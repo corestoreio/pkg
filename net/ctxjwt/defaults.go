@@ -12,21 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt_test
+package ctxjwt
 
-import "github.com/corestoreio/csfw/net/ctxjwt"
+import (
+	"time"
 
-// backend overall backend models for all tests
-var backend *ctxjwt.PkgBackend
+	"github.com/corestoreio/csfw/util/csjwt"
+)
 
-// this would belong into the test suit setup
-func init() {
+// DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
+// ConfigSigningMethod model returns an empty string.
+const DefaultSigningMethod = csjwt.HS512
 
-	cfgStruct, err := ctxjwt.NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-
-	backend = ctxjwt.NewBackend(cfgStruct)
-
-}
+// DefaultExpire duration when a token expires
+const DefaultExpire = time.Hour

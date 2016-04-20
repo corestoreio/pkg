@@ -33,7 +33,7 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 	t.Parallel()
 	jwts := MustNewService()
 
-	defaultErrH := jwts.defaultScopeCache.errorHandler
+	defaultErrH := jwts.defaultScopeCache.ErrorHandler
 
 	wsErrH := ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 		http.Error(w, http.StatusText(http.StatusAccepted), http.StatusAccepted)
@@ -44,15 +44,15 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cstesting.EqualPointers(t, defaultErrH, jwts.defaultScopeCache.errorHandler)
-	cstesting.EqualPointers(t, wsErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].errorHandler)
-	cstesting.UnEqualPointers(t, defaultErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].errorHandler)
+	cstesting.EqualPointers(t, defaultErrH, jwts.defaultScopeCache.ErrorHandler)
+	cstesting.EqualPointers(t, wsErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].ErrorHandler)
+	cstesting.UnEqualPointers(t, defaultErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].ErrorHandler)
 
 	if err := jwts.Options(WithErrorHandler(scope.Default, 0, wsErrH)); err != nil {
 		t.Fatal(err)
 	}
-	cstesting.UnEqualPointers(t, defaultErrH, jwts.defaultScopeCache.errorHandler)
-	cstesting.EqualPointers(t, wsErrH, jwts.defaultScopeCache.errorHandler)
+	cstesting.UnEqualPointers(t, defaultErrH, jwts.defaultScopeCache.ErrorHandler)
+	cstesting.EqualPointers(t, wsErrH, jwts.defaultScopeCache.ErrorHandler)
 }
 
 func TestInternalOptionNoLeakage(t *testing.T) {
@@ -60,6 +60,6 @@ func TestInternalOptionNoLeakage(t *testing.T) {
 	sc := scopedConfig{
 		Key: csjwt.WithPasswordRandom(),
 	}
-	assert.Exactly(t, `{0 csjwt.Key{/*redacted*/} 0 <nil> <nil> false <nil> <nil> <nil>}`, fmt.Sprintf("%v", sc))
-	assert.Exactly(t, `ctxjwt.scopedConfig{scopeHash:0x0, Key:csjwt.Key{/*redacted*/}, expire:0, signingMethod:csjwt.Signer(nil), jwtVerify:(*csjwt.Verification)(nil), enableJTI:false, errorHandler:ctxhttp.Handler(nil), keyFunc:(csjwt.Keyfunc)(nil), templateTokenFunc:(func() csjwt.Token)(nil)}`, fmt.Sprintf("%#v", sc))
+	assert.Contains(t, fmt.Sprintf("%v", sc), `csjwt.Key{/*redacted*/}`)
+	assert.Contains(t, fmt.Sprintf("%#v", sc), `csjwt.Key{/*redacted*/}`)
 }

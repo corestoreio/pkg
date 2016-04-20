@@ -38,7 +38,8 @@ const (
 	claimKeyID     = "jti"
 )
 
-// Service main object for handling JWT authentication, generation, blacklists and log outs.
+// Service main type for handling JWT authentication, generation, blacklists
+// and log outs depending on a scope.
 type Service struct {
 	*cserr.MultiErr
 
@@ -50,10 +51,10 @@ type Service struct {
 	// Default black hole storage. Must be thread safe.
 	Blacklist Blacklister
 
-	// Backend optional configuration, can be nil. If the black list has been set it pulls
+	// scpOptionFnc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings in the
-	// internal map.
-	Backend *PkgBackend
+	// internal map. ScopedOption requires a config.ScopedGetter
+	scpOptionFnc ScopedOption
 
 	defaultScopeCache scopedConfig
 
@@ -131,7 +132,7 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (c
 		return empty, errors.Mask(err)
 	}
 
-	var tk = cfg.getTemplateToken()
+	var tk = cfg.TemplateToken()
 
 	if len(claim) > 0 && claim[0] != nil {
 		if err := tk.Merge(claim[0]); err != nil {
@@ -139,26 +140,26 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (c
 		}
 	}
 
-	if err := tk.Claims.Set(claimExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
+	if err := tk.Claims.Set(claimExpiresAt, now.Add(cfg.Expire).Unix()); err != nil {
 		return empty, errors.Mask(err)
 	}
 	if err := tk.Claims.Set(claimIssuedAt, now.Unix()); err != nil {
 		return empty, errors.Mask(err)
 	}
 
-	if cfg.enableJTI && s.JTI != nil {
+	if cfg.EnableJTI && s.JTI != nil {
 		if err := tk.Claims.Set(claimKeyID, s.JTI.Get()); err != nil {
 			return empty, errors.Mask(err)
 		}
 	}
 
-	tk.Raw, err = tk.SignedString(cfg.signingMethod, cfg.Key)
+	tk.Raw, err = tk.SignedString(cfg.SigningMethod, cfg.Key)
 	return tk, errors.Mask(err)
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration.
 func (s *Service) Logout(token csjwt.Token) error {
-	if len(token.Raw) == 0 || token.Valid == false {
+	if len(token.Raw) == 0 || !token.Valid {
 		return nil
 	}
 
@@ -181,7 +182,7 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 		return emptyTok, errors.Mask(err)
 	}
 
-	token, err := sc.parse(rawToken)
+	token, err := sc.Parse(rawToken)
 	if err != nil {
 		return emptyTok, errors.Mask(err)
 	}
@@ -200,16 +201,19 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 	return emptyTok, errors.Mask(err)
 }
 
-// getConfigByScopedGetter used in the middleware where sg comes from the store.Website.Config
+// ConfigByScopedGetter returns the internal configuration depending on the ScopedGetter.
+// Mainly used within the middleware. Exported here to build your own middleware.
 // A nil argument falls back to the default scope configuration.
-func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
+// If you have applied the option WithBackend() the configuration will be pulled out
+// one time from the backend service.
+func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
 
 	h := scope.DefaultHash
 	if sg != nil {
 		h = scope.NewHash(sg.Scope())
 	}
 
-	if (s.Backend == nil || sg == nil) && h == scope.DefaultHash && s.defaultScopeCache.isValid() {
+	if (s.scpOptionFnc == nil || sg == nil) && h == scope.DefaultHash && s.defaultScopeCache.IsValid() {
 		return s.defaultScopeCache, nil
 	}
 
@@ -220,8 +224,8 @@ func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig,
 		return sc, nil
 	}
 
-	if s.Backend != nil {
-		if err := s.Options(optionsByBackend(s.Backend, sg)...); err != nil {
+	if s.scpOptionFnc != nil {
+		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
 			return scopedConfig{}, errors.Mask(err)
 		}
 	}
@@ -230,12 +234,17 @@ func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig,
 	return s.getConfigByScopeID(true, h)
 }
 
+// ConfigByScopeID returns the internal configuration depending on the scope.
+func (s *Service) ConfigByScopeID(scp scope.Scope, id int64) (scopedConfig, error) {
+	return s.getConfigByScopeID(true, scope.NewHash(scp, id))
+}
+
 func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
 	var empty scopedConfig
 	// requested scope plus ID
 	scpCfg, ok := s.getScopedConfig(hash)
 	if ok {
-		if scpCfg.isValid() {
+		if scpCfg.IsValid() {
 			return scpCfg, nil
 		}
 		return empty, errors.Errorf("[ctxjwt] Incomplete configuration for %s. Missing Signing Method and its Key.", hash)
@@ -245,7 +254,7 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 	if fallback {
 		// fallback to default scope
 		var err error
-		if !s.defaultScopeCache.isValid() {
+		if !s.defaultScopeCache.IsValid() {
 			err = errors.Errorf(errConfigNotFound, scope.DefaultHash)
 		}
 		return s.defaultScopeCache, errors.Mask(err)
@@ -265,12 +274,12 @@ func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
 
 	if ok {
 		var hasChanges bool
-		if nil == sc.keyFunc {
+		if nil == sc.KeyFunc {
 			sc.initKeyFunc()
 			hasChanges = true
 		}
-		if sc.expire < 1 {
-			sc.expire = DefaultExpire
+		if sc.Expire < 1 {
+			sc.Expire = DefaultExpire
 			hasChanges = true
 		}
 		if hasChanges {

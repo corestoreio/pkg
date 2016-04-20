@@ -27,43 +27,56 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Option can be used as an argument in NewService to configure a token service.
+type Option func(*Service)
+
+// ScopedOption a closure around a scoped configuration to figure out which
+// options should be returned depending on the scope brought to you during
+// a request.
+type ScopedOption func(config.ScopedGetter) []Option
+
 // scopedConfig private internal scoped based configuration
 type scopedConfig struct {
-	scopeHash scope.Hash
+	// ScopeHash defines the scope bound to the configuration is.
+	ScopeHash scope.Hash
 	// Key contains the HMAC, RSA or ECDSA sensitive data. Yes the csjwt.Key
 	// must not be embedded into this struct because otherwise when printing
 	// or logging the sensitive data from csjwt.Key gets leaked into loggers
 	// or where ever. If key would be lower case then %#v still prints
 	// every field of the csjwt.Key.
 	Key csjwt.Key
-	// expire defines the duration when the token is about to expire
-	expire time.Duration
-	// signingMethod how to sign the JWT. For default value see the OptionFuncs
-	signingMethod csjwt.Signer
-	// jwtVerify token parser and verifier bound to ONE signing method. Setting
+	// Expire defines the duration when the token is about to expire
+	Expire time.Duration
+	// SigningMethod how to sign the JWT. For default value see the OptionFuncs
+	SigningMethod csjwt.Signer
+	// Verifier token parser and verifier bound to ONE signing method. Setting
 	// a new SigningMethod also overwrites the JWTVerify pointer.
 	// TODO(newbies): For Verification add Options for setting custom Unmarshaler, HTTP FORM input name and cookie name.
-	jwtVerify *csjwt.Verification
-	// enableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
-	enableJTI bool
-	// errorHandler specific for this scope. if nil, fallback to global one
+	Verifier *csjwt.Verification
+	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
+	EnableJTI bool
+	// ErrorHandler specific for this scope. if nil, fallback to global one
 	// stored in the Service
-	errorHandler ctxhttp.Handler
-	// keyFunc will receive the parsed token and should return the key for validating.
-	keyFunc csjwt.Keyfunc
-	// templateTokenFunc function to a create a new template token when parsing
+	ErrorHandler ctxhttp.Handler
+	// KeyFunc will receive the parsed token and should return the key for validating.
+	KeyFunc csjwt.Keyfunc
+	// templateTokenFunc to a create a new template token when parsing
 	// a byte token slice into the template token.
 	// Default value nil.
-	// TODO(cs) maybe we can replace csjwt.Token with our own interface definition but seems complex.
 	templateTokenFunc func() csjwt.Token
 }
 
-// isValid a configuration for a scope is only then valid when the Key has been
-// supplied and a applied non-nil signing method.
-func (sc *scopedConfig) isValid() bool {
-	return !sc.Key.IsEmpty() && sc.signingMethod != nil && sc.jwtVerify != nil
+// TODO(cs) maybe we can replace csjwt.Token with our own interface definition but seems complex.
+
+// IsValid a configuration for a scope is only then valid when the Key has been
+// supplied, a non-nil signing method and a non-nil Verifier.
+func (sc *scopedConfig) IsValid() bool {
+	return !sc.Key.IsEmpty() && sc.SigningMethod != nil && sc.Verifier != nil
 }
-func (sc scopedConfig) getTemplateToken() csjwt.Token {
+
+// TemplateToken returns the template token. Default Claim is a map. You can
+// provide your own by setting the template token function. WithTemplateToken()
+func (sc scopedConfig) TemplateToken() csjwt.Token {
 	if sc.templateTokenFunc != nil {
 		return sc.templateTokenFunc()
 	}
@@ -73,20 +86,23 @@ func (sc scopedConfig) getTemplateToken() csjwt.Token {
 	return csjwt.NewToken(&jwtclaim.Map{})
 }
 
-func (sc scopedConfig) parseFromRequest(r *http.Request) (csjwt.Token, error) {
-	return sc.jwtVerify.ParseFromRequest(sc.getTemplateToken(), sc.keyFunc, r)
+// ParseFromRequest parses a request to find a token in either the header, a
+// cookie or an HTML form.
+func (sc scopedConfig) ParseFromRequest(r *http.Request) (csjwt.Token, error) {
+	return sc.Verifier.ParseFromRequest(sc.TemplateToken(), sc.KeyFunc, r)
 }
 
-func (sc scopedConfig) parse(rawToken []byte) (csjwt.Token, error) {
-	return sc.jwtVerify.Parse(sc.getTemplateToken(), rawToken, sc.keyFunc)
+// Parse parses a raw token.
+func (sc scopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
+	return sc.Verifier.Parse(sc.TemplateToken(), rawToken, sc.KeyFunc)
 }
 
-// getKeyFunc generates a closure for a specific scope to compare if the
+// initKeyFunc generates a closure for a specific scope to compare if the
 // algorithm in the token matches with the current algorithm.
 func (sc *scopedConfig) initKeyFunc() {
-	sc.keyFunc = func(t csjwt.Token) (csjwt.Key, error) {
+	sc.KeyFunc = func(t csjwt.Token) (csjwt.Key, error) {
 
-		if have, want := t.Alg(), sc.signingMethod.Alg(); have != want {
+		if have, want := t.Alg(), sc.SigningMethod.Alg(); have != want {
 			return csjwt.Key{}, errors.Errorf("[ctxjwt] Unknown signing method - Have: %q Want: %q", have, want)
 		}
 		if sc.Key.Error != nil {
@@ -96,20 +112,17 @@ func (sc *scopedConfig) initKeyFunc() {
 	}
 }
 
-// Option can be used as an argument in NewService to configure a token service.
-type Option func(*Service)
-
 func defaultScopedConfig() (scopedConfig, error) {
 	key := csjwt.WithPasswordRandom()
 	hs256, err := csjwt.NewHMACFast256(key)
 	sc := scopedConfig{
-		scopeHash:     scope.DefaultHash,
-		expire:        DefaultExpire,
+		ScopeHash:     scope.DefaultHash,
+		Expire:        DefaultExpire,
 		Key:           key,
-		signingMethod: hs256,
-		jwtVerify:     csjwt.NewVerification(hs256),
-		enableJTI:     false,
-		errorHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+		SigningMethod: hs256,
+		Verifier:      csjwt.NewVerification(hs256),
+		EnableJTI:     false,
+		ErrorHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return nil
 		}),
@@ -147,19 +160,27 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 
 // WithBlacklist sets a new global black list service.
 // Convenience helper function.
-func WithBlacklist(blacklist Blacklister) Option {
+func WithBlacklist(bl Blacklister) Option {
 	return func(s *Service) {
-		s.Blacklist = blacklist
+		s.Blacklist = bl
 	}
 }
 
 // WithBackend applies the backend configuration to the service.
 // Once this has been set all other option functions are not really
 // needed.
-// Convenience helper function.
-func WithBackend(pb *PkgBackend) Option {
+//	cfgStruct, err := ctxjwtbe.NewConfigStructure()
+//	if err != nil {
+//		panic(err)
+//	}
+//	pb := ctxjwtbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(myEncryptor{}))
+//
+//	jwts := ctxjwt.MustNewService(
+//		ctxjwt.WithBackend(ctxjwtbe.BackendOptions(pb)),
+//	)
+func WithBackend(f ScopedOption) Option {
 	return func(s *Service) {
-		s.Backend = pb
+		s.scpOptionFnc = f
 	}
 }
 
@@ -187,7 +208,7 @@ func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 			sc.templateTokenFunc = scNew.templateTokenFunc
 			scNew = sc
 		}
-		scNew.scopeHash = h
+		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -199,8 +220,8 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 	return func(s *Service) {
 
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.signingMethod = sm
-			s.defaultScopeCache.jwtVerify = csjwt.NewVerification(sm)
+			s.defaultScopeCache.SigningMethod = sm
+			s.defaultScopeCache.Verifier = csjwt.NewVerification(sm)
 			return
 		}
 
@@ -210,16 +231,16 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 		// inherit default config
 		scNew := s.defaultScopeCache
 
-		scNew.signingMethod = sm
-		scNew.jwtVerify = csjwt.NewVerification(sm)
+		scNew.SigningMethod = sm
+		scNew.Verifier = csjwt.NewVerification(sm)
 
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.signingMethod = scNew.signingMethod
-			sc.jwtVerify = scNew.jwtVerify
+			sc.SigningMethod = scNew.SigningMethod
+			sc.Verifier = scNew.Verifier
 			scNew = sc
 		}
 
-		scNew.scopeHash = h
+		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -232,7 +253,7 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 	return func(s *Service) {
 
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.errorHandler = handler
+			s.defaultScopeCache.ErrorHandler = handler
 			return
 		}
 
@@ -241,13 +262,13 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 
 		// inherit default config
 		scNew := s.defaultScopeCache
-		scNew.errorHandler = handler
+		scNew.ErrorHandler = handler
 
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.errorHandler = scNew.errorHandler
+			sc.ErrorHandler = scNew.ErrorHandler
 			scNew = sc
 		}
-		scNew.scopeHash = h
+		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -258,7 +279,7 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 	return func(s *Service) {
 
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.expire = d
+			s.defaultScopeCache.Expire = d
 			return
 		}
 
@@ -267,13 +288,13 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 
 		// inherit default config
 		scNew := s.defaultScopeCache
-		scNew.expire = d
+		scNew.Expire = d
 
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.expire = scNew.expire
+			sc.Expire = scNew.Expire
 			scNew = sc
 		}
-		scNew.scopeHash = h
+		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -284,7 +305,7 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 	return func(s *Service) {
 
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.enableJTI = enable
+			s.defaultScopeCache.EnableJTI = enable
 			return
 		}
 
@@ -293,13 +314,13 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 
 		// inherit default config
 		scNew := s.defaultScopeCache
-		scNew.enableJTI = enable
+		scNew.EnableJTI = enable
 
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.enableJTI = scNew.enableJTI
+			sc.EnableJTI = scNew.EnableJTI
 			scNew = sc
 		}
-		scNew.scopeHash = h
+		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -332,124 +353,41 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		// by using WithSigningMethod
 		switch key.Algorithm() {
 		case csjwt.ES:
-			scNew.signingMethod = csjwt.NewSigningMethodES256()
+			scNew.SigningMethod = csjwt.NewSigningMethodES256()
 		case csjwt.HS:
 			var err error
-			scNew.signingMethod, err = csjwt.NewHMACFast256(key)
+			scNew.SigningMethod, err = csjwt.NewHMACFast256(key)
 			if err != nil {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 				return
 			}
 		case csjwt.RS:
-			scNew.signingMethod = csjwt.NewSigningMethodRS256()
+			scNew.SigningMethod = csjwt.NewSigningMethodRS256()
 		default:
 			s.MultiErr = s.AppendErrors(errors.Errorf("[ctxjwt] Unknown signing method - Have: %q Want: ES, HS or RS", key.Algorithm()))
 			return
 		}
 
-		scNew.jwtVerify = csjwt.NewVerification(scNew.signingMethod)
+		scNew.Verifier = csjwt.NewVerification(scNew.SigningMethod)
 		scNew.initKeyFunc()
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.Key = scNew.Key
-			s.defaultScopeCache.signingMethod = scNew.signingMethod
-			s.defaultScopeCache.jwtVerify = scNew.jwtVerify
-			s.defaultScopeCache.keyFunc = scNew.keyFunc
+			s.defaultScopeCache.SigningMethod = scNew.SigningMethod
+			s.defaultScopeCache.Verifier = scNew.Verifier
+			s.defaultScopeCache.KeyFunc = scNew.KeyFunc
 			return
 		}
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.Key = scNew.Key
-			sc.signingMethod = scNew.signingMethod
-			sc.jwtVerify = scNew.jwtVerify
-			sc.keyFunc = scNew.keyFunc
+			sc.SigningMethod = scNew.SigningMethod
+			sc.Verifier = scNew.Verifier
+			sc.KeyFunc = scNew.KeyFunc
 			scNew = sc
 		}
 
-		scNew.scopeHash = h
+		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
 	}
-}
-
-// optionsByBackend creates an option array containing the Options based
-// on the configuration
-func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
-	scp, id := sg.Scope()
-
-	exp, err := be.NetCtxjwtExpiration.Get(sg)
-	if err != nil {
-		return append(opts, func(s *Service) {
-			s.MultiErr = s.AppendErrors(errors.Mask(err))
-		})
-	}
-	opts = append(opts, WithExpiration(scp, id, exp))
-
-	isJTI, err := be.NetCtxjwtEnableJTI.Get(sg)
-	if err != nil {
-		return append(opts, func(s *Service) {
-			s.MultiErr = s.AppendErrors(errors.Mask(err))
-		})
-	}
-	opts = append(opts, WithTokenID(scp, id, isJTI))
-
-	signingMethod, err := be.NetCtxjwtSigningMethod.Get(sg)
-	if err != nil {
-		return append(opts, func(s *Service) {
-			s.MultiErr = s.AppendErrors(errors.Mask(err))
-		})
-	}
-
-	var key csjwt.Key
-
-	switch signingMethod.Alg() {
-	case csjwt.RS256, csjwt.RS384, csjwt.RS512:
-
-		rsaKey, err := be.NetCtxjwtRSAKey.Get(sg)
-		if err != nil {
-			return append(opts, func(s *Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
-			})
-		}
-		rsaPW, err := be.NetCtxjwtRSAKeyPassword.Get(sg)
-		if err != nil {
-			return append(opts, func(s *Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
-			})
-		}
-		key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
-
-	case csjwt.ES256, csjwt.ES384, csjwt.ES512:
-
-		ecdsaKey, err := be.NetCtxjwtECDSAKey.Get(sg)
-		if err != nil {
-			return append(opts, func(s *Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
-			})
-		}
-		ecdsaPW, err := be.NetCtxjwtECDSAKeyPassword.Get(sg)
-		if err != nil {
-			return append(opts, func(s *Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
-			})
-		}
-		key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
-
-	case csjwt.HS256, csjwt.HS384, csjwt.HS512:
-
-		password, err := be.NetCtxjwtHmacPassword.Get(sg)
-		if err != nil {
-			return append(opts, func(s *Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
-			})
-		}
-		key = csjwt.WithPassword(password)
-
-	default:
-		opts = append(opts, func(s *Service) {
-			s.MultiErr = s.AppendErrors(errors.Errorf("[ctxjwt] Unknown signing method: %q", signingMethod.Alg()))
-		})
-	}
-
-	// WithSigningMethod must be added at the end of the slice to overwrite default signing methods
-	return append(opts, WithKey(scp, id, key), WithSigningMethod(scp, id, signingMethod))
 }

@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt
+package ctxjwtbe
 
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/juju/errors"
 )
@@ -57,7 +58,7 @@ func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err 
 	}
 
 	if raw == "" {
-		raw = DefaultSigningMethod
+		raw = ctxjwt.DefaultSigningMethod
 	}
 
 	switch raw {

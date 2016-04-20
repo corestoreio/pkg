@@ -68,7 +68,7 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			errHandler := s.defaultScopeCache.errorHandler
+			errHandler := s.defaultScopeCache.ErrorHandler
 
 			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
@@ -78,17 +78,17 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 			// the scpCfg depends on how you have initialized the storeService during app boot.
 			// requestedStore.Website.Config is the reason that all options only support
 			// website scope and not group or store scope.
-			scpCfg, err := s.getConfigByScopedGetter(requestedStore.Website.Config)
+			scpCfg, err := s.ConfigByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
 				err = errors.Mask(err)
 				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
-			if scpCfg.errorHandler != nil {
-				errHandler = scpCfg.errorHandler
+			if scpCfg.ErrorHandler != nil {
+				errHandler = scpCfg.ErrorHandler
 			}
 
-			token, err := scpCfg.parseFromRequest(r)
+			token, err := scpCfg.ParseFromRequest(r)
 			if err != nil {
 				err = errors.Mask(err)
 				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)

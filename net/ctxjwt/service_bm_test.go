@@ -60,7 +60,7 @@ func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 				if err := bl.Set(tokens[i], time.Minute); err != nil {
 					b.Fatal(err)
 				}
-				if bl.Has(tokens[i]) == false {
+				if !bl.Has(tokens[i]) {
 					b.Fatalf("Cannot find token %s with index %d", tokens[i], i)
 				}
 			}

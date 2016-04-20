@@ -12,24 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt
+package ctxjwtbe
 
 import (
-	"time"
-
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/csjwt"
 )
-
-// DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
-// ConfigSigningMethod model returns an empty string.
-const DefaultSigningMethod = csjwt.HS512
-
-// DefaultExpire duration when a token expires
-const DefaultExpire = time.Hour
 
 // NewConfigStructure global configuration structure for this package.
 // Used in frontend (to display the user all the settings) and in
@@ -55,7 +46,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   DefaultExpire.String(),
+							Default:   ctxjwt.DefaultExpire.String(),
 						},
 						element.Field{
 							// Path: net/ctxjwt/enable_jti
@@ -76,7 +67,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 35,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   DefaultSigningMethod,
+							Default:   ctxjwt.DefaultSigningMethod,
 						},
 						element.Field{
 							// Path: net/ctxjwt/hmac_password
