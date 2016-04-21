@@ -30,10 +30,10 @@ import (
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(*Service)
 
-// ScopedOption a closure around a scoped configuration to figure out which
+// ScopedOptionFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
 // a request.
-type ScopedOption func(config.ScopedGetter) []Option
+type ScopedOptionFunc func(config.ScopedGetter) []Option
 
 // scopedConfig private internal scoped based configuration
 type scopedConfig struct {
@@ -178,7 +178,7 @@ func WithBlacklist(bl Blacklister) Option {
 //	jwts := ctxjwt.MustNewService(
 //		ctxjwt.WithBackend(ctxjwtbe.BackendOptions(pb)),
 //	)
-func WithBackend(f ScopedOption) Option {
+func WithBackend(f ScopedOptionFunc) Option {
 	return func(s *Service) {
 		s.scpOptionFnc = f
 	}

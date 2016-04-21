@@ -54,7 +54,7 @@ type Service struct {
 	// scpOptionFnc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings in the
 	// internal map. ScopedOption requires a config.ScopedGetter
-	scpOptionFnc ScopedOption
+	scpOptionFnc ScopedOptionFunc
 
 	defaultScopeCache scopedConfig
 

@@ -25,7 +25,7 @@ import (
 // DefaultBackend creates new ctxjwt.Option slice with the default configuration
 // structure and a noop encryptor/decryptor IF no option arguments have been
 // provided. It panics on error, so us it only during the app init phase.
-func DefaultBackend(opts ...cfgmodel.Option) ctxjwt.ScopedOption {
+func DefaultBackend(opts ...cfgmodel.Option) ctxjwt.ScopedOptionFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -40,7 +40,7 @@ func DefaultBackend(opts ...cfgmodel.Option) ctxjwt.ScopedOption {
 // BackendOptions creates a closure around the PkgBackend. The closure will
 // be used during a scoped request to figure out the configuration depending on
 // the scope. An option array will be returned by the closure.
-func BackendOptions(be *PkgBackend) ctxjwt.ScopedOption {
+func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 
 	return func(sg config.ScopedGetter) (opts []ctxjwt.Option) {
 
