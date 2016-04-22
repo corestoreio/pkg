@@ -17,7 +17,6 @@ package cstesting
 import (
 	"go/build"
 	"path/filepath"
-	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -28,15 +27,11 @@ import (
 var RootPath = filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw")
 
 // MockDB creates a mocked database connection. Fatals on error.
-func MockDB(t *testing.T) (*dbr.Connection, sqlmock.Sqlmock) {
+func MockDB(t Fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 	db, sm, err := sqlmock.New()
-	if err != nil {
-		t.Fatal(err)
-	}
+	FatalIfError(t, err)
 
 	dbc, err := dbr.NewConnection(dbr.SetDB(db))
-	if err != nil {
-		t.Fatal(err)
-	}
+	FatalIfError(t, err)
 	return dbc, sm
 }
