@@ -12,5 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cserr contains basic error handling helper functions.
-package cserr
+// Package errors implements functions for manipulating errors.
+//
+// Hello there! Read the presentation http://dave.cheney.net/paste/gocon-spring-2016.pdf
+// to see what the big deal is.
+package errors

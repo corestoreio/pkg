@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cserr_test
+package errors_test
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 type Service struct {
-	me *cserr.MultiErr
+	me *errors.MultiErr
 	a  string
 	b  string
 }
@@ -81,7 +80,8 @@ func ExampleMultiErr() {
 
 	// Output:
 	// S1: hello gophers ; Error is nil: true
-	// S2 nil: true ; S2 Error: Input string A is empty
-	// S3 nil: true ; S3 Error: Input string A is empty
-	// Input string B is empty
+	// S2 nil: true ; S2 Error: github.com/corestoreio/csfw/util/errors/example_MultiErr_test.go:34: Input string A is empty
+	//
+	// S3 nil: true ; S3 Error: github.com/corestoreio/csfw/util/errors/example_MultiErr_test.go:34: Input string A is empty
+	// github.com/corestoreio/csfw/util/errors/example_MultiErr_test.go:44: Input string B is empty
 }

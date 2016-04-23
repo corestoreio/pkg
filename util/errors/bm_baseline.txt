@@ -1,0 +1,5 @@
+PASS
+BenchmarkError-4        	  500000	      4160 ns/op	     217 B/op	       4 allocs/op
+BenchmarkErrorPointer-4 	 3000000	       385 ns/op	      48 B/op	       1 allocs/op
+BenchmarkErrorConstant-4	 5000000	       387 ns/op	      48 B/op	       1 allocs/op
+ok  	github.com/corestoreio/csfw/util/errors	6.038s

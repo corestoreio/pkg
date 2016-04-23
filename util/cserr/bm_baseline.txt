@@ -1,5 +1,0 @@
-PASS
-BenchmarkError-4        	  500000	      3056 ns/op	    1312 B/op	      22 allocs/op
-BenchmarkErrorPointer-4 	 5000000	       301 ns/op	      48 B/op	       1 allocs/op
-BenchmarkErrorConstant-4	 5000000	       306 ns/op	      48 B/op	       1 allocs/op
-ok  	github.com/corestoreio/csfw/util/cserr	5.233s

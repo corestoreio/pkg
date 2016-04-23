@@ -12,26 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cserr_test
+package errors
 
 import (
-	goerr "errors"
 	"testing"
 
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnwrapMasked(t *testing.T) {
-	t.Parallel()
-	e1 := goerr.New("PHP")
-	assert.Exactly(t, e1, cserr.UnwrapMasked(errors.Mask(e1)))
-	assert.Exactly(t, e1, cserr.UnwrapMasked(e1))
+func TestError_Error(t *testing.T) {
+	const e1 Error = "e1"
+	assert.EqualError(t, e1, "e1")
+}
 
-	e2 := errors.New("Scala")
-	assert.Exactly(t, e2, cserr.UnwrapMasked(errors.Mask(e2)))
-	assert.Exactly(t, nil, cserr.UnwrapMasked(errors.Mask(nil)))
-	assert.Exactly(t, e2, cserr.UnwrapMasked(e2))
-	assert.Exactly(t, nil, cserr.UnwrapMasked(nil))
+func TestErrorf(t *testing.T) {
+	var e = Errorf("Error %d", 2)
+	assert.EqualError(t, e, "Error 2")
+}
+
+func TestPrintLoc(t *testing.T) {
+	const pi = 3.141592
+	e1 := Errorf("Error %d", 1)
+	e2 := Wrapf(e1, "Prints e %.3f", pi)
+	assert.Exactly(t, "github.com/corestoreio/csfw/util/errors/error_test.go:36: Prints e 3.142\ngithub.com/corestoreio/csfw/util/errors/error_test.go:35: Error 1\n", PrintLoc(e2))
 }
