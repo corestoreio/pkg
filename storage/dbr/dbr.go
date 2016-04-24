@@ -2,7 +2,8 @@ package dbr
 
 import (
 	"database/sql"
-	"github.com/juju/errors"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DefaultDriverName is MySQL
@@ -26,10 +27,10 @@ type Session struct {
 }
 
 // ConnectionOption can be used as an argument in NewConnection to configure a connection.
-type ConnectionOption func(c *Connection)
+type ConnectionOption func(*Connection)
 
-// SetDB sets the DB value to a connection. If set ignores the DSN values.
-func SetDB(db *sql.DB) ConnectionOption {
+// WithDB sets the DB value to a connection. If set ignores the DSN values.
+func WithDB(db *sql.DB) ConnectionOption {
 	if db == nil {
 		panic("DB argument cannot be nil")
 	}
@@ -38,8 +39,8 @@ func SetDB(db *sql.DB) ConnectionOption {
 	}
 }
 
-// SetEventReceiver sets the event receiver for a connection.
-func SetEventReceiver(log EventReceiver) ConnectionOption {
+// WithEventReceiver sets the event receiver for a connection.
+func WithEventReceiver(log EventReceiver) ConnectionOption {
 	if log == nil {
 		log = nullReceiver
 	}
@@ -48,16 +49,16 @@ func SetEventReceiver(log EventReceiver) ConnectionOption {
 	}
 }
 
-// SetDriver sets the driver name for a connection. At the moment only MySQL
+// WithDriver sets the driver name for a connection. At the moment only MySQL
 // is supported.
-func SetDriver(driverName string) ConnectionOption {
+func WithDriver(driverName string) ConnectionOption {
 	return func(c *Connection) {
 		c.dn = driverName
 	}
 }
 
-// SetDSN sets the data source name for a connection.
-func SetDSN(dsn string) ConnectionOption {
+// WithDSN sets the data source name for a connection.
+func WithDSN(dsn string) ConnectionOption {
 	if dsn == "" {
 		panic("DSN argument cannot be empty")
 	}
@@ -67,7 +68,8 @@ func SetDSN(dsn string) ConnectionOption {
 }
 
 // NewConnection instantiates a Connection for a given database/sql connection
-// and event receiver
+// and event receiver. An invalid drivername causes a NotImplemented error
+// to be returned.
 func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	c := &Connection{
 		dn:            DriverNameMySQL,
@@ -78,7 +80,7 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	switch c.dn {
 	case DriverNameMySQL:
 	default:
-		return nil, errors.NotImplementedf("unsupported driver: %s", c.dn)
+		return nil, errors.NewNotImplementedf("[dbr] unsupported driver: %q", c.dn)
 	}
 
 	if c.DB != nil {
@@ -88,7 +90,7 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	if c.dsn != "" {
 		var err error
 		if c.DB, err = sql.Open(c.dn, c.dsn); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "[dbr] sql.Open")
 		}
 	}
 	return c, nil

@@ -356,11 +356,11 @@ func TestSelectJoin(t *testing.T) {
 		Select("p1.*", "p2.*").
 		From("dbr_people", "p1").
 		Join(
-		JoinTable("dbr_people", "p2"),
-		JoinColumns(),
-		ConditionRaw("`p2`.`id` = `p1`.`id`"),
-		ConditionRaw("`p1`.`id` = ?", 42),
-	)
+			JoinTable("dbr_people", "p2"),
+			JoinColumns(),
+			ConditionRaw("`p2`.`id` = `p1`.`id`"),
+			ConditionRaw("`p1`.`id` = ?", 42),
+		)
 
 	sql, _, err := sqlObj.ToSql()
 	assert.NoError(t, err)
@@ -373,11 +373,11 @@ func TestSelectJoin(t *testing.T) {
 		Select("p1.*").
 		From("dbr_people", "p1").
 		LeftJoin(
-		JoinTable("dbr_people", "p2"),
-		JoinColumns("p2.name"),
-		ConditionRaw("`p2`.`id` = `p1`.`id`"),
-		ConditionRaw("`p1`.`id` = ?", 42),
-	)
+			JoinTable("dbr_people", "p2"),
+			JoinColumns("p2.name"),
+			ConditionRaw("`p2`.`id` = `p1`.`id`"),
+			ConditionRaw("`p1`.`id` = ?", 42),
+		)
 
 	sql, _, err = sqlObj.ToSql()
 	assert.NoError(t, err)
@@ -390,10 +390,10 @@ func TestSelectJoin(t *testing.T) {
 		Select("p1.*").
 		From("dbr_people", "p1").
 		RightJoin(
-		JoinTable("dbr_people", "p2"),
-		Quoter.ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
-		ConditionRaw("`p2`.`id` = `p1`.`id`"),
-	)
+			JoinTable("dbr_people", "p2"),
+			Quoter.ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
+			ConditionRaw("`p2`.`id` = `p1`.`id`"),
+		)
 
 	sql, _, err = sqlObj.ToSql()
 	assert.NoError(t, err)

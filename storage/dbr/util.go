@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"strings"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // argsValuer checks if an argument implements driver.Valuer interface. If so
@@ -15,7 +15,7 @@ func argsValuer(args *[]interface{}) error {
 			if val, err := dbVal.Value(); err == nil {
 				(*args)[i] = val
 			} else {
-				return errors.Mask(err)
+				return errors.Wrap(err, "[dbr] Error by driver.Valuer")
 			}
 		}
 	}

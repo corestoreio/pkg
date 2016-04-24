@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"testing"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 //
@@ -23,8 +27,8 @@ func createFakeSession() *Session {
 func createRealSession() *Session {
 	dn, dsn := realDb()
 	cxn, err := NewConnection(
-		SetDSN(dsn),
-		SetDriver(dn),
+		WithDSN(dsn),
+		WithDriver(dn),
 	)
 	if err != nil {
 		panic(err)
@@ -104,4 +108,13 @@ func installFixtures(db *sql.DB) {
 			log.Fatalln("Failed to execute statement: ", v, " Got error: ", err)
 		}
 	}
+}
+
+func TestNewConnection_NotImplemted(t *testing.T) {
+	c, err := NewConnection(WithDriver("ODBC"))
+	assert.Nil(t, c)
+	assert.True(t, errors.IsNotImplemented(err))
+	pl := errors.PrintLoc(err)
+	assert.Contains(t, pl, `github.com/corestoreio/csfw/storage/dbr/dbr.go:`)
+	assert.Contains(t, pl, `[dbr] unsupported driver: "ODBC": Not implemented`)
 }
