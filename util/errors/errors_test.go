@@ -26,6 +26,7 @@ package errors
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -40,6 +41,7 @@ func TestNew(t *testing.T) {
 		{"", fmt.Errorf("")},
 		{"foo", fmt.Errorf("foo")},
 		{"foo", New("foo")},
+		{"string with format specifiers: %v", errors.New("string with format specifiers: %v")},
 	}
 
 	for _, tt := range tests {
@@ -148,13 +150,13 @@ func TestFprint(t *testing.T) {
 		want: "cause error\nEOF\n",
 	}, {
 		err:  x, // return from errors.New
-		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:131: error\n",
+		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:133: error\n",
 	}, {
 		err:  Wrap(x, "message"),
-		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:153: message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:131: error\n",
+		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:155: message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:133: error\n",
 	}, {
 		err:  Wrap(Wrap(x, "message"), "another message"),
-		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:156: another message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:156: message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:131: error\n",
+		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:158: another message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:158: message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:133: error\n",
 	}}
 
 	for i, tt := range tests {
