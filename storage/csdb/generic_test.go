@@ -13,16 +13,3 @@
 // limitations under the License.
 
 package csdb_test
-
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestError(t *testing.T) {
-	t.Parallel()
-	assert.Equal(t, "err123", csdb.NewError("err123").Error())
-	assert.Equal(t, "err 123", csdb.NewErrorf("err %v", 123).Error())
-}

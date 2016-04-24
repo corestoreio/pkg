@@ -23,7 +23,7 @@ import (
 )
 
 func TestGetDSN(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		env        string
 		envContent string

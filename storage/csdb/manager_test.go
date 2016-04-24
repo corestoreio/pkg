@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +26,7 @@ var _ csdb.TableManager = (*csdb.TableService)(nil)
 var _ error = (*csdb.TableService)(nil)
 
 func TestNewTableService(t *testing.T) {
-	t.Parallel()
+
 	assert.Equal(t, csdb.MustNewTableService().Len(), csdb.Index(0))
 
 	const (
@@ -43,10 +44,12 @@ func TestNewTableService(t *testing.T) {
 	assert.Equal(t, tm1.Len(), csdb.Index(3))
 }
 func TestNewTableServicePanic(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), csdb.ErrIncorrectIdentifier.Error())
+			err := r.(error)
+			t.Logf("%#v", err)
+			assert.True(t, errors.IsNotValid(err))
 		} else {
 			t.Error("Expecting a panic")
 		}
@@ -58,17 +61,16 @@ func TestNewTableServicePanic(t *testing.T) {
 }
 
 func TestNewTableServiceAppend(t *testing.T) {
-	t.Parallel()
 
 	tm0 := csdb.MustNewTableService()
 	assert.NotNil(t, tm0)
-	assert.EqualError(t, tm0.Append(csdb.Index(0), nil), "Table pointer cannot be nil for Index 0")
+	assert.True(t, errors.IsFatal(tm0.Append(csdb.Index(0), nil)))
 	assert.Equal(t, tm0.Len(), csdb.Index(0))
 }
 
 func TestIntegration_NewTableServiceInit(t *testing.T) {
-	t.Parallel()
-	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip("Skipping because no DSN found.")
 	}
 
@@ -76,7 +78,7 @@ func TestIntegration_NewTableServiceInit(t *testing.T) {
 	defer dbc.Close()
 	i := csdb.Index(4711)
 	tm0 := csdb.MustNewTableService(csdb.WithTable(i, "admin_user"))
-	assert.EqualError(t, tm0.Init(dbc.NewSession(), true), csdb.ErrTableServiceInitReload.Error())
+	assert.True(t, errors.IsTemporary(tm0.Init(dbc.NewSession(), true)))
 	err := tm0.Init(dbc.NewSession())
 	assert.NoError(t, err)
 

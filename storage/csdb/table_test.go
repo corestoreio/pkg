@@ -152,7 +152,7 @@ func mustStructure(i csdb.Index) *csdb.Table {
 }
 
 func TestTableStructure(t *testing.T) {
-	t.Parallel()
+
 	sValid, err := tableMap.Structure(table1)
 	assert.NotNil(t, sValid)
 	assert.NoError(t, err)
@@ -177,7 +177,7 @@ func TestTableStructure(t *testing.T) {
 }
 
 func TestTableStructureTableAliasQuote(t *testing.T) {
-	t.Parallel()
+
 	want := map[string]string{
 		"catalog_category_anc_categs_index_idx":   "`catalog_category_anc_categs_index_idx` AS `alias`",
 		"catalog_category_anc_categs_index_tmp":   "`catalog_category_anc_categs_index_tmp` AS `alias`",
@@ -195,7 +195,7 @@ func TestTableStructureTableAliasQuote(t *testing.T) {
 }
 
 func TestTableStructureColumnAliasQuote(t *testing.T) {
-	t.Parallel()
+
 	want := map[string][]string{
 		"catalog_category_anc_categs_index_idx":   {"`alias`.`category_id`", "`alias`.`path`"},
 		"catalog_category_anc_categs_index_tmp":   {"`alias`.`path`"},
@@ -213,7 +213,7 @@ func TestTableStructureColumnAliasQuote(t *testing.T) {
 }
 
 func TestTableStructureAllColumnAliasQuote(t *testing.T) {
-	t.Parallel()
+
 	want := map[string][]string{
 		"catalog_category_anc_categs_index_idx":   {"`alias`.`category_id`", "`alias`.`path`"},
 		"catalog_category_anc_categs_index_tmp":   {"`alias`.`category_id`", "`alias`.`path`"},
@@ -231,7 +231,7 @@ func TestTableStructureAllColumnAliasQuote(t *testing.T) {
 }
 
 func TestTableStructureIn(t *testing.T) {
-	t.Parallel()
+
 	want := map[string]bool{
 		"catalog_category_anc_categs_index_idx":   true,
 		"catalog_category_anc_categs_index_tmp":   true,

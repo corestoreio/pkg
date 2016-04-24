@@ -16,13 +16,12 @@ package csdb_test
 
 import (
 	"bytes"
-	"errors"
-	"testing"
-
 	"fmt"
+	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,8 +30,8 @@ var _ fmt.Stringer = (*csdb.Columns)(nil)
 var _ fmt.GoStringer = (*csdb.Columns)(nil)
 
 func TestGetColumns(t *testing.T) {
-	t.Parallel()
-	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip("Skipping because no DSN found.")
 	}
 
@@ -77,7 +76,7 @@ func TestGetColumns(t *testing.T) {
 }
 
 func TestColumns(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have  int
 		want  int
@@ -131,7 +130,6 @@ func TestColumns(t *testing.T) {
 }
 
 func TestColumnsMap(t *testing.T) {
-	t.Parallel()
 
 	cols := csdb.Columns{
 		0: csdb.Column{
@@ -165,7 +163,6 @@ func TestColumnsMap(t *testing.T) {
 }
 
 func TestColumnsFilter(t *testing.T) {
-	t.Parallel()
 
 	cols := csdb.Columns{
 		0: csdb.Column{
@@ -196,7 +193,7 @@ func TestColumnsFilter(t *testing.T) {
 }
 
 func TestGetGoPrimitive(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		c           csdb.Column
 		useNullType bool

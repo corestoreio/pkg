@@ -16,7 +16,7 @@ package csdb
 
 import (
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Table represents a table from the database
@@ -59,7 +59,7 @@ func (ts *Table) update() *Table {
 func (ts *Table) LoadColumns(dbrSess dbr.SessionRunner) (err error) {
 	ts.Columns, err = GetColumns(dbrSess, ts.Name)
 	ts.update()
-	return errors.Mask(err)
+	return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", ts.Name)
 }
 
 // TableAliasQuote returns a table name with the alias.
@@ -97,7 +97,7 @@ func (ts *Table) In(n string) bool {
 // Select generates a SELECT * FROM tableName statement
 func (ts *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
 	if ts == nil {
-		return nil, ErrTableNotFound
+		return nil, errors.NewFatalf("[csdb] Table cannot be nil")
 	}
 	return dbrSess.
 		Select(ts.AllColumnAliasQuote(MainTable)...).

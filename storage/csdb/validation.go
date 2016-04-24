@@ -15,11 +15,8 @@
 package csdb
 
 import (
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrIncorrectIdentifier gets returned by IsValidIdentifier on error.
-var ErrIncorrectIdentifier = errors.New("Incorrect identifier. Too long or empty.")
 
 // IsValidIdentifier checks the permissible syntax for identifiers.
 // Certain objects within MySQL, including database, table, index, column, alias,
@@ -27,12 +24,13 @@ var ErrIncorrectIdentifier = errors.New("Incorrect identifier. Too long or empty
 // known as identifiers.
 // ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar, underscore)
 // Max length 63 characters.
+// Returns errors.NotValid
 //
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 func IsValidIdentifier(name string) error {
 
 	if len(name) > 63 || name == "" {
-		return ErrIncorrectIdentifier
+		return errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
 	}
 
 	for _, r := range name {
@@ -46,7 +44,7 @@ func IsValidIdentifier(name string) error {
 			ok = true
 		}
 		if !ok {
-			return errors.Errorf("Invalid character `%s` in name %q", string(r), name)
+			return errors.NewNotValidf("[csdb] Invalid character %q in name %q", string(r), name)
 		}
 	}
 	return nil

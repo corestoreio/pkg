@@ -22,7 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 const (
@@ -91,15 +91,12 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 
 	selSql, selArg, err := sel.ToSql()
 	if err != nil {
-		return Columns{}, errors.Mask(err)
+		return Columns{}, errors.Wrap(err, "[csdb] ToSql")
 	}
 
 	rows, err := sel.Query(selSql, selArg...)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("csdb.GetColumns.Query", "err", err, "query", selSql, "args", selArg)
-		}
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[csdb] Query: %q Args: %#v", selSql, selArg)
 	}
 	defer rows.Close()
 
@@ -107,19 +104,13 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 	for rows.Next() {
 		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("csdb.GetColumns.Rows.Scan", "err", err, "query", selSql, "args", selArg)
-			}
-			return nil, errors.Mask(err)
+			return nil, errors.Wrapf(err, "[csdb] Scan Query: %q Args: %#v", selSql, selArg)
 		}
 		cols = append(cols, col)
 	}
 	err = rows.Err()
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("csdb.GetColumns.Rows.Err", "err", err, "query", selSql, "args", selArg)
-		}
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[csdb] rows.Err Query: %q Args: %#v", selSql, selArg)
 	}
 	return cols, nil
 }

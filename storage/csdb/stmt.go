@@ -15,13 +15,12 @@
 package csdb
 
 import (
+	"database/sql"
 	"sync"
 	"time"
 
-	"database/sql"
-
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
-	"github.com/juju/errors"
 )
 
 // DefaultResurrectStmtIdleTime is the global idle time when you create a new
@@ -122,7 +121,7 @@ func (su *ResurrectStmt) close() error {
 		// statement has not been opened or is unused.
 		return nil
 	}
-	return errors.Mask(su.stmt.Close())
+	return errors.Wrap(su.stmt.Close(), "[csdb] ResurrectStmt.close")
 }
 
 func (su *ResurrectStmt) checkIdle() {
@@ -168,7 +167,7 @@ func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 	var err error
 	su.stmt, err = su.DB.Prepare(su.SQL)
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[csdb] DB.Prepare %q", su.SQL)
 	}
 	if su.Log.IsDebug() {
 		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", "SQL", su.SQL)

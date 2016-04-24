@@ -15,29 +15,29 @@
 package csdb_test
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIsValidIdentifier(t *testing.T) {
-	t.Parallel()
+	const errDummy = errors.Error("Dummy")
 	tests := []struct {
 		have string
 		want error
 	}{
 		{"$catalog_product_3ntity", nil},
-		{"`catalog_product_3ntity", errors.New("Invalid character ``` in name \"`catalog_product_3ntity\"")},
-		{"", csdb.ErrIncorrectIdentifier},
-		{strings.Repeat("a", 64), csdb.ErrIncorrectIdentifier},
+		{"`catalog_product_3ntity", errDummy},
+		{"", errDummy},
+		{strings.Repeat("a", 64), errDummy},
 	}
 	for i, test := range tests {
 		haveErr := csdb.IsValidIdentifier(test.have)
 		if test.want != nil {
-			assert.EqualError(t, haveErr, test.want.Error(), "Index %d", i)
+			assert.True(t, errors.IsNotValid(haveErr), "Index %d", i)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
 		}

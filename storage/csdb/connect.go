@@ -18,18 +18,12 @@ import (
 	"os"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/errors"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/juju/errors"
 )
 
-const (
-	// EnvDSN is the name of the environment variable
-	EnvDSN string = "CS_DSN"
-)
-
-var (
-	ErrDSNNotFound = errors.New("Env var: " + EnvDSN + " not found")
-)
+// EnvDSN is the name of the environment variable
+const EnvDSN string = "CS_DSN"
 
 func getDSN(env string, err error) (string, error) {
 	dsn := os.Getenv(env)
@@ -41,7 +35,7 @@ func getDSN(env string, err error) (string, error) {
 
 // GetDSN returns the data source name from an environment variable or an error
 func GetDSN() (string, error) {
-	return getDSN(EnvDSN, ErrDSNNotFound)
+	return getDSN(EnvDSN, errors.NewNotFoundf("Env var: %q not found", EnvDSN))
 }
 
 // Connect creates a new database connection from a DSN stored in an
@@ -49,9 +43,9 @@ func GetDSN() (string, error) {
 func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
 	dsn, err := GetDSN()
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[csdb] GetDSN")
 	}
-	c, err := dbr.NewConnection(dbr.SetDSN(dsn))
+	c, err := dbr.NewConnection(dbr.WithDSN(dsn))
 	return c.ApplyOpts(opts...), err
 }
 
@@ -62,5 +56,5 @@ func MustConnectTest(opts ...dbr.ConnectionOption) *dbr.Connection {
 	if err != nil {
 		panic(err)
 	}
-	return dbr.MustConnectAndVerify(dbr.SetDSN(dsn)).ApplyOpts(opts...)
+	return dbr.MustConnectAndVerify(dbr.WithDSN(dsn)).ApplyOpts(opts...)
 }

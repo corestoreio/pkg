@@ -15,47 +15,21 @@
 package csdb
 
 import (
-	"fmt"
-
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-var _ error = (*Error)(nil)
-
-// Error type with more options
-type Error struct {
-	msg string
-}
-
-// NewError creates a new error from a string
-func NewError(text string) *Error {
-	return &Error{
-		msg: text,
-	}
-}
-
-// NewErrorf creates a new formatted error. Same arguments as with fmt.Sprintf
-func NewErrorf(format string, a ...interface{}) *Error {
-	return NewError(fmt.Sprintf(format, a...))
-}
-
-// Error returns the error string
-func (e *Error) Error() string {
-	return e.msg
-}
 
 // LoadSlice loads the slice dest with the table structure from tsr TableStructurer and table index ti.
 // Returns the number of loaded rows and nil or 0 and an error. Slice must be a pointer to structs.
 func LoadSlice(dbrSess dbr.SessionRunner, tsr TableManager, ti Index, dest interface{}, cbs ...dbr.SelectCb) (int, error) {
 	ts, err := tsr.Structure(ti)
 	if err != nil {
-		return 0, errors.Mask(err)
+		return 0, errors.Wrap(err, "[csdb] LoadSlice.Structure")
 	}
 
 	sb, err := ts.Select(dbrSess)
 	if err != nil {
-		return 0, errors.Mask(err)
+		return 0, errors.Wrap(err, "[csdb] LoadSlice.Select")
 	}
 
 	for _, cb := range cbs {
