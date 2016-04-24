@@ -23,13 +23,6 @@ import (
 
 const pkgPath = `github.com/corestoreio/csfw/util/errors`
 
-// Error type can be used for constant errors
-// http://dave.cheney.net/2016/04/07/constant-errors
-type Error string
-
-// Error implements the error interface
-func (e Error) Error() string { return string(e) }
-
 // Errorf creates a new annotated error and records the location that the
 // error is created.  This should be a drop in replacement for fmt.Errorf.
 //

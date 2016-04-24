@@ -41,11 +41,11 @@ func (l loc) Location() (string, int) {
 		return "unknown", 0
 	}
 
-	_, prefix, _, _ := runtime.Caller(0)
 	file, line := fn.FileLine(pc)
-	if i := strings.LastIndex(prefix, pkgPath); i > 0 {
+	if i := strings.LastIndex(file, pkgPath); i > 0 {
 		file = file[i:]
 	}
+
 	return file, line
 }
 

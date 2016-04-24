@@ -16,4 +16,6 @@
 //
 // Hello there! Read the presentation http://dave.cheney.net/paste/gocon-spring-2016.pdf
 // to see what the big deal is.
+//
+// Read this for asserting errors for their behaviour http://dave.cheney.net/2014/12/24/inspecting-errors
 package errors
