@@ -14,16 +14,51 @@
 
 package errors
 
+import (
+	"fmt"
+	"runtime"
+)
+
+type eb struct {
+	err     error
+	message string
+	loc
+}
+
+func (e *eb) Error() string {
+	if e.err == nil {
+		return e.message
+	}
+	return e.message + ": " + e.err.Error()
+}
+
+func wrapf(err error, format string, args ...interface{}) eb {
+	pc, _, _, _ := runtime.Caller(2)
+	return eb{
+		err:     err,
+		message: fmt.Sprintf(format, args...),
+		loc:     loc(pc),
+	}
+}
+
 // TODO(cs): add notProvisioned,badRequest,methodNotAllowed,notAssigned,...
 
-type notImplemented struct {
-	error
-}
+type notImplemented struct{ eb }
+
+const notImplementedTxt NotImplemented = "Not implemented"
 
 // NewNotImplemented returns an error which wraps err that satisfies
 // IsNotImplemented().
-func NewNotImplemented(err error, msg string, args ...interface{}) error {
-	return &notImplemented{Wrapf(err, msg, args...)}
+func NewNotImplemented(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &notImplemented{wrapf(err, msg)}
+}
+
+// NewNotImplementedf returns an formatted error that satisfies IsNotImplemented().
+func NewNotImplementedf(format string, args ...interface{}) error {
+	return &notImplemented{wrapf(notImplementedTxt, format, args...)}
 }
 
 // IsNotImplemented reports whether err was created with NewNotImplemented() or
@@ -43,14 +78,21 @@ func IsNotImplemented(err error) bool {
 	return ok
 }
 
-type fatal struct {
-	error
+type fatal struct{ eb }
+
+const fatalTxt Fatal = "Fatal"
+
+// NewFatal returns an error which wraps err that satisfies IsFatal().
+func NewFatal(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &fatal{wrapf(err, msg)}
 }
 
-// NewNotImplemented returns an error which wraps err that satisfies
-// IsNotImplemented().
-func NewFatal(err error, msg string, args ...interface{}) error {
-	return &fatal{Wrapf(err, msg, args...)}
+// NewFatalf returns an formatted error that satisfies IsFatal().
+func NewFatalf(format string, args ...interface{}) error {
+	return &fatal{wrapf(fatalTxt, format, args...)}
 }
 
 // IsFatal reports whether err was created with NewFatal() or
@@ -70,14 +112,22 @@ func IsFatal(err error) bool {
 	return ok
 }
 
-type notFound struct {
-	error
-}
+type notFound struct{ eb }
+
+const notFoundTxt NotFound = "Not found"
 
 // NewNotFound returns an error which wraps err that satisfies
 // IsNotFound().
-func NewNotFound(err error, msg string, args ...interface{}) error {
-	return &notFound{Wrapf(err, msg, args...)}
+func NewNotFound(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &notFound{wrapf(err, msg)}
+}
+
+// NewNotFoundf returns an formatted error that satisfies IsNotFound().
+func NewNotFoundf(format string, args ...interface{}) error {
+	return &notFound{wrapf(notFoundTxt, format, args...)}
 }
 
 // IsNotFound reports whether err was created with NewNotFound() or
@@ -97,14 +147,22 @@ func IsNotFound(err error) bool {
 	return ok
 }
 
-type userNotFound struct {
-	error
-}
+type userNotFound struct{ eb }
+
+const userNotFoundTxt UserNotFound = "User not found"
 
 // NewUserNotFound returns an error which wraps err and satisfies
 // IsUserNotFound().
-func NewUserNotFound(err error, msg string, args ...interface{}) error {
-	return &userNotFound{Wrapf(err, msg, args...)}
+func NewUserNotFound(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &userNotFound{wrapf(err, msg)}
+}
+
+// NewUserNotFoundf returns an formatted error that satisfies IsUserNotFound().
+func NewUserNotFoundf(format string, args ...interface{}) error {
+	return &userNotFound{wrapf(userNotFoundTxt, format, args...)}
 }
 
 // IsUserNotFound reports whether err was created with NewUserNotFound() or
@@ -124,14 +182,22 @@ func IsUserNotFound(err error) bool {
 	return ok
 }
 
-type unauthorized struct {
-	error
-}
+type unauthorized struct{ eb }
+
+const unauthorizedTxt Unauthorized = "Unauthorized"
 
 // NewUnauthorized returns an error which wraps err and satisfies
 // IsUnauthorized().
-func NewUnauthorized(err error, msg string, args ...interface{}) error {
-	return &unauthorized{Wrapf(err, msg, args...)}
+func NewUnauthorized(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &unauthorized{wrapf(err, msg)}
+}
+
+// NewUnauthorizedf returns an formatted error that satisfies IsUnauthorized().
+func NewUnauthorizedf(format string, args ...interface{}) error {
+	return &unauthorized{wrapf(unauthorizedTxt, format, args...)}
 }
 
 // IsUnauthorized reports whether err was created with NewUnauthorized() or
@@ -151,14 +217,22 @@ func IsUnauthorized(err error) bool {
 	return ok
 }
 
-type alreadyExists struct {
-	error
-}
+type alreadyExists struct{ eb }
+
+const alreadyExistsTxt AlreadyExists = "Already exists"
 
 // NewAlreadyExists returns an error which wraps err and satisfies
 // IsAlreadyExists().
-func NewAlreadyExists(err error, msg string, args ...interface{}) error {
-	return &alreadyExists{Wrapf(err, msg, args...)}
+func NewAlreadyExists(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &alreadyExists{wrapf(err, msg)}
+}
+
+// NewAlreadyExistsf returns an formatted error that satisfies IsAlreadyExists().
+func NewAlreadyExistsf(format string, args ...interface{}) error {
+	return &alreadyExists{wrapf(alreadyExistsTxt, format, args...)}
 }
 
 // IsAlreadyExists reports whether err was created with NewAlreadyExists() or
@@ -178,14 +252,22 @@ func IsAlreadyExists(err error) bool {
 	return ok
 }
 
-type alreadyClosed struct {
-	error
-}
+type alreadyClosed struct{ eb }
+
+const alreadyClosedTxt AlreadyClosed = "Already closed"
 
 // NewAlreadyClosed returns an error which wraps err and satisfies
 // IsAlreadyClosed().
-func NewAlreadyClosed(err error, msg string, args ...interface{}) error {
-	return &alreadyClosed{Wrapf(err, msg, args...)}
+func NewAlreadyClosed(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &alreadyClosed{wrapf(err, msg)}
+}
+
+// NewAlreadyClosedf returns an formatted error that satisfies IsAlreadyClosed().
+func NewAlreadyClosedf(format string, args ...interface{}) error {
+	return &alreadyClosed{wrapf(alreadyClosedTxt, format, args...)}
 }
 
 // IsAlreadyClosed reports whether err was created with NewAlreadyClosed() or
@@ -205,14 +287,22 @@ func IsAlreadyClosed(err error) bool {
 	return ok
 }
 
-type notSupported struct {
-	error
-}
+type notSupported struct{ eb }
+
+const notSupportedTxt NotSupported = "Not supported"
 
 // NewNotSupported returns an error which wraps err and satisfies
 // IsNotSupported().
-func NewNotSupported(err error, msg string, args ...interface{}) error {
-	return &notSupported{Wrapf(err, msg, args...)}
+func NewNotSupported(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &notSupported{wrapf(err, msg)}
+}
+
+// NewNotSupportedf returns an formatted error that satisfies IsNotSupported().
+func NewNotSupportedf(format string, args ...interface{}) error {
+	return &notSupported{wrapf(notSupportedTxt, format, args...)}
 }
 
 // IsNotSupported reports whether err was created with NewNotSupported() or
@@ -232,14 +322,22 @@ func IsNotSupported(err error) bool {
 	return ok
 }
 
-type notValid struct {
-	error
-}
+type notValid struct{ eb }
+
+const notValidTxt NotValid = "Not valid"
 
 // NewNotValid returns an error which wraps err and satisfies
 // IsNotValid().
-func NewNotValid(err error, msg string, args ...interface{}) error {
-	return &notValid{Wrapf(err, msg, args...)}
+func NewNotValid(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &notValid{wrapf(err, msg)}
+}
+
+// NewNotValidf returns an formatted error that satisfies IsNotValid().
+func NewNotValidf(format string, args ...interface{}) error {
+	return &notValid{wrapf(notValidTxt, format, args...)}
 }
 
 // IsNotValid reports whether err was created with NewNotValid() or
@@ -259,14 +357,22 @@ func IsNotValid(err error) bool {
 	return ok
 }
 
-type temporary struct {
-	error
-}
+type temporary struct{ eb }
+
+const temporaryTxt Temporary = "Temporary"
 
 // NewTemporary returns an error which wraps err and satisfies
 // IsTemporary().
-func NewTemporary(err error, msg string, args ...interface{}) error {
-	return &temporary{Wrapf(err, msg, args...)}
+func NewTemporary(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &temporary{wrapf(err, msg)}
+}
+
+// NewTemporaryf returns an formatted error that satisfies IsTemporary().
+func NewTemporaryf(format string, args ...interface{}) error {
+	return &temporary{wrapf(temporaryTxt, format, args...)}
 }
 
 // IsTemporary reports whether err was created with NewTemporary() or
@@ -286,14 +392,22 @@ func IsTemporary(err error) bool {
 	return ok
 }
 
-type timeout struct {
-	error
-}
+type timeout struct{ eb }
+
+const timeoutTxt Timeout = "Timeout"
 
 // NewTimeout returns an error which wraps err and satisfies
 // IsTimeout().
-func NewTimeout(err error, msg string, args ...interface{}) error {
-	return &timeout{Wrapf(err, msg, args...)}
+func NewTimeout(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &timeout{wrapf(err, msg)}
+}
+
+// NewTimeoutf returns an formatted error that satisfies IsTimeout().
+func NewTimeoutf(format string, args ...interface{}) error {
+	return &timeout{wrapf(timeoutTxt, format, args...)}
 }
 
 // IsTimeout reports whether err was created with NewTimeout() or

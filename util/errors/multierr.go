@@ -30,8 +30,7 @@ type MultiErr struct {
 // NewMultiErr creates a new multi error struct.
 func NewMultiErr(errs ...error) *MultiErr {
 	m := new(MultiErr)
-	m.AppendErrors(errs...)
-	return m
+	return m.AppendErrors(errs...)
 }
 
 // AppendErrors adds multiple errors to the container. Does not add a location.
@@ -71,7 +70,7 @@ func (m *MultiErr) HasErrors() bool {
 // Error returns a string where each error has been separated by a line break.
 // The location will be added to the output to show you the file name and line number.
 func (m *MultiErr) Error() string {
-	if false == m.HasErrors() {
+	if !m.HasErrors() {
 		return ""
 	}
 	var buf = bufferpool.Get()
@@ -91,18 +90,18 @@ func fprint(buf *bytes.Buffer, err error) {
 		location, ok := err.(locationer)
 		if ok {
 			file, line := location.Location()
-			buf.WriteString(file)
-			buf.WriteRune(':')
-			buf.WriteString(strconv.Itoa(line))
-			buf.WriteString(": ")
+			_, _ = buf.WriteString(file)
+			_, _ = buf.WriteRune(':')
+			_, _ = buf.WriteString(strconv.Itoa(line))
+			_, _ = buf.WriteString(": ")
 		}
 		switch err := err.(type) {
 		case *e:
-			buf.WriteString(err.message)
-			buf.WriteRune('\n')
+			_, _ = buf.WriteString(err.message)
+			_, _ = buf.WriteRune('\n')
 		default:
-			buf.WriteString(err.Error())
-			buf.WriteRune('\n')
+			_, _ = buf.WriteString(err.Error())
+			_, _ = buf.WriteRune('\n')
 		}
 
 		cause, ok := err.(causer)

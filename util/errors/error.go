@@ -24,7 +24,8 @@ import (
 const pkgPath = `github.com/corestoreio/csfw/util/errors`
 
 // Errorf creates a new annotated error and records the location that the
-// error is created.  This should be a drop in replacement for fmt.Errorf.
+// error is created. This should be a drop in replacement for fmt.Errorf.
+// No behaviour has been attached to this returned error.
 //
 // For example:
 //    return errors.Errorf("[package name] validation failed: %s", message)
@@ -40,7 +41,7 @@ func Errorf(format string, args ...interface{}) error {
 	}
 }
 
-// Wrapf returns an error annotating the cause with message.
+// Wrapf returns an error annotating the cause with a message.
 // If cause is nil, Wrap returns nil.
 func Wrapf(cause error, format string, args ...interface{}) error {
 	if cause == nil {
@@ -55,6 +56,7 @@ func Wrapf(cause error, format string, args ...interface{}) error {
 }
 
 // PrintLoc prints the error including the location and its stack.
+// If the error is nil, returns an empty string.
 func PrintLoc(err error) string {
 	if err == nil {
 		return ""

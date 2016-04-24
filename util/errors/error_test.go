@@ -35,4 +35,12 @@ func TestPrintLoc(t *testing.T) {
 	e1 := Errorf("Error %d", 1)
 	e2 := Wrapf(e1, "Prints e %.3f", pi)
 	assert.Exactly(t, "github.com/corestoreio/csfw/util/errors/error_test.go:36: Prints e 3.142\ngithub.com/corestoreio/csfw/util/errors/error_test.go:35: Error 1\n", PrintLoc(e2))
+
+	e3 := PrintLoc(nil)
+	assert.Exactly(t, "", e3)
+}
+
+func TestWrapf(t *testing.T) {
+	var e = Wrapf(nil, "Error %d")
+	assert.Nil(t, e)
 }

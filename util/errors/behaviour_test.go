@@ -16,8 +16,19 @@ package errors
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
+
+func TestEB(t *testing.T) {
+
+	teb := eb{
+		message: "CoreStore",
+	}
+	if have, want := teb.Error(), "CoreStore"; have != want {
+		t.Errorf("Have %q Want %q", have, want)
+	}
+}
 
 type testBehave struct{ ret bool }
 
@@ -71,6 +82,10 @@ func TestBehaviour(t *testing.T) {
 		}, {
 			err:  NewNotImplemented(nil, "Error2"),
 			is:   IsNotImplemented,
+			want: false,
+		}, {
+			err:  NewNotImplemented(Error("Error2a"), "Error2"),
+			is:   IsNotImplemented,
 			want: true,
 		}, {
 			err:  nil,
@@ -89,6 +104,10 @@ func TestBehaviour(t *testing.T) {
 		}, {
 			err:  NewFatal(nil, "Error2"),
 			is:   IsFatal,
+			want: false,
+		}, {
+			err:  NewFatal(Error("Error2a"), "Error2"),
+			is:   IsFatal,
 			want: true,
 		}, {
 			err:  nil,
@@ -106,6 +125,10 @@ func TestBehaviour(t *testing.T) {
 			want: false,
 		}, {
 			err:  NewNotFound(nil, "Error2"),
+			is:   IsNotFound,
+			want: false,
+		}, {
+			err:  NewNotFound(Error("Error2a"), "Error2"),
 			is:   IsNotFound,
 			want: true,
 		}, {
@@ -128,6 +151,10 @@ func TestBehaviour(t *testing.T) {
 			want: false,
 		}, {
 			err:  NewUserNotFound(nil, "Error2"),
+			is:   IsUserNotFound,
+			want: false,
+		}, {
+			err:  NewUserNotFound(Error("Error2a"), "Error2"),
 			is:   IsUserNotFound,
 			want: true,
 		}, {
@@ -155,6 +182,10 @@ func TestBehaviour(t *testing.T) {
 		}, {
 			err:  NewUnauthorized(nil, "Error2"),
 			is:   IsUnauthorized,
+			want: false,
+		}, {
+			err:  NewUnauthorized(Error("Error2a"), "Error2"),
+			is:   IsUnauthorized,
 			want: true,
 		}, {
 			err:  nil,
@@ -180,6 +211,10 @@ func TestBehaviour(t *testing.T) {
 			want: false,
 		}, {
 			err:  NewAlreadyExists(nil, "Error2"),
+			is:   IsAlreadyExists,
+			want: false,
+		}, {
+			err:  NewAlreadyExists(Error("Error2a"), "Error2"),
 			is:   IsAlreadyExists,
 			want: true,
 		}, {
@@ -207,6 +242,10 @@ func TestBehaviour(t *testing.T) {
 		}, {
 			err:  NewAlreadyClosed(nil, "Error2"),
 			is:   IsAlreadyClosed,
+			want: false,
+		}, {
+			err:  NewAlreadyClosed(Error("Error2a"), "Error2"),
+			is:   IsAlreadyClosed,
 			want: true,
 		}, {
 			err:  nil,
@@ -232,6 +271,10 @@ func TestBehaviour(t *testing.T) {
 			want: false,
 		}, {
 			err:  NewNotSupported(nil, "Error2"),
+			is:   IsNotSupported,
+			want: false,
+		}, {
+			err:  NewNotSupported(Error("Error2a"), "Error2"),
 			is:   IsNotSupported,
 			want: true,
 		}, {
@@ -259,6 +302,10 @@ func TestBehaviour(t *testing.T) {
 		}, {
 			err:  NewNotValid(nil, "Error2"),
 			is:   IsNotValid,
+			want: false,
+		}, {
+			err:  NewNotValid(Error("Error2a"), "Error2"),
+			is:   IsNotValid,
 			want: true,
 		}, {
 			err:  nil,
@@ -284,6 +331,10 @@ func TestBehaviour(t *testing.T) {
 			want: false,
 		}, {
 			err:  NewTemporary(nil, "Error2"),
+			is:   IsTemporary,
+			want: false,
+		}, {
+			err:  NewTemporary(Error("Error2a"), "Error2"),
 			is:   IsTemporary,
 			want: true,
 		}, {
@@ -311,6 +362,10 @@ func TestBehaviour(t *testing.T) {
 		}, {
 			err:  NewTimeout(nil, "Error2"),
 			is:   IsTimeout,
+			want: false,
+		}, {
+			err:  NewTimeout(Error("Error2a"), "Error2"),
+			is:   IsTimeout,
 			want: true,
 		}, {
 			err:  nil,
@@ -327,8 +382,43 @@ func TestBehaviour(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		if test.want != test.is(test.err) {
-			t.Errorf("Index %d: Error: %s", i, test.err)
+		if want, have := test.want, test.is(test.err); want != have {
+			t.Errorf("Index %d: Want %t Have %t", i, want, have)
+		}
+	}
+}
+
+func TestBehaviourF(t *testing.T) {
+	tests := []struct {
+		constErr error
+		errf     func(format string, args ...interface{}) error
+		is       func(error) bool
+		want     bool
+	}{
+		{notImplementedTxt, NewNotImplementedf, IsNotImplemented, true},
+		{fatalTxt, NewFatalf, IsFatal, true},
+		{notFoundTxt, NewNotFoundf, IsNotFound, true},
+		{userNotFoundTxt, NewUserNotFoundf, IsUserNotFound, true},
+		{unauthorizedTxt, NewUnauthorizedf, IsUnauthorized, true},
+		{alreadyExistsTxt, NewAlreadyExistsf, IsAlreadyExists, true},
+		{alreadyClosedTxt, NewAlreadyClosedf, IsAlreadyClosed, true},
+		{notSupportedTxt, NewNotSupportedf, IsNotSupported, true},
+		{notValidTxt, NewNotValidf, IsNotValid, true},
+		{temporaryTxt, NewTemporaryf, IsTemporary, true},
+		{timeoutTxt, NewTimeoutf, IsTimeout, true},
+	}
+	const substrLocation = `github.com/corestoreio/csfw/util/errors/behaviour_test.go`
+	for i, test := range tests {
+		haveErr := test.errf("Gopher %d", i)
+		if want, have := test.want, test.is(haveErr); want != have {
+			t.Errorf("Index %d: Want %t Have %t", i, want, have)
+		}
+		loca := PrintLoc(haveErr)
+		if !strings.Contains(loca, substrLocation) {
+			t.Errorf("Index %d: Cannot find %q in %q", i, substrLocation, loca)
+		}
+		if substr := test.constErr.Error(); !strings.Contains(loca, substr) {
+			t.Errorf("Index %d: Cannot find %q in %q", i, substr, loca)
 		}
 	}
 }
@@ -342,7 +432,7 @@ func BenchmarkAssertBehaviourInterface(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		benchmarkAsserted = IsAlreadyExists(hell)
-		if benchmarkAsserted == false {
+		if !benchmarkAsserted {
 			b.Error("Hell should already exists.")
 		}
 	}
@@ -355,7 +445,7 @@ func BenchmarkAssertBehaviourPointer(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		benchmarkAsserted = IsAlreadyExists(hell)
-		if benchmarkAsserted == false {
+		if !benchmarkAsserted {
 			b.Error("Hell should already exists.")
 		}
 	}

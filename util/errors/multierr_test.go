@@ -40,8 +40,7 @@ func TestMultiErrors(t *testing.T) {
 
 func TestMultiAppend(t *testing.T) {
 
-	e := errors.NewMultiErr()
-	e.AppendErrors(
+	e := errors.NewMultiErr().AppendErrors(
 		errors.New("Err5"),
 		nil,
 		errors.New("Err6"),
@@ -49,7 +48,7 @@ func TestMultiAppend(t *testing.T) {
 	)
 	assert.True(t, e.HasErrors())
 	assert.Equal(t,
-		"github.com/corestoreio/csfw/util/errors/multierr_test.go:45: Err5\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:47: Err6\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:48: Err7\n",
+		"github.com/corestoreio/csfw/util/errors/multierr_test.go:44: Err5\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:46: Err6\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:47: Err7\n",
 		e.Error(),
 	)
 }
@@ -75,7 +74,7 @@ func TestMultiAppendToNil(t *testing.T) {
 	e = e.AppendErrors(errors.New("Err74"))
 
 	assert.True(t, e.HasErrors())
-	assert.Equal(t, "github.com/corestoreio/csfw/util/errors/multierr_test.go:75: Err74\n", e.Error())
+	assert.Equal(t, "github.com/corestoreio/csfw/util/errors/multierr_test.go:74: Err74\n", e.Error())
 }
 
 func TestMultiAppendNilToNil1(t *testing.T) {
@@ -96,8 +95,8 @@ func TestMultiAppendNilToNil2(t *testing.T) {
 
 func TestMultiAppendRecursive(t *testing.T) {
 
-	me := errors.NewMultiErr(goerr.New("Err1"))
-	me.AppendErrors(errors.NewMultiErr(goerr.New("Err2"), errors.NewMultiErr(goerr.New("Err3"))))
+	me := errors.NewMultiErr(goerr.New("Err1")).
+		AppendErrors(errors.NewMultiErr(goerr.New("Err2"), errors.NewMultiErr(goerr.New("Err3"))))
 	assert.Exactly(t, "Err1\nErr2\nErr3\n", me.Error())
 	fmtd := fmt.Sprintf("%#v", me)
 	// "&errors.MultiErr{errs:[]error{(*errors.errorString)(0xc82000f590), (*errors.errorString)(0xc82000f5b0), (*errors.errorString)(0xc82000f5c0)}, details:false}" (actual)
@@ -118,13 +117,13 @@ var benchmarkError string
 // BenchmarkError-4	  500000	      3763 ns/op	    1936 B/op	      26 allocs/op
 func BenchmarkError(b *testing.B) {
 	// errors.Details(e) produces those high allocs
-	e := errors.NewMultiErr()
-	e.AppendErrors(
-		errors.New("Err5"),
-		nil,
-		errors.New("Err6"),
-		errors.New("Err7"),
-	)
+	e := errors.NewMultiErr().
+		AppendErrors(
+			errors.New("Err5"),
+			nil,
+			errors.New("Err6"),
+			errors.New("Err7"),
+		)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
