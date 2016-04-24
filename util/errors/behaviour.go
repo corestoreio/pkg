@@ -14,14 +14,41 @@
 
 package errors
 
-// TODO(cs): add notImplemented,notProvisioned,badRequest,methodNotAllowed,notAssigned,...
+// TODO(cs): add notProvisioned,badRequest,methodNotAllowed,notAssigned,...
+
+type notImplemented struct {
+	error
+}
+
+// NewNotImplemented returns an error which wraps err that satisfies
+// IsNotImplemented().
+func NewNotImplemented(err error, msg string, args ...interface{}) error {
+	return &notImplemented{Wrapf(err, msg, args...)}
+}
+
+// IsNotImplemented reports whether err was created with NewNotImplemented() or
+// has a method receiver "NotImplemented() bool".
+func IsNotImplemented(err error) bool {
+	type iFace interface {
+		NotImplemented() bool
+	}
+	err = Cause(err)
+	var ok bool
+	switch et := err.(type) {
+	case *notImplemented:
+		ok = true
+	case iFace:
+		ok = et.NotImplemented()
+	}
+	return ok
+}
 
 type fatal struct {
 	error
 }
 
-// NewFatal returns an error which wraps err that satisfies
-// IsFatal().
+// NewNotImplemented returns an error which wraps err that satisfies
+// IsNotImplemented().
 func NewFatal(err error, msg string, args ...interface{}) error {
 	return &fatal{Wrapf(err, msg, args...)}
 }

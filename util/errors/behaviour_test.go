@@ -24,6 +24,9 @@ type testBehave struct{ ret bool }
 func (nf testBehave) Fatal() bool {
 	return nf.ret
 }
+func (nf testBehave) NotImplemented() bool {
+	return nf.ret
+}
 func (nf testBehave) NotFound() bool {
 	return nf.ret
 }
@@ -61,6 +64,24 @@ func TestBehaviour(t *testing.T) {
 		is   func(error) bool
 		want bool
 	}{
+		{
+			err:  errors.New("Error1"),
+			is:   IsNotImplemented,
+			want: false,
+		}, {
+			err:  NewNotImplemented(nil, "Error2"),
+			is:   IsNotImplemented,
+			want: true,
+		}, {
+			err:  nil,
+			is:   IsNotImplemented,
+			want: false,
+		}, {
+			err:  testBehave{},
+			is:   IsNotImplemented,
+			want: false,
+		},
+
 		{
 			err:  errors.New("Error1"),
 			is:   IsFatal,

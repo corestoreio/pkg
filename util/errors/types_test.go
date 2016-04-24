@@ -30,54 +30,73 @@ func TestTypeErrorBehaviour(t *testing.T) {
 	const errHellTo Timeout = "Hell"
 	const errHellU Unauthorized = "Hell"
 	const errHellUnf UserNotFound = "Hell"
+	const errHellNi NotImplemented = "Hell"
 	tests := []struct {
 		err   error
 		check func(error) bool
 		want  bool
 	}{
+		{errHellNi, IsNotImplemented, true},
+		{errHellNi, IsNotFound, false},
+		{errors.New("Paradise"), IsNotImplemented, false},
+		{nil, IsNotImplemented, false},
+
 		{errHellFa, IsFatal, true},
 		{errHellFa, IsNotFound, false},
 		{errors.New("Paradise"), IsFatal, false},
+		{nil, IsFatal, false},
 
 		{errHellE, IsAlreadyExists, true},
 		{errHellE, IsNotFound, false},
 		{errors.New("Paradise"), IsAlreadyExists, false},
+		{nil, IsAlreadyExists, false},
 
 		{errHellC, IsAlreadyClosed, true},
 		{errHellC, IsNotFound, false},
 		{errors.New("Paradise"), IsAlreadyClosed, false},
+		{nil, IsAlreadyClosed, false},
 
 		{errHellF, IsNotFound, true},
 		{errHellF, IsAlreadyClosed, false},
 		{errors.New("Paradise"), IsNotFound, false},
+		{nil, IsNotFound, false},
 
 		{errHellS, IsNotSupported, true},
 		{errHellS, IsAlreadyClosed, false},
 		{errors.New("Paradise"), IsNotSupported, false},
+		{nil, IsNotSupported, false},
 
 		{errHellV, IsNotValid, true},
 		{errHellV, IsAlreadyClosed, false},
 		{errors.New("Paradise"), IsNotValid, false},
+		{nil, IsNotValid, false},
 
 		{errHellT, IsTemporary, true},
 		{errHellT, IsAlreadyClosed, false},
 		{errors.New("Paradise"), IsTemporary, false},
+		{nil, IsTemporary, false},
 
 		{errHellTo, IsTimeout, true},
 		{errHellTo, IsAlreadyClosed, false},
 		{errors.New("Paradise"), IsTimeout, false},
+		{nil, IsTimeout, false},
 
 		{errHellU, IsUnauthorized, true},
 		{errHellU, IsAlreadyClosed, false},
 		{errors.New("Paradise"), IsUnauthorized, false},
+		{nil, IsUnauthorized, false},
 
 		{errHellUnf, IsUserNotFound, true},
 		{errHellUnf, IsAlreadyClosed, false},
 		{errors.New("Paradise"), IsUserNotFound, false},
+		{nil, IsUserNotFound, false},
 	}
 	for i, test := range tests {
 		if have, want := test.check(test.err), test.want; have != want {
 			t.Errorf("(%02d) Error: %q => Have %t Want %t", i, test.err, have, want)
+		}
+		if test.err != nil && test.err.Error() == "" {
+			t.Errorf("(%02d) Error: %q => Missing error string", i, test.err)
 		}
 	}
 }

@@ -22,6 +22,16 @@ type Error string
 // Error implements the error interface
 func (e Error) Error() string { return string(e) }
 
+// NotImplemented represents an error with the behaviour that an entity hasn't
+// implemented a feature.
+type NotImplemented string
+
+// Error implements the error interface
+func (e NotImplemented) Error() string { return string(e) }
+
+// NotImplemented satisfies the function IsNotImplemented()
+func (e NotImplemented) NotImplemented() bool { return true }
+
 // Fatal represents an error with the behaviour that the function should
 // terminate.
 type Fatal string
