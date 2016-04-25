@@ -111,6 +111,33 @@ func TestError(t *testing.T) {
 	assert.EqualError(t, err, "I'm a constant Error")
 }
 
+func TestMultiErrContains(t *testing.T) {
+	tests := []struct {
+		me   error
+		vf   []func(error) bool
+		want bool
+	}{
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []func(error) bool{errors.IsNotValid}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []func(error) bool{errors.IsNotFound}, false},
+		{errors.NewMultiErr(), []func(error) bool{errors.IsNotFound}, false},
+		{errors.New("random"), []func(error) bool{errors.IsNotFound}, false},
+		{nil, []func(error) bool{errors.IsNotFound}, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound}, true}, // 5
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound, errors.IsTemporary}, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound, errors.IsNotValid}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound, errors.IsNotValid, errors.IsAlreadyExists}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsAlreadyClosed, errors.IsNotValid, errors.IsAlreadyExists}, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), nil, false},
+		{errors.NewMultiErr(nil), nil, false},
+		{nil, nil, false},
+	}
+	for i, test := range tests {
+		if have, want := errors.MultiErrContains(test.me, test.vf...), test.want; have != want {
+			t.Errorf("Index %d: Have %t Want %t", i, have, want)
+		}
+	}
+}
+
 var benchmarkError string
 
 // BenchmarkError-4	  500000	      3063 ns/op	    1312 B/op	      22 allocs/op

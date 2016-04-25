@@ -82,6 +82,35 @@ func (m *MultiErr) Error() string {
 	return buf.String()
 }
 
+// MultiErrContains checks if err contains a behavioral error.
+// 1st argument err must be of type (*MultiErr) and validate function vf
+// at least one of the many Is*() e.g. IsNotValid().
+// More than one validate function will be treated as AND hence
+// all validate functions must return true.
+func MultiErrContains(err error, vf ...func(error) bool) bool {
+	me, ok := err.(*MultiErr)
+	if !ok {
+		return false
+	}
+
+	if len(vf) == 0 || len(me.errs) == 0 {
+		return false
+	}
+
+	var ec, valids int
+	for _, e := range me.errs {
+		if e != nil {
+			ec++
+		}
+		for _, f := range vf {
+			if f(e) {
+				valids++
+			}
+		}
+	}
+	return valids == ec || valids == len(vf)
+}
+
 // Fprint prints the error to the supplied writer.
 // The format of the output is the same as Print.
 // If err is nil, nothing is printed.
