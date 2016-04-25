@@ -15,7 +15,7 @@
 package i18n
 
 import (
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/text/unicode/cldr"
 )
 

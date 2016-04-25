@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/i18n"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,7 +69,7 @@ var testDefCurSym = i18n.Symbols{
 }
 
 func TestFmtCurrency2(t *testing.T) {
-
+	const errDummy = errors.Error("Dummy")
 	tests := []struct {
 		opts    []i18n.CurrencyOptions
 		sign    int
@@ -128,7 +129,7 @@ func TestFmtCurrency2(t *testing.T) {
 		},
 		{
 			[]i18n.CurrencyOptions{i18n.SetCurrencyFormat("¤\u00a0#0.00;¤\u00a0-#0.00"), i18n.SetCurrencyFraction(2, 0, 2, 0), i18n.SetCurrencySign([]byte("€"))},
-			-1, 4, 2, 245, "€\u00a04,25", i18n.ErrPrecIsTooShort, // 4.245
+			-1, 4, 2, 245, "€\u00a04,25", errDummy, // 4.245
 		},
 		{
 			[]i18n.CurrencyOptions{i18n.SetCurrencyFormat("¤\u00a0#0.00;¤\u00a0-#0.00"), i18n.SetCurrencyFraction(2, 0, 2, 0), i18n.SetCurrencySign([]byte("€"))},
@@ -148,7 +149,7 @@ func TestFmtCurrency2(t *testing.T) {
 		},
 		{
 			[]i18n.CurrencyOptions{i18n.SetCurrencyFormat("#,##0.00¤;(#,##0.00¤)"), i18n.SetCurrencyFraction(2, 0, 2, 0), i18n.SetCurrencySign([]byte("C"))},
-			0, 0, 3, 495, "", i18n.ErrCannotDetectMinusSign, // 0.495
+			0, 0, 3, 495, "", errDummy, // 0.495
 		},
 		{
 			[]i18n.CurrencyOptions{i18n.SetCurrencyFormat("#,##0.00¤;(#,##0.00¤)"), i18n.SetCurrencyFraction(2, 0, 2, 0), i18n.SetCurrencySign([]byte("C"))},
@@ -164,25 +165,25 @@ func TestFmtCurrency2(t *testing.T) {
 		},
 	}
 	var buf bytes.Buffer
-	for _, test := range tests {
+	for i, test := range tests {
 		haveNumber := i18n.NewCurrency(i18n.SetCurrencySymbols(testDefCurSym))
 		haveNumber.CSetOptions(test.opts...)
 
 		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
-			assert.Error(t, err)
-			assert.EqualError(t, err, test.wantErr.Error())
+			assert.Error(t, err, "Index %d", i)
+			assert.True(t, errors.IsNotValid(err), "Index %d +. %s", i, err)
 		} else {
-			assert.NoError(t, err)
-
-			assert.EqualValues(t, test.want, have, "%v", test)
+			assert.NoError(t, err, "Index %d", i)
+			assert.EqualValues(t, test.want, have, "%v", test, "Index %d", i)
 		}
 		buf.Reset()
 	}
 }
 
 func TestFmtCurrency3(t *testing.T) {
+	const errDummy = errors.Error("Dummy")
 	// only to test the default format
 	tests := []struct {
 		opts    []i18n.CurrencyOptions
@@ -215,7 +216,7 @@ func TestFmtCurrency3(t *testing.T) {
 				i18n.SetCurrencyFraction(0, 0, 0, 0), // euro, 2 digits, no rounding
 				i18n.SetCurrencySign([]byte("€")),
 			},
-			1, 1234, 2, 495, "€\u00a0-1.235", i18n.ErrPrecIsTooShort, // euros with default Symbols, -1234.495
+			1, 1234, 2, 495, "€\u00a0-1.235", errDummy, // euros with default Symbols, -1234.495
 		},
 		{
 			[]i18n.CurrencyOptions{
@@ -228,18 +229,17 @@ func TestFmtCurrency3(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	for _, test := range tests {
+	for i, test := range tests {
 		haveNumber := i18n.NewCurrency(test.opts...)
 
 		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
-			assert.Error(t, err)
-			assert.EqualError(t, err, test.wantErr.Error())
+			assert.Error(t, err, "Index %d", i)
+			assert.True(t, errors.IsNotValid(err), "Index %d => %s", i, err)
 		} else {
-			assert.NoError(t, err)
-
-			assert.EqualValues(t, test.want, have, "%v", test)
+			assert.NoError(t, err, "Index %d", i)
+			assert.EqualValues(t, test.want, have, "%v", test, "Index %d", i)
 		}
 		buf.Reset()
 	}
@@ -281,13 +281,13 @@ func testCurrencyWorker(t *testing.T, cf i18n.CurrencyFormatter, id int, queue c
 			return
 		}
 
-		_, err := cf.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
+		_, haveErr := cf.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
-		if test.wantErr != nil {
-			assert.Error(t, err, "Worker %d => %v", id, test)
-			assert.EqualError(t, err, test.wantErr.Error(), "Worker %d => %v", id, test)
+		if test.wantErr {
+			assert.Error(t, haveErr, "Worker %d => %v", id, test)
+			assert.True(t, errors.IsNotValid(haveErr), "Worker %d => %v\nError: %s", id, test, haveErr)
 		} else {
-			assert.NoError(t, err, "Worker %d => %v", id, test)
+			assert.NoError(t, haveErr, "Worker %d => %v", id, test)
 			assert.EqualValues(t, test.want, have, "Worker %d => %v", id, test)
 		}
 		buf.Reset()

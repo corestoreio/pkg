@@ -23,6 +23,7 @@ import (
 	"runtime"
 
 	"github.com/corestoreio/csfw/i18n"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,7 +50,7 @@ type fmtNumberData struct {
 	prec    int
 	frac    int64
 	want    string
-	wantErr error
+	wantErr bool
 }
 
 func TestNumberFmtNumber1(t *testing.T) {
@@ -57,78 +58,78 @@ func TestNumberFmtNumber1(t *testing.T) {
 	// if Format empty default format displays at the moment: #,##0.### DefaultNumberFormat
 
 	tests := []fmtNumberData{
-		{"¤ #0.00", 1, 1234, 1, 9, "¤ 1234.90", nil},
-		{"###0.###", 1, 1234, 1, 9, "1234.900", nil},
-		{"###0.###", -1, 0, 2, 2, "-0.020", nil},
+		{"¤ #0.00", 1, 1234, 1, 9, "¤ 1234.90", false},
+		{"###0.###", 1, 1234, 1, 9, "1234.900", false},
+		{"###0.###", -1, 0, 2, 2, "-0.020", false},
 
-		{"¤ #0.00", -1, -1234, 2, 6, "¤ -1234.06", nil},
-		{"#,##0.00 ¤", 1, 1234, 0, 0, "1,234.00 ¤", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 3, 615, "¤\u00a0—1,234.62", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1, 1234, 3, 454, "¤\u00a01,234.45", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 7, 1234567, "¤\u00a0—1,234.12", nil},
+		{"¤ #0.00", -1, -1234, 2, 6, "¤ -1234.06", false},
+		{"#,##0.00 ¤", 1, 1234, 0, 0, "1,234.00 ¤", false},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 3, 615, "¤\u00a0—1,234.62", false},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1, 1234, 3, 454, "¤\u00a01,234.45", false},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 7, 1234567, "¤\u00a0—1,234.12", false},
 
-		{"+#,##0.###", 1, 1234, 3, 560, "+1,234.560", nil},
-		{"", -1, -1234, 3, 56, "-1,234.056", nil},
-		{"", -1, -1234, 3, 6, "-1,234.006", nil},
-		{"", -1, -1234, 3, 76, "-1,234.076", nil},
-		{"", 0, -1234, 3, 6, "-1,234.006", nil},
-		{"", 0, -1234, 2, 6, "-1,234.060", nil},
-		{"", 0, -1234, 1, 6, "-1,234.600", nil},
+		{"+#,##0.###", 1, 1234, 3, 560, "+1,234.560", false},
+		{"", -1, -1234, 3, 56, "-1,234.056", false},
+		{"", -1, -1234, 3, 6, "-1,234.006", false},
+		{"", -1, -1234, 3, 76, "-1,234.076", false},
+		{"", 0, -1234, 3, 6, "-1,234.006", false},
+		{"", 0, -1234, 2, 6, "-1,234.060", false},
+		{"", 0, -1234, 1, 6, "-1,234.600", false},
 
-		{"#,##0.00;(#,##0.00)", 1, 1234, 2, 56, "1,234.56", nil},
-		{"#,##0.00;(#,##0.00)", -1, -1234, 2, 56, "(1,234.56)", nil},
-		{"#,###.;(#,###.)", 1, 1234, 2, 56, "1,235", nil},
-		{"#,###.;(#,###.)", -1, -1234, 2, 56, "(1,235)", nil},
-		{"#.;(#.)", 1, 1234, 2, 56, "1235", nil},
-		{"#.;(#.)", -1, -1234, 2, 56, "(1235)", nil},
+		{"#,##0.00;(#,##0.00)", 1, 1234, 2, 56, "1,234.56", false},
+		{"#,##0.00;(#,##0.00)", -1, -1234, 2, 56, "(1,234.56)", false},
+		{"#,###.;(#,###.)", 1, 1234, 2, 56, "1,235", false},
+		{"#,###.;(#,###.)", -1, -1234, 2, 56, "(1,235)", false},
+		{"#.;(#.)", 1, 1234, 2, 56, "1235", false},
+		{"#.;(#.)", -1, -1234, 2, 56, "(1235)", false},
 
-		{"#,###.##", 1, 1234, 2, 56, "1,234.56", nil},
-		{"#,###.##", -1, -1234, 2, 56, "-1,234.56", nil},
-		{"#,###.##", -1, -1234, 2, 6, "-1,234.06", nil},
-		{"#,###.##", -1, -987651234, 3, 456, "-987,651,234.46", nil},
-		{"#,###.##", -1, -9876512341, 3, 454, "-9,876,512,341.45", nil},
+		{"#,###.##", 1, 1234, 2, 56, "1,234.56", false},
+		{"#,###.##", -1, -1234, 2, 56, "-1,234.56", false},
+		{"#,###.##", -1, -1234, 2, 6, "-1,234.06", false},
+		{"#,###.##", -1, -987651234, 3, 456, "-987,651,234.46", false},
+		{"#,###.##", -1, -9876512341, 3, 454, "-9,876,512,341.45", false},
 
-		{"#,##0.###", 1, 1234, 3, 56, "1,234.056", nil},
-		{"#,##0.###", -1, -1234, 3, 56, "-1,234.056", nil},
-		{"#,##0.###", -1, -1234, 3, 6, "-1,234.006", nil},
-		{"#,##0.###", -1, -1234, 4, 7678, "-1,234.768", nil},
-		{"#,##0.###", -1, -1234, 3, 6, "-1,234.006", nil},
-		{"#,##0.###", -1, -987651234, 3, 456, "-987,651,234.456", nil},
+		{"#,##0.###", 1, 1234, 3, 56, "1,234.056", false},
+		{"#,##0.###", -1, -1234, 3, 56, "-1,234.056", false},
+		{"#,##0.###", -1, -1234, 3, 6, "-1,234.006", false},
+		{"#,##0.###", -1, -1234, 4, 7678, "-1,234.768", false},
+		{"#,##0.###", -1, -1234, 3, 6, "-1,234.006", false},
+		{"#,##0.###", -1, -987651234, 3, 456, "-987,651,234.456", false},
 
-		{"#0.###", 1, 1234, 3, 560, "1234.560", nil},
-		{"#0.###", -1, -1234, 3, 560, "-1234.560", nil},
-		{"#0.###", -1, -1234, 3, 60, "-1234.060", nil},
-		{"#0.###", -1, -1234, 4, 60, "-1234.006", nil},
-		{"#0.###", -1, -1234, 3, 76, "-1234.076", nil},
-		{"#0.###", -1, -1234, 3, 6, "-1234.006", nil},
-		{"#0.###", -1, -987651234, 3, 456, "-987651234.456", nil},
+		{"#0.###", 1, 1234, 3, 560, "1234.560", false},
+		{"#0.###", -1, -1234, 3, 560, "-1234.560", false},
+		{"#0.###", -1, -1234, 3, 60, "-1234.060", false},
+		{"#0.###", -1, -1234, 4, 60, "-1234.006", false},
+		{"#0.###", -1, -1234, 3, 76, "-1234.076", false},
+		{"#0.###", -1, -1234, 3, 6, "-1234.006", false},
+		{"#0.###", -1, -987651234, 3, 456, "-987651234.456", false},
 
-		{"#,###.", 1, 1234, 2, 56, "1,235", nil},
-		{"#,###.", -1, -1234, 2, 56, "-1,235", nil},
-		{"#,###.", -1, -1234, 3, 495, "-1,235", nil},
-		{"#,###.", -1, 1234, 3, 495, "1,235", nil},
-		{"#,###.", -1, -1234, 2, 76, "-1,235", nil},
-		{"#,###.", -1, -1234, 2, 6, "-1,234", nil},
-		{"#,###.", -1, -1234, 2, 45, "-1,235", nil},  // should we round down here?
-		{"#,###.", -1, -1234, 3, 445, "-1,234", nil}, // should we round up here?
-		{"#,###.", -1, -1234, 2, 44, "-1,234", nil},
+		{"#,###.", 1, 1234, 2, 56, "1,235", false},
+		{"#,###.", -1, -1234, 2, 56, "-1,235", false},
+		{"#,###.", -1, -1234, 3, 495, "-1,235", false},
+		{"#,###.", -1, 1234, 3, 495, "1,235", false},
+		{"#,###.", -1, -1234, 2, 76, "-1,235", false},
+		{"#,###.", -1, -1234, 2, 6, "-1,234", false},
+		{"#,###.", -1, -1234, 2, 45, "-1,235", false},  // should we round down here?
+		{"#,###.", -1, -1234, 3, 445, "-1,234", false}, // should we round up here?
+		{"#,###.", -1, -1234, 2, 44, "-1,234", false},
 
 		// invalid, because . is missing
-		{"#,###", 1, 2234, 2, 56, "2,235", nil},
-		{"#,###", 1, 22, 2, 56, "23", nil},
-		{"+#,###", 1, 22, 2, 0, "+22", nil},
+		{"#,###", 1, 2234, 2, 56, "2,235", false},
+		{"#,###", 1, 22, 2, 56, "23", false},
+		{"+#,###", 1, 22, 2, 0, "+22", false},
 
 		// invalid because . and , switched
-		{"#.###,######", 1, 1234, 6, 567891, "1,234.5678910000", nil},
+		{"#.###,######", 1, 1234, 6, 567891, "1,234.5678910000", false},
 
 		// invalid
-		{"#\U0001f4b0###.##", 1, 1234, 2, 56, "1234.56\U0001f4b0", nil},
-		{"#\U0001f4b0###.##", -1, -1234, 2, 56, "-1234.56\U0001f4b0", nil},
+		{"#\U0001f4b0###.##", 1, 1234, 2, 56, "1234.56\U0001f4b0", false},
+		{"#\U0001f4b0###.##", -1, -1234, 2, 56, "-1234.56\U0001f4b0", false},
 
-		{"+#,###.###", 1, 1234, 6, 567891, "+1,234.568", nil},
+		{"+#,###.###", 1, 1234, 6, 567891, "+1,234.568", false},
 
-		{"#,###0.###", 0, 0, 2, 6, "", i18n.ErrCannotDetectMinusSign},
-		{"$%^", 1, 1, 2, 6, "$%^1", nil},
+		{"#,###0.###", 0, 0, 2, 6, "", true},
+		{"$%^", 1, 1, 2, 6, "$%^1", false},
 	}
 
 	// all unique number formats and the last seen language
@@ -136,19 +137,19 @@ func TestNumberFmtNumber1(t *testing.T) {
 	// unicodeNumberFormats := map[string]string{"#0.###":"hy_AM", "#,##0.###":"zu_ZA", "#,##,##0.###":"te_IN", "#0.######":"en_US_POSIX"}
 	// te_IN not tested as too rare
 
-	for _, test := range tests {
+	for i, test := range tests {
 		haveNumber := i18n.NewNumber(
 			i18n.SetNumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
 		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
-		if test.wantErr != nil {
-			assert.Error(t, err, "%v", test)
-			assert.EqualError(t, err, test.wantErr.Error(), "%v", test)
+		if test.wantErr {
+			assert.Error(t, err, "Index %d", i)
+			assert.True(t, errors.IsNotValid(err), "Index %d => %s", i, err)
 		} else {
-			assert.NoError(t, err, "%v", test)
-			assert.EqualValues(t, test.want, have, "%v", test)
+			assert.NoError(t, err, "%v", test, "Index %d", i)
+			assert.EqualValues(t, test.want, have, "Index %d", i)
 		}
 	}
 }
@@ -162,37 +163,36 @@ func TestNumberFmtNumber2(t *testing.T) {
 		prec    int
 		frac    int64
 		want    string
-		wantErr error
+		wantErr bool
 	}{
 		{
 			[]i18n.NumberOptions{
 				i18n.SetNumberFormat(""),
 				i18n.SetNumberSymbols(testDefCurSym),
 			},
-			-1, -1234, 3, 6, "-1,234.006", nil, // euros with default Symbols
+			-1, -1234, 3, 6, "-1,234.006", false, // euros with default Symbols
 		},
 		{
 			[]i18n.NumberOptions{
 				i18n.SetNumberFormat(""),
 				i18n.SetNumberSymbols(testDefCurSym),
 			},
-			-1, -1234, 4, 6, "-1,234.001", nil, // euros with default Symbols
+			-1, -1234, 4, 6, "-1,234.001", false, // euros with default Symbols
 		},
 	}
 
 	var buf bytes.Buffer
-	for _, test := range tests {
+	for i, test := range tests {
 		haveNumber := i18n.NewNumber(test.opts...)
 
-		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
+		_, haveErr := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
-		if test.wantErr != nil {
-			assert.Error(t, err)
-			assert.EqualError(t, err, test.wantErr.Error())
+		if test.wantErr {
+			assert.Error(t, haveErr, "Index %d", i)
+			assert.True(t, errors.IsNotValid(haveErr), "Index %d => %s", i, haveErr)
 		} else {
-			assert.NoError(t, err)
-
-			assert.EqualValues(t, test.want, have, "%v", test)
+			assert.NoError(t, haveErr, "Index %d", i)
+			assert.EqualValues(t, test.want, have, "Index %d", i)
 		}
 		buf.Reset()
 	}
@@ -203,15 +203,15 @@ func genParallelTests(suffix string) []fmtNumberData {
 
 	for i := 0; i < 500; i++ {
 		// format is: "#,##0.###"
-		tests = append(tests, fmtNumberData{"", 1, 1234, 2, 56, "1,234.560" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 56, "-1,234.560" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 6, "-1,234.060" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 4, 7678, "-1,234.768" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 3, 9, "-1,234.009" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 1, 7, "-1,234.700" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -987651234, 3, 456, "-987,651,234.456" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", 0, 0, 2, 6, "", i18n.ErrCannotDetectMinusSign})
-		tests = append(tests, fmtNumberData{"", -1, 0, 1, 61, "", i18n.ErrPrecIsTooShort})
+		tests = append(tests, fmtNumberData{"", 1, 1234, 2, 56, "1,234.560" + suffix, false})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 56, "-1,234.560" + suffix, false})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 6, "-1,234.060" + suffix, false})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 4, 7678, "-1,234.768" + suffix, false})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 3, 9, "-1,234.009" + suffix, false})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 1, 7, "-1,234.700" + suffix, false})
+		tests = append(tests, fmtNumberData{"", -1, -987651234, 3, 456, "-987,651,234.456" + suffix, false})
+		tests = append(tests, fmtNumberData{"", 0, 0, 2, 6, "", true})
+		tests = append(tests, fmtNumberData{"", -1, 0, 1, 61, "", true})
 	}
 	return tests
 }
@@ -251,13 +251,13 @@ func testNumberWorker(t *testing.T, nf i18n.NumberFormatter, id int, queue chan 
 		}
 
 		var buf bytes.Buffer
-		_, err := nf.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
+		_, haveErr := nf.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
-		if test.wantErr != nil {
-			assert.Error(t, err, "Worker %d => %v", id, test)
-			assert.EqualError(t, err, test.wantErr.Error(), "Worker %d => %v", id, test)
+		if test.wantErr {
+			assert.Error(t, haveErr, "Worker %d => %v", id, test)
+			assert.True(t, errors.IsNotValid(haveErr), "Worker %d => %s", id, haveErr)
 		} else {
-			assert.NoError(t, err, "Worker %d => %v", id, test)
+			assert.NoError(t, haveErr, "Worker %d => %v", id, test)
 			assert.EqualValues(t, test.want, have, "Worker %d => %v", id, test)
 		}
 		//t.Logf("Worker %d run test: %v\n", id, test)
@@ -270,45 +270,45 @@ func TestNumberFmtInt(t *testing.T) {
 		format  string
 		i       int64
 		want    string
-		wantErr error
+		wantErr bool
 	}{
-		{"¤ #0.00", -1234, "¤ -1234.00", nil},
-		{"#,##0.00 ¤", 1234, "1,234.00 ¤", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1234, "¤\u00a0—1,234.00", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1234, "¤\u00a01,234.00", nil},
+		{"¤ #0.00", -1234, "¤ -1234.00", false},
+		{"#,##0.00 ¤", 1234, "1,234.00 ¤", false},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1234, "¤\u00a0—1,234.00", false},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1234, "¤\u00a01,234.00", false},
 
-		{"+#,##0.###", 1234, "+1,234.000", nil},
-		{"", -1234, "-1,234.000", nil},
+		{"+#,##0.###", 1234, "+1,234.000", false},
+		{"", -1234, "-1,234.000", false},
 
-		{"#,##0.00;(#,##0.00)", 1234, "1,234.00", nil},
-		{"#,##0.00;(#,##0.00)", -1234, "(1,234.00)", nil},
-		{"#,###.;(#,###.)", 1234, "1,234", nil},
-		{"#,###.;(#,###.)", -1234, "(1,234)", nil},
-		{"#.;(#.)", 1234, "1234", nil},
-		{"#.;(#.)", -1234, "(1234)", nil},
+		{"#,##0.00;(#,##0.00)", 1234, "1,234.00", false},
+		{"#,##0.00;(#,##0.00)", -1234, "(1,234.00)", false},
+		{"#,###.;(#,###.)", 1234, "1,234", false},
+		{"#,###.;(#,###.)", -1234, "(1,234)", false},
+		{"#.;(#.)", 1234, "1234", false},
+		{"#.;(#.)", -1234, "(1234)", false},
 
-		{"#,##0.###", 123456, "123,456.000", nil},
+		{"#,##0.###", 123456, "123,456.000", false},
 
 		// invalid
-		{"#\U0001f4b0###.##", 1234, "1234.00\U0001f4b0", nil},
-		{"#\U0001f4b0###.##", -1234, "-1234.00\U0001f4b0", nil},
+		{"#\U0001f4b0###.##", 1234, "1234.00\U0001f4b0", false},
+		{"#\U0001f4b0###.##", -1234, "-1234.00\U0001f4b0", false},
 
-		{"$%^", 2, "$%^2", nil},
+		{"$%^", 2, "$%^2", false},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		haveNumber := i18n.NewNumber(
 			i18n.SetNumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
-		_, err := haveNumber.FmtInt64(&buf, test.i)
+		_, haveErr := haveNumber.FmtInt64(&buf, test.i)
 		have := buf.String()
-		if test.wantErr != nil {
-			assert.Error(t, err, "%v", test)
-			assert.EqualError(t, err, test.wantErr.Error(), "%v", test)
+		if test.wantErr {
+			assert.Error(t, haveErr, "Index %d", i)
+			assert.True(t, errors.IsNotValid(haveErr), "Index %d => %s", i, haveErr)
 		} else {
-			assert.NoError(t, err, "%v", test)
-			assert.EqualValues(t, test.want, have, "%v", test)
+			assert.NoError(t, haveErr, "Index %d", i)
+			assert.EqualValues(t, test.want, have, "Index %d", i)
 		}
 	}
 }
@@ -319,49 +319,49 @@ func TestNumberFmtFloat64(t *testing.T) {
 		format  string
 		f       float64
 		want    string
-		wantErr error
+		wantErr bool
 	}{
-		{"¤ #0.00", -1234.456, "¤ -1234.46", nil},
-		{"#,##0.00 ¤", 1234.4456, "1,234.45 ¤", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1234.1234567, "¤\u00a0—1,234.12", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1234.1234567, "¤\u00a01,234.12", nil},
+		{"¤ #0.00", -1234.456, "¤ -1234.46", false},
+		{"#,##0.00 ¤", 1234.4456, "1,234.45 ¤", false},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1234.1234567, "¤\u00a0—1,234.12", false},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1234.1234567, "¤\u00a01,234.12", false},
 
-		{"+#,##0.###", 1234.1 * 23.4, "+28,877.940", nil},
-		{"", -12.34 * 11.22, "-138.455", nil},
+		{"+#,##0.###", 1234.1 * 23.4, "+28,877.940", false},
+		{"", -12.34 * 11.22, "-138.455", false},
 
-		{"#,##0.00;(#,##0.00)", 1234, "1,234.00", nil},
-		{"#,##0.00;(#,##0.00)", -1234, "(1,234.00)", nil},
-		{"#,###.;(#,###.)", 1234.345 * 10, "12,343", nil},
-		{"#,###.;(#,###.)", -1234.345 * 10, "(12,343)", nil},
-		{"#.;(#.)", 1234 * 10, "12340", nil},
-		{"#.;(#.)", -1234 * 10, "(12340)", nil},
+		{"#,##0.00;(#,##0.00)", 1234, "1,234.00", false},
+		{"#,##0.00;(#,##0.00)", -1234, "(1,234.00)", false},
+		{"#,###.;(#,###.)", 1234.345 * 10, "12,343", false},
+		{"#,###.;(#,###.)", -1234.345 * 10, "(12,343)", false},
+		{"#.;(#.)", 1234 * 10, "12340", false},
+		{"#.;(#.)", -1234 * 10, "(12340)", false},
 
-		{"#,##0.###", 12345.6 * 10, "123,456.000", nil},
+		{"#,##0.###", 12345.6 * 10, "123,456.000", false},
 		//
 		//		// invalid
-		{"#\U0001f4b0###.##", 1234, "1234.00\U0001f4b0", nil},
-		{"#\U0001f4b0###.##", -1234, "-1234.00\U0001f4b0", nil},
+		{"#\U0001f4b0###.##", 1234, "1234.00\U0001f4b0", false},
+		{"#\U0001f4b0###.##", -1234, "-1234.00\U0001f4b0", false},
 
-		{"$%^", 2, "$%^2", nil},
-		{"$%^", math.NaN(), "NaN", nil},
+		{"$%^", 2, "$%^2", false},
+		{"$%^", math.NaN(), "NaN", false},
 
-		{"#,##0.###", math.MaxFloat64, "∞", nil},
-		{"#,##0.###", -math.MaxFloat64, "—∞", nil},
+		{"#,##0.###", math.MaxFloat64, "∞", false},
+		{"#,##0.###", -math.MaxFloat64, "—∞", false},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		haveNumber := i18n.NewNumber(
 			i18n.SetNumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
-		_, err := haveNumber.FmtFloat64(&buf, test.f)
+		_, haveErr := haveNumber.FmtFloat64(&buf, test.f)
 		have := buf.String()
-		if test.wantErr != nil {
-			assert.Error(t, err, "%v", test)
-			assert.EqualError(t, err, test.wantErr.Error(), "%v", test)
+		if test.wantErr {
+			assert.Error(t, haveErr, "Index %d", i)
+			assert.True(t, errors.IsNotValid(haveErr), "Index %d => %s", i, haveErr)
 		} else {
-			assert.NoError(t, err, "%v", test)
-			assert.EqualValues(t, test.want, have, "%v", test)
+			assert.NoError(t, haveErr, "Index %d", i)
+			assert.EqualValues(t, test.want, have, "Index %d", i)
 		}
 	}
 }

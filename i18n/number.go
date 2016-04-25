@@ -24,7 +24,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DefaultNumber default formatter for default locale en-US
@@ -47,11 +47,6 @@ const (
 
 	floatRoundingCorrection = 0.000000000001
 	floatMax64              = math.MaxFloat64 * 0.9999999999
-)
-
-var (
-	ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
-	ErrPrecIsTooShort        = errors.New("Argument precision does not match with the amount of digits in frac. Prec is too short.")
 )
 
 type (
@@ -209,7 +204,7 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 	if isNegative {
 		if false == no.fneg.parsed {
 			if err := no.fneg.parse(); err != nil {
-				return no.fneg, errors.Mask(err)
+				return no.fneg, errors.Wrap(err, "[i18n] fneg.parse")
 			}
 		}
 		if true == no.fneg.parsed { // fneg can still be invalid because not available
@@ -219,7 +214,7 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 
 	if false == no.fo.parsed { // parse positive format
 		if err := no.fo.parse(); err != nil {
-			return no.fo, errors.Mask(err)
+			return no.fo, errors.Wrap(err, "[i18n] fo.parse")
 		}
 	}
 	return no.fo, nil
@@ -228,6 +223,7 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 // FmtNumber formats a number according to the number format. Internal rounding
 // will be applied. Returns the number bytes written or an error. Thread safe.
 // For more details please see the interface documentation.
+// Returns an NotValid error.
 func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac int64) (int, error) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
@@ -236,11 +232,11 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 	// first check the sign
 	switch {
 	case sign == 0 && intgr == 0:
-		return 0, ErrCannotDetectMinusSign
+		return 0, errors.NewNotValidf("[i18n] Cannot detect minus. Sign %d; Int %d; Prec %d; Frac %d", sign, intgr, prec, frac)
 	case prec < intLen(frac):
 		// check for the correct value for prec. prec cannot be shorter than frac. E.g.:
 		// frac = 324 and prec = 2 triggers the error because length of frac is 3.
-		return 0, ErrPrecIsTooShort
+		return 0, errors.NewNotValidf("[i18n] Argument precision does not match with the amount of digits in frac. Prec is too short. Sign: %d; Int %d; Prec %d; Frac %d", sign, intgr, prec, frac)
 	case intgr < 0:
 		sign = -1
 	case intgr > 0:
@@ -249,10 +245,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 
 	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("i18n.Number.FmtNumber.GetFormat", "err", err, "format", usedFmt.String())
-		}
-		return 0, errors.Mask(err)
+		return 0, errors.Wrapf(err, "[i18n] no.GetFormat: %q", usedFmt.String())
 	}
 
 	var wrote int
@@ -418,10 +411,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 
 	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("i18n.Number.FmtFloat64.GetFormat", "err", err, "format", usedFmt.String())
-		}
-		return 0, errors.Mask(err)
+		return 0, errors.Wrapf(err, "[i18n] GetFormat: %q", usedFmt.String())
 	}
 
 	// to test the next lines: http://play.golang.org/p/L0ykFv3G4B
