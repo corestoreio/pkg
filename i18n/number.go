@@ -20,10 +20,10 @@ import (
 	"io"
 	"math"
 	"strconv"
-	"sync"
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -77,8 +77,7 @@ type (
 		sym  Symbols
 		fo   format
 		fneg format // format for negative numbers
-		buf  []byte // size numberBufferSize @todo check for a possible race condition
-		mu   sync.RWMutex
+
 		// frac will only be set when we're parsing a currency format.
 		// So frac will be set by the parent CurrencyFormatter.
 		// The Digits in CurrencyFraction will override the precision in the
@@ -174,7 +173,6 @@ func SetNumberFormat(f string, s ...Symbols) NumberOptions {
 func NewNumber(opts ...NumberOptions) *Number {
 	n := &Number{
 		sym: NewSymbols(),
-		buf: make([]byte, numberBufferSize),
 	}
 	SetNumberFormat(DefaultNumberFormat)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
@@ -187,13 +185,11 @@ func NewNumber(opts ...NumberOptions) *Number {
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
 // This function is thread safe.
 func (no *Number) NSetOptions(opts ...NumberOptions) (previous NumberOptions) {
-	no.mu.Lock()
 	for _, o := range opts {
 		if o != nil {
 			previous = o(no)
 		}
 	}
-	no.mu.Unlock()
 	return
 }
 
@@ -225,9 +221,8 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 // For more details please see the interface documentation.
 // Returns an NotValid error.
 func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac int64) (int, error) {
-	no.mu.Lock()
-	defer no.mu.Unlock()
-	no.clearBuf()
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
 	// first check the sign
 	switch {
@@ -248,9 +243,8 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 		return 0, errors.Wrapf(err, "[i18n] no.GetFormat: %q", usedFmt.String())
 	}
 
-	var wrote int
 	if sign > 0 && usedFmt.plusSign > 0 {
-		wrote += utf8.EncodeRune(no.buf, usedFmt.plusSign)
+		buf.WriteRune(usedFmt.plusSign)
 	}
 
 	if no.fracValid {
@@ -299,22 +293,15 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 	if usedFmt.precision == 0 {
 
 		if lp := len(usedFmt.prefix); lp > 0 {
-			no.buf = append(no.buf[:wrote], usedFmt.prefix...)
-			wrote += lp
-			no.buf = no.buf[:numberBufferSize] // revert back to old size
+			buf.Write(usedFmt.prefix)
 		}
-
-		no.buf = append(no.buf[:wrote], intStr...)
-		no.buf = no.buf[:numberBufferSize] // revert back to old size
-		wrote += len(intStr)
+		buf.WriteString(intStr)
 
 		if ls := len(usedFmt.suffix); ls > 0 {
-			no.buf = append(no.buf[:wrote], usedFmt.suffix...)
-			wrote += ls
-			no.buf = no.buf[:numberBufferSize] // revert back to old size
+			buf.Write(usedFmt.suffix)
 		}
 
-		return w.Write(no.buf[:wrote])
+		return w.Write(buf.Bytes()) // maybe race, buffer returned to pool
 	}
 
 	// generate fractional part, round frac if it's to large to fit into prec
@@ -326,37 +313,28 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 	}
 
 	if lp := len(usedFmt.prefix); lp > 0 {
-		no.buf = append(no.buf[:wrote], usedFmt.prefix...)
-		wrote += lp
-		no.buf = no.buf[:numberBufferSize] // revert back to old size
+		buf.Write(usedFmt.prefix)
 	}
 
-	no.buf = append(no.buf[:wrote], intStr...)
-	wrote += len(intStr)
-	no.buf = no.buf[:numberBufferSize] // revert back to old size
+	buf.WriteString(intStr)
 
 	// write decimal separator
-	wrote += utf8.EncodeRune(no.buf[wrote:], usedFmt.decimal)
-	no.buf = append(no.buf[:wrote], fracStr...)
-	wrote += len(fracStr)
-	no.buf = no.buf[:numberBufferSize] // revert back to old size
+	buf.WriteRune(usedFmt.decimal)
+	buf.WriteString(fracStr)
 
 	// write suffix
 	if ls := len(usedFmt.suffix); ls > 0 {
-		no.buf = append(no.buf[:wrote], usedFmt.suffix...)
-		wrote += ls
-		no.buf = no.buf[:numberBufferSize] // revert back to old size
+		buf.Write(usedFmt.suffix)
 	}
 
 	// if we have a minus sign replace the minus with the format sign
 	if usedFmt.minusSign > 0 {
 		var mBuf [4]byte
 		mWritten := utf8.EncodeRune(mBuf[:], usedFmt.minusSign)
-		wrote += mWritten - 1 // check why we need here a -1 and trim does not work
-		no.buf = bytes.Replace(no.buf[:wrote], minusSign, mBuf[:mWritten], 1)
+		return w.Write(bytes.Replace(buf.Bytes(), minusSign, mBuf[:mWritten], 1)) // no race because of bytes.Replace
 	}
 
-	return w.Write(no.buf[:wrote])
+	return w.Write(buf.Bytes()) // should clone away of empty after returning buffer to pool
 }
 
 // FmtInt64 formats an integer according to the format pattern.
@@ -387,22 +365,15 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	}
 
 	if f > floatMax64 {
-		no.mu.Lock()
-		defer no.mu.Unlock()
-		no.clearBuf()
-
-		wr := utf8.EncodeRune(no.buf, no.sym.Infinity)
-		return w.Write(no.buf[:wr])
+		var buf [4]byte
+		wr := utf8.EncodeRune(buf[:], no.sym.Infinity)
+		return w.Write(buf[:wr])
 	}
 	if f < -floatMax64 {
-		no.mu.Lock()
-		defer no.mu.Unlock()
-		no.clearBuf()
-
-		wr := utf8.EncodeRune(no.buf, no.sym.MinusSign)
-		wr += utf8.EncodeRune(no.buf[wr:], no.sym.Infinity)
-		no.buf = no.buf[:numberBufferSize]
-		return w.Write(no.buf[:wr])
+		var buf [8]byte
+		wr := utf8.EncodeRune(buf[:], no.sym.MinusSign)
+		wr += utf8.EncodeRune(buf[wr:], no.sym.Infinity)
+		return w.Write(buf[:wr])
 	}
 
 	if isInt(f) { // check if float is integer value
@@ -432,13 +403,6 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	fracI := int64(util.Round(fracf*precPow10, 0, usedFmt.precision))
 
 	return no.FmtNumber(w, sign, int64(intgr), intLen(fracI), fracI)
-}
-
-func (no *Number) clearBuf() {
-	no.buf = no.buf[:numberBufferSize]
-	for i := range no.buf {
-		no.buf[i] = 0x0 // clear buffer
-	}
 }
 
 /*

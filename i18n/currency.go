@@ -17,8 +17,8 @@ package i18n
 import (
 	"bytes"
 	"io"
-	"sync"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/text/currency"
 )
@@ -58,8 +58,6 @@ type (
 		// Maybe one day that will get extended in text/currency package ...
 		ISO currency.Unit
 		sgn []byte // € or USD or ...
-		buf buf
-		mu  sync.RWMutex
 	}
 
 	// CurrencyFractions element contains any number of info elements.
@@ -209,7 +207,6 @@ func SetCurrencyFraction(digits, rounding, cashDigits, cashRounding int) Currenc
 func NewCurrency(opts ...CurrencyOptions) *Currency {
 	c := &Currency{
 		Number: NewNumber(),
-		buf:    make(buf, currencyBufferSize),
 	}
 	SetCurrencyISO(DefaultCurrencyName)(c)
 	SetCurrencyFormat(DefaultCurrencyFormat)(c)
@@ -223,13 +220,11 @@ func NewCurrency(opts ...CurrencyOptions) *Currency {
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
 // This function is thread safe.
 func (c *Currency) CSetOptions(opts ...CurrencyOptions) (previous CurrencyOptions) {
-	c.mu.Lock()
 	for _, o := range opts {
 		if o != nil {
 			previous = o(c)
 		}
 	}
-	c.mu.Unlock()
 	return
 }
 
@@ -237,57 +232,46 @@ func (c *Currency) CSetOptions(opts ...CurrencyOptions) (previous CurrencyOption
 // will be applied. Returns the number bytes written or an error. Thread safe.
 // For more details please see the interface documentation.
 func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac int64) (int, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.clearBuf()
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
-	if _, err := c.Number.FmtNumber(&c.buf, sign, intgr, prec, frac); err != nil {
-		return 0, errors.Wrapf(err, "[i18n] FmtNumber. Buffer %q; Sign %d; Int %d; Prec %d; Frac %d", string(c.buf), sign, intgr, prec, frac)
+	if _, err := c.Number.FmtNumber(buf, sign, intgr, prec, frac); err != nil {
+		return 0, errors.Wrapf(err, "[i18n] FmtNumber. Buffer %q; Sign %d; Int %d; Prec %d; Frac %d", buf.String(), sign, intgr, prec, frac)
 	}
-	return c.flushBuf(w)
+
+	return c.flushBuf(buf, w)
 }
 
 // FmtInt64 formats an integer according to the currency format pattern.
 // Thread safe
 func (c *Currency) FmtInt64(w io.Writer, i int64) (int, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.clearBuf()
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
-	if _, err := c.Number.FmtInt64(&c.buf, i); err != nil {
-		return 0, errors.Wrapf(err, "[i18n] FmtInt64. Buffer %q; Int %d", string(c.buf), i)
+	if _, err := c.Number.FmtInt64(buf, i); err != nil {
+		return 0, errors.Wrapf(err, "[i18n] FmtInt64. Buffer %q; Int %d", buf.String(), i)
 	}
-	return c.flushBuf(w)
+	return c.flushBuf(buf, w)
 }
 
 // FmtCurrencyFloat64 formats a float value, does internal maybe incorrect rounding.
 // Returns the number bytes written or an error. Thread safe.
 func (c *Currency) FmtFloat64(w io.Writer, f float64) (int, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.clearBuf()
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
-	if _, err := c.Number.FmtFloat64(&c.buf, f); err != nil {
-		return 0, errors.Wrapf(err, "[i18n] FmtFloat64. Buffer %q; Float %.6f", string(c.buf), f)
+	if _, err := c.Number.FmtFloat64(buf, f); err != nil {
+		return 0, errors.Wrapf(err, "[i18n] FmtFloat64. Buffer %q; Float %.6f", buf.String(), f)
 	}
-	return c.flushBuf(w)
+	return c.flushBuf(buf, w)
 }
 
 // flushBuf replaces the typographical symbol sign with the real sign.
-func (c *Currency) flushBuf(w io.Writer) (int, error) {
+func (c *Currency) flushBuf(buf *bytes.Buffer, w io.Writer) (int, error) {
 	// now replace ¤ with the real symbol or what ever
-	c.buf = bytes.Replace(c.buf, symbolSign, c.sgn, 1)
-	return w.Write(c.buf)
+	// pro tip: bytes.Replace eliminates the race condition because returns a copy of the slice
+	return w.Write(bytes.Replace(buf.Bytes(), symbolSign, c.sgn, 1))
 }
 
 // Sign returns the currency sign. Can be one character or a 3-letter ISO 4217 code.
 func (c *Currency) Sign() []byte { return c.sgn }
-
-// clearBuf iterates over the buffer and sets each element to 0 and resizes
-// the buffer to length 0. Must be protected by a mutex.
-func (c *Currency) clearBuf() {
-	for i := range c.buf {
-		c.buf[i] = 0 // clear buffer
-	}
-	c.buf = c.buf[:0]
-}
