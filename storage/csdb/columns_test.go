@@ -29,7 +29,7 @@ import (
 var _ fmt.Stringer = (*csdb.Columns)(nil)
 var _ fmt.GoStringer = (*csdb.Columns)(nil)
 
-func TestGetColumns(t *testing.T) {
+func TestGetColumnsMage19(t *testing.T) {
 
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip("Skipping because no DSN found.")

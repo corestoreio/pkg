@@ -48,8 +48,7 @@ func TestNewTableServicePanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			t.Logf("%#v", err)
-			assert.True(t, errors.IsNotValid(err))
+			assert.True(t, errors.MultiErrContains(err, errors.IsNotValid))
 		} else {
 			t.Error("Expecting a panic")
 		}
