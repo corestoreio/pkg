@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package money
-
-type buf []byte
-
-// Write writes len(p) bytes from p to the Buffer.
-func (b *buf) Write(p []byte) (int, error) {
-	*b = append(*b, p...)
-	return len(p), nil
-}
+// Package csmath provides additional math helper functions.
+//
+package csmath

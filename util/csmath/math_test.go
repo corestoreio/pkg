@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util_test
+package csmath_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/csmath"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,7 @@ func TestRound(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		have := util.Round(test.val, test.roundOn, test.places)
+		have := csmath.Round(test.val, test.roundOn, test.places)
 		assert.EqualValues(t, test.want, have, "%v", test)
 	}
 }
