@@ -78,6 +78,41 @@ func IsNotImplemented(err error) bool {
 	return ok
 }
 
+type empty struct{ eb }
+
+const emptyTxt Empty = "Empty value"
+
+// NewEmpty returns an error which wraps err that satisfies
+// IsEmpty().
+func NewEmpty(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &empty{wrapf(err, msg)}
+}
+
+// NewEmptyf returns an formatted error that satisfies IsEmpty().
+func NewEmptyf(format string, args ...interface{}) error {
+	return &empty{wrapf(emptyTxt, format, args...)}
+}
+
+// IsEmpty reports whether err was created with NewEmpty() or
+// has a method receiver "Empty() bool".
+func IsEmpty(err error) bool {
+	type iFace interface {
+		Empty() bool
+	}
+	err = Cause(err)
+	var ok bool
+	switch et := err.(type) {
+	case *empty:
+		ok = true
+	case iFace:
+		ok = et.Empty()
+	}
+	return ok
+}
+
 type fatal struct{ eb }
 
 const fatalTxt Fatal = "Fatal"

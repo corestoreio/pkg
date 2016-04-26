@@ -22,6 +22,15 @@ type Error string
 // Error implements the error interface
 func (e Error) Error() string { return string(e) }
 
+// Empty represents an error with the behaviour that an entity has no value.
+type Empty string
+
+// Error implements the error interface
+func (e Empty) Error() string { return string(e) }
+
+// Empty satisfies the function IsEmpty()
+func (e Empty) Empty() bool { return true }
+
 // NotImplemented represents an error with the behaviour that an entity hasn't
 // implemented a feature.
 type NotImplemented string

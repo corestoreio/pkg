@@ -31,11 +31,17 @@ func TestTypeErrorBehaviour(t *testing.T) {
 	const errHellU Unauthorized = "Hell"
 	const errHellUnf UserNotFound = "Hell"
 	const errHellNi NotImplemented = "Hell"
+	const errHellEm Empty = "Hell"
 	tests := []struct {
 		err   error
 		check func(error) bool
 		want  bool
 	}{
+		{errHellEm, IsEmpty, true},
+		{errHellEm, IsNotFound, false},
+		{errors.New("Paradise"), IsEmpty, false},
+		{nil, IsEmpty, false},
+
 		{errHellNi, IsNotImplemented, true},
 		{errHellNi, IsNotFound, false},
 		{errors.New("Paradise"), IsNotImplemented, false},

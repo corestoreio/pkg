@@ -38,6 +38,9 @@ func (nf testBehave) Fatal() bool {
 func (nf testBehave) NotImplemented() bool {
 	return nf.ret
 }
+func (nf testBehave) Empty() bool {
+	return nf.ret
+}
 func (nf testBehave) NotFound() bool {
 	return nf.ret
 }
@@ -75,6 +78,28 @@ func TestBehaviour(t *testing.T) {
 		is   func(error) bool
 		want bool
 	}{
+		{
+			err:  errors.New("Error1"),
+			is:   IsEmpty,
+			want: false,
+		}, {
+			err:  NewEmpty(nil, "Error2"),
+			is:   IsEmpty,
+			want: false,
+		}, {
+			err:  NewEmpty(Error("Error2a"), "Error2"),
+			is:   IsEmpty,
+			want: true,
+		}, {
+			err:  nil,
+			is:   IsEmpty,
+			want: false,
+		}, {
+			err:  testBehave{},
+			is:   IsEmpty,
+			want: false,
+		},
+
 		{
 			err:  errors.New("Error1"),
 			is:   IsNotImplemented,
