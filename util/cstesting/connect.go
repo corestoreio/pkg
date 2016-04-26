@@ -31,7 +31,7 @@ func MockDB(t Fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 	db, sm, err := sqlmock.New()
 	FatalIfError(t, err)
 
-	dbc, err := dbr.NewConnection(dbr.SetDB(db))
+	dbc, err := dbr.NewConnection(dbr.WithDB(db))
 	FatalIfError(t, err)
 	return dbc, sm
 }
