@@ -16,23 +16,30 @@ package money_test
 
 import (
 	"bytes"
+	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/money"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	_ json.Unmarshaler = (*money.Money)(nil)
+	_ json.Marshaler   = (*money.Money)(nil)
+	_ sql.Scanner      = (*money.Money)(nil)
+	_ driver.Valuer    = (*money.Money)(nil)
+)
+
 func TestJSONMarshal(t *testing.T) {
-	t.Parallel()
 
 	// @todo these tests will fail once i18n has been fully implemented. so fix this.
-	var prefix = `"` + string(i18n.DefaultCurrencySign) + " "
+	var prefix = `"` + string([]byte("$")) + " "
 	tests := []struct {
 		prec      int
 		haveI     int64
@@ -87,53 +94,53 @@ func TestJSONMarshal(t *testing.T) {
 	}
 }
 func TestJSONUnMarshalSingle(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		haveEnc  money.Encoder
 		jsonData []byte
 		want     string
-		wantErr  error
+		wantErr  bool
 	}{
-		{money.JSONNumber, []byte{0xf1, 0x32, 0xd8, 0x8a, 0x12, 0x8a, 0x74, 0x2a, 0x5, 0x5d, 0x18, 0x39, 0xf9, 0xd7, 0x99, 0x8b}, `NaN`, errors.New("Byte slice contains invalid utf8 characters: \"\\xf12؊\\x12\\x8at*\\x05]\\x189\\xf9י\\x8b\" not valid")},
+		{money.JSONNumber, []byte{0xf1, 0x32, 0xd8, 0x8a, 0x12, 0x8a, 0x74, 0x2a, 0x5, 0x5d, 0x18, 0x39, 0xf9, 0xd7, 0x99, 0x8b}, `NaN`, true},
 
-		{money.JSONNumber, []byte(`1999.0000`), `1999.0000`, nil},
-		{money.JSONNumber, []byte(`-0.01`), `-0.0100`, nil},
-		{money.JSONNumber, []byte(`null`), `NaN`, nil},
-		{money.JSONNumber, []byte(`1234.56789`), `1234.5679`, nil},
-		{money.JSONNumber, []byte(`-1234.56789`), `-1234.5679`, nil},
-		{money.JSONNumber, []byte(`2999x.0156`), `2999.0156`, nil},
-		{money.JSONNumber, []byte(`""`), `NaN`, nil},
+		{money.JSONNumber, []byte(`1999.0000`), `1999.0000`, false},
+		{money.JSONNumber, []byte(`-0.01`), `-0.0100`, false},
+		{money.JSONNumber, []byte(`null`), `NaN`, false},
+		{money.JSONNumber, []byte(`1234.56789`), `1234.5679`, false},
+		{money.JSONNumber, []byte(`-1234.56789`), `-1234.5679`, false},
+		{money.JSONNumber, []byte(`2999x.0156`), `2999.0156`, false},
+		{money.JSONNumber, []byte(`""`), `NaN`, false},
 
-		{money.JSONLocale, []byte(`$ 999.00 `), `999.0000`, nil},
-		{money.JSONLocale, []byte(`EUR 999.00`), `999.0000`, nil},
-		{money.JSONLocale, []byte(`EUR 99x9.0'0`), `999.0000`, nil},
-		{money.JSONLocale, []byte("EUR \x00 99x9.0'0"), `999.0000`, nil},
-		{money.JSONLocale, []byte(`2 345 678,45 €`), `2345678.4500`, nil},
-		{money.JSONLocale, []byte(`2 345 367,834456 €`), `2345367.8345`, nil},
-		{money.JSONLocale, []byte(`null`), `NaN`, nil},
-		{money.JSONLocale, []byte(`1.705,99 €`), `1705.9900`, nil},
-		{money.JSONLocale, []byte(`705,99 €`), `705.9900`, nil},
-		{money.JSONLocale, []byte(`$ 5,123,705.94`), `5123705.9400`, nil},
-		{money.JSONLocale, []byte(`$ -6,705.99`), `-6705.9900`, nil},
-		{money.JSONLocale, []byte(`$ 705.99`), `705.9900`, nil},
-		{money.JSONLocale, []byte(`$ 70789`), `70789.0000`, nil},
+		{money.JSONLocale, []byte(`$ 999.00 `), `999.0000`, false},
+		{money.JSONLocale, []byte(`EUR 999.00`), `999.0000`, false},
+		{money.JSONLocale, []byte(`EUR 99x9.0'0`), `999.0000`, false},
+		{money.JSONLocale, []byte("EUR \x00 99x9.0'0"), `999.0000`, false},
+		{money.JSONLocale, []byte(`2 345 678,45 €`), `2345678.4500`, false},
+		{money.JSONLocale, []byte(`2 345 367,834456 €`), `2345367.8345`, false},
+		{money.JSONLocale, []byte(`null`), `NaN`, false},
+		{money.JSONLocale, []byte(`1.705,99 €`), `1705.9900`, false},
+		{money.JSONLocale, []byte(`705,99 €`), `705.9900`, false},
+		{money.JSONLocale, []byte(`$ 5,123,705.94`), `5123705.9400`, false},
+		{money.JSONLocale, []byte(`$ -6,705.99`), `-6705.9900`, false},
+		{money.JSONLocale, []byte(`$ 705.99`), `705.9900`, false},
+		{money.JSONLocale, []byte(`$ 70789`), `70789.0000`, false},
 
-		{money.JSONExtended, []byte(`[999.0000,"$","$ 999.00"]`), `999.0000`, nil},
-		{money.JSONExtended, []byte(`[999.0000,null,null]`), `999.0000`, nil},
-		{money.JSONExtended, []byte(`[1,999.00236,null,null]`), `1.0000`, nil},
-		{money.JSONExtended, []byte(`[1999.00236,null,null]`), `1999.0024`, nil},
-		{money.JSONExtended, []byte(`null`), `NaN`, nil},
-		{money.JSONExtended, []byte(`[null,"$",null]`), `NaN`, nil},
-		{money.JSONExtended, []byte(`[null,null,null]`), `NaN`, nil},
-		{money.JSONExtended, []byte(`[ ]`), `NaN`, money.ErrDecodeMissingColon},
+		{money.JSONExtended, []byte(`[999.0000,"$","$ 999.00"]`), `999.0000`, false},
+		{money.JSONExtended, []byte(`[999.0000,null,null]`), `999.0000`, false},
+		{money.JSONExtended, []byte(`[1,999.00236,null,null]`), `1.0000`, false},
+		{money.JSONExtended, []byte(`[1999.00236,null,null]`), `1999.0024`, false},
+		{money.JSONExtended, []byte(`null`), `NaN`, false},
+		{money.JSONExtended, []byte(`[null,"$",null]`), `NaN`, false},
+		{money.JSONExtended, []byte(`[null,null,null]`), `NaN`, false},
+		{money.JSONExtended, []byte(`[ ]`), `NaN`, true},
 	}
 	for i, test := range tests {
 		var c money.Money
 		err := c.UnmarshalJSON(test.jsonData)
 
-		if test.wantErr != nil {
+		if test.wantErr {
 			assert.Error(t, err, "Index %d", i)
-			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
+			assert.True(t, errors.IsNotValid(err), "Index %d => %s", err)
 		} else {
 			var buf []byte
 			assert.NoError(t, err, "Index %d", i)
@@ -142,13 +149,11 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 			if test.want != have {
 				t.Errorf("\nHave: %s\n\nWant: %s\nIndex %d", have, test.want, i)
 			}
-
 		}
 	}
 }
 
 func TestJSONUnMarshalSlice(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		haveEnc  money.Encoder
@@ -299,8 +304,8 @@ func off_TestLoadFromDb(t *testing.T) {
 //}
 
 func TestValue(t *testing.T) {
-	t.Parallel()
-	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip(err)
 	}
 	dbrSess := csdb.MustConnectTest().NewSession()
@@ -321,7 +326,7 @@ func TestValue(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		src     interface{}
 		want    string
@@ -373,7 +378,7 @@ func TestScan(t *testing.T) {
 }
 
 func TestJSONEncode(t *testing.T) {
-	t.Parallel()
+
 	var peds = TableProductEntityDecimalSlice{
 		&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(9990000)},
 		&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
@@ -388,7 +393,7 @@ func TestJSONEncode(t *testing.T) {
 	jb, err := json.Marshal(peds)
 	assert.NoError(t, err)
 	have := string(jb)
-	want := `[{"ValueID":1,"AttributeID":73,"StoreID":0,"EntityID":1,"Value":"$\u00A0999.00"},{"ValueID":2,"AttributeID":78,"StoreID":0,"EntityID":1,"Value":null},{"ValueID":3,"AttributeID":74,"StoreID":0,"EntityID":1,"Value":null},{"ValueID":4,"AttributeID":77,"StoreID":0,"EntityID":1,"Value":null},{"ValueID":5,"AttributeID":73,"StoreID":1,"EntityID":1,"Value":"$\u00A0705.99"},{"ValueID":6,"AttributeID":73,"StoreID":4,"EntityID":1,"Value":"$\u00A0705.99"},{"ValueID":7,"AttributeID":73,"StoreID":2,"EntityID":1,"Value":"$\u00A0705.99"},{"ValueID":8,"AttributeID":73,"StoreID":3,"EntityID":1,"Value":"$\u00A0705.99"}]`
+	want := `[{"ValueID":1,"AttributeID":73,"StoreID":0,"EntityID":1,"Value":"Cur:$ Sign:1 I:999 Prec:4 Frac:0"},{"ValueID":2,"AttributeID":78,"StoreID":0,"EntityID":1,"Value":null},{"ValueID":3,"AttributeID":74,"StoreID":0,"EntityID":1,"Value":null},{"ValueID":4,"AttributeID":77,"StoreID":0,"EntityID":1,"Value":null},{"ValueID":5,"AttributeID":73,"StoreID":1,"EntityID":1,"Value":"Cur:$ Sign:1 I:705 Prec:4 Frac:9933"},{"ValueID":6,"AttributeID":73,"StoreID":4,"EntityID":1,"Value":"Cur:$ Sign:1 I:705 Prec:4 Frac:9933"},{"ValueID":7,"AttributeID":73,"StoreID":2,"EntityID":1,"Value":"Cur:$ Sign:1 I:705 Prec:4 Frac:9933"},{"ValueID":8,"AttributeID":73,"StoreID":3,"EntityID":1,"Value":"Cur:$ Sign:1 I:705 Prec:4 Frac:9933"}]`
 	if have != want {
 		t.Errorf("\nHave: %s\n\nWant: %s\n", have, want)
 	}

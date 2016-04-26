@@ -49,7 +49,7 @@ var testFmtNum = i18n.NewNumber(
 )
 
 func TestString(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		prec int
 		have int64
@@ -89,7 +89,7 @@ func TestString(t *testing.T) {
 }
 
 func TestAbs(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have int64
 		want int64
@@ -109,7 +109,7 @@ func TestAbs(t *testing.T) {
 }
 
 func TestPrecisionAndGet(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		prec  int
 		have  int64
@@ -149,7 +149,7 @@ func TestPrecisionAndGet(t *testing.T) {
 }
 
 func TestSetf(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		prec  int
 		want  int64
@@ -183,7 +183,7 @@ func TestSetf(t *testing.T) {
 }
 
 func TestSign(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have int64
 		want int
@@ -198,7 +198,6 @@ func TestSign(t *testing.T) {
 }
 
 func TestSwedishNumber(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		prec int
@@ -287,15 +286,15 @@ func TestSwedishNumber(t *testing.T) {
 
 		haveB, err := c.Swedish(money.WithSwedish(test.iv)).Number()
 		assert.NoError(t, err, "%v", test)
-		have := string(haveB)
-		if have != test.want {
-			t.Errorf("\nWant: %s\nHave: %s\nIndex: %v\n", test.want, have, test)
+
+		if haveB.String() != test.want {
+			t.Errorf("\nWant: %s\nHave: %s\nIndex: %v\n", test.want, haveB.String(), test)
 		}
 	}
 }
 
 func TestAdd(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have1 int64
 		have2 int64
@@ -318,7 +317,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestSub(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have1 int64
 		have2 int64
@@ -342,7 +341,7 @@ func TestSub(t *testing.T) {
 }
 
 func TestMulNumber(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		prec  int
 		have1 int64
@@ -374,15 +373,15 @@ func TestMulNumber(t *testing.T) {
 
 		haveB, err := c.Number()
 		assert.NoError(t, err)
-		have := string(haveB)
-		if have != test.want {
-			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
+
+		if haveB.String() != test.want {
+			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, haveB.String(), c.Sign(), test)
 		}
 	}
 }
 
 func TestMulf(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		prec  int
 		have1 int64
@@ -405,18 +404,20 @@ func TestMulf(t *testing.T) {
 
 	for _, test := range tests {
 		c := money.New(money.WithPrecision(test.prec)).Set(test.have1)
+		c.FmtCur = i18n.DefaultCurrency
+		c.FmtNum = i18n.DefaultNumber
 		c = c.Mulf(test.have2)
 		haveB, err := c.Number()
 		assert.NoError(t, err)
-		have := string(haveB)
-		if have != test.want {
-			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
+
+		if haveB.String() != test.want {
+			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, haveB.String(), c.Sign(), test)
 		}
 	}
 }
 
 func TestDiv(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have1 int64
 		have2 int64
@@ -439,7 +440,7 @@ func TestDiv(t *testing.T) {
 		assert.NoError(t, err)
 
 		if have != test.want {
-			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, string(nob), test)
+			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, nob.String(), test)
 		}
 	}
 }

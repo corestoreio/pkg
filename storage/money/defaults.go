@@ -15,11 +15,24 @@
 package money
 
 import (
+	"fmt"
+	"io"
 	"math"
 	"sync"
-
-	"github.com/corestoreio/csfw/i18n"
 )
+
+// NumberFormatter contract states how to write a money type as a formatted
+// number.
+type NumberFormatter interface {
+	FmtNumber(w io.Writer, sign int, i int64, prec int, frac int64) (int, error)
+}
+
+// CurrencyFormatter contract states how to write a money type as a formatted
+// currency representation.
+type CurrencyFormatter interface {
+	NumberFormatter
+	Sign() []byte
+}
 
 type globalSettings struct {
 	sync.Mutex
@@ -39,11 +52,11 @@ var gNaN = []byte(`NaN`)
 
 // DefaultFormatterCurrency sets the package wide default locale specific currency formatter.
 // This variable can be overridden.
-var DefaultFormatterCurrency i18n.CurrencyFormatter = i18n.DefaultCurrency
+var DefaultFormatterCurrency CurrencyFormatter = fmtCurrency{} // TODO minimal formatter
 
 // DefaultFormatterNumber sets the package wide default locale specific number formatter
 // This variable can be overridden.
-var DefaultFormatterNumber i18n.NumberFormatter = i18n.DefaultNumber
+var DefaultFormatterNumber NumberFormatter = fmtNumber{} // todo minimal formatter
 
 // DefaultJSONEncode is JSONLocale
 var DefaultJSONEncode Encoder = NewJSONEncoder()
@@ -87,4 +100,22 @@ func DefaultPrecision(p int) int {
 	}
 	global.dpi = p
 	return global.dpi
+}
+
+type fmtNumber struct{}
+
+func (fn fmtNumber) FmtNumber(w io.Writer, sign int, i int64, prec int, frac int64) (int, error) {
+	// todo some nicer output
+	return fmt.Fprintf(w, "Sign:%d I:%d Prec:%d Frac:%d", sign, i, prec, frac)
+}
+
+type fmtCurrency struct{}
+
+func (fc fmtCurrency) FmtNumber(w io.Writer, sign int, i int64, prec int, frac int64) (int, error) {
+	// todo some nicer output
+	return fmt.Fprintf(w, "Cur:%s Sign:%d I:%d Prec:%d Frac:%d", fc.Sign(), sign, i, prec, frac)
+}
+
+func (fmtCurrency) Sign() []byte {
+	return []byte(`$`)
 }

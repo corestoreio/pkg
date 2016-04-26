@@ -20,11 +20,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrDecodeMissingColon can be returned on malformed JSON value when decoding a currency.
-var ErrDecodeMissingColon = errors.Errorf("No colon found in JSON array")
 
 const (
 	// JSONNumber encodes/decodes a currency as a number string to directly use
@@ -85,7 +82,7 @@ func (t JSONType) Decode(c *Money, b []byte) error {
 	}
 	if false == utf8.Valid(b) { // we must have a valid string
 		c.m, c.Valid = 0, false
-		return errors.NotValidf("Byte slice contains invalid utf8 characters: %q", string(b))
+		return errors.NewNotValidf("[money] Byte slice contains invalid utf8 characters: %q", string(b))
 	}
 
 	runes := bytes.Runes(b)
@@ -153,7 +150,7 @@ OuterLoop:
 
 	if isArray { // now it's an error because no colon found
 		c.m, c.Valid = 0, false
-		return errors.Mask(ErrDecodeMissingColon)
+		return errors.NotValid(`[money] No colon found in JSON array.`)
 	}
 
 	switch {
@@ -193,7 +190,7 @@ OuterLoop:
 	}
 
 	c.m, c.Valid = 0, false
-	return errors.NotValidf("Invalid bytes: %q => Number: %q", string(b), string(number))
+	return errors.NewNotValidf("[money] Invalid bytes: %q => Number: %q", string(b), string(number))
 }
 
 // jsonNumberMarshal generates a number formatted currency string
@@ -213,9 +210,9 @@ func jsonLocaleMarshal(c *Money) ([]byte, error) {
 	b.WriteString(`"`)
 	lb, err := c.Localize()
 	if err != nil {
-		return nil, errors.Maskf(err, "Currency %#v\nBytes %q", c, string(lb))
+		return nil, errors.Wrapf(err, "[money] Currency %#v\nBytes %q", c, lb.String())
 	}
-	template.JSEscape(&b, lb)
+	template.JSEscape(&b, lb.Bytes())
 	b.WriteString(`"`)
 	return b.Bytes(), err
 }
@@ -233,9 +230,9 @@ func jsonExtendedMarshal(c *Money) ([]byte, error) {
 	b.WriteString(`", "`)
 	lb, err := c.Localize()
 	if err != nil {
-		return nil, errors.Maskf(err, "Currency %#v\nBytes %q", c, string(lb))
+		return nil, errors.Wrapf(err, "[money] Currency %#v\nBytes %q", c, lb.String())
 	}
-	template.JSEscape(&b, lb)
+	template.JSEscape(&b, lb.Bytes())
 
 	b.WriteRune('"')
 	b.WriteRune(']')

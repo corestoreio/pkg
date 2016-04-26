@@ -1,9 +1,0 @@
-PASS
-Benchmark_MoneyScan-4                   	 3000000	       456 ns/op	       8 B/op	       1 allocs/op
-Benchmark_ParseFloat-4                  	30000000	        56.1 ns/op	       0 B/op	       0 allocs/op
-Benchmark_JSONUnMarshalSingle__Number-4 	 1000000	      1215 ns/op	     240 B/op	       4 allocs/op
-Benchmark_JSONUnMarshalSingle__Locale-4 	 1000000	      1467 ns/op	     272 B/op	       4 allocs/op
-Benchmark_JSONUnMarshalSingle_Extended-4	 1000000	      1450 ns/op	     368 B/op	       4 allocs/op
-Benchmark_NumberWriter-4                	 1000000	      1441 ns/op	     192 B/op	       7 allocs/op
-Benchmark_MoneyNewGetf-4                	 2000000	       697 ns/op	     160 B/op	       3 allocs/op
-ok  	github.com/corestoreio/csfw/storage/money	11.338s

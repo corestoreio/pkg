@@ -15,30 +15,22 @@
 package money
 
 import (
-	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 var (
-	_          json.Unmarshaler = (*Money)(nil)
-	_          json.Marshaler   = (*Money)(nil)
-	_          sql.Scanner      = (*Money)(nil)
-	_          driver.Valuer    = (*Money)(nil)
-	nullString                  = []byte(`null`)
+	nullString = []byte(`null`)
 )
 
 type (
 	// Encoder interface to encode money into bytes
 	Encoder interface {
-		// Encode encodes the currency into bytes
 		Encode(*Money) ([]byte, error)
 	}
-	// Decoder interface to decode money type
+	// Decoder interface to parse the byte slice into the money type.
 	Decoder interface {
-		// Decode reads the bytes and decodes them into the currency
 		Decode(*Money, []byte) error
 	}
 )
