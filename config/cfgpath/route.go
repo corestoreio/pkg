@@ -16,18 +16,12 @@ package cfgpath
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/storage/text"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrRouteInvalidBytes whenever a non-rune is detected.
-var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are not runes.")
-
-// ErrRouteEmpty bytes are nil or len equals zero
-var ErrRouteEmpty = errors.New("Route is empty")
 
 // Route consists of at least three parts each of them separated by a slash
 // (See constant Separator). A route can be seen as a tree.
@@ -98,17 +92,18 @@ func (r Route) GoString() string {
 const rSeparator = rune(Separator)
 
 // Validate checks if the route contains valid runes and is not empty.
+// Error behaviour: Empty and NotValid.
 func (r Route) Validate() error {
 	if r.IsEmpty() {
-		return ErrRouteEmpty
+		return errRouteEmpty
 	}
 
 	if r.Separators() == len(r.Chars) {
-		return ErrIncorrectPath
+		return errors.NewNotValidf(errIncorrectPathTpl, r.String())
 	}
 
 	if false == utf8.Valid(r.Chars) {
-		return ErrRouteInvalidBytes
+		return errors.NewNotValidf(errRouteInvalidBytesTpl, r.String())
 	}
 
 	var sepCount int
@@ -120,9 +115,10 @@ func (r Route) Validate() error {
 			i++
 		} else {
 			dr, _ := utf8.DecodeRune(r.Chars[i:])
-			return fmt.Errorf("This character %q is not allowed in Route %s", string(dr), r)
+			return errors.NewNotValidf("[cfgpath]: Invalid character %q in Route %q", string(dr), r)
 		}
 		ok := false
+		// TODO(cs) maybe remove the check for [A-Za-z0-9] and allow all characters
 		switch {
 		case '0' <= ru && ru <= '9':
 			ok = true
@@ -137,7 +133,7 @@ func (r Route) Validate() error {
 			ok = true
 		}
 		if !ok {
-			return fmt.Errorf("This character %q is not allowed in Route %s", string(ru), r)
+			return errors.NewNotValidf("[cfgpath]: Invalid character %q in Route %q", string(ru), r)
 		}
 	}
 	return nil
@@ -221,21 +217,22 @@ func (r *Route) Append(routes ...Route) error {
 
 	(*r) = newRoute(buf)
 	if err := r.Validate(); err != nil {
-		return err
+		return errors.Wrap(err, "[cfgpath] Append.Validate")
 	}
 	return nil
 }
 
 // UnmarshalText transforms the text into a route with performed validation
 // checks.
+// Error behaviour: NotValid, Empty.
 func (r *Route) UnmarshalText(txt []byte) error {
 	var c text.Chars
 	if err := c.UnmarshalText(txt); err != nil {
-		return err
+		return errors.Wrap(err, "[cfgpath] UnmarshalText.UnmarshalText")
 	}
 	(*r) = newRoute(c)
 	if err := r.Validate(); err != nil {
-		return err
+		return errors.Wrap(err, "[cfgpath] UnmarshalText.Validate")
 	}
 	return nil
 }
@@ -247,9 +244,10 @@ func (r *Route) UnmarshalText(txt []byte) error {
 // Does not generate a fully qualified path.
 // The returned Route slice is owned by Route. For further modifications you must
 // copy it via Route.Copy().
+// Error behaviour: NotValid, Empty.
 func (r Route) Level(depth int) (Route, error) {
 	if err := r.Validate(); err != nil {
-		return Route{}, err
+		return Route{}, errors.Wrap(err, "[cfgpath] Level.Validate")
 	}
 
 	lp := len(r.Chars)
@@ -299,7 +297,7 @@ const (
 func (r Route) Hash(depth int) (uint32, error) {
 	r2, err := r.Level(depth)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "[cfgpath] Hash.Level")
 	}
 	var hash uint32 = offset32
 	for _, c := range r2.Chars {
@@ -352,7 +350,7 @@ func (r Route) Separators() (count int) {
 func (r Route) Part(pos int) (Route, error) {
 
 	if pos < 1 {
-		return Route{}, ErrIncorrectPosition
+		return Route{}, errors.NewNotValidf(errIncorrectPositionTpl, pos)
 	}
 
 	sepCount := r.Separators()
@@ -360,7 +358,7 @@ func (r Route) Part(pos int) (Route, error) {
 		return r, nil
 	}
 	if pos > sepCount+1 {
-		return Route{}, ErrIncorrectPosition
+		return Route{}, errors.NewNotValidf(errIncorrectPositionTpl, pos)
 	}
 
 	var sepPos [maxLevels]int
@@ -394,6 +392,8 @@ func (r Route) Part(pos int) (Route, error) {
 //		rs[0].String() == "aa"
 //		rs[1].String() == "bb"
 //		rs[2].String() == "cc"
+//
+// Error behaviour: NotValid
 func (r Route) Split() (ret [Levels]Route, err error) {
 
 	const sepCount = Levels - 1 // only two separators supported
@@ -406,7 +406,7 @@ func (r Route) Split() (ret [Levels]Route, err error) {
 		}
 	}
 	if sp < 1 {
-		err = ErrIncorrectPath
+		err = errors.NewNotValidf(errIncorrectPathTpl, r.String())
 		return
 	}
 

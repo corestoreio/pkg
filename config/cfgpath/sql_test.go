@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +34,7 @@ var _ driver.Valuer = (*cfgpath.Route)(nil)
 
 func TestIntegrationSQLType(t *testing.T) {
 	t.Parallel()
-	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip(err)
 	}
 	dbCon := csdb.MustConnectTest()

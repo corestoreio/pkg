@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Levels defines how many parts are at least in a path.
@@ -38,13 +38,6 @@ const Separator byte = '/'
 const sSeparator = "/"
 
 var bSeparator = []byte(sSeparator)
-
-// ErrIncorrectPath a path is missing a path separator or is too short
-var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
-
-// ErrIncorrectPosition returned by function Part() whenever an invalid input
-// position has been applied.
-var ErrIncorrectPosition = errors.New("Position does not exists")
 
 // Path represents a configuration path bound to a scope.
 type Path struct {
@@ -135,16 +128,13 @@ func (p Path) StrScope() string {
 }
 
 // String returns a fully qualified path. Errors get logged if debug mode
-// is enabled. String is empty on error.
+// is enabled. String starts with `[cfgpath] Error:` on error.
+// Error behaviour: NotValid, Empty or WriteFailed
 func (p Path) String() string {
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
-	err := p.fq(buf)
-	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("cfgpath.Path.FQ.String", "err", err, "path", p, "buf", buf.String())
-		}
-		return ""
+	if err := p.fq(buf); err != nil {
+		return "[cfgpath] Error: " + errors.PrintLoc(err)
 	}
 	return buf.String()
 }
@@ -157,6 +147,7 @@ func (p Path) GoString() string {
 // FQ returns the fully qualified route. Safe for further processing of the
 // returned byte slice. If scope is equal to scope.DefaultID and ID is not
 // zero then ID gets set to zero.
+// Error behaviour: NotValid, Empty or WriteFailed
 func (p Path) FQ() (Route, error) {
 	// bufPool not possible because we're returning bytes, which can be modified
 	// and bufPool truncates the slice, so return would a zero slice.
@@ -171,8 +162,9 @@ func (p Path) FQ() (Route, error) {
 // Depth 3 returns "a/b/c" and so on. Level -1 gives you all available levels.
 // Does not generate a fully qualified path.
 // The returned Route slice is owned by Path.Route. For further modifications you must
-// copy it via Route.Copy(). A path validation error may occur.
-func (p Path) Level(depth int) (r Route, err error) {
+// copy it via Route.Copy().
+// Error behaviour: NotValid or Empty
+func (p Path) Level(depth int) (_ Route, err error) {
 	p.routeValidated = true
 	if err = p.IsValid(); err != nil {
 		return
@@ -192,6 +184,8 @@ func (p Path) Level(depth int) (r Route, err error) {
 // created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
+//
+// Error behaviour: NotValid, Empty or WriteFailed
 func (p Path) Hash(depth int) (uint32, error) {
 	p.routeValidated = true
 
@@ -208,6 +202,7 @@ func (p Path) Hash(depth int) (uint32, error) {
 	return r.Hash(depth + 2)
 }
 
+// Error behaviour: NotValid or WriteFailed
 func (p Path) fq(buf *bytes.Buffer) error {
 	if err := p.IsValid(); err != nil {
 		return err
@@ -219,22 +214,22 @@ func (p Path) fq(buf *bytes.Buffer) error {
 	}
 
 	if _, err := buf.Write(p.Scope.Bytes()); err != nil {
-		return errors.Mask(err)
+		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	if err := buf.WriteByte(Separator); err != nil {
-		return errors.Mask(err)
+		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	bufRaw := buf.Bytes()
 	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
 	buf.Reset()
 	if _, err := buf.Write(bufRaw); err != nil {
-		return errors.Mask(err)
+		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	if err := buf.WriteByte(Separator); err != nil {
-		return errors.Mask(err)
+		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	if _, err := buf.Write(p.Route.Chars); err != nil {
-		return errors.Mask(err)
+		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	return nil
 }
@@ -367,19 +362,19 @@ func SplitFQ(fqPath string) (Path, error) {
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
 // Minimal length per part 2 characters. Case sensitive.
 //
-// IsValid can return ErrRouteEmpty or ErrIncorrectPath or a custom error.
+// Error behaviour: NotValid or Empty
 func (p Path) IsValid() error {
 	if !p.routeValidated {
 		// only validate the route when it has not yet been done
 		if err := p.Route.Validate(); err != nil {
-			return err
+			return errors.Wrap(err, "[cfgpath] Route.Validate")
 		}
 	}
 	if p.RouteLevelValid {
 		return nil
 	}
 	if p.Route.Separators() < Levels-1 || p.Route.RuneCount() < 8 /*aa/bb/cc*/ {
-		return ErrIncorrectPath
+		return errors.NewNotValidf(errIncorrectPathTpl, p.Route.String())
 	}
 	return nil
 }

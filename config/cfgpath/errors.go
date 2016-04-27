@@ -12,26 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cfgpath_test
+package cfgpath
 
-import (
-	std "log"
+import "github.com/corestoreio/csfw/util/errors"
 
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/util/log"
-)
+// private errors. Use the behaviour checks in package util/errors.
 
-var debugLogBuf *log.MutexBuffer
-var infoLogBuf *log.MutexBuffer
+const errIncorrectPathTpl = "[config/cfgpath] Invalid Path %q. Either to short or missing path separator."
 
-func init() {
-	debugLogBuf = new(log.MutexBuffer)
-	infoLogBuf = new(log.MutexBuffer)
+const errIncorrectPositionTpl = "[config/cfgpath] Position '%d' does not exists"
 
-	cfgpath.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
-		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
-		log.SetStdDisableStackTrace(),
-	)
-	cfgpath.PkgLog.SetLevel(log.StdLevelDebug)
-}
+const errRouteInvalidBytesTpl = "[config/cfgpath] Route contains invalid bytes %q which are not runes."
+
+var errRouteEmpty = errors.NewEmptyf("[config/cfgpath] Route is empty")

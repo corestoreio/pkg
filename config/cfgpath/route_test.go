@@ -19,12 +19,12 @@ import (
 	"database/sql/driver"
 	"encoding"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"hash/fnv"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -84,15 +84,15 @@ func TestRouteEqual(t *testing.T) {
 func TestRouteAppend(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		a       cfgpath.Route
-		b       cfgpath.Route
-		want    string
-		wantErr error
+		a          cfgpath.Route
+		b          cfgpath.Route
+		want       string
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{cfgpath.NewRoute("aa/bb/cc"), cfgpath.NewRoute("dd"), "aa/bb/cc/dd", nil},
 		{cfgpath.NewRoute("aa"), cfgpath.NewRoute("bb/cc"), "aa/bb/cc", nil},
 		{cfgpath.NewRoute("aa"), cfgpath.NewRoute("bbcc"), "aa/bbcc", nil},
-		{cfgpath.NewRoute("aa"), cfgpath.NewRoute("bb\x80cc"), "", cfgpath.ErrRouteInvalidBytes},
+		{cfgpath.NewRoute("aa"), cfgpath.NewRoute("bb\x80cc"), "", errors.IsNotValid},
 		{cfgpath.NewRoute("aa/"), cfgpath.NewRoute("bbcc"), "aa/bbcc", nil},
 		{cfgpath.NewRoute("aa"), cfgpath.NewRoute("/bbcc"), "aa/bbcc", nil},
 		{cfgpath.NewRoute("aa"), cfgpath.NewRoute("/bb\x00cc"), "aa/bb", nil},
@@ -104,8 +104,8 @@ func TestRouteAppend(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveErr := test.a.Append(test.b)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		assert.NoError(t, haveErr, "Index %d", i)
@@ -117,20 +117,20 @@ func TestRouteVariadicAppend(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		a       cfgpath.Route
-		routes  []cfgpath.Route
-		want    string
-		wantErr error
+		a          cfgpath.Route
+		routes     []cfgpath.Route
+		want       string
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{cfgpath.NewRoute("aa"), []cfgpath.Route{cfgpath.NewRoute("bb"), cfgpath.NewRoute("cc"), cfgpath.NewRoute("dd")}, "aa/bb/cc/dd", nil},
 		{cfgpath.NewRoute("aa"), []cfgpath.Route{{}, {}, {Chars: []byte(`cb`)}}, "aa/cb", nil},
 		{cfgpath.Route{}, []cfgpath.Route{{}, {}, {Chars: []byte(`cb`)}}, "cb", nil},
-		{cfgpath.Route{}, []cfgpath.Route{{}, {}, {}}, "", cfgpath.ErrRouteEmpty},
+		{cfgpath.Route{}, []cfgpath.Route{{}, {}, {}}, "", errors.IsEmpty},
 	}
 	for i, test := range tests {
 		haveErr := test.a.Append(test.routes...)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		assert.NoError(t, haveErr, "Index %d", i)
@@ -232,13 +232,13 @@ func benchmarkRouteLevelRun(b *testing.B, level int, have, want cfgpath.Route) {
 func TestRouteHash(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		have      cfgpath.Route
-		depth     int
-		wantHash  uint32
-		wantErr   error
-		wantLevel string
+		have       cfgpath.Route
+		depth      int
+		wantHash   uint32
+		wantErrBHf errors.BehaviourFunc
+		wantLevel  string
 	}{
-		{cfgpath.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, cfgpath.ErrRouteInvalidBytes, ""},
+		{cfgpath.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, errors.IsNotValid, ""},
 		{cfgpath.NewRoute("general/single_store_mode/enabled"), 0, 2166136261, nil, ""},
 		{cfgpath.NewRoute("general/single_store_mode/enabled"), 1, 616112491, nil, "general"},
 		{cfgpath.NewRoute("general/single_store_mode/enabled"), 2, 2274889228, nil, "general/single_store_mode"},
@@ -250,8 +250,8 @@ func TestRouteHash(t *testing.T) {
 	for i, test := range tests {
 
 		hv, err := test.have.Hash(test.depth)
-		if test.wantErr != nil {
-			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBHf != nil {
+			assert.True(t, test.wantErrBHf(err), "Index %d => %s", i, err)
 			assert.Empty(t, hv, "Index %d", i)
 			continue
 		}
@@ -334,23 +334,23 @@ func TestRoutePartPosition(t *testing.T) {
 		have     cfgpath.Route
 		pos      int
 		wantPart string
-		wantErr  error
+		wantErr  bool
 	}{
-		{cfgpath.NewRoute("general/single_\x80store_mode/enabled"), 0, "", cfgpath.ErrIncorrectPosition},
-		{cfgpath.NewRoute("general/single_store_mode/enabled"), 0, "", cfgpath.ErrIncorrectPosition},
-		{cfgpath.NewRoute("general/single_store_mode/enabled"), 1, "general", nil},
-		{cfgpath.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
-		{cfgpath.NewRoute("general/single_store_mode/enabled"), 3, "enabled", nil},
-		{cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), 4, "backend_port", nil},
-		{cfgpath.NewRoute("general/single_store_mode/enabled"), -1, "", cfgpath.ErrIncorrectPosition},
-		{cfgpath.NewRoute("general/single_store_mode/enabled"), 5, "", cfgpath.ErrIncorrectPosition},
-		{cfgpath.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "group", nil},
+		{cfgpath.NewRoute("general/single_\x80store_mode/enabled"), 0, "", true},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 0, "", true},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 1, "general", false},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", false},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 3, "enabled", false},
+		{cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), 4, "backend_port", false},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), -1, "", true},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 5, "", true},
+		{cfgpath.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "group", false},
 	}
 	for i, test := range tests {
 		part, haveErr := test.have.Part(test.pos)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErr {
 			assert.Nil(t, part.Chars, "Index %d", i)
+			assert.True(t, errors.IsNotValid(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		assert.Exactly(t, test.wantPart, part.String(), "Index %d", i)
@@ -384,27 +384,27 @@ func BenchmarkRoutePart(b *testing.B) {
 func TestRouteValidate(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		have cfgpath.Route
-		want error
+		have    cfgpath.Route
+		wantBhf errors.BehaviourFunc
 	}{
-		{cfgpath.NewRoute("//"), cfgpath.ErrIncorrectPath},
+		{cfgpath.NewRoute("//"), errors.IsNotValid},
 		{cfgpath.NewRoute("general/store_information/city"), nil},
 		{cfgpath.NewRoute("general/store_information/city"), nil},
 		{cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), nil},
-		{cfgpath.NewRoute(""), cfgpath.ErrRouteEmpty},
+		{cfgpath.NewRoute(""), errors.IsEmpty},
 		{cfgpath.NewRoute("general/store_information"), nil},
 		////{cfgpath.NewRoute(cfgpath.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), cfgpath.ErrIncorrectPath},
 		{cfgpath.NewRoute("groups/33/general/store_information/street"), nil},
 		{cfgpath.NewRoute("groups/33"), nil},
-		{cfgpath.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
-		{cfgpath.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
+		{cfgpath.NewRoute("system/dEv/inv˚lid"), errors.IsNotValid},
+		{cfgpath.NewRoute("system/dEv/inv'lid"), errors.IsNotValid},
 		{cfgpath.NewRoute("syst3m/dEv/invalid"), nil},
-		{cfgpath.Route{}, cfgpath.ErrRouteEmpty},
+		{cfgpath.Route{}, errors.IsEmpty},
 	}
 	for i, test := range tests {
 		haveErr := test.have.Validate()
-		if test.want != nil {
-			assert.EqualError(t, haveErr, test.want.Error(), "Index %d", i)
+		if test.wantBhf != nil {
+			assert.True(t, test.wantBhf(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
 		}
@@ -431,20 +431,20 @@ func BenchmarkRouteValidate(b *testing.B) {
 func TestRouteSplit(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		have     cfgpath.Route
-		wantPart []string
-		wantErr  error
+		have       cfgpath.Route
+		wantPart   []string
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{cfgpath.NewRoute("general/single_\x80store_mode"), []string{"general", "single_\x80store_mode"}, nil},
 		{cfgpath.NewRoute("general/single_store_mode"), []string{"general", "single_store_mode"}, nil},
-		{cfgpath.NewRoute("general"), nil, cfgpath.ErrIncorrectPath},
+		{cfgpath.NewRoute("general"), nil, errors.IsNotValid},
 		{cfgpath.NewRoute("general/single_store_mode/enabled"), []string{"general", "single_store_mode", "enabled"}, nil},
 		{cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), []string{"system", "full_page_cache", "varnish/backend_port"}, nil},
 	}
 	for i, test := range tests {
 		sps, haveErr := test.have.Split()
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			assert.Nil(t, sps[0].Chars, "Index %d", i)
 			assert.Nil(t, sps[1].Chars, "Index %d", i)
 			continue
