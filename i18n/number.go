@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"unicode/utf8"
 
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/csmath"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -400,7 +400,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 		fracf = -fracf
 	}
 
-	fracI := int64(util.Round(fracf*precPow10, 0, usedFmt.precision))
+	fracI := int64(csmath.Round(fracf*precPow10, 0, usedFmt.precision))
 
 	return no.FmtNumber(w, sign, int64(intgr), intLen(fracI), fracI)
 }
