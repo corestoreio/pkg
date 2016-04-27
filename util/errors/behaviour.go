@@ -49,7 +49,7 @@ func wrapf(err error, format string, args ...interface{}) eb {
 
 type notImplemented struct{ eb }
 
-const notImplementedTxt NotImplemented = "Not implemented"
+const notImplementedTxt Error = "Not implemented"
 
 // NewNotImplemented returns an error which wraps err that satisfies
 // IsNotImplemented().
@@ -84,7 +84,7 @@ func IsNotImplemented(err error) bool {
 
 type empty struct{ eb }
 
-const emptyTxt Empty = "Empty value"
+const emptyTxt Error = "Empty value"
 
 // NewEmpty returns an error which wraps err that satisfies
 // IsEmpty().
@@ -119,7 +119,7 @@ func IsEmpty(err error) bool {
 
 type writeFailed struct{ eb }
 
-const writeFailedTxt WriteFailed = "WriteFailed value"
+const writeFailedTxt Error = "WriteFailed value"
 
 // NewWriteFailed returns an error which wraps err that satisfies
 // IsWriteFailed().
@@ -154,7 +154,7 @@ func IsWriteFailed(err error) bool {
 
 type fatal struct{ eb }
 
-const fatalTxt Fatal = "Fatal"
+const fatalTxt Error = "Fatal"
 
 // NewFatal returns an error which wraps err that satisfies IsFatal().
 func NewFatal(err error, msg string) error {
@@ -188,7 +188,7 @@ func IsFatal(err error) bool {
 
 type notFound struct{ eb }
 
-const notFoundTxt NotFound = "Not found"
+const notFoundTxt Error = "Not found"
 
 // NewNotFound returns an error which wraps err that satisfies
 // IsNotFound().
@@ -223,7 +223,7 @@ func IsNotFound(err error) bool {
 
 type userNotFound struct{ eb }
 
-const userNotFoundTxt UserNotFound = "User not found"
+const userNotFoundTxt Error = "User not found"
 
 // NewUserNotFound returns an error which wraps err and satisfies
 // IsUserNotFound().
@@ -258,7 +258,7 @@ func IsUserNotFound(err error) bool {
 
 type unauthorized struct{ eb }
 
-const unauthorizedTxt Unauthorized = "Unauthorized"
+const unauthorizedTxt Error = "Unauthorized"
 
 // NewUnauthorized returns an error which wraps err and satisfies
 // IsUnauthorized().
@@ -293,7 +293,7 @@ func IsUnauthorized(err error) bool {
 
 type alreadyExists struct{ eb }
 
-const alreadyExistsTxt AlreadyExists = "Already exists"
+const alreadyExistsTxt Error = "Already exists"
 
 // NewAlreadyExists returns an error which wraps err and satisfies
 // IsAlreadyExists().
@@ -328,7 +328,7 @@ func IsAlreadyExists(err error) bool {
 
 type alreadyClosed struct{ eb }
 
-const alreadyClosedTxt AlreadyClosed = "Already closed"
+const alreadyClosedTxt Error = "Already closed"
 
 // NewAlreadyClosed returns an error which wraps err and satisfies
 // IsAlreadyClosed().
@@ -363,7 +363,7 @@ func IsAlreadyClosed(err error) bool {
 
 type notSupported struct{ eb }
 
-const notSupportedTxt NotSupported = "Not supported"
+const notSupportedTxt Error = "Not supported"
 
 // NewNotSupported returns an error which wraps err and satisfies
 // IsNotSupported().
@@ -398,7 +398,7 @@ func IsNotSupported(err error) bool {
 
 type notValid struct{ eb }
 
-const notValidTxt NotValid = "Not valid"
+const notValidTxt Error = "Not valid"
 
 // NewNotValid returns an error which wraps err and satisfies
 // IsNotValid().
@@ -433,7 +433,7 @@ func IsNotValid(err error) bool {
 
 type temporary struct{ eb }
 
-const temporaryTxt Temporary = "Temporary"
+const temporaryTxt Error = "Temporary"
 
 // NewTemporary returns an error which wraps err and satisfies
 // IsTemporary().
@@ -468,7 +468,7 @@ func IsTemporary(err error) bool {
 
 type timeout struct{ eb }
 
-const timeoutTxt Timeout = "Timeout"
+const timeoutTxt Error = "Timeout"
 
 // NewTimeout returns an error which wraps err and satisfies
 // IsTimeout().

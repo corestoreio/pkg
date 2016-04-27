@@ -15,6 +15,7 @@
 package errors_test
 
 import (
+	"bytes"
 	goerr "errors"
 	"fmt"
 	"strings"
@@ -29,7 +30,7 @@ var _ error = (*errors.MultiErr)(nil)
 func TestMultiErrors(t *testing.T) {
 
 	assert.Equal(t,
-		"github.com/corestoreio/csfw/util/errors/multierr_test.go:34: Err1\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:35: Err2\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:36: Err3\n",
+		"github.com/corestoreio/csfw/util/errors/multierr_test.go:35: Err1\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:36: Err2\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:37: Err3\n",
 		errors.NewMultiErr(
 			errors.New("Err1"),
 			errors.New("Err2"),
@@ -48,7 +49,7 @@ func TestMultiAppend(t *testing.T) {
 	)
 	assert.True(t, e.HasErrors())
 	assert.Equal(t,
-		"github.com/corestoreio/csfw/util/errors/multierr_test.go:44: Err5\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:46: Err6\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:47: Err7\n",
+		"github.com/corestoreio/csfw/util/errors/multierr_test.go:45: Err5\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:47: Err6\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:48: Err7\n",
 		e.Error(),
 	)
 }
@@ -74,7 +75,35 @@ func TestMultiAppendToNil(t *testing.T) {
 	e = e.AppendErrors(errors.New("Err74"))
 
 	assert.True(t, e.HasErrors())
-	assert.Equal(t, "github.com/corestoreio/csfw/util/errors/multierr_test.go:74: Err74\n", e.Error())
+	assert.Equal(t, "github.com/corestoreio/csfw/util/errors/multierr_test.go:75: Err74\n", e.Error())
+}
+
+func TestMultiErr_CustomFormatter(t *testing.T) {
+
+	m1 := errors.NewMultiErr(errors.New("Hello1"))
+	m1.AppendErrors(
+		errors.NewMultiErr(errors.NewAlreadyClosedf("Brain"),
+			errors.NewNotFoundf("Mind"),
+		),
+		errors.New("Hello2"),
+	)
+
+	assert.Exactly(t,
+		"github.com/corestoreio/csfw/util/errors/multierr_test.go:83: Hello1\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:85: Brain: Already closed\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:86: Mind: Not found\ngithub.com/corestoreio/csfw/util/errors/multierr_test.go:88: Hello2\n",
+		m1.Error())
+
+	m1.Formatter = func(errs []error) string {
+		var buf bytes.Buffer
+		for _, err := range errs {
+			buf.WriteString(`* `)
+			buf.WriteString(err.Error())
+			buf.WriteRune('\n')
+		}
+		return buf.String()
+	}
+	assert.Exactly(t,
+		"* Hello1\n* Brain: Already closed\n* Mind: Not found\n* Hello2\n",
+		m1.Error())
 }
 
 func TestMultiAppendNilToNil1(t *testing.T) {
@@ -130,6 +159,9 @@ func TestMultiErrContains(t *testing.T) {
 		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), nil, false},
 		{errors.NewMultiErr(nil), nil, false},
 		{nil, nil, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2"), errors.NewMultiErr(errors.Error("r3"), errors.NewMultiErr(errors.Error("r4"), errors.NewNotImplementedf("r5")))),
+			[]errors.BehaviourFunc{errors.IsNotImplemented},
+			true},
 	}
 	for i, test := range tests {
 		if have, want := errors.MultiErrContains(test.me, test.vf...), test.want; have != want {

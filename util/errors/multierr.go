@@ -14,17 +14,11 @@
 
 package errors
 
-import (
-	"bytes"
-	"strconv"
-
-	"github.com/corestoreio/csfw/util/bufferpool"
-)
-
 // MultiErr represents a container for collecting and printing multiple errors.
 // Mostly used for embedding in functional options.
 type MultiErr struct {
-	errs []error
+	Errors    []error
+	Formatter ErrorFormatFunc
 }
 
 // NewMultiErr creates a new multi error struct.
@@ -53,9 +47,9 @@ func (m *MultiErr) AppendErrors(errs ...error) *MultiErr {
 		if err != nil {
 			// unwrap MultiErr recursively because in errs can be a MultiErr
 			if mErr2, ok := err.(*MultiErr); ok {
-				m = m.AppendErrors(mErr2.errs...)
+				m = m.AppendErrors(mErr2.Errors...)
 			} else {
-				m.errs = append(m.errs, err)
+				m.Errors = append(m.Errors, err)
 			}
 		}
 	}
@@ -64,7 +58,7 @@ func (m *MultiErr) AppendErrors(errs ...error) *MultiErr {
 
 // HasErrors checks if Multi contains errors.
 func (m *MultiErr) HasErrors() bool {
-	return m != nil && len(m.errs) > 0
+	return m != nil && len(m.Errors) > 0
 }
 
 // Error returns a string where each error has been separated by a line break.
@@ -73,33 +67,31 @@ func (m *MultiErr) Error() string {
 	if !m.HasErrors() {
 		return ""
 	}
-	var buf = bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	for _, e := range m.errs {
-		fprint(buf, e)
+	if m.Formatter == nil {
+		return FormatLineFunc(m.Errors)
 	}
-	return buf.String()
+	return m.Formatter(m.Errors)
 }
 
 // MultiErrContains checks if err contains a behavioral error.
 // 1st argument err must be of type (*MultiErr) and validate function vf
-// at least one of the many Is*() e.g. IsNotValid().
+// at least one of the many Is*() e.g. IsNotValid(), see type BehaviourFunc.
 // More than one validate function will be treated as AND hence
 // all validate functions must return true.
-// BehaviourFunc located in this package starts with Is...(error) bool
+// If there are multiple behavioral errors and one BehaviourFunc it will stop
+// after all errors matches the BehaviourFunc, not at the first match.
 func MultiErrContains(err error, bfs ...BehaviourFunc) bool {
 	me, ok := err.(*MultiErr)
 	if !ok {
 		return false
 	}
 
-	if len(bfs) == 0 || len(me.errs) == 0 {
+	if len(bfs) == 0 || len(me.Errors) == 0 {
 		return false
 	}
 
 	var errCount, validCount int
-	for _, e := range me.errs {
+	for _, e := range me.Errors {
 		if e != nil {
 			errCount++
 		}
@@ -110,34 +102,4 @@ func MultiErrContains(err error, bfs ...BehaviourFunc) bool {
 		}
 	}
 	return validCount == errCount || validCount == len(bfs)
-}
-
-// Fprint prints the error to the supplied writer.
-// The format of the output is the same as Print.
-// If err is nil, nothing is printed.
-func fprint(buf *bytes.Buffer, err error) {
-	for err != nil {
-		location, ok := err.(locationer)
-		if ok {
-			file, line := location.Location()
-			_, _ = buf.WriteString(file)
-			_, _ = buf.WriteRune(':')
-			_, _ = buf.WriteString(strconv.Itoa(line))
-			_, _ = buf.WriteString(": ")
-		}
-		switch err := err.(type) {
-		case *e:
-			_, _ = buf.WriteString(err.message)
-			_, _ = buf.WriteRune('\n')
-		default:
-			_, _ = buf.WriteString(err.Error())
-			_, _ = buf.WriteRune('\n')
-		}
-
-		cause, ok := err.(causer)
-		if !ok {
-			break
-		}
-		err = cause.Cause()
-	}
 }

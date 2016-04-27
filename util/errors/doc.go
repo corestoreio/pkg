@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package errors implements functions for manipulating errors.
+// Package errors implements functions for manipulating, checking and adding
+// behaviours to errors.
 //
 // Hello there! Read the presentation http://dave.cheney.net/paste/gocon-spring-2016.pdf
 // to see what the big deal is.
+// http://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully
 //
 // Read this for asserting errors for their behaviour http://dave.cheney.net/2014/12/24/inspecting-errors
 package errors
