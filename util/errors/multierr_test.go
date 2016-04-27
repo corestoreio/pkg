@@ -140,7 +140,7 @@ func TestError(t *testing.T) {
 	assert.EqualError(t, err, "I'm a constant Error")
 }
 
-func TestMultiErrContains(t *testing.T) {
+func TestMultiErrContainsAll(t *testing.T) {
 	tests := []struct {
 		me   error
 		vf   []errors.BehaviourFunc
@@ -164,7 +164,37 @@ func TestMultiErrContains(t *testing.T) {
 			true},
 	}
 	for i, test := range tests {
-		if have, want := errors.MultiErrContains(test.me, test.vf...), test.want; have != want {
+		if have, want := errors.MultiErrContainsAll(test.me, test.vf...), test.want; have != want {
+			t.Errorf("Index %d: Have %t Want %t", i, have, want)
+		}
+	}
+}
+
+func TestMultiErrContainsAny(t *testing.T) {
+	tests := []struct {
+		me   error
+		vf   []errors.BehaviourFunc
+		want bool
+	}{
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []errors.BehaviourFunc{errors.IsNotValid}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{errors.NewMultiErr(), []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{errors.New("random"), []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{nil, []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound}, true},                     // 5
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound, errors.IsTemporary}, true}, // 6 different to All
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound, errors.IsNotValid}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound, errors.IsNotValid, errors.IsAlreadyExists}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsAlreadyClosed, errors.IsNotValid, errors.IsAlreadyExists}, true}, // 9 different to All
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), nil, false},
+		{errors.NewMultiErr(nil), nil, false},
+		{nil, nil, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2"), errors.NewMultiErr(errors.Error("r3"), errors.NewMultiErr(errors.Error("r4"), errors.NewNotImplementedf("r5")))),
+			[]errors.BehaviourFunc{errors.IsNotImplemented},
+			true},
+	}
+	for i, test := range tests {
+		if have, want := errors.MultiErrContainsAny(test.me, test.vf...), test.want; have != want {
 			t.Errorf("Index %d: Have %t Want %t", i, have, want)
 		}
 	}
@@ -172,8 +202,6 @@ func TestMultiErrContains(t *testing.T) {
 
 var benchmarkError string
 
-// BenchmarkError-4	  500000	      3063 ns/op	    1312 B/op	      22 allocs/op
-// BenchmarkError-4	  500000	      3763 ns/op	    1936 B/op	      26 allocs/op
 func BenchmarkError(b *testing.B) {
 	// errors.Details(e) produces those high allocs
 	e := errors.NewMultiErr().

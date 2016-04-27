@@ -44,3 +44,26 @@ func TestWrapf(t *testing.T) {
 	var e = Wrapf(nil, "Error %d")
 	assert.Nil(t, e)
 }
+
+func TestErrorContainsAny(t *testing.T) {
+	tests := []struct {
+		me   error
+		vf   []BehaviourFunc
+		want bool
+	}{
+		{NotFound("e0"), []BehaviourFunc{IsNotFound}, true},
+		{NotFound("e1"), []BehaviourFunc{IsNotValid}, false},
+		{NotFound("e2"), []BehaviourFunc{IsNotValid, IsNotFound}, true},
+		{NewNotFound(NewNotValidf("NotValid inner"), "NotFound outer"), []BehaviourFunc{IsNotValid, IsNotFound}, true},
+		// once ErrorContainsAny acts recursive the next line will switch to true
+		{NewNotFound(NewNotValidf("NotValid inner"), "NotFound outer"), []BehaviourFunc{IsNotValid}, false},
+		{nil, []BehaviourFunc{IsNotValid}, false},
+		{nil, nil, false},
+	}
+
+	for i, test := range tests {
+		if have, want := ErrorContainsAny(test.me, test.vf...), test.want; have != want {
+			t.Errorf("Index %d: Have %t Want %t", i, have, want)
+		}
+	}
+}

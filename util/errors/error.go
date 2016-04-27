@@ -68,3 +68,32 @@ func PrintLoc(err error) string {
 
 	return buf.String()
 }
+
+// TODO: should be recursive ...
+//// ErrorContainsAll checks if err contains all provided behaviour functions.
+//func ErrorContainsAll(err error, bfs ...BehaviourFunc) bool {
+//	fmt.Printf("%#v\n", err)
+//
+//	var validCount int
+//
+//	for _, f := range bfs {
+//		if f(err) {
+//			validCount++
+//		}
+//	}
+//	if len(bfs) > 1 {
+//
+//	}
+//	return validCount > 0 && validCount == len(bfs)
+//}
+
+// ErrorContainsAny checks if err contains at least one provided behaviour
+// functions. Does not traverse recursive into the error.
+func ErrorContainsAny(err error, bfs ...BehaviourFunc) bool {
+	for _, f := range bfs {
+		if f(err) {
+			return true
+		}
+	}
+	return false
+}
