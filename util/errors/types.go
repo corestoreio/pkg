@@ -22,6 +22,15 @@ type Error string
 // Error implements the error interface
 func (e Error) Error() string { return string(e) }
 
+// WriteFailed represents an error with the behaviour that an entity has no value.
+type WriteFailed string
+
+// Error implements the error interface
+func (e WriteFailed) Error() string { return string(e) }
+
+// WriteFailed satisfies the function IsWriteFailed()
+func (e WriteFailed) WriteFailed() bool { return true }
+
 // Empty represents an error with the behaviour that an entity has no value.
 type Empty string
 

@@ -114,19 +114,19 @@ func TestError(t *testing.T) {
 func TestMultiErrContains(t *testing.T) {
 	tests := []struct {
 		me   error
-		vf   []func(error) bool
+		vf   []errors.BehaviourFunc
 		want bool
 	}{
-		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []func(error) bool{errors.IsNotValid}, true},
-		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []func(error) bool{errors.IsNotFound}, false},
-		{errors.NewMultiErr(), []func(error) bool{errors.IsNotFound}, false},
-		{errors.New("random"), []func(error) bool{errors.IsNotFound}, false},
-		{nil, []func(error) bool{errors.IsNotFound}, false},
-		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound}, true}, // 5
-		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound, errors.IsTemporary}, false},
-		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound, errors.IsNotValid}, true},
-		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsNotFound, errors.IsNotValid, errors.IsAlreadyExists}, true},
-		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []func(error) bool{errors.IsAlreadyClosed, errors.IsNotValid, errors.IsAlreadyExists}, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []errors.BehaviourFunc{errors.IsNotValid}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1")), []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{errors.NewMultiErr(), []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{errors.New("random"), []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{nil, []errors.BehaviourFunc{errors.IsNotFound}, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound}, true}, // 5
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound, errors.IsTemporary}, false},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound, errors.IsNotValid}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsNotFound, errors.IsNotValid, errors.IsAlreadyExists}, true},
+		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), []errors.BehaviourFunc{errors.IsAlreadyClosed, errors.IsNotValid, errors.IsAlreadyExists}, false},
 		{errors.NewMultiErr(nil, errors.NewNotValidf("r1"), errors.NewNotFoundf("r2")), nil, false},
 		{errors.NewMultiErr(nil), nil, false},
 		{nil, nil, false},

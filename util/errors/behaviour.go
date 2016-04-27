@@ -19,6 +19,10 @@ import (
 	"runtime"
 )
 
+// BehaviourFunc defines the signature needed for a function to check
+// if an error has a specific behaviour attached.
+type BehaviourFunc func(error) bool
+
 type eb struct {
 	err     error
 	message string
@@ -109,6 +113,41 @@ func IsEmpty(err error) bool {
 		ok = true
 	case iFace:
 		ok = et.Empty()
+	}
+	return ok
+}
+
+type writeFailed struct{ eb }
+
+const writeFailedTxt WriteFailed = "WriteFailed value"
+
+// NewWriteFailed returns an error which wraps err that satisfies
+// IsWriteFailed().
+func NewWriteFailed(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &writeFailed{wrapf(err, msg)}
+}
+
+// NewWriteFailedf returns an formatted error that satisfies IsWriteFailed().
+func NewWriteFailedf(format string, args ...interface{}) error {
+	return &writeFailed{wrapf(writeFailedTxt, format, args...)}
+}
+
+// IsWriteFailed reports whether err was created with NewWriteFailed() or
+// has a method receiver "WriteFailed() bool".
+func IsWriteFailed(err error) bool {
+	type iFace interface {
+		WriteFailed() bool
+	}
+	err = Cause(err)
+	var ok bool
+	switch et := err.(type) {
+	case *writeFailed:
+		ok = true
+	case iFace:
+		ok = et.WriteFailed()
 	}
 	return ok
 }

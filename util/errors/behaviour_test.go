@@ -41,6 +41,9 @@ func (nf testBehave) NotImplemented() bool {
 func (nf testBehave) Empty() bool {
 	return nf.ret
 }
+func (nf testBehave) WriteFailed() bool {
+	return nf.ret
+}
 func (nf testBehave) NotFound() bool {
 	return nf.ret
 }
@@ -75,7 +78,7 @@ func (nf testBehave) Error() string {
 func TestBehaviour(t *testing.T) {
 	tests := []struct {
 		err  error
-		is   func(error) bool
+		is   BehaviourFunc
 		want bool
 	}{
 		{
@@ -97,6 +100,28 @@ func TestBehaviour(t *testing.T) {
 		}, {
 			err:  testBehave{},
 			is:   IsEmpty,
+			want: false,
+		},
+
+		{
+			err:  errors.New("Error1"),
+			is:   IsWriteFailed,
+			want: false,
+		}, {
+			err:  NewWriteFailed(nil, "Error2"),
+			is:   IsWriteFailed,
+			want: false,
+		}, {
+			err:  NewWriteFailed(Error("Error2a"), "Error2"),
+			is:   IsWriteFailed,
+			want: true,
+		}, {
+			err:  nil,
+			is:   IsWriteFailed,
+			want: false,
+		}, {
+			err:  testBehave{},
+			is:   IsWriteFailed,
 			want: false,
 		},
 
@@ -417,7 +442,7 @@ func TestBehaviourF(t *testing.T) {
 	tests := []struct {
 		constErr error
 		errf     func(format string, args ...interface{}) error
-		is       func(error) bool
+		is       BehaviourFunc
 		want     bool
 	}{
 		{notImplementedTxt, NewNotImplementedf, IsNotImplemented, true},

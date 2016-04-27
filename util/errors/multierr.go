@@ -87,28 +87,29 @@ func (m *MultiErr) Error() string {
 // at least one of the many Is*() e.g. IsNotValid().
 // More than one validate function will be treated as AND hence
 // all validate functions must return true.
-func MultiErrContains(err error, vf ...func(error) bool) bool {
+// BehaviourFunc located in this package starts with Is...(error) bool
+func MultiErrContains(err error, bfs ...BehaviourFunc) bool {
 	me, ok := err.(*MultiErr)
 	if !ok {
 		return false
 	}
 
-	if len(vf) == 0 || len(me.errs) == 0 {
+	if len(bfs) == 0 || len(me.errs) == 0 {
 		return false
 	}
 
-	var ec, valids int
+	var errCount, validCount int
 	for _, e := range me.errs {
 		if e != nil {
-			ec++
+			errCount++
 		}
-		for _, f := range vf {
+		for _, f := range bfs {
 			if f(e) {
-				valids++
+				validCount++
 			}
 		}
 	}
-	return valids == ec || valids == len(vf)
+	return validCount == errCount || validCount == len(bfs)
 }
 
 // Fprint prints the error to the supplied writer.
