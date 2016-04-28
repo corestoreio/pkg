@@ -15,5 +15,8 @@
 // Package conv - easy and safe casting from one type to another.
 //
 // CoreStore specific types have been additionally implemented for example
-// in funtion ToStringE()
+// in function ToStringE().
+//
+// Functions ending with ...E() return an error which has always the bahaviour
+// of not being valid.
 package conv

@@ -6,23 +6,21 @@
 package conv
 
 import (
+	"fmt"
 	"html/template"
+	"math"
 	"testing"
 	"time"
-
-	"errors"
-
-	"fmt"
-	"math"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestToInt(t *testing.T) {
-	t.Parallel()
+
 	var eight interface{} = 8
 	i_8 := int(8)
 	assert.Exactly(t, i_8, ToInt(8))
@@ -34,7 +32,7 @@ func TestToInt(t *testing.T) {
 }
 
 func TestToInt64(t *testing.T) {
-	t.Parallel()
+
 	var eight interface{} = 8
 	var i64_8 = int64(8)
 	assert.Exactly(t, i64_8, ToInt64(8))
@@ -46,39 +44,39 @@ func TestToInt64(t *testing.T) {
 }
 
 func TestToFloat64(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have    interface{}
 		want    float64
-		wantErr error
+		wantErr bool
 	}{
-		{8, 8, nil},
-		{math.E, math.E, nil},
-		{float32(4.56789), 4.567890167236328, nil},
+		{8, 8, false},
+		{math.E, math.E, false},
+		{float32(4.56789), 4.567890167236328, false},
 
-		{int64(56789), 56789, nil},
-		{int32(56789), 56789, nil},
-		{int16(math.MaxInt16), float64(math.MaxInt16), nil},
-		{int8(math.MaxInt8), float64(math.MaxInt8), nil},
-		{int(254), 254, nil},
+		{int64(56789), 56789, false},
+		{int32(56789), 56789, false},
+		{int16(math.MaxInt16), float64(math.MaxInt16), false},
+		{int8(math.MaxInt8), float64(math.MaxInt8), false},
+		{int(254), 254, false},
 
-		{uint64(56789), 56789, nil},
-		{uint32(56789), 56789, nil},
-		{uint16(math.MaxUint16), float64(math.MaxUint16), nil},
-		{uint8(math.MaxUint8), float64(math.MaxUint8), nil},
-		{uint(254), 254, nil},
+		{uint64(56789), 56789, false},
+		{uint32(56789), 56789, false},
+		{uint16(math.MaxUint16), float64(math.MaxUint16), false},
+		{uint8(math.MaxUint8), float64(math.MaxUint8), false},
+		{uint(254), 254, false},
 
-		{fmt.Sprintf("%.10f", math.Phi), 1.6180339887, nil},
-		{`hello`, 0, errors.New("Unable to cast \"hello\" to float")},
+		{fmt.Sprintf("%.10f", math.Phi), 1.6180339887, false},
+		{`hello`, 0, true},
 
-		{[]byte(fmt.Sprintf("%.10f", math.Phi)), 1.6180339887, nil},
-		{[]byte(`hello`), 0, errors.New("Unable to cast []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f} to float")},
-		{nil, 0, errors.New("Unable to cast <nil> to float")},
+		{[]byte(fmt.Sprintf("%.10f", math.Phi)), 1.6180339887, false},
+		{[]byte(`hello`), 0, true},
+		{nil, 0, true},
 	}
 	for i, test := range tests {
 		gotF64, gotErr := ToFloat64E(test.have)
-		if test.wantErr != nil {
-			assert.EqualError(t, gotErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErr {
+			assert.True(t, errors.IsNotValid(gotErr), "Index %d => %s", i, gotErr)
 			assert.Exactly(t, float64(0), gotF64, "Index %d", i)
 			continue
 		}
@@ -88,7 +86,7 @@ func TestToFloat64(t *testing.T) {
 }
 
 func TestToString(t *testing.T) {
-	t.Parallel()
+
 	var foo interface{} = "one more time"
 	assert.Equal(t, ToString(8), "8")
 	assert.Equal(t, ToString(8.12), "8.12")
@@ -105,7 +103,7 @@ func TestToString(t *testing.T) {
 }
 
 func TestToByte(t *testing.T) {
-	t.Parallel()
+
 	var foo interface{} = []byte("one more time")
 	assert.Equal(t, ToByte(8), []byte("8"))
 	assert.Equal(t, ToByte(int64(8888)), []byte("8888"))
@@ -123,7 +121,7 @@ func TestToByte(t *testing.T) {
 
 	b, err := ToByteE(uint8(1))
 	assert.Nil(t, b)
-	assert.EqualError(t, err, "Unable to cast 0x1 to []byte")
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
 type foo struct {
@@ -135,7 +133,6 @@ func (x foo) String() string {
 }
 
 func TestStringerToString(t *testing.T) {
-	t.Parallel()
 
 	var x foo
 	x.val = "bar"
@@ -151,14 +148,14 @@ func (x fu) Error() string {
 }
 
 func TestErrorToString(t *testing.T) {
-	t.Parallel()
+
 	var x fu
 	x.val = "bar"
 	assert.Equal(t, "bar", ToString(x))
 }
 
 func TestMaps(t *testing.T) {
-	t.Parallel()
+
 	var taxonomies = map[interface{}]interface{}{"tag": "tags", "group": "groups"}
 	var stringMapBool = map[interface{}]interface{}{"v1": true, "v2": false}
 
@@ -201,7 +198,7 @@ func TestMaps(t *testing.T) {
 }
 
 func TestSlices(t *testing.T) {
-	t.Parallel()
+
 	assert.Equal(t, []string{"a", "b"}, ToStringSlice([]string{"a", "b"}))
 	assert.Equal(t, []string{"1", "3"}, ToStringSlice([]interface{}{1, 3}))
 	assert.Equal(t, []int{1, 3}, ToIntSlice([]int{1, 3}))
@@ -211,7 +208,7 @@ func TestSlices(t *testing.T) {
 }
 
 func TestToBool(t *testing.T) {
-	t.Parallel()
+
 	assert.Equal(t, ToBool(0), false)
 	assert.Equal(t, ToBool(int64(0)), false)
 	assert.Equal(t, ToBool(nil), false)
@@ -236,7 +233,7 @@ func TestToBool(t *testing.T) {
 }
 
 func TestIndirectPointers(t *testing.T) {
-	t.Parallel()
+
 	x := 13
 	y := &x
 	z := &y
@@ -246,7 +243,7 @@ func TestIndirectPointers(t *testing.T) {
 }
 
 func TestToDuration(t *testing.T) {
-	t.Parallel()
+
 	a := time.Second * 5
 	ai := int64(a)
 	b := time.Second * 5
@@ -275,7 +272,7 @@ func getMockTime(format string) time.Time {
 }
 
 func TestStringToDate(t *testing.T) {
-	t.Parallel()
+
 	for i, f := range TimeFormats {
 		now := getMockTime(f)
 		nowS := now.Format(f)
@@ -289,7 +286,7 @@ func TestStringToDate(t *testing.T) {
 }
 
 func TestToTimeE(t *testing.T) {
-	t.Parallel()
+
 	now := time.Now()
 
 	fUnix := float64(now.Unix()) + (float64(now.Nanosecond()) / 1e9)
@@ -297,17 +294,17 @@ func TestToTimeE(t *testing.T) {
 	tests := []struct {
 		arg      interface{}
 		wantUnix int64
-		wantErr  error
+		wantErr  bool
 	}{
-		{now, now.Unix(), nil},
-		{'r', 0, errors.New("Unable to cast 114 to Time\n")},
-		{now.Unix(), now.Unix(), nil},
-		{fUnix, now.Unix(), nil},
+		{now, now.Unix(), false},
+		{'r', 0, true},
+		{now.Unix(), now.Unix(), false},
+		{fUnix, now.Unix(), false},
 	}
 	for i, test := range tests {
 		haveT, haveErr := ToTimeE(test.arg)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErr {
+			assert.True(t, errors.IsNotValid(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		if haveErr != nil {
@@ -318,7 +315,7 @@ func TestToTimeE(t *testing.T) {
 }
 
 func TestToTimeSpecific(t *testing.T) {
-	t.Parallel()
+
 	const have = "2012-08-23 09:20:13"
 	tm, err := ToTimeE(have)
 	if err != nil {

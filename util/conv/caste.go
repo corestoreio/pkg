@@ -16,7 +16,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // ToTimeE casts an empty interface to time.Time.
@@ -33,14 +33,14 @@ func ToTimeE(i interface{}) (time.Time, error) {
 		if e == nil {
 			return d, nil
 		}
-		return time.Time{}, errors.Errorf("Could not parse Date/Time format: %v\n", e)
+		return time.Time{}, errors.NewNotValidf("[conv] Could not parse Date/Time format: %v\n", e)
 	case int64:
 		return time.Unix(s, 0), nil
 	case float64:
 		fi, frac := math.Modf(s)
 		return time.Unix(int64(fi), int64(frac)), nil
 	default:
-		return time.Time{}, errors.Errorf("Unable to cast %#v to Time\n", i)
+		return time.Time{}, errors.NewNotValidf("[conv] Unable to cast %#v to Time\n", i)
 	}
 }
 
@@ -61,7 +61,7 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 		d, err = time.ParseDuration(s)
 		return
 	default:
-		err = errors.Errorf("Unable to cast %#v to Duration\n", i)
+		err = errors.NewNotValidf("[conv] Unable to cast %#v to Duration\n", i)
 		return
 	}
 }
@@ -88,7 +88,7 @@ func ToBoolE(i interface{}) (bool, error) {
 	case string:
 		return strconv.ParseBool(i.(string))
 	default:
-		return false, errors.Errorf("Unable to cast %#v to bool", i)
+		return false, errors.NewNotValidf("[conv] Unable to cast %#v to bool", i)
 	}
 }
 
@@ -126,7 +126,7 @@ func ToFloat64E(i interface{}) (float64, error) {
 		if err == nil {
 			return float64(v), nil
 		}
-		return 0.0, errors.Errorf("Unable to cast %#v to float", i)
+		return 0.0, errors.NewNotValidf("[conv] Unable to cast %#v to float. %s", i, err)
 	case []byte:
 		// real byte encoded floats will fail here
 		// @see https://github.com/golang/go/issues/2632
@@ -134,9 +134,9 @@ func ToFloat64E(i interface{}) (float64, error) {
 		if err == nil {
 			return float64(v), nil
 		}
-		return 0.0, errors.Errorf("Unable to cast %#v to float", i)
+		return 0.0, errors.NewNotValidf("[conv] Unable to cast %#v to float. %s", i, err)
 	default:
-		return 0.0, errors.Errorf("Unable to cast %#v to float", i)
+		return 0.0, errors.NewNotValidf("[conv] Unable to cast %#v to float", i)
 	}
 }
 
@@ -160,7 +160,7 @@ func ToIntE(i interface{}) (int, error) {
 		if err == nil {
 			return int(v), nil
 		}
-		return 0, errors.Errorf("Unable to cast %#v to int", i)
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to int. %s", i, err)
 
 	case float64:
 		return int(s), nil
@@ -172,7 +172,7 @@ func ToIntE(i interface{}) (int, error) {
 	case nil:
 		return 0, nil
 	default:
-		return 0, errors.Errorf("Unable to cast %#v to int", i)
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to int", i)
 	}
 }
 
@@ -196,7 +196,7 @@ func ToInt64E(i interface{}) (int64, error) {
 		if err == nil {
 			return v, nil
 		}
-		return 0, errors.Errorf("Unable to cast %#v to int64", i)
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to int64. %s", i, err)
 	case float64:
 		return int64(s), nil
 	case float32:
@@ -209,7 +209,7 @@ func ToInt64E(i interface{}) (int64, error) {
 	case nil:
 		return 0, nil
 	default:
-		return 0, errors.Errorf("Unable to cast %#v to int64", i)
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to int64", i)
 	}
 }
 
@@ -285,7 +285,7 @@ func ToStringE(i interface{}) (string, error) {
 	case error:
 		return s.Error(), nil
 	default:
-		return "", errors.Errorf("Unable to cast %#v to string", i)
+		return "", errors.NewNotValidf("[conv] Unable to cast %#v to string", i)
 	}
 }
 
@@ -324,7 +324,7 @@ func ToByteE(i interface{}) ([]byte, error) {
 	case nil:
 		return nil, nil
 	default:
-		return nil, errors.Errorf("Unable to cast %#v to []byte", i)
+		return nil, errors.NewNotValidf("[conv] Unable to cast %#v to []byte", i)
 	}
 }
 
@@ -352,7 +352,7 @@ func ToStringMapStringE(i interface{}) (map[string]string, error) {
 		}
 		return m, nil
 	default:
-		return m, errors.Errorf("Unable to cast %#v to map[string]string", i)
+		return m, errors.NewNotValidf("[conv] Unable to cast %#v to map[string]string", i)
 	}
 }
 
@@ -397,16 +397,16 @@ func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
 		for k, val := range v {
 			key, err := ToStringE(k)
 			if err != nil {
-				return m, errors.Errorf("Unable to cast %#v to map[string][]string", i)
+				return m, errors.NewNotValidf("[conv] Unable to cast %#v to map[string][]string. %s", i, err)
 			}
 			value, err := ToStringSliceE(val)
 			if err != nil {
-				return m, errors.Errorf("Unable to cast %#v to map[string][]string", i)
+				return m, errors.NewNotValidf("[conv] Unable to cast %#v to map[string][]string. %s", i, err)
 			}
 			m[key] = value
 		}
 	default:
-		return m, errors.Errorf("Unable to cast %#v to map[string][]string", i)
+		return m, errors.NewNotValidf("[conv] Unable to cast %#v to map[string][]string", i)
 	}
 	return m, nil
 }
@@ -430,7 +430,7 @@ func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
 	case map[string]bool:
 		return v, nil
 	default:
-		return m, errors.Errorf("Unable to cast %#v to map[string]bool", i)
+		return m, errors.NewNotValidf("[conv] Unable to cast %#v to map[string]bool", i)
 	}
 }
 
@@ -448,7 +448,7 @@ func ToStringMapE(i interface{}) (map[string]interface{}, error) {
 	case map[string]interface{}:
 		return v, nil
 	default:
-		return m, errors.Errorf("Unable to cast %#v to map[string]interface{}", i)
+		return m, errors.NewNotValidf("[conv] Unable to cast %#v to map[string]interface{}", i)
 	}
 }
 
@@ -469,7 +469,7 @@ func ToSliceE(i interface{}) ([]interface{}, error) {
 		}
 		return s, nil
 	default:
-		return s, errors.Errorf("Unable to cast %#v of type %v to []interface{}", i, reflect.TypeOf(i))
+		return s, errors.NewNotValidf("[conv] Unable to cast %#v of type %v to []interface{}", i, reflect.TypeOf(i))
 	}
 }
 
@@ -491,11 +491,11 @@ func ToStringSliceE(i interface{}) ([]string, error) {
 	case interface{}:
 		str, err := ToStringE(v)
 		if err != nil {
-			return a, errors.Errorf("Unable to cast %#v to []string", i)
+			return a, errors.NewNotValidf("[conv] Unable to cast %#v to []string. %s", i, err)
 		}
 		return []string{str}, nil
 	default:
-		return a, errors.Errorf("Unable to cast %#v to []string", i)
+		return a, errors.NewNotValidf("[conv] Unable to cast %#v to []string", i)
 	}
 }
 
@@ -503,7 +503,7 @@ func ToStringSliceE(i interface{}) ([]string, error) {
 func ToIntSliceE(i interface{}) ([]int, error) {
 
 	if i == nil {
-		return []int{}, errors.Errorf("Unable to cast %#v to []int", i)
+		return []int{}, errors.NewNotValidf("[conv] Unable to cast %#v to []int", i)
 	}
 
 	switch v := i.(type) {
@@ -519,13 +519,13 @@ func ToIntSliceE(i interface{}) ([]int, error) {
 		for j := 0; j < s.Len(); j++ {
 			val, err := ToIntE(s.Index(j).Interface())
 			if err != nil {
-				return []int{}, errors.Errorf("Unable to cast %#v to []int", i)
+				return []int{}, errors.NewNotValidf("[conv] Unable to cast %#v to []int. %s", i, err)
 			}
 			a[j] = val
 		}
 		return a, nil
 	default:
-		return []int{}, errors.Errorf("Unable to cast %#v to []int", i)
+		return []int{}, errors.NewNotValidf("[conv] Unable to cast %#v to []int", i)
 	}
 }
 
@@ -564,5 +564,5 @@ func parseDateWith(s string, dates []string, loc *time.Location) (d time.Time, e
 			return
 		}
 	}
-	return d, errors.Errorf("Unable to parse date: %s", s)
+	return d, errors.NewNotValidf("[conv] Unable to parse date: %s", s)
 }
