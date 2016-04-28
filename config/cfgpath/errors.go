@@ -18,10 +18,10 @@ import "github.com/corestoreio/csfw/util/errors"
 
 // private errors. Use the behaviour checks in package util/errors.
 
-const errIncorrectPathTpl = "[config/cfgpath] Invalid Path %q. Either to short or missing path separator."
+const errIncorrectPathTpl = "[cfgpath] Invalid Path %q. Either to short or missing path separator."
 
-const errIncorrectPositionTpl = "[config/cfgpath] Position '%d' does not exists"
+const errIncorrectPositionTpl = "[cfgpath] Position '%d' does not exists"
 
-const errRouteInvalidBytesTpl = "[config/cfgpath] Route contains invalid bytes %q which are not runes."
+const errRouteInvalidBytesTpl = "[cfgpath] Route contains invalid bytes %q which are not runes."
 
-var errRouteEmpty = errors.NewEmptyf("[config/cfgpath] Route is empty")
+var errRouteEmpty = errors.NewEmptyf("[cfgpath] Route is empty")

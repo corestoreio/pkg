@@ -66,7 +66,7 @@ func New(rs ...Route) (Path, error) {
 		p.Route.Sum32 = p.Route.Hash32()
 	}
 	if err := p.IsValid(); err != nil {
-		return Path{}, err
+		return Path{}, errors.Wrapf(err, "[cfgpath] Route %q", p.Route)
 	}
 	return p, nil
 }
