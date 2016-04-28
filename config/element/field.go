@@ -20,11 +20,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrFieldNotFound error when a field cannot be found.
-var ErrFieldNotFound = errors.New("Field not found")
 
 // FieldSlice contains a set of Fields. Has several method receivers attached.
 //  Thread safe for reading but not for modifying.
@@ -63,25 +60,6 @@ type Field struct {
 	Default interface{} `json:",omitempty"`
 }
 
-// FieldError shows detailed information about an error when calling FQPathDefault()
-type FieldError struct {
-	Err       error           // Main error
-	Field                     // Affected field
-	PreRoutes []cfgpath.Route // prepended routes
-}
-
-// Error implements the error interface
-func (fe FieldError) Error() string {
-	return fe.Err.Error()
-}
-
-// RenderRoutes merges the PreRoute fields into a string
-func (fe FieldError) RenderRoutes() string {
-	var r cfgpath.Route
-	_ = r.Append(fe.PreRoutes...)
-	return r.String()
-}
-
 // NewFieldSlice wrapper to create a new FieldSlice
 func NewFieldSlice(fs ...Field) FieldSlice {
 	return FieldSlice(fs)
@@ -91,13 +69,14 @@ func NewFieldSlice(fs ...Field) FieldSlice {
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "c". For comparison the field Sum32 of a route will be used.
 // 2nd argument int contains the slice index of the field.
+// Error behaviour: NotFound
 func (fs FieldSlice) Find(id cfgpath.Route) (Field, int, error) {
 	for i, f := range fs {
 		if f.ID.Sum32 > 0 && f.ID.Sum32 == id.Sum32 {
 			return f, i, nil
 		}
 	}
-	return Field{}, 0, ErrFieldNotFound
+	return Field{}, 0, errors.NewNotFoundf("[element] Field %s", id)
 }
 
 // Append adds *Field (variadic) to the FieldSlice. Not thread safe.
@@ -111,7 +90,7 @@ func (fs *FieldSlice) Append(f ...Field) *FieldSlice {
 func (fs *FieldSlice) Merge(fields ...Field) error {
 	for _, f := range fields {
 		if err := (*fs).merge(f); err != nil {
-			return errors.Mask(err)
+			return errors.Wrap(err, "[element] FieldSlice.Merge")
 		}
 	}
 	return nil
@@ -184,7 +163,7 @@ func (f Field) Update(new Field) Field {
 
 // Route returns the merged route of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
-// Returns on error *FieldError. Owner of the cfgpath.Route is *Field.
+// Owner of the returned cfgpath.Route is *Field.
 func (f Field) Route(preRoutes ...cfgpath.Route) (cfgpath.Route, error) {
 	var p cfgpath.Path
 	var err error
@@ -194,23 +173,21 @@ func (f Field) Route(preRoutes ...cfgpath.Route) (cfgpath.Route, error) {
 		p, err = cfgpath.New(append(preRoutes, f.ID)...)
 	}
 	if err != nil {
-		return cfgpath.Route{}, &FieldError{Err: errors.Mask(err), Field: f, PreRoutes: preRoutes}
+		return cfgpath.Route{}, errors.Wrapf(err, "[element] Field.Route: %v", preRoutes)
 	}
 	return p.Route, nil
 }
 
 // RouteHash returns the 64-bit FNV-1a hash of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
-// Returns on error *FieldError
 func (f Field) RouteHash(preRoutes ...cfgpath.Route) (uint64, error) {
 	var r cfgpath.Route
 
 	if nil != f.ConfigPath && false == f.ConfigPath.SelfRoute().IsEmpty() {
 		r = f.ConfigPath.SelfRoute()
-	} else {
-		if err := r.Append(append(preRoutes, f.ID)...); err != nil {
-			return 0, &FieldError{Err: errors.Mask(err), Field: f, PreRoutes: preRoutes}
-		}
+	} else if err := r.Append(append(preRoutes, f.ID)...); err != nil {
+		return 0, errors.Wrapf(err, "[element] Field.RouteHash %v", preRoutes)
 	}
+
 	return r.Chars.Hash(), nil
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/storage/text"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +28,7 @@ var _ element.Sectioner = (*element.SectionSlice)(nil)
 
 func TestSectionValidateDuplicate(t *testing.T) {
 	// for benchmark tests see package config_bm
-	t.Parallel()
+
 	ss := element.NewSectionSlice(
 		element.Section{
 			ID: cfgpath.NewRoute(`aa`),
@@ -42,13 +43,11 @@ func TestSectionValidateDuplicate(t *testing.T) {
 			),
 		},
 	)
-
-	err := ss.Validate()
-	assert.EqualError(t, err, "Duplicate entry for path aa/bb/cc :: [{\"ID\":\"aa\",\"Groups\":[{\"ID\":\"bb\",\"Fields\":[{\"ID\":\"cc\"},{\"ID\":\"cc\"}]}]}]\n")
+	assert.True(t, errors.IsNotValid(ss.Validate())) // "Duplicate entry for path aa/bb/cc :: [{\"ID\":\"aa\",\"Groups\":[{\"ID\":\"bb\",\"Fields\":[{\"ID\":\"cc\"},{\"ID\":\"cc\"}]}]}]\n"
 }
 
 func TestSectionValidateShortPath(t *testing.T) {
-	t.Parallel()
+
 	ss := element.NewSectionSlice(
 		element.Section{
 			//ID: cfgpath.NewRoute(`aa`),
@@ -66,18 +65,11 @@ func TestSectionValidateShortPath(t *testing.T) {
 	)
 
 	err := ss.Validate()
-	assert.EqualError(t, err, cfgpath.ErrRouteEmpty.Error())
-
-	if e2, ok := err.(*element.FieldError); ok {
-		assert.Exactly(t, "", e2.Field.ID.String())
-		assert.Exactly(t, "", e2.RenderRoutes())
-	} else {
-		t.Fatal("Cannot type assert to *element.FieldError in err variable")
-	}
+	assert.True(t, errors.IsEmpty(err), "Error %s", err)
 }
 
 func TestSectionUpdateField(t *testing.T) {
-	t.Parallel()
+
 	ss := element.NewSectionSlice(
 		element.Section{
 			ID: cfgpath.NewRoute(`aa`),
@@ -107,14 +99,15 @@ func TestSectionUpdateField(t *testing.T) {
 	assert.Exactly(t, `ca New Label`, f.Label.String())
 
 	err1 := ss.UpdateField(cfgpath.NewRoute(`a/b/c`), element.Field{})
-	assert.EqualError(t, err1, element.ErrSectionNotFound.Error())
+	assert.True(t, errors.IsNotFound(err1), "Error: %s", err1)
 
 	err2 := ss.UpdateField(cfgpath.NewRoute(`aa/b/c`), element.Field{})
-	assert.EqualError(t, err2, element.ErrGroupNotFound.Error())
+	assert.True(t, errors.IsNotFound(err2), "Error: %s", err2)
 
 	err3 := ss.UpdateField(cfgpath.NewRoute(`aa/bb/c`), element.Field{})
-	assert.EqualError(t, err3, element.ErrFieldNotFound.Error())
+	assert.True(t, errors.IsNotFound(err3), "Error: %s", err3)
 
 	err4 := ss.UpdateField(cfgpath.NewRoute(`aa_bb_c`), element.Field{})
-	assert.EqualError(t, err4, cfgpath.ErrIncorrectPath.Error())
+	assert.True(t, errors.IsNotValid(err4), "Error: %s", err4)
+
 }

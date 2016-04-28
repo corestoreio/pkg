@@ -15,18 +15,15 @@
 package element
 
 import (
-	"bytes"
 	"encoding/json"
 	"sort"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrSectionNotFound error when a section cannot be found.
-var ErrSectionNotFound = errors.New("Section not found")
 
 // SectionSlice contains a set of Sections. Some nifty helper functions
 // exists. Thread safe for reading. A section slice can be used in many
@@ -58,10 +55,7 @@ func NewSectionSlice(s ...Section) SectionSlice {
 func NewConfiguration(sections ...Section) (SectionSlice, error) {
 	ss := NewSectionSlice(sections...)
 	if err := ss.Validate(); err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.NewConfiguration.Validate", "err", err)
-		}
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[element] NewSectionSlice.Validate")
 	}
 	return ss, nil
 }
@@ -81,16 +75,10 @@ func MustNewConfiguration(sections ...Section) SectionSlice {
 func NewConfigurationMerge(sections ...Section) (SectionSlice, error) {
 	var ss SectionSlice
 	if err := ss.Merge(sections...); err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.NewConfigurationMerge.Merge", "err", err, "sections", sections)
-		}
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[element] SectionSlice.Merge")
 	}
 	if err := ss.Validate(); err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.NewConfigurationMerge.Validate", "err", err)
-		}
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[element] SectionSlice.Validate")
 	}
 	return ss, nil
 }
@@ -113,7 +101,7 @@ func (ss SectionSlice) Defaults() (DefaultMap, error) {
 			for _, f := range g.Fields {
 				r, err := f.Route(s.ID, g.ID)
 				if err != nil {
-					return nil, err
+					return nil, errors.Wrapf(err, "[element] SectionSlice.Defaults.Field.Route. Section %q Group %q", s.ID, g.ID)
 				}
 				dm[r.String()] = f.Default
 			}
@@ -140,7 +128,7 @@ func (ss SectionSlice) TotalFields() int {
 func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 	for _, sl := range sSlices {
 		if err := ss.Merge(sl...); err != nil {
-			return err
+			return errors.Wrap(err, "[element] SectionSlice.MergeMultiple")
 		}
 	}
 	return nil
@@ -151,7 +139,7 @@ func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 func (ss *SectionSlice) Merge(sections ...Section) error {
 	for _, s := range sections {
 		if err := ss.merge(s); err != nil {
-			return errors.Mask(err)
+			return errors.Wrap(err, "[element] SectionSlice.merge")
 		}
 	}
 	return nil
@@ -180,7 +168,7 @@ func (ss *SectionSlice) merge(s Section) error {
 		cs.Resource = s.Resource
 	}
 	if err := cs.Groups.Merge(s.Groups...); err != nil {
-		return errors.Mask(err)
+		return errors.Wrap(err, "[element] SectionSlice.merge.Groups.Merge")
 	}
 
 	(*ss)[idx] = cs
@@ -192,70 +180,73 @@ func (ss *SectionSlice) merge(s Section) error {
 // this case "a". For comparison the field Sum32 of a route will be used.
 // 2nd return parameter contains the position of the Section within the
 // SectionSlice.
+// Error behaviour: NotFound
 func (ss SectionSlice) Find(id cfgpath.Route) (Section, int, error) {
 	for i, s := range ss {
 		if s.ID.Sum32 > 0 && s.ID.Sum32 == id.Sum32 {
 			return s, i, nil
 		}
 	}
-	return Section{}, 0, ErrSectionNotFound
+	return Section{}, 0, errors.NewNotFoundf("[element] Section %q", id)
 }
 
 // FindGroup searches for a group using the first two path segments.
 // Route must have the format a/b/c.
 // 2nd return parameter contains the position of the Group within the
 // GgroupSlice of a Section.
+// Error behaviour: NotFound
 func (ss SectionSlice) FindGroup(r cfgpath.Route) (Group, int, error) {
 
 	spl, err := r.Split()
 	if err != nil {
-		// debug log?
-		return Group{}, 0, ErrGroupNotFound
+		return Group{}, 0, errors.NewNotFoundf("[element] Route %q", r)
 	}
 	cs, _, err := ss.Find(spl[0])
 	if err != nil {
-		return Group{}, 0, errors.Mask(err)
+		return Group{}, 0, errors.Wrap(err, "[element] SectionSlice.FindGroup")
 	}
-	return cs.Groups.Find(spl[1])
+	return cs.Groups.Find(spl[1]) // annotation missing !?
 }
 
 // FindField searches for a field using all three path segments.
 // Route must have the format a/b/c.
+// Error behaviour: NotFound, NotValid
 func (ss SectionSlice) FindField(r cfgpath.Route) (Field, int, error) {
 	spl, err := r.Split()
 	if err != nil {
-		return Field{}, 0, errors.Mask(err)
+		return Field{}, 0, errors.Wrapf(err, "[element] Route %q", r)
 	}
 	sec, _, err := ss.Find(spl[0])
 	if err != nil {
-		return Field{}, 0, errors.Mask(err)
+		return Field{}, 0, errors.Wrapf(err, "[element] Route %q", r)
 	}
 	cg, _, err := sec.Groups.Find(spl[1])
 	if err != nil {
-		return Field{}, 0, errors.Mask(err)
+		return Field{}, 0, errors.Wrapf(err, "[element] Route %q", r)
 	}
-	return cg.Fields.Find(spl[2])
+	return cg.Fields.Find(spl[2]) // annotation missing !?
 }
 
 // UpdateField searches for a field using all three path segments and updates
 // the found field with the new field data.
 // Not thread safe!
+// Error behaviour: NotFound, NotValid
 func (ss SectionSlice) UpdateField(r cfgpath.Route, new Field) error {
 	spl, err := r.Split()
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrapf(err, "[element] Route %q", r)
 	}
 	sec, sIDX, err := ss.Find(spl[0])
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrapf(err, "[element] Route %q", r)
 	}
 	cg, gIDX, err := sec.Groups.Find(spl[1])
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrapf(err, "[element] Route %q", r)
 	}
 	cf, fIDX, err := cg.Fields.Find(spl[2])
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrapf(err, "[element] Route %q", r)
 	}
 
 	ss[sIDX].Groups[gIDX].Fields[fIDX] = cf.Update(new)
@@ -271,18 +262,19 @@ func (ss *SectionSlice) Append(s ...Section) *SectionSlice {
 
 // AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
 // more path parts gets ignored. Not thread safe.
+// Error behaviour: NotFound, NotValid
 func (ss *SectionSlice) AppendFields(r cfgpath.Route, fs ...Field) error {
 	spl, err := r.Split()
 	if err != nil {
-		return ErrGroupNotFound
+		return errors.NewNotFoundf("[element] Route %q", r)
 	}
 	cs, sIDX, err := ss.Find(spl[0])
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrapf(err, "[element] Route %q", r)
 	}
 	cg, gIDX, err := cs.Groups.Find(spl[1])
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrapf(err, "[element] Route %q", r)
 	}
 	cg.Fields.Append(fs...)
 	(*ss)[sIDX].Groups[gIDX] = cg
@@ -291,19 +283,19 @@ func (ss *SectionSlice) AppendFields(r cfgpath.Route, fs ...Field) error {
 
 // ToJSON transforms the whole slice into JSON
 func (ss SectionSlice) ToJSON() string {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(ss); err != nil {
-		PkgLog.Debug("config.SectionSlice.ToJSON.Encode", "err", err)
-		return err.Error()
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if err := json.NewEncoder(buf).Encode(ss); err != nil {
+		return "[element] Error: " + err.Error()
 	}
 	return buf.String()
 }
 
 // Validate checks for duplicated configuration paths in all three hierarchy levels.
-// On error returns *FieldError or duplicate entry error or slice empty error.
+// Error behaviour: NotValid
 func (ss SectionSlice) Validate() error {
 	if len(ss) == 0 {
-		return errors.New("SectionSlice is empty")
+		return errors.NewNotValidf("[element] SectionSlice length is zero")
 	}
 
 	var hashes = make([]uint64, ss.TotalFields(), ss.TotalFields()) // pc path checker
@@ -315,16 +307,16 @@ func (ss SectionSlice) Validate() error {
 
 				fnv1a, err := f.RouteHash(s.ID, g.ID)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "[element] Route Section %q Group %q", s.ID, g.ID)
 				}
 
 				for _, h := range hashes {
 					if h == fnv1a {
 						p, err := f.Route(s.ID, g.ID)
 						if err != nil {
-							return err
+							return errors.Wrapf(err, "[element] Route Section %q Group %q", s.ID, g.ID)
 						}
-						return errors.Errorf("Duplicate entry for path %s :: %s", p.String(), ss.ToJSON())
+						return errors.NewNotValidf("[element] Duplicate entry for path %q :: %s", p.String(), ss.ToJSON())
 					}
 				}
 				hashes[i] = fnv1a

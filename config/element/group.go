@@ -15,18 +15,15 @@
 package element
 
 import (
-	"bytes"
 	"encoding/json"
 	"sort"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrGroupNotFound error when a group cannot be found
-var ErrGroupNotFound = errors.New("Group not found")
 
 // GroupSlice contains a set of Groups.
 //  Thread safe for reading but not for modifying.
@@ -60,13 +57,14 @@ func NewGroupSlice(gs ...Group) GroupSlice {
 // Find returns a Group pointer or ErrGroupNotFound.
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "b". For comparison the field Sum32 of a route will be used.
+// Error behaviour: NotFound
 func (gs GroupSlice) Find(id cfgpath.Route) (Group, int, error) {
 	for i, g := range gs {
 		if g.ID.Sum32 > 0 && g.ID.Sum32 == id.Sum32 {
 			return g, i, nil
 		}
 	}
-	return Group{}, 0, ErrGroupNotFound
+	return Group{}, 0, errors.NewNotFoundf("[element] Group %q", id)
 }
 
 // Merge copies the data from a groups into this slice. Appends if ID is not found
@@ -74,7 +72,7 @@ func (gs GroupSlice) Find(id cfgpath.Route) (Group, int, error) {
 func (gs *GroupSlice) Merge(groups ...Group) error {
 	for _, g := range groups {
 		if err := gs.merge(g); err != nil {
-			return errors.Mask(err)
+			return errors.Wrap(err, "[element] GroupSlice.Merge")
 		}
 	}
 	return nil
@@ -101,19 +99,20 @@ func (gs *GroupSlice) merge(g Group) error {
 		cg.SortOrder = g.SortOrder
 	}
 	if err := cg.Fields.Merge(g.Fields...); err != nil {
-		return err
+		return errors.Wrap(err, "[element] GroupSlice.merge.Fields.Merge")
 	}
 
 	(*gs)[idx] = cg
 	return nil
 }
 
-// ToJSON transforms the whole slice into JSON
+// ToJSON transforms the whole slice into JSON. If an error occurs the returned
+// string starts with: "[element] Error:".
 func (gs GroupSlice) ToJSON() string {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(gs); err != nil {
-		PkgLog.Debug("config.GroupSlice.ToJSON.Encode", "err", err)
-		return ""
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if err := json.NewEncoder(buf).Encode(gs); err != nil {
+		return "[element] Error: " + err.Error()
 	}
 	return buf.String()
 }

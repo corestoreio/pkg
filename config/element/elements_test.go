@@ -15,29 +15,27 @@
 package element_test
 
 import (
-	goerr "errors"
-	"testing"
-
 	"encoding/json"
+	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewConfiguration(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
-		have    element.SectionSlice
-		wantErr string
-		wantLen int
+		have       element.SectionSlice
+		wantErrBhf errors.BehaviourFunc
+		wantLen    int
 	}{
 		0: {
-			have:    nil,
-			wantErr: "SectionSlice is empty",
+			have:       nil,
+			wantErrBhf: errors.IsNotValid,
 		},
 		1: {
 			have: element.NewSectionSlice(
@@ -60,16 +58,16 @@ func TestNewConfiguration(t *testing.T) {
 					),
 				},
 			),
-			wantErr: "",
-			wantLen: 3,
+			wantErrBhf: nil,
+			wantLen:    3,
 		},
 		2: {
-			have:    element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice()}),
-			wantErr: "",
+			have:       element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice()}),
+			wantErrBhf: nil,
 		},
 		3: {
-			have:    element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`bb`), Fields: nil})}),
-			wantErr: "",
+			have:       element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`bb`), Fields: nil})}),
+			wantErrBhf: nil,
 		},
 		4: {
 			have: element.NewSectionSlice(
@@ -83,38 +81,38 @@ func TestNewConfiguration(t *testing.T) {
 					),
 				},
 			),
-			wantErr: `Duplicate entry for path aa/bb/cc :: [{"ID":"aa","Groups":[{"ID":"bb","Fields":[{"ID":"cc"},{"ID":"cc"}]}]}]`,
+			wantErrBhf: errors.IsNotValid, // `Duplicate entry for path aa/bb/cc :: [{"ID":"aa","Groups":[{"ID":"bb","Fields":[{"ID":"cc"},{"ID":"cc"}]}]}]`,
 		},
 	}
 
 	for i, test := range tests {
-		func(t *testing.T, have element.SectionSlice, wantErr string) {
+		func(t *testing.T, have element.SectionSlice, wantErr errors.BehaviourFunc) {
 			defer func() {
 				if r := recover(); r != nil {
 					if err, ok := r.(error); ok {
-						assert.Contains(t, err.Error(), wantErr, "Index %d", i)
+						assert.True(t, wantErr(err), "Index %d => %s", i, err)
 					} else {
-						t.Errorf("Failed to convert to type error: %#v", err)
+						t.Errorf("Failed to convert to type error: %#v", r)
 					}
-				} else if wantErr != "" {
-					t.Errorf("Cannot find panic: wantErr %s", wantErr)
+				} else if wantErr != nil {
+					t.Errorf("Cannot find panic: wantErr %v", wantErr)
 				}
 			}()
 
 			haveSlice := element.MustNewConfiguration(have...)
-			if wantErr != "" {
+			if wantErr != nil {
 				assert.Nil(t, haveSlice, "Index %d", i)
 			} else {
 				assert.NotNil(t, haveSlice, "Index %d", i)
 				assert.Len(t, haveSlice, len(have), "Index %d", i)
 			}
 			assert.Exactly(t, test.wantLen, haveSlice.TotalFields(), "Index %d", i)
-		}(t, test.have, test.wantErr)
+		}(t, test.have, test.wantErrBhf)
 	}
 }
 
 func TestSectionSliceDefaults(t *testing.T) {
-	t.Parallel()
+
 	pkgCfg := element.MustNewConfiguration(
 		element.Section{
 			ID: cfgpath.NewRoute(`contact`),
@@ -163,7 +161,7 @@ func TestSectionSliceDefaults(t *testing.T) {
 }
 
 func TestSectionSliceMerge(t *testing.T) {
-	t.Parallel()
+
 	// Got stuck in comparing JSON?
 	// Use a Webservice to compare the JSON output!
 
@@ -414,7 +412,7 @@ func TestSectionSliceMerge(t *testing.T) {
 }
 
 func TestFieldSliceMerge(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have    element.FieldSlice
 		wantErr error
@@ -472,7 +470,7 @@ func TestFieldSliceMerge(t *testing.T) {
 }
 
 func TestGroupSliceMerge(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have    element.GroupSlice
 		wantErr error
@@ -601,51 +599,51 @@ func TestGroupSliceMerge(t *testing.T) {
 }
 
 func TestSectionSliceFindGroupByID(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
-		haveSlice element.SectionSlice
-		haveRoute cfgpath.Route
-		wantGID   string
-		wantErr   error
+		haveSlice  element.SectionSlice
+		haveRoute  cfgpath.Route
+		wantGID    string
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("a/b"),
-			wantGID:   "b",
-			wantErr:   nil,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("a/b"),
+			wantGID:    "b",
+			wantErrBhf: nil,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("a/bc"),
-			wantGID:   "b",
-			wantErr:   element.ErrGroupNotFound,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("a/bc"),
+			wantGID:    "b",
+			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice: element.SectionSlice{},
-			haveRoute: cfgpath.Route{},
-			wantGID:   "b",
-			wantErr:   element.ErrGroupNotFound,
+			haveSlice:  element.SectionSlice{},
+			haveRoute:  cfgpath.Route{},
+			wantGID:    "b",
+			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("a", "bb", "cc"),
-			wantGID:   "bb",
-			wantErr:   nil,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("a", "bb", "cc"),
+			wantGID:    "bb",
+			wantErrBhf: nil,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("xa", "bb", "cc"),
-			wantGID:   "",
-			wantErr:   element.ErrSectionNotFound,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("xa", "bb", "cc"),
+			wantGID:    "",
+			wantErrBhf: errors.IsNotFound,
 		},
 	}
 
 	for i, test := range tests {
 		haveGroup, _, haveErr := test.haveSlice.FindGroup(test.haveRoute)
-		if test.wantErr != nil {
+		if test.wantErrBhf != nil {
 			assert.Error(t, haveErr, "Index %d", i)
 			assert.Exactly(t, element.Group{}, haveGroup)
-			assert.EqualError(t, haveErr, test.wantErr.Error())
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 
@@ -656,63 +654,63 @@ func TestSectionSliceFindGroupByID(t *testing.T) {
 }
 
 func TestSectionSliceFindFieldByID(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
-		haveSlice element.SectionSlice
-		haveRoute cfgpath.Route
-		wantFID   string
-		wantErr   error
+		haveSlice  element.SectionSlice
+		haveRoute  cfgpath.Route
+		wantFID    string
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`bb`)}, element.Group{ID: cfgpath.NewRoute(`cc`)})}),
-			haveRoute: cfgpath.Route{},
-			wantFID:   "",
-			wantErr:   cfgpath.ErrIncorrectPath,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`aa`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`bb`)}, element.Group{ID: cfgpath.NewRoute(`cc`)})}),
+			haveRoute:  cfgpath.Route{},
+			wantFID:    "",
+			wantErrBhf: errors.IsNotValid,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("a/b"),
-			wantFID:   "b",
-			wantErr:   element.ErrFieldNotFound,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("a/b"),
+			wantFID:    "b",
+			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("a/bc"),
-			wantFID:   "b",
-			wantErr:   element.ErrGroupNotFound,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("a/bc"),
+			wantFID:    "b",
+			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice: element.NewSectionSlice(),
-			haveRoute: cfgpath.Route{},
-			wantFID:   "",
-			wantErr:   cfgpath.ErrIncorrectPath,
+			haveSlice:  element.NewSectionSlice(),
+			haveRoute:  cfgpath.Route{},
+			wantFID:    "",
+			wantErrBhf: errors.IsNotValid,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("a", "bb", "cc"),
-			wantFID:   "bb",
-			wantErr:   element.ErrFieldNotFound,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("a", "bb", "cc"),
+			wantFID:    "bb",
+			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
-			haveRoute: cfgpath.NewRoute("xa", "bb", "cc"),
-			wantFID:   "",
-			wantErr:   element.ErrSectionNotFound,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b`)}, element.Group{ID: cfgpath.NewRoute(`bb`)})}),
+			haveRoute:  cfgpath.NewRoute("xa", "bb", "cc"),
+			wantFID:    "",
+			wantErrBhf: errors.IsNotFound,
 		},
 		{
-			haveSlice: element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a1`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b1`), Fields: element.NewFieldSlice(element.Field{ID: cfgpath.NewRoute(`c1`)})})}),
-			haveRoute: cfgpath.NewRoute("a1", "b1", "c1"),
-			wantFID:   "c1",
-			wantErr:   nil,
+			haveSlice:  element.NewSectionSlice(element.Section{ID: cfgpath.NewRoute(`a1`), Groups: element.NewGroupSlice(element.Group{ID: cfgpath.NewRoute(`b1`), Fields: element.NewFieldSlice(element.Field{ID: cfgpath.NewRoute(`c1`)})})}),
+			haveRoute:  cfgpath.NewRoute("a1", "b1", "c1"),
+			wantFID:    "c1",
+			wantErrBhf: nil,
 		},
 	}
 
 	for i, test := range tests {
 		haveGroup, _, haveErr := test.haveSlice.FindField(test.haveRoute)
-		if test.wantErr != nil {
+		if test.wantErrBhf != nil {
 			assert.Error(t, haveErr, "Index %d", i)
 			assert.Exactly(t, element.Field{}, haveGroup, "Index %d", i)
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		assert.NoError(t, haveErr, "Index %d", i)
@@ -722,7 +720,7 @@ func TestSectionSliceFindFieldByID(t *testing.T) {
 }
 
 func TestFieldSliceSort(t *testing.T) {
-	t.Parallel()
+
 	want := []int{-10, 1, 10, 11, 20}
 	fs := element.NewFieldSlice(
 		element.Field{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
@@ -738,7 +736,7 @@ func TestFieldSliceSort(t *testing.T) {
 }
 
 func TestGroupSliceSort(t *testing.T) {
-	t.Parallel()
+
 	want := []int{-10, 1, 10, 11, 20}
 	gs := element.NewGroupSlice(
 		element.Group{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
@@ -752,7 +750,7 @@ func TestGroupSliceSort(t *testing.T) {
 	}
 }
 func TestSectionSliceSort(t *testing.T) {
-	t.Parallel()
+
 	want := []int{-10, 1, 10, 11, 20}
 	ss := element.NewSectionSlice(
 		element.Section{ID: cfgpath.NewRoute(`aa`), SortOrder: 20},
@@ -768,7 +766,7 @@ func TestSectionSliceSort(t *testing.T) {
 }
 
 func TestSectionSliceSortAll(t *testing.T) {
-	t.Parallel()
+
 	want := `[{"ID":"bb","SortOrder":-10,"Groups":null},{"ID":"ee","SortOrder":1,"Groups":null},{"ID":"cc","SortOrder":10,"Groups":null},{"ID":"aa","SortOrder":20,"Groups":[{"ID":"bb","SortOrder":-10,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]},{"ID":"ee","SortOrder":1,"Fields":null},{"ID":"dd","SortOrder":11,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]},{"ID":"aa","SortOrder":20,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]}]}]` + "\n"
 	ss := element.MustNewConfiguration(
 		element.Section{ID: cfgpath.NewRoute(`aa`), SortOrder: 20, Groups: element.NewGroupSlice(
@@ -820,7 +818,7 @@ func TestSectionSliceSortAll(t *testing.T) {
 }
 
 func TestSectionSliceAppendFields(t *testing.T) {
-	t.Parallel()
+
 	want := `[{"ID":"aa","Groups":[{"ID":"aa","Fields":[{"ID":"aa"},{"ID":"bb"},{"ID":"cc"}]}]}]` + "\n"
 	ss := element.MustNewConfiguration(
 		element.Section{
@@ -834,34 +832,11 @@ func TestSectionSliceAppendFields(t *testing.T) {
 				},
 			)},
 	)
-	assert.EqualError(t, ss.AppendFields(cfgpath.NewRoute("aa/XX")), element.ErrGroupNotFound.Error())
+	assert.True(t, errors.IsNotFound(ss.AppendFields(cfgpath.NewRoute("aa/XX"))))
 
 	assert.NoError(t, ss.AppendFields(cfgpath.NewRoute("aa/aa"), element.Field{ID: cfgpath.NewRoute(`cc`)}))
 	have := ss.ToJSON()
 	if want != have {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)
-	}
-}
-
-func TestNotNotFoundError(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		have error
-		want bool
-	}{
-		{goerr.New("PHP"), true},
-		{errors.Mask(goerr.New("Scala")), true},
-		{errors.New("Java"), true},
-		{errors.Mask(errors.New("Java")), true},
-		{element.ErrSectionNotFound, false},
-		{element.ErrGroupNotFound, false},
-		{element.ErrFieldNotFound, false},
-		{errors.Mask(element.ErrFieldNotFound), false},
-		{errors.Maskf(errors.Mask(element.ErrFieldNotFound), "A field not found error"), false},
-		{nil, false},
-		{errors.Mask(nil), false},
-	}
-	for i, test := range tests {
-		assert.Exactly(t, test.want, element.NotNotFoundError(test.have), "Index %d", i)
 	}
 }

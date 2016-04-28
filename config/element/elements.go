@@ -14,10 +14,6 @@
 
 package element
 
-import (
-	"github.com/corestoreio/csfw/util/cserr"
-)
-
 // Sectioner at the moment only for testing
 type Sectioner interface {
 	// Defaults generates the default configuration from all fields.
@@ -28,14 +24,3 @@ type Sectioner interface {
 // DefaultMap contains the default aka global configuration of a package.
 // string is the fully qualified configuration path of scope default.
 type DefaultMap map[string]interface{}
-
-// NotNotFoundError returns true if the error is NOT one of:
-//		ErrSectionNotFound
-//		ErrGroupNotFound
-// 		ErrFieldNotFound
-//		nil
-func NotNotFoundError(err error) bool {
-	// stupid repetitive name ... is there a better one?
-	err = cserr.UnwrapMasked(err)
-	return err != nil && err != ErrSectionNotFound && err != ErrGroupNotFound && err != ErrFieldNotFound
-}
