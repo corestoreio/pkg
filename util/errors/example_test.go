@@ -78,3 +78,11 @@ func ExampleFprint() {
 	// github.com/corestoreio/csfw/util/errors/example_test.go:58: inner
 	// github.com/corestoreio/csfw/util/errors/example_test.go:57: error
 }
+
+func ExampleWrapf() {
+	cause := errors.New("whoops")
+	err := errors.Wrapf(cause, "oh noes #%d", 2)
+	fmt.Println(err)
+
+	// Output: oh noes #2: whoops
+}
