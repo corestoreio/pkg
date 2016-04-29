@@ -26,8 +26,14 @@ import (
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/net/context"
 )
+
+type keyNotFound struct{}
+
+func (a keyNotFound) Error() string  { return "[cfgmock] Get() Path" }
+func (a keyNotFound) NotFound() bool { return true }
 
 // Write used for testing when writing configuration values.
 type Write struct {
@@ -204,7 +210,7 @@ func (mr *Service) UpdateValues(pathValues PathValue) {
 
 func (mr *Service) hasVal(p cfgpath.Path) bool {
 	v, err := mr.db.Get(p)
-	if err != nil && config.NotKeyNotFoundError(err) {
+	if err != nil && !errors.IsNotFound(err) {
 		println("Mock.Service.hasVal error:", err.Error(), "path", p.String())
 	}
 	return v != nil && err == nil
@@ -212,7 +218,7 @@ func (mr *Service) hasVal(p cfgpath.Path) bool {
 
 func (mr *Service) getVal(p cfgpath.Path) interface{} {
 	v, err := mr.db.Get(p)
-	if err != nil && config.NotKeyNotFoundError(err) {
+	if err != nil && !errors.IsNotFound(err) {
 		println("Mock.Service.getVal error:", err.Error(), "path", p.String())
 		return nil
 	}
@@ -228,7 +234,7 @@ func (mr *Service) Byte(p cfgpath.Path) ([]byte, error) {
 	case mr.FByte != nil:
 		return mr.FByte(p.String())
 	default:
-		return nil, storage.ErrKeyNotFound
+		return nil, keyNotFound{}
 	}
 }
 
@@ -240,7 +246,7 @@ func (mr *Service) String(p cfgpath.Path) (string, error) {
 	case mr.FString != nil:
 		return mr.FString(p.String())
 	default:
-		return "", storage.ErrKeyNotFound
+		return "", keyNotFound{}
 	}
 }
 
@@ -252,7 +258,7 @@ func (mr *Service) Bool(p cfgpath.Path) (bool, error) {
 	case mr.FBool != nil:
 		return mr.FBool(p.String())
 	default:
-		return false, storage.ErrKeyNotFound
+		return false, keyNotFound{}
 	}
 }
 
@@ -264,7 +270,7 @@ func (mr *Service) Float64(p cfgpath.Path) (float64, error) {
 	case mr.FFloat64 != nil:
 		return mr.FFloat64(p.String())
 	default:
-		return 0.0, storage.ErrKeyNotFound
+		return 0.0, keyNotFound{}
 	}
 }
 
@@ -276,7 +282,7 @@ func (mr *Service) Int(p cfgpath.Path) (int, error) {
 	case mr.FInt != nil:
 		return mr.FInt(p.String())
 	default:
-		return 0, storage.ErrKeyNotFound
+		return 0, keyNotFound{}
 	}
 }
 
@@ -288,7 +294,7 @@ func (mr *Service) Time(p cfgpath.Path) (time.Time, error) {
 	case mr.FTime != nil:
 		return mr.FTime(p.String())
 	default:
-		return time.Time{}, storage.ErrKeyNotFound
+		return time.Time{}, keyNotFound{}
 	}
 }
 

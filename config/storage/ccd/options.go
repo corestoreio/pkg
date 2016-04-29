@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // WithDBStorage applies the MySQL storage to a new Service. It
@@ -40,12 +40,12 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.ServiceOption {
 
 		var ccd TableCoreConfigDataSlice
 		loadedRows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("ccd.WithCoreConfigData.LoadSlice", "rows", loadedRows)
+		if s.Log.IsDebug() {
+			s.Log.Debug("ccd.WithCoreConfigData.LoadSlice", "rows", loadedRows)
 		}
 		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("ccd.WithCoreConfigData.LoadSlice.err", "err", err)
+			if s.Log.IsDebug() {
+				s.Log.Debug("ccd.WithCoreConfigData.LoadSlice.err", "err", err)
 			}
 			s.MultiErr = s.AppendErrors(err)
 			return
@@ -57,19 +57,19 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.ServiceOption {
 				var p cfgpath.Path
 				p, err = cfgpath.NewByParts(cd.Path)
 				if err != nil {
-					s.MultiErr = s.AppendErrors(errors.Mask(err))
+					s.MultiErr = s.AppendErrors(errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q", cd.Path))
 					return
 				}
 
 				if err = s.Write(p.Bind(scope.FromString(cd.Scope), cd.ScopeID), cd.Value.String); err != nil {
-					s.MultiErr = s.AppendErrors(errors.Mask(err))
+					s.MultiErr = s.AppendErrors(errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q Scope: %q ID: %d Value: %q", cd.Path, cd.Scope, cd.ScopeID, cd.Value.String))
 					return
 				}
 				writtenRows++
 			}
 		}
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("ccd.WithCoreConfigData.Written", "loadedRows", loadedRows, "writtenRows", writtenRows)
+		if s.Log.IsDebug() {
+			s.Log.Debug("ccd.WithCoreConfigData.Written", "loadedRows", loadedRows, "writtenRows", writtenRows)
 		}
 	}
 }

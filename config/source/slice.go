@@ -20,7 +20,7 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Optioner defines how to retrieve all Options values. Mostly used for
@@ -101,7 +101,7 @@ func (s Slice) ToJSON() (string, error) {
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := json.NewEncoder(buf).Encode(s); err != nil {
-		return "", errors.Mask(err)
+		return "", errors.Wrap(err, "[source] json.Encode")
 	}
 	return buf.String(), nil
 }

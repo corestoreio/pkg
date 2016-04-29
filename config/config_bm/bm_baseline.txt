@@ -1,7 +1,7 @@
 PASS
-BenchmarkSectionSliceValidate-4               	    1000	   1171704 ns/op	  191414 B/op	    2410 allocs/op
-BenchmarkSectionSliceToJson-4                 	     500	   3930528 ns/op	  836214 B/op	   16553 allocs/op
-BenchmarkSectionSliceFindFieldByID1-4         	 3000000	       507 ns/op	       0 B/op	       0 allocs/op
-BenchmarkSectionSliceFindFieldByID5-4         	  500000	      3174 ns/op	       0 B/op	       0 allocs/op
-BenchmarkSectionSliceFindFieldByID5_Parallel-4	 1000000	      1543 ns/op	       0 B/op	       0 allocs/op
-ok  	github.com/corestoreio/csfw/config/config_bm	8.897s
+BenchmarkSectionSliceValidate-4               	    2000	   1148642 ns/op	  191412 B/op	    2410 allocs/op
+BenchmarkSectionSliceToJson-4                 	     500	   3717608 ns/op	  695122 B/op	   16551 allocs/op
+BenchmarkSectionSliceFindFieldByID1-4         	 3000000	       504 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSectionSliceFindFieldByID5-4         	  500000	      3199 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSectionSliceFindFieldByID5_Parallel-4	 1000000	      1601 ns/op	       0 B/op	       0 allocs/op
+ok  	github.com/corestoreio/csfw/config/config_bm	9.943s

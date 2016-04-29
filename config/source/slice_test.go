@@ -16,19 +16,23 @@ package source_test
 
 import (
 	"encoding/json"
-	"errors"
 	"math"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ json.Marshaler = (*source.Pair)(nil)
+var _ json.Unmarshaler = (*source.Pair)(nil)
 
 func TestSliceStringPanic(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), source.ErrImbalancedPairs.Error())
+			err := r.(error)
+			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 		}
 	}()
 	_ = source.NewByString("kb", "l2", "ka")
@@ -429,17 +433,17 @@ func TestSliceUnmarshalJSON(t *testing.T) {
 		{
 			[]byte(`[{"Value":3.1415678,"Label":true} ]`),
 			source.Slice{source.Pair{}},
-			errors.New("json: cannot unmarshal bool into Go value of type string"),
+			errors.New("[source] Unmarshal: \"{\\\"Value\\\":3.1415678,\\\"Label\\\":true}\": json: cannot unmarshal bool into Go value of type string"),
 		},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		var have source.Slice
 		err := json.Unmarshal(test.in, &have)
 		if test.wantErr != nil {
-			assert.EqualError(t, err, test.wantErr.Error())
+			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
 			continue
 		}
-		assert.NoError(t, err)
-		assert.Exactly(t, test.want, have)
+		assert.NoError(t, err, "Index %d", i)
+		assert.Exactly(t, test.want, have, "Index %d", i)
 	}
 }

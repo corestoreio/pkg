@@ -82,7 +82,7 @@ func TestNewMockGetterAllTypes(t *testing.T) {
 			t.Fatal(haveErr)
 		}
 		if false == reflect.DeepEqual(wantVal, haveVal) {
-			t.Fatalf("Want %v Have %V", wantVal, haveVal)
+			t.Fatalf("Want %v Have %v", wantVal, haveVal)
 		}
 	}
 

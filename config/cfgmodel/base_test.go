@@ -15,7 +15,6 @@
 package cfgmodel
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
@@ -25,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -136,9 +136,9 @@ func TestBaseValueString(t *testing.T) {
 func TestBaseValueInScope(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		sg      config.ScopedGetter
-		p       scope.Perm
-		wantErr error
+		sg         config.ScopedGetter
+		p          scope.Perm
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{
 			cfgmock.NewService().NewScoped(0, 0),
@@ -158,12 +158,12 @@ func TestBaseValueInScope(t *testing.T) {
 		{
 			cfgmock.NewService().NewScoped(0, 4),
 			scope.PermWebsite,
-			errors.New("Scope permission insufficient: Have 'Store'; Want 'Default,Website'"),
+			errors.IsUnauthorized,
 		},
 		{
 			cfgmock.NewService().NewScoped(4, 0),
 			scope.PermDefault,
-			errors.New("Scope permission insufficient: Have 'Website'; Want 'Default'"),
+			errors.IsUnauthorized,
 		},
 	}
 	for i, test := range tests {
@@ -173,8 +173,8 @@ func TestBaseValueInScope(t *testing.T) {
 		}))
 		haveErr := p1.InScope(test.sg)
 
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
 		}
@@ -194,7 +194,8 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), cfgpath.ErrIncorrectPath.Error())
+			err := r.(error)
+			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a panic")
 		}
@@ -208,22 +209,21 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 func TestBaseValueToPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		route   cfgpath.Route
-		s       scope.Scope
-		sid     int64
-		wantErr error
+		route      cfgpath.Route
+		s          scope.Scope
+		sid        int64
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{cfgpath.NewRoute("aa/bb/cc"), scope.Store, 23, nil},
-		{cfgpath.NewRoute("a/bb/cc"), scope.Store, 23, cfgpath.ErrIncorrectPath},
+		{cfgpath.NewRoute("a/bb/cc"), scope.Store, 23, errors.IsNotValid},
 	}
 	for i, test := range tests {
 		bv := NewValue(test.route.String())
 		havePath, haveErr := bv.ToPath(test.s, test.sid)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
-		assert.NoError(t, test.wantErr, "Index %d", i)
 		wantPath := cfgpath.MustNew(test.route).Bind(test.s, test.sid)
 		assert.Exactly(t, wantPath, havePath, "Index %d", i)
 	}

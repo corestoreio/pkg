@@ -18,20 +18,21 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestURLCache(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		haveType  config.URLType
 		url       string
-		wantError error
+		wantError errors.BehaviourFunc
 	}{
-		{config.URLTypeStatic, "", config.ErrURLEmpty},
+		{config.URLTypeStatic, "", errors.IsEmpty},
 		{config.URLTypeWeb, "http://corestore.io/", nil},
-		{config.URLTypeStatic, "://corestore.io/", errors.New("parse ://corestore.io/: missing protocol scheme")},
-		{config.URLType(254), "https://corestore.io/catalog", errors.New("Unknown Index 254")},
+		{config.URLTypeStatic, "://corestore.io/", errors.IsNotValid},
+		{config.URLType(254), "https://corestore.io/catalog", errors.IsNotFound},
 	}
 	for i, test := range tests {
 		uc := config.NewURLCache()
@@ -39,7 +40,7 @@ func TestURLCache(t *testing.T) {
 		if test.wantError != nil {
 			pu, err := uc.Set(test.haveType, test.url)
 			assert.Nil(t, pu, "Index %d", i)
-			assert.EqualError(t, err, test.wantError.Error(), "Index %d", i)
+			assert.True(t, test.wantError(err), "Index %d => %s", i, err)
 			assert.Nil(t, uc.Get(test.haveType))
 			continue
 		}
@@ -51,7 +52,7 @@ func TestURLCache(t *testing.T) {
 		puCache := uc.Get(test.haveType)
 		assert.Exactly(t, test.url, puCache.String(), "Index %d", i)
 
-		assert.EqualError(t, uc.Clear(), config.ErrURLCacheCleared.Error())
+		assert.NoError(t, uc.Clear())
 		assert.Nil(t, uc.Get(test.haveType), "Index %d", i)
 	}
 }

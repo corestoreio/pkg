@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Time represents a path in config.Getter which handles time values.
@@ -47,7 +47,7 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 			var err error
 			v, err = conv.ToTimeE(d)
 			if err != nil {
-				return time.Time{}, errors.Mask(err)
+				return time.Time{}, errors.Wrap(err, "[cfgmodel] ToTimeE")
 			}
 		}
 	}
@@ -56,8 +56,8 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", t.route)
+	case !errors.IsNotFound(err):
+		err = errors.Wrapf(err, "[cfgmodel] Route %q", t.route)
 	default:
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
@@ -95,7 +95,7 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 			var err error
 			v, err = conv.ToDurationE(d)
 			if err != nil {
-				return 0, errors.Mask(err)
+				return 0, errors.Wrap(err, "[cfgmodel] ToDurationE")
 			}
 		}
 	}
@@ -104,8 +104,8 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v, err = conv.ToDurationE(val)
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", t.route)
+	case !errors.IsNotFound(err):
+		err = errors.Wrapf(err, "[cfgmodel] Route %q", t.route)
 	default:
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}

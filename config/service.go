@@ -21,7 +21,9 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/cserr"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
@@ -31,71 +33,70 @@ const (
 	RightDelim = "}}"
 )
 
-type (
-	// Getter implements how to receive thread-safe a configuration value from
-	// a cfgpath.Path.
-	// Providing a cfgpath.Path argument does not make any assumptions if the
-	// scope of the cfgpath.Path is allowed to retrieve the value.
-	// The NewScoped() function binds a cfgpath.Route to a scope.Scope and
-	// gives you the possibility to fallback the hierarchy levels.
-	// These functions are also available in the ScopedGetter interface.
-	Getter interface {
-		NewScoped(websiteID, storeID int64) ScopedGetter
-		Byte(cfgpath.Path) ([]byte, error)
-		String(cfgpath.Path) (string, error)
-		Bool(cfgpath.Path) (bool, error)
-		Float64(cfgpath.Path) (float64, error)
-		Int(cfgpath.Path) (int, error)
-		Time(cfgpath.Path) (time.Time, error)
-		// maybe add compare and swap function
-	}
+// Getter implements how to receive thread-safe a configuration value from
+// a cfgpath.Path.
+// Providing a cfgpath.Path argument does not make any assumptions if the
+// scope of the cfgpath.Path is allowed to retrieve the value.
+// The NewScoped() function binds a cfgpath.Route to a scope.Scope and
+// gives you the possibility to fallback the hierarchy levels.
+// These functions are also available in the ScopedGetter interface.
+type Getter interface {
+	NewScoped(websiteID, storeID int64) ScopedGetter
+	Byte(cfgpath.Path) ([]byte, error)
+	String(cfgpath.Path) (string, error)
+	Bool(cfgpath.Path) (bool, error)
+	Float64(cfgpath.Path) (float64, error)
+	Int(cfgpath.Path) (int, error)
+	Time(cfgpath.Path) (time.Time, error)
+	// maybe add compare and swap function
+}
 
-	// GetterPubSuber implements a configuration Getter and a Subscriber for
-	// Publish and Subscribe pattern.
-	GetterPubSuber interface {
-		Getter
-		Subscriber
-	}
+// GetterPubSuber implements a configuration Getter and a Subscriber for
+// Publish and Subscribe pattern.
+type GetterPubSuber interface {
+	Getter
+	Subscriber
+}
 
-	// Writer thread safe storing of configuration values under different paths and scopes.
-	Writer interface {
-		// Write writes a configuration entry and may return an error
-		Write(p cfgpath.Path, value interface{}) error
-	}
+// Writer thread safe storing of configuration values under different paths and scopes.
+type Writer interface {
+	// Write writes a configuration entry and may return an error
+	Write(p cfgpath.Path, value interface{}) error
+}
 
-	// Service main configuration provider
-	Service struct {
-		// Storage is the underlying data holding provider. Only access it
-		// if you know exactly what you are doing.
-		Storage storage.Storager
-		// MultiErr which ServiceOption function arguments are generating
-		// Usually empty (= nil) ;-)
-		*cserr.MultiErr
-		*pubSub
-	}
-)
+// Service main configuration provider
+type Service struct {
+	// Storage is the underlying data holding provider. Only access it
+	// if you know exactly what you are doing.
+	Storage storage.Storager
+	// MultiErr which ServiceOption function arguments are generating
+	// Usually empty (= nil) ;-)
+	*errors.MultiErr
+	*pubSub
 
-// ServiceOption applies options to the NewService.
-type ServiceOption func(*Service)
+	// Log can be set for debugging purpose. If nil, it panics.
+	// Default log.Blackhole with disabled debug and info logging.
+	Log log.Logger
+}
 
 // NewService creates the main new configuration for all scopes: default, website
 // and store. Default Storage is a simple map[string]interface{}. A new go routine
 // will be startet for the publish and subscribe feature.
 func NewService(opts ...ServiceOption) (*Service, error) {
+	l := log.BlackHole{} // disabled debug and info logging.
 	s := &Service{
-		pubSub:  newPubSub(),
+		pubSub:  newPubSub(l),
 		Storage: storage.NewKV(),
+		Log:     l,
 	}
 
-	go s.publish()
+	go s.publish() // yes we know how to quit this goroutine.
 
-	_ = s.Options(opts...)
-
-	if s.HasErrors() {
+	if err := s.Options(opts...); err != nil {
 		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
 			s.MultiErr = s.AppendErrors(err)
 		}
-		return nil, s
+		return nil, s.MultiErr
 	}
 
 	p := cfgpath.MustNewByParts(PathCSBaseURL)
@@ -126,7 +127,7 @@ func (s *Service) Options(opts ...ServiceOption) error {
 		}
 	}
 	if s.HasErrors() {
-		return s
+		return s.MultiErr
 	}
 	return nil
 }
@@ -142,19 +143,19 @@ func (s *Service) NewScoped(websiteID, storeID int64) ScopedGetter {
 func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 	def, err := ss.Defaults()
 	if err != nil {
-		return
+		return 0, errors.Wrap(err, "[config] Defaults")
 	}
 	for k, v := range def {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Service.ApplyDefaults", k, v)
+		if s.Log.IsDebug() {
+			s.Log.Debug("config.Service.ApplyDefaults", k, v)
 		}
 		var p cfgpath.Path
 		p, err = cfgpath.NewByParts(k) // default path!
 		if err != nil {
 			return
 		}
-		if err = s.Storage.Set(p, v); err != nil {
-			return
+		if err = s.Write(p, v); err != nil {
+			return 0, errors.Wrap(err, "[config] Storage.Set")
 		}
 		count++
 	}
@@ -174,12 +175,12 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
 func (s *Service) Write(p cfgpath.Path, v interface{}) error {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Service.Write", "path", p, "val", v)
+	if s.Log.IsDebug() {
+		s.Log.Debug("config.Service.Write", "path", p, "val", v)
 	}
 
 	if err := s.Storage.Set(p, v); err != nil {
-		return err
+		return errors.Wrap(err, "[config] Storage.Set")
 	}
 	s.sendMsg(p)
 	return nil
@@ -187,8 +188,8 @@ func (s *Service) Write(p cfgpath.Path, v interface{}) error {
 
 // get generic getter ... not sure if this should be public ...
 func (s *Service) get(p cfgpath.Path) (interface{}, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Service.get", "path", p)
+	if s.Log.IsDebug() {
+		s.Log.Debug("config.Service.get", "path", p)
 	}
 	return s.Storage.Get(p)
 }
@@ -209,7 +210,7 @@ func (s *Service) get(p cfgpath.Path) (interface{}, error) {
 func (s *Service) String(p cfgpath.Path) (string, error) {
 	vs, err := s.get(p)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "[config] Storage.String.get")
 	}
 	return conv.ToStringE(vs)
 }
@@ -218,7 +219,7 @@ func (s *Service) String(p cfgpath.Path) (string, error) {
 func (s *Service) Byte(p cfgpath.Path) ([]byte, error) {
 	vs, err := s.get(p)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "[config] Storage.Byte.get")
 	}
 	return conv.ToByteE(vs)
 }
@@ -227,7 +228,7 @@ func (s *Service) Byte(p cfgpath.Path) ([]byte, error) {
 func (s *Service) Bool(p cfgpath.Path) (bool, error) {
 	vs, err := s.get(p)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "[config] Storage.Bool.get")
 	}
 	return conv.ToBoolE(vs)
 }
@@ -236,7 +237,7 @@ func (s *Service) Bool(p cfgpath.Path) (bool, error) {
 func (s *Service) Float64(p cfgpath.Path) (float64, error) {
 	vs, err := s.get(p)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "[config] Storage.Float64.get")
 	}
 	return conv.ToFloat64E(vs)
 }
@@ -245,7 +246,7 @@ func (s *Service) Float64(p cfgpath.Path) (float64, error) {
 func (s *Service) Int(p cfgpath.Path) (int, error) {
 	vs, err := s.get(p)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "[config] Storage.Int.get")
 	}
 	return conv.ToIntE(vs)
 }
@@ -256,7 +257,7 @@ func (s *Service) Int(p cfgpath.Path) (int, error) {
 func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 	vs, err := s.get(p)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, errors.Wrap(err, "[config] Storage.Time.get")
 	}
 	return conv.ToTimeE(vs)
 }
@@ -267,16 +268,10 @@ func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 func (s *Service) IsSet(p cfgpath.Path) bool {
 	v, err := s.Storage.Get(p)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Service.IsSet.Storage.Get", "err", err, "path", p)
+		if s.Log.IsDebug() {
+			s.Log.Debug("config.Service.IsSet.Storage.Get", "err", err, "path", p)
 		}
 		return false
 	}
 	return v != nil
-}
-
-// NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.
-func NotKeyNotFoundError(err error) bool {
-	err = cserr.UnwrapMasked(err)
-	return err != nil && err != storage.ErrKeyNotFound
 }

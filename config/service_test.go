@@ -21,8 +21,8 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,14 +108,13 @@ func TestNotKeyNotFoundError(t *testing.T) {
 	scopedSrv := srv.NewScoped(1, 1)
 
 	flat, err := scopedSrv.String(cfgpath.NewRoute("catalog/product/enable_flat"))
-	assert.EqualError(t, err, storage.ErrKeyNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Empty(t, flat)
-	assert.False(t, config.NotKeyNotFoundError(err))
 
 	val, err := scopedSrv.String(cfgpath.NewRoute("catalog"))
 	assert.Empty(t, val)
-	assert.EqualError(t, err, cfgpath.ErrIncorrectPath.Error())
-	assert.True(t, config.NotKeyNotFoundError(err))
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.False(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func TestService_NewScoped(t *testing.T) {
@@ -136,18 +135,19 @@ func TestService_Write(t *testing.T) {
 	assert.NotNil(t, srv)
 
 	p1 := cfgpath.Path{}
-	assert.EqualError(t, srv.Write(p1, true), cfgpath.ErrIncorrectPath.Error())
+	err := srv.Write(p1, true)
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
 func TestService_Types(t *testing.T) {
 	t.Parallel()
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 	tests := []struct {
-		p   cfgpath.Path
-		err error
+		p          cfgpath.Path
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{basePath, nil},
-		{cfgpath.Path{}, cfgpath.ErrIncorrectPath},
+		{cfgpath.Path{}, errors.IsNotValid},
 		{basePath.Bind(scope.Website, 10), nil},
 		{basePath.Bind(scope.Store, 22), nil},
 	}
@@ -157,19 +157,18 @@ func TestService_Types(t *testing.T) {
 
 	for vi, wantVal := range values {
 		for i, test := range tests {
-			testServiceTypes(t, test.p, wantVal, wantVal, vi, i, test.err)
-			testServiceTypes(t, test.p, struct{}{}, wantVal, vi, i, test.err) // provokes a cast error
+			testServiceTypes(t, test.p, wantVal, wantVal, vi, i, test.wantErrBhf)
+			testServiceTypes(t, test.p, struct{}{}, wantVal, vi, i, test.wantErrBhf) // provokes a cast error
 		}
 	}
 }
 
-func testServiceTypes(t *testing.T, p cfgpath.Path, writeVal, wantVal interface{}, iFaceIDX, testIDX int, wantErr error) {
+func testServiceTypes(t *testing.T, p cfgpath.Path, writeVal, wantVal interface{}, iFaceIDX, testIDX int, wantErrBhf errors.BehaviourFunc) {
 
 	srv := config.MustNewService()
 
-	writeErr := srv.Write(p, writeVal)
-	if wantErr != nil {
-		assert.EqualError(t, writeErr, wantErr.Error(), "Index Value %d Index Test %d", iFaceIDX, testIDX)
+	if writeErr := srv.Write(p, writeVal); wantErrBhf != nil {
+		assert.True(t, wantErrBhf(writeErr), "Index Value %d Index Test %d => %s", iFaceIDX, testIDX, writeErr)
 	} else {
 		assert.NoError(t, writeErr, "Index Value %d Index Test %d", iFaceIDX, testIDX)
 	}
@@ -193,17 +192,15 @@ func testServiceTypes(t *testing.T, p cfgpath.Path, writeVal, wantVal interface{
 		t.Fatalf("Unsupported type: %#v in Index Value %d Index Test %d", wantVal, iFaceIDX, testIDX)
 	}
 
-	if wantErr != nil {
-		// if this fails for time.Time{} then my PR to assert pkg has not yet been merged :-(
-		// https://github.com/stretchr/testify/pull/259
+	if wantErrBhf != nil {
 		assert.Empty(t, haveVal, "Index %d", testIDX)
-		assert.EqualError(t, haveErr, wantErr.Error(), "Index %d", testIDX)
+		assert.True(t, wantErrBhf(haveErr), "Index Value %d Index Test %d => %s", iFaceIDX, testIDX, haveErr)
 		assert.False(t, srv.IsSet(p))
 		return
 	}
 
 	if ws, ok := writeVal.(struct{}); ok && ws == (struct{}{}) {
-		assert.Contains(t, haveErr.Error(), "Unable to Cast struct {}{} to")
+		assert.True(t, errors.IsNotValid(haveErr), "Error: %s", haveErr)
 		assert.Empty(t, haveVal)
 	} else {
 		assert.NoError(t, haveErr, "Index %d", testIDX)

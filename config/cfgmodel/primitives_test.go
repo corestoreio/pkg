@@ -25,8 +25,7 @@ import (
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -235,15 +234,14 @@ func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	t.Parallel()
 
 	b := cfgmodel.NewBool("web/cors/allow_credentials")
-	haveErr := errors.New("Unexpected error")
 
-	gb, err := b.Get(cfgmock.NewService(
+	gb, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithBool(func(path string) (bool, error) {
-			return false, haveErr
+			return false, errors.NewFatalf("Unexpected error")
 		}),
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 }
 
 func TestBoolIgnoreNilDefaultValues(t *testing.T) {
@@ -263,7 +261,8 @@ func TestBoolWrite(t *testing.T) {
 	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(source.YesNo))
 
 	mw := &cfgmock.Write{}
-	assert.EqualError(t, b.Write(mw, true, scope.Store, 3), "Scope permission insufficient: Have 'Store'; Want 'Default,Website'")
+	err := b.Write(mw, true, scope.Store, 3)
+	assert.True(t, errors.IsUnauthorized(err), "Error: %s", err)
 	assert.NoError(t, b.Write(mw, true, scope.Website, 3))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, true, mw.ArgValue.(bool))
@@ -335,14 +334,13 @@ func TestByteGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	b := cfgmodel.NewByte("web/cors/byte")
 	assert.Empty(t, b.Options())
 
-	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(cfgmock.NewService(
+	gb, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithByte(func(path string) ([]byte, error) {
-			return nil, haveErr
+			return nil, errors.NewFatalf("Unexpected error")
 		}),
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 }
 
 func TestByteIgnoreNilDefaultValues(t *testing.T) {
@@ -431,14 +429,13 @@ func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	b := cfgmodel.NewStr("web/cors/exposed_headers")
 	assert.Empty(t, b.Options())
 
-	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(cfgmock.NewService(
+	gb, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithString(func(path string) (string, error) {
-			return "", haveErr
+			return "", errors.NewFatalf("Unexpected error")
 		}),
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 }
 
 func TestStrIgnoreNilDefaultValues(t *testing.T) {
@@ -527,14 +524,13 @@ func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 	b := cfgmodel.NewInt("web/cors/int")
 
-	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(cfgmock.NewService(
+	gb, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithInt(func(path string) (int, error) {
-			return 0, haveErr
+			return 0, errors.NewFatalf("Unexpected error")
 		}),
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 }
 
 func TestIntIgnoreNilDefaultValues(t *testing.T) {
@@ -624,16 +620,14 @@ func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 	b := cfgmodel.NewFloat64("web/cors/float64")
 
-	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(cfgmock.NewService(
+	gb, haveErr := b.Get(cfgmock.NewService(
 
 		cfgmock.WithFloat64(func(path string) (float64, error) {
-			return 0, haveErr
+			return 0, errors.NewFatalf("Unexpected error")
 		}),
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
-
+	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 }
 
 func TestFloat64IgnoreNilDefaultValues(t *testing.T) {

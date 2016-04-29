@@ -17,15 +17,9 @@ package storage
 import (
 	"sync"
 
-	"errors"
-
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrKeyNotFound will be returned if a key cannot be found or value is nil.
-// If you provide your own interface implementation make sure to also return
-// ErrKeyNotFound if a key cannot be found.
-var ErrKeyNotFound = errors.New("Key not found")
 
 // Storager is the underlying data storage for holding the keys and its values.
 // Implementations can be spf13/viper or MySQL backed. Default Storager
@@ -39,11 +33,17 @@ type Storager interface {
 	// Set sets a key with a value and returns on success nil or ErrKeyOverwritten,
 	// on failure any other error
 	Set(key cfgpath.Path, value interface{}) error
-	// Get may return a ErrKeyNotFound error
+	// Get may return a NotFound error behaviour.
 	Get(key cfgpath.Path) (interface{}, error)
 	// AllKeys returns the fully qualified keys
 	AllKeys() (cfgpath.PathSlice, error)
 }
+
+// NotFound error type which defines that a specific key cannot be found.
+type NotFound struct{}
+
+func (NotFound) Error() string  { return "[storage] Key not found" }
+func (NotFound) NotFound() bool { return true } // @see errors.IsNotFound
 
 type keyVal struct {
 	k cfgpath.Path
@@ -70,25 +70,26 @@ func (sp *kvmap) Set(key cfgpath.Path, value interface{}) error {
 
 	h32, err := key.Hash(-1)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "[storage] key.Hash")
 	}
 	sp.kv[h32] = keyVal{key, value}
 	return nil
 }
 
-// Get implements Storager interface
+// Get implements Storager interface.
+// Error behaviour: NotFound.
 func (sp *kvmap) Get(key cfgpath.Path) (interface{}, error) {
 	sp.Lock()
 	defer sp.Unlock()
 
 	h32, err := key.Hash(-1)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "[storage] key.Hash")
 	}
 	if data, ok := sp.kv[h32]; ok {
 		return data.v, nil
 	}
-	return nil, ErrKeyNotFound
+	return nil, NotFound{}
 }
 
 // AllKeys implements Storager interface

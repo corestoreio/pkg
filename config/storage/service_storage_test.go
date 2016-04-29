@@ -20,6 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +45,7 @@ func TestSimpleStorage(t *testing.T) {
 	assert.Exactly(t, 4711, i.(int))
 
 	ni, err := sp.Get(cfgpath.Path{})
-	assert.EqualError(t, err, cfgpath.ErrIncorrectPath.Error())
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.Nil(t, ni)
 
 	keys, err := sp.AllKeys()
@@ -56,6 +57,6 @@ func TestSimpleStorage(t *testing.T) {
 
 	p3 := cfgpath.MustNewByParts("rr/ss/tt").Bind(scope.Store, 1)
 	ni, err = sp.Get(p3)
-	assert.EqualError(t, err, storage.ErrKeyNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Nil(t, ni)
 }

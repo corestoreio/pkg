@@ -15,11 +15,13 @@
 package freecache_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/config/storage/freecache"
+	"github.com/corestoreio/csfw/util/conv"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var _ storage.Storager = (*freecache.Storage)(nil)
@@ -34,7 +36,7 @@ func TestCacheGet(t *testing.T) {
 		wantSetErr error
 		wantGetErr error
 	}{
-		{cfgpath.MustNewByParts("aa/bb/cc"), 1, nil, nil},
+		{cfgpath.MustNewByParts("aa/bb/cc"), 12345, nil, nil},
 	}
 	for idx, test := range tests {
 
@@ -51,7 +53,7 @@ func TestCacheGet(t *testing.T) {
 		} else {
 			assert.NoError(t, haveGetErr, "Index %d", idx)
 		}
-
-		assert.Exactly(t, test.val, haveVal, "Index %d", idx)
+		// don't do this 2x conv casting in production code
+		assert.Exactly(t, test.val, conv.ToInt(conv.ToString(haveVal)), "Index %d => %v", idx, conv.ToString(haveVal))
 	}
 }

@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // CSVSeparator separates CSV values. Default value.
@@ -84,7 +84,7 @@ func (str *StringCSV) Option(opts ...Option) (previous Option) {
 func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 	s, err := str.Str.Get(sg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
 	if s == "" {
 		return nil, nil
@@ -144,7 +144,7 @@ func (ic *IntCSV) Option(opts ...Option) (previous Option) {
 func (ic IntCSV) Get(sg config.ScopedGetter) ([]int, error) {
 	s, err := ic.Str.Get(sg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
 	if s == "" {
 		return nil, nil
@@ -178,15 +178,15 @@ func (ic IntCSV) Write(w config.Writer, sl []int, s scope.Scope, scopeID int64) 
 	for i, v := range sl {
 
 		if err := ic.ValidateInt(v); err != nil {
-			return err
+			return errors.Wrap(err, "[cfgmodel] ValidateInt")
 		}
 
 		if _, err := val.WriteString(strconv.Itoa(v)); err != nil {
-			return errors.Mask(err)
+			return errors.Wrapf(err, "[cfgmodel] Value %v", v)
 		}
 		if i < len(sl)-1 {
 			if _, err := val.WriteRune(ic.Separator); err != nil {
-				return errors.Mask(err)
+				return errors.Wrap(err, "[cfgmodel] WriteRune")
 			}
 		}
 	}

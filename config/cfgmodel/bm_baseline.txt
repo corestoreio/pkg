@@ -1,5 +1,5 @@
 PASS
-Benchmark_ParallelStrGetDefault-4	 1000000	      2375 ns/op	      97 B/op	       4 allocs/op
-Benchmark_SingleStrGetDefault-4  	 1000000	      1832 ns/op	      97 B/op	       4 allocs/op
-Benchmark_SingleByteGetDefault-4 	 1000000	      1344 ns/op	       1 B/op	       1 allocs/op
-ok  	github.com/corestoreio/csfw/config/cfgmodel	5.628s
+Benchmark_ParallelStrGetDefault-4	 1000000	      2424 ns/op	       1 B/op	       1 allocs/op
+Benchmark_SingleStrGetDefault-4  	 1000000	      1890 ns/op	       1 B/op	       1 allocs/op
+Benchmark_SingleByteGetDefault-4 	 1000000	      1688 ns/op	       1 B/op	       1 allocs/op
+ok  	github.com/corestoreio/csfw/config/cfgmodel	6.082s

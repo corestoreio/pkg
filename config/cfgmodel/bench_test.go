@@ -16,9 +16,10 @@ package cfgmodel_test
 
 import (
 	"bytes"
+	"testing"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"testing"
 )
 
 var benchmarkStr string

@@ -15,11 +15,12 @@
 package freecache
 
 import (
+	"time"
+
 	"github.com/coocood/freecache"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/util/conv"
-	"time"
 )
 
 // Storage wrapper around the freecache.Cache type
@@ -66,7 +67,7 @@ func (s *Storage) Get(key cfgpath.Path) (interface{}, error) {
 		return nil, err
 	}
 	if err == freecache.ErrNotFound {
-		return nil, storage.ErrKeyNotFound
+		return nil, storage.NotFound{}
 	}
 
 	return val, nil

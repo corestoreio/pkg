@@ -20,12 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/log"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +56,7 @@ func TestScopedServicePath(t *testing.T) {
 		route              cfgpath.Route
 		perm               scope.Scope
 		websiteID, storeID int64
-		err                error
+		wantErrBhf         errors.BehaviourFunc
 	}{
 		{
 			"Default ScopedGetter should return default scope",
@@ -82,11 +80,11 @@ func TestScopedServicePath(t *testing.T) {
 		},
 		{
 			"Website ID 10 + Store 42 ScopedGetter should return nothing",
-			basePath.Bind(scope.Store, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 42, storage.ErrKeyNotFound,
+			basePath.Bind(scope.Store, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 42, errors.IsNotFound,
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			basePath.String(), cfgpath.NewRoute("aa", "bb"), scope.Store, 0, 0, cfgpath.ErrIncorrectPath,
+			basePath.String(), cfgpath.NewRoute("aa", "bb"), scope.Store, 0, 0, errors.IsNotValid,
 		},
 	}
 
@@ -120,17 +118,15 @@ func TestScopedServicePath(t *testing.T) {
 			default:
 				t.Fatalf("Unsupported type: %#v in vals index %d", wantVal, vi)
 			}
-			testScopedService(t, wantVal, haveVal, test.desc, test.err, haveErr)
+			testScopedService(t, wantVal, haveVal, test.desc, test.wantErrBhf, haveErr)
 		}
 	}
 }
 
-func testScopedService(t *testing.T, want, have interface{}, desc string, wantErr, err error) {
-	if wantErr != nil {
-		// if this fails for time.Time{} then my PR to assert pkg has not yet been merged :-(
-		// https://github.com/stretchr/testify/pull/259
+func testScopedService(t *testing.T, want, have interface{}, desc string, wantErrBhf errors.BehaviourFunc, err error) {
+	if wantErrBhf != nil {
 		assert.Empty(t, have, desc)
-		assert.EqualError(t, err, wantErr.Error(), desc)
+		assert.True(t, wantErrBhf(err), "Error: %s => %s", err, desc)
 		return
 	}
 	assert.NoError(t, err, desc)
@@ -157,7 +153,6 @@ func BenchmarkScopedServiceStringDefault(b *testing.B) {
 }
 
 func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64, s scope.Scope) {
-	config.PkgLog.SetLevel(log.StdLevelFatal)
 	route := cfgpath.NewRoute("aa/bb/cc")
 	want := strings.Repeat("Gopher", 100)
 	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{

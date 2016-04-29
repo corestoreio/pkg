@@ -15,13 +15,16 @@
 package config_test
 
 import (
-	"errors"
+	"io/ioutil"
+	goLog "log"
 	"sync"
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,13 +42,24 @@ func (ts *testSubscriber) MessageConfig(p cfgpath.Path) error {
 	return ts.f(p)
 }
 
+func initLogger() (*log.MutexBuffer, log.Logger) {
+	debugBuf := new(log.MutexBuffer)
+	lg := log.NewStdLogger(
+		log.SetStdDebug(debugBuf, "testDebug: ", goLog.Lshortfile),
+		log.SetStdInfo(ioutil.Discard, "testInfo: ", goLog.Lshortfile),
+	)
+	lg.SetLevel(log.StdLevelDebug)
+	return debugBuf, lg
+}
+
 func TestPubSubBubbling(t *testing.T) {
+	t.Parallel()
 	testPath := cfgpath.MustNewByParts("aa/bb/cc")
 
 	s := config.MustNewService()
 
 	_, err := s.Subscribe(cfgpath.Route{}, nil)
-	assert.EqualError(t, err, cfgpath.ErrIncorrectPath.Error())
+	assert.True(t, errors.IsEmpty(err), "Error: %s", err)
 
 	subID, err := s.Subscribe(testPath.Route, &testSubscriber{
 		t: t,
@@ -72,14 +86,16 @@ func TestPubSubBubbling(t *testing.T) {
 
 	// send on closed channel
 	assert.NoError(t, s.Write(testPath2.Bind(scope.Website, 3), 1))
-	assert.EqualError(t, s.Close(), config.ErrPublisherClosed.Error())
+	err = s.Close()
+	assert.True(t, errors.IsAlreadyClosed(err), "Error: %s", err)
 }
 
 func TestPubSubPanicSimple(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
+	debugBuf, logger := initLogger()
+	s := config.MustNewService(config.WithLogger(logger))
 	testPath := cfgpath.NewRoute("xx/yy/zz")
 
-	s := config.MustNewService()
 	subID, err := s.Subscribe(testPath, &testSubscriber{
 		t: t,
 		f: func(_ cfgpath.Path) error {
@@ -90,15 +106,18 @@ func TestPubSubPanicSimple(t *testing.T) {
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 	assert.NoError(t, s.Write(cfgpath.MustNew(testPath).Bind(scope.Store, 123), 321), "Writing value 123 should not fail")
 	assert.NoError(t, s.Close(), "Closing the service should not fail.")
-	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
 }
 
 func TestPubSubPanicError(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
+	debugBuf, logger := initLogger()
+	s := config.MustNewService(config.WithLogger(logger))
+
 	testPath := cfgpath.NewRoute("aa/bb/cc")
 
 	var pErr = errors.New("OMG! Panic!")
-	s := config.MustNewService()
+
 	subID, err := s.Subscribe(testPath, &testSubscriber{
 		t: t,
 		f: func(_ cfgpath.Path) error {
@@ -110,12 +129,13 @@ func TestPubSubPanicError(t *testing.T) {
 	assert.NoError(t, s.Write(cfgpath.MustNew(testPath).Bind(scope.Store, 123), 321))
 
 	assert.NoError(t, s.Close())
-	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
-	defer debugLogBuf.Reset()
-	s := config.MustNewService()
+	t.Parallel()
+	debugBuf, logger := initLogger()
+	s := config.MustNewService(config.WithLogger(logger))
 
 	subID, err := s.Subscribe(cfgpath.NewRoute("xx"), &testSubscriber{
 		t: t,
@@ -153,16 +173,17 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, s.Write(cfgpath.MustNewByParts("xx/yy/zz").Bind(scope.Store, 987), 789))
 	assert.NoError(t, s.Close())
 
-	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
-	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
-	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
 }
 
 func TestPubSubUnsubscribe(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
+	debugBuf, logger := initLogger()
+	s := config.MustNewService(config.WithLogger(logger))
 
 	var pErr = errors.New("WTF? Panic!")
-	s := config.MustNewService()
 	subID, err := s.Subscribe(cfgpath.NewRoute("xx/yy/zz"), &testSubscriber{
 		t: t,
 		f: func(_ cfgpath.Path) error {
@@ -174,7 +195,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, s.Unsubscribe(subID))
 	assert.NoError(t, s.Write(cfgpath.MustNewByParts("xx/yy/zz").Bind(scope.Store, 123), 321))
 	assert.NoError(t, s.Close())
-	assert.Contains(t, debugLogBuf.String(), "config.Service.Write path: cfgpath.Path{ Route:cfgpath.NewRoute(`xx/yy/zz`), Scope: 4, ID: 123 } val: 321")
+	assert.Contains(t, debugBuf.String(), "config.Service.Write path: cfgpath.Path{ Route:cfgpath.NewRoute(`xx/yy/zz`), Scope: 4, ID: 123 } val: 321")
 
 }
 
@@ -185,12 +206,14 @@ type levelCalls struct {
 }
 
 func TestPubSubEvict(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
+	debugBuf, logger := initLogger()
+	s := config.MustNewService(config.WithLogger(logger))
 
 	levelCall := new(levelCalls)
 
 	var pErr = errors.New("WTF Eviction? Panic!")
-	s := config.MustNewService()
+
 	subID, err := s.Subscribe(cfgpath.NewRoute("xx/yy"), &testSubscriber{
 		t: t,
 		f: func(p cfgpath.Path) error {
@@ -225,11 +248,12 @@ func TestPubSubEvict(t *testing.T) {
 
 	assert.NoError(t, s.Close())
 
-	assert.Contains(t, debugLogBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
+	assert.Contains(t, debugBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
 
 	levelCall.Lock()
 	assert.Equal(t, 3, levelCall.level2Calls)
 	assert.Equal(t, 1, levelCall.level3Calls)
 	levelCall.Unlock()
-	assert.EqualError(t, s.Close(), config.ErrPublisherClosed.Error())
+	err = s.Close()
+	assert.True(t, errors.IsAlreadyClosed(err), "Error: %s", err)
 }

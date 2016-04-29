@@ -16,6 +16,7 @@ package cfgmodel
 
 import (
 	"errors"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 )

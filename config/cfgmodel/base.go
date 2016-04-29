@@ -15,6 +15,7 @@
 package cfgmodel
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -23,8 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // PkgBackend used for embedding in the PkgBackend type in each package.
@@ -105,7 +105,7 @@ func WithSourceByInt(vli source.Ints) Option {
 // types in this package inherits from this path type.
 type baseValue struct {
 	// MultiErr some errors of the With* option functions gets appended here.
-	*cserr.MultiErr
+	*errors.MultiErr
 
 	route cfgpath.Route // contains the path like web/cors/exposed_headers but has no scope
 
@@ -148,15 +148,16 @@ func (bv baseValue) hasField() bool {
 
 // Write writes a value v to the config.Writer without checking if the value
 // has changed. Checks if the Scope matches as defined in the non-nil ConfigStructure.
+// Error behaviour: Unauthorized
 func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, scopeID int64) error {
 	if bv.hasField() {
 		if false == bv.Field.Scopes.Has(s) {
-			return errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
+			return errors.NewUnauthorizedf("[cfgmodel] Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
 		}
 	}
 	pp, err := bv.ToPath(s, scopeID)
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrap(err, "[cfgmodel] ToPath")
 	}
 	return w.Write(pp, v)
 }
@@ -170,7 +171,7 @@ func (bv baseValue) String() string {
 func (bv baseValue) ToPath(s scope.Scope, scopeID int64) (cfgpath.Path, error) {
 	p, err := cfgpath.New(bv.route)
 	if err != nil {
-		return cfgpath.Path{}, errors.Mask(err)
+		return cfgpath.Path{}, errors.Wrapf(err, "[cfgmodel] cfgpath.New: %q", bv.route)
 	}
 	return p.Bind(s, scopeID), nil
 }
@@ -182,10 +183,11 @@ func (bv baseValue) Route() cfgpath.Route {
 
 // InScope checks if a field from a path is allowed for current scope.
 // Returns nil on success.
+// Error behaviour: Unauthorized
 func (bv baseValue) InScope(sg scope.Scoper) (err error) {
 	s, _ := sg.Scope()
 	if bv.hasField() && false == bv.Field.Scopes.Has(s) {
-		err = errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
+		err = errors.NewUnauthorizedf("[cfgmodel] Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
 	}
 	return
 }
@@ -205,7 +207,7 @@ func (bv baseValue) Options() source.Slice {
 // and storeID e.g. 4 into: stores/4/general/country/allow
 func (bv baseValue) FQ(s scope.Scope, scopeID int64) (string, error) {
 	p, err := bv.ToPath(s, scopeID)
-	return p.String(), err
+	return p.String(), errors.Wrap(err, "[cfgmodel] ToPath")
 }
 
 // MustFQ same as FQ but panics on error. Please use only for testing.
@@ -218,50 +220,54 @@ func (bv baseValue) MustFQ(s scope.Scope, scopeID int64) string {
 }
 
 // ValidateString checks if string v is contained in Source source.Slice.
+// Error behaviour: NotValid
 func (bv baseValue) ValidateString(v string) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
 		jv, jErr := bv.Source.ToJSON()
 		if jErr != nil {
-			return errors.Maskf(err, "Source: %#v", bv.Source)
+			return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 		}
-		err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
+		err = errors.NewNotValidf("[cfgmodel] The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
 
 // ValidateInt checks if int v is contained in non-nil Source source.Slice.
+// Error behaviour: NotValid
 func (bv baseValue) ValidateInt(v int) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValInt(v) {
 		jv, jErr := bv.Source.ToJSON()
 		if jErr != nil {
-			return errors.Maskf(err, "Source: %#v", bv.Source)
+			return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 		}
-		err = errors.Errorf("The value '%d' cannot be found within the allowed Options():\n%s", v, jv)
+		err = errors.NewNotValidf("[cfgmodel] The value '%d' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
 
 // ValidateFloat64 checks if float64 v is contained in non-nil Source source.Slice.
+// Error behaviour: NotValid
 func (bv baseValue) ValidateFloat64(v float64) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
 		jv, jErr := bv.Source.ToJSON()
 		if jErr != nil {
-			return errors.Maskf(err, "Source: %#v", bv.Source)
+			return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 		}
-		err = errors.Errorf("The value '%.14f' cannot be found within the allowed Options():\n%s", v, jv)
+		err = errors.NewNotValidf("[cfgmodel] The value '%.14f' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
 
 // ValidateTime checks if time.Time v is contained in non-nil Source source.Slice.
+// Error behaviour: NotValid
 func (bv baseValue) ValidateTime(v time.Time) (err error) {
 	// todo:
 	//if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
 	//jv, jErr := bv.Source.ToJSON()
 	//if jErr != nil {
-	//	return errors.Maskf(err, "Source: %#v", bv.Source)
+	//	return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 	//}
-	//err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
+	//err = errors.NewNotValidf("[cfgmodel] The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
 	//}
-	return
+	return errors.NewNotValidf("[cfgmodel] @todo once someone requires this feature")
 }

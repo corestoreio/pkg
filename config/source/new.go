@@ -14,17 +14,14 @@
 
 package source
 
-import "errors"
-
-// ErrImbalancedPairs reports whether the value/label pairs are incorrect
-var ErrImbalancedPairs = errors.New("Imbalanced value/label pairs")
+import "github.com/corestoreio/csfw/util/errors"
 
 // NewByString creates a new ValueLabelSlice (VLS) from key,value list.
 // It panics when arguments are imbalanced. Example:
 // 		mySlice := NewValueLabelSlice("http", "HTTP (unsecure)", "https", "HTTPS (TLS)")
 func NewByString(vl ...string) Slice {
 	if len(vl)%2 != 0 {
-		panic(ErrImbalancedPairs)
+		panic(errors.NewNotValidf("[source] Imbalanced Pairs: %v", vl))
 	}
 	vls := make(Slice, len(vl)/2)
 	j := 0

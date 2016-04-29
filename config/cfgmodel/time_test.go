@@ -25,8 +25,7 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -105,14 +104,13 @@ func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	b := cfgmodel.NewTime("web/cors/time")
 	assert.Empty(t, b.Options())
 
-	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(cfgmock.NewService(
+	gb, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithTime(func(path string) (time.Time, error) {
-			return time.Time{}, haveErr
+			return time.Time{}, errors.NewFatalf("Unexpected error")
 		}),
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 }
 
 func TestTimeIgnoreNilDefaultValues(t *testing.T) {
@@ -218,14 +216,13 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	b := cfgmodel.NewDuration("web/cors/duration")
 	assert.Empty(t, b.Options())
 
-	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(cfgmock.NewService(
+	gb, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithString(func(path string) (string, error) {
-			return "", haveErr
+			return "", errors.NewFatalf("Unexpected error")
 		}),
 	).NewScoped(1, 1))
 	assert.Exactly(t, time.Duration(0), gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 }
 
 func TestDurationIgnoreNilDefaultValues(t *testing.T) {

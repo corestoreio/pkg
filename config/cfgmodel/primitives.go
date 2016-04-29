@@ -18,7 +18,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Bool represents a path in config.Getter which handles bool values.
@@ -44,7 +44,7 @@ func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
 		var err error
 		v, err = conv.ToBoolE(b.Field.Default)
 		if err != nil {
-			return false, errors.Mask(err)
+			return false, errors.Wrap(err, "[cfgmodel] ToBoolE")
 		}
 	}
 
@@ -52,10 +52,11 @@ func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", b.route)
+	case !errors.IsNotFound(err):
+		err = errors.Wrapf(err, "[cfgmodel] Route %q", b.route)
 	default:
-		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
+		// use default value v because sg found nothing
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
 	return v, err
 }
@@ -88,7 +89,7 @@ func (bt Byte) Get(sg config.ScopedGetter) ([]byte, error) {
 		var err error
 		v, err = conv.ToByteE(bt.Field.Default)
 		if err != nil {
-			return nil, errors.Mask(err)
+			return nil, errors.Wrap(err, "[cfgmodel] ToByteE")
 		}
 	}
 
@@ -96,10 +97,11 @@ func (bt Byte) Get(sg config.ScopedGetter) ([]byte, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", bt.route)
+	case !errors.IsNotFound(err):
+		err = errors.Wrapf(err, "[cfgmodel] Route %q", bt.route)
 	default:
-		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
+		// use default value v because sg found nothing
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
 	return v, err
 }
@@ -132,7 +134,7 @@ func (str Str) Get(sg config.ScopedGetter) (string, error) {
 		var err error
 		v, err = conv.ToStringE(str.Field.Default)
 		if err != nil {
-			return "", errors.Mask(err)
+			return "", errors.Wrap(err, "[cfgmodel] ToStringE")
 		}
 	}
 
@@ -140,10 +142,11 @@ func (str Str) Get(sg config.ScopedGetter) (string, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", str.route)
+	case !errors.IsNotFound(err):
+		err = errors.Wrapf(err, "[cfgmodel] Route %q", str.route)
 	default:
-		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
+		// use default value v because sg found nothing
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
 	return v, err
 }
@@ -174,7 +177,7 @@ func (i Int) Get(sg config.ScopedGetter) (int, error) {
 		var err error
 		v, err = conv.ToIntE(i.Field.Default)
 		if err != nil {
-			return 0, errors.Mask(err)
+			return 0, errors.Wrap(err, "[cfgmodel] ToIntE")
 		}
 	}
 
@@ -182,10 +185,11 @@ func (i Int) Get(sg config.ScopedGetter) (int, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", i.route)
+	case !errors.IsNotFound(err):
+		err = errors.Wrapf(err, "[cfgmodel] Route %q", i.route)
 	default:
-		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
+		// use default value v because sg found nothing
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
 	return v, err
 }
@@ -217,7 +221,7 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 			var err error
 			v, err = conv.ToFloat64E(d)
 			if err != nil {
-				return 0, errors.Mask(err)
+				return 0, errors.Wrap(err, "[cfgmodel] ToFloat64E")
 			}
 		}
 	}
@@ -226,10 +230,11 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", f.route)
+	case !errors.IsNotFound(err):
+		err = errors.Wrapf(err, "[cfgmodel] Route %q", f.route)
 	default:
-		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
+		// use default value v because sg found nothing
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
 	return v, err
 }

@@ -20,11 +20,8 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-var _ json.Marshaler = (*Pair)(nil)
-var _ json.Unmarshaler = (*Pair)(nil)
 
 // NotNull* are specifying which type has a non null value
 const (
@@ -80,7 +77,7 @@ func (p *Pair) UnmarshalJSON(data []byte) error {
 	}{}
 
 	if err := json.Unmarshal(data, &rawPair); err != nil {
-		return errors.Mask(err)
+		return errors.Wrapf(err, "[source] Unmarshal: %q", string(data))
 	}
 
 	p.label = rawPair.Label
@@ -101,7 +98,7 @@ func (p *Pair) UnmarshalJSON(data []byte) error {
 		p.NotNull = NotNullBool
 		p.Bool = vt
 	default:
-		return errors.Errorf("Cannot detect type for value '%s' in Pair: %#v", rawPair.Value, rawPair)
+		return errors.Errorf("[source] Cannot detect type for value '%s' in Pair: %#v", rawPair.Value, rawPair)
 	}
 
 	return nil
@@ -115,12 +112,12 @@ func (p Pair) MarshalJSON() ([]byte, error) {
 	case NotNullString:
 		data, err = json.Marshal(p.String)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "[source] String Marshal: %q", p.String)
 		}
 	case NotNullInt:
 		data, err = json.Marshal(p.Int)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "[source] String Marshal: %v", p.Int)
 		}
 	case NotNullFloat64:
 		var n = p.Float64
@@ -134,33 +131,33 @@ func (p Pair) MarshalJSON() ([]byte, error) {
 		}
 		data, err = json.Marshal(n)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "[source] Float Marshal: %v", n)
 		}
 	case NotNullBool:
 		data, err = json.Marshal(p.Bool)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "[source] Bool Marshal: %q", p.Bool)
 		}
 	}
 
 	labelData, err := json.Marshal(p.Label())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "[source] Label Marshal: %q", p.Label())
 	}
 
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 	buf.WriteString(`{"Value":`)
 	if len(data) == 0 {
-		buf.WriteByte('"')
-		buf.WriteByte('"')
+		_ = buf.WriteByte('"')
+		_ = buf.WriteByte('"')
 	} else {
-		buf.Write(data)
+		_, _ = buf.Write(data)
 	}
 
-	buf.WriteString(`,"Label":`)
-	buf.Write(labelData)
-	buf.WriteByte('}')
+	_, _ = buf.WriteString(`,"Label":`)
+	_, _ = buf.Write(labelData)
+	_ = buf.WriteByte('}')
 
 	return buf.Bytes(), nil
 }

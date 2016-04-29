@@ -20,6 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // We focus here on type String() other primitive types are of course also available.
@@ -85,14 +86,18 @@ func ExampleService() {
 	// Scope4
 	val, err = configSrv.String(pathString.Bind(scope.Store, 3)) // different scope ID
 	if err != nil {
-		fmt.Printf("Scope4: srvString Error: %s\n", err)
+		fmt.Printf("Scope4a: srvString Error: %s\n", err)
+		fmt.Printf("Scope4b: srvString Error: %s\n", errors.PrintLoc(err))
 	}
-	fmt.Printf("Scope4: Is KeyNotFound %t\n", !config.NotKeyNotFoundError(err))
+	fmt.Printf("Scope4: Is KeyNotFound %t\n", errors.IsNotFound(err))
 
 	// Output:
 	// Scope1: DefaultGopher
 	// Scope2: WebsiteGopher
 	// Scope3: StoreGopher
-	// Scope4: srvString Error: Key not found
+	// Scope4a: srvString Error: [config] Storage.String.get: [storage] Key not found
+	// Scope4b: srvString Error: github.com/corestoreio/csfw/config/service.go:213: [config] Storage.String.get
+	// [storage] Key not found
+	//
 	// Scope4: Is KeyNotFound true
 }

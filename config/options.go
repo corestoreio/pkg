@@ -16,5 +16,19 @@ package config
 
 import "github.com/corestoreio/csfw/util/log"
 
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// ServiceOption applies options to the NewService.
+type ServiceOption func(*Service)
+
+// WithLogger sets a logger to the Service and to the internal pubSub
+// goroutine. If nil, everything will panic.
+// Apply this function before setting other option functions to provide your
+// logger to those other option functions.
+// Default Logger log.Blackhole with disabled debug and info logging.
+func WithLogger(l log.Logger) ServiceOption {
+	return func(s *Service) {
+		s.Log = l
+		if s.pubSub != nil {
+			s.pubSub.log = l
+		}
+	}
+}
