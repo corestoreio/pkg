@@ -475,7 +475,6 @@ func TestBehaviourF(t *testing.T) {
 
 var benchmarkAsserted bool
 
-// BenchmarkAssertBehaviourInterface-4	20000000	        99.4 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkAssertBehaviourInterface(b *testing.B) {
 	const hell AlreadyExists = "Hell"
 	b.ReportAllocs()
@@ -488,7 +487,6 @@ func BenchmarkAssertBehaviourInterface(b *testing.B) {
 	}
 }
 
-// BenchmarkAssertBehaviourPointer-4  	50000000	        27.6 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkAssertBehaviourPointer(b *testing.B) {
 	var hell = NewAlreadyExists(errors.New("Hell"), "There is already a place for you")
 	b.ReportAllocs()
@@ -497,6 +495,18 @@ func BenchmarkAssertBehaviourPointer(b *testing.B) {
 		benchmarkAsserted = IsAlreadyExists(hell)
 		if !benchmarkAsserted {
 			b.Error("Hell should already exists.")
+		}
+	}
+}
+
+func BenchmarkAssertBehaviourNoMatch(b *testing.B) {
+	var hell = NewAlreadyExists(errors.New("Hell"), "There is already a place for you")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkAsserted = IsAlreadyClosed(hell)
+		if benchmarkAsserted {
+			b.Error("Hell should already be clsoed.")
 		}
 	}
 }

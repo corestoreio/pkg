@@ -34,24 +34,10 @@ func Errorf(format string, args ...interface{}) error {
 	pc, _, _, _ := runtime.Caller(1)
 	return struct {
 		error
-		loc
+		location
 	}{
 		fmt.Errorf(format, args...),
-		loc(pc),
-	}
-}
-
-// Wrapf returns an error annotating the cause with a message.
-// If cause is nil, Wrap returns nil.
-func Wrapf(cause error, format string, args ...interface{}) error {
-	if cause == nil {
-		return nil
-	}
-	pc, _, _, _ := runtime.Caller(1)
-	return &e{
-		cause:   cause,
-		message: fmt.Sprintf(format, args...),
-		loc:     loc(pc),
+		location(pc),
 	}
 }
 

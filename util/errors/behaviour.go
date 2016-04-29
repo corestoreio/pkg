@@ -26,7 +26,7 @@ type BehaviourFunc func(error) bool
 type eb struct {
 	err     error
 	message string
-	loc
+	location
 }
 
 func (e *eb) Error() string {
@@ -39,9 +39,9 @@ func (e *eb) Error() string {
 func wrapf(err error, format string, args ...interface{}) eb {
 	pc, _, _, _ := runtime.Caller(2)
 	return eb{
-		err:     err,
-		message: fmt.Sprintf(format, args...),
-		loc:     loc(pc),
+		err:      err,
+		message:  fmt.Sprintf(format, args...),
+		location: location(pc),
 	}
 }
 

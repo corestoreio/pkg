@@ -42,8 +42,15 @@ func FormatLineFunc(errs []error) string {
 // The format of the output is the same as Print.
 // If err is nil, nothing is printed.
 func fprint(buf *bytes.Buffer, err error) {
+	type location interface {
+		Location() (string, int)
+	}
+	type message interface {
+		Message() string
+	}
+
 	for err != nil {
-		location, ok := err.(locationer)
+		location, ok := err.(location)
 		if ok {
 			file, line := location.Location()
 			_, _ = buf.WriteString(file)
@@ -52,8 +59,8 @@ func fprint(buf *bytes.Buffer, err error) {
 			_, _ = buf.WriteString(": ")
 		}
 		switch err := err.(type) {
-		case *e:
-			_, _ = buf.WriteString(err.message)
+		case message:
+			_, _ = buf.WriteString(err.Message())
 			_, _ = buf.WriteRune('\n')
 		default:
 			_, _ = buf.WriteString(err.Error())

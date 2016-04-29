@@ -1,7 +1,8 @@
 PASS
-BenchmarkAssertBehaviourInterface-4	20000000	       100 ns/op	      16 B/op	       1 allocs/op
-BenchmarkAssertBehaviourPointer-4  	50000000	        26.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkError-4                   	 1000000	      2243 ns/op	     217 B/op	       4 allocs/op
-BenchmarkErrorPointer-4            	 3000000	       388 ns/op	      48 B/op	       1 allocs/op
-BenchmarkErrorConstant-4           	 5000000	       392 ns/op	      48 B/op	       1 allocs/op
-ok  	github.com/corestoreio/csfw/util/errors	9.694s
+BenchmarkAssertBehaviourInterface-4	20000000	        99.9 ns/op	      16 B/op	       1 allocs/op
+BenchmarkAssertBehaviourPointer-4  	50000000	        44.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAssertBehaviourNoMatch-4  	30000000	        47.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkError-4                   	  500000	      2776 ns/op	     217 B/op	       4 allocs/op
+BenchmarkErrorPointer-4            	 3000000	       448 ns/op	      48 B/op	       1 allocs/op
+BenchmarkErrorConstant-4           	 3000000	       416 ns/op	      48 B/op	       1 allocs/op
+ok  	github.com/corestoreio/csfw/util/errors	10.740s
