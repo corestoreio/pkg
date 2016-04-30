@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,19 +35,23 @@ func TestMethodsSlice(t *testing.T) {
 	assert.Exactly(t, `RS256`, ms.String())
 }
 
-func TestMustNewSigningMethodByAlg(t *testing.T) {
+func TestMustSigningMethodFactory(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), "[csjwt] Unknown signing algorithm \"rot13\"")
+			err, ok := r.(error)
+			if !ok {
+				t.Fatalf("Missing error interface: %#v", r)
+			}
+			assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 		} else {
 			t.Fatal("Missing a panic!")
 		}
 	}()
-	_ = MustNewSigningMethodByAlg("rot13")
+	_ = MustSigningMethodFactory("rot13")
 }
 
-func TestNewSigningMethodByAlg(t *testing.T) {
+func TestSigningMethodFactory(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		alg string
@@ -65,6 +70,6 @@ func TestNewSigningMethodByAlg(t *testing.T) {
 		{RS512},
 	}
 	for _, test := range tests {
-		assert.NotNil(t, MustNewSigningMethodByAlg(test.alg), "Index %s", test.alg)
+		assert.NotNil(t, MustSigningMethodFactory(test.alg), "Index %s", test.alg)
 	}
 }

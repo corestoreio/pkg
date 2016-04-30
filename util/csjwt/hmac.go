@@ -3,6 +3,8 @@ package csjwt
 import (
 	"crypto"
 	"crypto/hmac"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // SigningMethodHMAC implements the HMAC-SHA family of signing methods signing methods
@@ -36,24 +38,25 @@ func (m *SigningMethodHMAC) Alg() string {
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
 // For the key you can use any of the WithPassword*() functions.
+// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) error {
 	// Verify the key is the right type
 	if key.Error != nil {
-		return key.Error
+		return errors.Wrap(key.Error, "[csjwt] SigningMethodHMAC.Verify.key")
 	}
 	if len(key.hmacPassword) == 0 {
-		return errHmacPasswordEmpty
+		return errors.NewEmptyf(errHmacPasswordEmpty)
 	}
 
 	// Decode signature, for comparison
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "[csjwt] SigningMethodHMAC.Verify.DecodeSegment")
 	}
 
 	// Can we use the specified hashing method?
 	if !m.Hash.Available() {
-		return errHmacHashUnavailable
+		return errors.NewNotImplementedf(errHmacHashUnavailable)
 	}
 
 	// This signing method is symmetric, so we validate the signature
@@ -61,11 +64,11 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 	// comparing that against the provided signature.
 	hasher := hmac.New(m.Hash.New, key.hmacPassword)
 	if _, err := hasher.Write(signingString); err != nil {
-		return err
+		return errors.NewWriteFailed(err, "[csjwt] SigningMethodHMAC.Verify.hasher.Write")
 	}
 
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return errHmacSignatureInvalid
+		return errors.NewNotValidf(errHmacSignatureInvalid)
 	}
 
 	// No validation errors.  Signature is good.
@@ -74,22 +77,23 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 
 // Sign implements the Sign method from SigningMethod interface.
 // For the key you can use any of the WithPassword*() functions.
+// Error behaviour: Empty, NotImplemented, WriteFailed
 func (m *SigningMethodHMAC) Sign(signingString []byte, key Key) ([]byte, error) {
 
 	if key.Error != nil {
-		return nil, key.Error
+		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodHMAC.Sign.key")
 	}
 	if key.hmacPassword == nil {
-		return nil, errHmacPasswordEmpty
+		return nil, errors.NewEmptyf(errHmacPasswordEmpty)
 	}
 
 	if !m.Hash.Available() {
-		return nil, errHmacHashUnavailable
+		return nil, errors.NewNotImplementedf(errHmacHashUnavailable)
 	}
 
 	hasher := hmac.New(m.Hash.New, key.hmacPassword)
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, err
+		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodHMAC.Sign.hasher.Write")
 	}
 
 	return EncodeSegment(hasher.Sum(nil)), nil

@@ -184,7 +184,7 @@ func signToken() error {
 	}
 
 	// get the signing alg
-	sMethod, err := csjwt.NewSigningMethodByAlg(*flagAlg)
+	sMethod, err := csjwt.SigningMethodFactory(*flagAlg)
 	if sMethod == nil || err != nil {
 		return fmt.Errorf("Couldn't find signing method: %q - Error: %s", *flagAlg, err)
 	}

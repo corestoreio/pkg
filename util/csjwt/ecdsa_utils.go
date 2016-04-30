@@ -4,6 +4,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Parse PEM encoded Elliptic Curve Private Key Structure
@@ -12,17 +14,17 @@ func parseECPrivateKeyFromPEM(key []byte, password ...[]byte) (*ecdsa.PrivateKey
 	// Parse PEM block
 	pemBlock, _ := pem.Decode(key)
 	if pemBlock == nil {
-		return nil, errKeyMustBePEMEncoded
+		return nil, errors.NewNotSupportedf(errKeyMustBePEMEncoded)
 	}
 
 	var blockBytes []byte
 	if x509.IsEncryptedPEMBlock(pemBlock) {
 		if len(password) != 1 || len(password[0]) == 0 {
-			return nil, errKeyMissingPassword
+			return nil, errors.NewEmptyf(errKeyMissingPassword)
 		}
 		var errPEM error
 		if blockBytes, errPEM = x509.DecryptPEMBlock(pemBlock, password[0]); errPEM != nil {
-			return nil, errPEM
+			return nil, errors.NewNotFound(errPEM, "[csjwt] parseECPrivateKeyFromPEM.x509.DecryptPEMBlock")
 		}
 	} else {
 		blockBytes = pemBlock.Bytes
@@ -38,7 +40,7 @@ func parseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	// Parse PEM block
 	block, _ := pem.Decode(key)
 	if block == nil {
-		return nil, errKeyMustBePEMEncoded
+		return nil, errors.NewNotSupportedf(errKeyMustBePEMEncoded)
 	}
 
 	// Parse the key
@@ -46,7 +48,7 @@ func parseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	if err != nil {
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "[csjwt] parseECPublicKeyFromPEM.x509.ParseCertificate")
 		}
 		parsedKey = cert.PublicKey
 	}
@@ -54,5 +56,5 @@ func parseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	if pkey, ok := parsedKey.(*ecdsa.PublicKey); ok {
 		return pkey, nil
 	}
-	return nil, errKeyNonECDSAPublicKey
+	return nil, errors.NewNotValidf(errKeyNonECDSAPublicKey)
 }

@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // SigningMethodRSA implements the RSA family of signing methods signing methods
@@ -37,57 +39,59 @@ func (m *SigningMethodRSA) Alg() string {
 
 // Verify implements the Verify method from SigningMethod interface.
 // For the key you can use any of the WithRSA*Key*() functions.
+// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
-		return key.Error
+		return errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Verify.key")
 	}
 	if key.rsaKeyPub == nil {
-		return errRSAPublicKeyEmpty
+		return errors.NewEmptyf(errRSAPublicKeyEmpty)
 	}
 
 	// Decode the signature
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "[csjwt] SigningMethodRSA.Verify.DecodeSegment")
 	}
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return errRSAHashUnavailable
+		return errors.NewNotImplementedf(errRSAHashUnavailable)
 	}
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
-		return err
+		return errors.NewWriteFailed(err, "[csjwt] SigningMethodRSA.Verify.hasher.Write")
 	}
 
 	// Verify the signature
-	return rsa.VerifyPKCS1v15(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig)
+	return errors.NewNotValid(rsa.VerifyPKCS1v15(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig), "[csjwt] SigningMethodRSA.Verify.VerifyPKCS1v15")
 }
 
 // Sign implements the Sign method from SigningMethod interface.
 // For the key you can use any of the WithRSAPrivateKey*() functions.
+// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodRSA) Sign(signingString []byte, key Key) ([]byte, error) {
 	if key.Error != nil {
-		return nil, key.Error
+		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Sign.key")
 	}
 	if key.rsaKeyPriv == nil {
-		return nil, errRSAPrivateKeyEmpty
+		return nil, errors.NewEmptyf(errRSAPrivateKeyEmpty)
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return nil, errRSAHashUnavailable
+		return nil, errors.NewNotImplementedf(errRSAHashUnavailable)
 	}
 
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, err
+		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodRSA.Sign.hasher.Write")
 	}
 
 	// Sign the string and return the encoded bytes
 	sigBytes, err := rsa.SignPKCS1v15(rand.Reader, key.rsaKeyPriv, m.Hash, hasher.Sum(nil))
 	if err != nil {
-		return nil, err
+		return nil, errors.NewNotValid(err, "[csjwt] SigningMethodRSA.Sign.SignPKCS1v15")
 	}
 	return EncodeSegment(sigBytes), nil
 }

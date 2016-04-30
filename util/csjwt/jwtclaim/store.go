@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 //go:generate ffjson $GOFILE
@@ -60,10 +60,10 @@ func (s *Store) Set(key string, value interface{}) (err error) {
 	switch key {
 	case KeyStore:
 		s.Store, err = conv.ToStringE(value)
-		return errors.Mask(err)
+		return errors.Wrap(err, "[jwtclaim] Store.ToString")
 	case KeyUserID:
 		s.UserID, err = conv.ToStringE(value)
-		return errors.Mask(err)
+		return errors.Wrap(err, "[jwtclaim] UserID.ToString")
 	}
 
 	return s.Standard.Set(key, value)
@@ -71,7 +71,7 @@ func (s *Store) Set(key string, value interface{}) (err error) {
 
 // Get retrieves StoreClaim specific fields and then falls back to the
 // StandardClaims Get function.
-func (s *Store) Get(key string) (value interface{}, err error) {
+func (s *Store) Get(key string) (interface{}, error) {
 	switch key {
 	case KeyStore:
 		return s.Store, nil
@@ -90,7 +90,7 @@ func (s *Store) Keys() []string {
 func (s *Store) String() string {
 	b, err := json.Marshal(s)
 	if err != nil {
-		return errors.Errorf("[jwtclaim] Store.String(): json.Marshal Error: %s", err).Error()
+		return errors.NewFatalf("[jwtclaim] Store.String(): json.Marshal Error: %s", err).Error()
 	}
 	return string(b)
 }

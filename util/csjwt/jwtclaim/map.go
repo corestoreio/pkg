@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Map default type for the Claim field in a token. Slowest but
@@ -21,18 +20,28 @@ func (m Map) VerifyAudience(cmp string, req bool) bool {
 	return verifyConstantTime(aud, []byte(cmp), req)
 }
 
+func (m Map) exp() int64 {
+	return conv.ToInt64(m["exp"])
+}
+
+func (m Map) iat() int64 {
+	return conv.ToInt64(m["iat"])
+}
+
+func (m Map) nbf() int64 {
+	return conv.ToInt64(m["nbf"])
+}
+
 // Compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m Map) VerifyExpiresAt(cmp int64, req bool) bool {
-	exp := conv.ToInt64(m["exp"])
-	return verifyExp(exp, cmp, req)
+	return verifyExp(m.exp(), cmp, req)
 }
 
 // Compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m Map) VerifyIssuedAt(cmp int64, req bool) bool {
-	iat := conv.ToInt64(m["iat"])
-	return verifyIat(iat, cmp, req)
+	return verifyIat(m.iat(), cmp, req)
 }
 
 // Compares the iss claim against cmp.
@@ -45,36 +54,33 @@ func (m Map) VerifyIssuer(cmp string, req bool) bool {
 // Compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m Map) VerifyNotBefore(cmp int64, req bool) bool {
-	nbf := conv.ToInt64(m["nbf"])
-	return verifyNbf(nbf, cmp, req)
+	return verifyNbf(m.nbf(), cmp, req)
 }
 
 // Validates time based claims "exp, iat, nbf". There is no accounting for
 // clock skew. As well, if any of the above claims are not in the token, it
 // will still be considered a valid claim.
 func (m Map) Valid() error {
-	var vErr *cserr.MultiErr
+
 	now := TimeFunc().Unix()
 
-	if len(m) == 0 {
-		return ErrValidationClaimsInvalid
+	switch {
+	case len(m) == 0:
+		return errors.NewNotValidf(`[jwtclaim] token claims validation failed1`)
+
+	//case m.exp() == 0 && m.iat() == 0 && m.nbf() == 0:
+	//	return errors.NewNotValidf(`[jwtclaim] token claims validation failed2`)
+
+	case !m.VerifyExpiresAt(now, false):
+		return errors.NewNotValidf(`[jwtclaim] token is expired %s ago`, TimeFunc().Sub(time.Unix(m.exp(), 0)))
+
+	case !m.VerifyIssuedAt(now, false):
+		return errors.NewNotValidf(`[jwtclaim] token used before issued, clock skew issue? Diff %s`, time.Unix(m.iat(), 0).Sub(TimeFunc()))
+
+	case !m.VerifyNotBefore(now, false):
+		return errors.NewNotValidf(`[jwtclaim] token is not valid yet. Diff %s`, time.Unix(m.nbf(), 0).Sub(TimeFunc()))
 	}
 
-	if m.VerifyExpiresAt(now, false) == false {
-		vErr = vErr.AppendErrors(ErrValidationExpired)
-	}
-
-	if m.VerifyIssuedAt(now, false) == false {
-		vErr = vErr.AppendErrors(ErrValidationUsedBeforeIssued)
-	}
-
-	if m.VerifyNotBefore(now, false) == false {
-		vErr = vErr.AppendErrors(ErrValidationNotValidYet)
-	}
-
-	if vErr.HasErrors() {
-		return vErr
-	}
 	return nil
 }
 
@@ -83,7 +89,8 @@ func (m Map) Set(key string, value interface{}) error {
 	return nil
 }
 
-func (m Map) Get(key string) (value interface{}, err error) {
+// Get can return nil,nil
+func (m Map) Get(key string) (interface{}, error) {
 	return m[key], nil
 }
 
@@ -115,7 +122,7 @@ func (m Map) Expires() (exp time.Duration) {
 func (m Map) String() string {
 	b, err := json.Marshal(m)
 	if err != nil {
-		return errors.Errorf("[jwtclaim] Map.String(): json.Marshal Error: %s", err).Error()
+		return errors.NewFatalf("[jwtclaim] Map.String(): json.Marshal Error: %s", err).Error()
 	}
 	return string(b)
 }

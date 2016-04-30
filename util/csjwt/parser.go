@@ -19,8 +19,7 @@ import (
 	"net/http"
 	"unicode"
 
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // HTTPHeaderAuthorization identifies the bearer token in this header key
@@ -59,14 +58,15 @@ func NewVerification(availableSigners ...Signer) *Verification {
 // verified Token, or an error. You must make sure to set the correct expected
 // headers and claims in the template Token. The Header and Claims field in the
 // template token must be a pointer.
+// Error behaviour: Empty, NotFound, NotValid
 func (vf *Verification) Parse(template Token, rawToken []byte, keyFunc Keyfunc) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return Token{}, errTokenInvalidSegmentCounts
+		return Token{}, errors.NewNotValidf(errTokenInvalidSegmentCounts)
 	}
 
 	if template.Header == nil || template.Claims == nil {
-		return template, errTokenBaseNil
+		return template, errors.NewNotValidf(errTokenBaseNil)
 	}
 
 	dec := vf.Decoder
@@ -77,43 +77,43 @@ func (vf *Verification) Parse(template Token, rawToken []byte, keyFunc Keyfunc) 
 	template.Raw = rawToken
 
 	if startsWithBearer(template.Raw) {
-		return template, errTokenShouldNotContainBearer
+		return template, errors.NewNotValidf(errTokenShouldNotContainBearer)
 	}
 
 	// parse Header
 	if err := dec.Unmarshal(template.Raw[:pos[0]], template.Header); err != nil {
-		return template, cserr.NewMultiErr(ErrTokenMalformed, err)
+		return template, errors.NewNotValid(err, errTokenMalformed)
 	}
 
 	// parse Claims
 	if err := dec.Unmarshal(template.Raw[pos[0]+1:pos[1]], template.Claims); err != nil {
-		return template, cserr.NewMultiErr(ErrTokenMalformed, err)
+		return template, errors.NewNotValid(err, errTokenMalformed)
 	}
 
 	// validate Claims
 	if err := template.Claims.Valid(); err != nil {
-		return template, cserr.NewMultiErr(ErrValidationClaimsInvalid, err)
+		return template, errors.Wrap(err, errValidationClaimsInvalid)
 	}
 
 	// Lookup key
 	if keyFunc == nil {
-		return template, errMissingKeyFunc
+		return template, errors.NewEmptyf(errMissingKeyFunc)
 	}
 	key, err := keyFunc(template)
 	if err != nil {
-		return template, cserr.NewMultiErr(ErrTokenUnverifiable, err)
+		return template, errors.NewNotValid(err, errTokenUnverifiable)
 	}
 
 	// Lookup signature method
 	method, err := vf.getMethod(&template)
 	if err != nil {
-		return template, err
+		return template, errors.Wrap(err, "[csjwt] Verification.Parse.getMethod")
 	}
 
 	// Perform validation
 	template.Signature = template.Raw[pos[1]+1:]
 	if err := method.Verify(template.Raw[:pos[1]], template.Signature, key); err != nil {
-		return template, cserr.NewMultiErr(ErrSignatureInvalid, err)
+		return template, errors.NewNotValid(err, errSignatureInvalid)
 	}
 
 	template.Valid = true
@@ -123,12 +123,12 @@ func (vf *Verification) Parse(template Token, rawToken []byte, keyFunc Keyfunc) 
 func (vf *Verification) getMethod(t *Token) (Signer, error) {
 
 	if len(vf.Methods) == 0 {
-		return nil, errors.New("[csjwt] No methods supplied to the Verfication Method slice")
+		return nil, errors.NewEmptyf("[csjwt] No methods supplied to the Verfication Method slice")
 	}
 
 	alg := t.Alg()
 	if alg == "" {
-		return nil, errors.Errorf("[csjwt] Cannot find alg entry in token header: %#v", t.Header)
+		return nil, errors.NewEmptyf("[csjwt] Cannot find alg entry in token header: %#v", t.Header)
 	}
 
 	for _, m := range vf.Methods {
@@ -136,7 +136,7 @@ func (vf *Verification) getMethod(t *Token) (Signer, error) {
 			return m, nil
 		}
 	}
-	return nil, errors.Errorf("[csjwt] Algorithm %q not found in method list %q", alg, vf.Methods)
+	return nil, errors.NewNotFoundf("[csjwt] Algorithm %q not found in method list %q", alg, vf.Methods)
 }
 
 // ParseFromRequest same as Parse but extracts the token from a request.
@@ -156,7 +156,7 @@ func (vf *Verification) ParseFromRequest(template Token, keyFunc Keyfunc, req *h
 	if vf.CookieName != "" {
 		tk, err := vf.parseCookie(template, keyFunc, req)
 		if err != nil && err != http.ErrNoCookie {
-			return Token{}, errors.Mask(err)
+			return Token{}, errors.Wrap(err, "[csjwt] Verification.ParseFromRequest.parseCookie")
 		}
 		if tk.Valid {
 			return tk, nil
@@ -168,7 +168,7 @@ func (vf *Verification) ParseFromRequest(template Token, keyFunc Keyfunc, req *h
 		return vf.parseForm(template, keyFunc, req)
 	}
 
-	return Token{}, errors.Mask(ErrTokenNotInRequest)
+	return Token{}, errors.NewNotFoundf(errTokenNotInRequest)
 }
 
 func (vf *Verification) parseCookie(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
@@ -176,7 +176,7 @@ func (vf *Verification) parseCookie(template Token, keyFunc Keyfunc, req *http.R
 	if keks != nil && keks.Value != "" {
 		return vf.Parse(template, []byte(keks.Value), keyFunc)
 	}
-	return Token{}, err
+	return Token{}, err // error can be http.ErrNoCookie
 }
 
 func (vf *Verification) parseForm(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
@@ -184,7 +184,7 @@ func (vf *Verification) parseForm(template Token, keyFunc Keyfunc, req *http.Req
 	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
 		return vf.Parse(template, []byte(tokStr), keyFunc)
 	}
-	return Token{}, errors.Mask(ErrTokenNotInRequest)
+	return Token{}, errors.NewNotFoundf(errTokenNotInRequest)
 }
 
 // SplitForVerify splits the token into two parts: the payload and the signature.
@@ -192,7 +192,7 @@ func (vf *Verification) parseForm(template Token, keyFunc Keyfunc, req *http.Req
 func SplitForVerify(rawToken []byte) (signingString, signature []byte, err error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return nil, nil, errTokenInvalidSegmentCounts
+		return nil, nil, errors.NewNotValidf(errTokenInvalidSegmentCounts)
 	}
 	return rawToken[:pos[1]], rawToken[pos[1]+1:], nil
 }

@@ -6,7 +6,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // ContentTypeJWT defines the content type of a token. At the moment only JWT
@@ -59,23 +59,23 @@ func (t Token) Alg() string {
 func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 
 	if err := t.Header.Set(headerAlg, method.Alg()); err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[csjwt] Header.Set")
 	}
 
 	buf, err := t.SigningString()
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[csjwt] Token.SignedString.SigningString")
 	}
 	sig, err := method.Sign(buf.Bytes(), key)
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[csjwt] Token.SignedString.SigningString")
 	}
 
 	if _, err := buf.WriteRune('.'); err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.NewWriteFailed(err, "[csjwt] Token.SignedString.WriteRune")
 	}
 	if _, err := buf.Write(sig); err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.NewWriteFailed(err, "[csjwt] Token.SignedString.Write")
 	}
 	return buf.Bytes(), nil
 }
@@ -95,24 +95,24 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 	var j []byte
 	j, err = enc.Marshal(t.Header)
 	if err != nil {
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[csjwt] Token.SigningString.Marshal")
 		return
 	}
 	if _, err = buf.Write(j); err != nil {
-		err = errors.Mask(err)
+		err = errors.NewWriteFailed(err, "[csjwt] Token.SigningString.Write")
 		return
 	}
 	if _, err = buf.WriteRune('.'); err != nil {
-		err = errors.Mask(err)
+		err = errors.NewWriteFailed(err, "[csjwt] Token.SigningString.Write")
 		return
 	}
 	j, err = enc.Marshal(t.Claims)
 	if err != nil {
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[csjwt] Token.SigningString.Marshal")
 		return
 	}
 	if _, err = buf.Write(j); err != nil {
-		err = errors.Mask(err)
+		err = errors.NewWriteFailed(err, "[csjwt] Token.SigningString.Write")
 		return
 	}
 	return

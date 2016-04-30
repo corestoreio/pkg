@@ -3,7 +3,7 @@ package csjwt
 import (
 	"bytes"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Signer interface to add new methods for signing or verifying tokens.
@@ -36,9 +36,9 @@ const (
 	RS    = `RS`
 )
 
-// NewSigningMethodByAlg creates a new signing method by an algorithm.
+// SigningMethodFactory creates a new signing method by an algorithm.
 // Returns an error for an unknown signing method.
-func NewSigningMethodByAlg(alg string) (s Signer, err error) {
+func SigningMethodFactory(alg string) (s Signer, err error) {
 	switch alg {
 
 	case ES256:
@@ -71,15 +71,15 @@ func NewSigningMethodByAlg(alg string) (s Signer, err error) {
 
 	}
 	if s == nil {
-		err = errors.Errorf("[csjwt] Unknown signing algorithm %q", alg)
+		err = errors.NewNotSupportedf("[csjwt] Unknown signing algorithm %q", alg)
 	}
 	return s, err
 }
 
-// MustNewSigningMethodByAlg same as NewSigningMethodByAlg but panics on error.
+// MustSigningMethodFactory same as SigningMethodFactory but panics on error.
 // You should only use the Must* functions during init process or testing.
-func MustNewSigningMethodByAlg(alg string) Signer {
-	s, err := NewSigningMethodByAlg(alg)
+func MustSigningMethodFactory(alg string) Signer {
+	s, err := SigningMethodFactory(alg)
 	if err != nil {
 		panic(err)
 	}

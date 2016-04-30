@@ -5,6 +5,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"math/big"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
@@ -40,23 +42,24 @@ func (m *SigningMethodECDSA) Alg() string {
 
 // Verify implements the Verify method from SigningMethod interface.
 // For the key you can use any of the WithEC*Key*() functions
+// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) error {
 	// Get the key
 	if key.Error != nil {
-		return key.Error
+		return errors.Wrap(key.Error, "[csjwt] SigningMethodECDSA.Verify.key")
 	}
 	if key.ecdsaKeyPub == nil {
-		return errECDSAPublicKeyEmpty
+		return errors.NewEmptyf(errECDSAPublicKeyEmpty)
 	}
 
 	// Decode the signature
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "[csjwt] SigningMethodECDSA.Verify.DecodeSegment")
 	}
 
 	if len(sig) != 2*m.KeySize {
-		return ErrECDSAVerification
+		return errors.NewNotValidf(errECDSAVerification)
 	}
 
 	r := big.NewInt(0).SetBytes(sig[:m.KeySize])
@@ -64,52 +67,52 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return errECDSAHashUnavailable
-	}
-	hasher := m.Hash.New()
-	_, err = hasher.Write(signingString)
-	if err != nil {
-		return err
-	}
-
-	// Verify the signature
-	err = ErrECDSAVerification
-	if ecdsa.Verify(key.ecdsaKeyPub, hasher.Sum(nil), r, s) {
-		err = nil
-	}
-	return err
-}
-
-// Sign implements the Sign method from SigningMethod.
-// For the key you can use any of the WithECPrivateKey*() functions
-func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error) {
-	if key.Error != nil {
-		return nil, key.Error
-	}
-	if key.ecdsaKeyPriv == nil {
-		return nil, errECDSAPrivateKeyEmpty
-	}
-
-	// Create the hasher
-	if !m.Hash.Available() {
-		return nil, errECDSAHashUnavailable
+		return errors.NewNotImplementedf(errECDSAHashUnavailable)
 	}
 
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, err
+		return errors.NewWriteFailed(err, "[csjwt] SigningMethodECDSA.Verify.hasher.Write")
+	}
+
+	// Verify the signature
+	if !ecdsa.Verify(key.ecdsaKeyPub, hasher.Sum(nil), r, s) {
+		return errors.NewNotValidf(errECDSAVerification)
+	}
+	return nil
+}
+
+// Sign implements the Sign method from SigningMethod.
+// For the key you can use any of the WithECPrivateKey*() functions.
+// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
+func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error) {
+	if key.Error != nil {
+		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodECDSA.Sign.key")
+	}
+	if key.ecdsaKeyPriv == nil {
+		return nil, errors.NewEmptyf(errECDSAPrivateKeyEmpty)
+	}
+
+	// Create the hasher
+	if !m.Hash.Available() {
+		return nil, errors.NewNotImplementedf(errECDSAHashUnavailable)
+	}
+
+	hasher := m.Hash.New()
+	if _, err := hasher.Write(signingString); err != nil {
+		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodECDSA.Sign.hasher.Write")
 	}
 
 	// Sign the string and return r, s
 	r, s, err := ecdsa.Sign(rand.Reader, key.ecdsaKeyPriv, hasher.Sum(nil))
 	if err != nil {
-		return nil, err
+		return nil, errors.NewNotValid(err, "[csjwt] SigningMethodECDSA.Sign.ecdsa.Sign")
 	}
 
 	curveBits := key.ecdsaKeyPriv.Curve.Params().BitSize
 
 	if m.CurveBits != curveBits {
-		return nil, errECDSAPrivateInvalidBits
+		return nil, errors.NewNotValidf(errECDSAPrivateInvalidBits)
 	}
 
 	keyBytes := curveBits / 8

@@ -14,22 +14,6 @@
 
 package jwtclaim
 
-import (
-	"github.com/corestoreio/csfw/util/cserr"
-)
-
-// Error variables predefined
-const (
-	ErrValidationUnknownAlg       cserr.Error = `[jwtclaim] unknown token signing algorithm`
-	ErrValidationExpired          cserr.Error = `[jwtclaim] token is expired`
-	ErrValidationUsedBeforeIssued cserr.Error = `[jwtclaim] token used before issued, clock skew issue?`
-	ErrValidationNotValidYet      cserr.Error = `[jwtclaim] token is not valid yet`
-	ErrValidationAudience         cserr.Error = `[jwtclaim] token is not valid for current audience`
-	ErrValidationIssuer           cserr.Error = `[jwtclaim] token issue validation failed`
-	ErrValidationJTI              cserr.Error = `[jwtclaim] token JTI validation failed`
-	ErrValidationClaimsInvalid    cserr.Error = `[jwtclaim] token claims validation failed`
-)
-
 const (
 	errHeaderKeyNotSupported = "[jwtclaim] Header %q not yet supported. Please see constants Header*."
 	errClaimKeyNotSupported  = "[jwtclaim] Claim %q not supported."

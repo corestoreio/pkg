@@ -17,6 +17,8 @@ package csjwt
 import (
 	"crypto"
 	"crypto/hmac"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // SigningMethodHMACFast implements the HMAC-SHA family of pre-warmed signing methods.
@@ -29,14 +31,14 @@ type SigningMethodHMACFast struct {
 
 func newHMACFast(a string, h crypto.Hash, key Key) (Signer, error) {
 	if key.Error != nil {
-		return nil, key.Error
+		return nil, errors.Wrap(key.Error, "[csjwt] newHMACFast.key")
 	}
 	if len(key.hmacPassword) == 0 {
-		return nil, errHmacPasswordEmpty
+		return nil, errors.NewEmptyf(errHmacPasswordEmpty)
 	}
 	// Can we use the specified hashing method?
 	if !h.Available() {
-		return nil, errHmacHashUnavailable
+		return nil, errors.NewNotImplementedf(errHmacHashUnavailable)
 	}
 	return &SigningMethodHMACFast{
 		Name: a,
@@ -67,12 +69,13 @@ func (m *SigningMethodHMACFast) Alg() string {
 }
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
+// Error behaviour: NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) error {
 
 	// Decode signature, for comparison
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "[csjwt] SigningMethodHMACFast.Verify.DecodeSegment")
 	}
 
 	// This signing method is symmetric, so we validate the signature
@@ -82,11 +85,11 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 	defer m.ht.put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
-		return err
+		return errors.NewWriteFailed(err, "[csjwt] SigningMethodHMACFast.Verify.hasher.Write")
 	}
 
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return errHmacSignatureInvalid
+		return errors.NewNotValidf(errHmacSignatureInvalid)
 	}
 
 	// No validation errors.  Signature is good.
@@ -94,13 +97,14 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 }
 
 // Sign implements the Sign method from SigningMethod interface.
+// Error behaviour: WriteFailed
 func (m *SigningMethodHMACFast) Sign(signingString []byte, _ Key) ([]byte, error) {
 
 	hasher := m.ht.get()
 	defer m.ht.put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
-		return nil, err
+		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodHMACFast.Sign.hasher.Write")
 	}
 
 	return EncodeSegment(hasher.Sum(nil)), nil

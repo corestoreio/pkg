@@ -20,7 +20,7 @@ import (
 	"crypto/rsa"
 	"io/ioutil"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // PrivateKeyBits used when auto generating a private key
@@ -53,12 +53,12 @@ func NewKeyFunc(s Signer, key Key) Keyfunc {
 	return func(t Token) (Key, error) {
 
 		if key.Error != nil {
-			return Key{}, errors.Mask(key.Error)
+			return Key{}, errors.Wrap(key.Error, "[csjwt] NewKeyFunc.Key")
 		}
 		if a := s.Alg(); a != "" && a == t.Header.Alg() {
 			return key, nil
 		}
-		return Key{}, errors.Mask(ErrTokenUnverifiable)
+		return Key{}, errors.NewNotValidf(errTokenUnverifiable)
 	}
 }
 
@@ -102,7 +102,7 @@ func (k Key) Algorithm() (a string) {
 func WithPassword(password []byte) Key {
 	var err error
 	if len(password) == 0 {
-		err = errKeyEmptyPassword
+		err = errors.NewEmptyf(errKeyEmptyPassword)
 	}
 	return Key{
 		hmacPassword: password,
@@ -131,7 +131,7 @@ func WithPasswordFromFile(pathToFile string) Key {
 	var err error
 	k.hmacPassword, err = ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = errors.Mask(err)
+		k.Error = errors.NewNotValidf("[csjwt] WithPasswordFromFile: %s with file %s", err, pathToFile)
 	}
 	return k
 }
@@ -147,7 +147,7 @@ func WithRSAPublicKeyFromPEM(publicKey []byte) (k Key) {
 func WithRSAPublicKeyFromFile(pathToFile string) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = errors.Errorf("%s with file %s", err, pathToFile)
+		k.Error = errors.NewNotValidf("[csjwt] WithRSAPublicKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	return WithRSAPublicKeyFromPEM(pk)
@@ -177,7 +177,7 @@ func WithRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (k Key) {
 func WithRSAPrivateKeyFromFile(pathToFile string, password ...[]byte) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = err
+		k.Error = errors.NewNotValidf("[csjwt] WithRSAPrivateKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	return WithRSAPrivateKeyFromPEM(pk, password...)
@@ -215,7 +215,7 @@ func WithECPublicKeyFromPEM(publicKey []byte) (k Key) {
 func WithECPublicKeyFromFile(pathToFile string) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = err
+		k.Error = errors.NewNotValidf("[csjwt] WithECPublicKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	k.ecdsaKeyPub, k.Error = parseECPublicKeyFromPEM(pk)
@@ -246,7 +246,7 @@ func WithECPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (k Key) {
 func WithECPrivateKeyFromFile(pathToFile string, password ...[]byte) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
-		k.Error = err
+		k.Error = errors.NewNotValidf("[csjwt] WithECPrivateKeyFromFile: %s with file %s", err, pathToFile)
 		return k
 	}
 	return WithECPrivateKeyFromPEM(pk, password...)

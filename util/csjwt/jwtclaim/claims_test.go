@@ -16,7 +16,6 @@ package jwtclaim_test
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"testing"
@@ -24,6 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,44 +63,45 @@ func TestStandardClaimsParseJSON(t *testing.T) {
 
 func TestClaimsValid(t *testing.T) {
 	tests := []struct {
-		sc        csjwt.Claimer
-		wantValid error
+		sc         csjwt.Claimer
+		wantErrBhf errors.BehaviourFunc
 	}{
-		{&jwtclaim.Standard{}, jwtclaim.ErrValidationClaimsInvalid},
+		{&jwtclaim.Standard{}, nil},
 		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(-time.Second).Unix()}, jwtclaim.ErrValidationExpired},
+		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(-time.Second).Unix()}, errors.IsNotValid},
 		{&jwtclaim.Standard{IssuedAt: time.Now().Add(-time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationUsedBeforeIssued},
+		{&jwtclaim.Standard{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
 		{&jwtclaim.Standard{NotBefore: time.Now().Add(-time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{NotBefore: time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationNotValidYet},
+		{&jwtclaim.Standard{NotBefore: time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
 		{
 			&jwtclaim.Standard{
 				ExpiresAt: time.Now().Add(-time.Second).Unix(),
 				IssuedAt:  time.Now().Add(time.Second * 5).Unix(),
 				NotBefore: time.Now().Add(time.Second * 5).Unix(),
 			},
-			fmt.Errorf("%s\n%s\n%s", jwtclaim.ErrValidationExpired, jwtclaim.ErrValidationUsedBeforeIssued, jwtclaim.ErrValidationNotValidYet),
+			errors.IsNotValid,
 		},
 
-		{jwtclaim.Map{}, jwtclaim.ErrValidationClaimsInvalid},                                         // 7
-		{jwtclaim.Map{"exp": time.Now().Add(time.Second).Unix()}, nil},                                // 8
-		{jwtclaim.Map{"exp": time.Now().Add(-time.Second * 2).Unix()}, jwtclaim.ErrValidationExpired}, // 9
-		{jwtclaim.Map{"iat": time.Now().Add(-time.Second).Unix()}, nil},                               // 10
-		{jwtclaim.Map{"iat": time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationUsedBeforeIssued},
+		{jwtclaim.Map{}, errors.IsNotValid},                                               // 7
+		{jwtclaim.Map{"exp": time.Now().Add(time.Second).Unix()}, nil},                    // 8
+		{jwtclaim.Map{"exp": time.Now().Add(-time.Second * 2).Unix()}, errors.IsNotValid}, // 9
+		{jwtclaim.Map{"iat": time.Now().Add(-time.Second).Unix()}, nil},                   // 10
+		{jwtclaim.Map{"iat": time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
 		{jwtclaim.Map{"nbf": time.Now().Add(-time.Second).Unix()}, nil},
-		{jwtclaim.Map{"nbf": time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationNotValidYet},
+		{jwtclaim.Map{"nbf": time.Now().Add(time.Second * 5).Unix()}, errors.IsNotValid},
 		{
 			jwtclaim.Map{
 				"exp": time.Now().Add(-time.Second).Unix(),
 				"iat": time.Now().Add(time.Second * 5).Unix(),
 				"nbf": time.Now().Add(time.Second * 5).Unix(),
 			},
-			fmt.Errorf("%s\n%s\n%s", jwtclaim.ErrValidationExpired, jwtclaim.ErrValidationUsedBeforeIssued, jwtclaim.ErrValidationNotValidYet),
+			errors.IsNotValid,
 		},
 	}
 	for i, test := range tests {
-		if test.wantValid != nil {
-			assert.EqualError(t, test.sc.Valid(), test.wantValid.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			err := test.sc.Valid()
+			assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 		} else {
 			assert.NoError(t, test.sc.Valid(), "Index %d", i)
 		}
@@ -109,16 +110,16 @@ func TestClaimsValid(t *testing.T) {
 
 func TestClaimsGetSet(t *testing.T) {
 	tests := []struct {
-		sc         csjwt.Claimer
-		key        string
-		val        interface{}
-		wantSetErr error
-		wantGetErr error
+		sc            csjwt.Claimer
+		key           string
+		val           interface{}
+		wantSetErrBhf errors.BehaviourFunc
+		wantGetErrBhf errors.BehaviourFunc
 	}{
-		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.New("Unable to cast 63743 to string"), nil},
+		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.IsNotValid, nil},
 		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, "Go", nil, nil},
 		{&jwtclaim.Standard{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
-		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.New("[jwtclaim] Claim \"Not Supported\" not supported."), errors.New("[jwtclaim] Claim \"Not Supported\" not supported.")},
+		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.IsNotSupported, errors.IsNotSupported},
 
 		{jwtclaim.Map{}, jwtclaim.KeyAudience, "Go", nil, nil},
 		{jwtclaim.Map{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
@@ -128,21 +129,21 @@ func TestClaimsGetSet(t *testing.T) {
 	for i, test := range tests {
 
 		haveSetErr := test.sc.Set(test.key, test.val)
-		if test.wantSetErr != nil {
-			assert.EqualError(t, haveSetErr, test.wantSetErr.Error(), "Index %d", i)
+		if test.wantSetErrBhf != nil {
+			assert.True(t, test.wantSetErrBhf(haveSetErr), "Index %d => %s", i, haveSetErr)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", i)
 		}
 
 		haveVal, haveGetErr := test.sc.Get(test.key)
-		if test.wantGetErr != nil {
-			assert.EqualError(t, haveGetErr, test.wantGetErr.Error(), "Index %d", i)
+		if test.wantGetErrBhf != nil {
+			assert.True(t, test.wantGetErrBhf(haveGetErr), "Index %d => %s", i, haveGetErr)
 			continue
 		} else {
 			assert.NoError(t, haveGetErr, "Index %d", i)
 		}
 
-		if test.wantSetErr == nil {
+		if test.wantSetErrBhf == nil {
 			assert.Exactly(t, test.val, haveVal, "Index %d", i)
 		}
 	}
@@ -185,7 +186,7 @@ func TestMap_String_error(t *testing.T) {
 		"k2": 3.14159,
 		"k3": make(chan int),
 	}
-	assert.Exactly(t, "[jwtclaim] Map.String(): json.Marshal Error: json: unsupported type: chan int", m.String())
+	assert.Exactly(t, "[jwtclaim] Map.String(): json.Marshal Error: json: unsupported type: chan int: Fatal", m.String())
 }
 
 func TestStandard_String(t *testing.T) {

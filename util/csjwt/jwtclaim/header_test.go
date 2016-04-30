@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,33 +55,34 @@ func TestHeadSegmentsAlgTyp(t *testing.T) {
 
 func TestHeadSegmentsGetSet(t *testing.T) {
 	tests := []struct {
-		sc         csjwt.Header
-		key        string
-		val        string
-		wantSetErr error
-		wantGetErr error
+		sc            csjwt.Header
+		key           string
+		val           string
+		wantSetErrBhf errors.BehaviourFunc
+		wantGetErrBhf errors.BehaviourFunc
 	}{
 		{&jwtclaim.HeadSegments{}, jwtclaim.HeaderAlg, "", nil, nil},
 		{&jwtclaim.HeadSegments{}, jwtclaim.HeaderTyp, "Go", nil, nil},
+		{&jwtclaim.HeadSegments{}, "ext", "Test", errors.IsNotSupported, errors.IsNotSupported},
 	}
 	for i, test := range tests {
 
 		haveSetErr := test.sc.Set(test.key, test.val)
-		if test.wantSetErr != nil {
-			assert.EqualError(t, haveSetErr, test.wantSetErr.Error(), "Index %d", i)
+		if test.wantSetErrBhf != nil {
+			assert.True(t, test.wantSetErrBhf(haveSetErr), "Index %d => %s", i, haveSetErr)
 		} else {
 			assert.NoError(t, haveSetErr, "Index %d", i)
 		}
 
 		haveVal, haveGetErr := test.sc.Get(test.key)
-		if test.wantGetErr != nil {
-			assert.EqualError(t, haveGetErr, test.wantGetErr.Error(), "Index %d", i)
+		if test.wantGetErrBhf != nil {
+			assert.True(t, test.wantGetErrBhf(haveGetErr), "Index %d => %s", i, haveGetErr)
 			continue
 		} else {
 			assert.NoError(t, haveGetErr, "Index %d", i)
 		}
 
-		if test.wantSetErr == nil {
+		if test.wantSetErrBhf == nil {
 			assert.Exactly(t, test.val, haveVal, "Index %d", i)
 		}
 	}

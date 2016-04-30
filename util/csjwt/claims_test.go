@@ -15,13 +15,13 @@
 package csjwt_test
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,9 +76,9 @@ func TestHeadSetGet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, "JWE", g)
 
-	assert.EqualError(t, h.Set("x", "y"), "[csjwt] Header \"x\" not yet supported. Please switch to type jwtclaim.HeadSegments.")
+	assert.True(t, errors.IsNotSupported(h.Set("x", "y")))
 	g, err = h.Get("x")
-	assert.EqualError(t, err, "[csjwt] Header \"x\" not yet supported. Please switch to type jwtclaim.HeadSegments.")
+	assert.True(t, errors.IsNotSupported(err))
 	assert.Empty(t, g)
 }
 
@@ -88,21 +88,21 @@ func TestMergeClaims(t *testing.T) {
 		dst               csjwt.Token
 		srcs              csjwt.Claimer
 		wantSigningString string
-		wantErr           error
+		wantErrBhf        errors.BehaviourFunc
 	}{
 		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQo.bnVsbAo`, nil},
-		{csjwt.NewToken(jwtclaim.Map{}), claimMock{getErr: errors.New("claimMerge get error")}, ``, errors.New("[csjwt] Cannot get Key \"k1\" from Claim index 0. Error: claimMerge get error")},
+		{csjwt.NewToken(jwtclaim.Map{}), claimMock{getErr: errors.NewFatalf("claimMerge get error")}, ``, errors.IsFatal},
 		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQo.eyJrMSI6InYxIiwiazIiOjJ9Cg`, nil},
-		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.New("[csjwt] Cannot set Key \"k2\" with value `2'. Claim index 0. Error: [jwtclaim] Claim \"k2\" not supported.")},
+		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.IsNotSupported},
 		{csjwt.NewToken(&jwtclaim.Standard{}), &jwtclaim.Store{
 			Standard: &jwtclaim.Standard{},
 			UserID:   "Gopher",
-		}, ``, errors.New("[csjwt] Cannot set Key \"store\" with value `'. Claim index 0. Error: [jwtclaim] Claim \"store\" not supported.")},
+		}, ``, errors.IsNotSupported},
 	}
 	for i, test := range tests {
 		haveErr := csjwt.MergeClaims(test.dst.Claims, test.srcs)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			continue
 		}
 		if haveErr != nil {

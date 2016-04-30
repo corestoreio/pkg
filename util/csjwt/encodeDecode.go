@@ -18,7 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Decoder interface to pass in a custom decoding type.
@@ -38,7 +38,7 @@ type JSONDecode struct{}
 func (jp JSONDecode) Unmarshal(data []byte, v interface{}) error {
 	dec, err := DecodeSegment(data)
 	if err != nil {
-		return errors.Mask(err)
+		return errors.Wrap(err, "[csjwt] JSONDecode.Unmarshal.DecodeSegment")
 	}
 	return json.Unmarshal(dec, v)
 }
@@ -65,8 +65,9 @@ func EncodeSegment(seg []byte) []byte {
 
 // DecodeSegment decodes JWT specific base64url encoding with padding stripped.
 // Returns a new byte slice.
+// Error behaviour: NotValid
 func DecodeSegment(seg []byte) ([]byte, error) {
 	dbuf := make([]byte, base64.RawURLEncoding.DecodedLen(len(seg)))
 	n, err := base64.RawURLEncoding.Decode(dbuf, seg)
-	return dbuf[:n], err
+	return dbuf[:n], errors.NewNotValid(err, "[csjwt] DecodeSegment")
 }

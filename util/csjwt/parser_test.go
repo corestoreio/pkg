@@ -2,7 +2,6 @@ package csjwt_test
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -12,9 +11,9 @@ import (
 
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +32,7 @@ var jwtTestData = []struct {
 	keyfunc     csjwt.Keyfunc
 	claims      jwtclaim.Map
 	valid       bool
-	wantErr     error
+	wantErrBhf  errors.BehaviourFunc
 	parser      *csjwt.Verification
 }{
 	{
@@ -51,7 +50,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
-		jwtclaim.ErrValidationExpired,
+		errors.IsNotValid,
 		csjwt.NewVerification(),
 	},
 	{
@@ -60,7 +59,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
-		jwtclaim.ErrValidationNotValidYet,
+		errors.IsNotValid,
 		csjwt.NewVerification(),
 	},
 	{
@@ -69,7 +68,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
-		cserr.NewMultiErr(jwtclaim.ErrValidationNotValidYet, jwtclaim.ErrValidationExpired),
+		errors.IsNotValid,
 		csjwt.NewVerification(),
 	},
 	{
@@ -78,7 +77,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		csjwt.ErrSignatureInvalid,
+		errors.IsNotValid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -87,7 +86,7 @@ var jwtTestData = []struct {
 		nilKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		errors.New("[csjwt] Missing KeyFunc"),
+		errors.IsEmpty,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -96,7 +95,7 @@ var jwtTestData = []struct {
 		emptyKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		csjwt.ErrSignatureInvalid,
+		errors.IsNotValid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -105,7 +104,7 @@ var jwtTestData = []struct {
 		errorKeyFunc,
 		jwtclaim.Map{"foo": "bar"},
 		false,
-		csjwt.ErrTokenUnverifiable,
+		errors.IsNotValid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
@@ -114,7 +113,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
-		errors.New("[csjwt] Algorithm \"RS256\" not found in method list \"HS256\""),
+		errors.IsNotFound,
 		csjwt.NewVerification(csjwt.NewSigningMethodHS256()),
 	},
 	{
@@ -155,13 +154,13 @@ func TestVerification_ParseFromRequest_WithMap(t *testing.T) {
 		if !data.valid && err == nil {
 			t.Errorf("[%v] Invalid token passed validation", data.name)
 		}
-		if data.wantErr != nil {
+		if data.wantErrBhf != nil {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
 			} else {
 
-				if !cserr.Contains(err, data.wantErr) {
-					t.Errorf("[%v] Errors don't match expectation:\n@%#v@ != |%#v|\n", data.name, err, data.wantErr)
+				if !data.wantErrBhf(err) {
+					t.Errorf("[%v] Errors don't match expectation: %s\n", data.name, err)
 				}
 			}
 		}
@@ -246,15 +245,15 @@ func TestVerification_Parse_BearerInHeader(t *testing.T) {
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
-	assert.EqualError(t, haveErr, `[csjwt] tokenstring should not contain 'bearer '`)
+	assert.True(t, errors.IsNotValid(haveErr), "Error: %s", haveErr)
 	assert.True(t, bytes.Contains(haveToken.Raw, token))
 }
 
 func TestVerification_Parse_InvalidSegments(t *testing.T) {
 	t.Parallel()
-	token, err := csjwt.NewVerification().Parse(csjwt.NewToken(nil), []byte(`hello.gopher`), nil)
+	token, haveErr := csjwt.NewVerification().Parse(csjwt.NewToken(nil), []byte(`hello.gopher`), nil)
 	assert.False(t, token.Valid)
-	assert.EqualError(t, err, `[csjwt] token contains an invalid number of segments`)
+	assert.True(t, errors.IsNotValid(haveErr), "Error: %s", haveErr)
 }
 
 func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
@@ -279,12 +278,12 @@ func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
 
 	haveToken, haveErr := vf.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
-		t.Fatal(cserr.NewMultiErr(haveErr).VerboseErrors())
+		t.Fatal(errors.PrintLoc(haveErr))
 	}
 
 	where, err := haveToken.Claims.Get(`where`)
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 	assert.Exactly(t, `in the cookie dude!`, conv.ToString(where))
 }
@@ -313,12 +312,12 @@ func TestVerification_ParseFromRequest_Form(t *testing.T) {
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	haveToken, haveErr := vf.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
-		t.Fatal(cserr.NewMultiErr(haveErr).VerboseErrors())
+		t.Fatal(errors.PrintLoc(haveErr))
 	}
 
 	where, err := haveToken.Claims.Get(`where`)
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 	assert.Exactly(t, `in the form dude!`, conv.ToString(where))
 }
@@ -335,7 +334,7 @@ func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
 
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	haveToken, haveErr := vf.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), csjwt.NewKeyFunc(rs256, pubKey), r)
-	assert.EqualError(t, haveErr, csjwt.ErrTokenNotInRequest.Error())
+	assert.True(t, errors.IsNotFound(haveErr), "Error: %s", haveErr)
 	assert.Empty(t, haveToken.Raw)
 	assert.False(t, haveToken.Valid)
 }
@@ -346,7 +345,7 @@ func TestSplitForVerify(t *testing.T) {
 		rawToken      []byte
 		signingString []byte
 		signature     []byte
-		wantErr       error
+		wantErrBhf    errors.BehaviourFunc
 	}{
 		{
 			[]byte(`Hello.World.Gophers`),
@@ -358,24 +357,24 @@ func TestSplitForVerify(t *testing.T) {
 			[]byte(`Hello.WorldGophers`),
 			nil,
 			nil,
-			errors.New("[csjwt] token contains an invalid number of segments"),
+			errors.IsNotValid,
 		},
 		{
 			[]byte(`Hello.World.Gop.hers`),
 			nil,
 			nil,
-			errors.New("[csjwt] token contains an invalid number of segments"),
+			errors.IsNotValid,
 		},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		haveSS, haveSig, haveErr := csjwt.SplitForVerify(test.rawToken)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error())
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 		} else {
-			assert.NoError(t, haveErr)
+			assert.NoError(t, haveErr, "Index %d", i)
 		}
-		assert.Exactly(t, test.signingString, haveSS)
-		assert.Exactly(t, test.signature, haveSig)
+		assert.Exactly(t, test.signingString, haveSS, "Index %d", i)
+		assert.Exactly(t, test.signature, haveSig, "Index %d", i)
 	}
 }
 
@@ -485,7 +484,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 	token := csjwt.NewToken(clm)
 	tokenString, err := token.SignedString(sm, key)
 	if err != nil {
-		b.Fatal(err)
+		b.Fatal(errors.PrintLoc(err))
 	}
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -501,7 +500,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 
 		rToken, err := veri.ParseFromRequest(csjwt.NewToken(mc), keyFunc, r)
 		if err != nil {
-			b.Fatal(err)
+			b.Fatal(errors.PrintLoc(err))
 		}
 		if !rToken.Valid {
 			b.Fatalf("Token not valid: %#v", rToken)

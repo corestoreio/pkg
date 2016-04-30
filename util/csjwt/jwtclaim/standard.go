@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 //go:generate ffjson $GOFILE
@@ -76,66 +75,65 @@ type Standard struct {
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
+// Error behaviour: NotValid
 func (s *Standard) Valid() error {
-	var vErr *cserr.MultiErr
-	now := TimeFunc().Unix()
 
-	if s.ExpiresAt == 0 && s.IssuedAt == 0 && s.NotBefore == 0 {
-		return ErrValidationClaimsInvalid
-	}
+	now := TimeFunc().Unix()
 
 	// The claims below are optional, by default, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
-	if s.VerifyExpiresAt(now, false) == false {
-		vErr = vErr.AppendErrors(ErrValidationExpired)
+
+	switch {
+	//case s.ExpiresAt == 0 && s.IssuedAt == 0 && s.NotBefore == 0:
+	//	return errors.NewNotValidf(`[jwtclaim] token claims validation failed`)
+
+	case !s.VerifyExpiresAt(now, false):
+		return errors.NewNotValidf(`[jwtclaim] token is expired %s ago`, TimeFunc().Sub(time.Unix(s.ExpiresAt, 0)))
+
+	case !s.VerifyIssuedAt(now, false):
+		return errors.NewNotValidf(`[jwtclaim] token used before issued, clock skew issue? Diff %s`, time.Unix(s.IssuedAt, 0).Sub(TimeFunc()))
+
+	case !s.VerifyNotBefore(now, false):
+		return errors.NewNotValidf(`[jwtclaim] token is not valid yet. Diff %s`, time.Unix(s.NotBefore, 0).Sub(TimeFunc()))
 	}
 
-	if s.VerifyIssuedAt(now, false) == false {
-		vErr = vErr.AppendErrors(ErrValidationUsedBeforeIssued)
-	}
-
-	if s.VerifyNotBefore(now, false) == false {
-		vErr = vErr.AppendErrors(ErrValidationNotValidYet)
-	}
-
-	if vErr.HasErrors() {
-		return vErr
-	}
 	return nil
 }
 
 // Set sets a value. Key must be one of the constants Claim*.
+// Error behaviour: NotSupported, NotValid
 func (s *Standard) Set(key string, value interface{}) (err error) {
 	switch key {
 	case KeyAudience:
 		s.Audience, err = conv.ToStringE(value)
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[jwtclaim] ToString")
 	case KeyExpiresAt:
 		s.ExpiresAt, err = conv.ToInt64E(value)
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[jwtclaim] ToInt64")
 	case KeyID:
 		s.ID, err = conv.ToStringE(value)
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[jwtclaim] ToString")
 	case KeyIssuedAt:
 		s.IssuedAt, err = conv.ToInt64E(value)
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[jwtclaim] ToInt64")
 	case KeyIssuer:
 		s.Issuer, err = conv.ToStringE(value)
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[jwtclaim] ToString")
 	case KeyNotBefore:
 		s.NotBefore, err = conv.ToInt64E(value)
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[jwtclaim] ToInt64")
 	case KeySubject:
 		s.Subject, err = conv.ToStringE(value)
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[jwtclaim] ToString")
 	default:
-		return errors.Errorf(errClaimKeyNotSupported, key)
+		return errors.NewNotSupportedf(errClaimKeyNotSupported, key)
 	}
 	return err
 }
 
 // Get returns a value or nil or an error. Key must be one of the constants Claim*.
-func (s *Standard) Get(key string) (value interface{}, err error) {
+// Error behaviour: NotSupported
+func (s *Standard) Get(key string) (interface{}, error) {
 	switch key {
 	case KeyAudience:
 		return s.Audience, nil
@@ -152,7 +150,7 @@ func (s *Standard) Get(key string) (value interface{}, err error) {
 	case KeySubject:
 		return s.Subject, nil
 	}
-	return nil, errors.Errorf(errClaimKeyNotSupported, key)
+	return nil, errors.NewNotSupportedf(errClaimKeyNotSupported, key)
 }
 
 // Expires duration when a token expires.
@@ -205,7 +203,7 @@ func (s *Standard) VerifyNotBefore(cmp int64, req bool) bool {
 func (s *Standard) String() string {
 	b, err := json.Marshal(s)
 	if err != nil {
-		return errors.Errorf("[jwtclaim] Standard.String(): json.Marshal Error: %s", err).Error()
+		return errors.NewFatalf("[jwtclaim] Standard.String(): json.Marshal Error: %s", err).Error()
 	}
 	return string(b)
 }

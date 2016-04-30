@@ -14,46 +14,42 @@
 
 package csjwt
 
-import (
-	"github.com/corestoreio/csfw/util/cserr"
-)
-
 // Error variables predefined
 const (
-	ErrSignatureInvalid        cserr.Error = `[csjwt] signature is invalid`
-	ErrTokenNotInRequest       cserr.Error = `[csjwt] token not present in request`
-	ErrTokenMalformed          cserr.Error = `[csjwt] token is malformed`
-	ErrTokenUnverifiable       cserr.Error = `[csjwt] token is unverifiable`
-	ErrValidationClaimsInvalid cserr.Error = `[csjwt] token claims validation failed`
+	errSignatureInvalid        = `[csjwt] signature is invalid`
+	errTokenNotInRequest       = `[csjwt] token not present in request`
+	errTokenMalformed          = `[csjwt] token is malformed`
+	errTokenUnverifiable       = `[csjwt] token is unverifiable`
+	errValidationClaimsInvalid = `[csjwt] token claims validation failed`
 )
 
 // Private errors no need to make them public
 const (
-	errTokenBaseNil                cserr.Error = `[csjwt] template token header and/or claim are nil`
-	errTokenInvalidSegmentCounts   cserr.Error = `[csjwt] token contains an invalid number of segments`
-	errMissingKeyFunc              cserr.Error = `[csjwt] Missing KeyFunc`
-	errTokenShouldNotContainBearer cserr.Error = `[csjwt] tokenstring should not contain 'bearer '`
-	errKeyEmptyPassword            cserr.Error = "[csjwt] Empty password provided"
-	errKeyMissingPassword          cserr.Error = "[csjwt] Missing password to decrypt private key"
-	errKeyMustBePEMEncoded         cserr.Error = "[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key"
-	errKeyNonECDSAPublicKey        cserr.Error = "[csjwt] invalid key: Not a valid ECDSA public key"
-	errKeyNonRSAPrivateKey         cserr.Error = "[csjwt] invalid key: Not a valid RSA private key"
+	errTokenBaseNil                = `[csjwt] template token header and/or claim are nil`
+	errTokenInvalidSegmentCounts   = `[csjwt] token contains an invalid number of segments`
+	errMissingKeyFunc              = `[csjwt] Missing KeyFunc`
+	errTokenShouldNotContainBearer = `[csjwt] tokenstring should not contain 'bearer '`
+	errKeyEmptyPassword            = "[csjwt] Empty password provided"
+	errKeyMissingPassword          = "[csjwt] Missing password to decrypt private key"
+	errKeyMustBePEMEncoded         = "[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key"
+	errKeyNonECDSAPublicKey        = "[csjwt] invalid key: Not a valid ECDSA public key"
+	errKeyNonRSAPrivateKey         = "[csjwt] invalid key: Not a valid RSA private key"
 )
 
 // ErrECDSAVerification sadly this is missing from crypto/ecdsa compared to crypto/rsa
-const ErrECDSAVerification cserr.Error = "crypto/ecdsa: verification error"
+const errECDSAVerification = "crypto/ecdsa: verification error"
 
 const (
-	errECDSAPublicKeyEmpty     cserr.Error = `[csjwt] ECDSA Public Key not provided`
-	errECDSAPrivateKeyEmpty    cserr.Error = `[csjwt] ECDSA Private Key not provided`
-	errECDSAPrivateInvalidBits cserr.Error = `[csjwt] ECDSA Private Key has invalid curve bits`
-	errECDSAHashUnavailable    cserr.Error = `[csjwt] ECDSA Hash unavaiable`
+	errECDSAPublicKeyEmpty     = `[csjwt] ECDSA Public Key not provided`
+	errECDSAPrivateKeyEmpty    = `[csjwt] ECDSA Private Key not provided`
+	errECDSAPrivateInvalidBits = `[csjwt] ECDSA Private Key has invalid curve bits`
+	errECDSAHashUnavailable    = `[csjwt] ECDSA Hash unavaiable`
 
-	errHmacPasswordEmpty    cserr.Error = `[csjwt] HMAC-SHA Password not provided`
-	errHmacHashUnavailable  cserr.Error = `[csjwt] HMAC-SHA Hash unavaiable`
-	errHmacSignatureInvalid cserr.Error = `[csjwt] HMAC-SHA Signature invalid`
+	errHmacPasswordEmpty    = `[csjwt] HMAC-SHA Password not provided`
+	errHmacHashUnavailable  = `[csjwt] HMAC-SHA Hash unavaiable`
+	errHmacSignatureInvalid = `[csjwt] HMAC-SHA Signature invalid`
 
-	errRSAPublicKeyEmpty  cserr.Error = `[csjwt] RSA Public Key not provided`
-	errRSAPrivateKeyEmpty cserr.Error = `[csjwt] RSA Private Key not provided`
-	errRSAHashUnavailable cserr.Error = `[csjwt] RSA Hash unavaiable`
+	errRSAPublicKeyEmpty  = `[csjwt] RSA Public Key not provided`
+	errRSAPrivateKeyEmpty = `[csjwt] RSA Private Key not provided`
+	errRSAHashUnavailable = `[csjwt] RSA Hash unavaiable`
 )

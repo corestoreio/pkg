@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Claimer for a type to be a Claims object
 type Claimer interface {
 	// Valid method that determines if the token is invalid for any supported reason.
-	// Returns nil on success
+	// Returns nil on success. Error behaviour: NotValid
 	Valid() error
 	// Expires declares when a token expires. A duration smaller or equal
 	// to zero means that the token has already expired.
@@ -58,7 +58,9 @@ type Header interface {
 	Alg() string
 	// Typ identifies the type of the JSON web token
 	Typ() string
+	// Set error behaviour must be NotSupported
 	Set(key, value string) error
+	// Get error behaviour must be NotSupported
 	Get(key string) (value string, err error)
 }
 
@@ -118,31 +120,34 @@ func (s *Head) GoString() string {
 const errHeaderKeyNotSupported = "[csjwt] Header %q not yet supported. Please switch to type jwtclaim.HeadSegments."
 
 // Set sets a value. Key must be one of the constants Header*.
-func (s *Head) Set(key, value string) (err error) {
+// Error behaviour: NotSupported
+func (s *Head) Set(key, value string) error {
 	switch key {
 	case headerAlg:
 		s.Algorithm = value
 	case headerTyp:
 		s.Type = value
 	default:
-		return errors.Errorf(errHeaderKeyNotSupported, key)
+		return errors.NewNotSupportedf(errHeaderKeyNotSupported, key)
 	}
-	return err
+	return nil
 }
 
 // Get returns a value or nil or an error. Key must be one of the constants Header*.
-func (s *Head) Get(key string) (value string, err error) {
+// Error behaviour: NotSupported
+func (s *Head) Get(key string) (string, error) {
 	switch key {
 	case headerAlg:
 		return s.Algorithm, nil
 	case headerTyp:
 		return s.Type, nil
 	}
-	return "", errors.Errorf(errHeaderKeyNotSupported, key)
+	return "", errors.NewNotSupportedf(errHeaderKeyNotSupported, key)
 }
 
 // MergeClaims merges the sources Claimers into the destination claimer existing token claims and overwrites
 // existing entries. Destination Claimer must be a pointer.
+// Error behaviour: NotSupported
 func MergeClaims(dst Claimer, srcs ...Claimer) error {
 	if dst == nil || len(srcs) == 0 {
 		return nil
@@ -152,10 +157,10 @@ func MergeClaims(dst Claimer, srcs ...Claimer) error {
 		for _, k := range c.Keys() {
 			v, err := c.Get(k)
 			if err != nil {
-				return errors.Errorf("[csjwt] Cannot get Key %q from Claim index %d. Error: %s", k, idx, err)
+				return errors.Wrapf(err, "[csjwt] Cannot get Key %q from Claim index %d", k, idx)
 			}
 			if err := dst.Set(k, v); err != nil {
-				return errors.Errorf("[csjwt] Cannot set Key %q with value `%v'. Claim index %d. Error: %s", k, v, idx, err)
+				return errors.Wrapf(err, "[csjwt] Cannot set Key %q with value `%v'. Claim index %d", k, v, idx)
 			}
 		}
 	}

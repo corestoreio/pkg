@@ -1,6 +1,6 @@
 package jwtclaim
 
-import "github.com/juju/errors"
+import "github.com/corestoreio/csfw/util/errors"
 
 //go:generate ffjson $GOFILE
 
@@ -77,6 +77,7 @@ func (s *HeadSegments) Typ() string {
 }
 
 // Set sets a value. Key must be one of the constants Header*.
+// Error behaviour: NotSupported
 func (s *HeadSegments) Set(key, value string) (err error) {
 	switch key {
 	case HeaderAlg:
@@ -84,12 +85,13 @@ func (s *HeadSegments) Set(key, value string) (err error) {
 	case HeaderTyp:
 		s.Type = value
 	default:
-		return errors.Errorf(errHeaderKeyNotSupported, key)
+		return errors.NewNotSupportedf(errHeaderKeyNotSupported, key)
 	}
 	return err
 }
 
 // Get returns a value or nil or an error. Key must be one of the constants Header*.
+// Error behaviour: NotSupported
 func (s *HeadSegments) Get(key string) (value string, err error) {
 	switch key {
 	case HeaderAlg:
@@ -97,5 +99,5 @@ func (s *HeadSegments) Get(key string) (value string, err error) {
 	case HeaderTyp:
 		return s.Type, nil
 	}
-	return "", errors.Errorf(errHeaderKeyNotSupported, key)
+	return "", errors.NewNotSupportedf(errHeaderKeyNotSupported, key)
 }

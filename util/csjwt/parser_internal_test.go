@@ -17,8 +17,7 @@ package csjwt
 import (
 	"testing"
 
-	"errors"
-
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,21 +27,21 @@ func TestVerificationGetMethod(t *testing.T) {
 		vf           *Verification
 		token        *Token
 		wantSigner   Signer
-		wantErr      error
+		wantErrBhf   errors.BehaviourFunc
 		haveLastUsed uint32
 	}{
 		{
 			&Verification{},
 			nil,
 			nil,
-			errors.New(`[csjwt] No methods supplied to the Verfication Method slice`),
+			errors.IsEmpty,
 			0,
 		},
 		{
 			NewVerification(NewSigningMethodHS256()),
 			&Token{},
 			nil,
-			errors.New(`[csjwt] Cannot find alg entry in token header: <nil>`),
+			errors.IsEmpty,
 			0,
 		},
 		{
@@ -51,7 +50,7 @@ func TestVerificationGetMethod(t *testing.T) {
 				Header: NewHead("RS4"),
 			},
 			nil,
-			errors.New(`[csjwt] Algorithm "RS4" not found in method list "HS512"`),
+			errors.IsNotFound,
 			0,
 		},
 		{
@@ -66,8 +65,8 @@ func TestVerificationGetMethod(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveSigner, haveErr := test.vf.getMethod(test.token)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 			assert.Nil(t, haveSigner, "Index %d", i)
 			continue
 		}
@@ -101,7 +100,7 @@ func BenchmarkVerificationGetMethod(b *testing.B) {
 		for pb.Next() {
 			m, err := vf.getMethod(tokens[i%2])
 			if err != nil {
-				b.Fatal(err)
+				b.Fatal(errors.PrintLoc(err))
 			}
 			if have, want := m.Alg(), wantAlg[i%2]; have != want {
 				b.Fatalf("Have %s Want %s", have, want)
