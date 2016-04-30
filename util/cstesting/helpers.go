@@ -17,7 +17,7 @@ package cstesting
 import (
 	"os"
 
-	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Fataler describes the function needed to print the output and stop
@@ -52,6 +52,6 @@ func ChangeDir(t Fataler, dir string) func() {
 // If the error is gift wrapped prints the location.
 func FatalIfError(t Fataler, err error) {
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 }
