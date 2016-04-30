@@ -472,3 +472,13 @@ func TestBehaviourF(t *testing.T) {
 		}
 	}
 }
+
+func TestEbWrapf(t *testing.T) {
+	const e Error = "Error1"
+	if haveEB, want := ebWrapf(e, "Hello World %#v"), "Hello World %#v"; haveEB.message != want {
+		t.Errorf("have %q want %q", haveEB.message, want)
+	}
+	if haveEB, want := ebWrapf(e, "Hello World %d", 123), "Hello World 123"; haveEB.message != want {
+		t.Errorf("have %q want %q", haveEB.message, want)
+	}
+}

@@ -23,14 +23,6 @@ import (
 // if an error has a specific behaviour attached.
 type BehaviourFunc func(error) bool
 
-func newEB(err error, msg string, pc uintptr) eb {
-	return eb{
-		err:      err,
-		message:  msg,
-		location: location(pc),
-	}
-}
-
 type eb struct {
 	err     error
 	message string
@@ -46,12 +38,15 @@ func (e *eb) Error() string {
 
 func ebWrapf(err error, format string, args ...interface{}) eb {
 	pc, _, _, _ := runtime.Caller(2)
-	return newEB(err, fmt.Sprintf(format, args...), pc)
-}
-
-func ebWrap(err error, msg string) eb {
-	pc, _, _, _ := runtime.Caller(2)
-	return newEB(err, msg, pc)
+	ret := eb{
+		err:      err,
+		message:  format,
+		location: location(pc),
+	}
+	if len(args) > 0 {
+		ret.message = fmt.Sprintf(format, args...)
+	}
+	return ret
 }
 
 // TODO(cs): add notProvisioned,badRequest,methodNotAllowed,notAssigned,...
@@ -66,7 +61,7 @@ func NewNotImplemented(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notImplemented{ebWrap(err, msg)}
+	return &notImplemented{ebWrapf(err, msg)}
 }
 
 // NewNotImplementedf returns an formatted error that satisfies IsNotImplemented().
@@ -101,7 +96,7 @@ func NewEmpty(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &empty{ebWrap(err, msg)}
+	return &empty{ebWrapf(err, msg)}
 }
 
 // NewEmptyf returns an formatted error that satisfies IsEmpty().
@@ -136,7 +131,7 @@ func NewWriteFailed(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &writeFailed{ebWrap(err, msg)}
+	return &writeFailed{ebWrapf(err, msg)}
 }
 
 // NewWriteFailedf returns an formatted error that satisfies IsWriteFailed().
@@ -170,7 +165,7 @@ func NewFatal(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &fatal{ebWrap(err, msg)}
+	return &fatal{ebWrapf(err, msg)}
 }
 
 // NewFatalf returns an formatted error that satisfies IsFatal().
@@ -205,7 +200,7 @@ func NewNotFound(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notFound{ebWrap(err, msg)}
+	return &notFound{ebWrapf(err, msg)}
 }
 
 // NewNotFoundf returns an formatted error that satisfies IsNotFound().
@@ -240,7 +235,7 @@ func NewUserNotFound(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &userNotFound{ebWrap(err, msg)}
+	return &userNotFound{ebWrapf(err, msg)}
 }
 
 // NewUserNotFoundf returns an formatted error that satisfies IsUserNotFound().
@@ -275,7 +270,7 @@ func NewUnauthorized(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &unauthorized{ebWrap(err, msg)}
+	return &unauthorized{ebWrapf(err, msg)}
 }
 
 // NewUnauthorizedf returns an formatted error that satisfies IsUnauthorized().
@@ -310,7 +305,7 @@ func NewAlreadyExists(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &alreadyExists{ebWrap(err, msg)}
+	return &alreadyExists{ebWrapf(err, msg)}
 }
 
 // NewAlreadyExistsf returns an formatted error that satisfies IsAlreadyExists().
@@ -345,7 +340,7 @@ func NewAlreadyClosed(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &alreadyClosed{ebWrap(err, msg)}
+	return &alreadyClosed{ebWrapf(err, msg)}
 }
 
 // NewAlreadyClosedf returns an formatted error that satisfies IsAlreadyClosed().
@@ -380,7 +375,7 @@ func NewNotSupported(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notSupported{ebWrap(err, msg)}
+	return &notSupported{ebWrapf(err, msg)}
 }
 
 // NewNotSupportedf returns an formatted error that satisfies IsNotSupported().
@@ -415,7 +410,7 @@ func NewNotValid(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notValid{ebWrap(err, msg)}
+	return &notValid{ebWrapf(err, msg)}
 }
 
 // NewNotValidf returns an formatted error that satisfies IsNotValid().
@@ -450,7 +445,7 @@ func NewTemporary(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &temporary{ebWrap(err, msg)}
+	return &temporary{ebWrapf(err, msg)}
 }
 
 // NewTemporaryf returns an formatted error that satisfies IsTemporary().
@@ -485,7 +480,7 @@ func NewTimeout(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &timeout{ebWrap(err, msg)}
+	return &timeout{ebWrapf(err, msg)}
 }
 
 // NewTimeoutf returns an formatted error that satisfies IsTimeout().
