@@ -45,5 +45,5 @@ func TestFromContext(t *testing.T) {
 	haveToken, haveErr := FromContext(ctx)
 	assert.NotNil(t, haveToken)
 	assert.False(t, haveToken.Valid)
-	assert.EqualError(t, haveErr, ErrContextJWTNotFound.Error())
+	assert.EqualError(t, haveErr, errContextJWTNotFound.Error())
 }

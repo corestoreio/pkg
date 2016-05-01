@@ -19,7 +19,6 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/juju/errors"
 )
 
 // DefaultBackend creates new ctxjwt.Option slice with the default configuration

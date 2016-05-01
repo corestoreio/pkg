@@ -14,9 +14,4 @@
 
 package ctxjwt
 
-import (
-	"github.com/corestoreio/csfw/util/cserr"
-)
-
-// ErrContextJWTNotFound gets returned when the JWT cannot be found.
-var ErrContextJWTNotFound cserr.Error = `[ctxjwt] Cannot extract token nor an error from the context`
+var errContextJWTNotFound = `[ctxjwt] Cannot extract token nor an error from the context`

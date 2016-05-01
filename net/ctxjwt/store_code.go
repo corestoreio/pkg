@@ -33,7 +33,7 @@ const StoreParamName = `store`
 // Please make sure to add the key storenet.ParamName with the store code
 // to the token claim.
 func ScopeOptionFromClaim(tc csjwt.Claimer) (o scope.Option, err error) {
-	err = store.ErrStoreNotFound
+	err = store.errStoreNotFound
 	if tc == nil {
 		return
 	}

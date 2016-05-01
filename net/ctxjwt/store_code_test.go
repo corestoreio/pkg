@@ -43,7 +43,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	assert.EqualValues(t, "de", so.StoreCode())
 
 	so, err = ctxjwt.ScopeOptionFromClaim(nil)
-	assert.EqualError(t, store.ErrStoreNotFound, err.Error())
+	assert.EqualError(t, store.errStoreNotFound, err.Error())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
@@ -58,7 +58,7 @@ func TestStoreCodeFromClaimInvalid(t *testing.T) {
 	})
 
 	so, err := ctxjwt.ScopeOptionFromClaim(token2.Claims)
-	assert.EqualError(t, store.ErrStoreCodeInvalid, err.Error())
+	assert.EqualError(t, store.errStoreCodeInvalid, err.Error())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
@@ -75,7 +75,7 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 	}{
 		{
 			jwtclaim.Map{},
-			store.ErrStoreNotFound,
+			store.errStoreNotFound,
 			scope.Default,
 			"",
 			0,
@@ -89,14 +89,14 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 		},
 		{
 			jwtclaim.Map{ctxjwt.StoreParamName: "de'de"},
-			store.ErrStoreCodeInvalid,
+			store.errStoreCodeInvalid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
 			jwtclaim.Map{ctxjwt.StoreParamName: 1},
-			store.ErrStoreNotFound,
+			store.errStoreNotFound,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,

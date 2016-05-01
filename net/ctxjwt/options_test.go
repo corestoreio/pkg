@@ -24,9 +24,9 @@ import (
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,44 +47,30 @@ func TestOptionWithTemplateToken(t *testing.T) {
 			}
 		}),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 
 	tkDefault, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
 		"lang": "ch_DE",
 	})
-	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
-	}
+	cstesting.FatalIfError(t, err)
 
 	tkWebsite, err := jwts.NewToken(scope.Website, 3, &jwtclaim.Standard{
 		Audience: "Gophers",
 	})
-	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
-	}
+	cstesting.FatalIfError(t, err)
 
 	tkDefaultParsed, err := jwts.ParseScoped(scope.Default, 0, tkDefault.Raw)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 	// t.Logf("tkMissing: %#v\n", tkDefaultParsed)
 	lng, err := tkDefaultParsed.Claims.Get("lang")
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 	assert.Exactly(t, "ch_DE", conv.ToString(lng))
 
 	tkWebsiteParsed, err := jwts.ParseScoped(scope.Website, 3, tkWebsite.Raw)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 	// t.Logf("tkFull: %#v\n", tkWebsiteParsed)
 	claimStore, err := tkWebsiteParsed.Claims.Get(jwtclaim.KeyStore)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 	assert.Exactly(t, "potato", conv.ToString(claimStore))
 
 }
@@ -95,20 +81,14 @@ func TestOptionWithTokenID(t *testing.T) {
 		ctxjwt.WithTokenID(scope.Website, 22, true),
 		ctxjwt.WithKey(scope.Website, 22, csjwt.WithPasswordRandom()),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 
 	theToken, err := jwts.NewToken(scope.Website, 22)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 	assert.NotEmpty(t, theToken.Raw)
 
 	id, err := theToken.Claims.Get(jwtclaim.KeyID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 	assert.Len(t, id, uuidLen)
 }
 
@@ -118,24 +98,18 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 		ctxjwt.WithTokenID(scope.Website, 33, true),
 		ctxjwt.WithKey(scope.Website, 33, csjwt.WithPasswordRandom()),
 	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 
 	now := time.Now()
 	theToken, err := jwts.NewToken(scope.Website, 33) // must be a pointer the cl or Get() returns nil
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
+
 	assert.NotEmpty(t, theToken.Raw)
 	exp, err := theToken.Claims.Get(jwtclaim.KeyExpiresAt)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
+
 	iat, err := theToken.Claims.Get(jwtclaim.KeyIssuedAt)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 
 	assert.Exactly(t, now.Unix(), conv.ToInt64(iat))
 	assert.Exactly(t, int(ctxjwt.DefaultExpire.Seconds()), int(time.Unix(conv.ToInt64(exp), 0).Sub(now).Seconds()+1))
@@ -170,20 +144,14 @@ func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
 
 func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 	jwts, err := ctxjwt.NewService(opt)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{})
-	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
-	}
+	cstesting.FatalIfError(t, err)
 	assert.NotEmpty(t, theToken.Raw)
 
 	tk, err := jwts.Parse(theToken.Raw)
-	if err != nil {
-		t.Fatal(err)
-	}
+	cstesting.FatalIfError(t, err)
 	assert.NotNil(t, tk)
 	assert.True(t, tk.Valid)
 }

@@ -38,7 +38,7 @@ func FromContext(ctx context.Context) (csjwt.Token, error) {
 
 	wrp, ok := ctx.Value(keyCtxToken{}).(ctxTokenWrapper)
 	if !ok {
-		return wrp.t, ErrContextJWTNotFound
+		return wrp.t, errContextJWTNotFound
 	}
 
 	if wrp.err != nil {
@@ -48,7 +48,7 @@ func FromContext(ctx context.Context) (csjwt.Token, error) {
 	if wrp.t.Valid {
 		return wrp.t, nil
 	}
-	return wrp.t, ErrContextJWTNotFound
+	return wrp.t, errContextJWTNotFound
 }
 
 // withContextError creates a new context with an error attached.

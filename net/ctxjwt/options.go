@@ -23,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
 

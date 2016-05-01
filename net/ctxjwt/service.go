@@ -19,9 +19,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/pborman/uuid"
 )
 
@@ -41,7 +40,7 @@ const (
 // Service main type for handling JWT authentication, generation, blacklists
 // and log outs depending on a scope.
 type Service struct {
-	*cserr.MultiErr
+	*errors.MultiErr
 
 	// JTI represents the interface to generate a new UUID aka JWT ID
 	JTI interface {
@@ -103,7 +102,7 @@ func (s *Service) Options(opts ...Option) error {
 		opt(s)
 	}
 	if s.HasErrors() {
-		return s
+		return s.MultiErr
 	}
 
 	s.mu.RLock()

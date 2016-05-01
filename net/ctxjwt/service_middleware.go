@@ -19,7 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
-	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
 
@@ -107,7 +106,7 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 
 			scopeOption, err := ScopeOptionFromClaim(token.Claims)
 
-			if err == store.ErrStoreNotFound {
+			if err == store.errStoreNotFound {
 				// move on when the store code cannot be found in the token.
 				return hf.ServeHTTPContext(ctx, w, r)
 			}

@@ -19,7 +19,6 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/juju/errors"
 )
 
 // ConfigSigningMethod signing method type for the JWT.

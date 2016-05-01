@@ -25,15 +25,15 @@ import (
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/ctxjwt/ctxjwtbe"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
 	p, err := f(s, scopeID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 	return p.String()
 }
@@ -42,7 +42,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	t.Parallel()
 	cfgStruct, err := ctxjwtbe.NewConfigStructure()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 	pb := ctxjwtbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
@@ -67,7 +67,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
 	scNew, err := jwts.ConfigByScopedGetter(sg)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 
 	assert.True(t, scNew.EnableJTI)
@@ -79,7 +79,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	// test if cache returns the same scopedConfig
 	scCached, err := jwts.ConfigByScopedGetter(sg)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 	// reflect.DeepEqual returns here false because scCached was copied.
 	assert.Exactly(t, fmt.Sprintf("%#v", scNew), fmt.Sprintf("%#v", scCached))
@@ -89,7 +89,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	t.Parallel()
 	cfgStruct, err := ctxjwtbe.NewConfigStructure()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 	pb := ctxjwtbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
@@ -111,7 +111,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 	scNew, err := jwts.ConfigByScopedGetter(sg)
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 
 	assert.False(t, scNew.EnableJTI)
@@ -122,7 +122,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	// test if cache returns the same scopedConfig
 	scCached, err := jwts.ConfigByScopedGetter(sg)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 	// reflect.DeepEqual returns here false because scCached was copied.
 	assert.Exactly(t, fmt.Sprintf("%#v", scNew), fmt.Sprintf("%#v", scCached))

@@ -22,9 +22,9 @@ import (
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -207,25 +207,25 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 		jwtclaim.KeyUserID: "0815",
 	})
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 	assert.NotEmpty(t, theToken.Raw)
 
 	storeID, err := theToken.Claims.Get(jwtclaim.KeyStore)
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 	assert.Exactly(t, "de", storeID)
 
 	userID, err := theToken.Claims.Get(jwtclaim.KeyUserID)
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 	assert.Exactly(t, "0815", userID)
 
 	expires, err := theToken.Claims.Get(jwtclaim.KeyExpiresAt)
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 	assert.True(t, conv.ToInt64(expires) > time.Now().Unix())
 }
@@ -239,7 +239,7 @@ func TestService_NewToken_Merge_Fail(t *testing.T) {
 		}),
 	)
 	if err != nil {
-		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+		t.Fatal(errors.PrintLoc(err))
 	}
 
 	// NewToken has an underlying jwtclaim.NewStore as a claimer

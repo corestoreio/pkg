@@ -29,9 +29,10 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/util/cserr"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -95,7 +96,7 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	assert.NoError(t, authHandler.ServeHTTPContext(ctx, w, req))
 	assert.Equal(t, http.StatusTeapot, w.Code)
-	assert.Equal(t, csjwt.ErrTokenNotInRequest.Error(), w.Body.String())
+	assert.Equal(t, csjwt.errTokenNotInRequest.Error(), w.Body.String())
 }
 
 func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
@@ -113,11 +114,11 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 		ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			token, err := ctxjwt.FromContext(ctx)
 			t.Logf("Token: %#v\n", token)
-			t.Fatal("Unexpected Error:", cserr.NewMultiErr(err).VerboseErrors())
+			t.Fatal(errors.PrintLoc(err))
 			return nil
 		}),
 	)); err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
@@ -140,7 +141,7 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 		assert.NotNil(t, ctxToken)
 		xFoo, err := ctxToken.Claims.Get("xfoo")
 		if err != nil {
-			t.Fatal(err)
+			t.Fatal(errors.PrintLoc(err))
 		}
 		assert.Exactly(t, "bar", xFoo.(string))
 		return nil
@@ -210,7 +211,7 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 func testAuth(t *testing.T, opts ...ctxjwt.Option) (ctxhttp.Handler, []byte) {
 	jm, err := ctxjwt.NewService(opts...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 
 	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
@@ -237,7 +238,7 @@ func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFu
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		_, haveReqStore, err := store.FromContextProvider(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatal(errors.PrintLoc(err))
 			return err
 		}
 		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode())
@@ -250,7 +251,7 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 	var newReq = func(i int, token []byte) *http.Request {
 		req, err := http.NewRequest(httputil.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatal(errors.PrintLoc(err))
 		}
 		ctxjwt.SetHeaderAuthorization(req, token)
 		return req
@@ -263,23 +264,23 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		wantErr        error
 	}{
 		{store.WithContextProvider(context.Background(), nil), "de", "de", store.ErrContextProviderNotFound},
-		{store.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", "de", csjwt.ErrTokenNotInRequest},
+		{store.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", "de", csjwt.errTokenNotInRequest},
 		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "de", "de", nil},
-		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "ch", "at", store.ErrStoreNotActive},
+		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "ch", "at", store.errStoreNotActive},
 		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "at", "at", nil},
-		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "a$t", "de", store.ErrStoreCodeInvalid},
-		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "", "at", store.ErrStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "a$t", "de", store.errStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "", "at", store.errStoreCodeInvalid},
 		//
 		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "de", "de", nil},
-		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "ch", "at", store.ErrStoreNotActive},
-		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), " ch", "at", store.ErrStoreCodeInvalid},
-		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "uk", "at", store.ErrStoreChangeNotAllowed},
+		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "ch", "at", store.errStoreNotActive},
+		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), " ch", "at", store.errStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "uk", "at", store.errStoreChangeNotAllowed},
 		//
-		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "uk", "au", store.ErrStoreChangeNotAllowed},
+		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "uk", "au", store.errStoreChangeNotAllowed},
 		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "nz", "nz", nil},
-		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "n z", "au", store.ErrStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "n z", "au", store.errStoreCodeInvalid},
 		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "au", "au", nil},
-		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "", "au", store.ErrStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "", "au", store.errStoreCodeInvalid},
 	}
 	for i, test := range tests {
 		jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()))
@@ -288,7 +289,7 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 			ctxjwt.StoreParamName: test.tokenStoreCode,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fatal(errors.PrintLoc(err))
 		}
 
 		if test.wantErr != nil {
@@ -299,13 +300,13 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 					return nil
 				}),
 			)); err != nil {
-				t.Fatal(err)
+				t.Fatal(errors.PrintLoc(err))
 			}
 		}
 		mw := jwts.WithInitTokenAndStore()(finalInitStoreHandler(t, test.wantStoreCode))
 		rec := httptest.NewRecorder()
 		if err := mw.ServeHTTPContext(test.ctx, rec, newReq(i, token.Raw)); err != nil {
-			t.Fatal(err)
+			t.Fatal(errors.PrintLoc(err))
 		}
 	}
 }

@@ -29,9 +29,9 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/blacklist"
-	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/net/context"
 )
 
@@ -47,7 +47,7 @@ func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 		}
 		tk, err := jwts.NewToken(scope.Default, 0, claim)
 		if err != nil {
-			b.Fatal(err)
+			b.Fatal(errors.PrintLoc(err))
 		}
 		tokens[i] = tk.Raw
 	}
@@ -58,7 +58,7 @@ func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 		for pb.Next() {
 			for i := 0; i < benchTokenCount; i++ {
 				if err := bl.Set(tokens[i], time.Minute); err != nil {
-					b.Fatal(err)
+					b.Fatal(errors.PrintLoc(err))
 				}
 				if !bl.Has(tokens[i]) {
 					b.Fatalf("Cannot find token %s with index %d", tokens[i], i)
@@ -190,7 +190,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (ctxhttp.Handle
 		jwtclaim.KeyStore: "at",
 	})
 	if err != nil {
-		b.Fatal(err)
+		t.Fatal(errors.PrintLoc(err))
 	}
 
 	final := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
@@ -276,7 +276,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		s.Store = storeCode
 		token, err := jwts.NewToken(scope.Website, 1, s)
 		if err != nil {
-			b.Fatal(err)
+			t.Fatal(errors.PrintLoc(err))
 		}
 		return token.Raw
 	}
@@ -291,7 +291,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		// just add garbage to the blacklist
 		tbl := generateToken(strconv.FormatInt(int64(i), 10))
 		if err := jwts.Blacklist.Set(tbl, time.Millisecond*time.Microsecond*time.Duration(i)); err != nil {
-			b.Fatal(err)
+			t.Fatal(errors.PrintLoc(err))
 		}
 	}
 
@@ -335,7 +335,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		for pb.Next() {
 			w := httptest.NewRecorder() // 3 allocs
 			if err := jwtHandler.ServeHTTPContext(ctx, w, getRequestWithToken(b, tokens[i%tokenCount])); err != nil {
-				b.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+				t.Fatal(errors.PrintLoc(err))
 			}
 			if w.Code != http.StatusUnavailableForLegalReasons {
 				b.Fatalf("Response Code want %d; have %d", http.StatusUnavailableForLegalReasons, w.Code)
