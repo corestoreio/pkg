@@ -276,21 +276,21 @@ func TestSplitFQ(t *testing.T) {
 		wantScope   string
 		wantScopeID int64
 		wantPath    string
-		wantErr     error
+		wantErrBhf  errors.BehaviourFunc
 	}{
-		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
+		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", errors.IsNotSupported},
 		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
 		{"stores/4/system/full_page_cache/varnish/backend_port", scope.StrStores.String(), 4, "system/full_page_cache/varnish/backend_port", nil},
 		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
-		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
-		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\". Expecting: strScope/ID/stores/123/catalog/index")},
+		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.IsNotValid},
+		{"stores/123/catalog/index", "default", 0, "", errors.IsNotValid},
 	}
 	for i, test := range tests {
 		havePath, haveErr := cfgpath.SplitFQ(test.have)
 
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => Error: %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
 		}

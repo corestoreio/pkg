@@ -265,14 +265,14 @@ func SplitFQ(fqPath string) (Path, error) {
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
 	if false == (strings.Count(fqPath, sSeparator) >= Levels+1) {
-		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
+		return Path{}, errors.NewNotValidf("[cfgpath] Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
 	}
 
 	fi := strings.Index(fqPath, sSeparator)
 	scopeStr := fqPath[:fi]
 
 	if false == scope.Valid(scopeStr) {
-		return Path{}, scope.ErrUnsupportedScope
+		return Path{}, errors.NewNotSupportedf("[cfgpath] Unknown Scope: %q", scopeStr)
 	}
 
 	fqPath = fqPath[fi+1:]
@@ -283,7 +283,7 @@ func SplitFQ(fqPath string) (Path, error) {
 		Route: NewRoute(fqPath[fi+1:]),
 		Scope: scope.FromString(scopeStr),
 		ID:    scopeID,
-	}, err
+	}, errors.NewNotValid(err, "[cfgpath] ParseInt")
 }
 
 // BenchmarkSplitFQ-4  	 2000000	       761 ns/op	      32 B/op	       1 allocs/op
