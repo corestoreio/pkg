@@ -15,7 +15,6 @@
 package httputil_test
 
 import (
-	"errors"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +22,7 @@ import (
 	"text/template"
 
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,14 +52,17 @@ func TestPrintRender(t *testing.T) {
 
 func TestPrintRenderErrors(t *testing.T) {
 	t.Parallel()
-	assert.EqualError(t, httputil.NewPrinter(nil, nil).Render(0, "", nil), httputil.ErrRendererNotRegistered.Error())
+	err := httputil.NewPrinter(nil, nil).Render(0, "", nil)
+	assert.True(t, errors.IsEmpty(err), "Error: %s", err)
 
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 	tpl, err := template.New("foo").Parse(`{{define "T"}}Hello, {{.}}!{{end}}`)
 	assert.NoError(t, err)
 	p.Renderer = tpl
-	assert.EqualError(t, p.Render(3141, "X", nil), "template: no template \"X\" associated with template \"foo\"")
+
+	err = p.Render(3141, "X", nil)
+	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.Exactly(t, ``, w.Body.String())
 
 }
@@ -81,7 +84,8 @@ func TestPrintHTMLError(t *testing.T) {
 	w.ResponseRecorder = httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
-	assert.EqualError(t, p.HTML(31415, "Hello %s", "Gophers"), "Not in the mood to write today")
+	err := p.HTML(31415, "Hello %s", "Gophers")
+	assert.True(t, errors.IsWriteFailed(err), "Error: %s", err)
 	assert.Exactly(t, ``, w.Body.String())
 	assert.Exactly(t, 31415, w.Code)
 	assert.Equal(t, httputil.TextHTMLCharsetUTF8, w.Header().Get(httputil.ContentType))
@@ -115,7 +119,8 @@ func TestPrintStringError(t *testing.T) {
 	w.ResponseRecorder = httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
-	assert.EqualError(t, p.String(31415, "Hello %s", "Gophers"), "Not in the mood to write today")
+	err := p.String(31415, "Hello %s", "Gophers")
+	assert.True(t, errors.IsWriteFailed(err), "Error: %s", err)
 	assert.Exactly(t, ``, w.Body.String())
 	assert.Exactly(t, 31415, w.Code)
 	assert.Equal(t, httputil.TextPlain, w.Header().Get(httputil.ContentType))
@@ -148,7 +153,8 @@ func TestPrintJSONError(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
-	assert.EqualError(t, p.JSON(3141, nonMarshallableChannel), "json: unsupported type: chan bool")
+	err := p.JSON(3141, nonMarshallableChannel)
+	assert.True(t, errors.IsFatal(err), "Errors: %s", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
 	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
@@ -192,7 +198,8 @@ func TestPrintJSONPError(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
-	assert.EqualError(t, p.JSONP(3141, "awesomeReact", nonMarshallableChannel), "json: unsupported type: chan bool")
+	err := p.JSONP(3141, "awesomeReact", nonMarshallableChannel)
+	assert.True(t, errors.IsFatal(err), "Error: %s", errors.PrintLoc(err))
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
 	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
@@ -214,7 +221,8 @@ func TestPrintXMLError(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
-	assert.EqualError(t, p.XML(3141, nonMarshallableChannel), "xml: unsupported type: chan bool")
+	err := p.XML(3141, nonMarshallableChannel)
+	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
 	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
@@ -236,7 +244,8 @@ func TestPrintXMLIndentError(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
-	assert.EqualError(t, p.XMLIndent(3141, nonMarshallableChannel, " ", "  "), "xml: unsupported type: chan bool")
+	err := p.XMLIndent(3141, nonMarshallableChannel, " ", "  ")
+	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
 	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
@@ -257,7 +266,8 @@ func TestPrintRedirect(t *testing.T) {
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
 	assert.NoError(t, err)
 	p := httputil.NewPrinter(w, r)
-	assert.EqualError(t, p.Redirect(501, ""), httputil.ErrInvalidRedirectCode.Error())
+	err = p.Redirect(501, "")
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 
 	p.Redirect(http.StatusMovedPermanently, "http://cs.io")
 	assert.Exactly(t, http.StatusMovedPermanently, w.Code)
@@ -336,7 +346,8 @@ func TestPrintFileWithAttachmentError(t *testing.T) {
 	assert.NoError(t, err)
 	p := httputil.NewPrinter(w, r)
 
-	assert.EqualError(t, p.File("gopher.svg", "gopher-logo.svg", true), "File not found:  => gopher.svg")
+	err = p.File("gopher.svg", "gopher-logo.svg", true)
+	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
 	assert.Equal(t, "", w.Header().Get(httputil.ContentDisposition))
 

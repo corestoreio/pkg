@@ -21,13 +21,10 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
-
-// ErrBaseURLDoNotMatch will be returned if the request URL does not match the
-// configured URL.
-var ErrBaseURLDoNotMatch = errors.New("The Base URLs do not match")
 
 // CheckSecureRequest checks if a request is secure using the SSL offloader header
 type CheckSecureRequest struct {
@@ -35,6 +32,7 @@ type CheckSecureRequest struct {
 	// See package backend.
 	// Path: web/secure/offloader_header
 	WebSecureOffloaderHeader cfgmodel.Str
+	Log                      log.Logger
 }
 
 // NewCeckSecureRequest creates a new SecureRequest type pointer.
@@ -42,6 +40,7 @@ type CheckSecureRequest struct {
 func NewCeckSecureRequest(cfgOffloader cfgmodel.Str) *CheckSecureRequest {
 	return &CheckSecureRequest{
 		WebSecureOffloaderHeader: cfgOffloader,
+		Log: log.BlackHole{}, // disabled info and debug logging
 	}
 }
 
@@ -50,8 +49,8 @@ func NewCeckSecureRequest(cfgOffloader cfgmodel.Str) *CheckSecureRequest {
 func (sr *CheckSecureRequest) CtxIs(ctx context.Context, r *http.Request) bool {
 	sg, ok := config.FromContextScopedGetter(ctx)
 	if !ok {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("net.httputil.CtxIsSecure.FromContextScopedGetter", "ok", ok, "request", r)
+		if sr.Log.IsDebug() {
+			sr.Log.Debug("net.httputil.CtxIsSecure.FromContextScopedGetter", "ok", ok, "request", r)
 		}
 	}
 	return sr.Is(sg, r)
@@ -72,8 +71,8 @@ func (sr *CheckSecureRequest) Is(sg config.ScopedGetter, r *http.Request) bool {
 
 	oh, err := sr.WebSecureOffloaderHeader.Get(sg)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("net.httputil.IsSecure.FromContextReader.String", "err", err, "path", sr.WebSecureOffloaderHeader.Route())
+		if sr.Log.IsDebug() {
+			sr.Log.Debug("net.httputil.IsSecure.FromContextReader.String", "err", err, "path", sr.WebSecureOffloaderHeader.Route())
 		}
 		return false
 	}
@@ -91,12 +90,10 @@ func (sr *CheckSecureRequest) Is(sg config.ScopedGetter, r *http.Request) bool {
 
 // IsBaseURLCorrect checks if the requested host, scheme and path are same as the servers and
 // if the path of the baseURL is included in the request URI.
+// Error behaviour: NotValid
 func IsBaseURLCorrect(r *http.Request, baseURL *url.URL) error {
 	if r.Host == baseURL.Host && r.URL.Host == baseURL.Host && r.URL.Scheme == baseURL.Scheme && strings.HasPrefix(r.URL.Path, baseURL.Path) {
 		return nil
 	}
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseURLDoNotMatch, "r.Host", r.Host, "baseURL", baseURL.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), baseURL.Path})
-	}
-	return errors.Mask(ErrBaseURLDoNotMatch)
+	return errors.NewNotValidf("[httputil] Base URLs do not match. BaseURL %q RequestURL %q strings.Contains %v", baseURL.String(), r.URL.String(), []string{r.URL.RequestURI(), baseURL.Path})
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -122,20 +123,20 @@ func TestIsBaseUrlCorrect(t *testing.T) {
 	tests := []struct {
 		req         *http.Request
 		haveBaseURL *url.URL
-		wantErr     error
+		wantErrBhf  errors.BehaviourFunc
 	}{
 		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
-		{nr("http://www.corestore.io/"), pu("http://corestore.io/"), httputil.ErrBaseURLDoNotMatch},
-		{nr("http://corestore.io/"), pu("https://corestore.io/"), httputil.ErrBaseURLDoNotMatch},
-		{nr("http://corestore.io/"), pu("http://corestore.io/subpath"), httputil.ErrBaseURLDoNotMatch},
+		{nr("http://www.corestore.io/"), pu("http://corestore.io/"), errors.IsNotValid},
+		{nr("http://corestore.io/"), pu("https://corestore.io/"), errors.IsNotValid},
+		{nr("http://corestore.io/"), pu("http://corestore.io/subpath"), errors.IsNotValid},
 		{nr("http://corestore.io/subpath"), pu("http://corestore.io/subpath"), nil},
 		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
 		{nr("http://corestore.io/subpath/catalog/product/list"), pu("http://corestore.io/subpath"), nil},
 	}
 	for i, test := range tests {
 		haveErr := httputil.IsBaseURLCorrect(test.req, test.haveBaseURL)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
 		}
