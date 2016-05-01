@@ -14,17 +14,9 @@
 
 package scope
 
-import "errors"
+import "github.com/corestoreio/csfw/util/errors"
 
 const maxUint32 = 1<<32 - 1
-
-// ErrUnsupportedScope gets returned when a string does not match
-// StrDefault, StrWebsites or StrStores constants.
-var ErrUnsupportedScope = errors.New("Unsupported StrScope type")
-
-// ErrUnsupportedScopeID whenever a not valid scope ID will be provided.
-// Neither a WebsiteID nor a GroupID nor a StoreID.
-var ErrUnsupportedScopeID = errors.New("Unsupported Scope ID")
 
 // Option takes care of the hierarchical level between Website, Group and Store.
 // Option can be used as an argument in other functions.
@@ -43,6 +35,7 @@ type Option struct {
 // StoreCoder or WebsiteCoder interface and the appropriate struct fields
 // get assigned with the *Coder interface. scopeType can only be WebsiteID or
 // StoreID because a Group code does not exists.
+// Error behaviour: NotSupported
 func SetByCode(scp Scope, code string) (o Option, err error) {
 	c := MockCode(code)
 	// GroupID does not have a scope code
@@ -52,7 +45,7 @@ func SetByCode(scp Scope, code string) (o Option, err error) {
 	case Store:
 		o.Store = c
 	default:
-		err = ErrUnsupportedScopeID
+		err = errors.NewNotSupportedf("[scope] Scope: %q Code %q", scp, code)
 	}
 	return
 }
@@ -69,6 +62,7 @@ func MustSetByCode(scp Scope, code string) Option {
 
 // SetByID depending on the scopeType the scopeID int64 gets converted into a
 // [Website|Group|Store]IDer.
+// Error behaviour: NotSupported
 func SetByID(scp Scope, id int64) (o Option, err error) {
 	i := MockID(id)
 	// the order of the cases is important
@@ -80,7 +74,7 @@ func SetByID(scp Scope, id int64) (o Option, err error) {
 	case Store:
 		o.Store = i
 	default:
-		err = ErrUnsupportedScopeID
+		err = errors.NewNotSupportedf("[scope] Scope: %q ID %d", scp, id)
 	}
 	return
 }

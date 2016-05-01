@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +27,11 @@ func TestMustSetByCode(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), scope.ErrUnsupportedScopeID.Error())
+			err, ok := r.(error)
+			if !ok {
+				t.Fatalf("Want error interface; Got: %#v", r)
+			}
+			assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a panic")
 		}
@@ -38,7 +43,11 @@ func TestMustSetByID(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), scope.ErrUnsupportedScopeID.Error())
+			err, ok := r.(error)
+			if !ok {
+				t.Fatalf("Want error interface; Got: %#v", r)
+			}
+			assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a panic")
 		}
@@ -53,25 +62,25 @@ func TestApplyCode(t *testing.T) {
 		wantWebsiteCode string
 		haveCode        string
 		s               scope.Scope
-		err             error
+		wantErrBhf      errors.BehaviourFunc
 	}{
 		{"", "de1", "de1", scope.Website, nil},
 		{"de2", "", "de2", scope.Store, nil},
-		{"", "", "de3", scope.Group, scope.ErrUnsupportedScopeID},
-		{"", "", "de4", scope.Absent, scope.ErrUnsupportedScopeID},
+		{"", "", "de3", scope.Group, errors.IsNotSupported},
+		{"", "", "de4", scope.Absent, errors.IsNotSupported},
 	}
 
 	for _, test := range tests {
 		so, err := scope.SetByCode(test.s, test.haveCode)
 		assert.NotNil(t, so)
-		if test.err != nil {
-			assert.EqualError(t, err, test.err.Error())
-		} else {
-			assert.NoError(t, err)
-			assert.Equal(t, test.s, so.Scope())
-			assert.Equal(t, test.wantStoreCode, so.StoreCode())
-			assert.Equal(t, test.wantWebsiteCode, so.WebsiteCode())
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(err), "Error: %s", err)
+			continue
 		}
+		assert.NoError(t, err)
+		assert.Equal(t, test.s, so.Scope())
+		assert.Equal(t, test.wantStoreCode, so.StoreCode())
+		assert.Equal(t, test.wantWebsiteCode, so.WebsiteCode())
 	}
 }
 
@@ -82,47 +91,47 @@ func TestApplyID(t *testing.T) {
 		wantGroupID   scope.GroupIDer
 		wantStoreID   scope.StoreIDer
 
-		haveID int64
-		s      scope.Scope
-		err    error
+		haveID     int64
+		s          scope.Scope
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{scope.MockID(1), nil, nil, 1, scope.Website, nil},
 		{nil, scope.MockID(3), nil, 3, scope.Group, nil},
 		{nil, nil, scope.MockID(2), 2, scope.Store, nil},
-		{nil, nil, nil, 4, scope.Absent, scope.ErrUnsupportedScopeID},
+		{nil, nil, nil, 4, scope.Absent, errors.IsNotSupported},
 	}
 
 	for _, test := range tests {
 		so, err := scope.SetByID(test.s, test.haveID)
 		assert.NotNil(t, so)
-		if test.err != nil {
-			assert.EqualError(t, err, test.err.Error())
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(err), "Error: %s", err)
 			assert.Nil(t, so.Website)
 			assert.Nil(t, so.Group)
 			assert.Nil(t, so.Store)
+			continue
+		}
+		assert.NoError(t, err)
+		assert.Equal(t, test.s, so.Scope())
+		assert.Equal(t, "", so.StoreCode())
+		assert.Equal(t, "", so.WebsiteCode())
+
+		if test.wantWebsiteID != nil {
+			assert.Equal(t, test.wantWebsiteID.WebsiteID(), so.Website.WebsiteID())
 		} else {
-			assert.NoError(t, err)
-			assert.Equal(t, test.s, so.Scope())
-			assert.Equal(t, "", so.StoreCode())
-			assert.Equal(t, "", so.WebsiteCode())
+			assert.Nil(t, test.wantWebsiteID)
+		}
 
-			if test.wantWebsiteID != nil {
-				assert.Equal(t, test.wantWebsiteID.WebsiteID(), so.Website.WebsiteID())
-			} else {
-				assert.Nil(t, test.wantWebsiteID)
-			}
+		if test.wantGroupID != nil {
+			assert.Equal(t, test.wantGroupID.GroupID(), so.Group.GroupID())
+		} else {
+			assert.Nil(t, test.wantGroupID)
+		}
 
-			if test.wantGroupID != nil {
-				assert.Equal(t, test.wantGroupID.GroupID(), so.Group.GroupID())
-			} else {
-				assert.Nil(t, test.wantGroupID)
-			}
-
-			if test.wantStoreID != nil {
-				assert.Equal(t, test.wantStoreID.StoreID(), so.Store.StoreID())
-			} else {
-				assert.Nil(t, test.wantStoreID)
-			}
+		if test.wantStoreID != nil {
+			assert.Equal(t, test.wantStoreID.StoreID(), so.Store.StoreID())
+		} else {
+			assert.Nil(t, test.wantStoreID)
 		}
 	}
 }

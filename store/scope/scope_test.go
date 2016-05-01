@@ -39,7 +39,7 @@ func TestScopeBits(t *testing.T) {
 	}{
 		{[]Scope{scope1, scope2}, scope2, scope3, []string{"Default", "Website"}, "Default,Website"},
 		{[]Scope{scope3, scope4}, scope3, scope2, []string{"Group", "Store"}, "Group,Store"},
-		{[]Scope{scope4, scope5}, scope4, scope2, []string{"Store", "Scope(5)"}, "Store,Scope(5)"},
+		{[]Scope{scope4, scope5}, scope4, scope2, []string{"Store"}, "Store"},
 	}
 
 	for _, test := range tests {

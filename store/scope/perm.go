@@ -14,10 +14,7 @@
 
 package scope
 
-import (
-	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/bufferpool"
-)
+import "github.com/corestoreio/csfw/util/bufferpool"
 
 // Perm is a bit set and used for permissions. Uint16 should be big enough.
 type Perm uint16
@@ -79,12 +76,12 @@ func (bits Perm) Has(s ...Scope) bool {
 }
 
 // Human readable representation of the permissions
-func (bits Perm) Human() util.StringSlice {
-	var ret util.StringSlice
-	for i := uint(0); i < 64; i++ {
+func (bits Perm) Human() []string {
+	var ret = make([]string, 0, maxScope)
+	for i := uint(0); i < uint(maxScope); i++ {
 		bit := ((bits & (1 << i)) != 0)
 		if bit {
-			ret.Append(Scope(i).String())
+			ret = append(ret, (Scope(i).String()))
 		}
 	}
 	return ret
@@ -95,7 +92,7 @@ func (bits Perm) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	for i := uint(0); i < 64; i++ {
+	for i := uint(0); i < uint(maxScope); i++ {
 		if (bits & (1 << i)) != 0 {
 			_, _ = buf.WriteString(Scope(i).String())
 			_ = buf.WriteByte(',')
@@ -116,5 +113,19 @@ func (bits Perm) MarshalJSON() ([]byte, error) {
 	if bits == 0 {
 		return nullByte, nil
 	}
-	return []byte(`["` + bits.Human().Join(`","`) + `"]`), nil
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	buf.WriteString(`["`)
+	hm := bits.Human()
+	lhm := len(hm) - 1
+	for i, h := range hm {
+		buf.WriteString(h)
+		if i < lhm {
+			buf.WriteString(`","`)
+		}
+	}
+	buf.WriteString(`"]`)
+
+	// seems redundant but we must copy the bytes aways because bufferpool.Put() resets the buffer
+	return []byte(buf.String()), nil
 }

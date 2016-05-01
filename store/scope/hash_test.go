@@ -18,9 +18,10 @@ import (
 	"math"
 	"testing"
 
+	"sync"
+
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"sync"
 )
 
 func TestHashString(t *testing.T) {

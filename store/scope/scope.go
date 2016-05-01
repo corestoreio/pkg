@@ -34,6 +34,7 @@ const (
 	Website
 	Group
 	Store
+	maxScope
 )
 
 // TODO: rename Scope constants and remove the stupid ID ...
