@@ -21,19 +21,15 @@ import (
 	"strings"
 	"testing"
 
-	"reflect"
-
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/store/storenet"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -201,7 +197,7 @@ var testsMWInitByFormCookie = []struct {
 }{
 	{
 		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "uk"}),
-		scope.Option{Store: scope.MockID(1)}, "uk", nil, storenet.ParamName + "=uk;", store.ErrStoreCodeInvalid.Error(),
+		scope.Option{Store: scope.MockID(1)}, "uk", nil, storenet.ParamName + "=uk;", store.errStoreCodeInvalid.Error(),
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
@@ -209,11 +205,11 @@ var testsMWInitByFormCookie = []struct {
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=%20uk", nil),
-		scope.Option{Store: scope.MockID(1)}, "de", nil, "", store.ErrStoreCodeInvalid.Error(),
+		scope.Option{Store: scope.MockID(1)}, "de", nil, "", store.errStoreCodeInvalid.Error(),
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "de"}),
-		scope.Option{Group: scope.MockID(1)}, "de", nil, storenet.ParamName + "=de;", store.ErrStoreCodeInvalid.Error(),
+		scope.Option{Group: scope.MockID(1)}, "de", nil, storenet.ParamName + "=de;", store.errStoreCodeInvalid.Error(),
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io", nil),
@@ -233,20 +229,20 @@ var testsMWInitByFormCookie = []struct {
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", store.ErrStoreChangeNotAllowed, "", "",
+		scope.Option{Group: scope.MockID(1)}, "at", store.errStoreChangeNotAllowed, "", "",
 	},
 
 	{
 		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "nz"}),
-		scope.Option{Website: scope.MockID(2)}, "nz", nil, storenet.ParamName + "=nz;", store.ErrStoreCodeInvalid.Error(),
+		scope.Option{Website: scope.MockID(2)}, "nz", nil, storenet.ParamName + "=nz;", store.errStoreCodeInvalid.Error(),
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "n'z"}),
-		scope.Option{Website: scope.MockID(2)}, "au", nil, "", store.ErrStoreCodeInvalid.Error(),
+		scope.Option{Website: scope.MockID(2)}, "au", nil, "", store.errStoreCodeInvalid.Error(),
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
-		scope.Option{Website: scope.MockID(2)}, "au", store.ErrStoreChangeNotAllowed, "", "",
+		scope.Option{Website: scope.MockID(2)}, "au", store.errStoreChangeNotAllowed, "", "",
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=nz", nil),
@@ -254,11 +250,11 @@ var testsMWInitByFormCookie = []struct {
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=ch", nil),
-		scope.Option{Website: scope.MockID(1)}, "at", store.ErrStoreNotActive, "", "",
+		scope.Option{Website: scope.MockID(1)}, "at", store.errStoreNotActive, "", "",
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=nz", nil),
-		scope.Option{Website: scope.MockID(1)}, "at", store.ErrStoreChangeNotAllowed, "", "",
+		scope.Option{Website: scope.MockID(1)}, "at", store.errStoreChangeNotAllowed, "", "",
 	},
 }
 

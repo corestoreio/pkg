@@ -18,8 +18,7 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DefaultGroupID defines the default group id which is always 0.
@@ -37,30 +36,25 @@ type Group struct {
 	Stores StoreSlice
 	// Website contains the Website which belongs to this group. Can be nil.
 	Website *Website
-	*cserr.MultiErr
+	*errors.MultiErr
 }
-
-// ErrGroup* are general errors when handling with the Group type.
-// They are self explanatory.
-var (
-	ErrGroupNotFound               = errors.New("Group not found")
-	ErrGroupDefaultStoreNotFound   = errors.New("Group default store not found")
-	ErrGroupWebsiteNotFound        = errors.New("Group Website not found or nil or ID do not match")
-	ErrGroupWebsiteIntegrityFailed = errors.New("Groups WebsiteID does not match the Websites ID")
-)
 
 // NewGroup creates a new Group. Returns an error if 1st argument is nil.
 // Config will only be set if there has been a Website provided via
-// an option argument,
+// an option argument.
+// Error behaviour: Empty
 func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
 	if tg == nil {
-		return nil, ErrArgumentCannotBeNil
+		return nil, errors.NewEmptyf(errArgumentCannotBeNil)
 	}
 
 	g := &Group{
 		Data: tg,
 	}
-	return g.ApplyOptions(opts...)
+	if err := g.Options(opts...); err != nil {
+		return nil, errors.Wrap(err, "[store] NewGroup Options")
+	}
+	return g, nil
 }
 
 // MustNewGroup creates a NewGroup but panics on error.
@@ -72,26 +66,22 @@ func MustNewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	return g
 }
 
-// ApplyOptions sets the options to a Group.
-func (g *Group) ApplyOptions(opts ...GroupOption) (*Group, error) {
+// Options sets the options to a Group.
+func (g *Group) Options(opts ...GroupOption) error {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(g)
 		}
 	}
 	if g.HasErrors() {
-		return nil, g
+		return g.MultiErr
 	}
 	if g.Website != nil {
-		_, err := g.Website.ApplyOptions(SetWebsiteConfig(g.cr))
-		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("store.Group.ApplyOptions.Website.ApplyOptions", "err", err, "g", g)
-			}
-			return nil, errors.Mask(err)
+		if err := g.Website.Options(SetWebsiteConfig(g.cr)); err != nil {
+			return errors.Wrapf(err, "[store] Group %#v", g)
 		}
 	}
-	return g, nil
+	return nil
 }
 
 // GroupID satisfies interface scope.GroupIDer and returns the group ID.
@@ -115,13 +105,14 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 // type ErrGroupDefaultStoreNotFound you can then access Data field to get the
 // DefaultStoreID. The returned *Store does not contain that much data to other
 // Website or Groups.
+// Error behaviour: NotFound
 func (g *Group) DefaultStore() (*Store, error) {
 	for _, sb := range g.Stores {
 		if sb.Data.StoreID == g.Data.DefaultStoreID {
 			return sb, nil
 		}
 	}
-	return nil, ErrGroupDefaultStoreNotFound
+	return nil, errors.NewNotFoundf(errGroupDefaultStoreNotFound)
 }
 
 /*

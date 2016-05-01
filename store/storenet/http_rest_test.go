@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet
+package storenet_test
 
-import "github.com/corestoreio/csfw/util/log"
+import "testing"
 
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+func TestRESTStores(t *testing.T) {
+
+}

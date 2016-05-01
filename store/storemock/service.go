@@ -64,7 +64,7 @@ var _ store.Storager = (*Storage)(nil)
 
 func (ms *Storage) Website(_ scope.WebsiteIDer) (*store.Website, error) {
 	if ms.MockWebsite == nil {
-		return nil, store.ErrWebsiteNotFound
+		return nil, store.errWebsiteNotFound
 	}
 	return ms.MockWebsite()
 }
@@ -76,7 +76,7 @@ func (ms *Storage) Websites() (store.WebsiteSlice, error) {
 }
 func (ms *Storage) Group(_ scope.GroupIDer) (*store.Group, error) {
 	if ms.MockGroup == nil {
-		return nil, store.ErrGroupNotFound
+		return nil, store.errGroupNotFound
 	}
 	return ms.MockGroup()
 }
@@ -88,7 +88,7 @@ func (ms *Storage) Groups() (store.GroupSlice, error) {
 }
 func (ms *Storage) Store(_ scope.StoreIDer) (*store.Store, error) {
 	if ms.MockStore == nil {
-		return nil, store.ErrStoreNotFound
+		return nil, store.errStoreNotFound
 	}
 	return ms.MockStore()
 }
@@ -106,7 +106,7 @@ func (ms *Storage) DefaultStoreView() (*store.Store, error) {
 	if ms.MockStore != nil {
 		return ms.MockStore()
 	}
-	return nil, store.ErrStoreNotFound
+	return nil, store.errStoreNotFound
 }
 func (ms *Storage) ReInit(dbr.SessionRunner, ...dbr.SelectCb) error {
 	return nil

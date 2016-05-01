@@ -39,11 +39,11 @@ func TestNewWebsite(t *testing.T) {
 
 	dg, err := w.DefaultGroup()
 	assert.Nil(t, dg)
-	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
+	assert.EqualError(t, store.errWebsiteDefaultGroupNotFound, err.Error())
 
 	ds, err := w.DefaultStore()
 	assert.Nil(t, ds)
-	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
+	assert.EqualError(t, store.errWebsiteDefaultGroupNotFound, err.Error())
 	assert.Nil(t, w.Stores)
 	assert.Nil(t, w.Groups)
 }
@@ -51,7 +51,7 @@ func TestNewWebsite(t *testing.T) {
 func TestMustNewWebsite(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.ErrArgumentCannotBeNil.Error())
+			assert.EqualError(t, r.(error), store.errArgumentCannotBeNil.Error())
 		}
 	}()
 	_ = store.MustNewWebsite(nil, nil)

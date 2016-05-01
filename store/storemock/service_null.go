@@ -25,20 +25,28 @@ type NullService struct{}
 func (m *NullService) IsSingleStoreMode() bool { return false }
 func (m *NullService) HasSingleStore() bool    { return false }
 func (m *NullService) Website(r ...scope.WebsiteIDer) (*store.Website, error) {
-	return nil, store.ErrWebsiteNotFound
+	return nil, store.errWebsiteNotFound
 }
-func (m *NullService) Websites() (store.WebsiteSlice, error) { return nil, store.ErrWebsiteNotFound }
+func (m *NullService) Websites() (store.WebsiteSlice, error) {
+	return nil, store.errWebsiteNotFound
+}
 func (m *NullService) Group(r ...scope.GroupIDer) (*store.Group, error) {
-	return nil, store.ErrGroupNotFound
+	return nil, store.errGroupNotFound
 }
-func (m *NullService) Groups() (store.GroupSlice, error) { return nil, store.ErrGroupNotFound }
+func (m *NullService) Groups() (store.GroupSlice, error) {
+	return nil, store.errGroupNotFound
+}
 func (m *NullService) Store(r ...scope.StoreIDer) (*store.Store, error) {
-	return nil, store.ErrStoreNotFound
+	return nil, store.errStoreNotFound
 }
-func (m *NullService) Stores() (store.StoreSlice, error)       { return nil, store.ErrStoreNotFound }
-func (m *NullService) DefaultStoreView() (*store.Store, error) { return nil, store.ErrStoreNotFound }
+func (m *NullService) Stores() (store.StoreSlice, error) {
+	return nil, store.errStoreNotFound
+}
+func (m *NullService) DefaultStoreView() (*store.Store, error) {
+	return nil, store.errStoreNotFound
+}
 func (m *NullService) RequestedStore(scope.Option) (*store.Store, error) {
-	return nil, store.ErrStoreNotFound
+	return nil, store.errStoreNotFound
 }
 
 // NewNullService creates a new NullService

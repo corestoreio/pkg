@@ -17,12 +17,9 @@ package store
 import (
 	"encoding/json"
 
-	"github.com/corestoreio/csfw/catalog/catconfig"
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DefaultWebsiteID is always 0
@@ -43,25 +40,21 @@ type Website struct {
 	Groups GroupSlice
 	// Stores contains a slice to all stores associated to one website. This slice can be nil.
 	Stores StoreSlice
-	*cserr.MultiErr
+	*errors.MultiErr
 }
-
-// ErrWebsite* are general errors when handling with the Website type.
-// They are self explanatory.
-var (
-	ErrWebsiteNotFound             = errors.New("Website not found")
-	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
-)
 
 // NewWebsite creates a new website pointer with the config.DefaultManager.
 func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 	if tw == nil {
-		return nil, ErrArgumentCannotBeNil
+		return nil, errors.NewEmptyf(errArgumentCannotBeNil)
 	}
 	w := &Website{
 		Data: tw,
 	}
-	return w.ApplyOptions(opts...)
+	if err := w.Options(opts...); err != nil {
+		return nil, errors.Wrap(err, "[store] NewWebsite Options")
+	}
+	return w, nil
 }
 
 // MustNewWebsite same as NewWebsite but panics on error.
@@ -73,20 +66,20 @@ func MustNewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 	return w
 }
 
-// ApplyOptions sets the options on a Website
-func (w *Website) ApplyOptions(opts ...WebsiteOption) (*Website, error) {
+// Options sets the options on a Website
+func (w *Website) Options(opts ...WebsiteOption) error {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(w)
 		}
 	}
 	if w.HasErrors() {
-		return nil, w
+		return w.MultiErr
 	}
 	if w.cr != nil {
 		w.Config = w.cr.NewScoped(w.WebsiteID(), 0) // Scope Store is not available
 	}
-	return w, nil
+	return nil
 }
 
 // WebsiteID satisfies the interface scope.WebsiteIDer and returns the website ID.
@@ -106,9 +99,6 @@ func (w *Website) GroupID() int64 {
 func (w *Website) StoreID() int64 {
 	g, err := w.DefaultGroup()
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.Website.StoreID", "err", err, "Website", w)
-		}
 		return scope.UnavailableStoreID
 	}
 	return g.Data.DefaultStoreID
@@ -128,31 +118,16 @@ func (w *Website) DefaultGroup() (*Group, error) {
 			return g, nil
 		}
 	}
-	return nil, ErrWebsiteDefaultGroupNotFound
+	return nil, errors.NewNotFoundf(errWebsiteDefaultGroupNotFound)
 }
 
 // DefaultStore returns the default store which via the default group.
 func (w *Website) DefaultStore() (*Store, error) {
 	g, err := w.DefaultGroup()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "DefaultGroup")
 	}
 	return g.DefaultStore()
-}
-
-// BaseCurrency returns the base currency code of a website.
-// 	1st argument should be a path to catalog/price/scope
-// 	2nd argument should be a path to currency/options/base
-func (w *Website) BaseCurrency(ps catconfig.PriceScope, cc directory.ConfigCurrency) (directory.Currency, error) {
-	// TODO, and also see test: TestWebsiteBaseCurrency
-	isGlobal, err := ps.IsGlobal(w.Config)
-	if err != nil {
-		return directory.Currency{}, errors.Mask(err)
-	}
-	if isGlobal {
-		return cc.GetDefault(w.cr) // default scope
-	}
-	return cc.Get(w.Config) // website scope
 }
 
 /*

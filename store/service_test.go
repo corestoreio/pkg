@@ -25,6 +25,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ store.Provider = (*store.Service)(nil)
+
 //func init() {
 // Reminder to myself:
 //	// regarding SetConfigReader: https://twitter.com/davecheney/status/602633849374429185
@@ -69,7 +71,7 @@ func TestNewServiceStore(t *testing.T) {
 func TestMustNewService(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.ErrStoreNotFound.Error())
+			assert.EqualError(t, r.(error), store.errStoreNotFound.Error())
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
@@ -78,9 +80,9 @@ func TestMustNewService(t *testing.T) {
 		have    scope.StoreIDer
 		wantErr error
 	}{
-		{scope.MockCode("nilSlices"), store.ErrStoreNotFound},
-		{scope.MockID(2), store.ErrStoreNotFound},
-		{nil, store.ErrStoreNotFound},
+		{scope.MockCode("nilSlices"), store.errStoreNotFound},
+		{scope.MockID(2), store.errStoreNotFound},
+		{nil, store.errStoreNotFound},
 	}
 	serviceEmpty := storemock.MustNewService(scope.Option{})
 	for _, test := range tests {
@@ -186,7 +188,7 @@ func TestNewServiceStores(t *testing.T) {
 func TestMustNewServiceStores(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.ErrStoreNotFound.Error())
+			assert.EqualError(t, r.(error), store.errStoreNotFound.Error())
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
@@ -413,7 +415,7 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 	if s, err := sm.Store(); err == nil {
 		assert.EqualValues(t, "de", s.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		assert.EqualError(t, err, store.errStoreNotFound.Error())
 		t.Fail()
 	}
 
@@ -431,7 +433,7 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
 		{scope.Option{Store: scope.MockID(6)}, "nz", nil},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
 
 		{scope.Option{Store: scope.MockCode("nz")}, "nz", nil},
 		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
@@ -439,7 +441,7 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 		{scope.Option{Store: scope.MockCode("au")}, "au", nil},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
 	}
 	runTestsRequestedStore(t, sm, tests)
 }
@@ -458,14 +460,14 @@ func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
 	if s, err := sm.Store(); err == nil {
 		assert.EqualValues(t, "at", s.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		assert.EqualError(t, err, store.errStoreNotFound.Error())
 		t.Fail()
 	}
 
 	if g, err := sm.Group(); err == nil {
 		assert.EqualValues(t, 1, g.Data.GroupID)
 	} else {
-		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		assert.EqualError(t, err, store.errStoreNotFound.Error())
 		t.Fail()
 	}
 
@@ -476,22 +478,22 @@ func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
 		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
-		{scope.Option{Store: scope.MockID(6)}, "nz", store.ErrStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(6)}, "nz", store.errStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
 
 		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
-		{scope.Option{Store: scope.MockCode("au")}, "au", store.ErrStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockCode("au")}, "au", store.errStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
 
 		{scope.Option{Group: scope.MockCode("ch")}, "", store.ErrIDNotFoundTableGroupSlice},
-		{scope.Option{Group: scope.MockID(2)}, "", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Group: scope.MockID(2)}, "", store.errStoreChangeNotAllowed},
 		{scope.Option{Group: scope.MockID(1)}, "at", nil},
 
 		{scope.Option{Website: scope.MockCode("xxxx")}, "", store.ErrIDNotFoundTableWebsiteSlice},
-		{scope.Option{Website: scope.MockID(2)}, "", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Website: scope.MockID(2)}, "", store.errStoreChangeNotAllowed},
 		{scope.Option{Website: scope.MockID(1)}, "at", nil},
 	}
 	runTestsRequestedStore(t, sm, tests)
@@ -512,14 +514,14 @@ func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
 	if s, err := sm.Store(); err == nil {
 		assert.EqualValues(t, "at", s.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		assert.EqualError(t, err, store.errStoreNotFound.Error())
 		t.Fail()
 	}
 
 	if w, err := sm.Website(); err == nil {
 		assert.EqualValues(t, "euro", w.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		assert.EqualError(t, err, store.errStoreNotFound.Error())
 		t.Fail()
 	}
 
@@ -529,18 +531,18 @@ func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
 		{scope.Option{Website: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableWebsiteSlice},
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
-		{scope.Option{Store: scope.MockID(6)}, "", store.ErrStoreChangeNotAllowed},
-		{scope.Option{Website: scope.MockCode("oz")}, "", store.ErrStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(6)}, "", store.errStoreChangeNotAllowed},
+		{scope.Option{Website: scope.MockCode("oz")}, "", store.errStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
 
 		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
-		{scope.Option{Store: scope.MockCode("au")}, "au", store.ErrStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockCode("au")}, "au", store.errStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
 
-		{scope.Option{Group: scope.MockID(3)}, "", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Group: scope.MockID(3)}, "", store.errStoreChangeNotAllowed},
 	}
 	runTestsRequestedStore(t, sm, tests)
 }
@@ -566,9 +568,9 @@ func TestNewServiceReInit(t *testing.T) {
 		{scope.MockCode("dede"), nil},
 		{scope.MockCode("czcz"), store.ErrIDNotFoundTableStoreSlice},
 		{scope.MockID(1), nil},
-		{scope.MockID(100), store.ErrStoreNotFound},
+		{scope.MockID(100), store.errStoreNotFound},
 		{mockIDCode{1, "dede"}, nil},
-		{mockIDCode{2, "czfr"}, store.ErrStoreNotFound},
+		{mockIDCode{2, "czfr"}, store.errStoreNotFound},
 		{mockIDCode{2, ""}, nil},
 	}
 

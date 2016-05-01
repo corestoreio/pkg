@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // WebsiteOption can be used as an argument in NewWebsite to configure a website.
@@ -43,10 +43,7 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 			var err error
 			w.Groups[i], err = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr), SetGroupStores(tss, nil))
 			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.SetWebsiteGroupsStores.NewGroup", "err", err, "g", g, "w", w.Data)
-				}
-				w.MultiErr = w.AppendErrors(errors.Mask(err))
+				w.MultiErr = w.AppendErrors(errors.Wrapf(err, "[store] NewGroup. Group %#v Website Data: %#v", g, w.Data))
 				return
 			}
 		}
@@ -60,10 +57,7 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 			}
 			w.Stores[i], err = NewStore(s, w.Data, group, WithStoreConfig(w.cr))
 			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.SetWebsiteGroupsStores.NewStore", "err", err, "s", s, "w.Data", w.Data, "group", group)
-				}
-				w.MultiErr = w.AppendErrors(errors.Mask(err))
+				w.MultiErr = w.AppendErrors(errors.Wrapf(err, "[store] NewStore. Store %#v Website Data %#v Group %#v", s, w.Data, group))
 				return
 			}
 		}

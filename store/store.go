@@ -16,7 +16,6 @@ package store
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -26,6 +25,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DefaultStoreID is always 0.
@@ -48,58 +48,43 @@ type Store struct {
 	Group *Group
 	// Data underlying raw data
 	Data *TableStore
+	*errors.MultiErr
 
+	// todo remove this and move it somewhere else
 	urlcache *struct {
 		secure   *config.URLCache
 		unsecure *config.URLCache
 	}
 }
 
-// ErrStore* are general errors when handling with the Store type.
-// They are self explanatory.
-var (
-	ErrStoreNotFound         = errors.New("Store not found")
-	ErrStoreNotActive        = errors.New("Store not active")
-	ErrArgumentCannotBeNil   = errors.New("An argument cannot be nil")
-	ErrStoreIncorrectGroup   = errors.New("Incorrect group")
-	ErrStoreIncorrectWebsite = errors.New("Incorrect website")
-	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
-)
-
 // NewStore creates a new Store. Returns an error if the first three arguments
 // are nil. Returns an error if integrity checks fail. config.Getter will be
 // also set to Group and Website.
-func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (s *Store, err error) {
+func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (*Store, error) {
 	if ts == nil || tw == nil || tg == nil {
-		return nil, ErrArgumentCannotBeNil
+		return nil, errors.NewEmptyf(errArgumentCannotBeNil)
 	}
 	if ts.WebsiteID != tw.WebsiteID {
-		return nil, ErrStoreIncorrectWebsite
+		return nil, errors.NewNotValidf(errStoreIncorrectWebsite)
 	}
 	if tg.WebsiteID != tw.WebsiteID {
-		return nil, ErrStoreIncorrectWebsite
+		return nil, errors.NewNotValidf(errStoreIncorrectWebsite)
 	}
 	if ts.GroupID != tg.GroupID {
-		return nil, ErrStoreIncorrectGroup
+		return nil, errors.NewNotValidf(errStoreIncorrectGroup)
 	}
 
-	var nw *Website
-	if nw, err = NewWebsite(tw); err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.NewStore.NewWebsite", "err", err, "tw", tw)
-		}
-		return
+	nw, err := NewWebsite(tw)
+	if err != nil {
+		return nil, errors.Wrapf(err, "[store] TableWebsite: %#v\n", tw)
 	}
 
 	var ng *Group
 	if ng, err = NewGroup(tg, SetGroupWebsite(tw)); err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.NewStore.NewGroup", "err", err, "tg", tg, "tw", tw)
-		}
-		return
+		return nil, errors.Wrapf(err, "[store] TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
 	}
 
-	s = &Store{
+	s := &Store{
 		Data:    ts,
 		Website: nw,
 		Group:   ng,
@@ -111,18 +96,14 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 			unsecure: config.NewURLCache(),
 		},
 	}
-	s.ApplyOptions(opts...)
-	if _, err = s.Website.ApplyOptions(SetWebsiteConfig(s.cr)); err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.Website.ApplyOptions", "err", err, "tg", tg, "tw", tw)
-		}
-		return
+	if err := s.Options(opts...); err != nil {
+		return nil, errors.Wrap(err, "[store] NewStore Options")
 	}
-	if _, err = s.Group.ApplyOptions(SetGroupConfig(s.cr)); err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.Group.ApplyOptions", "err", err, "tg", tg, "tw", tw)
-		}
-		return
+	if err = s.Website.Options(SetWebsiteConfig(s.cr)); err != nil {
+		return nil, errors.Wrapf(err, "[store] Website Options TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
+	}
+	if err = s.Group.Options(SetGroupConfig(s.cr)); err != nil {
+		return nil, errors.Wrapf(err, "[store] Group Options TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
 	}
 	return s, nil
 }
@@ -136,17 +117,20 @@ func MustNewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...Stor
 	return s
 }
 
-// ApplyOptions sets the options to the Store struct.
-func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
+// Options sets the options to the Store struct.
+func (s *Store) Options(opts ...StoreOption) error {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(s)
 		}
 	}
+	if s.HasErrors() {
+		return s.MultiErr
+	}
 	if nil != s.Website && nil != s.Group && s.cr != nil {
 		s.Config = s.cr.NewScoped(s.Website.WebsiteID(), s.StoreID())
 	}
-	return s
+	return nil
 }
 
 /*
@@ -243,8 +227,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
 		base, err := s.cr.String(cfgpath.MustNewByParts(config.PathCSBaseURL))
-		if config.NotKeyNotFoundError(err) {
-			PkgLog.Debug("store.Store.BaseURL.String", "err", err, "path", config.PathCSBaseURL)
+		if err != nil && !errors.IsNotFound(err) {
 			base = config.CSBaseURL
 		}
 		rawURL = strings.Replace(rawURL, cfgmodel.PlaceholderBaseURL, base, 1)

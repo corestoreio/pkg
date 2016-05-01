@@ -16,7 +16,7 @@ package store
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // GroupOption can be used as an argument in NewGroup to configure a group.
@@ -32,17 +32,17 @@ func SetGroupConfig(cr config.Getter) GroupOption { return func(g *Group) { g.cr
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
 		if g.Data == nil {
-			g.MultiErr = g.AppendErrors(ErrGroupNotFound)
+			g.MultiErr = g.AppendErrors(errors.NewNotFoundf(errGroupNotFound))
 			return
 		}
 		if tw != nil && g.Data.WebsiteID != tw.WebsiteID {
-			g.MultiErr = g.AppendErrors(ErrGroupWebsiteNotFound)
+			g.MultiErr = g.AppendErrors(errors.NewNotFoundf(errGroupWebsiteNotFound))
 			return
 		}
 		if tw != nil {
 			var err error
 			g.Website, err = NewWebsite(tw, SetWebsiteConfig(g.cr))
-			g.MultiErr = g.AppendErrors(err)
+			g.MultiErr = g.AppendErrors(errors.Wrap(err, "[store] SetGroupWebsite.NewWebsite"))
 		}
 	}
 }
@@ -57,23 +57,20 @@ func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
 			return
 		}
 		if g.Website == nil && w == nil {
-			g.MultiErr = g.AppendErrors(ErrGroupWebsiteNotFound)
+			g.MultiErr = g.AppendErrors(errors.NewNotFoundf(errGroupWebsiteNotFound))
 			return
 		}
 		if w == nil {
 			w = g.Website.Data
 		}
 		if w.WebsiteID != g.Data.WebsiteID {
-			g.MultiErr = g.AppendErrors(ErrGroupWebsiteIntegrityFailed)
+			g.MultiErr = g.AppendErrors(errors.NewNotValidf(errGroupWebsiteIntegrityFailed))
 			return
 		}
 		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
 			ns, err := NewStore(s, w, g.Data, WithStoreConfig(g.cr))
 			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.SetGroupStores.NewStore", "err", err, "s", s, "w", w, "g.Data", g.Data)
-				}
-				g.MultiErr = g.AppendErrors(errors.Mask(err))
+				g.MultiErr = g.AppendErrors(errors.Wrapf(err, "[store] SetGroupStores.FilterByGroupID.NewStore. StoreID %d WebsiteID %d Group %v", s.StoreID, w.WebsiteID, g.Data))
 				return
 			}
 			g.Stores = append(g.Stores, ns)

@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
 
@@ -31,7 +31,7 @@ import (
 // is equal to the one store in the configuration, if not
 // i.e. redirect from http://example.com/store/ to http://www.example.com/store/
 // @see app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
-func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
+func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middleware {
 
 	// Having the GetBool command here, means you must restart the app to take
 	// changes in effect. @todo refactor and use pub/sub to automatically change
@@ -57,23 +57,23 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 
 				_, requestedStore, err := store.FromContextProvider(ctx)
 				if err != nil {
-					if PkgLog.IsDebug() {
-						PkgLog.Debug("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", err, "ctx", ctx)
+					if l.IsDebug() {
+						l.Debug("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", err, "ctx", ctx)
 					}
 					return errors.Mask(err)
 				}
 
 				baseURL, err := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
 				if err != nil {
-					if PkgLog.IsDebug() {
-						PkgLog.Debug("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
+					if l.IsDebug() {
+						l.Debug("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
 					}
 					return errors.Mask(err)
 				}
 
 				if err := httputil.IsBaseURLCorrect(r, &baseURL); err != nil {
-					if PkgLog.IsDebug() {
-						PkgLog.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
+					if l.IsDebug() {
+						l.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
 					}
 
 					baseURL.Path = r.URL.Path
@@ -96,14 +96,14 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 // It calls Getter.RequestedStore() to determine the correct store.
 // 		1. check cookie store, always a string and the store code
 // 		2. check for GET ___store variable, always a string and the store code
-func WithInitStoreByFormCookie() ctxhttp.Middleware {
+func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
+				if l.IsDebug() {
+					l.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
 				}
 				return errors.Mask(err)
 			}
@@ -112,15 +112,15 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 
 			reqSO, err = CodeFromRequestGET(r)
 			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", "err", err, "req", r, "scope", reqSO)
+				if l.IsDebug() {
+					l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", "err", err, "req", r, "scope", reqSO)
 				}
 
 				reqSO, err = CodeFromCookie(r)
 				if err != nil {
 					// ignore further processing because all codes are invalid or not found
-					if PkgLog.IsDebug() {
-						PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", "err", err, "req", r, "scope", reqSO)
+					if l.IsDebug() {
+						l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", "err", err, "req", r, "scope", reqSO)
 					}
 					return hf.ServeHTTPContext(ctx, w, r)
 				}
@@ -128,8 +128,8 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 
 			var newRequestedStore *store.Store
 			if newRequestedStore, err = storeService.RequestedStore(reqSO); err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)
+				if l.IsDebug() {
+					l.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)
 				}
 				return errors.Mask(err)
 			}
@@ -140,8 +140,8 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 			if newRequestedStore != nil && newRequestedStore.Data.Code.String == soStoreCode {
 				wds, err := newRequestedStore.Website.DefaultStore()
 				if err != nil {
-					if PkgLog.IsDebug() {
-						PkgLog.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
+					if l.IsDebug() {
+						l.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
 					}
 					return errors.Mask(err)
 				}
@@ -160,7 +160,6 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 			}
 
 			return hf(ctx, w, r)
-
 		}
 	}
 }

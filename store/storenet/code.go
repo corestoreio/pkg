@@ -34,7 +34,7 @@ const HTTPRequestParamStore = `___store`
 // CodeFromCookie returns from a Request the value of the store cookie or
 // an ErrStoreNotFound.
 func CodeFromCookie(req *http.Request) (o scope.Option, err error) {
-	err = store.ErrStoreNotFound
+	err = store.errStoreNotFound
 	if nil == req {
 		return
 	}
@@ -49,7 +49,7 @@ func CodeFromCookie(req *http.Request) (o scope.Option, err error) {
 // CodeFromRequestGET returns from a Request form the value of the store code or
 // an ErrStoreNotFound.
 func CodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
-	err = store.ErrStoreNotFound
+	err = store.errStoreNotFound
 	if req == nil {
 		return
 	}

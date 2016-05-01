@@ -57,7 +57,7 @@ func TestStorageWebsite(t *testing.T) {
 		err       error
 		wantWCode string
 	}{
-		{nil, store.ErrWebsiteNotFound, ""},
+		{nil, store.errWebsiteNotFound, ""},
 		{scope.MockID(2015), store.ErrIDNotFoundTableWebsiteSlice, ""},
 		{scope.MockID(1), nil, "euro"},
 		{scope.MockCode("asia"), store.ErrIDNotFoundTableWebsiteSlice, ""},
@@ -156,7 +156,7 @@ func TestStorageGroup(t *testing.T) {
 		err      error
 		wantName string
 	}{
-		{nil, store.ErrGroupNotFound, ""},
+		{nil, store.errGroupNotFound, ""},
 		{scope.MockID(2015), store.ErrIDNotFoundTableGroupSlice, ""},
 		{scope.MockID(1), nil, "DACH Group"},
 	}
@@ -265,7 +265,7 @@ func TestStorageStore(t *testing.T) {
 		err      error
 		wantCode string
 	}{
-		{nil, store.ErrStoreNotFound, ""},
+		{nil, store.errStoreNotFound, ""},
 		{scope.MockID(2015), store.ErrIDNotFoundTableStoreSlice, ""},
 		{scope.MockID(1), nil, "de"},
 		{scope.MockCode("asia"), store.ErrIDNotFoundTableStoreSlice, ""},
@@ -366,7 +366,7 @@ func TestDefaultStoreView(t *testing.T) {
 	)
 	dSt, err := tst.DefaultStoreView()
 	assert.Nil(t, dSt)
-	assert.EqualError(t, store.ErrStoreNotFound, err.Error())
+	assert.EqualError(t, store.errStoreNotFound, err.Error())
 
 	var tst2 = store.MustNewStorage(
 		store.SetStorageWebsites(

@@ -20,8 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 type (
@@ -54,9 +53,9 @@ type (
 		ReInit(dbr.SessionRunner, ...dbr.SelectCb) error
 	}
 
-	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
+	// Storage contains a mutex and the raw slices from the database.
 	storage struct {
-		*cserr.MultiErr
+		*errors.MultiErr
 		// cr parent config service. can only be set once.
 		cr       config.Getter
 		mu       sync.RWMutex
@@ -98,7 +97,7 @@ func NewStorage(opts ...StorageOption) (Storager, error) {
 		}
 	}
 	if s.HasErrors() {
-		return nil, s
+		return nil, s.MultiErr
 	}
 	return s, nil
 }
@@ -116,7 +115,7 @@ func MustNewStorage(opts ...StorageOption) Storager {
 // available then the non-empty code has precedence.
 func (st *storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
 	if r == nil {
-		return nil, ErrWebsiteNotFound
+		return nil, errors.NewNotFoundf(errWebsiteNotFound)
 	}
 	if c, ok := r.(scope.WebsiteCoder); ok && c.WebsiteCode() != "" {
 		return st.websites.FindByCode(c.WebsiteCode())
@@ -128,7 +127,7 @@ func (st *storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
 func (st *storage) Website(r scope.WebsiteIDer) (*Website, error) {
 	w, err := st.website(r)
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[store] WebsiteIDer %#v", r)
 	}
 	return NewWebsite(w, SetWebsiteConfig(st.cr), SetWebsiteGroupsStores(st.groups, st.stores))
 }
@@ -140,10 +139,7 @@ func (st *storage) Websites() (WebsiteSlice, error) {
 		var err error
 		websites[i], err = NewWebsite(w, SetWebsiteConfig(st.cr), SetWebsiteGroupsStores(st.groups, st.stores))
 		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("store.Storage.Websites.NewWebsite", "err", err, "w", w, "websites", st.websites)
-			}
-			return nil, errors.Mask(err)
+			return nil, errors.Wrapf(err, "[store] Storage.Websites. WebsiteID: %d", w.WebsiteID)
 		}
 	}
 	return websites, nil
@@ -153,7 +149,7 @@ func (st *storage) Websites() (WebsiteSlice, error) {
 // one has been supplied it returns an error.
 func (st *storage) group(r scope.GroupIDer) (*TableGroup, error) {
 	if r == nil {
-		return nil, ErrGroupNotFound
+		return nil, errors.NewNotFoundf(errGroupNotFound)
 	}
 	return st.groups.FindByGroupID(r.GroupID())
 }
@@ -163,15 +159,12 @@ func (st *storage) group(r scope.GroupIDer) (*TableGroup, error) {
 func (st *storage) Group(id scope.GroupIDer) (*Group, error) {
 	g, err := st.group(id)
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[store] Storage.Group.group")
 	}
 
 	w, err := st.website(scope.MockID(g.WebsiteID))
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.Storage.Group.website", "err", err, "websiteID", g.WebsiteID, "groupID", id.GroupID())
-		}
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[store] Storage.Group.website. WebsiteID %d GroupID %d", g.WebsiteID, id.GroupID())
 	}
 	return NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 }
@@ -183,18 +176,12 @@ func (st *storage) Groups() (GroupSlice, error) {
 	for i, g := range st.groups {
 		w, err := st.website(scope.MockID(g.WebsiteID))
 		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("store.Storage.Groups.website", "err", err, "g", g, "websiteID", g.WebsiteID)
-			}
-			return nil, errors.Mask(err)
+			return nil, errors.Wrapf(err, "[store] WebsiteID %d", g.WebsiteID)
 		}
 
 		groups[i], err = NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("store.Storage.Groups.NewGroup", "err", err, "g", g, "websiteID", g.WebsiteID)
-			}
-			return nil, errors.Mask(err)
+			return nil, errors.Wrapf(err, "[store] GroupID %d WebsiteID %d", g.GroupID, g.WebsiteID)
 		}
 	}
 	return groups, nil
@@ -204,7 +191,7 @@ func (st *storage) Groups() (GroupSlice, error) {
 // The non-empty code has precedence if available.
 func (st *storage) store(r scope.StoreIDer) (*TableStore, error) {
 	if r == nil {
-		return nil, ErrStoreNotFound
+		return nil, errors.NewNotFoundf(errStoreNotFound)
 	}
 	if c, ok := r.(scope.StoreCoder); ok && c.StoreCode() != "" {
 		return st.stores.FindByCode(c.StoreCode())
@@ -212,30 +199,30 @@ func (st *storage) store(r scope.StoreIDer) (*TableStore, error) {
 	return st.stores.FindByStoreID(r.StoreID())
 }
 
-// Store creates a new Store which contains the the store, its group and website
+// Store creates a new Store which contains the store, its group and website
 // according to the interface definition.
 func (st *storage) Store(r scope.StoreIDer) (*Store, error) {
 	s, err := st.store(r)
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[store] Store: %v", r)
 	}
 	w, err := st.website(scope.MockID(s.WebsiteID))
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[store] WebsiteID: %d", s.WebsiteID)
 	}
 	g, err := st.group(scope.MockID(s.GroupID))
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[store] GroupID: %d", s.GroupID)
 	}
 	ns, err := NewStore(s, w, g, WithStoreConfig(st.cr))
 	if err != nil {
-		return nil, errors.Mask(err)
+		return nil, errors.Wrapf(err, "[store] StoreID %d WebsiteID %d GroupID %d", s.StoreID, w.WebsiteID, g.GroupID)
 	}
-	if _, err := ns.Website.ApplyOptions(SetWebsiteGroupsStores(st.groups, st.stores)); err != nil {
-		return nil, errors.Mask(err)
+	if err := ns.Website.Options(SetWebsiteGroupsStores(st.groups, st.stores)); err != nil {
+		return nil, errors.Wrap(err, "")
 	}
-	if _, err := ns.Group.ApplyOptions(SetGroupStores(st.stores, w)); err != nil {
-		return nil, errors.Mask(err)
+	if err := ns.Group.Options(SetGroupStores(st.stores, w)); err != nil {
+		return nil, errors.Wrap(err, "")
 	}
 	return ns, nil
 }
@@ -247,7 +234,7 @@ func (st *storage) Stores() (StoreSlice, error) {
 	for i, s := range st.stores {
 		var err error
 		if stores[i], err = st.Store(scope.MockID(s.StoreID)); err != nil {
-			return nil, errors.Mask(err)
+			return nil, errors.Wrapf(err, "[store] StoreID %d", s.StoreID)
 		}
 	}
 	return stores, nil
@@ -256,16 +243,16 @@ func (st *storage) Stores() (StoreSlice, error) {
 // DefaultStoreView traverses through the websites to find the default website and gets
 // the default group which has the default store id assigned to. Only one website can be the default one.
 func (st *storage) DefaultStoreView() (*Store, error) {
-	for _, website := range st.websites {
-		if website.IsDefault.Bool && website.IsDefault.Valid {
-			g, err := st.group(scope.MockID(website.DefaultGroupID))
+	for _, w := range st.websites {
+		if w.IsDefault.Bool && w.IsDefault.Valid {
+			g, err := st.group(scope.MockID(w.DefaultGroupID))
 			if err != nil {
-				return nil, errors.Mask(err)
+				return nil, errors.Wrapf(err, "[store] WebsiteID %d DefaultGroupID %d", w.WebsiteID, w.DefaultGroupID)
 			}
 			return st.Store(scope.MockID(g.DefaultStoreID))
 		}
 	}
-	return nil, ErrStoreNotFound
+	return nil, errors.NewNotFoundf(errStoreNotFound)
 }
 
 // ReInit reloads all websites, groups and stores concurrently from the database. If GOMAXPROCS
@@ -276,7 +263,7 @@ func (st *storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 	defer st.mu.Unlock()
 
 	if dbrSess == nil {
-		return errors.New("dbr.SessionRunner is nil")
+		return errors.NewEmptyf("[store] dbr.SessionRunner is nil")
 	}
 
 	errc := make(chan error)
@@ -288,7 +275,7 @@ func (st *storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 		}
 		st.websites = nil
 		_, err := st.websites.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Mask(err)
+		errc <- errors.Wrap(err, "[store] websites")
 	}()
 
 	go func() {
@@ -297,7 +284,7 @@ func (st *storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 		}
 		st.groups = nil
 		_, err := st.groups.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Mask(err)
+		errc <- errors.Wrap(err, "[store] groups")
 	}()
 
 	go func() {
@@ -306,7 +293,7 @@ func (st *storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 		}
 		st.stores = nil
 		_, err := st.stores.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Mask(err)
+		errc <- errors.Wrap(err, "[store] stores")
 	}()
 
 	for i := 0; i < 3; i++ {

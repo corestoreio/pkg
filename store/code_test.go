@@ -27,19 +27,19 @@ func TestValidateStoreCode(t *testing.T) {
 		have    string
 		wantErr error
 	}{
-		{"@de", store.ErrStoreCodeInvalid},
-		{" de", store.ErrStoreCodeInvalid},
+		{"@de", store.errStoreCodeInvalid},
+		{" de", store.errStoreCodeInvalid},
 		{"de", nil},
 		{"DE", nil},
 		{"deCH09_", nil},
-		{"_de", store.ErrStoreCodeInvalid},
-		{"", store.ErrStoreCodeInvalid},
-		{"\U0001f41c", store.ErrStoreCodeInvalid},
+		{"_de", store.errStoreCodeInvalid},
+		{"", store.errStoreCodeInvalid},
+		{"\U0001f41c", store.errStoreCodeInvalid},
 		{"au_en", nil},
-		{"au-fr", store.ErrStoreCodeInvalid},
-		{"Hello GoLang", store.ErrStoreCodeInvalid},
-		{"Hello€GoLang", store.ErrStoreCodeInvalid},
-		{"HelloGoLdhashdfkjahdjfhaskjdfhuiwehfiawehfuahweldsnjkasfkjkwejqwehqang", store.ErrStoreCodeInvalid},
+		{"au-fr", store.errStoreCodeInvalid},
+		{"Hello GoLang", store.errStoreCodeInvalid},
+		{"Hello€GoLang", store.errStoreCodeInvalid},
+		{"HelloGoLdhashdfkjahdjfhaskjdfhuiwehfiawehfuahweldsnjkasfkjkwejqwehqang", store.errStoreCodeInvalid},
 	}
 	for _, test := range tests {
 		haveErr := store.CodeIsValid(test.have)

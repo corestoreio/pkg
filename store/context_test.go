@@ -42,7 +42,7 @@ func TestContextReaderError(t *testing.T) {
 	ctx = store.WithContextProvider(context.Background(), mr)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = store.FromContextProvider(ctx)
-	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+	assert.EqualError(t, err, store.errStoreNotFound.Error())
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
 

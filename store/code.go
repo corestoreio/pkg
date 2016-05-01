@@ -14,7 +14,10 @@
 
 package store
 
-import "github.com/corestoreio/csfw/util"
+import (
+	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
+)
 
 // StoreCodeMaxLen defines the overall maximum length a store code can have.
 const StoreCodeMaxLen = 32
@@ -22,16 +25,17 @@ const StoreCodeMaxLen = 32
 // CodeIsValid checks if a store code is valid. Returns an ErrStoreCodeEmpty
 // or an ErrStoreCodeInvalid if the first letter is not a-zA-Z and followed by
 // a-zA-Z0-9_ or store code length is greater than 32 characters.
+// Error behaviour: NotValid
 func CodeIsValid(c string) error {
 	if c == "" || len(c) > StoreCodeMaxLen {
-		return ErrStoreCodeInvalid
+		return errors.NewNotValidf(errStoreCodeInvalid, c)
 	}
 	c1 := c[0]
 	if false == ((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
-		return ErrStoreCodeInvalid
+		return errors.NewNotValidf(errStoreCodeInvalid, c)
 	}
 	if false == util.StrIsAlNum(c) {
-		return ErrStoreCodeInvalid
+		return errors.NewNotValidf(errStoreCodeInvalid, c)
 	}
 	return nil
 }

@@ -76,7 +76,7 @@ func TestNewStore(t *testing.T) {
 func TestNewStoreErrorArgsNil(t *testing.T) {
 	s, err := store.NewStore(nil, nil, nil)
 	assert.Nil(t, s)
-	assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
+	assert.EqualError(t, store.errArgumentCannotBeNil, err.Error())
 }
 
 func TestNewStoreErrorIncorrectGroup(t *testing.T) {
@@ -86,7 +86,7 @@ func TestNewStoreErrorIncorrectGroup(t *testing.T) {
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
 	assert.Nil(t, s)
-	assert.EqualError(t, store.ErrStoreIncorrectGroup, err.Error())
+	assert.EqualError(t, store.errStoreIncorrectGroup, err.Error())
 }
 
 func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
@@ -96,7 +96,7 @@ func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
 	assert.Nil(t, s)
-	assert.EqualError(t, store.ErrStoreIncorrectWebsite, err.Error())
+	assert.EqualError(t, store.errStoreIncorrectWebsite, err.Error())
 }
 
 func TestStoreSlice(t *testing.T) {
@@ -301,7 +301,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		s.ApplyOptions(store.WithStoreConfig(test.haveR))
+		s.Options(store.WithStoreConfig(test.haveR))
 		assert.NotNil(t, s.Config, "Index %d", i)
 		baseURL, err := s.BaseURL(test.haveUT, test.haveIsSecure)
 		assert.NoError(t, err)

@@ -32,30 +32,30 @@ func TestNullService(t *testing.T) {
 
 	ws, err := ns.Website()
 	assert.Nil(t, ws)
-	assert.EqualError(t, err, store.ErrWebsiteNotFound.Error())
+	assert.EqualError(t, err, store.errWebsiteNotFound.Error())
 
 	wss, err := ns.Websites()
 	assert.Nil(t, wss)
-	assert.EqualError(t, err, store.ErrWebsiteNotFound.Error())
+	assert.EqualError(t, err, store.errWebsiteNotFound.Error())
 
 	gs, err := ns.Group()
 	assert.Nil(t, gs)
-	assert.EqualError(t, err, store.ErrGroupNotFound.Error())
+	assert.EqualError(t, err, store.errGroupNotFound.Error())
 
 	gss, err := ns.Groups()
 	assert.Nil(t, gss)
-	assert.EqualError(t, err, store.ErrGroupNotFound.Error())
+	assert.EqualError(t, err, store.errGroupNotFound.Error())
 
 	ss, err := ns.Store()
 	assert.Nil(t, ss)
-	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+	assert.EqualError(t, err, store.errStoreNotFound.Error())
 
 	sss, err := ns.Stores()
 	assert.Nil(t, sss)
-	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+	assert.EqualError(t, err, store.errStoreNotFound.Error())
 
 	ss, err = ns.DefaultStoreView()
 	assert.Nil(t, ss)
-	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+	assert.EqualError(t, err, store.errStoreNotFound.Error())
 
 }

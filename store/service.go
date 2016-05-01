@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 type (
@@ -91,12 +91,6 @@ type (
 	}
 )
 
-var _ Provider = (*Service)(nil)
-
-// ErrStoreChangeNotAllowed if a given store within a website would like to
-// switch to another store in a different website.
-var ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
-
 // NewService creates a new store Service which handles websites, groups and stores.
 // A Service can only act on a certain scope (MAGE_RUN_TYPE) and scope ID (MAGE_RUN_CODE).
 // Default scope.Scope is always the scope.WebsiteID constant.
@@ -120,12 +114,8 @@ func NewService(so scope.Option, storage Storager) (*Service, error) {
 	var err error
 	s.appStore, err = s.findDefaultStoreByScope(s.boundToScope, so)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.Service.Init", "err", err, "ScopeOption", so)
-		}
-		return nil, errors.Mask(err)
+		return nil, errors.Wrap(err, "[store] NewService.findDefaultStoreByScope")
 	}
-
 	return s, nil
 }
 
@@ -149,14 +139,11 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 	case scope.Group:
 		g, errG := sm.Group(so.Group)
 		if errG != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("store.Service.findDefaultStoreByScope.Group", "err", errG, "ScopeOption", so)
-			}
-			return nil, errors.Mask(errG)
+			return nil, errors.Wrapf(errG, "[store] sm.Group ScopeOption %s", so)
 		}
 		store, err := sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
 		if err != nil {
-			return nil, errors.Mask(ErrGroupDefaultStoreNotFound)
+			return nil, errors.NewNotFoundf(errGroupDefaultStoreNotFound)
 		}
 		return store, nil
 
@@ -166,41 +153,33 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 			if err == nil {
 				store, err = sm.Store(store) // this Store contains more data
 			}
-			return store, err
+			return store, errors.Wrapf(err, "[store] DefaultStoreView Store. ScopeOption %s", so)
 		}
 
 		w, errW := sm.Website(so.Website)
 		if errW != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("store.Service.findDefaultStoreByScope.Website", "err", errW, "ScopeOption", so)
-			}
-			return nil, errors.Mask(errW)
+			return nil, errors.Wrapf(errW, "[store] sm.Website ScopeOption %s", so)
 		}
 		g, errG := w.DefaultGroup()
 		if errG != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("store.Service.findDefaultStoreByScope.Website.DefaultGroup", "err", errG, "ScopeOption", so)
-			}
-			return nil, errors.Mask(errG)
+			return nil, errors.Wrapf(errG, "[store] Website.DefaultGroup ScopeOption %s", so)
 		}
 		store, err := sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
 		if err != nil {
-			return nil, errors.Mask(ErrGroupDefaultStoreNotFound)
+			return nil, errors.NewNotFoundf(errGroupDefaultStoreNotFound)
 		}
 		return store, nil
 	}
-	return nil, errors.Mask(scope.ErrUnsupportedScopeID)
+	return nil, errors.NewNotSupportedf("[store] Unknown Scope: %q", allowedScope)
 }
 
-// RequestedStore see interface description Getter.RequestedStore
+// RequestedStore see interface description Getter.RequestedStore.
+// Error behaviour: Unauthorized, NotFound, NotSupported
 func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err error) {
 
 	activeStore, err = sm.findDefaultStoreByScope(so.Scope(), so)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.Service.RequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
-		}
-		return nil, err
+		return nil, errors.Wrap(err, "[store] findDefaultStoreByScope")
 	}
 
 	//	activeStore, err = sm.newActiveStore(activeStore) // this is the active store from a request.
@@ -212,7 +191,7 @@ func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err erro
 	//	}
 
 	if false == activeStore.Data.IsActive {
-		return nil, ErrStoreNotActive
+		return nil, errors.NewUnauthorizedf(errStoreNotActive)
 	}
 
 	allowStoreChange := false
@@ -231,7 +210,7 @@ func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err erro
 	if allowStoreChange {
 		return activeStore, nil
 	}
-	return nil, ErrStoreChangeNotAllowed
+	return nil, errors.NewUnauthorizedf(errStoreChangeNotAllowed)
 }
 
 // IsSingleStoreMode check if Single-Store mode is enabled in configuration and from Store count < 3.
@@ -277,7 +256,7 @@ func (sm *Service) Website(ids ...scope.WebsiteIDer) (*Website, error) {
 	sm.websiteMap[key] = w
 	sm.mu.Unlock()
 
-	return w, errors.Mask(err)
+	return w, errors.Wrap(err, "[store] Service.storage.Website")
 }
 
 // website retrieves a *Website from the internal map cache. Can return nil.
@@ -293,13 +272,12 @@ func (sm *Service) website(key uint32) *Website {
 
 // Websites returns a cached slice containing all pointers to Websites with its associated
 // groups and stores. It panics when the integrity is incorrect.
-func (sm *Service) Websites() (WebsiteSlice, error) {
+func (sm *Service) Websites() (_ WebsiteSlice, err error) {
 	if sm.websites != nil {
 		return sm.websites, nil
 	}
-	var err error
 	sm.websites, err = sm.storage.Websites()
-	return sm.websites, err
+	return sm.websites, errors.Wrap(err, "[store] Service.storage.Websites")
 }
 
 // Group returns a cached Group which contains all related stores and its website.
@@ -325,7 +303,7 @@ func (sm *Service) Group(ids ...scope.GroupIDer) (*Group, error) {
 	sm.groupMap[key] = g
 	sm.mu.Unlock()
 
-	return g, errors.Mask(err)
+	return g, errors.Wrap(err, "[store] Service.storage.Group")
 }
 
 // group returns a *Group from the internal map cache. Can return nil.
@@ -341,13 +319,12 @@ func (sm *Service) group(key uint32) *Group {
 
 // Groups returns a cached slice containing all pointers to Groups with its associated
 // stores and websites. It panics when the integrity is incorrect.
-func (sm *Service) Groups() (GroupSlice, error) {
+func (sm *Service) Groups() (_ GroupSlice, err error) {
 	if sm.groups != nil {
 		return sm.groups, nil
 	}
-	var err error
 	sm.groups, err = sm.storage.Groups()
-	return sm.groups, err
+	return sm.groups, errors.Wrap(err, "[store] Service.storage.Groups")
 }
 
 // Store returns the cached Store view containing its group and its website.
@@ -373,7 +350,7 @@ func (sm *Service) Store(ids ...scope.StoreIDer) (*Store, error) {
 	sm.storeMap[key] = s
 	sm.mu.Unlock()
 
-	return s, errors.Mask(err)
+	return s, errors.Wrap(err, "[store] Service.storage.Store")
 }
 
 // store returns a *Store from the internal map cache. Can return nil.
@@ -389,24 +366,22 @@ func (sm *Service) store(key uint32) *Store {
 
 // Stores returns a cached Store slice. Can return an error when the website or
 // the group cannot be found.
-func (sm *Service) Stores() (StoreSlice, error) {
+func (sm *Service) Stores() (_ StoreSlice, err error) {
 	if sm.stores != nil {
 		return sm.stores, nil
 	}
-	var err error
 	sm.stores, err = sm.storage.Stores()
-	return sm.stores, err
+	return sm.stores, errors.Wrap(err, "[store] Service.storage.Stores")
 }
 
 // DefaultStoreView returns the default store view, independent of the
 // applied scope.Option while creating the service.
-func (sm *Service) DefaultStoreView() (*Store, error) {
+func (sm *Service) DefaultStoreView() (_ *Store, err error) {
 	if sm.defaultStore != nil {
 		return sm.defaultStore, nil
 	}
-	var err error
 	sm.defaultStore, err = sm.storage.DefaultStoreView()
-	return sm.defaultStore, err
+	return sm.defaultStore, errors.Wrap(err, "[store] Service.storage.DefaultStoreView")
 }
 
 // ReInit reloads the website, store group and store view data from the database.
@@ -416,7 +391,7 @@ func (sm *Service) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 	if err == nil {
 		sm.ClearCache()
 	}
-	return err
+	return errors.Wrap(err, "[store] ReInit")
 }
 
 // ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and

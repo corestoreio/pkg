@@ -48,7 +48,7 @@ func TestStoreCodeFromCookie(t *testing.T) {
 	}{
 		{
 			nil,
-			store.ErrStoreNotFound,
+			store.errStoreNotFound,
 			scope.Default,
 			"",
 			0,
@@ -62,7 +62,7 @@ func TestStoreCodeFromCookie(t *testing.T) {
 		},
 		{
 			getRootRequest(&http.Cookie{Name: store.ParamName, Value: "ded'e"}),
-			store.ErrStoreCodeInvalid,
+			store.errStoreCodeInvalid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
@@ -111,7 +111,7 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 	}{
 		{
 			nil,
-			store.ErrStoreNotFound,
+			store.errStoreNotFound,
 			scope.Default,
 			"",
 			0,
@@ -125,14 +125,14 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		},
 		{
 			getRootRequest(storenet.HTTPRequestParamStore, "ded¢e"),
-			store.ErrStoreCodeInvalid,
+			store.errStoreCodeInvalid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
 			getRootRequest("invalid", "dede"),
-			store.ErrStoreCodeInvalid,
+			store.errStoreCodeInvalid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,

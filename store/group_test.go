@@ -39,19 +39,19 @@ func TestNewGroup(t *testing.T) {
 
 	gStores2, err := g.DefaultStore()
 	assert.Nil(t, gStores2)
-	assert.EqualError(t, store.ErrGroupDefaultStoreNotFound, err.Error())
+	assert.EqualError(t, store.errGroupDefaultStoreNotFound, err.Error())
 }
 
 func TestNewGroupErrorArgument(t *testing.T) {
 	ng, err := store.NewGroup(nil, nil)
 	assert.Nil(t, ng)
-	assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
+	assert.EqualError(t, store.errArgumentCannotBeNil, err.Error())
 }
 
 func TestNewGroupPanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.ErrArgumentCannotBeNil.Error())
+			assert.EqualError(t, r.(error), store.errArgumentCannotBeNil.Error())
 		}
 	}()
 	_ = store.MustNewGroup(nil, nil)
@@ -63,7 +63,7 @@ func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
 		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)}),
 	)
 	assert.Nil(t, ng)
-	assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.errGroupWebsiteNotFound, err.Error())
 }
 
 func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
@@ -78,7 +78,7 @@ func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
 		),
 	)
 	assert.Nil(t, g)
-	assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.errGroupWebsiteNotFound, err.Error())
 }
 
 func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
@@ -92,7 +92,7 @@ func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
 		),
 	)
 	assert.Nil(t, g)
-	assert.EqualError(t, store.ErrGroupWebsiteIntegrityFailed, err.Error())
+	assert.EqualError(t, store.errGroupWebsiteIntegrityFailed, err.Error())
 }
 
 func TestNewGroupSetStores(t *testing.T) {
