@@ -63,5 +63,5 @@ func TestChangeDir(t *testing.T) {
 func TestFatalIfError(t *testing.T) {
 	f := new(fatal)
 	cstesting.FatalIfError(f, errors.New("errrrr"))
-	assert.Exactly(t, "[{errrrr}]", f.ret)
+	assert.Exactly(t, "errrrr\n", f.ret)
 }

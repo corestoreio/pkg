@@ -71,7 +71,7 @@ func TestLoadCSVReadError(t *testing.T) {
 	)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 5)
-	assert.EqualError(t, err, `line 8, column 0: extraneous " in field`)
+	assert.EqualError(t, err, "[cstesting] csvReader.Read: line 8, column 0: extraneous \" in field")
 }
 
 func TestMockRowsError(t *testing.T) {
