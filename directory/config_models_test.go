@@ -52,7 +52,7 @@ func TestNewConfigCurrencyGetDefaultPathError(t *testing.T) {
 	cr := cfgmock.NewService()
 
 	cur, err := ccModel.GetDefault(cr)
-	assert.EqualError(t, err, cfgpath.ErrIncorrectPath.Error())
+	assert.EqualError(t, err, cfgpath.errIncorrectPath.Error())
 	assert.Exactly(t, "XXX", cur.String())
 }
 
