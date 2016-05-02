@@ -40,7 +40,7 @@ func (gs *GroupSlice) Less(i, j int) bool {
 func (gs GroupSlice) Filter(f func(*Group) bool) GroupSlice {
 	var ret GroupSlice
 	for _, v := range gs {
-		if v != nil && f(v) {
+		if f(v) {
 			ret = append(ret, v)
 		}
 	}
@@ -54,9 +54,7 @@ func (gs GroupSlice) IDs() []int64 {
 	}
 	var ids = make([]int64, 0, len(gs))
 	for _, g := range gs {
-		if g != nil {
-			ids = append(ids, g.Data.GroupID)
-		}
+		ids = append(ids, g.Data.GroupID)
 	}
 	return ids
 }

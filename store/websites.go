@@ -40,7 +40,7 @@ func (ws *WebsiteSlice) Less(i, j int) bool {
 func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
 	var nws = make(WebsiteSlice, 0, len(ws))
 	for _, v := range ws {
-		if v != nil && f(v) {
+		if f(v) {
 			nws = append(nws, v)
 		}
 	}
@@ -54,9 +54,7 @@ func (ws WebsiteSlice) Codes() []string {
 	}
 	var c = make([]string, 0, len(ws))
 	for _, w := range ws {
-		if w != nil {
-			c = append(c, w.Data.Code.String)
-		}
+		c = append(c, w.Data.Code.String)
 	}
 	return c
 }
@@ -68,9 +66,7 @@ func (ws WebsiteSlice) IDs() []int64 {
 	}
 	var ids = make([]int64, 0, len(ws))
 	for _, w := range ws {
-		if w != nil {
-			ids = append(ids, w.Data.WebsiteID)
-		}
+		ids = append(ids, w.Data.WebsiteID)
 	}
 	return ids
 }

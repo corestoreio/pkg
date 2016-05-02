@@ -39,7 +39,7 @@ func (ss *StoreSlice) Less(i, j int) bool {
 func (ss StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 	var stores StoreSlice
 	for _, v := range ss {
-		if v != nil && f(v) {
+		if f(v) {
 			stores = append(stores, v)
 		}
 	}
@@ -53,9 +53,7 @@ func (ss StoreSlice) Codes() []string {
 	}
 	var c = make([]string, 0, len(ss))
 	for _, st := range ss {
-		if st != nil {
-			c = append(c, st.Data.Code.String)
-		}
+		c = append(c, st.Data.Code.String)
 	}
 	return c
 }
@@ -67,9 +65,7 @@ func (ss StoreSlice) IDs() []int64 {
 	}
 	var ids = make([]int64, 0, len(ss))
 	for _, st := range ss {
-		if st != nil {
-			ids = append(ids, st.Data.StoreID)
-		}
+		ids = append(ids, st.Data.StoreID)
 	}
 	return ids
 }

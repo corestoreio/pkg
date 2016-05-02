@@ -44,10 +44,6 @@ type Group struct {
 // an option argument.
 // Error behaviour: Empty
 func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
-	if tg == nil {
-		return nil, errors.NewEmptyf(errArgumentCannotBeNil)
-	}
-
 	g := &Group{
 		Data: tg,
 	}
@@ -69,9 +65,7 @@ func MustNewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 // Options sets the options to a Group.
 func (g *Group) Options(opts ...GroupOption) error {
 	for _, opt := range opts {
-		if opt != nil {
-			opt(g)
-		}
+		opt(g)
 	}
 	if g.HasErrors() {
 		return g.MultiErr

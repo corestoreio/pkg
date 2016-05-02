@@ -61,9 +61,6 @@ type Store struct {
 // are nil. Returns an error if integrity checks fail. config.Getter will be
 // also set to Group and Website.
 func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (*Store, error) {
-	if ts == nil || tw == nil || tg == nil {
-		return nil, errors.NewEmptyf(errArgumentCannotBeNil)
-	}
 	if ts.WebsiteID != tw.WebsiteID {
 		return nil, errors.NewNotValidf(errStoreIncorrectWebsite)
 	}
@@ -120,9 +117,7 @@ func MustNewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...Stor
 // Options sets the options to the Store struct.
 func (s *Store) Options(opts ...StoreOption) error {
 	for _, opt := range opts {
-		if opt != nil {
-			opt(s)
-		}
+		opt(s)
 	}
 	if s.HasErrors() {
 		return s.MultiErr

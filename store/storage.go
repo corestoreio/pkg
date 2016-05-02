@@ -114,9 +114,9 @@ func MustNewStorage(opts ...StorageOption) Storager {
 // website returns a TableWebsite by using either id or code to find it. If id and code are
 // available then the non-empty code has precedence.
 func (st *storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
-	if r == nil {
-		return nil, errors.NewNotFoundf(errWebsiteNotFound)
-	}
+	//if r == nil {
+	//	return nil, errors.NewNotFoundf(errWebsiteNotFound)
+	//}
 	if c, ok := r.(scope.WebsiteCoder); ok && c.WebsiteCode() != "" {
 		return st.websites.FindByCode(c.WebsiteCode())
 	}
@@ -148,9 +148,9 @@ func (st *storage) Websites() (WebsiteSlice, error) {
 // group returns a TableGroup by using a group id as argument. If no argument or more than
 // one has been supplied it returns an error.
 func (st *storage) group(r scope.GroupIDer) (*TableGroup, error) {
-	if r == nil {
-		return nil, errors.NewNotFoundf(errGroupNotFound)
-	}
+	//if r == nil {
+	//	return nil, errors.NewNotFoundf(errGroupNotFound)
+	//}
 	return st.groups.FindByGroupID(r.GroupID())
 }
 
@@ -190,9 +190,9 @@ func (st *storage) Groups() (GroupSlice, error) {
 // store returns a TableStore by an id or code.
 // The non-empty code has precedence if available.
 func (st *storage) store(r scope.StoreIDer) (*TableStore, error) {
-	if r == nil {
-		return nil, errors.NewNotFoundf(errStoreNotFound)
-	}
+	//if r == nil {
+	//	return nil, errors.NewNotFoundf(errStoreNotFound)
+	//}
 	if c, ok := r.(scope.StoreCoder); ok && c.StoreCode() != "" {
 		return st.stores.FindByCode(c.StoreCode())
 	}
@@ -261,10 +261,6 @@ func (st *storage) DefaultStoreView() (*Store, error) {
 func (st *storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-
-	if dbrSess == nil {
-		return errors.NewEmptyf("[store] dbr.SessionRunner is nil")
-	}
 
 	errc := make(chan error)
 	defer close(errc)

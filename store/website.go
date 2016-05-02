@@ -45,9 +45,6 @@ type Website struct {
 
 // NewWebsite creates a new website pointer with the config.DefaultManager.
 func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
-	if tw == nil {
-		return nil, errors.NewEmptyf(errArgumentCannotBeNil)
-	}
 	w := &Website{
 		Data: tw,
 	}
@@ -69,9 +66,7 @@ func MustNewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 // Options sets the options on a Website
 func (w *Website) Options(opts ...WebsiteOption) error {
 	for _, opt := range opts {
-		if opt != nil {
-			opt(w)
-		}
+		opt(w)
 	}
 	if w.HasErrors() {
 		return w.MultiErr

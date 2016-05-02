@@ -31,19 +31,13 @@ func SetGroupConfig(cr config.Getter) GroupOption { return func(g *Group) { g.cr
 // the group website ID then add error will be generated.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
-		if g.Data == nil {
-			g.MultiErr = g.AppendErrors(errors.NewNotFoundf(errGroupNotFound))
-			return
-		}
-		if tw != nil && g.Data.WebsiteID != tw.WebsiteID {
+		if g.Data.WebsiteID != tw.WebsiteID {
 			g.MultiErr = g.AppendErrors(errors.NewNotFoundf(errGroupWebsiteNotFound))
 			return
 		}
-		if tw != nil {
-			var err error
-			g.Website, err = NewWebsite(tw, SetWebsiteConfig(g.cr))
-			g.MultiErr = g.AppendErrors(errors.Wrap(err, "[store] SetGroupWebsite.NewWebsite"))
-		}
+		var err error
+		g.Website, err = NewWebsite(tw, SetWebsiteConfig(g.cr))
+		g.MultiErr = g.AppendErrors(errors.Wrap(err, "[store] SetGroupWebsite.NewWebsite"))
 	}
 }
 
