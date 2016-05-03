@@ -56,9 +56,8 @@ func (ot *OneTable) initTableNames(mageVersion int, pkgName, table string) {
 	ot.Package = pkgName
 	ot.Tick = "`"
 	ot.Table = table
-	if mageVersion == util.MagentoV1 {
-		ot.TableName = table
-	}
+	ot.TableName = table
+
 	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok && mageVersion == util.MagentoV2 {
 		ot.TableName = mappedName
 	}

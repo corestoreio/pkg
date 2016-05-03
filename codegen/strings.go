@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 var (
@@ -94,12 +94,12 @@ func GenerateCode(pkg, tplCode string, data interface{}, addFM template.FuncMap)
 	var buf = new(bytes.Buffer)
 	err := codeTpl.Execute(buf, data)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "template execute")
 	}
 
 	fmt, err := format.Source(buf.Bytes())
 	if err != nil {
-		return buf.Bytes(), err
+		return buf.Bytes(), errors.Wrap(err, "gofmt")
 	}
 	return fmt, nil
 }
@@ -132,16 +132,12 @@ func PrepareVar(pkg, s string) string {
 	return prepareVar(pkg)(s)
 }
 
-// LogFatal logs an error as fatal with printed location and exists the program.
+// LogFatal logs an error as fatal with printed location and terminates the program.
 func LogFatal(err error) {
 	if err == nil {
 		return
 	}
-	s := "Error: " + err.Error()
-	if err, ok := err.(errgo.Locationer); ok {
-		s += " " + err.Location().String()
-	}
-	PkgLog.Fatal(s)
+	PkgLog.Fatal(errors.PrintLoc(err))
 }
 
 // randSeq returns a random string with a defined length n.
@@ -160,12 +156,12 @@ func ReplaceTablePrefix(query string) string {
 	return strings.Replace(query, "{{tableprefix}}", TablePrefix, -1)
 }
 
-func extractSplit(s string) (path string, tp []string, hasVersion bool, err error) {
+func extractSplit(s string) (path string, tp []string, hasVersion bool, _ error) {
 	hasVersion = false
 
 	pp := strings.Split(s, "/")
 	if len(pp) == 1 {
-		return path, tp, hasVersion, errgo.Newf("Path '%s' contains no slashes", s)
+		return path, tp, hasVersion, errors.Errorf("Path %q contains no slashes", s)
 	}
 
 	switch pp[0] { // add more domains here
@@ -177,7 +173,7 @@ func extractSplit(s string) (path string, tp []string, hasVersion bool, err erro
 	tp = strings.Split(pp[len(pp)-1:][0], ".")
 
 	if len(tp) == 1 {
-		return path, tp, hasVersion, errgo.Newf("Missing . in package.Type")
+		return path, tp, hasVersion, errors.Errorf("Missing . in package.Type")
 	}
 	return path, tp, hasVersion, nil
 }
@@ -214,7 +210,7 @@ func ExtractFuncType(s string) (string, error) {
 
 	_, tp, hasVersion, err := extractSplit(s)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "extractSplit")
 	}
 
 	if hasVersion {
@@ -229,7 +225,7 @@ func ParseString(tpl string, data interface{}) string {
 	var buf = &bytes.Buffer{}
 	err := codeTpl.Execute(buf, data)
 	if err != nil {
-		LogFatal(errgo.Mask(err))
+		LogFatal(err)
 	}
 	return buf.String()
 }

@@ -16,7 +16,6 @@ package codegen
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -24,8 +23,8 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
-	"github.com/juju/errgo"
 )
 
 const (
@@ -93,11 +92,11 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 	sb := dbrSess.SelectBySql(qry)
 	query, args, err := sb.ToSql()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "ToSql")
 	}
 	rows, err := sb.Query(query, args...)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrapf(err, "Query %q", query)
 	}
 	defer rows.Close()
 
@@ -105,13 +104,13 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 	var tableNames = make([]string, 0, 200)
 	for rows.Next() {
 		if err := rows.Scan(&tableName); err != nil {
-			return nil, errgo.Mask(err)
+			return nil, errors.Wrapf(err, "Scan Query %q", query)
 		}
 		tableNames = append(tableNames, tableName)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "Rows")
 	}
 	return tableNames, nil
 }
@@ -132,7 +131,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 			ReturnString()
 
 		if err != nil && err != dbr.ErrNotFound {
-			return nil, errgo.Mask(err)
+			return nil, errors.Wrapf(err, "Select Error. Code %q", typeCode)
 		}
 		if vtp == "" {
 			vtp = typeCode + TableNameSeparator + TableEntityTypeSuffix + TableNameSeparator // e.g. catalog_product_entity_
@@ -142,7 +141,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 
 		tableNames, err := GetTables(dbrConn.NewSession(), vtp+`%`)
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, errors.Wrapf(err, "GetTables %q", typeCode)
 		}
 
 		if _, ok := typeCodeTables[typeCode]; !ok {
@@ -275,7 +274,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 	var cols = make(Columns, 0, 200)
 	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrapf(err, "Query Table %q", table)
 	}
 	defer rows.Close()
 
@@ -284,18 +283,14 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 
 		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, errors.Wrapf(err, "Query Scan Table %q", table)
 		}
 		if isIgnoredColumn(table, col.Field.String) {
 			continue
 		}
 		cols = append(cols, col)
 	}
-	err = rows.Err()
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return cols, nil
+	return cols, errors.Wrapf(rows.Err(), "Rows Error Table %q", table)
 }
 
 const tplQueryDBRStruct = `
@@ -329,12 +324,12 @@ func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string)
 		var err error
 		qry, args, err = dbSelect.ToSql()
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, errors.Wrap(err, "dbSelect.ToSql")
 		}
 	}
 	_, err := db.Exec("CREATE TABLE `"+tableName+"` AS "+qry, args...)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrapf(err, "Create Table %q", tableName)
 	}
 
 	return GetColumns(db, tableName)
@@ -366,18 +361,18 @@ func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder) ([]StringEntiti
 
 	qry, args, err := dbSelect.ToSql()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "ToSQL")
 	}
 
 	rows, err := db.Query(qry, args...)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrapf(err, "Query %q", qry)
 	}
 	defer rows.Close()
 
 	columnNames, err := rows.Columns()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "rows.Columns")
 	}
 
 	ret := make([]StringEntities, 0, 2000)
@@ -385,15 +380,15 @@ func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder) ([]StringEntiti
 	for rows.Next() {
 
 		if err := rows.Scan(rss.cp...); err != nil {
-			return nil, errgo.Mask(err)
+			return nil, errors.Wrap(err, "Scan")
 		}
 		err := rss.toString()
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, errors.Wrap(err, "toString")
 		}
 		rss.append(&ret)
 	}
-	return ret, nil
+	return ret, errors.Wrap(rows.Err(), "Rows.err")
 }
 
 type (
@@ -430,7 +425,7 @@ func (s *rowTransformer) toString() error {
 			s.se[s.colNames[i]] = string(*rb)
 			*rb = nil // reset pointer to discard current value to avoid a bug
 		} else {
-			return errors.New("Cannot convert index " + strconv.Itoa(i) + " column " + s.colNames[i] + " to type *sql.RawBytes")
+			return errors.NewFatalf("Cannot convert index %d column %q to type *sql.RawBytes", i, s.colNames[i])
 		}
 	}
 	return nil

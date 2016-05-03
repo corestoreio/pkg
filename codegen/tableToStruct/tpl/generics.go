@@ -68,61 +68,75 @@ func (s *{{.Slice}}) {{ typePrefix "SQLDelete" }}(dbrSess dbr.SessionRunner, cbs
 `
 
 const FindBy = `
-// ErrIDNotFound{{.Slice}} gets returned when an ID cannot be found in a {{.Slice}} slice.
-// Generated via tableToStruct.
-var ErrIDNotFound{{.Slice}} = csdb.NewError("ID not found in {{.Slice}}")
-
 {{if (.FindByPk) ne ""}}
 // {{ typePrefix .FindByPk }} searches the primary keys and returns a
-// *{{.Struct}} if found or an error.
+// *{{.Struct}} if found or nil and false.
 // Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix .FindByPk }}(
 {{range $k,$v := .Columns.PrimaryKeys}} {{ $v.Name }} {{$v.GetGoPrimitive false}},
-{{end}}	) (*{{.Struct}}, error) {
+{{end}}	) (match *{{.Struct}}, found bool) {
 	for _, u := range s {
 		if u != nil {{ range $c := .Columns.PrimaryKeys }} && u.{{ $c.Name | camelize }}{{dbrType $c}} == {{$c.Name}} {{ end }} {
-			return u, nil
+			match = u
+			found = true
+			return
 		}
 	}
-	return nil, ErrIDNotFound{{.Slice}}
+	return
 }
 {{end}}
 
 {{ range $k,$c := .Columns.UniqueKeys }}
 // {{ findBy $c.Name | typePrefix }} searches through this unique key and returns
-// a *{{$.Struct}} if found or an error.
+// a *{{$.Struct}} if found or nil and false.
 // Generated via tableToStruct.
-func (s {{$.Slice}}) {{ findBy $c.Name | typePrefix }} ( {{ $c.Name }} {{$c.GetGoPrimitive false}} ) (*{{$.Struct}}, error) {
+func (s {{$.Slice}}) {{ findBy $c.Name | typePrefix }} ( {{ $c.Name }} {{$c.GetGoPrimitive false}} ) (match *{{$.Struct}}, found bool) {
 	for _, u := range s {
 		if u != nil && u.{{ $c.Name | camelize }}{{ dbrType $c }} == {{$c.Name}} {
-			return u, nil
+			match = u
+			found = true
+			return
 		}
 	}
-	return nil, ErrIDNotFound{{$.Slice}}
+	return
 }
 {{ end }}
 `
 
-const Sort = `var _ sort.Interface = (*{{.Slice}})(nil)
+const Sort = `
+
+type sort{{.Slice}} struct {
+	slice {{.Slice}}
+	lessFunc func(*{{.Struct}}, *{{.Struct}}) bool
+}
+
+// Less will satisfy the sort.Interface and compares via
+// the primary key.
+// Generated via tableToStruct.
+func (s sort{{.Slice}}) Less(i, j int) bool {
+	return s.lessFunc(s.slice[i], s.slice[j])
+}
+
+// {{ typePrefix "Sort" }} will sort {{.Slice}}.
+// Generated via tableToStruct.
+func (s {{.Slice}}) {{ typePrefix "Sort" }}(less func(*{{.Struct}}, *{{.Struct}}) bool) {
+	sort.Sort(sort{{.Slice}} { s, less})
+}
 
 // {{ typePrefix "Len" }} returns the length and  will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "Len" }}() int { return len(s) }
 
-// {{ typePrefix "Less" }} will satisfy the sort.Interface and compares via
-// the primary key.
+// {{ typePrefix "LessPK" }} helper functions for sorting by ascending primary key.
+// Can be used as an argument in Sort().
 // Generated via tableToStruct.
-func (s {{.Slice}}) {{ typePrefix "Less" }}(i, j int) bool {
-	return {{ range $c := .Columns.PrimaryKeys }} s[i].{{ $c.Name | camelize }}{{dbrType $c}} < s[j].{{ $c.Name | camelize }}{{dbrType $c}} && {{ end }} 1 == 1
+func (s {{.Slice}}) {{ typePrefix "LessPK" }}(i, j *{{.Struct}}) bool {
+	return {{ range $c := .Columns.PrimaryKeys }} i.{{ $c.Name | camelize }}{{dbrType $c}} < j.{{ $c.Name | camelize }}{{dbrType $c}} && {{ end }} 1 == 1
 }
 
 // {{ typePrefix "Swap" }} will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "Swap" }}(i, j int) { s[i], s[j] = s[j], s[i] }
-
-// {{ typePrefix "Sort" }} will sort {{.Slice}}.
-// Generated via tableToStruct.
-func (s {{.Slice}}) {{ typePrefix "Sort" }}() { sort.Sort(s) }
 `
 
 const SliceFunctions = `// {{ typePrefix "FilterThis" }} filters the current slice by predicate f without memory allocation.
@@ -162,9 +176,9 @@ func (s {{.Slice}}) {{ typePrefix "FilterNot" }}(f func(*{{.Struct}}) bool) {{.S
 	return sl
 }
 
-// {{ typePrefix "Map" }} will run function f on all items in {{.Slice}}.
+// {{ typePrefix "Each" }} will run function f on all items in {{.Slice}}.
 // Generated via tableToStruct.
-func (s {{.Slice}}) Map(f func(*{{.Struct}}) ) {{.Slice}} {
+func (s {{.Slice}}) Each(f func(*{{.Struct}}) ) {{.Slice}} {
 	for i := range s {
 		f(s[i])
 	}
@@ -232,9 +246,7 @@ func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.Name | camelize}} {
 		{{ range $k,$c := .Columns }} {{$c.Name | camelize }} : func() []{{$c.GetGoPrimitive false}} {
 			ext := make([]{{$c.GetGoPrimitive false}}, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.{{ $c.Name | camelize }}{{dbrType $c}})
-				}
+				ext = append(ext, v.{{ $c.Name | camelize }}{{dbrType $c}})
 			}
 			return ext
 		},

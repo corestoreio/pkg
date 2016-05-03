@@ -18,7 +18,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Depends on generated code from tableToStruct.
@@ -43,7 +43,7 @@ func (aa *AddAttrTables) TableAdditionalAttribute() (*csdb.Table, error) {
 		}
 		return nil, nil
 	}
-	return nil, errgo.Newf("Table for %s not found", aa.EntityTypeCode)
+	return nil, errors.NewNotFoundf("Table %q", aa.EntityTypeCode)
 }
 
 // Implements interface eav.EntityTypeAdditionalAttributeTabler
@@ -54,14 +54,14 @@ func (aa *AddAttrTables) TableEavWebsite() (*csdb.Table, error) {
 		}
 		return nil, nil
 	}
-	return nil, errgo.Newf("Table for %s not found", aa.EntityTypeCode)
+	return nil, errors.NewNotFoundf("Table %q", aa.EntityTypeCode)
 }
 
 func (aa *AddAttrTables) newTableStructure(tableName string) (*csdb.Table, error) {
 	tableName = ReplaceTablePrefix(tableName)
 	cols, err := GetColumns(aa.db, tableName)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrapf(err, "Table %q", tableName)
 	}
 	return csdb.NewTable(tableName, cols.CopyToCSDB()...), nil
 }
