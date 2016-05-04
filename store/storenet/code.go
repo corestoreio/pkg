@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // ParamName use in Cookie and JWT important when the user selects a different
@@ -31,17 +32,12 @@ const ParamName = `store`
 // current website/group context
 const HTTPRequestParamStore = `___store`
 
-// CodeFromCookie returns from a Request the value of the store cookie or
-// an ErrStoreNotFound.
-func CodeFromCookie(req *http.Request) (o scope.Option, err error) {
-	err = store.errStoreNotFound
-	if nil == req {
-		return
-	}
-	var keks *http.Cookie
-	keks, err = req.Cookie(ParamName)
+// CodeFromCookie returns from a Request the value of the store cookie.
+// Error behaviour: NotValid, NotSupported or an http.ErrNoCookie
+func CodeFromCookie(req *http.Request) (scope.Option, error) {
+	keks, err := req.Cookie(ParamName)
 	if err != nil {
-		return
+		return scope.Option{}, errors.NewNotFound(err, "[storenet] Cookie")
 	}
 	return setByCode(keks.Value)
 }
@@ -49,17 +45,16 @@ func CodeFromCookie(req *http.Request) (o scope.Option, err error) {
 // CodeFromRequestGET returns from a Request form the value of the store code or
 // an ErrStoreNotFound.
 func CodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
-	err = store.errStoreNotFound
-	if req == nil {
-		return
-	}
 	return setByCode(req.URL.Query().Get(HTTPRequestParamStore))
 }
 
-func setByCode(scopeCode string) (o scope.Option, err error) {
-	err = store.CodeIsValid(scopeCode)
-	if err == nil {
-		o, err = scope.SetByCode(scope.Store, scopeCode)
+func setByCode(scopeCode string) (scope.Option, error) {
+	if err := store.CodeIsValid(scopeCode); err != nil {
+		return scope.Option{}, errors.Wrap(err, "[storenet] Code not valid")
 	}
-	return
+	o, err := scope.SetByCode(scope.Store, scopeCode)
+	if err != nil {
+		return scope.Option{}, errors.Wrap(err, "[storenet] Unknown scope")
+	}
+	return o, nil
 }

@@ -23,12 +23,13 @@ import (
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
 
 // WithValidateBaseURL is a middleware which checks if the request base URL
-// is equal to the one store in the configuration, if not
+// is equal to the one defined in the configuration, if not
 // i.e. redirect from http://example.com/store/ to http://www.example.com/store/
 // @see app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
 func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middleware {
@@ -39,7 +40,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middlew
 
 	// <todo check logic!>
 	cgDefaultScope := cg.NewScoped(0, 0)
-	configRedirectCode, err := backend.Backend.WebURLRedirectToBase.Get(cgDefaultScope)
+	configRedirectCode, err := backend.Backend.WebURLRedirectToBase.Get(cgDefaultScope) // remove dependency
 	if err != nil {
 		panic(err) // we can panic here because during app start up
 	}
@@ -60,7 +61,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middlew
 					if l.IsDebug() {
 						l.Debug("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", err, "ctx", ctx)
 					}
-					return errors.Mask(err)
+					return errors.Wrap(err, "[storenet] Context")
 				}
 
 				baseURL, err := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
@@ -68,7 +69,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middlew
 					if l.IsDebug() {
 						l.Debug("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
 					}
-					return errors.Mask(err)
+					return errors.Wrap(err, "[storenet] ")
 				}
 
 				if err := httputil.IsBaseURLCorrect(r, &baseURL); err != nil {
@@ -97,6 +98,9 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middlew
 // 		1. check cookie store, always a string and the store code
 // 		2. check for GET ___store variable, always a string and the store code
 func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
+
+	// todo: build this in an equal way like the JSON web token service
+
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
@@ -105,7 +109,7 @@ func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
 				if l.IsDebug() {
 					l.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
 				}
-				return errors.Mask(err)
+				return errors.Wrap(err, "[storenet] Context")
 			}
 
 			var reqSO scope.Option
@@ -131,7 +135,7 @@ func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
 				if l.IsDebug() {
 					l.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)
 				}
-				return errors.Mask(err)
+				return errors.Wrap(err, "[storenet] RequestedStore")
 			}
 
 			soStoreCode := reqSO.StoreCode()
@@ -143,7 +147,7 @@ func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
 					if l.IsDebug() {
 						l.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
 					}
-					return errors.Mask(err)
+					return errors.Wrap(err, "[storenet] Website.DefaultStore")
 				}
 				keks := Cookie{Store: newRequestedStore}
 				if wds.Data.Code.String == soStoreCode {

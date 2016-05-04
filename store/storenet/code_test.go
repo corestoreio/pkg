@@ -15,14 +15,13 @@
 package storenet_test
 
 import (
-	"testing"
-
 	"net/http"
 	"net/url"
+	"testing"
 
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,36 +39,29 @@ func TestStoreCodeFromCookie(t *testing.T) {
 	}
 
 	tests := []struct {
-		req       *http.Request
-		wantErr   error
-		wantScope scope.Scope
-		wantCode  string
-		wantID    int64
+		req        *http.Request
+		wantErrBhf errors.BehaviourFunc
+		wantScope  scope.Scope
+		wantCode   string
+		wantID     int64
 	}{
 		{
-			nil,
-			store.errStoreNotFound,
-			scope.Default,
-			"",
-			0,
-		},
-		{
-			getRootRequest(&http.Cookie{Name: store.ParamName, Value: "dede"}),
+			getRootRequest(&http.Cookie{Name: storenet.ParamName, Value: "dede"}),
 			nil,
 			scope.Store,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
-			getRootRequest(&http.Cookie{Name: store.ParamName, Value: "ded'e"}),
-			store.errStoreCodeInvalid,
+			getRootRequest(&http.Cookie{Name: storenet.ParamName, Value: "ded'e"}),
+			errors.IsNotValid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
 			getRootRequest(&http.Cookie{Name: "invalid", Value: "dede"}),
-			http.ErrNoCookie,
+			errors.IsNotFound,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
@@ -77,7 +69,7 @@ func TestStoreCodeFromCookie(t *testing.T) {
 	}
 	for i, test := range tests {
 		so, err := storenet.CodeFromCookie(test.req)
-		testStoreCodeFrom(t, i, err, test.wantErr, so, test.wantScope, test.wantCode, test.wantID)
+		testStoreCodeFrom(t, i, err, test.wantErrBhf, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }
 
@@ -103,19 +95,12 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 	}
 
 	tests := []struct {
-		req       *http.Request
-		wantErr   error
-		wantScope scope.Scope
-		wantCode  string
-		wantID    int64
+		req        *http.Request
+		wantErrBhf errors.BehaviourFunc
+		wantScope  scope.Scope
+		wantCode   string
+		wantID     int64
 	}{
-		{
-			nil,
-			store.errStoreNotFound,
-			scope.Default,
-			"",
-			0,
-		},
 		{
 			getRootRequest(storenet.HTTPRequestParamStore, "dede"),
 			nil,
@@ -125,14 +110,14 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		},
 		{
 			getRootRequest(storenet.HTTPRequestParamStore, "ded¢e"),
-			store.errStoreCodeInvalid,
+			errors.IsNotValid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
 			getRootRequest("invalid", "dede"),
-			store.errStoreCodeInvalid,
+			errors.IsNotValid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
@@ -140,14 +125,13 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 	}
 	for i, test := range tests {
 		so, err := storenet.CodeFromRequestGET(test.req)
-		testStoreCodeFrom(t, i, err, test.wantErr, so, test.wantScope, test.wantCode, test.wantID)
+		testStoreCodeFrom(t, i, err, test.wantErrBhf, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }
 
-func testStoreCodeFrom(t *testing.T, i int, haveErr, wantErr error, haveScope scope.Option, wantScope scope.Scope, wantCode string, wantID int64) {
-	if wantErr != nil {
-		assert.EqualError(t, haveErr, wantErr.Error(), "Index: %d", i)
-
+func testStoreCodeFrom(t *testing.T, i int, haveErr error, wantErrBhf errors.BehaviourFunc, haveScope scope.Option, wantScope scope.Scope, wantCode string, wantID int64) {
+	if wantErrBhf != nil {
+		assert.True(t, wantErrBhf(haveErr), "Index: %d => %s", i, haveErr)
 	}
 	switch sos := haveScope.Scope(); sos {
 	case scope.Store:
