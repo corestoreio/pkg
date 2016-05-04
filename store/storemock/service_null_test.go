@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,30 +33,29 @@ func TestNullService(t *testing.T) {
 
 	ws, err := ns.Website()
 	assert.Nil(t, ws)
-	assert.EqualError(t, err, store.errWebsiteNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	wss, err := ns.Websites()
 	assert.Nil(t, wss)
-	assert.EqualError(t, err, store.errWebsiteNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	gs, err := ns.Group()
 	assert.Nil(t, gs)
-	assert.EqualError(t, err, store.errGroupNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	gss, err := ns.Groups()
 	assert.Nil(t, gss)
-	assert.EqualError(t, err, store.errGroupNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	ss, err := ns.Store()
 	assert.Nil(t, ss)
-	assert.EqualError(t, err, store.errStoreNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	sss, err := ns.Stores()
 	assert.Nil(t, sss)
-	assert.EqualError(t, err, store.errStoreNotFound.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	ss, err = ns.DefaultStoreView()
 	assert.Nil(t, ss)
-	assert.EqualError(t, err, store.errStoreNotFound.Error())
-
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
