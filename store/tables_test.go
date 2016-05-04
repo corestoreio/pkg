@@ -19,23 +19,21 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	dbc := csdb.MustConnectTest()
-	defer func() {
-		if err := dbc.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	if err := store.TableCollection.Init(dbc.NewSession()); err != nil {
-		panic(err)
-	}
-}
-
 // These constants are here on purpose hard coded
 func TestGetTable(t *testing.T) {
+	t.Parallel()
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
+		t.Skip(err)
+	}
+	dbCon := csdb.MustConnectTest()
+	defer func() { assert.NoError(t, dbCon.Close()) }()
+	if err := store.TableCollection.Init(dbCon.NewSession()); err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		ti    csdb.Index

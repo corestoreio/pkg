@@ -17,6 +17,7 @@ package storemock
 import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // NullService does nothing and returns only errors.
@@ -25,28 +26,28 @@ type NullService struct{}
 func (m *NullService) IsSingleStoreMode() bool { return false }
 func (m *NullService) HasSingleStore() bool    { return false }
 func (m *NullService) Website(r ...scope.WebsiteIDer) (*store.Website, error) {
-	return nil, store.errWebsiteNotFound
+	return nil, errors.NewNotFoundf("[storemock] Website")
 }
 func (m *NullService) Websites() (store.WebsiteSlice, error) {
-	return nil, store.errWebsiteNotFound
+	return nil, errors.NewNotFoundf("[storemock] Website")
 }
 func (m *NullService) Group(r ...scope.GroupIDer) (*store.Group, error) {
-	return nil, store.errGroupNotFound
+	return nil, errors.NewNotFoundf("[storemock] Group")
 }
 func (m *NullService) Groups() (store.GroupSlice, error) {
-	return nil, store.errGroupNotFound
+	return nil, errors.NewNotFoundf("[storemock] Group")
 }
 func (m *NullService) Store(r ...scope.StoreIDer) (*store.Store, error) {
-	return nil, store.errStoreNotFound
+	return nil, errors.NewNotFoundf("[storemock] Store")
 }
 func (m *NullService) Stores() (store.StoreSlice, error) {
-	return nil, store.errStoreNotFound
+	return nil, errors.NewNotFoundf("[storemock] Store")
 }
 func (m *NullService) DefaultStoreView() (*store.Store, error) {
-	return nil, store.errStoreNotFound
+	return nil, errors.NewNotFoundf("[storemock] Store")
 }
 func (m *NullService) RequestedStore(scope.Option) (*store.Store, error) {
-	return nil, store.errStoreNotFound
+	return nil, errors.NewNotFoundf("[storemock] Store")
 }
 
 // NewNullService creates a new NullService

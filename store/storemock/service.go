@@ -18,6 +18,7 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/net/context"
 )
 
@@ -64,7 +65,7 @@ var _ store.Storager = (*Storage)(nil)
 
 func (ms *Storage) Website(_ scope.WebsiteIDer) (*store.Website, error) {
 	if ms.MockWebsite == nil {
-		return nil, store.errWebsiteNotFound
+		return nil, errors.NewNotFoundf("[storemock] Website is nil")
 	}
 	return ms.MockWebsite()
 }
@@ -76,7 +77,7 @@ func (ms *Storage) Websites() (store.WebsiteSlice, error) {
 }
 func (ms *Storage) Group(_ scope.GroupIDer) (*store.Group, error) {
 	if ms.MockGroup == nil {
-		return nil, store.errGroupNotFound
+		return nil, errors.NewNotFoundf("[storemock] Group is nil")
 	}
 	return ms.MockGroup()
 }
@@ -88,7 +89,7 @@ func (ms *Storage) Groups() (store.GroupSlice, error) {
 }
 func (ms *Storage) Store(_ scope.StoreIDer) (*store.Store, error) {
 	if ms.MockStore == nil {
-		return nil, store.errStoreNotFound
+		return nil, errors.NewNotFoundf("[storemock] Store is nil")
 	}
 	return ms.MockStore()
 }
@@ -106,7 +107,7 @@ func (ms *Storage) DefaultStoreView() (*store.Store, error) {
 	if ms.MockStore != nil {
 		return ms.MockStore()
 	}
-	return nil, store.errStoreNotFound
+	return nil, errors.NewNotFoundf("[storemock] Store")
 }
 func (ms *Storage) ReInit(dbr.SessionRunner, ...dbr.SelectCb) error {
 	return nil

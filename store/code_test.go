@@ -18,35 +18,36 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateStoreCode(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		have    string
-		wantErr error
+		have       string
+		wantErrBhf errors.BehaviourFunc
 	}{
-		{"@de", store.errStoreCodeInvalid},
-		{" de", store.errStoreCodeInvalid},
+		{"@de", errors.IsNotValid},
+		{" de", errors.IsNotValid},
 		{"de", nil},
 		{"DE", nil},
 		{"deCH09_", nil},
-		{"_de", store.errStoreCodeInvalid},
-		{"", store.errStoreCodeInvalid},
-		{"\U0001f41c", store.errStoreCodeInvalid},
+		{"_de", errors.IsNotValid},
+		{"", errors.IsNotValid},
+		{"\U0001f41c", errors.IsNotValid},
 		{"au_en", nil},
-		{"au-fr", store.errStoreCodeInvalid},
-		{"Hello GoLang", store.errStoreCodeInvalid},
-		{"Hello€GoLang", store.errStoreCodeInvalid},
-		{"HelloGoLdhashdfkjahdjfhaskjdfhuiwehfiawehfuahweldsnjkasfkjkwejqwehqang", store.errStoreCodeInvalid},
+		{"au-fr", errors.IsNotValid},
+		{"Hello GoLang", errors.IsNotValid},
+		{"Hello€GoLang", errors.IsNotValid},
+		{"HelloGoLdhashdfkjahdjfhaskjdfhuiwehfiawehfuahweldsnjkasfkjkwejqwehqang", errors.IsNotValid},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		haveErr := store.CodeIsValid(test.have)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "err codes switched: %#v", test)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 		} else {
-			assert.NoError(t, haveErr, "%#v", test)
+			assert.NoError(t, haveErr, "Index %d", i)
 		}
 	}
 }

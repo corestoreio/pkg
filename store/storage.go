@@ -113,10 +113,10 @@ func MustNewStorage(opts ...StorageOption) Storager {
 
 // website returns a TableWebsite by using either id or code to find it. If id and code are
 // available then the non-empty code has precedence.
-func (st *storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
-	//if r == nil {
-	//	return nil, errors.NewNotFoundf(errWebsiteNotFound)
-	//}
+func (st *storage) website(r scope.WebsiteIDer) (*TableWebsite, bool) {
+	if r == nil {
+		return nil, false
+	}
 	if c, ok := r.(scope.WebsiteCoder); ok && c.WebsiteCode() != "" {
 		return st.websites.FindByCode(c.WebsiteCode())
 	}
@@ -125,9 +125,9 @@ func (st *storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
 
 // Website creates a new Website according to the interface definition.
 func (st *storage) Website(r scope.WebsiteIDer) (*Website, error) {
-	w, err := st.website(r)
-	if err != nil {
-		return nil, errors.Wrapf(err, "[store] WebsiteIDer %#v", r)
+	w, found := st.website(r)
+	if !found {
+		return nil, errors.NewNotFoundf("[store] WebsiteIDer %v", r)
 	}
 	return NewWebsite(w, SetWebsiteConfig(st.cr), SetWebsiteGroupsStores(st.groups, st.stores))
 }
@@ -145,26 +145,25 @@ func (st *storage) Websites() (WebsiteSlice, error) {
 	return websites, nil
 }
 
-// group returns a TableGroup by using a group id as argument. If no argument or more than
-// one has been supplied it returns an error.
-func (st *storage) group(r scope.GroupIDer) (*TableGroup, error) {
-	//if r == nil {
-	//	return nil, errors.NewNotFoundf(errGroupNotFound)
-	//}
+// group returns a TableGroup by using a group id as argument.
+func (st *storage) group(r scope.GroupIDer) (*TableGroup, bool) {
+	if r == nil {
+		return nil, false
+	}
 	return st.groups.FindByGroupID(r.GroupID())
 }
 
 // Group creates a new Group which contains all related stores and its website according to the
 // interface definition.
 func (st *storage) Group(id scope.GroupIDer) (*Group, error) {
-	g, err := st.group(id)
-	if err != nil {
-		return nil, errors.Wrap(err, "[store] Storage.Group.group")
+	g, found := st.group(id)
+	if !found {
+		return nil, errors.NewNotFoundf("[store] Group %v", id)
 	}
 
-	w, err := st.website(scope.MockID(g.WebsiteID))
-	if err != nil {
-		return nil, errors.Wrapf(err, "[store] Storage.Group.website. WebsiteID %d GroupID %d", g.WebsiteID, id.GroupID())
+	w, found := st.website(scope.MockID(g.WebsiteID))
+	if !found {
+		return nil, errors.NewNotFoundf("[store] Website. WebsiteID %d GroupID %v", g.WebsiteID, id)
 	}
 	return NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 }
@@ -174,11 +173,11 @@ func (st *storage) Group(id scope.GroupIDer) (*Group, error) {
 func (st *storage) Groups() (GroupSlice, error) {
 	groups := make(GroupSlice, len(st.groups), len(st.groups))
 	for i, g := range st.groups {
-		w, err := st.website(scope.MockID(g.WebsiteID))
-		if err != nil {
-			return nil, errors.Wrapf(err, "[store] WebsiteID %d", g.WebsiteID)
+		w, found := st.website(scope.MockID(g.WebsiteID))
+		if !found {
+			return nil, errors.NewNotFoundf("[store] WebsiteID %d", g.WebsiteID)
 		}
-
+		var err error
 		groups[i], err = NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 		if err != nil {
 			return nil, errors.Wrapf(err, "[store] GroupID %d WebsiteID %d", g.GroupID, g.WebsiteID)
@@ -189,10 +188,10 @@ func (st *storage) Groups() (GroupSlice, error) {
 
 // store returns a TableStore by an id or code.
 // The non-empty code has precedence if available.
-func (st *storage) store(r scope.StoreIDer) (*TableStore, error) {
-	//if r == nil {
-	//	return nil, errors.NewNotFoundf(errStoreNotFound)
-	//}
+func (st *storage) store(r scope.StoreIDer) (*TableStore, bool) {
+	if r == nil {
+		return nil, false
+	}
 	if c, ok := r.(scope.StoreCoder); ok && c.StoreCode() != "" {
 		return st.stores.FindByCode(c.StoreCode())
 	}
@@ -202,17 +201,17 @@ func (st *storage) store(r scope.StoreIDer) (*TableStore, error) {
 // Store creates a new Store which contains the store, its group and website
 // according to the interface definition.
 func (st *storage) Store(r scope.StoreIDer) (*Store, error) {
-	s, err := st.store(r)
-	if err != nil {
-		return nil, errors.Wrapf(err, "[store] Store: %v", r)
+	s, found := st.store(r)
+	if !found {
+		return nil, errors.NewNotFoundf("[store] Store: %v", r)
 	}
-	w, err := st.website(scope.MockID(s.WebsiteID))
-	if err != nil {
-		return nil, errors.Wrapf(err, "[store] WebsiteID: %d", s.WebsiteID)
+	w, found := st.website(scope.MockID(s.WebsiteID))
+	if !found {
+		return nil, errors.NewNotFoundf("[store] WebsiteID: %d", s.WebsiteID)
 	}
-	g, err := st.group(scope.MockID(s.GroupID))
-	if err != nil {
-		return nil, errors.Wrapf(err, "[store] GroupID: %d", s.GroupID)
+	g, found := st.group(scope.MockID(s.GroupID))
+	if !found {
+		return nil, errors.NewNotFoundf("[store] GroupID: %d", s.GroupID)
 	}
 	ns, err := NewStore(s, w, g, WithStoreConfig(st.cr))
 	if err != nil {
@@ -245,9 +244,9 @@ func (st *storage) Stores() (StoreSlice, error) {
 func (st *storage) DefaultStoreView() (*Store, error) {
 	for _, w := range st.websites {
 		if w.IsDefault.Bool && w.IsDefault.Valid {
-			g, err := st.group(scope.MockID(w.DefaultGroupID))
-			if err != nil {
-				return nil, errors.Wrapf(err, "[store] WebsiteID %d DefaultGroupID %d", w.WebsiteID, w.DefaultGroupID)
+			g, found := st.group(scope.MockID(w.DefaultGroupID))
+			if !found {
+				return nil, errors.NewNotFoundf("[store] WebsiteID %d DefaultGroupID %d", w.WebsiteID, w.DefaultGroupID)
 			}
 			return st.Store(scope.MockID(g.DefaultStoreID))
 		}

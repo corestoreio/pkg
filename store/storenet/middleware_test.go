@@ -103,7 +103,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	mw := storenet.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
 
 	err = mw.ServeHTTPContext(context.Background(), w, req)
-	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
+	assert.EqualError(t, err, store.errContextProviderNotFound.Error())
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(httputil.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))
@@ -304,5 +304,5 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
 	mw := storenet.WithInitStoreByFormCookie()(nil)
 	surfErr := mw.ServeHTTPContext(context.Background(), nil, nil)
-	assert.EqualError(t, surfErr, store.ErrContextProviderNotFound.Error())
+	assert.EqualError(t, surfErr, store.errContextProviderNotFound.Error())
 }

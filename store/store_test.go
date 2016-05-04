@@ -23,12 +23,12 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +40,7 @@ var _ scope.StoreCoder = (*store.Store)(nil)
 const TODO_Better_Test_Data = "@todo implement better test data which is equal for each Magento version"
 
 func TestNewStore(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
 	tests := []struct {
 		w *store.TableWebsite
 		g *store.TableGroup
@@ -74,33 +74,36 @@ func TestNewStore(t *testing.T) {
 }
 
 func TestNewStoreErrorArgsNil(t *testing.T) {
+	t.Parallel()
 	s, err := store.NewStore(nil, nil, nil)
 	assert.Nil(t, s)
-	assert.EqualError(t, store.errArgumentCannotBeNil, err.Error())
+	assert.NoError(t, err)
 }
 
 func TestNewStoreErrorIncorrectGroup(t *testing.T) {
+	t.Parallel()
 	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
 	assert.Nil(t, s)
-	assert.EqualError(t, store.errStoreIncorrectGroup, err.Error())
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
 func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
+	t.Parallel()
 	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
 	assert.Nil(t, s)
-	assert.EqualError(t, store.errStoreIncorrectWebsite, err.Error())
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
 func TestStoreSlice(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
 	storeSlice := store.StoreSlice{
 		store.MustNewStore(
 			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -145,7 +148,7 @@ var testStores = store.TableStoreSlice{
 }
 
 func TestTableStoreSliceLoad(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 	dbrSess := dbc.NewSession()
@@ -160,32 +163,34 @@ func TestTableStoreSliceLoad(t *testing.T) {
 }
 
 func TestTableStoreSliceFindByID(t *testing.T) {
+	t.Parallel()
 	eLen := 9
 	assert.True(t, testStores.Len() == eLen, "Length of TableStoreSlice is not %d", eLen)
 
-	s1, err := testStores.FindByStoreID(999)
+	s1, found := testStores.FindByStoreID(999)
 	assert.Nil(t, s1)
-	assert.EqualError(t, store.ErrIDNotFoundTableStoreSlice, err.Error())
+	assert.False(t, found)
 
-	s2, err := testStores.FindByStoreID(6)
+	s2, found := testStores.FindByStoreID(6)
 	assert.NotNil(t, s2)
-	assert.NoError(t, err)
+	assert.True(t, found)
 	assert.Equal(t, int64(6), s2.StoreID)
 }
 
 func TestTableStoreSliceFindByCode(t *testing.T) {
-
-	s1, err := testStores.FindByCode("corestore")
+	t.Parallel()
+	s1, found := testStores.FindByCode("corestore")
 	assert.Nil(t, s1)
-	assert.EqualError(t, store.ErrIDNotFoundTableStoreSlice, err.Error())
+	assert.False(t, found)
 
-	s2, err := testStores.FindByCode("ch")
+	s2, found := testStores.FindByCode("ch")
 	assert.NotNil(t, s2)
-	assert.NoError(t, err)
+	assert.True(t, found)
 	assert.Equal(t, "ch", s2.Code.String)
 }
 
 func TestTableStoreSliceFilterByGroupID(t *testing.T) {
+	t.Parallel()
 	gStores := testStores.FilterByGroupID(3)
 	assert.NotNil(t, gStores)
 	assert.Len(t, gStores, 2)
@@ -195,6 +200,7 @@ func TestTableStoreSliceFilterByGroupID(t *testing.T) {
 }
 
 func TestTableStoreSliceFilterByWebsiteID(t *testing.T) {
+	t.Parallel()
 	gStores := testStores.FilterByWebsiteID(0)
 	assert.NotNil(t, gStores)
 	assert.Len(t, gStores, 1)
@@ -233,7 +239,7 @@ func TestTableStoreSliceIDs(t *testing.T) {
 }
 
 func TestStoreBaseURLandPath(t *testing.T) {
-	defer debugLogBuf.Reset()
+	t.Parallel()
 
 	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -263,7 +269,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 					case backend.Backend.WebUnsecureBaseURL.String():
 						return "http://corestore.io", nil
 					}
-					return "", storage.ErrKeyNotFound
+					return "", errors.NewNotFoundf("Invalid path: %s", path)
 				},
 			)),
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
@@ -277,7 +283,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 					case backend.Backend.WebUnsecureBaseURL.String():
 						return "http://myplatform.io/customer1", nil
 					}
-					return "", storage.ErrKeyNotFound
+					return "", errors.NewNotFoundf("Invalid path: %s", path)
 				},
 			)),
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
@@ -293,7 +299,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 					case cfgpath.MustNewByParts(config.PathCSBaseURL).String():
 						return config.CSBaseURL, nil
 					}
-					return "", storage.ErrKeyNotFound
+					return "", errors.NewNotFoundf("Invalid path: %s", p)
 				},
 			)),
 			config.URLTypeWeb, false, config.CSBaseURL, "/",
@@ -309,11 +315,12 @@ func TestStoreBaseURLandPath(t *testing.T) {
 		assert.EqualValues(t, test.wantPath, s.Path())
 
 		_, err = s.BaseURL(config.URLTypeAbsent, false)
-		assert.EqualError(t, err, config.ErrURLCacheCleared.Error())
+		assert.NoError(t, err)
 	}
 }
 
 func TestMarshalJSON(t *testing.T) {
+	t.Parallel()
 	s := store.MustNewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},

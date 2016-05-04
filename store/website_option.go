@@ -15,8 +15,6 @@
 package store
 
 import (
-	"fmt"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -50,11 +48,12 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 		stores := tss.FilterByWebsiteID(w.Data.WebsiteID)
 		w.Stores = make(StoreSlice, stores.Len(), stores.Len())
 		for i, s := range stores {
-			group, err := tgs.FindByGroupID(s.GroupID)
-			if err != nil {
-				w.MultiErr = w.AppendErrors(fmt.Errorf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
+			group, found := tgs.FindByGroupID(s.GroupID)
+			if !found {
+				w.MultiErr = w.AppendErrors(errors.NewNotFoundf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 				return
 			}
+			var err error
 			w.Stores[i], err = NewStore(s, w.Data, group, WithStoreConfig(w.cr))
 			if err != nil {
 				w.MultiErr = w.AppendErrors(errors.Wrapf(err, "[store] NewStore. Store %#v Website Data %#v Group %#v", s, w.Data, group))

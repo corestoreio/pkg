@@ -21,34 +21,37 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func TestContextReaderError(t *testing.T) {
+	t.Parallel()
 	haveMr, s, err := store.FromContextProvider(context.Background())
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
+	assert.True(t, errors.IsNotFound(err))
 
 	ctx := store.WithContextProvider(context.Background(), nil)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = store.FromContextProvider(ctx)
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
+	assert.True(t, errors.IsNotFound(err))
 
 	mr := storemock.NewNullService()
 	ctx = store.WithContextProvider(context.Background(), mr)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = store.FromContextProvider(ctx)
-	assert.EqualError(t, err, store.errStoreNotFound.Error())
+	assert.True(t, errors.IsNotFound(err))
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
 
 }
 
 func TestContextReaderSuccess(t *testing.T) {
+	t.Parallel()
 	ctx := storemock.WithContextMustService(scope.Option{},
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
@@ -72,6 +75,7 @@ func TestContextReaderSuccess(t *testing.T) {
 }
 
 func TestWithContextMustService(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			assert.EqualError(t, r.(error), "runtime error: invalid memory address or nil pointer dereference")

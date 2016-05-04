@@ -21,7 +21,8 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	storemock "github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,6 +56,7 @@ var serviceStoreSimpleTest = storemock.MustNewService(scope.Option{}, func(ms *s
 })
 
 func TestNewServiceStore(t *testing.T) {
+	t.Parallel()
 	assert.False(t, serviceStoreSimpleTest.IsCacheEmpty())
 	for j := 0; j < 3; j++ {
 		s, err := serviceStoreSimpleTest.Store(scope.MockCode("notNil"))
@@ -69,32 +71,34 @@ func TestNewServiceStore(t *testing.T) {
 }
 
 func TestMustNewService(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.errStoreNotFound.Error())
+			err := r.(error)
+			assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
 	tests := []struct {
-		have    scope.StoreIDer
-		wantErr error
+		have       scope.StoreIDer
+		wantErrBhf errors.BehaviourFunc
 	}{
-		{scope.MockCode("nilSlices"), store.errStoreNotFound},
-		{scope.MockID(2), store.errStoreNotFound},
-		{nil, store.errStoreNotFound},
+		{scope.MockCode("nilSlices"), errors.IsNotFound},
+		{scope.MockID(2), errors.IsNotFound},
+		{nil, errors.IsNotFound},
 	}
 	serviceEmpty := storemock.MustNewService(scope.Option{})
-	for _, test := range tests {
+	for i, test := range tests {
 		s, err := serviceEmpty.Store(test.have)
-		assert.Nil(t, s)
-		assert.EqualError(t, test.wantErr, err.Error())
+		assert.Nil(t, s, "Index %d")
+		assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 	}
 	assert.True(t, serviceStoreSimpleTest.IsCacheEmpty())
-
 }
 
 func TestNewServiceDefaultStoreView(t *testing.T) {
+	t.Parallel()
 	serviceDefaultStore := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockStore = func() (*store.Store, error) {
 			return store.NewStore(
@@ -138,6 +142,7 @@ func BenchmarkServiceGetStore(b *testing.B) {
 }
 
 func TestNewServiceStores(t *testing.T) {
+	t.Parallel()
 	serviceStores := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 
 		ms.MockStore = func() (*store.Store, error) {
@@ -186,9 +191,11 @@ func TestNewServiceStores(t *testing.T) {
 }
 
 func TestMustNewServiceStores(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.errStoreNotFound.Error())
+			err := r.(error)
+			assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
@@ -203,6 +210,7 @@ func TestMustNewServiceStores(t *testing.T) {
 }
 
 func TestNewServiceGroup(t *testing.T) {
+	t.Parallel()
 	var serviceGroupSimpleTest = storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockGroup = func() (*store.Group, error) {
 			return store.NewGroup(
@@ -249,6 +257,7 @@ func TestNewServiceGroup(t *testing.T) {
 }
 
 func TestNewServiceGroups(t *testing.T) {
+	t.Parallel()
 	serviceGroups := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockGroupSlice = func() (store.GroupSlice, error) {
 			return store.GroupSlice{}, nil
@@ -279,6 +288,7 @@ func TestNewServiceGroups(t *testing.T) {
 }
 
 func TestNewServiceWebsite(t *testing.T) {
+	t.Parallel()
 
 	var serviceWebsite = storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockWebsite = func() (*store.Website, error) {
@@ -325,6 +335,7 @@ func TestNewServiceWebsite(t *testing.T) {
 }
 
 func TestNewServiceWebsites(t *testing.T) {
+	t.Parallel()
 	serviceWebsites := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
 			return store.WebsiteSlice{}, nil
@@ -382,15 +393,15 @@ func TestNewServiceWebsites(t *testing.T) {
 type testNewServiceRequestedStore struct {
 	haveSO        scope.Option
 	wantStoreCode string
-	wantErr       error
+	wantErrBhf    errors.BehaviourFunc
 }
 
 func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceRequestedStore) {
 	for i, test := range tests {
 		haveStore, haveErr := sm.RequestedStore(test.haveSO)
-		if test.wantErr != nil {
+		if test.wantErrBhf != nil {
 			assert.Nil(t, haveStore, "Index: %d: %#v", i, test)
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index: %d: %#v", i, test)
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
 		} else {
 			assert.NotNil(t, haveStore, "Index %d", i)
 			assert.NoError(t, haveErr, "Index %d => %#v", i, test)
@@ -401,6 +412,7 @@ func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServ
 }
 
 func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
+	t.Parallel()
 
 	initScope := scope.Option{Store: scope.MockID(1)}
 	sm := storemock.NewEurozzyService(initScope)
@@ -415,7 +427,7 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 	if s, err := sm.Store(); err == nil {
 		assert.EqualValues(t, "de", s.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.errStoreNotFound.Error())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		t.Fail()
 	}
 
@@ -424,16 +436,16 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 		t.Fail()
 	} else {
 		assert.Nil(t, s)
-		assert.EqualError(t, err, store.ErrIDNotFoundTableStoreSlice.Error())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	}
 
 	tests := []testNewServiceRequestedStore{
-		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
-		{scope.Option{}, "de", scope.ErrUnsupportedScopeID},
-		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
+		{scope.Option{Store: scope.MockID(232)}, "", errors.IsNotFound},
+		{scope.Option{}, "de", errors.IsNotSupported},
+		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", errors.IsNotFound},
 
 		{scope.Option{Store: scope.MockID(6)}, "nz", nil},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
+		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
 
 		{scope.Option{Store: scope.MockCode("nz")}, "nz", nil},
 		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
@@ -441,12 +453,13 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 		{scope.Option{Store: scope.MockCode("au")}, "au", nil},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
+		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
 	}
 	runTestsRequestedStore(t, sm, tests)
 }
 
 func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
+	t.Parallel()
 	initScope := scope.Option{Group: scope.MockID(1)}
 
 	sm := storemock.NewEurozzyService(initScope)
@@ -460,46 +473,47 @@ func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
 	if s, err := sm.Store(); err == nil {
 		assert.EqualValues(t, "at", s.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.errStoreNotFound.Error())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		t.Fail()
 	}
 
 	if g, err := sm.Group(); err == nil {
 		assert.EqualValues(t, 1, g.Data.GroupID)
 	} else {
-		assert.EqualError(t, err, store.errStoreNotFound.Error())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		t.Fail()
 	}
 
 	//	// we're testing here against Group ID = 1
 	tests := []testNewServiceRequestedStore{
-		{scope.Option{Group: scope.MockID(232)}, "", store.ErrIDNotFoundTableGroupSlice},
+		{scope.Option{Group: scope.MockID(232)}, "", errors.IsNotFound},
 
-		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
-		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
+		{scope.Option{Store: scope.MockID(232)}, "", errors.IsNotFound},
+		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", errors.IsNotFound},
 
-		{scope.Option{Store: scope.MockID(6)}, "nz", store.errStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
+		{scope.Option{Store: scope.MockID(6)}, "nz", errors.IsUnauthorized},
+		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
 
 		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
-		{scope.Option{Store: scope.MockCode("au")}, "au", store.errStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
+		{scope.Option{Store: scope.MockCode("au")}, "au", errors.IsUnauthorized},
+		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
 
-		{scope.Option{Group: scope.MockCode("ch")}, "", store.ErrIDNotFoundTableGroupSlice},
-		{scope.Option{Group: scope.MockID(2)}, "", store.errStoreChangeNotAllowed},
+		{scope.Option{Group: scope.MockCode("ch")}, "", errors.IsNotFound},
+		{scope.Option{Group: scope.MockID(2)}, "", errors.IsUnauthorized},
 		{scope.Option{Group: scope.MockID(1)}, "at", nil},
 
-		{scope.Option{Website: scope.MockCode("xxxx")}, "", store.ErrIDNotFoundTableWebsiteSlice},
-		{scope.Option{Website: scope.MockID(2)}, "", store.errStoreChangeNotAllowed},
+		{scope.Option{Website: scope.MockCode("xxxx")}, "", errors.IsNotFound},
+		{scope.Option{Website: scope.MockID(2)}, "", errors.IsUnauthorized},
 		{scope.Option{Website: scope.MockID(1)}, "at", nil},
 	}
 	runTestsRequestedStore(t, sm, tests)
 }
 
 func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
+	t.Parallel()
 	initScope := scope.Option{Website: scope.MockID(1)}
 
 	sm := storemock.NewEurozzyService(initScope)
@@ -514,40 +528,41 @@ func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
 	if s, err := sm.Store(); err == nil {
 		assert.EqualValues(t, "at", s.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.errStoreNotFound.Error())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		t.Fail()
 	}
 
 	if w, err := sm.Website(); err == nil {
 		assert.EqualValues(t, "euro", w.Data.Code.String)
 	} else {
-		assert.EqualError(t, err, store.errStoreNotFound.Error())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		t.Fail()
 	}
 
 	// test against website euro
 	tests := []testNewServiceRequestedStore{
-		{scope.Option{Website: scope.MockID(232)}, "", store.ErrIDNotFoundTableWebsiteSlice},
-		{scope.Option{Website: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableWebsiteSlice},
-		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
+		{scope.Option{Website: scope.MockID(232)}, "", errors.IsNotFound},
+		{scope.Option{Website: scope.MockCode("\U0001f631")}, "", errors.IsNotFound},
+		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", errors.IsNotFound},
 
-		{scope.Option{Store: scope.MockID(6)}, "", store.errStoreChangeNotAllowed},
-		{scope.Option{Website: scope.MockCode("oz")}, "", store.errStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
+		{scope.Option{Store: scope.MockID(6)}, "", errors.IsUnauthorized},
+		{scope.Option{Website: scope.MockCode("oz")}, "", errors.IsUnauthorized},
+		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
 
 		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 
 		{scope.Option{Store: scope.MockID(2)}, "at", nil},
-		{scope.Option{Store: scope.MockCode("au")}, "au", store.errStoreChangeNotAllowed},
-		{scope.Option{Store: scope.MockCode("ch")}, "", store.errStoreNotActive},
+		{scope.Option{Store: scope.MockCode("au")}, "au", errors.IsUnauthorized},
+		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
 
-		{scope.Option{Group: scope.MockID(3)}, "", store.errStoreChangeNotAllowed},
+		{scope.Option{Group: scope.MockID(3)}, "", errors.IsUnauthorized},
 	}
 	runTestsRequestedStore(t, sm, tests)
 }
 
 func TestNewServiceReInit(t *testing.T) {
+	t.Parallel()
 
 	t.Skip(TODO_Better_Test_Data)
 
@@ -562,28 +577,27 @@ func TestNewServiceReInit(t *testing.T) {
 	}
 
 	tests := []struct {
-		have    scope.StoreIDer
-		wantErr error
+		have       scope.StoreIDer
+		wantErrBhf errors.BehaviourFunc
 	}{
 		{scope.MockCode("dede"), nil},
-		{scope.MockCode("czcz"), store.ErrIDNotFoundTableStoreSlice},
+		{scope.MockCode("czcz"), errors.IsNotFound},
 		{scope.MockID(1), nil},
-		{scope.MockID(100), store.errStoreNotFound},
+		{scope.MockID(100), errors.IsNotFound},
 		{mockIDCode{1, "dede"}, nil},
-		{mockIDCode{2, "czfr"}, store.errStoreNotFound},
+		{mockIDCode{2, "czfr"}, errors.IsNotFound},
 		{mockIDCode{2, ""}, nil},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		s, err := storeService.Store(test.have)
-		if test.wantErr == nil {
-			assert.NoError(t, err, "No Err; for test: %#v", test)
-			assert.NotNil(t, s)
+		if test.wantErrBhf == nil {
+			assert.NoError(t, err, "Index %d", i)
+			assert.NotNil(t, s, "Index %d", i)
 			//			assert.NotEmpty(t, s.Data.Code.String, "%#v", s.Data)
 		} else {
-			assert.Error(t, err, "Err for test: %#v", test)
-			assert.EqualError(t, test.wantErr, err.Error(), "EqualErr for test: %#v", test)
-			assert.Nil(t, s)
+			assert.True(t, test.wantErrBhf(err), "Index %d Error: %s", i, err)
+			assert.Nil(t, s, "Index %d", i)
 		}
 	}
 	assert.False(t, storeService.IsCacheEmpty())

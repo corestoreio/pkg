@@ -15,7 +15,6 @@
 package store_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"testing"
 
@@ -42,15 +41,16 @@ func BenchmarkJSONMarshal(b *testing.B) {
 	}
 }
 
+// @todo add encoders
 // BenchmarkJSONCodec-4  	  500000	      4157 ns/op	    1648 B/op	       4 allocs/op
-func BenchmarkJSONCodec(b *testing.B) {
-	b.ReportAllocs()
-	var buf bytes.Buffer
-	for i := 0; i < b.N; i++ {
-		if err := benchmarkJSONStore.ToJSON(&buf); err != nil {
-			b.Error(err)
-		}
-		benchmarkJSON = buf.Bytes()
-		buf.Reset()
-	}
-}
+//func BenchmarkJSONCodec(b *testing.B) {
+//	b.ReportAllocs()
+//	var buf bytes.Buffer
+//	for i := 0; i < b.N; i++ {
+//		if err := benchmarkJSONStore.ToJSON(&buf); err != nil {
+//			b.Error(err)
+//		}
+//		benchmarkJSON = buf.Bytes()
+//		buf.Reset()
+//	}
+//}

@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,9 +30,9 @@ var _ scope.GroupIDer = (*store.Group)(nil)
 var _ scope.StoreIDer = (*store.Group)(nil)
 
 func TestNewGroup(t *testing.T) {
+	t.Parallel()
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-		nil,
 	)
 	assert.NoError(t, err)
 	assert.EqualValues(t, "DACH Group", g.Data.Name)
@@ -39,37 +40,23 @@ func TestNewGroup(t *testing.T) {
 
 	gStores2, err := g.DefaultStore()
 	assert.Nil(t, gStores2)
-	assert.EqualError(t, store.errGroupDefaultStoreNotFound, err.Error())
-}
-
-func TestNewGroupErrorArgument(t *testing.T) {
-	ng, err := store.NewGroup(nil, nil)
-	assert.Nil(t, ng)
-	assert.EqualError(t, store.errArgumentCannotBeNil, err.Error())
-}
-
-func TestNewGroupPanic(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.errArgumentCannotBeNil.Error())
-		}
-	}()
-	_ = store.MustNewGroup(nil, nil)
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
+	t.Parallel()
 	ng, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)}),
 	)
 	assert.Nil(t, ng)
-	assert.EqualError(t, store.errGroupWebsiteNotFound, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
+	t.Parallel()
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-		nil,
 		store.SetGroupStores(
 			store.TableStoreSlice{
 				&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
@@ -78,10 +65,11 @@ func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
 		),
 	)
 	assert.Nil(t, g)
-	assert.EqualError(t, store.errGroupWebsiteNotFound, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
+	t.Parallel()
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupStores(
@@ -92,10 +80,11 @@ func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
 		),
 	)
 	assert.Nil(t, g)
-	assert.EqualError(t, store.errGroupWebsiteIntegrityFailed, err.Error())
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
 func TestNewGroupSetStores(t *testing.T) {
+	t.Parallel()
 
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
@@ -133,6 +122,8 @@ var testGroups = store.TableGroupSlice{
 }
 
 func TestTableGroupSliceLoad(t *testing.T) {
+	t.Parallel()
+
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 	dbrSess := dbc.NewSession()
@@ -149,16 +140,18 @@ func TestTableGroupSliceLoad(t *testing.T) {
 }
 
 func TestTableGroupSliceIDs(t *testing.T) {
+	t.Parallel()
 	assert.EqualValues(t, []int64{3, 1, 0, 2}, testGroups.Extract().GroupID())
 	assert.True(t, testGroups.Len() == 4)
 }
 
 func TestTableGroupSliceFindByID(t *testing.T) {
-	g1, err := testGroups.FindByGroupID(999)
-	assert.EqualError(t, err, "ID not found in TableGroupSlice")
+	t.Parallel()
+	g1, found := testGroups.FindByGroupID(999)
+	assert.False(t, found, "ID not found in TableGroupSlice")
 	assert.Nil(t, g1)
 
-	g2, err := testGroups.FindByGroupID(3)
-	assert.NoError(t, err)
+	g2, found := testGroups.FindByGroupID(3)
+	assert.True(t, found)
 	assert.EqualValues(t, "Australia", g2.Name)
 }

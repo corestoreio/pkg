@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,29 +52,29 @@ var testStorage = store.MustNewStorage(
 )
 
 func TestStorageWebsite(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
-		have      scope.WebsiteIDer
-		err       error
-		wantWCode string
+		have       scope.WebsiteIDer
+		wantErrBhf errors.BehaviourFunc
+		wantWCode  string
 	}{
-		{nil, store.errWebsiteNotFound, ""},
-		{scope.MockID(2015), store.ErrIDNotFoundTableWebsiteSlice, ""},
+		{nil, errors.IsNotFound, ""},
+		{scope.MockID(2015), errors.IsNotFound, ""},
 		{scope.MockID(1), nil, "euro"},
-		{scope.MockCode("asia"), store.ErrIDNotFoundTableWebsiteSlice, ""},
+		{scope.MockCode("asia"), errors.IsNotFound, ""},
 		{scope.MockCode("oz"), nil, "oz"},
 		{mockIDCode{1, "oz"}, nil, "oz"},
-		{mockIDCode{1, "ozzz"}, store.ErrIDNotFoundTableWebsiteSlice, ""},
+		{mockIDCode{1, "ozzz"}, errors.IsNotFound, ""},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		w, err := testStorage.Website(test.have)
-		if test.err != nil {
+		if test.wantErrBhf != nil {
 			assert.Nil(t, w)
-			assert.EqualError(t, test.err, err.Error())
+			assert.True(t, test.wantErrBhf(err), "Index %d Error: %s", i, err)
 		} else {
-			assert.NotNil(t, w, "Test: %#v", test)
-			assert.NoError(t, err, "Test: %#v", test)
-			assert.Equal(t, test.wantWCode, w.Data.Code.String, "Test: %#v", test)
+			assert.NotNil(t, w, "Index %d", i)
+			assert.NoError(t, err, "Index %d", i)
+			assert.Equal(t, test.wantWCode, w.Data.Code.String, "Index %d", i)
 		}
 	}
 
@@ -115,6 +116,7 @@ func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
 }
 
 func TestStorageWebsites(t *testing.T) {
+	t.Parallel()
 	websites, err := testStorage.Websites()
 	assert.NoError(t, err)
 	assert.EqualValues(t, util.StringSlice{"admin", "euro", "oz"}, websites.Codes())
@@ -139,6 +141,7 @@ func TestStorageWebsites(t *testing.T) {
 }
 
 func TestWebsiteSliceFilter(t *testing.T) {
+	t.Parallel()
 	websites, err := testStorage.Websites()
 	assert.NoError(t, err)
 	assert.True(t, websites.Len() == 3)
@@ -150,25 +153,26 @@ func TestWebsiteSliceFilter(t *testing.T) {
 }
 
 func TestStorageGroup(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
-		id       scope.GroupIDer
-		err      error
-		wantName string
+		id         scope.GroupIDer
+		wantErrBhf errors.BehaviourFunc
+		wantName   string
 	}{
-		{nil, store.errGroupNotFound, ""},
-		{scope.MockID(2015), store.ErrIDNotFoundTableGroupSlice, ""},
+		{nil, errors.IsNotFound, ""},
+		{scope.MockID(2015), errors.IsNotFound, ""},
 		{scope.MockID(1), nil, "DACH Group"},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		g, err := testStorage.Group(test.id)
-		if test.err != nil {
+		if test.wantErrBhf != nil {
 			assert.Nil(t, g)
-			assert.EqualError(t, err, test.err.Error())
+			assert.True(t, test.wantErrBhf(err), "Index %d Error: %s", i, err)
 		} else {
-			assert.NotNil(t, g)
-			assert.NoError(t, err)
-			assert.Equal(t, test.wantName, g.Data.Name)
+			assert.NotNil(t, g, "Index %d", i)
+			assert.NoError(t, err, "Index %d", i)
+			assert.Equal(t, test.wantName, g.Data.Name, "Index %d", i)
 		}
 	}
 
@@ -209,6 +213,7 @@ func BenchmarkStorageGroupGetDefaultStore(b *testing.B) {
 }
 
 func TestStorageGroups(t *testing.T) {
+	t.Parallel()
 	groups, err := testStorage.Groups()
 	assert.NoError(t, err)
 	assert.EqualValues(t, util.Int64Slice{3, 1, 0, 2}, groups.IDs())
@@ -228,6 +233,7 @@ func TestStorageGroups(t *testing.T) {
 }
 
 func TestGroupSliceFilter(t *testing.T) {
+	t.Parallel()
 	groups, err := testStorage.Groups()
 	assert.NoError(t, err)
 	gs := groups.Filter(func(g *store.Group) bool {
@@ -237,6 +243,7 @@ func TestGroupSliceFilter(t *testing.T) {
 }
 
 func TestStorageGroupNoWebsite(t *testing.T) {
+	t.Parallel()
 	var tst = store.MustNewStorage(
 		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
@@ -251,37 +258,38 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 	)
 	g, err := tst.Group(scope.MockID(3))
 	assert.Nil(t, g)
-	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
+	assert.True(t, errors.IsNotFound(err), err.Error())
 
 	gs, err := tst.Groups()
 	assert.Nil(t, gs)
-	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
+	assert.True(t, errors.IsNotFound(err), err.Error())
 }
 
 func TestStorageStore(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
-		have     scope.StoreIDer
-		err      error
-		wantCode string
+		have       scope.StoreIDer
+		wantErrBhf errors.BehaviourFunc
+		wantCode   string
 	}{
-		{nil, store.errStoreNotFound, ""},
-		{scope.MockID(2015), store.ErrIDNotFoundTableStoreSlice, ""},
+		{nil, errors.IsNotFound, ""},
+		{scope.MockID(2015), errors.IsNotFound, ""},
 		{scope.MockID(1), nil, "de"},
-		{scope.MockCode("asia"), store.ErrIDNotFoundTableStoreSlice, ""},
+		{scope.MockCode("asia"), errors.IsNotFound, ""},
 		{scope.MockCode("nz"), nil, "nz"},
 		{mockIDCode{4, "nz"}, nil, "nz"},
-		{mockIDCode{4, "auuuuu"}, store.ErrIDNotFoundTableStoreSlice, ""},
+		{mockIDCode{4, "auuuuu"}, errors.IsNotFound, ""},
 	}
 	for i, test := range tests {
 		s, err := testStorage.Store(test.have)
-		if test.err != nil {
+		if test.wantErrBhf != nil {
 			assert.Nil(t, s, "%#v", test)
-			assert.EqualError(t, err, test.err.Error(), "Index: %d", i)
+			assert.True(t, test.wantErrBhf(err), "Index: %d Error: %s", i, err)
 		} else {
-			assert.NotNil(t, s, "%#v", test)
-			assert.NoError(t, err, "%#v", test)
-			assert.Equal(t, test.wantCode, s.Data.Code.String)
+			assert.NotNil(t, s, "Index %d", i)
+			assert.NoError(t, err, "Index %d", i)
+			assert.Equal(t, test.wantCode, s.Data.Code.String, "Index %d", i)
 		}
 	}
 
@@ -323,6 +331,7 @@ func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 }
 
 func TestStorageStores(t *testing.T) {
+	t.Parallel()
 	stores, err := testStorage.Stores()
 	assert.NoError(t, err)
 	assert.EqualValues(t, util.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, stores.Codes())
@@ -348,6 +357,7 @@ func TestStorageStores(t *testing.T) {
 }
 
 func TestDefaultStoreView(t *testing.T) {
+	t.Parallel()
 	st, err := testStorage.DefaultStoreView()
 	assert.NoError(t, err)
 	assert.EqualValues(t, "at", st.Data.Code.String)
@@ -366,7 +376,7 @@ func TestDefaultStoreView(t *testing.T) {
 	)
 	dSt, err := tst.DefaultStoreView()
 	assert.Nil(t, dSt)
-	assert.EqualError(t, store.errStoreNotFound, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	var tst2 = store.MustNewStorage(
 		store.SetStorageWebsites(
@@ -379,10 +389,11 @@ func TestDefaultStoreView(t *testing.T) {
 	)
 	dSt2, err := tst2.DefaultStoreView()
 	assert.Nil(t, dSt2)
-	assert.EqualError(t, store.ErrIDNotFoundTableGroupSlice, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func TestStorageStoreErrors(t *testing.T) {
+	t.Parallel()
 
 	var nsw = store.MustNewStorage(
 		store.SetStorageWebsites(),
@@ -394,11 +405,11 @@ func TestStorageStoreErrors(t *testing.T) {
 	)
 	stw, err := nsw.Store(scope.MockCode("nz"))
 	assert.Nil(t, stw)
-	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
+	assert.True(t, errors.IsNotFound(err), err.Error())
 
 	stws, err := nsw.Stores()
 	assert.Nil(t, stws)
-	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
+	assert.True(t, errors.IsNotFound(err), err.Error())
 
 	var nsg = store.MustNewStorage(
 		store.SetStorageWebsites(
@@ -415,12 +426,11 @@ func TestStorageStoreErrors(t *testing.T) {
 
 	stg, err := nsg.Store(scope.MockCode("nz"))
 	assert.Nil(t, stg)
-	assert.EqualError(t, store.ErrIDNotFoundTableGroupSlice, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	stgs, err := nsg.Stores()
 	assert.Nil(t, stgs)
-	assert.EqualError(t, store.ErrIDNotFoundTableGroupSlice, err.Error())
-
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
@@ -437,15 +447,8 @@ func BenchmarkStorageDefaultStoreView(b *testing.B) {
 	}
 }
 
-func TestStorageReInitError(t *testing.T) {
-	nsg, err := store.NewStorage(store.WithDatabaseInit(nil))
-	assert.Nil(t, nsg)
-	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "dbr.SessionRunner is nil\n")
-	}
-}
-
 func TestStorageReInit(t *testing.T) {
+	t.Parallel()
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
 	dbc := csdb.MustConnectTest()

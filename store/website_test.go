@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,25 +40,28 @@ func TestNewWebsite(t *testing.T) {
 
 	dg, err := w.DefaultGroup()
 	assert.Nil(t, dg)
-	assert.EqualError(t, store.errWebsiteDefaultGroupNotFound, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	ds, err := w.DefaultStore()
 	assert.Nil(t, ds)
-	assert.EqualError(t, store.errWebsiteDefaultGroupNotFound, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Nil(t, w.Stores)
 	assert.Nil(t, w.Groups)
 }
 
 func TestMustNewWebsite(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), store.errArgumentCannotBeNil.Error())
+			err := r.(error)
+			assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		}
 	}()
 	_ = store.MustNewWebsite(nil, nil)
 }
 
 func TestNewWebsiteSetGroupsStores(t *testing.T) {
+	t.Parallel()
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		store.SetWebsiteGroupsStores(
@@ -211,23 +215,23 @@ func TestTableWebsiteSlice(t *testing.T) {
 	}
 	assert.True(t, websites.Len() == 4)
 
-	w1, err := websites.FindByWebsiteID(999)
+	w1, found := websites.FindByWebsiteID(999)
 	assert.Nil(t, w1)
-	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
+	assert.False(t, found)
 
-	w2, err := websites.FindByWebsiteID(2)
+	w2, found := websites.FindByWebsiteID(2)
 	assert.NotNil(t, w2)
-	assert.NoError(t, err)
+	assert.True(t, found)
 	assert.Equal(t, int64(2), w2.WebsiteID)
 
-	w3, err := websites.FindByCode("euro")
+	w3, found := websites.FindByCode("euro")
 	assert.NotNil(t, w3)
-	assert.NoError(t, err)
+	assert.True(t, found)
 	assert.Equal(t, "euro", w3.Code.String)
 
-	w4, err := websites.FindByCode("corestore")
+	w4, found := websites.FindByCode("corestore")
 	assert.Nil(t, w4)
-	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
+	assert.False(t, found)
 
 	wf1 := websites.Filter(func(w *store.TableWebsite) bool {
 		return w != nil && w.WebsiteID == 1
@@ -236,12 +240,15 @@ func TestTableWebsiteSlice(t *testing.T) {
 }
 
 func TestTableWebsiteSliceLoad(t *testing.T) {
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
-	dbrSess := dbc.NewSession()
+	t.Parallel()
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
+		t.Skip(err)
+	}
+	dbCon := csdb.MustConnectTest()
+	defer func() { assert.NoError(t, dbCon.Close()) }()
 
 	var websites store.TableWebsiteSlice
-	_, err := websites.SQLSelect(dbrSess)
+	_, err := websites.SQLSelect(dbCon.NewSession())
 	assert.NoError(t, err)
 
 	assert.True(t, websites.Len() >= 2)

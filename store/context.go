@@ -15,15 +15,12 @@
 package store
 
 import (
-	"errors"
-
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/net/context"
 )
 
-// ErrContextProviderNotFound gets returned when store.Provider cannot be found
-// in context.Context
-var ErrContextProviderNotFound = errors.New("store.Provider not found in context.Context")
+var errContextProviderNotFound = errors.NewNotFoundf("[store] Provider not found in context.Context")
 
 type ctxServiceKey struct{}
 type ctxServiceWrapper struct {
@@ -40,7 +37,7 @@ type ctxServiceWrapper struct {
 func FromContextProvider(ctx context.Context) (Provider, *Store, error) {
 	sw, ok := ctx.Value(ctxServiceKey{}).(ctxServiceWrapper)
 	if !ok || sw.service == nil {
-		return nil, nil, ErrContextProviderNotFound
+		return nil, nil, errContextProviderNotFound
 	}
 
 	if sw.requestedStore == nil {

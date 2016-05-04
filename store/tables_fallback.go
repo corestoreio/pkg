@@ -22,15 +22,9 @@ package store
 
 import (
 	"sort"
-	"time"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-)
-
-var (
-	_ = (*sort.IntSlice)(nil)
-	_ = (*time.Time)(nil)
 )
 
 // TableIndex... is the index to a table. These constants are guaranteed
@@ -92,56 +86,68 @@ func (s *TableStoreSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.Delete
 	return 0, nil
 }
 
-// ErrIDNotFoundTableStoreSlice gets returned when an ID cannot be found in a TableStoreSlice slice.
-// Generated via tableToStruct.
-var ErrIDNotFoundTableStoreSlice = csdb.NewError("ID not found in TableStoreSlice")
-
 // FindByStoreID searches the primary keys and returns a
-// *TableStore if found or an error.
+// *TableStore if found or nil and false.
 // Generated via tableToStruct.
 func (s TableStoreSlice) FindByStoreID(
 	store_id int64,
-) (*TableStore, error) {
+) (match *TableStore, found bool) {
 	for _, u := range s {
 		if u != nil && u.StoreID == store_id {
-			return u, nil
+			match = u
+			found = true
+			return
 		}
 	}
-	return nil, ErrIDNotFoundTableStoreSlice
+	return
 }
 
 // FindByCode searches through this unique key and returns
-// a *TableStore if found or an error.
+// a *TableStore if found or nil and false.
 // Generated via tableToStruct.
-func (s TableStoreSlice) FindByCode(code string) (*TableStore, error) {
+func (s TableStoreSlice) FindByCode(code string) (match *TableStore, found bool) {
 	for _, u := range s {
 		if u != nil && u.Code.String == code {
-			return u, nil
+			match = u
+			found = true
+			return
 		}
 	}
-	return nil, ErrIDNotFoundTableStoreSlice
+	return
 }
 
-var _ sort.Interface = (*TableStoreSlice)(nil)
+type sortTableStoreSlice struct {
+	TableStoreSlice
+	lessFunc func(*TableStore, *TableStore) bool
+}
+
+// Less will satisfy the sort.Interface and compares via
+// the primary key.
+// Generated via tableToStruct.
+func (s sortTableStoreSlice) Less(i, j int) bool {
+	return s.lessFunc(s.TableStoreSlice[i], s.TableStoreSlice[j])
+}
+
+// Sort will sort TableStoreSlice.
+// Generated via tableToStruct.
+func (s TableStoreSlice) Sort(less func(*TableStore, *TableStore) bool) {
+	sort.Sort(sortTableStoreSlice{s, less})
+}
 
 // Len returns the length and  will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s TableStoreSlice) Len() int { return len(s) }
 
-// Less will satisfy the sort.Interface and compares via
-// the primary key.
+// LessPK helper functions for sorting by ascending primary key.
+// Can be used as an argument in Sort().
 // Generated via tableToStruct.
-func (s TableStoreSlice) Less(i, j int) bool {
-	return s[i].StoreID < s[j].StoreID && 1 == 1
+func (s TableStoreSlice) LessPK(i, j *TableStore) bool {
+	return i.StoreID < j.StoreID && 1 == 1
 }
 
 // Swap will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s TableStoreSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-// Sort will sort TableStoreSlice.
-// Generated via tableToStruct.
-func (s TableStoreSlice) Sort() { sort.Sort(s) }
 
 // FilterThis filters the current slice by predicate f without memory allocation.
 // Generated via tableToStruct.
@@ -180,9 +186,9 @@ func (s TableStoreSlice) FilterNot(f func(*TableStore) bool) TableStoreSlice {
 	return sl
 }
 
-// parentMap will run function f on all items in TableStoreSlice.
+// Each will run function f on all items in TableStoreSlice.
 // Generated via tableToStruct.
-func (s TableStoreSlice) Map(f func(*TableStore)) TableStoreSlice {
+func (s TableStoreSlice) Each(f func(*TableStore)) TableStoreSlice {
 	for i := range s {
 		f(s[i])
 	}
@@ -254,63 +260,49 @@ func (s TableStoreSlice) Extract() ExtractStore {
 		StoreID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.StoreID)
-				}
+				ext = append(ext, v.StoreID)
 			}
 			return ext
 		},
 		Code: func() []string {
 			ext := make([]string, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.Code.String)
-				}
+				ext = append(ext, v.Code.String)
 			}
 			return ext
 		},
 		WebsiteID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.WebsiteID)
-				}
+				ext = append(ext, v.WebsiteID)
 			}
 			return ext
 		},
 		GroupID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.GroupID)
-				}
+				ext = append(ext, v.GroupID)
 			}
 			return ext
 		},
 		Name: func() []string {
 			ext := make([]string, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.Name)
-				}
+				ext = append(ext, v.Name)
 			}
 			return ext
 		},
 		SortOrder: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.SortOrder)
-				}
+				ext = append(ext, v.SortOrder)
 			}
 			return ext
 		},
 		IsActive: func() []bool {
 			ext := make([]bool, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.IsActive)
-				}
+				ext = append(ext, v.IsActive)
 			}
 			return ext
 		},
@@ -355,44 +347,54 @@ func (s *TableGroupSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.Delete
 	return 0, nil
 }
 
-// ErrIDNotFoundTableGroupSlice gets returned when an ID cannot be found in a TableGroupSlice slice.
-// Generated via tableToStruct.
-var ErrIDNotFoundTableGroupSlice = csdb.NewError("ID not found in TableGroupSlice")
-
 // FindByGroupID searches the primary keys and returns a
-// *TableGroup if found or an error.
+// *TableGroup if found or nil and false.
 // Generated via tableToStruct.
 func (s TableGroupSlice) FindByGroupID(
 	group_id int64,
-) (*TableGroup, error) {
+) (match *TableGroup, found bool) {
 	for _, u := range s {
 		if u != nil && u.GroupID == group_id {
-			return u, nil
+			match = u
+			found = true
+			return
 		}
 	}
-	return nil, ErrIDNotFoundTableGroupSlice
+	return
 }
 
-var _ sort.Interface = (*TableGroupSlice)(nil)
+type sortTableGroupSlice struct {
+	TableGroupSlice
+	lessFunc func(*TableGroup, *TableGroup) bool
+}
+
+// Less will satisfy the sort.Interface and compares via
+// the primary key.
+// Generated via tableToStruct.
+func (s sortTableGroupSlice) Less(i, j int) bool {
+	return s.lessFunc(s.TableGroupSlice[i], s.TableGroupSlice[j])
+}
+
+// Sort will sort TableGroupSlice.
+// Generated via tableToStruct.
+func (s TableGroupSlice) Sort(less func(*TableGroup, *TableGroup) bool) {
+	sort.Sort(sortTableGroupSlice{s, less})
+}
 
 // Len returns the length and  will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s TableGroupSlice) Len() int { return len(s) }
 
-// Less will satisfy the sort.Interface and compares via
-// the primary key.
+// LessPK helper functions for sorting by ascending primary key.
+// Can be used as an argument in Sort().
 // Generated via tableToStruct.
-func (s TableGroupSlice) Less(i, j int) bool {
-	return s[i].GroupID < s[j].GroupID && 1 == 1
+func (s TableGroupSlice) LessPK(i, j *TableGroup) bool {
+	return i.GroupID < j.GroupID && 1 == 1
 }
 
 // Swap will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s TableGroupSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-// Sort will sort TableGroupSlice.
-// Generated via tableToStruct.
-func (s TableGroupSlice) Sort() { sort.Sort(s) }
 
 // FilterThis filters the current slice by predicate f without memory allocation.
 // Generated via tableToStruct.
@@ -431,9 +433,9 @@ func (s TableGroupSlice) FilterNot(f func(*TableGroup) bool) TableGroupSlice {
 	return sl
 }
 
-// parentMap will run function f on all items in TableGroupSlice.
+// Each will run function f on all items in TableGroupSlice.
 // Generated via tableToStruct.
-func (s TableGroupSlice) Map(f func(*TableGroup)) TableGroupSlice {
+func (s TableGroupSlice) Each(f func(*TableGroup)) TableGroupSlice {
 	for i := range s {
 		f(s[i])
 	}
@@ -503,45 +505,35 @@ func (s TableGroupSlice) Extract() ExtractGroup {
 		GroupID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.GroupID)
-				}
+				ext = append(ext, v.GroupID)
 			}
 			return ext
 		},
 		WebsiteID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.WebsiteID)
-				}
+				ext = append(ext, v.WebsiteID)
 			}
 			return ext
 		},
 		Name: func() []string {
 			ext := make([]string, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.Name)
-				}
+				ext = append(ext, v.Name)
 			}
 			return ext
 		},
 		RootCategoryID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.RootCategoryID)
-				}
+				ext = append(ext, v.RootCategoryID)
 			}
 			return ext
 		},
 		DefaultStoreID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.DefaultStoreID)
-				}
+				ext = append(ext, v.DefaultStoreID)
 			}
 			return ext
 		},
@@ -587,56 +579,68 @@ func (s *TableWebsiteSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.Dele
 	return 0, nil
 }
 
-// ErrIDNotFoundTableWebsiteSlice gets returned when an ID cannot be found in a TableWebsiteSlice slice.
-// Generated via tableToStruct.
-var ErrIDNotFoundTableWebsiteSlice = csdb.NewError("ID not found in TableWebsiteSlice")
-
 // FindByWebsiteID searches the primary keys and returns a
-// *TableWebsite if found or an error.
+// *TableWebsite if found or nil and false.
 // Generated via tableToStruct.
 func (s TableWebsiteSlice) FindByWebsiteID(
 	website_id int64,
-) (*TableWebsite, error) {
+) (match *TableWebsite, found bool) {
 	for _, u := range s {
 		if u != nil && u.WebsiteID == website_id {
-			return u, nil
+			match = u
+			found = true
+			return
 		}
 	}
-	return nil, ErrIDNotFoundTableWebsiteSlice
+	return
 }
 
 // FindByCode searches through this unique key and returns
-// a *TableWebsite if found or an error.
+// a *TableWebsite if found or nil and false.
 // Generated via tableToStruct.
-func (s TableWebsiteSlice) FindByCode(code string) (*TableWebsite, error) {
+func (s TableWebsiteSlice) FindByCode(code string) (match *TableWebsite, found bool) {
 	for _, u := range s {
 		if u != nil && u.Code.String == code {
-			return u, nil
+			match = u
+			found = true
+			return
 		}
 	}
-	return nil, ErrIDNotFoundTableWebsiteSlice
+	return
 }
 
-var _ sort.Interface = (*TableWebsiteSlice)(nil)
+type sortTableWebsiteSlice struct {
+	TableWebsiteSlice
+	lessFunc func(*TableWebsite, *TableWebsite) bool
+}
+
+// Less will satisfy the sort.Interface and compares via
+// the primary key.
+// Generated via tableToStruct.
+func (s sortTableWebsiteSlice) Less(i, j int) bool {
+	return s.lessFunc(s.TableWebsiteSlice[i], s.TableWebsiteSlice[j])
+}
+
+// Sort will sort TableWebsiteSlice.
+// Generated via tableToStruct.
+func (s TableWebsiteSlice) Sort(less func(*TableWebsite, *TableWebsite) bool) {
+	sort.Sort(sortTableWebsiteSlice{s, less})
+}
 
 // Len returns the length and  will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s TableWebsiteSlice) Len() int { return len(s) }
 
-// Less will satisfy the sort.Interface and compares via
-// the primary key.
+// LessPK helper functions for sorting by ascending primary key.
+// Can be used as an argument in Sort().
 // Generated via tableToStruct.
-func (s TableWebsiteSlice) Less(i, j int) bool {
-	return s[i].WebsiteID < s[j].WebsiteID && 1 == 1
+func (s TableWebsiteSlice) LessPK(i, j *TableWebsite) bool {
+	return i.WebsiteID < j.WebsiteID && 1 == 1
 }
 
 // Swap will satisfy the sort.Interface.
 // Generated via tableToStruct.
 func (s TableWebsiteSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-// Sort will sort TableWebsiteSlice.
-// Generated via tableToStruct.
-func (s TableWebsiteSlice) Sort() { sort.Sort(s) }
 
 // FilterThis filters the current slice by predicate f without memory allocation.
 // Generated via tableToStruct.
@@ -675,9 +679,9 @@ func (s TableWebsiteSlice) FilterNot(f func(*TableWebsite) bool) TableWebsiteSli
 	return sl
 }
 
-// parentMap will run function f on all items in TableWebsiteSlice.
+// Each will run function f on all items in TableWebsiteSlice.
 // Generated via tableToStruct.
-func (s TableWebsiteSlice) Map(f func(*TableWebsite)) TableWebsiteSlice {
+func (s TableWebsiteSlice) Each(f func(*TableWebsite)) TableWebsiteSlice {
 	for i := range s {
 		f(s[i])
 	}
@@ -748,54 +752,42 @@ func (s TableWebsiteSlice) Extract() ExtractWebsite {
 		WebsiteID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.WebsiteID)
-				}
+				ext = append(ext, v.WebsiteID)
 			}
 			return ext
 		},
 		Code: func() []string {
 			ext := make([]string, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.Code.String)
-				}
+				ext = append(ext, v.Code.String)
 			}
 			return ext
 		},
 		Name: func() []string {
 			ext := make([]string, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.Name.String)
-				}
+				ext = append(ext, v.Name.String)
 			}
 			return ext
 		},
 		SortOrder: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.SortOrder)
-				}
+				ext = append(ext, v.SortOrder)
 			}
 			return ext
 		},
 		DefaultGroupID: func() []int64 {
 			ext := make([]int64, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.DefaultGroupID)
-				}
+				ext = append(ext, v.DefaultGroupID)
 			}
 			return ext
 		},
 		IsDefault: func() []bool {
 			ext := make([]bool, 0, len(s))
 			for _, v := range s {
-				if v != nil {
-					ext = append(ext, v.IsDefault.Bool)
-				}
+				ext = append(ext, v.IsDefault.Bool)
 			}
 			return ext
 		},
