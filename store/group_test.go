@@ -88,7 +88,6 @@ func TestNewGroupSetStores(t *testing.T) {
 
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-		nil, // this is just for to confuse the NewGroup ApplyOption function
 		store.SetGroupStores(
 			store.TableStoreSlice{
 				&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
@@ -123,13 +122,17 @@ var testGroups = store.TableGroupSlice{
 
 func TestTableGroupSliceLoad(t *testing.T) {
 	t.Parallel()
-
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
-	dbrSess := dbc.NewSession()
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
+		t.Skip(err)
+	}
+	dbCon := csdb.MustConnectTest()
+	defer func() { assert.NoError(t, dbCon.Close()) }()
+	if err := store.TableCollection.Init(dbCon.NewSession()); err != nil {
+		t.Fatal(err)
+	}
 
 	var groups store.TableGroupSlice
-	rows, err := groups.SQLSelect(dbrSess)
+	rows, err := groups.SQLSelect(dbCon.NewSession())
 	assert.NoError(t, err)
 	assert.True(t, rows > 0)
 

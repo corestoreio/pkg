@@ -448,14 +448,16 @@ func BenchmarkStorageDefaultStoreView(b *testing.B) {
 }
 
 func TestStorageReInit(t *testing.T) {
-	t.Parallel()
-
 	// quick implement, use mock of dbr.SessionRunner and remove connection
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
+	t.Parallel()
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
+		t.Skip(err)
+	}
+	dbCon := csdb.MustConnectTest()
+	defer func() { assert.NoError(t, dbCon.Close()) }()
 
 	nsg := store.MustNewStorage(nil, nil, nil)
-	assert.NoError(t, nsg.ReInit(dbc.NewSession()))
+	assert.NoError(t, nsg.ReInit(dbCon.NewSession()))
 
 	stores, err := nsg.Stores()
 	assert.NoError(t, err)

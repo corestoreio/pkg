@@ -73,13 +73,6 @@ func TestNewStore(t *testing.T) {
 	}
 }
 
-func TestNewStoreErrorArgsNil(t *testing.T) {
-	t.Parallel()
-	s, err := store.NewStore(nil, nil, nil)
-	assert.Nil(t, s)
-	assert.NoError(t, err)
-}
-
 func TestNewStoreErrorIncorrectGroup(t *testing.T) {
 	t.Parallel()
 	s, err := store.NewStore(
@@ -110,14 +103,13 @@ func TestStoreSlice(t *testing.T) {
 			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		),
-		nil,
 		store.MustNewStore(
 			&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
 	}
-	assert.True(t, storeSlice.Len() == 3)
+	assert.True(t, storeSlice.Len() == 2)
 	assert.EqualValues(t, util.Int64Slice{1, 5}, storeSlice.IDs())
 	assert.EqualValues(t, util.StringSlice{"de", "au"}, storeSlice.Codes())
 	assert.EqualValues(t, 5, storeSlice.LastItem().Data.StoreID)
@@ -137,24 +129,28 @@ func TestStoreSlice(t *testing.T) {
 
 var testStores = store.TableStoreSlice{
 	&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-	nil,
 	&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 	&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 	&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
 	&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
 	&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 	&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
-	nil,
 }
 
 func TestTableStoreSliceLoad(t *testing.T) {
+	// quick implement, use mock of dbr.SessionRunner and remove connection
 	t.Parallel()
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
-	dbrSess := dbc.NewSession()
+	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
+		t.Skip(err)
+	}
+	dbCon := csdb.MustConnectTest()
+	defer func() { assert.NoError(t, dbCon.Close()) }()
+	if err := store.TableCollection.Init(dbCon.NewSession()); err != nil {
+		t.Fatal(err)
+	}
 
 	var stores store.TableStoreSlice
-	_, err := stores.SQLSelect(dbrSess)
+	_, err := stores.SQLSelect(dbCon.NewSession())
 	assert.NoError(t, err)
 	assert.True(t, stores.Len() >= 2) // @todo proper test data in database
 	for _, s := range stores {
@@ -164,8 +160,8 @@ func TestTableStoreSliceLoad(t *testing.T) {
 
 func TestTableStoreSliceFindByID(t *testing.T) {
 	t.Parallel()
-	eLen := 9
-	assert.True(t, testStores.Len() == eLen, "Length of TableStoreSlice is not %d", eLen)
+	const eLen = 7
+	assert.Exactly(t, eLen, testStores.Len())
 
 	s1, found := testStores.FindByStoreID(999)
 	assert.Nil(t, s1)
@@ -240,6 +236,8 @@ func TestTableStoreSliceIDs(t *testing.T) {
 
 func TestStoreBaseURLandPath(t *testing.T) {
 	t.Parallel()
+
+	t.Skip("@todo refactor and move these functions into another package")
 
 	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},

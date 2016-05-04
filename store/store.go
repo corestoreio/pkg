@@ -48,7 +48,11 @@ type Store struct {
 	Group *Group
 	// Data underlying raw data
 	Data *TableStore
-	*errors.MultiErr
+
+	// optionError use by functional option arguments to indicate that one
+	// option has triggered an error and hence the other can options can
+	// skip their process.
+	optionError error
 
 	// todo remove this and move it somewhere else
 	urlcache *struct {
@@ -119,8 +123,10 @@ func (s *Store) Options(opts ...StoreOption) error {
 	for _, opt := range opts {
 		opt(s)
 	}
-	if s.HasErrors() {
-		return s.MultiErr
+	if s.optionError != nil {
+		// clear error or next call to Options() will fail.
+		defer func() { s.optionError = nil }()
+		return s.optionError
 	}
 	if nil != s.Website && nil != s.Group && s.cr != nil {
 		s.Config = s.cr.NewScoped(s.Website.WebsiteID(), s.StoreID())

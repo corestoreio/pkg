@@ -32,16 +32,18 @@ func SetWebsiteConfig(cr config.Getter) WebsiteOption { return func(w *Website) 
 // the data integrity is incorrect.
 func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOption {
 	return func(w *Website) {
+		if w.optionError != nil {
+			return
+		}
 		groups := tgs.Filter(func(tg *TableGroup) bool {
 			return tg.WebsiteID == w.Data.WebsiteID
 		})
 
 		w.Groups = make(GroupSlice, groups.Len(), groups.Len())
 		for i, g := range groups {
-			var err error
-			w.Groups[i], err = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr), SetGroupStores(tss, nil))
-			if err != nil {
-				w.MultiErr = w.AppendErrors(errors.Wrapf(err, "[store] NewGroup. Group %#v Website Data: %#v", g, w.Data))
+			w.Groups[i], w.optionError = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr), SetGroupStores(tss, nil))
+			if w.optionError != nil {
+				w.optionError = errors.Wrapf(w.optionError, "[store] NewGroup. Group %#v Website Data: %#v", g, w.Data)
 				return
 			}
 		}
@@ -50,13 +52,13 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 		for i, s := range stores {
 			group, found := tgs.FindByGroupID(s.GroupID)
 			if !found {
-				w.MultiErr = w.AppendErrors(errors.NewNotFoundf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
+				w.optionError = errors.NewNotFoundf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs)
 				return
 			}
-			var err error
-			w.Stores[i], err = NewStore(s, w.Data, group, WithStoreConfig(w.cr))
-			if err != nil {
-				w.MultiErr = w.AppendErrors(errors.Wrapf(err, "[store] NewStore. Store %#v Website Data %#v Group %#v", s, w.Data, group))
+
+			w.Stores[i], w.optionError = NewStore(s, w.Data, group, WithStoreConfig(w.cr))
+			if w.optionError != nil {
+				w.optionError = errors.Wrapf(w.optionError, "[store] NewStore. Store %#v Website Data %#v Group %#v", s, w.Data, group)
 				return
 			}
 		}

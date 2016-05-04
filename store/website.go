@@ -40,7 +40,10 @@ type Website struct {
 	Groups GroupSlice
 	// Stores contains a slice to all stores associated to one website. This slice can be nil.
 	Stores StoreSlice
-	*errors.MultiErr
+	// optionError use by functional option arguments to indicate that one
+	// option has triggered an error and hence the other can options can
+	// skip their process.
+	optionError error
 }
 
 // NewWebsite creates a new website pointer with the config.DefaultManager.
@@ -68,8 +71,10 @@ func (w *Website) Options(opts ...WebsiteOption) error {
 	for _, opt := range opts {
 		opt(w)
 	}
-	if w.HasErrors() {
-		return w.MultiErr
+	if w.optionError != nil {
+		// clear error or next call to Options() will fail.
+		defer func() { w.optionError = nil }()
+		return w.optionError
 	}
 	if w.cr != nil {
 		w.Config = w.cr.NewScoped(w.WebsiteID(), 0) // Scope Store is not available

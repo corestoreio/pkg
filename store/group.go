@@ -36,7 +36,10 @@ type Group struct {
 	Stores StoreSlice
 	// Website contains the Website which belongs to this group. Can be nil.
 	Website *Website
-	*errors.MultiErr
+	// optionError use by functional option arguments to indicate that one
+	// option has triggered an error and hence the other can options can
+	// skip their process.
+	optionError error
 }
 
 // NewGroup creates a new Group. Returns an error if 1st argument is nil.
@@ -67,8 +70,10 @@ func (g *Group) Options(opts ...GroupOption) error {
 	for _, opt := range opts {
 		opt(g)
 	}
-	if g.HasErrors() {
-		return g.MultiErr
+	if g.optionError != nil {
+		// clear error or next call to Options() will fail.
+		defer func() { g.optionError = nil }()
+		return g.optionError
 	}
 	if g.Website != nil {
 		if err := g.Website.Options(SetWebsiteConfig(g.cr)); err != nil {

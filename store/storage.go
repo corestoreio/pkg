@@ -55,19 +55,21 @@ type (
 
 	// Storage contains a mutex and the raw slices from the database.
 	storage struct {
-		*errors.MultiErr
 		// cr parent config service. can only be set once.
 		cr       config.Getter
 		mu       sync.RWMutex
 		websites TableWebsiteSlice
 		groups   TableGroupSlice
 		stores   TableStoreSlice
+		// optionError use by functional option arguments to indicate that one
+		// option has triggered an error and hence the other can options can
+		// skip their process.
+		optionError error
 	}
 )
 
 // check if interface has been implemented
 var _ Storager = (*storage)(nil)
-var _ error = (*storage)(nil)
 
 // NewStorage creates a new storage object which handles the raw data from the
 // three database tables for website, group and store. You can either provide
@@ -96,8 +98,8 @@ func NewStorage(opts ...StorageOption) (Storager, error) {
 			opt(s)
 		}
 	}
-	if s.HasErrors() {
-		return nil, s.MultiErr
+	if s.optionError != nil {
+		return nil, s.optionError
 	}
 	return s, nil
 }

@@ -17,6 +17,7 @@ package store
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // StorageOption option func for NewStorage()
@@ -47,8 +48,9 @@ func WithStorageConfig(cr config.Getter) StorageOption {
 // database.
 func WithDatabaseInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) StorageOption {
 	return func(s *storage) {
-		if err := s.ReInit(dbrSess, cbs...); err != nil {
-			s.MultiErr = s.AppendErrors(err)
+		if s.optionError != nil {
+			return
 		}
+		s.optionError = errors.Wrap(s.ReInit(dbrSess, cbs...), "[store] storage ReInit")
 	}
 }

@@ -32,6 +32,7 @@ var _ scope.GroupIDer = (*store.Website)(nil)
 var _ scope.WebsiteCoder = (*store.Website)(nil)
 
 func TestNewWebsite(t *testing.T) {
+	t.Parallel()
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 	)
@@ -47,17 +48,6 @@ func TestNewWebsite(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Nil(t, w.Stores)
 	assert.Nil(t, w.Groups)
-}
-
-func TestMustNewWebsite(t *testing.T) {
-	t.Parallel()
-	defer func() {
-		if r := recover(); r != nil {
-			err := r.(error)
-			assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-		}
-	}()
-	_ = store.MustNewWebsite(nil, nil)
 }
 
 func TestNewWebsiteSetGroupsStores(t *testing.T) {
@@ -167,43 +157,44 @@ func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
 //	)
 //}
 //
-//func TestWebsiteBaseCurrency(t *testing.T) {
-//	t.Parallel()
-//	tests := []struct {
-//		priceScope int
-//		curGlobal  string
-//		curWebsite string
-//		curWant    string
-//		wantErr    error
-//	}{
-//		{catconfig.PriceScopeGlobal, "USD", "EUR", "USD", nil},
-//		{catconfig.PriceScopeGlobal, "ZZ", "EUR", "XXX", errors.New("currency: tag is not well-formed")},
-//		{catconfig.PriceScopeWebsite, "USD", "EUR", "EUR", nil},
-//		{catconfig.PriceScopeWebsite, "USD", "YYY", "XXX", errors.New("currency: tag is not a recognized currency")},
-//	}
-//
-//	for _, test := range tests {
-//		w, err := getWebsiteBaseCurrency(test.priceScope, test.curGlobal, test.curWebsite)
-//		assert.NoError(t, err)
-//		if false == assert.NotNil(t, w) {
-//			t.Fatal("website is nil")
-//		}
-//
-//		haveCur, haveErr := w.BaseCurrency()
-//
-//		if test.wantErr != nil {
-//			assert.EqualError(t, haveErr, test.wantErr.Error())
-//			assert.Exactly(t, test.curWant, haveCur.Unit.String())
-//			continue
-//		}
-//
-//		assert.NoError(t, haveErr)
-//
-//		wantCur, err := directory.NewCurrencyISO(test.curWant)
-//		assert.NoError(t, err)
-//		assert.Exactly(t, wantCur, haveCur)
-//	}
-//}
+func TestWebsiteBaseCurrency(t *testing.T) {
+	t.Parallel()
+	t.Skip("@todo refactor and move into different package")
+	//	tests := []struct {
+	//		priceScope int
+	//		curGlobal  string
+	//		curWebsite string
+	//		curWant    string
+	//		wantErr    error
+	//	}{
+	//		{catconfig.PriceScopeGlobal, "USD", "EUR", "USD", nil},
+	//		{catconfig.PriceScopeGlobal, "ZZ", "EUR", "XXX", errors.New("currency: tag is not well-formed")},
+	//		{catconfig.PriceScopeWebsite, "USD", "EUR", "EUR", nil},
+	//		{catconfig.PriceScopeWebsite, "USD", "YYY", "XXX", errors.New("currency: tag is not a recognized currency")},
+	//	}
+	//
+	//	for _, test := range tests {
+	//		w, err := getWebsiteBaseCurrency(test.priceScope, test.curGlobal, test.curWebsite)
+	//		assert.NoError(t, err)
+	//		if false == assert.NotNil(t, w) {
+	//			t.Fatal("website is nil")
+	//		}
+	//
+	//		haveCur, haveErr := w.BaseCurrency()
+	//
+	//		if test.wantErr != nil {
+	//			assert.EqualError(t, haveErr, test.wantErr.Error())
+	//			assert.Exactly(t, test.curWant, haveCur.Unit.String())
+	//			continue
+	//		}
+	//
+	//		assert.NoError(t, haveErr)
+	//
+	//		wantCur, err := directory.NewCurrencyISO(test.curWant)
+	//		assert.NoError(t, err)
+	//		assert.Exactly(t, wantCur, haveCur)
+	//	}
+}
 
 func TestTableWebsiteSlice(t *testing.T) {
 	t.Parallel()

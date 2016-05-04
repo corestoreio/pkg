@@ -31,13 +31,15 @@ func SetGroupConfig(cr config.Getter) GroupOption { return func(g *Group) { g.cr
 // the group website ID then add error will be generated.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
-		if g.Data.WebsiteID != tw.WebsiteID {
-			g.MultiErr = g.AppendErrors(errors.NewNotFoundf(errGroupWebsiteNotFound))
+		if g.optionError != nil {
 			return
 		}
-		var err error
-		g.Website, err = NewWebsite(tw, SetWebsiteConfig(g.cr))
-		g.MultiErr = g.AppendErrors(errors.Wrap(err, "[store] SetGroupWebsite.NewWebsite"))
+		if g.Data.WebsiteID != tw.WebsiteID {
+			g.optionError = errors.NewNotFoundf(errGroupWebsiteNotFound)
+			return
+		}
+		g.Website, g.optionError = NewWebsite(tw, SetWebsiteConfig(g.cr))
+		g.optionError = errors.Wrap(g.optionError, "[store] SetGroupWebsite.NewWebsite")
 	}
 }
 
@@ -51,20 +53,20 @@ func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
 			return
 		}
 		if g.Website == nil && w == nil {
-			g.MultiErr = g.AppendErrors(errors.NewNotFoundf(errGroupWebsiteNotFound))
+			g.optionError = errors.NewNotFoundf(errGroupWebsiteNotFound)
 			return
 		}
 		if w == nil {
 			w = g.Website.Data
 		}
 		if w.WebsiteID != g.Data.WebsiteID {
-			g.MultiErr = g.AppendErrors(errors.NewNotValidf(errGroupWebsiteIntegrityFailed))
+			g.optionError = errors.NewNotValidf(errGroupWebsiteIntegrityFailed)
 			return
 		}
 		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
 			ns, err := NewStore(s, w, g.Data, WithStoreConfig(g.cr))
 			if err != nil {
-				g.MultiErr = g.AppendErrors(errors.Wrapf(err, "[store] SetGroupStores.FilterByGroupID.NewStore. StoreID %d WebsiteID %d Group %v", s.StoreID, w.WebsiteID, g.Data))
+				g.optionError = errors.Wrapf(err, "[store] SetGroupStores.FilterByGroupID.NewStore. StoreID %d WebsiteID %d Group %v", s.StoreID, w.WebsiteID, g.Data)
 				return
 			}
 			g.Stores = append(g.Stores, ns)
