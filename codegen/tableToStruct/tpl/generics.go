@@ -106,7 +106,7 @@ func (s {{$.Slice}}) {{ findBy $c.Name | typePrefix }} ( {{ $c.Name }} {{$c.GetG
 const Sort = `
 
 type sort{{.Slice}} struct {
-	slice {{.Slice}}
+	{{.Slice}}
 	lessFunc func(*{{.Struct}}, *{{.Struct}}) bool
 }
 
@@ -114,7 +114,7 @@ type sort{{.Slice}} struct {
 // the primary key.
 // Generated via tableToStruct.
 func (s sort{{.Slice}}) Less(i, j int) bool {
-	return s.lessFunc(s.slice[i], s.slice[j])
+	return s.lessFunc(s.{{.Slice}}[i], s.{{.Slice}}[j])
 }
 
 // {{ typePrefix "Sort" }} will sort {{.Slice}}.
