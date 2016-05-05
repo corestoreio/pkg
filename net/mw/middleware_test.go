@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxmw_test
+package mw_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
 	"time"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/ctxmw"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 type key uint
@@ -40,8 +38,8 @@ func fromContext(ctx context.Context) (string, bool) {
 	return value, ok
 }
 
-func serveHTTPContext(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-
+func serveHTTPContext(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	time.Sleep(time.Millisecond) // wait for other goroutines
 	val, _ := fromContext(ctx)
 	if _, ok := ctx.Deadline(); ok {
@@ -50,8 +48,8 @@ func serveHTTPContext(ctx context.Context, w http.ResponseWriter, r *http.Reques
 	if ctx.Err() == context.Canceled {
 		val += " canceled"
 	}
-	_, err := w.Write([]byte(val))
-	return err
+	_, _ = w.Write([]byte(val))
+
 }
 
 type closeNotifyWriter struct {
@@ -67,30 +65,27 @@ func (w *closeNotifyWriter) CloseNotify() <-chan bool {
 
 func TestWithCloseHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := ctxhttp.Chain(serveHTTPContext, ctxmw.WithCloseNotify())
+	finalCH := mw.Chain(serveHTTPContext, mw.WithCloseNotify())
 
 	w := &closeNotifyWriter{httptest.NewRecorder()}
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := finalCH.ServeHTTPContext(ctx, w, r); err != nil {
-		t.Fatal(err)
-	}
+
+	finalCH.ServeHTTP(w, r.WithContext(ctx))
 	assert.Equal(t, "gopher life canceled", w.Body.String())
 }
 
 func TestWithTimeoutHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := ctxhttp.Chain(serveHTTPContext, ctxmw.WithTimeout(time.Second))
+	finalCH := mw.Chain(serveHTTPContext, mw.WithTimeout(time.Second))
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := finalCH.ServeHTTPContext(ctx, w, r); err != nil {
-		t.Fatal(err)
-	}
+	finalCH.ServeHTTP(w, r.WithContext(ctx))
 	assert.Equal(t, "gopher life with deadline", w.Body.String())
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxmw_test
+package mw_test
 
 import (
 	"bytes"
@@ -23,13 +23,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/ctxmw"
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 var testJson string
@@ -53,48 +51,40 @@ func testCompressReqRes() (w *httptest.ResponseRecorder, r *http.Request) {
 }
 
 func TestWithCompressorNone(t *testing.T) {
-	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
 
 		assert.Empty(t, w.Header().Get(httputil.ContentEncoding))
 		assert.Empty(t, w.Header().Get(httputil.Vary))
 
-		return nil
-	}, ctxmw.WithCompressor())
+	}, mw.WithCompressor())
 
 	w, r := testCompressReqRes()
-	if err := finalCH.ServeHTTPContext(context.TODO(), w, r); err != nil {
-		t.Fatal(err)
-	}
+	finalCH.ServeHTTP(w, r)
 }
 
 func TestWithCompressorGZIPHeader(t *testing.T) {
-	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
 
 		assert.Exactly(t, httputil.CompressGZIP, w.Header().Get(httputil.ContentEncoding))
 		assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
 
-		return nil
-	}, ctxmw.WithCompressor())
+	}, mw.WithCompressor())
 
 	w, r := testCompressReqRes()
 	r.Header.Set(httputil.AcceptEncoding, "deflate, gzip")
-	if err := finalCH.ServeHTTPContext(context.TODO(), w, r); err != nil {
-		t.Fatal(err)
-	}
+	finalCH.ServeHTTP(w, r)
 }
 
 func TestWithCompressorDeflateHeader(t *testing.T) {
-	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
 		assert.Exactly(t, httputil.CompressDeflate, w.Header().Get(httputil.ContentEncoding))
 		assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
-		return nil
-	}, ctxmw.WithCompressor())
+
+	}, mw.WithCompressor())
 
 	w, r := testCompressReqRes()
 	r.Header.Set(httputil.AcceptEncoding, "deflate")
-	if err := finalCH.ServeHTTPContext(context.TODO(), w, r); err != nil {
-		t.Fatal(err)
-	}
+	finalCH.ServeHTTP(w, r)
 }
 
 func TestWithCompressorDeflateConcrete(t *testing.T) {
@@ -138,15 +128,15 @@ func TestWithCompressorGZIPConcrete(t *testing.T) {
 
 func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(io.Reader) string) {
 
-	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson)
-	}, ctxmw.WithCompressor())
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+		if err := httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
+			t.Fatal(err)
+		}
+	}, mw.WithCompressor())
 
 	w, r := testCompressReqRes()
 	r.Header.Set(httputil.AcceptEncoding, header)
-	if err := finalCH.ServeHTTPContext(context.TODO(), w, r); err != nil {
-		t.Fatal(err)
-	}
+	finalCH.ServeHTTP(w, r)
 	assert.False(t, len(testJson) < len(w.Body.Bytes()))
 
 	uncompressedBody := uncompressor(w.Body)
@@ -164,20 +154,19 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 // BenchmarkWithCompressorGZIP_1024B-4	   20000	     81916 ns/op	    1330 B/op	       5 allocs/op
 func BenchmarkWithCompressorGZIP_1024B(b *testing.B) {
 
-	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson)
-	}, ctxmw.WithCompressor())
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+		if err := httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
+			b.Fatal(err)
+		}
+	}, mw.WithCompressor())
 
 	w, r := testCompressReqRes()
 	r.Header.Set(httputil.AcceptEncoding, httputil.CompressGZIP)
 
-	ctx := context.TODO()
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if err := finalCH.ServeHTTPContext(ctx, w, r); err != nil {
-			b.Fatal(err)
-		}
+		finalCH.ServeHTTP(w, r)
 		w.Body.Reset()
 	}
 }

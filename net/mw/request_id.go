@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxmw
+package mw
 
 import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"net/http"
-	"strings"
-	"sync/atomic"
-
 	"os"
 	"strconv"
-
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/httputil"
-	"golang.org/x/net/context"
+	"strings"
+	"sync/atomic"
 )
+
+// RequestIDHeader defines the name of the header used to transmit the request ID.
+const RequestIDHeader = "X-Request-Id"
 
 // reqID is a global Counter used to create new request ids. This ID is not unique
 // across multiple micro services.
@@ -82,23 +80,21 @@ func (rp *RequestIDService) NewID() string {
 // otherwise a random value is generated. You can specify your own generator by
 // providing the RequestPrefixGenerator once or pass no argument to use the default request
 // prefix generator.
-func WithRequestID(gen ...RequestIDGenerator) ctxhttp.Middleware {
-	var pf RequestIDGenerator
-	pf = &RequestIDService{}
-	if len(gen) == 1 && gen[0] != nil {
-		pf = gen[0]
-	}
+func WithRequestID(opts ...Option) Middleware {
+	ob := newOptionBox(opts...)
+	ob.genRID.Init()
 
-	pf.Init()
-
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			id := r.Header.Get(httputil.RequestIDHeader)
+	return func(hf http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			id := r.Header.Get(RequestIDHeader)
 			if id == "" {
-				id = pf.NewID()
+				id = ob.genRID.NewID()
 			}
-			w.Header().Set(httputil.RequestIDHeader, id)
-			return hf(ctx, w, r)
+			if ob.log.IsDebug() {
+				ob.log.Debug("mw.WithRequestID", "id", id, "request", r)
+			}
+			w.Header().Set(RequestIDHeader, id)
+			hf(w, r)
 		}
 	}
 }

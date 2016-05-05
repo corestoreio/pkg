@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxmw
+package mw
 
 import (
 	"bufio"
@@ -23,11 +23,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
-	"golang.org/x/net/context"
 )
 
 var gzWriterPool = sync.Pool{
@@ -85,14 +83,14 @@ func (w *compressWriter) CloseNotify() <-chan bool {
 // Encoding header. Flush(), Hijack() and CloseNotify() interfaces will be
 // preserved. No header set, no compression takes place. GZIP has priority
 // before deflate.
-func WithCompressor() ctxhttp.Middleware {
+func WithCompressor() Middleware {
 
 	// todo(cs): maybe the sync.Pools can be put in here because then
 	// the developer can set the deflate compression level.
 	// todo(cs) handle compression depending on the website ...
 
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			enc := r.Header.Get(httputil.AcceptEncoding)
 
 			if strings.Contains(enc, httputil.CompressGZIP) {
@@ -106,7 +104,8 @@ func WithCompressor() ctxhttp.Middleware {
 					gzWriterPool.Put(zw)
 				}()
 				cw := compressWriter{Writer: zw, ResponseWriter: w}
-				return hf(ctx, cw, r)
+				hf(cw, r)
+				return
 			}
 
 			if strings.Contains(enc, httputil.CompressDeflate) {
@@ -120,10 +119,10 @@ func WithCompressor() ctxhttp.Middleware {
 					defWriterPool.Put(zw)
 				}()
 				cw := compressWriter{Writer: zw, ResponseWriter: w}
-				return hf(ctx, cw, r)
+				hf(cw, r)
+				return
 			}
-
-			return hf(ctx, w, r)
+			hf(w, r)
 		}
 	}
 }

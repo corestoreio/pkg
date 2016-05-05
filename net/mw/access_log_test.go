@@ -12,25 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxmw_test
+package mw_test
 
 // Idea: github.com/rs/xaccess Copyright (c) 2015 Olivier Poitrey <rs@dailymotion.com> MIT License
 
 import (
+	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
-
-	"bytes"
-
-	"github.com/corestoreio/csfw/net/ctxlog"
-	"github.com/corestoreio/csfw/net/ctxmw"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/util/log"
+	"github.com/stretchr/testify/assert"
 )
 
 type fakeContext struct {
@@ -54,26 +50,25 @@ func (c fakeContext) Value(key interface{}) interface{} {
 }
 
 func TestResponseStatus(t *testing.T) {
-	assert.Equal(t, "ok", ctxmw.ResponseStatus(fakeContext{err: nil}, http.StatusOK))
-	assert.Equal(t, "canceled", ctxmw.ResponseStatus(fakeContext{err: context.Canceled}, http.StatusOK))
-	assert.Equal(t, "timeout", ctxmw.ResponseStatus(fakeContext{err: context.DeadlineExceeded}, http.StatusOK))
-	assert.Equal(t, "error", ctxmw.ResponseStatus(fakeContext{err: nil}, http.StatusFound))
+	assert.Equal(t, "ok", mw.ResponseStatus(fakeContext{err: nil}, http.StatusOK))
+	assert.Equal(t, "canceled", mw.ResponseStatus(fakeContext{err: context.Canceled}, http.StatusOK))
+	assert.Equal(t, "timeout", mw.ResponseStatus(fakeContext{err: context.DeadlineExceeded}, http.StatusOK))
+	assert.Equal(t, "error", mw.ResponseStatus(fakeContext{err: nil}, http.StatusFound))
 }
 
 func TestWithAccessLog(t *testing.T) {
 	var buf bytes.Buffer
 	defer buf.Reset()
 
-	ctx := ctxlog.WithContext(context.Background(), log.NewStdLogger(log.SetStdWriter(&buf)))
+	testLog := log.NewStdLogger(log.SetStdWriter(&buf))
 
-	finalH := ctxhttp.Chain(
-		ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	finalH := mw.Chain(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTeapot)
-			_, err := w.Write([]byte{'1', '2', '3'})
+			_, _ = w.Write([]byte{'1', '2', '3'})
 			time.Sleep(time.Millisecond)
-			return err
 		}),
-		ctxmw.WithAccessLog(),
+		mw.WithAccessLog(mw.SetLogger(testLog)),
 	)
 
 	r, _ := http.NewRequest("GET", "/gopherine", nil)
@@ -82,9 +77,7 @@ func TestWithAccessLog(t *testing.T) {
 	r.Header.Set("Referer", "http://rustlang.org")
 
 	w := httptest.NewRecorder()
-	if err := finalH.ServeHTTPContext(ctx, w, r); err != nil {
-		t.Fatal(err)
-	}
+	finalH.ServeHTTP(w, r)
 
 	assert.Exactly(t, `123`, w.Body.String())
 	assert.Exactly(t, http.StatusTeapot, w.Code)

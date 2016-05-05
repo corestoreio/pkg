@@ -12,27 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxmw
+package mw
 
 import (
 	"net/http"
 	"time"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
+	"context"
+
 	"github.com/corestoreio/csfw/net/httputil"
-	"golang.org/x/net/context"
 )
+
+// Middleware is a wrapper for the function http.HandlerFunc to create
+// middleware functions.
+type Middleware func(http.HandlerFunc) http.HandlerFunc
+
+// MiddlewareSlice a slice full of middleware functions and with function
+// receivers attached
+type MiddlewareSlice []Middleware
+
+// Chain will iterate over all middleware functions, calling them one by one
+// in a chained manner, returning the result of the final middleware.
+func Chain(h http.HandlerFunc, mws ...Middleware) http.HandlerFunc {
+	// Chain middleware with handler in the end
+	for i := len(mws) - 1; i >= 0; i-- {
+		h = mws[i](h)
+	}
+	return h
+}
+
+// Chain will iterate over all middleware functions, calling them one by one
+// in a chained manner, returning the result of the final middleware.
+func (mws MiddlewareSlice) Chain(h http.HandlerFunc) http.HandlerFunc {
+	return Chain(h, mws...)
+}
 
 // WithHeader is a middleware that sets multiple HTTP headers. Will panic if kv
 // is imbalanced. len(kv)%2 == 0.
-func WithHeader(kv ...string) ctxhttp.Middleware {
+func WithHeader(kv ...string) Middleware {
 	lkv := len(kv)
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			for i := 0; i < lkv; i = i + 2 {
 				w.Header().Set(kv[i], kv[i+1])
 			}
-			return hf(ctx, w, r)
+			hf(w, r)
 		}
 	}
 }
@@ -42,9 +66,10 @@ func WithHeader(kv ...string) ctxhttp.Middleware {
 // HTTPMethodOverrideFormKey to any form will take precedence before
 // HTTP header. If an unknown method will be submitted it gets logged as an
 // Info log. This function is chainable.
-func WithXHTTPMethodOverride() ctxhttp.Middleware {
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func WithXHTTPMethodOverride(opts ...Option) Middleware {
+	ob := newOptionBox(opts...)
+	return func(hf http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			mo := r.FormValue(httputil.MethodOverrideFormKey)
 			if mo == "" {
 				mo = r.Header.Get(httputil.MethodOverrideHeader)
@@ -55,34 +80,37 @@ func WithXHTTPMethodOverride() ctxhttp.Middleware {
 				r.Method = mo
 			default:
 				// not sure if an error is here really needed ...
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
+				if ob.log.IsDebug() {
+					ob.log.Debug("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
 				}
 			}
-			return hf(ctx, w, r)
+			hf(w, r)
 		}
 	}
 }
 
 // WithCloseNotify returns a ctxhttp.Handler cancelling the context when the client
 // connection close unexpectedly.
-func WithCloseNotify() ctxhttp.Middleware {
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func WithCloseNotify(opts ...Option) Middleware {
+	ob := newOptionBox(opts...)
+	return func(hf http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
 			// Cancel the context if the client closes the connection
 			if wcn, ok := w.(http.CloseNotifier); ok {
-
-				var cancel context.CancelFunc
-				ctx, cancel = context.WithCancel(ctx)
+				ctx, cancel := context.WithCancel(r.Context())
 				defer cancel()
+				r = r.WithContext(ctx)
 
 				notify := wcn.CloseNotify()
 				go func() {
 					<-notify
 					cancel()
+					if ob.log.IsDebug() {
+						ob.log.Debug("ctxhttp.WithCloseNotify.cancel", "cancelled", true, "request", r)
+					}
 				}()
 			}
-			return hf(ctx, w, r)
+			hf(w, r)
 		}
 	}
 }
@@ -91,11 +119,12 @@ func WithCloseNotify() ctxhttp.Middleware {
 //
 // Child handlers have the responsibility to obey the context deadline and to return
 // an appropriate error (or not) response in case of timeout.
-func WithTimeout(timeout time.Duration) ctxhttp.Middleware {
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			ctx, _ = context.WithTimeout(ctx, timeout)
-			return hf(ctx, w, r)
+func WithTimeout(timeout time.Duration) Middleware {
+	return func(hf http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ctx, _ := context.WithTimeout(r.Context(), timeout)
+			r = r.WithContext(ctx)
+			hf(w, r)
 		}
 	}
 }

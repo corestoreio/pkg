@@ -12,24 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxlog
-
-import (
-	"github.com/corestoreio/csfw/util/log"
-	"golang.org/x/net/context"
-)
-
-type keyLog struct{}
-
-// WithContext creates a new context with jwt.Token attached.
-func WithContext(ctx context.Context, l log.Logger) context.Context {
-	return context.WithValue(ctx, keyLog{}, l)
-}
-
-// FromContext returns a log.Logger in ctx if it exists or an log.NullLogger.
-func FromContext(ctx context.Context) log.Logger {
-	if l, ok := ctx.Value(keyLog{}).(log.Logger); ok {
-		return l
-	}
-	return log.BlackHole{}
-}
+// Package mw provides a various middleware for net/context.
+//
+// TODO: maybe split this package into smaller once to reduce the dependency when
+// including just one middleware.
+package mw
