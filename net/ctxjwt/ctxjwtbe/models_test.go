@@ -19,29 +19,22 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxjwt/ctxjwtbe"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
-	t.Parallel()
-
 	ccModel := ctxjwtbe.NewConfigSigningMethod("a/x/c")
-
 	cr := cfgmock.NewService()
-
 	sm, err := ccModel.Get(cr.NewScoped(1, 1))
-	assert.EqualError(t, err, "Route a/x/c: Incorrect Path. Either to short or missing path separator.")
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.Nil(t, sm)
 }
 
 func TestNewConfigSigningMethodGetPathError(t *testing.T) {
-	t.Parallel()
-
 	ccModel := ctxjwtbe.NewConfigSigningMethod("a//c")
-
 	cr := cfgmock.NewService()
-
 	sm, err := ccModel.Get(cr.NewScoped(0, 0))
-	assert.EqualError(t, err, "Route a/\uf8ff/c: This character \"\\uf8ff\" is not allowed in Route a/\uf8ff/c")
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.Nil(t, sm)
 }

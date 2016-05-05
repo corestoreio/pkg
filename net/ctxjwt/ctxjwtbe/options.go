@@ -19,6 +19,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DefaultBackend creates new ctxjwt.Option slice with the default configuration
@@ -48,7 +49,7 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 		exp, err := be.NetCtxjwtExpiration.Get(sg)
 		if err != nil {
 			return append(opts, func(s *ctxjwt.Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
+				s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtExpiration.Get"))
 			})
 		}
 		opts = append(opts, ctxjwt.WithExpiration(scp, id, exp))
@@ -56,7 +57,7 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 		isJTI, err := be.NetCtxjwtEnableJTI.Get(sg)
 		if err != nil {
 			return append(opts, func(s *ctxjwt.Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
+				s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtEnableJTI.Get"))
 			})
 		}
 		opts = append(opts, ctxjwt.WithTokenID(scp, id, isJTI))
@@ -64,7 +65,7 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 		signingMethod, err := be.NetCtxjwtSigningMethod.Get(sg)
 		if err != nil {
 			return append(opts, func(s *ctxjwt.Service) {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
+				s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtSigningMethod.Get"))
 			})
 		}
 
@@ -76,13 +77,13 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 			rsaKey, err := be.NetCtxjwtRSAKey.Get(sg)
 			if err != nil {
 				return append(opts, func(s *ctxjwt.Service) {
-					s.MultiErr = s.AppendErrors(errors.Mask(err))
+					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtRSAKey.Get"))
 				})
 			}
 			rsaPW, err := be.NetCtxjwtRSAKeyPassword.Get(sg)
 			if err != nil {
 				return append(opts, func(s *ctxjwt.Service) {
-					s.MultiErr = s.AppendErrors(errors.Mask(err))
+					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtRSAKeyPassword.Get"))
 				})
 			}
 			key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
@@ -92,13 +93,13 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 			ecdsaKey, err := be.NetCtxjwtECDSAKey.Get(sg)
 			if err != nil {
 				return append(opts, func(s *ctxjwt.Service) {
-					s.MultiErr = s.AppendErrors(errors.Mask(err))
+					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtECDSAKey.Get"))
 				})
 			}
 			ecdsaPW, err := be.NetCtxjwtECDSAKeyPassword.Get(sg)
 			if err != nil {
 				return append(opts, func(s *ctxjwt.Service) {
-					s.MultiErr = s.AppendErrors(errors.Mask(err))
+					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtECDSAKeyPassword.Get"))
 				})
 			}
 			key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
@@ -108,14 +109,14 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 			password, err := be.NetCtxjwtHmacPassword.Get(sg)
 			if err != nil {
 				return append(opts, func(s *ctxjwt.Service) {
-					s.MultiErr = s.AppendErrors(errors.Mask(err))
+					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtHmacPassword.Get"))
 				})
 			}
 			key = csjwt.WithPassword(password)
 
 		default:
 			opts = append(opts, func(s *ctxjwt.Service) {
-				s.MultiErr = s.AppendErrors(errors.Errorf("[ctxjwt] Unknown signing method: %q", signingMethod.Alg()))
+				s.AddError(errors.Errorf("[ctxjwt] Unknown signing method: %q", signingMethod.Alg()))
 			})
 		}
 

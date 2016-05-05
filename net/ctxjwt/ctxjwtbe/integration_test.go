@@ -39,7 +39,7 @@ func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path
 }
 
 func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
-	t.Parallel()
+
 	cfgStruct, err := ctxjwtbe.NewConfigStructure()
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
@@ -86,7 +86,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 }
 
 func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
-	t.Parallel()
+
 	cfgStruct, err := ctxjwtbe.NewConfigStructure()
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
@@ -135,7 +135,6 @@ func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *ctx
 }
 
 func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
-	t.Parallel()
 
 	jwts, pb := getJwts(nil)
 
@@ -144,12 +143,11 @@ func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
 	}))
 
 	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.EqualError(t, err, "[ctxjwt] ConfigSigningMethod: Unknown algorithm HS4711")
+	assert.True(t, errors.IsNotImplemented(err), "Error: %s", err)
 	assert.False(t, sc.IsValid())
 }
 
 func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
-	t.Parallel()
 
 	jwts, pb := getJwts(nil)
 
@@ -158,12 +156,11 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 	}))
 
 	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.EqualError(t, err, "time: invalid duration Fail")
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.False(t, sc.IsValid())
 }
 
 func TestServiceWithBackend_InvalidJTI(t *testing.T) {
-	t.Parallel()
 
 	jwts, pb := getJwts(nil)
 
@@ -172,12 +169,11 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 	}))
 
 	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.EqualError(t, err, "Route net/ctxjwt/enable_jti: Unable to cast []byte{0x31} to bool")
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.False(t, sc.IsValid())
 }
 
 func TestServiceWithBackend_RSAFail(t *testing.T) {
-	t.Parallel()
 
 	jwts, pb := getJwts(nil, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
@@ -188,12 +184,11 @@ func TestServiceWithBackend_RSAFail(t *testing.T) {
 	}))
 
 	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 0))
-	assert.EqualError(t, err, "[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key")
+	assert.True(t, errors.IsNotSupported(err))
 	assert.False(t, sc.IsValid())
 }
 
 func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
-	t.Parallel()
 
 	jwts, _ := getJwts(nil)
 

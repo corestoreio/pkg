@@ -19,6 +19,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // ConfigSigningMethod signing method type for the JWT.
@@ -49,10 +50,11 @@ func NewConfigSigningMethod(path string, opts ...cfgmodel.Option) ConfigSigningM
 }
 
 // Get returns a signing method definied for a scope.
+// Error behaviour: NotImplemented
 func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err error) {
 	raw, err := cc.Str.Get(sg)
 	if err != nil {
-		err = errors.Mask(err)
+		err = errors.Wrap(err, "[ctxjwtbe] Str.Get")
 		return
 	}
 
@@ -82,7 +84,7 @@ func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err 
 	case csjwt.HS512:
 		sm = csjwt.NewSigningMethodHS512()
 	default:
-		err = errors.Errorf("[ctxjwt] ConfigSigningMethod: Unknown algorithm %s", raw)
+		err = errors.NewNotImplementedf("[ctxjwt] ConfigSigningMethod: Unknown algorithm %s", raw)
 	}
 	return
 }

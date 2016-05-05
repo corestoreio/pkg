@@ -43,8 +43,8 @@ type Service struct {
 	// Log mostly used for debugging. todo(CS) add more logging at useful places
 	Log log.Logger
 
-	// optionError use by functional option arguments to indicate that one
-	// option has triggered an error and hence the other can options can
+	// optionError used by functional option arguments to indicate that one
+	// option has triggered an error and hence the other options can
 	// skip their process.
 	optionError error
 
@@ -113,6 +113,19 @@ func (s *Service) Options(opts ...Option) error {
 	}
 
 	return nil
+}
+
+// AddError used by functional options to set an error. The error will only be
+// then set if there is not yet an error otherwise it gets discarded. You can
+// enable debug logging to find out more.
+func (s *Service) AddError(err error) {
+	if s.optionError != nil {
+		if s.Log.IsDebug() {
+			s.Log.Debug("ctxjwt.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
+		}
+		return
+	}
+	s.optionError = err
 }
 
 // NewToken creates a new signed JSON web token based on the predefined scoped
