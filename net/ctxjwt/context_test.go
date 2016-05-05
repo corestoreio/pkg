@@ -15,29 +15,27 @@
 package ctxjwt
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func TestContextWithError(t *testing.T) {
-	t.Parallel()
 
-	var wantErr = errors.New("Contiki Context")
+	const wantErr = errors.UserNotFound("User Contiki not found")
 	ctx := withContextError(context.Background(), wantErr)
 	assert.NotNil(t, ctx)
 
 	haveToken, haveErr := FromContext(ctx)
 	assert.NotNil(t, haveToken)
 	assert.False(t, haveToken.Valid)
-	assert.EqualError(t, haveErr, wantErr.Error())
+	assert.True(t, errors.IsUserNotFound(haveErr))
 }
 
 func TestFromContext(t *testing.T) {
-	t.Parallel()
 
 	ctx := withContext(context.Background(), csjwt.Token{})
 	assert.NotNil(t, ctx)
@@ -45,5 +43,5 @@ func TestFromContext(t *testing.T) {
 	haveToken, haveErr := FromContext(ctx)
 	assert.NotNil(t, haveToken)
 	assert.False(t, haveToken.Valid)
-	assert.EqualError(t, haveErr, errContextJWTNotFound.Error())
+	assert.True(t, errors.IsNotFound(haveErr))
 }

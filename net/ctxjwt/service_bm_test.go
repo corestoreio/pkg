@@ -190,7 +190,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (ctxhttp.Handle
 		jwtclaim.KeyStore: "at",
 	})
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		b.Fatal(errors.PrintLoc(err))
 	}
 
 	final := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
@@ -276,7 +276,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		s.Store = storeCode
 		token, err := jwts.NewToken(scope.Website, 1, s)
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			b.Fatal(errors.PrintLoc(err))
 		}
 		return token.Raw
 	}
@@ -291,7 +291,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		// just add garbage to the blacklist
 		tbl := generateToken(strconv.FormatInt(int64(i), 10))
 		if err := jwts.Blacklist.Set(tbl, time.Millisecond*time.Microsecond*time.Duration(i)); err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			b.Fatal(errors.PrintLoc(err))
 		}
 	}
 
@@ -335,7 +335,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		for pb.Next() {
 			w := httptest.NewRecorder() // 3 allocs
 			if err := jwtHandler.ServeHTTPContext(ctx, w, getRequestWithToken(b, tokens[i%tokenCount])); err != nil {
-				t.Fatal(errors.PrintLoc(err))
+				b.Fatal(errors.PrintLoc(err))
 			}
 			if w.Code != http.StatusUnavailableForLegalReasons {
 				b.Fatalf("Response Code want %d; have %d", http.StatusUnavailableForLegalReasons, w.Code)

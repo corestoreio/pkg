@@ -38,12 +38,11 @@ import (
 )
 
 func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {
-	t.Parallel()
 
 	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 		tk, err := ctxjwt.FromContext(ctx)
 		assert.False(t, tk.Valid)
-		assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		return nil
 	})))
 
@@ -56,7 +55,6 @@ func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {
 }
 
 func TestMiddlewareWithInitTokenNoToken(t *testing.T) {
-	t.Parallel()
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
@@ -75,7 +73,6 @@ func TestMiddlewareWithInitTokenNoToken(t *testing.T) {
 }
 
 func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
-	t.Parallel()
 
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.Website, "euro"),
@@ -87,6 +84,7 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 		tok, err := ctxjwt.FromContext(ctx)
 		assert.False(t, tok.Valid)
 		w.WriteHeader(http.StatusTeapot)
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		_, err = w.Write([]byte(err.Error()))
 		return err
 	})))
@@ -96,11 +94,10 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 	w := httptest.NewRecorder()
 	assert.NoError(t, authHandler.ServeHTTPContext(ctx, w, req))
 	assert.Equal(t, http.StatusTeapot, w.Code)
-	assert.Equal(t, csjwt.errTokenNotInRequest.Error(), w.Body.String())
+	assert.Contains(t, w.Body.String(), `token not present in request: Not found`)
 }
 
 func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
-	t.Parallel()
 
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.Website, "euro"),
@@ -169,7 +166,6 @@ func (b *testRealBL) Has(t []byte) bool { return bytes.Equal(b.theToken, t) }
 var _ ctxjwt.Blacklister = (*testRealBL)(nil)
 
 func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
-	t.Parallel()
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
@@ -247,7 +243,7 @@ func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFu
 }
 
 func TestWithInitTokenAndStore_Request(t *testing.T) {
-	t.Parallel()
+
 	var newReq = func(i int, token []byte) *http.Request {
 		req, err := http.NewRequest(httputil.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
 		if err != nil {
@@ -261,26 +257,26 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		ctx            context.Context
 		tokenStoreCode string
 		wantStoreCode  string
-		wantErr        error
+		wantErrBhf     errors.BehaviourFunc
 	}{
-		{store.WithContextProvider(context.Background(), nil), "de", "de", store.ErrContextProviderNotFound},
-		{store.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", "de", csjwt.errTokenNotInRequest},
+		{store.WithContextProvider(context.Background(), nil), "de", "de", errors.IsNotFound},
+		{store.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", "de", errors.IsNotFound},
 		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "de", "de", nil},
-		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "ch", "at", store.errStoreNotActive},
+		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "ch", "at", errors.IsUnauthorized},
 		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "at", "at", nil},
-		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "a$t", "de", store.errStoreCodeInvalid},
-		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "", "at", store.errStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("de")}), "a$t", "de", errors.IsNotValid},
+		{newStoreServiceWithCtx(scope.Option{Store: scope.MockCode("at")}), "", "at", errors.IsNotValid},
 		//
 		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "de", "de", nil},
-		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "ch", "at", store.errStoreNotActive},
-		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), " ch", "at", store.errStoreCodeInvalid},
-		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "uk", "at", store.errStoreChangeNotAllowed},
+		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "ch", "at", errors.IsUnauthorized},
+		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), " ch", "at", errors.IsNotValid},
+		{newStoreServiceWithCtx(scope.Option{Group: scope.MockID(1)}), "uk", "at", errors.IsUnauthorized},
 		//
-		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "uk", "au", store.errStoreChangeNotAllowed},
+		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "uk", "au", errors.IsUnauthorized},
 		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "nz", "nz", nil},
-		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "n z", "au", store.errStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "n z", "au", errors.IsNotValid},
 		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "au", "au", nil},
-		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "", "au", store.errStoreCodeInvalid},
+		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "", "au", errors.IsNotValid},
 	}
 	for i, test := range tests {
 		jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()))
@@ -292,11 +288,11 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 			t.Fatal(errors.PrintLoc(err))
 		}
 
-		if test.wantErr != nil {
+		if test.wantErrBhf != nil {
 			if err := jwts.Options(ctxjwt.WithErrorHandler(scope.Default, 0,
 				ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 					_, err := ctxjwt.FromContext(ctx)
-					assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
+					assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 					return nil
 				}),
 			)); err != nil {

@@ -16,6 +16,7 @@ package ctxjwt
 
 import (
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/net/context"
 )
 
@@ -34,6 +35,7 @@ func withContext(ctx context.Context, t csjwt.Token) context.Context {
 // FromContext returns the csjwt.Token in ctx if it exists or an error.
 // If there is no token in the context then the error
 // ErrContextJWTNotFound gets returned.
+// Error behaviour: NotFound
 func FromContext(ctx context.Context) (csjwt.Token, error) {
 
 	wrp, ok := ctx.Value(keyCtxToken{}).(ctxTokenWrapper)
@@ -42,7 +44,7 @@ func FromContext(ctx context.Context) (csjwt.Token, error) {
 	}
 
 	if wrp.err != nil {
-		return wrp.t, wrp.err
+		return wrp.t, errors.Wrap(wrp.err, "[ctxjwt] FromContext")
 	}
 
 	if wrp.t.Valid {

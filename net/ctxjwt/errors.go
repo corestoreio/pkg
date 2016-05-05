@@ -14,4 +14,30 @@
 
 package ctxjwt
 
-var errContextJWTNotFound = `[ctxjwt] Cannot extract token nor an error from the context`
+import "github.com/corestoreio/csfw/util/errors"
+
+var errContextJWTNotFound = errors.NewNotFoundf(`[ctxjwt] Cannot extract token nor an error from the context`)
+
+const errServiceUnsupportedScope = "[ctxjwt] Service does not support this: %s. Only default or website scope are allowed."
+
+const errTokenParseNotValidOrBlackListed = "[ctxjwt] Token not valid or black listed"
+
+const errScopedConfigMissingSigningMethod = "[ctxjwt] Incomplete configuration for %s. Missing Signing Method and its Key."
+
+const errConfigNotFound = "[ctxjwt] Cannot find JWT configuration for %s"
+
+const errUnknownSigningMethod = "[ctxjwt] Unknown signing method - Have: %q Want: %q"
+
+const errUnknownSigningMethodOptions = "[ctxjwt] Unknown signing method - Have: %q Want: ES, HS or RS"
+
+const errKeyEmpty = "[ctxjwt] Provided key argument is empty"
+
+// ErrTokenBlacklisted returned by the middleware if the token can be found
+// within the black list.
+const errTokenBlacklisted = "[ctxjwt] Token has been black listed"
+
+// ErrTokenInvalid returned by the middleware to make understandable that
+// a token has been invalidated.
+const errTokenInvalid = "[ctxjwt] Token has become invalid"
+
+const errStoreNotFound = "[ctxjwt] Store not found in token claim"

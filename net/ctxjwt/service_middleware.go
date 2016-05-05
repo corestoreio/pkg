@@ -20,40 +20,15 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
 	"golang.org/x/net/context"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
-
-// ErrTokenBlacklisted returned by the middleware if the token can be found
-// within the black list.
-var ErrTokenBlacklisted = errors.New("Token has been black listed")
-
-// ErrTokenInvalid returned by the middleware to make understandable that
-// a token has been invalidated.
-var ErrTokenInvalid = errors.New("Token has become invalid")
 
 // SetHeaderAuthorization convenience function to set the Authorization Bearer
 // Header on a request for a given token.
 func SetHeaderAuthorization(req *http.Request, token []byte) {
 	req.Header.Set("Authorization", "Bearer "+string(token))
 }
-
-// WithInitToken represent a middleware handler which parses and validates a
-// token and adds it to the context. For a POST or a PUT request, it also parses the
-// request body as a form. The extracted valid
-// token will be added to the context or if an error has occurred, that error will
-// be added to the context. The extracted token will be checked
-// against the Blacklist.
-//
-// Tip: Instead of passing the token as an HTML Header you can also add the token
-// to a form (multipart/form-data) with an input name of access_token. If the
-// token cannot be found within the Header the fallback triggers the lookup within the form.
-//func (s *Service) WithInitToken() ctxhttp.Middleware {
-//
-//	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-//		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-//
-//		}
-//	}
-//}
 
 // WithInitTokenAndStore  represent a middleware handler which parses and validates a
 // token, adds the token to the context and initializes the requested store
@@ -71,6 +46,10 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 
 			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "ctx", ctx, "req", r)
+				}
+				err = errors.Wrap(err, "[ctxjwt] FromContextProvider")
 				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
@@ -79,7 +58,10 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 			// website scope and not group or store scope.
 			scpCfg, err := s.ConfigByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
-				err = errors.Mask(err)
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
+				}
+				err = errors.Wrap(err, "[ctxjwt] ConfigByScopedGetter")
 				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
@@ -89,16 +71,27 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 
 			token, err := scpCfg.ParseFromRequest(r)
 			if err != nil {
-				err = errors.Mask(err)
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.ParseFromRequest", "err", err, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
+				}
+				err = errors.Wrap(err, "[ctxjwt] ParseFromRequest")
 				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			if false == token.Valid {
-				return errHandler.ServeHTTPContext(withContextError(ctx, ErrTokenInvalid), w, r)
+				err := errors.NewNotValidf(errTokenInvalid)
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.token.valid", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
+				}
+				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			if s.Blacklist.Has(token.Raw) {
-				return errHandler.ServeHTTPContext(withContextError(ctx, ErrTokenBlacklisted), w, r)
+				err := errors.NewNotValidf(errTokenBlacklisted)
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.token.blacklist", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
+				}
+				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			// add token to the context
@@ -106,27 +99,35 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 
 			scopeOption, err := ScopeOptionFromClaim(token.Claims)
 
-			if err == store.errStoreNotFound {
+			if err != nil && errors.IsNotFound(err) {
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.notfound", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
+				}
 				// move on when the store code cannot be found in the token.
 				return hf.ServeHTTPContext(ctx, w, r)
 			}
 
 			if err != nil {
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.error", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
+				}
 				// invalid syntax of store code
 				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("ctxjwt.Service.WithInitTokenAndStore.FromClaim", "token", token, "ScopeOption", scopeOption)
-			}
-
 			newRequestedStore, err := storeService.RequestedStore(scopeOption)
 			if err != nil {
-				err = errors.Mask(err)
+				err = errors.Wrap(err, "[ctxjwt] storeService.RequestedStore")
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.GetRequestedStore", "err", err, "token", token, "newRequestedStore", newRequestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
+				}
 				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithInitTokenAndStore.SetRequestedStore", "token", token, "newRequestedStore", newRequestedStore, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
+				}
 				// this should not lead to a bug because the previously set store.Provider and requestedStore
 				// will still exists and have not been/cannot be removed.
 				ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)

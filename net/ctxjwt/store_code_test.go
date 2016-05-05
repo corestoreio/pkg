@@ -23,11 +23,12 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStoreCodeFromClaimFullToken(t *testing.T) {
-	t.Parallel()
+
 	s := store.MustNewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
@@ -43,7 +44,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	assert.EqualValues(t, "de", so.StoreCode())
 
 	so, err = ctxjwt.ScopeOptionFromClaim(nil)
-	assert.EqualError(t, store.errStoreNotFound, err.Error())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
@@ -51,31 +52,30 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 }
 
 func TestStoreCodeFromClaimInvalid(t *testing.T) {
-	t.Parallel()
 
 	token2 := csjwt.NewToken(jwtclaim.Map{
 		ctxjwt.StoreParamName: "Invalid Cod€",
 	})
 
 	so, err := ctxjwt.ScopeOptionFromClaim(token2.Claims)
-	assert.EqualError(t, store.errStoreCodeInvalid, err.Error())
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
 }
 
 func TestStoreCodeFromClaimNoToken(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
-		token     csjwt.Claimer
-		wantErr   error
-		wantScope scope.Scope
-		wantCode  string
-		wantID    int64
+		token      csjwt.Claimer
+		wantErrBhf errors.BehaviourFunc
+		wantScope  scope.Scope
+		wantCode   string
+		wantID     int64
 	}{
 		{
 			jwtclaim.Map{},
-			store.errStoreNotFound,
+			errors.IsNotFound,
 			scope.Default,
 			"",
 			0,
@@ -89,14 +89,14 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 		},
 		{
 			jwtclaim.Map{ctxjwt.StoreParamName: "de'de"},
-			store.errStoreCodeInvalid,
+			errors.IsNotValid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
 			jwtclaim.Map{ctxjwt.StoreParamName: 1},
-			store.errStoreNotFound,
+			errors.IsNotFound,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
@@ -104,13 +104,13 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 	}
 	for i, test := range tests {
 		so, err := ctxjwt.ScopeOptionFromClaim(test.token)
-		testStoreCodeFrom(t, i, err, test.wantErr, so, test.wantScope, test.wantCode, test.wantID)
+		testStoreCodeFrom(t, i, err, test.wantErrBhf, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }
 
-func testStoreCodeFrom(t *testing.T, i int, haveErr, wantErr error, haveScope scope.Option, wantScope scope.Scope, wantCode string, wantID int64) {
-	if wantErr != nil {
-		assert.EqualError(t, haveErr, wantErr.Error(), "Index: %d", i)
+func testStoreCodeFrom(t *testing.T, i int, haveErr error, wantErrBhf errors.BehaviourFunc, haveScope scope.Option, wantScope scope.Scope, wantCode string, wantID int64) {
+	if wantErrBhf != nil {
+		assert.True(t, wantErrBhf(haveErr), "Index: %d => %s", i, haveErr)
 
 	}
 	switch sos := haveScope.Scope(); sos {

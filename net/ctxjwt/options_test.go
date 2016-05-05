@@ -15,10 +15,8 @@
 package ctxjwt_test
 
 import (
-	"crypto/x509"
 	"path/filepath"
 	"testing"
-
 	"time"
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
@@ -27,11 +25,12 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestOptionWithTemplateToken(t *testing.T) {
-	t.Parallel()
+
 	jwts, err := ctxjwt.NewService(
 		// ctxjwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
 		ctxjwt.WithTemplateToken(scope.Website, 3, func() csjwt.Token {
@@ -76,7 +75,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 }
 
 func TestOptionWithTokenID(t *testing.T) {
-	t.Parallel()
+
 	jwts, err := ctxjwt.NewService(
 		ctxjwt.WithTokenID(scope.Website, 22, true),
 		ctxjwt.WithKey(scope.Website, 22, csjwt.WithPasswordRandom()),
@@ -93,7 +92,7 @@ func TestOptionWithTokenID(t *testing.T) {
 }
 
 func TestOptionScopedDefaultExpire(t *testing.T) {
-	t.Parallel()
+
 	jwts, err := ctxjwt.NewService(
 		ctxjwt.WithTokenID(scope.Website, 33, true),
 		ctxjwt.WithKey(scope.Website, 33, csjwt.WithPasswordRandom()),
@@ -116,12 +115,12 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 }
 
 func TestOptionWithRSAReaderFail(t *testing.T) {
-	t.Parallel()
+
 	jm, err := ctxjwt.NewService(
 		ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
 	)
 	assert.Nil(t, jm)
-	assert.EqualError(t, err, `[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key`)
+	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 }
 
 var (
@@ -132,13 +131,13 @@ var (
 )
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
-	t.Parallel()
+
 	jm, err := ctxjwt.NewService(keyRsaPrivateNoPassword)
-	assert.EqualError(t, err, "[csjwt] Missing password to decrypt private key")
+	assert.True(t, errors.IsEmpty(err), "Error: %s", err)
 	assert.Nil(t, jm)
 
 	jm2, err2 := ctxjwt.NewService(keyRsaPrivateWrongPassword)
-	assert.EqualError(t, err2, x509.IncorrectPasswordError.Error())
+	assert.True(t, errors.IsNotValid(err2), "Error: %s", err2)
 	assert.Nil(t, jm2)
 }
 
@@ -157,11 +156,11 @@ func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 }
 
 func TestOptionWithRSAFromFilePassword(t *testing.T) {
-	t.Parallel()
+
 	testRsaOption(t, keyRsaPrivateCorrectPassword)
 }
 
 func TestOptionWithRSAFromFileNoPassword(t *testing.T) {
-	t.Parallel()
+
 	testRsaOption(t, ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
 }

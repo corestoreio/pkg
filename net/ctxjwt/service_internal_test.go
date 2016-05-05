@@ -28,12 +28,12 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func TestServiceWithBackend_NoBackend(t *testing.T) {
-	t.Parallel()
 
 	jwts := MustNewService()
 	// a hack for testing to remove the default setting or make it invalid
@@ -41,12 +41,11 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 
 	cr := cfgmock.NewService()
 	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
-	assert.EqualError(t, err, "[ctxjwt] Cannot find JWT configuration for Scope(Default) ID(0)")
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Exactly(t, scopedConfig{}, sc)
 }
 
 func TestServiceWithBackend_DefaultConfig(t *testing.T) {
-	t.Parallel()
 
 	jwts := MustNewService()
 
@@ -78,7 +77,7 @@ func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) cont
 }
 
 func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
-	t.Parallel()
+
 	// this Test is related to Benchmark_WithInitTokenAndStore
 	// The returned pointers from store.FromContextReader must be the
 	// same for each request with the same request pattern.

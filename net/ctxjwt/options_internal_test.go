@@ -30,7 +30,7 @@ import (
 )
 
 func TestInternalOptionWithErrorHandler(t *testing.T) {
-	t.Parallel()
+
 	jwts := MustNewService()
 
 	defaultErrH := jwts.defaultScopeCache.ErrorHandler
@@ -56,7 +56,7 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 }
 
 func TestInternalOptionNoLeakage(t *testing.T) {
-	t.Parallel()
+
 	sc := scopedConfig{
 		Key: csjwt.WithPasswordRandom(),
 	}

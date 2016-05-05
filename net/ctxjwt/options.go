@@ -23,6 +23,8 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
 
@@ -102,10 +104,10 @@ func (sc *scopedConfig) initKeyFunc() {
 	sc.KeyFunc = func(t csjwt.Token) (csjwt.Key, error) {
 
 		if have, want := t.Alg(), sc.SigningMethod.Alg(); have != want {
-			return csjwt.Key{}, errors.Errorf("[ctxjwt] Unknown signing method - Have: %q Want: %q", have, want)
+			return csjwt.Key{}, errors.NewNotImplementedf(errUnknownSigningMethod, have, want)
 		}
 		if sc.Key.Error != nil {
-			return csjwt.Key{}, errors.Mask(sc.Key.Error)
+			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[ctxjwt] Key Error")
 		}
 		return sc.Key, nil
 	}
@@ -142,18 +144,20 @@ func defaultScopedConfig() (scopedConfig, error) {
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
-		var err error
+		if s.optionError != nil {
+			return
+		}
 
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, err = defaultScopedConfig()
-			s.MultiErr = s.AppendErrors(err)
+			s.defaultScopeCache, s.optionError = defaultScopedConfig()
+			s.optionError = errors.Wrap(s.optionError, "[ctxjwt] Default Scope with Default Config")
 			return
 		}
 
 		s.mu.Lock()
-		s.scopeCache[h], err = defaultScopedConfig()
+		s.scopeCache[h], s.optionError = defaultScopedConfig()
+		s.optionError = errors.Wrapf(s.optionError, "[ctxjwt] Scope %s with Default Config", h)
 		s.mu.Unlock()
-		s.MultiErr = s.AppendErrors(err)
 	}
 }
 
@@ -162,6 +166,14 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 func WithBlacklist(bl Blacklister) Option {
 	return func(s *Service) {
 		s.Blacklist = bl
+	}
+}
+
+// WithLogger sets a new global logger.
+// Convenience helper function.
+func WithLogger(l log.Logger) Option {
+	return func(s *Service) {
+		s.Log = l
 	}
 }
 
@@ -331,15 +343,18 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 	h := scope.NewHash(scp, id)
 	if key.Error != nil {
 		return func(s *Service) {
-			s.MultiErr = s.AppendErrors(key.Error)
+			s.optionError = errors.Wrap(key.Error, "[ctxjwt] Key Error")
 		}
 	}
 	if key.IsEmpty() {
 		return func(s *Service) {
-			s.MultiErr = s.AppendErrors(errors.New("[ctxjwt] Provided key argument is empty"))
+			s.optionError = errors.NewEmptyf(errKeyEmpty)
 		}
 	}
 	return func(s *Service) {
+		if s.optionError != nil {
+			return
+		}
 
 		s.mu.Lock()
 		defer s.mu.Unlock()
@@ -354,16 +369,15 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		case csjwt.ES:
 			scNew.SigningMethod = csjwt.NewSigningMethodES256()
 		case csjwt.HS:
-			var err error
-			scNew.SigningMethod, err = csjwt.NewHMACFast256(key)
-			if err != nil {
-				s.MultiErr = s.AppendErrors(errors.Mask(err))
+			scNew.SigningMethod, s.optionError = csjwt.NewHMACFast256(key)
+			if s.optionError != nil {
+				s.optionError = errors.Wrap(s.optionError, "[ctxjwt] HMAC Fast 256 error")
 				return
 			}
 		case csjwt.RS:
 			scNew.SigningMethod = csjwt.NewSigningMethodRS256()
 		default:
-			s.MultiErr = s.AppendErrors(errors.Errorf("[ctxjwt] Unknown signing method - Have: %q Want: ES, HS or RS", key.Algorithm()))
+			s.optionError = errors.NewNotImplementedf(errUnknownSigningMethodOptions, key.Algorithm())
 			return
 		}
 

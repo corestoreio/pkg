@@ -28,15 +28,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ error = (*ctxjwt.Service)(nil)
-
 const uuidLen = 36
 
 func TestServiceMustNewServicePanic(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), "open non-existent.pem: no such file or directory")
+			err := r.(error)
+			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a panic")
 		}
@@ -45,7 +44,7 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 }
 
 func TestServiceNewDefaultBlacklist(t *testing.T) {
-	t.Parallel()
+
 	jwts := ctxjwt.MustNewService()
 
 	key := []byte("test")
@@ -55,7 +54,7 @@ func TestServiceNewDefaultBlacklist(t *testing.T) {
 }
 
 func TestServiceNewDefault(t *testing.T) {
-	t.Parallel()
+
 	jwts := ctxjwt.MustNewService()
 
 	testClaims := &jwtclaim.Standard{
@@ -82,7 +81,6 @@ func TestServiceNewDefault(t *testing.T) {
 }
 
 func TestServiceNewDefaultRSAError(t *testing.T) {
-	t.Parallel()
 
 	jmRSA, err := ctxjwt.NewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
@@ -98,7 +96,6 @@ func (ms malformedSigner) Alg() string {
 }
 
 func TestServiceParseInvalidSigningMethod(t *testing.T) {
-	t.Parallel()
 
 	ms := &malformedSigner{
 		SigningMethodHMAC: csjwt.NewSigningMethodHS256(),
@@ -116,7 +113,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	assert.NoError(t, err)
 
 	mt, err := jwts.Parse(malformedToken)
-	assert.EqualError(t, err, "[csjwt] token is unverifiable\n[ctxjwt] Unknown signing method - Have: \"None\" Want: \"HS256\"")
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.False(t, mt.Valid)
 }
 
@@ -136,7 +133,6 @@ func (b *testBL) Has(_ []byte) bool { return false }
 var _ ctxjwt.Blacklister = (*testBL)(nil)
 
 func TestServiceLogout(t *testing.T) {
-	t.Parallel()
 
 	tbl := &testBL{T: t}
 	jwts := ctxjwt.MustNewService(
@@ -157,15 +153,14 @@ func TestServiceLogout(t *testing.T) {
 }
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
-	t.Parallel()
 
 	jwts, err := ctxjwt.NewService(ctxjwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
 	assert.Nil(t, jwts)
-	assert.EqualError(t, err, `[ctxjwt] Service does not support this: Scope(Store) ID(33). Only default or website are allowed.`)
+	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 }
 
 func TestService_NewToken_Merge_Maps(t *testing.T) {
-	t.Parallel()
+
 	jwts, err := ctxjwt.NewService(
 		ctxjwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
 	)
@@ -189,7 +184,7 @@ func TestService_NewToken_Merge_Maps(t *testing.T) {
 }
 
 func TestService_NewToken_Merge_Structs(t *testing.T) {
-	t.Parallel()
+
 	jwts, err := ctxjwt.NewService(
 		ctxjwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
 		ctxjwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
@@ -231,7 +226,7 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 }
 
 func TestService_NewToken_Merge_Fail(t *testing.T) {
-	t.Parallel()
+
 	jwts, err := ctxjwt.NewService(
 		ctxjwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
 		ctxjwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
@@ -246,8 +241,6 @@ func TestService_NewToken_Merge_Fail(t *testing.T) {
 	theToken, err := jwts.NewToken(scope.Website, 4, jwtclaim.Map{
 		jwtclaim.KeyUserID: "0815",
 	})
-
-	assert.EqualError(t, err, "[csjwt] Cannot set Key \"userid\" with value `0815'. Claim index 0. Error: [jwtclaim] Claim \"userid\" not supported.")
+	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 	assert.Empty(t, theToken.Raw)
-
 }

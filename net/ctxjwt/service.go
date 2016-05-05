@@ -21,15 +21,8 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/pborman/uuid"
+	"github.com/corestoreio/csfw/util/log"
 )
-
-// jti type to generate a JTI for a token, a unique ID
-type jti struct{}
-
-func (j jti) Get() string {
-	return uuid.New()
-}
 
 const (
 	claimExpiresAt = "exp"
@@ -40,8 +33,6 @@ const (
 // Service main type for handling JWT authentication, generation, blacklists
 // and log outs depending on a scope.
 type Service struct {
-	*errors.MultiErr
-
 	// JTI represents the interface to generate a new UUID aka JWT ID
 	JTI interface {
 		Get() string
@@ -49,6 +40,13 @@ type Service struct {
 	// Blacklist concurrent safe black list service which handles blocked tokens.
 	// Default black hole storage. Must be thread safe.
 	Blacklist Blacklister
+	// Log mostly used for debugging. todo(CS) add more logging at useful places
+	Log log.Logger
+
+	// optionError use by functional option arguments to indicate that one
+	// option has triggered an error and hence the other can options can
+	// skip their process.
+	optionError error
 
 	// scpOptionFnc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings in the
@@ -76,13 +74,14 @@ func NewService(opts ...Option) (*Service, error) {
 		scopeCache: make(map[scope.Hash]scopedConfig),
 		JTI:        jti{},
 		Blacklist:  nullBL{},
+		Log:        log.BlackHole{}, // disabled debug and info logging
 	}
 
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
-		return nil, s
+		return nil, errors.Wrap(err, "[ctxjwt] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "[ctxjwt] Options Any Config")
 	}
 	return s, nil
 }
@@ -101,15 +100,15 @@ func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
 		opt(s)
 	}
-	if s.HasErrors() {
-		return s.MultiErr
+	if s.optionError != nil {
+		return s.optionError
 	}
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for h := range s.scopeCache {
 		if scp, _ := h.Unpack(); scp > scope.Website {
-			return errors.Errorf("[ctxjwt] Service does not support this: %s. Only default or website are allowed.", h)
+			return errors.NewNotSupportedf(errServiceUnsupportedScope, h)
 		}
 	}
 
@@ -128,32 +127,32 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (c
 	var empty csjwt.Token
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return empty, errors.Mask(err)
+		return empty, errors.Wrap(err, "[ctxjwt] getConfigByScopeID")
 	}
 
 	var tk = cfg.TemplateToken()
 
 	if len(claim) > 0 && claim[0] != nil {
 		if err := csjwt.MergeClaims(tk.Claims, claim...); err != nil {
-			return empty, errors.Mask(err)
+			return empty, errors.Wrap(err, "[ctxjwt] MergeClaims")
 		}
 	}
 
 	if err := tk.Claims.Set(claimExpiresAt, now.Add(cfg.Expire).Unix()); err != nil {
-		return empty, errors.Mask(err)
+		return empty, errors.Wrap(err, "[ctxjwt] Claims.Set EXP")
 	}
 	if err := tk.Claims.Set(claimIssuedAt, now.Unix()); err != nil {
-		return empty, errors.Mask(err)
+		return empty, errors.Wrap(err, "[ctxjwt] Claims.Set IAT")
 	}
 
 	if cfg.EnableJTI && s.JTI != nil {
 		if err := tk.Claims.Set(claimKeyID, s.JTI.Get()); err != nil {
-			return empty, errors.Mask(err)
+			return empty, errors.Wrap(err, "[ctxjwt] Claims.Set KID")
 		}
 	}
 
 	tk.Raw, err = tk.SignedString(cfg.SigningMethod, cfg.Key)
-	return tk, errors.Mask(err)
+	return tk, errors.Wrap(err, "[ctxjwt] SignedString")
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration.
@@ -178,12 +177,12 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 	var emptyTok csjwt.Token
 	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return emptyTok, errors.Mask(err)
+		return emptyTok, errors.Wrap(err, "[ctxjwt] getConfigByScopeID")
 	}
 
 	token, err := sc.Parse(rawToken)
 	if err != nil {
-		return emptyTok, errors.Mask(err)
+		return emptyTok, errors.Wrap(err, "[ctxjwt] Parse")
 	}
 
 	var inBL bool
@@ -194,10 +193,10 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 	if isValid && !inBL {
 		return token, nil
 	}
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", string(rawToken), "token", token)
+	if s.Log.IsDebug() {
+		s.Log.Debug("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", string(rawToken), "token", token)
 	}
-	return emptyTok, errors.Mask(err)
+	return emptyTok, errors.NewNotValidf(errTokenParseNotValidOrBlackListed)
 }
 
 // ConfigByScopedGetter returns the internal configuration depending on the ScopedGetter.
@@ -225,7 +224,7 @@ func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 
 	if s.scpOptionFnc != nil {
 		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Mask(err)
+			return scopedConfig{}, errors.Wrap(err, "[ctxjwt] Options by scpOptionFnc")
 		}
 	}
 
@@ -246,22 +245,21 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		if scpCfg.IsValid() {
 			return scpCfg, nil
 		}
-		return empty, errors.Errorf("[ctxjwt] Incomplete configuration for %s. Missing Signing Method and its Key.", hash)
+		return empty, errors.NewNotValidf(errScopedConfigMissingSigningMethod, hash)
 	}
 
-	const errConfigNotFound = "[ctxjwt] Cannot find JWT configuration for %s"
 	if fallback {
 		// fallback to default scope
 		var err error
 		if !s.defaultScopeCache.IsValid() {
-			err = errors.Errorf(errConfigNotFound, scope.DefaultHash)
+			err = errors.NewNotFoundf(errConfigNotFound, scope.DefaultHash)
 		}
-		return s.defaultScopeCache, errors.Mask(err)
+		return s.defaultScopeCache, err
 
 	}
 
 	// give up, nothing found
-	return empty, errors.Errorf(errConfigNotFound, hash)
+	return empty, errors.NewNotFoundf(errConfigNotFound, hash)
 }
 
 // getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
