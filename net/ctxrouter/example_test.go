@@ -6,18 +6,15 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/net/ctxrouter"
-	"golang.org/x/net/context"
 )
 
-func Index(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome!\n")
-	return nil
 }
 
-func Hello(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	ps := ctxrouter.FromContextParams(ctx)
+func Hello(w http.ResponseWriter, r *http.Request) {
+	ps := ctxrouter.FromContextParams(r.Context())
 	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-	return nil
 }
 
 func Example() {

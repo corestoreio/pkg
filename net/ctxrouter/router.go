@@ -11,7 +11,7 @@
 //		import (
 //			"fmt"
 //			"github.com/corestoreio/csfw/net/ctxrouter"
-//			"golang.org/x/net/context"
+//			"context"
 //			"log"
 //			"net/http"
 //		)
@@ -83,11 +83,10 @@
 package ctxrouter
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/util/cserr"
-	"golang.org/x/net/context"
+	"github.com/corestoreio/csfw/net/mw"
 	"golang.org/x/net/websocket"
 )
 
@@ -113,10 +112,10 @@ func (ps Params) ByName(name string) string {
 	return ""
 }
 
-// Router is a ctxhttp.Handler which can be used to dispatch requests to different
+// Router is a http.Handler which can be used to dispatch requests to different
 // handler functions via configurable routes
 type Router struct {
-	middleware ctxhttp.MiddlewareSlice
+	middleware mw.MiddlewareSlice
 	prefix     string
 	trees      map[string]*node
 
@@ -150,29 +149,29 @@ type Router struct {
 	// Custom OPTIONS handlers take priority over automatic replies.
 	HandleOPTIONS bool
 
-	// Configurable ctxhttp.Handler which is called when no matching route is
+	// Configurable http.Handler which is called when no matching route is
 	// found. If it is not set, http.NotFound is used.
-	NotFound ctxhttp.Handler
+	NotFound http.Handler
 
-	// Configurable ctxhttp.Handler which is called when a request
+	// Configurable http.Handler which is called when a request
 	// cannot be routed and HandleMethodNotAllowed is true.
 	// If it is not set, http.Error with http.StatusMethodNotAllowed is used.
 	// The "Allow" header with allowed request methods is set before the handler
 	// is called.
-	MethodNotAllowed ctxhttp.Handler
+	MethodNotAllowed http.Handler
 
 	// PanicHandler is a function to handle panics recovered from ctxhttp handlers.
 	// It should be used to generate a error page and return the http error code
 	// 500 (Internal Server Error).
 	// The handler can be used to keep your server from crashing because of
 	// unrecovered panics.
-	PanicHandler ctxhttp.HandlerFunc
+	PanicHandler http.HandlerFunc
 
-	// ErrorHandler takes care of the errors returned by a ctxhttp.HandlerFunc.
+	// ErrorHandler takes care of the errors returned by a http.HandlerFunc.
 	// It returns itself an error which is then finally handled by the default
 	// http.Error(). You can extract the error from the context with the helper
 	// function ctxrouter.FromContextError()
-	ErrorHandler ctxhttp.HandlerFunc
+	ErrorHandler http.HandlerFunc
 
 	// RootContext overall initial context which will be passed
 	// to every handler. Default context is context.Background().
@@ -180,8 +179,8 @@ type Router struct {
 	RootContext context.Context
 }
 
-// Make sure the Router conforms with the ctxhttp.Handler interface
-var _ ctxhttp.Handler = (*Router)(nil)
+// Make sure the Router conforms with the http.Handler interface
+var _ http.Handler = (*Router)(nil)
 var _ http.Handler = (*Router)(nil)
 
 // New returns a new initialized Router.
@@ -209,18 +208,18 @@ func (r *Router) initTree() {
 }
 
 // Use applies middleware to the router
-func (r *Router) Use(mws ...ctxhttp.Middleware) {
+func (r *Router) Use(mws ...mw.Middleware) {
 	r.middleware = append(r.middleware, mws...)
 }
 
 // Group creates a new sub router with prefix. It inherits all properties from
 // the parent. Passing middleware overrides parent middleware.
-func (r *Router) Group(prefix string, mws ...ctxhttp.Middleware) *Group {
+func (r *Router) Group(prefix string, mws ...mw.Middleware) *Group {
 	r.initTree()
 	g := &Group{r: *r} // dereference it because of custom middleware and a prefix. BUT we still need the map in the group
 	g.r.prefix += prefix
 	if len(mws) == 0 {
-		mw := make(ctxhttp.MiddlewareSlice, len(g.r.middleware))
+		mw := make(mw.MiddlewareSlice, len(g.r.middleware))
 		copy(mw, g.r.middleware)
 		g.r.middleware = mw
 	} else {
@@ -231,53 +230,52 @@ func (r *Router) Group(prefix string, mws ...ctxhttp.Middleware) *Group {
 }
 
 // GET is a shortcut for router.Handle("GET", path, handle)
-func (r *Router) GET(path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) GET(path string, handle http.HandlerFunc) {
 	r.Handle("GET", path, handle)
 }
 
 // HEAD is a shortcut for router.Handle("HEAD", path, handle)
-func (r *Router) HEAD(path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) HEAD(path string, handle http.HandlerFunc) {
 	r.Handle("HEAD", path, handle)
 }
 
 // OPTIONS is a shortcut for router.Handle("OPTIONS", path, handle)
-func (r *Router) OPTIONS(path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) OPTIONS(path string, handle http.HandlerFunc) {
 	r.Handle("OPTIONS", path, handle)
 }
 
 // POST is a shortcut for router.Handle("POST", path, handle)
-func (r *Router) POST(path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) POST(path string, handle http.HandlerFunc) {
 	r.Handle("POST", path, handle)
 }
 
 // PUT is a shortcut for router.Handle("PUT", path, handle)
-func (r *Router) PUT(path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) PUT(path string, handle http.HandlerFunc) {
 	r.Handle("PUT", path, handle)
 }
 
 // PATCH is a shortcut for router.Handle("PATCH", path, handle)
-func (r *Router) PATCH(path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) PATCH(path string, handle http.HandlerFunc) {
 	r.Handle("PATCH", path, handle)
 }
 
 // DELETE is a shortcut for router.Handle("DELETE", path, handle)
-func (r *Router) DELETE(path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) DELETE(path string, handle http.HandlerFunc) {
 	r.Handle("DELETE", path, handle)
 }
 
 // WEBSOCKET adds a WebSocket route > handler to the router. Use the helper
 // function FromContextWebsocket() to extract the websocket.Conn in your HandlerFunc
 // from the context.
-func (r *Router) WEBSOCKET(path string, h ctxhttp.HandlerFunc) {
-	r.GET(path, func(ctx context.Context, w http.ResponseWriter, r *http.Request) (err error) {
+func (r *Router) WEBSOCKET(path string, h http.HandlerFunc) {
+	r.GET(path, func(w http.ResponseWriter, r *http.Request) {
 		wss := websocket.Server{
 			Handler: func(ws *websocket.Conn) {
 				w.WriteHeader(http.StatusSwitchingProtocols)
-				err = h(withContextWebsocket(ctx, ws), w, r)
+				h(w, r.WithContext(withContextWebsocket(r.Context(), ws)))
 			},
 		}
 		wss.ServeHTTP(w, r)
-		return err
 	})
 }
 
@@ -289,7 +287,7 @@ func (r *Router) WEBSOCKET(path string, h ctxhttp.HandlerFunc) {
 // This function is intended for bulk loading and to allow the usage of less
 // frequently used, non-standardized or custom methods (e.g. for internal
 // communication with a proxy).
-func (r *Router) Handle(method, path string, handle ctxhttp.HandlerFunc) {
+func (r *Router) Handle(method, path string, handle http.HandlerFunc) {
 	if path[0] != '/' {
 		panic("path must begin with '/' in path '" + path + "'")
 	}
@@ -308,19 +306,19 @@ func (r *Router) Handle(method, path string, handle ctxhttp.HandlerFunc) {
 	root.addRoute(r.prefix+path, handle, r.middleware)
 }
 
-// Handler is an adapter which allows the usage of an ctxhttp.Handler as a
+// Handler is an adapter which allows the usage of an http.Handler as a
 // request handle.
-func (r *Router) Handler(method, path string, handler ctxhttp.Handler) {
+func (r *Router) Handler(method, path string, handler http.Handler) {
 	r.Handle(method, path,
-		func(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
-			return handler.ServeHTTPContext(ctx, w, req)
+		func(w http.ResponseWriter, req *http.Request) {
+			handler.ServeHTTP(w, req)
 		},
 	)
 }
 
-// HandlerFunc is an adapter which allows the usage of an ctxhttp.HandlerFunc as a
+// HandlerFunc is an adapter which allows the usage of an http.HandlerFunc as a
 // request handle.
-func (r *Router) HandlerFunc(method, path string, handler ctxhttp.HandlerFunc) {
+func (r *Router) HandlerFunc(method, path string, handler http.HandlerFunc) {
 	r.Handler(method, path, handler)
 }
 
@@ -341,18 +339,15 @@ func (r *Router) ServeFiles(path string, root http.FileSystem) {
 
 	fileServer := http.FileServer(root)
 
-	r.GET(path, func(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
-		req.URL.Path = FromContextParams(ctx).ByName("filepath")
+	r.GET(path, func(w http.ResponseWriter, req *http.Request) {
+		req.URL.Path = FromContextParams(req.Context()).ByName("filepath")
 		fileServer.ServeHTTP(w, req)
-		return nil
 	})
 }
 
-func (r *Router) recv(ctx context.Context, w http.ResponseWriter, req *http.Request) {
+func (r *Router) recv(w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
-		if err := r.PanicHandler(WithContextPanic(ctx, rcv), w, req); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		r.PanicHandler(w, req.WithContext(WithContextPanic(req.Context(), rcv)))
 	}
 }
 
@@ -361,7 +356,7 @@ func (r *Router) recv(ctx context.Context, w http.ResponseWriter, req *http.Requ
 // If the path was found, it returns the handle function and the path parameter
 // values. Otherwise the third return value indicates whether a redirection to
 // the same path with an extra / without the trailing slash should be performed.
-func (r *Router) Lookup(method, path string) (ctxhttp.HandlerFunc, ctxhttp.MiddlewareSlice, Params, bool) {
+func (r *Router) Lookup(method, path string) (http.HandlerFunc, mw.MiddlewareSlice, Params, bool) {
 	if root := r.trees[method]; root != nil {
 		return root.getValue(path)
 	}
@@ -410,31 +405,22 @@ func (r *Router) allowed(path, reqMethod string) (allow string) {
 // ServeHTTPContext function with the RootContext. If an error occurs:
 //
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if err := r.ServeHTTPContext(r.RootContext, w, req); err != nil {
-		if r.ErrorHandler == nil {
-			handleError(w, err)
-			return
-		}
-		if errH := r.ErrorHandler(withContextError(r.RootContext, err), w, req); errH != nil {
-			handleError(w, errH, err)
-		}
+	//if err := r.ServeHTTPContext(, w, req); err != nil {
+	//	if r.ErrorHandler == nil {
+	//		handleError(w, err)
+	//		return
+	//	}
+	//	if errH := r.ErrorHandler(withContextError(r.RootContext, err), w, req); errH != nil {
+	//		handleError(w, errH, err)
+	//	}
+	//}
+	ctx := r.RootContext
+	if ctx == nil {
+		ctx = context.Background()
 	}
-}
 
-func handleError(w http.ResponseWriter, errs ...error) {
-	if len(errs) > 0 && errs[0] != nil {
-		if ctxErr, ok := errs[0].(*ctxhttp.Error); ok {
-			http.Error(w, ctxErr.Error(), ctxErr.Code)
-			return
-		}
-	}
-	http.Error(w, cserr.NewMultiErr(errs...).Error(), http.StatusInternalServerError)
-}
-
-// ServeHTTPContext makes the router implement the ctxhttp.Handler interface.
-func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
 	if r.PanicHandler != nil {
-		defer r.recv(ctx, w, req)
+		defer r.recv(w, req.WithContext(ctx))
 	}
 
 	path := req.URL.Path
@@ -443,12 +429,13 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 
 		if handle, mws, ps, tsr := root.getValue(path); handle != nil {
 			if mws != nil {
-				handle = mws.Chain(handle)
+				handle = mws.ChainFunc(handle).ServeHTTP
 			}
 			if ps != nil {
 				ctx = WithContextParams(ctx, ps)
 			}
-			return handle(ctx, w, req)
+			handle(w, req.WithContext(ctx))
+			return
 		} else if req.Method != "CONNECT" && path != "/" {
 			code := 301 // Permanent redirect, request with GET method
 			if req.Method != "GET" {
@@ -464,7 +451,7 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 					req.URL.Path = path + "/"
 				}
 				http.Redirect(w, req, req.URL.String(), code)
-				return nil
+				return
 			}
 
 			// Try to fix the request path
@@ -476,7 +463,7 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 				if found {
 					req.URL.Path = string(fixedPath)
 					http.Redirect(w, req, req.URL.String(), code)
-					return nil
+					return
 				}
 			}
 		}
@@ -487,7 +474,7 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 		if r.HandleOPTIONS {
 			if allow := r.allowed(path, req.Method); len(allow) > 0 {
 				w.Header().Set("Allow", allow)
-				return nil
+				return
 			}
 		}
 	} else {
@@ -496,22 +483,22 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 			if allow := r.allowed(path, req.Method); len(allow) > 0 {
 				w.Header().Set("Allow", allow)
 				if r.MethodNotAllowed != nil {
-					return r.MethodNotAllowed.ServeHTTPContext(ctx, w, req)
-				} else {
-					http.Error(w,
-						http.StatusText(http.StatusMethodNotAllowed),
-						http.StatusMethodNotAllowed,
-					)
+					r.MethodNotAllowed.ServeHTTP(w, req.WithContext(ctx))
+					return
 				}
-				return nil
+				http.Error(w,
+					http.StatusText(http.StatusMethodNotAllowed),
+					http.StatusMethodNotAllowed,
+				)
+				return
 			}
 		}
 	}
 
 	// Handle 404
 	if r.NotFound != nil {
-		return r.NotFound.ServeHTTPContext(ctx, w, req)
+		r.NotFound.ServeHTTP(w, req.WithContext(ctx))
+		return
 	}
 	http.NotFound(w, req)
-	return nil
 }

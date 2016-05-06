@@ -7,6 +7,7 @@ package ctxrouter
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -16,9 +17,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"golang.org/x/net/context"
 )
 
 type mockResponseWriter struct{}
@@ -62,14 +60,13 @@ func TestRouter(t *testing.T) {
 	router.Use(noopMW())
 
 	routed := false
-	router.Handle("GET", "/user/:name", func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.Handle("GET", "/user/:name", func(w http.ResponseWriter, r *http.Request) {
 		routed = true
 		want := Params{Param{"name", "gopher"}}
-		ps := FromContextParams(ctx)
+		ps := FromContextParams(r.Context())
 		if !reflect.DeepEqual(ps, want) {
 			t.Fatalf("wrong wildcard values: want %v, got %v", want, ps)
 		}
-		return nil
 	})
 
 	w := new(mockResponseWriter)
@@ -89,7 +86,7 @@ func TestRouterContext(t *testing.T) {
 	router.Use(noopMW())
 
 	routed := false
-	router.Handle("GET", "/user", func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.Handle("GET", "/user", func(w http.ResponseWriter, r *http.Request) {
 		routed = true
 
 		have, ok := ctx.Value(1).(string)
@@ -100,8 +97,6 @@ func TestRouterContext(t *testing.T) {
 		if have != want {
 			t.Fatal("Have %s\nWant: %s", have, want)
 		}
-
-		return nil
 	})
 
 	w := new(mockResponseWriter)
@@ -118,9 +113,8 @@ type handlerStruct struct {
 	handeled *bool
 }
 
-func (h handlerStruct) ServeHTTPContext(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
+func (h handlerStruct) ServeHTTP(_ http.ResponseWriter, _ *http.Request) {
 	*h.handeled = true
-	return nil
 }
 
 func TestRouterAPI(t *testing.T) {
@@ -129,38 +123,30 @@ func TestRouterAPI(t *testing.T) {
 	httpHandler := handlerStruct{&handler}
 
 	router := New()
-	router.GET("/GET", func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.GET("/GET", func(w http.ResponseWriter, r *http.Request) {
 		get = true
-		return nil
 	})
-	router.HEAD("/GET", func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.HEAD("/GET", func(w http.ResponseWriter, r *http.Request) {
 		head = true
-		return nil
 	})
-	router.OPTIONS("/GET", func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.OPTIONS("/GET", func(w http.ResponseWriter, r *http.Request) {
 		options = true
-		return nil
 	})
-	router.POST("/POST", func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.POST("/POST", func(w http.ResponseWriter, r *http.Request) {
 		post = true
-		return nil
 	})
-	router.PUT("/PUT", func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.PUT("/PUT", func(w http.ResponseWriter, r *http.Request) {
 		put = true
-		return nil
 	})
-	router.PATCH("/PATCH", func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.PATCH("/PATCH", func(w http.ResponseWriter, r *http.Request) {
 		patch = true
-		return nil
 	})
-	router.DELETE("/DELETE", func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
+	router.DELETE("/DELETE", func(w http.ResponseWriter, r *http.Request) {
 		delete = true
-		return nil
 	})
 	router.Handler("GET", "/Handler", httpHandler)
-	router.HandlerFunc("GET", "/HandlerFunc", func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
+	router.HandlerFunc("GET", "/HandlerFunc", func(_ http.ResponseWriter, _ *http.Request) {
 		handlerFunc = true
-		return nil
 	})
 
 	w := new(mockResponseWriter)
@@ -236,17 +222,15 @@ func TestRouterChaining(t *testing.T) {
 	router1.NotFound = router2
 
 	fooHit := false
-	router1.POST("/foo", func(_ context.Context, w http.ResponseWriter, req *http.Request) error {
+	router1.POST("/foo", func(w http.ResponseWriter, req *http.Request) {
 		fooHit = true
 		w.WriteHeader(http.StatusOK)
-		return nil
 	})
 
 	barHit := false
-	router2.POST("/bar", func(_ context.Context, w http.ResponseWriter, req *http.Request) error {
+	router2.POST("/bar", func(w http.ResponseWriter, req *http.Request) {
 		barHit = true
 		w.WriteHeader(http.StatusOK)
-		return nil
 	})
 
 	r, _ := http.NewRequest("POST", "/foo", nil)
@@ -275,7 +259,7 @@ func TestRouterChaining(t *testing.T) {
 }
 
 func TestRouterOPTIONS(t *testing.T) {
-	handlerFunc := func(_ context.Context, w http.ResponseWriter, req *http.Request) error { return nil }
+	handlerFunc := func(w http.ResponseWriter, req *http.Request) { w.Write([]byte(`OK :-)`)) }
 
 	router := New()
 	router.POST("/path", handlerFunc)
@@ -334,9 +318,8 @@ func TestRouterOPTIONS(t *testing.T) {
 
 	// custom handler
 	var custom bool
-	router.OPTIONS("/path", func(_ context.Context, w http.ResponseWriter, req *http.Request) error {
+	router.OPTIONS("/path", func(w http.ResponseWriter, req *http.Request) {
 		custom = true
-		return nil
 	})
 
 	// test again
@@ -366,7 +349,7 @@ func TestRouterOPTIONS(t *testing.T) {
 }
 
 func TestRouterNotAllowed(t *testing.T) {
-	handlerFunc := func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error { return nil }
+	handlerFunc := func(_ http.ResponseWriter, _ *http.Request) {}
 
 	router := New()
 	router.POST("/path", handlerFunc)
@@ -398,10 +381,9 @@ func TestRouterNotAllowed(t *testing.T) {
 	// test custom handler
 	w = httptest.NewRecorder()
 	responseText := "custom method"
-	router.MethodNotAllowed = ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, req *http.Request) error {
+	router.MethodNotAllowed = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 		w.Write([]byte(responseText))
-		return nil
 	})
 	router.ServeHTTP(w, r)
 	if got := w.Body.String(); !(got == responseText) {
@@ -416,7 +398,7 @@ func TestRouterNotAllowed(t *testing.T) {
 }
 
 func TestRouterNotFound(t *testing.T) {
-	handlerFunc := func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error { return nil }
+	handlerFunc := func(_ http.ResponseWriter, _ *http.Request) {}
 
 	router := New()
 	router.GET("/path", handlerFunc)
@@ -449,10 +431,9 @@ func TestRouterNotFound(t *testing.T) {
 
 	// Test custom not found handler
 	var notFound bool
-	router.NotFound = ctxhttp.HandlerFunc(func(_ context.Context, rw http.ResponseWriter, r *http.Request) error {
+	router.NotFound = http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		rw.WriteHeader(404)
 		notFound = true
-		return nil
 	})
 	r, _ := http.NewRequest("GET", "/nope", nil)
 	w := httptest.NewRecorder()
@@ -485,19 +466,18 @@ func TestRouterPanicHandler(t *testing.T) {
 	router := New()
 	panicHandled := false
 
-	router.PanicHandler = func(ctx context.Context, rw http.ResponseWriter, r *http.Request) error {
+	router.PanicHandler = func(rw http.ResponseWriter, r *http.Request) {
 		panicHandled = true
-		pa, ok := FromContextPanic(ctx).(string)
+		pa, ok := FromContextPanic(r.Context()).(string)
 		if !ok {
 			t.Error("PanicFromContext should return a string")
 		}
 		if pa != "oops!" {
-			t.Errorf("Want: oops!\nHave: %s\nPanic %#v\n", pa, FromContextParams(ctx))
+			t.Errorf("Want: oops!\nHave: %s\nPanic %#v\n", pa, FromContextParams(r.Context()))
 		}
-		return nil
 	}
 
-	router.Handle("PUT", "/user/:name", func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
+	router.Handle("PUT", "/user/:name", func(_ http.ResponseWriter, _ *http.Request) {
 		panic("oops!")
 	})
 
@@ -520,11 +500,12 @@ func TestRouterPanicHandler(t *testing.T) {
 func TestRouterPanicHandlerError(t *testing.T) {
 	router := New()
 
-	router.PanicHandler = func(ctx context.Context, rw http.ResponseWriter, r *http.Request) error {
-		return errors.New("Epic fail")
+	router.PanicHandler = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Epic fail\n"))
 	}
 
-	router.Handle("PUT", "/user/:name", func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
+	router.Handle("PUT", "/user/:name", func(_ http.ResponseWriter, _ *http.Request) {
 		panic("oops!")
 	})
 
@@ -549,8 +530,9 @@ func TestRouterPanicHandlerError(t *testing.T) {
 func TestServeHTTPError(t *testing.T) {
 	router := New()
 
-	router.Handle("PUT", "/user/:name", func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
-		return errors.New("TestServeHTTPError")
+	router.Handle("PUT", "/user/:name", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("TestServeHTTPError\n"))
 	})
 
 	w := httptest.NewRecorder()
@@ -567,9 +549,8 @@ func TestServeHTTPError(t *testing.T) {
 
 func TestRouterLookup(t *testing.T) {
 	routed := false
-	wantHandle := func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
+	wantHandle := func(_ http.ResponseWriter, _ *http.Request) {
 		routed = true
-		return nil
 	}
 	wantParams := Params{Param{"name", "gopher"}}
 
@@ -591,7 +572,7 @@ func TestRouterLookup(t *testing.T) {
 	if handle == nil {
 		t.Fatal("Got no handle!")
 	} else {
-		handle(nil, nil, nil)
+		handle(nil, nil)
 		if !routed {
 			t.Fatal("Routing failed!")
 		}
@@ -678,16 +659,14 @@ func TestWEBSOCKET(t *testing.T) {
 	// see test files in "golang.org/x/net/websocket"
 
 	router := New()
-	router.WEBSOCKET("/ws", func(ctx context.Context, _ http.ResponseWriter, r *http.Request) error {
-		ws, ok := FromContextWebsocket(ctx)
+	router.WEBSOCKET("/ws", func(_ http.ResponseWriter, r *http.Request) {
+		ws, ok := FromContextWebsocket(r.Context())
 		if !ok {
 			t.Fatal("Expecting a Websocket but got nothing")
 		}
 		if ws == nil {
 			t.Fatal("Expecting a Websocket but got nil")
 		}
-
-		return nil
 	})
 
 	w := &recorderHijacker{
