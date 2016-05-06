@@ -22,9 +22,10 @@ import (
 )
 
 type optionBox struct {
-	log    log.Logger
-	xstat  xstats.XStater
-	genRID RequestIDGenerator
+	log                   log.Logger
+	xstat                 xstats.XStater
+	genRID                RequestIDGenerator
+	methodOverrideFormKey string
 }
 
 // Option contains multiple functional options for middlewares.
@@ -32,9 +33,10 @@ type Option func(ob *optionBox)
 
 func newOptionBox(opts ...Option) *optionBox {
 	ob := &optionBox{
-		log:    log.BlackHole{}, // disabled info and debug logging
-		xstat:  nopS{},
-		genRID: &RequestIDService{},
+		log:                   log.BlackHole{}, // disabled info and debug logging
+		xstat:                 nopS{},
+		genRID:                &RequestIDService{},
+		methodOverrideFormKey: MethodOverrideFormKey,
 	}
 	for _, o := range opts {
 		if o != nil {
@@ -62,6 +64,13 @@ func SetXStats(x xstats.XStater) Option {
 func SetRequestIDGenerator(g RequestIDGenerator) Option {
 	return func(ob *optionBox) {
 		ob.genRID = g
+	}
+}
+
+// SetMethodOverrideFormKey sets a custom form input name
+func SetMethodOverrideFormKey(k string) Option {
+	return func(ob *optionBox) {
+		ob.methodOverrideFormKey = k
 	}
 }
 

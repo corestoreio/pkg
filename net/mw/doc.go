@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mw provides a various middleware for net/context.
+// Package mw provides a various middleware.
 //
-// TODO: maybe split this package into smaller once to reduce the dependency when
-// including just one middleware.
+// TODO(CS): Make most of those middlewares optionally configurable via config package.
 package mw

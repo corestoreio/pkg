@@ -23,6 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ mw.RequestIDGenerator = (*mw.RequestIDService)(nil)
+
 func TestDefaultRequestPrefix(t *testing.T) {
 	s := mw.RequestIDService{}
 	s.Init()

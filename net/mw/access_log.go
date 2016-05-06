@@ -27,7 +27,9 @@ import (
 // Idea: github.com/rs/xaccess Copyright (c) 2015 Olivier Poitrey <rs@dailymotion.com> MIT License
 
 // WithAccessLog is a middleware that logs all access requests performed on the
-// sub handler and uses github.com/rs/xstats stored in context.
+// sub handler and uses github.com/rs/xstats for collecting stats.
+// Supported option arguments are: SetLogger() and SetXStats()
+// Provided none of those falls back to black hole logging and stats.
 func WithAccessLog(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	return func(h http.HandlerFunc) http.HandlerFunc {

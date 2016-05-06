@@ -23,15 +23,12 @@ import (
 
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/stretchr/testify/assert"
+	"net/url"
 )
 
 type key uint
 
 const ctxKey key = 0
-
-func newContext(ctx context.Context, value string) context.Context {
-	return context.WithValue(ctx, ctxKey, value)
-}
 
 func fromContext(ctx context.Context) (string, bool) {
 	value, ok := ctx.Value(ctxKey).(string)
@@ -65,7 +62,8 @@ func (w *closeNotifyWriter) CloseNotify() <-chan bool {
 
 func TestWithCloseHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := mw.Chain(serveHTTPContext, mw.WithCloseNotify())
+	var mws = mw.MiddlewareSlice{mw.WithCloseNotify()}
+	finalCH := mws.Chain(serveHTTPContext)
 
 	w := &closeNotifyWriter{httptest.NewRecorder()}
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
@@ -88,4 +86,70 @@ func TestWithTimeoutHandler(t *testing.T) {
 	}
 	finalCH.ServeHTTP(w, r.WithContext(ctx))
 	assert.Equal(t, "gopher life with deadline", w.Body.String())
+}
+
+func TestWithHeader(t *testing.T) {
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`Confirmed landing on drone ship.`))
+	}, mw.WithHeader("X-CoreStore-CartID", "0815"))
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finalCH.ServeHTTP(w, r)
+	if have, want := w.HeaderMap.Get("X-CoreStore-CartID"), "0815"; want != have {
+		t.Errorf("Want: %q Have: %q\nHeader: %#v", want, have, w.HeaderMap)
+	}
+}
+
+func TestWithXHTTPMethodOverrideForm(t *testing.T) {
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+		if have, want := r.Method, "HEAD"; want != have {
+			t.Errorf("Want: %q Have: %q", want, have)
+		}
+	}, mw.WithXHTTPMethodOverride(mw.SetMethodOverrideFormKey("_mykey")))
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.Form = url.Values{
+		"_mykey": []string{"HEAD"},
+	}
+
+	finalCH.ServeHTTP(w, r)
+}
+
+func TestWithXHTTPMethodOverrideHeader(t *testing.T) {
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+		if have, want := r.Method, "OPTIONS"; want != have {
+			t.Errorf("Want: %q Have: %q", want, have)
+		}
+	}, mw.WithXHTTPMethodOverride())
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.Header.Set(mw.MethodOverrideHeader, "OPTIONS")
+	finalCH.ServeHTTP(w, r)
+}
+
+func TestWithXHTTPMethodOverrideNone(t *testing.T) {
+	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+		if have, want := r.Method, "PATCH"; want != have {
+			t.Errorf("Want: %q Have: %q", want, have)
+		}
+	}, mw.WithXHTTPMethodOverride())
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("PATCH", "http://corestore.io/catalog/product/id/3452", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finalCH.ServeHTTP(w, r)
 }

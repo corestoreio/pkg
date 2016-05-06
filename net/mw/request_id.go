@@ -43,8 +43,6 @@ type RequestIDGenerator interface {
 	NewID() string
 }
 
-var _ RequestIDGenerator = (*RequestIDService)(nil)
-
 // DefaultRequestPrefix default prefix generator. Creates a prefix once the middleware
 // is set up.
 type RequestIDService struct {
@@ -80,6 +78,7 @@ func (rp *RequestIDService) NewID() string {
 // otherwise a random value is generated. You can specify your own generator by
 // providing the RequestPrefixGenerator once or pass no argument to use the default request
 // prefix generator.
+// Supported options are: SetLogger() and SetRequestIDGenerator()
 func WithRequestID(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	ob.genRID.Init()

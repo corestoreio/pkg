@@ -36,7 +36,7 @@ type MiddlewareSlice []Middleware
 func Chain(h http.HandlerFunc, mws ...Middleware) http.HandlerFunc {
 	// Chain middleware with handler in the end
 	for i := len(mws) - 1; i >= 0; i-- {
-		h = mws[i](h)
+		h = mws[i](h) // performance penalty because of bounds checking of the compiler
 	}
 	return h
 }
@@ -61,18 +61,26 @@ func WithHeader(kv ...string) Middleware {
 	}
 }
 
+const (
+	// MethodOverrideHeader represents a commonly used http header to override a request method.
+	MethodOverrideHeader = "X-HTTP-Method-Override"
+	// MethodOverrideFormKey represents a commonly used HTML form key to override a request method.
+	MethodOverrideFormKey = "_method"
+)
+
 // WithXHTTPMethodOverride adds support for the X-HTTP-Method-Override
 // header. Submitted value will be checked against known methods. Adding
 // HTTPMethodOverrideFormKey to any form will take precedence before
 // HTTP header. If an unknown method will be submitted it gets logged as an
 // Info log. This function is chainable.
+// Suported options are: SetMethodOverrideFormKey() and SetLogger().
 func WithXHTTPMethodOverride(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	return func(hf http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			mo := r.FormValue(httputil.MethodOverrideFormKey)
+			mo := r.FormValue(ob.methodOverrideFormKey)
 			if mo == "" {
-				mo = r.Header.Get(httputil.MethodOverrideHeader)
+				mo = r.Header.Get(MethodOverrideHeader)
 			}
 			switch mo {
 			case "": // do nothing
@@ -91,6 +99,7 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 
 // WithCloseNotify returns a ctxhttp.Handler cancelling the context when the client
 // connection close unexpectedly.
+// Supported options are: SetLogger().
 func WithCloseNotify(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	return func(hf http.HandlerFunc) http.HandlerFunc {
