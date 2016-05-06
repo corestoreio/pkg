@@ -17,10 +17,11 @@ package ctxjwt
 import (
 	"testing"
 
+	"context"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 func TestContextWithError(t *testing.T) {

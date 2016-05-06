@@ -19,13 +19,11 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
-	"golang.org/x/net/context"
 )
 
 // Option can be used as an argument in NewService to configure a token service.
@@ -56,9 +54,9 @@ type scopedConfig struct {
 	Verifier *csjwt.Verification
 	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	EnableJTI bool
-	// ErrorHandler specific for this scope. if nil, fallback to global one
-	// stored in the Service
-	ErrorHandler ctxhttp.Handler
+	// ErrorHandler specific for this scope. if nil, the the next handler in
+	// the chain will be called.
+	ErrorHandler http.Handler
 	// KeyFunc will receive the parsed token and should return the key for validating.
 	KeyFunc csjwt.Keyfunc
 	// templateTokenFunc to a create a new template token when parsing
@@ -123,10 +121,6 @@ func defaultScopedConfig() (scopedConfig, error) {
 		SigningMethod: hs256,
 		Verifier:      csjwt.NewVerification(hs256),
 		EnableJTI:     false,
-		ErrorHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return nil
-		}),
 	}
 	sc.initKeyFunc()
 	return sc, err
@@ -259,7 +253,7 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 // WithErrorHandler sets the error handler for a scope and its ID. If the
 // scope.DefaultID will be set the handler gets also applied to the global
 // handler
-func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option {
+func WithErrorHandler(scp scope.Scope, id int64, handler http.Handler) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
 

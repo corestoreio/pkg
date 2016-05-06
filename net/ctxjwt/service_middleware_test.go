@@ -16,6 +16,7 @@ package ctxjwt_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -23,33 +24,29 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {
 
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-		tk, err := ctxjwt.FromContext(ctx)
+	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tk, err := ctxjwt.FromContext(r.Context())
 		assert.False(t, tk.Valid)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-		return nil
 	})))
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
 	w := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), w, req))
+	authHandler.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Empty(t, w.Body.String())
 }
@@ -62,14 +59,20 @@ func TestMiddlewareWithInitTokenNoToken(t *testing.T) {
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
-	authHandler, _ := testAuth(t)
+	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tk, err := ctxjwt.FromContext(r.Context())
+		assert.False(t, tk.Valid)
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	})))
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
 	w := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(ctx, w, req))
+	authHandler.ServeHTTP(w, req.WithContext(ctx))
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Equal(t, w.Body.String(), http.StatusText(http.StatusUnauthorized)+"\n")
+	assert.Equal(t, http.StatusText(http.StatusUnauthorized)+"\n", w.Body.String())
 }
 
 func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
@@ -78,21 +81,23 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cfgmock.NewService()), // empty config
 	)
-	ctx := store.WithContextProvider(context.Background(), srv)
 
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		tok, err := ctxjwt.FromContext(ctx)
+	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tok, err := ctxjwt.FromContext(r.Context())
 		assert.False(t, tok.Valid)
 		w.WriteHeader(http.StatusTeapot)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		_, err = w.Write([]byte(err.Error()))
-		return err
+		if err != nil {
+			t.Fatal(err)
+		}
 	})))
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
 	w := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(ctx, w, req))
+	ctx := store.WithContextProvider(context.Background(), srv)
+	authHandler.ServeHTTP(w, req.WithContext(ctx))
 	assert.Equal(t, http.StatusTeapot, w.Code)
 	assert.Contains(t, w.Body.String(), `token not present in request: Not found`)
 }
@@ -103,16 +108,14 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cfgmock.NewService()),
 	)
-	ctx := store.WithContextProvider(context.Background(), srv)
 
 	jwts := ctxjwt.MustNewService()
 
 	if err := jwts.Options(ctxjwt.WithErrorHandler(scope.Default, 0,
-		ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			token, err := ctxjwt.FromContext(ctx)
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token, err := ctxjwt.FromContext(r.Context())
 			t.Logf("Token: %#v\n", token)
 			t.Fatal(errors.PrintLoc(err))
-			return nil
 		}),
 	)); err != nil {
 		t.Fatal(errors.PrintLoc(err))
@@ -129,11 +132,11 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	ctxjwt.SetHeaderAuthorization(req, theToken.Raw)
 
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 		fmt.Fprintf(w, "I'm more of a coffee pot")
 
-		ctxToken, err := ctxjwt.FromContext(ctx)
+		ctxToken, err := ctxjwt.FromContext(r.Context())
 		assert.NoError(t, err)
 		assert.NotNil(t, ctxToken)
 		xFoo, err := ctxToken.Claims.Get("xfoo")
@@ -141,12 +144,14 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 			t.Fatal(errors.PrintLoc(err))
 		}
 		assert.Exactly(t, "bar", xFoo.(string))
-		return nil
+
 	})
 	authHandler := jwts.WithInitTokenAndStore()(finalHandler)
 
 	wRec := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(ctx, wRec, req))
+	ctx := store.WithContextProvider(context.Background(), srv)
+
+	authHandler.ServeHTTP(wRec, req.WithContext(ctx))
 	assert.Equal(t, http.StatusTeapot, wRec.Code)
 	assert.Equal(t, `I'm more of a coffee pot`, wRec.Body.String())
 }
@@ -172,7 +177,6 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cr),
 	)
-	ctx := store.WithContextProvider(context.Background(), srv)
 
 	bl := &testRealBL{}
 	jm, err := ctxjwt.NewService(
@@ -189,22 +193,24 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 	assert.NoError(t, err)
 	ctxjwt.SetHeaderAuthorization(req, theToken.Raw)
 
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		w.WriteHeader(http.StatusTeapot)
-		return nil
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, err := ctxjwt.FromContext(r.Context())
+		assert.True(t, errors.IsNotValid(err))
+		w.WriteHeader(http.StatusUnauthorized)
 	})
 	authHandler := jm.WithInitTokenAndStore()(finalHandler)
 
 	wRec := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(ctx, wRec, req))
+	ctx := store.WithContextProvider(context.Background(), srv)
+	authHandler.ServeHTTP(wRec, req.WithContext(ctx))
 
-	assert.NotEqual(t, http.StatusTeapot, wRec.Code)
+	//assert.NotEqual(t, http.StatusTeapot, wRec.Code)
 	assert.Equal(t, http.StatusUnauthorized, wRec.Code)
 }
 
 // todo add test for form with input field: access_token
 
-func testAuth(t *testing.T, opts ...ctxjwt.Option) (ctxhttp.Handler, []byte) {
+func testAuth(t *testing.T, opts ...ctxjwt.Option) (http.Handler, []byte) {
 	jm, err := ctxjwt.NewService(opts...)
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
@@ -216,29 +222,24 @@ func testAuth(t *testing.T, opts ...ctxjwt.Option) (ctxhttp.Handler, []byte) {
 	})
 	assert.NoError(t, err)
 
-	final := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		return nil
 	})
 	authHandler := jm.WithInitTokenAndStore()(final)
 	return authHandler, theToken.Raw
 }
 
 func newStoreServiceWithCtx(initO scope.Option) context.Context {
-	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
-
-	return ctx
+	return store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
 }
 
-func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFunc {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := store.FromContextProvider(ctx)
+func finalInitStoreHandler(t *testing.T, wantStoreCode string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, haveReqStore, err := store.FromContextProvider(r.Context())
 		if err != nil {
 			t.Fatal(errors.PrintLoc(err))
-			return err
 		}
 		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode())
-		return nil
 	}
 }
 
@@ -290,10 +291,9 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 
 		if test.wantErrBhf != nil {
 			if err := jwts.Options(ctxjwt.WithErrorHandler(scope.Default, 0,
-				ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-					_, err := ctxjwt.FromContext(ctx)
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					_, err := ctxjwt.FromContext(r.Context())
 					assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
-					return nil
 				}),
 			)); err != nil {
 				t.Fatal(errors.PrintLoc(err))
@@ -301,8 +301,6 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		}
 		mw := jwts.WithInitTokenAndStore()(finalInitStoreHandler(t, test.wantStoreCode))
 		rec := httptest.NewRecorder()
-		if err := mw.ServeHTTPContext(test.ctx, rec, newReq(i, token.Raw)); err != nil {
-			t.Fatal(errors.PrintLoc(err))
-		}
+		mw.ServeHTTP(rec, newReq(i, token.Raw).WithContext(test.ctx))
 	}
 }

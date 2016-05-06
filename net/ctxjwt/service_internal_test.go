@@ -15,12 +15,12 @@
 package ctxjwt
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -30,7 +30,6 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 func TestServiceWithBackend_NoBackend(t *testing.T) {
@@ -59,21 +58,12 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 	assert.Exactly(t, csjwt.HS256, sc.SigningMethod.Alg())
 	assert.Exactly(t, dsc.Key.Algorithm(), sc.Key.Algorithm())
 
-	assert.NotNil(t, dsc.ErrorHandler)
-	assert.NotNil(t, sc.ErrorHandler)
-	assert.True(t, jwts.defaultScopeCache.ErrorHandler != nil)
+	assert.Nil(t, dsc.ErrorHandler)
+	assert.Nil(t, sc.ErrorHandler)
+	assert.Nil(t, jwts.defaultScopeCache.ErrorHandler)
 	assert.Exactly(t, DefaultExpire, dsc.Expire)
 	assert.False(t, dsc.Key.IsEmpty())
 	assert.False(t, sc.Key.IsEmpty())
-}
-
-func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
-	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
-	tok := csjwt.NewToken(jwtclaim.Map{
-		StoreParamName: tokenStoreCode,
-	})
-	ctx = withContext(ctx, tok)
-	return ctx
 }
 
 func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
@@ -82,36 +72,46 @@ func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
 	// The returned pointers from store.FromContextReader must be the
 	// same for each request with the same request pattern.
 
-	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	var equalStorePointer *store.Store
 	jwts := MustNewService()
-	mw := jwts.WithInitTokenAndStore()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	mw := jwts.WithInitTokenAndStore()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if _, err := FromContext(ctx); err != nil {
+			t.Fatal(err)
+		}
+
 		_, haveReqStore, err := store.FromContextProvider(ctx)
 		if err != nil {
-			return err
+			t.Fatal(err)
 		}
 
 		if equalStorePointer == nil {
 			equalStorePointer = haveReqStore
 		}
 
-		if "nz" != haveReqStore.StoreCode() {
-			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
+		if have, want := haveReqStore.StoreCode(), "nz"; have != want {
+			t.Errorf("Have: %q Want: %q", have, want)
 		}
 		cstesting.EqualPointers(t, equalStorePointer, haveReqStore)
-
-		return nil
 	}))
 
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sc := jwtclaim.NewStore()
+	sc.Store = "nz"
+	tok, err := jwts.NewToken(scope.Default, 0, sc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	SetHeaderAuthorization(req, tok.Raw)
+	// Bind request to a specific Website in this case down under
+	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Website: scope.MockID(2)}))
+
 	for i := 0; i < 10; i++ {
-		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
-			t.Error(err)
-		}
+		mw.ServeHTTP(rec, req.WithContext(ctx))
 	}
 }

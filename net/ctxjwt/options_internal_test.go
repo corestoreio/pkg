@@ -15,17 +15,13 @@
 package ctxjwt
 
 import (
-	"net/http"
-
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cstesting"
-	"golang.org/x/net/context"
-
 	"fmt"
+	"net/http"
 	"testing"
 
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,25 +29,20 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 
 	jwts := MustNewService()
 
-	defaultErrH := jwts.defaultScopeCache.ErrorHandler
-
-	wsErrH := ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+	wsErrH := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, http.StatusText(http.StatusAccepted), http.StatusAccepted)
-		return nil
 	})
 
 	if err := jwts.Options(WithErrorHandler(scope.Website, 22, wsErrH)); err != nil {
 		t.Fatal(err)
 	}
 
-	cstesting.EqualPointers(t, defaultErrH, jwts.defaultScopeCache.ErrorHandler)
+	assert.Nil(t, jwts.defaultScopeCache.ErrorHandler)
 	cstesting.EqualPointers(t, wsErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].ErrorHandler)
-	cstesting.UnEqualPointers(t, defaultErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].ErrorHandler)
 
 	if err := jwts.Options(WithErrorHandler(scope.Default, 0, wsErrH)); err != nil {
 		t.Fatal(err)
 	}
-	cstesting.UnEqualPointers(t, defaultErrH, jwts.defaultScopeCache.ErrorHandler)
 	cstesting.EqualPointers(t, wsErrH, jwts.defaultScopeCache.ErrorHandler)
 }
 

@@ -74,7 +74,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	assert.Exactly(t, "5m1s", scNew.Expire.String())
 	assert.Exactly(t, "HS512", scNew.SigningMethod.Alg())
 	assert.False(t, scNew.Key.IsEmpty())
-	assert.NotNil(t, scNew.ErrorHandler)
+	assert.Nil(t, scNew.ErrorHandler)
 
 	// test if cache returns the same scopedConfig
 	scCached, err := jwts.ConfigByScopedGetter(sg)
@@ -200,6 +200,6 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 	assert.Exactly(t, ctxjwt.DefaultExpire, sc.Expire)
 	assert.Exactly(t, csjwt.HS256, sc.SigningMethod.Alg())
 	assert.False(t, sc.EnableJTI)
-	assert.NotNil(t, sc.ErrorHandler)
+	assert.Nil(t, sc.ErrorHandler)
 	assert.NotNil(t, sc.KeyFunc)
 }

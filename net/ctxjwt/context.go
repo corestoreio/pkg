@@ -15,9 +15,10 @@
 package ctxjwt
 
 import (
+	"context"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
-	"golang.org/x/net/context"
 )
 
 type keyCtxToken struct{}

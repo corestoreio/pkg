@@ -17,10 +17,8 @@ package ctxjwt
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
-	"golang.org/x/net/context"
-
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -37,12 +35,16 @@ func SetHeaderAuthorization(req *http.Request, token []byte) {
 // Extracts the store.Provider and csjwt.Token from context.Context. If the requested
 // store is different than the initialized requested store than the new requested
 // store will be saved in the context.
-func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
+func (s *Service) WithInitTokenAndStore() mw.Middleware {
 
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			errHandler := s.defaultScopeCache.ErrorHandler
+			errHandler := hf
+			if s.defaultScopeCache.ErrorHandler != nil {
+				errHandler = s.defaultScopeCache.ErrorHandler
+			}
+			ctx := r.Context()
 
 			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
@@ -50,7 +52,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 					s.Log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "ctx", ctx, "req", r)
 				}
 				err = errors.Wrap(err, "[ctxjwt] FromContextProvider")
-				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				return
 			}
 
 			// the scpCfg depends on how you have initialized the storeService during app boot.
@@ -62,7 +65,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 					s.Log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
 				}
 				err = errors.Wrap(err, "[ctxjwt] ConfigByScopedGetter")
-				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				return
 			}
 
 			if scpCfg.ErrorHandler != nil {
@@ -75,7 +79,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 					s.Log.Debug("Service.WithInitTokenAndStore.ParseFromRequest", "err", err, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}
 				err = errors.Wrap(err, "[ctxjwt] ParseFromRequest")
-				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				return
 			}
 
 			if false == token.Valid {
@@ -83,7 +88,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.token.valid", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}
-				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				return
 			}
 
 			if s.Blacklist.Has(token.Raw) {
@@ -91,7 +97,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.token.blacklist", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}
-				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				return
 			}
 
 			// add token to the context
@@ -104,7 +111,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.notfound", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}
 				// move on when the store code cannot be found in the token.
-				return hf.ServeHTTPContext(ctx, w, r)
+				hf.ServeHTTP(w, r.WithContext(ctx))
+				return
 			}
 
 			if err != nil {
@@ -112,7 +120,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.error", "err", err, "token", token, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}
 				// invalid syntax of store code
-				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				return
 			}
 
 			newRequestedStore, err := storeService.RequestedStore(scopeOption)
@@ -121,7 +130,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.GetRequestedStore", "err", err, "token", token, "newRequestedStore", newRequestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}
-				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				return
 			}
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
@@ -133,7 +143,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 				ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)
 			}
 			// yay! we made it! the token and the requested store is valid!
-			return hf.ServeHTTPContext(ctx, w, r)
-		}
+			hf.ServeHTTP(w, r.WithContext(ctx))
+			return
+		})
 	}
 }
