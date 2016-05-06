@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt
+package jwtauth
 
 import (
 	"net/http"
@@ -51,7 +51,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "ctx", ctx, "req", r)
 				}
-				err = errors.Wrap(err, "[ctxjwt] FromContextProvider")
+				err = errors.Wrap(err, "[jwtauth] FromContextProvider")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -64,7 +64,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
 				}
-				err = errors.Wrap(err, "[ctxjwt] ConfigByScopedGetter")
+				err = errors.Wrap(err, "[jwtauth] ConfigByScopedGetter")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -78,7 +78,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.ParseFromRequest", "err", err, "requestedStore", requestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}
-				err = errors.Wrap(err, "[ctxjwt] ParseFromRequest")
+				err = errors.Wrap(err, "[jwtauth] ParseFromRequest")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -126,7 +126,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 
 			newRequestedStore, err := storeService.RequestedStore(scopeOption)
 			if err != nil {
-				err = errors.Wrap(err, "[ctxjwt] storeService.RequestedStore")
+				err = errors.Wrap(err, "[jwtauth] storeService.RequestedStore")
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.GetRequestedStore", "err", err, "token", token, "newRequestedStore", newRequestedStore, "scpCfg", scpCfg, "ctx", ctx, "req", r)
 				}

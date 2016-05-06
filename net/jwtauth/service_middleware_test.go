@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt_test
+package jwtauth_test
 
 import (
 	"bytes"
@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/net/jwtauth"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -37,8 +37,8 @@ import (
 
 func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {
 
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tk, err := ctxjwt.FromContext(r.Context())
+	authHandler, _ := testAuth(t, jwtauth.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tk, err := jwtauth.FromContext(r.Context())
 		assert.False(t, tk.Valid)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	})))
@@ -59,8 +59,8 @@ func TestMiddlewareWithInitTokenNoToken(t *testing.T) {
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tk, err := ctxjwt.FromContext(r.Context())
+	authHandler, _ := testAuth(t, jwtauth.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tk, err := jwtauth.FromContext(r.Context())
 		assert.False(t, tk.Valid)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -82,8 +82,8 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 		store.WithStorageConfig(cfgmock.NewService()), // empty config
 	)
 
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tok, err := ctxjwt.FromContext(r.Context())
+	authHandler, _ := testAuth(t, jwtauth.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tok, err := jwtauth.FromContext(r.Context())
 		assert.False(t, tok.Valid)
 		w.WriteHeader(http.StatusTeapot)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
@@ -109,11 +109,11 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 		store.WithStorageConfig(cfgmock.NewService()),
 	)
 
-	jwts := ctxjwt.MustNewService()
+	jwts := jwtauth.MustNewService()
 
-	if err := jwts.Options(ctxjwt.WithErrorHandler(scope.Default, 0,
+	if err := jwts.Options(jwtauth.WithErrorHandler(scope.Default, 0,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := ctxjwt.FromContext(r.Context())
+			token, err := jwtauth.FromContext(r.Context())
 			t.Logf("Token: %#v\n", token)
 			t.Fatal(errors.PrintLoc(err))
 		}),
@@ -130,13 +130,13 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://corestore.io/customer/account", nil)
 	assert.NoError(t, err)
-	ctxjwt.SetHeaderAuthorization(req, theToken.Raw)
+	jwtauth.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 		fmt.Fprintf(w, "I'm more of a coffee pot")
 
-		ctxToken, err := ctxjwt.FromContext(r.Context())
+		ctxToken, err := jwtauth.FromContext(r.Context())
 		assert.NoError(t, err)
 		assert.NotNil(t, ctxToken)
 		xFoo, err := ctxToken.Claims.Get("xfoo")
@@ -168,7 +168,7 @@ func (b *testRealBL) Set(t []byte, exp time.Duration) error {
 }
 func (b *testRealBL) Has(t []byte) bool { return bytes.Equal(b.theToken, t) }
 
-var _ ctxjwt.Blacklister = (*testRealBL)(nil)
+var _ jwtauth.Blacklister = (*testRealBL)(nil)
 
 func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 
@@ -179,8 +179,8 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 	)
 
 	bl := &testRealBL{}
-	jm, err := ctxjwt.NewService(
-		ctxjwt.WithBlacklist(bl),
+	jm, err := jwtauth.NewService(
+		jwtauth.WithBlacklist(bl),
 	)
 	assert.NoError(t, err)
 
@@ -191,10 +191,10 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
-	ctxjwt.SetHeaderAuthorization(req, theToken.Raw)
+	jwtauth.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := ctxjwt.FromContext(r.Context())
+		_, err := jwtauth.FromContext(r.Context())
 		assert.True(t, errors.IsNotValid(err))
 		w.WriteHeader(http.StatusUnauthorized)
 	})
@@ -210,8 +210,8 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 
 // todo add test for form with input field: access_token
 
-func testAuth(t *testing.T, opts ...ctxjwt.Option) (http.Handler, []byte) {
-	jm, err := ctxjwt.NewService(opts...)
+func testAuth(t *testing.T, opts ...jwtauth.Option) (http.Handler, []byte) {
+	jm, err := jwtauth.NewService(opts...)
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
@@ -250,7 +250,7 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		if err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}
-		ctxjwt.SetHeaderAuthorization(req, token)
+		jwtauth.SetHeaderAuthorization(req, token)
 		return req
 	}
 
@@ -280,19 +280,19 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "", "au", errors.IsNotValid},
 	}
 	for i, test := range tests {
-		jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()))
+		jwts := jwtauth.MustNewService(jwtauth.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()))
 
 		token, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
-			ctxjwt.StoreParamName: test.tokenStoreCode,
+			jwtauth.StoreParamName: test.tokenStoreCode,
 		})
 		if err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}
 
 		if test.wantErrBhf != nil {
-			if err := jwts.Options(ctxjwt.WithErrorHandler(scope.Default, 0,
+			if err := jwts.Options(jwtauth.WithErrorHandler(scope.Default, 0,
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					_, err := ctxjwt.FromContext(r.Context())
+					_, err := jwtauth.FromContext(r.Context())
 					assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 				}),
 			)); err != nil {

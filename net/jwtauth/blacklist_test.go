@@ -12,5 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ctxjwt handles JSON web tokens within a context.Context.
-package ctxjwt
+package jwtauth_test
+
+import (
+	"github.com/corestoreio/csfw/net/jwtauth"
+	"github.com/corestoreio/csfw/util/blacklist"
+)
+
+var _ jwtauth.Blacklister = (*blacklist.FreeCache)(nil)
+var _ jwtauth.Blacklister = (*blacklist.Map)(nil)

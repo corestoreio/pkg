@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt_test
+package jwtauth_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/net/jwtauth"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
@@ -40,12 +40,12 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
+	_ = jwtauth.MustNewService(jwtauth.WithKey(scope.Default, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
 }
 
 func TestServiceNewDefaultBlacklist(t *testing.T) {
 
-	jwts := ctxjwt.MustNewService()
+	jwts := jwtauth.MustNewService()
 
 	key := []byte("test")
 	assert.Nil(t, jwts.Blacklist.Set(key, time.Hour))
@@ -55,7 +55,7 @@ func TestServiceNewDefaultBlacklist(t *testing.T) {
 
 func TestServiceNewDefault(t *testing.T) {
 
-	jwts := ctxjwt.MustNewService()
+	jwts := jwtauth.MustNewService()
 
 	testClaims := &jwtclaim.Standard{
 		Subject: "gopher",
@@ -82,7 +82,7 @@ func TestServiceNewDefault(t *testing.T) {
 
 func TestServiceNewDefaultRSAError(t *testing.T) {
 
-	jmRSA, err := ctxjwt.NewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
+	jmRSA, err := jwtauth.NewService(jwtauth.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
@@ -102,7 +102,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	}
 
 	keyRand := csjwt.WithPasswordRandom()
-	jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, keyRand))
+	jwts := jwtauth.MustNewService(jwtauth.WithKey(scope.Default, 0, keyRand))
 
 	tk := csjwt.NewToken(jwtclaim.Map{
 		"exp": time.Now().Add(time.Hour).Unix(),
@@ -130,13 +130,13 @@ func (b *testBL) Set(theToken []byte, exp time.Duration) error {
 }
 func (b *testBL) Has(_ []byte) bool { return false }
 
-var _ ctxjwt.Blacklister = (*testBL)(nil)
+var _ jwtauth.Blacklister = (*testBL)(nil)
 
 func TestServiceLogout(t *testing.T) {
 
 	tbl := &testBL{T: t}
-	jwts := ctxjwt.MustNewService(
-		ctxjwt.WithBlacklist(tbl),
+	jwts := jwtauth.MustNewService(
+		jwtauth.WithBlacklist(tbl),
 	)
 
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.NewStore())
@@ -154,15 +154,15 @@ func TestServiceLogout(t *testing.T) {
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
 
-	jwts, err := ctxjwt.NewService(ctxjwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
+	jwts, err := jwtauth.NewService(jwtauth.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
 	assert.Nil(t, jwts)
 	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 }
 
 func TestService_NewToken_Merge_Maps(t *testing.T) {
 
-	jwts, err := ctxjwt.NewService(
-		ctxjwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
+	jwts, err := jwtauth.NewService(
+		jwtauth.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -185,9 +185,9 @@ func TestService_NewToken_Merge_Maps(t *testing.T) {
 
 func TestService_NewToken_Merge_Structs(t *testing.T) {
 
-	jwts, err := ctxjwt.NewService(
-		ctxjwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
-		ctxjwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
+	jwts, err := jwtauth.NewService(
+		jwtauth.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
+		jwtauth.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
 			s := jwtclaim.NewStore()
 			s.Store = "de"
 			return csjwt.NewToken(s)
@@ -227,9 +227,9 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 
 func TestService_NewToken_Merge_Fail(t *testing.T) {
 
-	jwts, err := ctxjwt.NewService(
-		ctxjwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
-		ctxjwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
+	jwts, err := jwtauth.NewService(
+		jwtauth.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
+		jwtauth.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
 			return csjwt.NewToken(&jwtclaim.Standard{})
 		}),
 	)

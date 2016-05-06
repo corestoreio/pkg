@@ -12,12 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt_test
-
-import (
-	"github.com/corestoreio/csfw/net/ctxjwt"
-	"github.com/corestoreio/csfw/util/blacklist"
-)
-
-var _ ctxjwt.Blacklister = (*blacklist.FreeCache)(nil)
-var _ ctxjwt.Blacklister = (*blacklist.Map)(nil)
+// Package jwtauth provides JSON web token authentication and scope based handling.
+package jwtauth

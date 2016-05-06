@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt
+package jwtauth
 
 import (
 	"net/http"
@@ -105,7 +105,7 @@ func (sc *scopedConfig) initKeyFunc() {
 			return csjwt.Key{}, errors.NewNotImplementedf(errUnknownSigningMethod, have, want)
 		}
 		if sc.Key.Error != nil {
-			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[ctxjwt] Key Error")
+			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[jwtauth] Key Error")
 		}
 		return sc.Key, nil
 	}
@@ -144,13 +144,13 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache, s.optionError = defaultScopedConfig()
-			s.optionError = errors.Wrap(s.optionError, "[ctxjwt] Default Scope with Default Config")
+			s.optionError = errors.Wrap(s.optionError, "[jwtauth] Default Scope with Default Config")
 			return
 		}
 
 		s.mu.Lock()
 		s.scopeCache[h], s.optionError = defaultScopedConfig()
-		s.optionError = errors.Wrapf(s.optionError, "[ctxjwt] Scope %s with Default Config", h)
+		s.optionError = errors.Wrapf(s.optionError, "[jwtauth] Scope %s with Default Config", h)
 		s.mu.Unlock()
 	}
 }
@@ -174,14 +174,14 @@ func WithLogger(l log.Logger) Option {
 // WithBackend applies the backend configuration to the service.
 // Once this has been set all other option functions are not really
 // needed.
-//	cfgStruct, err := ctxjwtbe.NewConfigStructure()
+//	cfgStruct, err := jwtauthbe.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := ctxjwtbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(myEncryptor{}))
+//	pb := jwtauthbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(myEncryptor{}))
 //
-//	jwts := ctxjwt.MustNewService(
-//		ctxjwt.WithBackend(ctxjwtbe.BackendOptions(pb)),
+//	jwts := jwtauth.MustNewService(
+//		jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)),
 //	)
 func WithBackend(f ScopedOptionFunc) Option {
 	return func(s *Service) {
@@ -337,7 +337,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 	h := scope.NewHash(scp, id)
 	if key.Error != nil {
 		return func(s *Service) {
-			s.optionError = errors.Wrap(key.Error, "[ctxjwt] Key Error")
+			s.optionError = errors.Wrap(key.Error, "[jwtauth] Key Error")
 		}
 	}
 	if key.IsEmpty() {
@@ -365,7 +365,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		case csjwt.HS:
 			scNew.SigningMethod, s.optionError = csjwt.NewHMACFast256(key)
 			if s.optionError != nil {
-				s.optionError = errors.Wrap(s.optionError, "[ctxjwt] HMAC Fast 256 error")
+				s.optionError = errors.Wrap(s.optionError, "[jwtauth] HMAC Fast 256 error")
 				return
 			}
 		case csjwt.RS:

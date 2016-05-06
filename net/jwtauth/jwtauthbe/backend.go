@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwtbe
+package jwtauthbe
 
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
@@ -28,40 +28,40 @@ type PkgBackend struct {
 
 	// NetCtxjwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/signing_method
+	// Path: net/jwtauth/signing_method
 	NetCtxjwtSigningMethod ConfigSigningMethod
 
 	// NetCtxjwtExpiration defines the duration in which a token expires.
-	// Path: net/ctxjwt/expiration
+	// Path: net/jwtauth/expiration
 	NetCtxjwtExpiration cfgmodel.Duration
 
 	// NetCtxjwtEnableJTI if enabled a new token ID will be generated.
-	// Path: net/ctxjwt/enable_jti
+	// Path: net/jwtauth/enable_jti
 	NetCtxjwtEnableJTI cfgmodel.Bool
 
 	// NetCtxjwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/hmac_password
+	// Path: net/jwtauth/hmac_password
 	NetCtxjwtHmacPassword cfgmodel.Obscure
 
 	// NetCtxjwtRSAKey handles the RSA private key. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/rsa_key
+	// Path: net/jwtauth/rsa_key
 	NetCtxjwtRSAKey cfgmodel.Obscure
 
 	// NetCtxjwtRSAKeyPassword handles the password for the RSA private key.
 	// Will panic if you do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/rsa_key_password
+	// Path: net/jwtauth/rsa_key_password
 	NetCtxjwtRSAKeyPassword cfgmodel.Obscure
 
 	// NetCtxjwtECDSAKey handles the ECDSA private key. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/ecdsa_key
+	// Path: net/jwtauth/ecdsa_key
 	NetCtxjwtECDSAKey cfgmodel.Obscure
 
 	// NetCtxjwtECDSAKeyPassword handles the password for the ECDSA private key.
 	// Will panic if you do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/ecdsa_key_password
+	// Path: net/jwtauth/ecdsa_key_password
 	NetCtxjwtECDSAKeyPassword cfgmodel.Obscure
 }
 
@@ -83,14 +83,14 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Opti
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/ctxjwt/signing_method`, opts...)
-	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/ctxjwt/expiration`, opts...)
-	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/ctxjwt/enable_jti`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
-	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/ctxjwt/hmac_password`, opts...)
-	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/ctxjwt/rsa_key`, opts...)
-	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/rsa_key_password`, opts...)
-	pp.NetCtxjwtECDSAKey = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key`, opts...)
-	pp.NetCtxjwtECDSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key_password`, opts...)
+	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/jwtauth/signing_method`, opts...)
+	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/jwtauth/expiration`, opts...)
+	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/jwtauth/enable_jti`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/jwtauth/hmac_password`, opts...)
+	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/jwtauth/rsa_key`, opts...)
+	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/jwtauth/rsa_key_password`, opts...)
+	pp.NetCtxjwtECDSAKey = cfgmodel.NewObscure(`net/jwtauth/ecdsa_key`, opts...)
+	pp.NetCtxjwtECDSAKeyPassword = cfgmodel.NewObscure(`net/jwtauth/ecdsa_key_password`, opts...)
 
 	return pp
 }

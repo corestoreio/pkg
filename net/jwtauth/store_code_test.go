@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt_test
+package jwtauth_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/net/jwtauth"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -36,14 +36,14 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	)
 
 	token := csjwt.NewToken(jwtclaim.Map{
-		ctxjwt.StoreParamName: s.StoreCode(),
+		jwtauth.StoreParamName: s.StoreCode(),
 	})
 
-	so, err := ctxjwt.ScopeOptionFromClaim(token.Claims)
+	so, err := jwtauth.ScopeOptionFromClaim(token.Claims)
 	assert.NoError(t, err)
 	assert.EqualValues(t, "de", so.StoreCode())
 
-	so, err = ctxjwt.ScopeOptionFromClaim(nil)
+	so, err = jwtauth.ScopeOptionFromClaim(nil)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
@@ -54,10 +54,10 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 func TestStoreCodeFromClaimInvalid(t *testing.T) {
 
 	token2 := csjwt.NewToken(jwtclaim.Map{
-		ctxjwt.StoreParamName: "Invalid Cod€",
+		jwtauth.StoreParamName: "Invalid Cod€",
 	})
 
-	so, err := ctxjwt.ScopeOptionFromClaim(token2.Claims)
+	so, err := jwtauth.ScopeOptionFromClaim(token2.Claims)
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
@@ -81,21 +81,21 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 			0,
 		},
 		{
-			jwtclaim.Map{ctxjwt.StoreParamName: "dede"},
+			jwtclaim.Map{jwtauth.StoreParamName: "dede"},
 			nil,
 			scope.Store,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
-			jwtclaim.Map{ctxjwt.StoreParamName: "de'de"},
+			jwtclaim.Map{jwtauth.StoreParamName: "de'de"},
 			errors.IsNotValid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
-			jwtclaim.Map{ctxjwt.StoreParamName: 1},
+			jwtclaim.Map{jwtauth.StoreParamName: 1},
 			errors.IsNotFound,
 			scope.Default,
 			"",
@@ -103,7 +103,7 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		so, err := ctxjwt.ScopeOptionFromClaim(test.token)
+		so, err := jwtauth.ScopeOptionFromClaim(test.token)
 		testStoreCodeFrom(t, i, err, test.wantErrBhf, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }

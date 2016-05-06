@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwtbe
+package jwtauthbe
 
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/net/jwtauth"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// DefaultBackend creates new ctxjwt.Option slice with the default configuration
+// DefaultBackend creates new jwtauth.Option slice with the default configuration
 // structure and a noop encryptor/decryptor IF no option arguments have been
 // provided. It panics on error, so us it only during the app init phase.
-func DefaultBackend(opts ...cfgmodel.Option) ctxjwt.ScopedOptionFunc {
+func DefaultBackend(opts ...cfgmodel.Option) jwtauth.ScopedOptionFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -40,32 +40,32 @@ func DefaultBackend(opts ...cfgmodel.Option) ctxjwt.ScopedOptionFunc {
 // BackendOptions creates a closure around the PkgBackend. The closure will
 // be used during a scoped request to figure out the configuration depending on
 // the scope. An option array will be returned by the closure.
-func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
+func BackendOptions(be *PkgBackend) jwtauth.ScopedOptionFunc {
 
-	return func(sg config.ScopedGetter) (opts []ctxjwt.Option) {
+	return func(sg config.ScopedGetter) (opts []jwtauth.Option) {
 
 		scp, id := sg.Scope()
 
 		exp, err := be.NetCtxjwtExpiration.Get(sg)
 		if err != nil {
-			return append(opts, func(s *ctxjwt.Service) {
-				s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtExpiration.Get"))
+			return append(opts, func(s *jwtauth.Service) {
+				s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtExpiration.Get"))
 			})
 		}
-		opts = append(opts, ctxjwt.WithExpiration(scp, id, exp))
+		opts = append(opts, jwtauth.WithExpiration(scp, id, exp))
 
 		isJTI, err := be.NetCtxjwtEnableJTI.Get(sg)
 		if err != nil {
-			return append(opts, func(s *ctxjwt.Service) {
-				s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtEnableJTI.Get"))
+			return append(opts, func(s *jwtauth.Service) {
+				s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtEnableJTI.Get"))
 			})
 		}
-		opts = append(opts, ctxjwt.WithTokenID(scp, id, isJTI))
+		opts = append(opts, jwtauth.WithTokenID(scp, id, isJTI))
 
 		signingMethod, err := be.NetCtxjwtSigningMethod.Get(sg)
 		if err != nil {
-			return append(opts, func(s *ctxjwt.Service) {
-				s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtSigningMethod.Get"))
+			return append(opts, func(s *jwtauth.Service) {
+				s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtSigningMethod.Get"))
 			})
 		}
 
@@ -76,14 +76,14 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 
 			rsaKey, err := be.NetCtxjwtRSAKey.Get(sg)
 			if err != nil {
-				return append(opts, func(s *ctxjwt.Service) {
-					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtRSAKey.Get"))
+				return append(opts, func(s *jwtauth.Service) {
+					s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtRSAKey.Get"))
 				})
 			}
 			rsaPW, err := be.NetCtxjwtRSAKeyPassword.Get(sg)
 			if err != nil {
-				return append(opts, func(s *ctxjwt.Service) {
-					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtRSAKeyPassword.Get"))
+				return append(opts, func(s *jwtauth.Service) {
+					s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtRSAKeyPassword.Get"))
 				})
 			}
 			key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
@@ -92,14 +92,14 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 
 			ecdsaKey, err := be.NetCtxjwtECDSAKey.Get(sg)
 			if err != nil {
-				return append(opts, func(s *ctxjwt.Service) {
-					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtECDSAKey.Get"))
+				return append(opts, func(s *jwtauth.Service) {
+					s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtECDSAKey.Get"))
 				})
 			}
 			ecdsaPW, err := be.NetCtxjwtECDSAKeyPassword.Get(sg)
 			if err != nil {
-				return append(opts, func(s *ctxjwt.Service) {
-					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtECDSAKeyPassword.Get"))
+				return append(opts, func(s *jwtauth.Service) {
+					s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtECDSAKeyPassword.Get"))
 				})
 			}
 			key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
@@ -108,19 +108,19 @@ func BackendOptions(be *PkgBackend) ctxjwt.ScopedOptionFunc {
 
 			password, err := be.NetCtxjwtHmacPassword.Get(sg)
 			if err != nil {
-				return append(opts, func(s *ctxjwt.Service) {
-					s.AddError(errors.Wrap(err, "[ctxjwtbe] NetCtxjwtHmacPassword.Get"))
+				return append(opts, func(s *jwtauth.Service) {
+					s.AddError(errors.Wrap(err, "[jwtauthbe] NetCtxjwtHmacPassword.Get"))
 				})
 			}
 			key = csjwt.WithPassword(password)
 
 		default:
-			opts = append(opts, func(s *ctxjwt.Service) {
-				s.AddError(errors.Errorf("[ctxjwt] Unknown signing method: %q", signingMethod.Alg()))
+			opts = append(opts, func(s *jwtauth.Service) {
+				s.AddError(errors.Errorf("[jwtauth] Unknown signing method: %q", signingMethod.Alg()))
 			})
 		}
 
 		// WithSigningMethod must be added at the end of the slice to overwrite default signing methods
-		return append(opts, ctxjwt.WithKey(scp, id, key), ctxjwt.WithSigningMethod(scp, id, signingMethod))
+		return append(opts, jwtauth.WithKey(scp, id, key), jwtauth.WithSigningMethod(scp, id, signingMethod))
 	}
 }

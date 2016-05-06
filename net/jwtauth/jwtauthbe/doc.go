@@ -12,17 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt
-
-import (
-	"time"
-
-	"github.com/corestoreio/csfw/util/csjwt"
-)
-
-// DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
-// ConfigSigningMethod model returns an empty string.
-const DefaultSigningMethod = csjwt.HS512
-
-// DefaultExpire duration when a token expires
-const DefaultExpire = time.Hour
+// Package jwtauthbe defines the backend configuration options and element slices.
+package jwtauthbe

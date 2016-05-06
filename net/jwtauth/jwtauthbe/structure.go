@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwtbe
+package jwtauthbe
 
 import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/net/jwtauth"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -32,13 +32,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			ID: cfgpath.NewRoute("net"),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:        cfgpath.NewRoute("ctxjwt"),
+					ID:        cfgpath.NewRoute("jwtauth"),
 					Label:     text.Chars(`JSON Web Token (JWT)`),
 					SortOrder: 40,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: net/ctxjwt/expiration
+							// Path: net/jwtauth/expiration
 							ID:        cfgpath.NewRoute("expiration"),
 							Label:     text.Chars(`Token Expiration`),
 							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
@@ -46,10 +46,10 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   ctxjwt.DefaultExpire.String(),
+							Default:   jwtauth.DefaultExpire.String(),
 						},
 						element.Field{
-							// Path: net/ctxjwt/enable_jti
+							// Path: net/jwtauth/enable_jti
 							ID:        cfgpath.NewRoute("enable_jti"),
 							Label:     text.Chars(`Enable Token ID`),
 							Comment:   text.Chars(`Generates a unique token ID`),
@@ -60,17 +60,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `false`,
 						},
 						element.Field{
-							// Path: net/ctxjwt/signing_method
+							// Path: net/jwtauth/signing_method
 							ID:        cfgpath.NewRoute("signing_method"),
 							Label:     text.Chars(`Token Signing Algorithm`),
 							Type:      element.TypeSelect,
 							SortOrder: 35,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   ctxjwt.DefaultSigningMethod,
+							Default:   jwtauth.DefaultSigningMethod,
 						},
 						element.Field{
-							// Path: net/ctxjwt/hmac_password
+							// Path: net/jwtauth/hmac_password
 							ID:        cfgpath.NewRoute("hmac_password"),
 							Label:     text.Chars(`HMAC Token Password`),
 							Type:      element.TypeObscure,
@@ -79,7 +79,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/ctxjwt/rsa_key
+							// Path: net/jwtauth/rsa_key
 							ID:        cfgpath.NewRoute("rsa_key"),
 							Label:     text.Chars(`Private RSA Key`),
 							Type:      element.TypeObscure,
@@ -88,7 +88,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/ctxjwt/rsa_key_password
+							// Path: net/jwtauth/rsa_key_password
 							ID:        cfgpath.NewRoute("rsa_key_password"),
 							Label:     text.Chars(`Private RSA Key Password`),
 							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),
@@ -98,7 +98,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/ctxjwt/ecdsa_key
+							// Path: net/jwtauth/ecdsa_key
 							ID:        cfgpath.NewRoute("ecdsa_key"),
 							Label:     text.Chars(`Private ECDSA Key`),
 							Comment:   text.Chars(`Elliptic Curve Digital Signature Algorithm, as defined in FIPS 186-3.`),
@@ -108,7 +108,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/ctxjwt/ecdsa_key_password
+							// Path: net/jwtauth/ecdsa_key_password
 							ID:        cfgpath.NewRoute("ecdsa_key_password"),
 							Label:     text.Chars(`Private ECDSA Key Password`),
 							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),

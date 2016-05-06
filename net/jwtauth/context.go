@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt
+package jwtauth
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func FromContext(ctx context.Context) (csjwt.Token, error) {
 	}
 
 	if wrp.err != nil {
-		return wrp.t, errors.Wrap(wrp.err, "[ctxjwt] FromContext")
+		return wrp.t, errors.Wrap(wrp.err, "[jwtauth] FromContext")
 	}
 
 	if wrp.t.Valid {

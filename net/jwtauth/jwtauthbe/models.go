@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwtbe
+package jwtauthbe
 
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/net/jwtauth"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -54,12 +54,12 @@ func NewConfigSigningMethod(path string, opts ...cfgmodel.Option) ConfigSigningM
 func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err error) {
 	raw, err := cc.Str.Get(sg)
 	if err != nil {
-		err = errors.Wrap(err, "[ctxjwtbe] Str.Get")
+		err = errors.Wrap(err, "[jwtauthbe] Str.Get")
 		return
 	}
 
 	if raw == "" {
-		raw = ctxjwt.DefaultSigningMethod
+		raw = jwtauth.DefaultSigningMethod
 	}
 
 	switch raw {
@@ -84,7 +84,7 @@ func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err 
 	case csjwt.HS512:
 		sm = csjwt.NewSigningMethodHS512()
 	default:
-		err = errors.NewNotImplementedf("[ctxjwt] ConfigSigningMethod: Unknown algorithm %s", raw)
+		err = errors.NewNotImplementedf("[jwtauth] ConfigSigningMethod: Unknown algorithm %s", raw)
 	}
 	return
 }

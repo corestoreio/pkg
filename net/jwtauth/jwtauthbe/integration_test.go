@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwtbe_test
+package jwtauthbe_test
 
 import (
 	"fmt"
@@ -22,8 +22,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/ctxjwt"
-	"github.com/corestoreio/csfw/net/ctxjwt/ctxjwtbe"
+	"github.com/corestoreio/csfw/net/jwtauth"
+	"github.com/corestoreio/csfw/net/jwtauth/jwtauthbe"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
@@ -40,14 +40,14 @@ func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path
 
 func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
-	cfgStruct, err := ctxjwtbe.NewConfigStructure()
+	cfgStruct, err := jwtauthbe.NewConfigStructure()
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
-	pb := ctxjwtbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
+	pb := jwtauthbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
-	jwts := ctxjwt.MustNewService(
-		ctxjwt.WithBackend(ctxjwtbe.BackendOptions(pb)),
+	jwts := jwtauth.MustNewService(
+		jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -87,14 +87,14 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
 func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
-	cfgStruct, err := ctxjwtbe.NewConfigStructure()
+	cfgStruct, err := jwtauthbe.NewConfigStructure()
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
-	pb := ctxjwtbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
+	pb := jwtauthbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
-	jwts := ctxjwt.MustNewService(
-		ctxjwt.WithBackend(ctxjwtbe.BackendOptions(pb)),
+	jwts := jwtauth.MustNewService(
+		jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -128,9 +128,9 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	assert.Exactly(t, fmt.Sprintf("%#v", scNew), fmt.Sprintf("%#v", scCached))
 }
 
-func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *ctxjwt.Service, pb *ctxjwtbe.PkgBackend) {
-	pb = ctxjwtbe.NewBackend(cfgStruct, opts...)
-	jwts = ctxjwt.MustNewService(ctxjwt.WithBackend(ctxjwtbe.BackendOptions(pb)))
+func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *jwtauth.Service, pb *jwtauthbe.PkgBackend) {
+	pb = jwtauthbe.NewBackend(cfgStruct, opts...)
+	jwts = jwtauth.MustNewService(jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)))
 	return
 }
 
@@ -197,7 +197,7 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 
 	assert.Exactly(t, scope.DefaultHash, sc.ScopeHash)
 	assert.False(t, sc.Key.IsEmpty())
-	assert.Exactly(t, ctxjwt.DefaultExpire, sc.Expire)
+	assert.Exactly(t, jwtauth.DefaultExpire, sc.Expire)
 	assert.Exactly(t, csjwt.HS256, sc.SigningMethod.Alg())
 	assert.False(t, sc.EnableJTI)
 	assert.Nil(t, sc.ErrorHandler)

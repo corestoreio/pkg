@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt
+package jwtauthbe_test
 
-import "github.com/pborman/uuid"
+import "github.com/corestoreio/csfw/net/jwtauth/jwtauthbe"
 
-// jti type to generate a JTI for a token, a unique ID
-type jti struct{}
+// backend overall backend models for all tests
+var backend *jwtauthbe.PkgBackend
 
-func (j jti) Get() string {
-	return uuid.New()
+// this would belong into the test suit setup
+func init() {
+
+	cfgStruct, err := jwtauthbe.NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
+
+	backend = jwtauthbe.NewBackend(cfgStruct)
+
 }
