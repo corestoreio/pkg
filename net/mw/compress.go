@@ -89,8 +89,8 @@ func WithCompressor() Middleware {
 	// the developer can set the deflate compression level.
 	// todo(cs) handle compression depending on the website ...
 
-	return func(hf http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			enc := r.Header.Get(httputil.AcceptEncoding)
 
 			if strings.Contains(enc, httputil.CompressGZIP) {
@@ -104,7 +104,7 @@ func WithCompressor() Middleware {
 					gzWriterPool.Put(zw)
 				}()
 				cw := compressWriter{Writer: zw, ResponseWriter: w}
-				hf(cw, r)
+				h.ServeHTTP(cw, r)
 				return
 			}
 
@@ -119,10 +119,10 @@ func WithCompressor() Middleware {
 					defWriterPool.Put(zw)
 				}()
 				cw := compressWriter{Writer: zw, ResponseWriter: w}
-				hf(cw, r)
+				h.ServeHTTP(cw, r)
 				return
 			}
-			hf(w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }

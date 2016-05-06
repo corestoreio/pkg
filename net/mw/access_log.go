@@ -32,8 +32,8 @@ import (
 // Provided none of those falls back to black hole logging and stats.
 func WithAccessLog(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
-	return func(h http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			// Time request
 			reqStart := time.Now()
@@ -71,7 +71,7 @@ func WithAccessLog(opts ...Option) Middleware {
 					"referer", r.Header.Get("Referer"),
 				)
 			}
-		}
+		})
 	}
 }
 

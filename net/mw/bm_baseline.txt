@@ -1,0 +1,4 @@
+BenchmarkWithCompressorGZIP_1024B-4   	   10000	    124327 ns/op	   11292 B/op	       4 allocs/op
+BenchmarkWithRequestID-4              	 5000000	       348 ns/op	      56 B/op	       3 allocs/op
+PASS
+ok  	github.com/corestoreio/csfw/net/mw	3.348s

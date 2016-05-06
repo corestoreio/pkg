@@ -23,9 +23,9 @@ import (
 	"github.com/corestoreio/csfw/net/httputil"
 )
 
-// Middleware is a wrapper for the function http.HandlerFunc to create
+// Middleware is a wrapper for the interface http.Handler to create
 // middleware functions.
-type Middleware func(http.HandlerFunc) http.HandlerFunc
+type Middleware func(http.Handler) http.Handler
 
 // MiddlewareSlice a slice full of middleware functions and with function
 // receivers attached
@@ -33,7 +33,7 @@ type MiddlewareSlice []Middleware
 
 // Chain will iterate over all middleware functions, calling them one by one
 // in a chained manner, returning the result of the final middleware.
-func Chain(h http.HandlerFunc, mws ...Middleware) http.HandlerFunc {
+func Chain(h http.Handler, mws ...Middleware) http.Handler {
 	// Chain middleware with handler in the end
 	for i := len(mws) - 1; i >= 0; i-- {
 		h = mws[i](h) // performance penalty because of bounds checking of the compiler
@@ -41,23 +41,46 @@ func Chain(h http.HandlerFunc, mws ...Middleware) http.HandlerFunc {
 	return h
 }
 
+// ChainFunc will iterate over all middleware functions, calling them one by one
+// in a chained manner, returning the result of the final middleware.
+func ChainFunc(hf http.HandlerFunc, mws ...Middleware) http.Handler {
+	return Chain(hf, mws...)
+}
+
 // Chain will iterate over all middleware functions, calling them one by one
 // in a chained manner, returning the result of the final middleware.
-func (mws MiddlewareSlice) Chain(h http.HandlerFunc) http.HandlerFunc {
+func (mws MiddlewareSlice) Chain(h http.Handler) http.Handler {
 	return Chain(h, mws...)
+}
+
+// Chain will iterate over all middleware functions, calling them one by one
+// in a chained manner, returning the result of the final middleware.
+func (mws MiddlewareSlice) ChainFunc(hf http.HandlerFunc) http.Handler {
+	return Chain(hf, mws...)
+}
+
+// Append extends a slice, adding the specified Middleware
+// as the last ones in the request flow.
+//
+// Append returns a new slice, leaving the original one untouched.
+func (c MiddlewareSlice) Append(mws ...Middleware) MiddlewareSlice {
+	newMWS := make(MiddlewareSlice, len(c)+len(mws))
+	copy(newMWS, c)
+	copy(newMWS[len(c):], mws)
+	return newMWS
 }
 
 // WithHeader is a middleware that sets multiple HTTP headers. Will panic if kv
 // is imbalanced. len(kv)%2 == 0.
 func WithHeader(kv ...string) Middleware {
 	lkv := len(kv)
-	return func(hf http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			for i := 0; i < lkv; i = i + 2 {
 				w.Header().Set(kv[i], kv[i+1])
 			}
-			hf(w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }
 
@@ -76,8 +99,8 @@ const (
 // Suported options are: SetMethodOverrideFormKey() and SetLogger().
 func WithXHTTPMethodOverride(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
-	return func(hf http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			mo := r.FormValue(ob.methodOverrideFormKey)
 			if mo == "" {
 				mo = r.Header.Get(MethodOverrideHeader)
@@ -92,8 +115,8 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 					ob.log.Debug("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
 				}
 			}
-			hf(w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }
 
@@ -102,8 +125,8 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 // Supported options are: SetLogger().
 func WithCloseNotify(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
-	return func(hf http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Cancel the context if the client closes the connection
 			if wcn, ok := w.(http.CloseNotifier); ok {
 				ctx, cancel := context.WithCancel(r.Context())
@@ -119,8 +142,8 @@ func WithCloseNotify(opts ...Option) Middleware {
 					}
 				}()
 			}
-			hf(w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }
 
@@ -129,11 +152,11 @@ func WithCloseNotify(opts ...Option) Middleware {
 // Child handlers have the responsibility to obey the context deadline and to return
 // an appropriate error (or not) response in case of timeout.
 func WithTimeout(timeout time.Duration) Middleware {
-	return func(hf http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, _ := context.WithTimeout(r.Context(), timeout)
 			r = r.WithContext(ctx)
-			hf(w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }

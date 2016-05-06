@@ -50,6 +50,7 @@ type RequestIDService struct {
 }
 
 // Prefix returns a unique prefix string for the current (micro) service.
+// This id gets reset once you restart the service.
 func (rp *RequestIDService) Init() {
 	// algorithm taken from https://github.com/zenazn/goji/blob/master/web/middleware/request_id.go#L40-L52
 	hostname, err := os.Hostname()
@@ -83,8 +84,8 @@ func WithRequestID(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	ob.genRID.Init()
 
-	return func(hf http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			id := r.Header.Get(RequestIDHeader)
 			if id == "" {
 				id = ob.genRID.NewID()
@@ -93,7 +94,7 @@ func WithRequestID(opts ...Option) Middleware {
 				ob.log.Debug("mw.WithRequestID", "id", id, "request", r)
 			}
 			w.Header().Set(RequestIDHeader, id)
-			hf(w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }

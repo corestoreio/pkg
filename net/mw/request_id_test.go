@@ -39,7 +39,7 @@ func testWithRequestID(t *testing.T, gen mw.RequestIDGenerator) {
 		opt = mw.SetRequestIDGenerator(gen)
 	}
 
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := w.Header().Get(mw.RequestIDHeader)
 		assert.Exactly(t, "-2", id[len(id)-2:])
 		assert.Contains(t, id, "/")
@@ -74,7 +74,7 @@ func TestWithRequestIDCustom(t *testing.T) {
 // BenchmarkWithRequestID-4	 3000000	       432 ns/op	      64 B/op	       3 allocs/op
 func BenchmarkWithRequestID(b *testing.B) {
 
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := w.Header().Get(mw.RequestIDHeader)
 		if id == "" {
 			b.Fatal("id is empty")

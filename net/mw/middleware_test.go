@@ -63,7 +63,7 @@ func (w *closeNotifyWriter) CloseNotify() <-chan bool {
 func TestWithCloseHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
 	var mws = mw.MiddlewareSlice{mw.WithCloseNotify()}
-	finalCH := mws.Chain(serveHTTPContext)
+	finalCH := mws.Chain(http.HandlerFunc(serveHTTPContext))
 
 	w := &closeNotifyWriter{httptest.NewRecorder()}
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
@@ -77,7 +77,7 @@ func TestWithCloseHandler(t *testing.T) {
 
 func TestWithTimeoutHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := mw.Chain(serveHTTPContext, mw.WithTimeout(time.Second))
+	finalCH := mw.ChainFunc(serveHTTPContext, mw.WithTimeout(time.Second))
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
@@ -89,9 +89,9 @@ func TestWithTimeoutHandler(t *testing.T) {
 }
 
 func TestWithHeader(t *testing.T) {
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.Chain(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`Confirmed landing on drone ship.`))
-	}, mw.WithHeader("X-CoreStore-CartID", "0815"))
+	}), mw.WithHeader("X-CoreStore-CartID", "0815"))
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
@@ -105,11 +105,15 @@ func TestWithHeader(t *testing.T) {
 }
 
 func TestWithXHTTPMethodOverrideForm(t *testing.T) {
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+
+	var mws mw.MiddlewareSlice
+	mws = mws.Append(mw.WithXHTTPMethodOverride(mw.SetMethodOverrideFormKey("_mykey")))
+
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		if have, want := r.Method, "HEAD"; want != have {
 			t.Errorf("Want: %q Have: %q", want, have)
 		}
-	}, mw.WithXHTTPMethodOverride(mw.SetMethodOverrideFormKey("_mykey")))
+	}, mws...)
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
@@ -124,7 +128,7 @@ func TestWithXHTTPMethodOverrideForm(t *testing.T) {
 }
 
 func TestWithXHTTPMethodOverrideHeader(t *testing.T) {
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		if have, want := r.Method, "OPTIONS"; want != have {
 			t.Errorf("Want: %q Have: %q", want, have)
 		}
@@ -140,7 +144,7 @@ func TestWithXHTTPMethodOverrideHeader(t *testing.T) {
 }
 
 func TestWithXHTTPMethodOverrideNone(t *testing.T) {
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		if have, want := r.Method, "PATCH"; want != have {
 			t.Errorf("Want: %q Have: %q", want, have)
 		}

@@ -51,7 +51,7 @@ func testCompressReqRes() (w *httptest.ResponseRecorder, r *http.Request) {
 }
 
 func TestWithCompressorNone(t *testing.T) {
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		assert.Empty(t, w.Header().Get(httputil.ContentEncoding))
 		assert.Empty(t, w.Header().Get(httputil.Vary))
@@ -63,7 +63,7 @@ func TestWithCompressorNone(t *testing.T) {
 }
 
 func TestWithCompressorGZIPHeader(t *testing.T) {
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		assert.Exactly(t, httputil.CompressGZIP, w.Header().Get(httputil.ContentEncoding))
 		assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
@@ -76,7 +76,7 @@ func TestWithCompressorGZIPHeader(t *testing.T) {
 }
 
 func TestWithCompressorDeflateHeader(t *testing.T) {
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Exactly(t, httputil.CompressDeflate, w.Header().Get(httputil.ContentEncoding))
 		assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
 
@@ -128,7 +128,7 @@ func TestWithCompressorGZIPConcrete(t *testing.T) {
 
 func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(io.Reader) string) {
 
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			t.Fatal(err)
 		}
@@ -154,7 +154,7 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 // BenchmarkWithCompressorGZIP_1024B-4	   20000	     81916 ns/op	    1330 B/op	       5 allocs/op
 func BenchmarkWithCompressorGZIP_1024B(b *testing.B) {
 
-	finalCH := mw.Chain(func(w http.ResponseWriter, r *http.Request) {
+	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			b.Fatal(err)
 		}
