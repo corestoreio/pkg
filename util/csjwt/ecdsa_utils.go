@@ -24,7 +24,7 @@ func parseECPrivateKeyFromPEM(key []byte, password ...[]byte) (*ecdsa.PrivateKey
 		}
 		var errPEM error
 		if blockBytes, errPEM = x509.DecryptPEMBlock(pemBlock, password[0]); errPEM != nil {
-			return nil, errors.NewNotFound(errPEM, "[csjwt] parseECPrivateKeyFromPEM.x509.DecryptPEMBlock")
+			return nil, errors.NewNotValid(errPEM, "[csjwt] parseECPrivateKeyFromPEM.x509.DecryptPEMBlock")
 		}
 	} else {
 		blockBytes = pemBlock.Bytes
