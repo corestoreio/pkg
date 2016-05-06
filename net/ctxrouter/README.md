@@ -43,15 +43,13 @@ import (
 	"net/http"
 )
 
-func Index(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome!\n")
-	return nil
 }
 
-func Hello(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func Hello(w http.ResponseWriter, r *http.Request) {
 	ps := ctxrouter.ParamsFromContext(ctx)
 	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-	return nil
 }
 
 func main() {

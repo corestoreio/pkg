@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-// Package ctxrouter is a trie based high performance HTTP request router for net/context.
+// Package ctxrouter is a trie based high performance HTTP request router for pkg context.
 //
 // A trivial example is:
 //
@@ -16,15 +16,13 @@
 //			"net/http"
 //		)
 //
-//		func Index(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//		func Index(w http.ResponseWriter, r *http.Request) {
 //			fmt.Fprint(w, "Welcome!\n")
-//			return nil
 //		}
 //
-//		func Hello(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//		func Hello(w http.ResponseWriter, r *http.Request) {
 //			ps := ctxrouter.ParamsFromContext(ctx)
 //			fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-//			return nil
 //		}
 //
 //		func main() {
@@ -180,8 +178,7 @@ type Router struct {
 }
 
 // Make sure the Router conforms with the http.Handler interface
-var _ http.Handler = (*Router)(nil)
-var _ http.Handler = (*Router)(nil)
+var _ http.Handler = New()
 
 // New returns a new initialized Router.
 // Path auto-correction, including trailing slashes, is enabled by default.
@@ -401,9 +398,7 @@ func (r *Router) allowed(path, reqMethod string) (allow string) {
 	return
 }
 
-// ServeHTTP makes the router implement the http.Handler interface. Calls the
-// ServeHTTPContext function with the RootContext. If an error occurs:
-//
+// ServeHTTP makes the router implement the http.Handler interface.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	//if err := r.ServeHTTPContext(, w, req); err != nil {
 	//	if r.ErrorHandler == nil {
