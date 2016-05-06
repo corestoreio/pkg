@@ -22,7 +22,7 @@ import (
 )
 
 func TestVersionize(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have, want string
 	}{

@@ -20,17 +20,18 @@ import (
 	"net/url"
 	"testing"
 
+	"context"
+
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 func TestCtxIsSecure(t *testing.T) {
-	t.Parallel()
+
 	woh, err := backend.Backend.WebSecureOffloaderHeader.ToPath(scope.Default, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +103,6 @@ func TestCtxIsSecure(t *testing.T) {
 }
 
 func TestIsBaseUrlCorrect(t *testing.T) {
-	t.Parallel()
 
 	var nr = func(urlStr string) *http.Request {
 		r, err := http.NewRequest("GET", urlStr, nil)

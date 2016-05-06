@@ -15,6 +15,7 @@
 package httputil
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -23,7 +24,6 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
-	"golang.org/x/net/context"
 )
 
 // CheckSecureRequest checks if a request is secure using the SSL offloader header
