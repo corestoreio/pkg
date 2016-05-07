@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package jwtauthbe defines the backend configuration options and element slices.
-package jwtauthbe
+// Package backendjwt defines the backend configuration options and element slices.
+package backendjwt

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauthbe_test
+package backendjwt_test
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/net/jwtauth"
-	"github.com/corestoreio/csfw/net/jwtauth/jwtauthbe"
+	"github.com/corestoreio/csfw/net/jwtauth/backendjwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
@@ -40,14 +40,14 @@ func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path
 
 func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
-	cfgStruct, err := jwtauthbe.NewConfigStructure()
+	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
-	pb := jwtauthbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
+	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
 	jwts := jwtauth.MustNewService(
-		jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)),
+		jwtauth.WithBackend(backendjwt.BackendOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -87,14 +87,14 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
 func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
-	cfgStruct, err := jwtauthbe.NewConfigStructure()
+	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
-	pb := jwtauthbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
+	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
 	jwts := jwtauth.MustNewService(
-		jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)),
+		jwtauth.WithBackend(backendjwt.BackendOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -128,9 +128,9 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	assert.Exactly(t, fmt.Sprintf("%#v", scNew), fmt.Sprintf("%#v", scCached))
 }
 
-func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *jwtauth.Service, pb *jwtauthbe.PkgBackend) {
-	pb = jwtauthbe.NewBackend(cfgStruct, opts...)
-	jwts = jwtauth.MustNewService(jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)))
+func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *jwtauth.Service, pb *backendjwt.Backend) {
+	pb = backendjwt.New(cfgStruct, opts...)
+	jwts = jwtauth.MustNewService(jwtauth.WithBackend(backendjwt.BackendOptions(pb)))
 	return
 }
 

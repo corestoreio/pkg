@@ -174,14 +174,14 @@ func WithLogger(l log.Logger) Option {
 // WithBackend applies the backend configuration to the service.
 // Once this has been set all other option functions are not really
 // needed.
-//	cfgStruct, err := jwtauthbe.NewConfigStructure()
+//	cfgStruct, err := backendjwt.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := jwtauthbe.NewBackend(cfgStruct, cfgmodel.WithEncryptor(myEncryptor{}))
+//	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(myEncryptor{}))
 //
 //	jwts := jwtauth.MustNewService(
-//		jwtauth.WithBackend(jwtauthbe.BackendOptions(pb)),
+//		jwtauth.WithBackend(backendjwt.BackendOptions(pb)),
 //	)
 func WithBackend(f ScopedOptionFunc) Option {
 	return func(s *Service) {

@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauthbe_test
+package backendjwt_test
 
-import "github.com/corestoreio/csfw/net/jwtauth/jwtauthbe"
+import "github.com/corestoreio/csfw/net/jwtauth/backendjwt"
 
 // backend overall backend models for all tests
-var backend *jwtauthbe.PkgBackend
+var backend *backendjwt.Backend
 
 // this would belong into the test suit setup
 func init() {
 
-	cfgStruct, err := jwtauthbe.NewConfigStructure()
+	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {
 		panic(err)
 	}
 
-	backend = jwtauthbe.NewBackend(cfgStruct)
+	backend = backendjwt.New(cfgStruct)
 
 }

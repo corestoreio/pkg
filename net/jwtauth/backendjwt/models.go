@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauthbe
+package backendjwt
 
 import (
 	"github.com/corestoreio/csfw/config"
@@ -54,7 +54,7 @@ func NewConfigSigningMethod(path string, opts ...cfgmodel.Option) ConfigSigningM
 func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err error) {
 	raw, err := cc.Str.Get(sg)
 	if err != nil {
-		err = errors.Wrap(err, "[jwtauthbe] Str.Get")
+		err = errors.Wrap(err, "[backendjwt] Str.Get")
 		return
 	}
 

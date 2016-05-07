@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauthbe_test
+package backendjwt_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/jwtauth/jwtauthbe"
+	"github.com/corestoreio/csfw/net/jwtauth/backendjwt"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
-	ccModel := jwtauthbe.NewConfigSigningMethod("a/x/c")
+	ccModel := backendjwt.NewConfigSigningMethod("a/x/c")
 	cr := cfgmock.NewService()
 	sm, err := ccModel.Get(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
@@ -32,7 +32,7 @@ func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
 }
 
 func TestNewConfigSigningMethodGetPathError(t *testing.T) {
-	ccModel := jwtauthbe.NewConfigSigningMethod("a//c")
+	ccModel := backendjwt.NewConfigSigningMethod("a//c")
 	cr := cfgmock.NewService()
 	sm, err := ccModel.Get(cr.NewScoped(0, 0))
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
