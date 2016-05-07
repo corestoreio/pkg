@@ -15,27 +15,22 @@
 package geoip_test
 
 import (
-	"errors"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
-	"io"
-
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
-
-var _ error = (*geoip.Service)(nil)
 
 func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 	maxMindDB := filepath.Join(cstesting.RootPath, "net", "geoip", "GeoIP2-Country-Test.mmdb")
@@ -46,14 +41,13 @@ func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 	return s
 }
 
-func finalHandlerFinland(t *testing.T) ctxhttp.HandlerFunc {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err := geoip.FromContextCountry(ctx)
+func finalHandlerFinland(t *testing.T) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.NotNil(t, ipc)
 		assert.NoError(t, err)
 		assert.Exactly(t, "2a02:d200::", ipc.IP.String())
 		assert.Exactly(t, "FI", ipc.Country.IsoCode)
-		return nil
 	}
 }
 
@@ -75,7 +69,7 @@ func TestNewServiceErrorWithoutOptions(t *testing.T) {
 func TestNewServiceErrorWithAlternativeHandler(t *testing.T) {
 	s, err := geoip.NewService(geoip.WithAlternativeHandler(scope.Absent, 314152, nil))
 	assert.Nil(t, s)
-	assert.EqualError(t, err, scope.ErrUnsupportedScopeID.Error())
+	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 }
 
 func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
@@ -111,11 +105,10 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 	s.GeoIP = geoReaderMock{}
 	defer deferClose(t, s.GeoIP)
 
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err := geoip.FromContextCountry(ctx)
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.Nil(t, ipc)
 		assert.EqualError(t, err, "Failed to read country from MMDB")
-		return nil
 	})
 
 	countryHandler := s.WithCountryByIP()(finalHandler)
@@ -123,7 +116,7 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://corestore.io", nil)
 	assert.NoError(t, err)
 	req.Header.Set("X-Forwarded-For", "2a02:d200::")
-	assert.NoError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req))
+	countryHandler.ServeHTTP(rec, req)
 }
 
 func TestWithCountryByIPSuccess(t *testing.T) {
@@ -133,25 +126,24 @@ func TestWithCountryByIPSuccess(t *testing.T) {
 	countryHandler := s.WithCountryByIP()(finalHandlerFinland(t))
 	rec := httptest.NewRecorder()
 
-	assert.NoError(t, countryHandler.ServeHTTPContext(context.Background(), rec, mustGetRequestFinland()))
+	countryHandler.ServeHTTP(rec, mustGetRequestFinland())
 }
 
 func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	s := mustGetTestService()
 	defer deferClose(t, s.GeoIP)
 
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err := geoip.FromContextCountry(ctx)
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.Nil(t, ipc)
-		assert.EqualError(t, err, geoip.ErrContextCountryNotFound.Error())
-		return nil
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	})
 
 	countryHandler := s.WithIsCountryAllowedByIP()(finalHandler)
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "http://corestore.io", nil)
 	assert.NoError(t, err)
-	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), store.ErrContextProviderNotFound.Error())
+	countryHandler.ServeHTTP(rec, req)
 }
 
 var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, func(ms *storemock.Storage) {
@@ -164,12 +156,11 @@ var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, fu
 	}
 })
 
-func ipErrorFinalHandler(t *testing.T) ctxhttp.HandlerFunc {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err := geoip.FromContextCountry(ctx)
+func ipErrorFinalHandler(t *testing.T) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.Nil(t, ipc)
-		assert.EqualError(t, err, geoip.ErrCannotGetRemoteAddr.Error())
-		return nil
+		assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	}
 }
 
@@ -182,7 +173,7 @@ func TestWithCountryByIPErrorRemoteAddr(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://corestore.io", nil)
 	assert.NoError(t, err)
 	req.Header.Set("X-Forwarded-For", "2324.2334.432.534")
-	assert.NoError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req))
+	countryHandler.ServeHTTP(rec, req)
 }
 
 func TestWithIsCountryAllowedByIPErrorWithContextCountryByIP(t *testing.T) {
@@ -195,7 +186,7 @@ func TestWithIsCountryAllowedByIPErrorWithContextCountryByIP(t *testing.T) {
 	assert.NoError(t, err)
 	req.Header.Set("X-Forwarded-For", "2R02:d2'0.:")
 
-	assert.NoError(t, countryHandler.ServeHTTPContext(managerStoreSimpleTest, rec, req))
+	countryHandler.ServeHTTP(rec, req) // managerStoreSimpleTest,  ?
 }
 
 func TestWithIsCountryAllowedByIPErrorAllowedCountries(t *testing.T) {

@@ -14,12 +14,7 @@
 
 package geoip
 
-import (
-	"net/http"
-
-	"github.com/corestoreio/csfw/net/ctxhttp"
-	"golang.org/x/net/context"
-)
+import "net/http"
 
 // DefaultAlternativeHandler gets called when detected Country cannot be found
 // within the list of allowed countries. This handler can be overridden to provide
@@ -27,9 +22,8 @@ import (
 // use the With*() options. This function gets called in WithIsCountryAllowedByIP.
 //
 // Status is StatusServiceUnavailable
-var DefaultAlternativeHandler ctxhttp.Handler = defaultAlternativeHandler
+var DefaultAlternativeHandler http.Handler = defaultAlternativeHandler
 
-var defaultAlternativeHandler = ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+var defaultAlternativeHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
-	return nil
 })

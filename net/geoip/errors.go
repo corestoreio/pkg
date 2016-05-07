@@ -14,12 +14,8 @@
 
 package geoip
 
-import (
-	"github.com/corestoreio/csfw/util/cserr"
+const (
+	errCannotGetRemoteAddr    = `[geoip] Cannot get request.RemoteAddr`
+	errContextCountryNotFound = `[geoip] Cannot extract token nor an error from the context`
+	errUnsupportedScope       = `[geoip] Unsupported Scope %s ID %d`
 )
-
-// ErrCannotGetRemoteAddr will be returned if there is an invalid or not found
-// RemoteAddr in the request.
-var ErrCannotGetRemoteAddr cserr.Error = `[geoip] Cannot get request.RemoteAddr`
-
-var ErrContextCountryNotFound cserr.Error = `[geoip] Cannot extract token nor an error from the context`

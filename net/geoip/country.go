@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/store"
+	"github.com/oschwald/geoip2-golang"
 )
 
 // The Country structure corresponds to the data in the GeoIP2/GeoLite2
@@ -64,3 +65,45 @@ type Reader interface {
 // allowed to process the request. The StringSlice contains a list of ISO country
 // names fetched from the config.ScopedGetter.
 type IsAllowedFunc func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
+
+var _ Reader = (*mmdb)(nil)
+
+// mmdb internal wrapper between geoip2 and our interface
+type mmdb struct {
+	r *geoip2.Reader
+}
+
+func (mm *mmdb) Country(ipAddress net.IP) (*Country, error) {
+	c, err := mm.r.Country(ipAddress)
+	if err != nil {
+		return nil, err
+	}
+	c2 := &Country{
+		IP: ipAddress,
+	}
+	c2.Continent.Code = c.Continent.Code
+	c2.Continent.GeoNameID = c.Continent.GeoNameID
+	c2.Continent.Names = c.Continent.Names // ! a map those names, should maybe copied away
+
+	c2.Country.GeoNameID = c.Country.GeoNameID
+	c2.Country.IsoCode = c.Country.IsoCode
+	c2.Country.Names = c.Country.Names
+
+	c2.RegisteredCountry.GeoNameID = c.RegisteredCountry.GeoNameID
+	c2.RegisteredCountry.IsoCode = c.RegisteredCountry.IsoCode
+	c2.RegisteredCountry.Names = c.RegisteredCountry.Names
+
+	c2.RepresentedCountry.GeoNameID = c.RepresentedCountry.GeoNameID
+	c2.RepresentedCountry.IsoCode = c.RepresentedCountry.IsoCode
+	c2.RepresentedCountry.Names = c.RepresentedCountry.Names
+	c2.RepresentedCountry.Type = c.RepresentedCountry.Type
+
+	c2.Traits.IsAnonymousProxy = c.Traits.IsAnonymousProxy
+	c2.Traits.IsSatelliteProvider = c.Traits.IsSatelliteProvider
+
+	return c2, nil
+}
+
+func (mm *mmdb) Close() error {
+	return mm.r.Close()
+}

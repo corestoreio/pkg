@@ -14,7 +14,11 @@
 
 package geoip
 
-import "golang.org/x/net/context"
+import (
+	"context"
+
+	"github.com/corestoreio/csfw/util/errors"
+)
 
 // keyctxCountry type is unexported to prevent collisions with context keys defined in
 // other packages.
@@ -42,7 +46,7 @@ func withContextError(ctx context.Context, err error) context.Context {
 func FromContextCountry(ctx context.Context) (*Country, error) {
 	wrp, ok := ctx.Value(keyctxCountry{}).(ctxCountryWrapper)
 	if !ok {
-		return nil, ErrContextCountryNotFound
+		return nil, errors.NewNotFoundf(errContextCountryNotFound)
 	}
 	if wrp.err != nil {
 		return nil, wrp.err

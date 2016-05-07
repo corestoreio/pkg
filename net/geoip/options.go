@@ -15,12 +15,12 @@
 package geoip
 
 import (
-	"fmt"
-	"net"
+	"net/http"
 
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/corestoreio/csfw/util/os"
 	"github.com/oschwald/geoip2-golang"
 )
@@ -32,11 +32,11 @@ type Option func(*Service)
 // on a Service. If the Handler h is nil falls back to the DefaultErrorHandler.
 // This function can be called as many times as you have websites or stores.
 // Group scope is not suppored.
-func WithAlternativeHandler(so scope.Scope, id int64, hf ctxhttp.Handler) Option {
-	if hf == nil {
-		hf = DefaultAlternativeHandler
-	}
+func WithAlternativeHandler(so scope.Scope, id int64, hf http.Handler) Option {
 	return func(s *Service) {
+		if s.optionError != nil {
+			return
+		}
 		switch so {
 		case scope.Store:
 			s.storeIDs.Append(id)
@@ -45,7 +45,7 @@ func WithAlternativeHandler(so scope.Scope, id int64, hf ctxhttp.Handler) Option
 			s.websiteIDs.Append(id)
 			s.websiteAltH = append(s.websiteAltH, hf)
 		default:
-			s.MultiErr = s.AppendErrors(scope.ErrUnsupportedScopeID)
+			s.optionError = errors.NewNotSupportedf(errUnsupportedScope, so, id)
 		}
 	}
 }
@@ -64,64 +64,32 @@ func WithAllowedCountryConfigModel(m cfgmodel.StringCSV) Option {
 	}
 }
 
+func WithLogger(l log.Logger) Option {
+	return func(s *Service) {
+		s.Log = l
+	}
+}
+
 // WithGeoIP2Reader creates a new GeoIP2.Reader. As long as there are no other
 // readers this is a mandatory argument.
+// Error behaviour: NotFound, NotValid
 func WithGeoIP2Reader(file string) Option {
 	return func(s *Service) {
+		if s.optionError != nil {
+			return
+		}
 		if false == os.FileExists(file) {
-			s.MultiErr = s.AppendErrors(fmt.Errorf("File %s not found", file))
+			s.optionError = errors.NewNotFoundf("[geoip] File %s not found", file)
 			return
 		}
 
 		r, err := geoip2.Open(file) // that implementation is not nice for testing because no interface usages :(
 		if err != nil {
-			s.MultiErr = s.AppendErrors(err)
+			s.optionError = errors.NewNotValid(err, "[geoip] Maxmind Open")
 			return
 		}
 		s.GeoIP = &mmdb{
 			r: r,
 		}
 	}
-}
-
-var _ Reader = (*mmdb)(nil)
-
-// mmdb internal wrapper between geoip2 and our interface
-type mmdb struct {
-	r *geoip2.Reader
-}
-
-func (mm *mmdb) Country(ipAddress net.IP) (*Country, error) {
-	c, err := mm.r.Country(ipAddress)
-	if err != nil {
-		return nil, err
-	}
-	c2 := &Country{
-		IP: ipAddress,
-	}
-	c2.Continent.Code = c.Continent.Code
-	c2.Continent.GeoNameID = c.Continent.GeoNameID
-	c2.Continent.Names = c.Continent.Names // ! a map those names, should maybe copied away
-
-	c2.Country.GeoNameID = c.Country.GeoNameID
-	c2.Country.IsoCode = c.Country.IsoCode
-	c2.Country.Names = c.Country.Names
-
-	c2.RegisteredCountry.GeoNameID = c.RegisteredCountry.GeoNameID
-	c2.RegisteredCountry.IsoCode = c.RegisteredCountry.IsoCode
-	c2.RegisteredCountry.Names = c.RegisteredCountry.Names
-
-	c2.RepresentedCountry.GeoNameID = c.RepresentedCountry.GeoNameID
-	c2.RepresentedCountry.IsoCode = c.RepresentedCountry.IsoCode
-	c2.RepresentedCountry.Names = c.RepresentedCountry.Names
-	c2.RepresentedCountry.Type = c.RepresentedCountry.Type
-
-	c2.Traits.IsAnonymousProxy = c.Traits.IsAnonymousProxy
-	c2.Traits.IsSatelliteProvider = c.Traits.IsSatelliteProvider
-
-	return c2, nil
-}
-
-func (mm *mmdb) Close() error {
-	return mm.r.Close()
 }
