@@ -8,6 +8,8 @@ eCommerce library which is compatible to Magento 1 and 2 database schema.
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
+Min. Go Version: 1.7
+
 ## Usage
 
 To properly use the CoreStore library some environment variables must be set before running `go generate`. (TODO)
