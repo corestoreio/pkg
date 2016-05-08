@@ -84,6 +84,7 @@ func NewDuration(path string, opts ...Option) Duration {
 // decimal numbers, each with optional fraction and a unit suffix,
 // such as "300ms", "-1.5h" or "2h45m".
 // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+// Error behaviour: NotValid
 func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 	// This code must be kept in sync with other Get() functions
 
@@ -95,7 +96,7 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 			var err error
 			v, err = conv.ToDurationE(d)
 			if err != nil {
-				return 0, errors.Wrap(err, "[cfgmodel] ToDurationE")
+				return 0, errors.NewNotValid(err, "[cfgmodel] ToDurationE")
 			}
 		}
 	}
@@ -104,6 +105,7 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 	switch {
 	case err == nil: // we found the value in the config service
 		v, err = conv.ToDurationE(val)
+		err = errors.NewNotValid(err, "[cfgmodel] ToDurationE")
 	case !errors.IsNotFound(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", t.route)
 	default:
