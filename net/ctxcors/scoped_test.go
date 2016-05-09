@@ -14,64 +14,64 @@
 
 package ctxcors
 
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/config/cfgmock"
-
-	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
-)
-
-func TestCorsCurrent_ShouldCreateANewScopedBasedCors(t *testing.T) {
-	t.Parallel()
-	be := initBackend(t)
-
-	cfgGet := cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.Website, 2):     "X-CoreStore-ID\nContent-Type\n\n",
-			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.Website, 2):     "host1.com\nhost2.com\n\n",
-			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.Website, 2):     "PATCH\nDELETE",
-			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.Website, 2):     "Date,X-Header1",
-			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.Website, 2):   "1",
-			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.Website, 2): "1",
-			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.Website, 2):             "2h",
-		}),
-	)
-
-	scpO, err := scope.SetByCode(scope.Website, "oz")
-	if err != nil {
-		t.Fatal(err)
-	}
-	storeSrv := storemock.NewEurozzyService(scpO, store.WithStorageConfig(cfgGet))
-	dftStore, err := storeSrv.Store() // default store for AU
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if dftStore.Website.Config == nil {
-		t.Fatalf("Website Config unexpected nil: %#v", dftStore.Website)
-	}
-	ctx := store.WithContextProvider(context.Background(), storeSrv, dftStore)
-
-	c := MustNew(WithBackendApplied(be, dftStore.Website.Config)) // OZ website ID = 2 and AU store ID = 5
-
-	csc := newScopeCache(c)
-
-	scopedCors, err := c.current(csc, ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Exactly(t, scope.NewHash(scope.Website, 2), scopedCors.scopedTo)
-
-	// check that we get the same cors back
-	scopedCors2, err := c.current(csc, ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.Exactly(t, scope.NewHash(scope.Website, 2), scopedCors.scopedTo)
-	assert.Exactly(t, scopedCors2, scopedCors)
-}
+//import (
+//	"testing"
+//
+//	"github.com/corestoreio/csfw/config/cfgmock"
+//
+//	"context"
+//	"github.com/corestoreio/csfw/store"
+//	"github.com/corestoreio/csfw/store/scope"
+//	"github.com/corestoreio/csfw/store/storemock"
+//	"github.com/stretchr/testify/assert"
+//)
+//
+//func TestCorsCurrent_ShouldCreateANewScopedBasedCors(t *testing.T) {
+//
+//	be := initBackend(t)
+//
+//	cfgGet := cfgmock.NewService(
+//		cfgmock.WithPV(cfgmock.PathValue{
+//			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.Website, 2):     "X-CoreStore-ID\nContent-Type\n\n",
+//			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.Website, 2):     "host1.com\nhost2.com\n\n",
+//			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.Website, 2):     "PATCH\nDELETE",
+//			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.Website, 2):     "Date,X-Header1",
+//			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.Website, 2):   "1",
+//			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.Website, 2): "1",
+//			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.Website, 2):             "2h",
+//		}),
+//	)
+//
+//	scpO, err := scope.SetByCode(scope.Website, "oz")
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	storeSrv := storemock.NewEurozzyService(scpO, store.WithStorageConfig(cfgGet))
+//	dftStore, err := storeSrv.Store() // default store for AU
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//
+//	if dftStore.Website.Config == nil {
+//		t.Fatalf("Website Config unexpected nil: %#v", dftStore.Website)
+//	}
+//	ctx := store.WithContextProvider(context.Background(), storeSrv, dftStore)
+//
+//	c := MustNew(WithBackendApplied(be, dftStore.Website.Config)) // OZ website ID = 2 and AU store ID = 5
+//
+//	csc := newScopeCache(c)
+//
+//	scopedCors, err := c.current(csc, ctx)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	assert.Exactly(t, scope.NewHash(scope.Website, 2), scopedCors.scopedTo)
+//
+//	// check that we get the same cors back
+//	scopedCors2, err := c.current(csc, ctx)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	assert.Exactly(t, scope.NewHash(scope.Website, 2), scopedCors.scopedTo)
+//	assert.Exactly(t, scopedCors2, scopedCors)
+//}

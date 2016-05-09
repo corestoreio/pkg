@@ -24,8 +24,10 @@ import (
 	"net/http"
 	"testing"
 
+	"context"
+
 	"github.com/corestoreio/csfw/net/ctxcors"
-	"golang.org/x/net/context"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 type FakeResponse struct {
@@ -80,7 +82,7 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	c, err := ctxcors.New(ctxcors.WithAllowedOrigins("somedomain.com"))
+	c, err := ctxcors.New(ctxcors.WithAllowedOrigins(scope.Default, 0, "somedomain.com"))
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -28,13 +28,14 @@ import (
 	"testing"
 	"time"
 
+	"context"
+
 	"github.com/corestoreio/csfw/net/ctxcors"
 	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
-var _ error = (*ctxcors.Cors)(nil)
+var _ error = (*ctxcors.Service)(nil)
 
 var testHandler = func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 	_, err := w.Write([]byte("bar"))
@@ -50,7 +51,7 @@ func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]s
 }
 
 func TestMustNew(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			assert.EqualError(t, r.(error), "MaxAge: Invalid Duration seconds: -2")
