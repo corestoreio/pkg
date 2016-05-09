@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -115,4 +116,40 @@ func TestMergeClaims(t *testing.T) {
 		}
 		assert.Exactly(t, test.wantSigningString, buf.String(), "Index %d", i)
 	}
+}
+
+func TestClaimExpiresSkew(t *testing.T) {
+
+	st := jwtclaim.NewStore()
+	st.ExpiresAt = time.Now().Unix() - 2
+	st.Store = "HelloWorld"
+	tk := csjwt.NewToken(st)
+
+	pwKey := csjwt.WithPasswordRandom()
+	hs256 := csjwt.NewSigningMethodHS256()
+	token, err := tk.SignedString(hs256, pwKey)
+	cstesting.FatalIfError(t, err)
+
+	vrf := csjwt.NewVerification(hs256)
+
+	parsedTK, parsedErr := vrf.Parse(csjwt.NewToken(&jwtclaim.Store{
+		Standard: &jwtclaim.Standard{
+			TimeSkew: 0,
+		},
+	}), token, csjwt.NewKeyFunc(hs256, pwKey))
+	assert.True(t, errors.IsNotValid(parsedErr), "Error: %s", parsedErr)
+	assert.False(t, parsedTK.Valid, "Token must be not valid")
+
+	// now adjust skew
+	parsedTK, parsedErr = vrf.Parse(csjwt.NewToken(&jwtclaim.Store{
+		Standard: &jwtclaim.Standard{
+			TimeSkew: time.Second * 3,
+		},
+	}), token, csjwt.NewKeyFunc(hs256, pwKey))
+	assert.NoError(t, parsedErr, "Error: %s", parsedErr)
+	assert.True(t, parsedTK.Valid, "Token must be valid")
+
+	haveSt, err := parsedTK.Claims.Get(jwtclaim.KeyStore)
+	cstesting.FatalIfError(t, err)
+	assert.Exactly(t, "HelloWorld", haveSt)
 }
