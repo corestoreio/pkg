@@ -14,6 +14,8 @@ import (
 // referenced at https://tools.ietf.org/html/rfc7519#section-4.1
 // ffjson: noencoder
 type Standard struct {
+	// TimeSkew duration of time skew we allow between signer and verifier.
+	TimeSkew time.Duration `json:"-"`
 	// Audience claim identifies the recipients that the JWT is
 	// intended for.  Each principal intended to process the JWT MUST
 	// identify itself with a value in the audience claim.  If the principal
@@ -125,6 +127,9 @@ func (s *Standard) Set(key string, value interface{}) (err error) {
 	case KeySubject:
 		s.Subject, err = conv.ToStringE(value)
 		err = errors.Wrap(err, "[jwtclaim] ToString")
+	case KeyTimeSkew:
+		s.TimeSkew, err = conv.ToDurationE(value)
+		err = errors.Wrap(err, "[jwtclaim] ToDurationE")
 	default:
 		return errors.NewNotSupportedf(errClaimKeyNotSupported, key)
 	}
@@ -149,6 +154,8 @@ func (s *Standard) Get(key string) (interface{}, error) {
 		return s.NotBefore, nil
 	case KeySubject:
 		return s.Subject, nil
+	case KeyTimeSkew:
+		return s.TimeSkew, nil
 	}
 	return nil, errors.NewNotSupportedf(errClaimKeyNotSupported, key)
 }
@@ -178,7 +185,7 @@ func (s *Standard) VerifyAudience(cmp string, req bool) bool {
 // VerifyExpiresAt compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (s *Standard) VerifyExpiresAt(cmp int64, req bool) bool {
-	return verifyExp(s.ExpiresAt, cmp, req)
+	return verifyExp(s.TimeSkew, s.ExpiresAt, cmp, req)
 }
 
 // VerifyIssuedAt compares the iat claim against cmp.
@@ -196,7 +203,7 @@ func (s *Standard) VerifyIssuer(cmp string, req bool) bool {
 // VerifyNotBefore compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (s *Standard) VerifyNotBefore(cmp int64, req bool) bool {
-	return verifyNbf(s.NotBefore, cmp, req)
+	return verifyNbf(s.TimeSkew, s.NotBefore, cmp, req)
 }
 
 // String human readable output via JSON, slow.

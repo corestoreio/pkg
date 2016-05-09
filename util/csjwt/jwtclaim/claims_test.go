@@ -23,6 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -168,6 +169,55 @@ func TestClaimsExpires(t *testing.T) {
 	}
 	for i, test := range tests {
 		assert.Exactly(t, int64(test.wantExp.Seconds()), int64(test.sc.Expires().Seconds()), "Index %d", i)
+	}
+}
+
+func TestClaimsExpiresSkew(t *testing.T) {
+	tm := time.Now()
+	tests := []struct {
+		sc      csjwt.Claimer
+		skew    time.Duration
+		isValid bool
+	}{
+		{&jwtclaim.Standard{ExpiresAt: tm.Add(time.Second * 2).Unix()}, time.Second * 1, true},
+		{&jwtclaim.Standard{ExpiresAt: tm.Add(time.Second * 2).Unix()}, -time.Second * 3, false},
+		{&jwtclaim.Standard{ExpiresAt: tm.Unix() - 1}, 0, false},
+		{&jwtclaim.Standard{ExpiresAt: tm.Unix() - 1}, time.Second * 1, true},
+
+		{jwtclaim.Map{"exp": tm.Add(time.Second * 2).Unix()}, time.Second * 1, true},
+		{jwtclaim.Map{"exp": tm.Add(time.Second * 2).Unix()}, -time.Second * 3, false},
+		{jwtclaim.Map{"exp": tm.Unix() - 1}, 0, false},
+		{jwtclaim.Map{"exp": tm.Unix() - 1}, time.Second * 1, true},
+	}
+	for i, test := range tests {
+		cstesting.FatalIfError(t, test.sc.Set(jwtclaim.KeyTimeSkew, test.skew))
+		err := test.sc.Valid()
+		assert.Exactly(t, !test.isValid, errors.IsNotValid(err), "Index %d => %s", i, err)
+	}
+}
+
+func TestClaimsNotBeforeSkew(t *testing.T) {
+	tm := time.Now()
+	tests := []struct {
+		sc      csjwt.Claimer
+		skew    time.Duration
+		isValid bool
+	}{
+		{&jwtclaim.Standard{NotBefore: tm.Add(time.Second * 2).Unix()}, time.Second * 1, false},
+		{&jwtclaim.Standard{NotBefore: tm.Add(time.Second * 2).Unix()}, time.Second * 3, true},
+		{&jwtclaim.Standard{NotBefore: tm.Unix() - 1}, 0, true},
+		{&jwtclaim.Standard{NotBefore: tm.Unix() - 1}, time.Second * 1, true},
+
+		{jwtclaim.Map{"nbf": tm.Add(time.Second * 2).Unix()}, time.Second * 1, false},
+		{jwtclaim.Map{"nbf": tm.Add(time.Second * 2).Unix()}, time.Second * 3, true},
+		{jwtclaim.Map{"nbf": tm.Unix() - 1}, 0, true},
+		{jwtclaim.Map{"nbf": tm.Unix() - 1}, time.Second * 1, true},
+		{jwtclaim.Map{"nbf": tm.Unix() - 1}, -time.Second * 2, false},
+	}
+	for i, test := range tests {
+		cstesting.FatalIfError(t, test.sc.Set(jwtclaim.KeyTimeSkew, test.skew))
+		err := test.sc.Valid()
+		assert.Exactly(t, !test.isValid, errors.IsNotValid(err), "Index %d => %s", i, err)
 	}
 }
 

@@ -29,6 +29,7 @@ const (
 	KeyIssuer    = "iss"
 	KeyNotBefore = "nbf"
 	KeySubject   = "sub"
+	KeyTimeSkew  = "skew" // not marshalled, internal usage.
 )
 
 // allKeys first seven entries only supported by Standard type and all entries
@@ -47,10 +48,11 @@ func verifyConstantTime(aud, cmp []byte, required bool) bool {
 	return subtle.ConstantTimeCompare(aud, cmp) == 1
 }
 
-func verifyExp(exp int64, now int64, required bool) bool {
+func verifyExp(skew time.Duration, exp, now int64, required bool) bool {
 	if exp == 0 {
 		return !required
 	}
+	now -= int64(skew.Seconds())
 	return now <= exp
 }
 
@@ -61,9 +63,10 @@ func verifyIat(iat int64, now int64, required bool) bool {
 	return now >= iat
 }
 
-func verifyNbf(nbf int64, now int64, required bool) bool {
+func verifyNbf(skew time.Duration, nbf int64, now int64, required bool) bool {
 	if nbf == 0 {
 		return !required
 	}
+	now += int64(skew.Seconds())
 	return now >= nbf
 }

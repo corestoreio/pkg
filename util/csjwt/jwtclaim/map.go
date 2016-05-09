@@ -32,10 +32,17 @@ func (m Map) nbf() int64 {
 	return conv.ToInt64(m["nbf"])
 }
 
+func (m Map) skew() time.Duration {
+	if d, ok := m[KeyTimeSkew]; ok {
+		return conv.ToDuration(d)
+	}
+	return 0
+}
+
 // Compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m Map) VerifyExpiresAt(cmp int64, req bool) bool {
-	return verifyExp(m.exp(), cmp, req)
+	return verifyExp(m.skew(), m.exp(), cmp, req)
 }
 
 // Compares the iat claim against cmp.
@@ -54,7 +61,7 @@ func (m Map) VerifyIssuer(cmp string, req bool) bool {
 // Compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m Map) VerifyNotBefore(cmp int64, req bool) bool {
-	return verifyNbf(m.nbf(), cmp, req)
+	return verifyNbf(m.skew(), m.nbf(), cmp, req)
 }
 
 // Validates time based claims "exp, iat, nbf". There is no accounting for
