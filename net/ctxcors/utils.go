@@ -51,7 +51,7 @@ func parseHeaderList(headerList string) []string {
 	upper := true
 	// Estimate the number headers in order to allocate the right splice size
 	t := 0
-	for i := 0; i < l; i++ {
+	for i := 0; i < l; i++ { // faster than range!
 		if headerList[i] == ',' {
 			t++
 		}
@@ -59,19 +59,20 @@ func parseHeaderList(headerList string) []string {
 	headers := make([]string, 0, t)
 	for i := 0; i < l; i++ {
 		b := headerList[i]
-		if b >= 'a' && b <= 'z' {
+		switch {
+		case b >= 'a' && b <= 'z':
 			if upper {
 				h = append(h, b-toLower)
 			} else {
 				h = append(h, b)
 			}
-		} else if b >= 'A' && b <= 'Z' {
+		case b >= 'A' && b <= 'Z':
 			if !upper {
 				h = append(h, b+toLower)
 			} else {
 				h = append(h, b)
 			}
-		} else if b == '-' || (b >= '0' && b <= '9') {
+		case b == '-', (b >= '0' && b <= '9'):
 			h = append(h, b)
 		}
 

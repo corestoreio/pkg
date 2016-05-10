@@ -1,4 +1,4 @@
-BenchmarkParseHeaderList-4             	 3000000	       545 ns/op	     184 B/op	       6 allocs/op
+BenchmarkParseHeaderListConvert-4      	 3000000	       545 ns/op	     184 B/op	       6 allocs/op
 BenchmarkParseHeaderListSingle-4       	10000000	       142 ns/op	      32 B/op	       3 allocs/op
 BenchmarkParseHeaderListNormalized-4   	 3000000	       493 ns/op	     160 B/op	       6 allocs/op
 BenchmarkWithout-4                     	20000000	        60.4 ns/op	       8 B/op	       1 allocs/op

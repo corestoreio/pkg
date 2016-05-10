@@ -70,7 +70,7 @@ func TestParseHeaderListEmpty(t *testing.T) {
 
 var parseHeaderListResult []string
 
-func BenchmarkParseHeaderList(b *testing.B) {
+func BenchmarkParseHeaderListConvert(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		parseHeaderListResult = parseHeaderList("header, second-header, THIRD-HEADER")
