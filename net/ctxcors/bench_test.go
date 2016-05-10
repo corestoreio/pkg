@@ -24,8 +24,6 @@ import (
 	"net/http"
 	"testing"
 
-	"context"
-
 	"github.com/corestoreio/csfw/net/ctxcors"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -48,13 +46,10 @@ func (r FakeResponse) Write(b []byte) (n int, err error) {
 func BenchmarkWithout(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := testHandler(ctx, res, req); err != nil {
-			b.Fatal(err)
-		}
+		testHandler(res, req)
 	}
 }
 
@@ -68,13 +63,10 @@ func BenchmarkDefault(b *testing.B) {
 	}
 	handler := c.WithCORS()(testHandler)
 
-	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := handler(ctx, res, req); err != nil {
-			b.Fatal(err)
-		}
+		handler.ServeHTTP(res, req)
 	}
 }
 
@@ -88,13 +80,10 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	}
 	handler := c.WithCORS()(testHandler)
 
-	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := handler(ctx, res, req); err != nil {
-			b.Fatal(err)
-		}
+		handler.ServeHTTP(res, req)
 	}
 }
 
@@ -108,13 +97,10 @@ func BenchmarkPreflight(b *testing.B) {
 	}
 	handler := c.WithCORS()(testHandler)
 
-	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := handler(ctx, res, req); err != nil {
-			b.Fatal(err)
-		}
+		handler.ServeHTTP(res, req)
 	}
 }
 
@@ -129,12 +115,9 @@ func BenchmarkPreflightHeader(b *testing.B) {
 	}
 	handler := c.WithCORS()(testHandler)
 
-	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := handler(ctx, res, req); err != nil {
-			b.Fatal(err)
-		}
+		handler.ServeHTTP(res, req)
 	}
 }
