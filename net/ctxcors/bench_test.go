@@ -46,10 +46,11 @@ func (r FakeResponse) Write(b []byte) (n int, err error) {
 func BenchmarkWithout(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	h := testHandler(b)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		testHandler(res, req)
+		h(res, req)
 	}
 }
 
@@ -61,7 +62,7 @@ func BenchmarkDefault(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler)
+	handler := c.WithCORS()(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -78,7 +79,7 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler)
+	handler := c.WithCORS()(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -95,7 +96,7 @@ func BenchmarkPreflight(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler)
+	handler := c.WithCORS()(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -113,7 +114,7 @@ func BenchmarkPreflightHeader(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler)
+	handler := c.WithCORS()(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()

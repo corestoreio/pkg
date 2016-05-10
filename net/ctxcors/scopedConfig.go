@@ -80,6 +80,7 @@ func defaultScopedConfig() (scopedConfig, error) {
 		allowedMethods: []string{"GET", "POST"},
 		// Use sensible defaults
 		allowedHeaders: []string{"Origin", "Accept", "Content-Type"},
+		log:            log.BlackHole{}, // disabled info and debug logging
 	}, nil
 }
 

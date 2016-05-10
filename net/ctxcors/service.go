@@ -30,7 +30,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // Service describes the CrossOriginResourceSharing which is used to create a
@@ -42,9 +41,6 @@ import (
 // http://enable-cors.org/server.html
 // http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request
 type Service struct {
-
-	// Log is a logger mainly for debugging. Default Logger writes to a black hole.
-	Log log.Logger
 
 	// optionError use by functional option arguments to indicate that one
 	// option has triggered an error and hence the other can options can
@@ -71,7 +67,6 @@ type Service struct {
 // New creates a new Cors handler with the provided options.
 func New(opts ...Option) (*Service, error) {
 	s := &Service{
-		Log:        log.BlackHole{}, // debug and info logging disabled
 		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
@@ -117,8 +112,8 @@ func (s *Service) Options(opts ...Option) error {
 // enable debug logging to find out more.
 func (s *Service) AddError(err error) {
 	if s.optionError != nil {
-		if s.Log.IsDebug() {
-			s.Log.Debug("jwtauth.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
+		if s.defaultScopeCache.log.IsDebug() {
+			s.defaultScopeCache.log.Debug("jwtauth.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
 		}
 		return
 	}
@@ -139,8 +134,8 @@ func (s *Service) WithCORS() mw.Middleware {
 
 			_, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
-				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "ctx", ctx, "req", r)
+				if s.defaultScopeCache.log.IsDebug() {
+					s.defaultScopeCache.log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "ctx", ctx, "req", r)
 				}
 				err = errors.Wrap(err, "[jwtauth] FromContextProvider")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -152,21 +147,21 @@ func (s *Service) WithCORS() mw.Middleware {
 			// website scope and not group or store scope.
 			scpCfg, err := s.configByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
-				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
+				if s.defaultScopeCache.log.IsDebug() {
+					s.defaultScopeCache.log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
 				}
 				err = errors.Wrap(err, "[jwtauth] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
 
-			if s.Log.IsInfo() {
-				s.Log.Info("ctxcors.Cors.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
+			if s.defaultScopeCache.log.IsInfo() {
+				s.defaultScopeCache.log.Info("ctxcors.Cors.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
 			}
 
 			if r.Method == httputil.MethodOptions {
-				if s.Log.IsDebug() {
-					s.Log.Debug("ctxcors.Cors.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
+				if s.defaultScopeCache.log.IsDebug() {
+					s.defaultScopeCache.log.Debug("ctxcors.Cors.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
 				}
 				scpCfg.handlePreflight(w, r)
 				// Preflight requests are standalone and should stop the chain as some other
@@ -249,15 +244,19 @@ func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
 	sc, ok = s.scopeCache[h]
 	s.mu.RUnlock()
 
-	//if ok {
-	//	var hasChanges bool
-	//	// do some init stuff ...
-	//
-	//	if hasChanges {
-	//		s.mu.Lock()
-	//		s.scopeCache[h] = sc
-	//		s.mu.Unlock()
-	//	}
-	//}
+	if ok {
+		var hasChanges bool
+		// do some init stuff ...
+		if sc.log == nil {
+			sc.log = s.defaultScopeCache.log // copy logger
+			hasChanges = true
+		}
+
+		if hasChanges {
+			s.mu.Lock()
+			s.scopeCache[h] = sc
+			s.mu.Unlock()
+		}
+	}
 	return sc, ok
 }

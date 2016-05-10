@@ -28,22 +28,46 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxcors"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var testHandler http.HandlerFunc = func(w http.ResponseWriter, _ *http.Request) {
-	_, _ = w.Write([]byte("bar"))
+func testHandler(fa interface {
+	Fatal(args ...interface{})
+}) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := ctxcors.FromContext(r.Context()); err != nil {
+			fa.Fatal(errors.PrintLoc(err))
+		}
+		_, _ = w.Write([]byte("bar"))
+	}
 }
 
 func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]string) {
 	for name, value := range reqHeaders {
 		if actual := strings.Join(resHeaders[name], ", "); actual != value {
-			t.Errorf("Invalid header `%s', wanted `%s', got `%s'", name, value, actual)
+			t.Errorf("Invalid header %q, wanted %q, got %q", name, value, actual)
 		}
 	}
+}
+
+func reqWithStore(method string) *http.Request {
+	req, err := http.NewRequest(method, "http://corestore.io/foo", nil)
+	if err != nil {
+		panic(err)
+	}
+	srv := storemock.NewEurozzyService(
+		scope.MustSetByCode(scope.Website, "euro"),
+		store.WithStorageConfig(cfgmock.NewService()),
+	)
+	return req.WithContext(
+		store.WithContextProvider(req.Context(), srv),
+	)
 }
 
 func TestMustNew(t *testing.T) {
@@ -63,9 +87,8 @@ func TestNoConfig(t *testing.T) {
 	s := ctxcors.MustNew()
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, reqWithStore("GET"))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -84,10 +107,10 @@ func TestMatchAllOrigin(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req := reqWithStore("GET")
 	req.Header.Add("Origin", "http://foobar.com")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -106,10 +129,10 @@ func TestAllowedOrigin(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req := reqWithStore("GET")
 	req.Header.Add("Origin", "http://foobar.com")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -128,10 +151,10 @@ func TestWildcardOrigin(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req := reqWithStore("GET")
 	req.Header.Add("Origin", "http://foo.bar.com")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -150,10 +173,10 @@ func TestDisallowedOrigin(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req := reqWithStore("GET")
 	req.Header.Add("Origin", "http://barbaz.com")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -172,10 +195,10 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req := reqWithStore("GET")
 	req.Header.Add("Origin", "http://foo.baz.com")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -196,18 +219,18 @@ func TestAllowedOriginFunc(t *testing.T) {
 		}),
 	)
 
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req := reqWithStore("GET")
 
 	res := httptest.NewRecorder()
 	req.Header.Set("Origin", "http://foobar.com")
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 	assertHeaders(t, res.Header(), map[string]string{
 		"Access-Control-Allow-Origin": "http://foobar.com",
 	})
 
 	res = httptest.NewRecorder()
 	req.Header.Set("Origin", "http://barfoo.com")
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 	assertHeaders(t, res.Header(), map[string]string{
 		"Access-Control-Allow-Origin": "",
 	})
@@ -220,11 +243,11 @@ func TestAllowedMethod(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -245,11 +268,11 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -269,11 +292,11 @@ func TestDisallowedMethod(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PATCH")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -293,12 +316,12 @@ func TestAllowedHeader(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -318,12 +341,12 @@ func TestAllowedWildcardHeader(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -343,12 +366,12 @@ func TestDisallowedHeader(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "X-Header-3, X-Header-1")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -367,12 +390,12 @@ func TestOriginHeader(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "origin")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -392,10 +415,10 @@ func TestExposedHeader(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req := reqWithStore("GET")
 	req.Header.Add("Origin", "http://foobar.com")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -415,11 +438,11 @@ func TestAllowedCredentials(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -440,11 +463,11 @@ func TestMaxAge(t *testing.T) {
 	)
 
 	res := httptest.NewRecorder()
-	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req := reqWithStore("OPTIONS")
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 
-	s.WithCORS()(testHandler).ServeHTTP(res, req)
+	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",

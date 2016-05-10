@@ -35,7 +35,7 @@ type Option func(*Service)
 type ScopedOptionFunc func(config.ScopedGetter) []Option
 
 // WithDefaultConfig applies the default CORS configuration settings based for
-// a specific scope.
+// a specific scope. This function overwrites any previous set options.
 //
 // Default values are:
 //		- Allowed Methods: GET, POST
@@ -54,9 +54,10 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 		}
 
 		s.mu.Lock()
+		defer s.mu.Unlock()
+
 		s.scopeCache[h], s.optionError = defaultScopedConfig()
 		s.optionError = errors.Wrapf(s.optionError, "[ctxcors] Scope %s with Default Config", h)
-		s.mu.Unlock()
 	}
 }
 
@@ -350,11 +351,12 @@ func WithOptionsPassthrough(scp scope.Scope, id int64) Option {
 	}
 }
 
-// WithLogger convenient helper function.
+// WithLogger applies a logger to the default scope which gets inherited to
+// subsequent scopes.
 // Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
-	return func(c *Service) {
-		c.Log = l
+	return func(s *Service) {
+		s.defaultScopeCache.log = l
 	}
 }
 
@@ -370,6 +372,7 @@ func WithLogger(l log.Logger) Option {
 //	cors := ctxcors.MustNewService(
 //		ctxcors.WithBackend(backendcors.BackendOptions(pb)),
 //	)
+// Lazy execution of the specific configuration for a scope.
 func WithBackend(f ScopedOptionFunc) Option {
 	return func(s *Service) {
 		s.scpOptionFnc = f
