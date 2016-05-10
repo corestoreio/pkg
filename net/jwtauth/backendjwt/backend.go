@@ -31,6 +31,10 @@ type Backend struct {
 	// Path: net/jwtauth/signing_method
 	NetCtxjwtSigningMethod ConfigSigningMethod
 
+	// NetCtxjwtSkew defines the time skew duration between verifier and signer.
+	// Path: net/jwtauth/skew
+	NetCtxjwtSkew cfgmodel.Duration
+
 	// NetCtxjwtExpiration defines the duration in which a token expires.
 	// Path: net/jwtauth/expiration
 	NetCtxjwtExpiration cfgmodel.Duration
@@ -85,6 +89,7 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 
 	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/jwtauth/signing_method`, opts...)
 	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/jwtauth/expiration`, opts...)
+	pp.NetCtxjwtSkew = cfgmodel.NewDuration(`net/jwtauth/skew`, opts...)
 	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/jwtauth/enable_jti`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
 	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/jwtauth/hmac_password`, opts...)
 	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/jwtauth/rsa_key`, opts...)

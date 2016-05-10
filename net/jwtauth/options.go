@@ -46,6 +46,8 @@ type scopedConfig struct {
 	Key csjwt.Key
 	// Expire defines the duration when the token is about to expire
 	Expire time.Duration
+	// Skew duration of time skew we allow between signer and verifier.
+	Skew time.Duration
 	// SigningMethod how to sign the JWT. For default value see the OptionFuncs
 	SigningMethod csjwt.Signer
 	// Verifier token parser and verifier bound to ONE signing method. Setting
@@ -75,14 +77,16 @@ func (sc *scopedConfig) IsValid() bool {
 
 // TemplateToken returns the template token. Default Claim is a map. You can
 // provide your own by setting the template token function. WithTemplateToken()
-func (sc scopedConfig) TemplateToken() csjwt.Token {
+func (sc scopedConfig) TemplateToken() (tk csjwt.Token) {
 	if sc.templateTokenFunc != nil {
-		return sc.templateTokenFunc()
+		tk = sc.templateTokenFunc()
+	} else {
+		// must be a pointer because of the unmarshalling function
+		// default claim defines a map[string]interface{}
+		tk = csjwt.NewToken(&jwtclaim.Map{})
 	}
-	// must be a pointer because of the unmarshalling function
-	// default claim defines a map[string]interface{}
-	// TODO(cs) get rid of dependency on jwtclaim.Map
-	return csjwt.NewToken(&jwtclaim.Map{})
+	_ = tk.Claims.Set(jwtclaim.KeyTimeSkew, sc.Skew)
+	return
 }
 
 // ParseFromRequest parses a request to find a token in either the header, a
@@ -117,6 +121,7 @@ func defaultScopedConfig() (scopedConfig, error) {
 	sc := scopedConfig{
 		ScopeHash:     scope.DefaultHash,
 		Expire:        DefaultExpire,
+		Skew:          DefaultSkew,
 		Key:           key,
 		SigningMethod: hs256,
 		Verifier:      csjwt.NewVerification(hs256),
@@ -297,6 +302,33 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.Expire = scNew.Expire
+			scNew = sc
+		}
+		scNew.ScopeHash = h
+		s.scopeCache[h] = scNew
+	}
+}
+
+// WithSkew sets the duration of time skew we allow between signer and verifier.
+// Must be a positive value.
+func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) {
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.Skew = d
+			return
+		}
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.Skew = d
+
+		if sc, ok := s.scopeCache[h]; ok {
+			sc.Skew = scNew.Skew
 			scNew = sc
 		}
 		scNew.ScopeHash = h

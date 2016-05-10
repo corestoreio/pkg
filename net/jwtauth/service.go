@@ -288,10 +288,6 @@ func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
 			sc.initKeyFunc()
 			hasChanges = true
 		}
-		if sc.Expire < 1 {
-			sc.Expire = DefaultExpire
-			hasChanges = true
-		}
 		if hasChanges {
 			s.mu.Lock()
 			s.scopeCache[h] = sc

@@ -54,6 +54,14 @@ func BackendOptions(be *Backend) jwtauth.ScopedOptionFunc {
 		}
 		opts = append(opts, jwtauth.WithExpiration(scp, id, exp))
 
+		skew, err := be.NetCtxjwtSkew.Get(sg)
+		if err != nil {
+			return append(opts, func(s *jwtauth.Service) {
+				s.AddError(errors.Wrap(err, "[backendjwt] NetCtxjwtSkew.Get"))
+			})
+		}
+		opts = append(opts, jwtauth.WithSkew(scp, id, skew))
+
 		isJTI, err := be.NetCtxjwtEnableJTI.Get(sg)
 		if err != nil {
 			return append(opts, func(s *jwtauth.Service) {

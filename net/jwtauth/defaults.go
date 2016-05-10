@@ -26,3 +26,6 @@ const DefaultSigningMethod = csjwt.HS512
 
 // DefaultExpire duration when a token expires
 const DefaultExpire = time.Hour
+
+// DefaultSkew duration of time skew we allow between signer and verifier.
+const DefaultSkew = time.Minute * 2

@@ -114,6 +114,43 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 	assert.Exactly(t, int(jwtauth.DefaultExpire.Seconds()), int(time.Unix(conv.ToInt64(exp), 0).Sub(now).Seconds()+1))
 }
 
+func TestWithMaxSkew_Valid(t *testing.T) {
+	jwts, err := jwtauth.NewService(
+		jwtauth.WithKey(scope.Website, 44, csjwt.WithPasswordRandom()),
+		jwtauth.WithSkew(scope.Website, 44, time.Second*5),
+		jwtauth.WithExpiration(scope.Website, 44, -time.Second*3),
+	)
+	cstesting.FatalIfError(t, err)
+
+	newTK, err := jwts.NewToken(scope.Website, 44, jwtclaim.Map{"key1": "value1"})
+	assert.NoError(t, err)
+
+	parsedTK, err := jwts.ParseScoped(scope.Website, 44, newTK.Raw)
+	assert.NoError(t, err)
+	assert.True(t, parsedTK.Valid, "Token must be valid")
+
+	k1, err1 := parsedTK.Claims.Get("key1")
+	cstesting.FatalIfError(t, err1)
+	assert.Exactly(t, "value1", k1)
+}
+
+func TestWithMaxSkew_NotValid(t *testing.T) {
+	jwts, err := jwtauth.NewService(
+		jwtauth.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
+		jwtauth.WithSkew(scope.Default, 0, time.Second*1),
+		jwtauth.WithExpiration(scope.Default, 0, -time.Second*3),
+	)
+	cstesting.FatalIfError(t, err)
+
+	newTK, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{"key1": "value1"})
+	assert.NoError(t, err)
+
+	parsedTK, err := jwts.Parse(newTK.Raw)
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.False(t, parsedTK.Valid, "Token must be NOT valid")
+
+}
+
 func TestOptionWithRSAReaderFail(t *testing.T) {
 
 	jm, err := jwtauth.NewService(

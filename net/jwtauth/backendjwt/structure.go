@@ -49,6 +49,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   jwtauth.DefaultExpire.String(),
 						},
 						element.Field{
+							// Path: net/jwtauth/skew
+							ID:        cfgpath.NewRoute("skew"),
+							Label:     text.Chars(`Max time skew`),
+							Comment:   text.Chars(`How much time skew we allow between signer and verifier. Per second (s), minute (i), hour (h) or day (d). Must be a positive value.`),
+							Type:      element.TypeText,
+							SortOrder: 25,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   jwtauth.DefaultSkew.String(),
+						},
+						element.Field{
 							// Path: net/jwtauth/enable_jti
 							ID:        cfgpath.NewRoute("enable_jti"),
 							Label:     text.Chars(`Enable Token ID`),

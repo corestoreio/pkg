@@ -60,6 +60,9 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Default, 0): "2m",
 		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Website, 1): "5m1s",
 
+		mustToPath(t, pb.NetCtxjwtSkew.ToPath, scope.Default, 0): "4m",
+		mustToPath(t, pb.NetCtxjwtSkew.ToPath, scope.Website, 1): "6m1s",
+
 		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.Default, 0): "pw1",
 		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.Website, 1): "pw2",
 	}
@@ -72,6 +75,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
 	assert.True(t, scNew.EnableJTI)
 	assert.Exactly(t, "5m1s", scNew.Expire.String())
+	assert.Exactly(t, "6m1s", scNew.Skew.String())
 	assert.Exactly(t, "HS512", scNew.SigningMethod.Alg())
 	assert.False(t, scNew.Key.IsEmpty())
 	assert.Nil(t, scNew.ErrorHandler)
@@ -99,12 +103,10 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 	pv := cfgmock.PathValue{
 		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.Default, 0): "HS384",
-
-		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.Default, 0): 0, // disabled
-
-		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Default, 0): "2m",
-
-		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.Default, 0): "pw1",
+		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.Default, 0):     0, // disabled
+		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Default, 0):    "2m",
+		mustToPath(t, pb.NetCtxjwtSkew.ToPath, scope.Default, 0):          "3m",
+		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.Default, 0):  "pw1",
 	}
 
 	sg := cfgmock.NewService(cfgmock.WithPV(pv)).NewScoped(1, 0) // 1 = website euro and 0 no store ID provided like in the middleware
@@ -116,6 +118,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 	assert.False(t, scNew.EnableJTI)
 	assert.Exactly(t, "2m0s", scNew.Expire.String())
+	assert.Exactly(t, "3m0s", scNew.Skew.String())
 	assert.Exactly(t, "HS384", scNew.SigningMethod.Alg())
 	assert.False(t, scNew.Key.IsEmpty())
 
@@ -153,6 +156,19 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 
 	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Default, 0): "Fail",
+	}))
+
+	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.False(t, sc.IsValid())
+}
+
+func TestServiceWithBackend_InvalidSkew(t *testing.T) {
+
+	jwts, pb := getJwts(nil)
+
+	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, pb.NetCtxjwtSkew.ToPath, scope.Default, 0): "Fail171",
 	}))
 
 	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
