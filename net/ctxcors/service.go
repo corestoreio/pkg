@@ -156,12 +156,12 @@ func (s *Service) WithCORS() mw.Middleware {
 			}
 
 			if s.defaultScopeCache.log.IsInfo() {
-				s.defaultScopeCache.log.Info("ctxcors.Cors.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
+				s.defaultScopeCache.log.Info("ctxcors.Service.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
 			}
 
 			if r.Method == httputil.MethodOptions {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("ctxcors.Cors.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
+					s.defaultScopeCache.log.Debug("ctxcors.Service.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
 				}
 				scpCfg.handlePreflight(w, r)
 				// Preflight requests are standalone and should stop the chain as some other
@@ -227,14 +227,19 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		// fallback to default scope
 		var err error
 		if !s.defaultScopeCache.IsValid() {
-			err = errors.NewNotFoundf(errConfigNotFound, scope.DefaultHash)
+			err = errConfigNotFound
+			if s.defaultScopeCache.log.IsDebug() {
+				s.defaultScopeCache.log.Debug("ctxcors.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String(), "fallback", fallback)
+			}
 		}
 		return s.defaultScopeCache, err
-
 	}
 
+	if s.defaultScopeCache.log.IsDebug() {
+		s.defaultScopeCache.log.Debug("ctxcors.Service.getConfigByScopeID.scoped", "err", errConfigNotFound, "scope", hash.String(), "fallback", fallback)
+	}
 	// give up, nothing found
-	return empty, errors.NewNotFoundf(errConfigNotFound, hash)
+	return empty, errConfigNotFound
 }
 
 // getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock

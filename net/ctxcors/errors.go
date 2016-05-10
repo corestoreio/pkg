@@ -14,10 +14,12 @@
 
 package ctxcors
 
+import "github.com/corestoreio/csfw/util/errors"
+
 const errInvalidDurations = "[ctxcors] MaxAge: Invalid Duration seconds: %.0f"
 
 const errServiceUnsupportedScope = "[ctxcors] Service does not support this: %s. Only default or website scope are allowed."
 
 const errScopedConfigNotValid = `[ctxcors] ScopedConfig %s invalid`
 
-const errConfigNotFound = `[ctxcors] ScopedConfig %s not available`
+var errConfigNotFound = errors.NewNotFoundf(`[ctxcors] ScopedConfig not available`)
