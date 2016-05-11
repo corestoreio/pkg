@@ -16,60 +16,36 @@ package store
 
 import (
 	"context"
-	"github.com/corestoreio/csfw/store/scope"
+
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-var errContextProviderNotFound = errors.NewNotFoundf("[store] Provider not found in context.Context")
+var errContextProviderNotFound = errors.NewNotFoundf("[store] Requested Store not found in context.Context")
 
-type ctxServiceKey struct{}
-type ctxServiceWrapper struct {
-	service        Provider
-	requestedStore *Store
+type ctxRequestedStoreKey struct{}
+type ctxRequestedStoreWrapper struct {
+	s   *Store
+	err error
 }
 
-// FromContextProvider returns a store.Provider and a store.Store from a context.
-// The *store.Store is either the current requested store (via JWT or cookie or REQUEST
-// parameter) or if those are not set then the default initialized store when
-// instantiating a new Getter. The returned store.Store identifies the current
+// FromContextRequestedStore returns the requested store.Store from a context
+// valid for the current request scope.
+// The *store.Store represents the current requested store (via JWT or cookie or REQUEST
+// parameter). The returned store.Store identifies the current
 // scope.Scope of a request. If it cannot determine a store.Store then the
-// error ErrStoreNotFound will get returned.
-func FromContextProvider(ctx context.Context) (Provider, *Store, error) {
-	sw, ok := ctx.Value(ctxServiceKey{}).(ctxServiceWrapper)
-	if !ok || sw.service == nil {
-		return nil, nil, errContextProviderNotFound
+// not found error will get returned.
+func FromContextRequestedStore(ctx context.Context) (*Store, error) {
+	st, ok := ctx.Value(ctxRequestedStoreKey{}).(ctxRequestedStoreWrapper)
+	if !ok || (st.s == nil && st.err == nil) {
+		return nil, errContextProviderNotFound
 	}
-
-	if sw.requestedStore == nil {
-		var err error
-		sw.requestedStore, err = sw.service.Store()
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-	return sw.service, sw.requestedStore, nil
+	return st.s, st.err
 }
 
-// WithContextProvider adds a store.Provider and an optional requestedStore to the context.
-// requestedStore can be provided 0 or 1 time. If you provide the RequestedStore
-// argument then it will override the default RequestedStore from FromContextReader()
-func WithContextProvider(ctx context.Context, r Provider, requestedStore ...*Store) context.Context {
-	var rs *Store
-	if len(requestedStore) == 1 {
-		rs = requestedStore[0]
-	}
-	return context.WithValue(ctx, ctxServiceKey{}, ctxServiceWrapper{
-		service:        r,
-		requestedStore: rs,
-	})
-}
-
-// WithContextMustService creates a new StoreService wrapped in a context.Background().
-// Convenience function. Panics on error.
-func WithContextMustService(so scope.Option, s Storager) context.Context {
-	sm, err := NewService(so, s)
-	if err != nil {
-		panic(err)
-	}
-	return WithContextProvider(context.Background(), sm)
+// WithContextRequestedStore adds the requestedStore to the context.
+// This function must only be used one time to set the requested store for one
+// request. Usually a store gets initialized by the store.NewService() init,
+// JSON web token middleware or cookie and form based middleware.
+func WithContextRequestedStore(ctx context.Context, requestedStore *Store, err error) context.Context {
+	return context.WithValue(ctx, ctxRequestedStoreKey{}, ctxRequestedStoreWrapper{requestedStore, err})
 }

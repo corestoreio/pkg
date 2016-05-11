@@ -15,14 +15,11 @@
 package storenet_test
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"bytes"
-
-	"context"
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -174,14 +171,16 @@ func getMWTestRequest(m, u string, c *http.Cookie) *http.Request {
 	return req
 }
 
-func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFunc {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := store.FromContextProvider(ctx)
+func finalInitStoreHandler(t *testing.T, wantStoreCode string, wantErrBhf errors.BehaviourFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		haveReqStore, err := store.FromContextRequestedStore(r.Context())
+		if wantErrBhf != nil {
+			assert.True(t, wantErrBhf(err), "\nIndex Error %s", err)
+		}
 		if err != nil {
-			return err
+			t.Fatal(err)
 		}
 		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode())
-		return nil
 	}
 }
 
@@ -263,17 +262,14 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 
 	for i, test := range testsMWInitByFormCookie {
 
-		ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(test.haveSO))
+		srv := storemock.NewEurozzyService(test.haveSO)
+		dsv, err := srv.DefaultStoreView()
+		ctx := store.WithContextRequestedStore(test.req.Context(), dsv, errors.Wrap(err, "DefaultStoreView"))
 
-		mw := storenet.WithInitStoreByFormCookie(lg)(finalInitStoreHandler(t, test.wantStoreCode))
+		mw := storenet.WithInitStoreByFormCookie(srv, lg)(finalInitStoreHandler(t, test.wantStoreCode, test.wantErrBhf))
 
 		rec := httptest.NewRecorder()
-		surfErr := mw.ServeHTTPContext(ctx, rec, test.req)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(surfErr), "\nIndex %d\n%s", i, surfErr)
-			debugLogBuf.Reset()
-			continue
-		}
+		mw.ServeHTTP(rec, test.req.WithContext(ctx))
 
 		if test.wantLog != "" {
 			assert.Contains(t, debugLogBuf.String(), test.wantLog, "\nIndex %d\n", i)
@@ -283,8 +279,6 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 			assert.Empty(t, debugLogBuf.String(), "\nIndex %d\n", i)
 		}
 
-		assert.NoError(t, surfErr, "Index %d", i)
-
 		newKeks := rec.HeaderMap.Get("Set-Cookie")
 		if test.wantCookie != "" {
 			assert.Contains(t, newKeks, test.wantCookie, "\nIndex %d\n", i)
@@ -293,10 +287,4 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 		}
 		debugLogBuf.Reset()
 	}
-}
-
-func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
-	mw := storenet.WithInitStoreByFormCookie(log.BlackHole{})(nil)
-	err := mw.ServeHTTPContext(context.Background(), nil, nil)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }

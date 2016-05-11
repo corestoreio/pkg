@@ -17,11 +17,10 @@ package storenet
 import (
 	"net/http"
 
-	"context"
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
@@ -32,7 +31,8 @@ import (
 // is equal to the one defined in the configuration, if not
 // i.e. redirect from http://example.com/store/ to http://www.example.com/store/
 // @see app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
-func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middleware {
+// @todo refactor this whole function as BaseURL must be bound to a store type
+func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 
 	// Having the GetBool command here, means you must restart the app to take
 	// changes in effect. @todo refactor and use pub/sub to automatically change
@@ -51,30 +51,32 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middlew
 	}
 	// </todo check logic>
 
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			if configRedirectCode > 0 && r.Method != "POST" {
 
-				_, requestedStore, err := store.FromContextProvider(ctx)
+				requestedStore, err := store.FromContextRequestedStore(r.Context())
 				if err != nil {
 					if l.IsDebug() {
-						l.Debug("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", err, "ctx", ctx)
+						l.Debug("http.WithValidateBaseUrl.FromContextServiceReader", "err", err, "req", r)
 					}
-					return errors.Wrap(err, "[storenet] Context")
+					serveError(h, w, r, errors.Wrap(err, "[storenet] Context"))
+					return
 				}
 
 				baseURL, err := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
 				if err != nil {
 					if l.IsDebug() {
-						l.Debug("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
+						l.Debug("http.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "req", r)
 					}
-					return errors.Wrap(err, "[storenet] ")
+					serveError(h, w, r, errors.Wrap(err, "[storenet] BaseURL"))
+					return
 				}
 
 				if err := httputil.IsBaseURLCorrect(r, &baseURL); err != nil {
 					if l.IsDebug() {
-						l.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
+						l.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "req", r)
 					}
 
 					baseURL.Path = r.URL.Path
@@ -82,11 +84,11 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middlew
 					baseURL.RawQuery = r.URL.RawQuery
 					baseURL.Fragment = r.URL.Fragment
 					http.Redirect(w, r, (&baseURL).String(), redirectCode)
-					return nil
+					return
 				}
 			}
-			return hf(ctx, w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
 }
 
@@ -97,19 +99,20 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) ctxhttp.Middlew
 // It calls Getter.RequestedStore() to determine the correct store.
 // 		1. check cookie store, always a string and the store code
 // 		2. check for GET ___store variable, always a string and the store code
-func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
+func WithInitStoreByFormCookie(storeService store.Provider, l log.Logger) mw.Middleware {
 
 	// todo: build this in an equal way like the JSON web token service
 
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			storeService, requestedStore, err := store.FromContextProvider(ctx)
+			requestedStore, err := store.FromContextRequestedStore(r.Context())
 			if err != nil {
 				if l.IsDebug() {
-					l.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
+					l.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "req", r)
 				}
-				return errors.Wrap(err, "[storenet] Context")
+				serveError(h, w, r, errors.Wrap(err, "[storenet] FromContextRequestedStore"))
+				return
 			}
 
 			var reqSO scope.Option
@@ -126,16 +129,18 @@ func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
 					if l.IsDebug() {
 						l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", "err", err, "req", r, "scope", reqSO)
 					}
-					return hf.ServeHTTPContext(ctx, w, r)
+					h.ServeHTTP(w, r)
+					return
 				}
 			}
 
-			var newRequestedStore *store.Store
-			if newRequestedStore, err = storeService.RequestedStore(reqSO); err != nil {
+			newRequestedStore, err := storeService.RequestedStore(reqSO)
+			if err != nil {
 				if l.IsDebug() {
 					l.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)
 				}
-				return errors.Wrap(err, "[storenet] RequestedStore")
+				serveError(h, w, r, errors.Wrap(err, "[storenet] RequestedStore"))
+				return
 			}
 
 			soStoreCode := reqSO.StoreCode()
@@ -147,7 +152,8 @@ func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
 					if l.IsDebug() {
 						l.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
 					}
-					return errors.Wrap(err, "[storenet] Website.DefaultStore")
+					serveError(h, w, r, errors.Wrap(err, "[storenet] Website.DefaultStore"))
+					return
 				}
 				keks := Cookie{Store: newRequestedStore}
 				if wds.Data.Code.String == soStoreCode {
@@ -156,14 +162,17 @@ func WithInitStoreByFormCookie(l log.Logger) ctxhttp.Middleware {
 					keks.Set(w) // make sure we force set the new store
 
 					if newRequestedStore.StoreID() != requestedStore.StoreID() {
-						// this may lead to a bug because the previously set storeService and requestedStore
-						// will still exists and have not been removed.
-						ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)
+						r = r.WithContext(store.WithContextRequestedStore(r.Context(), newRequestedStore, nil))
 					}
 				}
 			}
 
-			return hf(ctx, w, r)
-		}
+			h.ServeHTTP(w, r)
+		})
 	}
+}
+
+func serveError(next http.Handler, w http.ResponseWriter, r *http.Request, err error) {
+	r.WithContext(store.WithContextRequestedStore(r.Context(), nil, err))
+	next.ServeHTTP(w, r)
 }

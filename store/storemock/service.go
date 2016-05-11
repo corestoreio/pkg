@@ -16,6 +16,7 @@ package storemock
 
 import (
 	"context"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -41,13 +42,14 @@ func MustNewService(so scope.Option, opts ...func(ms *Storage)) *store.Service {
 }
 
 // WithContextMustService creates a new StoreService wrapped in a context.Background().
-// Panics on error.
-func WithContextMustService(so scope.Option, opts ...func(ms *Storage)) context.Context {
+// Panics on error. The context contains the request store which is equal to DefaultStoreView()
+func WithContextMustService(so scope.Option, opts ...func(ms *Storage)) (store.Provider, context.Context) {
 	sm, err := NewService(so, opts...)
 	if err != nil {
 		panic(err)
 	}
-	return store.WithContextProvider(context.Background(), sm)
+	defaultSt, err := sm.DefaultStoreView()
+	return sm, store.WithContextRequestedStore(context.Background(), defaultSt, err)
 }
 
 // Storage main underlying data container

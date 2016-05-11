@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"context"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -27,32 +28,28 @@ import (
 )
 
 func TestContextReaderError(t *testing.T) {
-	t.Parallel()
-	haveMr, s, err := store.FromContextProvider(context.Background())
-	assert.Nil(t, haveMr)
+
+	s, err := store.FromContextRequestedStore(context.Background())
 	assert.Nil(t, s)
 	assert.True(t, errors.IsNotFound(err))
 
-	ctx := store.WithContextProvider(context.Background(), nil)
+	ctx := store.WithContextRequestedStore(context.Background(), nil)
 	assert.NotNil(t, ctx)
-	haveMr, s, err = store.FromContextProvider(ctx)
-	assert.Nil(t, haveMr)
+	s, err = store.FromContextRequestedStore(ctx)
 	assert.Nil(t, s)
-	assert.True(t, errors.IsNotFound(err))
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
-	mr := storemock.NewNullService()
-	ctx = store.WithContextProvider(context.Background(), mr)
+	ctx = store.WithContextRequestedStore(context.Background(), (*store.Store)(nil))
 	assert.NotNil(t, ctx)
-	haveMr, s, err = store.FromContextProvider(ctx)
+	s, err = store.FromContextRequestedStore(ctx)
 	assert.True(t, errors.IsNotFound(err))
-	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
 
 }
 
 func TestContextReaderSuccess(t *testing.T) {
-	t.Parallel()
-	ctx := storemock.WithContextMustService(scope.Option{},
+
+	srv, ctx := storemock.WithContextMustService(scope.Option{},
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
 				return store.NewStore(
@@ -64,22 +61,12 @@ func TestContextReaderSuccess(t *testing.T) {
 		},
 	)
 
-	haveMr, s, err := store.FromContextProvider(ctx)
+	s, err := store.FromContextRequestedStore(ctx)
 	assert.NoError(t, err)
 	assert.Exactly(t, int64(6), s.StoreID())
 
-	s2, err2 := haveMr.Store()
+	s2, err2 := srv.Store()
 	assert.NoError(t, err2)
 	assert.Exactly(t, int64(6), s2.StoreID())
 
-}
-
-func TestWithContextMustService(t *testing.T) {
-	t.Parallel()
-	defer func() {
-		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), "runtime error: invalid memory address or nil pointer dereference")
-		}
-	}()
-	store.WithContextMustService(scope.Option{}, nil)
 }

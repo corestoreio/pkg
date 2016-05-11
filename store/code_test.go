@@ -23,7 +23,7 @@ import (
 )
 
 func TestValidateStoreCode(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have       string
 		wantErrBhf errors.BehaviourFunc

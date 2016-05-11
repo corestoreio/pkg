@@ -97,7 +97,7 @@ type (
 // This function is mainly used when booting the app to set the environment configuration
 // Also all other calls to any method receiver with nil arguments depends on the internal
 // appStore which reflects the default store ID.
-func NewService(so scope.Option, storage Storager) (*Service, error) {
+func NewService(so scope.Option, st Storager) (*Service, error) {
 	scopeID := so.Scope()
 	if scopeID == scope.Default {
 		scopeID = scope.Website
@@ -105,7 +105,7 @@ func NewService(so scope.Option, storage Storager) (*Service, error) {
 
 	s := &Service{
 		boundToScope: scopeID,
-		storage:      storage,
+		storage:      st,
 		websiteMap:   make(map[uint32]*Website),
 		groupMap:     make(map[uint32]*Group),
 		storeMap:     make(map[uint32]*Store),
@@ -120,8 +120,8 @@ func NewService(so scope.Option, storage Storager) (*Service, error) {
 }
 
 // MustNewService same as NewService, but panics on error.
-func MustNewService(so scope.Option, storage Storager) *Service {
-	m, err := NewService(so, storage)
+func MustNewService(so scope.Option, st Storager) *Service {
+	m, err := NewService(so, st)
 	if err != nil {
 		panic(err)
 	}
