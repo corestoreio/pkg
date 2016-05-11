@@ -162,7 +162,7 @@ func WithInitStoreByFormCookie(storeService store.Provider, l log.Logger) mw.Mid
 					keks.Set(w) // make sure we force set the new store
 
 					if newRequestedStore.StoreID() != requestedStore.StoreID() {
-						r = r.WithContext(store.WithContextRequestedStore(r.Context(), newRequestedStore, nil))
+						r = r.WithContext(store.WithContextRequestedStore(r.Context(), newRequestedStore))
 					}
 				}
 			}

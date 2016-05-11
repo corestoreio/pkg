@@ -46,6 +46,11 @@ func FromContextRequestedStore(ctx context.Context) (*Store, error) {
 // This function must only be used one time to set the requested store for one
 // request. Usually a store gets initialized by the store.NewService() init,
 // JSON web token middleware or cookie and form based middleware.
-func WithContextRequestedStore(ctx context.Context, requestedStore *Store, err error) context.Context {
+// Only one error can be passed, multiple errors get ignored from the 2nd position.
+func WithContextRequestedStore(ctx context.Context, requestedStore *Store, errs ...error) context.Context {
+	var err error
+	if len(errs) > 0 {
+		err = errs[0]
+	}
 	return context.WithValue(ctx, ctxRequestedStoreKey{}, ctxRequestedStoreWrapper{requestedStore, err})
 }
