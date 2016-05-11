@@ -33,13 +33,13 @@ func TestContextReaderError(t *testing.T) {
 	assert.Nil(t, s)
 	assert.True(t, errors.IsNotFound(err))
 
-	ctx := store.WithContextRequestedStore(context.Background(), nil)
+	ctx := store.WithContextRequestedStore(context.Background(), nil, nil)
 	assert.NotNil(t, ctx)
 	s, err = store.FromContextRequestedStore(ctx)
 	assert.Nil(t, s)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
-	ctx = store.WithContextRequestedStore(context.Background(), (*store.Store)(nil))
+	ctx = store.WithContextRequestedStore(context.Background(), (*store.Store)(nil), nil)
 	assert.NotNil(t, ctx)
 	s, err = store.FromContextRequestedStore(ctx)
 	assert.True(t, errors.IsNotFound(err))
