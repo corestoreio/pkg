@@ -15,9 +15,9 @@
 package store
 
 import (
+	"context"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"golang.org/x/net/context"
 )
 
 var errContextProviderNotFound = errors.NewNotFoundf("[store] Provider not found in context.Context")

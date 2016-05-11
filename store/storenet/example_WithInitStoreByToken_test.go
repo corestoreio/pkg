@@ -29,7 +29,7 @@ package storenet_test
 //	"github.com/corestoreio/csfw/store/scope"
 //	"github.com/corestoreio/csfw/store/storenet"
 //	"github.com/corestoreio/csfw/util/log"
-//	"golang.org/x/net/context"
+//	"context"
 //)
 //
 //var testDebugLogBuf bytes.Buffer

@@ -21,6 +21,7 @@ import (
 
 	"bytes"
 
+	"context"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -29,7 +30,6 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 //var middlewareConfigReader *cfgmock.Service

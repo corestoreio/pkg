@@ -15,11 +15,11 @@
 package storemock
 
 import (
+	"context"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"golang.org/x/net/context"
 )
 
 // NewService creates a new StoreService

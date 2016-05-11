@@ -17,6 +17,7 @@ package storenet
 import (
 	"net/http"
 
+	"context"
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
@@ -25,7 +26,6 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
-	"golang.org/x/net/context"
 )
 
 // WithValidateBaseURL is a middleware which checks if the request base URL
