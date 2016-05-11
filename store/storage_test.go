@@ -52,7 +52,7 @@ var testStorage = store.MustNewStorage(
 )
 
 func TestStorageWebsite(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have       scope.WebsiteIDer
 		wantErrBhf errors.BehaviourFunc
@@ -116,7 +116,7 @@ func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
 }
 
 func TestStorageWebsites(t *testing.T) {
-	t.Parallel()
+
 	websites, err := testStorage.Websites()
 	assert.NoError(t, err)
 	assert.EqualValues(t, util.StringSlice{"admin", "euro", "oz"}, websites.Codes())
@@ -141,7 +141,7 @@ func TestStorageWebsites(t *testing.T) {
 }
 
 func TestWebsiteSliceFilter(t *testing.T) {
-	t.Parallel()
+
 	websites, err := testStorage.Websites()
 	assert.NoError(t, err)
 	assert.True(t, websites.Len() == 3)
@@ -153,7 +153,6 @@ func TestWebsiteSliceFilter(t *testing.T) {
 }
 
 func TestStorageGroup(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		id         scope.GroupIDer
@@ -213,7 +212,7 @@ func BenchmarkStorageGroupGetDefaultStore(b *testing.B) {
 }
 
 func TestStorageGroups(t *testing.T) {
-	t.Parallel()
+
 	groups, err := testStorage.Groups()
 	assert.NoError(t, err)
 	assert.EqualValues(t, util.Int64Slice{3, 1, 0, 2}, groups.IDs())
@@ -233,7 +232,7 @@ func TestStorageGroups(t *testing.T) {
 }
 
 func TestGroupSliceFilter(t *testing.T) {
-	t.Parallel()
+
 	groups, err := testStorage.Groups()
 	assert.NoError(t, err)
 	gs := groups.Filter(func(g *store.Group) bool {
@@ -243,7 +242,7 @@ func TestGroupSliceFilter(t *testing.T) {
 }
 
 func TestStorageGroupNoWebsite(t *testing.T) {
-	t.Parallel()
+
 	var tst = store.MustNewStorage(
 		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
@@ -266,7 +265,6 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 }
 
 func TestStorageStore(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		have       scope.StoreIDer
@@ -331,7 +329,7 @@ func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 }
 
 func TestStorageStores(t *testing.T) {
-	t.Parallel()
+
 	stores, err := testStorage.Stores()
 	assert.NoError(t, err)
 	assert.EqualValues(t, util.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, stores.Codes())
@@ -357,7 +355,7 @@ func TestStorageStores(t *testing.T) {
 }
 
 func TestDefaultStoreView(t *testing.T) {
-	t.Parallel()
+
 	st, err := testStorage.DefaultStoreView()
 	assert.NoError(t, err)
 	assert.EqualValues(t, "at", st.Data.Code.String)
@@ -393,7 +391,6 @@ func TestDefaultStoreView(t *testing.T) {
 }
 
 func TestStorageStoreErrors(t *testing.T) {
-	t.Parallel()
 
 	var nsw = store.MustNewStorage(
 		store.SetStorageWebsites(),
@@ -449,7 +446,7 @@ func BenchmarkStorageDefaultStoreView(b *testing.B) {
 
 func TestStorageReInit(t *testing.T) {
 	// quick implement, use mock of dbr.SessionRunner and remove connection
-	t.Parallel()
+
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip(err)
 	}

@@ -40,7 +40,7 @@ var _ scope.StoreCoder = (*store.Store)(nil)
 const TODO_Better_Test_Data = "@todo implement better test data which is equal for each Magento version"
 
 func TestNewStore(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		w *store.TableWebsite
 		g *store.TableGroup
@@ -74,7 +74,7 @@ func TestNewStore(t *testing.T) {
 }
 
 func TestNewStoreErrorIncorrectGroup(t *testing.T) {
-	t.Parallel()
+
 	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
@@ -85,7 +85,7 @@ func TestNewStoreErrorIncorrectGroup(t *testing.T) {
 }
 
 func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
-	t.Parallel()
+
 	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
@@ -96,7 +96,7 @@ func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
 }
 
 func TestStoreSlice(t *testing.T) {
-	t.Parallel()
+
 	storeSlice := store.StoreSlice{
 		store.MustNewStore(
 			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -139,15 +139,13 @@ var testStores = store.TableStoreSlice{
 
 func TestTableStoreSliceLoad(t *testing.T) {
 	// quick implement, use mock of dbr.SessionRunner and remove connection
-	t.Parallel()
+
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip(err)
 	}
 	dbCon := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbCon.Close()) }()
-	if err := store.TableCollection.Init(dbCon.NewSession()); err != nil {
-		t.Fatal(err)
-	}
+	// store.TableCollection initialized with test TestTableGroupSliceLoad()
 
 	var stores store.TableStoreSlice
 	_, err := stores.SQLSelect(dbCon.NewSession())
@@ -159,7 +157,7 @@ func TestTableStoreSliceLoad(t *testing.T) {
 }
 
 func TestTableStoreSliceFindByID(t *testing.T) {
-	t.Parallel()
+
 	const eLen = 7
 	assert.Exactly(t, eLen, testStores.Len())
 
@@ -174,7 +172,7 @@ func TestTableStoreSliceFindByID(t *testing.T) {
 }
 
 func TestTableStoreSliceFindByCode(t *testing.T) {
-	t.Parallel()
+
 	s1, found := testStores.FindByCode("corestore")
 	assert.Nil(t, s1)
 	assert.False(t, found)
@@ -186,7 +184,7 @@ func TestTableStoreSliceFindByCode(t *testing.T) {
 }
 
 func TestTableStoreSliceFilterByGroupID(t *testing.T) {
-	t.Parallel()
+
 	gStores := testStores.FilterByGroupID(3)
 	assert.NotNil(t, gStores)
 	assert.Len(t, gStores, 2)
@@ -196,7 +194,7 @@ func TestTableStoreSliceFilterByGroupID(t *testing.T) {
 }
 
 func TestTableStoreSliceFilterByWebsiteID(t *testing.T) {
-	t.Parallel()
+
 	gStores := testStores.FilterByWebsiteID(0)
 	assert.NotNil(t, gStores)
 	assert.Len(t, gStores, 1)
@@ -235,7 +233,6 @@ func TestTableStoreSliceIDs(t *testing.T) {
 }
 
 func TestStoreBaseURLandPath(t *testing.T) {
-	t.Parallel()
 
 	t.Skip("@todo refactor and move these functions into another package")
 
@@ -318,7 +315,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 }
 
 func TestMarshalJSON(t *testing.T) {
-	t.Parallel()
+
 	s := store.MustNewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},

@@ -24,7 +24,7 @@ import (
 )
 
 func TestMustSetByCode(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err, ok := r.(error)
@@ -40,7 +40,7 @@ func TestMustSetByCode(t *testing.T) {
 }
 
 func TestMustSetByID(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err, ok := r.(error)
@@ -56,7 +56,7 @@ func TestMustSetByID(t *testing.T) {
 }
 
 func TestApplyCode(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		wantStoreCode   string
 		wantWebsiteCode string
@@ -85,7 +85,7 @@ func TestApplyCode(t *testing.T) {
 }
 
 func TestApplyID(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		wantWebsiteID scope.WebsiteIDer
 		wantGroupID   scope.GroupIDer
@@ -137,7 +137,7 @@ func TestApplyID(t *testing.T) {
 }
 
 func TestApplyWebsite(t *testing.T) {
-	t.Parallel()
+
 	so := scope.Option{Website: scope.MockID(3)}
 	assert.NotNil(t, so)
 	assert.Equal(t, int64(3), so.Website.WebsiteID())
@@ -147,7 +147,7 @@ func TestApplyWebsite(t *testing.T) {
 }
 
 func TestApplyGroup(t *testing.T) {
-	t.Parallel()
+
 	so := scope.Option{Group: scope.MockID(3)}
 	assert.NotNil(t, so)
 	assert.Equal(t, int64(3), so.Group.GroupID())
@@ -157,7 +157,7 @@ func TestApplyGroup(t *testing.T) {
 }
 
 func TestApplyStore(t *testing.T) {
-	t.Parallel()
+
 	so := scope.Option{Store: scope.MockID(3)}
 	assert.NotNil(t, so)
 	assert.Equal(t, int64(3), so.Store.StoreID())
@@ -167,14 +167,14 @@ func TestApplyStore(t *testing.T) {
 }
 
 func TestApplyDefault(t *testing.T) {
-	t.Parallel()
+
 	so := scope.Option{}
 	assert.NotNil(t, so)
 	assert.Exactly(t, scope.Default, so.Scope())
 }
 
 func TestToUint32ByID(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		so   scope.Option
 		want uint32
@@ -192,7 +192,7 @@ func TestToUint32ByID(t *testing.T) {
 }
 
 func TestToUint32ByCode(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		so   scope.Option
 		want string

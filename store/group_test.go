@@ -30,7 +30,7 @@ var _ scope.GroupIDer = (*store.Group)(nil)
 var _ scope.StoreIDer = (*store.Group)(nil)
 
 func TestNewGroup(t *testing.T) {
-	t.Parallel()
+
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 	)
@@ -44,7 +44,7 @@ func TestNewGroup(t *testing.T) {
 }
 
 func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
-	t.Parallel()
+
 	ng, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)}),
@@ -54,7 +54,7 @@ func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
 }
 
 func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
-	t.Parallel()
+
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupStores(
@@ -69,7 +69,7 @@ func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
 }
 
 func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
-	t.Parallel()
+
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupStores(
@@ -84,7 +84,6 @@ func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
 }
 
 func TestNewGroupSetStores(t *testing.T) {
-	t.Parallel()
 
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
@@ -121,7 +120,7 @@ var testGroups = store.TableGroupSlice{
 }
 
 func TestTableGroupSliceLoad(t *testing.T) {
-	t.Parallel()
+
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip(err)
 	}
@@ -143,13 +142,13 @@ func TestTableGroupSliceLoad(t *testing.T) {
 }
 
 func TestTableGroupSliceIDs(t *testing.T) {
-	t.Parallel()
+
 	assert.EqualValues(t, []int64{3, 1, 0, 2}, testGroups.Extract().GroupID())
 	assert.True(t, testGroups.Len() == 4)
 }
 
 func TestTableGroupSliceFindByID(t *testing.T) {
-	t.Parallel()
+
 	g1, found := testGroups.FindByGroupID(999)
 	assert.False(t, found, "ID not found in TableGroupSlice")
 	assert.Nil(t, g1)

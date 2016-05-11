@@ -22,7 +22,7 @@ import (
 )
 
 func TestPermAll(t *testing.T) {
-	t.Parallel()
+
 	var p scope.Perm
 	pa := p.All()
 	assert.True(t, pa.Has(scope.Default))
@@ -31,7 +31,6 @@ func TestPermAll(t *testing.T) {
 }
 
 func TestPermTop(t *testing.T) {
-	t.Parallel()
 
 	assert.Exactly(t, scope.Website, scope.PermWebsite.Top())
 	assert.Exactly(t, scope.Store, scope.PermStore.Top())
@@ -42,7 +41,7 @@ func TestPermTop(t *testing.T) {
 }
 
 func TestPermMarshalJSONAll(t *testing.T) {
-	t.Parallel()
+
 	var p scope.Perm
 	pa := p.All()
 	jd, err := pa.MarshalJSON()
@@ -51,7 +50,7 @@ func TestPermMarshalJSONAll(t *testing.T) {
 }
 
 func TestPermMarshalJSONNull(t *testing.T) {
-	t.Parallel()
+
 	var p scope.Perm
 	jd, err := p.MarshalJSON()
 	assert.NoError(t, err)

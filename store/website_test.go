@@ -32,7 +32,7 @@ var _ scope.GroupIDer = (*store.Website)(nil)
 var _ scope.WebsiteCoder = (*store.Website)(nil)
 
 func TestNewWebsite(t *testing.T) {
-	t.Parallel()
+
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 	)
@@ -51,7 +51,7 @@ func TestNewWebsite(t *testing.T) {
 }
 
 func TestNewWebsiteSetGroupsStores(t *testing.T) {
-	t.Parallel()
+
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		store.SetWebsiteGroupsStores(
@@ -104,7 +104,7 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 }
 
 func TestNewWebsiteStoreIDError(t *testing.T) {
-	t.Parallel()
+
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 	)
@@ -113,7 +113,7 @@ func TestNewWebsiteStoreIDError(t *testing.T) {
 }
 
 func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
-	t.Parallel()
+
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		store.SetWebsiteGroupsStores(
@@ -158,7 +158,7 @@ func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
 //}
 //
 func TestWebsiteBaseCurrency(t *testing.T) {
-	t.Parallel()
+
 	t.Skip("@todo refactor and move into different package")
 	//	tests := []struct {
 	//		priceScope int
@@ -197,7 +197,7 @@ func TestWebsiteBaseCurrency(t *testing.T) {
 }
 
 func TestTableWebsiteSlice(t *testing.T) {
-	t.Parallel()
+
 	websites := store.TableWebsiteSlice{
 		0: &store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		1: &store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
@@ -231,10 +231,12 @@ func TestTableWebsiteSlice(t *testing.T) {
 }
 
 func TestTableWebsiteSliceLoad(t *testing.T) {
-	t.Parallel()
+
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip(err)
 	}
+	// store.TableCollection initialized with test TestTableGroupSliceLoad()
+
 	dbCon := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbCon.Close()) }()
 

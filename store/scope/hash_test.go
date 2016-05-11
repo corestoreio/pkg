@@ -25,13 +25,13 @@ import (
 )
 
 func TestHashString(t *testing.T) {
-	t.Parallel()
+
 	s := scope.NewHash(scope.Store, 33).String()
 	assert.Exactly(t, "Scope(Store) ID(33)", s)
 }
 
 func TestHashSegment(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		h    scope.Hash
 		want uint8
@@ -63,20 +63,20 @@ func TestHashSegment(t *testing.T) {
 }
 
 func TestNewHashError(t *testing.T) {
-	t.Parallel()
+
 	h := scope.NewHash(scope.Absent, -1)
 	assert.Exactly(t, scope.Hash(0), h)
 }
 
 func TestFromHashError(t *testing.T) {
-	t.Parallel()
+
 	scp, id := scope.Hash(math.MaxUint32).Unpack()
 	assert.Exactly(t, scope.Absent, scp)
 	assert.Exactly(t, int64(-1), id)
 }
 
 func TestHashValid(t *testing.T) {
-	t.Parallel()
+
 	t.Logf("[Info] Max Store ID: %d", scope.MaxStoreID)
 
 	if testing.Short() {

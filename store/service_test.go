@@ -56,7 +56,7 @@ var serviceStoreSimpleTest = storemock.MustNewService(scope.Option{}, func(ms *s
 })
 
 func TestNewServiceStore(t *testing.T) {
-	t.Parallel()
+
 	assert.False(t, serviceStoreSimpleTest.IsCacheEmpty())
 	for j := 0; j < 3; j++ {
 		s, err := serviceStoreSimpleTest.Store(scope.MockCode("notNil"))
@@ -71,7 +71,7 @@ func TestNewServiceStore(t *testing.T) {
 }
 
 func TestMustNewService(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -98,7 +98,7 @@ func TestMustNewService(t *testing.T) {
 }
 
 func TestNewServiceDefaultStoreView(t *testing.T) {
-	t.Parallel()
+
 	serviceDefaultStore := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockStore = func() (*store.Store, error) {
 			return store.NewStore(
@@ -142,7 +142,7 @@ func BenchmarkServiceGetStore(b *testing.B) {
 }
 
 func TestNewServiceStores(t *testing.T) {
-	t.Parallel()
+
 	serviceStores := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 
 		ms.MockStore = func() (*store.Store, error) {
@@ -191,7 +191,7 @@ func TestNewServiceStores(t *testing.T) {
 }
 
 func TestMustNewServiceStores(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -210,7 +210,7 @@ func TestMustNewServiceStores(t *testing.T) {
 }
 
 func TestNewServiceGroup(t *testing.T) {
-	t.Parallel()
+
 	var serviceGroupSimpleTest = storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockGroup = func() (*store.Group, error) {
 			return store.NewGroup(
@@ -257,7 +257,7 @@ func TestNewServiceGroup(t *testing.T) {
 }
 
 func TestNewServiceGroups(t *testing.T) {
-	t.Parallel()
+
 	serviceGroups := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockGroupSlice = func() (store.GroupSlice, error) {
 			return store.GroupSlice{}, nil
@@ -288,7 +288,6 @@ func TestNewServiceGroups(t *testing.T) {
 }
 
 func TestNewServiceWebsite(t *testing.T) {
-	t.Parallel()
 
 	var serviceWebsite = storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockWebsite = func() (*store.Website, error) {
@@ -335,7 +334,7 @@ func TestNewServiceWebsite(t *testing.T) {
 }
 
 func TestNewServiceWebsites(t *testing.T) {
-	t.Parallel()
+
 	serviceWebsites := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 		ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
 			return store.WebsiteSlice{}, nil
@@ -412,7 +411,6 @@ func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServ
 }
 
 func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
-	t.Parallel()
 
 	initScope := scope.Option{Store: scope.MockID(1)}
 	sm := storemock.NewEurozzyService(initScope)
@@ -459,7 +457,7 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 }
 
 func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
-	t.Parallel()
+
 	initScope := scope.Option{Group: scope.MockID(1)}
 
 	sm := storemock.NewEurozzyService(initScope)
@@ -513,7 +511,7 @@ func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
 }
 
 func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
-	t.Parallel()
+
 	initScope := scope.Option{Website: scope.MockID(1)}
 
 	sm := storemock.NewEurozzyService(initScope)
@@ -562,7 +560,6 @@ func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
 }
 
 func TestNewServiceReInit(t *testing.T) {
-	t.Parallel()
 
 	t.Skip(TODO_Better_Test_Data)
 

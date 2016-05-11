@@ -25,15 +25,13 @@ import (
 
 // These constants are here on purpose hard coded
 func TestGetTable(t *testing.T) {
-	t.Parallel()
+
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
 		t.Skip(err)
 	}
 	dbCon := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbCon.Close()) }()
-	if err := store.TableCollection.Init(dbCon.NewSession()); err != nil {
-		t.Fatal(err)
-	}
+	// store.TableCollection initialized with test TestTableGroupSliceLoad()
 
 	tests := []struct {
 		ti    csdb.Index

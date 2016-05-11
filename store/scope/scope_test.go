@@ -21,7 +21,7 @@ import (
 )
 
 func TestScopeBits(t *testing.T) {
-	t.Parallel()
+
 	const (
 		scope1 Scope = iota + 1
 		scope2
@@ -56,7 +56,7 @@ func TestScopeBits(t *testing.T) {
 }
 
 func TestFromString(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have string
 		want Scope
@@ -72,7 +72,7 @@ func TestFromString(t *testing.T) {
 }
 
 func TestFromScope(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have Scope
 		want StrScope
@@ -90,7 +90,7 @@ func TestFromScope(t *testing.T) {
 }
 
 func TestStrScope(t *testing.T) {
-	t.Parallel()
+
 	assert.Equal(t, strDefault, StrDefault.String())
 	assert.Equal(t, strWebsites, StrWebsites.String())
 	assert.Equal(t, strStores, StrStores.String())
@@ -101,7 +101,7 @@ func TestStrScope(t *testing.T) {
 }
 
 func TestValid(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have string
 		want bool
@@ -119,7 +119,7 @@ func TestValid(t *testing.T) {
 }
 
 func TestFromBytes(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have []byte
 		want Scope
@@ -135,7 +135,7 @@ func TestFromBytes(t *testing.T) {
 }
 
 func TestValidBytes(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have []byte
 		want bool
@@ -153,7 +153,7 @@ func TestValidBytes(t *testing.T) {
 }
 
 func TestStrScopeBytes(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		id Scope
 	}{
