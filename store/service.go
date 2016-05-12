@@ -22,32 +22,49 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-type (
-	// Provider specifies a store Service from which you can only read.
-	// A Getter is bound to a scope.Scope.
-	Provider interface {
-		IsSingleStoreMode() bool
-		HasSingleStore() bool
-		Website(r ...scope.WebsiteIDer) (*Website, error)
-		Websites() (WebsiteSlice, error)
-		Group(r ...scope.GroupIDer) (*Group, error)
-		Groups() (GroupSlice, error)
-		Store(r ...scope.StoreIDer) (*Store, error)
-		Stores() (StoreSlice, error)
+// For now: not needed because too big and we only need the
+// RequestedStore(scope.Option) (activeStore *Store, err error) function type
+// there commented out until final remove.
+//
+//type (
+//	// Provider specifies a store Service from which you can only read.
+//	// A Getter is bound to a scope.Scope.
+//	Provider interface {
+//		IsSingleStoreMode() bool
+//		HasSingleStore() bool
+//		Website(r ...scope.WebsiteIDer) (*Website, error)
+//		Websites() (WebsiteSlice, error)
+//		Group(r ...scope.GroupIDer) (*Group, error)
+//		Groups() (GroupSlice, error)
+//		Store(r ...scope.StoreIDer) (*Store, error)
+//		Stores() (StoreSlice, error)
+//
+//		// DefaultStoreView because a Getter is bound to a specific scope.Scope,
+//		// this function will return always the default store view depending on
+//		// the scope.
+//		DefaultStoreView() (*Store, error)
+//
+//		// RequestedStore figures out the default active store for a scope.Option.
+//		// It takes into account that Getter is bound to a specific scope.Scope.
+//		// It also prevents running a store from another website or store group,
+//		// if website or store group was specified explicitly. RequestedStore returns
+//		// either an error or the store.
+//		RequestedStore(scope.Option) (activeStore *Store, err error)
+//	}
+//)
 
-		// DefaultStoreView because a Getter is bound to a specific scope.Scope,
-		// this function will return always the default store view depending on
-		// the scope.
-		DefaultStoreView() (*Store, error)
+// Requester knows how to retrieve a specific store depending on the
+// scope.Option.
+type Requester interface {
 
-		// RequestedStore figures out the default active store for a scope.Option.
-		// It takes into account that Getter is bound to a specific scope.Scope.
-		// It also prevents running a store from another website or store group,
-		// if website or store group was specified explicitly. RequestedStore returns
-		// either an error or the store.
-		RequestedStore(scope.Option) (activeStore *Store, err error)
-	}
-)
+	// RequestedStore figures out the default active store for a scope.Option.
+	// It takes into account that Getter is bound to a specific scope.Scope.
+	// It also prevents running a store from another website or store group,
+	// if website or store group was specified explicitly. RequestedStore returns
+	// either an error or the store. RequestedStore will be mostly used within
+	// an HTTP request.
+	RequestedStore(scope.Option) (activeStore *Store, err error)
+}
 
 type (
 	// Service represents type which handles the underlying storage and takes care

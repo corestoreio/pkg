@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ store.Provider = (*store.Service)(nil)
+var _ store.Requester = (*store.Service)(nil)
 
 //func init() {
 // Reminder to myself:

@@ -20,6 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -262,7 +263,7 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 
 	for i, test := range testsMWInitByFormCookie {
 
-		srv := storemock.NewEurozzyService(test.haveSO)
+		srv := storemock.NewEurozzyService(test.haveSO, store.WithStorageConfig(cfgmock.NewService()))
 		dsv, err := srv.DefaultStoreView()
 		ctx := store.WithContextRequestedStore(test.req.Context(), dsv, errors.Wrap(err, "DefaultStoreView"))
 

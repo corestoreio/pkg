@@ -99,7 +99,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 // It calls Getter.RequestedStore() to determine the correct store.
 // 		1. check cookie store, always a string and the store code
 // 		2. check for GET ___store variable, always a string and the store code
-func WithInitStoreByFormCookie(storeService store.Provider, l log.Logger) mw.Middleware {
+func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 
 	// todo: build this in an equal way like the JSON web token service
 
@@ -134,7 +134,7 @@ func WithInitStoreByFormCookie(storeService store.Provider, l log.Logger) mw.Mid
 				}
 			}
 
-			newRequestedStore, err := storeService.RequestedStore(reqSO)
+			newRequestedStore, err := rs.RequestedStore(reqSO)
 			if err != nil {
 				if l.IsDebug() {
 					l.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)

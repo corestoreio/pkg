@@ -47,9 +47,20 @@ func TestContextReaderError(t *testing.T) {
 
 }
 
+// withContextMustService creates a new StoreService wrapped in a context.Background().
+// Panics on error. The context contains the request store which is equal to DefaultStoreView()
+func withContextMustService(so scope.Option, opts ...func(ms *storemock.Storage)) (*store.Service, context.Context) {
+	sm, err := storemock.NewService(so, opts...)
+	if err != nil {
+		panic(err)
+	}
+	defaultSt, err := sm.DefaultStoreView()
+	return sm, store.WithContextRequestedStore(context.Background(), defaultSt, err)
+}
+
 func TestContextReaderSuccess(t *testing.T) {
 
-	srv, ctx := storemock.WithContextMustService(scope.Option{},
+	srv, ctx := withContextMustService(scope.Option{},
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
 				return store.NewStore(

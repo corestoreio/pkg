@@ -15,6 +15,6 @@
 package store
 
 // ScopeTree todo app/code/Magento/Store/Model/ScopeTreeProvider.php
-func ScopeTree(p Provider) {
+func ScopeTree(s *Service) {
 	// todo app/code/Magento/Store/Model/ScopeTreeProvider.php
 }
