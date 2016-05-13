@@ -28,9 +28,9 @@ func init() {
 	debugLogBuf = new(log.MutexBuffer)
 	infoLogBuf = new(log.MutexBuffer)
 
-	directory.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
-		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
+	directory.PkgLog = log.NewStdLog(
+		log.WithStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
+		log.WithStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
 	)
 	directory.PkgLog.SetLevel(log.StdLevelDebug)
 }

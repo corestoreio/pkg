@@ -23,8 +23,8 @@ import (
 )
 
 // PkgLog global package based logger
-var PkgLog log.Logger = log.NewStdLogger(
-	log.SetStdLevel(log.StdLevelFatal),
+var PkgLog log.Logger = log.NewStdLog(
+	log.WithStdLevel(log.StdLevelFatal),
 	//log.SetStdLevel(log.StdLevelDebug),
 )
 

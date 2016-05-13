@@ -60,7 +60,7 @@ func TestWithAccessLog(t *testing.T) {
 	var buf bytes.Buffer
 	defer buf.Reset()
 
-	testLog := log.NewStdLogger(log.SetStdWriter(&buf))
+	testLog := log.NewStdLog(log.WithStdWriter(&buf))
 
 	finalH := mw.Chain(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
