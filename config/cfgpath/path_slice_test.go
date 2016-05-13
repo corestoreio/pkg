@@ -27,7 +27,7 @@ import (
 var _ sort.Interface = (*cfgpath.PathSlice)(nil)
 
 func TestPathSlice_Contains(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		paths  cfgpath.PathSlice
 		search cfgpath.Path
@@ -56,7 +56,7 @@ func TestPathSlice_Contains(t *testing.T) {
 }
 
 func TestPathSlice_Sort(t *testing.T) {
-	t.Parallel()
+
 	ps := cfgpath.PathSlice{
 		cfgpath.MustNewByParts("bb/cc/dd"),
 		cfgpath.MustNewByParts("xx/yy/zz"),

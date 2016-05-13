@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// those tests cannot run in t.Parallel() because of reading and writing the debug log :-(
+// those tests cannot run in  because of reading and writing the debug log :-(
 
 var _ config.MessageReceiver = (*testSubscriber)(nil)
 
@@ -53,7 +53,7 @@ func initLogger() (*log.MutexBuffer, log.Logger) {
 }
 
 func TestPubSubBubbling(t *testing.T) {
-	t.Parallel()
+
 	testPath := cfgpath.MustNewByParts("aa/bb/cc")
 
 	s := config.MustNewService()
@@ -91,7 +91,7 @@ func TestPubSubBubbling(t *testing.T) {
 }
 
 func TestPubSubPanicSimple(t *testing.T) {
-	t.Parallel()
+
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.WithLogger(logger))
 	testPath := cfgpath.NewRoute("xx/yy/zz")
@@ -110,7 +110,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 }
 
 func TestPubSubPanicError(t *testing.T) {
-	t.Parallel()
+
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.WithLogger(logger))
 
@@ -133,7 +133,7 @@ func TestPubSubPanicError(t *testing.T) {
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
-	t.Parallel()
+
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.WithLogger(logger))
 
@@ -179,7 +179,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 }
 
 func TestPubSubUnsubscribe(t *testing.T) {
-	t.Parallel()
+
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.WithLogger(logger))
 
@@ -206,7 +206,7 @@ type levelCalls struct {
 }
 
 func TestPubSubEvict(t *testing.T) {
-	t.Parallel()
+
 	debugBuf, logger := initLogger()
 	s := config.MustNewService(config.WithLogger(logger))
 

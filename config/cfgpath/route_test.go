@@ -40,13 +40,13 @@ var _ fmt.Stringer = (*cfgpath.Route)(nil)
 var _ cfgpath.SelfRouter = (*cfgpath.Route)(nil)
 
 func TestRouteRouteSelfer(t *testing.T) {
-	t.Parallel()
+
 	r := cfgpath.NewRoute("a/b/c")
 	assert.Exactly(t, r, r.SelfRoute())
 }
 
 func TestRouteGoString(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have cfgpath.Route
 		want string
@@ -61,7 +61,7 @@ func TestRouteGoString(t *testing.T) {
 }
 
 func TestRouteEqual(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		a    cfgpath.Route
 		b    cfgpath.Route
@@ -82,7 +82,7 @@ func TestRouteEqual(t *testing.T) {
 }
 
 func TestRouteAppend(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		a          cfgpath.Route
 		b          cfgpath.Route
@@ -114,7 +114,6 @@ func TestRouteAppend(t *testing.T) {
 }
 
 func TestRouteVariadicAppend(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		a          cfgpath.Route
@@ -159,7 +158,7 @@ func BenchmarkRouteAppend(b *testing.B) {
 }
 
 func TestRouteTextMarshal(t *testing.T) {
-	t.Parallel()
+
 	r := cfgpath.NewRoute("admin/security/password_lifetime")
 	j, err := json.Marshal(r)
 	assert.NoError(t, err)
@@ -167,7 +166,7 @@ func TestRouteTextMarshal(t *testing.T) {
 }
 
 func TestRouteUnmarshalTextOk(t *testing.T) {
-	t.Parallel()
+
 	var r cfgpath.Route
 	err := json.Unmarshal([]byte(`"admin/security/password_lifetime"`), &r)
 	assert.NoError(t, err)
@@ -175,7 +174,7 @@ func TestRouteUnmarshalTextOk(t *testing.T) {
 }
 
 func TestRouteLevel(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have  cfgpath.Route
 		depth int
@@ -230,7 +229,7 @@ func benchmarkRouteLevelRun(b *testing.B, level int, have, want cfgpath.Route) {
 }
 
 func TestRouteHash(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have       cfgpath.Route
 		depth      int
@@ -269,7 +268,7 @@ func TestRouteHash(t *testing.T) {
 }
 
 func TestRouteHash32(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have     cfgpath.Route
 		wantHash uint32
@@ -329,7 +328,7 @@ func BenchmarkRouteHash32(b *testing.B) {
 }
 
 func TestRoutePartPosition(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have     cfgpath.Route
 		pos      int
@@ -382,7 +381,7 @@ func BenchmarkRoutePart(b *testing.B) {
 }
 
 func TestRouteValidate(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have    cfgpath.Route
 		wantBhf errors.BehaviourFunc
@@ -429,7 +428,7 @@ func BenchmarkRouteValidate(b *testing.B) {
 }
 
 func TestRouteSplit(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have       cfgpath.Route
 		wantPart   []string

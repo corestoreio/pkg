@@ -47,7 +47,6 @@ func TestPathValueGoStringer(t *testing.T) {
 }
 
 func TestNewMockGetterAllTypes(t *testing.T) {
-	t.Parallel()
 
 	types := []interface{}{"a", int(3141), float64(2.7182) * 3.141, true, time.Now(), []byte(`H∑llo goph€r`)}
 	p := cfgpath.MustNewByParts("aa/bb/cc")

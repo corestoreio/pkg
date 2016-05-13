@@ -27,7 +27,7 @@ import (
 )
 
 func TestStringCSVGet(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
 	b := cfgmodel.NewStringCSV(
@@ -71,7 +71,7 @@ func TestStringCSVGet(t *testing.T) {
 }
 
 func TestStringCSVWrite(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
 	b := cfgmodel.NewStringCSV(
@@ -93,7 +93,6 @@ func TestStringCSVWrite(t *testing.T) {
 }
 
 func TestStringCSVCustomSeparator(t *testing.T) {
-	t.Parallel()
 
 	const cfgPath = "aa/bb/cc"
 
@@ -122,7 +121,6 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 }
 
 func TestIntCSV(t *testing.T) {
-	t.Parallel()
 
 	const pathWebCorsIntSlice = "web/cors/int_slice"
 
@@ -175,7 +173,6 @@ func TestIntCSV(t *testing.T) {
 }
 
 func TestIntCSVWrite(t *testing.T) {
-	t.Parallel()
 
 	const pathWebCorsIntSlice = "web/cors/int_slice"
 
@@ -203,7 +200,6 @@ func TestIntCSVWrite(t *testing.T) {
 }
 
 func TestIntCSVCustomSeparator(t *testing.T) {
-	t.Parallel()
 
 	const pathWebCorsIntSlice = "web/cors/int_slice"
 

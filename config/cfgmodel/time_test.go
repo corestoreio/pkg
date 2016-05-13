@@ -38,7 +38,7 @@ func mustParseTime(s string) time.Time {
 }
 
 func TestTimeGetWithCfgStruct(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsTime = "web/cors/time"
 	tm := cfgmodel.NewTime("web/cors/time", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, tm.Options())
@@ -69,7 +69,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 }
 
 func TestTimeGetWithoutCfgStruct(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsTime = "web/cors/time"
 	b := cfgmodel.NewTime(pathWebCorsTime)
 	assert.Empty(t, b.Options())
@@ -99,7 +99,6 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 }
 
 func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
-	t.Parallel()
 
 	b := cfgmodel.NewTime("web/cors/time")
 	assert.Empty(t, b.Options())
@@ -114,7 +113,7 @@ func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 }
 
 func TestTimeIgnoreNilDefaultValues(t *testing.T) {
-	t.Parallel()
+
 	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithField(&element.Field{}))
 	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
 	if err != nil {
@@ -124,7 +123,7 @@ func TestTimeIgnoreNilDefaultValues(t *testing.T) {
 }
 
 func TestTimeWrite(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsF64 = "web/cors/time"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.Website, 10)
 	haveTime := mustParseTime("2000-08-23 09:20:13")
@@ -149,7 +148,7 @@ func mustParseDuration(s string) time.Duration {
 }
 
 func TestDurationGetWithCfgStruct(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsDuration = "web/cors/duration"
 	tm := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, tm.Options())
@@ -181,7 +180,7 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 }
 
 func TestDurationGetWithoutCfgStruct(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsDuration = "web/cors/duration"
 	b := cfgmodel.NewDuration(pathWebCorsDuration)
 	assert.Empty(t, b.Options())
@@ -211,7 +210,6 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 }
 
 func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
-	t.Parallel()
 
 	b := cfgmodel.NewDuration("web/cors/duration")
 	assert.Empty(t, b.Options())
@@ -226,7 +224,7 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 }
 
 func TestDurationIgnoreNilDefaultValues(t *testing.T) {
-	t.Parallel()
+
 	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithField(nil))
 	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
 	if err != nil {
@@ -236,7 +234,7 @@ func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 }
 
 func TestDurationWrite(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsF64 = "web/cors/duration"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.Website, 10)
 	haveDuration := mustParseDuration("4h33m")

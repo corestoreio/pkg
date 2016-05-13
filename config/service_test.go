@@ -34,7 +34,6 @@ var (
 )
 
 func TestService_ApplyDefaults(t *testing.T) {
-	t.Parallel()
 
 	pkgCfg := element.MustNewConfiguration(
 		element.Section{
@@ -88,7 +87,7 @@ func TestService_ApplyDefaults(t *testing.T) {
 }
 
 func TestNewServiceStandard(t *testing.T) {
-	t.Parallel()
+
 	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 	url, err := srv.String(cfgpath.MustNewByParts(config.PathCSBaseURL))
@@ -101,7 +100,7 @@ func TestWithDBStorage(t *testing.T) {
 }
 
 func TestNotKeyNotFoundError(t *testing.T) {
-	t.Parallel()
+
 	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 
@@ -118,7 +117,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 }
 
 func TestService_NewScoped(t *testing.T) {
-	t.Parallel()
+
 	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 
@@ -130,7 +129,7 @@ func TestService_NewScoped(t *testing.T) {
 }
 
 func TestService_Write(t *testing.T) {
-	t.Parallel()
+
 	srv := config.MustNewService()
 	assert.NotNil(t, srv)
 
@@ -140,7 +139,7 @@ func TestService_Write(t *testing.T) {
 }
 
 func TestService_Types(t *testing.T) {
-	t.Parallel()
+
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 	tests := []struct {
 		p          cfgpath.Path

@@ -25,7 +25,7 @@ import (
 )
 
 func TestBaseURLGet(t *testing.T) {
-	t.Parallel()
+
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.Store, 1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
@@ -51,7 +51,7 @@ func TestBaseURLGet(t *testing.T) {
 }
 
 func TestBaseURLWrite(t *testing.T) {
-	t.Parallel()
+
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.Store, 1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))

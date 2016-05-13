@@ -23,7 +23,7 @@ import (
 )
 
 func TestURLCache(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		haveType  config.URLType
 		url       string

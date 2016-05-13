@@ -27,7 +27,7 @@ import (
 )
 
 func TestNewByParts(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		parts      []string
 		want       string
@@ -54,7 +54,7 @@ func TestNewByParts(t *testing.T) {
 }
 
 func TestMustNewByPartsPanic(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -67,7 +67,7 @@ func TestMustNewByPartsPanic(t *testing.T) {
 }
 
 func TestMustNewByPartsNoPanic(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			assert.NotNil(t, r, "Did not expect a panic")
@@ -99,7 +99,7 @@ func BenchmarkNewByParts(b *testing.B) {
 }
 
 func TestPathNewSum32(t *testing.T) {
-	t.Parallel()
+
 	r := cfgpath.Route{
 		Chars: text.Chars(`dd/ee/ff`),
 	}
@@ -114,7 +114,7 @@ func TestPathNewSum32(t *testing.T) {
 }
 
 func TestPathNew(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		route      cfgpath.Route
 		s          scope.Scope
@@ -143,7 +143,7 @@ func TestPathNew(t *testing.T) {
 }
 
 func TestFQ(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		str        scope.StrScope
 		id         int64
@@ -185,7 +185,7 @@ func TestFQ(t *testing.T) {
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
-	t.Parallel()
+
 	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrStores, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
@@ -196,7 +196,7 @@ func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 }
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
-	t.Parallel()
+
 	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrDefault, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
@@ -270,7 +270,7 @@ func BenchmarkPathHashLevel2(b *testing.B) {
 }
 
 func TestSplitFQ(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have        string
 		wantScope   string
@@ -320,7 +320,7 @@ func BenchmarkSplitFQ(b *testing.B) {
 }
 
 func TestPathIsValid(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		s          scope.Scope
 		id         int64
@@ -357,7 +357,7 @@ func TestPathIsValid(t *testing.T) {
 }
 
 func TestPathRouteIsValid(t *testing.T) {
-	t.Parallel()
+
 	p := cfgpath.Path{
 		Scope: scope.Store,
 		ID:    2,
@@ -375,7 +375,6 @@ func TestPathRouteIsValid(t *testing.T) {
 }
 
 func TestPathHashWebsite(t *testing.T) {
-	t.Parallel()
 
 	p := cfgpath.MustNewByParts("general/single_store_mode/enabled").Bind(scope.Website, 33)
 	hv, err := p.Hash(-1)
@@ -391,7 +390,7 @@ func TestPathHashWebsite(t *testing.T) {
 }
 
 func TestPathHashDefault(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have       cfgpath.Route
 		level      int
@@ -444,7 +443,7 @@ func TestPathHashDefault(t *testing.T) {
 }
 
 func TestPathPartPosition(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have     cfgpath.Route
 		level    int
@@ -477,7 +476,7 @@ func TestPathPartPosition(t *testing.T) {
 }
 
 func TestPathCloneRareUseCase(t *testing.T) {
-	t.Parallel()
+
 	rs := "aa/bb/cc"
 	pOrg := cfgpath.MustNewByParts(rs)
 	pOrg = pOrg.Bind(scope.Store, 3141)
@@ -515,7 +514,7 @@ func TestPathCloneRareUseCase(t *testing.T) {
 }
 
 func TestPathCloneAppend(t *testing.T) {
-	t.Parallel()
+
 	rs := "aa/bb/cc"
 	pOrg := cfgpath.MustNewByParts(rs)
 	pOrg = pOrg.Bind(scope.Store, 3141)

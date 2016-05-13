@@ -27,7 +27,7 @@ import (
 var _ storage.Storager = storage.NewKV()
 
 func TestSimpleStorage(t *testing.T) {
-	t.Parallel()
+
 	sp := storage.NewKV()
 
 	p1 := cfgpath.MustNewByParts("aa/bb/cc")

@@ -20,12 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/log"
 )
-
-func init() {
-	log.SetLevel(log.StdLevelFatal)
-}
 
 const enableGCPauseOutput = false
 

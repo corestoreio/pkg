@@ -88,7 +88,7 @@ var configStructure = element.MustNewConfiguration(
 )
 
 func TestBaseValueString(t *testing.T) {
-	t.Parallel()
+
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	p1 := NewStr(pathWebCorsHeaders, WithFieldFromSectionSlice(configStructure))
 	assert.Exactly(t, pathWebCorsHeaders, p1.String())
@@ -134,7 +134,7 @@ func TestBaseValueString(t *testing.T) {
 }
 
 func TestBaseValueInScope(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		sg         config.ScopedGetter
 		p          scope.Perm
@@ -182,7 +182,7 @@ func TestBaseValueInScope(t *testing.T) {
 }
 
 func TestBaseValueFQ(t *testing.T) {
-	t.Parallel()
+
 	const pth = "aa/bb/cc"
 	p := NewValue(pth)
 	fq, err := p.FQ(scope.Store, 4)
@@ -191,7 +191,7 @@ func TestBaseValueFQ(t *testing.T) {
 }
 
 func TestBaseValueMustFQPanic(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -207,7 +207,7 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 }
 
 func TestBaseValueToPath(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		route      cfgpath.Route
 		s          scope.Scope
@@ -230,7 +230,7 @@ func TestBaseValueToPath(t *testing.T) {
 }
 
 func TestBaseValueRoute(t *testing.T) {
-	t.Parallel()
+
 	org := NewValue("aa/bb/cc")
 	clone := org.Route()
 

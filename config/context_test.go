@@ -25,7 +25,7 @@ import (
 )
 
 func TestContextMustGetter(t *testing.T) {
-	t.Parallel()
+
 	mr := cfgmock.NewService()
 	ctx := config.WithContextGetter(context.Background(), mr)
 	mrHave, ok := config.FromContextGetter(ctx)
@@ -39,7 +39,7 @@ func TestContextMustGetter(t *testing.T) {
 }
 
 func TestContextMustGetterPubSuber(t *testing.T) {
-	t.Parallel()
+
 	mr := cfgmock.NewService()
 	ctx := config.WithContextGetterPubSuber(context.Background(), mr)
 	mrHave, ok := config.FromContextGetterPubSuber(ctx)
@@ -62,7 +62,7 @@ func (w cWrite) Write(_ cfgpath.Path, _ interface{}) error {
 var _ config.Writer = (*cWrite)(nil)
 
 func TestContextMustWriter(t *testing.T) {
-	t.Parallel()
+
 	wr := cWrite{}
 	ctx := config.WithContextWriter(context.Background(), wr)
 	wrHave, ok := config.FromContextWriter(ctx)
@@ -76,7 +76,7 @@ func TestContextMustWriter(t *testing.T) {
 }
 
 func TestContextScopedGetterOK(t *testing.T) {
-	t.Parallel()
+
 	srv := cfgmock.NewService()
 	scopedSrv := srv.NewScoped(0, 0)
 
@@ -90,7 +90,6 @@ func TestContextScopedGetterOK(t *testing.T) {
 }
 
 func TestContextScopedGetterFail(t *testing.T) {
-	t.Parallel()
 
 	ctxScopedSrc, ok := config.FromContextScopedGetter(context.Background())
 	assert.False(t, ok)

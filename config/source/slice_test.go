@@ -28,7 +28,7 @@ var _ json.Marshaler = (*source.Pair)(nil)
 var _ json.Unmarshaler = (*source.Pair)(nil)
 
 func TestSliceStringPanic(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -39,7 +39,7 @@ func TestSliceStringPanic(t *testing.T) {
 }
 
 func TestNewByStringValue(t *testing.T) {
-	t.Parallel()
+
 	sl := source.NewByStringValue("a", "b", "c")
 	j, err := sl.ToJSON()
 	assert.NoError(t, err)
@@ -47,7 +47,7 @@ func TestNewByStringValue(t *testing.T) {
 }
 
 func TestSliceString(t *testing.T) {
-	t.Parallel()
+
 	// TODO(cs) go fuzz testing
 	tests := []struct {
 		have      source.Slice
@@ -89,7 +89,7 @@ func TestSliceString(t *testing.T) {
 }
 
 func TestNewByIntValue(t *testing.T) {
-	t.Parallel()
+
 	sl := source.NewByIntValue(-1, 0, 5, 3, 2, -1)
 	j, err := sl.ToJSON()
 	assert.NoError(t, err)
@@ -97,7 +97,7 @@ func TestNewByIntValue(t *testing.T) {
 }
 
 func TestSliceInt(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have      source.Slice
 		wantValue string
@@ -147,7 +147,7 @@ func TestSliceInt(t *testing.T) {
 }
 
 func TestSliceFloat64(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have      source.Slice
 		wantValue string
@@ -206,7 +206,7 @@ func TestSliceFloat64(t *testing.T) {
 }
 
 func TestSliceBool(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have      source.Slice
 		wantValue string
@@ -259,7 +259,7 @@ func TestSliceBool(t *testing.T) {
 }
 
 func TestSliceNull(t *testing.T) {
-	t.Parallel()
+
 	nullSlice := source.Slice{
 		source.Pair{},
 		source.Pair{},
@@ -272,14 +272,14 @@ func TestSliceNull(t *testing.T) {
 }
 
 func TestSliceContainsValString(t *testing.T) {
-	t.Parallel()
+
 	sl := source.NewByString("k1", "v1", "k2", "v2")
 	assert.True(t, sl.ContainsValString("k1"), "Search for k1 failed")
 	assert.False(t, sl.ContainsValString("k0"), "Found k0 despite it is not in the slice")
 }
 
 func TestSliceContainsValInt(t *testing.T) {
-	t.Parallel()
+
 	sl := source.NewByInt(source.Ints{
 		{1, "v1"},
 		{2, "v2"},
@@ -290,7 +290,7 @@ func TestSliceContainsValInt(t *testing.T) {
 }
 
 func TestSliceContainsValFloat64(t *testing.T) {
-	t.Parallel()
+
 	sl := source.NewByFloat64(source.F64s{
 		{1.0, "v1"},
 		{2.2 * 0.3, "v2"},
@@ -301,14 +301,14 @@ func TestSliceContainsValFloat64(t *testing.T) {
 }
 
 func TestSliceContainsValBool(t *testing.T) {
-	t.Parallel()
+
 	sl := source.NewByBool(source.Bools{{true, "v1"}})
 	assert.True(t, sl.ContainsValBool(true), "Search for k1 failed")
 	assert.False(t, sl.ContainsValBool(false), "Found k0 despite it is not in the slice")
 }
 
 func TestSliceContainsLabel(t *testing.T) {
-	t.Parallel()
+
 	sl := source.NewByInt(source.Ints{
 		{1, "v1"},
 		{2, "v2"},
@@ -319,7 +319,7 @@ func TestSliceContainsLabel(t *testing.T) {
 }
 
 func TestSliceEquality(t *testing.T) {
-	t.Parallel()
+
 	func(sl source.Slice, vlPairs ...source.Pair) {
 		vlsl := source.Slice(vlPairs)
 		assert.Exactly(t, sl, vlsl)
@@ -327,7 +327,7 @@ func TestSliceEquality(t *testing.T) {
 }
 
 func TestSliceMerge(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		in    source.Slice
 		merge source.Slice
@@ -365,7 +365,7 @@ func TestSliceMerge(t *testing.T) {
 }
 
 func TestSliceUnique(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		in   source.Slice
 		want string
@@ -398,7 +398,6 @@ func TestSliceUnique(t *testing.T) {
 }
 
 func TestSliceUnmarshalJSON(t *testing.T) {
-	t.Parallel()
 
 	tests := []struct {
 		in      []byte

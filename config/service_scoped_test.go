@@ -28,7 +28,7 @@ import (
 )
 
 func TestScopedServiceScope(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		websiteID, storeID int64
 		wantScope          scope.Scope
@@ -48,7 +48,7 @@ func TestScopedServiceScope(t *testing.T) {
 }
 
 func TestScopedServicePath(t *testing.T) {
-	t.Parallel()
+
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 	tests := []struct {
 		desc               string
@@ -175,7 +175,6 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64, s s
 }
 
 func TestScopedServicePermission(t *testing.T) {
-	t.Parallel()
 
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 

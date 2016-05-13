@@ -48,7 +48,7 @@ func (rt rot13) Decrypt(s []byte) ([]byte, error) {
 	return rt.Encrypt(s)
 }
 func TestObscureMissingEncryptor(t *testing.T) {
-	t.Parallel()
+
 	m := cfgmodel.NewObscure(`aa/bb/cc`)
 	val, err := m.Get(nil)
 	assert.Nil(t, val)
@@ -57,7 +57,7 @@ func TestObscureMissingEncryptor(t *testing.T) {
 }
 
 func TestObscure(t *testing.T) {
-	t.Parallel()
+
 	var wantPlain = []byte(`H3llo G0phers`)
 	var wantCiphered = []byte(`U3yyb T0curef`)
 	const cfgPath = "aa/bb/cc"
@@ -86,7 +86,6 @@ func TestObscure(t *testing.T) {
 }
 
 func TestNoopEncryptor(t *testing.T) {
-	t.Parallel()
 
 	ne := cfgmodel.NoopEncryptor{}
 
