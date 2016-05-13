@@ -97,6 +97,49 @@ func TestAllowedWildcardHeader(t *testing.T) {
 	corstest.TestAllowedWildcardHeader(t, s, req)
 }
 
+func TestDisallowedHeader(t *testing.T) {
+	s := newCorsService()
+
+	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCtxcorsAllowedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
+	}))
+
+	corstest.TestDisallowedHeader(t, s, req)
+}
+
+func TestExposedHeader(t *testing.T) {
+	s := newCorsService()
+
+	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCtxcorsExposedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
+	}))
+
+	corstest.TestExposedHeader(t, s, req)
+}
+
+func TestAllowedCredentials(t *testing.T) {
+	s := newCorsService()
+
+	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2):   "http://foobar.com",
+		mustToPath(t, backend.NetCtxcorsAllowCredentials.ToPath, scope.Website, 2): true,
+	}))
+
+	corstest.TestAllowedCredentials(t, s, req)
+}
+func TestMaxAge(t *testing.T) {
+	s := newCorsService()
+
+	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCtxcorsMaxAge.ToPath, scope.Website, 2):         "30s",
+	}))
+
+	corstest.TestMaxAge(t, s, req)
+}
+
 //func TestWithBackendApplied(t *testing.T) {
 //
 //	be := initBackend(t)

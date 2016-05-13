@@ -263,11 +263,11 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 // WithAllowCredentials convenient helper function.
 // AllowCredentials indicates whether the request can include user credentials like
 // cookies, HTTP authentication or client side SSL certificates.
-func WithAllowCredentials(scp scope.Scope, id int64) Option {
+func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.allowCredentials = true
+			s.defaultScopeCache.allowCredentials = ok
 			return
 		}
 
@@ -276,7 +276,7 @@ func WithAllowCredentials(scp scope.Scope, id int64) Option {
 
 		// inherit default config
 		scNew := s.defaultScopeCache
-		scNew.allowCredentials = true
+		scNew.allowCredentials = ok
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.allowCredentials = scNew.allowCredentials
