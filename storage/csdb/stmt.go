@@ -71,7 +71,7 @@ func NewResurrectStmt(p Preparer, SQL string) *ResurrectStmt {
 		DB:     p,
 		SQL:    SQL,
 		Idle:   DefaultResurrectStmtIdleTime,
-		Log:    PkgLog,
+		Log:    log.BlackHole{},
 		stop:   make(chan struct{}),
 		closed: true,
 	}
