@@ -26,15 +26,6 @@ practice, the first argument to every logging method is the value to the
 *implicit* key 'msg'. You may supply any additional context as a set of
 key/value pairs to the logging function.
 
-To initialize your own logger you must somewhere set the logging object to the
-util/log package.
-
-	import "github.com/corestoreio/csfw/util/log"
-
-	func init() {
-		log.Set(NewMyCustomLogger())
-	}
-
 Level guards exists to avoid the cost of building arguments. Get in the
 habit of using guards.
 
@@ -73,9 +64,11 @@ log.NewStdLogger() accepts a wide range of optional arguments. Please see the fu
 
 Additional Reading
 
-- http://dave.cheney.net/2015/11/05/lets-talk-about-logging
-- https://www.reddit.com/r/golang/comments/3rljir/lets_talk_about_logging/
-- https://forum.golangbridge.org/t/whats-so-bad-about-the-stdlibs-log-package/1435/2
+http://dave.cheney.net/2015/11/05/lets-talk-about-logging
+
+https://www.reddit.com/r/golang/comments/3rljir/lets_talk_about_logging/
+
+https://forum.golangbridge.org/t/whats-so-bad-about-the-stdlibs-log-package/1435/2
 
 TODO(cs): http://12factor.net/logs
 */

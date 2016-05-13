@@ -14,23 +14,9 @@
 
 package log_test
 
-import (
-	"testing"
+import "github.com/corestoreio/csfw/util/log"
 
-	"github.com/corestoreio/csfw/util/log"
+var (
+	_ log.Logger = (*log.BlackHole)(nil)
+	_ log.Logger = (*log.StdLogger)(nil)
 )
-
-func TestNull(t *testing.T) {
-	log.SetLevel(-1000)
-	if !log.IsDebug() {
-		t.Error("There should be debug logging")
-	}
-	if !log.IsInfo() {
-		t.Error("There should be info logging")
-	}
-	var args []interface{}
-	args = append(args, "key1", 1, "key2", 3.14152)
-
-	log.Debug("Hello World", args...)
-	log.Info("Hello World", args...)
-}

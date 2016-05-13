@@ -28,10 +28,10 @@ func TestStdLogger(t *testing.T) {
 	var buf bytes.Buffer
 
 	sl := log.NewStdLogger(
-		log.SetStdLevel(log.StdLevelDebug),
-		log.SetStdDebug(&buf, "TEST-DEBUG ", std.LstdFlags),
-		log.SetStdInfo(&buf, "TEST-INFO ", std.LstdFlags),
-		log.SetStdFatal(&buf, "TEST-FATAL ", std.LstdFlags),
+		log.WithStdLevel(log.StdLevelDebug),
+		log.WithStdDebug(&buf, "TEST-DEBUG ", std.LstdFlags),
+		log.WithStdInfo(&buf, "TEST-INFO ", std.LstdFlags),
+		log.WithStdFatal(&buf, "TEST-FATAL ", std.LstdFlags),
 	)
 	sl.SetLevel(log.StdLevelInfo)
 	assert.False(t, sl.IsDebug())
@@ -65,9 +65,9 @@ func TestStdLoggerGlobals(t *testing.T) {
 
 	var buf bytes.Buffer
 	sl := log.NewStdLogger(
-		log.SetStdLevel(log.StdLevelDebug),
-		log.SetStdWriter(&buf),
-		log.SetStdFlag(std.Ldate),
+		log.WithStdLevel(log.StdLevelDebug),
+		log.WithStdWriter(&buf),
+		log.WithStdFlag(std.Ldate),
 	)
 	sl.Debug("my Debug", "float", 3.14152)
 	sl.Debug("my Debug2", 2.14152)
@@ -86,9 +86,9 @@ func TestStdLoggerFormat(t *testing.T) {
 	var buf bytes.Buffer
 	var bufInfo bytes.Buffer
 	sl := log.NewStdLogger(
-		log.SetStdLevel(log.StdLevelDebug),
-		log.SetStdWriter(&buf),
-		log.SetStdInfo(&bufInfo, "TEST-INFO ", std.LstdFlags),
+		log.WithStdLevel(log.StdLevelDebug),
+		log.WithStdWriter(&buf),
+		log.WithStdInfo(&bufInfo, "TEST-INFO ", std.LstdFlags),
 	)
 
 	sl.Debug("my Debug", 3.14152)
@@ -124,9 +124,9 @@ func TestStdLoggerNewPanic(t *testing.T) {
 
 	var buf bytes.Buffer
 	sl := log.NewStdLogger(
-		log.SetStdWriter(&buf),
+		log.WithStdWriter(&buf),
 	)
-	sl.New(log.SetStdLevel(log.StdLevelDebug), 1)
+	sl.New(log.WithStdLevel(log.StdLevelDebug), 1)
 }
 
 func TestStdLoggerFatal(t *testing.T) {
@@ -139,7 +139,7 @@ func TestStdLoggerFatal(t *testing.T) {
 
 	var buf bytes.Buffer
 	sl := log.NewStdLogger(
-		log.SetStdWriter(&buf),
+		log.WithStdWriter(&buf),
 	)
 	sl.Fatal("This is sparta")
 }

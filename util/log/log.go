@@ -16,15 +16,6 @@ package log
 
 import "time"
 
-var (
-	_ Logger = (*BlackHole)(nil)
-	_ Logger = (*StdLogger)(nil)
-)
-
-// PkgLog global package based logger. This logger gets inherited to other
-// packages. Default BlackHole
-var PkgLog Logger = NewBlackHole()
-
 // Logger defines the minimum requirements for logging. See doc.go for more details.
 type Logger interface {
 	// New returns a new Logger that has this logger's context plus the given context
@@ -45,14 +36,6 @@ type Logger interface {
 	// IsInfo returns true if Info level is enabled
 	IsInfo() bool
 }
-
-func Debug(msg string, args ...interface{}) { PkgLog.Debug(msg, args...) }
-func Info(msg string, args ...interface{})  { PkgLog.Info(msg, args...) }
-func Fatal(msg string, args ...interface{}) { PkgLog.Fatal(msg, args...) }
-
-func SetLevel(l int) { PkgLog.SetLevel(l) }
-func IsDebug() bool  { return PkgLog.IsDebug() }
-func IsInfo() bool   { return PkgLog.IsInfo() }
 
 // Deferred defines a logger type which can be used to trace the duration.
 // Usage:
