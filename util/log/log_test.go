@@ -18,5 +18,5 @@ import "github.com/corestoreio/csfw/util/log"
 
 var (
 	_ log.Logger = (*log.BlackHole)(nil)
-	_ log.Logger = (*log.StdLogger)(nil)
+	_ log.Logger = (*log.StdLog)(nil)
 )

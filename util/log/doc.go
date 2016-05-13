@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
-Package log contains BlackHole, StdLogger and the Logger interface.
+Package log contains BlackHole, StdLog, Log15 and the Logger interface.
 
 Logging
 
@@ -52,15 +52,15 @@ and https://github.com/inconshreveable/log15
 Standard Logger
 
 CoreStore provides a leveled logger based on Go's standard library without any
-dependencies. This StdLogger obeys to the interface Logger of this package.
+dependencies. This StdLog obeys to the interface Logger of this package.
 
 	import "github.com/corestoreio/csfw/util/log"
 
 	func init() {
-		log.Set(log.NewStdLogger())
+		log.Set(log.NewStdLog())
 	}
 
-log.NewStdLogger() accepts a wide range of optional arguments. Please see the functions Std*Option().
+log.NewStdLog() accepts a wide range of optional arguments. Please see the functions Std*Option().
 
 Additional Reading
 

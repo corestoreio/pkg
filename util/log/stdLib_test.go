@@ -23,11 +23,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStdLogger(t *testing.T) {
+func TestStdLog(t *testing.T) {
 
 	var buf bytes.Buffer
 
-	sl := log.NewStdLogger(
+	sl := log.NewStdLog(
 		log.WithStdLevel(log.StdLevelDebug),
 		log.WithStdDebug(&buf, "TEST-DEBUG ", std.LstdFlags),
 		log.WithStdInfo(&buf, "TEST-INFO ", std.LstdFlags),
@@ -61,10 +61,10 @@ func TestStdLogger(t *testing.T) {
 
 }
 
-func TestStdLoggerGlobals(t *testing.T) {
+func TestStdLogGlobals(t *testing.T) {
 
 	var buf bytes.Buffer
-	sl := log.NewStdLogger(
+	sl := log.NewStdLog(
 		log.WithStdLevel(log.StdLevelDebug),
 		log.WithStdWriter(&buf),
 		log.WithStdFlag(std.Ldate),
@@ -81,11 +81,11 @@ func TestStdLoggerGlobals(t *testing.T) {
 	assert.Contains(t, logs, "Debug2")
 }
 
-func TestStdLoggerFormat(t *testing.T) {
+func TestStdLogFormat(t *testing.T) {
 
 	var buf bytes.Buffer
 	var bufInfo bytes.Buffer
-	sl := log.NewStdLogger(
+	sl := log.NewStdLog(
 		log.WithStdLevel(log.StdLevelDebug),
 		log.WithStdWriter(&buf),
 		log.WithStdInfo(&bufInfo, "TEST-INFO ", std.LstdFlags),
@@ -110,7 +110,7 @@ func TestStdLoggerFormat(t *testing.T) {
 	assert.Contains(t, logsInfo, `FIX_IMBALANCED_PAIRS: []interface {}{"keyI", 117, 2009}`)
 }
 
-func TestStdLoggerNewPanic(t *testing.T) {
+func TestStdLogNewPanic(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -123,13 +123,13 @@ func TestStdLoggerNewPanic(t *testing.T) {
 	}()
 
 	var buf bytes.Buffer
-	sl := log.NewStdLogger(
+	sl := log.NewStdLog(
 		log.WithStdWriter(&buf),
 	)
 	sl.New(log.WithStdLevel(log.StdLevelDebug), 1)
 }
 
-func TestStdLoggerFatal(t *testing.T) {
+func TestStdLogFatal(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -138,7 +138,7 @@ func TestStdLoggerFatal(t *testing.T) {
 	}()
 
 	var buf bytes.Buffer
-	sl := log.NewStdLogger(
+	sl := log.NewStdLog(
 		log.WithStdWriter(&buf),
 	)
 	sl.Fatal("This is sparta")

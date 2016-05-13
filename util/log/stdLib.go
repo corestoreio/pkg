@@ -35,8 +35,8 @@ const (
 	StdLevelDebug
 )
 
-// StdLogger implements logging with Go's standard library
-type StdLogger struct {
+// StdLog implements logging with Go's standard library
+type StdLog struct {
 	gw      io.Writer // global writer
 	level   int
 	flag    int // global flag http://golang.org/pkg/log/#pkg-constants
@@ -46,14 +46,14 @@ type StdLogger struct {
 	fatal   *std.Logger
 }
 
-// StdOption can be used as an argument in NewStdLogger to configure a standard logger.
-type StdOption func(*StdLogger)
+// StdOption can be used as an argument in NewStdLog to configure a standard logger.
+type StdOption func(*StdLog)
 
-// NewStdLogger creates a new logger with 6 different sub loggers.
+// NewStdLog creates a new logger with 6 different sub loggers.
 // You can use option functions to modify each logger independently.
 // Default output goes to Stderr.
-func NewStdLogger(opts ...StdOption) *StdLogger {
-	sl := &StdLogger{
+func NewStdLog(opts ...StdOption) *StdLog {
+	sl := &StdLog{
 		level: StdLevelInfo,
 		gw:    os.Stderr,
 		flag:  std.LstdFlags,
@@ -76,7 +76,7 @@ func NewStdLogger(opts ...StdOption) *StdLogger {
 // SetStdWriter sets the global writer for all loggers. This global writer can be
 // overwritten by individual level options.
 func WithStdWriter(w io.Writer) StdOption {
-	return func(l *StdLogger) {
+	return func(l *StdLog) {
 		l.gw = w
 	}
 }
@@ -86,35 +86,35 @@ func WithStdWriter(w io.Writer) StdOption {
 // This global flag can be overwritten by individual level options.
 // Please see http://golang.org/pkg/log/#pkg-constants
 func WithStdFlag(f int) StdOption {
-	return func(l *StdLogger) {
+	return func(l *StdLog) {
 		l.flag = f
 	}
 }
 
 // WithStdLevel sets the log level. See constants Level*
 func WithStdLevel(level int) StdOption {
-	return func(l *StdLogger) {
+	return func(l *StdLog) {
 		l.SetLevel(level)
 	}
 }
 
 // WithStdDebug applies options for debug logging
 func WithStdDebug(out io.Writer, prefix string, flag int) StdOption {
-	return func(l *StdLogger) {
+	return func(l *StdLog) {
 		l.debug = std.New(out, prefix, flag)
 	}
 }
 
 // WithStdInfo applies options for info logging
 func WithStdInfo(out io.Writer, prefix string, flag int) StdOption {
-	return func(l *StdLogger) {
+	return func(l *StdLog) {
 		l.info = std.New(out, prefix, flag)
 	}
 }
 
 // WithStdFatal applies options for fatal logging
 func WithStdFatal(out io.Writer, prefix string, flag int) StdOption {
-	return func(l *StdLogger) {
+	return func(l *StdLog) {
 		l.fatal = std.New(out, prefix, flag)
 	}
 }
@@ -122,14 +122,14 @@ func WithStdFatal(out io.Writer, prefix string, flag int) StdOption {
 // SetStdDisableStackTrace disables the stack trace when an error will be passed
 // as an argument.
 func SetStdDisableStackTrace() StdOption {
-	return func(l *StdLogger) {
+	return func(l *StdLog) {
 		l.noTrace = true
 	}
 }
 
 // New returns a new Logger that has this logger's context plus the given context
 // This function panics if an argument is not of type StdOption.
-func (l *StdLogger) New(iOpts ...interface{}) Logger {
+func (l *StdLog) New(iOpts ...interface{}) Logger {
 	var opts = make([]StdOption, len(iOpts), len(iOpts))
 	for i, iopt := range iOpts {
 		if o, ok := iopt.(StdOption); ok {
@@ -138,26 +138,26 @@ func (l *StdLogger) New(iOpts ...interface{}) Logger {
 			panic("Arguments to New() can only be StdOption types!")
 		}
 	}
-	return NewStdLogger(opts...)
+	return NewStdLog(opts...)
 }
 
 // Debug logs a debug entry.
-func (l *StdLogger) Debug(msg string, args ...interface{}) {
+func (l *StdLog) Debug(msg string, args ...interface{}) {
 	l.log(StdLevelDebug, msg, args)
 }
 
 // Info logs an info entry.
-func (l *StdLogger) Info(msg string, args ...interface{}) {
+func (l *StdLog) Info(msg string, args ...interface{}) {
 	l.log(StdLevelInfo, msg, args)
 }
 
 // Fatal logs a fatal entry then panics.
-func (l *StdLogger) Fatal(msg string, args ...interface{}) {
+func (l *StdLog) Fatal(msg string, args ...interface{}) {
 	l.log(StdLevelFatal, msg, args)
 }
 
 // log logs a leveled entry. Panics if an unknown level has been provided.
-func (l *StdLogger) log(level int, msg string, args []interface{}) {
+func (l *StdLog) log(level int, msg string, args []interface{}) {
 	if l.level >= level {
 		switch level {
 		case StdLevelDebug:
@@ -177,13 +177,13 @@ func (l *StdLogger) log(level int, msg string, args []interface{}) {
 }
 
 // IsDebug determines if this logger logs a debug statement.
-func (l *StdLogger) IsDebug() bool { return l.level >= StdLevelDebug }
+func (l *StdLog) IsDebug() bool { return l.level >= StdLevelDebug }
 
 // IsInfo determines if this logger logs an info statement.
-func (l *StdLogger) IsInfo() bool { return l.level >= StdLevelInfo }
+func (l *StdLog) IsInfo() bool { return l.level >= StdLevelInfo }
 
 // SetLevel sets the level of this logger.
-func (l *StdLogger) SetLevel(level int) {
+func (l *StdLog) SetLevel(level int) {
 	l.level = level
 }
 

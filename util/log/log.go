@@ -40,7 +40,7 @@ type Logger interface {
 // Deferred defines a logger type which can be used to trace the duration.
 // Usage:
 //		function main(){
-//			var PkgLog = log.NewStdLogger()
+//			var PkgLog = log.NewStdLog()
 // 			defer log.WhenDone(PkgLog).Info("Stats", "Package", "main")
 //			...
 // 		}
