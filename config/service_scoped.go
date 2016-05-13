@@ -34,10 +34,11 @@ import (
 // If you access the ScopedGetter from a store.Store, store.Website type the
 // second argument must already be internally pre-filled.
 //
-// This interface is mainly implemented in the store package. The functions
-// should be the same as in Getter but only the different is the route and
-// scope argument. A route represents always "a/b/c".
-// Returned error is mostly of ErrKeyNotFound.
+// This interface is mainly used by the store package. The functions
+// should be the same as in config.Getter but only the different elucidates
+// the route and scope argument. The route represents always "a/b/c" without
+// the scope string and scope ID.
+// Returned error has mostly the behaviour of not found.
 type ScopedGetter interface {
 	scope.Scoper
 	Byte(r cfgpath.Route, s ...scope.Scope) ([]byte, error)
