@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
@@ -43,6 +44,10 @@ type Service struct {
 	// Log mostly used for debugging. todo(CS) add more logging at useful places
 	Log log.Logger
 
+	// StoreService used in the middleware to set a new requested store, change store.
+	// If nil the requested store extracted from the context won't be changed.
+	StoreService store.Requester
+
 	// optionError used by functional option arguments to indicate that one
 	// option has triggered an error and hence the other options can
 	// skip their process.
@@ -64,17 +69,15 @@ type Service struct {
 	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
 }
 
-// NewService creates a new token service. If key option will not be
-// passed then a HMAC password will be generated.
-// Default expire is one hour as in variable DefaultExpire. Default signing
-// method is HMAC512. The auto generated password will not be outputted.
-// The DefaultErrorHandler returns a http.StatusUnauthorized.
+// NewService creates a new token service.
+// Default values from option function WithDefaultConfig() will be
+// applied if passing no functional option arguments.
 func NewService(opts ...Option) (*Service, error) {
 	s := &Service{
-		scopeCache: make(map[scope.Hash]scopedConfig),
 		JTI:        jti{},
 		Blacklist:  nullBL{},
 		Log:        log.BlackHole{}, // disabled debug and info logging
+		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
 
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {

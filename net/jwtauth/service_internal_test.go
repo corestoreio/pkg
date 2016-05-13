@@ -72,15 +72,20 @@ func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
 	// The returned pointers from store.FromContextReader must be the
 	// same for each request with the same request pattern.
 
+	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(nil))
+
 	var equalStorePointer *store.Store
-	jwts := MustNewService()
+	jwts := MustNewService(
+		WithStoreService(storemock.NewEurozzyService(scope.Option{Website: scope.MockCode("oz")})),
+	)
+
 	mw := jwts.WithInitTokenAndStore()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if _, err := FromContext(ctx); err != nil {
 			t.Fatal(err)
 		}
 
-		_, haveReqStore, err := store.FromContextProvider(ctx)
+		haveReqStore, err := store.FromContextRequestedStore(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -108,10 +113,8 @@ func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
 		t.Fatal(err)
 	}
 	SetHeaderAuthorization(req, tok.Raw)
-	// Bind request to a specific Website in this case down under
-	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Website: scope.MockID(2)}))
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 4; i++ {
 		mw.ServeHTTP(rec, req.WithContext(ctx))
 	}
 }

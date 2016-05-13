@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
@@ -173,6 +174,15 @@ func WithBlacklist(bl Blacklister) Option {
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) {
 		s.Log = l
+	}
+}
+
+// WithStoreService apply a store service aka. requested store to the middleware
+// to allow a store change if requested via token.
+// Convenience helper function.
+func WithStoreService(sr store.Requester) Option {
+	return func(s *Service) {
+		s.StoreService = sr
 	}
 }
 

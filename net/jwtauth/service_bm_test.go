@@ -108,12 +108,14 @@ func bmServeHTTP(b *testing.B, opts ...jwtauth.Option) {
 		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cr),
 	)
-	ctx := store.WithContextProvider(context.Background(), srv)
+	dsv, err := srv.DefaultStoreView()
+	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
+	req = req.WithContext(ctx)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		jwtHandler.ServeHTTP(w, req.WithContext(ctx))
+		jwtHandler.ServeHTTP(w, req)
 		if w.Code != http.StatusTeapot {
 			b.Errorf("Response Code want %d; have %d", http.StatusTeapot, w.Code)
 		}
@@ -176,7 +178,9 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (http.Handler, 
 		scope.MustSetByCode(scope.Website, "euro"),
 		//store.WithStorageConfig(cr), no configuration so config.ScopedGetter is nil
 	)
-	ctx := store.WithContextProvider(context.Background(), srv) // root context
+
+	dsv, err := srv.DefaultStoreView()
+	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
 
 	token, err := jwts.NewToken(scope.Website, 1, jwtclaim.Map{ // 1 = website euro
 		"someKey":         2.718281,
@@ -193,7 +197,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (http.Handler, 
 		}
 		w.WriteHeader(http.StatusUnavailableForLegalReasons)
 
-		_, st, err := store.FromContextProvider(ctx)
+		st, err := store.FromContextRequestedStore(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -295,6 +299,8 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		scope.MustSetByCode(scope.Store, "at"), // at default store for this context
 		store.WithStorageConfig(cr),
 	)
+	dsv, err := srv.DefaultStoreView()
+	ctx := store.WithContextRequestedStore(context.Background(), dsv, err) // root context
 
 	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -304,7 +310,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		}
 		w.WriteHeader(http.StatusUnavailableForLegalReasons)
 
-		_, st, err := store.FromContextProvider(ctx)
+		st, err := store.FromContextRequestedStore(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -316,7 +322,6 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		}
 	})
 	jwtHandler := jwts.WithInitTokenAndStore()(final)
-	ctx := store.WithContextProvider(context.Background(), srv) // root context
 
 	b.ReportAllocs()
 	b.ResetTimer()
