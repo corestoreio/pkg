@@ -193,7 +193,7 @@ func TestScopedServicePermission(t *testing.T) {
 		{scope.Website, "b"},
 		{scope.Group, "a"},
 		{scope.Store, "c"},
-		{scope.Absent, "a"},
+		{scope.Absent, "c"}, // because ScopedGetter bound to store scope
 	}
 	for i, test := range tests {
 		have, err := sg.String(basePath.Route, test.s)
@@ -207,5 +207,5 @@ func TestScopedServicePermission(t *testing.T) {
 	ss = nil
 	have, err := sg.String(basePath.Route, ss...)
 	assert.NoError(t, err)
-	assert.Exactly(t, "a", have)
+	assert.Exactly(t, "c", have) // because ScopedGetter bound to store scope
 }

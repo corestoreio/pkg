@@ -44,9 +44,9 @@ func (ts *testSubscriber) MessageConfig(p cfgpath.Path) error {
 
 func initLogger() (*log.MutexBuffer, log.Logger) {
 	debugBuf := new(log.MutexBuffer)
-	lg := log.NewStdLogger(
-		log.SetStdDebug(debugBuf, "testDebug: ", goLog.Lshortfile),
-		log.SetStdInfo(ioutil.Discard, "testInfo: ", goLog.Lshortfile),
+	lg := log.NewStdLog(
+		log.WithStdDebug(debugBuf, "testDebug: ", goLog.Lshortfile),
+		log.WithStdInfo(ioutil.Discard, "testInfo: ", goLog.Lshortfile),
 	)
 	lg.SetLevel(log.StdLevelDebug)
 	return debugBuf, lg

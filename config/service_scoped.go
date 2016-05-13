@@ -29,7 +29,10 @@ import (
 //
 // To restrict bubbling up you can provide a second argument scope.Scope.
 // You can restrict a configuration path to be only used with the default,
-// website or store scope. See the examples.
+// website or store scope. See the examples. This second argument will mainly
+// be used by the cfgmodel package to use a defined scope in a config.Structure.
+// If you access the ScopedGetter from a store.Store, store.Website type the
+// second argument must already be internally pre-filled.
 //
 // This interface is mainly implemented in the store package. The functions
 // should be the same as in Getter but only the different is the route and
@@ -54,7 +57,9 @@ type ScopedGetter interface {
 // and so on ...
 
 type scopedService struct {
-	root      Getter
+	root Getter
+	// scp defines the scope bound to
+	scp       scope.Scope
 	websiteID int64
 	storeID   int64
 }
@@ -64,11 +69,13 @@ var _ ScopedGetter = (*scopedService)(nil)
 // NewScopedService instantiates a ScopedGetter implementation.
 // For internal use only. Exported because of the config/cfgmock package.
 func NewScopedService(r Getter, websiteID, storeID int64) ScopedGetter {
-	return scopedService{
+	ss := scopedService{
 		root:      r,
 		websiteID: websiteID,
 		storeID:   storeID,
 	}
+	ss.scp, _ = ss.Scope()
+	return ss
 }
 
 // Scope tells you the current underlying scope and its website or store ID
@@ -83,6 +90,22 @@ func (ss scopedService) Scope() (scope.Scope, int64) {
 	}
 }
 
+func (ss scopedService) isAllowedStore(s ...scope.Scope) bool {
+	scp := ss.scp
+	if len(s) > 0 && s[0] > scope.Absent {
+		scp = s[0]
+	}
+	return ss.storeID > 0 && scope.PermStoreReverse.Has(scp)
+}
+
+func (ss scopedService) isAllowedWebsite(s ...scope.Scope) bool {
+	scp := ss.scp
+	if len(s) > 0 && s[0] > scope.Absent {
+		scp = s[0]
+	}
+	return ss.websiteID > 0 && scope.PermWebsiteReverse.Has(scp)
+}
+
 // Byte traverses through the scopes store->website->default to find
 // a matching byte slice value.
 func (ss scopedService) Byte(r cfgpath.Route, s ...scope.Scope) (v []byte, err error) {
@@ -93,13 +116,13 @@ func (ss scopedService) Byte(r cfgpath.Route, s ...scope.Scope) (v []byte, err e
 		return
 	}
 
-	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
+	if ss.isAllowedStore(s...) {
 		v, err = ss.root.Byte(p.Bind(scope.Store, ss.storeID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
 		}
 	}
-	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
+	if ss.isAllowedWebsite(s...) {
 		v, err = ss.root.Byte(p.Bind(scope.Website, ss.websiteID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
@@ -118,13 +141,14 @@ func (ss scopedService) String(r cfgpath.Route, s ...scope.Scope) (v string, err
 		return
 	}
 
-	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
+	if ss.isAllowedStore(s...) {
 		v, err = ss.root.String(p.Bind(scope.Store, ss.storeID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
 		}
 	}
-	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
+
+	if ss.isAllowedWebsite(s...) {
 		v, err = ss.root.String(p.Bind(scope.Website, ss.websiteID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
@@ -143,14 +167,14 @@ func (ss scopedService) Bool(r cfgpath.Route, s ...scope.Scope) (v bool, err err
 		return
 	}
 
-	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
+	if ss.isAllowedStore(s...) {
 		v, err = ss.root.Bool(p.Bind(scope.Store, ss.storeID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
 		}
 	} // if not found in store scope go to website scope
 
-	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
+	if ss.isAllowedWebsite(s...) {
 		v, err = ss.root.Bool(p.Bind(scope.Website, ss.websiteID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
@@ -169,14 +193,14 @@ func (ss scopedService) Float64(r cfgpath.Route, s ...scope.Scope) (v float64, e
 		return
 	}
 
-	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
+	if ss.isAllowedStore(s...) {
 		v, err = ss.root.Float64(p.Bind(scope.Store, ss.storeID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
 		}
 	} // if not found in store scope go to website scope
 
-	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
+	if ss.isAllowedWebsite(s...) {
 		v, err = ss.root.Float64(p.Bind(scope.Website, ss.websiteID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
@@ -195,14 +219,14 @@ func (ss scopedService) Int(r cfgpath.Route, s ...scope.Scope) (v int, err error
 		return
 	}
 
-	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
+	if ss.isAllowedStore(s...) {
 		v, err = ss.root.Int(p.Bind(scope.Store, ss.storeID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
 		}
 	} // if not found in store scope go to website scope
 
-	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
+	if ss.isAllowedWebsite(s...) {
 		v, err = ss.root.Int(p.Bind(scope.Website, ss.websiteID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
@@ -221,14 +245,14 @@ func (ss scopedService) Time(r cfgpath.Route, s ...scope.Scope) (v time.Time, er
 		return
 	}
 
-	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
+	if ss.isAllowedStore(s...) {
 		v, err = ss.root.Time(p.Bind(scope.Store, ss.storeID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
 		}
 	} // if not found in store scope go to website scope
 
-	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
+	if ss.isAllowedWebsite(s...) {
 		v, err = ss.root.Time(p.Bind(scope.Website, ss.websiteID))
 		if !errors.IsNotFound(err) || err == nil {
 			return // value found or err is not a NotFound error
