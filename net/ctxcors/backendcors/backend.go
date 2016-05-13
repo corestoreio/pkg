@@ -89,19 +89,23 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 // Load creates the configuration models for each PkgBackend field.
 // Internal mutex will protect the fields during loading.
 // The argument SectionSlice will be applied to all models.
-func (pp *Backend) Load(cfgStruct element.SectionSlice) *Backend {
+func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	pp.Lock()
 	defer pp.Unlock()
 
-	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
+	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	optsCSV := append([]cfgmodel.Option{}, opts...)
+	optsCSV = append(optsCSV, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithCSVSeparator('\n'))
+	optsYN := append([]cfgmodel.Option{}, opts...)
+	optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
 
-	pp.NetCtxcorsExposedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/exposed_headers`, opt, cfgmodel.WithCSVSeparator('\n'))
-	pp.NetCtxcorsAllowedOrigins = cfgmodel.NewStringCSV(`net/ctxcors/allowed_origins`, opt, cfgmodel.WithCSVSeparator('\n'))
-	pp.NetCtxcorsAllowedMethods = cfgmodel.NewStringCSV(`net/ctxcors/allowed_methods`, opt, cfgmodel.WithCSVSeparator('\n'))
-	pp.NetCtxcorsAllowedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/allowed_headers`, opt, cfgmodel.WithCSVSeparator('\n'))
-	pp.NetCtxcorsAllowCredentials = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, opt, cfgmodel.WithSource(source.YesNo))
-	pp.NetCtxcorsOptionsPassthrough = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, opt, cfgmodel.WithSource(source.YesNo))
-	pp.NetCtxcorsMaxAge = cfgmodel.NewDuration(`net/ctxcors/max_age`, opt)
+	pp.NetCtxcorsExposedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/exposed_headers`, optsCSV...)
+	pp.NetCtxcorsAllowedOrigins = cfgmodel.NewStringCSV(`net/ctxcors/allowed_origins`, optsCSV...)
+	pp.NetCtxcorsAllowedMethods = cfgmodel.NewStringCSV(`net/ctxcors/allowed_methods`, optsCSV...)
+	pp.NetCtxcorsAllowedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/allowed_headers`, optsCSV...)
+	pp.NetCtxcorsAllowCredentials = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, optsYN...)
+	pp.NetCtxcorsOptionsPassthrough = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, optsYN...)
+	pp.NetCtxcorsMaxAge = cfgmodel.NewDuration(`net/ctxcors/max_age`, opts...)
 
 	return pp
 }

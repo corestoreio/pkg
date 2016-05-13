@@ -14,21 +14,16 @@
 
 package backendcors_test
 
-import (
-	"github.com/corestoreio/csfw/net/ctxcors"
-	"github.com/corestoreio/csfw/net/ctxcors/backendcors"
-)
+import "github.com/corestoreio/csfw/net/ctxcors/backendcors"
 
 // backend overall backend models for all tests
 var backend *backendcors.Backend
 
 // this would belong into the test suit setup
 func init() {
-
 	cfgStruct, err := backendcors.NewConfigStructure()
 	if err != nil {
 		panic(err)
 	}
-
-	backend = ctxcors.New(cfgStruct)
+	backend = backendcors.New(cfgStruct)
 }

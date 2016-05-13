@@ -110,7 +110,7 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	}
 	if false == sc.isOriginAllowed(origin) {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.origin", "method", r.Method, "origin", origin)
+			sc.log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.origin", "method", r.Method, "origin", origin, "allowedOrigins", sc.allowedOrigins)
 		}
 		return
 	}

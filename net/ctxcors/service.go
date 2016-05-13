@@ -132,7 +132,7 @@ func (s *Service) WithCORS() mw.Middleware {
 
 			ctx := r.Context()
 
-			_, requestedStore, err := store.FromContextProvider(ctx)
+			requestedStore, err := store.FromContextRequestedStore(ctx)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
 					s.defaultScopeCache.log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "ctx", ctx, "req", r)
@@ -235,9 +235,6 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		return s.defaultScopeCache, err
 	}
 
-	if s.defaultScopeCache.log.IsDebug() {
-		s.defaultScopeCache.log.Debug("ctxcors.Service.getConfigByScopeID.scoped", "err", errConfigNotFound, "scope", hash.String(), "fallback", fallback)
-	}
 	// give up, nothing found
 	return empty, errConfigNotFound
 }

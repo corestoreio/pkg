@@ -40,7 +40,8 @@ func TestWithOptionsPassthrough(t *testing.T) {
 		want bool
 	}{
 		{scope.Default, 0, noopOption(), false},
-		{scope.Default, 0, WithOptionsPassthrough(scope.Default, 0), true},
+		{scope.Default, 0, WithOptionsPassthrough(scope.Default, 0, true), true},
+		{scope.Default, 0, WithOptionsPassthrough(scope.Default, 0, false), false},
 	}
 	for _, test := range tests {
 

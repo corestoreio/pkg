@@ -327,11 +327,11 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 // WithOptionsPassthrough convenient helper function.
 // OptionsPassthrough instructs preflight to let other potential next handlers to
 // process the OPTIONS method. Turn this on if your application handles OPTIONS.
-func WithOptionsPassthrough(scp scope.Scope, id int64) Option {
+func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.optionsPassthrough = true
+			s.defaultScopeCache.optionsPassthrough = ok
 			return
 		}
 
@@ -340,7 +340,7 @@ func WithOptionsPassthrough(scp scope.Scope, id int64) Option {
 
 		// inherit default config
 		scNew := s.defaultScopeCache
-		scNew.optionsPassthrough = true
+		scNew.optionsPassthrough = ok
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.optionsPassthrough = scNew.optionsPassthrough

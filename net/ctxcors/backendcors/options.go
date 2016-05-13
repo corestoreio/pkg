@@ -18,11 +18,11 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxcors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DefaultBackend creates new ctxcors.Option slice with the default configuration
-// structure and a noop encryptor/decryptor IF no option arguments have been
-// provided. It panics on error, so us it only during the app init phase.
+// structure. It panics on error, so us it only during the app init phase.
 func DefaultBackend(opts ...cfgmodel.Option) ctxcors.ScopedOptionFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
@@ -35,26 +35,57 @@ func DefaultBackend(opts ...cfgmodel.Option) ctxcors.ScopedOptionFunc {
 	return BackendOptions(New(cfgStruct, opts...))
 }
 
-// BackendOptions creates a closure around the PkgBackend. The closure will
+// BackendOptions creates a closure around the type Backend. The closure will
 // be used during a scoped request to figure out the configuration depending on
 // the scope. An option array will be returned by the closure.
 func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 
-	return func(sg config.ScopedGetter) (opts []ctxcors.Option) {
+	return func(sg config.ScopedGetter) []ctxcors.Option {
+		var opts [4]ctxcors.Option
+		var i int
+		scp, id := sg.Scope()
 
-		// scp, id := sg.Scope()
+		ao, err := be.NetCtxcorsAllowedOrigins.Get(sg)
+		if err != nil {
+			opts[i] = func(s *ctxcors.Service) {
+				s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsAllowedOrigins.Get"))
+			}
+			return opts[:]
+		}
+		opts[i] = ctxcors.WithAllowedOrigins(scp, id, ao...)
+		i++
 
-		//exp, err := be.NetCtxjwtExpiration.Get(sg)
-		//if err != nil {
-		//	return append(opts, func(s *ctxcors.Service) {
-		//		s.AddError(errors.Wrap(err, "[backendjwt] NetCtxjwtExpiration.Get"))
-		//	})
-		//}
-		//opts = append(opts, ctxcors.WithExpiration(scp, id, exp))
+		am, err := be.NetCtxcorsAllowedMethods.Get(sg)
+		if err != nil {
+			opts[i] = func(s *ctxcors.Service) {
+				s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsAllowedMethods.Get"))
+			}
+			return opts[:]
+		}
+		opts[i] = ctxcors.WithAllowedMethods(scp, id, am...)
+		i++
 
-		// WithSigningMethod must be added at the end of the slice to overwrite default signing methods
-		// return append(opts, ctxcors.WithKey(scp, id, key), ctxcors.WithSigningMethod(scp, id, signingMethod))
-		return nil
+		ah, err := be.NetCtxcorsAllowedHeaders.Get(sg)
+		if err != nil {
+			opts[i] = func(s *ctxcors.Service) {
+				s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsAllowedHeaders.Get"))
+			}
+			return opts[:]
+		}
+		opts[i] = ctxcors.WithAllowedHeaders(scp, id, ah...)
+		i++
+
+		op, err := be.NetCtxcorsOptionsPassthrough.Get(sg)
+		if err != nil {
+			opts[i] = func(s *ctxcors.Service) {
+				s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsOptionsPassthrough.Get"))
+			}
+			return opts[:]
+		}
+		opts[i] = ctxcors.WithOptionsPassthrough(scp, id, op)
+		i++
+
+		return opts[:]
 	}
 }
 

@@ -30,6 +30,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxcors"
+	"github.com/corestoreio/csfw/net/ctxcors/internal/corstest"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -61,12 +62,9 @@ func reqWithStore(method string) *http.Request {
 	if err != nil {
 		panic(err)
 	}
-	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.Website, "euro"),
-		store.WithStorageConfig(cfgmock.NewService()),
-	)
+
 	return req.WithContext(
-		store.WithContextProvider(req.Context(), srv),
+		store.WithContextRequestedStore(req.Context(), storemock.MustNewStoreAU(cfgmock.NewService())),
 	)
 }
 
@@ -264,25 +262,10 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 		ctxcors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
-		ctxcors.WithOptionsPassthrough(scope.Default, 0),
+		ctxcors.WithOptionsPassthrough(scope.Default, 0, true),
 	)
-
-	res := httptest.NewRecorder()
 	req := reqWithStore("OPTIONS")
-	req.Header.Add("Origin", "http://foobar.com")
-	req.Header.Add("Access-Control-Request-Method", "PUT")
-
-	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
-
-	assertHeaders(t, res.Header(), map[string]string{
-		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-		"Access-Control-Allow-Origin":      "http://foobar.com",
-		"Access-Control-Allow-Methods":     "PUT",
-		"Access-Control-Allow-Headers":     "",
-		"Access-Control-Allow-Credentials": "",
-		"Access-Control-Max-Age":           "",
-		"Access-Control-Expose-Headers":    "",
-	})
+	corstest.TestAllowedMethodPassthrough(t, s, req)
 }
 
 func TestDisallowedMethod(t *testing.T) {
@@ -290,23 +273,8 @@ func TestDisallowedMethod(t *testing.T) {
 		ctxcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 		ctxcors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
 	)
-
-	res := httptest.NewRecorder()
 	req := reqWithStore("OPTIONS")
-	req.Header.Add("Origin", "http://foobar.com")
-	req.Header.Add("Access-Control-Request-Method", "PATCH")
-
-	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
-
-	assertHeaders(t, res.Header(), map[string]string{
-		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-		"Access-Control-Allow-Origin":      "",
-		"Access-Control-Allow-Methods":     "",
-		"Access-Control-Allow-Headers":     "",
-		"Access-Control-Allow-Credentials": "",
-		"Access-Control-Max-Age":           "",
-		"Access-Control-Expose-Headers":    "",
-	})
+	corstest.TestDisallowedMethod(t, s, req)
 }
 
 func TestAllowedHeader(t *testing.T) {
@@ -314,24 +282,8 @@ func TestAllowedHeader(t *testing.T) {
 		ctxcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 		ctxcors.WithAllowedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
 	)
-
-	res := httptest.NewRecorder()
 	req := reqWithStore("OPTIONS")
-	req.Header.Add("Origin", "http://foobar.com")
-	req.Header.Add("Access-Control-Request-Method", "GET")
-	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
-
-	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
-
-	assertHeaders(t, res.Header(), map[string]string{
-		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-		"Access-Control-Allow-Origin":      "http://foobar.com",
-		"Access-Control-Allow-Methods":     "GET",
-		"Access-Control-Allow-Headers":     "X-Header-2, X-Header-1",
-		"Access-Control-Allow-Credentials": "",
-		"Access-Control-Max-Age":           "",
-		"Access-Control-Expose-Headers":    "",
-	})
+	corstest.TestAllowedHeader(t, s, req)
 }
 
 func TestAllowedWildcardHeader(t *testing.T) {
@@ -339,24 +291,8 @@ func TestAllowedWildcardHeader(t *testing.T) {
 		ctxcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 		ctxcors.WithAllowedHeaders(scope.Default, 0, "*"),
 	)
-
-	res := httptest.NewRecorder()
 	req := reqWithStore("OPTIONS")
-	req.Header.Add("Origin", "http://foobar.com")
-	req.Header.Add("Access-Control-Request-Method", "GET")
-	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
-
-	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
-
-	assertHeaders(t, res.Header(), map[string]string{
-		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-		"Access-Control-Allow-Origin":      "http://foobar.com",
-		"Access-Control-Allow-Methods":     "GET",
-		"Access-Control-Allow-Headers":     "X-Header-2, X-Header-1",
-		"Access-Control-Allow-Credentials": "",
-		"Access-Control-Max-Age":           "",
-		"Access-Control-Expose-Headers":    "",
-	})
+	corstest.TestAllowedWildcardHeader(t, s, req)
 }
 
 func TestDisallowedHeader(t *testing.T) {
