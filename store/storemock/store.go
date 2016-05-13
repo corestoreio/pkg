@@ -37,6 +37,17 @@ func (rs *RequestedStoreAU) RequestedStore(so scope.Option) (*store.Store, error
 	return NewStoreAU(rs.Getter)
 }
 
+// NewRequestedStoreAU creates a new type. Only one argument may be passed.
+func NewRequestedStoreAU(cgs ...config.Getter) *RequestedStoreAU {
+	var cg config.Getter
+	if len(cgs) > 0 {
+		cg = cgs[0]
+	}
+	return &RequestedStoreAU{
+		Getter: cg,
+	}
+}
+
 // NewStoreAU creates a new Store with an attached config.
 // Store ID 5, Code "au"; Website ID 2, Code "oz"; GroupID 3.
 func NewStoreAU(cg config.Getter) (*store.Store, error) {

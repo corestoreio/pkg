@@ -259,7 +259,7 @@ var testsMWInitByFormCookie = []struct {
 func TestWithInitStoreByFormCookie(t *testing.T) {
 
 	debugLogBuf := new(bytes.Buffer)
-	lg := log.NewStdLogger(log.SetStdWriter(debugLogBuf), log.SetStdLevel(log.StdLevelDebug))
+	lg := log.NewStdLog(log.WithStdWriter(debugLogBuf), log.WithStdLevel(log.StdLevelDebug))
 
 	for i, test := range testsMWInitByFormCookie {
 

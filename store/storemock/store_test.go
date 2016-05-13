@@ -18,9 +18,11 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,4 +54,39 @@ func TestRequestedStoreAU(t *testing.T) {
 	assert.NotNil(t, rStore)
 	assert.NotNil(t, rStore.Config)
 	assert.NotNil(t, rStore.Website.Config)
+}
+
+func TestMustNewStoreAU_Config(t *testing.T) {
+	var configPath = cfgpath.MustNewByParts("aa/bb/cc")
+
+	aust := storemock.MustNewStoreAU(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		configPath.Bind(scope.Default, 0).String(): "DefaultScopeString",
+		configPath.Bind(scope.Website, 2).String(): "WebsiteScopeString",
+		configPath.Bind(scope.Store, 5).String():   "StoreScopeString",
+	})))
+
+	haveS, err := aust.Website.Config.String(configPath.Route)
+	if err != nil {
+		t.Fatal("fatal", errors.PrintLoc(err))
+	}
+	assert.Exactly(t, "WebsiteScopeString", haveS)
+
+	haveS, err = aust.Website.Config.String(configPath.Route, scope.Default)
+	if err != nil {
+		t.Fatal("fatal", errors.PrintLoc(err))
+	}
+	assert.Exactly(t, "DefaultScopeString", haveS)
+
+	haveS, err = aust.Config.String(configPath.Route)
+	if err != nil {
+		t.Fatal("fatal", errors.PrintLoc(err))
+	}
+	assert.Exactly(t, "StoreScopeString", haveS)
+
+	haveS, err = aust.Config.String(configPath.Route, scope.Default)
+	if err != nil {
+		t.Fatal("fatal", errors.PrintLoc(err))
+	}
+	assert.Exactly(t, "DefaultScopeString", haveS)
+
 }
