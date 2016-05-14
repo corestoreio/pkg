@@ -54,6 +54,69 @@ func newCorsService() *ctxcors.Service {
 	)
 }
 
+func TestNoConfig(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("GET")
+	corstest.TestNoConfig(t, s, req)
+}
+
+func TestMatchAllOrigin(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+	// STAR is the default value in the element structure
+	}))
+	corstest.TestMatchAllOrigin(t, s, req)
+}
+
+func TestAllowedOrigin(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+	}))
+	corstest.TestAllowedOrigin(t, s, req)
+}
+
+func TestWildcardOrigin(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://*.bar.com",
+	}))
+	corstest.TestWildcardOrigin(t, s, req)
+}
+
+func TestDisallowedOrigin(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+	}))
+	corstest.TestDisallowedOrigin(t, s, req)
+}
+
+func TestDisallowedWildcardOrigin(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://*.bar.com",
+	}))
+	corstest.TestDisallowedWildcardOrigin(t, s, req)
+}
+
+func TestAllowedOriginFunc(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowOriginRegex.ToPath, scope.Website, 2): "^http://foo",
+	}))
+	corstest.TestAllowedOriginFunc(t, s, req)
+}
+
+func TestAllowedMethod(t *testing.T) {
+	s := newCorsService()
+	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCtxcorsAllowedMethods.ToPath, scope.Website, 2): "PUT\nDELETE",
+	}))
+	corstest.TestAllowedMethod(t, s, req)
+}
+
 func TestAllowedMethodPassthrough(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{

@@ -43,6 +43,12 @@ type Backend struct {
 	// Path: net/ctxcors/allowed_origins
 	NetCtxcorsAllowedOrigins cfgmodel.StringCSV
 
+	// NetCtxcorsAllowOriginRegex same as NetCtxcorsAllowedOrigins but uses
+	// a regex to check for the domains.
+	//
+	// Path: net/ctxcors/allow_origin_regex
+	NetCtxcorsAllowOriginRegex cfgmodel.Str
+
 	// NetCtxcorsAllowedMethods a list of methods the client is allowed to
 	// use with cross-domain requests. Default value is simple methods (GET and POST)
 	// Separate via line break (\n).
@@ -101,10 +107,11 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 
 	pp.NetCtxcorsExposedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/exposed_headers`, optsCSV...)
 	pp.NetCtxcorsAllowedOrigins = cfgmodel.NewStringCSV(`net/ctxcors/allowed_origins`, optsCSV...)
+	pp.NetCtxcorsAllowOriginRegex = cfgmodel.NewStr(`net/ctxcors/allow_origin_regex`, opts...)
 	pp.NetCtxcorsAllowedMethods = cfgmodel.NewStringCSV(`net/ctxcors/allowed_methods`, optsCSV...)
 	pp.NetCtxcorsAllowedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/allowed_headers`, optsCSV...)
 	pp.NetCtxcorsAllowCredentials = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, optsYN...)
-	pp.NetCtxcorsOptionsPassthrough = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, optsYN...)
+	pp.NetCtxcorsOptionsPassthrough = cfgmodel.NewBool(`net/ctxcors/options_passthrough`, optsYN...)
 	pp.NetCtxcorsMaxAge = cfgmodel.NewDuration(`net/ctxcors/max_age`, opts...)
 
 	return pp

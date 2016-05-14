@@ -69,6 +69,16 @@ Only one wildcard can be used per origin. Default value is ["*"]. Separate via l
 							Default:   `*`,
 						},
 						element.Field{
+							// Path: `net/ctxcors/allow_origin_regex`,
+							ID:        cfgpath.NewRoute(`allow_origin_regex`),
+							Label:     text.Chars(`Allowed Origin Regex`),
+							Comment:   text.Chars(`Same as Allowed Origins but uses a PERL regular expression.`),
+							Type:      element.TypeText,
+							SortOrder: 25,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+						},
+						element.Field{
 							// Path: `net/ctxcors/allowed_methods`,
 							ID:    cfgpath.NewRoute(`allowed_methods`),
 							Label: text.Chars(`Allowed Methods`),

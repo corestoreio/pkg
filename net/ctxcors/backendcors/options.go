@@ -15,6 +15,8 @@
 package backendcors
 
 import (
+	"regexp"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxcors"
@@ -41,10 +43,11 @@ func DefaultBackend(opts ...cfgmodel.Option) ctxcors.ScopedOptionFunc {
 func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 
 	return func(sg config.ScopedGetter) []ctxcors.Option {
-		var opts [7]ctxcors.Option
+		var opts [8]ctxcors.Option
 		var i int
 		scp, id := sg.Scope()
 
+		// EXPOSED HEADERS
 		eh, err := be.NetCtxcorsExposedHeaders.Get(sg)
 		if err != nil {
 			opts[i] = func(s *ctxcors.Service) {
@@ -55,6 +58,7 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 		opts[i] = ctxcors.WithExposedHeaders(scp, id, eh...)
 		i++
 
+		// ALLOWED ORIGINS
 		ao, err := be.NetCtxcorsAllowedOrigins.Get(sg)
 		if err != nil {
 			opts[i] = func(s *ctxcors.Service) {
@@ -65,6 +69,29 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 		opts[i] = ctxcors.WithAllowedOrigins(scp, id, ao...)
 		i++
 
+		// ALLOW ORIGIN REGEX
+		aor, err := be.NetCtxcorsAllowOriginRegex.Get(sg)
+		if err != nil {
+			opts[i] = func(s *ctxcors.Service) {
+				s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsAllowedOriginRegex.Get"))
+			}
+			return opts[:]
+		}
+		if len(aor) > 1 {
+			r, err := regexp.Compile(aor)
+			if err != nil {
+				opts[i] = func(s *ctxcors.Service) {
+					s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsAllowedOriginRegex.regexp.Compile"))
+				}
+				return opts[:]
+			}
+			opts[i] = ctxcors.WithAllowOriginFunc(scp, id, func(o string) bool {
+				return r.MatchString(o)
+			})
+		}
+		i++
+
+		// ALLOWED METHODS
 		am, err := be.NetCtxcorsAllowedMethods.Get(sg)
 		if err != nil {
 			opts[i] = func(s *ctxcors.Service) {
@@ -75,6 +102,7 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 		opts[i] = ctxcors.WithAllowedMethods(scp, id, am...)
 		i++
 
+		// ALLOWED HEADERS
 		ah, err := be.NetCtxcorsAllowedHeaders.Get(sg)
 		if err != nil {
 			opts[i] = func(s *ctxcors.Service) {
@@ -85,6 +113,7 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 		opts[i] = ctxcors.WithAllowedHeaders(scp, id, ah...)
 		i++
 
+		// ALLOW CREDENTIALS
 		ac, err := be.NetCtxcorsAllowCredentials.Get(sg)
 		if err != nil {
 			opts[i] = func(s *ctxcors.Service) {
@@ -95,6 +124,7 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 		opts[i] = ctxcors.WithAllowCredentials(scp, id, ac)
 		i++
 
+		// OPTIONS PASSTHROUGH
 		op, err := be.NetCtxcorsOptionsPassthrough.Get(sg)
 		if err != nil {
 			opts[i] = func(s *ctxcors.Service) {
@@ -105,10 +135,11 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 		opts[i] = ctxcors.WithOptionsPassthrough(scp, id, op)
 		i++
 
+		// MAX AGE
 		ma, err := be.NetCtxcorsMaxAge.Get(sg)
 		if err != nil {
 			opts[i] = func(s *ctxcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsOptionsPassthrough.Get"))
+				s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsMaxAge.Get"))
 			}
 			return opts[:]
 		}

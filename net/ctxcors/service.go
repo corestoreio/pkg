@@ -90,7 +90,9 @@ func MustNew(opts ...Option) *Service {
 // Options applies option at creation time or refreshes them.
 func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
-		opt(s)
+		if opt != nil { // can be nil because of the backend options where we have an array instead of a slice.
+			opt(s)
+		}
 	}
 	if s.optionError != nil {
 		return s.optionError
@@ -113,7 +115,7 @@ func (s *Service) Options(opts ...Option) error {
 func (s *Service) AddError(err error) {
 	if s.optionError != nil {
 		if s.defaultScopeCache.log.IsDebug() {
-			s.defaultScopeCache.log.Debug("jwtauth.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
+			s.defaultScopeCache.log.Debug("ctxcors.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
 		}
 		return
 	}
@@ -135,9 +137,9 @@ func (s *Service) WithCORS() mw.Middleware {
 			requestedStore, err := store.FromContextRequestedStore(ctx)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "ctx", ctx, "req", r)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", "err", err, "ctx", ctx, "req", r)
 				}
-				err = errors.Wrap(err, "[jwtauth] FromContextProvider")
+				err = errors.Wrap(err, "[ctxcors] FromContextRequestedStore")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -148,20 +150,20 @@ func (s *Service) WithCORS() mw.Middleware {
 			scpCfg, err := s.configByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
 				}
-				err = errors.Wrap(err, "[jwtauth] ConfigByScopedGetter")
+				err = errors.Wrap(err, "[ctxcors] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
 
 			if s.defaultScopeCache.log.IsInfo() {
-				s.defaultScopeCache.log.Info("ctxcors.Service.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
+				s.defaultScopeCache.log.Info("Service.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
 			}
 
 			if r.Method == httputil.MethodOptions {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("ctxcors.Service.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
 				}
 				scpCfg.handlePreflight(w, r)
 				// Preflight requests are standalone and should stop the chain as some other
@@ -204,7 +206,7 @@ func (s *Service) configByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 
 	if s.scpOptionFnc != nil {
 		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[jwtauth] Options by scpOptionFnc")
+			return scopedConfig{}, errors.Wrap(err, "[ctxcors] Options by scpOptionFnc")
 		}
 	}
 

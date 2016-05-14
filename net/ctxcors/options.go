@@ -292,7 +292,7 @@ func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
-		if s.optionError != nil {
+		if s.optionError != nil || seconds == 0 {
 			return
 		}
 		var age string

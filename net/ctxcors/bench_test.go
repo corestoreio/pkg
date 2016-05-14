@@ -26,7 +26,19 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxcors"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
+
+func testHandler(fa interface {
+	Fatal(args ...interface{})
+}) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := ctxcors.FromContext(r.Context()); err != nil {
+			fa.Fatal(errors.PrintLoc(err))
+		}
+		_, _ = w.Write([]byte("bar"))
+	}
+}
 
 type FakeResponse struct {
 	header http.Header
