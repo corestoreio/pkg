@@ -22,10 +22,10 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// DefaultBackend creates new jwtauth.Option slice with the default configuration
+// Default creates new jwtauth.Option slice with the default configuration
 // structure and a noop encryptor/decryptor IF no option arguments have been
 // provided. It panics on error, so us it only during the app init phase.
-func DefaultBackend(opts ...cfgmodel.Option) jwtauth.ScopedOptionFunc {
+func Default(opts ...cfgmodel.Option) jwtauth.ScopedOptionFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -34,13 +34,13 @@ func DefaultBackend(opts ...cfgmodel.Option) jwtauth.ScopedOptionFunc {
 		opts = append(opts, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 	}
 
-	return BackendOptions(New(cfgStruct, opts...))
+	return PrepareOptions(New(cfgStruct, opts...))
 }
 
-// BackendOptions creates a closure around the PkgBackend. The closure will
+// PrepareOptions creates a closure around the type Backend. The closure will
 // be used during a scoped request to figure out the configuration depending on
-// the scope. An option array will be returned by the closure.
-func BackendOptions(be *Backend) jwtauth.ScopedOptionFunc {
+// the incoming scope. An option array will be returned by the closure.
+func PrepareOptions(be *Backend) jwtauth.ScopedOptionFunc {
 
 	return func(sg config.ScopedGetter) (opts []jwtauth.Option) {
 
