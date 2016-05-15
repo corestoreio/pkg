@@ -12,14 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxcors
+package mwcors
 
-import "github.com/corestoreio/csfw/util/errors"
+import (
+	"context"
+	"testing"
 
-const errInvalidDurations = "[ctxcors] MaxAge: Invalid Duration seconds: %.0f"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
+)
 
-const errServiceUnsupportedScope = "[ctxcors] Service does not support this: %s. Only default or website scope are allowed."
+func TestContextWithError(t *testing.T) {
 
-const errScopedConfigNotValid = `[ctxcors] ScopedConfig %s invalid`
+	const wantErr = errors.UserNotFound("User Contiki not found")
+	ctx := withContextError(context.Background(), wantErr)
+	assert.NotNil(t, ctx)
 
-var errConfigNotFound = errors.NewNotFoundf(`[ctxcors] ScopedConfig not available`)
+	haveErr := FromContext(ctx)
+	assert.True(t, errors.IsUserNotFound(haveErr))
+}

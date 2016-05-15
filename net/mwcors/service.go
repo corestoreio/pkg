@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package ctxcors
+package mwcors
 
 import (
 	"net/http"
@@ -70,10 +70,10 @@ func New(opts ...Option) (*Service, error) {
 		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
-		return nil, errors.Wrap(err, "[ctxcors] Options WithDefaultConfig")
+		return nil, errors.Wrap(err, "[mwcors] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[ctxcors] Options Any Config")
+		return nil, errors.Wrap(err, "[mwcors] Options Any Config")
 	}
 	return s, nil
 }
@@ -115,7 +115,7 @@ func (s *Service) Options(opts ...Option) error {
 func (s *Service) AddError(err error) {
 	if s.optionError != nil {
 		if s.defaultScopeCache.log.IsDebug() {
-			s.defaultScopeCache.log.Debug("ctxcors.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
+			s.defaultScopeCache.log.Debug("mwcors.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
 		}
 		return
 	}
@@ -139,7 +139,7 @@ func (s *Service) WithCORS() mw.Middleware {
 				if s.defaultScopeCache.log.IsDebug() {
 					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", "err", err, "ctx", ctx, "req", r)
 				}
-				err = errors.Wrap(err, "[ctxcors] FromContextRequestedStore")
+				err = errors.Wrap(err, "[mwcors] FromContextRequestedStore")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -152,7 +152,7 @@ func (s *Service) WithCORS() mw.Middleware {
 				if s.defaultScopeCache.log.IsDebug() {
 					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
 				}
-				err = errors.Wrap(err, "[ctxcors] ConfigByScopedGetter")
+				err = errors.Wrap(err, "[mwcors] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -206,7 +206,7 @@ func (s *Service) configByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 
 	if s.scpOptionFnc != nil {
 		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[ctxcors] Options by scpOptionFnc")
+			return scopedConfig{}, errors.Wrap(err, "[mwcors] Options by scpOptionFnc")
 		}
 	}
 
@@ -231,7 +231,7 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		if !s.defaultScopeCache.IsValid() {
 			err = errConfigNotFound
 			if s.defaultScopeCache.log.IsDebug() {
-				s.defaultScopeCache.log.Debug("ctxcors.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String(), "fallback", fallback)
+				s.defaultScopeCache.log.Debug("mwcors.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String(), "fallback", fallback)
 			}
 		}
 		return s.defaultScopeCache, err

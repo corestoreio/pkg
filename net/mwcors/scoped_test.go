@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxcors
+package mwcors
 
 //import (
 //	"testing"
@@ -32,13 +32,13 @@ package ctxcors
 //
 //	cfgGet := cfgmock.NewService(
 //		cfgmock.WithPV(cfgmock.PathValue{
-//			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.Website, 2):     "X-CoreStore-ID\nContent-Type\n\n",
-//			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.Website, 2):     "host1.com\nhost2.com\n\n",
-//			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.Website, 2):     "PATCH\nDELETE",
-//			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.Website, 2):     "Date,X-Header1",
-//			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.Website, 2):   "1",
-//			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.Website, 2): "1",
-//			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.Website, 2):             "2h",
+//			mustToPath(t, be.NetCorsExposedHeaders.FQ, scope.Website, 2):     "X-CoreStore-ID\nContent-Type\n\n",
+//			mustToPath(t, be.NetCorsAllowedOrigins.FQ, scope.Website, 2):     "host1.com\nhost2.com\n\n",
+//			mustToPath(t, be.NetCorsAllowedMethods.FQ, scope.Website, 2):     "PATCH\nDELETE",
+//			mustToPath(t, be.NetCorsAllowedHeaders.FQ, scope.Website, 2):     "Date,X-Header1",
+//			mustToPath(t, be.NetCorsAllowCredentials.FQ, scope.Website, 2):   "1",
+//			mustToPath(t, be.NetCorsOptionsPassthrough.FQ, scope.Website, 2): "1",
+//			mustToPath(t, be.NetCorsMaxAge.FQ, scope.Website, 2):             "2h",
 //		}),
 //	)
 //

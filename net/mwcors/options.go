@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxcors
+package mwcors
 
 import (
 	"fmt"
@@ -49,7 +49,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache, s.optionError = defaultScopedConfig()
-			s.optionError = errors.Wrap(s.optionError, "[ctxcors] Default Scope with Default Config")
+			s.optionError = errors.Wrap(s.optionError, "[mwcors] Default Scope with Default Config")
 			return
 		}
 
@@ -57,7 +57,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 		defer s.mu.Unlock()
 
 		s.scopeCache[h], s.optionError = defaultScopedConfig()
-		s.optionError = errors.Wrapf(s.optionError, "[ctxcors] Scope %s with Default Config", h)
+		s.optionError = errors.Wrapf(s.optionError, "[mwcors] Scope %s with Default Config", h)
 	}
 }
 
@@ -371,8 +371,8 @@ func WithLogger(l log.Logger) Option {
 //	}
 //	pb := backendcors.New(cfgStruct)
 //
-//	cors := ctxcors.MustNewService(
-//		ctxcors.WithOptionFactory(backendcors.PrepareOptions(pb)),
+//	cors := mwcors.MustNewService(
+//		mwcors.WithOptionFactory(backendcors.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) {

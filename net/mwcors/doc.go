@@ -12,18 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backendcors_test
-
-import "github.com/corestoreio/csfw/net/ctxcors/backendcors"
-
-// backend overall backend models for all tests
-var backend *backendcors.Backend
-
-// this would belong into the test suit setup
-func init() {
-	cfgStruct, err := backendcors.NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	backend = backendcors.New(cfgStruct)
-}
+// Package mwcors provides a middleware for Cross-origin resource sharing (CORS).
+//
+// Cors describes the CrossOriginResourceSharing which is used to create a
+// Container Filter that implements CORS. Cross-origin resource sharing (CORS)
+// is a mechanism that allows JavaScript on a web page to make XMLHttpRequests
+// to another domain, not the domain the JavaScript originated from.
+//
+// http://en.wikipedia.org/wiki/Cross-origin_resource_sharing
+// http://enable-cors.org/server.html
+// http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request
+package mwcors

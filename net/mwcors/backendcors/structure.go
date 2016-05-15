@@ -31,7 +31,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			ID: cfgpath.NewRoute(`net`),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:    cfgpath.NewRoute(`ctxcors`),
+					ID:    cfgpath.NewRoute(`cors`),
 					Label: text.Chars(`CORS Cross Origin Resource Sharing`),
 					Comment: text.Chars(`CORS describes the CrossOriginResourceSharing
 which is used to create a Container Filter that implements CORS. Cross-origin
@@ -43,7 +43,7 @@ from.`),
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: `net/ctxcors/exposed_headers`,
+							// Path: `net/cors/exposed_headers`,
 							ID:    cfgpath.NewRoute(`exposed_headers`),
 							Label: text.Chars(`Exposed Headers`),
 							Comment: text.Chars(`Indicates which headers are safe to
@@ -54,7 +54,7 @@ expose to the API of a CORS API specification. Separate via line break (\n)`),
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: `net/ctxcors/allowed_origins`,
+							// Path: `net/cors/allowed_origins`,
 							ID:    cfgpath.NewRoute(`allowed_origins`),
 							Label: text.Chars(`Allowed Origins`),
 							Comment: text.Chars(`Is a list of origins a cross-domain request
@@ -69,7 +69,7 @@ Only one wildcard can be used per origin. Default value is ["*"]. Separate via l
 							Default:   `*`,
 						},
 						element.Field{
-							// Path: `net/ctxcors/allow_origin_regex`,
+							// Path: `net/cors/allow_origin_regex`,
 							ID:        cfgpath.NewRoute(`allow_origin_regex`),
 							Label:     text.Chars(`Allowed Origin Regex`),
 							Comment:   text.Chars(`Same as Allowed Origins but uses a PERL regular expression.`),
@@ -79,7 +79,7 @@ Only one wildcard can be used per origin. Default value is ["*"]. Separate via l
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: `net/ctxcors/allowed_methods`,
+							// Path: `net/cors/allowed_methods`,
 							ID:    cfgpath.NewRoute(`allowed_methods`),
 							Label: text.Chars(`Allowed Methods`),
 							Comment: text.Chars(`A list of methods the client is allowed to
@@ -91,7 +91,7 @@ use with cross-domain requests. Default value is simple methods (GET and POST). 
 							Default:   "GET\nPOST",
 						},
 						element.Field{
-							// Path: `net/ctxcors/allowed_headers`,
+							// Path: `net/cors/allowed_headers`,
 							ID:    cfgpath.NewRoute(`allowed_headers`),
 							Label: text.Chars(`Allowed Headers`),
 							Comment: text.Chars(`A list of non simple headers the client is
@@ -105,7 +105,7 @@ always appended to the list. Separate via line break (\n)`),
 							Default:   "Origin\nAccept\nContent-Type",
 						},
 						element.Field{
-							// Path: `net/ctxcors/allow_credentials`,
+							// Path: `net/cors/allow_credentials`,
 							ID:    cfgpath.NewRoute(`allow_credentials`),
 							Label: text.Chars(`Allow Credentials`),
 							Comment: text.Chars(`Indicates whether the request can include
@@ -117,7 +117,7 @@ user credentials like cookies, HTTP authentication or client side SSL certificat
 							Default:   `false`,
 						},
 						element.Field{
-							// Path: `net/ctxcors/options_passthrough`,
+							// Path: `net/cors/options_passthrough`,
 							ID:    cfgpath.NewRoute(`options_passthrough`),
 							Label: text.Chars(`Options Passthrough`),
 							Comment: text.Chars(`OptionsPassthrough instructs preflight to let other potential next handlers to
@@ -129,7 +129,7 @@ process the OPTIONS method. Turn this on if your application handles OPTIONS.`),
 							Default:   `false`,
 						},
 						element.Field{
-							// Path: `net/ctxcors/max_age`,
+							// Path: `net/cors/max_age`,
 							ID:    cfgpath.NewRoute(`max_age`),
 							Label: text.Chars(`Max Age`),
 							Comment: text.Chars(`Indicates how long (in seconds) the results

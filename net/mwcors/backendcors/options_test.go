@@ -20,9 +20,9 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/net/ctxcors"
-	"github.com/corestoreio/csfw/net/ctxcors/backendcors"
-	"github.com/corestoreio/csfw/net/ctxcors/internal/corstest"
+	"github.com/corestoreio/csfw/net/mwcors"
+	"github.com/corestoreio/csfw/net/mwcors/backendcors"
+	"github.com/corestoreio/csfw/net/mwcors/internal/corstest"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -49,9 +49,9 @@ func reqWithStore(method string, cfgOpt ...cfgmock.OptionFunc) *http.Request {
 	)
 }
 
-func newCorsService() *ctxcors.Service {
-	return ctxcors.MustNew(
-		ctxcors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+func newCorsService() *mwcors.Service {
+	return mwcors.MustNew(
+		mwcors.WithOptionFactory(backendcors.PrepareOptions(backend)),
 	)
 }
 
@@ -72,7 +72,7 @@ func TestMatchAllOrigin(t *testing.T) {
 func TestAllowedOrigin(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
 	}))
 	corstest.TestAllowedOrigin(t, s, req)
 }
@@ -80,7 +80,7 @@ func TestAllowedOrigin(t *testing.T) {
 func TestWildcardOrigin(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://*.bar.com",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://*.bar.com",
 	}))
 	corstest.TestWildcardOrigin(t, s, req)
 }
@@ -88,7 +88,7 @@ func TestWildcardOrigin(t *testing.T) {
 func TestDisallowedOrigin(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
 	}))
 	corstest.TestDisallowedOrigin(t, s, req)
 }
@@ -96,7 +96,7 @@ func TestDisallowedOrigin(t *testing.T) {
 func TestDisallowedWildcardOrigin(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://*.bar.com",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://*.bar.com",
 	}))
 	corstest.TestDisallowedWildcardOrigin(t, s, req)
 }
@@ -104,7 +104,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 func TestAllowedOriginFunc(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowOriginRegex.ToPath, scope.Website, 2): "^http://foo",
+		mustToPath(t, backend.NetCorsAllowOriginRegex.ToPath, scope.Website, 2): "^http://foo",
 	}))
 	corstest.TestAllowedOriginFunc(t, s, req)
 }
@@ -112,8 +112,8 @@ func TestAllowedOriginFunc(t *testing.T) {
 func TestAllowedMethod(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsAllowedMethods.ToPath, scope.Website, 2): "PUT\nDELETE",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedMethods.ToPath, scope.Website, 2): "PUT\nDELETE",
 	}))
 	corstest.TestAllowedMethod(t, s, req)
 }
@@ -121,9 +121,9 @@ func TestAllowedMethod(t *testing.T) {
 func TestAllowedMethodPassthrough(t *testing.T) {
 	s := newCorsService()
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2):     "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsAllowedMethods.ToPath, scope.Website, 2):     "PUT\nDELETE",
-		mustToPath(t, backend.NetCtxcorsOptionsPassthrough.ToPath, scope.Website, 2): true,
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2):     "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedMethods.ToPath, scope.Website, 2):     "PUT\nDELETE",
+		mustToPath(t, backend.NetCorsOptionsPassthrough.ToPath, scope.Website, 2): true,
 	}))
 	corstest.TestAllowedMethodPassthrough(t, s, req)
 }
@@ -132,8 +132,8 @@ func TestDisallowedMethod(t *testing.T) {
 	s := newCorsService()
 
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsAllowedMethods.ToPath, scope.Website, 2): "PUT\nDELETE",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedMethods.ToPath, scope.Website, 2): "PUT\nDELETE",
 	}))
 
 	corstest.TestDisallowedMethod(t, s, req)
@@ -143,8 +143,8 @@ func TestAllowedHeader(t *testing.T) {
 	s := newCorsService()
 
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsAllowedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
 	}))
 
 	corstest.TestAllowedHeader(t, s, req)
@@ -154,8 +154,8 @@ func TestAllowedWildcardHeader(t *testing.T) {
 	s := newCorsService()
 
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsAllowedHeaders.ToPath, scope.Website, 2): "*",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedHeaders.ToPath, scope.Website, 2): "*",
 	}))
 
 	corstest.TestAllowedWildcardHeader(t, s, req)
@@ -165,8 +165,8 @@ func TestDisallowedHeader(t *testing.T) {
 	s := newCorsService()
 
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsAllowedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
 	}))
 
 	corstest.TestDisallowedHeader(t, s, req)
@@ -176,8 +176,8 @@ func TestExposedHeader(t *testing.T) {
 	s := newCorsService()
 
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsExposedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsExposedHeaders.ToPath, scope.Website, 2): "X-Header-1\nx-header-2",
 	}))
 
 	corstest.TestExposedHeader(t, s, req)
@@ -187,8 +187,8 @@ func TestAllowedCredentials(t *testing.T) {
 	s := newCorsService()
 
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2):   "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsAllowCredentials.ToPath, scope.Website, 2): true,
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2):   "http://foobar.com",
+		mustToPath(t, backend.NetCorsAllowCredentials.ToPath, scope.Website, 2): true,
 	}))
 
 	corstest.TestAllowedCredentials(t, s, req)
@@ -197,8 +197,8 @@ func TestMaxAge(t *testing.T) {
 	s := newCorsService()
 
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetCtxcorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
-		mustToPath(t, backend.NetCtxcorsMaxAge.ToPath, scope.Website, 2):         "30s",
+		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
+		mustToPath(t, backend.NetCorsMaxAge.ToPath, scope.Website, 2):         "30s",
 	}))
 
 	corstest.TestMaxAge(t, s, req)
@@ -211,15 +211,15 @@ func TestBackend_Path_Errors(t *testing.T) {
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.NetCtxcorsExposedHeaders.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetCtxcorsAllowedOrigins.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetCtxcorsAllowOriginRegex.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetCtxcorsAllowOriginRegex.ToPath, "[a-z+", errors.IsFatal},
-		{backend.NetCtxcorsAllowedMethods.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetCtxcorsAllowedHeaders.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetCtxcorsAllowCredentials.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetCtxcorsOptionsPassthrough.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetCtxcorsMaxAge.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsExposedHeaders.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsAllowedOrigins.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsAllowOriginRegex.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsAllowOriginRegex.ToPath, "[a-z+", errors.IsFatal},
+		{backend.NetCorsAllowedMethods.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsAllowedHeaders.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsAllowCredentials.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsOptionsPassthrough.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCorsMaxAge.ToPath, struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 
@@ -229,7 +229,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 		}))
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
-		_, err := ctxcors.New(scpFnc(cfgScp)...)
+		_, err := mwcors.New(scpFnc(cfgScp)...)
 		assert.True(t, test.errBhf(err), "Index %d Error: %s", i, err)
 	}
 }

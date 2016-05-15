@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ctxcors provides a various middleware for net/context.
-//
-// Cors describes the CrossOriginResourceSharing which is used to create a
-// Container Filter that implements CORS. Cross-origin resource sharing (CORS)
-// is a mechanism that allows JavaScript on a web page to make XMLHttpRequests
-// to another domain, not the domain the JavaScript originated from.
-//
-// http://en.wikipedia.org/wiki/Cross-origin_resource_sharing
-// http://enable-cors.org/server.html
-// http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request
-package ctxcors
+package mwcors
+
+import "github.com/corestoreio/csfw/util/errors"
+
+const errInvalidDurations = "[mwcors] MaxAge: Invalid Duration seconds: %.0f"
+
+const errServiceUnsupportedScope = "[mwcors] Service does not support this: %s. Only default or website scope are allowed."
+
+const errScopedConfigNotValid = `[mwcors] ScopedConfig %s invalid`
+
+var errConfigNotFound = errors.NewNotFoundf(`[mwcors] ScopedConfig not available`)

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/ctxcors"
+	"github.com/corestoreio/csfw/net/mwcors"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -35,7 +35,7 @@ func testHandler(fa interface {
 	Fatal(args ...interface{})
 }) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := ctxcors.FromContext(r.Context()); err != nil {
+		if err := mwcors.FromContext(r.Context()); err != nil {
 			fa.Fatal(errors.PrintLoc(err))
 		}
 		_, _ = w.Write([]byte("bar"))
@@ -52,7 +52,7 @@ func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]s
 	}
 }
 
-func TestNoConfig(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestNoConfig(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	res := httptest.NewRecorder()
 
@@ -69,7 +69,7 @@ func TestNoConfig(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestMatchAllOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestMatchAllOrigin(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	res := httptest.NewRecorder()
 	req.Header.Add("Origin", "http://foobar.com")
@@ -87,7 +87,7 @@ func TestMatchAllOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestAllowedOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestAllowedOrigin(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	res := httptest.NewRecorder()
 	req.Header.Add("Origin", "http://foobar.com")
@@ -105,7 +105,7 @@ func TestAllowedOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestWildcardOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestWildcardOrigin(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	res := httptest.NewRecorder()
 	req.Header.Add("Origin", "http://foo.bar.com")
@@ -123,7 +123,7 @@ func TestWildcardOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestDisallowedOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestDisallowedOrigin(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://barbaz.com")
 	res := httptest.NewRecorder()
@@ -141,7 +141,7 @@ func TestDisallowedOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestDisallowedWildcardOrigin(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestDisallowedWildcardOrigin(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foo.baz.com")
 	res := httptest.NewRecorder()
@@ -159,7 +159,7 @@ func TestDisallowedWildcardOrigin(t *testing.T, s *ctxcors.Service, req *http.Re
 	})
 }
 
-func TestAllowedOriginFunc(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestAllowedOriginFunc(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Set("Origin", "http://foobar.com")
 	res := httptest.NewRecorder()
@@ -176,7 +176,7 @@ func TestAllowedOriginFunc(t *testing.T, s *ctxcors.Service, req *http.Request) 
 	})
 }
 
-func TestAllowedMethod(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestAllowedMethod(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
@@ -194,7 +194,7 @@ func TestAllowedMethod(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestAllowedMethodPassthrough(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestAllowedMethodPassthrough(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
@@ -212,7 +212,7 @@ func TestAllowedMethodPassthrough(t *testing.T, s *ctxcors.Service, req *http.Re
 	})
 }
 
-func TestDisallowedMethod(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestDisallowedMethod(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PATCH")
@@ -231,7 +231,7 @@ func TestDisallowedMethod(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestAllowedHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestAllowedHeader(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
@@ -251,7 +251,7 @@ func TestAllowedHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestAllowedWildcardHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestAllowedWildcardHeader(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
@@ -270,7 +270,7 @@ func TestAllowedWildcardHeader(t *testing.T, s *ctxcors.Service, req *http.Reque
 	})
 }
 
-func TestDisallowedHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestDisallowedHeader(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
@@ -290,7 +290,7 @@ func TestDisallowedHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestOriginHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestOriginHeader(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
@@ -310,7 +310,7 @@ func TestOriginHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestExposedHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestExposedHeader(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	res := httptest.NewRecorder()
@@ -328,7 +328,7 @@ func TestExposedHeader(t *testing.T, s *ctxcors.Service, req *http.Request) {
 	})
 }
 
-func TestAllowedCredentials(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestAllowedCredentials(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
@@ -347,7 +347,7 @@ func TestAllowedCredentials(t *testing.T, s *ctxcors.Service, req *http.Request)
 	})
 }
 
-func TestMaxAge(t *testing.T, s *ctxcors.Service, req *http.Request) {
+func TestMaxAge(t *testing.T, s *mwcors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")

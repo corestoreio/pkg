@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxcors
+package mwcors
 
 import (
 	"net/http"
@@ -91,7 +91,7 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != httputil.MethodOptions {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handlePreflight.aborted", "method", r.Method)
+			sc.log.Debug("mwcors.Cors.handlePreflight.aborted", "method", r.Method)
 		}
 		return
 	}
@@ -104,13 +104,13 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 
 	if origin == "" {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handlePreflight.aborted.empty.origin", "method", r.Method)
+			sc.log.Debug("mwcors.Cors.handlePreflight.aborted.empty.origin", "method", r.Method)
 		}
 		return
 	}
 	if false == sc.isOriginAllowed(origin) {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.origin", "method", r.Method, "origin", origin, "allowedOrigins", sc.allowedOrigins)
+			sc.log.Debug("mwcors.Cors.handlePreflight.aborted.notAllowed.origin", "method", r.Method, "origin", origin, "allowedOrigins", sc.allowedOrigins)
 		}
 		return
 	}
@@ -118,14 +118,14 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	reqMethod := r.Header.Get("Access-Control-Request-Method")
 	if false == sc.isMethodAllowed(reqMethod) {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.reqMethod", "method", r.Method, "reqMethod", reqMethod)
+			sc.log.Debug("mwcors.Cors.handlePreflight.aborted.notAllowed.reqMethod", "method", r.Method, "reqMethod", reqMethod)
 		}
 		return
 	}
 	reqHeaders := parseHeaderList(r.Header.Get("Access-Control-Request-Headers"))
 	if false == sc.areHeadersAllowed(reqHeaders) {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.reqHeaders", "method", r.Method, "reqHeaders", reqHeaders)
+			sc.log.Debug("mwcors.Cors.handlePreflight.aborted.notAllowed.reqHeaders", "method", r.Method, "reqHeaders", reqHeaders)
 		}
 		return
 	}
@@ -146,7 +146,7 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 		headers.Set("Access-Control-Max-Age", sc.maxAge)
 	}
 	if sc.log.IsDebug() {
-		sc.log.Debug("ctxcors.Cors.handlePreflight.response.headers", "method", r.Method, "headers", headers)
+		sc.log.Debug("mwcors.Cors.handlePreflight.response.headers", "method", r.Method, "headers", headers)
 	}
 }
 
@@ -157,7 +157,7 @@ func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 
 	if r.Method == httputil.MethodOptions {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handleActualRequest.aborted.options", "method", r.Method)
+			sc.log.Debug("mwcors.Cors.handleActualRequest.aborted.options", "method", r.Method)
 		}
 		return
 	}
@@ -165,13 +165,13 @@ func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 	headers.Add("Vary", "Origin")
 	if origin == "" {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handleActualRequest.aborted.empty.origin", "method", r.Method)
+			sc.log.Debug("mwcors.Cors.handleActualRequest.aborted.empty.origin", "method", r.Method)
 		}
 		return
 	}
 	if !sc.isOriginAllowed(origin) {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handleActualRequest.aborted.notAllowed.origin", "method", r.Method, "origin", origin)
+			sc.log.Debug("mwcors.Cors.handleActualRequest.aborted.notAllowed.origin", "method", r.Method, "origin", origin)
 		}
 		return
 	}
@@ -182,7 +182,7 @@ func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 	// We think it's a nice feature to be able to have control on those methods though.
 	if !sc.isMethodAllowed(r.Method) {
 		if sc.log.IsDebug() {
-			sc.log.Debug("ctxcors.Cors.handleActualRequest.aborted.notAllowed.method", "method", r.Method)
+			sc.log.Debug("mwcors.Cors.handleActualRequest.aborted.notAllowed.method", "method", r.Method)
 		}
 		return
 	}
@@ -194,7 +194,7 @@ func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 		headers.Set("Access-Control-Allow-Credentials", "true")
 	}
 	if sc.log.IsDebug() {
-		sc.log.Debug("ctxcors.Cors.handleActualRequest.response.headers", "headers", headers)
+		sc.log.Debug("mwcors.Cors.handleActualRequest.response.headers", "headers", headers)
 	}
 }
 
