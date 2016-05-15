@@ -18,41 +18,78 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
+	"encoding/gob"
+
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Decoder interface to pass in a custom decoding type.
-type Decoder interface {
-	// Unmarshal transforms a string into the arbitrary type v
-	Unmarshal(data []byte, v interface{}) error
+// Deserializer provides an interface for providing custom deserializers.
+// Also known as unserialize ;-)
+type Deserializer interface {
+	Deserialize(src []byte, dst interface{}) error
 }
 
-// Encoder interface to encode an arbitrary type into a byte slice
-type Encoder interface {
-	Marshal(v interface{}) ([]byte, error)
+// Serializer provides an interface for providing custom serializers.
+type Serializer interface {
+	Serialize(src interface{}) ([]byte, error)
 }
 
-// JSONDecode default JSON decoder with base64 support
-type JSONDecode struct{}
+// JSONEncoding default JSON de- & serializer with base64 support
+type JSONEncoding struct{}
 
-func (jp JSONDecode) Unmarshal(data []byte, v interface{}) error {
-	dec, err := DecodeSegment(data)
+// Deserialize decodes a value using encoding/json.
+func (jp JSONEncoding) Deserialize(src []byte, dst interface{}) error {
+	dec, err := DecodeSegment(src)
 	if err != nil {
-		return errors.Wrap(err, "[csjwt] JSONDecode.Unmarshal.DecodeSegment")
+		return errors.Wrap(err, "[csjwt] JSONEncoding.Deserialize.DecodeSegment")
 	}
-	return json.Unmarshal(dec, v)
+	return errors.Wrap(json.Unmarshal(dec, dst), "[csjwt] JSONEncoding.Deserialize.Unmarshal")
 }
 
-// JSONEncode default JSON encoder with bas64 support
-type JSONEncode struct{}
-
-func (jp JSONEncode) Marshal(v interface{}) ([]byte, error) {
+// Serialize encodes a value using encoding/json.
+func (jp JSONEncoding) Serialize(src interface{}) ([]byte, error) {
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
-	if err := json.NewEncoder(buf).Encode(v); err != nil {
-		return nil, err
+	if err := json.NewEncoder(buf).Encode(src); err != nil {
+		return nil, errors.Wrap(err, "[csjwt] JSONEncoding.Serialize.Encode")
 	}
 	return EncodeSegment(buf.Bytes()), nil
+}
+
+// GobEncoding encodes JWT values using encoding/gob. This is the simplest
+// encoder and can handle complex types via gob.Register.
+type GobEncoding struct{}
+
+// Serialize encodes a value using gob.
+func (e GobEncoding) Serialize(src interface{}) ([]byte, error) {
+	buf := bufPool.Get()
+	defer bufPool.Put(buf)
+	// todo figure out how to use one instance of NewEncoder instead of creating each time a new one
+	enc := gob.NewEncoder(buf)
+	if err := enc.Encode(src); err != nil {
+		return nil, errors.Wrap(err, "[csjwt] GobEncoding.Serialize.Encode")
+	}
+	return EncodeSegment(buf.Bytes()), nil
+}
+
+// Deserialize decodes a value using gob.
+func (e GobEncoding) Deserialize(src []byte, dst interface{}) error {
+	srcDec, err := DecodeSegment(src)
+	if err != nil {
+		return errors.Wrap(err, "[csjwt] JSONEncoding.Deserialize.DecodeSegment")
+	}
+
+	buf := bufPool.Get()
+	defer bufPool.Put(buf)
+	if _, err := buf.Write(srcDec); err != nil {
+		return errors.Wrap(err, "[csjwt] GobEncoding.Deserialize.Write")
+	}
+	// todo figure out how to use one instance of NewDecoder instead of creating each time a new one
+	dec := gob.NewDecoder(buf)
+	if err := dec.Decode(dst); err != nil {
+		return errors.Wrap(err, "[csjwt] GobEncoding.Deserialize.Decode")
+	}
+	return nil
 }
 
 // EncodeSegment encodes JWT specific base64url encoding with padding stripped.

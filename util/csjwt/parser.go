@@ -41,7 +41,7 @@ type Verification struct {
 
 	// Decoder interface to pass in a custom decoder parser.
 	// Can be nil, falls back to JSON
-	Decoder
+	Deserializer
 }
 
 // NewVerification creates new verification parser with the default signing
@@ -49,75 +49,75 @@ type Verification struct {
 // Nil arguments are forbidden.
 func NewVerification(availableSigners ...Signer) *Verification {
 	return &Verification{
-		Methods: availableSigners,
-		Decoder: JSONDecode{},
+		Methods:      availableSigners,
+		Deserializer: JSONEncoding{},
 	}
 }
 
-// Parse parses a rawToken into the template token and returns the fully parsed and
-// verified Token, or an error. You must make sure to set the correct expected
+// Parse parses a rawToken into the destination token and may return an error.
+// You must make sure to set the correct expected
 // headers and claims in the template Token. The Header and Claims field in the
-// template token must be a pointer.
+// destination token must be a pointer as the token itself.
 // Error behaviour: Empty, NotFound, NotValid
-func (vf *Verification) Parse(template Token, rawToken []byte, keyFunc Keyfunc) (Token, error) {
+func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) error {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return Token{}, errors.NewNotValidf(errTokenInvalidSegmentCounts)
+		return errors.NewNotValidf(errTokenInvalidSegmentCounts)
 	}
 
-	if template.Header == nil || template.Claims == nil {
-		return template, errors.NewNotValidf(errTokenBaseNil)
+	if dst.Header == nil || dst.Claims == nil {
+		return errors.NewNotValidf(errTokenBaseNil)
 	}
 
-	dec := vf.Decoder
+	dec := vf.Deserializer
 	if dec == nil {
-		dec = JSONDecode{}
+		dec = JSONEncoding{}
 	}
 
-	template.Raw = rawToken
+	dst.Raw = rawToken
 
-	if startsWithBearer(template.Raw) {
-		return template, errors.NewNotValidf(errTokenShouldNotContainBearer)
+	if startsWithBearer(dst.Raw) {
+		return errors.NewNotValidf(errTokenShouldNotContainBearer)
 	}
 
 	// parse Header
-	if err := dec.Unmarshal(template.Raw[:pos[0]], template.Header); err != nil {
-		return template, errors.NewNotValid(err, errTokenMalformed)
+	if err := dec.Deserialize(dst.Raw[:pos[0]], dst.Header); err != nil {
+		return errors.NewNotValid(err, errTokenMalformed)
 	}
 
 	// parse Claims
-	if err := dec.Unmarshal(template.Raw[pos[0]+1:pos[1]], template.Claims); err != nil {
-		return template, errors.NewNotValid(err, errTokenMalformed)
+	if err := dec.Deserialize(dst.Raw[pos[0]+1:pos[1]], dst.Claims); err != nil {
+		return errors.NewNotValid(err, errTokenMalformed)
 	}
 
 	// validate Claims
-	if err := template.Claims.Valid(); err != nil {
-		return template, errors.Wrap(err, errValidationClaimsInvalid)
+	if err := dst.Claims.Valid(); err != nil {
+		return errors.Wrap(err, errValidationClaimsInvalid)
 	}
 
 	// Lookup key
 	if keyFunc == nil {
-		return template, errors.NewEmptyf(errMissingKeyFunc)
+		return errors.NewEmptyf(errMissingKeyFunc)
 	}
-	key, err := keyFunc(template)
+	key, err := keyFunc(dst)
 	if err != nil {
-		return template, errors.NewNotValid(err, errTokenUnverifiable)
+		return errors.NewNotValid(err, errTokenUnverifiable)
 	}
 
 	// Lookup signature method
-	method, err := vf.getMethod(&template)
+	method, err := vf.getMethod(dst)
 	if err != nil {
-		return template, errors.Wrap(err, "[csjwt] Verification.Parse.getMethod")
+		return errors.Wrap(err, "[csjwt] Verification.Parse.getMethod")
 	}
 
 	// Perform validation
-	template.Signature = template.Raw[pos[1]+1:]
-	if err := method.Verify(template.Raw[:pos[1]], template.Signature, key); err != nil {
-		return template, errors.NewNotValid(err, errSignatureInvalid)
+	dst.Signature = dst.Raw[pos[1]+1:]
+	if err := method.Verify(dst.Raw[:pos[1]], dst.Signature, key); err != nil {
+		return errors.NewNotValid(err, errSignatureInvalid)
 	}
 
-	template.Valid = true
-	return template, nil
+	dst.Valid = true
+	return nil
 }
 
 func (vf *Verification) getMethod(t *Token) (Signer, error) {
@@ -143,48 +143,47 @@ func (vf *Verification) getMethod(t *Token) (Signer, error) {
 // First it searches for the token bearer in the header HTTPHeaderAuthorization.
 // If not found the request POST form gets parsed and the FormInputName gets
 // used to lookup the token value.
-func (vf *Verification) ParseFromRequest(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
+func (vf *Verification) ParseFromRequest(dst *Token, keyFunc Keyfunc, req *http.Request) error {
 	// Look for an Authorization header
 	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
 		// Should be a bearer token
 		auth := []byte(ah)
 		if startsWithBearer(auth) {
-			return vf.Parse(template, auth[7:], keyFunc)
+			return vf.Parse(dst, auth[7:], keyFunc)
 		}
 	}
 
 	if vf.CookieName != "" {
-		tk, err := vf.parseCookie(template, keyFunc, req)
-		if err != nil && err != http.ErrNoCookie {
-			return Token{}, errors.Wrap(err, "[csjwt] Verification.ParseFromRequest.parseCookie")
+		if err := vf.parseCookie(dst, keyFunc, req); err != nil && err != http.ErrNoCookie {
+			return errors.Wrap(err, "[csjwt] Verification.ParseFromRequest.parseCookie")
 		}
-		if tk.Valid {
-			return tk, nil
+		if dst.Valid {
+			return nil
 		}
 		// try next, the form
 	}
 
 	if vf.FormInputName != "" {
-		return vf.parseForm(template, keyFunc, req)
+		return vf.parseForm(dst, keyFunc, req)
 	}
 
-	return Token{}, errors.NewNotFoundf(errTokenNotInRequest)
+	return errors.NewNotFoundf(errTokenNotInRequest)
 }
 
-func (vf *Verification) parseCookie(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
+func (vf *Verification) parseCookie(dst *Token, keyFunc Keyfunc, req *http.Request) error {
 	keks, err := req.Cookie(vf.CookieName)
 	if keks != nil && keks.Value != "" {
-		return vf.Parse(template, []byte(keks.Value), keyFunc)
+		return vf.Parse(dst, []byte(keks.Value), keyFunc)
 	}
-	return Token{}, err // error can be http.ErrNoCookie
+	return err // error can be http.ErrNoCookie
 }
 
-func (vf *Verification) parseForm(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
+func (vf *Verification) parseForm(dst *Token, keyFunc Keyfunc, req *http.Request) error {
 	_ = req.ParseMultipartForm(10e6) // ignore errors
 	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
-		return vf.Parse(template, []byte(tokStr), keyFunc)
+		return vf.Parse(dst, []byte(tokStr), keyFunc)
 	}
-	return Token{}, errors.NewNotFoundf(errTokenNotInRequest)
+	return errors.NewNotFoundf(errTokenNotInRequest)
 }
 
 // SplitForVerify splits the token into two parts: the payload and the signature.

@@ -49,15 +49,14 @@ func compareParseTk(t *testing.T, haveTK csjwt.Token, err error) {
 }
 
 func TestParse(t *testing.T) {
-	t.Parallel()
 
 	rawTK, kf := genParseTk(t)
-	haveTK, err := csjwt.Parse(csjwt.NewToken(&jwtclaim.Map{}), rawTK, kf)
+	haveTK := csjwt.NewToken(&jwtclaim.Map{})
+	err := csjwt.Parse(&haveTK, rawTK, kf)
 	compareParseTk(t, haveTK, err)
 }
 
 func TestParseFromRequest(t *testing.T) {
-	t.Parallel()
 
 	rawTK, kf := genParseTk(t)
 
@@ -69,6 +68,7 @@ func TestParseFromRequest(t *testing.T) {
 		csjwt.HTTPFormInputName: []string{rawTK.String()},
 	}
 
-	haveTK, err := csjwt.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), kf, r)
+	haveTK := csjwt.NewToken(&jwtclaim.Map{})
+	err = csjwt.ParseFromRequest(&haveTK, kf, r)
 	compareParseTk(t, haveTK, err)
 }

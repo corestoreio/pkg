@@ -51,7 +51,7 @@ var hmacTestData = []struct {
 }
 
 func TestHMACVerify(t *testing.T) {
-	t.Parallel()
+
 	for _, data := range hmacTestData {
 		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
 		if err != nil {
@@ -69,7 +69,7 @@ func TestHMACVerify(t *testing.T) {
 }
 
 func TestHMACSign(t *testing.T) {
-	t.Parallel()
+
 	for _, data := range hmacTestData {
 		if data.valid {
 			signing, signature, err := csjwt.SplitForVerify(data.tokenString)

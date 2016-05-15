@@ -26,16 +26,16 @@ func init() {
 	defaultHSVerification.FormInputName = HTTPFormInputName
 }
 
-// Parse parses a rawToken into the template token and returns the fully parsed and
-// verified Token, or an error. You must make sure to set the correct expected
-// headers and claims in the template Token. The Header and Claims field in the
-// template token must be a pointer.
+// Parse parses a rawToken into the destination token and may return an error.
+// You must make sure to set the correct expected
+// headers and claims in the destination Token. The Header and Claims field in the
+// template token must be a pointer, as the destination Token itself.
 //
 // Default configuration with defined CookieName of constant HTTPFormInputName,
 // defined FormInputNam with value of constant HTTPFormInputName and supported
 // Signers of HS256, HS384 and HS512.
-func Parse(template Token, rawToken []byte, keyFunc Keyfunc) (Token, error) {
-	return defaultHSVerification.Parse(template, rawToken, keyFunc)
+func Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) error {
+	return defaultHSVerification.Parse(dst, rawToken, keyFunc)
 }
 
 // ParseFromRequest same as Parse but extracts the token from a request.
@@ -46,6 +46,6 @@ func Parse(template Token, rawToken []byte, keyFunc Keyfunc) (Token, error) {
 // Default configuration with defined CookieName of constant HTTPFormInputName,
 // defined FormInputNam with value of constant HTTPFormInputName and supported
 // Signers of HS256, HS384 and HS512.
-func ParseFromRequest(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
-	return defaultHSVerification.ParseFromRequest(template, keyFunc, req)
+func ParseFromRequest(dst *Token, keyFunc Keyfunc, req *http.Request) error {
+	return defaultHSVerification.ParseFromRequest(dst, keyFunc, req)
 }

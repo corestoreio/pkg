@@ -46,7 +46,7 @@ func (c claimMock) Get(key string) (interface{}, error) {
 func (c claimMock) Keys() []string { return []string{"k1"} }
 
 func TestNewHeadStringer(t *testing.T) {
-	t.Parallel()
+
 	var h csjwt.Header
 	h = csjwt.NewHead("Quantum")
 	assert.Exactly(t, "csjwt.NewHead(\"Quantum\")", fmt.Sprintf("%s", h))
@@ -55,7 +55,7 @@ func TestNewHeadStringer(t *testing.T) {
 }
 
 func TestNewHead(t *testing.T) {
-	t.Parallel()
+
 	var h csjwt.Header
 	h = csjwt.NewHead("X")
 	assert.Exactly(t, "X", h.Alg())
@@ -63,7 +63,7 @@ func TestNewHead(t *testing.T) {
 }
 
 func TestHeadSetGet(t *testing.T) {
-	t.Parallel()
+
 	var h csjwt.Header
 	h = csjwt.NewHead("X")
 
@@ -84,7 +84,7 @@ func TestHeadSetGet(t *testing.T) {
 }
 
 func TestMergeClaims(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		dst               csjwt.Token
 		srcs              csjwt.Claimer
@@ -132,20 +132,22 @@ func TestClaimExpiresSkew(t *testing.T) {
 
 	vrf := csjwt.NewVerification(hs256)
 
-	parsedTK, parsedErr := vrf.Parse(csjwt.NewToken(&jwtclaim.Store{
+	parsedTK := csjwt.NewToken(&jwtclaim.Store{
 		Standard: &jwtclaim.Standard{
 			TimeSkew: 0,
 		},
-	}), token, csjwt.NewKeyFunc(hs256, pwKey))
+	})
+	parsedErr := vrf.Parse(&parsedTK, token, csjwt.NewKeyFunc(hs256, pwKey))
 	assert.True(t, errors.IsNotValid(parsedErr), "Error: %s", parsedErr)
 	assert.False(t, parsedTK.Valid, "Token must be not valid")
 
 	// now adjust skew
-	parsedTK, parsedErr = vrf.Parse(csjwt.NewToken(&jwtclaim.Store{
+	parsedTK = csjwt.NewToken(&jwtclaim.Store{
 		Standard: &jwtclaim.Standard{
 			TimeSkew: time.Second * 3,
 		},
-	}), token, csjwt.NewKeyFunc(hs256, pwKey))
+	})
+	parsedErr = vrf.Parse(&parsedTK, token, csjwt.NewKeyFunc(hs256, pwKey))
 	assert.NoError(t, parsedErr, "Error: %s", parsedErr)
 	assert.True(t, parsedTK.Valid, "Token must be valid")
 

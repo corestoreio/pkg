@@ -23,7 +23,7 @@ import (
 )
 
 func TestTokenAlg(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		tok     csjwt.Token
 		wantAlg string

@@ -96,7 +96,7 @@ func init() {
 }
 
 func TestHMACVerifyFast(t *testing.T) {
-	t.Parallel()
+
 	for _, data := range hmacFastTestData {
 		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
 		if err != nil {
@@ -114,7 +114,7 @@ func TestHMACVerifyFast(t *testing.T) {
 }
 
 func TestHMACSignFast(t *testing.T) {
-	t.Parallel()
+
 	for _, data := range hmacFastTestData {
 		if data.valid {
 			signing, signature, err := csjwt.SplitForVerify(data.tokenString)

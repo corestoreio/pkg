@@ -27,14 +27,14 @@ type Token struct {
 	Claims    Claimer    // The second segment of the token
 	Signature text.Chars // The third segment of the token.  Populated when you Parse a token
 	Valid     bool       // Is the token valid?  Populated when you Parse/Verify a token
-	Encoder
+	Serializer
 }
 
 // NewToken creates a new Token and presets the header to typ = JWT.
 // A new token has not yet an assigned algorithm. The underlying default
 // template header consists of a two field struct for the minimum
 // requirements. If you need more header fields consider using a map or
-// the jwtclaim.HeadSegments type.
+// the jwtclaim.HeadSegments type. Default header from function NewHead().
 func NewToken(c Claimer) Token {
 	return Token{
 		Header: NewHead(),
@@ -87,15 +87,15 @@ func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 // Returns a buffer which can be used for further modifications.
 func (t Token) SigningString() (buf bytes.Buffer, err error) {
 
-	enc := t.Encoder
-	if enc == nil {
-		enc = JSONEncode{}
+	ser := t.Serializer
+	if ser == nil {
+		ser = JSONEncoding{}
 	}
 
 	var j []byte
-	j, err = enc.Marshal(t.Header)
+	j, err = ser.Serialize(t.Header)
 	if err != nil {
-		err = errors.Wrap(err, "[csjwt] Token.SigningString.Marshal")
+		err = errors.Wrap(err, "[csjwt] Token.SigningString.Serialize")
 		return
 	}
 	if _, err = buf.Write(j); err != nil {
@@ -106,9 +106,9 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 		err = errors.NewWriteFailed(err, "[csjwt] Token.SigningString.Write")
 		return
 	}
-	j, err = enc.Marshal(t.Claims)
+	j, err = ser.Serialize(t.Claims)
 	if err != nil {
-		err = errors.Wrap(err, "[csjwt] Token.SigningString.Marshal")
+		err = errors.Wrap(err, "[csjwt] Token.SigningString.Serialize")
 		return
 	}
 	if _, err = buf.Write(j); err != nil {

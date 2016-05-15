@@ -65,7 +65,7 @@ var ecdsaTestData = []struct {
 }
 
 func TestECDSAVerify(t *testing.T) {
-	t.Parallel()
+
 	for _, data := range ecdsaTestData {
 
 		key, err := ioutil.ReadFile(data.keys["public"])
@@ -89,7 +89,7 @@ func TestECDSAVerify(t *testing.T) {
 }
 
 func TestECDSASign(t *testing.T) {
-	t.Parallel()
+
 	for _, data := range ecdsaTestData {
 
 		key, err := ioutil.ReadFile(data.keys["private"])

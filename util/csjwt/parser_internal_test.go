@@ -22,7 +22,7 @@ import (
 )
 
 func TestVerificationGetMethod(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		vf           *Verification
 		token        *Token

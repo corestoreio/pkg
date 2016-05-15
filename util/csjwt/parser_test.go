@@ -18,11 +18,11 @@ import (
 )
 
 var (
-	defaultKeyFunc csjwt.Keyfunc = func(t csjwt.Token) (csjwt.Key, error) {
+	defaultKeyFunc csjwt.Keyfunc = func(_ *csjwt.Token) (csjwt.Key, error) {
 		return csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub"), nil
 	}
-	emptyKeyFunc csjwt.Keyfunc = func(t csjwt.Token) (csjwt.Key, error) { return csjwt.Key{}, nil }
-	errorKeyFunc csjwt.Keyfunc = func(t csjwt.Token) (csjwt.Key, error) { return csjwt.Key{}, fmt.Errorf("error loading key") }
+	emptyKeyFunc csjwt.Keyfunc = func(_ *csjwt.Token) (csjwt.Key, error) { return csjwt.Key{}, nil }
+	errorKeyFunc csjwt.Keyfunc = func(_ *csjwt.Token) (csjwt.Key, error) { return csjwt.Key{}, fmt.Errorf("error loading key") }
 	nilKeyFunc   csjwt.Keyfunc = nil
 )
 
@@ -137,13 +137,13 @@ func makeSample(c jwtclaim.Map) []byte {
 }
 
 func TestVerification_ParseFromRequest_WithMap(t *testing.T) {
-	t.Parallel()
+
 	for _, data := range jwtTestData {
 		if len(data.tokenString) == 0 {
 			data.tokenString = makeSample(data.claims)
 		}
-
-		token, err := data.parser.Parse(csjwt.NewToken(&jwtclaim.Map{}), data.tokenString, data.keyfunc)
+		token := csjwt.NewToken(&jwtclaim.Map{})
+		err := data.parser.Parse(&token, data.tokenString, data.keyfunc)
 
 		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -171,7 +171,7 @@ func TestVerification_ParseFromRequest_WithMap(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_LoopTestData(t *testing.T) {
-	t.Parallel()
+
 	// Bearer token request
 	for _, data := range jwtTestData {
 
@@ -181,7 +181,8 @@ func TestVerification_ParseFromRequest_LoopTestData(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.tokenString))
-		token, err := data.parser.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), data.keyfunc, r)
+		token := csjwt.NewToken(&jwtclaim.Map{})
+		err := data.parser.ParseFromRequest(&token, data.keyfunc, r)
 
 		if token.Raw == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
@@ -200,7 +201,6 @@ func TestVerification_ParseFromRequest_LoopTestData(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_Complex(t *testing.T) {
-	t.Parallel()
 
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
 	clm := jwtclaim.Map{
@@ -224,7 +224,8 @@ func TestVerification_ParseFromRequest_Complex(t *testing.T) {
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
 
 	var newClaim = make(jwtclaim.Map)
-	rToken, err := csjwt.NewVerification(sm512).ParseFromRequest(csjwt.NewToken(&newClaim), func(t csjwt.Token) (csjwt.Key, error) {
+	rToken := csjwt.NewToken(&newClaim)
+	err = csjwt.NewVerification(sm512).ParseFromRequest(&rToken, func(t *csjwt.Token) (csjwt.Key, error) {
 		if have, want := t.Alg(), sm512.Alg(); have != want {
 			return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 		}
@@ -237,11 +238,12 @@ func TestVerification_ParseFromRequest_Complex(t *testing.T) {
 }
 
 func TestVerification_Parse_BearerInHeader(t *testing.T) {
-	t.Parallel()
+
 	token := text.Chars(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
 
-	haveToken, haveErr := csjwt.NewVerification().Parse(csjwt.NewToken(&jwtclaim.Map{}), token, nil)
+	haveToken := csjwt.NewToken(&jwtclaim.Map{})
+	haveErr := csjwt.NewVerification().Parse(&haveToken, token, nil)
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
@@ -250,14 +252,13 @@ func TestVerification_Parse_BearerInHeader(t *testing.T) {
 }
 
 func TestVerification_Parse_InvalidSegments(t *testing.T) {
-	t.Parallel()
-	token, haveErr := csjwt.NewVerification().Parse(csjwt.NewToken(nil), []byte(`hello.gopher`), nil)
+	token := csjwt.NewToken(nil)
+	haveErr := csjwt.NewVerification().Parse(&token, []byte(`hello.gopher`), nil)
 	assert.False(t, token.Valid)
 	assert.True(t, errors.IsNotValid(haveErr), "Error: %s", haveErr)
 }
 
 func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
-	t.Parallel()
 
 	const cookieName = "store_bearer"
 	token := makeSample(jwtclaim.Map{
@@ -276,7 +277,8 @@ func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
 
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 
-	haveToken, haveErr := vf.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), csjwt.NewKeyFunc(rs256, pubKey), r)
+	haveToken := csjwt.NewToken(&jwtclaim.Map{})
+	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
 		t.Fatal(errors.PrintLoc(haveErr))
 	}
@@ -289,7 +291,6 @@ func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_Form(t *testing.T) {
-	t.Parallel()
 
 	token := makeSample(jwtclaim.Map{
 		"where": "in the form dude!",
@@ -310,7 +311,8 @@ func TestVerification_ParseFromRequest_Form(t *testing.T) {
 	vf.FormInputName = csjwt.HTTPFormInputName
 
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
-	haveToken, haveErr := vf.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), csjwt.NewKeyFunc(rs256, pubKey), r)
+	haveToken := csjwt.NewToken(&jwtclaim.Map{})
+	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
 		t.Fatal(errors.PrintLoc(haveErr))
 	}
@@ -323,7 +325,6 @@ func TestVerification_ParseFromRequest_Form(t *testing.T) {
 }
 
 func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
-	t.Parallel()
 
 	r, _ := http.NewRequest("GET", "/", nil)
 
@@ -333,14 +334,15 @@ func TestVerification_ParseFromRequest_NoTokenInRequest(t *testing.T) {
 	vf.FormInputName = csjwt.HTTPFormInputName
 
 	pubKey := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
-	haveToken, haveErr := vf.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), csjwt.NewKeyFunc(rs256, pubKey), r)
+	haveToken := csjwt.NewToken(&jwtclaim.Map{})
+	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	assert.True(t, errors.IsNotFound(haveErr), "Error: %s", haveErr)
 	assert.Empty(t, haveToken.Raw)
 	assert.False(t, haveToken.Valid)
 }
 
 func TestSplitForVerify(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		rawToken      []byte
 		signingString []byte
@@ -413,7 +415,7 @@ func BenchmarkParseFromRequest_HS256(b *testing.B) {
 		b,
 		hmacFast, // csjwt.SigningMethodHS256,
 		key,
-		func(t csjwt.Token) (csjwt.Key, error) {
+		func(t *csjwt.Token) (csjwt.Key, error) {
 			if have, want := t.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
@@ -431,7 +433,7 @@ func BenchmarkParseFromRequest_HS384(b *testing.B) {
 		b,
 		hmacFast, // csjwt.SigningMethodHS384,
 		key,
-		func(t csjwt.Token) (csjwt.Key, error) {
+		func(t *csjwt.Token) (csjwt.Key, error) {
 			if have, want := t.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
@@ -449,7 +451,7 @@ func BenchmarkParseFromRequest_HS512(b *testing.B) {
 		b,
 		hmacFast, // csjwt.SigningMethodHS512,
 		key,
-		func(t csjwt.Token) (csjwt.Key, error) {
+		func(t *csjwt.Token) (csjwt.Key, error) {
 			if have, want := t.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
@@ -497,8 +499,8 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-
-		rToken, err := veri.ParseFromRequest(csjwt.NewToken(mc), keyFunc, r)
+		rToken := csjwt.NewToken(mc)
+		err := veri.ParseFromRequest(&rToken, keyFunc, r)
 		if err != nil {
 			b.Fatal(errors.PrintLoc(err))
 		}

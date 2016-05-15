@@ -30,7 +30,7 @@ const PrivateKeyBits = 2048
 // the key for verification.  The function receives the parsed,
 // but unverified Token.  This allows you to use propries in the
 // Header of the token (such as `kid`) to identify which key to use.
-type Keyfunc func(Token) (Key, error)
+type Keyfunc func(*Token) (Key, error)
 
 // Key defines a container for the HMAC password, RSA and ECDSA public and
 // private keys. The Error fields gets filled out when loading/parsing the keys.
@@ -50,7 +50,7 @@ type Key struct {
 // check for the correct signatures, but this function is more specific and
 // returns the correct key to check the signature.
 func NewKeyFunc(s Signer, key Key) Keyfunc {
-	return func(t Token) (Key, error) {
+	return func(t *Token) (Key, error) {
 
 		if key.Error != nil {
 			return Key{}, errors.Wrap(key.Error, "[csjwt] NewKeyFunc.Key")
