@@ -186,19 +186,21 @@ func WithStoreService(sr store.Requester) Option {
 	}
 }
 
-// WithBackend applies the backend configuration to the service.
-// Once this has been set all other option functions are not really
+// WithOptionFactory applies a function which lazily loads the option depending
+// on the incoming scope within a request. For example applies the backend
+// configuration to the service.
+// Once this option function has been set all other option functions are not really
 // needed.
 //	cfgStruct, err := backendjwt.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(myEncryptor{}))
+//	pb := backendjwt.New(cfgStruct)
 //
 //	jwts := jwtauth.MustNewService(
-//		jwtauth.WithBackend(backendjwt.BackendOptions(pb)),
+//		jwtauth.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 //	)
-func WithBackend(f ScopedOptionFunc) Option {
+func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) {
 		s.scpOptionFnc = f
 	}

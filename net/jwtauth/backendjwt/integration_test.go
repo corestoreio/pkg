@@ -47,7 +47,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
 	jwts := jwtauth.MustNewService(
-		jwtauth.WithBackend(backendjwt.PrepareOptions(pb)),
+		jwtauth.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -98,7 +98,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
 	jwts := jwtauth.MustNewService(
-		jwtauth.WithBackend(backendjwt.PrepareOptions(pb)),
+		jwtauth.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -133,7 +133,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *jwtauth.Service, pb *backendjwt.Backend) {
 	pb = backendjwt.New(cfgStruct, opts...)
-	jwts = jwtauth.MustNewService(jwtauth.WithBackend(backendjwt.PrepareOptions(pb)))
+	jwts = jwtauth.MustNewService(jwtauth.WithOptionFactory(backendjwt.PrepareOptions(pb)))
 	return
 }
 
