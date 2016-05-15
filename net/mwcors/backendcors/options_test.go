@@ -30,10 +30,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
+type fataler interface {
+	Fatal(args ...interface{})
+}
+
+func mustToPath(fa fataler, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
 	p, err := f(s, scopeID)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		fa.Fatal(errors.PrintLoc(err))
 	}
 	return p.String()
 }

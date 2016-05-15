@@ -1,0 +1,3 @@
+BenchmarkExposedHeader_WebsiteScope_AllowOriginRegex-4   	 2000000	       590 ns/op	     114 B/op	       2 allocs/op
+PASS
+ok  	github.com/corestoreio/csfw/net/mwcors/backendcors	1.840s
