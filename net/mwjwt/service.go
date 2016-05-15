@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauth
+package mwjwt
 
 import (
 	"sync"
@@ -81,10 +81,10 @@ func NewService(opts ...Option) (*Service, error) {
 	}
 
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
-		return nil, errors.Wrap(err, "[jwtauth] Options WithDefaultConfig")
+		return nil, errors.Wrap(err, "[mwjwt] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[jwtauth] Options Any Config")
+		return nil, errors.Wrap(err, "[mwjwt] Options Any Config")
 	}
 	return s, nil
 }
@@ -124,7 +124,7 @@ func (s *Service) Options(opts ...Option) error {
 func (s *Service) AddError(err error) {
 	if s.optionError != nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug("jwtauth.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
+			s.Log.Debug("mwjwt.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
 		}
 		return
 	}
@@ -143,32 +143,32 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (c
 	var empty csjwt.Token
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return empty, errors.Wrap(err, "[jwtauth] getConfigByScopeID")
+		return empty, errors.Wrap(err, "[mwjwt] getConfigByScopeID")
 	}
 
 	var tk = cfg.TemplateToken()
 
 	if len(claim) > 0 && claim[0] != nil {
 		if err := csjwt.MergeClaims(tk.Claims, claim...); err != nil {
-			return empty, errors.Wrap(err, "[jwtauth] MergeClaims")
+			return empty, errors.Wrap(err, "[mwjwt] MergeClaims")
 		}
 	}
 
 	if err := tk.Claims.Set(claimExpiresAt, now.Add(cfg.Expire).Unix()); err != nil {
-		return empty, errors.Wrap(err, "[jwtauth] Claims.Set EXP")
+		return empty, errors.Wrap(err, "[mwjwt] Claims.Set EXP")
 	}
 	if err := tk.Claims.Set(claimIssuedAt, now.Unix()); err != nil {
-		return empty, errors.Wrap(err, "[jwtauth] Claims.Set IAT")
+		return empty, errors.Wrap(err, "[mwjwt] Claims.Set IAT")
 	}
 
 	if cfg.EnableJTI && s.JTI != nil {
 		if err := tk.Claims.Set(claimKeyID, s.JTI.Get()); err != nil {
-			return empty, errors.Wrap(err, "[jwtauth] Claims.Set KID")
+			return empty, errors.Wrap(err, "[mwjwt] Claims.Set KID")
 		}
 	}
 
 	tk.Raw, err = tk.SignedString(cfg.SigningMethod, cfg.Key)
-	return tk, errors.Wrap(err, "[jwtauth] SignedString")
+	return tk, errors.Wrap(err, "[mwjwt] SignedString")
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration.
@@ -193,12 +193,12 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 	var emptyTok csjwt.Token
 	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return emptyTok, errors.Wrap(err, "[jwtauth] getConfigByScopeID")
+		return emptyTok, errors.Wrap(err, "[mwjwt] getConfigByScopeID")
 	}
 
 	token, err := sc.Parse(rawToken)
 	if err != nil {
-		return emptyTok, errors.Wrap(err, "[jwtauth] Parse")
+		return emptyTok, errors.Wrap(err, "[mwjwt] Parse")
 	}
 
 	var inBL bool
@@ -210,7 +210,7 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 		return token, nil
 	}
 	if s.Log.IsDebug() {
-		s.Log.Debug("jwtauth.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", string(rawToken), "token", token)
+		s.Log.Debug("mwjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", string(rawToken), "token", token)
 	}
 	return emptyTok, errors.NewNotValidf(errTokenParseNotValidOrBlackListed)
 }
@@ -240,7 +240,7 @@ func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 
 	if s.scpOptionFnc != nil {
 		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[jwtauth] Options by scpOptionFnc")
+			return scopedConfig{}, errors.Wrap(err, "[mwjwt] Options by scpOptionFnc")
 		}
 	}
 

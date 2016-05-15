@@ -17,7 +17,7 @@ package backendjwt
 import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/jwtauth"
+	"github.com/corestoreio/csfw/net/mwjwt"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -32,13 +32,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			ID: cfgpath.NewRoute("net"),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:        cfgpath.NewRoute("jwtauth"),
+					ID:        cfgpath.NewRoute("jwt"),
 					Label:     text.Chars(`JSON Web Token (JWT)`),
 					SortOrder: 40,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: net/jwtauth/expiration
+							// Path: net/jwt/expiration
 							ID:        cfgpath.NewRoute("expiration"),
 							Label:     text.Chars(`Token Expiration`),
 							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
@@ -46,10 +46,10 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   jwtauth.DefaultExpire.String(),
+							Default:   mwjwt.DefaultExpire.String(),
 						},
 						element.Field{
-							// Path: net/jwtauth/skew
+							// Path: net/jwt/skew
 							ID:        cfgpath.NewRoute("skew"),
 							Label:     text.Chars(`Max time skew`),
 							Comment:   text.Chars(`How much time skew we allow between signer and verifier. Per second (s), minute (i), hour (h) or day (d). Must be a positive value.`),
@@ -57,10 +57,10 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   jwtauth.DefaultSkew.String(),
+							Default:   mwjwt.DefaultSkew.String(),
 						},
 						element.Field{
-							// Path: net/jwtauth/enable_jti
+							// Path: net/jwt/enable_jti
 							ID:        cfgpath.NewRoute("enable_jti"),
 							Label:     text.Chars(`Enable Token ID`),
 							Comment:   text.Chars(`Generates a unique token ID`),
@@ -71,17 +71,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `false`,
 						},
 						element.Field{
-							// Path: net/jwtauth/signing_method
+							// Path: net/jwt/signing_method
 							ID:        cfgpath.NewRoute("signing_method"),
 							Label:     text.Chars(`Token Signing Algorithm`),
 							Type:      element.TypeSelect,
 							SortOrder: 35,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   jwtauth.DefaultSigningMethod,
+							Default:   mwjwt.DefaultSigningMethod,
 						},
 						element.Field{
-							// Path: net/jwtauth/hmac_password
+							// Path: net/jwt/hmac_password
 							ID:        cfgpath.NewRoute("hmac_password"),
 							Label:     text.Chars(`HMAC Token Password`),
 							Type:      element.TypeObscure,
@@ -90,7 +90,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/jwtauth/rsa_key
+							// Path: net/jwt/rsa_key
 							ID:        cfgpath.NewRoute("rsa_key"),
 							Label:     text.Chars(`Private RSA Key`),
 							Type:      element.TypeObscure,
@@ -99,7 +99,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/jwtauth/rsa_key_password
+							// Path: net/jwt/rsa_key_password
 							ID:        cfgpath.NewRoute("rsa_key_password"),
 							Label:     text.Chars(`Private RSA Key Password`),
 							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),
@@ -109,7 +109,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/jwtauth/ecdsa_key
+							// Path: net/jwt/ecdsa_key
 							ID:        cfgpath.NewRoute("ecdsa_key"),
 							Label:     text.Chars(`Private ECDSA Key`),
 							Comment:   text.Chars(`Elliptic Curve Digital Signature Algorithm, as defined in FIPS 186-3.`),
@@ -119,7 +119,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 						},
 						element.Field{
-							// Path: net/jwtauth/ecdsa_key_password
+							// Path: net/jwt/ecdsa_key_password
 							ID:        cfgpath.NewRoute("ecdsa_key_password"),
 							Label:     text.Chars(`Private ECDSA Key Password`),
 							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),

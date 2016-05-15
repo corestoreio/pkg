@@ -12,5 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package jwtauth provides JSON web token authentication and scope based handling.
-package jwtauth
+package mwjwt
+
+import "github.com/pborman/uuid"
+
+// jti type to generate a JTI for a token, a unique ID
+type jti struct{}
+
+func (j jti) Get() string {
+	return uuid.New()
+}

@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauth
+package mwjwt_test
 
-import "github.com/pborman/uuid"
+import (
+	"github.com/corestoreio/csfw/net/mwjwt"
+	"github.com/corestoreio/csfw/util/blacklist"
+)
 
-// jti type to generate a JTI for a token, a unique ID
-type jti struct{}
-
-func (j jti) Get() string {
-	return uuid.New()
-}
+var _ mwjwt.Blacklister = (*blacklist.FreeCache)(nil)
+var _ mwjwt.Blacklister = (*blacklist.Map)(nil)

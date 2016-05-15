@@ -14,7 +14,7 @@
 
 package backendjwt_test
 
-import "github.com/corestoreio/csfw/net/jwtauth/backendjwt"
+import "github.com/corestoreio/csfw/net/mwjwt/backendjwt"
 
 // backend overall backend models for all tests
 var backend *backendjwt.Backend

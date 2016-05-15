@@ -17,7 +17,7 @@ package backendjwt
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/jwtauth"
+	"github.com/corestoreio/csfw/net/mwjwt"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -59,7 +59,7 @@ func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err 
 	}
 
 	if raw == "" {
-		raw = jwtauth.DefaultSigningMethod
+		raw = mwjwt.DefaultSigningMethod
 	}
 
 	switch raw {
@@ -84,7 +84,7 @@ func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err 
 	case csjwt.HS512:
 		sm = csjwt.NewSigningMethodHS512()
 	default:
-		err = errors.NewNotImplementedf("[jwtauth] ConfigSigningMethod: Unknown algorithm %s", raw)
+		err = errors.NewNotImplementedf("[mwjwt] ConfigSigningMethod: Unknown algorithm %s", raw)
 	}
 	return
 }

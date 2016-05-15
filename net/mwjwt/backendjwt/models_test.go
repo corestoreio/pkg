@@ -12,37 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauth
+package backendjwt_test
 
 import (
 	"testing"
 
-	"context"
-
-	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/net/mwjwt/backendjwt"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestContextWithError(t *testing.T) {
-
-	const wantErr = errors.UserNotFound("User Contiki not found")
-	ctx := withContextError(context.Background(), wantErr)
-	assert.NotNil(t, ctx)
-
-	haveToken, haveErr := FromContext(ctx)
-	assert.NotNil(t, haveToken)
-	assert.False(t, haveToken.Valid)
-	assert.True(t, errors.IsUserNotFound(haveErr))
+func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
+	ccModel := backendjwt.NewConfigSigningMethod("a/x/c")
+	cr := cfgmock.NewService()
+	sm, err := ccModel.Get(cr.NewScoped(1, 1))
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.Nil(t, sm)
 }
 
-func TestFromContext(t *testing.T) {
-
-	ctx := withContext(context.Background(), csjwt.Token{})
-	assert.NotNil(t, ctx)
-
-	haveToken, haveErr := FromContext(ctx)
-	assert.NotNil(t, haveToken)
-	assert.False(t, haveToken.Valid)
-	assert.True(t, errors.IsNotFound(haveErr))
+func TestNewConfigSigningMethodGetPathError(t *testing.T) {
+	ccModel := backendjwt.NewConfigSigningMethod("a//c")
+	cr := cfgmock.NewService()
+	sm, err := ccModel.Get(cr.NewScoped(0, 0))
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.Nil(t, sm)
 }

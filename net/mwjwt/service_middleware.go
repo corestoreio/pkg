@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauth
+package mwjwt
 
 import (
 	"net/http"
@@ -51,7 +51,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.FromContextProvider", "err", err, "req", r)
 				}
-				err = errors.Wrap(err, "[jwtauth] FromContextProvider")
+				err = errors.Wrap(err, "[mwjwt] FromContextProvider")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -64,7 +64,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", "err", err, "requestedStore", requestedStore, "req", r)
 				}
-				err = errors.Wrap(err, "[jwtauth] ConfigByScopedGetter")
+				err = errors.Wrap(err, "[mwjwt] ConfigByScopedGetter")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -79,7 +79,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.ParseFromRequest", "err", err, "requestedStore", requestedStore, "scpCfg", scpCfg, "req", r)
 				}
-				err = errors.Wrap(err, "[jwtauth] ParseFromRequest")
+				err = errors.Wrap(err, "[mwjwt] ParseFromRequest")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 
@@ -133,7 +133,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 
 			newRequestedStore, err := s.StoreService.RequestedStore(scopeOption)
 			if err != nil {
-				err = errors.Wrap(err, "[jwtauth] storeService.RequestedStore")
+				err = errors.Wrap(err, "[mwjwt] storeService.RequestedStore")
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithInitTokenAndStore.GetRequestedStore", "err", err, "token", token, "newRequestedStore", newRequestedStore, "scpCfg", scpCfg, "req", r)
 				}

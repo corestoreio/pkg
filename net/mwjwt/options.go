@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauth
+package mwjwt
 
 import (
 	"net/http"
@@ -110,7 +110,7 @@ func (sc *scopedConfig) initKeyFunc() {
 			return csjwt.Key{}, errors.NewNotImplementedf(errUnknownSigningMethod, have, want)
 		}
 		if sc.Key.Error != nil {
-			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[jwtauth] Key Error")
+			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[mwjwt] Key Error")
 		}
 		return sc.Key, nil
 	}
@@ -150,13 +150,13 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache, s.optionError = defaultScopedConfig()
-			s.optionError = errors.Wrap(s.optionError, "[jwtauth] Default Scope with Default Config")
+			s.optionError = errors.Wrap(s.optionError, "[mwjwt] Default Scope with Default Config")
 			return
 		}
 
 		s.mu.Lock()
 		s.scopeCache[h], s.optionError = defaultScopedConfig()
-		s.optionError = errors.Wrapf(s.optionError, "[jwtauth] Scope %s with Default Config", h)
+		s.optionError = errors.Wrapf(s.optionError, "[mwjwt] Scope %s with Default Config", h)
 		s.mu.Unlock()
 	}
 }
@@ -197,8 +197,8 @@ func WithStoreService(sr store.Requester) Option {
 //	}
 //	pb := backendjwt.New(cfgStruct)
 //
-//	jwts := jwtauth.MustNewService(
-//		jwtauth.WithOptionFactory(backendjwt.PrepareOptions(pb)),
+//	jwts := mwjwt.MustNewService(
+//		mwjwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) {
@@ -381,7 +381,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 	h := scope.NewHash(scp, id)
 	if key.Error != nil {
 		return func(s *Service) {
-			s.optionError = errors.Wrap(key.Error, "[jwtauth] Key Error")
+			s.optionError = errors.Wrap(key.Error, "[mwjwt] Key Error")
 		}
 	}
 	if key.IsEmpty() {
@@ -409,7 +409,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		case csjwt.HS:
 			scNew.SigningMethod, s.optionError = csjwt.NewHMACFast256(key)
 			if s.optionError != nil {
-				s.optionError = errors.Wrap(s.optionError, "[jwtauth] HMAC Fast 256 error")
+				s.optionError = errors.Wrap(s.optionError, "[mwjwt] HMAC Fast 256 error")
 				return
 			}
 		case csjwt.RS:

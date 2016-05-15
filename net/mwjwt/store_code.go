@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauth
+package mwjwt
 
 import (
 	"github.com/corestoreio/csfw/store"
@@ -44,7 +44,7 @@ func ScopeOptionFromClaim(tc csjwt.Claimer) (o scope.Option, err error) {
 		err = store.CodeIsValid(scopeCode)
 		if err == nil {
 			o, err = scope.SetByCode(scope.Store, scopeCode)
-			err = errors.Wrap(err, "[jwtauth] scope.SetByCode")
+			err = errors.Wrap(err, "[mwjwt] scope.SetByCode")
 		}
 	}
 	return

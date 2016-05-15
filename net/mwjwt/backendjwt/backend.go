@@ -26,47 +26,47 @@ import (
 type Backend struct {
 	cfgmodel.PkgBackend
 
-	// NetCtxjwtHmacPassword handles the password. Will panic if you
+	// NetJwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/jwtauth/signing_method
-	NetCtxjwtSigningMethod ConfigSigningMethod
+	// Path: net/jwt/signing_method
+	NetJwtSigningMethod ConfigSigningMethod
 
-	// NetCtxjwtSkew defines the time skew duration between verifier and signer.
-	// Path: net/jwtauth/skew
-	NetCtxjwtSkew cfgmodel.Duration
+	// NetJwtSkew defines the time skew duration between verifier and signer.
+	// Path: net/jwt/skew
+	NetJwtSkew cfgmodel.Duration
 
-	// NetCtxjwtExpiration defines the duration in which a token expires.
-	// Path: net/jwtauth/expiration
-	NetCtxjwtExpiration cfgmodel.Duration
+	// NetJwtExpiration defines the duration in which a token expires.
+	// Path: net/jwt/expiration
+	NetJwtExpiration cfgmodel.Duration
 
-	// NetCtxjwtEnableJTI if enabled a new token ID will be generated.
-	// Path: net/jwtauth/enable_jti
-	NetCtxjwtEnableJTI cfgmodel.Bool
+	// NetJwtEnableJTI if enabled a new token ID will be generated.
+	// Path: net/jwt/enable_jti
+	NetJwtEnableJTI cfgmodel.Bool
 
-	// NetCtxjwtHmacPassword handles the password. Will panic if you
+	// NetJwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/jwtauth/hmac_password
-	NetCtxjwtHmacPassword cfgmodel.Obscure
+	// Path: net/jwt/hmac_password
+	NetJwtHmacPassword cfgmodel.Obscure
 
-	// NetCtxjwtRSAKey handles the RSA private key. Will panic if you
+	// NetJwtRSAKey handles the RSA private key. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/jwtauth/rsa_key
-	NetCtxjwtRSAKey cfgmodel.Obscure
+	// Path: net/jwt/rsa_key
+	NetJwtRSAKey cfgmodel.Obscure
 
-	// NetCtxjwtRSAKeyPassword handles the password for the RSA private key.
+	// NetJwtRSAKeyPassword handles the password for the RSA private key.
 	// Will panic if you do not set the cfgmodel.Encryptor
-	// Path: net/jwtauth/rsa_key_password
-	NetCtxjwtRSAKeyPassword cfgmodel.Obscure
+	// Path: net/jwt/rsa_key_password
+	NetJwtRSAKeyPassword cfgmodel.Obscure
 
-	// NetCtxjwtECDSAKey handles the ECDSA private key. Will panic if you
+	// NetJwtECDSAKey handles the ECDSA private key. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/jwtauth/ecdsa_key
-	NetCtxjwtECDSAKey cfgmodel.Obscure
+	// Path: net/jwt/ecdsa_key
+	NetJwtECDSAKey cfgmodel.Obscure
 
-	// NetCtxjwtECDSAKeyPassword handles the password for the ECDSA private key.
+	// NetJwtECDSAKeyPassword handles the password for the ECDSA private key.
 	// Will panic if you do not set the cfgmodel.Encryptor
-	// Path: net/jwtauth/ecdsa_key_password
-	NetCtxjwtECDSAKeyPassword cfgmodel.Obscure
+	// Path: net/jwt/ecdsa_key_password
+	NetJwtECDSAKeyPassword cfgmodel.Obscure
 }
 
 // New initializes the backend configuration models containing the
@@ -87,15 +87,15 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/jwtauth/signing_method`, opts...)
-	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/jwtauth/expiration`, opts...)
-	pp.NetCtxjwtSkew = cfgmodel.NewDuration(`net/jwtauth/skew`, opts...)
-	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/jwtauth/enable_jti`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
-	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/jwtauth/hmac_password`, opts...)
-	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/jwtauth/rsa_key`, opts...)
-	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/jwtauth/rsa_key_password`, opts...)
-	pp.NetCtxjwtECDSAKey = cfgmodel.NewObscure(`net/jwtauth/ecdsa_key`, opts...)
-	pp.NetCtxjwtECDSAKeyPassword = cfgmodel.NewObscure(`net/jwtauth/ecdsa_key_password`, opts...)
+	pp.NetJwtSigningMethod = NewConfigSigningMethod(`net/jwt/signing_method`, opts...)
+	pp.NetJwtExpiration = cfgmodel.NewDuration(`net/jwt/expiration`, opts...)
+	pp.NetJwtSkew = cfgmodel.NewDuration(`net/jwt/skew`, opts...)
+	pp.NetJwtEnableJTI = cfgmodel.NewBool(`net/jwt/enable_jti`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	pp.NetJwtHmacPassword = cfgmodel.NewObscure(`net/jwt/hmac_password`, opts...)
+	pp.NetJwtRSAKey = cfgmodel.NewObscure(`net/jwt/rsa_key`, opts...)
+	pp.NetJwtRSAKeyPassword = cfgmodel.NewObscure(`net/jwt/rsa_key_password`, opts...)
+	pp.NetJwtECDSAKey = cfgmodel.NewObscure(`net/jwt/ecdsa_key`, opts...)
+	pp.NetJwtECDSAKeyPassword = cfgmodel.NewObscure(`net/jwt/ecdsa_key_password`, opts...)
 
 	return pp
 }

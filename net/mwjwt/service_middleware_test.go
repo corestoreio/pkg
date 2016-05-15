@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwtauth_test
+package mwjwt_test
 
 import (
 	"bytes"
@@ -25,7 +25,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/httputil"
-	"github.com/corestoreio/csfw/net/jwtauth"
+	"github.com/corestoreio/csfw/net/mwjwt"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -37,8 +37,8 @@ import (
 
 func TestService_WithInitTokenAndStore_NoStoreProvider(t *testing.T) {
 
-	authHandler, _ := testAuth(t, jwtauth.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tk, err := jwtauth.FromContext(r.Context())
+	authHandler, _ := testAuth(t, mwjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tk, err := mwjwt.FromContext(r.Context())
 		assert.False(t, tk.Valid)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	})))
@@ -60,8 +60,8 @@ func TestService_WithInitTokenAndStore_NoToken(t *testing.T) {
 	)
 	dsv, err := srv.Store()
 	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
-	authHandler, _ := testAuth(t, jwtauth.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tk, err := jwtauth.FromContext(r.Context())
+	authHandler, _ := testAuth(t, mwjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tk, err := mwjwt.FromContext(r.Context())
 		assert.False(t, tk.Valid)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -85,8 +85,8 @@ func TestService_WithInitTokenAndStore_HTTPErrorHandler(t *testing.T) {
 	dsv, err := srv.Store()
 	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
 
-	authHandler, _ := testAuth(t, jwtauth.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tok, err := jwtauth.FromContext(r.Context())
+	authHandler, _ := testAuth(t, mwjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tok, err := mwjwt.FromContext(r.Context())
 		assert.False(t, tok.Valid)
 		w.WriteHeader(http.StatusTeapot)
 		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
@@ -114,11 +114,11 @@ func TestService_WithInitTokenAndStore_Success(t *testing.T) {
 	dsv, err := srv.Store()
 	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
 
-	jwts := jwtauth.MustNewService()
+	jwts := mwjwt.MustNewService()
 
-	if err := jwts.Options(jwtauth.WithErrorHandler(scope.Default, 0,
+	if err := jwts.Options(mwjwt.WithErrorHandler(scope.Default, 0,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token, err := jwtauth.FromContext(r.Context())
+			token, err := mwjwt.FromContext(r.Context())
 			t.Logf("Token: %#v\n", token)
 			t.Fatal(errors.PrintLoc(err))
 		}),
@@ -135,13 +135,13 @@ func TestService_WithInitTokenAndStore_Success(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://corestore.io/customer/account", nil)
 	assert.NoError(t, err)
-	jwtauth.SetHeaderAuthorization(req, theToken.Raw)
+	mwjwt.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 		fmt.Fprintf(w, "I'm more of a coffee pot")
 
-		ctxToken, err := jwtauth.FromContext(r.Context())
+		ctxToken, err := mwjwt.FromContext(r.Context())
 		assert.NoError(t, err)
 		assert.NotNil(t, ctxToken)
 		xFoo, err := ctxToken.Claims.Get("xfoo")
@@ -164,15 +164,15 @@ func TestService_WithInitTokenAndStore_InvalidToken(t *testing.T) {
 
 	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(cfgmock.NewService()))
 
-	jwts := jwtauth.MustNewService(
-		jwtauth.WithExpiration(scope.Website, 12, -time.Second),
-		jwtauth.WithSkew(scope.Website, 12, 0),
+	jwts := mwjwt.MustNewService(
+		mwjwt.WithExpiration(scope.Website, 12, -time.Second),
+		mwjwt.WithSkew(scope.Website, 12, 0),
 	)
 
-	if err := jwts.Options(jwtauth.WithErrorHandler(scope.Default, 0,
+	if err := jwts.Options(mwjwt.WithErrorHandler(scope.Default, 0,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
-			token, err := jwtauth.FromContext(r.Context())
+			token, err := mwjwt.FromContext(r.Context())
 			assert.Nil(t, token.Raw)
 			assert.False(t, token.Valid)
 			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
@@ -190,7 +190,7 @@ func TestService_WithInitTokenAndStore_InvalidToken(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://corestore.io/customer/wishlist", nil)
 	assert.NoError(t, err)
-	jwtauth.SetHeaderAuthorization(req, theToken.Raw)
+	mwjwt.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatal("Should not be executed")
@@ -217,7 +217,7 @@ func (b *testRealBL) Set(t []byte, exp time.Duration) error {
 }
 func (b *testRealBL) Has(t []byte) bool { return bytes.Equal(b.theToken, t) }
 
-var _ jwtauth.Blacklister = (*testRealBL)(nil)
+var _ mwjwt.Blacklister = (*testRealBL)(nil)
 
 func TestService_WithInitTokenAndStore_InBlackList(t *testing.T) {
 
@@ -230,8 +230,8 @@ func TestService_WithInitTokenAndStore_InBlackList(t *testing.T) {
 	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
 
 	bl := &testRealBL{}
-	jm, err := jwtauth.NewService(
-		jwtauth.WithBlacklist(bl),
+	jm, err := mwjwt.NewService(
+		mwjwt.WithBlacklist(bl),
 	)
 	assert.NoError(t, err)
 
@@ -242,10 +242,10 @@ func TestService_WithInitTokenAndStore_InBlackList(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
-	jwtauth.SetHeaderAuthorization(req, theToken.Raw)
+	mwjwt.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := jwtauth.FromContext(r.Context())
+		_, err := mwjwt.FromContext(r.Context())
 		assert.True(t, errors.IsNotValid(err))
 		w.WriteHeader(http.StatusUnauthorized)
 	})
@@ -260,8 +260,8 @@ func TestService_WithInitTokenAndStore_InBlackList(t *testing.T) {
 
 // todo add test for form with input field: access_token
 
-func testAuth(t *testing.T, opts ...jwtauth.Option) (http.Handler, []byte) {
-	jm, err := jwtauth.NewService(opts...)
+func testAuth(t *testing.T, opts ...mwjwt.Option) (http.Handler, []byte) {
+	jm, err := mwjwt.NewService(opts...)
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
@@ -302,7 +302,7 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 		if err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}
-		jwtauth.SetHeaderAuthorization(req, token)
+		mwjwt.SetHeaderAuthorization(req, token)
 		return req
 	}
 
@@ -342,23 +342,23 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 
 		//buf := &bytes.Buffer{}
 
-		jwts := jwtauth.MustNewService(
-			//jwtauth.WithLogger(log.NewLog15(log15.LvlDebug, log15.StreamHandler(buf, log15.TerminalFormat()))),
-			jwtauth.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
-			jwtauth.WithStoreService(storemock.NewEurozzyService(test.scpOpt)),
+		jwts := mwjwt.MustNewService(
+			//mwjwt.WithLogger(log.NewLog15(log15.LvlDebug, log15.StreamHandler(buf, log15.TerminalFormat()))),
+			mwjwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
+			mwjwt.WithStoreService(storemock.NewEurozzyService(test.scpOpt)),
 		)
 
 		token, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
-			jwtauth.StoreParamName: test.tokenStoreCode,
+			mwjwt.StoreParamName: test.tokenStoreCode,
 		})
 		if err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}
 
 		if test.wantErrBhf != nil {
-			if err := jwts.Options(jwtauth.WithErrorHandler(scope.Default, 0,
+			if err := jwts.Options(mwjwt.WithErrorHandler(scope.Default, 0,
 				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					_, err := jwtauth.FromContext(r.Context())
+					_, err := mwjwt.FromContext(r.Context())
 					assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 				}),
 			)); err != nil {
@@ -377,11 +377,11 @@ func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 
 	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(cfgmock.NewService()))
 
-	jwts := jwtauth.MustNewService(
-		jwtauth.WithExpiration(scope.Website, 12, time.Second),
+	jwts := mwjwt.MustNewService(
+		mwjwt.WithExpiration(scope.Website, 12, time.Second),
 	)
 
-	if err := jwts.Options(jwtauth.WithErrorHandler(scope.Default, 0,
+	if err := jwts.Options(mwjwt.WithErrorHandler(scope.Default, 0,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("Should not be executed this error handler")
 		}),
@@ -398,11 +398,11 @@ func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://corestore.io/customer/wishlist", nil)
 	assert.NoError(t, err)
-	jwtauth.SetHeaderAuthorization(req, theToken.Raw)
+	mwjwt.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
-		tk, err := jwtauth.FromContext(r.Context())
+		tk, err := mwjwt.FromContext(r.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
