@@ -360,8 +360,10 @@ func WithLogger(l log.Logger) Option {
 	}
 }
 
-// WithBackend applies the backend configuration to the service.
-// Once this has been set all other option functions are not really
+// WithOptionFactory applies a function which lazily loads the option depending
+// on the incoming scope within a request. For example applies the backend
+// configuration to the service.
+// Once this option function has been set all other option functions are not really
 // needed.
 //	cfgStruct, err := backendcors.NewConfigStructure()
 //	if err != nil {
@@ -370,10 +372,9 @@ func WithLogger(l log.Logger) Option {
 //	pb := backendcors.New(cfgStruct)
 //
 //	cors := ctxcors.MustNewService(
-//		ctxcors.WithBackend(backendcors.BackendOptions(pb)),
+//		ctxcors.WithOptionFactory(backendcors.PrepareOptions(pb)),
 //	)
-// Lazy execution of the specific configuration for a scope.
-func WithBackend(f ScopedOptionFunc) Option {
+func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) {
 		s.scpOptionFnc = f
 	}

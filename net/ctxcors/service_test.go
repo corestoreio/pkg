@@ -33,6 +33,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,8 +48,7 @@ func reqWithStore(method string) *http.Request {
 	)
 }
 
-func TestMustNew(t *testing.T) {
-
+func TestMustNew_Default(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -60,10 +60,108 @@ func TestMustNew(t *testing.T) {
 	_ = ctxcors.MustNew(ctxcors.WithMaxAge(scope.Default, 0, -2*time.Second))
 }
 
+func TestMustNew_Website(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := r.(error)
+			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+		} else {
+			t.Fatal("Expecting a Panic")
+		}
+	}()
+	_ = ctxcors.MustNew(ctxcors.WithMaxAge(scope.Website, 2, -2*time.Second))
+}
+
 func TestNoConfig(t *testing.T) {
 	s := ctxcors.MustNew()
 	req := reqWithStore("GET")
 	corstest.TestNoConfig(t, s, req)
+}
+
+func TestService_Options_Scope_Website(t *testing.T) {
+
+	var newSrv = func(opts ...ctxcors.Option) *ctxcors.Service {
+		s := ctxcors.MustNew(ctxcors.WithLogger(log.BlackHole{})) // why can't i append opts... after WithLogger() ?
+		if err := s.Options(opts...); err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+
+	tests := []struct {
+		srv    *ctxcors.Service
+		req    *http.Request
+		tester func(t *testing.T, s *ctxcors.Service, req *http.Request)
+	}{
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "*")),
+			reqWithStore("GET"),
+			corstest.TestMatchAllOrigin,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
+			reqWithStore("GET"),
+			corstest.TestAllowedOrigin,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://*.bar.com")),
+			reqWithStore("GET"),
+			corstest.TestWildcardOrigin,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
+			reqWithStore("GET"),
+			corstest.TestDisallowedOrigin,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://*.bar.com")),
+			reqWithStore("GET"),
+			corstest.TestDisallowedWildcardOrigin,
+		},
+		{
+			newSrv(ctxcors.WithAllowOriginFunc(scope.Website, 2, func(o string) bool {
+				r, _ := regexp.Compile("^http://foo") // don't do this on production systems!
+				return r.MatchString(o)
+			})),
+			reqWithStore("GET"),
+			corstest.TestAllowedOriginFunc,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), ctxcors.WithAllowedMethods(scope.Website, 2, "PUT", "DELETE")),
+			reqWithStore("OPTIONS"),
+			corstest.TestAllowedMethod,
+		},
+		{
+			newSrv(ctxcors.WithAllowedMethods(scope.Website, 2, "PUT", "DELETE"), ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), ctxcors.WithOptionsPassthrough(scope.Website, 2, true)),
+			reqWithStore("OPTIONS"),
+			corstest.TestAllowedMethodPassthrough,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), ctxcors.WithAllowedHeaders(scope.Website, 2, "X-Header-1", "x-header-2")),
+			reqWithStore("OPTIONS"),
+			corstest.TestAllowedHeader,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), ctxcors.WithExposedHeaders(scope.Website, 2, "X-Header-1", "x-header-2")),
+			reqWithStore("GET"),
+			corstest.TestExposedHeader,
+		},
+		{
+			newSrv(ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), ctxcors.WithAllowCredentials(scope.Website, 2, true)),
+			reqWithStore("OPTIONS"),
+			corstest.TestAllowedCredentials,
+		},
+		{
+			newSrv(ctxcors.WithMaxAge(scope.Website, 2, time.Second*30), ctxcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
+			reqWithStore("OPTIONS"),
+			corstest.TestMaxAge,
+		},
+	}
+	for _, test := range tests {
+		// for debugging comment this out to see the index which fails
+		// t.Logf("Running Index %d Tester %q", i, runtime.FuncForPC(reflect.ValueOf(test.tester).Pointer()).Name())
+		test.tester(t, test.srv, test.req)
+	}
 }
 
 func TestMatchAllOrigin(t *testing.T) {
@@ -188,6 +286,28 @@ func TestExposedHeader(t *testing.T) {
 
 	req := reqWithStore("GET")
 	corstest.TestExposedHeader(t, s, req)
+}
+
+func TestExposedHeader_MultiScope(t *testing.T) {
+	s := ctxcors.MustNew(
+		ctxcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		ctxcors.WithExposedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
+		ctxcors.WithAllowCredentials(scope.Website, 1, true),
+	)
+
+	reqDefault, _ := http.NewRequest("GET", "http://corestore.io/reqDefault", nil)
+	reqDefault = reqDefault.WithContext(
+		store.WithContextRequestedStore(reqDefault.Context(), storemock.MustNewStoreAU(cfgmock.NewService())),
+	)
+	corstest.TestExposedHeader(t, s, reqDefault)
+
+	eur := storemock.NewEurozzyService(scope.Option{Website: scope.MockID(1)}, store.WithStorageConfig(cfgmock.NewService()))
+	atStore, atErr := eur.Store(scope.MockID(2)) // ID = 2 store Austria
+	reqWebsite, _ := http.NewRequest("OPTIONS", "http://corestore.io/reqWebsite", nil)
+	reqWebsite = reqWebsite.WithContext(
+		store.WithContextRequestedStore(reqWebsite.Context(), atStore, atErr),
+	)
+	corstest.TestAllowedCredentials(t, s, reqWebsite)
 }
 
 func TestAllowedCredentials(t *testing.T) {

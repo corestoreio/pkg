@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
@@ -50,7 +51,7 @@ func reqWithStore(method string, cfgOpt ...cfgmock.OptionFunc) *http.Request {
 
 func newCorsService() *ctxcors.Service {
 	return ctxcors.MustNew(
-		ctxcors.WithBackend(backendcors.BackendOptions(backend)),
+		ctxcors.WithOptionFactory(backendcors.PrepareOptions(backend)),
 	)
 }
 
@@ -203,48 +204,32 @@ func TestMaxAge(t *testing.T) {
 	corstest.TestMaxAge(t, s, req)
 }
 
-//func TestWithBackendApplied(t *testing.T) {
-//
-//	be := initBackend(t)
-//
-//	cfgGet := cfgmock.NewService(
-//		cfgmock.WithPV(cfgmock.PathValue{
-//			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.Website, 2):     "X-CoreStore-ID\nContent-Type\n\n",
-//			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.Website, 2):     "host1.com\nhost2.com\n\n",
-//			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.Default, 0):     "PATCH\nDELETE",
-//			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.Default, 0):     "Date,X-Header1",
-//			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.Website, 2):   "1",
-//			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.Website, 2): "1",
-//			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.Website, 2):             "2h",
-//		}),
-//	)
-//
-//	c := MustNew(WithBackendApplied(be, cfgGet.NewScoped(2, 4)))
-//
-//	assert.Exactly(t, []string{"X-Corestore-Id", "Content-Type"}, c.exposedHeaders)
-//	assert.Exactly(t, []string{"host1.com", "host2.com"}, c.allowedOrigins)
-//	assert.Exactly(t, []string{"PATCH", "DELETE"}, c.allowedMethods)
-//	assert.Exactly(t, []string{"Date,X-Header1", "Origin"}, c.allowedHeaders)
-//	assert.Exactly(t, true, c.AllowCredentials)
-//	assert.Exactly(t, true, c.OptionsPassthrough)
-//	assert.Exactly(t, "7200", c.maxAge)
-//}
+func TestBackend_Path_Errors(t *testing.T) {
 
-//func TestWithBackendAppliedErrors(t *testing.T) {
-//
-//	be := initBackend(t)
-//
-//	cfgErr := errors.New("Test Error")
-//	cfgGet := cfgmock.NewService(
-//		cfgmock.WithBool(func(_ string) (bool, error) {
-//			return false, cfgErr
-//		}),
-//		cfgmock.WithString(func(_ string) (string, error) {
-//			return "", cfgErr
-//		}),
-//	)
-//
-//	c, err := New(WithBackendApplied(be, cfgGet.NewScoped(223, 43213)))
-//	assert.Nil(t, c)
-//	assert.EqualError(t, err, "Route net/ctxcors/exposed_headers: Test Error\nRoute net/ctxcors/allowed_origins: Test Error\nRoute net/ctxcors/allowed_methods: Test Error\nRoute net/ctxcors/allowed_headers: Test Error\nRoute net/ctxcors/allow_credentials: Test Error\nRoute net/ctxcors/allow_credentials: Test Error\nRoute net/ctxcors/max_age: Test Error\nMaxAge: Invalid Duration seconds: 0")
-//}
+	tests := []struct {
+		toPath func(s scope.Scope, scopeID int64) (cfgpath.Path, error)
+		val    interface{}
+		errBhf errors.BehaviourFunc
+	}{
+		{backend.NetCtxcorsExposedHeaders.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCtxcorsAllowedOrigins.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCtxcorsAllowOriginRegex.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCtxcorsAllowOriginRegex.ToPath, "[a-z+", errors.IsFatal},
+		{backend.NetCtxcorsAllowedMethods.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCtxcorsAllowedHeaders.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCtxcorsAllowCredentials.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCtxcorsOptionsPassthrough.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.NetCtxcorsMaxAge.ToPath, struct{}{}, errors.IsNotValid},
+	}
+	for i, test := range tests {
+
+		scpFnc := backendcors.PrepareOptions(backend)
+		cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+			mustToPath(t, test.toPath, scope.Website, 2): test.val,
+		}))
+		cfgScp := cfgSrv.NewScoped(2, 0)
+
+		_, err := ctxcors.New(scpFnc(cfgScp)...)
+		assert.True(t, test.errBhf(err), "Index %d Error: %s", i, err)
+	}
+}

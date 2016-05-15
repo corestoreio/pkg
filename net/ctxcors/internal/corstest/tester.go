@@ -23,6 +23,7 @@ package corstest
 import (
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -44,7 +45,9 @@ func testHandler(fa interface {
 func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]string) {
 	for name, value := range reqHeaders {
 		if actual := strings.Join(resHeaders[name], ", "); actual != value {
-			t.Errorf("Invalid header %q, wanted %q, got %q", name, value, actual)
+			var buf [1024]byte
+			written := runtime.Stack(buf[:], false)
+			t.Errorf("Invalid header %q, wanted %q, got %q\n%s\n\n", name, value, actual, string(buf[:written]))
 		}
 	}
 }

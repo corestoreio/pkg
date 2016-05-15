@@ -23,24 +23,20 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// DefaultBackend creates new ctxcors.Option slice with the default configuration
+// Default creates new ctxcors.Option slice with the default configuration
 // structure. It panics on error, so us it only during the app init phase.
-func DefaultBackend(opts ...cfgmodel.Option) ctxcors.ScopedOptionFunc {
+func Default(opts ...cfgmodel.Option) ctxcors.ScopedOptionFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
 	}
-	if len(opts) == 0 {
-		opts = append(opts, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
-	}
-
-	return BackendOptions(New(cfgStruct, opts...))
+	return PrepareOptions(New(cfgStruct, opts...))
 }
 
-// BackendOptions creates a closure around the type Backend. The closure will
+// PrepareOptions creates a closure around the type Backend. The closure will
 // be used during a scoped request to figure out the configuration depending on
-// the scope. An option array will be returned by the closure.
-func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
+// the incoming scope. An option array will be returned by the closure.
+func PrepareOptions(be *Backend) ctxcors.ScopedOptionFunc {
 
 	return func(sg config.ScopedGetter) []ctxcors.Option {
 		var opts [8]ctxcors.Option
@@ -81,7 +77,7 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 			r, err := regexp.Compile(aor)
 			if err != nil {
 				opts[i] = func(s *ctxcors.Service) {
-					s.AddError(errors.Wrap(err, "[backendcors] NetCtxcorsAllowedOriginRegex.regexp.Compile"))
+					s.AddError(errors.NewFatal(err, "[backendcors] NetCtxcorsAllowedOriginRegex.regexp.Compile"))
 				}
 				return opts[:]
 			}
@@ -149,68 +145,3 @@ func BackendOptions(be *Backend) ctxcors.ScopedOptionFunc {
 		return opts[:]
 	}
 }
-
-//
-//// WithBackendApplied allows to add the backend configuration struct and applying
-//// all options. This option should only be used within the middleware while
-//// creating a new Cors pointer for a specific scope.
-//func WithBackendApplied(b *Backend, sg config.ScopedGetter) Option {
-//	return func(c *Service) {
-//		c.Backend = b
-//
-//		var opts [8]Option
-//
-//		headers, err := b.NetCtxcorsExposedHeaders.Get(sg)
-//		if err != nil {
-//			c.MultiErr = c.AppendErrors(err)
-//		}
-//		opts[0] = WithExposedHeaders(headers...)
-//
-//		ao, err := b.NetCtxcorsAllowedOrigins.Get(sg)
-//		if err != nil {
-//			c.MultiErr = c.AppendErrors(err)
-//		}
-//		opts[1] = WithAllowedOrigins(ao...)
-//
-//		am, err := b.NetCtxcorsAllowedMethods.Get(sg)
-//		if err != nil {
-//			c.MultiErr = c.AppendErrors(err)
-//		}
-//		opts[2] = WithAllowedMethods(am...)
-//
-//		ah, err := b.NetCtxcorsAllowedHeaders.Get(sg)
-//		if err != nil {
-//			c.MultiErr = c.AppendErrors(err)
-//		}
-//		opts[3] = WithAllowedHeaders(ah...)
-//
-//		ac, err := b.NetCtxcorsAllowCredentials.Get(sg)
-//		if err != nil {
-//			c.MultiErr = c.AppendErrors(err)
-//		}
-//		if ac {
-//			opts[4] = WithAllowCredentials()
-//		}
-//
-//		op, err := b.NetCtxcorsOptionsPassthrough.Get(sg)
-//		if err != nil {
-//			c.MultiErr = c.AppendErrors(err)
-//		}
-//		if op {
-//			opts[5] = WithOptionsPassthrough()
-//		}
-//
-//		ma, err := b.NetCtxcorsMaxAge.Get(sg)
-//		if err != nil {
-//			c.MultiErr = c.AppendErrors(err)
-//		}
-//		opts[6] = WithMaxAge(ma)
-//
-//		// inherit logger
-//		if c.Log != nil {
-//			opts[7] = WithLogger(c.Log)
-//		}
-//
-//		_, _ = c.Options(opts[:]...) // ignore because already covered
-//	}
-//}
