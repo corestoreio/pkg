@@ -1,10 +1,10 @@
-BenchmarkBlackListMap_Parallel-4                        	    3000	    544900 ns/op	       3 B/op	       0 allocs/op
-BenchmarkBlackListFreeCache_Parallel-4                  	  100000	     24148 ns/op	     100 B/op	     100 allocs/op
-BenchmarkServeHTTPHMAC-4                                	  100000	     17692 ns/op	    2746 B/op	      62 allocs/op
-BenchmarkServeHTTPHMACSimpleBL-4                        	  100000	     18292 ns/op	    2746 B/op	      62 allocs/op
-BenchmarkServeHTTPRSAGenerator-4                        	   10000	    121927 ns/op	    9182 B/op	      91 allocs/op
-BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4   	  200000	      8920 ns/op	    3738 B/op	      64 allocs/op
-BenchmarkServeHTTP_DefaultConfig_BlackList_Single-4     	  100000	     17354 ns/op	    3737 B/op	      64 allocs/op
-BenchmarkServeHTTP_MultiToken_MultiScope-4              	  200000	      7280 ns/op	    3458 B/op	      42 allocs/op
+BenchmarkBlackListMap_Parallel-4                        	    3000	    553990 ns/op	       3 B/op	       0 allocs/op
+BenchmarkBlackListFreeCache_Parallel-4                  	  100000	     23597 ns/op	     100 B/op	     100 allocs/op
+BenchmarkServeHTTPHMAC-4                                	  100000	     17818 ns/op	    2858 B/op	      63 allocs/op
+BenchmarkServeHTTPHMACSimpleBL-4                        	  100000	     17906 ns/op	    2858 B/op	      63 allocs/op
+BenchmarkServeHTTPRSAGenerator-4                        	   10000	    124616 ns/op	    9294 B/op	      92 allocs/op
+BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4   	  200000	     10196 ns/op	    3850 B/op	      65 allocs/op
+BenchmarkServeHTTP_DefaultConfig_BlackList_Single-4     	  100000	     17158 ns/op	    3849 B/op	      65 allocs/op
+BenchmarkServeHTTP_MultiToken_MultiScope-4              	  200000	      6914 ns/op	    3570 B/op	      43 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/jwtauth	16.433s
+ok  	github.com/corestoreio/csfw/net/mwjwt	16.944s

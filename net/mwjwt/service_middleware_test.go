@@ -280,7 +280,7 @@ func testAuth(t *testing.T, opts ...mwjwt.Option) (http.Handler, []byte) {
 }
 
 func newStoreServiceWithCtx(initO scope.Option) context.Context {
-	srv := storemock.NewEurozzyService(initO)
+	srv := storemock.NewEurozzyService(initO, store.WithStorageConfig(cfgmock.NewService()))
 	st, err := srv.Store()
 	return store.WithContextRequestedStore(context.Background(), st, err)
 }
@@ -425,4 +425,63 @@ func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 	authHandler.ServeHTTP(wRec, req.WithContext(ctx))
 	assert.Equal(t, http.StatusAccepted, wRec.Code)
 	assert.Equal(t, ``, wRec.Body.String())
+}
+
+func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
+
+	jm, err := mwjwt.NewService(mwjwt.WithDisable(scope.Website, 2, true))
+	if err != nil {
+		t.Fatal(errors.PrintLoc(err))
+	}
+
+	mw := jm.WithInitTokenAndStore()
+
+	// valid request with website euro and token must be validated
+	{
+		handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tk, err := mwjwt.FromContext(r.Context())
+			if err != nil {
+				t.Fatal("MW Error", err)
+			}
+			assert.True(t, tk.Valid)
+			http.Error(w, http.StatusText(http.StatusMultipleChoices), http.StatusMultipleChoices)
+		}))
+
+		req, err := http.NewRequest("GET", "http://auth.xyz", nil)
+		if err != nil {
+			t.Fatal(errors.PrintLoc(err))
+		}
+		theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
+			"noStore": "bar",
+			"zfoo":    4711,
+		})
+		if err != nil {
+			t.Fatal(errors.PrintLoc(err))
+		}
+		mwjwt.SetHeaderAuthorization(req, theToken.Raw)
+
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req.WithContext(newStoreServiceWithCtx(scope.MustSetByCode(scope.Website, "euro"))))
+		assert.Equal(t, http.StatusMultipleChoices, w.Code)
+	}
+
+	// valid request with website oz must be passed through with an invalid token because JWT disabled
+	{
+		handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := mwjwt.FromContext(r.Context())
+			assert.True(t, errors.IsNotFound(err))
+			assert.Exactly(t, `Bearer Invalid Token`, r.Header.Get("Authorization"))
+			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+		}))
+
+		req, err := http.NewRequest("GET", "http://auth.xyz", nil)
+		if err != nil {
+			t.Fatal(errors.PrintLoc(err))
+		}
+		mwjwt.SetHeaderAuthorization(req, []byte(`Invalid Token`))
+
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req.WithContext(newStoreServiceWithCtx(scope.MustSetByCode(scope.Website, "oz"))))
+		assert.Equal(t, http.StatusConflict, w.Code)
+	}
 }

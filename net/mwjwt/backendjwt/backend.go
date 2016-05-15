@@ -26,6 +26,10 @@ import (
 type Backend struct {
 	cfgmodel.PkgBackend
 
+	// NetJwtDisabled if set to true disables the JWT validation.
+	// Path: net/jwt/disabled
+	NetJwtDisabled cfgmodel.Bool
+
 	// NetJwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
 	// Path: net/jwt/signing_method
@@ -87,6 +91,7 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
+	pp.NetJwtDisabled = cfgmodel.NewBool(`net/jwt/disabled`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
 	pp.NetJwtSigningMethod = NewConfigSigningMethod(`net/jwt/signing_method`, opts...)
 	pp.NetJwtExpiration = cfgmodel.NewDuration(`net/jwt/expiration`, opts...)
 	pp.NetJwtSkew = cfgmodel.NewDuration(`net/jwt/skew`, opts...)

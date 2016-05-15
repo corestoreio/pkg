@@ -57,6 +57,9 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 		mustToPath(t, pb.NetJwtEnableJTI.ToPath, scope.Default, 0): 0, // disabled
 		mustToPath(t, pb.NetJwtEnableJTI.ToPath, scope.Website, 1): 1, // enabled
 
+		mustToPath(t, pb.NetJwtDisabled.ToPath, scope.Default, 0): 0, // disable: disabled 8-)
+		mustToPath(t, pb.NetJwtDisabled.ToPath, scope.Website, 1): 1, // disable: enabled 8-)
+
 		mustToPath(t, pb.NetJwtExpiration.ToPath, scope.Default, 0): "2m",
 		mustToPath(t, pb.NetJwtExpiration.ToPath, scope.Website, 1): "5m1s",
 
@@ -74,6 +77,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	}
 
 	assert.True(t, scNew.EnableJTI)
+	assert.True(t, scNew.Disabled)
 	assert.Exactly(t, "5m1s", scNew.Expire.String())
 	assert.Exactly(t, "6m1s", scNew.Skew.String())
 	assert.Exactly(t, "HS512", scNew.SigningMethod.Alg())
@@ -104,6 +108,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	pv := cfgmock.PathValue{
 		mustToPath(t, pb.NetJwtSigningMethod.ToPath, scope.Default, 0): "HS384",
 		mustToPath(t, pb.NetJwtEnableJTI.ToPath, scope.Default, 0):     0, // disabled
+		mustToPath(t, pb.NetJwtDisabled.ToPath, scope.Default, 0):      1, // disabled active
 		mustToPath(t, pb.NetJwtExpiration.ToPath, scope.Default, 0):    "2m",
 		mustToPath(t, pb.NetJwtSkew.ToPath, scope.Default, 0):          "3m",
 		mustToPath(t, pb.NetJwtHmacPassword.ToPath, scope.Default, 0):  "pw1",
@@ -117,6 +122,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	}
 
 	assert.False(t, scNew.EnableJTI)
+	assert.True(t, scNew.Disabled)
 	assert.Exactly(t, "2m0s", scNew.Expire.String())
 	assert.Exactly(t, "3m0s", scNew.Skew.String())
 	assert.Exactly(t, "HS384", scNew.SigningMethod.Alg())

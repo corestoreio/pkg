@@ -101,7 +101,9 @@ func MustNewService(opts ...Option) *Service {
 // Options applies option at creation time or refreshes them.
 func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
-		opt(s)
+		if opt != nil { // might be nil because of package backendjwt
+			opt(s)
+		}
 	}
 	if s.optionError != nil {
 		return s.optionError
@@ -226,8 +228,14 @@ func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 	if sg != nil {
 		h = scope.NewHash(sg.Scope())
 	}
+	if s.Log.IsDebug() {
+		s.Log.Debug("mwjwt.Service.ConfigByScopedGetter.ScopedGetter", "ScopedGetter_Nil", sg == nil, "scope", h.String())
+	}
 
 	if (s.scpOptionFnc == nil || sg == nil) && h == scope.DefaultHash && s.defaultScopeCache.IsValid() {
+		if s.Log.IsDebug() {
+			s.Log.Debug("mwjwt.Service.ConfigByScopedGetter.defaultScopeCache", "ScopedGetter_Nil", sg == nil, "scpOptionFnc_Nil", s.scpOptionFnc == nil)
+		}
 		return s.defaultScopeCache, nil
 	}
 

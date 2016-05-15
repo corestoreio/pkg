@@ -38,6 +38,17 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
+							// Path: net/jwt/disabled
+							ID:        cfgpath.NewRoute("disabled"),
+							Label:     text.Chars(`JSON Webtoken is disabled`),
+							Comment:   text.Chars(`Disables completely the JWT validation. Set to true/enable to activate the disabling.`),
+							Type:      element.TypeSelect,
+							SortOrder: 10,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   false,
+						},
+						element.Field{
 							// Path: net/jwt/expiration
 							ID:        cfgpath.NewRoute("expiration"),
 							Label:     text.Chars(`Token Expiration`),

@@ -42,39 +42,57 @@ func Default(opts ...cfgmodel.Option) mwjwt.ScopedOptionFunc {
 // the incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
 
-	return func(sg config.ScopedGetter) (opts []mwjwt.Option) {
-
+	return func(sg config.ScopedGetter) []mwjwt.Option {
+		var opts [6]mwjwt.Option
+		var i int
 		scp, id := sg.Scope()
+
+		off, err := be.NetJwtDisabled.Get(sg)
+		if err != nil {
+			opts[i] = func(s *mwjwt.Service) {
+				s.AddError(errors.Wrap(err, "[backendcors] NetJwtDisabled.Get"))
+			}
+			return opts[:]
+		}
+		opts[i] = mwjwt.WithDisable(scp, id, off)
+		i++
 
 		exp, err := be.NetJwtExpiration.Get(sg)
 		if err != nil {
-			return append(opts, func(s *mwjwt.Service) {
+			opts[i] = func(s *mwjwt.Service) {
 				s.AddError(errors.Wrap(err, "[backendjwt] NetJwtExpiration.Get"))
-			})
+			}
+			return opts[:]
 		}
-		opts = append(opts, mwjwt.WithExpiration(scp, id, exp))
+		opts[i] = mwjwt.WithExpiration(scp, id, exp)
+		i++
 
 		skew, err := be.NetJwtSkew.Get(sg)
 		if err != nil {
-			return append(opts, func(s *mwjwt.Service) {
+			opts[i] = func(s *mwjwt.Service) {
 				s.AddError(errors.Wrap(err, "[backendjwt] NetJwtSkew.Get"))
-			})
+			}
+			return opts[:]
 		}
-		opts = append(opts, mwjwt.WithSkew(scp, id, skew))
+		opts[i] = mwjwt.WithSkew(scp, id, skew)
+		i++
 
 		isJTI, err := be.NetJwtEnableJTI.Get(sg)
 		if err != nil {
-			return append(opts, func(s *mwjwt.Service) {
+			opts[i] = func(s *mwjwt.Service) {
 				s.AddError(errors.Wrap(err, "[backendjwt] NetJwtEnableJTI.Get"))
-			})
+			}
+			return opts[:]
 		}
-		opts = append(opts, mwjwt.WithTokenID(scp, id, isJTI))
+		opts[i] = mwjwt.WithTokenID(scp, id, isJTI)
+		i++
 
 		signingMethod, err := be.NetJwtSigningMethod.Get(sg)
 		if err != nil {
-			return append(opts, func(s *mwjwt.Service) {
+			opts[i] = func(s *mwjwt.Service) {
 				s.AddError(errors.Wrap(err, "[backendjwt] NetJwtSigningMethod.Get"))
-			})
+			}
+			return opts[:]
 		}
 
 		var key csjwt.Key
@@ -84,15 +102,17 @@ func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
 
 			rsaKey, err := be.NetJwtRSAKey.Get(sg)
 			if err != nil {
-				return append(opts, func(s *mwjwt.Service) {
+				opts[i] = func(s *mwjwt.Service) {
 					s.AddError(errors.Wrap(err, "[backendjwt] NetJwtRSAKey.Get"))
-				})
+				}
+				return opts[:]
 			}
 			rsaPW, err := be.NetJwtRSAKeyPassword.Get(sg)
 			if err != nil {
-				return append(opts, func(s *mwjwt.Service) {
+				opts[i] = func(s *mwjwt.Service) {
 					s.AddError(errors.Wrap(err, "[backendjwt] NetJwtRSAKeyPassword.Get"))
-				})
+				}
+				return opts[:]
 			}
 			key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
 
@@ -100,15 +120,17 @@ func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
 
 			ecdsaKey, err := be.NetJwtECDSAKey.Get(sg)
 			if err != nil {
-				return append(opts, func(s *mwjwt.Service) {
+				opts[i] = func(s *mwjwt.Service) {
 					s.AddError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKey.Get"))
-				})
+				}
+				return opts[:]
 			}
 			ecdsaPW, err := be.NetJwtECDSAKeyPassword.Get(sg)
 			if err != nil {
-				return append(opts, func(s *mwjwt.Service) {
+				opts[i] = func(s *mwjwt.Service) {
 					s.AddError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKeyPassword.Get"))
-				})
+				}
+				return opts[:]
 			}
 			key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
 
@@ -116,19 +138,24 @@ func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
 
 			password, err := be.NetJwtHmacPassword.Get(sg)
 			if err != nil {
-				return append(opts, func(s *mwjwt.Service) {
+				opts[i] = func(s *mwjwt.Service) {
 					s.AddError(errors.Wrap(err, "[backendjwt] NetJwtHmacPassword.Get"))
-				})
+				}
+				return opts[:]
 			}
 			key = csjwt.WithPassword(password)
 
 		default:
-			opts = append(opts, func(s *mwjwt.Service) {
+			opts[i] = func(s *mwjwt.Service) {
 				s.AddError(errors.Errorf("[mwjwt] Unknown signing method: %q", signingMethod.Alg()))
-			})
+			}
+			return opts[:]
 		}
 
 		// WithSigningMethod must be added at the end of the slice to overwrite default signing methods
-		return append(opts, mwjwt.WithKey(scp, id, key), mwjwt.WithSigningMethod(scp, id, signingMethod))
+		opts[i] = mwjwt.WithKey(scp, id, key)
+		i++
+		opts[i] = mwjwt.WithSigningMethod(scp, id, signingMethod)
+		return opts[:]
 	}
 }

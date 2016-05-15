@@ -39,6 +39,8 @@ type ScopedOptionFunc func(config.ScopedGetter) []Option
 type scopedConfig struct {
 	// ScopeHash defines the scope bound to the configuration is.
 	ScopeHash scope.Hash
+	// Disabled if true disables JWT completely
+	Disabled bool
 	// Key contains the HMAC, RSA or ECDSA sensitive data. Yes the csjwt.Key
 	// must not be embedded into this struct because otherwise when printing
 	// or logging the sensitive data from csjwt.Key gets leaked into loggers
@@ -93,18 +95,22 @@ func (sc scopedConfig) TemplateToken() (tk csjwt.Token) {
 // ParseFromRequest parses a request to find a token in either the header, a
 // cookie or an HTML form.
 func (sc scopedConfig) ParseFromRequest(r *http.Request) (csjwt.Token, error) {
-	return sc.Verifier.ParseFromRequest(sc.TemplateToken(), sc.KeyFunc, r)
+	dst := sc.TemplateToken()
+	err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r)
+	return dst, errors.Wrap(err, "[mwjwt] scopedConfig.Verifier.ParseFromRequest")
 }
 
 // Parse parses a raw token.
 func (sc scopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
-	return sc.Verifier.Parse(sc.TemplateToken(), rawToken, sc.KeyFunc)
+	dst := sc.TemplateToken()
+	err := sc.Verifier.Parse(&dst, rawToken, sc.KeyFunc)
+	return dst, errors.Wrap(err, "[mwjwt] scopedConfig.Verifier.Parse")
 }
 
 // initKeyFunc generates a closure for a specific scope to compare if the
 // algorithm in the token matches with the current algorithm.
 func (sc *scopedConfig) initKeyFunc() {
-	sc.KeyFunc = func(t csjwt.Token) (csjwt.Key, error) {
+	sc.KeyFunc = func(t *csjwt.Token) (csjwt.Key, error) {
 
 		if have, want := t.Alg(), sc.SigningMethod.Alg(); have != want {
 			return csjwt.Key{}, errors.NewNotImplementedf(errUnknownSigningMethod, have, want)
@@ -438,6 +444,32 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 			scNew = sc
 		}
 
+		scNew.ScopeHash = h
+		s.scopeCache[h] = scNew
+	}
+}
+
+// WithDisable disables the whole JWT processing for a scope.
+func WithDisable(scp scope.Scope, id int64, ok bool) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) {
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.Disabled = ok
+			return
+		}
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.Disabled = ok
+
+		if sc, ok := s.scopeCache[h]; ok {
+			sc.Disabled = scNew.Disabled
+			scNew = sc
+		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
 	}
