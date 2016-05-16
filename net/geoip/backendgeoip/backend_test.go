@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip
+package backendgeoip_test
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/csfw/net/geoip/backendgeoip"
 
-const (
-	errCannotGetRemoteAddr    = `[geoip] Cannot get request.RemoteAddr`
-	errContextCountryNotFound = `[geoip] Cannot extract token nor an error from the context`
-	errUnsupportedScope       = `[geoip] Unsupported Scope %s ID %d`
-	errScopedConfigNotValid   = `[geoip] ScopedConfig %s invalid`
-)
+// backend overall backend models for all tests
+var backend *backendgeoip.Backend
 
-var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)
+// this would belong into the test suit setup
+func init() {
+	cfgStruct, err := backendgeoip.NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
+	backend = backendgeoip.New(cfgStruct)
+}

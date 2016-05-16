@@ -23,10 +23,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/geoip"
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +31,7 @@ import (
 
 func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 	maxMindDB := filepath.Join(cstesting.RootPath, "net", "geoip", "GeoIP2-Country-Test.mmdb")
-	s, err := geoip.NewService(append(opts, geoip.WithGeoIP2Reader(maxMindDB))...)
+	s, err := geoip.New(append(opts, geoip.WithGeoIP2Reader(maxMindDB))...)
 	if err != nil {
 		panic(err)
 	}
@@ -61,19 +58,19 @@ func mustGetRequestFinland() *http.Request {
 }
 
 func TestNewServiceErrorWithoutOptions(t *testing.T) {
-	s, err := geoip.NewService()
+	s, err := geoip.New()
 	assert.Nil(t, s)
 	assert.EqualError(t, err, "Please provide a GeoIP Reader.")
 }
 
 func TestNewServiceErrorWithAlternativeHandler(t *testing.T) {
-	s, err := geoip.NewService(geoip.WithAlternativeHandler(scope.Absent, 314152, nil))
+	s, err := geoip.New(geoip.WithAlternativeHandler(scope.Absent, 314152, nil))
 	assert.Nil(t, s)
 	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 }
 
 func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
-	s, err := geoip.NewService(geoip.WithGeoIP2Reader("Walhalla/GeoIP2-Country-Test.mmdb"))
+	s, err := geoip.New(geoip.WithGeoIP2Reader("Walhalla/GeoIP2-Country-Test.mmdb"))
 	assert.Nil(t, s)
 	assert.EqualError(t, err, "File Walhalla/GeoIP2-Country-Test.mmdb not found")
 }
@@ -145,16 +142,6 @@ func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	assert.NoError(t, err)
 	countryHandler.ServeHTTP(rec, req)
 }
-
-var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, func(ms *storemock.Storage) {
-	ms.MockStore = func() (*store.Store, error) {
-		return store.NewStore(
-			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-		)
-	}
-})
 
 func ipErrorFinalHandler(t *testing.T) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

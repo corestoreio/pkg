@@ -12,15 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip
-
-import "github.com/corestoreio/csfw/util/errors"
-
-const (
-	errCannotGetRemoteAddr    = `[geoip] Cannot get request.RemoteAddr`
-	errContextCountryNotFound = `[geoip] Cannot extract token nor an error from the context`
-	errUnsupportedScope       = `[geoip] Unsupported Scope %s ID %d`
-	errScopedConfigNotValid   = `[geoip] ScopedConfig %s invalid`
-)
-
-var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)
+// Package backendgeoip defines the backend configuration options and element slices.
+package backendgeoip

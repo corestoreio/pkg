@@ -15,190 +15,190 @@
 package geoip
 
 import (
-	"context"
-	"net/http"
+	"sync"
 
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/httputil"
-	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
 )
 
 // Service represents a service manager
 type Service struct {
-	// AllowedCountries a model containing a path to the configuration which
-	// countries are allowed within a scope. Current implementation triggers
-	// for each HTTP request a configuration lookup which can be a bottle neck.
-	AllowedCountries cfgmodel.StringCSV
 	// GeoIP searches the country for an IP address
 	GeoIP Reader
-	// IsAllowed checks in middleware WithIsCountryAllowedByIP if the country is
-	// allowed to process the request.
-	IsAllowed IsAllowedFunc
+	// Log used for debugging. Defaults to black hole. Panics if nil.
+	Log log.Logger
 
 	// optionError use by functional option arguments to indicate that one
 	// option has triggered an error and hence the other can options can
 	// skip their process.
 	optionError error
 
-	// AltH are alternative handlers if the current request is not allowed for
-	// a country.
-	// IDs and AltH slices must have both the same length because with the ID
-	// found in IDs slice we take the index key and access the appropriate handler in AltH.
-	websiteIDs  util.Int64Slice
-	websiteAltH []http.Handler
-	storeIDs    util.Int64Slice
-	storeAltH   []http.Handler
-	// Log used for debugging. Defaults to black hole. Panics if nil.
-	Log log.Logger
+	// scpOptionFnc optional configuration closure, can be nil. It pulls
+	// out the configuration settings during a request and caches the settings in the
+	// internal map. ScopedOption requires a config.ScopedGetter
+	scpOptionFnc ScopedOptionFunc
+
+	defaultScopeCache scopedConfig
+
+	mu sync.RWMutex
+	// scopeCache internal cache of already created token configurations
+	// scoped.Hash relates to the website ID.
+	// this can become a bottle neck when multiple website IDs supplied by a
+	// request try to access the map. we can use the same pattern like in freecache
+	// to create a segment of 256 slice items to evenly distribute the lock.
+	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
 }
 
 // NewService creates a new GeoIP service to be used as a middleware.
-func NewService(opts ...Option) (*Service, error) {
+func New(opts ...Option) (*Service, error) {
 	s := &Service{
-		Log: log.BlackHole{}, // disabled info and debug logging
+		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
-	for _, opt := range opts {
-		opt(s)
+	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
+		return nil, errors.Wrap(err, "[geoip] Options WithDefaultConfig")
 	}
-	if s.optionError != nil {
-		return nil, s.optionError
-	}
-	if s.GeoIP == nil {
-		return nil, errors.NewFatalf("[geoip] Missing GeoIP Reader")
-	}
-	if s.IsAllowed == nil {
-		s.IsAllowed = defaultIsCountryAllowed
+	if err := s.Options(opts...); err != nil {
+		return nil, errors.Wrap(err, "[geoip] Options Any Config")
 	}
 	return s, nil
 }
 
-// newContextCountryByIP searches the country for an IP address and puts the country
-// into a new context.
-func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Country, error) {
-
-	ip := httputil.GetRemoteAddr(r)
-	if ip == nil {
-		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", "err", errors.NotFound(errCannotGetRemoteAddr), "req", r)
-		}
-		return nil, nil, errors.NewNotFoundf(errCannotGetRemoteAddr)
-	}
-
-	c, err := s.GeoIP.Country(ip)
+// MustNew same as New() but panics on error. Use only during app start up process.
+func MustNew(opts ...Option) *Service {
+	c, err := New(opts...)
 	if err != nil {
-		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.newContextCountryByIP.GeoIP.Country", "err", err, "remoteAddr", ip, "req", r)
+		panic(err)
+	}
+	return c
+}
+
+// Options applies option at creation time or refreshes them.
+func (s *Service) Options(opts ...Option) error {
+	for _, opt := range opts {
+		if opt != nil { // can be nil because of the backend options where we have an array instead of a slice.
+			opt(s)
 		}
-		return nil, nil, errors.NewFatal(err, "[geoip] getting country")
 	}
-	return WithContextCountry(r.Context(), c), c, nil
-}
-
-// WithCountryByIP is a simple middleware which detects the country via an IP
-// address. With the detected country a new tree context.Context gets created.
-// Use FromContextCountry() to extract the country or an error.
-func (s *Service) WithCountryByIP() mw.Middleware {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx, _, err := s.newContextCountryByIP(r)
-			if err != nil {
-				ctx = withContextError(r.Context(), err)
-			}
-			h.ServeHTTP(w, r.WithContext(ctx))
-		})
+	if s.optionError != nil {
+		return s.optionError
 	}
-}
 
-// WithIsCountryAllowedByIP queries the AllowedCountries configuration model
-// to retrieve a list of countries for a scope and then uses the function
-// IsAllowedFunc to check if a country is allowed for an IP address.
-// Use FromContextCountry() to extract the country or an error.
-func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-			_, requestedStore, err := store.FromContextProvider(r.Context())
-			if err != nil {
-				err = errors.Wrap(err, "[geoip] FromContextProvider")
-				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
-				return
-			}
-
-			ctx, c, err := s.newContextCountryByIP(r)
-			if err != nil {
-				err = errors.Wrap(err, "[geoip] newContextCountryByIP")
-				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
-				return
-			}
-
-			allowedCountries, err := s.AllowedCountries.Get(requestedStore.Config)
-			if err != nil {
-				if s.Log.IsDebug() {
-					s.Log.Debug("geoip.WithIsCountryAllowedByIP.AllowedCountries", "err", err, "requestedStore", requestedStore, "country", c)
-				}
-				err = errors.NewFatal(err, "[geoip] AllowedCountries.Get")
-				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
-				return
-			}
-
-			if false == s.IsAllowed(requestedStore, c, allowedCountries, r) {
-				h = s.altHandlerByID(requestedStore)
-			}
-
-			h.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
-
-// WithInitStoreByCountryIP initializes a store scope via the IP address which
-// is bound to a country. todo(CS) IDEA
-func (s *Service) WithInitStoreByCountryIP() mw.Middleware {
 	return nil
+}
+
+// AddError used by functional options to set an error. The error will only be
+// then set if there is not yet an error otherwise it gets discarded. You can
+// enable debug logging to find out more.
+func (s *Service) AddError(err error) {
+	if s.optionError != nil {
+		if s.defaultScopeCache.log.IsDebug() {
+			s.defaultScopeCache.log.Debug("geoip.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
+		}
+		return
+	}
+	s.optionError = err
 }
 
 // altHandlerByID searches in the hierarchical order of store -> website -> default.
 // the next alternative handler IF a country is not allowed as defined in function
 // type IsAllowedFunc.
-func (s *Service) altHandlerByID(st *store.Store) http.Handler {
+//func (s *Service) altHandlerByID(st *store.Store) http.Handler {
+//
+//	if s.storeIDs != nil && s.storeAltH != nil {
+//		return findHandlerByID(scope.Store, st.StoreID(), s.storeIDs, s.storeAltH)
+//	}
+//	if s.websiteIDs != nil && s.websiteAltH != nil {
+//		return findHandlerByID(scope.Website, st.Website.WebsiteID(), s.websiteIDs, s.websiteAltH)
+//	}
+//	return DefaultAlternativeHandler
+//}
 
-	if s.storeIDs != nil && s.storeAltH != nil {
-		return findHandlerByID(scope.Store, st.StoreID(), s.storeIDs, s.storeAltH)
+// configByScopedGetter returns the internal configuration depending on the ScopedGetter.
+// Mainly used within the middleware. Exported here to build your own middleware.
+// A nil argument falls back to the default scope configuration.
+// If you have applied the option WithBackend() the configuration will be pulled out
+// one time from the backend service.
+func (s *Service) configByScopedGetter(reqSt *store.Store) (scopedConfig, error) {
+
+	sgs := reqSt.Config // 1. check store config
+	//sgw := reqSt.Website.Config //2 . check website config
+	// 3. fall back to default
+
+	h := scope.DefaultHash
+	if sgs != nil {
+		h = scope.NewHash(sgs.Scope())
 	}
-	if s.websiteIDs != nil && s.websiteAltH != nil {
-		return findHandlerByID(scope.Website, st.Website.WebsiteID(), s.websiteIDs, s.websiteAltH)
+
+	if (s.scpOptionFnc == nil || sgs == nil) && h == scope.DefaultHash && s.defaultScopeCache.isValid() {
+		return s.defaultScopeCache, nil
 	}
-	return DefaultAlternativeHandler
+
+	sc, err := s.getConfigByScopeID(false, h)
+	if err == nil {
+		// cached entry found and ignore the error because we fall back to
+		// default scope at the end of this function.
+		return sc, nil
+	}
+
+	if s.scpOptionFnc != nil {
+		if err := s.Options(s.scpOptionFnc(sgs)...); err != nil {
+			return scopedConfig{}, errors.Wrap(err, "[geoip] Options by scpOptionFnc")
+		}
+	}
+
+	// after applying the new config try to fetch the new scoped token configuration
+	return s.getConfigByScopeID(true, h)
 }
 
-// findHandlerByID returns the Handler for the searchID. If not found
-// or slices have an indifferent length or something is nil it will
-// return the DefaultErrorHandler.
-func findHandlerByID(so scope.Scope, id int64, idsIdx util.Int64Slice, handlers []http.Handler) http.Handler {
-
-	if len(idsIdx) != len(handlers) {
-		return DefaultAlternativeHandler
-	}
-	index := idsIdx.Index(id)
-	if index < 0 {
-		return DefaultAlternativeHandler
-	}
-	prospect := handlers[index]
-	if nil == prospect {
-		return DefaultAlternativeHandler
+func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
+	var empty scopedConfig
+	// requested scope plus ID
+	scpCfg, ok := s.getScopedConfig(hash)
+	if ok {
+		if scpCfg.isValid() {
+			return scpCfg, nil
+		}
+		return empty, errors.NewNotValidf(errScopedConfigNotValid, hash)
 	}
 
-	return prospect
+	if fallback {
+		// fallback to default scope
+		var err error
+		if !s.defaultScopeCache.isValid() {
+			err = errConfigNotFound
+			if s.defaultScopeCache.log.IsDebug() {
+				s.defaultScopeCache.log.Debug("geoip.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String(), "fallback", fallback)
+			}
+		}
+		return s.defaultScopeCache, err
+	}
+
+	// give up, nothing found
+	return empty, errConfigNotFound
 }
 
-func defaultIsCountryAllowed(_ *store.Store, c *Country, allowedCountries []string, r *http.Request) bool {
-	var ac util.StringSlice = allowedCountries
-	if false == ac.Contains(c.Country.IsoCode) {
-		return false
+// getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
+// has been acquired in lookupScopedConfig()
+func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
+	s.mu.RLock()
+	sc, ok = s.scopeCache[h]
+	s.mu.RUnlock()
+
+	if ok {
+		var hasChanges bool
+		// do some init stuff ...
+		if sc.log == nil {
+			sc.log = s.defaultScopeCache.log // copy logger
+			hasChanges = true
+		}
+
+		if hasChanges {
+			s.mu.Lock()
+			s.scopeCache[h] = sc
+			s.mu.Unlock()
+		}
 	}
-	return true
+	return sc, ok
 }
