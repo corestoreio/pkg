@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package os
-
-import "os"
-
-// FileExists determines if path exists
-func FileExists(filename string) bool {
-	_, err := os.Stat(filename)
-	return !os.IsNotExist(err)
-}
+// Package csnet provides additional network helper functions.
+//
+// csnet has been choosen to avoid import conflicts. cs = corestore
+package csnet
