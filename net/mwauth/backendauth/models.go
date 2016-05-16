@@ -20,62 +20,44 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/util/csnet"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-type IPRange struct {
-	from net.IP
-	to   net.IP
-}
-
-func NewIPRange(from, to string) IPRange {
-	return IPRange{
-		from: net.ParseIP(from).To16(),
-		to:   net.ParseIP(to).To16(),
-	}
-}
-
-func (ir IPRange) In(test net.IP) bool {
-	tv6 := test.To16()
-	return ir.from != nil && ir.to != nil && tv6 != nil && bytes.Compare(tv6, ir.from) >= 0 && bytes.Compare(tv6, ir.to) <= 0
-}
-
-func (ir IPRange) InStr(ip string) bool {
-	return ir.In(net.ParseIP(ip))
-}
 
 // ConfigIPRange defines how IP ranges are stored and handled.
 // A valid IP range string looks like for example:
 // 		IPv4: 74.50.153.0-74.50.153.4
 // 		IPv6: ::ffff:192.0.2.128-::ffff:192.0.2.250
 // 		IPv6: 2001:0db8:85a3:0000:0000:8a2e:0370:7334-2001:0db8:85a3:0000:0000:8a2e:0370:8334
-// No white spaces! Multiple entries supported via line break \n
+// No white spaces! Multiple entries supported via \r and/or \n.
 type ConfigIPRange struct {
-	cfgmodel.StringCSV
+	cfgmodel.CSV
 }
 
 // NewConfigIPRange ....
-// A valid IP range string looks like for example:
-// 		IPv4: 74.50.153.0-74.50.153.4
-// 		IPv6: ::ffff:192.0.2.128-::ffff:192.0.2.250
-// 		IPv6: 2001:0db8:85a3:0000:0000:8a2e:0370:7334-2001:0db8:85a3:0000:0000:8a2e:0370:8334
-// No white spaces! Multiple entries supported via line break \n
 func NewConfigIPRange(path string, opts ...cfgmodel.Option) ConfigIPRange {
 	cip := ConfigIPRange{
-		StringCSV: cfgmodel.NewStringCSV(path, opts...),
+		CSV: cfgmodel.NewCSV(path, opts...),
 	}
-	cip.Separator = '-'
+	cip.Comma = '-'
 	return cip
 }
 
 // Get ...
-func (cc ConfigIPRange) Get(sg config.ScopedGetter) (IPRange, error) {
-	raw, err := cc.StringCSV.Get(sg)
+func (cc ConfigIPRange) Get(sg config.ScopedGetter) (csnet.IPRanges, error) {
+	data, err := cc.CSV.Get(sg)
 	if err != nil {
-		return IPRange{}, errors.Wrap(err, "[backendauth] Str.Get")
+		return nil, errors.Wrap(err, "[backendauth] Str.Get")
 	}
-	if len(raw) != 2 {
-		return IPRange{}, errors.NewNotValidf("[backendauth] IP Range %q not in expected format: IP.From-IP.To", raw)
+
+	var rngs csnet.IPRanges
+	for _, row := range data {
+		if len(row) != 2 {
+			return nil, errors.NewNotValidf("[backendauth] IP Range %q not in expected format: IP.From-IP.To", row)
+		}
+		if row[0] != "" && row[1] != "" {
+			rngs = append(rngs, csnet.NewIPRange(row[0], row[1]))
+		}
 	}
-	return NewIPRange(raw[0], raw[1]), nil
+	return rngs, nil
 }
