@@ -104,7 +104,7 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 			"2016", "Year 2016",
 			"2017", "Year 2017",
 		),
-		cfgmodel.WithCSVSeparator(''),
+		cfgmodel.WithCSVComma(''),
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
@@ -212,7 +212,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 			{2016, "Year 2016"},
 			{2017, "Year 2017"},
 		}),
-		cfgmodel.WithCSVSeparator('|'),
+		cfgmodel.WithCSVComma('|'),
 	)
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Website, 34).String()
 
@@ -226,4 +226,65 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	}
 
 	assert.Exactly(t, []int{2015, 2016}, haveSL)
+}
+
+func TestCSVGet(t *testing.T) {
+
+	const pathWebCorsCSV = "web/cors/csv"
+	wantPath := cfgpath.MustNewByParts(pathWebCorsCSV).String()
+	b := cfgmodel.NewCSV(
+		"web/cors/csv",
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithCSVComma('|'),
+	)
+	assert.Empty(t, b.Options())
+
+	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	assert.NoError(t, err)
+	assert.Exactly(t,
+		[][]string{{"0", "\"Did you mean...\" Suggestions", "\"meinten Sie...?\""}, {"1", "Accuracy for Suggestions", "Genauigkeit der Vorschläge"}, {"2", "After switching please reindex the<br /><em>Catalog Search Index</em>.", "Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."}, {"3", "CATALOG", "KATALOG"}},
+		sl) // default values from variable configStructure
+
+	tests := []struct {
+		have       string
+		want       [][]string
+		wantErrBhf errors.BehaviourFunc
+	}{
+		{"Content-Type|X-CoreStore-ID", [][]string{{"Content-Type", "X-CoreStore-ID"}}, nil},
+		{"", nil, nil},
+		{"X-CoreStore-ID", [][]string{{"X-CoreStore-ID"}}, nil},
+		{"Content-Type|X-CS", [][]string{{"Content-Type", "X-CS"}}, nil},
+		{"Content-Type|X-CS\nApplication", nil, errors.IsNotValid},
+	}
+	for i, test := range tests {
+		haveSL, haveErr := b.Get(cfgmock.NewService(
+			cfgmock.WithPV(cfgmock.PathValue{
+				wantPath: test.have,
+			}),
+		).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
+
+		assert.Exactly(t, test.want, haveSL, "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
+			continue
+		}
+		assert.NoError(t, haveErr, "Index %d", i)
+	}
+}
+
+func TestCSVWrite(t *testing.T) {
+
+	const pathWebCorsCsv = "web/cors/csv"
+	wantPath := cfgpath.MustNewByParts(pathWebCorsCsv).String()
+	b := cfgmodel.NewCSV(
+		"web/cors/csv",
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithCSVComma('!'),
+	)
+
+	mw := &cfgmock.Write{}
+
+	assert.NoError(t, b.Write(mw, [][]string{{"a", "b", "c"}, {"d", "e", "f"}}, scope.Default, 0))
+	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, "a!b!c\nd!e!f\n", mw.ArgValue.(string))
 }

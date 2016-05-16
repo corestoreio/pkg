@@ -64,7 +64,7 @@ func TestObscure(t *testing.T) {
 
 	b := cfgmodel.NewObscure(
 		cfgPath,
-		cfgmodel.WithCSVSeparator(''), // trick it
+		cfgmodel.WithCSVComma(''), // trick it
 		cfgmodel.WithEncryptor(rot13{}),
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope

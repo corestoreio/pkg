@@ -127,6 +127,18 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   []byte(`Hello Dud€`),
 					},
+					element.Field{
+						// Path: `web/cors/csv`,
+						ID:        cfgpath.NewRoute("csv"),
+						Type:      element.TypeTextarea,
+						SortOrder: 30,
+						Visible:   element.VisibleYes,
+						Scopes:    scope.PermWebsite,
+						Default: `0|"""Did you mean..."" Suggestions"|"""meinten Sie...?"""
+1|"Accuracy for Suggestions"|"Genauigkeit der Vorschläge"
+2|"After switching please reindex the<br /><em>Catalog Search Index</em>."|"Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."
+3|"CATALOG"|"KATALOG"`,
+					},
 				),
 			},
 

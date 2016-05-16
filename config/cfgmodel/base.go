@@ -39,6 +39,7 @@ type optionBox struct {
 	*baseValue
 	*Obscure
 	*StringCSV
+	*CSV
 	*IntCSV
 }
 
