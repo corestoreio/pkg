@@ -23,40 +23,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetRemoteAddr(t *testing.T) {
+func TestGetRealIP(t *testing.T) {
 
 	tests := []struct {
 		r      *http.Request
 		wantIP net.IP
 	}{
 		{func() *http.Request {
-			r, err := http.NewRequest("GET", "http://gopher.go", nil)
-			assert.NoError(t, err)
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.Header.Set("X-Real-IP", "123.123.123.123")
 			return r
 		}(), net.ParseIP("123.123.123.123")},
 		{func() *http.Request {
-			r, err := http.NewRequest("GET", "http://gopher.go", nil)
-			assert.NoError(t, err)
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.Header.Set("X-Forwarded-For", "200.100.50.3")
 			return r
 		}(), net.ParseIP("200.100.50.3")},
 		{func() *http.Request {
-			r, err := http.NewRequest("GET", "http://gopher.go", nil)
-			assert.NoError(t, err)
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
+			r.Header.Set("X-Forwarded-For", "2002:0db8:85a3:0000:0000:8a2e:0370:7335")
+			return r
+		}(), net.ParseIP("2002:0db8:85a3:0000:0000:8a2e:0370:7335")},
+		{func() *http.Request {
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
+			r.Header.Set("X-Forwarded-For", "200.100.54.4, 192.168.0.100:8080")
+			return r
+		}(), net.ParseIP("200.100.54.4")},
+		{func() *http.Request {
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
+			r.Header.Set("X-Forwarded-For", "127.0.0.1:8080")
+			r.RemoteAddr = "200.100.54.6:8181"
+			return r
+		}(), net.ParseIP("200.100.54.6")},
+		{func() *http.Request {
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.RemoteAddr = "100.200.50.3"
 			return r
 		}(), net.ParseIP("100.200.50.3")},
 		{func() *http.Request {
-			r, err := http.NewRequest("GET", "http://gopher.go", nil)
-			assert.NoError(t, err)
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
+			r.RemoteAddr = "2002:0db8:85a3:0000:0000:8a2e:0370:7334"
+			return r
+		}(), net.ParseIP("2002:0db8:85a3:0000:0000:8a2e:0370:7334")},
+		{func() *http.Request {
+			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.RemoteAddr = "100.200.a.3"
 			return r
 		}(), nil},
 	}
 
 	for i, test := range tests {
-		haveIP := httputil.GetRemoteAddr(test.r)
-		assert.Exactly(t, test.wantIP, haveIP, "Index: %d", i)
+		haveIP := httputil.GetRealIP(test.r)
+		assert.Exactly(t, test.wantIP, haveIP, "Index: %d Want %s Have %s", i, test.wantIP, haveIP)
 	}
 }

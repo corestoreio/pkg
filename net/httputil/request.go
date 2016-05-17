@@ -17,23 +17,59 @@ package httputil
 import (
 	"net"
 	"net/http"
+	"strings"
+	"unicode"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/csnet"
 )
 
-// GetRemoteAddr extracts the remote address from a request and takes
+// GetRealIP extracts the remote address from a request and takes
 // care of different headers in which an IP address can be stored.
+// Checks if the IP in one of the header fields lies in csnet.PrivateIPRanges.
 // Return value can be nil.
-func GetRemoteAddr(req *http.Request) net.IP {
-	addr := req.Header.Get("X-Real-IP")
-	if addr == "" {
-		addr = req.Header.Get("X-Forwarded-For")
-		if addr == "" {
-			addr = req.RemoteAddr
+func GetRealIP(r *http.Request) net.IP {
+	// Courtesy https://husobee.github.io/golang/ip-address/2015/12/17/remote-ip-go.html
+	for _, h := range [2]string{"X-Forwarded-For", "X-Real-Ip"} {
+		addresses := strings.Split(r.Header.Get(h), ",")
+		// march from right to left until we get a public address
+		// that will be the address right before our proxy.
+		for i := len(addresses) - 1; i >= 0; i-- {
+			// header can contain spaces too, strip those out.
+			addr := filterIP(addresses[i])
+			if addr == "" {
+				continue
+			}
+			host, _, err := net.SplitHostPort(addr)
+			if err != nil {
+				host = addr
+			}
+			realIP := net.ParseIP(host)
+			if !realIP.IsGlobalUnicast() || csnet.PrivateIPRanges.In(realIP) {
+				// bad address, go to next
+				continue
+			}
+
+			if realIP != nil {
+				return realIP
+			}
 		}
 	}
-	host, _, err := net.SplitHostPort(addr)
-
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		host = addr
+		host = r.RemoteAddr
 	}
-	return net.ParseIP(host)
+	return net.ParseIP(filterIP(host))
+}
+
+func filterIP(ip string) string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	for _, r := range ip {
+		switch {
+		case unicode.IsDigit(r), unicode.IsLetter(r), unicode.IsPunct(r):
+			_, _ = buf.WriteRune(r)
+		}
+	}
+	return buf.String()
 }
