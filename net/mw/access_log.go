@@ -66,7 +66,7 @@ func WithAccessLog(opts ...Option) Middleware {
 					"status_code", lw.Status(),
 					"duration", reqDur.Seconds(),
 					"size", lw.BytesWritten(),
-					"remote_addr", httputil.GetRemoteAddr(r).String(),
+					"remote_addr", httputil.GetRealIP(r).String(),
 					"user_agent", r.Header.Get("User-Agent"),
 					"referer", r.Header.Get("Referer"),
 				)
