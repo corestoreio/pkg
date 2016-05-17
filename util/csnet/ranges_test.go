@@ -15,6 +15,7 @@
 package csnet_test
 
 import (
+	"net"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/csnet"
@@ -67,6 +68,23 @@ func TestIPRange_In(t *testing.T) {
 	for _, test := range tests {
 		if have, want := csnet.NewIPRange(test.from, test.to).InStr(test.testIP), test.want; have != want {
 			t.Errorf("Assertion (have: %t want: %t) failed on range %s-%s with test %s", have, want, test.from, test.to, test.testIP)
+		}
+	}
+}
+
+func TestPrivateIPRanges(t *testing.T) {
+	tests := []struct {
+		ip   net.IP
+		want bool
+	}{
+		{net.ParseIP("74.50.146.4"), false},
+		{net.ParseIP("100.64.1.0"), true},
+		{net.ParseIP("192.168.1.3"), true},
+		{nil, false},
+	}
+	for _, test := range tests {
+		if have, want := csnet.PrivateIPRanges.In(test.ip), test.want; have != want {
+			t.Errorf("Have %t Want %t => IP %s", have, want, test.ip)
 		}
 	}
 }

@@ -61,3 +61,15 @@ func (s IPRanges) In(test net.IP) bool {
 func (s IPRanges) InStr(ip string) bool {
 	return s.In(net.ParseIP(ip))
 }
+
+// PrivateIPRanges defines a list of private IP subnets.
+// Can be modified by yourself.
+var PrivateIPRanges = IPRanges{
+	NewIPRange("10.0.0.0", "10.255.255.255"),
+	NewIPRange("100.64.0.0", "100.127.255.255"),
+	NewIPRange("172.16.0.0", "172.31.255.255"),
+	NewIPRange("192.0.0.0", "192.0.0.255"),
+	NewIPRange("192.168.0.0", "192.168.255.255"),
+	NewIPRange("198.18.0.0", "198.19.255.255"),
+	// NewIPRange("fc00::/7", "fc00::/7"),
+}
