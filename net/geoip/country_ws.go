@@ -20,7 +20,11 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
+
+var _ Reader = (*mmws)(nil)
 
 type mmws struct {
 	userID     string
@@ -79,25 +83,26 @@ func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Headers
 	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
 		var v Error
-		err := json.NewDecoder(resp.Body).Decode(&v)
-		if err != nil {
-			return response, err
-		}
-		return response, v
+		v.err = json.NewDecoder(resp.Body).Decode(&v)
+		return nil, errors.NewNotValid(v, "[geoip] mmws.fetch URL: "+prefix)
 	}
 
 	// parse the response body
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Body
 
 	err = json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
+	return response, errors.NewNotValid(err, "[geoip] json.NewDecoder.Decode")
 }
 
 type Error struct {
+	err  error
 	Code string `json:"code,omitempty"`
 	Err  string `json:"error,omitempty"`
 }
 
 func (e Error) Error() string {
+	if e.err != nil {
+		return e.err.Error()
+	}
 	return fmt.Sprintf("%s: %s", e.Code, e.Err)
 }

@@ -15,19 +15,56 @@
 package geoip
 
 import (
-	"github.com/corestoreio/csfw/util/errors"
+	"net"
 	"testing"
+	"time"
+
+	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 )
 
-func Testmmws(t *testing.T) {
-	tests := []struct {
-		wc          *mmws
-		errBhf      errors.BehaviourFunc
-		wantCountry string
-	}{
-		{},
-	}
-	for _, test := range tests {
+func TestMmws_Country_Failure_Response(t *testing.T) {
 
+	c := newMMWS("gopher", "passw0rd", time.Second)
+	trip := cstesting.NewHttpTrip(400, `{"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
+	c.client.Transport = trip
+	ret, err := c.Country(net.ParseIP("123.123.123.123"))
+	assert.Nil(t, ret)
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+
+	u, p, ok := trip.Req.BasicAuth()
+	assert.True(t, ok)
+	assert.Exactly(t, "gopher", u)
+	assert.Exactly(t, "passw0rd", p)
+}
+
+func TestMmws_Country_Failure_JSON(t *testing.T) {
+
+	c := newMMWS("a", "b", time.Second)
+	trip := cstesting.NewHttpTrip(200, `"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
+	c.client.Transport = trip
+	ret, err := c.Country(net.ParseIP("123.123.123.123"))
+	assert.NotNil(t, ret)
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+}
+
+func TestMmws_Country_Success(t *testing.T) {
+	td, err := ioutil.ReadFile("testdata/response.json")
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	c := newMMWS("gopher", "passw0rd", time.Second)
+	trip := cstesting.NewHttpTrip(200, string(td), nil)
+	c.client.Transport = trip
+	ret, err := c.Country(net.ParseIP("123.123.123.123"))
+	assert.NotNil(t, ret)
+	assert.NoError(t, err)
+	assert.Exactly(t, "US", ret.Country.IsoCode)
+	u, p, ok := trip.Req.BasicAuth()
+	assert.True(t, ok)
+	assert.Exactly(t, "gopher", u)
+	assert.Exactly(t, "passw0rd", p)
 }
