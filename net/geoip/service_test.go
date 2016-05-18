@@ -24,13 +24,12 @@ import (
 
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func mustGetTestService(opts ...geoip.Option) *geoip.Service {
-	maxMindDB := filepath.Join(cstesting.RootPath, "net", "geoip", "GeoIP2-Country-Test.mmdb")
+	maxMindDB := filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")
 	s, err := geoip.New(append(opts, geoip.WithGeoIP2Reader(maxMindDB))...)
 	if err != nil {
 		panic(err)

@@ -55,6 +55,7 @@ type Service struct {
 func New(opts ...Option) (*Service, error) {
 	s := &Service{
 		scopeCache: make(map[scope.Hash]scopedConfig),
+		Log:        log.BlackHole{},
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
 		return nil, errors.Wrap(err, "[geoip] Options WithDefaultConfig")

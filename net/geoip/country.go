@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/oschwald/geoip2-golang"
 )
 
@@ -26,32 +27,67 @@ import (
 // Country databases.
 type Country struct {
 	// IP contains the request IP address even if we run behind a proxy
-	IP        net.IP
+	IP   net.IP `json:"ip,omitempty"`
+	City struct {
+		Confidence int               `json:"confidence,omitempty"`
+		GeoNameID  uint              `json:"geoname_id,omitempty"`
+		Names      map[string]string `json:"names,omitempty"`
+	} `json:"city,omitempty"`
 	Continent struct {
-		Code      string
-		GeoNameID uint
-		Names     map[string]string
-	}
+		Code      string            `json:"code,omitempty"`
+		GeoNameID uint              `json:"geoname_id,omitempty"`
+		Names     map[string]string `json:"names,omitempty"`
+	} `json:"continent,omitempty"`
 	Country struct {
-		GeoNameID uint
-		IsoCode   string
-		Names     map[string]string
-	}
+		Confidence int               `json:"confidence,omitempty"`
+		GeoNameID  uint              `json:"geoname_id,omitempty"`
+		IsoCode    string            `json:"iso_code,omitempty"`
+		Names      map[string]string `json:"names,omitempty"`
+	} `json:"country,omitempty"`
+	Location struct {
+		AccuracyRadius    int     `json:"accuracy_radius,omitempty"`
+		AverageIncome     int     `json:"average_income,omitempty"`
+		Latitude          float64 `json:"latitude,omitempty"`
+		Longitude         float64 `json:"longitude,omitempty"`
+		MetroCode         int     `json:"metro_code,omitempty"`
+		PopulationDensity int     `json:"population_density,omitempty"`
+		TimeZone          string  `json:"time_zone,omitempty"`
+	} `json:"location,omitempty"`
+	Postal struct {
+		Code       string `json:"code,omitempty"`
+		Confidence int    `json:"confidence,omitempty"`
+	} `json:"postal,omitempty"`
 	RegisteredCountry struct {
-		GeoNameID uint
-		IsoCode   string
-		Names     map[string]string
-	}
+		GeoNameID uint              `json:"geoname_id,omitempty"`
+		IsoCode   string            `json:"iso_code,omitempty"`
+		Names     map[string]string `json:"names,omitempty"`
+	} `json:"registered_country,omitempty"`
 	RepresentedCountry struct {
-		GeoNameID uint
-		IsoCode   string
-		Names     map[string]string
-		Type      string
-	}
+		GeoNameID uint              `json:"geoname_id,omitempty"`
+		IsoCode   string            `json:"iso_code,omitempty"`
+		Names     map[string]string `json:"names,omitempty"`
+		Type      string            `json:"type,omitempty"`
+	} `json:"represented_country,omitempty"`
+	Subdivision []struct {
+		Confidence int               `json:"confidence,omitempty"`
+		GeoNameId  uint              `json:"geoname_id,omitempty"`
+		IsoCode    string            `json:"iso_code,omitempty"`
+		Names      map[string]string `json:"names,omitempty"`
+	} `json:"subdivisions,omitempty"`
 	Traits struct {
-		IsAnonymousProxy    bool
-		IsSatelliteProvider bool
-	}
+		AutonomousSystemNumber       int    `json:"autonomous_system_number,omitempty"`
+		AutonomousSystemOrganization string `json:"autonomous_system_organization,omitempty"`
+		Domain                       string `json:"domain,omitempty"`
+		IsAnonymousProxy             bool   `json:"is_anonymous_proxy,omitempty"`
+		IsSatelliteProvider          bool   `json:"is_satellite_provider,omitempty"`
+		Isp                          string `json:"isp,omitempty"`
+		IpAddress                    string `json:"ip_address,omitempty"`
+		Organization                 string `json:"organization,omitempty"`
+		UserType                     string `json:"user_type,omitempty"`
+	} `json:"traits,omitempty"`
+	MaxMind struct {
+		QueriesRemaining int `json:"queries_remaining,omitempty"`
+	} `json:"maxmind,omitempty"`
 }
 
 // Reader defines the functions which are needed to return a country by an IP.
@@ -73,10 +109,15 @@ type mmdb struct {
 	r *geoip2.Reader
 }
 
+func newMMDBByFile(filename string) (*mmdb, error) {
+	r, err := geoip2.Open(filename)
+	return &mmdb{r}, errors.NewNotValid(err, "[geoip] Maxmind Open")
+}
+
 func (mm *mmdb) Country(ipAddress net.IP) (*Country, error) {
 	c, err := mm.r.Country(ipAddress)
 	if err != nil {
-		return nil, err
+		return nil, errors.NewNotValid(err, "[geoip] mmdb.Country")
 	}
 	c2 := &Country{
 		IP: ipAddress,

@@ -28,7 +28,7 @@ import (
 // into a new context.
 func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Country, error) {
 
-	ip := httputil.GetRemoteAddr(r)
+	ip := httputil.GetRealIP(r)
 	if ip == nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", "err", errors.NotFound(errCannotGetRemoteAddr), "req", r)

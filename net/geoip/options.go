@@ -16,15 +16,14 @@ package geoip
 
 import (
 	"net/http"
-
 	"time"
+
+	"os"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
-	"github.com/corestoreio/csfw/util/os"
-	"github.com/oschwald/geoip2-golang"
 )
 
 // Option can be used as an argument in NewService to configure a token service.
@@ -163,24 +162,20 @@ func WithLogger(l log.Logger) Option {
 // WithGeoIP2Reader creates a new GeoIP2.Reader. As long as there are no other
 // readers this is a mandatory argument.
 // Error behaviour: NotFound, NotValid
-func WithGeoIP2Reader(file string) Option {
+func WithGeoIP2Reader(filename string) Option {
 	return func(s *Service) {
 		if s.optionError != nil {
 			return
 		}
-		if false == os.FileExists(file) {
-			s.optionError = errors.NewNotFoundf("[geoip] File %s not found", file)
+
+		if _, err := os.Stat(filename); os.IsNotExist(err) {
+			s.optionError = errors.NewNotFoundf("[geoip] File %s not found", filename)
 			return
 		}
 
-		r, err := geoip2.Open(file) // that implementation is not nice for testing because no interface usages :(
-		if err != nil {
-			s.optionError = errors.NewNotValid(err, "[geoip] Maxmind Open")
-			return
-		}
-		s.GeoIP = &mmdb{
-			r: r,
-		}
+		var err error
+		s.GeoIP, err = newMMDBByFile(filename)
+		s.optionError = errors.NewNotValid(err, "[geoip] Maxmind Open")
 	}
 }
 
