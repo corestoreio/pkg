@@ -15,16 +15,9 @@
 package cstesting
 
 import (
-	"go/build"
-	"path/filepath"
-
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 )
-
-// RootPath defines the corestore csfw root path. Does not consider vendoring.
-// Used for testing to include and load testdata from disk.
-var RootPath = filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw")
 
 // MockDB creates a mocked database connection. Fatals on error.
 func MockDB(t Fataler) (*dbr.Connection, sqlmock.Sqlmock) {

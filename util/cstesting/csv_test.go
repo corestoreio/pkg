@@ -26,7 +26,7 @@ import (
 func TestLoadCSVWithFile(t *testing.T) {
 	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(
-		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data1.csv"),
+		cstesting.WithFile("testdata", "core_config_data1.csv"),
 		cstesting.WithTestMode(),
 	)
 	assert.NoError(t, err)
@@ -41,7 +41,7 @@ func TestLoadCSVWithReaderConfig(t *testing.T) {
 	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(
 		cstesting.WithTestMode(),
-		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data3.csv"),
+		cstesting.WithFile("testdata", "core_config_data3.csv"),
 		cstesting.WithReaderConfig(&csv.Reader{Comma: '|'}),
 	)
 	assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestLoadCSVFileError(t *testing.T) {
 	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(
 		cstesting.WithTestMode(),
-		cstesting.WithFile("util", "cstesting", "testdata", "core_config_dataXX.csv"),
+		cstesting.WithFile("testdata", "core_config_dataXX.csv"),
 	)
 	assert.Nil(t, cols)
 	assert.Nil(t, rows)
@@ -66,7 +66,7 @@ func TestLoadCSVFileError(t *testing.T) {
 func TestLoadCSVReadError(t *testing.T) {
 	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(
-		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data2.csv"),
+		cstesting.WithFile("testdata", "core_config_data2.csv"),
 		cstesting.WithTestMode(),
 	)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
@@ -85,7 +85,7 @@ func TestMockRowsLoaded(t *testing.T) {
 	t.Parallel()
 	rows, err := cstesting.MockRows(
 		cstesting.WithReaderConfig(&csv.Reader{Comma: '|'}),
-		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data3.csv"),
+		cstesting.WithFile("testdata", "core_config_data3.csv"),
 		cstesting.WithTestMode(),
 	)
 	assert.NoError(t, err)

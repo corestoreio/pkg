@@ -23,7 +23,6 @@ import (
 
 	"path/filepath"
 
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/sqlbeautifier"
 	"github.com/stretchr/testify/assert"
 )
@@ -58,7 +57,7 @@ func TestFromReader(t *testing.T) {
 	}
 }
 
-var pathPrefix = filepath.Join(cstesting.RootPath, "util", "sqlbeautifier", "test_")
+var pathPrefix = filepath.Join("testdata", "test_")
 
 func getTestFile(t *testing.T, i int, test string) []byte {
 	n := fmt.Sprintf("%s%02d_%s.sql", pathPrefix, i, test)

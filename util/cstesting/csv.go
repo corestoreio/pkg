@@ -38,7 +38,7 @@ type config struct {
 
 // WithFile sets the file name. File path prefix is always RootPath variable.
 func WithFile(elem ...string) csvOptions {
-	return func(c *config) { c.path = filepath.Join(append([]string{RootPath}, elem...)...) }
+	return func(c *config) { c.path = filepath.Join(elem...) }
 }
 
 // WithReaderConfig sets CSV reader options
