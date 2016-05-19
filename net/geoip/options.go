@@ -162,7 +162,7 @@ func WithLogger(l log.Logger) Option {
 // WithGeoIP2Reader creates a new GeoIP2.Reader. As long as there are no other
 // readers this is a mandatory argument.
 // Error behaviour: NotFound, NotValid
-func WithGeoIP2Reader(filename string) Option {
+func WithGeoIP2File(filename string) Option {
 	return func(s *Service) {
 		if s.optionError != nil {
 			return
@@ -179,16 +179,14 @@ func WithGeoIP2Reader(filename string) Option {
 	}
 }
 
-// WithGeoIP2WebService
+// WithGeoIP2WebService uses for each request
 // Uses the Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/
 func WithGeoIP2Webservice(userID, licenseKey string, timeout time.Duration) Option {
-
 	return func(s *Service) {
 		if s.optionError != nil {
 			return
 		}
-
-		s.GeoIP = nil
+		s.GeoIP = newMMWS(userID, licenseKey, timeout)
 	}
 }
 

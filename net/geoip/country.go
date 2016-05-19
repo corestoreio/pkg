@@ -15,6 +15,7 @@
 package geoip
 
 import (
+	"encoding/gob"
 	"net"
 	"net/http"
 
@@ -22,6 +23,10 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/oschwald/geoip2-golang"
 )
+
+func init() {
+	gob.Register(new(Country))
+}
 
 // The Country structure corresponds to the data in the GeoIP2/GeoLite2
 // Country databases.
