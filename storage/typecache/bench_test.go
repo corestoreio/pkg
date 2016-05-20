@@ -20,12 +20,17 @@ import (
 	"strconv"
 	"testing"
 
+	"io/ioutil"
+	"os"
+
 	"github.com/corestoreio/csfw/storage/typecache"
+	"github.com/corestoreio/csfw/storage/typecache/tcbigcache"
+	"github.com/corestoreio/csfw/storage/typecache/tcboltdb"
 	"github.com/ugorji/go/codec"
 	vmihailencoMsgPack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
-func benchmark_country_enc(b *testing.B, opts ...typecache.Options) {
+func benchmark_country_enc(b *testing.B, opts ...typecache.Option) {
 	p, err := typecache.NewProcessor(opts...)
 	if err != nil {
 		b.Fatal(err)
@@ -35,9 +40,9 @@ func benchmark_country_enc(b *testing.B, opts ...typecache.Options) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
-		var i int
+		var i int64
 		for pb.Next() {
-			key := strconv.Itoa(i) // 1 alloc
+			key := strconv.AppendInt(nil, i, 10) // 1 alloc
 			if err := p.Set(key, cntry); err != nil {
 				b.Fatal(err)
 			}
@@ -53,7 +58,7 @@ func benchmark_country_enc(b *testing.B, opts ...typecache.Options) {
 	})
 }
 
-func benchmark_stores_enc(b *testing.B, opts ...typecache.Options) {
+func benchmark_stores_enc(b *testing.B, opts ...typecache.Option) {
 	p, err := typecache.NewProcessor(opts...)
 	if err != nil {
 		b.Fatal(err)
@@ -63,9 +68,9 @@ func benchmark_stores_enc(b *testing.B, opts ...typecache.Options) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
-		var i int
+		var i int64
 		for pb.Next() {
-			key := strconv.Itoa(i) // 1 alloc
+			key := strconv.AppendInt(nil, i, 10) // 1 alloc
 			if err := p.Set(key, ts); err != nil {
 				b.Fatal(err)
 			}
@@ -81,36 +86,56 @@ func benchmark_stores_enc(b *testing.B, opts ...typecache.Options) {
 	})
 }
 
-func Benchmark_SetGet_Country_Gob(b *testing.B) {
-	benchmark_country_enc(b)
+func Benchmark_BigCache_Country_Gob(b *testing.B) {
+	benchmark_country_enc(b, tcbigcache.With())
 }
 
-func Benchmark_SetGet_Country_VmihailencoMsgPack(b *testing.B) {
-	benchmark_country_enc(b, typecache.WithEncoder(newVmihailencoMsgPackEnc, newVmihailencoMsgPackDec))
+func Benchmark_BigCache_Country_VmihailencoMsgPack(b *testing.B) {
+	benchmark_country_enc(b, tcbigcache.With(), typecache.WithEncoder(newVmihailencoMsgPackEnc, newVmihailencoMsgPackDec))
 }
 
-func Benchmark_SetGet_Country_JSON(b *testing.B) {
-	benchmark_country_enc(b, typecache.WithEncoder(newJSONEncoder, newJSONDecoder))
+func Benchmark_BigCache_Country_JSON(b *testing.B) {
+	benchmark_country_enc(b, tcbigcache.With(), typecache.WithEncoder(newJSONEncoder, newJSONDecoder))
 }
 
-func Benchmark_SetGet_Country_UgorjiMsgPack(b *testing.B) {
-	benchmark_country_enc(b, typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+func Benchmark_BigCache_Country_UgorjiMsgPack(b *testing.B) {
+	benchmark_country_enc(b, tcbigcache.With(), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
 }
 
-func Benchmark_SetGet_Stores_Gob(b *testing.B) {
-	benchmark_stores_enc(b)
+func Benchmark_BigCache_Stores_Gob(b *testing.B) {
+	benchmark_stores_enc(b, tcbigcache.With())
 }
 
-func Benchmark_SetGet_Stores_VmihailencoMsgPack(b *testing.B) {
-	benchmark_stores_enc(b, typecache.WithEncoder(newVmihailencoMsgPackEnc, newVmihailencoMsgPackDec))
+func Benchmark_BigCache_Stores_VmihailencoMsgPack(b *testing.B) {
+	benchmark_stores_enc(b, tcbigcache.With(), typecache.WithEncoder(newVmihailencoMsgPackEnc, newVmihailencoMsgPackDec))
 }
 
-func Benchmark_SetGet_Stores_JSON(b *testing.B) {
-	benchmark_stores_enc(b, typecache.WithEncoder(newJSONEncoder, newJSONDecoder))
+func Benchmark_BigCache_Stores_JSON(b *testing.B) {
+	benchmark_stores_enc(b, tcbigcache.With(), typecache.WithEncoder(newJSONEncoder, newJSONDecoder))
 }
 
-func Benchmark_SetGet_Stores_UgorjiMsgPack(b *testing.B) {
-	benchmark_stores_enc(b, typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+func Benchmark_BigCache_Stores_UgorjiMsgPack(b *testing.B) {
+	benchmark_stores_enc(b, tcbigcache.With(), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+}
+
+func getTempFile(t *testing.B) string {
+	f, err := ioutil.TempFile("", "tcboltdb_")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return f.Name()
+}
+
+func Benchmark_BoltDB_Country_Gob(b *testing.B) {
+	f := getTempFile(b)
+	defer os.Remove(f)
+	benchmark_country_enc(b, tcboltdb.WithFile(f, 0600))
+}
+
+func Benchmark_BoltDB_Stores_Gob(b *testing.B) {
+	f := getTempFile(b)
+	defer os.Remove(f)
+	benchmark_stores_enc(b, tcboltdb.WithFile(f, 0600))
 }
 
 func newJSONEncoder(w io.Writer) typecache.Encoder { return json.NewEncoder(w) }

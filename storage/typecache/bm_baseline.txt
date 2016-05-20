@@ -1,10 +1,12 @@
-Benchmark_SetGet_Country_Gob-4                  	   50000	     29666 ns/op	   15817 B/op	     432 allocs/op
-Benchmark_SetGet_Country_VmihailencoMsgPack-4   	   30000	     45354 ns/op	   10818 B/op	     387 allocs/op
-Benchmark_SetGet_Country_JSON-4                 	   30000	     64481 ns/op	   14454 B/op	     420 allocs/op
-Benchmark_SetGet_Country_UgorjiMsgPack-4        	  100000	     22829 ns/op	    5426 B/op	     135 allocs/op
-Benchmark_SetGet_Stores_Gob-4                   	  200000	      8124 ns/op	    1156 B/op	      37 allocs/op
-Benchmark_SetGet_Stores_VmihailencoMsgPack-4    	  100000	     14915 ns/op	    2376 B/op	     120 allocs/op
-Benchmark_SetGet_Stores_JSON-4                  	   50000	     24580 ns/op	    5920 B/op	     121 allocs/op
-Benchmark_SetGet_Stores_UgorjiMsgPack-4         	  100000	     13674 ns/op	    1465 B/op	      36 allocs/op
+Benchmark_BigCache_Country_Gob-4                  	   50000	     29422 ns/op	   15801 B/op	     430 allocs/op
+Benchmark_BigCache_Country_VmihailencoMsgPack-4   	   30000	     46552 ns/op	   10802 B/op	     385 allocs/op
+Benchmark_BigCache_Country_JSON-4                 	   20000	     70937 ns/op	   14472 B/op	     418 allocs/op
+Benchmark_BigCache_Country_UgorjiMsgPack-4        	  100000	     22659 ns/op	    5410 B/op	     133 allocs/op
+Benchmark_BigCache_Stores_Gob-4                   	  200000	      7690 ns/op	    1140 B/op	      35 allocs/op
+Benchmark_BigCache_Stores_VmihailencoMsgPack-4    	  100000	     15582 ns/op	    2360 B/op	     118 allocs/op
+Benchmark_BigCache_Stores_JSON-4                  	   50000	     24766 ns/op	    5920 B/op	     119 allocs/op
+Benchmark_BigCache_Stores_UgorjiMsgPack-4         	  100000	     13383 ns/op	    1449 B/op	      34 allocs/op
+Benchmark_BoltDB_Country_Gob-4                    	    5000	    339749 ns/op	   40056 B/op	     501 allocs/op
+Benchmark_BoltDB_Stores_Gob-4                     	   10000	    293489 ns/op	   17987 B/op	      94 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/storage/typecache	17.137s
+ok  	github.com/corestoreio/csfw/storage/typecache	21.379s

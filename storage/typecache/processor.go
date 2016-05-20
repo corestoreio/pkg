@@ -24,8 +24,9 @@ import (
 // Cacher defines a custom cache type to be used as underlying storage.
 // Must be safe for parallel usage.
 type Cacher interface {
-	Set(key string, value []byte) (err error)
-	Get(key string) (value []byte, err error)
+	Set(key, value []byte) (err error)
+	Get(key []byte) (value []byte, err error)
+	Close() error
 }
 
 // Encoder defines how to encode a type represented by variable src into
@@ -60,22 +61,18 @@ type decode struct {
 // Processor handles the encoding, decoding and caching
 type Processor struct {
 	Hasher
-	optionError error
 	// Cache exported to allow easy debugging and access to raw values.
 	Cache Cacher
 	enc   [encodeShards]encode
 	dec   [encodeShards]decode
 }
 
-// Options allows to set custom cache storage and encoder and decoder
-type Options func(*Processor)
-
-// NewProcessor creates a new type with the default cache instance of bigcache,
+// NewProcessor creates a new type with no default cache instance
 // and encoding/gob as the underlying encoder. If you use gob please make sure
 // to use gob.Register() to register your types.
-//
-// https://godoc.org/github.com/allegro/bigcache
-func NewProcessor(opts ...Options) (*Processor, error) {
+// You must set a caching service or it panics please see the sub packages
+// tcbigcache and tcbolddb.
+func NewProcessor(opts ...Option) (*Processor, error) {
 	p := &Processor{
 		Hasher: newDefaultHasher(),
 	}
@@ -86,27 +83,25 @@ func NewProcessor(opts ...Options) (*Processor, error) {
 	}
 
 	for _, opt := range opts {
-		opt(p)
+		if err := opt(p); err != nil {
+			return nil, errors.Wrap(err, "[typecache] NewProcessor applied options")
+		}
 	}
 
-	if p.Cache == nil {
-		WithBigCache()(p)
-	}
 	if p.enc[0].Encoder == nil || p.dec[0].Decoder == nil {
-		withGob()(p)
-	}
-	if p.optionError != nil {
-		return nil, errors.Wrap(p.optionError, "[typecache] NewProcessor applied options")
+		if err := withGob()(p); err != nil {
+			return nil, errors.Wrap(err, "[typecache] NewProcessor.Option.WithGob")
+		}
 	}
 	return p, nil
 }
 
-func (tr *Processor) shardID(key string) uint64 {
+func (tr *Processor) shardID(key []byte) uint64 {
 	return tr.Hasher.Sum64(key) & encodeShardMask
 }
 
 // Set sets the type src with a key
-func (tr *Processor) Set(key string, src interface{}) error {
+func (tr *Processor) Set(key []byte, src interface{}) error {
 	shardID := tr.shardID(key)
 
 	tr.enc[shardID].Lock()
@@ -124,7 +119,7 @@ func (tr *Processor) Set(key string, src interface{}) error {
 // Get looksup the key and parses the raw data into the destination pointer dst.
 // You have to check yourself if the returned error is of type NotFound or of
 // any other source. Every caching type defines its own NotFound error.
-func (tr *Processor) Get(key string, dst interface{}) error {
+func (tr *Processor) Get(key []byte, dst interface{}) error {
 	shardID := tr.shardID(key)
 	tr.dec[shardID].Lock()
 	defer tr.dec[shardID].Unlock()
@@ -138,7 +133,7 @@ func (tr *Processor) Get(key string, dst interface{}) error {
 		return errors.NewWriteFailed(err, "[typecache] Get.Buffer.Write")
 	}
 	if err := tr.dec[shardID].Decode(dst); err != nil {
-		return errors.NewFatal(err, "[typecace] Get.Decode")
+		return errors.NewFatal(err, "[typecache] Get.Decode")
 	}
 	return nil
 }

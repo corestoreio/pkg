@@ -22,20 +22,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/allegro/bigcache"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/typecache"
+	"github.com/corestoreio/csfw/storage/typecache/tcbigcache"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestNewProcessor_BigCacheError(t *testing.T) {
-	p, err := typecache.NewProcessor(typecache.WithBigCache(bigcache.Config{
-		Shards: 3,
-	}))
-	assert.Nil(t, p)
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
-}
 
 func TestNewProcessor_EncoderError(t *testing.T) {
 	p, err := typecache.NewProcessor()
@@ -48,47 +40,45 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 	}{
 		ErrChan: make(chan error),
 	}
-	err = p.Set("key1", ch)
+	err = p.Set([]byte("key1"), ch)
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 }
 
 func TestNewProcessor_DecoderError(t *testing.T) {
-	p, err := typecache.NewProcessor()
+	p, err := typecache.NewProcessor(tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	key := []byte("key1")
 	val1 := struct {
 		Val string
 	}{
 		Val: "Gopher",
 	}
-	assert.NoError(t, p.Set("key1", val1))
+	assert.NoError(t, p.Set(key, val1))
 
 	var val2 struct {
 		Val2 string
 	}
-	err = p.Get("key1", &val2)
+	err = p.Get(key, &val2)
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 }
 
 func TestNewProcessor_GetError(t *testing.T) {
-	p, err := typecache.NewProcessor()
+	p, err := typecache.NewProcessor(tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	key := []byte("key1")
 	var ch struct {
 		ErrChan string
 	}
-	err = p.Get("key1", ch)
-	nf, ok := errors.Cause(err).(*bigcache.EntryNotFoundError)
-	assert.True(t, ok)
-	assert.Exactly(t, "Entry \"key1\" not found", nf.Error())
+	err = p.Get(key, ch)
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func TestNewProcessor(t *testing.T) {
-	p, err := typecache.NewProcessor()
+	p, err := typecache.NewProcessor(tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,27 +92,27 @@ func TestNewProcessor(t *testing.T) {
 
 	// to detect race conditions run with -race
 	wg.Add(1)
-	go testCountry(t, &wg, p, "country_one")
+	go testCountry(t, &wg, p, []byte("country_one"))
 
 	wg.Add(1)
-	go testStoreSlice(t, &wg, p, "stores_one")
+	go testStoreSlice(t, &wg, p, []byte("stores_one"))
 
 	wg.Add(1)
-	go testCountry(t, &wg, p, "country_two")
+	go testCountry(t, &wg, p, []byte("country_two"))
 
 	wg.Add(1)
-	go testStoreSlice(t, &wg, p, "stores_two")
+	go testStoreSlice(t, &wg, p, []byte("stores_two"))
 
 	wg.Add(1)
-	go testStoreSlice(t, &wg, p, "stores_three")
+	go testStoreSlice(t, &wg, p, []byte("stores_three"))
 
 	wg.Add(1)
-	go testCountry(t, &wg, p, "country_three")
+	go testCountry(t, &wg, p, []byte("country_three"))
 
 	wg.Wait()
 }
 
-func testCountry(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key string) {
+func testCountry(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key []byte) {
 	defer wg.Done()
 
 	var val = getTestCountry(t)
@@ -137,7 +127,7 @@ func testCountry(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key s
 	assert.Exactly(t, val, newVal)
 }
 
-func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key string) {
+func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key []byte) {
 	defer wg.Done()
 
 	var val = getTestStores()
