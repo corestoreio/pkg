@@ -41,17 +41,30 @@ type Decoder interface {
 	Decode(dst interface{}) error
 }
 
+// 64 is quite good. there are not yet any benefits from higher values
+const encodeShards = 64 // must be power of 2
+const encodeShardMask uint64 = encodeShards - 1
+
+type encode struct {
+	Encoder
+	sync.Mutex
+	buf *bytes.Buffer
+}
+
+type decode struct {
+	Decoder
+	sync.Mutex
+	buf *bytes.Buffer
+}
+
 // Processor handles the encoding, decoding and caching
 type Processor struct {
+	Hasher
 	optionError error
 	// Cache exported to allow easy debugging and access to raw values.
-	Cache  Cacher
-	enc    Encoder
-	dec    Decoder
-	encMu  sync.Mutex
-	encBuf *bytes.Buffer
-	decMu  sync.Mutex
-	decBuf *bytes.Buffer
+	Cache Cacher
+	enc   [encodeShards]encode
+	dec   [encodeShards]decode
 }
 
 // Options allows to set custom cache storage and encoder and decoder
@@ -63,11 +76,13 @@ type Options func(*Processor)
 //
 // https://godoc.org/github.com/allegro/bigcache
 func NewProcessor(opts ...Options) (*Processor, error) {
-	encBuf := &bytes.Buffer{}
-	decBuf := &bytes.Buffer{}
 	p := &Processor{
-		encBuf: encBuf,
-		decBuf: decBuf,
+		Hasher: newDefaultHasher(),
+	}
+
+	for i := 0; i < encodeShards; i++ {
+		p.enc[i].buf = new(bytes.Buffer)
+		p.dec[i].buf = new(bytes.Buffer)
 	}
 
 	for _, opt := range opts {
@@ -77,7 +92,7 @@ func NewProcessor(opts ...Options) (*Processor, error) {
 	if p.Cache == nil {
 		WithBigCache()(p)
 	}
-	if p.enc == nil || p.dec == nil {
+	if p.enc[0].Encoder == nil || p.dec[0].Decoder == nil {
 		withGob()(p)
 	}
 	if p.optionError != nil {
@@ -86,17 +101,23 @@ func NewProcessor(opts ...Options) (*Processor, error) {
 	return p, nil
 }
 
+func (tr *Processor) shardID(key string) uint64 {
+	return tr.Hasher.Sum64(key) & encodeShardMask
+}
+
 // Set sets the type src with a key
 func (tr *Processor) Set(key string, src interface{}) error {
-	tr.encMu.Lock()
-	defer tr.encMu.Unlock()
-	if err := tr.enc.Encode(src); err != nil {
+	shardID := tr.shardID(key)
+
+	tr.enc[shardID].Lock()
+	defer tr.enc[shardID].Unlock()
+	if err := tr.enc[shardID].Encode(src); err != nil {
 		return errors.NewFatal(err, "[typecache] Set.Encode")
 	}
 
-	var buf = make([]byte, tr.encBuf.Len(), tr.encBuf.Len())
-	copy(buf, tr.encBuf.Bytes()) // copy the encoded data away because we're reusing the buffer
-	tr.encBuf.Reset()
+	var buf = make([]byte, tr.enc[shardID].buf.Len(), tr.enc[shardID].buf.Len())
+	copy(buf, tr.enc[shardID].buf.Bytes()) // copy the encoded data away because we're reusing the buffer
+	tr.enc[shardID].buf.Reset()
 	return errors.NewFatal(tr.Cache.Set(key, buf), "[typecache] Set.Cache.Set")
 }
 
@@ -104,18 +125,19 @@ func (tr *Processor) Set(key string, src interface{}) error {
 // You have to check yourself if the returned error is of type NotFound or of
 // any other source. Every caching type defines its own NotFound error.
 func (tr *Processor) Get(key string, dst interface{}) error {
-	tr.decMu.Lock()
-	defer tr.decMu.Unlock()
-	tr.decBuf.Reset()
+	shardID := tr.shardID(key)
+	tr.dec[shardID].Lock()
+	defer tr.dec[shardID].Unlock()
+	tr.dec[shardID].buf.Reset()
 
 	val, err := tr.Cache.Get(key)
 	if err != nil {
 		return errors.Wrap(err, "[typecache] Get.Cache.Get")
 	}
-	if _, err := tr.decBuf.Write(val); err != nil {
+	if _, err := tr.dec[shardID].buf.Write(val); err != nil {
 		return errors.NewWriteFailed(err, "[typecache] Get.Buffer.Write")
 	}
-	if err := tr.dec.Decode(dst); err != nil {
+	if err := tr.dec[shardID].Decode(dst); err != nil {
 		return errors.NewFatal(err, "[typecace] Get.Decode")
 	}
 	return nil

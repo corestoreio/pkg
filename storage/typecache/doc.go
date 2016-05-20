@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package typecache encodes arbitrary Go types to bytes and stores them in a cache.
+// Package typecache encodes arbitrary Go types to bytes and stores them
+// in a cache reducing GC.
 //
 // A Cache can be either in memory (default bigcache) or you can write a
 // connector to Redis or MySQL.
+//
+// Caching millions of Go types as a byte slice reduces the pressure to the GC.
 package typecache

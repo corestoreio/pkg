@@ -52,16 +52,20 @@ func WithBigCache(c ...bigcache.Config) Options {
 // withGob defines the default encoder
 func withGob() Options {
 	return func(p *Processor) {
-		p.enc = gob.NewEncoder(p.encBuf)
-		p.dec = gob.NewDecoder(p.decBuf)
+		for i := 0; i < encodeShards; i++ {
+			p.enc[i].Encoder = gob.NewEncoder(p.enc[i].buf)
+			p.dec[i].Decoder = gob.NewDecoder(p.dec[i].buf)
+		}
 	}
 }
 
 // WithEncoder sets a custom encoder and decoder like message pack or protobuf.
 func WithEncoder(enc func(io.Writer) Encoder, dec func(io.Reader) Decoder) Options {
 	return func(p *Processor) {
-		p.enc = enc(p.encBuf)
-		p.dec = dec(p.decBuf)
+		for i := 0; i < encodeShards; i++ {
+			p.enc[i].Encoder = enc(p.enc[i].buf)
+			p.dec[i].Decoder = dec(p.dec[i].buf)
+		}
 	}
 }
 

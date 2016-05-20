@@ -1,10 +1,10 @@
-Benchmark_SetGet_Country_Gob-4                  	   20000	     58827 ns/op	   15730 B/op	     427 allocs/op
-Benchmark_SetGet_Country_VmihailencoMsgPack-4   	   20000	     74510 ns/op	   10789 B/op	     383 allocs/op
-Benchmark_SetGet_Country_JSON-4                 	   10000	    152101 ns/op	   14479 B/op	     416 allocs/op
-Benchmark_SetGet_Country_UgorjiMsgPack-4        	   30000	     52957 ns/op	    5406 B/op	     131 allocs/op
-Benchmark_SetGet_Stores_Gob-4                   	  100000	     18100 ns/op	    1119 B/op	      33 allocs/op
-Benchmark_SetGet_Stores_VmihailencoMsgPack-4    	   50000	     36501 ns/op	    2349 B/op	     116 allocs/op
-Benchmark_SetGet_Stores_JSON-4                  	   30000	     56624 ns/op	    5887 B/op	     117 allocs/op
-Benchmark_SetGet_Stores_UgorjiMsgPack-4         	   50000	     31086 ns/op	    1433 B/op	      32 allocs/op
+Benchmark_SetGet_Country_Gob-4                  	   50000	     29666 ns/op	   15817 B/op	     432 allocs/op
+Benchmark_SetGet_Country_VmihailencoMsgPack-4   	   30000	     45354 ns/op	   10818 B/op	     387 allocs/op
+Benchmark_SetGet_Country_JSON-4                 	   30000	     64481 ns/op	   14454 B/op	     420 allocs/op
+Benchmark_SetGet_Country_UgorjiMsgPack-4        	  100000	     22829 ns/op	    5426 B/op	     135 allocs/op
+Benchmark_SetGet_Stores_Gob-4                   	  200000	      8124 ns/op	    1156 B/op	      37 allocs/op
+Benchmark_SetGet_Stores_VmihailencoMsgPack-4    	  100000	     14915 ns/op	    2376 B/op	     120 allocs/op
+Benchmark_SetGet_Stores_JSON-4                  	   50000	     24580 ns/op	    5920 B/op	     121 allocs/op
+Benchmark_SetGet_Stores_UgorjiMsgPack-4         	  100000	     13674 ns/op	    1465 B/op	      36 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/storage/typecache	17.737s
+ok  	github.com/corestoreio/csfw/storage/typecache	17.137s
