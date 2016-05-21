@@ -82,12 +82,25 @@ type wrapper struct {
 }
 
 func (w wrapper) Set(key []byte, value []byte) error {
-	_, err := w.Pool.Get().Do("SET", key, value)
+	conn := w.Pool.Get()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			panic(err) // todo remove panic
+		}
+	}()
+	_, err := conn.Do("SET", key, value)
 	return errors.Wrap(err, "[tcredis] wrapper.Set.Do")
 }
 
 func (w wrapper) Get(key []byte) ([]byte, error) {
-	raw, err := w.Pool.Get().Do("GET", key)
+	conn := w.Pool.Get()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			panic(err) // todo remove panic
+		}
+	}()
+
+	raw, err := conn.Do("GET", key)
 	if raw == nil && err == nil {
 		return nil, errKeyNotFound
 	}

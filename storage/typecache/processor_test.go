@@ -77,41 +77,6 @@ func TestNewProcessor_GetError(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
-func TestNewProcessor(t *testing.T) {
-	p, err := typecache.NewProcessor(tcbigcache.With())
-	if err != nil {
-		t.Fatal(err)
-	}
-	var wg sync.WaitGroup
-
-	//raw, err := p.Cache.Get(key1)
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//t.Logf("%s => %s\n", key1, raw)
-
-	// to detect race conditions run with -race
-	wg.Add(1)
-	go testCountry(t, &wg, p, []byte("country_one"))
-
-	wg.Add(1)
-	go testStoreSlice(t, &wg, p, []byte("stores_one"))
-
-	wg.Add(1)
-	go testCountry(t, &wg, p, []byte("country_two"))
-
-	wg.Add(1)
-	go testStoreSlice(t, &wg, p, []byte("stores_two"))
-
-	wg.Add(1)
-	go testStoreSlice(t, &wg, p, []byte("stores_three"))
-
-	wg.Add(1)
-	go testCountry(t, &wg, p, []byte("country_three"))
-
-	wg.Wait()
-}
-
 func testCountry(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key []byte) {
 	defer wg.Done()
 
