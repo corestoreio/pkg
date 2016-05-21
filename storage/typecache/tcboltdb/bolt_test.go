@@ -45,6 +45,11 @@ func TestWithBolt_Success(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		if err := p.Cache.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	var key = []byte(`key1`)
 	if err := p.Set(key, math.Pi); err != nil {
 		t.Fatal(err)
