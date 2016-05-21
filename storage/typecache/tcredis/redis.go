@@ -16,20 +16,44 @@ package tcredis
 
 import (
 	"github.com/corestoreio/csfw/storage/typecache"
+	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/garyburd/redigo/redis"
 )
 
-//BucketName global bucket name for all entries
-//var BucketName = []byte("typecache")
+var errKeyNotFound = errors.NewNotFoundf(`[tcredis] Key not found`)
 
-var errKeyNotFound = errors.NewNotFoundf(`[tcboltdb] Key not found`)
-
+// WithDial connects to the Redis server at the given network and
+// address using the specified options. Sets the connection as
+// cache backend to the Processor.
 func WithDial(network, address string, options ...redis.DialOption) typecache.Option {
 	return func(p *typecache.Processor) error {
+		con, err := redis.Dial(network, address, options...)
+		if err != nil {
+			return errors.NewFatal(err, "[tcredis] WithDial.redis.Dial")
+		}
+		return WithCon(con)(p)
+	}
+}
 
-		_, _ = redis.Dial(network, address, options...)
+// WithDialURL connects to a Redis server at the given URL using the Redis
+// URI scheme. URLs should follow the draft IANA specification for the
+// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
+// Sets the connection as cache backend to the Processor.
+func WithDialURL(rawurl string, options ...redis.DialOption) typecache.Option {
+	return func(p *typecache.Processor) error {
+		con, err := redis.DialURL(rawurl, options...)
+		if err != nil {
+			return errors.NewFatal(err, "[tcredis] WithDial.redis.DialURL")
+		}
+		return WithCon(con)(p)
+	}
+}
 
+// WithCon sets a connection to a Redis server as cache backend.
+func WithCon(con redis.Conn) typecache.Option {
+	return func(p *typecache.Processor) error {
+		p.Cache = wrapper{con}
 		return nil
 	}
 }
@@ -39,11 +63,18 @@ type wrapper struct {
 }
 
 func (bw wrapper) Set(key []byte, value []byte) (err error) {
-
-	return errors.Wrap(err, "[tcboltdb] boltWrapper.Set.Update")
+	_, err = bw.Do("SET", key, value)
+	return errors.Wrap(err, "[tcredis] wrapper.Set.Do")
 }
 
 func (bw wrapper) Get(key []byte) ([]byte, error) {
-
-	return nil, nil
+	raw, err := bw.Do("GET", key)
+	if raw == nil && err == nil {
+		return nil, errKeyNotFound
+	}
+	if err != nil {
+		return nil, errors.NewFatal(err, "[tcredis] wrapper.Get.Do2")
+	}
+	resp, err := conv.ToByteE(raw)
+	return resp, errors.NewFatal(err, "[tcredis] wrapper.Get.conv.ToByte")
 }
