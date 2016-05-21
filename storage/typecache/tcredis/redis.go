@@ -15,6 +15,8 @@
 package tcredis
 
 import (
+	"time"
+
 	"github.com/corestoreio/csfw/storage/typecache"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
@@ -51,24 +53,41 @@ func WithDialURL(rawurl string, options ...redis.DialOption) typecache.Option {
 }
 
 // WithCon sets a connection to a Redis server as cache backend.
+// Internally uses a pool with MaxIdle 3, IdleTimeout 240sec
 func WithCon(con redis.Conn) typecache.Option {
 	return func(p *typecache.Processor) error {
-		p.Cache = wrapper{con}
+		p.Cache = wrapper{
+			Pool: &redis.Pool{
+				MaxActive:   20,   // test that
+				Wait:        true, // test that
+				MaxIdle:     3,
+				IdleTimeout: 240 * time.Second,
+				Dial: func() (redis.Conn, error) {
+					return con, nil
+				},
+				TestOnBorrow: func(c redis.Conn, t time.Time) error {
+					_, err := c.Do("PING")
+					return errors.Wrap(err, "[tcredis] Pool.TestOnBorrow")
+				},
+			},
+		}
 		return nil
 	}
 }
 
+// todo(CS): Maybe add WithPool() to allow set a custom pool
+
 type wrapper struct {
-	redis.Conn
+	*redis.Pool
 }
 
-func (bw wrapper) Set(key []byte, value []byte) (err error) {
-	_, err = bw.Do("SET", key, value)
+func (w wrapper) Set(key []byte, value []byte) error {
+	_, err := w.Pool.Get().Do("SET", key, value)
 	return errors.Wrap(err, "[tcredis] wrapper.Set.Do")
 }
 
-func (bw wrapper) Get(key []byte) ([]byte, error) {
-	raw, err := bw.Do("GET", key)
+func (w wrapper) Get(key []byte) ([]byte, error) {
+	raw, err := w.Pool.Get().Do("GET", key)
 	if raw == nil && err == nil {
 		return nil, errKeyNotFound
 	}

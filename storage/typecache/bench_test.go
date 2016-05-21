@@ -26,6 +26,8 @@ import (
 	"github.com/corestoreio/csfw/storage/typecache"
 	"github.com/corestoreio/csfw/storage/typecache/tcbigcache"
 	"github.com/corestoreio/csfw/storage/typecache/tcboltdb"
+	"github.com/corestoreio/csfw/storage/typecache/tcredis"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/ugorji/go/codec"
 	vmihailencoMsgPack "gopkg.in/vmihailenco/msgpack.v2"
 )
@@ -35,6 +37,11 @@ func benchmark_country_enc(b *testing.B, opts ...typecache.Option) {
 	if err != nil {
 		b.Fatal(err)
 	}
+	defer func() {
+		if err := p.Cache.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}()
 	cntry := getTestCountry(b) // type already gob.Registered ...
 	const wantCountryISO = "US"
 	b.ReportAllocs()
@@ -44,11 +51,11 @@ func benchmark_country_enc(b *testing.B, opts ...typecache.Option) {
 		for pb.Next() {
 			key := strconv.AppendInt(nil, i, 10) // 1 alloc
 			if err := p.Set(key, cntry); err != nil {
-				b.Fatal(err)
+				b.Fatal(errors.PrintLoc(err))
 			}
 			var newCntry = new(Country)
 			if err := p.Get(key, newCntry); err != nil {
-				b.Fatal(err)
+				b.Fatal(errors.PrintLoc(err))
 			}
 			if newCntry.Country.IsoCode != wantCountryISO {
 				b.Fatalf("Country ISO Code must be %q, Have %q", wantCountryISO, newCntry.Country.IsoCode)
@@ -63,6 +70,11 @@ func benchmark_stores_enc(b *testing.B, opts ...typecache.Option) {
 	if err != nil {
 		b.Fatal(err)
 	}
+	defer func() {
+		if err := p.Cache.Close(); err != nil {
+			b.Fatal(err)
+		}
+	}()
 	ts := getTestStores() // type already gob.Registered ...
 	const wantStoreCode = "nz"
 	b.ReportAllocs()
@@ -136,6 +148,26 @@ func Benchmark_BoltDB_Stores_Gob(b *testing.B) {
 	f := getTempFile(b)
 	defer os.Remove(f)
 	benchmark_stores_enc(b, tcboltdb.WithFile(f, 0600))
+}
+
+func Benchmark_Redis_Country_Gob(b *testing.B) {
+	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
+	if redConURL == "" {
+		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+		`)
+	}
+	benchmark_country_enc(b, tcredis.WithDialURL(redConURL))
+}
+
+func Benchmark_Redis_Stores_Gob(b *testing.B) {
+	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
+	if redConURL == "" {
+		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+		`)
+	}
+	benchmark_stores_enc(b, tcredis.WithDialURL(redConURL))
 }
 
 func newJSONEncoder(w io.Writer) typecache.Encoder { return json.NewEncoder(w) }
