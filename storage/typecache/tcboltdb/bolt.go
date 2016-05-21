@@ -68,18 +68,18 @@ type wrapper struct {
 	*bolt.DB
 }
 
-func (bw wrapper) Set(key []byte, value []byte) (err error) {
-	err = bw.DB.Update(func(tx *bolt.Tx) error {
+func (w wrapper) Set(key []byte, value []byte) (err error) {
+	err = w.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(BucketName)
 		return errors.NewFatal(b.Put(key, value), "[tcboltdb] boltWrapper.Set.Put")
 	})
 	return errors.Wrap(err, "[tcboltdb] boltWrapper.Set.Update")
 }
 
-func (bw wrapper) Get(key []byte) ([]byte, error) {
+func (w wrapper) Get(key []byte) ([]byte, error) {
 	var found bool
 	var buf []byte
-	if err := bw.DB.View(func(tx *bolt.Tx) error {
+	if err := w.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(BucketName)
 		v := b.Get(key)
 		found = v != nil

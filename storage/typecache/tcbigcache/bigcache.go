@@ -60,8 +60,8 @@ func (w wrapper) Set(key []byte, value []byte) error {
 		"[tcbigcache] wrapper.Set.Set")
 }
 
-func (bw wrapper) Get(key []byte) ([]byte, error) {
-	v, err := bw.BigCache.Get(string(key))
+func (w wrapper) Get(key []byte) ([]byte, error) {
+	v, err := w.BigCache.Get(string(key))
 	if _, ok := err.(*bigcache.EntryNotFoundError); ok {
 		return nil, errKeyNotFound
 	}
