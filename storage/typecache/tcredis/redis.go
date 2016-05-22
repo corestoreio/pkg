@@ -15,98 +15,136 @@
 package tcredis
 
 import (
-	"time"
+	"net"
+	"net/url"
+	"regexp"
+	"strconv"
 
 	"github.com/corestoreio/csfw/storage/typecache"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/garyburd/redigo/redis"
+	"gopkg.in/redis.v3"
 )
 
-var errKeyNotFound = errors.NewNotFoundf(`[tcredis] Key not found`)
+// I'm happy to replace the redis client with another as long as the other works
+// in concurrent situations without race conditions and have the same benchmark perf.
 
-// WithDial connects to the Redis server at the given network and
-// address using the specified options. Sets the connection as
-// cache backend to the Processor.
-func WithDial(network, address string, options ...redis.DialOption) typecache.Option {
+// WithClient connects to the Redis server. Set ping to true to check if the
+// connection works correctly.
+//
+// For options see: https://godoc.org/gopkg.in/redis.v3#Options
+func WithClient(opt *redis.Options, ping ...bool) typecache.Option {
 	return func(p *typecache.Processor) error {
-		con, err := redis.Dial(network, address, options...)
-		if err != nil {
-			return errors.NewFatal(err, "[tcredis] WithDial.redis.Dial")
+		c := redis.NewClient(opt)
+		if len(ping) > 0 && ping[0] {
+			if _, err := c.Ping().Result(); err != nil {
+				return errors.NewFatal(err, "[tcredis] WithClient Ping")
+			}
 		}
-		return WithCon(con)(p)
-	}
-}
-
-// WithDialURL connects to a Redis server at the given URL using the Redis
-// URI scheme. URLs should follow the draft IANA specification for the
-// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
-// Sets the connection as cache backend to the Processor.
-func WithDialURL(rawurl string, options ...redis.DialOption) typecache.Option {
-	return func(p *typecache.Processor) error {
-		con, err := redis.DialURL(rawurl, options...)
-		if err != nil {
-			return errors.NewFatal(err, "[tcredis] WithDial.redis.DialURL")
-		}
-		return WithCon(con)(p)
-	}
-}
-
-// WithCon sets a connection to a Redis server as cache backend.
-// Internally uses a pool with MaxIdle 3, IdleTimeout 240sec
-func WithCon(con redis.Conn) typecache.Option {
-	return func(p *typecache.Processor) error {
 		p.Cache = wrapper{
-			Pool: &redis.Pool{
-				MaxActive:   20,   // test that
-				Wait:        true, // test that
-				MaxIdle:     3,
-				IdleTimeout: 240 * time.Second,
-				Dial: func() (redis.Conn, error) {
-					return con, nil
-				},
-				TestOnBorrow: func(c redis.Conn, t time.Time) error {
-					_, err := c.Do("PING")
-					return errors.Wrap(err, "[tcredis] Pool.TestOnBorrow")
-				},
-			},
+			Client: c,
 		}
 		return nil
 	}
 }
 
-// todo(CS): Maybe add WithPool() to allow set a custom pool
+var pathDBRegexp = regexp.MustCompile(`/(\d*)\z`)
+
+// WithURL connects to a Redis server at the given URL using the Redis
+// URI scheme. URLs should follow the draft IANA specification for the
+// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
+// This option function sets the connection as cache backend to the Processor.
+//
+// For redis.Options see: https://godoc.org/gopkg.in/redis.v3#Options
+// They can be nil. If not nil, the rawURL will overwrite network,
+// address, password and DB.
+//
+// For example: redis://localhost:6379/3
+func WithURL(rawurl string, opt *redis.Options, ping ...bool) typecache.Option {
+	return func(p *typecache.Processor) error {
+
+		u, err := url.Parse(rawurl)
+		if err != nil {
+			return errors.NewFatal(err, "[tcredis] WithDialURL url.Parse")
+		}
+
+		if u.Scheme != "redis" {
+			return errors.NewNotValidf("[tcredis] Invalid Redis URL scheme: %q", u.Scheme)
+		}
+
+		// As per the IANA draft spec, the host defaults to localhost and
+		// the port defaults to 6379.
+		host, port, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			// assume port is missing
+			host = u.Host
+			port = "6379"
+		}
+		if host == "" {
+			host = "localhost"
+		}
+		address := net.JoinHostPort(host, port)
+
+		var password string
+		if u.User != nil {
+			password, _ = u.User.Password()
+		}
+
+		var db int64
+		match := pathDBRegexp.FindStringSubmatch(u.Path)
+		if len(match) == 2 {
+			if len(match[1]) > 0 {
+				db, err = strconv.ParseInt(match[1], 10, 64)
+				if err != nil {
+					return errors.NewNotValidf("[tcredis] Invalid database: %q in %q", u.Path[1:], match[1])
+				}
+			}
+		} else if u.Path != "" {
+			return errors.NewNotValidf("[tcredis] Invalid database: %q", u.Path[1:])
+		}
+
+		myOpt := &redis.Options{
+			Network:  "tcp",
+			Addr:     address,
+			Password: password,
+			DB:       db,
+		}
+		if opt != nil {
+			opt.Network = myOpt.Network
+			opt.Addr = myOpt.Addr
+			opt.Password = myOpt.Password
+			opt.DB = myOpt.DB
+		} else {
+			opt = myOpt
+		}
+		return WithClient(opt, ping...)(p)
+	}
+}
 
 type wrapper struct {
-	*redis.Pool
+	*redis.Client
 }
 
 func (w wrapper) Set(key []byte, value []byte) error {
-	conn := w.Pool.Get()
-	defer func() {
-		if err := conn.Close(); err != nil {
-			panic(err) // todo remove panic
-		}
-	}()
-	_, err := conn.Do("SET", key, value)
-	return errors.Wrap(err, "[tcredis] wrapper.Set.Do")
+	cmd := redis.NewStatusCmd("SET", key, value)
+	w.Client.Process(cmd)
+	return errors.NewFatal(cmd.Err(), "[tcredis] wrapper.Set.NewStatusCmd")
 }
 
-func (w wrapper) Get(key []byte) ([]byte, error) {
-	conn := w.Pool.Get()
-	defer func() {
-		if err := conn.Close(); err != nil {
-			panic(err) // todo remove panic
-		}
-	}()
+var errKeyNotFound = errors.NewNotFoundf(`[tcredis] Key not found`)
 
-	raw, err := conn.Do("GET", key)
-	if raw == nil && err == nil {
+func (w wrapper) Get(key []byte) ([]byte, error) {
+
+	cmd := redis.NewCmd("GET", key)
+	w.Client.Process(cmd)
+
+	if cmd.Err() != nil {
+		if cmd.Err().Error() != "redis: nil" { // wow that is ugly, how to do better?
+			return nil, errors.NewFatal(cmd.Err(), "[tcredis] wrapper.Get.Cmd")
+		}
 		return nil, errKeyNotFound
 	}
-	if err != nil {
-		return nil, errors.NewFatal(err, "[tcredis] wrapper.Get.Do2")
-	}
-	resp, err := conv.ToByteE(raw)
-	return resp, errors.NewFatal(err, "[tcredis] wrapper.Get.conv.ToByte")
+
+	raw, err := conv.ToByteE(cmd.Val())
+	return raw, errors.NewFatal(err, "[tcredis] wrapper.Get.conv.ToByte")
 }

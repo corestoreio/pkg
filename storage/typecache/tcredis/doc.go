@@ -12,8 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tcredis implements a wrapper for the Redis server
-//
-// We have chosen to use Redigo as Go client for Redis based on this thread:
-// https://www.reddit.com/r/golang/comments/3dspr9/which_redis_client/
+// Package tcredis implements a wrapper for the Redis server.
 package tcredis

@@ -17,19 +17,20 @@ package typecache_test
 import (
 	"encoding/json"
 	"io"
-	"strconv"
-	"testing"
-
 	"io/ioutil"
 	"os"
+	"strconv"
+	"testing"
 
 	"github.com/corestoreio/csfw/storage/typecache"
 	"github.com/corestoreio/csfw/storage/typecache/tcbigcache"
 	"github.com/corestoreio/csfw/storage/typecache/tcboltdb"
+	"github.com/corestoreio/csfw/storage/typecache/tcredis"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/ugorji/go/codec"
-	vmihailencoMsgPack "gopkg.in/vmihailenco/msgpack.v2"
 )
+
+// removed "gopkg.in/vmihailenco/msgpack.v2" because not worth it
 
 func benchmark_country_enc(b *testing.B, opts ...typecache.Option) {
 	p, err := typecache.NewProcessor(opts...)
@@ -101,10 +102,6 @@ func Benchmark_BigCache_Country_Gob(b *testing.B) {
 	benchmark_country_enc(b, tcbigcache.With())
 }
 
-func Benchmark_BigCache_Country_VmihailencoMsgPack(b *testing.B) {
-	benchmark_country_enc(b, tcbigcache.With(), typecache.WithEncoder(newVmihailencoMsgPackEnc, newVmihailencoMsgPackDec))
-}
-
 func Benchmark_BigCache_Country_JSON(b *testing.B) {
 	benchmark_country_enc(b, tcbigcache.With(), typecache.WithEncoder(newJSONEncoder, newJSONDecoder))
 }
@@ -115,10 +112,6 @@ func Benchmark_BigCache_Country_UgorjiMsgPack(b *testing.B) {
 
 func Benchmark_BigCache_Stores_Gob(b *testing.B) {
 	benchmark_stores_enc(b, tcbigcache.With())
-}
-
-func Benchmark_BigCache_Stores_VmihailencoMsgPack(b *testing.B) {
-	benchmark_stores_enc(b, tcbigcache.With(), typecache.WithEncoder(newVmihailencoMsgPackEnc, newVmihailencoMsgPackDec))
 }
 
 func Benchmark_BigCache_Stores_JSON(b *testing.B) {
@@ -151,55 +144,48 @@ func Benchmark_BoltDB_Stores_Gob(b *testing.B) {
 	benchmark_stores_enc(b, tcboltdb.WithFile(f, 0600))
 }
 
-// skipped due to race condition
-//
-//func Benchmark_Redis_Country_Gob(b *testing.B) {
-//	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
-//	if redConURL == "" {
-//		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
-//	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
-//		`)
-//	}
-//	benchmark_country_enc(b, tcredis.WithDialURL(redConURL))
-//}
-//
-//func Benchmark_Redis_Stores_Gob(b *testing.B) {
-//	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
-//	if redConURL == "" {
-//		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
-//	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
-//		`)
-//	}
-//	benchmark_stores_enc(b, tcredis.WithDialURL(redConURL))
-//}
+func Benchmark_Redis_Country_Gob(b *testing.B) {
+	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
+	if redConURL == "" {
+		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+		`)
+	}
+	benchmark_country_enc(b, tcredis.WithURL(redConURL, nil))
+}
+
+func Benchmark_Redis_Stores_Gob(b *testing.B) {
+	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
+	if redConURL == "" {
+		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+		`)
+	}
+	benchmark_stores_enc(b, tcredis.WithURL(redConURL, nil))
+}
+
+func Benchmark_Redis_Country_UgorjiMsgPack(b *testing.B) {
+	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
+	if redConURL == "" {
+		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+		`)
+	}
+	benchmark_country_enc(b, tcredis.WithURL(redConURL, nil), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+}
+
+func Benchmark_Redis_Stores_UgorjiMsgPack(b *testing.B) {
+	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
+	if redConURL == "" {
+		b.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+		`)
+	}
+	benchmark_stores_enc(b, tcredis.WithURL(redConURL, nil), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+}
 
 func newJSONEncoder(w io.Writer) typecache.Encoder { return json.NewEncoder(w) }
 func newJSONDecoder(r io.Reader) typecache.Decoder { return json.NewDecoder(r) }
-
-type VmihailencoMsgPackEnc struct {
-	enc *vmihailencoMsgPack.Encoder
-	dec *vmihailencoMsgPack.Decoder
-}
-
-func newVmihailencoMsgPackEnc(w io.Writer) typecache.Encoder {
-	return VmihailencoMsgPackEnc{
-		enc: vmihailencoMsgPack.NewEncoder(w),
-	}
-}
-
-func (m VmihailencoMsgPackEnc) Encode(src interface{}) error {
-	return m.enc.Encode(src)
-}
-
-func (m VmihailencoMsgPackEnc) Decode(dst interface{}) error {
-	return m.dec.Decode(dst)
-}
-
-func newVmihailencoMsgPackDec(r io.Reader) typecache.Decoder {
-	return VmihailencoMsgPackEnc{
-		dec: vmihailencoMsgPack.NewDecoder(r),
-	}
-}
 
 var ugmsgPackHandle codec.MsgpackHandle
 

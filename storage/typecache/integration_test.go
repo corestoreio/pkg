@@ -25,6 +25,8 @@ import (
 	"github.com/corestoreio/csfw/storage/typecache/tcredis"
 )
 
+// run this with go test -race .
+
 func TestProcessor_Parallel_GetSet_BigCache(t *testing.T) {
 	newTestNewProcessor(t, tcbigcache.With())
 }
@@ -37,15 +39,13 @@ func TestProcessor_Parallel_GetSet_Bolt(t *testing.T) {
 
 func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
 
-	t.Skip("Skipped due to race condition")
-
 	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
 	if redConURL == "" {
 		t.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	newTestNewProcessor(t, tcredis.WithDialURL(redConURL))
+	newTestNewProcessor(t, tcredis.WithURL(redConURL, nil))
 }
 
 func newTestNewProcessor(t *testing.T, opts ...typecache.Option) {

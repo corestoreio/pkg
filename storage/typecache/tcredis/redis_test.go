@@ -22,9 +22,8 @@ import (
 	"github.com/corestoreio/csfw/storage/typecache"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/garyburd/redigo/redis"
-	"github.com/rafaeljusto/redigomock"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/redis.v3"
 )
 
 var _ typecache.Cacher = (*wrapper)(nil)
@@ -38,7 +37,7 @@ func TestWithDial_SetGet_Success_Live(t *testing.T) {
 		`)
 	}
 
-	p, err := typecache.NewProcessor(WithDialURL(redConURL))
+	p, err := typecache.NewProcessor(WithURL(redConURL, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +68,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 		`)
 	}
 
-	p, err := typecache.NewProcessor(WithDialURL(redConURL))
+	p, err := typecache.NewProcessor(WithURL(redConURL, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,79 +86,84 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 	assert.Empty(t, newVal)
 }
 
-func TestWithDial_SetGet_Success_Mock(t *testing.T) {
-	c := redigomock.NewConn()
+// refactor   and use a mock to not rely on a real redis instance
 
-	p, err := typecache.NewProcessor(WithCon(c))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := p.Cache.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	var key = []byte(util.RandAlnum(30))
-	c.Command("SET", key, []uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40}).Expect([]uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40})
-	if err := p.Set(key, math.Pi); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
-
-	var newVal float64
-	c.Command("GET", key).Expect([]uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40})
-	if err := p.Get(key, &newVal); err != nil {
-		t.Fatalf("Key %q Error: %s", key, err)
-	}
-	assert.Exactly(t, math.Pi, newVal)
-}
-
-func TestWithDial_Get_NotFound_Mock(t *testing.T) {
-
-	c := redigomock.NewConn()
-	p, err := typecache.NewProcessor(WithCon(c))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := p.Cache.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	var key = []byte(util.RandAlnum(30))
-	c.Command("GET", key).Expect(nil)
-	var newVal float64
-	err = p.Get(key, &newVal)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-	assert.Empty(t, newVal)
-}
-
-func TestWithDial_Get_Fatal_Mock(t *testing.T) {
-
-	c := redigomock.NewConn()
-	p, err := typecache.NewProcessor(WithCon(c))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := p.Cache.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	var key = []byte(util.RandAlnum(30))
-	c.Command("GET", key).ExpectError(errors.New("Some Error"))
-	var newVal float64
-	err = p.Get(key, &newVal)
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
-	assert.Empty(t, newVal)
-}
+//func TestWithDial_SetGet_Success_Mock(t *testing.T) {
+//	c := redigomock.NewConn()
+//
+//	p, err := typecache.NewProcessor(WithCon(c))
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	defer func() {
+//		if err := p.Cache.Close(); err != nil {
+//			t.Fatal(err)
+//		}
+//	}()
+//
+//	var key = []byte(util.RandAlnum(30))
+//	c.Command("SET", key, []uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40}).Expect([]uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40})
+//	if err := p.Set(key, math.Pi); err != nil {
+//		t.Fatalf("Key %q Error: %s", key, err)
+//	}
+//
+//	var newVal float64
+//	c.Command("GET", key).Expect([]uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40})
+//	if err := p.Get(key, &newVal); err != nil {
+//		t.Fatalf("Key %q Error: %s", key, err)
+//	}
+//	assert.Exactly(t, math.Pi, newVal)
+//}
+//
+//func TestWithDial_Get_NotFound_Mock(t *testing.T) {
+//
+//	c := redigomock.NewConn()
+//	p, err := typecache.NewProcessor(WithCon(c))
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	defer func() {
+//		if err := p.Cache.Close(); err != nil {
+//			t.Fatal(err)
+//		}
+//	}()
+//
+//	var key = []byte(util.RandAlnum(30))
+//	c.Command("GET", key).Expect(nil)
+//	var newVal float64
+//	err = p.Get(key, &newVal)
+//	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+//	assert.Empty(t, newVal)
+//}
+//
+//func TestWithDial_Get_Fatal_Mock(t *testing.T) {
+//
+//	c := redigomock.NewConn()
+//	p, err := typecache.NewProcessor(WithCon(c))
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	defer func() {
+//		if err := p.Cache.Close(); err != nil {
+//			t.Fatal(err)
+//		}
+//	}()
+//
+//	var key = []byte(util.RandAlnum(30))
+//	c.Command("GET", key).ExpectError(errors.New("Some Error"))
+//	var newVal float64
+//	err = p.Get(key, &newVal)
+//	assert.True(t, errors.IsFatal(err), "Error: %s", err)
+//	assert.Empty(t, newVal)
+//}
 
 func TestWithDial_ConFailure(t *testing.T) {
-	p, err := typecache.NewProcessor(WithDial("tcp", "127.0.0.1:380", redis.DialDatabase(33)))
-	assert.True(t, errors.IsFatal(err))
-	assert.Nil(t, p)
+	p, err := typecache.NewProcessor(WithClient(&redis.Options{
+		Network: "tcp",
+		Addr:    "127.0.0.1:3344", // random port
+	}, true))
+	assert.True(t, errors.IsFatal(err), "Error: %s", err)
+	assert.True(t, p == nil, "p is not nil")
 }
 
 func TestWithDialURL_ConFailure(t *testing.T) {
@@ -170,7 +174,7 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 	}{
 		{
 			"localhost",
-			errors.IsFatal, // "invalid redis URL scheme",
+			errors.IsNotValid, // "invalid redis URL scheme",
 		},
 		// The error message for invalid hosts is diffferent in different
 		// versions of Go, so just check that there is an error message.
@@ -180,21 +184,21 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 		},
 		{
 			"redis://foo:bar:baz",
-			errors.IsFatal,
+			nil,
 		},
 		{
 			"http://www.google.com",
-			errors.IsFatal, // "invalid redis URL scheme: http",
+			errors.IsNotValid, // "invalid redis URL scheme: http",
 		},
 		{
 			"redis://localhost:6379/abc123",
-			errors.IsFatal, // "invalid database: abc123",
+			errors.IsNotValid, // "invalid database: abc123",
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := typecache.NewProcessor(WithDialURL(test.rawurl, redis.DialDatabase(33)))
+		p, err := typecache.NewProcessor(WithURL(test.rawurl, &redis.Options{Network: "udp"}))
 		if test.errBhf != nil {
-			assert.True(t, errors.IsFatal(err), "Index %d Error %s", i, err)
+			assert.True(t, test.errBhf(err), "Index %d Error %s", i, err)
 			assert.Nil(t, p, "Index %d", i)
 		} else {
 			assert.NoError(t, err, "Index %d", i)
