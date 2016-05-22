@@ -19,14 +19,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/typecache"
+	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/redis.v3"
 )
 
-var _ typecache.Cacher = (*wrapper)(nil)
+var _ transcache.Cacher = (*wrapper)(nil)
 
 func TestWithDial_SetGet_Success_Live(t *testing.T) {
 
@@ -37,7 +37,7 @@ func TestWithDial_SetGet_Success_Live(t *testing.T) {
 		`)
 	}
 
-	p, err := typecache.NewProcessor(WithURL(redConURL, nil))
+	p, err := transcache.NewProcessor(WithURL(redConURL, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 		`)
 	}
 
-	p, err := typecache.NewProcessor(WithURL(redConURL, nil))
+	p, err := transcache.NewProcessor(WithURL(redConURL, nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 //func TestWithDial_SetGet_Success_Mock(t *testing.T) {
 //	c := redigomock.NewConn()
 //
-//	p, err := typecache.NewProcessor(WithCon(c))
+//	p, err := transcache.NewProcessor(WithCon(c))
 //	if err != nil {
 //		t.Fatal(err)
 //	}
@@ -118,7 +118,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 //func TestWithDial_Get_NotFound_Mock(t *testing.T) {
 //
 //	c := redigomock.NewConn()
-//	p, err := typecache.NewProcessor(WithCon(c))
+//	p, err := transcache.NewProcessor(WithCon(c))
 //	if err != nil {
 //		t.Fatal(err)
 //	}
@@ -139,7 +139,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 //func TestWithDial_Get_Fatal_Mock(t *testing.T) {
 //
 //	c := redigomock.NewConn()
-//	p, err := typecache.NewProcessor(WithCon(c))
+//	p, err := transcache.NewProcessor(WithCon(c))
 //	if err != nil {
 //		t.Fatal(err)
 //	}
@@ -158,7 +158,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 //}
 
 func TestWithDial_ConFailure(t *testing.T) {
-	p, err := typecache.NewProcessor(WithClient(&redis.Options{
+	p, err := transcache.NewProcessor(WithClient(&redis.Options{
 		Network: "tcp",
 		Addr:    "127.0.0.1:3344", // random port
 	}, true))
@@ -196,7 +196,7 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := typecache.NewProcessor(WithURL(test.rawurl, &redis.Options{Network: "udp"}))
+		p, err := transcache.NewProcessor(WithURL(test.rawurl, &redis.Options{Network: "udp"}))
 		if test.errBhf != nil {
 			assert.True(t, test.errBhf(err), "Index %d Error %s", i, err)
 			assert.Nil(t, p, "Index %d", i)

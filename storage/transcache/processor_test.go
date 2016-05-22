@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package typecache_test
+package transcache_test
 
 import (
 	"encoding/gob"
@@ -23,14 +23,14 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/storage/typecache"
-	"github.com/corestoreio/csfw/storage/typecache/tcbigcache"
+	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewProcessor_EncoderError(t *testing.T) {
-	p, err := typecache.NewProcessor()
+	p, err := transcache.NewProcessor()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 }
 
 func TestNewProcessor_DecoderError(t *testing.T) {
-	p, err := typecache.NewProcessor(tcbigcache.With())
+	p, err := transcache.NewProcessor(tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestNewProcessor_DecoderError(t *testing.T) {
 }
 
 func TestNewProcessor_GetError(t *testing.T) {
-	p, err := typecache.NewProcessor(tcbigcache.With())
+	p, err := transcache.NewProcessor(tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestNewProcessor_GetError(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
-func testCountry(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key []byte) {
+func testCountry(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
 	defer wg.Done()
 
 	var val = getTestCountry(t)
@@ -92,7 +92,7 @@ func testCountry(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key [
 	assert.Exactly(t, val, newVal)
 }
 
-func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *typecache.Processor, key []byte) {
+func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
 	defer wg.Done()
 
 	var val = getTestStores()

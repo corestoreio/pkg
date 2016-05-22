@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package typecache_test
+package transcache_test
 
 import (
 	"os"
 	"sync"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/typecache"
-	"github.com/corestoreio/csfw/storage/typecache/tcbigcache"
-	"github.com/corestoreio/csfw/storage/typecache/tcboltdb"
-	"github.com/corestoreio/csfw/storage/typecache/tcredis"
+	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
+	"github.com/corestoreio/csfw/storage/transcache/tcboltdb"
+	"github.com/corestoreio/csfw/storage/transcache/tcredis"
 )
 
 // run this with go test -race .
@@ -48,8 +48,8 @@ func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
 	newTestNewProcessor(t, tcredis.WithURL(redConURL, nil))
 }
 
-func newTestNewProcessor(t *testing.T, opts ...typecache.Option) {
-	p, err := typecache.NewProcessor(opts...)
+func newTestNewProcessor(t *testing.T, opts ...transcache.Option) {
+	p, err := transcache.NewProcessor(opts...)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,12 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package typecache encodes arbitrary Go types to bytes and stores them
-// in a cache reducing GC.
-//
-// A Cache can be either in memory or you can write a connector to Redis or
-// MySQL. Cache adapters are available in the subpackages.
-//
-// Use case:
-// Caching millions of Go types as a byte slice reduces the pressure to the GC.
-package typecache
+package transcache
+
+import (
+	"hash/fnv"
+	"testing"
+)
+
+func TestFnv64a_Sum64(t *testing.T) {
+
+	var data = []byte(`// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors`)
+	var f fnv64a
+	have := f.Sum64(data)
+
+	gof := fnv.New64a()
+	if _, err := gof.Write(data); err != nil {
+		t.Fatal(err)
+	}
+	want := gof.Sum64()
+	if have != want {
+		t.Errorf("Have %d Want %d", have, want)
+	}
+}

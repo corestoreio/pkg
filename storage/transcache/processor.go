@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package typecache
+package transcache
 
 import (
 	"bytes"
@@ -84,13 +84,13 @@ func NewProcessor(opts ...Option) (*Processor, error) {
 
 	for _, opt := range opts {
 		if err := opt(p); err != nil {
-			return nil, errors.Wrap(err, "[typecache] NewProcessor applied options")
+			return nil, errors.Wrap(err, "[transcache] NewProcessor applied options")
 		}
 	}
 
 	if p.enc[0].Encoder == nil || p.dec[0].Decoder == nil {
 		if err := withGob()(p); err != nil {
-			return nil, errors.Wrap(err, "[typecache] NewProcessor.Option.WithGob")
+			return nil, errors.Wrap(err, "[transcache] NewProcessor.Option.WithGob")
 		}
 	}
 	return p, nil
@@ -107,13 +107,13 @@ func (tr *Processor) Set(key []byte, src interface{}) error {
 	tr.enc[shardID].Lock()
 	defer tr.enc[shardID].Unlock()
 	if err := tr.enc[shardID].Encode(src); err != nil {
-		return errors.NewFatal(err, "[typecache] Set.Encode")
+		return errors.NewFatal(err, "[transcache] Set.Encode")
 	}
 
 	var buf = make([]byte, tr.enc[shardID].buf.Len(), tr.enc[shardID].buf.Len())
 	copy(buf, tr.enc[shardID].buf.Bytes()) // copy the encoded data away because we're reusing the buffer
 	tr.enc[shardID].buf.Reset()
-	return errors.NewFatal(tr.Cache.Set(key, buf), "[typecache] Set.Cache.Set")
+	return errors.NewFatal(tr.Cache.Set(key, buf), "[transcache] Set.Cache.Set")
 }
 
 // Get looksup the key and parses the raw data into the destination pointer dst.
@@ -127,13 +127,13 @@ func (tr *Processor) Get(key []byte, dst interface{}) error {
 
 	val, err := tr.Cache.Get(key)
 	if err != nil {
-		return errors.Wrap(err, "[typecache] Get.Cache.Get")
+		return errors.Wrap(err, "[transcache] Get.Cache.Get")
 	}
 	if _, err := tr.dec[shardID].buf.Write(val); err != nil {
-		return errors.NewWriteFailed(err, "[typecache] Get.Buffer.Write")
+		return errors.NewWriteFailed(err, "[transcache] Get.Buffer.Write")
 	}
 	if err := tr.dec[shardID].Decode(dst); err != nil {
-		return errors.NewFatal(err, "[typecache] Get.Decode")
+		return errors.NewFatal(err, "[transcache] Get.Decode")
 	}
 	return nil
 }

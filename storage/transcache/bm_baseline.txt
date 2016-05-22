@@ -11,4 +11,4 @@ Benchmark_Redis_Stores_Gob-4                 	   20000	     75187 ns/op	    1968
 Benchmark_Redis_Country_UgorjiMsgPack-4      	   20000	     87104 ns/op	    9151 B/op	     140 allocs/op
 Benchmark_Redis_Stores_UgorjiMsgPack-4       	   20000	     70706 ns/op	    2988 B/op	      41 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/storage/typecache	24.323s
+ok  	github.com/corestoreio/csfw/storage/transcache	24.323s

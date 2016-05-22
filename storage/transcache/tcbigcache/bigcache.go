@@ -18,19 +18,19 @@ import (
 	"time"
 
 	"github.com/allegro/bigcache"
-	"github.com/corestoreio/csfw/storage/typecache"
+	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
 var errKeyNotFound = errors.NewNotFoundf(`[tcbigcache] Key not found`)
 
-// With sets the bigcache as underlying storage engine to the typecache.
+// With sets the bigcache as underlying storage engine to the transcache.
 // This function allows to set custom configuration options to the bigcache
 // instance.
 // Default option: shards 256, LifeWindow 12 hours, Verbose false
 //
 // For more details: https://godoc.org/github.com/allegro/bigcache
-func With(c ...bigcache.Config) typecache.Option {
+func With(c ...bigcache.Config) transcache.Option {
 	def := bigcache.Config{
 		// optimize this ...
 		Shards:             256,
@@ -43,7 +43,7 @@ func With(c ...bigcache.Config) typecache.Option {
 	if len(c) == 1 {
 		def = c[0]
 	}
-	return func(p *typecache.Processor) error {
+	return func(p *transcache.Processor) error {
 		c, err := bigcache.NewBigCache(def)
 		p.Cache = wrapper{c}
 		return errors.NewFatal(err, "[tcbigcache] bigcache.NewBigCache")

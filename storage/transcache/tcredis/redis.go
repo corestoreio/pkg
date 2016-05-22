@@ -20,7 +20,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/corestoreio/csfw/storage/typecache"
+	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/redis.v3"
@@ -33,8 +33,8 @@ import (
 // connection works correctly.
 //
 // For options see: https://godoc.org/gopkg.in/redis.v3#Options
-func WithClient(opt *redis.Options, ping ...bool) typecache.Option {
-	return func(p *typecache.Processor) error {
+func WithClient(opt *redis.Options, ping ...bool) transcache.Option {
+	return func(p *transcache.Processor) error {
 		c := redis.NewClient(opt)
 		if len(ping) > 0 && ping[0] {
 			if _, err := c.Ping().Result(); err != nil {
@@ -60,8 +60,8 @@ var pathDBRegexp = regexp.MustCompile(`/(\d*)\z`)
 // address, password and DB.
 //
 // For example: redis://localhost:6379/3
-func WithURL(rawurl string, opt *redis.Options, ping ...bool) typecache.Option {
-	return func(p *typecache.Processor) error {
+func WithURL(rawurl string, opt *redis.Options, ping ...bool) transcache.Option {
+	return func(p *transcache.Processor) error {
 
 		u, err := url.Parse(rawurl)
 		if err != nil {

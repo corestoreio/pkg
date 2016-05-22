@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package typecache_test
+package transcache_test
 
 import (
 	"encoding/json"
@@ -22,18 +22,18 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/typecache"
-	"github.com/corestoreio/csfw/storage/typecache/tcbigcache"
-	"github.com/corestoreio/csfw/storage/typecache/tcboltdb"
-	"github.com/corestoreio/csfw/storage/typecache/tcredis"
+	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
+	"github.com/corestoreio/csfw/storage/transcache/tcboltdb"
+	"github.com/corestoreio/csfw/storage/transcache/tcredis"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/ugorji/go/codec"
 )
 
 // removed "gopkg.in/vmihailenco/msgpack.v2" because not worth it
 
-func benchmark_country_enc(b *testing.B, opts ...typecache.Option) {
-	p, err := typecache.NewProcessor(opts...)
+func benchmark_country_enc(b *testing.B, opts ...transcache.Option) {
+	p, err := transcache.NewProcessor(opts...)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -65,8 +65,8 @@ func benchmark_country_enc(b *testing.B, opts ...typecache.Option) {
 	})
 }
 
-func benchmark_stores_enc(b *testing.B, opts ...typecache.Option) {
-	p, err := typecache.NewProcessor(opts...)
+func benchmark_stores_enc(b *testing.B, opts ...transcache.Option) {
+	p, err := transcache.NewProcessor(opts...)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -103,11 +103,11 @@ func Benchmark_BigCache_Country_Gob(b *testing.B) {
 }
 
 func Benchmark_BigCache_Country_JSON(b *testing.B) {
-	benchmark_country_enc(b, tcbigcache.With(), typecache.WithEncoder(newJSONEncoder, newJSONDecoder))
+	benchmark_country_enc(b, tcbigcache.With(), transcache.WithEncoder(newJSONEncoder, newJSONDecoder))
 }
 
 func Benchmark_BigCache_Country_UgorjiMsgPack(b *testing.B) {
-	benchmark_country_enc(b, tcbigcache.With(), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+	benchmark_country_enc(b, tcbigcache.With(), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
 }
 
 func Benchmark_BigCache_Stores_Gob(b *testing.B) {
@@ -115,11 +115,11 @@ func Benchmark_BigCache_Stores_Gob(b *testing.B) {
 }
 
 func Benchmark_BigCache_Stores_JSON(b *testing.B) {
-	benchmark_stores_enc(b, tcbigcache.With(), typecache.WithEncoder(newJSONEncoder, newJSONDecoder))
+	benchmark_stores_enc(b, tcbigcache.With(), transcache.WithEncoder(newJSONEncoder, newJSONDecoder))
 }
 
 func Benchmark_BigCache_Stores_UgorjiMsgPack(b *testing.B) {
-	benchmark_stores_enc(b, tcbigcache.With(), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+	benchmark_stores_enc(b, tcbigcache.With(), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
 }
 
 func getTempFile(t interface {
@@ -171,7 +171,7 @@ func Benchmark_Redis_Country_UgorjiMsgPack(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	benchmark_country_enc(b, tcredis.WithURL(redConURL, nil), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+	benchmark_country_enc(b, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
 }
 
 func Benchmark_Redis_Stores_UgorjiMsgPack(b *testing.B) {
@@ -181,18 +181,18 @@ func Benchmark_Redis_Stores_UgorjiMsgPack(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	benchmark_stores_enc(b, tcredis.WithURL(redConURL, nil), typecache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
+	benchmark_stores_enc(b, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder))
 }
 
-func newJSONEncoder(w io.Writer) typecache.Encoder { return json.NewEncoder(w) }
-func newJSONDecoder(r io.Reader) typecache.Decoder { return json.NewDecoder(r) }
+func newJSONEncoder(w io.Writer) transcache.Encoder { return json.NewEncoder(w) }
+func newJSONDecoder(r io.Reader) transcache.Decoder { return json.NewDecoder(r) }
 
 var ugmsgPackHandle codec.MsgpackHandle
 
-func newUgorjiMsgPackDecoder(r io.Reader) typecache.Decoder {
+func newUgorjiMsgPackDecoder(r io.Reader) transcache.Decoder {
 	return codec.NewDecoder(r, &ugmsgPackHandle)
 }
 
-func newUgorjiMsgPackEncoder(w io.Writer) typecache.Encoder {
+func newUgorjiMsgPackEncoder(w io.Writer) transcache.Encoder {
 	return codec.NewEncoder(w, &ugmsgPackHandle)
 }

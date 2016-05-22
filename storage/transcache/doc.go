@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package tcbigcache adapter for the typecache package to use an in-memory cache.
+// Package transcache transcodes arbitrary Go types to bytes and stores them
+// in a cache reducing GC.
 //
-// For more details: https://godoc.org/github.com/allegro/bigcache
-package tcbigcache
+// A Cache can be either in memory or a persistent one. Cache adapters are
+// available in the subpackages, like bigcache, boltdb or Redis.
+//
+// Use case:
+// Caching millions of Go types as a byte slice reduces the pressure to the GC.
+package transcache

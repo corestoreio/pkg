@@ -12,25 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package typecache
-
-import (
-	"hash/fnv"
-	"testing"
-)
-
-func TestFnv64a_Sum64(t *testing.T) {
-
-	var data = []byte(`// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors`)
-	var f fnv64a
-	have := f.Sum64(data)
-
-	gof := fnv.New64a()
-	if _, err := gof.Write(data); err != nil {
-		t.Fatal(err)
-	}
-	want := gof.Sum64()
-	if have != want {
-		t.Errorf("Have %d Want %d", have, want)
-	}
-}
+// Package tcbigcache adapter for the transcache package to use an in-memory cache.
+//
+// For more details: https://godoc.org/github.com/allegro/bigcache
+package tcbigcache

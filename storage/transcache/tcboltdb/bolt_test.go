@@ -12,23 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tcbigcache
+package tcboltdb
 
 import (
+	"io/ioutil"
 	"math"
 	"testing"
 
-	"github.com/allegro/bigcache"
-	"github.com/corestoreio/csfw/storage/typecache"
+	"os"
+	"path/filepath"
+
+	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWithBigCache_Success(t *testing.T) {
-	p, err := typecache.NewProcessor(With())
+var _ transcache.Cacher = (*wrapper)(nil)
+
+func getTempFile(t *testing.T) string {
+	f, err := ioutil.TempFile("", "tcboltdb_")
 	if err != nil {
 		t.Fatal(err)
 	}
+	return f.Name()
+}
+
+func TestWithBolt_Success(t *testing.T) {
+	fn := getTempFile(t)
+	defer os.Remove(fn)
+
+	p, err := transcache.NewProcessor(WithFile(fn, 0600))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := p.Cache.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	var key = []byte(`key1`)
 	if err := p.Set(key, math.Pi); err != nil {
 		t.Fatal(err)
@@ -42,10 +63,8 @@ func TestWithBigCache_Success(t *testing.T) {
 
 }
 
-func TestWithBigCache_Error(t *testing.T) {
-	p, err := typecache.NewProcessor(With(bigcache.Config{
-		Shards: 3,
-	}))
+func TestWithBolt_Error(t *testing.T) {
+	p, err := transcache.NewProcessor(WithFile(filepath.Join("non", "existent"), 0400))
 	assert.Nil(t, p)
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 }

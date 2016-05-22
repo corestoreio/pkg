@@ -18,12 +18,12 @@ import (
 	"os"
 
 	"github.com/boltdb/bolt"
-	"github.com/corestoreio/csfw/storage/typecache"
+	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
 // BucketName global bucket name for all entries
-var BucketName = []byte("typecache")
+var BucketName = []byte("transcache")
 
 var errKeyNotFound = errors.NewNotFoundf(`[tcboltdb] Key not found`)
 
@@ -33,8 +33,8 @@ var errKeyNotFound = errors.NewNotFoundf(`[tcboltdb] Key not found`)
 // will be used.
 // Creates a new bucket from variable name BucketName if that bucket does
 // not exists.
-func WithFile(path string, mode os.FileMode, options ...*bolt.Options) typecache.Option {
-	return func(p *typecache.Processor) error {
+func WithFile(path string, mode os.FileMode, options ...*bolt.Options) transcache.Option {
+	return func(p *transcache.Processor) error {
 		var opt = bolt.DefaultOptions
 		if len(options) == 1 {
 			opt = options[0]
@@ -50,8 +50,8 @@ func WithFile(path string, mode os.FileMode, options ...*bolt.Options) typecache
 
 // WithDB uses an existing DB and creates a new bucket from variable name
 // BucketName if that bucket does not exists.
-func WithDB(db *bolt.DB) typecache.Option {
-	return func(p *typecache.Processor) error {
+func WithDB(db *bolt.DB) transcache.Option {
+	return func(p *transcache.Processor) error {
 
 		err := db.Update(func(tx *bolt.Tx) error {
 			_, err := tx.CreateBucketIfNotExists(BucketName)

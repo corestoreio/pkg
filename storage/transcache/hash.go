@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package typecache
+package transcache
 
 // Hasher is responsible for generating unsigned, 64 bit hash of provided string. Hasher should minimize collisions
 // (generating same hash for different strings) and while performance is also important fast functions are preferable (i.e.
