@@ -25,6 +25,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ CountryRetriever = (*mmdb)(nil)
+
 func TestCountry_JSON(t *testing.T) {
 	td, err := ioutil.ReadFile("testdata/response.json")
 	if err != nil {

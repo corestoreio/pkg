@@ -24,28 +24,51 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-var _ Reader = (*mmws)(nil)
+// TransCacher transcodes Go objects. It knows how to encode and cache any
+// Go object and knows how to retrieve from cache and decode into a new Go object.
+// Hint: use package storage/transcache.
+type TransCacher interface {
+	Set(key []byte, src interface{}) error
+	// Get must return an errors.NotFound if a key does not exists.
+	Get(key []byte, dst interface{}) error
+}
 
+// mmws resolves to MaxMind WebService
 type mmws struct {
 	userID     string
 	licenseKey string
 	client     *http.Client
+	TransCacher
 }
 
-func newMMWS(userID, licenseKey string, timeout time.Duration) *mmws {
-	if timeout == 0 {
-		timeout = time.Second * 20
+func newMMWS(t TransCacher, userID, licenseKey string, httpTimeout time.Duration) *mmws {
+	if httpTimeout < 1 {
+		httpTimeout = time.Second * 20
 	}
-	ws := &mmws{
-		userID:     userID,
-		licenseKey: licenseKey,
-		client:     &http.Client{Timeout: timeout},
+	return &mmws{
+		userID:      userID,
+		licenseKey:  licenseKey,
+		client:      &http.Client{Timeout: httpTimeout},
+		TransCacher: t,
 	}
-	return ws
 }
 
 func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
-	return mm.fetch("https://geoip.maxmind.com/geoip/v2.1/country/", ipAddress)
+	var c = new(Country)
+	err := mm.TransCacher.Get(ipAddress, c)
+	if err != nil && !errors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Get")
+	}
+	if err == nil {
+		return c, nil
+	}
+	c, err = mm.fetch("https://geoip.maxmind.com/geoip/v2.1/country/", ipAddress)
+	if err == nil {
+		if err2 := mm.TransCacher.Set(ipAddress, c); err2 != nil {
+			return nil, errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
+		}
+	}
+	return c, errors.Wrap(err, "[geoip] mmws.Country.fetch")
 }
 
 func (mm *mmws) Close() error {
@@ -82,7 +105,7 @@ func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
 	// handle errors that may occur
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Headers
 	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
-		var v Error
+		var v WebserviceError
 		v.err = json.NewDecoder(resp.Body).Decode(&v)
 		return nil, errors.NewNotValid(v, "[geoip] mmws.fetch URL: "+prefix)
 	}
@@ -94,13 +117,14 @@ func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
 	return response, errors.NewNotValid(err, "[geoip] json.NewDecoder.Decode")
 }
 
-type Error struct {
+// WebserviceError used in the Maxmind Webservice functional option.
+type WebserviceError struct {
 	err  error
 	Code string `json:"code,omitempty"`
 	Err  string `json:"error,omitempty"`
 }
 
-func (e Error) Error() string {
+func (e WebserviceError) Error() string {
 	if e.err != nil {
 		return e.err.Error()
 	}

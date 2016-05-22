@@ -23,14 +23,13 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/geoip"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 	maxMindDB := filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")
-	s, err := geoip.New(append(opts, geoip.WithGeoIP2Reader(maxMindDB))...)
+	s, err := geoip.New(append(opts, geoip.WithGeoIP2File(maxMindDB))...)
 	if err != nil {
 		panic(err)
 	}
@@ -58,20 +57,15 @@ func mustGetRequestFinland() *http.Request {
 
 func TestNewServiceErrorWithoutOptions(t *testing.T) {
 	s, err := geoip.New()
-	assert.Nil(t, s)
-	assert.EqualError(t, err, "Please provide a GeoIP Reader.")
-}
-
-func TestNewServiceErrorWithAlternativeHandler(t *testing.T) {
-	s, err := geoip.New(geoip.WithAlternativeHandler(scope.Absent, 314152, nil))
-	assert.Nil(t, s)
-	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+	assert.Nil(t, s.GeoIP)
 }
 
 func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
-	s, err := geoip.New(geoip.WithGeoIP2Reader("Walhalla/GeoIP2-Country-Test.mmdb"))
+	s, err := geoip.New(geoip.WithGeoIP2File("Walhalla/GeoIP2-Country-Test.mmdb"))
 	assert.Nil(t, s)
-	assert.EqualError(t, err, "File Walhalla/GeoIP2-Country-Test.mmdb not found")
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func deferClose(t *testing.T, c io.Closer) {
@@ -104,7 +98,7 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.Nil(t, ipc)
-		assert.EqualError(t, err, "Failed to read country from MMDB")
+		assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	})
 
 	countryHandler := s.WithCountryByIP()(finalHandler)
@@ -146,7 +140,7 @@ func ipErrorFinalHandler(t *testing.T) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.Nil(t, ipc)
-		assert.True(t, errors.IsFatal(err), "Error: %s", err)
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	}
 }
 

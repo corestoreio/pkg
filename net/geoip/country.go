@@ -15,7 +15,6 @@
 package geoip
 
 import (
-	"encoding/gob"
 	"net"
 	"net/http"
 
@@ -23,10 +22,6 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/oschwald/geoip2-golang"
 )
-
-func init() {
-	gob.Register(new(Country))
-}
 
 // The Country structure corresponds to the data in the GeoIP2/GeoLite2
 // Country databases.
@@ -95,10 +90,12 @@ type Country struct {
 	} `json:"maxmind,omitempty"`
 }
 
-// Reader defines the functions which are needed to return a country by an IP.
-type Reader interface {
+// CountryRetriever implements how to lookup the Country for an IP address.
+// Supports IPv4 and IPv6 addresses.
+type CountryRetriever interface {
 	Country(net.IP) (*Country, error)
-	// Close may be called on shutdown of the overall app.
+	// Close may be called on shutdown of the overall app and terminates
+	// the underlying lookup service.
 	Close() error
 }
 
@@ -106,8 +103,6 @@ type Reader interface {
 // allowed to process the request. The StringSlice contains a list of ISO country
 // names fetched from the config.ScopedGetter.
 type IsAllowedFunc func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
-
-var _ Reader = (*mmdb)(nil)
 
 // mmdb internal wrapper between geoip2 and our interface
 type mmdb struct {

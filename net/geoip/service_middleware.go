@@ -54,7 +54,7 @@ func (s *Service) WithCountryByIP() mw.Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx, _, err := s.newContextCountryByIP(r)
 			if err != nil {
-				ctx = withContextError(r.Context(), err)
+				ctx = withContextError(r.Context(), errors.Wrap(err, "[geoip] newContextCountryByIP"))
 			}
 			h.ServeHTTP(w, r.WithContext(ctx))
 		})

@@ -25,15 +25,11 @@ import (
 
 // Service represents a service manager
 type Service struct {
-	// GeoIP searches the country for an IP address
-	GeoIP Reader
+	// GeoIP searches the country for an IP address. If nil panics
+	// during execution in the middleware
+	GeoIP CountryRetriever
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
-
-	// optionError use by functional option arguments to indicate that one
-	// option has triggered an error and hence the other can options can
-	// skip their process.
-	optionError error
 
 	// scpOptionFnc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings in the
@@ -79,27 +75,12 @@ func MustNew(opts ...Option) *Service {
 func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil { // can be nil because of the backend options where we have an array instead of a slice.
-			opt(s)
+			if err := opt(s); err != nil {
+				return err
+			}
 		}
 	}
-	if s.optionError != nil {
-		return s.optionError
-	}
-
 	return nil
-}
-
-// AddError used by functional options to set an error. The error will only be
-// then set if there is not yet an error otherwise it gets discarded. You can
-// enable debug logging to find out more.
-func (s *Service) AddError(err error) {
-	if s.optionError != nil {
-		if s.defaultScopeCache.log.IsDebug() {
-			s.defaultScopeCache.log.Debug("geoip.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
-		}
-		return
-	}
-	s.optionError = err
 }
 
 // altHandlerByID searches in the hierarchical order of store -> website -> default.

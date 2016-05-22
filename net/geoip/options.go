@@ -26,8 +26,9 @@ import (
 	"github.com/corestoreio/csfw/util/log"
 )
 
-// Option can be used as an argument in NewService to configure a token service.
-type Option func(*Service)
+// Option can be used as an argument in NewService to configure it with
+// different settings.
+type Option func(*Service) error
 
 // ScopedOptionFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
@@ -43,22 +44,18 @@ type ScopedOptionFunc func(config.ScopedGetter) []Option
 //		- Check allow:
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
-		if s.optionError != nil {
-			return
-		}
-
+	return func(s *Service) error {
+		var err error
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, s.optionError = defaultScopedConfig()
-			s.optionError = errors.Wrap(s.optionError, "[geoip] Default Scope with Default Config")
-			return
+			s.defaultScopeCache, err = defaultScopedConfig()
+			return errors.Wrap(err, "[geoip] Default Scope with Default Config")
 		}
 
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		s.scopeCache[h], s.optionError = defaultScopedConfig()
-		s.optionError = errors.Wrapf(s.optionError, "[geoip] Scope %s with Default Config", h)
+		s.scopeCache[h], err = defaultScopedConfig()
+		return errors.Wrapf(err, "[geoip] Scope %s with Default Config", h)
 	}
 }
 
@@ -67,10 +64,10 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 // Only to be used with function WithIsCountryAllowedByIP()
 func WithAlternativeHandler(scp scope.Scope, id int64, altHndlr http.Handler) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.alternativeHandler = altHndlr
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -86,6 +83,7 @@ func WithAlternativeHandler(scp scope.Scope, id int64, altHndlr http.Handler) Op
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -96,15 +94,16 @@ func WithAlternativeRedirect(scp scope.Scope, id int64, urlStr string, code int)
 	return WithAlternativeHandler(scp, id, http.RedirectHandler(urlStr, code))
 }
 
-// WithCheckAllow sets your custom function which checks is the country of the IP
-// address is allowed.
+// WithCheckAllow sets your custom function which checks if the country of an IP
+// address should access to granted, or the next middleware handler in the chain
+// gets called.
 // Only to be used with function WithIsCountryAllowedByIP()
 func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.isAllowed = f
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -120,6 +119,7 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -127,10 +127,10 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 // Only to be used with function WithIsCountryAllowedByIP()
 func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...string) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedCountries = isoCountryCodes
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -146,6 +146,7 @@ func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...strin
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -153,9 +154,10 @@ func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...strin
 // subsequent scopes.
 // Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.defaultScopeCache.log = l
 		s.Log = l
+		return nil
 	}
 }
 
@@ -163,30 +165,25 @@ func WithLogger(l log.Logger) Option {
 // readers this is a mandatory argument.
 // Error behaviour: NotFound, NotValid
 func WithGeoIP2File(filename string) Option {
-	return func(s *Service) {
-		if s.optionError != nil {
-			return
-		}
-
+	return func(s *Service) error {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			s.optionError = errors.NewNotFoundf("[geoip] File %s not found", filename)
-			return
+			return errors.NewNotFoundf("[geoip] File %s not found", filename)
 		}
 
 		var err error
 		s.GeoIP, err = newMMDBByFile(filename)
-		s.optionError = errors.NewNotValid(err, "[geoip] Maxmind Open")
+		return errors.NewNotValid(err, "[geoip] Maxmind Open")
 	}
 }
 
-// WithGeoIP2WebService uses for each request
-// Uses the Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/
-func WithGeoIP2Webservice(userID, licenseKey string, timeout time.Duration) Option {
-	return func(s *Service) {
-		if s.optionError != nil {
-			return
-		}
-		s.GeoIP = newMMWS(userID, licenseKey, timeout)
+// WithGeoIP2WebService uses for each incoming a request a lookup request to
+// the Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/
+// and caches the result in Transcacher.
+// Hint: use package storage/transcache.
+func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout time.Duration) Option {
+	return func(s *Service) error {
+		s.GeoIP = newMMWS(t, userID, licenseKey, httpTimeout)
+		return nil
 	}
 }
 
@@ -205,7 +202,8 @@ func WithGeoIP2Webservice(userID, licenseKey string, timeout time.Duration) Opti
 //		mwcors.WithOptionFactory(backendcors.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.scpOptionFnc = f
+		return nil
 	}
 }
