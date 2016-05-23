@@ -22,7 +22,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/geoip"
+	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -169,6 +173,83 @@ func TestWithIsCountryAllowedByIPErrorWithContextCountryByIP(t *testing.T) {
 	countryHandler.ServeHTTP(rec, req) // managerStoreSimpleTest,  ?
 }
 
-func TestWithIsCountryAllowedByIPErrorAllowedCountries(t *testing.T) {
-	t.Skip("@todo once store package has been refactored")
+func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
+	s := mustGetTestService()
+	defer deferClose(t, s.GeoIP)
+
+	o, err := scope.SetByCode(scope.Website, "euro")
+	if err != nil {
+		t.Fatal(err)
+	}
+	storeSrv := storemock.NewEurozzyService(o)
+
+	var finalTestHandler = func(i int, wantCountryISO string, wantErrorBhf errors.BehaviourFunc, wantAltHandler bool) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			if wantAltHandler && i < 900 {
+				t.Fatalf("Expecting alternative Handler, Got %d", i) // bit hacky but ok
+			}
+
+			ipc, err := geoip.FromContextCountry(r.Context())
+			if wantErrorBhf != nil {
+				assert.Nil(t, ipc, "Index %d", i)
+				assert.True(t, wantErrorBhf(err), "Index %d Error: %s", i, err)
+				return
+			}
+			assert.NoError(t, err, "Index %d", i)
+			if assert.NotNil(t, ipc, "Index %d", i) {
+				assert.Exactly(t, wantCountryISO, ipc.Country.IsoCode, "Index %d", i)
+			}
+		})
+	}
+
+	if err := s.Options(
+		geoip.WithAlternativeHandler(scope.Store, 2, finalTestHandler(999, "FI", nil, false)),
+		geoip.WithAllowedCountryCodes(scope.Store, 2, "AT", "CH", "FI"),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		req            func() *http.Request
+		wantCountryISO string
+		wantErrorBhf   errors.BehaviourFunc
+		wantAltHandler bool
+	}{
+		// requested store not found
+		{func() *http.Request {
+			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			return req
+		},
+			"", errors.IsNotFound, false},
+
+		// IP detected as origin from Finland
+		{func() *http.Request {
+			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			req.Header.Set("X-Forwarded-For", "2a02:d200::")
+			st, err := storeSrv.Store(scope.MockID(1)) // German Store
+			if err != nil {
+				t.Fatal(errors.PrintLoc(err))
+			}
+			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+		},
+			"FI", nil, false},
+
+		// IP detected as origin from AT and alternative handler for scope Store == 2 gets called
+		{func() *http.Request {
+			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			req.RemoteAddr = "2a02:da80::"
+			st, err := storeSrv.Store(scope.MockID(2)) // Austria Store
+			if err != nil {
+				t.Fatal(errors.PrintLoc(err))
+			}
+			st.Config = cfgmock.NewService().NewScoped(1, 2)
+			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+		},
+			"AT", nil, true},
+	}
+	for i, test := range tests {
+		h := s.WithIsCountryAllowedByIP()(finalTestHandler(i, test.wantCountryISO, test.wantErrorBhf, test.wantAltHandler))
+		h.ServeHTTP(nil, test.req())
+	}
 }

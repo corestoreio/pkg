@@ -35,9 +35,9 @@ type scopedConfig struct {
 	// countries are allowed within a scope. Current implementation triggers
 	// for each HTTP request a configuration lookup which can be a bottle neck.
 	allowedCountries []string
-	// IsAllowed checks in middleware WithIsCountryAllowedByIP if the country is
+	// IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
 	// allowed to process the request.
-	isAllowed IsAllowedFunc // func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
+	IsAllowedFunc // func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
 
 	// alternativeHandler if ip/country is denied we call this handler
 	alternativeHandler http.Handler
@@ -47,7 +47,7 @@ func defaultScopedConfig() (scopedConfig, error) {
 	return scopedConfig{
 		scopeHash: scope.DefaultHash,
 		log:       log.BlackHole{}, // disabled info and debug logging
-		isAllowed: func(_ *store.Store, c *Country, allowedCountries []string, _ *http.Request) bool {
+		IsAllowedFunc: func(_ *store.Store, c *Country, allowedCountries []string, _ *http.Request) bool {
 			var ac util.StringSlice = allowedCountries
 			return ac.Contains(c.Country.IsoCode)
 		},
@@ -65,5 +65,5 @@ func (sc scopedConfig) checkAllow(reqSt *store.Store, c *Country, r *http.Reques
 	if len(sc.allowedCountries) == 0 {
 		return true
 	}
-	return sc.isAllowed(reqSt, c, sc.allowedCountries, r)
+	return sc.IsAllowedFunc(reqSt, c, sc.allowedCountries, r)
 }

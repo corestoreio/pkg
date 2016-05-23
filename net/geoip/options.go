@@ -102,7 +102,7 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.isAllowed = f
+			s.defaultScopeCache.IsAllowedFunc = f
 			return nil
 		}
 
@@ -111,10 +111,10 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 
 		// inherit default config
 		scNew := s.defaultScopeCache
-		scNew.isAllowed = f
+		scNew.IsAllowedFunc = f
 
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.isAllowed = scNew.isAllowed
+			sc.IsAllowedFunc = scNew.IsAllowedFunc
 			scNew = sc
 		}
 		scNew.scopeHash = h
@@ -192,18 +192,18 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 // configuration to the service.
 // Once this option function has been set all other option functions are not really
 // needed.
-//	cfgStruct, err := backendcors.NewConfigStructure()
+//	cfgStruct, err := backendgeoip.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := backendcors.New(cfgStruct)
+//	pb := backendgeoip.New(cfgStruct)
 //
-//	cors := mwcors.MustNewService(
-//		mwcors.WithOptionFactory(backendcors.PrepareOptions(pb)),
+//	cors := geoip.MustNewService(
+//		geoip.WithOptionFactory(backendgeoip.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) error {
-		s.scpOptionFnc = f
+		s.scopedOptionFunc = f
 		return nil
 	}
 }

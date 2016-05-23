@@ -17,6 +17,8 @@ package geoip
 import (
 	"sync"
 
+	"sync/atomic"
+
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
@@ -31,10 +33,10 @@ type Service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
-	// scpOptionFnc optional configuration closure, can be nil. It pulls
+	// scopedOptionFunc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings in the
 	// internal map. ScopedOption requires a config.ScopedGetter
-	scpOptionFnc ScopedOptionFunc
+	scopedOptionFunc ScopedOptionFunc
 
 	defaultScopeCache scopedConfig
 
@@ -83,19 +85,7 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// altHandlerByID searches in the hierarchical order of store -> website -> default.
-// the next alternative handler IF a country is not allowed as defined in function
-// type IsAllowedFunc.
-//func (s *Service) altHandlerByID(st *store.Store) http.Handler {
-//
-//	if s.storeIDs != nil && s.storeAltH != nil {
-//		return findHandlerByID(scope.Store, st.StoreID(), s.storeIDs, s.storeAltH)
-//	}
-//	if s.websiteIDs != nil && s.websiteAltH != nil {
-//		return findHandlerByID(scope.Website, st.Website.WebsiteID(), s.websiteIDs, s.websiteAltH)
-//	}
-//	return DefaultAlternativeHandler
-//}
+// configByID searches in the hierarchical order of store -> website -> default.
 
 // configByScopedGetter returns the internal configuration depending on the ScopedGetter.
 // Mainly used within the middleware. Exported here to build your own middleware.
@@ -104,61 +94,72 @@ func (s *Service) Options(opts ...Option) error {
 // one time from the backend service.
 func (s *Service) configByScopedGetter(reqSt *store.Store) (scopedConfig, error) {
 
-	sgs := reqSt.Config // 1. check store config
-	//sgw := reqSt.Website.Config //2 . check website config
+	// only run once and we maybe reset scpOptionApplied to 0 if we need
+	// to refresh: todo(cs) implement refresher
+	if s.scopedOptionFunc != nil { // skip memory hit with LoadInt
+		// todo: scpOptionApplied is a bug because Config.Scope() can be anything which
+		// is not yet loaded. so we need to check for each hash individually if the
+		// config has already been applied.
+
+		if err := s.Options(s.scopedOptionFunc(reqSt.Config)...); err != nil {
+			return scopedConfig{}, errors.Wrap(err, "[geoip] Options by scopedOptionFunc")
+		}
+
+	}
+	// 1. check store config
+	// 2. check website config
 	// 3. fall back to default
 
-	h := scope.DefaultHash
-	if sgs != nil {
-		h = scope.NewHash(sgs.Scope())
-	}
-
-	if (s.scpOptionFnc == nil || sgs == nil) && h == scope.DefaultHash && s.defaultScopeCache.isValid() {
-		return s.defaultScopeCache, nil
-	}
-
-	sc, err := s.getConfigByScopeID(false, h)
+	// lookup for store scope
+	sc, err := s.getConfigByScopeID(scope.Store, reqSt.StoreID())
 	if err == nil {
 		// cached entry found and ignore the error because we fall back to
 		// default scope at the end of this function.
 		return sc, nil
 	}
 
-	if s.scpOptionFnc != nil {
-		if err := s.Options(s.scpOptionFnc(sgs)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[geoip] Options by scpOptionFnc")
-		}
+	//if (s.scpOptionFnc == nil || reqSt.Website.Config == nil) && h == scope.DefaultHash && s.defaultScopeCache.isValid() {
+	//	return s.defaultScopeCache, nil
+	//}
+
+	// lookup for website scope
+	sc, err = s.getConfigByScopeID(scope.Website, reqSt.Website.WebsiteID())
+	if err == nil {
+		// cached entry found and ignore the error because we fall back to
+		// default scope at the end of this function.
+		return sc, nil
 	}
 
 	// after applying the new config try to fetch the new scoped token configuration
-	return s.getConfigByScopeID(true, h)
+	return s.getConfigByScopeID(scope.Default, 0)
 }
 
-func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
-	var empty scopedConfig
+func (s *Service) getConfigByScopeID(scp scope.Scope, id int64) (scopedConfig, error) {
+
+	hash := scope.NewHash(scp, id)
+
+	if hash == scope.DefaultHash {
+		var err error
+		if !s.defaultScopeCache.isValid() {
+			err = errConfigNotFound
+			if s.defaultScopeCache.log.IsDebug() {
+				s.defaultScopeCache.log.Debug("geoip.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String())
+			}
+		}
+		return s.defaultScopeCache, err
+	}
+
 	// requested scope plus ID
 	scpCfg, ok := s.getScopedConfig(hash)
 	if ok {
 		if scpCfg.isValid() {
 			return scpCfg, nil
 		}
-		return empty, errors.NewNotValidf(errScopedConfigNotValid, hash)
-	}
-
-	if fallback {
-		// fallback to default scope
-		var err error
-		if !s.defaultScopeCache.isValid() {
-			err = errConfigNotFound
-			if s.defaultScopeCache.log.IsDebug() {
-				s.defaultScopeCache.log.Debug("geoip.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String(), "fallback", fallback)
-			}
-		}
-		return s.defaultScopeCache, err
+		return scopedConfig{}, errors.NewNotValidf(errScopedConfigNotValid, hash)
 	}
 
 	// give up, nothing found
-	return empty, errConfigNotFound
+	return scopedConfig{}, errConfigNotFound
 }
 
 // getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
