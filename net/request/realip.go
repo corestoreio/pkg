@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputil
+package request
 
 import (
 	"net"
@@ -24,13 +24,15 @@ import (
 	"github.com/corestoreio/csfw/util/csnet"
 )
 
-// GetRealIP extracts the remote address from a request and takes
-// care of different headers in which an IP address can be stored.
-// Checks if the IP in one of the header fields lies in csnet.PrivateIPRanges.
-// Return value can be nil.
-func GetRealIP(r *http.Request) net.IP {
-	// Courtesy https://husobee.github.io/golang/ip-address/2015/12/17/remote-ip-go.html
-	for _, h := range [2]string{"X-Forwarded-For", "X-Real-Ip"} {
+// ForwardedIPHeaders contains a list of available headers which
+// might contain the client IP address.
+var ForwardedIPHeaders = headers{"X-Forwarded", "X-Forwarded-For", "Forwarded", "Forwarded-For", "X-Real-Ip", "Client-Ip", "X-Cluster-Client-Ip"}
+
+type headers [7]string
+
+func (hs headers) findIP(r *http.Request) net.IP {
+	for _, h := range hs {
+
 		addresses := strings.Split(r.Header.Get(h), ",")
 		// march from right to left until we get a public address
 		// that will be the address right before our proxy.
@@ -55,6 +57,42 @@ func GetRealIP(r *http.Request) net.IP {
 			}
 		}
 	}
+	return nil
+}
+
+// IPForwarded* must be set as an option to function RealIP() to specify if you
+// trust the forwarded headers.
+const (
+	IPForwardedIgnore = 1<<iota + 1
+	IPForwardedTrust
+)
+
+// RealIP extracts the remote address from a request and takes
+// care of different headers in which an IP address can be stored.
+// Checks if the IP in one of the header fields lies in csnet.PrivateIPRanges.
+// For the second argument opts please see the constants IPForwarded*.
+// Return value can be nil.
+func RealIP(r *http.Request, opts int) net.IP {
+	// Courtesy https://husobee.github.io/golang/ip-address/2015/12/17/remote-ip-go.html
+
+	// The reason for providing an int field as option instead of e.g.
+	// a boolean value is in the final API design.
+	// what reads more fluently?
+	//
+	// 		request.RealIP(r, true)
+	// or
+	//		request.RealIP(r, IPForwardedTrust)
+	//
+	// also in the later stage we can apply more options without
+	// breaking the API:
+	//
+	//		request.RealIP(r, IPForwardedTrust | DisablePrivateIPRangeCheck)
+	if (opts & IPForwardedTrust) != 0 {
+		if ip := ForwardedIPHeaders.findIP(r); ip != nil {
+			return ip
+		}
+	}
+
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		host = r.RemoteAddr

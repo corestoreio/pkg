@@ -15,12 +15,11 @@
 package httputil_test
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"net/url"
 	"testing"
-
-	"context"
 
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config/cfgmock"

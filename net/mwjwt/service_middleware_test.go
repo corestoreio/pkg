@@ -298,7 +298,7 @@ func finalInitStoreHandler(t *testing.T, idx int, wantStoreCode string) http.Han
 func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 
 	var newReq = func(i int, token []byte) *http.Request {
-		req, err := http.NewRequest(httputil.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
+		req, err := http.NewRequest("GET", fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
 		if err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}

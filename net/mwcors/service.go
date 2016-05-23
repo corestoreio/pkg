@@ -32,6 +32,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
+const methodOptions = "OPTIONS"
+
 // Service describes the CrossOriginResourceSharing which is used to create a
 // Container Filter that implements CORS. Cross-origin resource sharing (CORS)
 // is a mechanism that allows JavaScript on a web page to make XMLHttpRequests
@@ -141,7 +143,7 @@ func (s *Service) WithCORS() mw.Middleware {
 				s.defaultScopeCache.log.Info("Service.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
 			}
 
-			if r.Method == httputil.MethodOptions {
+			if r.Method == methodOptions {
 				if s.defaultScopeCache.log.IsDebug() {
 					s.defaultScopeCache.log.Debug("Service.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
 				}

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputil_test
+package request_test
 
 import (
 	"net"
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/net/request"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,53 +27,55 @@ func TestGetRealIP(t *testing.T) {
 
 	tests := []struct {
 		r      *http.Request
+		opt    int
 		wantIP net.IP
 	}{
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.Header.Set("X-Real-IP", "123.123.123.123")
 			return r
-		}(), net.ParseIP("123.123.123.123")},
+		}(), request.IPForwardedTrust, net.ParseIP("123.123.123.123")},
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
-			r.Header.Set("X-Forwarded-For", "200.100.50.3")
+			r.Header.Set("Forwarded-For", "200.100.50.3")
 			return r
-		}(), net.ParseIP("200.100.50.3")},
+		}(), request.IPForwardedTrust, net.ParseIP("200.100.50.3")},
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
-			r.Header.Set("X-Forwarded-For", "2002:0db8:85a3:0000:0000:8a2e:0370:7335")
+			r.Header.Set("X-Forwarded", "2002:0db8:85a3:0000:0000:8a2e:0370:7335")
 			return r
-		}(), net.ParseIP("2002:0db8:85a3:0000:0000:8a2e:0370:7335")},
+		}(), request.IPForwardedTrust, net.ParseIP("2002:0db8:85a3:0000:0000:8a2e:0370:7335")},
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.Header.Set("X-Forwarded-For", "200.100.54.4, 192.168.0.100:8080")
 			return r
-		}(), net.ParseIP("200.100.54.4")},
+		}(), request.IPForwardedTrust, net.ParseIP("200.100.54.4")},
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
-			r.Header.Set("X-Forwarded-For", "127.0.0.1:8080")
+			r.Header.Set("X-Cluster-Client-Ip", "127.0.0.1:8080")
 			r.RemoteAddr = "200.100.54.6:8181"
 			return r
-		}(), net.ParseIP("200.100.54.6")},
+		}(), request.IPForwardedTrust, net.ParseIP("200.100.54.6")},
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.RemoteAddr = "100.200.50.3"
 			return r
-		}(), net.ParseIP("100.200.50.3")},
+		}(), request.IPForwardedTrust, net.ParseIP("100.200.50.3")},
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
+			r.Header.Set("X-Forwarded-For", "127.0.0.1:8080")
 			r.RemoteAddr = "2002:0db8:85a3:0000:0000:8a2e:0370:7334"
 			return r
-		}(), net.ParseIP("2002:0db8:85a3:0000:0000:8a2e:0370:7334")},
+		}(), request.IPForwardedIgnore, net.ParseIP("2002:0db8:85a3:0000:0000:8a2e:0370:7334")},
 		{func() *http.Request {
 			r, _ := http.NewRequest("GET", "http://gopher.go", nil)
 			r.RemoteAddr = "100.200.a.3"
 			return r
-		}(), nil},
+		}(), request.IPForwardedIgnore, nil},
 	}
 
 	for i, test := range tests {
-		haveIP := httputil.GetRealIP(test.r)
+		haveIP := request.RealIP(test.r, test.opt)
 		assert.Exactly(t, test.wantIP, haveIP, "Index: %d Want %s Have %s", i, test.wantIP, haveIP)
 	}
 }

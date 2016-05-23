@@ -89,7 +89,7 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
-	if r.Method != httputil.MethodOptions {
+	if r.Method != methodOptions {
 		if sc.log.IsDebug() {
 			sc.log.Debug("mwcors.Cors.handlePreflight.aborted", "method", r.Method)
 		}
@@ -155,7 +155,7 @@ func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
-	if r.Method == httputil.MethodOptions {
+	if r.Method == methodOptions {
 		if sc.log.IsDebug() {
 			sc.log.Debug("mwcors.Cors.handleActualRequest.aborted.options", "method", r.Method)
 		}
@@ -229,7 +229,7 @@ func (sc scopedConfig) isMethodAllowed(method string) bool {
 		return false
 	}
 	method = strings.ToUpper(method)
-	if method == httputil.MethodOptions {
+	if method == methodOptions {
 		// Always allow preflight requests
 		return true
 	}

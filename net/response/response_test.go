@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputil_test
+package response_test
 
 import (
 	"math"
@@ -22,6 +22,7 @@ import (
 	"text/template"
 
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/net/response"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func (errorWriter) Write(p []byte) (n int, err error) {
 func TestPrintRender(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 	tpl, err := template.New("foo").Parse(`{{define "T"}}Hello, {{.}}!{{end}}`)
 	assert.NoError(t, err)
 	p.Renderer = tpl
@@ -52,11 +53,11 @@ func TestPrintRender(t *testing.T) {
 
 func TestPrintRenderErrors(t *testing.T) {
 
-	err := httputil.NewPrinter(nil, nil).Render(0, "", nil)
+	err := response.NewPrinter(nil, nil).Render(0, "", nil)
 	assert.True(t, errors.IsEmpty(err), "Error: %s", err)
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 	tpl, err := template.New("foo").Parse(`{{define "T"}}Hello, {{.}}!{{end}}`)
 	assert.NoError(t, err)
 	p.Renderer = tpl
@@ -70,7 +71,7 @@ func TestPrintRenderErrors(t *testing.T) {
 func TestPrintHTML(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.HTML(3141, "Hello %s. Wanna have some %.5f?", "Gophers", math.Pi))
 	assert.Exactly(t, `Hello Gophers. Wanna have some 3.14159?`, w.Body.String())
@@ -82,7 +83,7 @@ func TestPrintHTMLError(t *testing.T) {
 
 	w := new(errorWriter)
 	w.ResponseRecorder = httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	err := p.HTML(31415, "Hello %s", "Gophers")
 	assert.True(t, errors.IsWriteFailed(err), "Error: %s", err)
@@ -94,7 +95,7 @@ func TestPrintHTMLError(t *testing.T) {
 func TestPrintString(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.String(3141, "Hello %s. Wanna have some %.5f?", "Gophers", math.Pi))
 	assert.Exactly(t, `Hello Gophers. Wanna have some 3.14159?`, w.Body.String())
@@ -105,7 +106,7 @@ func TestPrintString(t *testing.T) {
 func TestPrintWriteString(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.WriteString(3141, "Hello %s. Wanna have some %.5f?"))
 	assert.Exactly(t, `Hello %s. Wanna have some %.5f?`, w.Body.String())
@@ -117,7 +118,7 @@ func TestPrintStringError(t *testing.T) {
 
 	w := new(errorWriter)
 	w.ResponseRecorder = httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	err := p.String(31415, "Hello %s", "Gophers")
 	assert.True(t, errors.IsWriteFailed(err), "Error: %s", err)
@@ -140,7 +141,7 @@ var encodeData = []EncData{
 func TestPrintJSON(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.JSON(3141, encodeData))
 	assert.Exactly(t, "[{\"Title\":\"Camera\",\"SKU\":\"323423423\",\"Price\":45.12},{\"Title\":\"LCD TV\",\"SKU\":\"8785344\",\"Price\":145.99}]\n", w.Body.String())
@@ -151,7 +152,7 @@ func TestPrintJSON(t *testing.T) {
 func TestPrintJSONError(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	err := p.JSON(3141, nonMarshallableChannel)
 	assert.True(t, errors.IsFatal(err), "Errors: %s", err)
@@ -163,7 +164,7 @@ func TestPrintJSONError(t *testing.T) {
 func TestPrintJSONIndent(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.JSONIndent(3141, encodeData, "  ", "\t"))
 	assert.Exactly(t, "[\n  \t{\n  \t\t\"Title\": \"Camera\",\n  \t\t\"SKU\": \"323423423\",\n  \t\t\"Price\": 45.12\n  \t},\n  \t{\n  \t\t\"Title\": \"LCD TV\",\n  \t\t\"SKU\": \"8785344\",\n  \t\t\"Price\": 145.99\n  \t}\n  ]", w.Body.String())
@@ -174,7 +175,7 @@ func TestPrintJSONIndent(t *testing.T) {
 func TestPrintJSONIndentError(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.EqualError(t, p.JSONIndent(3141, nonMarshallableChannel, "  ", "\t"), "json: unsupported type: chan bool")
 	assert.Exactly(t, "", w.Body.String())
@@ -185,7 +186,7 @@ func TestPrintJSONIndentError(t *testing.T) {
 func TestPrintJSONP(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.JSONP(3141, "awesomeReact", encodeData))
 	assert.Exactly(t, "awesomeReact([{\"Title\":\"Camera\",\"SKU\":\"323423423\",\"Price\":45.12},{\"Title\":\"LCD TV\",\"SKU\":\"8785344\",\"Price\":145.99}]\n);", w.Body.String())
@@ -196,7 +197,7 @@ func TestPrintJSONP(t *testing.T) {
 func TestPrintJSONPError(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	err := p.JSONP(3141, "awesomeReact", nonMarshallableChannel)
 	assert.True(t, errors.IsFatal(err), "Error: %s", errors.PrintLoc(err))
@@ -208,7 +209,7 @@ func TestPrintJSONPError(t *testing.T) {
 func TestPrintXML(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.XML(3141, encodeData))
 	assert.Exactly(t, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<EncData><Title>Camera</Title><SKU>323423423</SKU><Price>45.12</Price></EncData><EncData><Title>LCD TV</Title><SKU>8785344</SKU><Price>145.99</Price></EncData>", w.Body.String())
@@ -219,7 +220,7 @@ func TestPrintXML(t *testing.T) {
 func TestPrintXMLError(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	err := p.XML(3141, nonMarshallableChannel)
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
@@ -231,7 +232,7 @@ func TestPrintXMLError(t *testing.T) {
 func TestPrintXMLIndent(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	assert.NoError(t, p.XMLIndent(3141, encodeData, "\n", "\t"))
 	assert.Exactly(t, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<EncData>\n\n\t<Title>Camera</Title>\n\n\t<SKU>323423423</SKU>\n\n\t<Price>45.12</Price>\n\n</EncData>\n\n<EncData>\n\n\t<Title>LCD TV</Title>\n\n\t<SKU>8785344</SKU>\n\n\t<Price>145.99</Price>\n\n</EncData>", w.Body.String())
@@ -242,7 +243,7 @@ func TestPrintXMLIndent(t *testing.T) {
 func TestPrintXMLIndentError(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 
 	err := p.XMLIndent(3141, nonMarshallableChannel, " ", "  ")
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
@@ -254,7 +255,7 @@ func TestPrintXMLIndentError(t *testing.T) {
 func TestPrintNoContent(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	p := httputil.NewPrinter(w, nil)
+	p := response.NewPrinter(w, nil)
 	assert.NoError(t, p.NoContent(501))
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 501, w.Code)
@@ -265,7 +266,7 @@ func TestPrintRedirect(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
 	assert.NoError(t, err)
-	p := httputil.NewPrinter(w, r)
+	p := response.NewPrinter(w, r)
 	err = p.Redirect(501, "")
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 
@@ -308,7 +309,7 @@ func TestPrintFileNoAttachment(t *testing.T) {
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
 	assert.NoError(t, err)
 
-	p := httputil.NewPrinter(w, r)
+	p := response.NewPrinter(w, r)
 
 	p.FileSystem = testMemFs
 
@@ -324,7 +325,7 @@ func TestPrintFileWithAttachment(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
 	assert.NoError(t, err)
-	p := httputil.NewPrinter(w, r)
+	p := response.NewPrinter(w, r)
 
 	p.FileSystem = testMemFs
 
@@ -341,7 +342,7 @@ func TestPrintFileWithAttachmentError(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
 	assert.NoError(t, err)
-	p := httputil.NewPrinter(w, r)
+	p := response.NewPrinter(w, r)
 
 	err = p.File("gopher.svg", "gopher-logo.svg", true)
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
@@ -372,7 +373,7 @@ func TestPrintFileDirectoryIndex(t *testing.T) {
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
 	assert.NoError(t, err)
-	p := httputil.NewPrinter(w, r)
+	p := response.NewPrinter(w, r)
 	p.FileSystem = testMemFs
 
 	assert.NoError(t, p.File("/test", "", false))

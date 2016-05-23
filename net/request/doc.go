@@ -12,24 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputil
-
-// todo(CS) http://racksburg.com/choosing-an-http-status-code/
-
-// APIRoute defines the current API version
-const APIRoute apiVersion = "/V1/"
-
-type apiVersion string
-
-// Versionize prepends the API version as defined in constant APIRoute to a route.
-func (a apiVersion) Versionize(r string) string {
-	if len(r) > 0 && r[:1] == "/" {
-		r = r[1:]
-	}
-	return string(a) + r
-}
-
-// String returns the current version and not the full route
-func (a apiVersion) String() string {
-	return string(a)
-}
+// Package request provides functions for http request handling.
+//
+// TODO(cs) => github.com/streadway/handy
+package request

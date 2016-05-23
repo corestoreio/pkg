@@ -101,7 +101,7 @@ func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
 	}))
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
+	req, err := http.NewRequest("GET", "https://corestore.io/store/list", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

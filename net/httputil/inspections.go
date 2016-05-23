@@ -26,6 +26,8 @@ import (
 	"github.com/corestoreio/csfw/util/log"
 )
 
+// todo: refactor
+
 // CheckSecureRequest checks if a request is secure using the SSL offloader header
 type CheckSecureRequest struct {
 	// WebSecureOffloaderHeader => Offloader header.
