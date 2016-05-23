@@ -27,7 +27,7 @@ import (
 )
 
 // Option defines a function argument for the Cors type to apply options.
-type Option func(*Service)
+type Option func(*Service) error
 
 // ScopedOptionFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
@@ -42,22 +42,17 @@ type ScopedOptionFunc func(config.ScopedGetter) []Option
 //		- Allowed Headers: Origin, Accept, Content-Type
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
-		if s.optionError != nil {
-			return
-		}
-
+	return func(s *Service) (err error) {
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, s.optionError = defaultScopedConfig()
-			s.optionError = errors.Wrap(s.optionError, "[mwcors] Default Scope with Default Config")
-			return
+			s.defaultScopeCache, err = defaultScopedConfig()
+			return errors.Wrap(err, "[mwcors] Default Scope with Default Config")
 		}
 
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		s.scopeCache[h], s.optionError = defaultScopedConfig()
-		s.optionError = errors.Wrapf(s.optionError, "[mwcors] Scope %s with Default Config", h)
+		s.scopeCache[h], err = defaultScopedConfig()
+		return errors.Wrapf(err, "[mwcors] Scope %s with Default Config", h)
 	}
 }
 
@@ -66,10 +61,10 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 func WithExposedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 	h := scope.NewHash(scp, id)
 	exposedHeaders := convert(headers, http.CanonicalHeaderKey)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.exposedHeaders = exposedHeaders
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -85,6 +80,7 @@ func WithExposedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -127,12 +123,12 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 
 	// Note: for origins and methods matching, the spec requires a case-sensitive matching.
 	// As it may error prone, we chose to ignore the spec here.
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedOriginsAll = allowedOriginsAll
 			s.defaultScopeCache.allowedOrigins = allowedOrigins
 			s.defaultScopeCache.allowedWOrigins = allowedWOrigins
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -152,6 +148,7 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -161,10 +158,10 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 // set, the content of AllowedOrigins is ignored.
 func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowOriginFunc = f
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -180,6 +177,7 @@ func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) 
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -188,14 +186,14 @@ func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) 
 func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 	h := scope.NewHash(scp, id)
 	am := convert(methods, strings.ToUpper)
-	return func(s *Service) {
+	return func(s *Service) error {
 		// Allowed Methods
 		// Note: for origins and methods matching, the spec requires a case-sensitive matching.
 		// As it may error prone, we chose to ignore the spec here.
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedMethods = am
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -211,6 +209,7 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -235,11 +234,11 @@ func convertAllowedHeaders(headers ...string) (allowedHeadersAll bool, allowedHe
 func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 	h := scope.NewHash(scp, id)
 	allowedHeadersAll, allowedHeaders := convertAllowedHeaders(headers...)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedHeadersAll = allowedHeadersAll
 			s.defaultScopeCache.allowedHeaders = allowedHeaders
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -257,6 +256,7 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -265,10 +265,10 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 // cookies, HTTP authentication or client side SSL certificates.
 func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowCredentials = ok
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -284,6 +284,7 @@ func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -291,21 +292,21 @@ func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 // can be cached
 func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
-		if s.optionError != nil || seconds == 0 {
-			return
+	return func(s *Service) error {
+		if seconds < 1 {
+			return nil
 		}
+
 		var age string
 		if sec := seconds.Seconds(); sec > 0 {
 			age = fmt.Sprintf("%.0f", sec)
 		} else {
-			s.optionError = errors.NewNotValidf(errInvalidDurations, sec)
-			return
+			return errors.NewNotValidf(errInvalidDurations, sec)
 		}
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.maxAge = age
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -321,6 +322,7 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -329,10 +331,10 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 // process the OPTIONS method. Turn this on if your application handles OPTIONS.
 func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.optionsPassthrough = ok
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -348,6 +350,7 @@ func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -355,8 +358,9 @@ func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 // subsequent scopes.
 // Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.defaultScopeCache.log = l
+		return nil
 	}
 }
 
@@ -375,7 +379,8 @@ func WithLogger(l log.Logger) Option {
 //		mwcors.WithOptionFactory(backendcors.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.scpOptionFnc = f
+		return nil
 	}
 }

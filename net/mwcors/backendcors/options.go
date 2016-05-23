@@ -46,8 +46,8 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// EXPOSED HEADERS
 		eh, err := be.NetCorsExposedHeaders.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsExposedHeaders.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsExposedHeaders.Get")
 			}
 			return opts[:]
 		}
@@ -57,8 +57,8 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOWED ORIGINS
 		ao, err := be.NetCorsAllowedOrigins.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsAllowedOrigins.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsAllowedOrigins.Get")
 			}
 			return opts[:]
 		}
@@ -68,16 +68,16 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOW ORIGIN REGEX
 		aor, err := be.NetCorsAllowOriginRegex.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsAllowedOriginRegex.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsAllowedOriginRegex.Get")
 			}
 			return opts[:]
 		}
 		if len(aor) > 1 {
 			r, err := regexp.Compile(aor)
 			if err != nil {
-				opts[i] = func(s *mwcors.Service) {
-					s.AddError(errors.NewFatal(err, "[backendcors] NetCorsAllowedOriginRegex.regexp.Compile"))
+				opts[i] = func(s *mwcors.Service) error {
+					return errors.NewFatal(err, "[backendcors] NetCorsAllowedOriginRegex.regexp.Compile")
 				}
 				return opts[:]
 			}
@@ -90,8 +90,8 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOWED METHODS
 		am, err := be.NetCorsAllowedMethods.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsAllowedMethods.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsAllowedMethods.Get")
 			}
 			return opts[:]
 		}
@@ -101,8 +101,8 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOWED HEADERS
 		ah, err := be.NetCorsAllowedHeaders.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsAllowedHeaders.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsAllowedHeaders.Get")
 			}
 			return opts[:]
 		}
@@ -112,8 +112,8 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOW CREDENTIALS
 		ac, err := be.NetCorsAllowCredentials.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsAllowCredentials.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsAllowCredentials.Get")
 			}
 			return opts[:]
 		}
@@ -123,8 +123,8 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// OPTIONS PASSTHROUGH
 		op, err := be.NetCorsOptionsPassthrough.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsOptionsPassthrough.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsOptionsPassthrough.Get")
 			}
 			return opts[:]
 		}
@@ -134,8 +134,8 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// MAX AGE
 		ma, err := be.NetCorsMaxAge.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) {
-				s.AddError(errors.Wrap(err, "[backendcors] NetCorsMaxAge.Get"))
+			opts[i] = func(s *mwcors.Service) error {
+				return errors.Wrap(err, "[backendcors] NetCorsMaxAge.Get")
 			}
 			return opts[:]
 		}
