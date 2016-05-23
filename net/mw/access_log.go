@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/net/request"
 	"github.com/zenazn/goji/web/mutil"
 )
 
@@ -66,7 +66,7 @@ func WithAccessLog(opts ...Option) Middleware {
 					"status_code", lw.Status(),
 					"duration", reqDur.Seconds(),
 					"size", lw.BytesWritten(),
-					"remote_addr", httputil.GetRealIP(r).String(),
+					"remote_addr", request.RealIP(r, request.IPForwardedTrust).String(),
 					"user_agent", r.Header.Get("User-Agent"),
 					"referer", r.Header.Get("Referer"),
 				)

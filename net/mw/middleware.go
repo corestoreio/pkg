@@ -15,12 +15,9 @@
 package mw
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"context"
-
-	"github.com/corestoreio/csfw/net/httputil"
 )
 
 // Middleware is a wrapper for the interface http.Handler to create
@@ -107,7 +104,7 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 			}
 			switch mo {
 			case "": // do nothing
-			case httputil.MethodHead, httputil.MethodGet, httputil.MethodPost, httputil.MethodPut, httputil.MethodPatch, httputil.MethodDelete, httputil.MethodTrace, httputil.MethodOptions:
+			case "HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "TRACE", "OPTIONS":
 				r.Method = mo
 			default:
 				// not sure if an error is here really needed ...

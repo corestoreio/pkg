@@ -21,9 +21,10 @@ import (
 	"testing"
 	"time"
 
+	"net/url"
+
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/stretchr/testify/assert"
-	"net/url"
 )
 
 type key uint

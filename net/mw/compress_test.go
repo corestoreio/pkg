@@ -25,6 +25,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/csfw/net/response"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 	"github.com/stretchr/testify/assert"
@@ -129,7 +130,7 @@ func TestWithCompressorGZIPConcrete(t *testing.T) {
 func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(io.Reader) string) {
 
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
+		if err := response.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			t.Fatal(err)
 		}
 	}, mw.WithCompressor())
@@ -155,7 +156,7 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 func BenchmarkWithCompressorGZIP_1024B(b *testing.B) {
 
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
+		if err := response.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			b.Fatal(err)
 		}
 	}, mw.WithCompressor())
