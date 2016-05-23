@@ -28,7 +28,7 @@ import (
 )
 
 // Option can be used as an argument in NewService to configure a token service.
-type Option func(*Service)
+type Option func(*Service) error
 
 // ScopedOptionFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
@@ -149,37 +149,34 @@ func defaultScopedConfig() (scopedConfig, error) {
 //		- JTI disabled
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
-		if s.optionError != nil {
-			return
-		}
-
+	return func(s *Service) (err error) {
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, s.optionError = defaultScopedConfig()
-			s.optionError = errors.Wrap(s.optionError, "[mwjwt] Default Scope with Default Config")
-			return
+			s.defaultScopeCache, err = defaultScopedConfig()
+			return errors.Wrap(err, "[mwjwt] Default Scope with Default Config")
 		}
 
 		s.mu.Lock()
-		s.scopeCache[h], s.optionError = defaultScopedConfig()
-		s.optionError = errors.Wrapf(s.optionError, "[mwjwt] Scope %s with Default Config", h)
-		s.mu.Unlock()
+		defer s.mu.Unlock()
+		s.scopeCache[h], err = defaultScopedConfig()
+		return errors.Wrapf(err, "[mwjwt] Scope %s with Default Config", h)
 	}
 }
 
 // WithBlacklist sets a new global black list service.
 // Convenience helper function.
 func WithBlacklist(bl Blacklister) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.Blacklist = bl
+		return nil
 	}
 }
 
 // WithLogger sets a new global logger.
 // Convenience helper function.
 func WithLogger(l log.Logger) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.Log = l
+		return nil
 	}
 }
 
@@ -187,8 +184,9 @@ func WithLogger(l log.Logger) Option {
 // to allow a store change if requested via token.
 // Convenience helper function.
 func WithStoreService(sr store.Requester) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.StoreService = sr
+		return nil
 	}
 }
 
@@ -207,8 +205,9 @@ func WithStoreService(sr store.Requester) Option {
 //		mwjwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.scpOptionFnc = f
+		return nil
 	}
 }
 
@@ -218,11 +217,11 @@ func WithOptionFactory(f ScopedOptionFunc) Option {
 // or a fast struct based claim. Same goes with the header.
 func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.templateTokenFunc = f
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -238,6 +237,7 @@ func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -245,12 +245,12 @@ func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 // signing method for a specific scope. Used incorrectly token decryption can fail.
 func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.SigningMethod = sm
 			s.defaultScopeCache.Verifier = csjwt.NewVerification(sm)
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -270,6 +270,7 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -278,11 +279,11 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 // handler
 func WithErrorHandler(scp scope.Scope, id int64, handler http.Handler) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.ErrorHandler = handler
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -298,17 +299,18 @@ func WithErrorHandler(scp scope.Scope, id int64, handler http.Handler) Option {
 		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
 // WithExpiration sets expiration duration depending on the scope
 func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.Expire = d
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -324,6 +326,7 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -331,11 +334,11 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 // Must be a positive value.
 func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.Skew = d
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -351,17 +354,18 @@ func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
 		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
 // WithTokenID enables JTI (JSON Web Token ID) for a specific scope
 func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.EnableJTI = enable
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -377,6 +381,7 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -386,20 +391,16 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 	h := scope.NewHash(scp, id)
 	if key.Error != nil {
-		return func(s *Service) {
-			s.optionError = errors.Wrap(key.Error, "[mwjwt] Key Error")
+		return func(s *Service) error {
+			return errors.Wrap(key.Error, "[mwjwt] Key Error")
 		}
 	}
 	if key.IsEmpty() {
-		return func(s *Service) {
-			s.optionError = errors.NewEmptyf(errKeyEmpty)
+		return func(s *Service) error {
+			return errors.NewEmptyf(errKeyEmpty)
 		}
 	}
-	return func(s *Service) {
-		if s.optionError != nil {
-			return
-		}
-
+	return func(s *Service) (err error) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -413,16 +414,14 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		case csjwt.ES:
 			scNew.SigningMethod = csjwt.NewSigningMethodES256()
 		case csjwt.HS:
-			scNew.SigningMethod, s.optionError = csjwt.NewHMACFast256(key)
-			if s.optionError != nil {
-				s.optionError = errors.Wrap(s.optionError, "[mwjwt] HMAC Fast 256 error")
-				return
+			scNew.SigningMethod, err = csjwt.NewHMACFast256(key)
+			if err != nil {
+				return errors.Wrap(err, "[mwjwt] HMAC Fast 256 error")
 			}
 		case csjwt.RS:
 			scNew.SigningMethod = csjwt.NewSigningMethodRS256()
 		default:
-			s.optionError = errors.NewNotImplementedf(errUnknownSigningMethodOptions, key.Algorithm())
-			return
+			return errors.NewNotImplementedf(errUnknownSigningMethodOptions, key.Algorithm())
 		}
 
 		scNew.Verifier = csjwt.NewVerification(scNew.SigningMethod)
@@ -433,7 +432,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 			s.defaultScopeCache.SigningMethod = scNew.SigningMethod
 			s.defaultScopeCache.Verifier = scNew.Verifier
 			s.defaultScopeCache.KeyFunc = scNew.KeyFunc
-			return
+			return nil
 		}
 
 		if sc, ok := s.scopeCache[h]; ok {
@@ -446,17 +445,18 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
 // WithDisable disables the whole JWT processing for a scope.
 func WithDisable(scp scope.Scope, id int64, ok bool) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.Disabled = ok
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -472,5 +472,6 @@ func WithDisable(scp scope.Scope, id int64, ok bool) Option {
 		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }

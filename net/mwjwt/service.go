@@ -48,11 +48,6 @@ type Service struct {
 	// If nil the requested store extracted from the context won't be changed.
 	StoreService store.Requester
 
-	// optionError used by functional option arguments to indicate that one
-	// option has triggered an error and hence the other options can
-	// skip their process.
-	optionError error
-
 	// scpOptionFnc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings in the
 	// internal map. ScopedOption requires a config.ScopedGetter
@@ -102,35 +97,22 @@ func MustNewService(opts ...Option) *Service {
 func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil { // might be nil because of package backendjwt
-			opt(s)
+			if err := opt(s); err != nil {
+				return errors.Wrap(err, "[mwjwt] Service.Options")
+			}
 		}
-	}
-	if s.optionError != nil {
-		return s.optionError
 	}
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for h := range s.scopeCache {
+		// maybe this can be removed and allow all scopes but we need to change much more.
 		if scp, _ := h.Unpack(); scp > scope.Website {
 			return errors.NewNotSupportedf(errServiceUnsupportedScope, h)
 		}
 	}
 
 	return nil
-}
-
-// AddError used by functional options to set an error. The error will only be
-// then set if there is not yet an error otherwise it gets discarded. You can
-// enable debug logging to find out more.
-func (s *Service) AddError(err error) {
-	if s.optionError != nil {
-		if s.Log.IsDebug() {
-			s.Log.Debug("mwjwt.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
-		}
-		return
-	}
-	s.optionError = err
 }
 
 // NewToken creates a new signed JSON web token based on the predefined scoped
@@ -247,6 +229,9 @@ func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 	}
 
 	if s.scpOptionFnc != nil {
+		if s.Log.IsDebug() {
+			s.Log.Debug("mwjwt.Service.ConfigByScopedGetter.scpOptionFnc", "scope", h.String())
+		}
 		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
 			return scopedConfig{}, errors.Wrap(err, "[mwjwt] Options by scpOptionFnc")
 		}
