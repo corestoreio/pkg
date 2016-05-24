@@ -18,17 +18,17 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/csfw/net/request"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// newContextCountryByIP searches the country for an IP address and puts the country
+// newContextCountryByIP searches a country by an IP address and puts the country
 // into a new context.
 func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Country, error) {
 
-	ip := httputil.GetRealIP(r)
+	ip := request.RealIP(r, request.IPForwardedTrust)
 	if ip == nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", "err", errors.NotFound(errCannotGetRemoteAddr), "req", r)
@@ -64,6 +64,9 @@ func (s *Service) WithCountryByIP() mw.Middleware {
 // WithIsCountryAllowedByIP queries the AllowedCountries slice
 // to retrieve a list of countries for a scope and then uses the function
 // IsAllowedFunc to check if a country is allowed for an IP address.
+// If a country should not access the next handler within the middleware
+// chain it will call an alternative handler to e.g. show a different page
+// or performa a redirect.
 // Use FromContextCountry() to extract the country or an error.
 func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 	return func(h http.Handler) http.Handler {
@@ -86,10 +89,10 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 			// the scpCfg depends on how you have initialized the storeService during app boot.
 			// requestedStore.Website.Config is the reason that all options only support
 			// website scope and not group or store scope.
-			scpCfg, err := s.configByScopedGetter(requestedStore)
+			scpCfg, err := s.configByScopedGetter(requestedStore.Config)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", "err", err, "requestedStore", requestedStore, "req", r)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", "err", err, "scope", scpCfg.scopeHash, "requestedStore", requestedStore, "req", r)
 				}
 				err = errors.Wrap(err, "[mwcors] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -98,14 +101,14 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 
 			if scpCfg.checkAllow(requestedStore, c, r) {
 				if s.Log.IsDebug() {
-					s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.true", "requestedStore", requestedStore, "country", c)
+					s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.true", "scope", scpCfg.scopeHash, "requestedStore", requestedStore, "country", c.Country)
 				}
 				h.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 			// access denied
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", "requestedStore", requestedStore, "country", c)
+				s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", "scope", scpCfg.scopeHash, "requestedStore", requestedStore, "country", c.Country)
 			}
 			scpCfg.alternativeHandler.ServeHTTP(w, r.WithContext(ctx))
 		})

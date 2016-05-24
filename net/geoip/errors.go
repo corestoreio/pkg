@@ -18,8 +18,7 @@ import "github.com/corestoreio/csfw/util/errors"
 
 const (
 	errCannotGetRemoteAddr    = `[geoip] Cannot get request.RemoteAddr`
-	errContextCountryNotFound = `[geoip] Cannot extract token nor an error from the context`
-	errUnsupportedScope       = `[geoip] Unsupported Scope %s ID %d`
+	errContextCountryNotFound = `[geoip] Cannot extract type Country nor an error from the context`
 	errScopedConfigNotValid   = `[geoip] ScopedConfig %s invalid`
 )
 
