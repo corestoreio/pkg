@@ -15,17 +15,85 @@
 package cfgmodel_test
 
 import (
+	"net/url"
 	"testing"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBaseURLGet(t *testing.T) {
+func TestURLGet(t *testing.T) {
 
+	const pathWebURL = "web/unsecure/url"
+	wantPath := cfgpath.MustNewByParts(pathWebURL).Bind(scope.Store, 1)
+	b := cfgmodel.NewURL(pathWebURL, cfgmodel.WithFieldFromSectionSlice(configStructure))
+	assert.Empty(t, b.Options())
+
+	tests := []struct {
+		scpcfg     config.ScopedGetter
+		wantErrBhf errors.BehaviourFunc
+		wantVal    interface{}
+	}{
+		{cfgmock.NewService().NewScoped(0, 1), nil, `http://john%20doe@corestore.io/?q=go+language#foo&bar`},
+		{cfgmock.NewService(
+			cfgmock.WithPV(cfgmock.PathValue{
+				wantPath.String(): "http://cs.io",
+			}),
+		).NewScoped(0, 1), nil, "http://cs.io"},
+		{cfgmock.NewService(
+			cfgmock.WithPV(cfgmock.PathValue{
+				wantPath.String(): "http://192.168.0.%31/",
+			}),
+		).NewScoped(0, 1), errors.IsFatal, nil},
+		{cfgmock.NewService(
+			cfgmock.WithPV(cfgmock.PathValue{
+				wantPath.String(): "",
+			}),
+		).NewScoped(0, 1), nil, nil},
+	}
+	for i, test := range tests {
+		anURL, haveErr := b.Get(test.scpcfg)
+		if test.wantErrBhf != nil {
+			assert.Nil(t, anURL, "Index %d", i)
+			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error %s", i, haveErr)
+			continue
+		}
+		if test.wantVal != nil {
+			assert.Exactly(t, test.wantVal, anURL.String(), "Index %d", i)
+		} else {
+			assert.Nil(t, anURL, "Index %d", i)
+		}
+		assert.NoError(t, haveErr, "Index %d", i)
+	}
+
+}
+
+func TestURLWrite(t *testing.T) {
+	const pathWebURL = "web/unsecure/url"
+	wantPath := cfgpath.MustNewByParts(pathWebURL).Bind(scope.Store, 1)
+	b := cfgmodel.NewURL(pathWebURL, cfgmodel.WithFieldFromSectionSlice(configStructure))
+
+	data, err := url.Parse(`http://john%20doe@corestore.io/?q=go+language#foo&bar`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mw := &cfgmock.Write{}
+	assert.NoError(t, b.Write(mw, data, scope.Store, 1))
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
+	assert.Exactly(t, `http://john%20doe@corestore.io/?q=go+language#foo&bar`, mw.ArgValue.(string))
+
+	assert.NoError(t, b.Write(mw, nil, scope.Store, 1))
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
+	assert.Exactly(t, ``, mw.ArgValue.(string))
+}
+
+func TestBaseURLGet(t *testing.T) {
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.Store, 1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
@@ -47,7 +115,6 @@ func TestBaseURLGet(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "http://cs.io", sg)
-
 }
 
 func TestBaseURLWrite(t *testing.T) {

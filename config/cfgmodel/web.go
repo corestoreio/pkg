@@ -15,8 +15,11 @@
 package cfgmodel
 
 import (
+	"net/url"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Placeholder constants and their values can occur in the table core_config_data.
@@ -26,6 +29,40 @@ const (
 	PlaceholderBaseURLSecure   = config.LeftDelim + "secure_base_url" + config.RightDelim
 	PlaceholderBaseURLUnSecure = config.LeftDelim + "unsecure_base_url" + config.RightDelim
 )
+
+// URL represents a path in config.Getter which handles URLs and internal validation
+type URL struct{ Str }
+
+// NewURL creates a new URL with validation checks.
+func NewURL(path string, opts ...Option) URL {
+	return URL{Str: NewStr(path, opts...)}
+}
+
+// Get returns an URL. If the underlying value is empty returns nil,nil.
+func (p URL) Get(sg config.ScopedGetter) (*url.URL, error) {
+	rawurl, err := p.Str.Get(sg)
+	if err != nil {
+		return nil, errors.Wrap(err, "[cfgmodel] URL.Str.Get")
+	}
+	if rawurl == "" {
+		return nil, nil
+	}
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		return nil, errors.NewFatal(err, "[cfgmodel] URL.Parse")
+	}
+	return u, nil
+}
+
+// Write writes a new URL and validates it before saving. If v is nil, an empty value
+// will be written.
+func (p URL) Write(w config.Writer, v *url.URL, s scope.Scope, scopeID int64) error {
+	var val string
+	if v != nil {
+		val = v.String()
+	}
+	return p.Str.Write(w, val, s, scopeID)
+}
 
 // BaseURL represents a path in config.Getter handles BaseURLs and internal validation
 type BaseURL struct{ Str }

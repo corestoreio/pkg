@@ -150,6 +150,16 @@ var configStructure = element.MustNewConfiguration(
 				Scopes:    scope.PermStore,
 				Fields: element.NewFieldSlice(
 					element.Field{
+						// Path: `web/unsecure/url`,
+						ID:        cfgpath.NewRoute("url"),
+						Label:     text.Chars(`Just an URL`),
+						Type:      element.TypeText,
+						SortOrder: 9,
+						Visible:   element.VisibleYes,
+						Scopes:    scope.PermStore,
+						Default:   `http://john%20doe@corestore.io/?q=go+language#foo%26bar`,
+					},
+					element.Field{
 						// Path: `web/unsecure/base_url`,
 						ID:        cfgpath.NewRoute("base_url"),
 						Label:     text.Chars(`Base URL`),
