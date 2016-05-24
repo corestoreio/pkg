@@ -20,5 +20,6 @@ Provides access to locale information translated into given languages.
 Manages locale information for a store instance.
 
 @todo namespace Magento\Framework\Locale
+@todo https://github.com/iafan/Plurr for pluralization
 */
 package locale
