@@ -15,9 +15,6 @@
 package backendauth
 
 import (
-	"bytes"
-	"net"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/util/csnet"

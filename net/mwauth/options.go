@@ -22,7 +22,7 @@ import (
 )
 
 // Option defines a function argument for the Cors type to apply options.
-type Option func(*Service)
+type Option func(*Service) error
 
 // ScopedOptionFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
@@ -36,31 +36,27 @@ type ScopedOptionFunc func(config.ScopedGetter) []Option
 //		- ?
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
-		if s.optionError != nil {
-			return
-		}
-
+	return func(s *Service) error {
+		var err error
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, s.optionError = defaultScopedConfig()
-			s.optionError = errors.Wrap(s.optionError, "[mwauth] Default Scope with Default Config")
-			return
+			s.defaultScopeCache, err = defaultScopedConfig()
+			return errors.Wrap(err, "[mwauth] Default Scope with Default Config")
 		}
 
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		s.scopeCache[h], s.optionError = defaultScopedConfig()
-		s.optionError = errors.Wrapf(s.optionError, "[mwauth] Scope %s with Default Config", h)
+		s.scopeCache[h], err = defaultScopedConfig()
+		return errors.Wrapf(err, "[mwauth] Scope %s with Default Config", h)
 	}
 }
 
 func WithIsActive(scp scope.Scope, id int64, active bool) Option {
 	h := scope.NewHash(scp, id)
-	return func(s *Service) {
+	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.enable = active
-			return
+			return nil
 		}
 
 		s.mu.Lock()
@@ -76,6 +72,7 @@ func WithIsActive(scp scope.Scope, id int64, active bool) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
@@ -83,8 +80,9 @@ func WithIsActive(scp scope.Scope, id int64, active bool) Option {
 // subsequent scopes.
 // Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.defaultScopeCache.log = l
+		return nil
 	}
 }
 
@@ -103,7 +101,8 @@ func WithLogger(l log.Logger) Option {
 //		mwauth.WithOptionFactory(backendauth.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.scpOptionFnc = f
+		return nil
 	}
 }

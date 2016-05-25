@@ -81,7 +81,7 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 	optsCSV := append([]cfgmodel.Option{}, opts...)
-	optsCSV = append(optsCSV, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithCSVSeparator('\n'))
+	optsCSV = append(optsCSV, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithCSVComma('\n'))
 	optsYN := append([]cfgmodel.Option{}, opts...)
 	optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
 

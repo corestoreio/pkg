@@ -28,6 +28,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func withError() mwauth.Option {
+	return func(s *mwauth.Service) error {
+		return errors.NewNotValidf("Paaaaanic!")
+	}
+}
+
 func TestMustNew_Default(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -37,7 +43,7 @@ func TestMustNew_Default(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = mwauth.MustNew()
+	_ = mwauth.MustNew(withError())
 }
 
 func TestMustNew_Website(t *testing.T) {
@@ -49,5 +55,5 @@ func TestMustNew_Website(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = mwauth.MustNew()
+	_ = mwauth.MustNew(withError())
 }

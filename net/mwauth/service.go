@@ -33,11 +33,6 @@ import (
 
 // Service describes
 type Service struct {
-	// optionError use by functional option arguments to indicate that one
-	// option has triggered an error and hence the other can options can
-	// skip their process.
-	optionError error
-
 	// scpOptionFnc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings in the
 	// internal map. ScopedOption requires a config.ScopedGetter
@@ -82,27 +77,12 @@ func MustNew(opts ...Option) *Service {
 func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil { // can be nil because of the backend options where we have an array instead of a slice.
-			opt(s)
+			if err := opt(s); err != nil {
+				return errors.Wrap(err, "[mwauth] Service.Option")
+			}
 		}
 	}
-	if s.optionError != nil {
-		return s.optionError
-	}
-
 	return nil
-}
-
-// AddError used by functional options to set an error. The error will only be
-// then set if there is not yet an error otherwise it gets discarded. You can
-// enable debug logging to find out more.
-func (s *Service) AddError(err error) {
-	if s.optionError != nil {
-		if s.defaultScopeCache.log.IsDebug() {
-			s.defaultScopeCache.log.Debug("mwauth.Service.AddError", "err", err, "skipped", true, "currentError", s.optionError)
-		}
-		return
-	}
-	s.optionError = err
 }
 
 // WithAuthentication to be used as a middleware for ctxhttp.Handler.

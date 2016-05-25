@@ -44,10 +44,7 @@ func PrepareOptions(be *Backend) mwauth.ScopedOptionFunc {
 		// ENABLED
 		on, err := be.NetAuthEnable.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwauth.Service) {
-				s.AddError(errors.Wrap(err, "[backendauth] NetAuthEnable.Get"))
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendauth] NetAuthEnable.Get"))
 		}
 		opts[i] = mwauth.WithIsActive(scp, id, on)
 		i++
@@ -56,4 +53,10 @@ func PrepareOptions(be *Backend) mwauth.ScopedOptionFunc {
 
 		return opts[:]
 	}
+}
+
+func optError(err error) []mwauth.Option {
+	return []mwauth.Option{func(s *mwauth.Service) error {
+		return err
+	}}
 }
