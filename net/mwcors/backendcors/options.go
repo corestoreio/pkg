@@ -46,10 +46,7 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// EXPOSED HEADERS
 		eh, err := be.NetCorsExposedHeaders.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsExposedHeaders.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsExposedHeaders.Get"))
 		}
 		opts[i] = mwcors.WithExposedHeaders(scp, id, eh...)
 		i++
@@ -57,10 +54,7 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOWED ORIGINS
 		ao, err := be.NetCorsAllowedOrigins.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsAllowedOrigins.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsAllowedOrigins.Get"))
 		}
 		opts[i] = mwcors.WithAllowedOrigins(scp, id, ao...)
 		i++
@@ -68,18 +62,12 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOW ORIGIN REGEX
 		aor, err := be.NetCorsAllowOriginRegex.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsAllowedOriginRegex.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsAllowedOriginRegex.Get"))
 		}
 		if len(aor) > 1 {
 			r, err := regexp.Compile(aor)
 			if err != nil {
-				opts[i] = func(s *mwcors.Service) error {
-					return errors.NewFatal(err, "[backendcors] NetCorsAllowedOriginRegex.regexp.Compile")
-				}
-				return opts[:]
+				return optError(errors.NewFatal(err, "[backendcors] NetCorsAllowedOriginRegex.regexp.Compile"))
 			}
 			opts[i] = mwcors.WithAllowOriginFunc(scp, id, func(o string) bool {
 				return r.MatchString(o)
@@ -90,10 +78,7 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOWED METHODS
 		am, err := be.NetCorsAllowedMethods.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsAllowedMethods.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsAllowedMethods.Get"))
 		}
 		opts[i] = mwcors.WithAllowedMethods(scp, id, am...)
 		i++
@@ -101,10 +86,7 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOWED HEADERS
 		ah, err := be.NetCorsAllowedHeaders.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsAllowedHeaders.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsAllowedHeaders.Get"))
 		}
 		opts[i] = mwcors.WithAllowedHeaders(scp, id, ah...)
 		i++
@@ -112,10 +94,7 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// ALLOW CREDENTIALS
 		ac, err := be.NetCorsAllowCredentials.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsAllowCredentials.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsAllowCredentials.Get"))
 		}
 		opts[i] = mwcors.WithAllowCredentials(scp, id, ac)
 		i++
@@ -123,10 +102,7 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// OPTIONS PASSTHROUGH
 		op, err := be.NetCorsOptionsPassthrough.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsOptionsPassthrough.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsOptionsPassthrough.Get"))
 		}
 		opts[i] = mwcors.WithOptionsPassthrough(scp, id, op)
 		i++
@@ -134,14 +110,17 @@ func PrepareOptions(be *Backend) mwcors.ScopedOptionFunc {
 		// MAX AGE
 		ma, err := be.NetCorsMaxAge.Get(sg)
 		if err != nil {
-			opts[i] = func(s *mwcors.Service) error {
-				return errors.Wrap(err, "[backendcors] NetCorsMaxAge.Get")
-			}
-			return opts[:]
+			return optError(errors.Wrap(err, "[backendcors] NetCorsMaxAge.Get"))
 		}
 		opts[i] = mwcors.WithMaxAge(scp, id, ma)
 		i++
 
 		return opts[:]
 	}
+}
+
+func optError(err error) []mwcors.Option {
+	return []mwcors.Option{func(s *mwcors.Service) error {
+		return err
+	}}
 }

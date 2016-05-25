@@ -25,7 +25,6 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"

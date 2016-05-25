@@ -48,6 +48,12 @@ func reqWithStore(method string) *http.Request {
 	)
 }
 
+func withError() mwcors.Option {
+	return func(s *mwcors.Service) error {
+		return errors.NewNotValidf("Paaaaaaaniic!")
+	}
+}
+
 func TestMustNew_Default(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -57,7 +63,7 @@ func TestMustNew_Default(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = mwcors.MustNew(mwcors.WithMaxAge(scope.Default, 0, -2*time.Second))
+	_ = mwcors.MustNew(withError())
 }
 
 func TestMustNew_Website(t *testing.T) {
@@ -67,6 +73,16 @@ func TestMustNew_Website(t *testing.T) {
 			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a Panic")
+		}
+	}()
+	_ = mwcors.MustNew(withError())
+}
+
+func TestMustNew_NoPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := r.(error)
+			t.Fatalf("Expecting NOT a Panic with error: %s", err)
 		}
 	}()
 	_ = mwcors.MustNew(mwcors.WithMaxAge(scope.Website, 2, -2*time.Second))

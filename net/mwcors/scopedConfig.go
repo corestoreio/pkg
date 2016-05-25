@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/log"
 )
