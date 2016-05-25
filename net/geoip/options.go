@@ -16,9 +16,9 @@ package geoip
 
 import (
 	"net/http"
-	"time"
-
 	"os"
+	"sync/atomic"
+	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
@@ -41,7 +41,7 @@ type ScopedOptionFunc func(config.ScopedGetter) []Option
 // Default values are:
 //		- Alternative Handler: variable DefaultAlternativeHandler
 //		- Logger black hole
-//		- Check allow:
+//		- Check allow: If allowed countries are empty, all countries are allowed
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
@@ -169,9 +169,19 @@ func WithGeoIP2File(filename string) Option {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			return errors.NewNotFoundf("[geoip] File %s not found", filename)
 		}
-
+		if atomic.LoadUint32(&s.geoipDone) == 1 {
+			if s.Log.IsDebug() {
+				s.Log.Debug("geoip.WithGeoIP2File.geoipDone", "geoipDone", s.geoipDone, "filename", filename)
+			}
+			return nil
+		}
+		s.mu.Lock()
+		defer s.mu.Unlock()
 		var err error
-		s.GeoIP, err = newMMDBByFile(filename)
+		if s.geoipDone == 0 {
+			defer atomic.StoreUint32(&s.geoipDone, 1)
+			s.GeoIP, err = newMMDBByFile(filename)
+		}
 		return errors.NewNotValid(err, "[geoip] Maxmind Open")
 	}
 }
@@ -182,7 +192,18 @@ func WithGeoIP2File(filename string) Option {
 // Hint: use package storage/transcache.
 func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout time.Duration) Option {
 	return func(s *Service) error {
-		s.GeoIP = newMMWS(t, userID, licenseKey, httpTimeout)
+		if atomic.LoadUint32(&s.geoipDone) == 1 {
+			if s.Log.IsDebug() {
+				s.Log.Debug("geoip.WithGeoIP2Webservice.geoipDone", "geoipDone", s.geoipDone, "userID", userID)
+			}
+			return nil
+		}
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		if s.geoipDone == 0 {
+			defer atomic.StoreUint32(&s.geoipDone, 1)
+			s.GeoIP = newMMWS(t, userID, licenseKey, httpTimeout)
+		}
 		return nil
 	}
 }

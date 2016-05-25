@@ -118,5 +118,8 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 // WithInitStoreByCountryIP initializes a store scope via the IP address which
 // is bound to a country. todo(CS) IDEA
 func (s *Service) WithInitStoreByCountryIP() mw.Middleware {
+	// - define a mapping for a store assigned to countries ISO codes
+	// - load that store default but allow a user to switch
+	// - force set a store to a country and the user cannot switch.
 	return nil
 }

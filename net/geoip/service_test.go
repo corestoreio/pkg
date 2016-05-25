@@ -15,6 +15,7 @@
 package geoip_test
 
 import (
+	"bytes"
 	"io"
 	"net"
 	"net/http"
@@ -22,7 +23,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"bytes"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/store"

@@ -28,6 +28,11 @@ type Service struct {
 	// GeoIP searches the country for an IP address. If nil panics
 	// during execution in the middleware
 	GeoIP CountryRetriever
+	// geoipDone checks to only load the GeoIP CountryRetriever once
+	// because we may set that within a request because it is defined
+	// in the backend configuration but later we need to reset
+	// this value to zero to allow reloading.
+	geoipDone uint32
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
