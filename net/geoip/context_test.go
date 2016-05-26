@@ -12,19 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip_test
+package geoip
 
 import (
+	"context"
 	"testing"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestContextWithError(t *testing.T) {
+	var wantErr = errors.New("Contiki Context")
+	ctx := withContextError(context.Background(), wantErr)
+	assert.NotNil(t, ctx)
 
-	//var wantErr = errors.New("Contiki Context")
-	//ctx := ctxjwt.WithContextError(context.Background(), wantErr)
-	//assert.NotNil(t, ctx)
-	//
-	//tok, err := ctxjwt.FromContext(ctx)
-	//assert.Nil(t, tok)
-	//assert.EqualError(t, err, wantErr.Error())
+	tok, err := FromContextCountry(ctx)
+	assert.Nil(t, tok)
+	assert.EqualError(t, err, wantErr.Error())
+
+	tok, err = FromContextCountry(context.TODO())
+	assert.Nil(t, tok)
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }

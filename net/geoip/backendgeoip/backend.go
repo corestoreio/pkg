@@ -17,6 +17,7 @@ package backendgeoip
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/source"
 )
 
 // Backend just exported for the sake of documentation. See fields
@@ -30,6 +31,42 @@ type Backend struct {
 	//
 	// Path: net/geoip/allowed_countries
 	NetGeoipAllowedCountries cfgmodel.StringCSV
+
+	// NetGeoipAlternativeRedirect redirects the client to this URL if their
+	// country hasn't been granted access to the next middleware handler.
+	//
+	// Path: net/geoip/alternative_redirect
+	NetGeoipAlternativeRedirect cfgmodel.URL
+
+	// NetGeoipAlternativeRedirectCode HTTP redirect code.
+	//
+	// Path: net/geoip/alternative_redirect_code
+	NetGeoipAlternativeRedirectCode cfgmodel.Int
+
+	// NetGeoipMaxmindLocalFile path to a file name stored on the server.
+	//
+	// Path: net/geoip_maxmind/local_file
+	NetGeoipMaxmindLocalFile cfgmodel.Str
+
+	// NetGeoipMaxmindWebserviceUserID user id
+	//
+	// Path: net/geoip_maxmind/webservice_userid
+	NetGeoipMaxmindWebserviceUserID cfgmodel.Str
+
+	// NetGeoipMaxmindWebserviceLicense license name
+	//
+	// Path: net/geoip_maxmind/webservice_license
+	NetGeoipMaxmindWebserviceLicense cfgmodel.Str
+
+	// NetGeoipMaxmindWebserviceTimeout HTTP request time out
+	//
+	// Path: net/geoip_maxmind/webservice_timeout
+	NetGeoipMaxmindWebserviceTimeout cfgmodel.Duration
+
+	// NetGeoipMaxmindWebserviceRedisURL an URL to the Redis server
+	//
+	// Path: net/geoip_maxmind/webservice_redisurl
+	NetGeoipMaxmindWebserviceRedisURL cfgmodel.URL
 }
 
 // New initializes the backend configuration models containing the
@@ -49,10 +86,27 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	//optsYN := append([]cfgmodel.Option{}, opts...)
-	//optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
+	optsRedir := append([]cfgmodel.Option{}, opts...)
+	optsRedir = append(optsRedir, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(redirects))
 
 	pp.NetGeoipAllowedCountries = cfgmodel.NewStringCSV(`net/geoip/allowed_countries`, opts...)
+	pp.NetGeoipAlternativeRedirect = cfgmodel.NewURL(`net/geoip/alternative_redirect`, opts...)
+	pp.NetGeoipAlternativeRedirectCode = cfgmodel.NewInt(`net/geoip/alternative_redirect_code`, optsRedir...)
+
+	pp.NetGeoipMaxmindLocalFile = cfgmodel.NewStr(`net/geoip_maxmind/local_file`, opts...)
+	pp.NetGeoipMaxmindWebserviceUserID = cfgmodel.NewStr(`net/geoip_maxmind/webservice_userid`, opts...)
+	pp.NetGeoipMaxmindWebserviceLicense = cfgmodel.NewStr(`net/geoip_maxmind/webservice_license`, opts...)
+	pp.NetGeoipMaxmindWebserviceTimeout = cfgmodel.NewDuration(`net/geoip_maxmind/webservice_timeout`, opts...)
+	pp.NetGeoipMaxmindWebserviceRedisURL = cfgmodel.NewURL(`net/geoip_maxmind/webservice_redisurl`, opts...)
 
 	return pp
 }
+
+var redirects = source.NewByInt(
+	source.Ints{
+		{301, "301 moved permanently"},
+		{302, "302 found"},
+		{303, "303 see other"},
+		{308, "308 permanent redirect "},
+	},
+)

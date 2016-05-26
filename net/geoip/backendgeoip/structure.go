@@ -15,6 +15,8 @@
 package backendgeoip
 
 import (
+	"time"
+
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/storage/text"
@@ -31,13 +33,11 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			ID: cfgpath.NewRoute(`net`),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:    cfgpath.NewRoute(`geoip`),
-					Label: text.Chars(`Geo IP`),
-					Comment: text.Chars(`Detects the country by an IP address and maybe restricts the access. Compatible to IPv4 and IPv6.
-Uses the maxmind database or alternative country/city detectors.`),
-					MoreURL:   text.Chars(`https://www.maxmind.com/en/geoip2-services-and-databases`),
+					ID:        cfgpath.NewRoute(`geoip`),
+					Label:     text.Chars(`Geo IP`),
+					Comment:   text.Chars(`Detects the country by an IP address and maybe restricts the access. Compatible to IPv4 and IPv6.`),
 					SortOrder: 170,
-					Scopes:    scope.PermWebsite,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						element.Field{
 							// Path: `net/geoip/allowed_countries`,
@@ -49,6 +49,100 @@ expose to the API of a CORS API specification. Separate via line break (\n)`),
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermStore,
+						},
+						element.Field{
+							// Path: `net/geoip/alternative_redirect`,
+							ID:        cfgpath.NewRoute(`alternative_redirect`),
+							Label:     text.Chars(`Alternative Redirect URL`),
+							Comment:   text.Chars(`Redirects the client to this URL if their country doesn't have access.`),
+							Type:      element.TypeText,
+							SortOrder: 30,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermStore,
+						},
+						element.Field{
+							// Path: `net/geoip/alternative_redirect_code`,
+							ID:        cfgpath.NewRoute(`alternative_redirect_code`),
+							Label:     text.Chars(`Alternative Redirect HTTP Code`),
+							Comment:   text.Chars(`Specifies the HTTP redirect code`),
+							Type:      element.TypeSelect,
+							SortOrder: 40,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermStore,
+							Default:   301,
+						},
+					),
+				},
+
+				element.Group{
+					ID:    cfgpath.NewRoute(`geoip_maxmind`),
+					Label: text.Chars(`Geo IP (MaxMind)`),
+					Comment: text.Chars(`Detects the country by an IP address and maybe restricts the access. Compatible to IPv4 and IPv6.
+Uses the maxmind database from a file or the web service.`),
+					MoreURL:   text.Chars(`https://www.maxmind.com/en/geoip2-services-and-databases`),
+					HelpURL:   text.Chars(`http://dev.maxmind.com/geoip/geoip2/web-services/`),
+					SortOrder: 170,
+					Scopes:    scope.PermDefault,
+					Fields: element.NewFieldSlice(
+
+						element.Field{
+							// Path: `net/geoip_maxmind/local_file`,
+							ID:        cfgpath.NewRoute(`local_file`),
+							Label:     text.Chars(`Local MaxMind database file`),
+							Comment:   text.Chars(`Load a local MaxMind binary database file for extracting country information from an IP address.`),
+							Type:      element.TypeSelect,
+							SortOrder: 10,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermDefault,
+						},
+
+						element.Field{
+							// Path: `net/geoip_maxmind/webservice_userid`,
+							ID:    cfgpath.NewRoute(`webservice_userid`),
+							Label: text.Chars(`Webservice User ID`),
+							//Comment:   text.Chars(``),
+							Type:      element.TypeText,
+							SortOrder: 30,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermDefault,
+						},
+						element.Field{
+							// Path: `net/geoip_maxmind/webservice_license`,
+							ID:    cfgpath.NewRoute(`webservice_license`),
+							Label: text.Chars(`Webservice License`),
+							//Comment:   text.Chars(``),
+							Type:      element.TypeText,
+							SortOrder: 40,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermDefault,
+						},
+						element.Field{
+							// Path: `net/geoip_maxmind/webservice_timeout`,
+							ID:    cfgpath.NewRoute(`webservice_timeout`),
+							Label: text.Chars(`Webservice HTTP request timeout`),
+							Comment: text.Chars(`A duration string is a possibly signed sequence of
+decimal numbers, each with optional fraction and a unit suffix,
+such as "300s", "-1.5h" or "2h45m". Valid time units are "s", "m", "h".`),
+							Type:      element.TypeText,
+							SortOrder: 50,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermDefault,
+							Default:   time.Second * 15,
+						},
+						element.Field{
+							// Path: `net/geoip_maxmind/webservice_redisurl`,
+							ID:    cfgpath.NewRoute(`webservice_redisurl`),
+							Label: text.Chars(`Webservice Redis URL`),
+							Comment: text.Chars(`An URL to the Redis instance to be used as a cache. If empty
+the default cache will be in-memory and limited to XX MB.
+
+URL has not match the scheme: redis://localhost:6379/X. Where X is the database number. Or
+redis://ignored:passw0rd@localhost:6379/3 to use the password passw0rd with database 3.
+`),
+							Type:      element.TypeText,
+							SortOrder: 50,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermDefault,
 						},
 					),
 				},

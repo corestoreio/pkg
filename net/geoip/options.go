@@ -167,11 +167,11 @@ func WithLogger(l log.Logger) Option {
 func WithGeoIP2File(filename string) Option {
 	return func(s *Service) error {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			return errors.NewNotFoundf("[geoip] File %s not found", filename)
+			return errors.NewNotFoundf("[geoip] File %q not found", filename)
 		}
 		if atomic.LoadUint32(&s.geoipDone) == 1 {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithGeoIP2File.geoipDone", "geoipDone", s.geoipDone, "filename", filename)
+				s.Log.Debug("geoip.WithGeoIP2File.geoipDone", "geoipDone", int(s.geoipDone), "filename", filename)
 			}
 			return nil
 		}
@@ -194,10 +194,11 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 	return func(s *Service) error {
 		if atomic.LoadUint32(&s.geoipDone) == 1 {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithGeoIP2Webservice.geoipDone", "geoipDone", s.geoipDone, "userID", userID)
+				s.Log.Debug("geoip.WithGeoIP2Webservice.geoipDone", "geoipDone", int(s.geoipDone), "userID", userID)
 			}
 			return nil
 		}
+		// todo: add tests
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		if s.geoipDone == 0 {

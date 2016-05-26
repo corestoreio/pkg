@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
@@ -62,6 +63,38 @@ func TestNewServiceErrorWithoutOptions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 	assert.Nil(t, s.GeoIP)
+}
+
+func TestNewService_WithGeoIP2File_Atomic(t *testing.T) {
+	logBuf := &bytes.Buffer{}
+	s, err := geoip.New(
+		geoip.WithLogger(log.NewStdLog(log.WithStdWriter(logBuf), log.WithStdLevel(log.StdLevelDebug))),
+		geoip.WithGeoIP2File(filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")),
+	)
+	defer deferClose(t, s.GeoIP)
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+	assert.NotNil(t, s.GeoIP)
+	for i := 0; i < 3; i++ {
+		assert.NoError(t, s.Options(geoip.WithGeoIP2File(filepath.Join("testdata", "GeoIP2-Country-Test.json"))))
+	}
+	assert.True(t, 3 == strings.Count(logBuf.String(), `geoip.WithGeoIP2File.geoipDone geoipDone`))
+}
+
+func TestNewService_WithGeoIP2Webservice_Atomic(t *testing.T) {
+	logBuf := &bytes.Buffer{}
+	s, err := geoip.New(
+		geoip.WithLogger(log.NewStdLog(log.WithStdWriter(logBuf), log.WithStdLevel(log.StdLevelDebug))),
+		geoip.WithGeoIP2Webservice(nil, "a", "b", 1),
+	)
+	defer deferClose(t, s.GeoIP)
+	assert.NoError(t, err)
+	assert.NotNil(t, s)
+	assert.NotNil(t, s.GeoIP)
+	for i := 0; i < 3; i++ {
+		assert.NoError(t, s.Options(geoip.WithGeoIP2Webservice(nil, "d", "e", 1)))
+	}
+	assert.True(t, 3 == strings.Count(logBuf.String(), `geoip.WithGeoIP2Webservice.geoipDone geoipDone`))
 }
 
 func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
