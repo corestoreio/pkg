@@ -20,8 +20,8 @@ import (
 	"strings"
 	"unicode"
 
+	csnet "github.com/corestoreio/csfw/net"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/csnet"
 )
 
 // ForwardedIPHeaders contains a list of available headers which
@@ -69,7 +69,7 @@ const (
 
 // RealIP extracts the remote address from a request and takes
 // care of different headers in which an IP address can be stored.
-// Checks if the IP in one of the header fields lies in csnet.PrivateIPRanges.
+// Checks if the IP in one of the header fields lies in net.PrivateIPRanges.
 // For the second argument opts please see the constants IPForwarded*.
 // Return value can be nil.
 func RealIP(r *http.Request, opts int) net.IP {

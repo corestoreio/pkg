@@ -17,7 +17,7 @@ package backendauth
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/util/csnet"
+	"github.com/corestoreio/csfw/net"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -41,19 +41,19 @@ func NewConfigIPRange(path string, opts ...cfgmodel.Option) ConfigIPRange {
 }
 
 // Get ...
-func (cc ConfigIPRange) Get(sg config.ScopedGetter) (csnet.IPRanges, error) {
+func (cc ConfigIPRange) Get(sg config.ScopedGetter) (net.IPRanges, error) {
 	data, err := cc.CSV.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendauth] Str.Get")
 	}
 
-	var rngs csnet.IPRanges
+	var rngs net.IPRanges
 	for _, row := range data {
 		if len(row) != 2 {
 			return nil, errors.NewNotValidf("[backendauth] IP Range %q not in expected format: IP.From-IP.To", row)
 		}
 		if row[0] != "" && row[1] != "" {
-			rngs = append(rngs, csnet.NewIPRange(row[0], row[1]))
+			rngs = append(rngs, net.NewIPRange(row[0], row[1]))
 		}
 	}
 	return rngs, nil
