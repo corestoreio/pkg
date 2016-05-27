@@ -37,8 +37,8 @@ func TestStdLog(t *testing.T) {
 	assert.False(t, sl.IsDebug())
 	assert.True(t, sl.IsInfo())
 
-	sl.Debug("my Debug", "float", 3.14152)
-	sl.Debug("my Debug2", 2.14152)
+	sl.Debug("my Debug", log.Float64("float", 3.14152))
+	sl.Debug("my Debug2", log.Float64("float2", 2.14152))
 	sl.Info("InfoTEST")
 
 	logs := buf.String()
@@ -50,8 +50,8 @@ func TestStdLog(t *testing.T) {
 	sl.SetLevel(log.StdLevelDebug)
 	assert.True(t, sl.IsDebug())
 	assert.True(t, sl.IsInfo())
-	sl.Debug("my Debug", "float", 3.14152)
-	sl.Debug("my Debug2", 2.14152)
+	sl.Debug("my Debug", log.Float64("float", 3.14152))
+	sl.Debug("my Debug2", log.Float64("float2", 2.14152))
 	sl.Info("InfoTEST")
 
 	logs = buf.String()
@@ -69,8 +69,8 @@ func TestStdLogGlobals(t *testing.T) {
 		log.WithStdWriter(&buf),
 		log.WithStdFlag(std.Ldate),
 	)
-	sl.Debug("my Debug", "float", 3.14152)
-	sl.Debug("my Debug2", 2.14152)
+	sl.Debug("my Debug", log.Float64("float", 3.14152))
+	sl.Debug("my Debug2", log.Float64("float2", 2.14152))
 	sl.Info("InfoTEST")
 
 	logs := buf.String()
@@ -91,23 +91,22 @@ func TestStdLogFormat(t *testing.T) {
 		log.WithStdInfo(&bufInfo, "TEST-INFO ", std.LstdFlags),
 	)
 
-	sl.Debug("my Debug", 3.14152)
-	sl.Debug("my Debug2", "", 2.14152)
-	sl.Debug("my Debug3", "key3", 3105, 4711, "Hello")
+	sl.Debug("my Debug", log.Float64("float1", 3.14152))
+	sl.Debug("my Debug2", log.Float64("", 2.14152))
+	sl.Debug("my Debug3", log.Int("key3", 3105), log.Int64("Hello", 4711))
 	sl.Info("InfoTEST")
-	sl.Info("InfoTEST", "keyI", 117, 2009)
-	sl.Info("InfoTEST", "Now we have the salad")
+	sl.Info("InfoTEST", log.Int("keyI", 117), log.Int64("year", 2009))
+	sl.Info("InfoTEST", log.String("", "Now we have the salad"))
 
 	logs := buf.String()
 	logsInfo := bufInfo.String()
 
 	assert.Contains(t, logs, "Debug2")
-	assert.Contains(t, logs, "BAD_KEY_AT_INDEX_0")
-	assert.Contains(t, logs, `key3: 3105 BAD_KEY_AT_INDEX_2: "Hello"`)
+	assert.NotContains(t, logs, "BAD_KEY_AT_INDEX_0")
+	assert.NotContains(t, logs, `key3: 3105 BAD_KEY_AT_INDEX_2: "Hello"`)
 
 	assert.Contains(t, logsInfo, "InfoTEST")
 	assert.Contains(t, logsInfo, `_: "Now we have the salad`)
-	assert.Contains(t, logsInfo, `FIX_IMBALANCED_PAIRS: []interface {}{"keyI", 117, 2009}`)
 }
 
 func TestStdLogNewPanic(t *testing.T) {

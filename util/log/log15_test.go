@@ -31,22 +31,24 @@ func getLog15(lvl log15.Lvl) string {
 	l := log.NewLog15(lvl, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
 
 	if l.IsDebug() {
-		l.Debug("log_15_debug", "err", errors.New("I'm an debug error"), "pi", 3.14159)
+		l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))
 	}
 	if l.IsInfo() {
-		l.Info("log_15_info", "err", errors.New("I'm an info error"), "e", 2.7182)
+		l.Info("log_15_info", log.Err(errors.New("I'm an info error")), log.Float64("e", 2.7182))
 	}
 	return buf.String()
 }
 
 func TestNewLog15_Debug(t *testing.T) {
 	out := getLog15(log15.LvlDebug)
-	assert.Contains(t, out, `{"Hello":"Gophers","err":"I'm an debug error","lvl":"dbug"`)
-	assert.Contains(t, out, `"err":"I'm an info error","lvl":"info"`)
+	assert.Contains(t, out, `{"Hello":"Gophers","error":"I'm an debug error","lvl":"dbug"`)
+	assert.Contains(t, out, `"pi":3.14159`)
+	assert.Contains(t, out, `"error":"I'm an info error","lvl":"info"`)
 }
 
 func TestNewLog15_Info(t *testing.T) {
 	out := getLog15(log15.LvlInfo)
-	assert.NotContains(t, out, `{"Hello":"Gophers","err":"I'm an debug error","lvl":"dbug"`)
-	assert.Contains(t, out, `"err":"I'm an info error","lvl":"info"`)
+	assert.NotContains(t, out, `{"Hello":"Gophers","error":"I'm an debug error","lvl":"dbug"`)
+	assert.Contains(t, out, `"error":"I'm an info error","lvl":"info"`)
+	assert.Contains(t, out, `"e":2.7182`)
 }

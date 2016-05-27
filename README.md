@@ -89,6 +89,9 @@ Please have a look at the [contribution guidelines](https://github.com/corestore
 
 ## Acknowledgements
 
+Some packages have been fully refactored but the initial idea has been extracted from the
+geniuses listed below:
+
 | Name | Package | License |
 | -------|----------|-------|
 | Steve Francia | [cast](http://github.com/corestoreio/csfw/tree/master/utils/cast) | MIT Copyright (c) 2014 |
@@ -102,6 +105,7 @@ Please have a look at the [contribution guidelines](https://github.com/corestore
 | Julien Schmidt | [ctxrouter](https://github.com/corestoreio/csfw/tree/master/net/ctxrouter) aka. [httprouter](https://github.com/julienschmidt/httprouter) | Copyright (c) 2013 MIT |
 | Olivier Poitrey| [ctxmw.WithAccessLog](https://github.com/corestoreio/csfw/tree/master/net/ctxmw) & CORS | Copyright (c) 2014-2015  MIT License |
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/csfw/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
+| Uber Technologies, Inc. | [csjwt](https://github.com/corestoreio/csfw/tree/master/util/log) | Copyright (c) 2016 MIT License |
 
 ## Licensing
 

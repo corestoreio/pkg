@@ -32,14 +32,14 @@ habit of using guards.
 	import "github.com/corestoreio/csfw/util/log"
 
 	if log.IsDebug() {
-		log.Debug("some message", "key1", expensive())
+		log.Debug("some message", log.Object("key1", expensive()))
 	}
 
 Standardizes on key-value pair argument sequence:
 
 	import "github.com/corestoreio/csfw/util/log"
 
-	log.Debug("message from inside Fn()", "key1", value1, "key2", value2)
+	log.Debug("message from inside Fn()", log.String("key1", "value1"), log.Int64("key2", 42))
 
 	// instead of this
 	log.WithFields(logrus.Fields{"m": "pkg", "key1": value1, "key2": value2}).Debug("inside fn()")
@@ -56,9 +56,7 @@ dependencies. This StdLog obeys to the interface Logger of this package.
 
 	import "github.com/corestoreio/csfw/util/log"
 
-	func init() {
-		log.Set(log.NewStdLog())
-	}
+	std := log.NewStdLog(log.SetStdLevel(log.StdLevelDebug))
 
 log.NewStdLog() accepts a wide range of optional arguments. Please see the functions Std*Option().
 

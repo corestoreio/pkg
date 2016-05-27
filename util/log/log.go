@@ -22,12 +22,12 @@ type Logger interface {
 	New(ctx ...interface{}) Logger
 
 	// Debug outputs information for developers including a strack trace.
-	Debug(msg string, args ...interface{})
+	Debug(msg string, fields ...Field)
 	// Info outputs information for users of the app
-	Info(msg string, args ...interface{})
+	Info(msg string, fields ...Field)
 
 	// Fatal exists the app with logging the error
-	Fatal(msg string, args ...interface{})
+	Fatal(msg string, fields ...Field)
 
 	// SetLevel sets the global log level
 	SetLevel(int)
@@ -41,13 +41,13 @@ type Logger interface {
 // Usage:
 //		function main(){
 //			var PkgLog = log.NewStdLog()
-// 			defer log.WhenDone(PkgLog).Info("Stats", "Package", "main")
+// 			defer log.WhenDone(PkgLog).Info("Stats", log.String("Package", "main"))
 //			...
 // 		}
 // Outputs the duration for the main action.
 type Deferred struct {
-	Info  func(msg string, args ...interface{})
-	Debug func(msg string, args ...interface{})
+	Info  func(msg string, fields ...Field)
+	Debug func(msg string, fields ...Field)
 }
 
 // WhenDone returns a Logger which tracks the duration
@@ -55,14 +55,14 @@ func WhenDone(l Logger) Deferred {
 	// @see http://play.golang.org/p/K53LV16F9e from @francesc
 	start := time.Now()
 	return Deferred{
-		Info: func(msg string, args ...interface{}) {
+		Info: func(msg string, fields ...Field) {
 			if l.IsInfo() {
-				l.Info(msg, append(args, "Duration", time.Since(start).String())...)
+				l.Info(msg, append(fields, Duration("Duration", time.Since(start)))...)
 			}
 		},
-		Debug: func(msg string, args ...interface{}) {
+		Debug: func(msg string, fields ...Field) {
 			if l.IsDebug() {
-				l.Debug(msg, append(args, "Duration", time.Since(start).String())...)
+				l.Debug(msg, append(fields, Duration("Duration", time.Since(start)))...)
 			}
 		},
 	}

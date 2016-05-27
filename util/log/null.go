@@ -31,13 +31,13 @@ func NewBlackHole() BlackHole {
 func (l BlackHole) New(ctx ...interface{}) Logger { return BlackHole{} }
 
 // Debug logs a debug entry. Noop.
-func (l BlackHole) Debug(msg string, args ...interface{}) {}
+func (l BlackHole) Debug(msg string, _ ...Field) {}
 
 // Info logs an info entry. Noop.
-func (l BlackHole) Info(msg string, args ...interface{}) {}
+func (l BlackHole) Info(msg string, _ ...Field) {}
 
 // Fatal logs a fatal entry then panics.
-func (l BlackHole) Fatal(msg string, args ...interface{}) { panic("exit due to fatal error: " + msg) }
+func (l BlackHole) Fatal(msg string, _ ...Field) { panic("exit due to fatal error: " + msg) }
 
 // IsDebug determines if this logger logs a debug statement. Returns always true.
 func (l BlackHole) IsDebug() bool { return l.EnableDebug }

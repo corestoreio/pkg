@@ -14,7 +14,12 @@
 
 package log
 
-import "github.com/inconshreveable/log15"
+import (
+	"sync"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/inconshreveable/log15"
+)
 
 type Log15 struct {
 	Level log15.Lvl
@@ -37,18 +42,18 @@ func (l *Log15) New(ctx ...interface{}) Logger {
 }
 
 // Fatal exists the app with logging the error
-func (l *Log15) Fatal(msg string, args ...interface{}) {
-	l.Wrap.Crit(msg, args...)
+func (l *Log15) Fatal(msg string, fields ...Field) {
+	l.Wrap.Crit(msg, doLog15FieldWrap(fields...)...)
 }
 
 // Info outputs information for users of the app
-func (l *Log15) Info(msg string, args ...interface{}) {
-	l.Wrap.Info(msg, args...)
+func (l *Log15) Info(msg string, fields ...Field) {
+	l.Wrap.Info(msg, doLog15FieldWrap(fields...)...)
 }
 
 // Debug outputs information for developers including a strack trace.
-func (l *Log15) Debug(msg string, args ...interface{}) {
-	l.Wrap.Debug(msg, args...)
+func (l *Log15) Debug(msg string, fields ...Field) {
+	l.Wrap.Debug(msg, doLog15FieldWrap(fields...)...)
 }
 
 // SetLevel sets the log level. Panics on incorrect value
@@ -65,4 +70,53 @@ func (l *Log15) IsDebug() bool {
 // IsInfo returns true if Info level is enabled
 func (l *Log15) IsInfo() bool {
 	return l.Level >= log15.LvlInfo
+}
+
+var log15IFSlicePool = &sync.Pool{
+	New: func() interface{} {
+		return &log15FieldWrap{
+			ifaces: make([]interface{}, 0, 12), // just guessing not more than 12 args / 6 Fields
+		}
+	},
+}
+
+type log15FieldWrap struct {
+	ifaces []interface{}
+}
+
+func doLog15FieldWrap(fs ...Field) []interface{} {
+	fw := log15IFSlicePool.Get().(*log15FieldWrap)
+	defer log15IFSlicePool.Put(fw)
+
+	if err := Fields(fs).AddTo(fw); err != nil {
+		fw.AddString("error", errors.PrintLoc(err))
+	}
+	return fw.ifaces
+}
+
+func (se *log15FieldWrap) append(key string, val interface{}) {
+	se.ifaces = append(se.ifaces, key, val)
+}
+
+func (se *log15FieldWrap) AddBool(k string, v bool) {
+	se.append(k, v)
+}
+func (se *log15FieldWrap) AddFloat64(k string, v float64) {
+	se.append(k, v)
+}
+func (se *log15FieldWrap) AddInt(k string, v int) {
+	se.append(k, v)
+}
+func (se *log15FieldWrap) AddInt64(k string, v int64) {
+	se.append(k, v)
+}
+func (se *log15FieldWrap) AddMarshaler(k string, v LogMarshaler) error {
+	// se.stdSetKV( k, v.)
+	return nil
+}
+func (se *log15FieldWrap) AddObject(k string, v interface{}) {
+	se.append(k, v)
+}
+func (se *log15FieldWrap) AddString(k string, v string) {
+	se.append(k, v)
 }

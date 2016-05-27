@@ -24,9 +24,9 @@ import (
 	"io"
 	std "log"
 	"os"
-	"runtime/debug"
-	"strconv"
-	"sync"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 const (
@@ -37,13 +37,12 @@ const (
 
 // StdLog implements logging with Go's standard library
 type StdLog struct {
-	gw      io.Writer // global writer
-	level   int
-	flag    int // global flag http://golang.org/pkg/log/#pkg-constants
-	noTrace bool
-	debug   *std.Logger
-	info    *std.Logger
-	fatal   *std.Logger
+	gw    io.Writer // global writer
+	level int
+	flag  int // global flag http://golang.org/pkg/log/#pkg-constants
+	debug *std.Logger
+	info  *std.Logger
+	fatal *std.Logger
 }
 
 // StdOption can be used as an argument in NewStdLog to configure a standard logger.
@@ -119,14 +118,6 @@ func WithStdFatal(out io.Writer, prefix string, flag int) StdOption {
 	}
 }
 
-// SetStdDisableStackTrace disables the stack trace when an error will be passed
-// as an argument.
-func SetStdDisableStackTrace() StdOption {
-	return func(l *StdLog) {
-		l.noTrace = true
-	}
-}
-
 // New returns a new Logger that has this logger's context plus the given context
 // This function panics if an argument is not of type StdOption.
 func (l *StdLog) New(iOpts ...interface{}) Logger {
@@ -142,33 +133,33 @@ func (l *StdLog) New(iOpts ...interface{}) Logger {
 }
 
 // Debug logs a debug entry.
-func (l *StdLog) Debug(msg string, args ...interface{}) {
-	l.log(StdLevelDebug, msg, args)
+func (l *StdLog) Debug(msg string, fields ...Field) {
+	l.log(StdLevelDebug, msg, fields)
 }
 
 // Info logs an info entry.
-func (l *StdLog) Info(msg string, args ...interface{}) {
-	l.log(StdLevelInfo, msg, args)
+func (l *StdLog) Info(msg string, fields ...Field) {
+	l.log(StdLevelInfo, msg, fields)
 }
 
 // Fatal logs a fatal entry then panics.
-func (l *StdLog) Fatal(msg string, args ...interface{}) {
-	l.log(StdLevelFatal, msg, args)
+func (l *StdLog) Fatal(msg string, fields ...Field) {
+	l.log(StdLevelFatal, msg, fields)
 }
 
 // log logs a leveled entry. Panics if an unknown level has been provided.
-func (l *StdLog) log(level int, msg string, args []interface{}) {
+func (l *StdLog) log(level int, msg string, fs Fields) {
 	if l.level >= level {
 		switch level {
 		case StdLevelDebug:
 			// l.debug.Print(stdFormat(msg, append(args, "in", getStackTrace())))
-			l.debug.Print(stdFormat(msg, args, l.noTrace))
+			l.debug.Print(stdFormat(msg, fs))
 			break
 		case StdLevelInfo:
-			l.info.Print(stdFormat(msg, args, l.noTrace))
+			l.info.Print(stdFormat(msg, fs))
 			break
 		case StdLevelFatal:
-			l.fatal.Panic(stdFormat(msg, args, l.noTrace))
+			l.fatal.Panic(stdFormat(msg, fs))
 			break
 		default:
 			panic("Unknown Log Level")
@@ -187,17 +178,42 @@ func (l *StdLog) SetLevel(level int) {
 	l.level = level
 }
 
-func getStackTrace() string {
-	s := debug.Stack()
-	lb := []byte("\n")
-	parts := bytes.Split(s, lb)
-	return string(bytes.Join(parts[6:], lb))
+type stdEncoder struct {
+	buf *bytes.Buffer
 }
 
-// Following Code by: https://github.com/mgutz Mario Gutierrez / MIT License
-// And some changes by @SchumacherFM
+func (se stdEncoder) stdSetKV(key string, val interface{}) {
+	se.buf.WriteString(Separator)
+	if key == "" {
+		key = "_"
+	}
+	se.buf.WriteString(key)
+	se.buf.WriteString(AssignmentChar)
+	se.buf.WriteString(fmt.Sprintf("%#v", val))
+}
 
-var pool = newBP()
+func (se stdEncoder) AddBool(k string, v bool) {
+	se.stdSetKV(k, v)
+}
+func (se stdEncoder) AddFloat64(k string, v float64) {
+	se.stdSetKV(k, v)
+}
+func (se stdEncoder) AddInt(k string, v int) {
+	se.stdSetKV(k, v)
+}
+func (se stdEncoder) AddInt64(k string, v int64) {
+	se.stdSetKV(k, v)
+}
+func (se stdEncoder) AddMarshaler(k string, v LogMarshaler) error {
+	// se.stdSetKV( k, v.)
+	return nil
+}
+func (se stdEncoder) AddObject(k string, v interface{}) {
+	se.stdSetKV(k, v)
+}
+func (se stdEncoder) AddString(k string, v string) {
+	se.stdSetKV(k, v)
+}
 
 // AssignmentChar represents the assignment character between key-value pairs
 var AssignmentChar = ": "
@@ -205,75 +221,17 @@ var AssignmentChar = ": "
 // Separator is the separator to use between key value pairs
 var Separator = " "
 
-func stdSetKV(buf *bytes.Buffer, key string, val interface{}, noTrace bool) {
-	buf.WriteString(Separator)
-	buf.WriteString(key)
-	buf.WriteString(AssignmentChar)
-	if err, ok := val.(error); ok {
-		buf.WriteString(err.Error())
-		if false == noTrace {
-			buf.WriteRune('\n')
-			buf.WriteString(getStackTrace())
-		}
-		return
-	}
-	buf.WriteString(fmt.Sprintf("%#v", val))
-}
-
-func stdFormat(msg string, args []interface{}, noTrace bool) string {
-	buf := pool.Get()
-	defer pool.Put(buf)
+func stdFormat(msg string, fs Fields) string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	se := stdEncoder{buf}
 
 	buf.WriteString(msg)
-	lenArgs := len(args)
-	if lenArgs > 0 {
-		if lenArgs == 1 {
-			stdSetKV(buf, "_", args[0], noTrace)
-		} else if lenArgs%2 == 0 {
-			for i := 0; i < lenArgs; i += 2 {
-				if key, ok := args[i].(string); ok {
-					if key == "" {
-						// show key is invalid
-						stdSetKV(buf, badKeyAtIndex(i), args[i+1], noTrace)
-					} else {
-						stdSetKV(buf, key, args[i+1], noTrace)
-					}
-				} else {
-					// show key is invalid
-					stdSetKV(buf, badKeyAtIndex(i), args[i+1], noTrace)
-				}
-			}
-		} else {
-			stdSetKV(buf, `FIX_IMBALANCED_PAIRS`, args, noTrace)
-		}
+	if err := fs.AddTo(se); err != nil {
+		buf.WriteString("Error")
+		buf.WriteString(AssignmentChar)
+		buf.WriteString(errors.PrintLoc(err))
 	}
 	buf.WriteRune('\n')
 	return buf.String()
-}
-
-func badKeyAtIndex(i int) string {
-	return "BAD_KEY_AT_INDEX_" + strconv.Itoa(i)
-}
-
-type bp struct {
-	sync.Pool
-}
-
-func newBP() *bp {
-	return &bp{
-		Pool: sync.Pool{New: func() interface{} {
-			b := bytes.NewBuffer(make([]byte, 128))
-			b.Reset()
-			return b
-		}},
-	}
-}
-
-func (bp *bp) Get() *bytes.Buffer {
-	return bp.Pool.Get().(*bytes.Buffer)
-}
-
-func (bp *bp) Put(b *bytes.Buffer) {
-	b.Reset()
-	bp.Pool.Put(b)
 }
