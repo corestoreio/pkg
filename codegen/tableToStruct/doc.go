@@ -14,5 +14,7 @@
 
 // package main generates Go structs, slices and function receivers from SQL tables.
 //
+// TODO: Analyze SQL code generation tools
 // TODO: https://github.com/knq/xo
+// TODO: https://bitbucket.org/jatone/genieql
 package main

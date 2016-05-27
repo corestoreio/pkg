@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: Implement IDEAs from https://github.com/moneyphp/money and http://verraes.net/2016/02/type-safety-and-money/
+
 /*
 Package money uses a fixed-length guard for precision arithmetic.
 Implements Un/Marshaller and Scan() method for database
