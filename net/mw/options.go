@@ -14,16 +14,10 @@
 
 package mw
 
-import (
-	"time"
-
-	"github.com/corestoreio/csfw/util/log"
-	"github.com/rs/xstats"
-)
+import "github.com/corestoreio/csfw/util/log"
 
 type optionBox struct {
 	log                   log.Logger
-	xstat                 xstats.XStater
 	genRID                RequestIDGenerator
 	methodOverrideFormKey string
 }
@@ -34,8 +28,7 @@ type Option func(ob *optionBox)
 func newOptionBox(opts ...Option) *optionBox {
 	ob := &optionBox{
 		log:                   log.BlackHole{}, // disabled info and debug logging
-		xstat:                 nopS{},
-		genRID:                &RequestIDService{},
+		genRID:                &requestIDService{},
 		methodOverrideFormKey: MethodOverrideFormKey,
 	}
 	for _, o := range opts {
@@ -53,13 +46,6 @@ func SetLogger(l log.Logger) Option {
 	}
 }
 
-// SetXStats sets a stats handler to a middleware
-func SetXStats(x xstats.XStater) Option {
-	return func(ob *optionBox) {
-		ob.xstat = x
-	}
-}
-
 // SetRequestIDGenerator sets a custom request ID generator
 func SetRequestIDGenerator(g RequestIDGenerator) Option {
 	return func(ob *optionBox) {
@@ -72,28 +58,4 @@ func SetMethodOverrideFormKey(k string) Option {
 	return func(ob *optionBox) {
 		ob.methodOverrideFormKey = k
 	}
-}
-
-type nopS struct{}
-
-var _ xstats.XStater = (*nopS)(nil)
-
-// AddTag implements XStats interface
-func (rc nopS) AddTags(tags ...string) {
-}
-
-// Gauge implements XStats interface
-func (rc nopS) Gauge(stat string, value float64, tags ...string) {
-}
-
-// Count implements XStats interface
-func (rc nopS) Count(stat string, count float64, tags ...string) {
-}
-
-// Histogram implements XStats interface
-func (rc nopS) Histogram(stat string, value float64, tags ...string) {
-}
-
-// Timing implements xstats interface
-func (rc nopS) Timing(stat string, duration time.Duration, tags ...string) {
 }

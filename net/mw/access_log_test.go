@@ -68,7 +68,7 @@ func TestWithAccessLog(t *testing.T) {
 			_, _ = w.Write([]byte{'1', '2', '3'})
 			time.Sleep(time.Millisecond)
 		}),
-		mw.WithAccessLog(mw.SetLogger(testLog)),
+		mw.WithAccessLog(mw.BlackholeXStat{}, mw.SetLogger(testLog)),
 	)
 
 	r, _ := http.NewRequest("GET", "/gopherine", nil)

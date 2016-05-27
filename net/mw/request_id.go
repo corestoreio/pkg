@@ -40,18 +40,18 @@ type RequestIDGenerator interface {
 	Init()
 	// NewID returns an atomic ID. This function gets executed for every
 	// request.
-	NewID() string
+	NewID(*http.Request) string
 }
 
-// DefaultRequestPrefix default prefix generator. Creates a prefix once the middleware
+// requestIDService default prefix generator. Creates a prefix once the middleware
 // is set up.
-type RequestIDService struct {
+type requestIDService struct {
 	prefix string
 }
 
 // Prefix returns a unique prefix string for the current (micro) service.
 // This id gets reset once you restart the service.
-func (rp *RequestIDService) Init() {
+func (rp *requestIDService) Init() {
 	// algorithm taken from https://github.com/zenazn/goji/blob/master/web/middleware/request_id.go#L40-L52
 	hostname, err := os.Hostname()
 	if hostname == "" || err != nil {
@@ -68,18 +68,21 @@ func (rp *RequestIDService) Init() {
 }
 
 // NewID returns a new ID unique for the current compilation.
-func (rp *RequestIDService) NewID() string {
+func (rp *requestIDService) NewID(_ *http.Request) string {
 	return rp.prefix + strconv.FormatInt(atomic.AddInt64(&reqID, 1), 10)
 }
 
 // WithRequestID is a middleware that injects a request ID into the response header
 // of each request. Retrieve it using:
-// 		w.Header().Get(httputil.RequestIDHeader)
+// 		w.Header().Get(RequestIDHeader)
 // If the incoming request has a RequestIDHeader header then that value is used
 // otherwise a random value is generated. You can specify your own generator by
-// providing the RequestPrefixGenerator once or pass no argument to use the default request
-// prefix generator.
+// providing the RequestPrefixGenerator in an option. No options uses the
+// default request prefix generator.
 // Supported options are: SetLogger() and SetRequestIDGenerator()
+//
+// Package store/storenet provides also a request ID generator containing
+// the current requested store.
 func WithRequestID(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	ob.genRID.Init()
@@ -88,7 +91,7 @@ func WithRequestID(opts ...Option) Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			id := r.Header.Get(RequestIDHeader)
 			if id == "" {
-				id = ob.genRID.NewID()
+				id = ob.genRID.NewID(r)
 			}
 			if ob.log.IsDebug() {
 				ob.log.Debug("mw.WithRequestID", "id", id, "request", r)

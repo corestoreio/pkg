@@ -21,16 +21,38 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/request"
+	"github.com/rs/xstats"
 	"github.com/zenazn/goji/web/mutil"
 )
 
 // Idea: github.com/rs/xaccess Copyright (c) 2015 Olivier Poitrey <rs@dailymotion.com> MIT License
 
+// BlackholeXStat provides a type to disable the stats.
+type BlackholeXStat struct{}
+
+var _ xstats.XStater = (*BlackholeXStat)(nil)
+
+// AddTag implements XStats interface
+func (BlackholeXStat) AddTags(tags ...string) {}
+
+// Gauge implements XStats interface
+func (BlackholeXStat) Gauge(stat string, value float64, tags ...string) {}
+
+// Count implements XStats interface
+func (BlackholeXStat) Count(stat string, count float64, tags ...string) {}
+
+// Histogram implements XStats interface
+func (BlackholeXStat) Histogram(stat string, value float64, tags ...string) {}
+
+// Timing implements xstats interface
+func (BlackholeXStat) Timing(stat string, duration time.Duration, tags ...string) {}
+
 // WithAccessLog is a middleware that logs all access requests performed on the
 // sub handler and uses github.com/rs/xstats for collecting stats.
-// Supported option arguments are: SetLogger() and SetXStats()
-// Provided none of those falls back to black hole logging and stats.
-func WithAccessLog(opts ...Option) Middleware {
+// Supported option arguments are: SetLogger().
+// Provide none of those falls back to black hole logging. Log level must be
+// set to info.
+func WithAccessLog(x xstats.XStater, opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -55,16 +77,19 @@ func WithAccessLog(opts ...Option) Middleware {
 				"status:" + status,
 				"status_code:" + strconv.Itoa(lw.Status()),
 			}
-			ob.xstat.Timing("request_time", reqDur, tags...)
-			ob.xstat.Histogram("request_size", float64(lw.BytesWritten()), tags...)
+			x.Timing("request_time", reqDur, tags...)
+			x.Histogram("request_size", float64(lw.BytesWritten()), tags...)
 			if ob.log.IsInfo() {
 				ob.log.Info("request",
+					"proto", r.Proto,
+					"request_uri", r.RequestURI,
 					"method", r.Method,
 					"uri", r.URL.String(),
 					"type", "access",
 					"status", status,
 					"status_code", lw.Status(),
 					"duration", reqDur.Seconds(),
+					"requested-host", r.Host,
 					"size", lw.BytesWritten(),
 					"remote_addr", request.RealIP(r, request.IPForwardedTrust).String(),
 					"user_agent", r.Header.Get("User-Agent"),
