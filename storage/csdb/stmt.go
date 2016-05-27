@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // DefaultResurrectStmtIdleTime is the global idle time when you create a new
@@ -115,7 +115,7 @@ func (su *ResurrectStmt) close() error {
 	}()
 
 	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL, "stmt", su.stmt)
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", log.String("SQL", su.SQL))
 	}
 	if su.stmt == nil {
 		// statement has not been opened or is unused.
@@ -138,7 +138,7 @@ func (su *ResurrectStmt) checkIdle() {
 				// stmt has not been used within the last x seconds.
 				// so close the stmt and release the resources in the DB.
 				if err := su.close(); err != nil {
-					su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", "err", err, "SQL", su.SQL)
+					su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", log.Err(err), log.String("SQL", su.SQL))
 				}
 			}
 		case <-su.stop:
@@ -170,7 +170,7 @@ func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 		return nil, errors.Wrapf(err, "[csdb] DB.Prepare %q", su.SQL)
 	}
 	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", "SQL", su.SQL)
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", log.String("SQL", su.SQL))
 	}
 	su.closed = false
 	return su.stmt, nil

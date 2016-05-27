@@ -1,6 +1,10 @@
 package dbr
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/corestoreio/csfw/log"
+)
 
 // todo for maybe later the sync.Pool code
 //var wfPool = &sync.Pool{
@@ -36,7 +40,7 @@ type ConditionArg func(*whereFragment)
 
 func ConditionRaw(raw string, values ...interface{}) ConditionArg {
 	if err := argsValuer(&values); err != nil {
-		PkgLog.Info("dbr.insertbuilder.values", "err", err, "args", values)
+		PkgLog.Info("dbr.insertbuilder.values", log.Err(err), log.Object("args", values))
 	}
 	return func(wf *whereFragment) {
 		wf.Condition = raw

@@ -22,10 +22,11 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,7 +93,7 @@ func TestResurrectStmtSqlMockNoTicker(t *testing.T) {
 	mock.ExpectPrepare("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
 		ExpectExec().WithArgs("gopher", 3141).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	tw := newTypeWriterMocked(db, log.NewBlackHole())
+	tw := newTypeWriterMocked(db, log.BlackHole{true, true})
 
 	assert.NoError(t, tw.Save("gopher", 3141))
 	assert.False(t, tw.Write.IsIdle())
@@ -121,7 +122,7 @@ func TestResurrectStmtSqlMockShouldPrepareOnceAndThenBecomeIdle(t *testing.T) {
 	mock.ExpectPrepare("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
 		ExpectExec().WithArgs("gopher", 3141).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	tw := newTypeWriterMocked(db, log.NewBlackHole())
+	tw := newTypeWriterMocked(db, log.BlackHole{true, true})
 	tw.Write.StartIdleChecker()
 	tw.Write.StartIdleChecker() // 2x
 
@@ -152,7 +153,7 @@ func TestResurrectStmtSqlMockShouldPrepareTwoTimesWithThreeCalls(t *testing.T) {
 		WithArgs("gopher", 3141).
 		WillReturnResult(sqlmock.NewResult(1, 0))
 
-	tw := newTypeWriterMocked(db, log.NewBlackHole())
+	tw := newTypeWriterMocked(db, log.BlackHole{true, true})
 	tw.Write.StartIdleChecker()
 
 	assert.NoError(t, tw.Save("gopher", 3141))
@@ -190,10 +191,10 @@ func TestResurrectStmtRealDB(t *testing.T) {
 	debugLogBuf = new(log.MutexBuffer)
 	//infoLogBuf = new(log.MutexBuffer)
 
-	l := log.NewStdLog(
-		log.WithStdDebug(debugLogBuf, "testDebug: ", golog.Lshortfile),
-		//log.WithStdInfo(infoLogBuf, "testInfo: ", golog.Lshortfile),
-		log.WithStdLevel(log.StdLevelDebug),
+	l := logw.NewLog(
+		logw.WithDebug(debugLogBuf, "testDebug: ", golog.Lshortfile),
+		//logw.WithInfo(infoLogBuf, "testInfo: ", golog.Lshortfile),
+		logw.WithLevel(logw.LevelDebug),
 	)
 
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {

@@ -14,7 +14,7 @@
 
 package dbr
 
-import "github.com/corestoreio/csfw/util/log"
+import "github.com/corestoreio/csfw/log"
 
 // PkgLog global package based logger
 var PkgLog log.Logger = log.BlackHole{}
