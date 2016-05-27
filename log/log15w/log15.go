@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log
+package log15w
 
 import (
 	"sync"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/inconshreveable/log15"
 )
@@ -37,22 +38,22 @@ func NewLog15(lvl log15.Lvl, h log15.Handler, ctx ...interface{}) *Log15 {
 }
 
 // New creates a new logger with the same level as its parent.
-func (l *Log15) New(ctx ...interface{}) Logger {
+func (l *Log15) New(ctx ...interface{}) log.Logger {
 	return NewLog15(l.Level, l.Wrap.GetHandler(), ctx...)
 }
 
 // Fatal exists the app with logging the error
-func (l *Log15) Fatal(msg string, fields ...Field) {
+func (l *Log15) Fatal(msg string, fields ...log.Field) {
 	l.Wrap.Crit(msg, doLog15FieldWrap(fields...)...)
 }
 
 // Info outputs information for users of the app
-func (l *Log15) Info(msg string, fields ...Field) {
+func (l *Log15) Info(msg string, fields ...log.Field) {
 	l.Wrap.Info(msg, doLog15FieldWrap(fields...)...)
 }
 
 // Debug outputs information for developers including a strack trace.
-func (l *Log15) Debug(msg string, fields ...Field) {
+func (l *Log15) Debug(msg string, fields ...log.Field) {
 	l.Wrap.Debug(msg, doLog15FieldWrap(fields...)...)
 }
 
@@ -84,11 +85,11 @@ type log15FieldWrap struct {
 	ifaces []interface{}
 }
 
-func doLog15FieldWrap(fs ...Field) []interface{} {
+func doLog15FieldWrap(fs ...log.Field) []interface{} {
 	fw := log15IFSlicePool.Get().(*log15FieldWrap)
 	defer log15IFSlicePool.Put(fw)
 
-	if err := Fields(fs).AddTo(fw); err != nil {
+	if err := log.Fields(fs).AddTo(fw); err != nil {
 		fw.AddString("error", errors.PrintLoc(err))
 	}
 	return fw.ifaces
@@ -110,7 +111,7 @@ func (se *log15FieldWrap) AddInt(k string, v int) {
 func (se *log15FieldWrap) AddInt64(k string, v int64) {
 	se.append(k, v)
 }
-func (se *log15FieldWrap) AddMarshaler(k string, v LogMarshaler) error {
+func (se *log15FieldWrap) AddMarshaler(k string, v log.LogMarshaler) error {
 	// se.stdSetKV( k, v.)
 	return nil
 }

@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log_test
+package log15w_test
 
 import (
 	"bytes"
 	"testing"
 
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/log15w"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ log.Logger = (*log.Log15)(nil)
+var _ log.Logger = (*log15w.Log15)(nil)
 
 func getLog15(lvl log15.Lvl) string {
 	buf := &bytes.Buffer{}
-	l := log.NewLog15(lvl, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
+	l := log15w.NewLog15(lvl, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
 
 	if l.IsDebug() {
 		l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))

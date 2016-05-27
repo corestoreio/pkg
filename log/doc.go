@@ -29,7 +29,7 @@ key/value pairs to the logging function.
 Level guards exists to avoid the cost of building arguments. Get in the
 habit of using guards.
 
-	import "github.com/corestoreio/csfw/util/log"
+	import "github.com/corestoreio/csfw/log"
 
 	if log.IsDebug() {
 		log.Debug("some message", log.Object("key1", expensive()))
@@ -37,7 +37,7 @@ habit of using guards.
 
 Standardizes on key-value pair argument sequence:
 
-	import "github.com/corestoreio/csfw/util/log"
+	import "github.com/corestoreio/csfw/log"
 
 	log.Debug("message from inside Fn()", log.String("key1", "value1"), log.Int64("key2", 42))
 
@@ -54,7 +54,7 @@ Standard Logger
 CoreStore provides a leveled logger based on Go's standard library without any
 dependencies. This StdLog obeys to the interface Logger of this package.
 
-	import "github.com/corestoreio/csfw/util/log"
+	import "github.com/corestoreio/csfw/log"
 
 	std := log.NewStdLog(log.SetStdLevel(log.StdLevelDebug))
 

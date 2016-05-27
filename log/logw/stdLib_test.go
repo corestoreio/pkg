@@ -12,28 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log_test
+package logw_test
 
 import (
 	"bytes"
 	std "log"
 	"testing"
 
-	"github.com/corestoreio/csfw/util/log"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ log.Logger = (*logw.Log)(nil)
 
 func TestStdLog(t *testing.T) {
 
 	var buf bytes.Buffer
 
-	sl := log.NewStdLog(
-		log.WithStdLevel(log.StdLevelDebug),
-		log.WithStdDebug(&buf, "TEST-DEBUG ", std.LstdFlags),
-		log.WithStdInfo(&buf, "TEST-INFO ", std.LstdFlags),
-		log.WithStdFatal(&buf, "TEST-FATAL ", std.LstdFlags),
+	sl := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithDebug(&buf, "TEST-DEBUG ", std.LstdFlags),
+		logw.WithInfo(&buf, "TEST-INFO ", std.LstdFlags),
+		logw.WithFatal(&buf, "TEST-FATAL ", std.LstdFlags),
 	)
-	sl.SetLevel(log.StdLevelInfo)
+	sl.SetLevel(logw.LevelInfo)
 	assert.False(t, sl.IsDebug())
 	assert.True(t, sl.IsInfo())
 
@@ -47,7 +50,7 @@ func TestStdLog(t *testing.T) {
 	assert.NotContains(t, logs, "Debug2")
 
 	buf.Reset()
-	sl.SetLevel(log.StdLevelDebug)
+	sl.SetLevel(logw.LevelDebug)
 	assert.True(t, sl.IsDebug())
 	assert.True(t, sl.IsInfo())
 	sl.Debug("my Debug", log.Float64("float", 3.14152))
@@ -64,10 +67,10 @@ func TestStdLog(t *testing.T) {
 func TestStdLogGlobals(t *testing.T) {
 
 	var buf bytes.Buffer
-	sl := log.NewStdLog(
-		log.WithStdLevel(log.StdLevelDebug),
-		log.WithStdWriter(&buf),
-		log.WithStdFlag(std.Ldate),
+	sl := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithStdWriter(&buf),
+		logw.WithFlag(std.Ldate),
 	)
 	sl.Debug("my Debug", log.Float64("float", 3.14152))
 	sl.Debug("my Debug2", log.Float64("float2", 2.14152))
@@ -85,10 +88,10 @@ func TestStdLogFormat(t *testing.T) {
 
 	var buf bytes.Buffer
 	var bufInfo bytes.Buffer
-	sl := log.NewStdLog(
-		log.WithStdLevel(log.StdLevelDebug),
-		log.WithStdWriter(&buf),
-		log.WithStdInfo(&bufInfo, "TEST-INFO ", std.LstdFlags),
+	sl := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithStdWriter(&buf),
+		logw.WithInfo(&bufInfo, "TEST-INFO ", std.LstdFlags),
 	)
 
 	sl.Debug("my Debug", log.Float64("float1", 3.14152))
@@ -122,10 +125,10 @@ func TestStdLogNewPanic(t *testing.T) {
 	}()
 
 	var buf bytes.Buffer
-	sl := log.NewStdLog(
-		log.WithStdWriter(&buf),
+	sl := logw.NewLog(
+		logw.WithStdWriter(&buf),
 	)
-	sl.New(log.WithStdLevel(log.StdLevelDebug), 1)
+	sl.New(logw.WithLevel(logw.LevelDebug), 1)
 }
 
 func TestStdLogFatal(t *testing.T) {
@@ -137,8 +140,8 @@ func TestStdLogFatal(t *testing.T) {
 	}()
 
 	var buf bytes.Buffer
-	sl := log.NewStdLog(
-		log.WithStdWriter(&buf),
+	sl := logw.NewLog(
+		logw.WithStdWriter(&buf),
 	)
 	sl.Fatal("This is sparta")
 }

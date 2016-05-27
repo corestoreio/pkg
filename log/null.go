@@ -21,12 +21,6 @@ type BlackHole struct {
 	EnableInfo  bool
 }
 
-// NewBlackHole creates a new black hole logger where debug and info logging
-// is enabled.
-func NewBlackHole() BlackHole {
-	return BlackHole{true, true}
-}
-
 // New returns a new Logger that has this logger's context plus the given context
 func (l BlackHole) New(ctx ...interface{}) Logger { return BlackHole{} }
 

@@ -12,23 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log_test
-
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/util/log"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestBlackHoleFatal(t *testing.T) {
-
-	defer func() {
-		if r := recover(); r != nil {
-			assert.Contains(t, r.(string), "This is sparta")
-		}
-	}()
-
-	nl := &log.BlackHole{}
-	nl.Fatal("This is sparta")
-}
+// Package logw provides a wrapper (w) to Go's standard logger
+package logw

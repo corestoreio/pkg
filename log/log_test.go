@@ -14,9 +14,8 @@
 
 package log_test
 
-import "github.com/corestoreio/csfw/util/log"
+import "github.com/corestoreio/csfw/log"
 
 var (
 	_ log.Logger = (*log.BlackHole)(nil)
-	_ log.Logger = (*log.StdLog)(nil)
 )
