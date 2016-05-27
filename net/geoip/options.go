@@ -161,7 +161,7 @@ func WithLogger(l log.Logger) Option {
 	}
 }
 
-// WithGeoIP2Reader creates a new GeoIP2.Reader. As long as there are no other
+// WithGeoIP2File creates a new GeoIP2.Reader. As long as there are no other
 // readers this is a mandatory argument.
 // Error behaviour: NotFound, NotValid
 func WithGeoIP2File(filename string) Option {
@@ -198,7 +198,6 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 			}
 			return nil
 		}
-		// todo: add tests
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		if s.geoipDone == 0 {

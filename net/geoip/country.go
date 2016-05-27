@@ -70,7 +70,7 @@ type Country struct {
 	} `json:"represented_country,omitempty"`
 	Subdivision []struct {
 		Confidence int               `json:"confidence,omitempty"`
-		GeoNameId  uint              `json:"geoname_id,omitempty"`
+		GeoNameID  uint              `json:"geoname_id,omitempty"`
 		IsoCode    string            `json:"iso_code,omitempty"`
 		Names      map[string]string `json:"names,omitempty"`
 	} `json:"subdivisions,omitempty"`
@@ -81,7 +81,7 @@ type Country struct {
 		IsAnonymousProxy             bool   `json:"is_anonymous_proxy,omitempty"`
 		IsSatelliteProvider          bool   `json:"is_satellite_provider,omitempty"`
 		Isp                          string `json:"isp,omitempty"`
-		IpAddress                    string `json:"ip_address,omitempty"`
+		IPAddress                    string `json:"ip_address,omitempty"`
 		Organization                 string `json:"organization,omitempty"`
 		UserType                     string `json:"user_type,omitempty"`
 	} `json:"traits,omitempty"`

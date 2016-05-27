@@ -101,6 +101,8 @@ func PrepareOptions(be *Backend) geoip.ScopedOptionFunc {
 			opt = tcbigcache.With()
 		}
 
+		// for now only encoding/gob can be used, we might make it configurable
+		// to choose the encoder/decoder.
 		tc, err := transcache.NewProcessor(opt)
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendgeoip] transcache.NewProcessor"))

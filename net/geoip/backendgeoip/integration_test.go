@@ -30,6 +30,7 @@ import (
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
@@ -45,22 +46,63 @@ func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 }
 
 func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
-	t.Skip("TODO")
+	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
+	if redConURL == "" {
+		t.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
+	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
+		`)
+	}
+
+	// clear all redis keys
+
+	// test if we get the correct country and if the country has
+	// been successfully stored in redis and can be retrieved.
+
+	scpFnc := backendgeoip.Default()
+	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		// @see structure.go for the limitation to scope.Default
+		mustToPath(t, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):   `TestUserID`,
+		mustToPath(t, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0):  `TestLicense`,
+		mustToPath(t, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0):  `21s`,
+		mustToPath(t, backend.NetGeoipMaxmindWebserviceRedisURL.ToPath, scope.Default, 0): redConURL,
+	}))
+	cfgScp := cfgSrv.NewScoped(1, 2) // Website ID 2 == euro / Store ID == 2 Austria ==> here doesn't matter
+
+	geoSrv := mustGetTestService()
+	if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
+		t.Fatal(errors.PrintLoc(err))
+	}
+
+	req := func() *http.Request {
+		req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+		req.RemoteAddr = "2a02:d180::" // Germany
+		return req
+	}()
+
+	geoSrv.WithCountryByIP()(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+
+		cty, err := geoip.FromContextCountry(r.Context())
+		t.Logf("%#v", cty)
+		if err != nil {
+			t.Error(errors.PrintLoc(err))
+		}
+		assert.Exactly(t, "DE", cty.Country.IsoCode)
+
+	})).ServeHTTP(nil, req)
+
 }
 
 func TestBackend_WithAlternativeRedirect(t *testing.T) {
 
 	scpFnc := backendgeoip.Default()
 	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):     `https://byebye.de.io`,
-		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Store, 2): 307,
+		// @see structure.go why scope.Store and scope.Website can be used.
+		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
+		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
 	}))
 	cfgScp := cfgSrv.NewScoped(1, 2) // Website ID 2 == euro / Store ID == 2 Austria
 
-	geoSrv := mustGetTestService()
-	if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
-		t.Fatal(errors.PrintLoc(err))
-	}
+	geoSrv := mustGetTestService(geoip.WithOptionFactory(scpFnc(cfgScp)))
 	if err := geoSrv.Options(geoip.WithAllowedCountryCodes(scope.Store, 2, "AT", "CH")); err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
