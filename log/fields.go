@@ -147,8 +147,7 @@ func Bool(key string, value bool) Field {
 	return Field{key: key, fieldType: typeBool, int64: val}
 }
 
-// Float64 constructs a Field with the given key and value. Encodes value
-// as IEEE 754 binary representation.
+// Float64 constructs a Field with the given key and value.
 func Float64(key string, value float64) Field {
 	return Field{key: key, fieldType: typeFloat64, float64: value}
 }
@@ -230,9 +229,9 @@ func Duration(key string, val time.Duration) Field {
 // <nil> if the error is nil.
 func Err(err error) Field {
 	if err == nil {
-		return String("error", "<nil>")
+		return String(ErrorKeyName, "<nil>")
 	}
-	return String("error", err.Error())
+	return String(ErrorKeyName, err.Error())
 }
 
 // Object constructs a field with the given key and an arbitrary object. It uses

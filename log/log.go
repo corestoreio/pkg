@@ -16,6 +16,10 @@ package log
 
 import "time"
 
+// ErrorKeyName whenever an error occurs during marshaling that is the
+// official key name in the log stream.
+const ErrorKeyName = `Error`
+
 // Logger defines the minimum requirements for logging. See doc.go for more details.
 type Logger interface {
 	// New returns a new Logger that has this logger's context plus the given context

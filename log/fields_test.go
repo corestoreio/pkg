@@ -132,7 +132,7 @@ func TestField_TextError(t *testing.T) {
 	f := Text(testKey, data)
 	assert.Exactly(t, typeString, f.fieldType)
 	assert.Exactly(t, "[log] TextMarshaler: Errr", f.string)
-	assert.Exactly(t, "error", f.key)
+	assert.Exactly(t, ErrorKeyName, f.key)
 }
 
 func TestField_JSON(t *testing.T) {
@@ -147,7 +147,7 @@ func TestField_JSONError(t *testing.T) {
 	f := JSON(testKey, gs{data: make(chan struct{})})
 	assert.Exactly(t, typeString, f.fieldType)
 	assert.Exactly(t, "[log] MarshalJSON: json: unsupported type: chan struct {}", f.string)
-	assert.Exactly(t, "error", f.key)
+	assert.Exactly(t, ErrorKeyName, f.key)
 }
 
 func TestField_Time(t *testing.T) {
@@ -172,7 +172,7 @@ func TestField_Error(t *testing.T) {
 	f := Err(err)
 	assert.Exactly(t, typeString, f.fieldType)
 	assert.Exactly(t, data, f.string)
-	assert.Exactly(t, "error", f.key)
+	assert.Exactly(t, ErrorKeyName, f.key)
 }
 
 func TestField_Object(t *testing.T) {

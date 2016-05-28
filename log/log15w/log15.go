@@ -52,7 +52,7 @@ func (l *Log15) Info(msg string, fields ...log.Field) {
 	l.Wrap.Info(msg, doLog15FieldWrap(fields...)...)
 }
 
-// Debug outputs information for developers including a strack trace.
+// Debug outputs information for developers.
 func (l *Log15) Debug(msg string, fields ...log.Field) {
 	l.Wrap.Debug(msg, doLog15FieldWrap(fields...)...)
 }
@@ -90,7 +90,7 @@ func doLog15FieldWrap(fs ...log.Field) []interface{} {
 	defer log15IFSlicePool.Put(fw)
 
 	if err := log.Fields(fs).AddTo(fw); err != nil {
-		fw.AddString("error", errors.PrintLoc(err))
+		fw.AddString(log.ErrorKeyName, errors.PrintLoc(err))
 	}
 	return fw.ifaces
 }
@@ -112,7 +112,9 @@ func (se *log15FieldWrap) AddInt64(k string, v int64) {
 	se.append(k, v)
 }
 func (se *log15FieldWrap) AddMarshaler(k string, v log.LogMarshaler) error {
-	// se.stdSetKV( k, v.)
+	if err := v.MarshalLog(se); err != nil {
+		se.AddString(log.ErrorKeyName, errors.PrintLoc(err))
+	}
 	return nil
 }
 func (se *log15FieldWrap) AddObject(k string, v interface{}) {

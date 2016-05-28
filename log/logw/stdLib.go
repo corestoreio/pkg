@@ -52,7 +52,7 @@ type Log struct {
 	fatal *std.Logger
 }
 
-// Option can be used as an argument in NewStdLog to configure a standard logger.
+// Option can be used as an argument in NewLog to configure a standard logger.
 type Option func(*Log)
 
 // NewLog creates a new logger with 6 different sub loggers.
@@ -79,9 +79,9 @@ func NewLog(opts ...Option) *Log {
 	return sl
 }
 
-// SetStdWriter sets the global writer for all loggers. This global writer can be
+// SetWriter sets the global writer for all loggers. This global writer can be
 // overwritten by individual level options.
-func WithStdWriter(w io.Writer) Option {
+func WithWriter(w io.Writer) Option {
 	return func(l *Log) {
 		l.gw = w
 	}
@@ -126,14 +126,14 @@ func WithFatal(out io.Writer, prefix string, flag int) Option {
 }
 
 // New returns a new Logger that has this logger's context plus the given context
-// This function panics if an argument is not of type StdOption.
+// This function panics if an argument is not of type Option.
 func (l *Log) New(iOpts ...interface{}) log.Logger {
-	var opts = make([]Option, len(iOpts), len(iOpts))
+	var opts = make([]Option, len(iOpts))
 	for i, iopt := range iOpts {
 		if o, ok := iopt.(Option); ok {
 			opts[i] = o
 		} else {
-			panic("Arguments to New() can only be StdOption types!")
+			panic("Arguments to New() can only be Option types!")
 		}
 	}
 	return NewLog(opts...)
@@ -216,7 +216,12 @@ func (se stdEncoder) AddInt64(k string, v int64) {
 	se.stdSetKV(k, v)
 }
 func (se stdEncoder) AddMarshaler(k string, v log.LogMarshaler) error {
-	// se.stdSetKV( k, v.)
+	if err := v.MarshalLog(se); err != nil {
+		se.buf.WriteString(Separator)
+		se.buf.WriteString(log.ErrorKeyName)
+		se.buf.WriteString(AssignmentChar)
+		se.buf.WriteString(errors.PrintLoc(err))
+	}
 	return nil
 }
 func (se stdEncoder) AddObject(k string, v interface{}) {
@@ -233,7 +238,8 @@ func stdFormat(msg string, fs log.Fields) string {
 
 	buf.WriteString(msg)
 	if err := fs.AddTo(se); err != nil {
-		buf.WriteString("Error")
+		buf.WriteString(Separator)
+		buf.WriteString(log.ErrorKeyName)
 		buf.WriteString(AssignmentChar)
 		buf.WriteString(errors.PrintLoc(err))
 	}

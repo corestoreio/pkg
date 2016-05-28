@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
+	"math"
 )
 
 var _ log.Logger = (*log15w.Log15)(nil)
@@ -42,14 +43,52 @@ func getLog15(lvl log15.Lvl) string {
 
 func TestNewLog15_Debug(t *testing.T) {
 	out := getLog15(log15.LvlDebug)
-	assert.Contains(t, out, `{"Hello":"Gophers","error":"I'm an debug error","lvl":"dbug"`)
+	assert.Contains(t, out, `{"Error":"I'm an debug error","Hello":"Gophers","lvl":"dbug","msg":"log_15_debug","pi":3.14159`)
 	assert.Contains(t, out, `"pi":3.14159`)
-	assert.Contains(t, out, `"error":"I'm an info error","lvl":"info"`)
+	assert.Contains(t, out, `{"Error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info","msg":"log_15_info"`)
 }
 
 func TestNewLog15_Info(t *testing.T) {
 	out := getLog15(log15.LvlInfo)
-	assert.NotContains(t, out, `{"Hello":"Gophers","error":"I'm an debug error","lvl":"dbug"`)
-	assert.Contains(t, out, `"error":"I'm an info error","lvl":"info"`)
+	assert.NotContains(t, out, `{"Hello":"Gophers","Error":"I'm an debug error","lvl":"dbug"`)
+	assert.Contains(t, out, `{"Error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info",`)
 	assert.Contains(t, out, `"e":2.7182`)
+}
+
+type myMarshaler struct {
+	string
+	float64
+	bool
+	error
+}
+
+func (mm myMarshaler) MarshalLog(kv log.KeyValuer) error {
+	kv.AddBool("kvbool", mm.bool)
+	kv.AddString("kvstring", mm.string)
+	kv.AddFloat64("kvfloat64", mm.float64)
+	return mm.error
+}
+
+func TestAddMarshaler(t *testing.T) {
+	buf := &bytes.Buffer{}
+	l := log15w.NewLog15(log15.LvlDebug, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
+
+	l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))
+
+	l.Debug("log_15_marshalling", log.Object("anObject", 42), log.Marshaler("myMarshaler", myMarshaler{
+		string:  "s1",
+		float64: math.Ln2,
+		bool:    true,
+	}))
+	assert.Contains(t, buf.String(), `"anObject":42,"e":2.7182,"kvbool":"true","kvfloat64":0.6931471805599453,"kvstring":"s1",`)
+}
+
+func TestAddMarshaler_Error(t *testing.T) {
+	buf := &bytes.Buffer{}
+	l := log15w.NewLog15(log15.LvlDebug, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
+
+	l.Debug("marshalling", log.Marshaler("myMarshaler", myMarshaler{
+		error: errors.New("Whooops"),
+	}))
+	assert.Contains(t, buf.String(), `{"Error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:92: Whooops\n","Hello":"Gophers","anObject":42,"e":2.7182,"kvbool":"false","kvfloat64":0,"kvstring":""`)
 }
