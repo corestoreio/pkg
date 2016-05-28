@@ -18,12 +18,13 @@ import (
 	"bytes"
 	"testing"
 
+	"math"
+
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/log15w"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
-	"math"
 )
 
 var _ log.Logger = (*log15w.Log15)(nil)
@@ -90,5 +91,5 @@ func TestAddMarshaler_Error(t *testing.T) {
 	l.Debug("marshalling", log.Marshaler("myMarshaler", myMarshaler{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `{"Error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:92: Whooops\n","Hello":"Gophers","anObject":42,"e":2.7182,"kvbool":"false","kvfloat64":0,"kvstring":""`)
+	assert.Contains(t, buf.String(), `{"Error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:93: Whooops\n","Hello":"Gophers","anObject":42,"e":2.7182,"kvbool":"false","kvfloat64":0,"kvstring":""`)
 }

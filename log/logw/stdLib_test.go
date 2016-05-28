@@ -156,7 +156,7 @@ func TestAddMarshaler_Error(t *testing.T) {
 	sl.Debug("marshalling", log.Marshaler("myMarshaler", myMarshaler{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `marshalling kvbool: false kvstring: "" kvfloat64: 0 Error: github.com/corestoreio/csfw/log/logw/stdLib_test.go:157: Whooops`)
+	assert.Contains(t, buf.String(), `marshalling kvbool: false kvstring: "" kvfloat64: 0 Error: github.com/corestoreio/csfw/log/logw/stdLib_test.go:158: Whooops`)
 }
 
 func TestStdLogNewPanic(t *testing.T) {
