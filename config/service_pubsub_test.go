@@ -22,9 +22,10 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,11 +45,11 @@ func (ts *testSubscriber) MessageConfig(p cfgpath.Path) error {
 
 func initLogger() (*log.MutexBuffer, log.Logger) {
 	debugBuf := new(log.MutexBuffer)
-	lg := log.NewStdLog(
-		log.WithStdDebug(debugBuf, "testDebug: ", goLog.Lshortfile),
-		log.WithStdInfo(ioutil.Discard, "testInfo: ", goLog.Lshortfile),
+	lg := logw.NewLog(
+		logw.WithDebug(debugBuf, "testDebug: ", goLog.Lshortfile),
+		logw.WithInfo(ioutil.Discard, "testInfo: ", goLog.Lshortfile),
 	)
-	lg.SetLevel(log.StdLevelDebug)
+	lg.SetLevel(logw.LevelDebug)
 	return debugBuf, lg
 }
 
@@ -129,7 +130,7 @@ func TestPubSubPanicError(t *testing.T) {
 	assert.NoError(t, s.Write(cfgpath.MustNew(testPath).Bind(scope.Store, 123), 321))
 
 	assert.NoError(t, s.Close())
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err Error: "OMG! Panic!" path: "stores/123/aa/bb/cc"`)
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
@@ -195,7 +196,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, s.Unsubscribe(subID))
 	assert.NoError(t, s.Write(cfgpath.MustNewByParts("xx/yy/zz").Bind(scope.Store, 123), 321))
 	assert.NoError(t, s.Close())
-	assert.Contains(t, debugBuf.String(), "config.Service.Write path: cfgpath.Path{ Route:cfgpath.NewRoute(`xx/yy/zz`), Scope: 4, ID: 123 } val: 321")
+	assert.Contains(t, debugBuf.String(), `config.Service.Write path: "stores/123/xx/yy/zz" val: 321`)
 
 }
 
@@ -248,7 +249,7 @@ func TestPubSubEvict(t *testing.T) {
 
 	assert.NoError(t, s.Close())
 
-	assert.Contains(t, debugBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err Error: "WTF Eviction? Panic!" path: "stores/123/xx/yy/zz"`)
 
 	levelCall.Lock()
 	assert.Equal(t, 3, levelCall.level2Calls)

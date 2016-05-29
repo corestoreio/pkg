@@ -14,7 +14,7 @@
 
 package config
 
-import "github.com/corestoreio/csfw/util/log"
+import "github.com/corestoreio/csfw/log"
 
 // ServiceOption applies options to the NewService.
 type ServiceOption func(*Service)

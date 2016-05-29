@@ -15,15 +15,13 @@
 package config
 
 import (
-	"time"
-
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/storage"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/conv"
-
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
+	"time"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
@@ -147,7 +145,7 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 	}
 	for k, v := range def {
 		if s.Log.IsDebug() {
-			s.Log.Debug("config.Service.ApplyDefaults", k, v)
+			s.Log.Debug("config.Service.ApplyDefaults", log.Object(k, v))
 		}
 		var p cfgpath.Path
 		p, err = cfgpath.NewByParts(k) // default path!
@@ -176,11 +174,11 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
 func (s *Service) Write(p cfgpath.Path, v interface{}) error {
 	if s.Log.IsDebug() {
-		s.Log.Debug("config.Service.Write", "path", p, "val", v)
+		s.Log.Debug("config.Service.Write", log.Stringer("path", p), log.Object("val", v))
 	}
 
 	if err := s.Storage.Set(p, v); err != nil {
-		return errors.Wrap(err, "[config] Storage.Set")
+		return errors.Wrap(err, "[config] sStorage.Set")
 	}
 	s.sendMsg(p)
 	return nil
@@ -189,7 +187,7 @@ func (s *Service) Write(p cfgpath.Path, v interface{}) error {
 // get generic getter ... not sure if this should be public ...
 func (s *Service) get(p cfgpath.Path) (interface{}, error) {
 	if s.Log.IsDebug() {
-		s.Log.Debug("config.Service.get", "path", p)
+		s.Log.Debug("config.Service.get", log.Stringer("path", p))
 	}
 	return s.Storage.Get(p)
 }
@@ -269,7 +267,7 @@ func (s *Service) IsSet(p cfgpath.Path) bool {
 	v, err := s.Storage.Get(p)
 	if err != nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug("config.Service.IsSet.Storage.Get", "err", err, "path", p)
+			s.Log.Debug("config.Service.IsSet.Storage.Get", log.Err(err), log.Stringer("path", p))
 		}
 		return false
 	}

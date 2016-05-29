@@ -96,7 +96,7 @@ func ExampleService() {
 	// Scope2: WebsiteGopher
 	// Scope3: StoreGopher
 	// Scope4a: srvString Error: [config] Storage.String.get: [storage] Key not found
-	// Scope4b: srvString Error: github.com/corestoreio/csfw/config/service.go:213: [config] Storage.String.get
+	// Scope4b: srvString Error: github.com/corestoreio/csfw/config/service.go:211: [config] Storage.String.get
 	// [storage] Key not found
 	//
 	// Scope4: Is KeyNotFound true
