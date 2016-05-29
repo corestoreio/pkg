@@ -136,9 +136,6 @@ var dbStorageMultiTests = []struct {
 
 func TestDBStorageMultipleStmt_Set(t *testing.T) {
 	t.Parallel()
-	//debugLogBuf.Reset()
-	//defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
-
 	dbc, dbMock := cstesting.MockDB(t)
 	defer func() {
 		dbMock.ExpectClose()
@@ -180,26 +177,10 @@ func TestDBStorageMultipleStmt_Set(t *testing.T) {
 	}
 
 	assert.NoError(t, sdb.Stop())
-
-	//logStr := debugLogBuf.String()
-	//assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
-	//assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
-	//
-	//assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
-	//assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
-
-	//
-	//// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
-	//assert.Exactly(t, 9, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
-
-	//println("\n", logStr, "\n")
 }
 
 func TestDBStorageMultipleStmt_Get(t *testing.T) {
 	t.Parallel()
-	//debugLogBuf.Reset()
-	//defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
-
 	dbc, dbMock := cstesting.MockDB(t)
 	defer func() {
 		dbMock.ExpectClose()
@@ -241,25 +222,10 @@ func TestDBStorageMultipleStmt_Get(t *testing.T) {
 	}
 
 	assert.NoError(t, sdb.Stop())
-
-	//logStr := debugLogBuf.String()
-	//assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
-	//assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
-	//
-	//assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
-	//assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
-
-	//
-	//// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
-	//assert.Exactly(t, 9, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
-
-	//println("\n", logStr, "\n")
 }
 
 func TestDBStorageMultipleStmt_All(t *testing.T) {
 	t.Parallel()
-	//debugLogBuf.Reset()
-	//defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
 
 	dbc, dbMock := cstesting.MockDB(t)
 	defer func() {
@@ -303,16 +269,4 @@ func TestDBStorageMultipleStmt_All(t *testing.T) {
 	}
 	assert.NoError(t, sdb.Stop())
 
-	//logStr := debugLogBuf.String()
-	//assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
-	//assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
-	//
-	//assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
-	//assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
-
-	//
-	//// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
-	//assert.Exactly(t, 9, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
-
-	//println("\n", logStr, "\n")
 }

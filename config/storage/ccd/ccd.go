@@ -192,8 +192,10 @@ func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 	if data.Valid {
 		return data.String, nil
 	}
-	return nil, errors.NewNotFoundf("[ccd] Key %q", key)
+	return nil, errKeyNotFound
 }
+
+var errKeyNotFound = errors.NewNotFoundf(`[ccd] Key not found`) // todo add test
 
 // AllKeys returns all available keys. Database errors get logged as info message.
 func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {

@@ -45,7 +45,7 @@ func TestIntegrationSQLType(t *testing.T) {
 	var insVal = time.Now().Unix()
 
 	// just for testing !
-	stmt, err := dbCon.DB.Prepare("INSERT INTO `" + tableCollection.Name(tableIndexCoreConfigData) + "` (cfgpath,value) values (?,?)")
+	stmt, err := dbCon.DB.Prepare("INSERT INTO `" + tableCollection.Name(tableIndexCoreConfigData) + "` (path,value) values (?,?)")
 	if false == assert.NoError(t, err) {
 		t.Fatal("Stopping ...")
 	}

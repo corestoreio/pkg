@@ -30,7 +30,6 @@ var (
 	_ config.Getter     = (*config.Service)(nil)
 	_ config.Writer     = (*config.Service)(nil)
 	_ config.Subscriber = (*config.Service)(nil)
-	_ error             = (*config.Service)(nil)
 )
 
 func TestService_ApplyDefaults(t *testing.T) {
