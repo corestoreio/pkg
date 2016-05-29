@@ -225,13 +225,22 @@ func Duration(key string, val time.Duration) Field {
 	return Field{key: key, fieldType: typeInt64, int64: val.Nanoseconds()}
 }
 
-// Error constructs a Field that stores err under the key "error". Prints
+// Error constructs a Field that stores err under the key log.ErrorKeyName. Prints
 // <nil> if the error is nil.
 func Err(err error) Field {
 	if err == nil {
 		return String(ErrorKeyName, "<nil>")
 	}
 	return String(ErrorKeyName, err.Error())
+}
+
+// ErrWithKey constructs a Field that stores err under a key. Prints
+// <nil> if the error is nil.
+func ErrWithKey(key string, err error) Field {
+	if err == nil {
+		return String(key, "<nil>")
+	}
+	return String(key, err.Error())
 }
 
 // Object constructs a field with the given key and an arbitrary object. It uses

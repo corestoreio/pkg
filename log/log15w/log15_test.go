@@ -56,14 +56,14 @@ func TestNewLog15_Info(t *testing.T) {
 	assert.Contains(t, out, `"e":2.7182`)
 }
 
-type myMarshaler struct {
+type marshalMock struct {
 	string
 	float64
 	bool
 	error
 }
 
-func (mm myMarshaler) MarshalLog(kv log.KeyValuer) error {
+func (mm marshalMock) MarshalLog(kv log.KeyValuer) error {
 	kv.AddBool("kvbool", mm.bool)
 	kv.AddString("kvstring", mm.string)
 	kv.AddFloat64("kvfloat64", mm.float64)
@@ -76,7 +76,7 @@ func TestAddMarshaler(t *testing.T) {
 
 	l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))
 
-	l.Debug("log_15_marshalling", log.Object("anObject", 42), log.Marshaler("myMarshaler", myMarshaler{
+	l.Debug("log_15_marshalling", log.Object("anObject", 42), log.Marshaler("marshalLogMock", marshalMock{
 		string:  "s1",
 		float64: math.Ln2,
 		bool:    true,
@@ -88,7 +88,7 @@ func TestAddMarshaler_Error(t *testing.T) {
 	buf := &bytes.Buffer{}
 	l := log15w.NewLog15(log15.LvlDebug, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
 
-	l.Debug("marshalling", log.Marshaler("myMarshaler", myMarshaler{
+	l.Debug("marshalling", log.Marshaler("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
 	assert.Contains(t, buf.String(), `{"Error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:93: Whooops\n","Hello":"Gophers","anObject":42,"e":2.7182,"kvbool":"false","kvfloat64":0,"kvstring":""`)

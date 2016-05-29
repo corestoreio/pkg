@@ -149,7 +149,15 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 	if dbs.log.IsDebug() {
 		li, err1 := result.LastInsertId()
 		ra, err2 := result.RowsAffected()
-		dbs.log.Debug("config.DBStorage.Set.Write.Result", "lastInsertID", li, "lastInsertIDErr", err1, "rowsAffected", ra, "rowsAffectedErr", err2, "SQL", dbs.Write.SQL, "key", key, "value", value)
+		dbs.log.Debug("config.DBStorage.Set.Write.Result",
+			log.Int64("lastInsertID", li),
+			log.Int64("lastInsertIDErr", err1),
+			log.Int64("rowsAffected", ra),
+			"rowsAffectedErr", err2,
+			log.String("SQL", dbs.Write.SQL),
+			log.Stringer("key", key),
+			log.Object("value", value),
+		)
 	}
 	return nil
 }

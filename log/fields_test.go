@@ -175,6 +175,29 @@ func TestField_Error(t *testing.T) {
 	assert.Exactly(t, ErrorKeyName, f.key)
 }
 
+func TestField_Error_Nil(t *testing.T) {
+	f := Err(nil)
+	assert.Exactly(t, typeString, f.fieldType)
+	assert.Exactly(t, `<nil>`, f.string)
+	assert.Exactly(t, ErrorKeyName, f.key)
+}
+
+func TestField_ErrorWithKey(t *testing.T) {
+	const data = `15. “There is no point in using the word 'impossible' to describe something that has clearly happened.” Douglas Adams`
+	err := errors.New(data)
+	f := ErrWithKey("e1", err)
+	assert.Exactly(t, typeString, f.fieldType)
+	assert.Exactly(t, data, f.string)
+	assert.Exactly(t, `e1`, f.key)
+}
+
+func TestField_ErrorWithKey_Nil(t *testing.T) {
+	f := ErrWithKey(`e2`, nil)
+	assert.Exactly(t, typeString, f.fieldType)
+	assert.Exactly(t, `<nil>`, f.string)
+	assert.Exactly(t, `e2`, f.key)
+}
+
 func TestField_Object(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://corestore.io", nil)
 	req.RemoteAddr = "192.168.0.42"
