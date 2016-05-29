@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package freecache uses the freecache in-memory database for reading and
+// Package cfgbigcache uses the bigcache in-memory database for reading and
 // writing configuration paths.
 //
-// Freecache delivers under high concurrent and parallel load better results
+// Bigcache delivers under high concurrent and parallel load better results
 // than a simple key value mutex protected map.
 //
 // Maybe implements synchronization with MySQL core_config_data table.
 // Converts all values to byte slices.
-package freecache
+package cfgbigcache
