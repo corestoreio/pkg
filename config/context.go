@@ -51,14 +51,3 @@ func FromContextGetterPubSuber(ctx context.Context) (r GetterPubSuber, ok bool) 
 func WithContextGetterPubSuber(ctx context.Context, r GetterPubSuber) context.Context {
 	return context.WithValue(ctx, cfgctx.KeyGetterPubSuber{}, r)
 }
-
-// FromContextWriter returns a config.Writer from a context.
-func FromContextWriter(ctx context.Context) (w Writer, ok bool) {
-	w, ok = ctx.Value(cfgctx.KeyWriter{}).(Writer)
-	return
-}
-
-// WithContextWriter adds a writer to a context
-func WithContextWriter(ctx context.Context, w Writer) context.Context {
-	return context.WithValue(ctx, cfgctx.KeyWriter{}, w)
-}

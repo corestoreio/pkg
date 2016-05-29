@@ -69,7 +69,6 @@ type Service struct {
 	Storage storage.Storager
 	// MultiErr which ServiceOption function arguments are generating
 	// Usually empty (= nil) ;-)
-	*errors.MultiErr
 	*pubSub
 
 	// Log can be set for debugging purpose. If nil, it panics.
@@ -80,7 +79,7 @@ type Service struct {
 // NewService creates the main new configuration for all scopes: default, website
 // and store. Default Storage is a simple map[string]interface{}. A new go routine
 // will be startet for the publish and subscribe feature.
-func NewService(opts ...ServiceOption) (*Service, error) {
+func NewService(opts ...Option) (*Service, error) {
 	l := log.BlackHole{} // disabled debug and info logging.
 	s := &Service{
 		pubSub:  newPubSub(l),
@@ -91,25 +90,25 @@ func NewService(opts ...ServiceOption) (*Service, error) {
 	go s.publish() // yes we know how to quit this goroutine.
 
 	if err := s.Options(opts...); err != nil {
-		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
-			s.MultiErr = s.AppendErrors(err)
+		if err2 := s.Close(); err2 != nil { // terminate publisher go routine and prevent leaking
+			return nil, errors.Wrap(err2, "[config] Service.Option.Close")
 		}
-		return nil, s.MultiErr
+		return nil, errors.Wrap(err, "[config] Service.Option")
 	}
 
 	p := cfgpath.MustNewByParts(PathCSBaseURL)
 	if err := s.Storage.Set(p, CSBaseURL); err != nil {
-		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
-			s.MultiErr = s.AppendErrors(err)
+		if err2 := s.Close(); err2 != nil { // terminate publisher go routine and prevent leaking
+			return nil, errors.Wrap(err2, "[config] Service.Storage.Close")
 		}
-		return nil, err
+		return nil, errors.Wrap(err, "[config] Service.Option")
 	}
 	return s, nil
 }
 
 // MustNewService same as NewService but panics on error. Use only in testing
 // or during boot process.
-func MustNewService(opts ...ServiceOption) *Service {
+func MustNewService(opts ...Option) *Service {
 	s, err := NewService(opts...)
 	if err != nil {
 		panic(err)
@@ -118,14 +117,13 @@ func MustNewService(opts ...ServiceOption) *Service {
 }
 
 // Options applies service options.
-func (s *Service) Options(opts ...ServiceOption) error {
+func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil {
-			opt(s)
+			if err := opt(s); err != nil {
+				return errors.Wrap(err, "[config] Service.Options")
+			}
 		}
-	}
-	if s.HasErrors() {
-		return s.MultiErr
 	}
 	return nil
 }

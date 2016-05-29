@@ -16,19 +16,20 @@ package config
 
 import "github.com/corestoreio/csfw/log"
 
-// ServiceOption applies options to the NewService.
-type ServiceOption func(*Service)
+// Option applies options to the NewService function.
+type Option func(*Service) error
 
 // WithLogger sets a logger to the Service and to the internal pubSub
 // goroutine. If nil, everything will panic.
 // Apply this function before setting other option functions to provide your
 // logger to those other option functions.
 // Default Logger log.Blackhole with disabled debug and info logging.
-func WithLogger(l log.Logger) ServiceOption {
-	return func(s *Service) {
+func WithLogger(l log.Logger) Option {
+	return func(s *Service) error {
 		s.Log = l
 		if s.pubSub != nil {
 			s.pubSub.log = l
 		}
+		return nil
 	}
 }

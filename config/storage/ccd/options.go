@@ -17,6 +17,7 @@ package ccd
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
@@ -25,30 +26,27 @@ import (
 
 // WithDBStorage applies the MySQL storage to a new Service. It
 // starts the idle checker of the DBStorage type.
-func WithDBStorage(p csdb.Preparer) config.ServiceOption {
-	return func(s *config.Service) {
+func WithDBStorage(p csdb.Preparer) config.Option {
+	return func(s *config.Service) error {
 		s.Storage = MustNewDBStorage(p).Start()
+		return nil
 	}
 }
 
 // WithCoreConfigData reads the table core_config_data into the Service and overrides
 // existing values. If the column `value` is NULL entry will be ignored.
 // Stops on errors.
-func WithCoreConfigData(dbrSess dbr.SessionRunner) config.ServiceOption {
+func WithCoreConfigData(dbrSess dbr.SessionRunner) config.Option {
 
-	return func(s *config.Service) {
+	return func(s *config.Service) error {
 
 		var ccd TableCoreConfigDataSlice
 		loadedRows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
 		if s.Log.IsDebug() {
-			s.Log.Debug("ccd.WithCoreConfigData.LoadSlice", "rows", loadedRows)
+			s.Log.Debug("ccd.WithCoreConfigData.LoadSlice", log.Int("rows", loadedRows), log.Err(err))
 		}
 		if err != nil {
-			if s.Log.IsDebug() {
-				s.Log.Debug("ccd.WithCoreConfigData.LoadSlice.err", "err", err)
-			}
-			s.MultiErr = s.AppendErrors(err)
-			return
+			return errors.Wrap(err, "[ccd] WithCoreConfigData.csdb.LoadSlice")
 		}
 
 		var writtenRows int
@@ -57,19 +55,18 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.ServiceOption {
 				var p cfgpath.Path
 				p, err = cfgpath.NewByParts(cd.Path)
 				if err != nil {
-					s.MultiErr = s.AppendErrors(errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q", cd.Path))
-					return
+					return errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q", cd.Path)
 				}
 
 				if err = s.Write(p.Bind(scope.FromString(cd.Scope), cd.ScopeID), cd.Value.String); err != nil {
-					s.MultiErr = s.AppendErrors(errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q Scope: %q ID: %d Value: %q", cd.Path, cd.Scope, cd.ScopeID, cd.Value.String))
-					return
+					return errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q Scope: %q ID: %d Value: %q", cd.Path, cd.Scope, cd.ScopeID, cd.Value.String)
 				}
 				writtenRows++
 			}
 		}
 		if s.Log.IsDebug() {
-			s.Log.Debug("ccd.WithCoreConfigData.Written", "loadedRows", loadedRows, "writtenRows", writtenRows)
+			s.Log.Debug("ccd.WithCoreConfigData.Written", log.Int("loadedRows", loadedRows), log.Int("writtenRows", writtenRows))
 		}
+		return nil
 	}
 }

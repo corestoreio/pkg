@@ -61,20 +61,6 @@ func (w cWrite) Write(_ cfgpath.Path, _ interface{}) error {
 
 var _ config.Writer = (*cWrite)(nil)
 
-func TestContextMustWriter(t *testing.T) {
-
-	wr := cWrite{}
-	ctx := config.WithContextWriter(context.Background(), wr)
-	wrHave, ok := config.FromContextWriter(ctx)
-	assert.Exactly(t, wr, wrHave)
-	assert.True(t, ok)
-
-	ctx = config.WithContextWriter(context.Background(), nil)
-	wrHave, ok = config.FromContextWriter(ctx)
-	assert.Nil(t, wrHave)
-	assert.False(t, ok)
-}
-
 func TestContextScopedGetterOK(t *testing.T) {
 
 	srv := cfgmock.NewService()
