@@ -44,15 +44,15 @@ func getLog15(lvl log15.Lvl) string {
 
 func TestNewLog15_Debug(t *testing.T) {
 	out := getLog15(log15.LvlDebug)
-	assert.Contains(t, out, `{"Error":"I'm an debug error","Hello":"Gophers","lvl":"dbug","msg":"log_15_debug","pi":3.14159`)
+	assert.Contains(t, out, `{"error":"I'm an debug error","Hello":"Gophers","lvl":"dbug","msg":"log_15_debug","pi":3.14159`)
 	assert.Contains(t, out, `"pi":3.14159`)
-	assert.Contains(t, out, `{"Error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info","msg":"log_15_info"`)
+	assert.Contains(t, out, `{"error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info","msg":"log_15_info"`)
 }
 
 func TestNewLog15_Info(t *testing.T) {
 	out := getLog15(log15.LvlInfo)
-	assert.NotContains(t, out, `{"Hello":"Gophers","Error":"I'm an debug error","lvl":"dbug"`)
-	assert.Contains(t, out, `{"Error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info",`)
+	assert.NotContains(t, out, `{"Hello":"Gophers","error":"I'm an debug error","lvl":"dbug"`)
+	assert.Contains(t, out, `{"error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info",`)
 	assert.Contains(t, out, `"e":2.7182`)
 }
 
@@ -91,5 +91,5 @@ func TestAddMarshaler_Error(t *testing.T) {
 	l.Debug("marshalling", log.Marshaler("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `{"Error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:93: Whooops\n","Hello":"Gophers","anObject":42,"e":2.7182,"kvbool":"false","kvfloat64":0,"kvstring":""`)
+	assert.Contains(t, buf.String(), `{"error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:93: Whooops\n","Hello":"Gophers","anObject":42,"e":2.7182,"kvbool":"false","kvfloat64":0,"kvstring":""`)
 }

@@ -14,11 +14,16 @@
 
 package log
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"github.com/corestoreio/csfw/util/errors"
+)
 
 // ErrorKeyName whenever an error occurs during marshaling that is the
 // official key name in the log stream.
-const ErrorKeyName = `Error`
+const ErrorKeyName = `error`
 
 // Logger defines the minimum requirements for logging. See doc.go for more details.
 type Logger interface {
@@ -39,6 +44,75 @@ type Logger interface {
 	IsDebug() bool
 	// IsInfo returns true if Info level is enabled
 	IsInfo() bool
+}
+
+// AssignmentChar represents the assignment character between key-value pairs
+var assignmentChar = ": "
+
+// Separator is the separator to use between key value pairs
+var separator = " "
+
+// WriteTypes satisfies the interface KeyValuer. It uses under the hood the
+// function Sprintf("%#v", val) to print the values. This costs performance.
+type WriteTypes struct {
+	// AssignmentChar represents the assignment character between key-value pairs
+	AssignmentChar string
+	// Separator is the separator to use between key value pairs
+	Separator string
+	// W used as writer. Must be a pointer.
+	W interface {
+		WriteString(s string) (n int, err error)
+	}
+}
+
+func (wt WriteTypes) stdSetKV(key string, value interface{}) {
+	if wt.Separator == "" {
+		wt.Separator = separator
+	}
+	wt.W.WriteString(wt.Separator)
+	if key == "" {
+		key = "_"
+	}
+	wt.W.WriteString(key)
+	if wt.AssignmentChar == "" {
+		wt.AssignmentChar = assignmentChar
+	}
+	wt.W.WriteString(wt.AssignmentChar)
+	wt.W.WriteString(fmt.Sprintf("%#v", value)) // can be refactored into the different functions
+}
+
+func (wt WriteTypes) AddBool(key string, value bool) {
+	wt.stdSetKV(key, value)
+}
+func (wt WriteTypes) AddFloat64(key string, value float64) {
+	wt.stdSetKV(key, value)
+}
+func (wt WriteTypes) AddInt(key string, value int) {
+	wt.stdSetKV(key, value)
+}
+func (wt WriteTypes) AddInt64(key string, value int64) {
+	wt.stdSetKV(key, value)
+}
+func (wt WriteTypes) AddMarshaler(key string, value LogMarshaler) error {
+	if err := value.MarshalLog(wt); err != nil {
+		if wt.Separator == "" {
+			wt.Separator = separator
+		}
+		wt.W.WriteString(wt.Separator)
+		wt.W.WriteString(ErrorKeyName)
+		if wt.AssignmentChar == "" {
+			wt.AssignmentChar = assignmentChar
+		}
+		wt.W.WriteString(wt.AssignmentChar)
+		wt.W.WriteString(errors.PrintLoc(err))
+	}
+	return nil
+}
+func (wt WriteTypes) AddObject(key string, value interface{}) {
+	wt.stdSetKV(key, value)
+}
+func (wt WriteTypes) AddString(key string, value string) {
+	wt.stdSetKV(key, value)
 }
 
 // Deferred defines a logger type which can be used to trace the duration.

@@ -19,22 +19,12 @@ package logw
 // any dependencies to third party packages.
 
 import (
-	"bytes"
-	"fmt"
 	"io"
 	std "log"
 	"os"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
 )
-
-// AssignmentChar represents the assignment character between key-value pairs
-var AssignmentChar = ": "
-
-// Separator is the separator to use between key value pairs
-var Separator = " "
 
 const (
 	LevelFatal int = iota + 1
@@ -160,13 +150,13 @@ func (l *Log) log(level int, msg string, fs log.Fields) {
 		switch level {
 		case LevelDebug:
 			// l.debug.Print(stdFormat(msg, append(args, "in", getStackTrace())))
-			l.debug.Print(stdFormat(msg, fs))
+			l.debug.Print(fs.ToString(msg))
 			break
 		case LevelInfo:
-			l.info.Print(stdFormat(msg, fs))
+			l.info.Print(fs.ToString(msg))
 			break
 		case LevelFatal:
-			l.fatal.Panic(stdFormat(msg, fs))
+			l.fatal.Panic(fs.ToString(msg))
 			break
 		default:
 			panic("Unknown Log Level")
@@ -187,62 +177,4 @@ func (l *Log) IsInfo() bool {
 // SetLevel sets the level of this logger.
 func (l *Log) SetLevel(level int) {
 	l.level = level
-}
-
-type stdEncoder struct {
-	buf *bytes.Buffer
-}
-
-func (se stdEncoder) stdSetKV(key string, val interface{}) {
-	se.buf.WriteString(Separator)
-	if key == "" {
-		key = "_"
-	}
-	se.buf.WriteString(key)
-	se.buf.WriteString(AssignmentChar)
-	se.buf.WriteString(fmt.Sprintf("%#v", val))
-}
-
-func (se stdEncoder) AddBool(k string, v bool) {
-	se.stdSetKV(k, v)
-}
-func (se stdEncoder) AddFloat64(k string, v float64) {
-	se.stdSetKV(k, v)
-}
-func (se stdEncoder) AddInt(k string, v int) {
-	se.stdSetKV(k, v)
-}
-func (se stdEncoder) AddInt64(k string, v int64) {
-	se.stdSetKV(k, v)
-}
-func (se stdEncoder) AddMarshaler(k string, v log.LogMarshaler) error {
-	if err := v.MarshalLog(se); err != nil {
-		se.buf.WriteString(Separator)
-		se.buf.WriteString(log.ErrorKeyName)
-		se.buf.WriteString(AssignmentChar)
-		se.buf.WriteString(errors.PrintLoc(err))
-	}
-	return nil
-}
-func (se stdEncoder) AddObject(k string, v interface{}) {
-	se.stdSetKV(k, v)
-}
-func (se stdEncoder) AddString(k string, v string) {
-	se.stdSetKV(k, v)
-}
-
-func stdFormat(msg string, fs log.Fields) string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	se := stdEncoder{buf}
-
-	buf.WriteString(msg)
-	if err := fs.AddTo(se); err != nil {
-		buf.WriteString(Separator)
-		buf.WriteString(log.ErrorKeyName)
-		buf.WriteString(AssignmentChar)
-		buf.WriteString(errors.PrintLoc(err))
-	}
-	buf.WriteRune('\n')
-	return buf.String()
 }

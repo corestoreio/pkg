@@ -82,9 +82,16 @@ func TestField_String(t *testing.T) {
 func TestField_Stringer(t *testing.T) {
 	const data = `27. “Anything invented after you're thirty-five is against the natural order of things.” Douglas Adams`
 	f := Stringer(testKey, bytes.NewBufferString(data))
-	assert.Exactly(t, typeString, f.fieldType)
-	assert.Exactly(t, data, f.string)
+	assert.Exactly(t, typeStringer, f.fieldType)
+	assert.Empty(t, f.string)
 	assert.Exactly(t, testKey, f.key)
+
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " MyTestKey: \"27. “Anything invented after you're thirty-five is against the natural order of things.” Douglas Adams\"", buf.String())
 }
 
 type gs struct {
@@ -115,24 +122,42 @@ func (g gs) MarshalLog() (Field, error) {
 
 func TestField_GoStringer(t *testing.T) {
 	f := GoStringer(testKey, gs{})
-	assert.Exactly(t, typeString, f.fieldType)
-	assert.Exactly(t, "gs struct {}", f.string)
+	assert.Exactly(t, typeGoStringer, f.fieldType)
+	assert.Empty(t, f.string)
 	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " MyTestKey: \"gs struct {}\"", buf.String())
 }
 
 func TestField_Text(t *testing.T) {
 	const data = `35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams`
 	f := Text(testKey, text.Chars(data))
-	assert.Exactly(t, typeString, f.fieldType)
-	assert.Exactly(t, data, f.string)
+	assert.Exactly(t, typeTextMarshaler, f.fieldType)
+	assert.Empty(t, f.string)
 	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " MyTestKey: \"35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams\"", buf.String())
 }
 func TestField_TextError(t *testing.T) {
 	var data = gs{data: nil, err: errors.New("Errr")}
 	f := Text(testKey, data)
-	assert.Exactly(t, typeString, f.fieldType)
-	assert.Exactly(t, "[log] TextMarshaler: Errr", f.string)
-	assert.Exactly(t, ErrorKeyName, f.key)
+	assert.Exactly(t, typeTextMarshaler, f.fieldType)
+	assert.Empty(t, f.string)
+	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	err := f.AddTo(wt)
+	assert.Empty(t, buf.String())
+	assert.EqualError(t, err, "[log] AddTo.TextMarshaler: Errr")
+
 }
 
 func TestField_JSON(t *testing.T) {
@@ -205,4 +230,16 @@ func TestField_Object(t *testing.T) {
 	assert.Exactly(t, typeObject, f.fieldType)
 	assert.Exactly(t, req, f.obj)
 	assert.Exactly(t, testKey, f.key)
+}
+
+func TestField_Nest(t *testing.T) {
+	f := Nest("nest0", String("nest1", "1"), Float64("nest2", math.Log2E))
+	assert.Exactly(t, typeMarshaler, f.fieldType)
+	assert.Exactly(t, `nest0`, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, ` nest1: "1" nest2: 1.4426950408889634`, buf.String())
 }

@@ -40,6 +40,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -52,8 +53,11 @@ const (
 	typeInt64
 	typeFloat64
 	typeString
+	typeStringer
+	typeGoStringer
 	typeObject
 	typeMarshaler
+	typeTextMarshaler
 )
 
 // JSONMarshaler is the interface implemented by types that
@@ -102,6 +106,29 @@ func (fs Fields) AddTo(kv KeyValuer) error {
 	return nil
 }
 
+// MarshalLog satisfies the interface of log.LogMarshaler
+func (fs Fields) MarshalLog(kv KeyValuer) error {
+	return errors.Wrap(fs.AddTo(kv), "[log] Fields.Marshalog")
+}
+
+// ToString transforms multiple fields into a single string using the
+// format of the type KVStringify.
+func (fs Fields) ToString(msg string) string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	wt := WriteTypes{W: buf}
+
+	buf.WriteString(msg)
+	if err := fs.AddTo(wt); err != nil {
+		buf.WriteString(separator)
+		buf.WriteString(ErrorKeyName)
+		buf.WriteString(assignmentChar)
+		buf.WriteString(errors.PrintLoc(err))
+	}
+	buf.WriteRune('\n')
+	return buf.String()
+}
+
 // A Field is a deferred marshaling operation used to add a key-value pair to
 // a logger's context. Keys and values are appropriately escaped for the current
 // encoding scheme (e.g., JSON).
@@ -128,10 +155,20 @@ func (f Field) AddTo(kv KeyValuer) error {
 		kv.AddInt64(f.key, f.int64)
 	case typeString:
 		kv.AddString(f.key, f.string)
-	case typeMarshaler:
-		return kv.AddMarshaler(f.key, f.obj.(LogMarshaler))
+	case typeStringer:
+		kv.AddString(f.key, f.obj.(fmt.Stringer).String())
+	case typeGoStringer:
+		kv.AddString(f.key, f.obj.(fmt.GoStringer).GoString())
 	case typeObject:
 		kv.AddObject(f.key, f.obj)
+	case typeMarshaler:
+		return kv.AddMarshaler(f.key, f.obj.(LogMarshaler))
+	case typeTextMarshaler:
+		txt, err := f.obj.(encoding.TextMarshaler).MarshalText()
+		if err != nil {
+			return errors.Wrap(err, "[log] AddTo.TextMarshaler")
+		}
+		kv.AddString(f.key, string(txt))
 	default:
 		return errors.NewFatalf("[log] Unknown field type found: %v", f)
 	}
@@ -184,23 +221,19 @@ func String(key string, val string) Field {
 // Stringer constructs a Field with the given key and value. The value
 // is the result of the String() method.
 func Stringer(key string, val fmt.Stringer) Field {
-	return Field{key: key, fieldType: typeString, string: val.String()}
+	return Field{key: key, fieldType: typeStringer, obj: val}
 }
 
 // GoStringer constructs a Field with the given key and value. The value
 // is the result of the GoString() method.
 func GoStringer(key string, val fmt.GoStringer) Field {
-	return Field{key: key, fieldType: typeString, string: val.GoString()}
+	return Field{key: key, fieldType: typeGoStringer, obj: val}
 }
 
 // Text constructs a Field with the given key and value. The value
 // is the result of the MarshalText() method.
 func Text(key string, val encoding.TextMarshaler) Field {
-	txt, err := val.MarshalText()
-	if err != nil {
-		return Err(errors.Wrap(err, "[log] TextMarshaler"))
-	}
-	return Field{key: key, fieldType: typeString, string: string(txt)}
+	return Field{key: key, fieldType: typeTextMarshaler, obj: val}
 }
 
 // JSON constructs a Field with the given key and value. The value
@@ -258,4 +291,10 @@ func Object(key string, val interface{}) Field {
 // user-defined types to the logging context.
 func Marshaler(key string, val LogMarshaler) Field {
 	return Field{key: key, fieldType: typeMarshaler, obj: val}
+}
+
+// Nest takes a key and a variadic number of Fields and creates a nested
+// namespace.
+func Nest(key string, fields ...Field) Field {
+	return Field{key: key, fieldType: typeMarshaler, obj: Fields(fields)}
 }
