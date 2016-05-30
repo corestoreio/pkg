@@ -29,6 +29,27 @@ import (
 
 const testKey = "MyTestKey"
 
+func TestFields_ToString(t *testing.T) {
+	var fs = Fields{
+		String("k1", "v1"),
+		Int("k2", 2),
+		Float64("k3", 3.14159),
+	}
+	str := fs.ToString("fieldsKey")
+	assert.Exactly(t, "fieldsKey k1: \"v1\" k2: 2 k3: 3.14159\n", str)
+
+}
+
+func TestFields_ToString_Error(t *testing.T) {
+	var fs = Fields{
+		Text("o1", gs{err: errors.New("ErrToString")}),
+		Int("k2", 2),
+		Float64("k3", 3.14159),
+	}
+	str := fs.ToString("fieldsKey")
+	assert.Contains(t, str, "[log] AddTo.TextMarshaler\nErrToString\n\n")
+}
+
 func TestField_Bool(t *testing.T) {
 	f := Bool(testKey, true)
 	assert.Exactly(t, typeBool, f.fieldType)
@@ -113,11 +134,12 @@ func (g gs) MarshalJSON() ([]byte, error) {
 	}
 	return d, g.err
 }
-func (g gs) MarshalLog() (Field, error) {
+func (g gs) MarshalLog(kv KeyValuer) error {
 	if g.err != nil {
-		return Field{}, g.err
+		return g.err
 	}
-	return String("ignored", "Val1x"), nil
+	kv.AddObject("MarshalLogKey", g.data)
+	return nil
 }
 
 func TestField_GoStringer(t *testing.T) {
@@ -131,6 +153,19 @@ func TestField_GoStringer(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, " MyTestKey: \"gs struct {}\"", buf.String())
+}
+
+func TestField_Marshaler(t *testing.T) {
+	f := Marshaler(testKey, gs{data: "MarshalerMarshaler"})
+	assert.Exactly(t, typeMarshaler, f.fieldType)
+	assert.Empty(t, f.string)
+	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " MarshalLogKey: \"MarshalerMarshaler\"", buf.String())
 }
 
 func TestField_Text(t *testing.T) {
@@ -233,7 +268,12 @@ func TestField_Object(t *testing.T) {
 }
 
 func TestField_Nest(t *testing.T) {
-	f := Nest("nest0", String("nest1", "1"), Float64("nest2", math.Log2E))
+	f := Nest("nest0",
+		String("nest1", "1"),
+		Int("nest2", 2),
+		Int64("", 3),
+		Float64("nest4", math.Log2E),
+	)
 	assert.Exactly(t, typeMarshaler, f.fieldType)
 	assert.Exactly(t, `nest0`, f.key)
 	buf := &bytes.Buffer{}
@@ -241,5 +281,21 @@ func TestField_Nest(t *testing.T) {
 	if err := f.AddTo(wt); err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, ` nest1: "1" nest2: 1.4426950408889634`, buf.String())
+	assert.Exactly(t, " nest1: \"1\" nest2: 2 _: 3 nest4: 1.4426950408889634", buf.String())
+}
+
+func TestField_Nest_Error(t *testing.T) {
+	f := Nest("nest0",
+		String("nest1", "1"),
+		Text("nest2", gs{err: errors.New("NestError. Smoke Alarm on ;-)")}),
+	)
+	assert.Exactly(t, typeMarshaler, f.fieldType)
+	assert.Exactly(t, `nest0`, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Contains(t, buf.String(), "nest1: \"1\" error:")
+	assert.Contains(t, buf.String(), "[log] AddTo.TextMarshaler\nNestError. Smoke Alarm on ;-)\n")
 }

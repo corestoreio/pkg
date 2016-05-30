@@ -14,9 +14,51 @@
 
 package log_test
 
-import "github.com/corestoreio/csfw/log"
+import (
+	"bytes"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
+	"github.com/stretchr/testify/assert"
+)
 
 var (
 	_ log.Logger    = (*log.BlackHole)(nil)
 	_ log.KeyValuer = (*log.WriteTypes)(nil)
 )
+
+func TestWhenDone(t *testing.T) {
+	t.Run("Level_Debug", testWhenDone(logw.LevelDebug))
+	t.Run("Level_Info", testWhenDone(logw.LevelInfo))
+	t.Run("Level_Fatal", testWhenDone(logw.LevelFatal))
+}
+
+func testWhenDone(lvl int) func(*testing.T) {
+	return func(t *testing.T) {
+		buf := &bytes.Buffer{}
+		l := logw.NewLog(logw.WithWriter(buf), logw.WithLevel(lvl))
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func(wg2 *sync.WaitGroup) {
+			defer wg2.Done()
+			defer log.WhenDone(l).Debug("WhenDoneDebug", log.Int("key1", 123))
+			defer log.WhenDone(l).Info("WhenDoneInfo", log.Int("key2", 321))
+			time.Sleep(time.Millisecond * 100)
+		}(&wg)
+		wg.Wait()
+
+		if lvl == logw.LevelDebug {
+			assert.Contains(t, buf.String(), `WhenDoneDebug key1: 123 Duration: 10`)
+		} else {
+			assert.NotContains(t, buf.String(), `WhenDoneDebug key1: 123 Duration: 10`)
+		}
+		if lvl >= logw.LevelInfo {
+			assert.Contains(t, buf.String(), `WhenDoneInfo key2: 321 Duration: 10`)
+		} else {
+			assert.NotContains(t, buf.String(), `WhenDoneInfo key2: 321 Duration: 10`)
+		}
+	}
+}

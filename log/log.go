@@ -115,6 +115,26 @@ func (wt WriteTypes) AddString(key string, value string) {
 	wt.stdSetKV(key, value)
 }
 
+// Nest allows the caller to populate a nested object under the provided key.
+func (wt WriteTypes) Nest(key string, f func(KeyValuer) error) error {
+	if wt.Separator == "" {
+		wt.Separator = separator
+	}
+	wt.W.WriteString(wt.Separator)
+	if key == "" {
+		key = "_"
+	}
+	wt.W.WriteString(key)
+	if wt.AssignmentChar == "" {
+		wt.AssignmentChar = assignmentChar
+	}
+	wt.W.WriteString(wt.AssignmentChar)
+	if err := f(wt); err != nil {
+		return errors.Wrap(err, "[log] WriteType.Nest.f")
+	}
+	return nil
+}
+
 // Deferred defines a logger type which can be used to trace the duration.
 // Usage:
 //		function main(){

@@ -89,7 +89,7 @@ type KeyValuer interface {
 	// allocation-heavy. Consider implementing the LogMarshaler interface instead.
 	AddObject(string, interface{})
 	AddString(string, string)
-	// Nest(string, func(KeyValue) error) error
+	Nest(string, func(KeyValuer) error) error
 }
 
 // Fields a slice of n Field types
