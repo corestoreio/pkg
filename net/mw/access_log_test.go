@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +60,7 @@ func TestWithAccessLog(t *testing.T) {
 	var buf bytes.Buffer
 	defer buf.Reset()
 
-	testLog := log.NewStdLog(log.WithStdWriter(&buf))
+	testLog := logw.NewLog(logw.WithWriter(&buf))
 
 	finalH := mw.Chain(
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

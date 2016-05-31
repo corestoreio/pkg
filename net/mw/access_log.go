@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/request"
 	"github.com/rs/xstats"
 	"github.com/zenazn/goji/web/mutil"
@@ -81,19 +82,19 @@ func WithAccessLog(x xstats.XStater, opts ...Option) Middleware {
 			x.Histogram("request_size", float64(lw.BytesWritten()), tags...)
 			if ob.log.IsInfo() {
 				ob.log.Info("request",
-					"proto", r.Proto,
-					"request_uri", r.RequestURI,
-					"method", r.Method,
-					"uri", r.URL.String(),
-					"type", "access",
-					"status", status,
-					"status_code", lw.Status(),
-					"duration", reqDur.Seconds(),
-					"requested-host", r.Host,
-					"size", lw.BytesWritten(),
-					"remote_addr", request.RealIP(r, request.IPForwardedTrust).String(),
-					"user_agent", r.Header.Get("User-Agent"),
-					"referer", r.Header.Get("Referer"),
+					log.String("proto", r.Proto),
+					log.String("request_uri", r.RequestURI),
+					log.String("method", r.Method),
+					log.Stringer("uri", r.URL),
+					log.String("type", "access"),
+					log.String("status", status),
+					log.Int("status_code", lw.Status()),
+					log.Duration("duration", reqDur),
+					log.String("requested-host", r.Host),
+					log.Int("size", lw.BytesWritten()),
+					log.Stringer("remote_addr", request.RealIP(r, request.IPForwardedTrust)),
+					log.String("user_agent", r.Header.Get("User-Agent")),
+					log.String("referer", r.Header.Get("Referer")),
 				)
 			}
 		})

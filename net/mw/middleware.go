@@ -18,6 +18,9 @@ import (
 	"context"
 	"net/http"
 	"time"
+
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Middleware is a wrapper for the interface http.Handler to create
@@ -96,6 +99,7 @@ const (
 // Suported options are: SetMethodOverrideFormKey() and SetLogger().
 func WithXHTTPMethodOverride(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
+	errUnknownMethod := errors.NewNotValidf("[mw] Unknown http method")
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			mo := r.FormValue(ob.methodOverrideFormKey)
@@ -109,7 +113,12 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 			default:
 				// not sure if an error is here really needed ...
 				if ob.log.IsDebug() {
-					ob.log.Debug("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
+					ob.log.Debug(
+						"ctxhttp.SupportXHTTPMethodOverride.switch",
+						log.Err(errUnknownMethod),
+						log.String("method", mo),
+						log.String("form", r.Form.Encode()),
+						log.Object("header", r.Header))
 				}
 			}
 			h.ServeHTTP(w, r)
@@ -135,7 +144,7 @@ func WithCloseNotify(opts ...Option) Middleware {
 					<-notify
 					cancel()
 					if ob.log.IsDebug() {
-						ob.log.Debug("ctxhttp.WithCloseNotify.cancel", "cancelled", true, "request", r)
+						ob.log.Debug("ctxhttp.WithCloseNotify.cancel", log.Bool("cancelled", true), log.Object("request", r))
 					}
 				}()
 			}

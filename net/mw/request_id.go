@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	"github.com/corestoreio/csfw/log"
 )
 
 // RequestIDHeader defines the name of the header used to transmit the request ID.
@@ -94,7 +96,7 @@ func WithRequestID(opts ...Option) Middleware {
 				id = ob.genRID.NewID(r)
 			}
 			if ob.log.IsDebug() {
-				ob.log.Debug("mw.WithRequestID", "id", id, "request", r)
+				ob.log.Debug("mw.WithRequestID", log.String("id", id), log.Object("request", r))
 			}
 			w.Header().Set(RequestIDHeader, id)
 			h.ServeHTTP(w, r)
