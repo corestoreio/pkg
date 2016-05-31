@@ -82,7 +82,7 @@ func TestAddMarshaler(t *testing.T) {
 
 	l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))
 
-	l.Debug("log_15_marshalling", log.Object("anObject", 42), log.Marshaler("marshalLogMock", marshalMock{
+	l.Debug("log_15_marshalling", log.Object("anObject", 42), log.Marshal("marshalLogMock", marshalMock{
 		string:  "s1",
 		float64: math.Ln2,
 		bool:    true,
@@ -93,7 +93,7 @@ func TestAddMarshaler(t *testing.T) {
 func TestAddMarshaler_Error(t *testing.T) {
 	buf, l := getZap(zap.Debug)
 
-	l.Debug("marshalling", log.Marshaler("marshalLogMock", marshalMock{
+	l.Debug("marshalling", log.Marshal("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
 	assert.Contains(t, buf.String(), `"fields":{"answer":42,"kvbool":false,"kvstring":"","kvfloat64":0,"error":"github.com/corestoreio/csfw/log/zapw/zap_test.go:98: Whooops\n"}`)

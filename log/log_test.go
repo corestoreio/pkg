@@ -16,6 +16,7 @@ package log_test
 
 import (
 	"bytes"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -61,4 +62,43 @@ func testWhenDone(lvl int) func(*testing.T) {
 			assert.NotContains(t, buf.String(), `WhenDoneInfo key2: 321 Duration: 10`)
 		}
 	}
+}
+
+func TestWriteTypes_Nest(t *testing.T) {
+	buf := &bytes.Buffer{}
+	wt := log.WriteTypes{W: buf}
+
+	if err := wt.Nest("nestedKey", func(kv log.KeyValuer) error {
+		kv.AddBool("nbool", true)
+		kv.AddInt("nint", 3)
+		kv.AddObject("nobj", []string{"sl1", "sl2"})
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " nestedKey:  nbool: true nint: 3 nobj: []string{\"sl1\", \"sl2\"}", buf.String())
+}
+
+func TestWriteTypes_Nest_EmptyKey(t *testing.T) {
+	buf := &bytes.Buffer{}
+	wt := log.WriteTypes{W: buf}
+
+	if err := wt.Nest("", func(kv log.KeyValuer) error {
+		kv.AddBool("nbool", true)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " _:  nbool: true", buf.String())
+}
+
+func TestWriteTypes_Nest_Error(t *testing.T) {
+	buf := &bytes.Buffer{}
+	wt := log.WriteTypes{W: buf}
+
+	err := wt.Nest("nestedKey", func(kv log.KeyValuer) error {
+		return errors.New("NestErr")
+	})
+	assert.Exactly(t, " nestedKey: ", buf.String())
+	assert.EqualError(t, err, "[log] WriteType.Nest.f: NestErr")
 }

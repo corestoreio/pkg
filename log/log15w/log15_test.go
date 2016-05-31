@@ -34,7 +34,7 @@ func getLog15(lvl log15.Lvl) string {
 	l := log15w.NewLog15(lvl, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
 
 	if l.IsDebug() {
-		l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))
+		l.Debug("log_15_debug", log.Err(errors.New("I'm a debug error")), log.Float64("pi", 3.14159))
 	}
 	if l.IsInfo() {
 		l.Info("log_15_info", log.Err(errors.New("I'm an info error")), log.Float64("e", 2.7182))
@@ -44,15 +44,23 @@ func getLog15(lvl log15.Lvl) string {
 
 func TestNewLog15_Debug(t *testing.T) {
 	out := getLog15(log15.LvlDebug)
-	assert.Contains(t, out, `{"error":"I'm an debug error","Hello":"Gophers","lvl":"dbug","msg":"log_15_debug","pi":3.14159`)
+	assert.Contains(t, out, `"error":"I'm a debug error"`)
+	assert.Contains(t, out, `"Hello":"Gophers"`)
+	assert.Contains(t, out, `"lvl":"dbug"`)
+	assert.Contains(t, out, `"msg":"log_15_debug"`)
 	assert.Contains(t, out, `"pi":3.14159`)
-	assert.Contains(t, out, `{"error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info","msg":"log_15_info"`)
+	assert.Contains(t, out, `"error":"I'm an info error"`)
+	assert.Contains(t, out, `"Hello":"Gophers"`)
+	assert.Contains(t, out, `"lvl":"info"`)
+	assert.Contains(t, out, `"msg":"log_15_info"`)
 }
 
 func TestNewLog15_Info(t *testing.T) {
 	out := getLog15(log15.LvlInfo)
 	assert.NotContains(t, out, `{"Hello":"Gophers","error":"I'm an debug error","lvl":"dbug"`)
-	assert.Contains(t, out, `{"error":"I'm an info error","Hello":"Gophers","e":2.7182,"lvl":"info",`)
+	assert.Contains(t, out, `"error":"I'm an info error"`)
+	assert.Contains(t, out, `"Hello":"Gophers"`)
+	assert.Contains(t, out, `"lvl":"info"`)
 	assert.Contains(t, out, `"e":2.7182`)
 }
 
@@ -67,6 +75,10 @@ func (mm marshalMock) MarshalLog(kv log.KeyValuer) error {
 	kv.AddBool("kvbool", mm.bool)
 	kv.AddString("kvstring", mm.string)
 	kv.AddFloat64("kvfloat64", mm.float64)
+	kv.Nest("startNest", func(kv2 log.KeyValuer) error {
+		kv2.AddInt64("nestedInt64", 4711)
+		return nil
+	})
 	return mm.error
 }
 
@@ -76,20 +88,26 @@ func TestAddMarshaler(t *testing.T) {
 
 	l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))
 
-	l.Debug("log_15_marshalling", log.Object("anObject", 42), log.Marshaler("marshalLogMock", marshalMock{
+	l.Debug("log_15_marshalling", log.Object("anObject", 42), log.Marshal("marshalLogMock", marshalMock{
 		string:  "s1",
 		float64: math.Ln2,
 		bool:    true,
 	}))
-	assert.Contains(t, buf.String(), `"anObject":42,"e":2.7182,"kvbool":"true","kvfloat64":0.6931471805599453,"kvstring":"s1",`)
+	assert.Contains(t, buf.String(), `"anObject":42`)
+	assert.Contains(t, buf.String(), `"e":2.7182`)
+	assert.Contains(t, buf.String(), `"kvbool":"true"`)
+	assert.Contains(t, buf.String(), `"kvfloat64":0.6931471805599453`)
+	assert.Contains(t, buf.String(), `"kvstring":"s1"`)
+	assert.Contains(t, buf.String(), `"nestedInt64":4711`)
 }
 
 func TestAddMarshaler_Error(t *testing.T) {
 	buf := &bytes.Buffer{}
 	l := log15w.NewLog15(log15.LvlDebug, log15.StreamHandler(buf, log15.JsonFormat()), "Hello", "Gophers")
 
-	l.Debug("marshalling", log.Marshaler("marshalLogMock", marshalMock{
+	l.Debug("marshalling", log.Marshal("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `{"error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:93: Whooops\n","Hello":"Gophers","anObject":42,"e":2.7182,"kvbool":"false","kvfloat64":0,"kvstring":""`)
+	assert.Contains(t, buf.String(), `"error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:110: Whooops\n"`)
+	assert.Contains(t, buf.String(), `"kvbool":"false","kvfloat64":0,"kvstring":""`)
 }

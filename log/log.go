@@ -59,26 +59,29 @@ type WriteTypes struct {
 	AssignmentChar string
 	// Separator is the separator to use between key value pairs
 	Separator string
-	// W used as writer. Must be a pointer.
+	// W used as writer. Must be a pointer. At the moment returned errors
+	// are getting ignored.
 	W interface {
 		WriteString(s string) (n int, err error)
 	}
 }
 
+// todo: check for errors in WriteString and remove _,_=
+
 func (wt WriteTypes) stdSetKV(key string, value interface{}) {
 	if wt.Separator == "" {
 		wt.Separator = separator
 	}
-	wt.W.WriteString(wt.Separator)
+	_, _ = wt.W.WriteString(wt.Separator)
 	if key == "" {
 		key = "_"
 	}
-	wt.W.WriteString(key)
+	_, _ = wt.W.WriteString(key)
 	if wt.AssignmentChar == "" {
 		wt.AssignmentChar = assignmentChar
 	}
-	wt.W.WriteString(wt.AssignmentChar)
-	wt.W.WriteString(fmt.Sprintf("%#v", value)) // can be refactored into the different functions
+	_, _ = wt.W.WriteString(wt.AssignmentChar)
+	_, _ = wt.W.WriteString(fmt.Sprintf("%#v", value)) // can be refactored into the different functions
 }
 
 func (wt WriteTypes) AddBool(key string, value bool) {
@@ -93,18 +96,18 @@ func (wt WriteTypes) AddInt(key string, value int) {
 func (wt WriteTypes) AddInt64(key string, value int64) {
 	wt.stdSetKV(key, value)
 }
-func (wt WriteTypes) AddMarshaler(key string, value LogMarshaler) error {
+func (wt WriteTypes) AddMarshaler(key string, value Marshaler) error {
 	if err := value.MarshalLog(wt); err != nil {
 		if wt.Separator == "" {
 			wt.Separator = separator
 		}
-		wt.W.WriteString(wt.Separator)
-		wt.W.WriteString(ErrorKeyName)
+		_, _ = wt.W.WriteString(wt.Separator)
+		_, _ = wt.W.WriteString(ErrorKeyName)
 		if wt.AssignmentChar == "" {
 			wt.AssignmentChar = assignmentChar
 		}
-		wt.W.WriteString(wt.AssignmentChar)
-		wt.W.WriteString(errors.PrintLoc(err))
+		_, _ = wt.W.WriteString(wt.AssignmentChar)
+		_, _ = wt.W.WriteString(errors.PrintLoc(err))
 	}
 	return nil
 }
@@ -120,19 +123,16 @@ func (wt WriteTypes) Nest(key string, f func(KeyValuer) error) error {
 	if wt.Separator == "" {
 		wt.Separator = separator
 	}
-	wt.W.WriteString(wt.Separator)
+	_, _ = wt.W.WriteString(wt.Separator)
 	if key == "" {
 		key = "_"
 	}
-	wt.W.WriteString(key)
+	_, _ = wt.W.WriteString(key)
 	if wt.AssignmentChar == "" {
 		wt.AssignmentChar = assignmentChar
 	}
-	wt.W.WriteString(wt.AssignmentChar)
-	if err := f(wt); err != nil {
-		return errors.Wrap(err, "[log] WriteType.Nest.f")
-	}
-	return nil
+	_, _ = wt.W.WriteString(wt.AssignmentChar)
+	return errors.Wrap(f(wt), "[log] WriteType.Nest.f")
 }
 
 // Deferred defines a logger type which can be used to trace the duration.

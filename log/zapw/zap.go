@@ -95,7 +95,7 @@ func (se *zapFieldWrap) AddInt(k string, v int) {
 func (se *zapFieldWrap) AddInt64(k string, v int64) {
 	se.zf = append(se.zf, zap.Int64(k, v))
 }
-func (se *zapFieldWrap) AddMarshaler(k string, v log.LogMarshaler) error {
+func (se *zapFieldWrap) AddMarshaler(k string, v log.Marshaler) error {
 	if err := v.MarshalLog(se); err != nil {
 		se.AddString(log.ErrorKeyName, errors.PrintLoc(err))
 	}
@@ -106,4 +106,12 @@ func (se *zapFieldWrap) AddObject(k string, v interface{}) {
 }
 func (se *zapFieldWrap) AddString(k string, v string) {
 	se.zf = append(se.zf, zap.String(k, v))
+}
+
+func (se *zapFieldWrap) Nest(key string, f func(log.KeyValuer) error) error {
+	// not that nice ...
+	se.zf = append(se.zf, zap.String(key, "StartNest"))
+	err := errors.Wrap(f(se), "[zapw] Nest")
+	se.zf = append(se.zf, zap.String(key, "EndNest"))
+	return err
 }

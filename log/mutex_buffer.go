@@ -16,11 +16,8 @@ package log
 
 import (
 	"bytes"
-	"io"
 	"sync"
 )
-
-var _ io.Writer = (*MutexBuffer)(nil)
 
 // MutexBuffer allows concurrent and parallel writes to a buffer. Mostly used
 // during testing when the logger should be able to accept multiple writes.

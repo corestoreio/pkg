@@ -156,7 +156,7 @@ func TestField_GoStringer(t *testing.T) {
 }
 
 func TestField_Marshaler(t *testing.T) {
-	f := Marshaler(testKey, gs{data: "MarshalerMarshaler"})
+	f := Marshal(testKey, gs{data: "MarshalerMarshaler"})
 	assert.Exactly(t, typeMarshaler, f.fieldType)
 	assert.Empty(t, f.string)
 	assert.Exactly(t, testKey, f.key)

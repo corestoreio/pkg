@@ -136,7 +136,7 @@ func TestAddMarshaler(t *testing.T) {
 	)
 
 	sl.Debug("my Debug", log.Float64("float1", math.SqrtE))
-	sl.Debug("marshalling", log.Object("anObject", 42), log.Marshaler("marshalLogMock", marshalMock{
+	sl.Debug("marshalling", log.Object("anObject", 42), log.Marshal("marshalLogMock", marshalMock{
 		string:  "s1",
 		float64: math.Ln2,
 		bool:    true,
@@ -153,10 +153,10 @@ func TestAddMarshaler_Error(t *testing.T) {
 	)
 
 	sl.Debug("my Debug", log.Float64("float1", math.SqrtE))
-	sl.Debug("marshalling", log.Marshaler("marshalLogMock", marshalMock{
+	sl.Debug("marshalling", log.Marshal("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `marshalling kvbool: false kvstring: "" kvfloat64: 0 Error: github.com/corestoreio/csfw/log/logw/stdLib_test.go:158: Whooops`)
+	assert.Contains(t, buf.String(), `marshalling kvbool: false kvstring: "" kvfloat64: 0 error: github.com/corestoreio/csfw/log/logw/stdLib_test.go:158: Whooops`)
 }
 
 func TestStdLogNewPanic(t *testing.T) {

@@ -66,11 +66,11 @@ type JSONMarshaler interface {
 	MarshalJSON() ([]byte, error)
 }
 
-// LogMarshaler allows user-defined types to efficiently add themselves to the
+// Marshaler allows user-defined types to efficiently add themselves to the
 // logging context, and to selectively omit information which shouldn't be
 // included in logs (e.g., passwords).
 // Compatible to github.com/uber-go/zap
-type LogMarshaler interface {
+type Marshaler interface {
 	MarshalLog(KeyValuer) error
 }
 
@@ -84,7 +84,7 @@ type KeyValuer interface {
 	AddFloat64(string, float64)
 	AddInt(string, int)
 	AddInt64(string, int64)
-	AddMarshaler(string, LogMarshaler) error
+	AddMarshaler(string, Marshaler) error
 	// AddObject uses reflection to serialize arbitrary objects, so it's slow and
 	// allocation-heavy. Consider implementing the LogMarshaler interface instead.
 	AddObject(string, interface{})
@@ -118,14 +118,14 @@ func (fs Fields) ToString(msg string) string {
 	defer bufferpool.Put(buf)
 	wt := WriteTypes{W: buf}
 
-	buf.WriteString(msg)
+	_, _ = buf.WriteString(msg)
 	if err := fs.AddTo(wt); err != nil {
-		buf.WriteString(separator)
-		buf.WriteString(ErrorKeyName)
-		buf.WriteString(assignmentChar)
-		buf.WriteString(errors.PrintLoc(err))
+		_, _ = buf.WriteString(separator)
+		_, _ = buf.WriteString(ErrorKeyName)
+		_, _ = buf.WriteString(assignmentChar)
+		_, _ = buf.WriteString(errors.PrintLoc(err))
 	}
-	buf.WriteRune('\n')
+	_, _ = buf.WriteRune('\n')
 	return buf.String()
 }
 
@@ -162,7 +162,7 @@ func (f Field) AddTo(kv KeyValuer) error {
 	case typeObject:
 		kv.AddObject(f.key, f.obj)
 	case typeMarshaler:
-		return kv.AddMarshaler(f.key, f.obj.(LogMarshaler))
+		return kv.AddMarshaler(f.key, f.obj.(Marshaler))
 	case typeTextMarshaler:
 		txt, err := f.obj.(encoding.TextMarshaler).MarshalText()
 		if err != nil {
@@ -258,7 +258,7 @@ func Duration(key string, val time.Duration) Field {
 	return Field{key: key, fieldType: typeInt64, int64: val.Nanoseconds()}
 }
 
-// Error constructs a Field that stores err under the key log.ErrorKeyName. Prints
+// Err constructs a Field that stores err under the key log.ErrorKeyName. Prints
 // <nil> if the error is nil.
 func Err(err error) Field {
 	if err == nil {
@@ -286,10 +286,10 @@ func Object(key string, val interface{}) Field {
 	return Field{key: key, fieldType: typeObject, obj: val}
 }
 
-// Marshaler constructs a field with the given key and zap.LogMarshaler. It
+// Marshal constructs a field with the given key and log.Marshaler. It
 // provides a flexible, but still type-safe and efficient, way to add
 // user-defined types to the logging context.
-func Marshaler(key string, val LogMarshaler) Field {
+func Marshal(key string, val Marshaler) Field {
 	return Field{key: key, fieldType: typeMarshaler, obj: val}
 }
 

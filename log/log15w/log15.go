@@ -111,7 +111,7 @@ func (se *log15FieldWrap) AddInt(k string, v int) {
 func (se *log15FieldWrap) AddInt64(k string, v int64) {
 	se.append(k, v)
 }
-func (se *log15FieldWrap) AddMarshaler(k string, v log.LogMarshaler) error {
+func (se *log15FieldWrap) AddMarshaler(k string, v log.Marshaler) error {
 	if err := v.MarshalLog(se); err != nil {
 		se.AddString(log.ErrorKeyName, errors.PrintLoc(err))
 	}
@@ -122,4 +122,9 @@ func (se *log15FieldWrap) AddObject(k string, v interface{}) {
 }
 func (se *log15FieldWrap) AddString(k string, v string) {
 	se.append(k, v)
+}
+
+func (se *log15FieldWrap) Nest(key string, f func(log.KeyValuer) error) error {
+	se.append(key, "nest")
+	return errors.Wrap(f(se), "[log15w] log15FieldWrap.Nest.f")
 }
