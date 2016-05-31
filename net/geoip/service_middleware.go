@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/request"
 	"github.com/corestoreio/csfw/store"
@@ -31,7 +32,9 @@ func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Coun
 	ip := request.RealIP(r, request.IPForwardedTrust)
 	if ip == nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", "err", errors.NotFound(errCannotGetRemoteAddr), "req", r)
+			s.Log.Debug(
+				"geoip.Service.newContextCountryByIP.GetRemoteAddr",
+				log.Err(errors.NotFound(errCannotGetRemoteAddr)), log.Object("request", r))
 		}
 		return nil, nil, errors.NewNotFoundf(errCannotGetRemoteAddr)
 	}
@@ -39,7 +42,9 @@ func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Coun
 	c, err := s.GeoIP.Country(ip)
 	if err != nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.newContextCountryByIP.GeoIP.Country", "err", err, "remoteAddr", ip, "req", r)
+			s.Log.Debug(
+				"geoip.Service.newContextCountryByIP.GeoIP.Country",
+				log.Err(err), log.Stringer("remote_addr", ip), log.Object("request", r))
 		}
 		return nil, nil, errors.NewFatal(err, "[geoip] getting country")
 	}
@@ -92,7 +97,9 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 			scpCfg, err := s.configByScopedGetter(requestedStore.Config)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", "err", err, "scope", scpCfg.scopeHash, "requestedStore", requestedStore, "req", r)
+					s.defaultScopeCache.log.Debug(
+						"Service.WithCORS.configByScopedGetter",
+						log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("request", r))
 				}
 				err = errors.Wrap(err, "[mwcors] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -101,14 +108,18 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 
 			if scpCfg.checkAllow(requestedStore, c, r) {
 				if s.Log.IsDebug() {
-					s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.true", "scope", scpCfg.scopeHash, "requestedStore", requestedStore, "country", c.Country)
+					s.Log.Debug(
+						"geoip.WithIsCountryAllowedByIP.checkAllow.true",
+						log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("country", c.Country))
 				}
 				h.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 			// access denied
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", "scope", scpCfg.scopeHash, "requestedStore", requestedStore, "country", c.Country)
+				s.Log.Debug(
+					"geoip.WithIsCountryAllowedByIP.checkAllow.false",
+					log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("country", c.Country))
 			}
 			scpCfg.alternativeHandler.ServeHTTP(w, r.WithContext(ctx))
 		})

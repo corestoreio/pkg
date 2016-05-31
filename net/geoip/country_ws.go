@@ -33,6 +33,13 @@ type TransCacher interface {
 	Get(key []byte, dst interface{}) error
 }
 
+// NewHttpClient creates a new HTTP client for the MaxMind webservice.
+// You can provide here your own function or a mock for testing.
+// This function will be used in the option function WithGeoIP2Webservice().
+var NewHttpClient = func(timeout time.Duration) *http.Client {
+	return &http.Client{Timeout: timeout}
+}
+
 // mmws resolves to MaxMind WebService
 type mmws struct {
 	userID     string
@@ -48,7 +55,7 @@ func newMMWS(t TransCacher, userID, licenseKey string, httpTimeout time.Duration
 	return &mmws{
 		userID:      userID,
 		licenseKey:  licenseKey,
-		client:      &http.Client{Timeout: httpTimeout},
+		client:      NewHttpClient(httpTimeout),
 		TransCacher: t,
 	}
 }

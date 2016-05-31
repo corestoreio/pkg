@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // Option can be used as an argument in NewService to configure it with
@@ -171,7 +171,7 @@ func WithGeoIP2File(filename string) Option {
 		}
 		if atomic.LoadUint32(&s.geoipDone) == 1 {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithGeoIP2File.geoipDone", "geoipDone", int(s.geoipDone), "filename", filename)
+				s.Log.Debug("geoip.WithGeoIP2File.geoipDone", log.Int("geoipDone", int(s.geoipDone)), log.String("filename", filename))
 			}
 			return nil
 		}
@@ -194,7 +194,7 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 	return func(s *Service) error {
 		if atomic.LoadUint32(&s.geoipDone) == 1 {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithGeoIP2Webservice.geoipDone", "geoipDone", int(s.geoipDone), "userID", userID)
+				s.Log.Debug("geoip.WithGeoIP2Webservice.geoipDone", log.Int("geoipDone", int(s.geoipDone)), log.String("userID", userID))
 			}
 			return nil
 		}

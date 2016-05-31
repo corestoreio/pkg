@@ -18,9 +18,9 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // Service represents a service manager
@@ -100,13 +100,13 @@ func (s *Service) configByScopedGetter(scpcfg config.ScopedGetter) (scopedConfig
 		h = scope.NewHash(scpcfg.Scope())
 	}
 	if s.Log.IsDebug() {
-		s.Log.Debug("geoip.Service.ConfigByScopedGetter.ScopedGetter", "ScopedGetter_Nil", scpcfg == nil, "scope", h.String())
+		s.Log.Debug("geoip.Service.ConfigByScopedGetter.ScopedGetter", log.Bool("ScopedGetter_isNil", scpcfg == nil), log.Stringer("scope", h))
 	}
 
 	// fallback to default scope
 	if (s.scopedOptionFunc == nil || scpcfg == nil) && h == scope.DefaultHash && s.defaultScopeCache.isValid() {
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache", "ScopedGetter_Nil", scpcfg == nil, "scpOptionFnc_Nil", s.scopedOptionFunc == nil)
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache", log.Bool("ScopedGetter_Nil", scpcfg == nil), log.Bool("scpOptionFnc_Nil", s.scopedOptionFunc == nil))
 		}
 		return s.defaultScopeCache, nil
 	}
@@ -120,7 +120,7 @@ func (s *Service) configByScopedGetter(scpcfg config.ScopedGetter) (scopedConfig
 
 	if s.scopedOptionFunc != nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.scpOptionFnc", "scope", h.String())
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.scpOptionFnc", log.Stringer("scope", h))
 		}
 		if err := s.Options(s.scopedOptionFunc(scpcfg)...); err != nil {
 			return scopedConfig{}, errors.Wrap(err, "[geoip] Options by scpOptionFnc")

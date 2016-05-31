@@ -25,12 +25,12 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,7 +68,7 @@ func TestNewServiceErrorWithoutOptions(t *testing.T) {
 func TestNewService_WithGeoIP2File_Atomic(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	s, err := geoip.New(
-		geoip.WithLogger(log.NewStdLog(log.WithStdWriter(logBuf), log.WithStdLevel(log.StdLevelDebug))),
+		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 		geoip.WithGeoIP2File(filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")),
 	)
 	defer deferClose(t, s.GeoIP)
@@ -84,7 +84,7 @@ func TestNewService_WithGeoIP2File_Atomic(t *testing.T) {
 func TestNewService_WithGeoIP2Webservice_Atomic(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	s, err := geoip.New(
-		geoip.WithLogger(log.NewStdLog(log.WithStdWriter(logBuf), log.WithStdLevel(log.StdLevelDebug))),
+		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 		geoip.WithGeoIP2Webservice(nil, "a", "b", 1),
 	)
 	defer deferClose(t, s.GeoIP)
@@ -207,7 +207,7 @@ func TestWithIsCountryAllowedByIPErrorWithContextCountryByIP(t *testing.T) {
 func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	s := mustGetTestService(
-		geoip.WithLogger(log.NewStdLog(log.WithStdWriter(logBuf), log.WithStdLevel(log.StdLevelDebug))),
+		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 	)
 	defer deferClose(t, s.GeoIP)
 

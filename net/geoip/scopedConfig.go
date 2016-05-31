@@ -17,10 +17,10 @@ package geoip
 import (
 	"net/http"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // scopedConfig private internal scoped based configuration
