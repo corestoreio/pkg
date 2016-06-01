@@ -44,7 +44,8 @@ var NewHttpClient = func(timeout time.Duration) *http.Client {
 type mmws struct {
 	userID     string
 	licenseKey string
-	client     *http.Client
+	// client instantiated once and used for all queries to MaxMind.
+	client *http.Client
 	TransCacher
 }
 

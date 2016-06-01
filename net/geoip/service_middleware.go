@@ -46,7 +46,7 @@ func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Coun
 				"geoip.Service.newContextCountryByIP.GeoIP.Country",
 				log.Err(err), log.Stringer("remote_addr", ip), log.Object("request", r))
 		}
-		return nil, nil, errors.NewFatal(err, "[geoip] getting country")
+		return nil, nil, errors.Wrap(err, "[geoip] getting country")
 	}
 	return WithContextCountry(r.Context(), c), c, nil
 }
@@ -121,6 +121,7 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 					"geoip.WithIsCountryAllowedByIP.checkAllow.false",
 					log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("country", c.Country))
 			}
+			println("scpCfg", scpCfg.scopeHash.String())
 			scpCfg.alternativeHandler.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
