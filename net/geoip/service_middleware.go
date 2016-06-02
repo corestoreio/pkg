@@ -110,7 +110,9 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 				if s.Log.IsDebug() {
 					s.Log.Debug(
 						"geoip.WithIsCountryAllowedByIP.checkAllow.true",
-						log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("country", c.Country))
+						log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("country", c.Country),
+						log.Strings("allowedCountries", scpCfg.allowedCountries...),
+					)
 				}
 				h.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -121,7 +123,6 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 					"geoip.WithIsCountryAllowedByIP.checkAllow.false",
 					log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("country", c.Country))
 			}
-			println("scpCfg", scpCfg.scopeHash.String())
 			scpCfg.alternativeHandler.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

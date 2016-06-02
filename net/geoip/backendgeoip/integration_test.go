@@ -16,6 +16,13 @@ package backendgeoip_test
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
@@ -28,11 +35,6 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"path/filepath"
-	"testing"
-	"time"
 )
 
 func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
@@ -154,12 +156,16 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
 		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
+		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
 	}))
 
 	geoSrv := mustGetTestService(geoip.WithOptionFactory(backendgeoip.Default()))
-	if err := geoSrv.Options(geoip.WithAllowedCountryCodes(scope.Store, 2, "AT", "CH")); err != nil {
-		t.Fatal(errors.PrintLoc(err))
-	}
+
+	// if you try to set the allowed countries with this option, they get
+	// overwritten by the ScopeConfig service.
+	// if err := geoSrv.Options(geoip.WithAllowedCountryCodes(scope.Store, 2, "AT", "CH")); err != nil {
+	//	t.Fatal(errors.PrintLoc(err))
+	// }
 
 	// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
 	req := func() *http.Request {
@@ -170,25 +176,33 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 		storeSrv := storemock.NewEurozzyService(o)
 		req, _ := http.NewRequest("GET", "http://corestore.io", nil)
 		req.RemoteAddr = "2a02:d180::"
-		st, err := storeSrv.Store(scope.MockID(2)) // Austria Store
+		atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
 		if err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}
-		st.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
+		atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
 
-		return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+		return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
 	}()
 
-	rec := httptest.NewRecorder()
-	geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// For the race detector
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			rec := httptest.NewRecorder()
+			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		panic("Should not be called")
+				panic("Should not be called")
 
-	})).ServeHTTP(rec, req)
+			})).ServeHTTP(rec, req)
 
-	t.Logf("%#v", rec.HeaderMap)
-	assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
-	assert.Exactly(t, 307, rec.Code)
+			assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
+			assert.Exactly(t, 307, rec.Code)
+		}(&wg)
+	}
+	wg.Wait()
 }
 
 func TestBackend_Path_Errors(t *testing.T) {

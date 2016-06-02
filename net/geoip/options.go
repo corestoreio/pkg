@@ -141,6 +141,12 @@ func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...strin
 		scNew.allowedCountries = isoCountryCodes
 
 		if sc, ok := s.scopeCache[h]; ok {
+			if s.Log.IsDebug() {
+				s.Log.Debug("WithAllowedCountryCodes.scopeCache.found.overwrite",
+					log.Strings("previous_allowedCountries", sc.allowedCountries...),
+					log.Strings("current_allowedCountries", scNew.allowedCountries...),
+				)
+			}
 			sc.allowedCountries = scNew.allowedCountries
 			scNew = sc
 		}
@@ -211,8 +217,12 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 // WithOptionFactory applies a function which lazily loads the option depending
 // on the incoming scope within a request. For example applies the backend
 // configuration to the service.
-// Once this option function has been set all other option functions are not really
-// needed.
+//
+// Once this option function has been set all other manually set option functions,
+// which accept a scope and a scope ID as an argument, will be overwritten by the
+// new values retrieved from the configuration service.
+//
+// Example:
 //	cfgStruct, err := backendgeoip.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
