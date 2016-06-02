@@ -89,8 +89,11 @@ func WithLogger(l log.Logger) Option {
 // WithOptionFactory applies a function which lazily loads the option depending
 // on the incoming scope within a request. For example applies the backend
 // configuration to the service.
-// Once this option function has been set all other option functions are not really
-// needed.
+//
+// Once this option function has been set all other manually set option functions,
+// which accept a scope and a scope ID as an argument, will be overwritten by the
+// new values retrieved from the configuration service.
+//
 //	cfgStruct, err := backendauth.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
