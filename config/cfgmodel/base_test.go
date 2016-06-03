@@ -207,25 +207,28 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 }
 
 func TestBaseValueToPath(t *testing.T) {
+	t.Run("Valid Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Website, 23, nil))
+	t.Run("Invalid Route", testBaseValueToPath(cfgpath.NewRoute("a/bb/cc"), scope.Website, 23, errors.IsNotValid))
+	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Store, 22, errors.IsUnauthorized))
+}
 
-	tests := []struct {
-		route      cfgpath.Route
-		s          scope.Scope
-		sid        int64
-		wantErrBhf errors.BehaviourFunc
-	}{
-		{cfgpath.NewRoute("aa/bb/cc"), scope.Store, 23, nil},
-		{cfgpath.NewRoute("a/bb/cc"), scope.Store, 23, errors.IsNotValid},
-	}
-	for i, test := range tests {
-		bv := NewValue(test.route.String())
-		havePath, haveErr := bv.ToPath(test.s, test.sid)
-		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
-			continue
+func testBaseValueToPath(route cfgpath.Route, s scope.Scope, sid int64, wantErrBhf errors.BehaviourFunc) func(*testing.T) {
+	return func(t *testing.T) {
+		bv := NewValue(route.String())
+
+		bv.Field = &element.Field{
+			ID:     cfgpath.NewRoute("cc"),
+			Scopes: scope.PermWebsite, // only scope default and website are allowed
 		}
-		wantPath := cfgpath.MustNew(test.route).Bind(test.s, test.sid)
-		assert.Exactly(t, wantPath, havePath, "Index %d", i)
+
+		havePath, haveErr := bv.ToPath(s, sid)
+		if wantErrBhf != nil {
+			// t.Log(haveErr)
+			assert.True(t, wantErrBhf(haveErr), "Error: %s", haveErr)
+			return
+		}
+		wantPath := cfgpath.MustNew(route).Bind(s, sid)
+		assert.Exactly(t, wantPath, havePath)
 	}
 }
 

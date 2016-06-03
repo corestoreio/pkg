@@ -668,21 +668,17 @@ func TestFloat64Write(t *testing.T) {
 	assert.Exactly(t, 1.12345678900000, mw.ArgValue.(float64))
 }
 
-func TestRecursiveOption(t *testing.T) {
-
+func TestNewInt_Option_Error(t *testing.T) {
 	b := cfgmodel.NewInt(
 		"web/cors/int",
 		cfgmodel.WithFieldFromSectionSlice(configStructure),
 		cfgmodel.WithSourceByString("a", "A", "b", "b"),
 	)
 
-	assert.Exactly(t, source.NewByString("a", "A", "b", "b"), b.Source)
+	assert.Exactly(t, source.MustNewByString("a", "A", "b", "b"), b.Source)
 
-	previous := b.Option(cfgmodel.WithSourceByString(
-		"1", "One", "2", "Two",
+	err := b.Option(cfgmodel.WithSourceByString(
+		"One", "2", "Two",
 	))
-	assert.Exactly(t, source.NewByString("1", "One", "2", "Two"), b.Source)
-
-	b.Option(previous)
-	assert.Exactly(t, source.NewByString("a", "A", "b", "b"), b.Source)
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }

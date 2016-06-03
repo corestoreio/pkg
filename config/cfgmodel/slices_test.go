@@ -83,7 +83,7 @@ func TestStringCSVWrite(t *testing.T) {
 	)
 
 	mw := &cfgmock.Write{}
-	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
+	b.Source.Merge(source.MustNewByString("a", "a", "b", "b", "c", "c"))
 
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.Default, 0))
 	assert.Exactly(t, wantPath, mw.ArgPath)

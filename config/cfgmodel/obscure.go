@@ -15,10 +15,9 @@
 package cfgmodel
 
 import (
-	"errors"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // ErrMissingEncryptor gets returned if you have forgotten to set the
@@ -52,13 +51,12 @@ func (ne NoopEncryptor) Decrypt(s []byte) ([]byte, error) {
 // WithEncryptor sets the functions for reading and writing encrypted data
 // to the configuration service. May return nil.
 func WithEncryptor(e Encryptor) Option {
-	return func(b *optionBox) Option {
+	return func(b *optionBox) error {
 		if b.Obscure == nil {
 			return nil
 		}
-		prev := b.Obscure.Encryptor
 		b.Obscure.Encryptor = e
-		return WithEncryptor(prev)
+		return nil
 	}
 }
 
@@ -78,17 +76,19 @@ func NewObscure(path string, opts ...Option) Obscure {
 }
 
 // Option sets the options and returns the last set previous option
-func (p *Obscure) Option(opts ...Option) (previous Option) {
+func (p *Obscure) Option(opts ...Option) error {
 	ob := &optionBox{
 		baseValue: &p.baseValue,
 		Obscure:   p,
 	}
 	for _, o := range opts {
-		previous = o(ob)
+		if err := o(ob); err != nil {
+			return errors.Wrap(err, "[cfgmodel] Obscure.Option")
+		}
 	}
 	p = ob.Obscure
 	p.baseValue = *ob.baseValue
-	return
+	return nil
 }
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is nil.

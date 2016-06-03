@@ -31,64 +31,62 @@ import (
 // CSVComma separates CSV values. Default value.
 const CSVComma = ','
 
-// WithCSVComma applies a custom CSV separator to the types
-// StringCSV or IntCSV
+// WithCSVComma applies a custom CSV separator to the types StringCSV or IntCSV
 func WithCSVComma(sep rune) Option {
-	return func(b *optionBox) Option {
-		prev := CSVComma
+	return func(b *optionBox) error {
 		switch {
 		case b.StringCSV != nil:
-			prev = b.StringCSV.Comma
 			b.StringCSV.Comma = sep
 		case b.CSV != nil:
-			prev = b.CSV.Comma
 			b.CSV.Comma = sep
 		case b.IntCSV != nil:
-			prev = b.IntCSV.Separator
 			b.IntCSV.Separator = sep
 		}
-		return WithCSVComma(prev)
+		return nil
 	}
 }
 
-// StringCSV represents a path in config.Getter which will be saved as a
-// CSV string and returned as a string slice. Separator is a comma.
-// It represents not a multi line string!
+// StringCSV represents a path in config.Getter which will be saved as a CSV
+// string and returned as a string slice. Separator is a comma. It represents
+// not a multi line string!
 type StringCSV struct {
 	Str
 	// Comma is your custom separator, default is constant CSVComma
 	Comma rune
 }
 
-// NewStringCSV creates a new CSV string type. Acts as a multiselect.
-// Default separator: constant CSVComma
-// It represents not a multi line string!
+// NewStringCSV creates a new CSV string type. Acts as a multiselect. Default
+// separator: constant CSVComma. It represents not a multi line string! An error
+// occurred in the options gets added to the field OptionError which you can
+// check.
 func NewStringCSV(path string, opts ...Option) StringCSV {
 	ret := StringCSV{
 		Comma: CSVComma,
 		Str:   NewStr(path),
 	}
-	(&ret).Option(opts...)
+	ret.OptionError = (&ret).Option(opts...)
 	return ret
 }
 
 // Option sets the options and returns the last set previous option
-func (str *StringCSV) Option(opts ...Option) (previous Option) {
+func (str *StringCSV) Option(opts ...Option) error {
 	ob := &optionBox{
 		baseValue: &str.baseValue,
 		StringCSV: str,
 	}
 	for _, o := range opts {
-		previous = o(ob)
+		if err := o(ob); err != nil {
+			return errors.Wrap(err, "[cfgmodel] StringCSV.Option")
+		}
 	}
 	str = ob.StringCSV
 	str.baseValue = *ob.baseValue
-	return
+	return nil
 }
 
-// Get returns a string slice. Splits the stored string by comma.
-// Can return nil,nil. Empty values will be discarded. Returns a slice
-// containing unique entries. No validation will be made.
+// Get returns a string slice. Splits the stored string by comma. Can return
+// nil,nil. Empty values will be discarded. Returns a slice containing unique
+// entries. No validation will be made.
 func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 	s, err := str.Str.Get(sg)
 	if err != nil {
@@ -101,8 +99,8 @@ func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 	return ret.Unique(), nil
 }
 
-// Write writes a slice with its scope and ID to the writer.
-// Validates the input string slice for correct values if set in source.Slice.
+// Write writes a slice with its scope and ID to the writer. Validates the input
+// string slice for correct values if set in source.Slice.
 func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, scopeID int64) error {
 	for _, v := range sl {
 		if err := str.ValidateString(v); err != nil {
@@ -112,9 +110,9 @@ func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, scopeID 
 	return str.baseValue.Write(w, strings.Join(sl, string(str.Comma)), s, scopeID)
 }
 
-// IntCSV represents a path in config.Getter which will be saved as a
-// CSV string and returned as an int64 slice. Separator is a comma.
-// It represents not a multi line string!
+// IntCSV represents a path in config.Getter which will be saved as a CSV string
+// and returned as an int64 slice. Separator is a comma. It represents not a
+// multi line string!
 type IntCSV struct {
 	Str
 	// Lenient ignores errors in parsing integers
@@ -123,34 +121,37 @@ type IntCSV struct {
 	Separator rune
 }
 
-// NewIntCSV creates a new int CSV type. Acts as a multiselect.
-// It represents not a multi line string!
+// NewIntCSV creates a new int CSV type. Acts as a multiselect. It represents
+// not a multi line string! An error occurred in the options gets added to the
+// field OptionError which you can check.
 func NewIntCSV(path string, opts ...Option) IntCSV {
 	ret := IntCSV{
 		Str:       NewStr(path),
 		Separator: CSVComma,
 	}
-	(&ret).Option(opts...)
+	ret.OptionError = (&ret).Option(opts...)
 	return ret
 }
 
 // Option sets the options and returns the last set previous option
-func (ic *IntCSV) Option(opts ...Option) (previous Option) {
+func (ic *IntCSV) Option(opts ...Option) error {
 	ob := &optionBox{
 		baseValue: &ic.baseValue,
 		IntCSV:    ic,
 	}
 	for _, o := range opts {
-		previous = o(ob)
+		if err := o(ob); err != nil {
+			return errors.Wrap(err, "[cfgmodel] StringCSV.Option")
+		}
 	}
 	ic = ob.IntCSV
 	ic.baseValue = *ob.baseValue
-	return
+	return nil
 }
 
-// Get returns an int slice. Int string gets splited by comma.
-// Can return nil,nil. If multiple values cannot be casted to int then the
-// last known error gets returned.
+// Get returns an int slice. Int string gets splited by comma. Can return
+// nil,nil. If multiple values cannot be casted to int then the last known error
+// gets returned.
 func (ic IntCSV) Get(sg config.ScopedGetter) ([]int, error) {
 	s, err := ic.Str.Get(sg)
 	if err != nil {
@@ -203,9 +204,9 @@ func (ic IntCSV) Write(w config.Writer, sl []int, s scope.Scope, scopeID int64) 
 	return ic.baseValue.Write(w, val.String(), s, scopeID)
 }
 
-// CSV represents a path in config.Getter which will be saved as a
-// CSV multi line string and returned as a string slice slice. Separator is a comma.
-// New line separator: \r and/or \n.
+// CSV represents a path in config.Getter which will be saved as a CSV multi
+// line string and returned as a string slice slice. Separator is a comma. New
+// line separator: \r and/or \n.
 type CSV struct {
 	Str
 	Comma     rune // field delimiter (set to ',' by NewReader)
@@ -214,9 +215,9 @@ type CSV struct {
 	NewWriter func(w io.Writer) *csv.Writer
 }
 
-// NewCSV creates a new CSV string type which can parse multi line strings
-// with a separator.
-// Default separator: constant CSVComma
+// NewCSV creates a new CSV string type which can parse multi line strings with
+// a separator. Default separator: constant CSVComma. An error occurred in the
+// options gets added to the field OptionError which you can check.
 func NewCSV(path string, opts ...Option) CSV {
 	ret := CSV{
 		Str:       NewStr(path),
@@ -225,28 +226,28 @@ func NewCSV(path string, opts ...Option) CSV {
 		NewReader: csv.NewReader,
 		NewWriter: csv.NewWriter,
 	}
-	(&ret).Option(opts...)
+	ret.OptionError = (&ret).Option(opts...)
 	return ret
 }
 
 // Option sets the options and returns the last set previous option
-func (c *CSV) Option(opts ...Option) (previous Option) {
+func (c *CSV) Option(opts ...Option) error {
 	ob := &optionBox{
 		baseValue: &c.baseValue,
 		CSV:       c,
 	}
 	for _, o := range opts {
-		previous = o(ob)
+		if err := o(ob); err != nil {
+			return errors.Wrap(err, "[cfgmodel] StringCSV.Option")
+		}
 	}
-
 	c.Comma = ob.CSV.Comma
 	c.Comment = ob.CSV.Comment
-	return
+	return nil
 }
 
-// Get returns a string slice. Splits the stored string by comma
-// and new lines by \r and/or \n.
-// Can return nil,nil. Error behaviour: NotValid
+// Get returns a string slice. Splits the stored string by comma and new lines
+// by \r and/or \n. Can return nil,nil. Error behaviour: NotValid
 func (c CSV) Get(sg config.ScopedGetter) ([][]string, error) {
 	s, err := c.Str.Get(sg)
 	if err != nil {
@@ -262,8 +263,8 @@ func (c CSV) Get(sg config.ScopedGetter) ([][]string, error) {
 	return res, errors.NewNotValid(err, "[cfgmodel] CSV.NewReader.ReadAll")
 }
 
-// Write writes a slice with its scope and ID to the writer.
-// Validates the input string slice for correct values if set in source.Slice.
+// Write writes a slice with its scope and ID to the writer. Validates the input
+// string slice for correct values if set in source.Slice.
 func (c CSV) Write(w config.Writer, csv [][]string, s scope.Scope, scopeID int64) error {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
