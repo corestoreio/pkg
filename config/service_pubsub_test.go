@@ -130,7 +130,7 @@ func TestPubSubPanicError(t *testing.T) {
 	assert.NoError(t, s.Write(cfgpath.MustNew(testPath).Bind(scope.Store, 123), 321))
 
 	assert.NoError(t, s.Close())
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err Error: "OMG! Panic!" path: "stores/123/aa/bb/cc"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err error: "OMG! Panic!" path: "stores/123/aa/bb/cc"`)
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
@@ -249,7 +249,7 @@ func TestPubSubEvict(t *testing.T) {
 
 	assert.NoError(t, s.Close())
 
-	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err Error: "WTF Eviction? Panic!" path: "stores/123/xx/yy/zz"`)
+	assert.Contains(t, debugBuf.String(), `config.pubSub.publish.recover.err error: "WTF Eviction? Panic!" path: "stores/123/xx/yy/zz"`)
 
 	levelCall.Lock()
 	assert.Equal(t, 3, levelCall.level2Calls)
