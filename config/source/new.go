@@ -19,9 +19,10 @@ import "github.com/corestoreio/csfw/util/errors"
 // NewByString creates a new ValueLabelSlice (VLS) from key,value list.
 // It panics when arguments are imbalanced. Example:
 // 		mySlice := NewValueLabelSlice("http", "HTTP (unsecure)", "https", "HTTPS (TLS)")
-func NewByString(vl ...string) Slice {
+// Error behaviour: NotValid.
+func NewByString(vl ...string) (Slice, error) {
 	if len(vl)%2 != 0 {
-		panic(errors.NewNotValidf("[source] Imbalanced Pairs: %v", vl))
+		return nil, errors.NewNotValidf("[source] Imbalanced Pairs: %v", vl)
 	}
 	vls := make(Slice, len(vl)/2)
 	j := 0
@@ -32,6 +33,15 @@ func NewByString(vl ...string) Slice {
 			label:   vl[i+1],
 		}
 		j++
+	}
+	return vls, nil
+}
+
+// MustNewByString same as NewByString but panics on error.
+func MustNewByString(vl ...string) Slice {
+	vls, err := NewByString(vl...)
+	if err != nil {
+		panic(err)
 	}
 	return vls
 }

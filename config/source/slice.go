@@ -44,9 +44,9 @@ func (s Slice) SortByLabel(direction int) Slice {
 	return s
 }
 
-// SortByValue sorts by value in asc = 0 or desc != 0 direction. The underlying value
-// will be converted to a string. You might expect strange results when sorting
-// integers or other non-strings.
+// SortByValue sorts by value in asc = 0 or desc != 0 direction. The underlying
+// value will be converted to a string. You might expect strange results when
+// sorting integers or other non-strings.
 func (s Slice) SortByValue(direction int) Slice {
 	var si sort.Interface
 	si = vlSortByValue{s}
@@ -120,8 +120,8 @@ func (s Slice) ContainsValString(k string) bool {
 	return s.IndexValString(k) > -1
 }
 
-// IndexValString checks if value k exists and returns its position.
-// Returns -1 when the value was not found.
+// IndexValString checks if value k exists and returns its position. Returns -1
+// when the value was not found.
 func (s Slice) IndexValString(k string) int {
 	for i, p := range s {
 		if p.NotNull == NotNullString && p.String == k {
@@ -136,8 +136,8 @@ func (s Slice) ContainsValInt(k int) bool {
 	return s.IndexValInt(k) > -1
 }
 
-// IndexValInt checks if value k exists and returns its position.
-// Returns -1 when the value was not found.
+// IndexValInt checks if value k exists and returns its position. Returns -1
+// when the value was not found.
 func (s Slice) IndexValInt(k int) int {
 	for i, p := range s {
 		if p.NotNull == NotNullInt && p.Int == k {
@@ -152,8 +152,8 @@ func (s Slice) ContainsValFloat64(k float64) bool {
 	return s.IndexValFloat64(k) > -1
 }
 
-// IndexValFloat64 checks if value k exists and returns its position.
-// Returns -1 when the value was not found.
+// IndexValFloat64 checks if value k exists and returns its position. Returns -1
+// when the value was not found.
 func (s Slice) IndexValFloat64(k float64) int {
 	for i, p := range s {
 		abs := math.Abs(p.Float64 - k)
@@ -169,8 +169,8 @@ func (s Slice) ContainsValBool(k bool) bool {
 	return s.IndexValBool(k) > -1
 }
 
-// IndexValBool checks if value k exists and returns its position.
-// Returns -1 when the value was not found.
+// IndexValBool checks if value k exists and returns its position. Returns -1
+// when the value was not found.
 func (s Slice) IndexValBool(k bool) int {
 	for i, p := range s {
 		if p.NotNull == NotNullBool && p.Bool == k {
@@ -196,8 +196,8 @@ func (s Slice) IndexLabel(l string) int {
 	return -1
 }
 
-// Merge integrates the argument Slice into the receiver slice and overwrites the
-// existing values of the receiver slice.
+// Merge integrates the argument Slice into the receiver slice and overwrites
+// the existing values of the receiver slice.
 func (s *Slice) Merge(sl Slice) Slice {
 
 	for _, p := range sl {

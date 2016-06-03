@@ -27,17 +27,6 @@ import (
 var _ json.Marshaler = (*source.Pair)(nil)
 var _ json.Unmarshaler = (*source.Pair)(nil)
 
-func TestSliceStringPanic(t *testing.T) {
-
-	defer func() {
-		if r := recover(); r != nil {
-			err := r.(error)
-			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
-		}
-	}()
-	_ = source.NewByString("kb", "l2", "ka")
-}
-
 func TestNewByStringValue(t *testing.T) {
 
 	sl := source.NewByStringValue("a", "b", "c")
@@ -56,19 +45,19 @@ func TestSliceString(t *testing.T) {
 		order     int
 	}{
 		{
-			source.NewByString("kb", "l2", "ka", "l1", "kc", "l3", "kY", "l5", "k0", "l4"),
+			source.MustNewByString("kb", "l2", "ka", "l1", "kc", "l3", "kY", "l5", "k0", "l4"),
 			`[{"Value":"k0","Label":"l4"},{"Value":"kY","Label":"l5"},{"Value":"ka","Label":"l1"},{"Value":"kb","Label":"l2"},{"Value":"kc","Label":"l3"}]` + "\n",
 			`[{"Value":"ka","Label":"l1"},{"Value":"kb","Label":"l2"},{"Value":"kc","Label":"l3"},{"Value":"k0","Label":"l4"},{"Value":"kY","Label":"l5"}]` + "\n",
 			0,
 		},
 		{
-			source.NewByString("x3", "l2", "xg", "l1", "xK", "l3", "x0", "l5", "x-", "l4"),
+			source.MustNewByString("x3", "l2", "xg", "l1", "xK", "l3", "x0", "l5", "x-", "l4"),
 			`[{"Value":"xg","Label":"l1"},{"Value":"xK","Label":"l3"},{"Value":"x3","Label":"l2"},{"Value":"x0","Label":"l5"},{"Value":"x-","Label":"l4"}]` + "\n",
 			`[{"Value":"x0","Label":"l5"},{"Value":"x-","Label":"l4"},{"Value":"xK","Label":"l3"},{"Value":"x3","Label":"l2"},{"Value":"xg","Label":"l1"}]` + "\n",
 			1,
 		},
 		{
-			source.NewByString("x'3", "l\"2", "xög", "l1", "x\"K", "l3", `x"0`, "l5", `™¢´ƒˆ∑`, "¢£•¥ü©∑üƒ"),
+			source.MustNewByString("x'3", "l\"2", "xög", "l1", "x\"K", "l3", `x"0`, "l5", `™¢´ƒˆ∑`, "¢£•¥ü©∑üƒ"),
 			`[{"Value":"™¢´ƒˆ∑","Label":"¢£•¥ü©∑üƒ"},{"Value":"xög","Label":"l1"},{"Value":"x'3","Label":"l\"2"},{"Value":"x\"K","Label":"l3"},{"Value":"x\"0","Label":"l5"}]` + "\n",
 			`[{"Value":"™¢´ƒˆ∑","Label":"¢£•¥ü©∑üƒ"},{"Value":"x\"0","Label":"l5"},{"Value":"x\"K","Label":"l3"},{"Value":"xög","Label":"l1"},{"Value":"x'3","Label":"l\"2"}]` + "\n",
 			1,
@@ -273,7 +262,7 @@ func TestSliceNull(t *testing.T) {
 
 func TestSliceContainsValString(t *testing.T) {
 
-	sl := source.NewByString("k1", "v1", "k2", "v2")
+	sl := source.MustNewByString("k1", "v1", "k2", "v2")
 	assert.True(t, sl.ContainsValString("k1"), "Search for k1 failed")
 	assert.False(t, sl.ContainsValString("k0"), "Found k0 despite it is not in the slice")
 }
@@ -334,8 +323,8 @@ func TestSliceMerge(t *testing.T) {
 		want  string
 	}{
 		{
-			source.NewByString("k1", "v1", "k2", "v2"),
-			source.NewByString("k0", "v0", "k3", "v3", "k2", "v2a"),
+			source.MustNewByString("k1", "v1", "k2", "v2"),
+			source.MustNewByString("k0", "v0", "k3", "v3", "k2", "v2a"),
 			`[{"Value":"k0","Label":"v0"},{"Value":"k1","Label":"v1"},{"Value":"k2","Label":"v2a"},{"Value":"k3","Label":"v3"}]` + "\n",
 		},
 		{
@@ -371,7 +360,7 @@ func TestSliceUnique(t *testing.T) {
 		want string
 	}{
 		{
-			source.NewByString("k2", "v20", "k1", "v1", "k2", "v21"),
+			source.MustNewByString("k2", "v20", "k1", "v1", "k2", "v21"),
 			`[{"Value":"k2","Label":"v20"},{"Value":"k1","Label":"v1"}]` + "\n",
 		},
 		{
@@ -406,7 +395,7 @@ func TestSliceUnmarshalJSON(t *testing.T) {
 	}{
 		{
 			[]byte(`[{"Value":"k2","Label":"v20"},{"Value":"k1","Label":"v1"}]`),
-			source.NewByString("k2", "v20", "k1", "v1"),
+			source.MustNewByString("k2", "v20", "k1", "v1"),
 			nil,
 		},
 		{
