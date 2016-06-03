@@ -37,10 +37,8 @@ const (
 	maxScope
 )
 
-// TODO: rename Scope constants and remove the stupid ID ...
-
-// Scoper specifies how to return the scope to which an ID belongs to.
-// ID is one of a website, group or store ID as definied in their database tables.
+// Scoper specifies how to return the scope to which an ID belongs to. ID is one
+// of a website, group or store ID as definied in their database tables.
 // config.ScopedGetter implements Scoper.
 type Scoper interface {
 	Scope() (Scope, int64)
@@ -89,15 +87,14 @@ func (i Scope) String() string {
 	return _ScopeName[_ScopeIndex[i]:_ScopeIndex[i+1]]
 }
 
-// StrScope converts the underlying scope ID to one of the three available
-// scope strings in database table core_config_data.
+// StrScope converts the underlying scope ID to one of the three available scope
+// strings in database table core_config_data.
 func (i Scope) StrScope() string {
 	return FromScope(i).String()
 }
 
-// Bytes returns the StrScope as byte slice from a Scope.
-// The returned byte slice is owned by this package. You must
-// copy it for further use.
+// Bytes returns the StrScope as byte slice from a Scope. The returned byte
+// slice is owned by this package. You must copy it for further use.
 func (i Scope) Bytes() []byte {
 	switch i {
 	case Website:
@@ -108,8 +105,8 @@ func (i Scope) Bytes() []byte {
 	return bDefault
 }
 
-// StrScope represents a string scope from table core_config_data column scope with
-// special functions attached, mainly for path generation
+// StrScope represents a string scope from table core_config_data column scope
+// with special functions attached, mainly for path generation
 type StrScope string
 
 const (
@@ -124,10 +121,10 @@ var (
 	bStores   = []byte(strStores)
 )
 
-// Str* constants are used in the database table core_config_data.
-// StrDefault defines the global scope.
-// StrWebsites defines the website scope which has default as parent and stores as child.
-// StrStores defines the store scope which has default and websites as parent.
+// Str* constants are used in the database table core_config_data. StrDefault
+// defines the global scope. StrWebsites defines the website scope which has
+// default as parent and stores as child. StrStores defines the store scope
+// which has default and websites as parent.
 const (
 	StrDefault  StrScope = strDefault
 	StrWebsites StrScope = strWebsites
@@ -162,7 +159,8 @@ func FromString(s string) Scope {
 	return Default
 }
 
-// FromScope returns the string representation for a scope ID. Opposite of FromString.
+// FromScope returns the string representation for a scope ID. Opposite of
+// FromString.
 func FromScope(scopeID Scope) StrScope {
 	switch scopeID {
 	case Website:
@@ -173,9 +171,8 @@ func FromScope(scopeID Scope) StrScope {
 	return StrDefault
 }
 
-// Valid checks if s is a valid StrScope of either
-// StrDefault, StrWebsites or StrStores. Case-sensitive.
-// Input should all be lowercase.
+// Valid checks if s is a valid StrScope of either StrDefault, StrWebsites or
+// StrStores. Case-sensitive. Input should all be lowercase.
 func Valid(s string) bool {
 	switch s {
 	case strWebsites, strStores, strDefault:
@@ -184,8 +181,8 @@ func Valid(s string) bool {
 	return false
 }
 
-// FromBytes returns the scope ID from a byte slice: default, websites or stores.
-// Opposite of FromScope
+// FromBytes returns the scope ID from a byte slice: default, websites or
+// stores. Opposite of FromScope
 func FromBytes(b []byte) Scope {
 	switch {
 	case bytes.Compare(bWebsites, b) == 0:
@@ -196,8 +193,8 @@ func FromBytes(b []byte) Scope {
 	return Default
 }
 
-// ValidBytes checks if b is a valid byte Scope of either
-// StrDefault, StrWebsites or StrStores. Case-sensitive.
+// ValidBytes checks if b is a valid byte Scope of either StrDefault,
+// StrWebsites or StrStores. Case-sensitive.
 func ValidBytes(b []byte) bool {
 	return bytes.Compare(bDefault, b) == 0 || bytes.Compare(bWebsites, b) == 0 || bytes.Compare(bStores, b) == 0
 }

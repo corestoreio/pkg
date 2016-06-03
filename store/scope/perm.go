@@ -19,9 +19,9 @@ import "github.com/corestoreio/csfw/util/bufferpool"
 // Perm is a bit set and used for permissions. Uint16 should be big enough.
 type Perm uint16
 
-// PermStore convenient helper contains all scope permission levels.
-// The official core_config_data table and its classes to not support the
-// GroupID scope, so that is the reason why PermStore does not have a GroupID.
+// PermStore convenient helper contains all scope permission levels. The
+// official core_config_data table and its classes to not support the GroupID
+// scope, so that is the reason why PermStore does not have a GroupID.
 const PermStore Perm = 1<<Default | 1<<Website | 1<<Store
 
 // PermWebsite convenient helper contains default and website scope permission levels.
@@ -30,12 +30,12 @@ const PermWebsite Perm = 1<<Default | 1<<Website
 // PermDefault convenient helper contains default scope permission level.
 const PermDefault Perm = 1 << Default
 
-// PermStoreReverse convenient helper to enforce hierarchy levels.
-// Only used in config.scopedService implementation.
+// PermStoreReverse convenient helper to enforce hierarchy levels. Only used in
+// config.scopedService implementation.
 const PermStoreReverse Perm = 1 << Store
 
-// PermWebsiteReverse convenient helper to enforce hierarchy levels
-// Only used in config.scopedService implementation.
+// PermWebsiteReverse convenient helper to enforce hierarchy levels. Only used in
+// config.scopedService implementation.
 const PermWebsiteReverse Perm = 1<<Store | 1<<Website
 
 // All applies DefaultID, WebsiteID and StoreID scopes
@@ -46,14 +46,14 @@ func (bits Perm) All() Perm {
 // Set takes a variadic amount of Group to set them to Bits
 func (bits Perm) Set(scopes ...Scope) Perm {
 	for _, i := range scopes {
-		bits = bits | (1 << i) // (1 << power = 2^power)
+		bits |= (1 << i) // (1 << power = 2^power)
 	}
 	return bits
 }
 
-// Top returns the highest stored scope within a Perm.
-// A Perm can consists of 3 scopes: 1. Default -> 2. Website -> 3. Store
-// Highest scope for a Perm with all scopes is: Store.
+// Top returns the highest stored scope within a Perm. A Perm can consists of 3
+// scopes: 1. Default -> 2. Website -> 3. Store Highest scope for a Perm with
+// all scopes is: Store.
 func (bits Perm) Top() Scope {
 	switch {
 	case bits.Has(Store):
@@ -64,9 +64,8 @@ func (bits Perm) Top() Scope {
 	return Default
 }
 
-// Has checks if a give scope exists within a Perm. Only the
-// first argument is supported. Providing no argument assumes
-// the scope.DefaultID.
+// Has checks if a give scope exists within a Perm. Only the first argument is
+// supported. Providing no argument assumes the scope.DefaultID.
 func (bits Perm) Has(s ...Scope) bool {
 	scp := Default
 	if len(s) > 0 {
@@ -106,9 +105,8 @@ func (bits Perm) String() string {
 var nullByte = []byte("null")
 
 // MarshalJSON implements marshaling into an array or null if no bits are set.
-// Returns null when Perm is empty aka zero. null and 0 are considered the
-// same for a later unmarshalling.
-// @todo UnMarshal
+// Returns null when Perm is empty aka zero. null and 0 are considered the same
+// for a later unmarshalling. @todo UnMarshal
 func (bits Perm) MarshalJSON() ([]byte, error) {
 	if bits == 0 {
 		return nullByte, nil
@@ -126,6 +124,7 @@ func (bits Perm) MarshalJSON() ([]byte, error) {
 	}
 	buf.WriteString(`"]`)
 
-	// seems redundant but we must copy the bytes aways because bufferpool.Put() resets the buffer
+	// seems redundant but we must copy the bytes aways because bufferpool.Put()
+	// resets the buffer
 	return []byte(buf.String()), nil
 }

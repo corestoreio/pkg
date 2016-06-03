@@ -21,7 +21,8 @@ var _ StoreIDer = MockID(0)
 // AdminScope is always 0 in each of the three scopes.
 const AdminScope MockID = 0
 
-// MockID is convenience helper to satisfy the interface WebsiteIDer, GroupIDer and StoreIDer.
+// MockID is convenience helper to satisfy the interface WebsiteIDer, GroupIDer
+// and StoreIDer.
 type MockID int64
 
 // WebsiteID is convenience helper to satisfy the interface WebsiteIDer
@@ -43,13 +44,14 @@ var _ StoreIDer = MockCode("")
 // the *ID() function. Store in this name refers to the package name :-\
 const UnavailableStoreID int64 = -1
 
-// MockCode is convenience helper to satisfy the interface WebsiteCoder, StoreCoder,
-// WebsiteIDer, GroupIDer and StoreIDer. Reason: In package store all functions have
-// as argument an *IDer interface but once they detect an *Coder interface, they
-// will once the *Coder return value.
+// MockCode is convenience helper to satisfy the interface WebsiteCoder,
+// StoreCoder, WebsiteIDer, GroupIDer and StoreIDer. Reason: In package store
+// all functions have as argument an *IDer interface but once they detect an
+// *Coder interface, they will once the *Coder return value.
 type MockCode string
 
-// WebsiteID is convenience helper to satisfy the interface WebsiteIDer. Returns -1.
+// WebsiteID is convenience helper to satisfy the interface WebsiteIDer. Returns
+// -1.
 func (c MockCode) WebsiteID() int64 { return UnavailableStoreID }
 
 // WebsiteCode mock helper to return a website code
