@@ -149,14 +149,9 @@ func (bv baseValue) hasField() bool {
 // ConfigStructure.
 // Error behaviour: Unauthorized
 func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, scopeID int64) error {
-	if bv.hasField() {
-		if false == bv.Field.Scopes.Has(s) {
-			return errors.NewUnauthorizedf("[cfgmodel] Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
-		}
-	}
 	pp, err := bv.ToPath(s, scopeID)
 	if err != nil {
-		return errors.Wrap(err, "[cfgmodel] ToPath")
+		return errors.Wrap(err, "[cfgmodel] baseValue.ToPath")
 	}
 	return w.Write(pp, v)
 }
@@ -196,7 +191,7 @@ func (bv baseValue) InScope(sg scope.Scoper) (err error) {
 
 func (bv baseValue) inScope(s scope.Scope, _ int64) (err error) {
 	if bv.hasField() && !bv.Field.Scopes.Has(s) {
-		err = errors.NewUnauthorizedf("[cfgmodel] Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
+		err = errors.NewUnauthorizedf("[cfgmodel] Scope permission insufficient: Have %q; Want %q; Route: %q", s, bv.Field.Scopes, bv)
 	}
 	return
 }
