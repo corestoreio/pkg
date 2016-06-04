@@ -66,7 +66,16 @@ func (shs HashState) Len() int {
 }
 
 // ShouldStart reports true atomically for a specific Hash, if a process can
-// start. Safe for concurrent use.
+// start. Safe for concurrent use. Use must check ShouldStart() first in your
+// switch statement:
+//		switch {
+//			case hs.ShouldStart(scopeHash):
+//				// start here your process
+//				err := hs.Done(scopeHash)
+//			case hs.IsRunning(scopeHash):
+//				// do nothing and wait ...
+//		}
+//		// proceed here with your program
 func (shs HashState) ShouldStart(h Hash) bool {
 	if !shs.Initialized() {
 		return false
@@ -78,6 +87,41 @@ func (shs HashState) ShouldStart(h Hash) bool {
 		shs.states[h] = newRunningState()
 	}
 	return !ok // we've created a new entry in the map and now we can run
+}
+
+// IsRunning checks atomically if the HashState has been set to tun and if so
+// the calling Goroutine waits until Done() has been called. Use must use
+// IsRunning() as second case in your switch statement:
+//		switch {
+//			case hs.ShouldStart(scopeHash):
+//				// start here your process
+//				err := hs.Done(scopeHash)
+//			case hs.IsRunning(scopeHash):
+//				// do nothing and wait ...
+//		}
+//		// proceed here with your program
+func (shs HashState) IsRunning(h Hash) bool {
+	if !shs.Initialized() {
+		return false
+	}
+	shs.mu.RLock()
+	st, ok := shs.states[h]
+	shs.mu.RUnlock()
+	if !ok {
+		return false
+	}
+
+	if atomic.LoadUint32(st.status) != stateRunning {
+		return false
+	}
+
+	st.Lock()
+	for atomic.LoadUint32(st.status) != stateDone {
+		st.Wait()
+	}
+	st.Unlock()
+
+	return true
 }
 
 // Done releases all the waiting Goroutines caught with the function IsRunning()
@@ -95,32 +139,6 @@ func (shs HashState) Done(h Hash) error {
 	atomic.StoreUint32(st.status, stateDone)
 	st.Broadcast()
 	return nil
-}
-
-// IsRunning checks atomically if the HashState has been set to tun and if so
-// the calling Goroutine waits until Done() has been called.
-func (shs HashState) IsRunning(h Hash) bool {
-	if !shs.Initialized() {
-		return false
-	}
-	shs.mu.RLock()
-	st, ok := shs.states[h]
-	shs.mu.RUnlock()
-	if !ok {
-		return false
-	}
-
-	if atomic.LoadUint32(st.status) != stateRunning {
-		return false
-	}
-
-	st.Lock()
-	defer st.Unlock()
-	for atomic.LoadUint32(st.status) != stateDone {
-		st.Wait()
-	}
-
-	return true
 }
 
 const (

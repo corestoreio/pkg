@@ -18,10 +18,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
+	"time"
 )
 
 const hashCount = 10
@@ -130,25 +130,19 @@ func TestHashState_IsRunning(t *testing.T) {
 				h := hashes[i]
 
 				switch {
-				case hs.IsRunning(h):
-					// wait here
-					//t.Logf("IsRunning Iteration %d Hash %s", j, h)
-					atomic.AddUint32(countWaiter, 1)
+				// You should stick to the sequence of the cases: 1. Start 2. Running
 				case hs.ShouldStart(h):
 					atomic.AddUint32(countRun, 1)
 					time.Sleep(time.Millisecond) // simulate race detector ;-)
 					if err := hs.Done(h); err != nil {
 						t.Fatal(errors.PrintLoc(err))
 					}
+				case hs.IsRunning(h): // this case is normally not needed
+					atomic.AddUint32(countWaiter, 1)
 				}
 
 				if hs.IsRunning(h) {
-					// This is weird because sometimes it prints out the log and
-					// sometimes nothing gets printed. The race detector detects
-					// nothing. AFAIK there must be delay between the first
-					// switch case and the last switch case. but if we comment
-					// out the whole switch everything still works as expected.
-					t.Logf("Should not be running, because it should have ran "+
+					t.Fatalf("Should not be running, because it should have ran "+
 						"already, so now we're waiting. Iteration %d Hash %s", j, h)
 				}
 			}(&wg, i, j)
@@ -159,11 +153,11 @@ func TestHashState_IsRunning(t *testing.T) {
 	if have, want := atomic.LoadUint32(countRun), uint32(len(hashes)); have != want {
 		t.Errorf("Runner: Have %d Want %d", have, want)
 	}
-	if have, want := atomic.LoadUint32(countWaiter), uint32(10); have < want {
+	if have, want := atomic.LoadUint32(countWaiter), uint32(150); have < want {
 		// we have around ~50-190 waiting goroutines. the number of waiting goroutines
 		// is totally random and depends on how fast the case CanRun: can process the
 		// work or if the race detector has been enabled. So we check here for at least
-		// 10 sleeper.
+		// 100 sleeper.
 		t.Errorf("Waiter: Have %d > Want %d", have, want)
 	} else {
 		t.Logf("INFO Waiter: %d", have)
