@@ -26,7 +26,11 @@ import (
 // checks the running state and returns true this Goroutine will be suspended
 // and must wait until the main Goroutine calls Done().
 //
-// Use case for the Hashstate is mainly in Service types
+// Use case for the Hashstate is mainly in middleware Service types for
+// net/http.Requests to load configuration values atomically and make other
+// requests wait until the configuration has been fully loaded and applied.
+// After that skip the whole access to HashState and use the configuration
+// values cached in the middleware service type.
 type HashState struct {
 	mu     *sync.RWMutex
 	states map[Hash]state
@@ -48,15 +52,22 @@ func (shs HashState) Initialized() bool {
 
 // Reset clears the internal list of Hash(es). Will panic if called on an
 // uninitialized HashState.
-func (shs HashState) Reset() {
+func (shs *HashState) Reset() {
 	shs.mu.Lock()
 	defer shs.mu.Unlock()
-	(&shs).states = make(map[Hash]state)
+	shs.states = make(map[Hash]state)
 }
 
-// CanRun starts atomically for a specific Hash and returns true if successful
-// started. Safe for concurrent use.
-func (shs HashState) CanRun(h Hash) bool {
+// Len returns the number of processed Hashes.
+func (shs HashState) Len() int {
+	shs.mu.Lock()
+	defer shs.mu.Unlock()
+	return len(shs.states)
+}
+
+// ShouldStart reports true atomically for a specific Hash, if a process can
+// start. Safe for concurrent use.
+func (shs HashState) ShouldStart(h Hash) bool {
 	if !shs.Initialized() {
 		return false
 	}
@@ -99,8 +110,7 @@ func (shs HashState) IsRunning(h Hash) bool {
 		return false
 	}
 
-	run := atomic.LoadUint32(st.status) == stateRunning
-	if !run {
+	if atomic.LoadUint32(st.status) != stateRunning {
 		return false
 	}
 
@@ -114,8 +124,7 @@ func (shs HashState) IsRunning(h Hash) bool {
 }
 
 const (
-	stateIdle uint32 = iota
-	stateRunning
+	stateRunning uint32 = 1 << iota
 	stateDone
 )
 

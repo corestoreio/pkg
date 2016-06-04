@@ -14,7 +14,10 @@
 
 package scope
 
-import "github.com/corestoreio/csfw/util/bufferpool"
+import (
+	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
+)
 
 // Perm is a bit set and used for permissions. Uint16 should be big enough.
 type Perm uint16
@@ -113,16 +116,26 @@ func (bits Perm) MarshalJSON() ([]byte, error) {
 	}
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	buf.WriteString(`["`)
+	if _, err := buf.WriteString(`["`); err != nil {
+		return nil, errors.Wrap(err, "[scope] Perm.Write")
+	}
 	hm := bits.Human()
 	lhm := len(hm) - 1
 	for i, h := range hm {
-		buf.WriteString(h)
+		if _, err := buf.WriteString(h); err != nil {
+			return nil, errors.Wrap(err, "[scope] Perm.Write")
+		}
+
 		if i < lhm {
-			buf.WriteString(`","`)
+			if _, err := buf.WriteString(`","`); err != nil {
+				return nil, errors.Wrap(err, "[scope] Perm.Write")
+			}
 		}
 	}
-	buf.WriteString(`"]`)
+
+	if _, err := buf.WriteString(`"]`); err != nil {
+		return nil, errors.Wrap(err, "[scope] Perm.Write")
+	}
 
 	// seems redundant but we must copy the bytes aways because bufferpool.Put()
 	// resets the buffer

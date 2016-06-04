@@ -52,7 +52,7 @@ func (h Hash) Unpack() (s Scope, id int64) {
 		return Absent, -1
 	}
 
-	id = int64(prospectID)
+	id = prospectID
 	return
 }
 
