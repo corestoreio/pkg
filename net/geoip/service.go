@@ -16,6 +16,7 @@ package geoip
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
@@ -25,15 +26,6 @@ import (
 
 // Service represents a service manager for GeoIP detection.
 type Service struct {
-	// GeoIP searches the country for an IP address. If nil panics
-	// during execution in the middleware
-	GeoIP CountryRetriever
-	// geoipDone checks to only load the GeoIP CountryRetriever once
-	// because we may set that within a request because it is defined
-	// in the backend configuration but later we need to reset
-	// this value to zero to allow reloading.
-	geoipDone uint32
-
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
@@ -53,7 +45,18 @@ type Service struct {
 	// access to the standard configuration without accessing a map.
 	defaultScopeCache scopedConfig
 
-	scopeCacheMu sync.RWMutex
+	// rwmu protects all fields below
+	rwmu sync.RWMutex
+
+	// geoIP searches the country for an IP address. If nil panics
+	// during execution in the middleware
+	geoIP CountryRetriever
+	// geoIPDone checks to only load the GeoIP CountryRetriever once
+	// because we may set that within a request because it is defined
+	// in the backend configuration but later we need to reset
+	// this value to zero to allow reloading.
+	geoIPDone uint32
+
 	// scopeCache internal cache of already created token configurations
 	// scoped.Hash relates to the website ID. This can become a bottle neck when
 	// multiple website IDs supplied by a request try to access the map. we can
@@ -98,6 +101,12 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
+// Closes the underlying GeoIP CountryRetriever service and resets the internal loading state.
+func (s *Service) Close() error {
+	atomic.StoreUint32(&s.geoIPDone, 0)
+	return s.geoIP.Close()
+}
+
 func (s *Service) useDefaultConfig(h scope.Hash) bool {
 	return s.optionFactoryFunc == nil && h == scope.DefaultHash && s.defaultScopeCache.isValid() == nil
 }
@@ -123,6 +132,9 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	case sCfg.isValid() == nil:
 		// cached entry found which can contain the configured scoped configuration or
 		// the default scope configuration.
+		if s.Log.IsDebug() {
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h))
+		}
 		return sCfg
 	case s.optionFactoryState.ShouldStart(h): // 2. map lookup, execute for each scope which needs to initialize the configuration.
 		// gets tested by backendgeoip
@@ -133,7 +145,13 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 				lastErr: errors.Wrap(err, "[geoip] Options by scpOptionFnc"),
 			}
 		}
+		if s.Log.IsDebug() {
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart", log.Stringer("scope", h))
+		}
 	case s.optionFactoryState.IsRunning(h): // 3. map lookup
+		if s.Log.IsDebug() {
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.IsRunning", log.Stringer("scope", h))
+		}
 		// gets tested by backendgeoip
 		// Wait! After optionFactoryState.Done() has been called in optionFactoryState.Done() we
 		// proceed here and go to the last return statement to search for the
@@ -147,12 +165,12 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {
 
-	s.scopeCacheMu.RLock()
+	s.rwmu.RLock()
 	scpCfg, ok := s.scopeCache[hash]
-	s.scopeCacheMu.RUnlock()
+	s.rwmu.RUnlock()
 	if !ok && useDefault {
-		s.scopeCacheMu.Lock()
-		defer s.scopeCacheMu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// all other fields are empty or nil!
 		scpCfg.scopeHash = hash

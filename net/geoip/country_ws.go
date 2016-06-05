@@ -17,11 +17,12 @@ package geoip
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/corestoreio/csfw/util/errors"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // TransCacher transcodes Go objects. It knows how to encode and cache any

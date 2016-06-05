@@ -51,17 +51,14 @@ type IsAllowedFunc func(s *store.Store, c *Country, allowedCountries []string, r
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-		var err error
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, err = defaultScopedConfig(h)
-			return errors.Wrap(err, "[geoip] Default Scope with Default Config")
+			s.defaultScopeCache = defaultScopedConfig(h)
+			return nil
 		}
-
-		s.scopeCacheMu.Lock()
-		defer s.scopeCacheMu.Unlock()
-
-		s.scopeCache[h], err = defaultScopedConfig(h)
-		return errors.Wrapf(err, "[geoip] Scope %s with Default Config", h)
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.scopeCache[h] = defaultScopedConfig(h)
+		return nil
 	}
 }
 
@@ -76,8 +73,8 @@ func WithAlternativeHandler(scp scope.Scope, id int64, altHndlr http.Handler) Op
 			return nil
 		}
 
-		s.scopeCacheMu.Lock()
-		defer s.scopeCacheMu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -112,8 +109,8 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 			return nil
 		}
 
-		s.scopeCacheMu.Lock()
-		defer s.scopeCacheMu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -134,8 +131,8 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...string) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-		s.scopeCacheMu.Lock()
-		defer s.scopeCacheMu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedCountries = isoCountryCodes
 			return nil
@@ -165,10 +162,30 @@ func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...strin
 // subsequent scopes. Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
-		//s.scopeCacheMu.Lock()
-		//defer s.scopeCacheMu.Unlock()
-		s.defaultScopeCache.log = l
 		s.Log = l
+		return nil
+	}
+}
+
+// WithGeoIP applies a custom CountryRetriever. Sets the retriever atomically
+// and only once.
+func WithGeoIP(cr CountryRetriever) Option {
+	return func(s *Service) error {
+		if atomic.LoadUint32(&s.geoIPDone) == 1 {
+			if s.Log.IsDebug() {
+				s.Log.Debug("geoip.WithGeoIP.geoIPDone", log.Int("done", 1))
+			}
+			return nil
+		}
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		if s.geoIPDone == 0 {
+			defer atomic.StoreUint32(&s.geoIPDone, 1)
+			s.geoIP = cr
+			if s.Log.IsDebug() {
+				s.Log.Debug("geoip.WithGeoIP.geoIPLoaded", log.Int("done", 0))
+			}
+		}
 		return nil
 	}
 }
@@ -181,21 +198,11 @@ func WithGeoIP2File(filename string) Option {
 			return errors.NewNotFoundf("[geoip] File %q not found", filename)
 		}
 
-		if atomic.LoadUint32(&s.geoipDone) == 1 {
-			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithGeoIP2File.geoipDone", log.Int("geoipDone", int(s.geoipDone)), log.String("filename", filename))
-			}
-			return nil
+		cr, err := newMMDBByFile(filename)
+		if err != nil {
+			return errors.NewNotValidf("[geoip] Maxmind Open %s with file %q", err, filename)
 		}
-		var err error
-		if s.geoipDone == 0 {
-			defer atomic.StoreUint32(&s.geoipDone, 1)
-			s.GeoIP, err = newMMDBByFile(filename)
-		}
-		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.WithGeoIP2File.geoipLoaded", log.Int("geoipDone", int(s.geoipDone)), log.String("filename", filename))
-		}
-		return errors.NewNotValid(err, "[geoip] Maxmind Open")
+		return WithGeoIP(cr)(s)
 	}
 }
 
@@ -214,24 +221,14 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 // Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/ and
 // caches the result in Transcacher. Hint: use package storage/transcache.
 func WithGeoIP2WebserviceHttpClient(t TransCacher, userID, licenseKey string, hc *http.Client) Option {
-	return func(s *Service) error {
-		if atomic.LoadUint32(&s.geoipDone) == 1 {
-			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithGeoIP2WebserviceHttpClient.geoipDone", log.Int("geoipDone", int(s.geoipDone)), log.String("userID", userID))
-			}
-			return nil
-		}
-		if s.geoipDone == 0 {
-			defer atomic.StoreUint32(&s.geoipDone, 1)
-			s.GeoIP = &mmws{
-				userID:      userID,
-				licenseKey:  licenseKey,
-				client:      hc,
-				TransCacher: t,
-			}
-		}
-		return nil
+	mm := &mmws{
+		userID:      userID,
+		licenseKey:  licenseKey,
+		client:      hc,
+		TransCacher: t,
 	}
+	return WithGeoIP(mm)
+
 }
 
 // WithOptionFactory applies a function which lazily loads the option depending
@@ -254,8 +251,6 @@ func WithGeoIP2WebserviceHttpClient(t TransCacher, userID, licenseKey string, hc
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
-		s.scopeCacheMu.Lock()
-		defer s.scopeCacheMu.Unlock()
 		s.optionFactoryFunc = f
 		s.optionFactoryState = scope.NewHashState()
 		return nil

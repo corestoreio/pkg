@@ -15,7 +15,6 @@
 package geoip_test
 
 import (
-	"bytes"
 	"io"
 	"net"
 	"net/http"
@@ -60,64 +59,8 @@ func mustGetRequestFinland() *http.Request {
 	return req
 }
 
-func TestNewServiceErrorWithoutOptions(t *testing.T) {
-	s, err := geoip.New()
-	assert.NoError(t, err)
-	assert.NotNil(t, s)
-	assert.Nil(t, s.GeoIP)
-}
-
-func TestNewService_WithGeoIP2File_Atomic(t *testing.T) {
-	logBuf := &bytes.Buffer{}
-	s, err := geoip.New(
-		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
-		geoip.WithGeoIP2File(filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")),
-	)
-	defer deferClose(t, s.GeoIP)
-	assert.NoError(t, err)
-	assert.NotNil(t, s)
-	assert.NotNil(t, s.GeoIP)
-	for i := 0; i < 3; i++ {
-		assert.NoError(t, s.Options(geoip.WithGeoIP2File(filepath.Join("testdata", "GeoIP2-Country-Test.json"))))
-	}
-	assert.True(t, 3 == strings.Count(logBuf.String(), `geoip.WithGeoIP2File.geoipDone geoipDone`))
-}
-
-func TestNewService_WithGeoIP2Webservice_Atomic(t *testing.T) {
-	logBuf := &bytes.Buffer{}
-	s, err := geoip.New(
-		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
-		geoip.WithGeoIP2Webservice(nil, "a", "b", 1),
-	)
-	defer deferClose(t, s.GeoIP)
-	assert.NoError(t, err)
-	assert.NotNil(t, s)
-	assert.NotNil(t, s.GeoIP)
-	for i := 0; i < 3; i++ {
-		assert.NoError(t, s.Options(geoip.WithGeoIP2Webservice(nil, "d", "e", 1)))
-	}
-	assert.True(t, 3 == strings.Count(logBuf.String(), `geoipDone: 1`))
-}
-
-func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
-	s, err := geoip.New(geoip.WithGeoIP2File("Walhalla/GeoIP2-Country-Test.mmdb"))
-	assert.Nil(t, s)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-}
-
 func deferClose(t *testing.T, c io.Closer) {
 	assert.NoError(t, c.Close())
-}
-
-func TestNewServiceWithGeoIP2Reader(t *testing.T) {
-	s := mustGetTestService()
-	defer deferClose(t, s.GeoIP)
-	ip, _, err := net.ParseCIDR("2a02:d200::/29") // IP range for Finland
-
-	assert.NoError(t, err)
-	haveCty, err := s.GeoIP.Country(ip)
-	assert.NoError(t, err)
-	assert.Exactly(t, "FI", haveCty.Country.IsoCode)
 }
 
 type geoReaderMock struct{}
@@ -128,9 +71,12 @@ func (geoReaderMock) Country(ipAddress net.IP) (*geoip.Country, error) {
 func (geoReaderMock) Close() error { return nil }
 
 func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
-	s := mustGetTestService()
-	s.GeoIP = geoReaderMock{}
-	defer deferClose(t, s.GeoIP)
+	s := geoip.MustNew()
+	defer deferClose(t, s)
+
+	if err := s.Options(geoip.WithGeoIP(geoReaderMock{})); err != nil {
+		t.Fatal(err)
+	}
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ipc, err := geoip.FromContextCountry(r.Context())
@@ -148,7 +94,7 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 
 func TestWithCountryByIPSuccess(t *testing.T) {
 	s := mustGetTestService()
-	defer deferClose(t, s.GeoIP)
+	defer deferClose(t, s)
 
 	countryHandler := s.WithCountryByIP()(finalHandlerFinland(t))
 	rec := httptest.NewRecorder()
@@ -158,7 +104,7 @@ func TestWithCountryByIPSuccess(t *testing.T) {
 
 func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	s := mustGetTestService()
-	defer deferClose(t, s.GeoIP)
+	defer deferClose(t, s)
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ipc, err := geoip.FromContextCountry(r.Context())
@@ -183,7 +129,7 @@ func ipErrorFinalHandler(t *testing.T) http.HandlerFunc {
 
 func TestWithCountryByIPErrorRemoteAddr(t *testing.T) {
 	s := mustGetTestService()
-	defer deferClose(t, s.GeoIP)
+	defer deferClose(t, s)
 
 	countryHandler := s.WithCountryByIP()(ipErrorFinalHandler(t))
 	rec := httptest.NewRecorder()
@@ -195,7 +141,7 @@ func TestWithCountryByIPErrorRemoteAddr(t *testing.T) {
 
 func TestWithIsCountryAllowedByIPErrorWithContextCountryByIP(t *testing.T) {
 	s := mustGetTestService()
-	defer deferClose(t, s.GeoIP)
+	defer deferClose(t, s)
 
 	countryHandler := s.WithIsCountryAllowedByIP()(ipErrorFinalHandler(t))
 	rec := httptest.NewRecorder()
@@ -211,7 +157,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 	s := mustGetTestService(
 		geoip.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
 	)
-	defer deferClose(t, s.GeoIP)
+	defer deferClose(t, s)
 
 	o, err := scope.SetByCode(scope.Website, "euro")
 	if err != nil {
@@ -318,7 +264,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 		req := test.req() // within the loop we'll get a race condition
 		var wg sync.WaitGroup
 		// Food for the race detector
-		for j := 0; j < 15; j++ {
+		for j := 0; j < 30; j++ {
 			wg.Add(1)
 			go func(wg *sync.WaitGroup, r *http.Request) {
 				defer wg.Done()
@@ -330,8 +276,8 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 
 	// println("\n", logBuf.String(), "\n")
 
-	if have, want := strings.Count(logBuf.String(), `geoip.Service.getConfigByScopeID.fallbackToDefault scope: "Scope(Store) ID(1)"`), 1; have != want {
-		t.Errorf("Expecting Scope(Store) ID(1) to fall back to default configuration: Have: %v Want: %v", have, want)
+	if have, want := strings.Count(logBuf.String(), `geoip.Service.getConfigByScopeID.fallbackToDefault scope: "Scope(Store) ID(1)"`), 1; have < want {
+		t.Errorf("Expecting Scope(Store) ID(1) to fall back to default configuration: Have: %d <= Want: %d", have, want)
 	}
 
 }

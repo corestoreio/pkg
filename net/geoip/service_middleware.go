@@ -39,7 +39,7 @@ func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Coun
 		return nil, nil, errors.NewNotFoundf(errCannotGetRemoteAddr)
 	}
 
-	c, err := s.GeoIP.Country(ip)
+	c, err := s.geoIP.Country(ip)
 	if err != nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug(
@@ -87,8 +87,8 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 			// website or finally can fall back to default scope.
 			scpCfg := s.configByScopedGetter(requestedStore.Config)
 			if err := scpCfg.isValid(); err != nil {
-				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug(
+				if s.Log.IsDebug() {
+					s.Log.Debug(
 						"Service.WithIsCountryAllowedByIP.configByScopedGetter",
 						log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("request", r))
 				}
