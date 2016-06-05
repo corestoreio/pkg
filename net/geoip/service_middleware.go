@@ -119,7 +119,7 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 			if s.Log.IsDebug() {
 				s.Log.Debug(
 					"geoip.WithIsCountryAllowedByIP.checkAllow.false",
-					log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("country", c.Country))
+					log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.String("countryISO", c.Country.IsoCode))
 			}
 			scpCfg.alternativeHandler.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -127,7 +127,7 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 }
 
 // WithInitStoreByCountryIP initializes a store scope via the IP address which
-// is bound to a country. todo(CS) IDEA
+// is bound to a country. todo(CS) idea
 func (s *Service) WithInitStoreByCountryIP() mw.Middleware {
 	// - define a mapping for a store assigned to countries ISO codes
 	// - load that store default but allow a user to switch

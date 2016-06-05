@@ -171,7 +171,7 @@ func WithLogger(l log.Logger) Option {
 // and only once.
 func WithGeoIP(cr CountryRetriever) Option {
 	return func(s *Service) error {
-		if atomic.LoadUint32(&s.geoIPDone) == 1 {
+		if s.isGeoIPLoaded() {
 			if s.Log.IsDebug() {
 				s.Log.Debug("geoip.WithGeoIP.geoIPDone", log.Int("done", 1))
 			}
@@ -179,9 +179,9 @@ func WithGeoIP(cr CountryRetriever) Option {
 		}
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
-		if s.geoIPDone == 0 {
-			defer atomic.StoreUint32(&s.geoIPDone, 1)
+		if *(s.geoIPLoaded) == 0 {
 			s.geoIP = cr
+			atomic.StoreUint32(s.geoIPLoaded, 1)
 			if s.Log.IsDebug() {
 				s.Log.Debug("geoip.WithGeoIP.geoIPLoaded", log.Int("done", 0))
 			}

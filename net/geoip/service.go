@@ -51,11 +51,11 @@ type Service struct {
 	// geoIP searches the country for an IP address. If nil panics
 	// during execution in the middleware
 	geoIP CountryRetriever
-	// geoIPDone checks to only load the GeoIP CountryRetriever once
+	// geoIPLoaded checks to only load the GeoIP CountryRetriever once
 	// because we may set that within a request because it is defined
 	// in the backend configuration but later we need to reset
 	// this value to zero to allow reloading.
-	geoIPDone uint32
+	geoIPLoaded *uint32
 
 	// scopeCache internal cache of already created token configurations
 	// scoped.Hash relates to the website ID. This can become a bottle neck when
@@ -68,8 +68,9 @@ type Service struct {
 // NewService creates a new GeoIP service to be used as a middleware.
 func New(opts ...Option) (*Service, error) {
 	s := &Service{
-		scopeCache: make(map[scope.Hash]scopedConfig),
-		Log:        log.BlackHole{},
+		geoIPLoaded: new(uint32),
+		scopeCache:  make(map[scope.Hash]scopedConfig),
+		Log:         log.BlackHole{},
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
 		return nil, errors.Wrap(err, "[geoip] Options WithDefaultConfig")
@@ -103,8 +104,12 @@ func (s *Service) Options(opts ...Option) error {
 
 // Closes the underlying GeoIP CountryRetriever service and resets the internal loading state.
 func (s *Service) Close() error {
-	atomic.StoreUint32(&s.geoIPDone, 0)
+	atomic.StoreUint32(s.geoIPLoaded, 0)
 	return s.geoIP.Close()
+}
+
+func (s *Service) isGeoIPLoaded() bool {
+	return atomic.LoadUint32(s.geoIPLoaded) == 1
 }
 
 func (s *Service) useDefaultConfig(h scope.Hash) bool {
@@ -129,7 +134,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 
 	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests
 	switch {
-	case sCfg.isValid() == nil:
+	case sCfg.isValid() == nil && s.isGeoIPLoaded(): // not nice isGeoIPLoaded, find something better
 		// cached entry found which can contain the configured scoped configuration or
 		// the default scope configuration.
 		if s.Log.IsDebug() {
@@ -148,9 +153,9 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart", log.Stringer("scope", h))
 		}
-	case s.optionFactoryState.IsRunning(h): // 3. map lookup
+	case s.optionFactoryState.ShouldWait(h): // 3. map lookup
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.IsRunning", log.Stringer("scope", h))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldWait", log.Stringer("scope", h))
 		}
 		// gets tested by backendgeoip
 		// Wait! After optionFactoryState.Done() has been called in optionFactoryState.Done() we

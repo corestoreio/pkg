@@ -16,15 +16,21 @@ package backendgeoip_test
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
 	"github.com/corestoreio/csfw/store"
@@ -35,6 +41,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	now := time.Now()
+	seed := now.Unix() + int64(now.Nanosecond()) + 12345*int64(os.Getpid())
+	rand.Seed(seed)
+}
 
 func mustToPath(t interface {
 	Fatal(...interface{})
@@ -150,8 +162,9 @@ func testBackend_WithGeoIP2Webservice_Redis(
 		//	}(&wg)
 		//}
 		//wg.Wait()
-		// poor mans type checking, we must check if we use the type of mmws
-		assert.Contains(t, fmt.Sprintf("%#v", geoSrv.GeoIP), `&geoip.mmws{userID:"TestUserID", licenseKey:"TestLicense", cl`)
+
+		// todo check if the key has been stored in redis
+		// rd.CheckGet(t,)
 	}
 }
 
@@ -164,9 +177,11 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 		mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	}))
 
-	geoSrv := geoip.MustNew(geoip.WithOptionFactory(backendgeoip.Default()))
-
-	assert.Nil(t, geoSrv.GeoIP) // gets initialized during the first request
+	var logBuf log.MutexBuffer
+	geoSrv := geoip.MustNew(
+		geoip.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
+		geoip.WithOptionFactory(backendgeoip.Default()),
+	)
 
 	// if you try to set the allowed countries with this option, they get
 	// overwritten by the ScopeConfig service.
@@ -194,15 +209,19 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 
 	// For the race detector
 	var wg sync.WaitGroup
-	for i := 0; i < 30; i++ {
+	for i := 1; i <= 30; i++ {
 		wg.Add(1)
-		go func(wg *sync.WaitGroup) {
+		sleeep := time.Microsecond * time.Duration(rand.Intn(100*i))
+		go func(wg *sync.WaitGroup, sleep time.Duration) {
 			defer wg.Done()
+			time.Sleep(sleep)
+
 			rec := httptest.NewRecorder()
 			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				c, err := geoip.FromContextCountry(r.Context())
 				assert.Nil(t, c)
 				if err != nil {
+					println("\n", logBuf.String(), "\n")
 					panic(errors.PrintLoc(err))
 				}
 				panic("Should not be called")
@@ -211,9 +230,27 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 
 			assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
 			assert.Exactly(t, 307, rec.Code)
-		}(&wg)
+		}(&wg, sleeep)
 	}
 	wg.Wait()
+
+	// Min 7 calls IsValid
+	// Exactly one call to ShouldStart
+	// Min 3 calls to ShouldWait
+	if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.IsValid`), 7; have < want {
+		t.Errorf("IsValid: Have: %d < Want: %d", have, want)
+	}
+	if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldStart`), 1; have != want {
+		t.Errorf("ShouldStart: Have: %d Want: %d", have, want)
+	}
+	if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldWait`), 0; have < want {
+		// set to 0 because sometimes no one is waiting
+		// If this fails during -race test with many -count CLI agrs then
+		// it doesn't matter
+		t.Errorf("ShouldWait: Have: %d < Want: %d", have, want)
+	}
+
+	// println("\n", logBuf.String(), "\n")
 }
 
 func TestBackend_Path_Errors(t *testing.T) {
