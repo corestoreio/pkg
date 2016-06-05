@@ -47,7 +47,7 @@ func TestHashState_Initialized(t *testing.T) {
 	if err := hs.Done(scope.DefaultHash); !errors.IsFatal(err) {
 		t.Errorf("Expecting a Fatal error: %s", err)
 	}
-	if hs.IsRunning(scope.DefaultHash) {
+	if hs.ShouldWait(scope.DefaultHash) {
 		t.Error("Should not be running")
 	}
 
@@ -76,7 +76,7 @@ func TestHashState_CanRun(t *testing.T) {
 			go func(wg *sync.WaitGroup, i int) {
 				defer wg.Done()
 				h := hashes[i]
-				if hs.IsRunning(h) {
+				if hs.ShouldWait(h) {
 					t.Fatal("Should not run")
 				}
 				if !hs.ShouldStart(h) {
@@ -107,7 +107,7 @@ func TestHashState_CanRun(t *testing.T) {
 	}
 }
 
-func TestHashState_IsRunning(t *testing.T) {
+func TestHashState_ShouldWait(t *testing.T) {
 	var hs scope.HashState
 	if hs.ShouldStart(scope.DefaultHash) {
 		t.Fatal("Should not return true because not yet initialized")
@@ -137,11 +137,11 @@ func TestHashState_IsRunning(t *testing.T) {
 					if err := hs.Done(h); err != nil {
 						t.Fatal(errors.PrintLoc(err))
 					}
-				case hs.IsRunning(h): // this case is normally not needed
+				case hs.ShouldWait(h): // this case is normally not needed
 					atomic.AddUint32(countWaiter, 1)
 				}
 
-				if hs.IsRunning(h) {
+				if hs.ShouldWait(h) {
 					t.Fatalf("Should not be running, because it should have ran "+
 						"already, so now we're waiting. Iteration %d Hash %s", j, h)
 				}

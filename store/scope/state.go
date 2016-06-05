@@ -66,13 +66,13 @@ func (shs HashState) Len() int {
 }
 
 // ShouldStart reports true atomically for a specific Hash, if a process can
-// start. Safe for concurrent use. Use must check ShouldStart() first in your
+// start. Safe for concurrent use. You should check ShouldStart() first in your
 // switch statement:
 //		switch {
 //			case hs.ShouldStart(scopeHash):
 //				// start here your process
 //				err := hs.Done(scopeHash)
-//			case hs.IsRunning(scopeHash):
+//			case hs.ShouldWait(scopeHash):
 //				// do nothing and wait ...
 //		}
 //		// proceed here with your program
@@ -89,18 +89,18 @@ func (shs HashState) ShouldStart(h Hash) bool {
 	return !ok // we've created a new entry in the map and now we can run
 }
 
-// IsRunning checks atomically if the HashState has been set to tun and if so
-// the calling Goroutine waits until Done() has been called. Use must use
-// IsRunning() as second case in your switch statement:
+// ShouldWait checks atomically if the HashState has been set to run and if so
+// the calling Goroutine waits until Done() has been called. You should use
+// ShouldWait() as second case in your switch statement:
 //		switch {
 //			case hs.ShouldStart(scopeHash):
 //				// start here your process
 //				err := hs.Done(scopeHash)
-//			case hs.IsRunning(scopeHash):
+//			case hs.ShouldWait(scopeHash):
 //				// do nothing and wait ...
 //		}
 //		// proceed here with your program
-func (shs HashState) IsRunning(h Hash) bool {
+func (shs HashState) ShouldWait(h Hash) bool {
 	if !shs.Initialized() {
 		return false
 	}
@@ -125,7 +125,8 @@ func (shs HashState) IsRunning(h Hash) bool {
 }
 
 // Done releases all the waiting Goroutines caught with the function IsRunning()
-// and sets the internal state to done.
+// and sets the internal state to done. Any subsequent calls to ShouldWait() and
+// ShouldStart() will fail. You must call Reset() once all is done.
 func (shs HashState) Done(h Hash) error {
 	if !shs.Initialized() {
 		return errors.NewFatalf("[scope] HashState not initialized")
@@ -138,6 +139,10 @@ func (shs HashState) Done(h Hash) error {
 	}
 	atomic.StoreUint32(st.status, stateDone)
 	st.Broadcast()
+	shs.states[h] = state{
+		// not needed anymore, so set sync.* pointers to nil.
+		status: st.status,
+	}
 	return nil
 }
 
