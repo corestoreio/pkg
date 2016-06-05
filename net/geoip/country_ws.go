@@ -17,11 +17,11 @@ package geoip
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/corestoreio/csfw/util/errors"
+	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
-	"time"
-
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 // TransCacher transcodes Go objects. It knows how to encode and cache any
@@ -33,13 +33,6 @@ type TransCacher interface {
 	Get(key []byte, dst interface{}) error
 }
 
-// NewHttpClient creates a new HTTP client for the MaxMind webservice.
-// You can provide here your own function or a mock for testing.
-// This function will be used in the option function WithGeoIP2Webservice().
-var NewHttpClient = func(timeout time.Duration) *http.Client {
-	return &http.Client{Timeout: timeout}
-}
-
 // mmws resolves to MaxMind WebService
 type mmws struct {
 	userID     string
@@ -49,14 +42,11 @@ type mmws struct {
 	TransCacher
 }
 
-func newMMWS(t TransCacher, userID, licenseKey string, httpTimeout time.Duration) *mmws {
-	if httpTimeout < 1 {
-		httpTimeout = time.Second * 20
-	}
+func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
 	return &mmws{
 		userID:      userID,
 		licenseKey:  licenseKey,
-		client:      NewHttpClient(httpTimeout),
+		client:      hc,
 		TransCacher: t,
 	}
 }
@@ -109,6 +99,12 @@ func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
 		return response, err
 	}
 	defer resp.Body.Close()
+	defer func() {
+		// read until the response is complete
+		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
+			panic(err) // todo remove panic or find another better way to avoid this
+		}
+	}()
 
 	// handle errors that may occur
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Headers

@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/config/cfgmock"
@@ -37,27 +36,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mustToPath(t *testing.T, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
+func mustToPath(t interface {
+	Fatal(...interface{})
+}, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
 	p, err := f(s, scopeID)
 	if err != nil {
 		t.Fatal(errors.PrintLoc(err))
 	}
 	return p.String()
 }
-func mustGetTestService(opts ...geoip.Option) *geoip.Service {
-	maxMindDB := filepath.Join("../", "testdata", "GeoIP2-Country-Test.mmdb")
-	return geoip.MustNew(append(opts, geoip.WithGeoIP2File(maxMindDB))...)
-}
 
 func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 
 	t.Run("Error_API", testBackend_WithGeoIP2Webservice_Redis(
-		func(to time.Duration) *http.Client {
+		func() *http.Client {
 			// http://dev.maxmind.com/geoip/geoip2/web-services/#Errors
-			trip := cstesting.NewHttpTrip(402, `{"error":"The license key you have provided is out of queries.","code":"OUT_OF_QUERIES"}`, nil)
 			return &http.Client{
-				Timeout:   to,
-				Transport: trip,
+				Transport: cstesting.NewHttpTrip(402, `{"error":"The license key you have provided is out of queries.","code":"OUT_OF_QUERIES"}`, nil),
 			}
 		},
 		func(t *testing.T) http.Handler {
@@ -71,12 +66,10 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 	))
 
 	t.Run("Error_JSON", testBackend_WithGeoIP2Webservice_Redis(
-		func(to time.Duration) *http.Client {
+		func() *http.Client {
 			// http://dev.maxmind.com/geoip/geoip2/web-services/#Errors
-			trip := cstesting.NewHttpTrip(200, `{"error":"The license ... wow this JSON isn't valid.`, nil)
 			return &http.Client{
-				Timeout:   to,
-				Transport: trip,
+				Transport: cstesting.NewHttpTrip(200, `{"error":"The license ... wow this JSON isn't valid.`, nil),
 			}
 		},
 		func(t *testing.T) http.Handler {
@@ -90,11 +83,9 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 	))
 
 	t.Run("Success", testBackend_WithGeoIP2Webservice_Redis(
-		func(to time.Duration) *http.Client {
-			trip := cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "es": "Europa", "fr": "Europe", "ja": "ヨーロッパ", "pt-BR": "Europa", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "registered_country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "traits": { "autonomous_system_number": 1239, "autonomous_system_organization": "Linkem IR WiMax Network", "domain": "example.com", "is_anonymous_proxy": true, "is_satellite_provider": true, "isp": "Linkem spa", "ip_address": "1.2.3.4", "organization": "Linkem IR WiMax Network", "user_type": "traveler" }, "maxmind": { "queries_remaining": 54321 } }`, nil)
+		func() *http.Client {
 			return &http.Client{
-				Timeout:   to,
-				Transport: trip,
+				Transport: cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "es": "Europa", "fr": "Europe", "ja": "ヨーロッパ", "pt-BR": "Europa", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "registered_country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "traits": { "autonomous_system_number": 1239, "autonomous_system_organization": "Linkem IR WiMax Network", "domain": "example.com", "is_anonymous_proxy": true, "is_satellite_provider": true, "isp": "Linkem spa", "ip_address": "1.2.3.4", "organization": "Linkem IR WiMax Network", "user_type": "traveler" }, "maxmind": { "queries_remaining": 54321 } }`, nil),
 			}
 		},
 		func(t *testing.T) http.Handler {
@@ -108,7 +99,7 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 }
 
 func testBackend_WithGeoIP2Webservice_Redis(
-	hcf func(time.Duration) *http.Client,
+	hcf func() *http.Client,
 	finalHandler func(t *testing.T) http.Handler,
 ) func(*testing.T) {
 
@@ -121,7 +112,14 @@ func testBackend_WithGeoIP2Webservice_Redis(
 		// test if we get the correct country and if the country has
 		// been successfully stored in redis and can be retrieved.
 
-		scpFnc := backendgeoip.Default()
+		cfgStruct, err := backendgeoip.NewConfigStructure()
+		if err != nil {
+			t.Fatal(err)
+		}
+		be := backendgeoip.New(cfgStruct)
+		be.WebServiceClient = hcf()
+		scpFnc := backendgeoip.PrepareOptions(be)
+
 		cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 			// @see structure.go for the limitation to scope.Default
 			mustToPath(t, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):   `TestUserID`,
@@ -139,13 +137,19 @@ func testBackend_WithGeoIP2Webservice_Redis(
 			return req
 		}()
 
-		geoip.NewHttpClient = hcf
 		if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}
-
+		// For the race detector
+		//var wg sync.WaitGroup
+		//for i := 0; i < 10; i++ {
+		//	wg.Add(1)
+		//	go func(wg *sync.WaitGroup) {
+		//		defer wg.Done()
 		geoSrv.WithCountryByIP()(finalHandler(t)).ServeHTTP(nil, req)
-
+		//	}(&wg)
+		//}
+		//wg.Wait()
 		// poor mans type checking, we must check if we use the type of mmws
 		assert.Contains(t, fmt.Sprintf("%#v", geoSrv.GeoIP), `&geoip.mmws{userID:"TestUserID", licenseKey:"TestLicense", cl`)
 	}
@@ -157,9 +161,12 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
 		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
 		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
+		mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	}))
 
-	geoSrv := mustGetTestService(geoip.WithOptionFactory(backendgeoip.Default()))
+	geoSrv := geoip.MustNew(geoip.WithOptionFactory(backendgeoip.Default()))
+
+	assert.Nil(t, geoSrv.GeoIP) // gets initialized during the first request
 
 	// if you try to set the allowed countries with this option, they get
 	// overwritten by the ScopeConfig service.
@@ -187,13 +194,17 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 
 	// For the race detector
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 30; i++ {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
 			rec := httptest.NewRecorder()
 			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+				c, err := geoip.FromContextCountry(r.Context())
+				assert.Nil(t, c)
+				if err != nil {
+					panic(errors.PrintLoc(err))
+				}
 				panic("Should not be called")
 
 			})).ServeHTTP(rec, req)

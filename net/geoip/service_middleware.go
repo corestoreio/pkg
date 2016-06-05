@@ -66,13 +66,12 @@ func (s *Service) WithCountryByIP() mw.Middleware {
 	}
 }
 
-// WithIsCountryAllowedByIP queries the AllowedCountries slice
-// to retrieve a list of countries for a scope and then uses the function
-// IsAllowedFunc to check if a country is allowed for an IP address.
-// If a country should not access the next handler within the middleware
-// chain it will call an alternative handler to e.g. show a different page
-// or performa a redirect.
-// Use FromContextCountry() to extract the country or an error.
+// WithIsCountryAllowedByIP queries the AllowedCountries slice to retrieve a
+// list of countries for a scope and then uses the function IsAllowedFunc to
+// check if a country is allowed for an IP address. If a country should not
+// access the next handler within the middleware chain it will call an
+// alternative handler to e.g. show a different page or performa a redirect. Use
+// FromContextCountry() to extract the country or an error.
 func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -84,25 +83,24 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 				return
 			}
 
-			ctx, c, err := s.newContextCountryByIP(r)
-			if err != nil {
-				err = errors.Wrap(err, "[geoip] newContextCountryByIP")
+			// requestedStore.Config contains the scope for store and then
+			// website or finally can fall back to default scope.
+			scpCfg := s.configByScopedGetter(requestedStore.Config)
+			if err := scpCfg.isValid(); err != nil {
+				if s.defaultScopeCache.log.IsDebug() {
+					s.defaultScopeCache.log.Debug(
+						"Service.WithIsCountryAllowedByIP.configByScopedGetter",
+						log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("request", r))
+				}
+				err = errors.Wrap(err, "[geoip] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
 				return
 			}
 
-			// the scpCfg depends on how you have initialized the storeService during app boot.
-			// requestedStore.Website.Config is the reason that all options only support
-			// website scope and not group or store scope.
-			scpCfg, err := s.configByScopedGetter(requestedStore.Config)
+			ctx, c, err := s.newContextCountryByIP(r)
 			if err != nil {
-				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug(
-						"Service.WithCORS.configByScopedGetter",
-						log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Object("requestedStore", requestedStore), log.Object("request", r))
-				}
-				err = errors.Wrap(err, "[mwcors] ConfigByScopedGetter")
-				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+				err = errors.Wrap(err, "[geoip] newContextCountryByIP")
+				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
 				return
 			}
 

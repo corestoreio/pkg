@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -30,10 +31,15 @@ import (
 // different settings.
 type Option func(*Service) error
 
-// ScopedOptionFunc a closure around a scoped configuration to figure out which
+// OptionFactoryFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
 // a request.
-type ScopedOptionFunc func(config.ScopedGetter) []Option
+type OptionFactoryFunc func(config.ScopedGetter) []Option
+
+// IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
+// allowed to process the request. The StringSlice contains a list of ISO country
+// names fetched from the config.ScopedGetter.
+type IsAllowedFunc func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
 
 // WithDefaultConfig applies the default GeoIP configuration settings based for
 // a specific scope. This function overwrites any previous set options.
@@ -47,14 +53,14 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) error {
 		var err error
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, err = defaultScopedConfig()
+			s.defaultScopeCache, err = defaultScopedConfig(h)
 			return errors.Wrap(err, "[geoip] Default Scope with Default Config")
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.scopeCacheMu.Lock()
+		defer s.scopeCacheMu.Unlock()
 
-		s.scopeCache[h], err = defaultScopedConfig()
+		s.scopeCache[h], err = defaultScopedConfig(h)
 		return errors.Wrapf(err, "[geoip] Scope %s with Default Config", h)
 	}
 }
@@ -70,8 +76,8 @@ func WithAlternativeHandler(scp scope.Scope, id int64, altHndlr http.Handler) Op
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.scopeCacheMu.Lock()
+		defer s.scopeCacheMu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -106,8 +112,8 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.scopeCacheMu.Lock()
+		defer s.scopeCacheMu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -128,13 +134,12 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...string) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.scopeCacheMu.Lock()
+		defer s.scopeCacheMu.Unlock()
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedCountries = isoCountryCodes
 			return nil
 		}
-
-		s.mu.Lock()
-		defer s.mu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -157,10 +162,11 @@ func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...strin
 }
 
 // WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes.
-// Mainly used for debugging.
+// subsequent scopes. Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
+		//s.scopeCacheMu.Lock()
+		//defer s.scopeCacheMu.Unlock()
 		s.defaultScopeCache.log = l
 		s.Log = l
 		return nil
@@ -168,47 +174,61 @@ func WithLogger(l log.Logger) Option {
 }
 
 // WithGeoIP2File creates a new GeoIP2.Reader. As long as there are no other
-// readers this is a mandatory argument.
-// Error behaviour: NotFound, NotValid
+// readers this is a mandatory argument. Error behaviour: NotFound, NotValid
 func WithGeoIP2File(filename string) Option {
 	return func(s *Service) error {
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
 			return errors.NewNotFoundf("[geoip] File %q not found", filename)
 		}
+
 		if atomic.LoadUint32(&s.geoipDone) == 1 {
 			if s.Log.IsDebug() {
 				s.Log.Debug("geoip.WithGeoIP2File.geoipDone", log.Int("geoipDone", int(s.geoipDone)), log.String("filename", filename))
 			}
 			return nil
 		}
-		s.mu.Lock()
-		defer s.mu.Unlock()
 		var err error
 		if s.geoipDone == 0 {
 			defer atomic.StoreUint32(&s.geoipDone, 1)
 			s.GeoIP, err = newMMDBByFile(filename)
 		}
+		if s.Log.IsDebug() {
+			s.Log.Debug("geoip.WithGeoIP2File.geoipLoaded", log.Int("geoipDone", int(s.geoipDone)), log.String("filename", filename))
+		}
 		return errors.NewNotValid(err, "[geoip] Maxmind Open")
 	}
 }
 
-// WithGeoIP2WebService uses for each incoming a request a lookup request to
-// the Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/
-// and caches the result in Transcacher.
-// Hint: use package storage/transcache.
+// WithGeoIP2WebService uses for each incoming a request a lookup request to the
+// Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/ and
+// caches the result in Transcacher. Hint: use package storage/transcache. If
+// the httpTimeout is lower 0 then the default 20s get applied.
 func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout time.Duration) Option {
+	if httpTimeout < 1 {
+		httpTimeout = time.Second * 20
+	}
+	return WithGeoIP2WebserviceHttpClient(t, userID, licenseKey, &http.Client{Timeout: httpTimeout})
+}
+
+// WithGeoIP2WebService uses for each incoming a request a lookup request to the
+// Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/ and
+// caches the result in Transcacher. Hint: use package storage/transcache.
+func WithGeoIP2WebserviceHttpClient(t TransCacher, userID, licenseKey string, hc *http.Client) Option {
 	return func(s *Service) error {
 		if atomic.LoadUint32(&s.geoipDone) == 1 {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithGeoIP2Webservice.geoipDone", log.Int("geoipDone", int(s.geoipDone)), log.String("userID", userID))
+				s.Log.Debug("geoip.WithGeoIP2WebserviceHttpClient.geoipDone", log.Int("geoipDone", int(s.geoipDone)), log.String("userID", userID))
 			}
 			return nil
 		}
-		s.mu.Lock()
-		defer s.mu.Unlock()
 		if s.geoipDone == 0 {
 			defer atomic.StoreUint32(&s.geoipDone, 1)
-			s.GeoIP = newMMWS(t, userID, licenseKey, httpTimeout)
+			s.GeoIP = &mmws{
+				userID:      userID,
+				licenseKey:  licenseKey,
+				client:      hc,
+				TransCacher: t,
+			}
 		}
 		return nil
 	}
@@ -218,9 +238,9 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 // on the incoming scope within a request. For example applies the backend
 // configuration to the service.
 //
-// Once this option function has been set all other manually set option functions,
-// which accept a scope and a scope ID as an argument, will be overwritten by the
-// new values retrieved from the configuration service.
+// WRONG: Once this option function has been set all other manually set option
+// functions, which accept a scope and a scope ID as an argument, will be
+// overwritten by the new values retrieved from the configuration service.
 //
 // Example:
 //	cfgStruct, err := backendgeoip.NewConfigStructure()
@@ -229,12 +249,15 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 //	}
 //	pb := backendgeoip.New(cfgStruct)
 //
-//	cors := geoip.MustNewService(
+//	geoSrv := geoip.MustNewService(
 //		geoip.WithOptionFactory(backendgeoip.PrepareOptions(pb)),
 //	)
-func WithOptionFactory(f ScopedOptionFunc) Option {
+func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
-		s.scopedOptionFunc = f
+		s.scopeCacheMu.Lock()
+		defer s.scopeCacheMu.Unlock()
+		s.optionFactoryFunc = f
+		s.optionFactoryState = scope.NewHashState()
 		return nil
 	}
 }

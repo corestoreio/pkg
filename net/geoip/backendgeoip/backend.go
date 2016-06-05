@@ -15,14 +15,16 @@
 package backendgeoip
 
 import (
+	"net/http"
+
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
 )
 
-// Backend just exported for the sake of documentation. See fields
-// for more information. The PkgBackend handles the reading and writing
-// of configuration values within this package.
+// Backend just exported for the sake of documentation. See fields for more
+// information. The PkgBackend handles the reading and writing of configuration
+// values within this package.
 type Backend struct {
 	cfgmodel.PkgBackend
 
@@ -67,19 +69,24 @@ type Backend struct {
 	//
 	// Path: net/geoip_maxmind/webservice_redisurl
 	NetGeoipMaxmindWebserviceRedisURL cfgmodel.URL
+
+	// WebServiceClient allows you to use a custom client when making requests
+	// to the MaxMind webservice. This client will be used in PrepareOptions().
+	// If nil a fallback to the default client happens. The timeout gets set by
+	// configuration path NetGeoipMaxmindWebserviceTimeout.
+	WebServiceClient *http.Client
 }
 
-// New initializes the backend configuration models containing the
-// cfgpath.Route variable to the appropriate entries.
-// The function Load() will be executed to apply the SectionSlice
-// to all models. See Load() for more details.
+// New initializes the backend configuration models containing the cfgpath.Route
+// variable to the appropriate entries. The function Load() will be executed to
+// apply the SectionSlice to all models. See Load() for more details.
 func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	return (&Backend{}).Load(cfgStruct, opts...)
 }
 
-// Load creates the configuration models for each PkgBackend field.
-// Internal mutex will protect the fields during loading.
-// The argument SectionSlice will be applied to all models.
+// Load creates the configuration models for each PkgBackend field. Internal
+// mutex will protect the fields during loading. The argument SectionSlice will
+// be applied to all models.
 func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	pp.Lock()
 	defer pp.Unlock()

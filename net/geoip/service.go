@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Service represents a service manager
+// Service represents a service manager for GeoIP detection.
 type Service struct {
 	// GeoIP searches the country for an IP address. If nil panics
 	// during execution in the middleware
@@ -33,23 +33,33 @@ type Service struct {
 	// in the backend configuration but later we need to reset
 	// this value to zero to allow reloading.
 	geoipDone uint32
+
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
-	// scopedOptionFunc optional configuration closure, can be nil. It pulls
-	// out the configuration settings during a request and caches the settings in the
-	// internal map. ScopedOption requires a config.ScopedGetter
-	scopedOptionFunc ScopedOptionFunc
+	// optionFactoryFunc optional configuration closure, can be nil. It pulls
+	// out the configuration settings during a request and caches the settings
+	// in the internal map. ScopedOption requires a config.ScopedGetter. This
+	// function gets set via WithOptionFactory()
+	optionFactoryFunc OptionFactoryFunc
+	// optionFactoryState checks on a per scope.Hash basis if the
+	// configuration loading process takes place. Delays the execution of other
+	// Goroutines with the same scope.Hash until the configuration has been
+	// fully loaded and applied and for that specific scope. This function gets
+	// set via WithOptionFactory()
+	optionFactoryState scope.HashState
 
+	// defaultScopeCache has been extracted from the scopeCache to allow faster
+	// access to the standard configuration without accessing a map.
 	defaultScopeCache scopedConfig
 
-	mu sync.RWMutex
+	scopeCacheMu sync.RWMutex
 	// scopeCache internal cache of already created token configurations
-	// scoped.Hash relates to the website ID.
-	// this can become a bottle neck when multiple website IDs supplied by a
-	// request try to access the map. we can use the same pattern like in freecache
-	// to create a segment of 256 slice items to evenly distribute the lock.
-	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
+	// scoped.Hash relates to the website ID. This can become a bottle neck when
+	// multiple website IDs supplied by a request try to access the map. we can
+	// use the same pattern like in freecache to create a segment of 256 slice
+	// items to evenly distribute the lock.
+	scopeCache map[scope.Hash]scopedConfig
 }
 
 // NewService creates a new GeoIP service to be used as a middleware.
@@ -88,94 +98,79 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
+func (s *Service) useDefaultConfig(h scope.Hash) bool {
+	return s.optionFactoryFunc == nil && h == scope.DefaultHash && s.defaultScopeCache.isValid() == nil
+}
+
 // configByScopedGetter returns the internal configuration depending on the ScopedGetter.
 // Mainly used within the middleware. Exported here to build your own middleware.
 // A nil argument falls back to the default scope configuration.
 // If you have applied the option WithBackend() the configuration will be pulled out
 // one time from the backend service.
-func (s *Service) configByScopedGetter(scpcfg config.ScopedGetter) (scopedConfig, error) {
+func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
 
-	h := scope.DefaultHash
-	if scpcfg != nil {
-		h = scope.NewHash(scpcfg.Scope())
-	}
-	if s.Log.IsDebug() {
-		s.Log.Debug("geoip.Service.ConfigByScopedGetter.ScopedGetter", log.Bool("ScopedGetter_isNil", scpcfg == nil), log.Stringer("scope", h))
-	}
-
+	h := scope.NewHash(scpGet.Scope())
 	// fallback to default scope
-	if (s.scopedOptionFunc == nil || scpcfg == nil) && h == scope.DefaultHash && s.defaultScopeCache.isValid() {
+	if s.useDefaultConfig(h) {
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache", log.Bool("ScopedGetter_Nil", scpcfg == nil), log.Bool("scpOptionFnc_Nil", s.scopedOptionFunc == nil))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache", log.Stringer("scope", h), log.Bool("optionFactoryFunc_Nil", s.optionFactoryFunc == nil))
 		}
-		return s.defaultScopeCache, nil
+		return s.defaultScopeCache
 	}
 
-	sc, err := s.getConfigByScopeID(false, h)
-	if err == nil {
-		// cached entry found and ignore the error because we fall back to
-		// default scope at the end of this function.
-		return sc, nil
+	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests
+	switch {
+	case sCfg.isValid() == nil:
+		// cached entry found which can contain the configured scoped configuration or
+		// the default scope configuration.
+		return sCfg
+	case s.optionFactoryState.ShouldStart(h): // 2. map lookup, execute for each scope which needs to initialize the configuration.
+		// gets tested by backendgeoip
+		defer s.optionFactoryState.Done(h) // send Signal and release waiter
+
+		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
+			return scopedConfig{
+				lastErr: errors.Wrap(err, "[geoip] Options by scpOptionFnc"),
+			}
+		}
+	case s.optionFactoryState.IsRunning(h): // 3. map lookup
+		// gets tested by backendgeoip
+		// Wait! After optionFactoryState.Done() has been called in optionFactoryState.Done() we
+		// proceed here and go to the last return statement to search for the
+		// newly set scopedConfig value.
 	}
 
-	if s.scopedOptionFunc != nil {
-		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.scpOptionFnc", log.Stringer("scope", h))
-		}
-		if err := s.Options(s.scopedOptionFunc(scpcfg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[geoip] Options by scpOptionFnc")
-		}
-	}
-
-	// after applying the new config try to fetch the new scoped token configuration
-	return s.getConfigByScopeID(true, h)
+	// after applying the new config try to fetch the new scoped configuration
+	// or if not found fall back to the default scope.
+	return s.getConfigByScopeID(h, true) // 4. map lookup
 }
 
-func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
-	var empty scopedConfig
-	// requested scope plus ID
-	scpCfg, ok := s.getScopedConfig(hash)
-	if ok {
-		if scpCfg.isValid() {
-			return scpCfg, nil
-		}
-		return empty, errors.NewNotValidf(errScopedConfigNotValid, hash)
-	}
+func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {
 
-	if fallback {
-		// fallback to default scope
-		var err error
-		if !s.defaultScopeCache.isValid() {
-			err = errors.NewNotFoundf(errScopedConfigNotValid, scope.DefaultHash)
-		}
-		return s.defaultScopeCache, err
+	s.scopeCacheMu.RLock()
+	scpCfg, ok := s.scopeCache[hash]
+	s.scopeCacheMu.RUnlock()
+	if !ok && useDefault {
+		s.scopeCacheMu.Lock()
+		defer s.scopeCacheMu.Unlock()
 
-	}
-
-	// give up, nothing found
-	return empty, errConfigNotFound
-}
-
-// getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
-// has been acquired in lookupScopedConfig()
-func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
-	s.mu.RLock()
-	sc, ok = s.scopeCache[h]
-	s.mu.RUnlock()
-
-	if ok {
-		var hasChanges bool
-		// do some init stuff ...
-		if sc.log == nil {
-			sc.log = s.defaultScopeCache.log // copy logger
-			hasChanges = true
-		}
-
-		if hasChanges {
-			s.mu.Lock()
-			s.scopeCache[h] = sc
-			s.mu.Unlock()
+		// all other fields are empty or nil!
+		scpCfg.scopeHash = hash
+		scpCfg.useDefault = true
+		// in very high concurrency this might get executed multiple times but it doesn't
+		// matter that much until the entry into the map has been written.
+		s.scopeCache[hash] = scpCfg
+		if s.Log.IsDebug() {
+			s.Log.Debug("geoip.Service.getConfigByScopeID.fallbackToDefault", log.Stringer("scope", hash))
 		}
 	}
-	return sc, ok
+	if !ok && !useDefault {
+		return scopedConfig{
+			lastErr: errors.Wrap(errConfigNotFound, "[geoip] Service.getConfigByScopeID"),
+		}
+	}
+	if scpCfg.useDefault {
+		return s.defaultScopeCache
+	}
+	return scpCfg
 }

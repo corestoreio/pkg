@@ -17,9 +17,10 @@ package geoip
 import (
 	"net"
 	"testing"
-	"time"
 
 	"io/ioutil"
+
+	"net/http"
 
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
@@ -61,7 +62,7 @@ func (mc *mockCacher) Get(key []byte, dst interface{}) error {
 
 func TestMmws_Country_Failure_Response(t *testing.T) {
 
-	c := newMMWS(newMockCacher(), "gopher", "passw0rd", time.Second)
+	c := newMMWS(newMockCacher(), "gopher", "passw0rd", http.DefaultClient)
 	trip := cstesting.NewHttpTrip(400, `{"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
 	c.client.Transport = trip
 	ret, err := c.Country(net.ParseIP("123.123.123.123"))
@@ -76,7 +77,7 @@ func TestMmws_Country_Failure_Response(t *testing.T) {
 
 func TestMmws_Country_Failure_JSON(t *testing.T) {
 
-	c := newMMWS(newMockCacher(), "a", "b", time.Second)
+	c := newMMWS(newMockCacher(), "a", "b", http.DefaultClient)
 	trip := cstesting.NewHttpTrip(200, `"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
 	c.client.Transport = trip
 	ret, err := c.Country(net.ParseIP("123.123.123.123"))
@@ -90,7 +91,7 @@ func TestMmws_Country_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c := newMMWS(newMockCacher(), "gopher", "passw0rd", time.Second)
+	c := newMMWS(newMockCacher(), "gopher", "passw0rd", http.DefaultClient)
 	trip := cstesting.NewHttpTrip(200, string(td), nil)
 	c.client.Transport = trip
 	ret, err := c.Country(net.ParseIP("123.123.123.123"))

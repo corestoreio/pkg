@@ -23,19 +23,20 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// NewConfigStructure global configuration structure for this package.
-// Used in frontend (to display the user all the settings) and in
-// backend (scope checks and default values). See the source code
-// of this function for the overall available sections, groups and fields.
+// NewConfigStructure global configuration structure for this package. Used in
+// frontend (to display the user all the settings) and in backend (scope checks
+// and default values). See the source code of this function for the overall
+// available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
 		element.Section{
 			ID: cfgpath.NewRoute(`net`),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:        cfgpath.NewRoute(`geoip`),
-					Label:     text.Chars(`Geo IP`),
-					Comment:   text.Chars(`Detects the country by an IP address and maybe restricts the access. Compatible to IPv4 and IPv6.`),
+					ID:    cfgpath.NewRoute(`geoip`),
+					Label: text.Chars(`Geo IP`),
+					Comment: text.Chars(`Detects the country by an IP address and maybe restricts the access. Compatible
+to IPv4 and IPv6.`),
 					SortOrder: 170,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
@@ -43,8 +44,8 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// Path: `net/geoip/allowed_countries`,
 							ID:    cfgpath.NewRoute(`allowed_countries`),
 							Label: text.Chars(`Allowed countries`),
-							Comment: text.Chars(`Indicates which headers are safe to
-expose to the API of a CORS API specification. Separate via line break (\n)`),
+							Comment: text.Chars(`Defines a list of ISO country codes which are allowed. Separated via comma,
+e.g.: DE,CH,AT,AU,NZ`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -77,8 +78,8 @@ expose to the API of a CORS API specification. Separate via line break (\n)`),
 				element.Group{
 					ID:    cfgpath.NewRoute(`geoip_maxmind`),
 					Label: text.Chars(`Geo IP (MaxMind)`),
-					Comment: text.Chars(`Detects the country by an IP address and maybe restricts the access. Compatible to IPv4 and IPv6.
-Uses the maxmind database from a file or the web service.`),
+					Comment: text.Chars(`Detects the country by an IP address and maybe restricts the access. Compatible
+to IPv4 and IPv6. Uses the maxmind database from a file or the web service.`),
 					MoreURL:   text.Chars(`https://www.maxmind.com/en/geoip2-services-and-databases`),
 					HelpURL:   text.Chars(`http://dev.maxmind.com/geoip/geoip2/web-services/`),
 					SortOrder: 170,
@@ -87,9 +88,10 @@ Uses the maxmind database from a file or the web service.`),
 
 						element.Field{
 							// Path: `net/geoip_maxmind/local_file`,
-							ID:        cfgpath.NewRoute(`local_file`),
-							Label:     text.Chars(`Local MaxMind database file`),
-							Comment:   text.Chars(`Load a local MaxMind binary database file for extracting country information from an IP address.`),
+							ID:    cfgpath.NewRoute(`local_file`),
+							Label: text.Chars(`Local MaxMind database file`),
+							Comment: text.Chars(`Load a local MaxMind binary database file for extracting country information
+from an IP address.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -120,9 +122,9 @@ Uses the maxmind database from a file or the web service.`),
 							// Path: `net/geoip_maxmind/webservice_timeout`,
 							ID:    cfgpath.NewRoute(`webservice_timeout`),
 							Label: text.Chars(`Webservice HTTP request timeout`),
-							Comment: text.Chars(`A duration string is a possibly signed sequence of
-decimal numbers, each with optional fraction and a unit suffix,
-such as "300s", "-1.5h" or "2h45m". Valid time units are "s", "m", "h".`),
+							Comment: text.Chars(`A duration string is a possibly signed sequence of decimal numbers, each with
+optional fraction and a unit suffix, such as "300s", "-1.5h" or "2h45m". Valid
+time units are "s", "m", "h".`),
 							Type:      element.TypeText,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -133,12 +135,12 @@ such as "300s", "-1.5h" or "2h45m". Valid time units are "s", "m", "h".`),
 							// Path: `net/geoip_maxmind/webservice_redisurl`,
 							ID:    cfgpath.NewRoute(`webservice_redisurl`),
 							Label: text.Chars(`Webservice Redis URL`),
-							Comment: text.Chars(`An URL to the Redis instance to be used as a cache. If empty
-the default cache will be in-memory and limited to XX MB.
+							Comment: text.Chars(`An URL to the Redis instance to be used as a cache. If empty the default cache
+will be in-memory and limited to XX MB.
 
-URL has not match the scheme: redis://localhost:6379/X. Where X is the database number. Or
-redis://ignored:passw0rd@localhost:6379/3 to use the password passw0rd with database 3.
-`),
+URL has not match the scheme: redis://localhost:6379/X. Where X is the database
+number. Or redis://ignored:passw0rd@localhost:6379/3 to use the password
+passw0rd with database 3.`),
 							Type:      element.TypeText,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,

@@ -22,9 +22,11 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/store"
@@ -94,7 +96,7 @@ func TestNewService_WithGeoIP2Webservice_Atomic(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		assert.NoError(t, s.Options(geoip.WithGeoIP2Webservice(nil, "d", "e", 1)))
 	}
-	assert.True(t, 3 == strings.Count(logBuf.String(), `geoip.WithGeoIP2Webservice.geoipDone geoipDone`))
+	assert.True(t, 3 == strings.Count(logBuf.String(), `geoipDone: 1`))
 }
 
 func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
@@ -121,7 +123,7 @@ func TestNewServiceWithGeoIP2Reader(t *testing.T) {
 type geoReaderMock struct{}
 
 func (geoReaderMock) Country(ipAddress net.IP) (*geoip.Country, error) {
-	return nil, errors.New("Failed to read country from MMDB")
+	return nil, errors.NewFatalf("Failed to read country from MMDB")
 }
 func (geoReaderMock) Close() error { return nil }
 
@@ -133,7 +135,7 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.Nil(t, ipc)
-		assert.True(t, errors.IsFatal(err), "Error: %s", err)
+		assert.True(t, errors.IsFatal(err), "Error: %s", errors.PrintLoc(err))
 	})
 
 	countryHandler := s.WithCountryByIP()(finalHandler)
@@ -205,9 +207,9 @@ func TestWithIsCountryAllowedByIPErrorWithContextCountryByIP(t *testing.T) {
 }
 
 func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
-	logBuf := &bytes.Buffer{}
+	var logBuf log.MutexBuffer
 	s := mustGetTestService(
-		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
+		geoip.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
 	)
 	defer deferClose(t, s.GeoIP)
 
@@ -266,6 +268,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 			if err != nil {
 				t.Fatal(errors.PrintLoc(err))
 			}
+			st.Config = cfgmock.NewService().NewScoped(0, 0)
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 		},
 			"FI", nil, false},
@@ -295,10 +298,40 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 		},
 			"XX", errors.IsNotFound, false},
+
+		// IP from Germany, scope config not available and hence fall back to default
+		4: {func() *http.Request {
+			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			req.RemoteAddr = "2a02:e240::"
+			st, err := storeSrv.Store(scope.MockID(1)) // DE Store
+			if err != nil {
+				t.Fatal(errors.PrintLoc(err))
+			}
+			st.Config = cfgmock.NewService().NewScoped(1, 1) // website (1) euro; store(1) DE
+			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+		},
+			"DE", nil, false},
 	}
 	for i, test := range tests {
 		h := s.WithIsCountryAllowedByIP()(finalTestHandler(i, test.wantCountryISO, test.wantErrorBhf, test.wantAltHandler))
-		h.ServeHTTP(nil, test.req())
+
+		req := test.req() // within the loop we'll get a race condition
+		var wg sync.WaitGroup
+		// Food for the race detector
+		for j := 0; j < 15; j++ {
+			wg.Add(1)
+			go func(wg *sync.WaitGroup, r *http.Request) {
+				defer wg.Done()
+				h.ServeHTTP(nil, r)
+			}(&wg, req)
+		}
+		wg.Wait()
 	}
-	//	println("\n", logBuf.String())
+
+	// println("\n", logBuf.String(), "\n")
+
+	if have, want := strings.Count(logBuf.String(), `geoip.Service.getConfigByScopeID.fallbackToDefault scope: "Scope(Store) ID(1)"`), 1; have != want {
+		t.Errorf("Expecting Scope(Store) ID(1) to fall back to default configuration: Have: %v Want: %v", have, want)
+	}
+
 }

@@ -26,7 +26,7 @@ import (
 
 // Default creates new geoip.Option slice with the default configuration
 // structure. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) geoip.ScopedOptionFunc {
+func Default(opts ...cfgmodel.Option) geoip.OptionFactoryFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -34,10 +34,10 @@ func Default(opts ...cfgmodel.Option) geoip.ScopedOptionFunc {
 	return PrepareOptions(New(cfgStruct, opts...))
 }
 
-// PrepareOptions creates a closure around the type Backend. The closure will
-// be used during a scoped request to figure out the configuration depending on
-// the incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Backend) geoip.ScopedOptionFunc {
+// PrepareOptions creates a closure around the type Backend. The closure will be
+// used during a scoped request to figure out the configuration depending on the
+// incoming scope. An option array will be returned by the closure.
+func PrepareOptions(be *Backend) geoip.OptionFactoryFunc {
 
 	return func(sg config.ScopedGetter) []geoip.Option {
 		var opts [6]geoip.Option
@@ -73,6 +73,8 @@ func PrepareOptions(be *Backend) geoip.ScopedOptionFunc {
 		if mmlf != "" {
 			opts[i] = geoip.WithGeoIP2File(mmlf)
 			i++
+			// we're done! skip the webservice part
+			return opts[:]
 		}
 
 		// MAXMIND WEB SERVICE
@@ -109,7 +111,12 @@ func PrepareOptions(be *Backend) geoip.ScopedOptionFunc {
 		}
 
 		if user != "" && license != "" && timeout > 0 {
-			opts[i] = geoip.WithGeoIP2Webservice(tc, user, license, timeout)
+			if be.WebServiceClient != nil {
+				be.WebServiceClient.Timeout = timeout
+				opts[i] = geoip.WithGeoIP2WebserviceHttpClient(tc, user, license, be.WebServiceClient)
+			} else {
+				opts[i] = geoip.WithGeoIP2Webservice(tc, user, license, timeout)
+			}
 			i++
 		}
 

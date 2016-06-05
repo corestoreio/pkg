@@ -16,9 +16,7 @@ package geoip
 
 import (
 	"net"
-	"net/http"
 
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/oschwald/geoip2-golang"
 )
@@ -98,11 +96,6 @@ type CountryRetriever interface {
 	// the underlying lookup service.
 	Close() error
 }
-
-// IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
-// allowed to process the request. The StringSlice contains a list of ISO country
-// names fetched from the config.ScopedGetter.
-type IsAllowedFunc func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
 
 // mmdb internal wrapper between geoip2 and our interface
 type mmdb struct {
