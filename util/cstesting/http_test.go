@@ -30,16 +30,17 @@ var _ http.RoundTripper = (*cstesting.HttpTrip)(nil)
 
 func TestNewHttpTrip_Ok(t *testing.T) {
 
+	tr := cstesting.NewHttpTrip(333, "Hello Wørld", nil)
 	cl := &http.Client{
-		Transport: cstesting.NewHttpTrip(333, "Hello Wørld", nil),
+		Transport: tr,
 	}
-
+	const reqURL = `http://corestore.io`
 	var wg sync.WaitGroup
 	wg.Add(10)
 	for i := 0; i < 10; i++ {
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			getReq, err := http.NewRequest("GET", "http://noophole.com", nil)
+			getReq, err := http.NewRequest("GET", reqURL, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -62,12 +63,18 @@ func TestNewHttpTrip_Ok(t *testing.T) {
 		}(&wg)
 	}
 	wg.Wait()
+
+	tr.RequestsMatchAll(t, func(r *http.Request) bool {
+		return r.URL.String() == reqURL
+	})
+	tr.RequestsCount(t, 10)
 }
 
 func TestNewHttpTrip_Error(t *testing.T) {
 
+	tr := cstesting.NewHttpTrip(501, "Hello Error", errors.NewNotValidf("test not valid"))
 	cl := &http.Client{
-		Transport: cstesting.NewHttpTrip(501, "Hello Error", errors.NewNotValidf("test not valid")),
+		Transport: tr,
 	}
 
 	var wg sync.WaitGroup
@@ -85,4 +92,5 @@ func TestNewHttpTrip_Error(t *testing.T) {
 		}(&wg)
 	}
 	wg.Wait()
+	tr.RequestsCount(t, 10)
 }
