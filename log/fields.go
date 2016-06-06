@@ -38,6 +38,7 @@ import (
 	"encoding"
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -50,9 +51,12 @@ type fieldType uint8
 const (
 	typeBool fieldType = iota + 1
 	typeInt
+	typeInts
 	typeInt64
+	typeInt64s
 	typeFloat64
 	typeString
+	typeStrings
 	typeStringer
 	typeGoStringer
 	typeObject
@@ -151,10 +155,43 @@ func (f Field) AddTo(kv KeyValuer) error {
 		kv.AddFloat64(f.key, f.float64)
 	case typeInt:
 		kv.AddInt(f.key, int(f.int64))
+	case typeInts:
+		buf := bufferpool.Get()
+		vals := f.obj.([]int)
+		for i, int := range vals {
+			_, _ = buf.WriteString(strconv.Itoa(int))
+			if i < len(vals)-1 {
+				_, _ = buf.WriteString(", ")
+			}
+		}
+		kv.AddString(f.key, buf.String())
+		bufferpool.Put(buf)
 	case typeInt64:
 		kv.AddInt64(f.key, f.int64)
+	case typeInt64s:
+		buf := bufferpool.Get()
+		vals := f.obj.([]int64)
+		for i, int64 := range vals {
+			_, _ = buf.WriteString(strconv.FormatInt(int64, 10))
+			if i < len(vals)-1 {
+				_, _ = buf.WriteString(", ")
+			}
+		}
+		kv.AddString(f.key, buf.String())
+		bufferpool.Put(buf)
 	case typeString:
 		kv.AddString(f.key, f.string)
+	case typeStrings:
+		buf := bufferpool.Get()
+		vals := f.obj.([]string)
+		for i, s := range vals {
+			_, _ = buf.WriteString(s)
+			if i < len(vals)-1 {
+				_, _ = buf.WriteString(", ")
+			}
+		}
+		kv.AddString(f.key, buf.String())
+		bufferpool.Put(buf)
 	case typeStringer:
 		kv.AddString(f.key, f.obj.(fmt.Stringer).String())
 	case typeGoStringer:
@@ -194,9 +231,21 @@ func Int(key string, val int) Field {
 	return Field{key: key, fieldType: typeInt, int64: int64(val)}
 }
 
+// Ints constructs a Field with the given key and multiple values.
+// Values will be joined together via a comma.
+func Ints(key string, vals ...int) Field {
+	return Field{key: key, fieldType: typeInts, obj: vals}
+}
+
 // Int64 constructs a Field with the given key and value.
 func Int64(key string, val int64) Field {
 	return Field{key: key, fieldType: typeInt64, int64: val}
+}
+
+// Int64s constructs a Field with the given key and multiple values.
+// Values will be joined together via a comma.
+func Int64s(key string, vals ...int64) Field {
+	return Field{key: key, fieldType: typeInt64s, obj: vals}
 }
 
 // Uint constructs a Field with the given key and value.
@@ -216,6 +265,12 @@ func Uint64(key string, val uint64) Field {
 // String constructs a Field with the given key and value.
 func String(key string, val string) Field {
 	return Field{key: key, fieldType: typeString, string: val}
+}
+
+// Strings constructs a Field with the given key and multiple values.
+// Values will be joined together via a comma.
+func Strings(key string, vals ...string) Field {
+	return Field{key: key, fieldType: typeStrings, obj: vals}
 }
 
 // Stringer constructs a Field with the given key and value. The value

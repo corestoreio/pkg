@@ -71,11 +71,37 @@ func TestField_Int(t *testing.T) {
 	assert.Exactly(t, testKey, f.key)
 }
 
+func TestField_Ints(t *testing.T) {
+	f := Ints(testKey, 4, 5, 6, 7, 8)
+	assert.Exactly(t, typeInts, f.fieldType)
+	assert.Empty(t, f.int64)
+	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " MyTestKey: \"4, 5, 6, 7, 8\"", buf.String())
+}
+
 func TestField_Int64(t *testing.T) {
 	f := Int64(testKey, math.MaxInt64)
 	assert.Exactly(t, typeInt64, f.fieldType)
 	assert.Exactly(t, int64(math.MaxInt64), f.int64)
 	assert.Exactly(t, testKey, f.key)
+}
+
+func TestField_Int64s(t *testing.T) {
+	f := Int64s(testKey, 4, 5, 6, 7, 8)
+	assert.Exactly(t, typeInt64s, f.fieldType)
+	assert.Empty(t, f.int64)
+	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " MyTestKey: \"4, 5, 6, 7, 8\"", buf.String())
 }
 
 func TestField_Uint(t *testing.T) {
@@ -98,6 +124,19 @@ func TestField_String(t *testing.T) {
 	assert.Exactly(t, typeString, f.fieldType)
 	assert.Exactly(t, data, f.string)
 	assert.Exactly(t, testKey, f.key)
+}
+
+func TestField_Strings(t *testing.T) {
+	f := Strings(testKey, "a", "b", "c", "d", "e")
+	assert.Exactly(t, typeStrings, f.fieldType)
+	assert.Empty(t, f.string)
+	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	if err := f.AddTo(wt); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, " MyTestKey: \"a, b, c, d, e\"", buf.String())
 }
 
 func TestField_Stringer(t *testing.T) {
