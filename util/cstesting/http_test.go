@@ -15,32 +15,74 @@
 package cstesting_test
 
 import (
+	"io/ioutil"
+	"net/http"
+	"sync"
+	"testing"
+
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"testing"
+	"net/url"
 )
 
 var _ http.RoundTripper = (*cstesting.HttpTrip)(nil)
 
-func TestNewHttpTrip(t *testing.T) {
+func TestNewHttpTrip_Ok(t *testing.T) {
 
-	tr := cstesting.NewHttpTrip(333, "Hello Wørld", errors.NewNotValidf("test not valid"))
-	req := httptest.NewRequest("GET", "http://noophole.com", nil)
-	resp, err := tr.RoundTrip(req)
-	assert.True(t, errors.IsNotValid(err), "Error: %s")
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
+	cl := &http.Client{
+		Transport: cstesting.NewHttpTrip(333, "Hello Wørld", nil),
 	}
-	assert.Exactly(t, "Hello Wørld", string(data))
-	assert.Exactly(t, 333, resp.StatusCode)
+
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			getReq, err := http.NewRequest("GET", "http://noophole.com", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resp, err := cl.Do(getReq)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}()
+			data, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Exactly(t, "Hello Wørld", string(data))
+			assert.Exactly(t, 333, resp.StatusCode)
+		}(&wg)
+	}
+	wg.Wait()
+}
+
+func TestNewHttpTrip_Error(t *testing.T) {
+
+	cl := &http.Client{
+		Transport: cstesting.NewHttpTrip(501, "Hello Error", errors.NewNotValidf("test not valid")),
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			getReq, err := http.NewRequest("GET", "http://noophole.com", nil)
+			if err != nil {
+				t.Fatal("NewRequest", err)
+			}
+			resp, err := cl.Do(getReq)
+			assert.True(t, errors.IsNotValid(err.(*url.Error).Err), "ErrorDo: %#v", err)
+			assert.Nil(t, resp)
+		}(&wg)
+	}
+	wg.Wait()
 }

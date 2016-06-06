@@ -24,7 +24,7 @@ import (
 )
 
 func TestLoadCSVWithFile(t *testing.T) {
-	t.Parallel()
+
 	cols, rows, err := cstesting.LoadCSV(
 		cstesting.WithFile("testdata", "core_config_data1.csv"),
 		cstesting.WithTestMode(),
@@ -38,7 +38,7 @@ func TestLoadCSVWithFile(t *testing.T) {
 }
 
 func TestLoadCSVWithReaderConfig(t *testing.T) {
-	t.Parallel()
+
 	cols, rows, err := cstesting.LoadCSV(
 		cstesting.WithTestMode(),
 		cstesting.WithFile("testdata", "core_config_data3.csv"),
@@ -53,7 +53,7 @@ func TestLoadCSVWithReaderConfig(t *testing.T) {
 }
 
 func TestLoadCSVFileError(t *testing.T) {
-	t.Parallel()
+
 	cols, rows, err := cstesting.LoadCSV(
 		cstesting.WithTestMode(),
 		cstesting.WithFile("testdata", "core_config_dataXX.csv"),
@@ -64,7 +64,7 @@ func TestLoadCSVFileError(t *testing.T) {
 }
 
 func TestLoadCSVReadError(t *testing.T) {
-	t.Parallel()
+
 	cols, rows, err := cstesting.LoadCSV(
 		cstesting.WithFile("testdata", "core_config_data2.csv"),
 		cstesting.WithTestMode(),
@@ -75,14 +75,14 @@ func TestLoadCSVReadError(t *testing.T) {
 }
 
 func TestMockRowsError(t *testing.T) {
-	t.Parallel()
+
 	r, err := cstesting.MockRows(cstesting.WithFile("non", "existent.csv"))
 	assert.Nil(t, r)
 	assert.Contains(t, err.Error(), "non/existent.csv: no such file or directory")
 }
 
 func TestMockRowsLoaded(t *testing.T) {
-	t.Parallel()
+
 	rows, err := cstesting.MockRows(
 		cstesting.WithReaderConfig(&csv.Reader{Comma: '|'}),
 		cstesting.WithFile("testdata", "core_config_data3.csv"),
@@ -94,7 +94,7 @@ func TestMockRowsLoaded(t *testing.T) {
 }
 
 func TestMustMockRows(t *testing.T) {
-	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			assert.Contains(t, r.(error).Error(), "non/existent.csv: no such file or directory")

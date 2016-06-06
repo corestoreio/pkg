@@ -22,17 +22,19 @@ import (
 
 // HttpTrip used for mocking the Transport field in http.Client.
 type HttpTrip struct {
-	Resp *http.Response
-	Err  error
-	Req  *http.Request
+	GenerateResponse func() *http.Response
+	Err              error
 }
 
 // NewHttpTrip creates a new trip.
-func NewHttpTrip(code int, body string, err error) *HttpTrip {
-	return &HttpTrip{
-		Resp: &http.Response{
-			StatusCode: code,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(body)),
+func NewHttpTrip(code int, body string, err error) HttpTrip {
+	return HttpTrip{
+		// use buffer pool
+		GenerateResponse: func() *http.Response {
+			return &http.Response{
+				StatusCode: code,
+				Body:       ioutil.NopCloser(bytes.NewBufferString(body)),
+			}
 		},
 		Err: err,
 	}
@@ -40,7 +42,9 @@ func NewHttpTrip(code int, body string, err error) *HttpTrip {
 
 // RoundTrip implements http.RoundTripper and adds the Request to the
 // field Req for later inspection.
-func (tp *HttpTrip) RoundTrip(r *http.Request) (*http.Response, error) {
-	tp.Req = r
-	return tp.Resp, tp.Err
+func (tp HttpTrip) RoundTrip(r *http.Request) (*http.Response, error) {
+	if tp.Err != nil {
+		return nil, tp.Err
+	}
+	return tp.GenerateResponse(), nil
 }
