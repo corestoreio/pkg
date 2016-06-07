@@ -15,17 +15,21 @@
 package transcache
 
 import (
-	"github.com/corestoreio/csfw/util/errors"
-	"reflect"
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
 	"sync"
 	"sync/atomic"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Mock used mainly for testing. Fully concurrent safe. Does not implement
-// Encoder and Decoder and stores the values in a map[string]interface{}.
+// Encoder and Decoder and stores the values in a map[string][]byte with values
+// encoded via gob.
 type Mock struct {
 	mu       sync.RWMutex
-	cache    map[string]interface{}
+	cache    map[string][]byte
 	SetErr   error
 	GetErr   error
 	setCount *int32
@@ -36,7 +40,7 @@ type Mock struct {
 // underlying map and synchronization types.
 func NewMock() *Mock {
 	return &Mock{
-		cache:    make(map[string]interface{}),
+		cache:    make(map[string][]byte),
 		setCount: new(int32),
 		getCount: new(int32),
 	}
@@ -50,7 +54,12 @@ func (mc *Mock) Set(key []byte, src interface{}) error {
 	if mc.SetErr != nil {
 		return mc.SetErr
 	}
-	mc.cache[string(key)] = src
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
+		return errors.NewFatal(err, "[transcache] Set.Gob.Encode")
+	}
+	mc.cache[string(key)] = buf.Bytes()
+
 	atomic.AddInt32(mc.setCount, 1)
 	return nil
 }
@@ -65,12 +74,10 @@ func (mc *Mock) Get(key []byte, dst interface{}) error {
 		return mc.GetErr
 	}
 
-	if val := reflect.ValueOf(dst); val.Kind() != reflect.Ptr {
-		return errors.NewFatalf("[transcache] dst must be a pointer")
-	}
-
 	if raw, ok := mc.cache[string(key)]; ok {
-		dst = raw
+		if err := gob.NewDecoder(bytes.NewReader(raw)).Decode(dst); err != nil {
+			return errors.NewFatal(json.Unmarshal(raw, dst), "[transcache] Get.Gob.Decode")
+		}
 		atomic.AddInt32(mc.getCount, 1)
 		return nil
 	}
