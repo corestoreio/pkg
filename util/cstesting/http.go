@@ -16,9 +16,13 @@ package cstesting
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"sync"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // HttpTrip used for mocking the Transport field in http.Client.
@@ -29,7 +33,7 @@ type HttpTrip struct {
 	RequestCache map[*http.Request]struct{}
 }
 
-// NewHttpTrip creates a new trip.
+// NewHttpTrip creates a new HttpRoundTripper
 func NewHttpTrip(code int, body string, err error) *HttpTrip {
 	return &HttpTrip{
 		// use buffer pool
@@ -40,6 +44,23 @@ func NewHttpTrip(code int, body string, err error) *HttpTrip {
 			}
 		},
 		Err:          err,
+		RequestCache: make(map[*http.Request]struct{}),
+	}
+}
+
+// NewHttpTripFromFile creates a new trip with content found in the provided file.
+// You must close the body and hence close the file.
+func NewHttpTripFromFile(code int, filename string) *HttpTrip {
+	fp, err := os.OpenFile(filename, os.O_RDONLY, 0)
+	return &HttpTrip{
+		// use buffer pool
+		GenerateResponse: func(_ *http.Request) *http.Response {
+			return &http.Response{
+				StatusCode: code,
+				Body:       fp,
+			}
+		},
+		Err:          errors.NewNotFound(err, fmt.Sprintf("File %q loading error", filename)),
 		RequestCache: make(map[*http.Request]struct{}),
 	}
 }

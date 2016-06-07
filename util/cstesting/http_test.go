@@ -17,13 +17,13 @@ package cstesting_test
 import (
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"sync"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"net/url"
 )
 
 var _ http.RoundTripper = (*cstesting.HttpTrip)(nil)
@@ -93,4 +93,22 @@ func TestNewHttpTrip_Error(t *testing.T) {
 	}
 	wg.Wait()
 	tr.RequestsCount(t, 10)
+}
+
+func TestNewHttpTrip_Error_FromFile(t *testing.T) {
+
+	tr := cstesting.NewHttpTripFromFile(505, "file_notFOUND.txt")
+	cl := &http.Client{
+		Transport: tr,
+	}
+
+	getReq, err := http.NewRequest("GET", "http://noophole.com", nil)
+	if err != nil {
+		t.Fatal("NewRequest", err)
+	}
+	resp, err := cl.Do(getReq)
+	assert.True(t, errors.IsNotFound(err.(*url.Error).Err), "ErrorDo: %#v", err)
+	assert.Nil(t, resp)
+
+	tr.RequestsCount(t, 1)
 }
