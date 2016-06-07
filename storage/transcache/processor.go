@@ -21,17 +21,31 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Cacher defines a custom cache type to be used as underlying storage.
-// Must be safe for parallel usage.
+// Cacher defines a custom cache type to be used as underlying storage of the
+// Transcacher. Must be safe for concurrent usage. Caches which implement this
+// interface can be found in the subpackages tcbigcache, tcboltdb, tcredis ...
 type Cacher interface {
 	Set(key, value []byte) (err error)
 	Get(key []byte) (value []byte, err error)
+	// Close closes the underlying cache service.
 	Close() error
 }
 
-// Encoder defines how to encode a type represented by variable src into
-// a byte slice. Encoders must write their data into an io.Writer defined
-// in option function WithEncoder().
+// Transcacher represents the function for storing and retrieving arbitrary Go
+// types.
+type Transcacher interface {
+	// Set sets the type src with a key
+	Set(key []byte, src interface{}) error
+	// Get looks up the key and parses the raw data into the destination pointer
+	// dst. You have to check yourself if the returned error is of type NotFound
+	// or of any other source. Every caching type defines its own NotFound
+	// error.
+	Get(key []byte, dst interface{}) error
+}
+
+// Encoder defines how to encode a type represented by variable src into a byte
+// slice. Encoders must write their data into an io.Writer defined in option
+// function WithEncoder().
 type Encoder interface {
 	Encode(src interface{}) error
 }
@@ -67,11 +81,10 @@ type Processor struct {
 	dec   [encodeShards]decode
 }
 
-// NewProcessor creates a new type with no default cache instance
-// and encoding/gob as the underlying encoder. If you use gob please make sure
-// to use gob.Register() to register your types.
-// You must set a caching service or it panics please see the sub packages
-// tcbigcache and tcbolddb.
+// NewProcessor creates a new type with no default cache instance and
+// encoding/gob as the underlying encoder. If you use gob please make sure to
+// use gob.Register() to register your types. You must set a caching service or
+// it panics please see the sub packages tcbigcache, tcbolddb, tcredis ...
 func NewProcessor(opts ...Option) (*Processor, error) {
 	p := &Processor{
 		Hasher: newDefaultHasher(),
@@ -116,9 +129,9 @@ func (tr *Processor) Set(key []byte, src interface{}) error {
 	return errors.NewFatal(tr.Cache.Set(key, buf), "[transcache] Set.Cache.Set")
 }
 
-// Get looksup the key and parses the raw data into the destination pointer dst.
-// You have to check yourself if the returned error is of type NotFound or of
-// any other source. Every caching type defines its own NotFound error.
+// Get looks up the key and parses the raw data into the destination pointer
+// dst. You have to check yourself if the returned error is of type NotFound or
+// of any other source. Every caching type defines its own NotFound error.
 func (tr *Processor) Get(key []byte, dst interface{}) error {
 	shardID := tr.shardID(key)
 	tr.dec[shardID].Lock()

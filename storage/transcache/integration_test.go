@@ -19,6 +19,9 @@ import (
 	"sync"
 	"testing"
 
+	"fmt"
+
+	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcboltdb"
@@ -38,13 +41,12 @@ func TestProcessor_Parallel_GetSet_Bolt(t *testing.T) {
 }
 
 func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
-
-	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
-	if redConURL == "" {
-		t.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
-	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
-		`)
+	mr := miniredis.NewMiniRedis()
+	if err := mr.Start(); err != nil {
+		t.Fatal(err)
 	}
+	defer mr.Close()
+	redConURL := fmt.Sprintf("redis://%s/2", mr.Addr())
 	newTestNewProcessor(t, tcredis.WithURL(redConURL, nil))
 }
 

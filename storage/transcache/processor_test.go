@@ -29,6 +29,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ transcache.Transcacher = (*transcache.Processor)(nil)
+
 func TestNewProcessor_EncoderError(t *testing.T) {
 	p, err := transcache.NewProcessor()
 	if err != nil {
