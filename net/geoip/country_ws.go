@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -36,6 +37,8 @@ type TransCacher interface {
 
 // mmws resolves to MaxMind WebService
 type mmws struct {
+	// Mutex blocks until the
+	sync.Mutex
 	userID     string
 	licenseKey string
 	// client instantiated once and used for all queries to MaxMind.
@@ -61,13 +64,17 @@ func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
 	if err == nil {
 		return c, nil
 	}
+
 	c, err = mm.fetch("https://geoip.maxmind.com/geoip/v2.1/country/", ipAddress)
-	if err == nil {
-		if err2 := mm.TransCacher.Set(ipAddress, c); err2 != nil {
-			return nil, errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
-		}
+	if err != nil {
+		return nil, errors.Wrap(err, "[geoip] mmws.Country.fetch")
 	}
-	return c, errors.Wrap(err, "[geoip] mmws.Country.fetch")
+
+	if err := mm.TransCacher.Set(ipAddress, c); err != nil {
+		return nil, errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
+	}
+
+	return c, nil
 }
 
 func (mm *mmws) Close() error {
@@ -83,10 +90,10 @@ func (mm *mmws) Close() error {
 //}
 
 func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
-	var response = new(Country)
+	var country = new(Country)
 	req, err := http.NewRequest("GET", prefix+ipAddress.String(), nil)
 	if err != nil {
-		return response, err
+		return country, err
 	}
 
 	// authorize the request
@@ -97,7 +104,7 @@ func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
 
 	resp, err := a.client.Do(req)
 	if err != nil {
-		return response, err
+		return country, err
 	}
 	defer resp.Body.Close()
 	defer func() {
@@ -118,8 +125,8 @@ func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
 	// parse the response body
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Body
 
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	return response, errors.NewNotValid(err, "[geoip] json.NewDecoder.Decode")
+	err = json.NewDecoder(resp.Body).Decode(country)
+	return country, errors.NewNotValid(err, "[geoip] json.NewDecoder.Decode")
 }
 
 // WebserviceError used in the Maxmind Webservice functional option.
