@@ -36,6 +36,11 @@ func (h Hash) String() string {
 	return fmt.Sprintf("Scope(%s) ID(%d)", scp, id)
 }
 
+// ToUint64 converts the hash
+func (h Hash) ToUint64() uint64 {
+	return uint64(h)
+}
+
 // Unpack extracts a Scope and its ID from a hash. Returned ID can be -1 when
 // the Hash contains invalid data. An ID of -1 is considered an error.
 func (h Hash) Unpack() (s Scope, id int64) {

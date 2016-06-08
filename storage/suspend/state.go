@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package scope
+package suspend
 
 import (
+	"hash"
 	"sync"
 	"sync/atomic"
 
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// HashState defines a struct which can atomically and in concurrent cases
+// State defines a struct which can atomically and in concurrent cases
 // detect if a process runs, idles or has been finished. If another Goroutine
 // checks the running state and returns true this Goroutine will be suspended
 // and must wait until the main Goroutine calls Done().
@@ -29,43 +30,69 @@ import (
 // Use case for the Hashstate is mainly in middleware Service types for
 // net/http.Requests to load configuration values atomically and make other
 // requests wait until the configuration has been fully loaded and applied.
-// After that skip the whole access to HashState and use the configuration
+// After that skip the whole access to State and use the configuration
 // values cached in the middleware service type.
-type HashState struct {
+type State struct {
 	mu     *sync.RWMutex
-	states map[Hash]state
+	states map[uint64]state
+	// Hash64 optional feature to be used when calling the functions which
+	// accepts a byte slice as input argument. The byte slice gets hashed into
+	// an uint64. If Hash64 remains empty, a panic will pop up. Depending on the
+	// hashing algorithm, collisions can occur.
+	// http://programmers.stackexchange.com/questions/49550/which-hashing-algorithm-is-best-for-uniqueness-and-speed
+	hash.Hash64
 }
 
-// NewHashState creates a new idle HashState.
-func NewHashState() HashState {
-	return HashState{
+// NewState creates a new idle State.
+func NewState() State {
+	return State{
 		mu:     &sync.RWMutex{},
-		states: make(map[Hash]state),
+		states: make(map[uint64]state),
 	}
 }
 
-// Initialized returns true if the type HashState has been initialized with the
-// call to NewHashState().
-func (shs HashState) Initialized() bool {
-	return shs.mu != nil && shs.states != nil
+// NewStateWithHash convenience helper function to create a new State with a hash algorithm.
+func NewStateWithHash(h hash.Hash64) State {
+	s := NewState()
+	s.Hash64 = h
+	return s
 }
 
-// Reset clears the internal list of Hash(es). Will panic if called on an
-// uninitialized HashState.
-func (shs *HashState) Reset() {
-	shs.mu.Lock()
-	defer shs.mu.Unlock()
-	shs.states = make(map[Hash]state)
+// Initialized returns true if the type State has been initialized with the
+// call to NewHashState().
+func (s State) Initialized() bool {
+	return s.mu != nil && s.states != nil
+}
+
+// Reset clears the internal list of uint64(es). Will panic if called on an
+// uninitialized State.
+func (s *State) Reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.states = make(map[uint64]state)
 }
 
 // Len returns the number of processed Hashes.
-func (shs HashState) Len() int {
-	shs.mu.Lock()
-	defer shs.mu.Unlock()
-	return len(shs.states)
+func (s State) Len() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.states)
 }
 
-// ShouldStart reports true atomically for a specific Hash, if a process can
+func (s State) byteToUint64(key []byte) uint64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Hash64.Reset()
+	_, _ = s.Hash64.Write(key)
+	return s.Hash64.Sum64()
+}
+
+// ShouldStartBytes same as ShouldStart.
+func (s State) ShouldStartBytes(key []byte) bool {
+	return s.ShouldStart(s.byteToUint64(key))
+}
+
+// ShouldStart reports true atomically for a specific uint64, if a process can
 // start. Safe for concurrent use. You should check ShouldStart() first in your
 // switch statement:
 //		switch {
@@ -76,20 +103,25 @@ func (shs HashState) Len() int {
 //				// do nothing and wait ...
 //		}
 //		// proceed here with your program
-func (shs HashState) ShouldStart(h Hash) bool {
-	if !shs.Initialized() {
+func (s State) ShouldStart(key uint64) bool {
+	if !s.Initialized() {
 		return false
 	}
-	shs.mu.Lock()
-	defer shs.mu.Unlock()
-	_, ok := shs.states[h]
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	_, ok := s.states[key]
 	if !ok {
-		shs.states[h] = newRunningState()
+		s.states[key] = newRunningState()
 	}
 	return !ok // we've created a new entry in the map and now we can run
 }
 
-// ShouldWait checks atomically if the HashState has been set to run and if so
+// ShouldWaitBytes same as ShouldWait.
+func (s State) ShouldWaitBytes(key []byte) bool {
+	return s.ShouldWait(s.byteToUint64(key))
+}
+
+// ShouldWait checks atomically if the State has been set to run and if so
 // the calling Goroutine waits until Done() has been called. You should use
 // ShouldWait() as second case in your switch statement:
 //		switch {
@@ -100,13 +132,13 @@ func (shs HashState) ShouldStart(h Hash) bool {
 //				// do nothing and wait ...
 //		}
 //		// proceed here with your program
-func (shs HashState) ShouldWait(h Hash) bool {
-	if !shs.Initialized() {
+func (s State) ShouldWait(key uint64) bool {
+	if !s.Initialized() {
 		return false
 	}
-	shs.mu.RLock()
-	st, ok := shs.states[h]
-	shs.mu.RUnlock()
+	s.mu.RLock()
+	st, ok := s.states[key]
+	s.mu.RUnlock()
 	if !ok {
 		return false
 	}
@@ -124,23 +156,28 @@ func (shs HashState) ShouldWait(h Hash) bool {
 	return true
 }
 
+// DoneBytes same as Done.
+func (s State) DoneBytes(key []byte) error {
+	return errors.Wrap(s.Done(s.byteToUint64(key)), "[suspend] DoneBytes")
+}
+
 // Done releases all the waiting Goroutines caught with the function IsRunning()
 // and sets the internal state to done. Any subsequent calls to ShouldWait() and
 // ShouldStart() will fail. You must call Reset() once all is done.
-func (shs HashState) Done(h Hash) error {
-	if !shs.Initialized() {
-		return errors.NewFatalf("[scope] HashState not initialized")
+func (s State) Done(key uint64) error {
+	if !s.Initialized() {
+		return errors.NewFatalf("[suspend] State not initialized")
 	}
-	shs.mu.Lock()
-	defer shs.mu.Unlock()
-	st, ok := shs.states[h]
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	st, ok := s.states[key]
 	if !ok {
-		return errors.NewFatalf("[scope] Done(%s) called without calling CanRun(%s)", h, h)
+		return errors.NewFatalf("[suspend] Done(%s) called without calling CanRun(%s)", key, key)
 	}
 	atomic.StoreUint32(st.status, stateDone)
 	st.Broadcast()
-	shs.states[h] = state{
-		// not needed anymore, so set sync.* pointers to nil.
+	s.states[key] = state{
+		// not needed anymore, so set sync.* pointers to nil and copy status
 		status: st.status,
 	}
 	return nil

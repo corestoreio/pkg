@@ -105,6 +105,9 @@ func TestHashValid(t *testing.T) {
 				if haveID != wantID {
 					t.Fatalf("Have Scope(%d) ScopeID: %d, Want: Scope(%d) ScopeID: %d", haveScp, haveID, scp, wantID)
 				}
+				if haveHash > 0 && haveHash.ToUint64() < 1 { // stupid test
+					t.Fatal("haveHash.ToUint64() cannot return zero")
+				}
 
 				//if ok := collisionCheck[haveHash]; ok {
 				//	t.Fatalf("Collision Detected: %d", haveHash)
