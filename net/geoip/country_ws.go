@@ -21,7 +21,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"sync"
+	"runtime"
 
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -37,8 +37,9 @@ type TransCacher interface {
 
 // mmws resolves to MaxMind WebService
 type mmws struct {
-	// Mutex blocks until the
-	sync.Mutex
+	ipIN       chan net.IP
+	cOUT       chan *Country
+	errOUT     chan error
 	userID     string
 	licenseKey string
 	// client instantiated once and used for all queries to MaxMind.
@@ -47,11 +48,41 @@ type mmws struct {
 }
 
 func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
-	return &mmws{
+	mm := &mmws{
+		ipIN:        make(chan net.IP),
+		cOUT:        make(chan *Country),
+		errOUT:      make(chan error),
 		userID:      userID,
 		licenseKey:  licenseKey,
 		client:      hc,
 		TransCacher: t,
+	}
+
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go workfetch(mm, mm.ipIN, mm.cOUT, mm.errOUT)
+	}
+
+	return mm
+}
+
+func workfetch(mm *mmws, ipIN <-chan net.IP, cOUT chan<- *Country, errOUT chan<- error) {
+
+	for {
+		select {
+		case ip, ok := <-ipIN:
+			if !ok {
+				return
+			}
+			c, err := fetch(mm.client, mm.userID, mm.licenseKey, "https://geoip.maxmind.com/geoip/v2.1/country/", ip)
+			if err != nil {
+				errOUT <- errors.Wrap(err, "[geoip] mmws.Country.fetch")
+			}
+
+			if err := mm.TransCacher.Set(ip, c); err != nil {
+				errOUT <- errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
+			}
+			cOUT <- c
+		}
 	}
 }
 
@@ -64,20 +95,23 @@ func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
 	if err == nil {
 		return c, nil
 	}
+	mm.ipIN <- ipAddress
+	select {
+	case ctry := <-mm.cOUT:
 
-	c, err = mm.fetch("https://geoip.maxmind.com/geoip/v2.1/country/", ipAddress)
-	if err != nil {
-		return nil, errors.Wrap(err, "[geoip] mmws.Country.fetch")
+		if !ctry.IP.Equal(ipAddress) {
+			// can this happen?
+			panic(fmt.Sprintf("Dude, a bug! IPs are not equal Have %s Want %s", ctry.IP, ipAddress))
+		}
+
+		return ctry, nil
+	case err := <-mm.errOUT:
+		return nil, errors.Wrap(err, "[geoip] mmws.Country.fetch.errOUT")
 	}
-
-	if err := mm.TransCacher.Set(ipAddress, c); err != nil {
-		return nil, errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
-	}
-
-	return c, nil
 }
 
 func (mm *mmws) Close() error {
+	close(mm.ipIN)
 	return nil
 }
 
@@ -89,20 +123,20 @@ func (mm *mmws) Close() error {
 //	return a.fetch("https://geoip.maxmind.com/geoip/v2.1/insights/", ipAddress)
 //}
 
-func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
+func fetch(hc *http.Client, userID, licenseKey, baseURL string, ipAddress net.IP) (*Country, error) {
 	var country = new(Country)
-	req, err := http.NewRequest("GET", prefix+ipAddress.String(), nil)
+	req, err := http.NewRequest("GET", baseURL+ipAddress.String(), nil)
 	if err != nil {
 		return country, err
 	}
 
 	// authorize the request
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Authorization
-	req.SetBasicAuth(a.userID, a.licenseKey)
+	req.SetBasicAuth(userID, licenseKey)
 
 	// execute the request
 
-	resp, err := a.client.Do(req)
+	resp, err := hc.Do(req)
 	if err != nil {
 		return country, err
 	}
@@ -119,14 +153,17 @@ func (a *mmws) fetch(prefix string, ipAddress net.IP) (*Country, error) {
 	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
 		var v WebserviceError
 		v.err = json.NewDecoder(resp.Body).Decode(&v)
-		return nil, errors.NewNotValid(v, "[geoip] mmws.fetch URL: "+prefix)
+		return nil, errors.NewNotValid(v, "[geoip] mmws.fetch URL: "+baseURL)
 	}
 
 	// parse the response body
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Body
 
-	err = json.NewDecoder(resp.Body).Decode(country)
-	return country, errors.NewNotValid(err, "[geoip] json.NewDecoder.Decode")
+	if err := json.NewDecoder(resp.Body).Decode(country); err != nil {
+		return nil, errors.NewNotValid(err, "[geoip] json.NewDecoder.Decode")
+	}
+	country.IP = ipAddress
+	return country, nil
 }
 
 // WebserviceError used in the Maxmind Webservice functional option.
