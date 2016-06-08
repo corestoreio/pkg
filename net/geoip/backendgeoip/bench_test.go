@@ -17,9 +17,8 @@ package backendgeoip_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"testing"
-
 	"path/filepath"
+	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/geoip"
@@ -46,11 +45,6 @@ func BenchmarkWithAlternativeRedirect_Database_NoCache(b *testing.B) {
 
 func BenchmarkWithAlternativeRedirect_Webservice_BigCache_Gob(b *testing.B) {
 
-	trip := cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "es": "Europa", "fr": "Europe", "ja": "ヨーロッパ", "pt-BR": "Europa", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "registered_country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "traits": { "autonomous_system_number": 1239, "autonomous_system_organization": "Linkem IR WiMax Network", "domain": "example.com", "is_anonymous_proxy": true, "is_satellite_provider": true, "isp": "Linkem spa", "ip_address": "1.2.3.4", "organization": "Linkem IR WiMax Network", "user_type": "traveler" }, "maxmind": { "queries_remaining": 54321 } }`, nil)
-	backend.WebServiceClient = &http.Client{
-		Transport: trip,
-	}
-
 	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(b, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
@@ -65,7 +59,16 @@ func BenchmarkWithAlternativeRedirect_Webservice_BigCache_Gob(b *testing.B) {
 
 func benchmarkWithAlternativeRedirect(b *testing.B, cfgSrv *cfgmock.Service) {
 
-	geoSrv := geoip.MustNew(geoip.WithOptionFactory(backendgeoip.Default()))
+	cfgStruct, err := backendgeoip.NewConfigStructure()
+	if err != nil {
+		b.Fatal(err)
+	}
+	be := backendgeoip.New(cfgStruct)
+	be.WebServiceClient = &http.Client{
+		Transport: cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
+	}
+	scpFnc := backendgeoip.PrepareOptions(be)
+	geoSrv := geoip.MustNew(geoip.WithOptionFactory(scpFnc))
 
 	// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
 	req := func() *http.Request {

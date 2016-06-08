@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -169,88 +168,112 @@ func testBackend_WithGeoIP2Webservice_Redis(
 }
 
 func TestBackend_WithAlternativeRedirect(t *testing.T) {
-	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	//
+	//t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	//	// @see structure.go why scope.Store and scope.Website can be used.
+	//	mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
+	//	mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
+	//	mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
+	//	mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
+	//}))))
+
+	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
-		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
-		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
-		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
-		mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
-	}))
+		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
+		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1):  307,
+		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):           "AT,CH",
+		mustToPath(t, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):  "LiesschenMueller",
+		mustToPath(t, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
+		mustToPath(t, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
+	}))))
+}
 
-	var logBuf log.MutexBuffer
-	geoSrv := geoip.MustNew(
-		geoip.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
-		geoip.WithOptionFactory(backendgeoip.Default()),
-	)
+func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
+	return func(t *testing.T) {
+		var logBuf log.MutexBuffer
 
-	// if you try to set the allowed countries with this option, they get
-	// overwritten by the ScopeConfig service.
-	// if err := geoSrv.Options(geoip.WithAllowedCountryCodes(scope.Store, 2, "AT", "CH")); err != nil {
-	//	t.Fatal(errors.PrintLoc(err))
-	// }
-
-	// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
-	req := func() *http.Request {
-		o, err := scope.SetByCode(scope.Website, "euro")
+		cfgStruct, err := backendgeoip.NewConfigStructure()
 		if err != nil {
 			t.Fatal(err)
 		}
-		storeSrv := storemock.NewEurozzyService(o)
-		req, _ := http.NewRequest("GET", "http://corestore.io", nil)
-		req.RemoteAddr = "2a02:d180::"
-		atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
-		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+		be := backendgeoip.New(cfgStruct)
+		be.WebServiceClient = &http.Client{
+			Transport: cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
 		}
-		atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
+		scpFnc := backendgeoip.PrepareOptions(be)
+		geoSrv := geoip.MustNew(
+			geoip.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
+			geoip.WithOptionFactory(scpFnc),
+		)
 
-		return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
-	}()
+		// if you try to set the allowed countries with this option, they get
+		// overwritten by the ScopeConfig service.
+		// if err := geoSrv.Options(geoip.WithAllowedCountryCodes(scope.Store, 2, "AT", "CH")); err != nil {
+		//	t.Fatal(errors.PrintLoc(err))
+		// }
 
-	// For the race detector
-	var wg sync.WaitGroup
-	for i := 1; i <= 30; i++ {
-		wg.Add(1)
-		sleeep := time.Microsecond * time.Duration(rand.Intn(100*i))
-		go func(wg *sync.WaitGroup, sleep time.Duration) {
-			defer wg.Done()
-			time.Sleep(sleep)
+		// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
+		req := func() *http.Request {
+			o, err := scope.SetByCode(scope.Website, "euro")
+			if err != nil {
+				t.Fatal(err)
+			}
+			storeSrv := storemock.NewEurozzyService(o)
+			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			req.RemoteAddr = "2a02:d180::"
+			atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
+			if err != nil {
+				t.Fatal(errors.PrintLoc(err))
+			}
+			atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
 
-			rec := httptest.NewRecorder()
-			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				c, err := geoip.FromContextCountry(r.Context())
-				assert.Nil(t, c)
-				if err != nil {
-					println("\n", logBuf.String(), "\n")
-					panic(errors.PrintLoc(err))
-				}
-				panic("Should not be called")
+			return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
+		}()
 
-			})).ServeHTTP(rec, req)
+		// For the race detector
+		var wg sync.WaitGroup
+		for i := 1; i <= 30; i++ {
+			wg.Add(1)
+			sleeep := time.Microsecond * time.Duration(rand.Intn(100*i))
+			go func(wg *sync.WaitGroup, sleep time.Duration) {
+				defer wg.Done()
+				time.Sleep(sleep)
 
-			assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
-			assert.Exactly(t, 307, rec.Code)
-		}(&wg, sleeep)
+				rec := httptest.NewRecorder()
+				geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					c, err := geoip.FromContextCountry(r.Context())
+					assert.Nil(t, c)
+					if err != nil {
+						println("\nBefore Panicing\n", logBuf.String(), "\n==== P A N I C====\n")
+						panic(errors.PrintLoc(err))
+					}
+					panic("Should not be called")
+
+				})).ServeHTTP(rec, req)
+
+				assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
+				assert.Exactly(t, 307, rec.Code)
+			}(&wg, sleeep)
+		}
+		wg.Wait()
+
+		// Min 7 calls IsValid
+		// Exactly one call to ShouldStart
+		// Min 3 calls to ShouldWait
+		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.IsValid`), 7; have < want {
+			t.Errorf("IsValid: Have: %d < Want: %d", have, want)
+		}
+		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldStart`), 1; have != want {
+			t.Errorf("ShouldStart: Have: %d Want: %d", have, want)
+		}
+		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldWait`), 0; have < want {
+			// set to 0 because sometimes no one is waiting
+			// If this fails during -race test with many -count CLI agrs then
+			// it doesn't matter
+			t.Errorf("ShouldWait: Have: %d < Want: %d", have, want)
+		}
+		// println("\n", logBuf.String(), "\n")
 	}
-	wg.Wait()
-
-	// Min 7 calls IsValid
-	// Exactly one call to ShouldStart
-	// Min 3 calls to ShouldWait
-	if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.IsValid`), 7; have < want {
-		t.Errorf("IsValid: Have: %d < Want: %d", have, want)
-	}
-	if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldStart`), 1; have != want {
-		t.Errorf("ShouldStart: Have: %d Want: %d", have, want)
-	}
-	if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldWait`), 0; have < want {
-		// set to 0 because sometimes no one is waiting
-		// If this fails during -race test with many -count CLI agrs then
-		// it doesn't matter
-		t.Errorf("ShouldWait: Have: %d < Want: %d", have, want)
-	}
-
-	// println("\n", logBuf.String(), "\n")
 }
 
 func TestBackend_Path_Errors(t *testing.T) {
