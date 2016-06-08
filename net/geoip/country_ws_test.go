@@ -21,6 +21,9 @@ import (
 	"sync"
 	"testing"
 
+	"fmt"
+	"time"
+
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
@@ -92,22 +95,26 @@ func TestMmws_Country_Success(t *testing.T) {
 	trip := cstesting.NewHttpTrip(200, string(td), nil)
 	ws.client.Transport = trip
 
-	const iterations = 10
+	const iterations = 100
 	var wg sync.WaitGroup
 	wg.Add(iterations)
 	for i := 0; i < iterations; i++ {
-		go func(wg *sync.WaitGroup) {
+		go func(wg *sync.WaitGroup, i int) {
 			defer wg.Done()
-			c, err := ws.Country(net.ParseIP("123.123.123.123"))
+
+			time.Sleep(time.Microsecond * time.Duration(100*i))
+			c, err := ws.Country(net.ParseIP(fmt.Sprintf("123.123.123.%d", i%4)))
 			assert.NotNil(t, c)
 			assert.NoError(t, err)
 			assert.Exactly(t, "US", c.Country.IsoCode)
-		}(&wg)
+		}(&wg, i)
 	}
 	wg.Wait()
 
-	assert.Exactly(t, 1, tcmock.SetCount(), "SetCount")
-	assert.Exactly(t, iterations-1, tcmock.GetCount(), "GetCount")
+	assert.Exactly(t, 4, tcmock.SetCount(), "SetCount")             // 4 because modulus 4
+	if have, want := tcmock.GetCount(), iterations-4; have < want { // because 4 set and 96 hit
+		t.Errorf("Have: %d < Want: %d", have, want)
+	}
 
 	trip.RequestsMatchAll(t, func(r *http.Request) bool {
 		u, p, ok := r.BasicAuth()

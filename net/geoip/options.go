@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/suspend"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
@@ -221,13 +222,7 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 // Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/ and
 // caches the result in Transcacher. Hint: use package storage/transcache.
 func WithGeoIP2WebserviceHttpClient(t TransCacher, userID, licenseKey string, hc *http.Client) Option {
-	mm := &mmws{
-		userID:      userID,
-		licenseKey:  licenseKey,
-		client:      hc,
-		TransCacher: t,
-	}
-	return WithGeoIP(mm)
+	return WithGeoIP(newMMWS(t, userID, licenseKey, hc))
 
 }
 
@@ -252,7 +247,7 @@ func WithGeoIP2WebserviceHttpClient(t TransCacher, userID, licenseKey string, hc
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
 		s.optionFactoryFunc = f
-		s.optionFactoryState = scope.NewHashState()
+		s.optionFactoryState = suspend.NewState()
 		return nil
 	}
 }

@@ -17,17 +17,17 @@ package geoip
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
+	"hash/fnv"
 	"net"
 	"net/http"
 	"runtime"
 
+	"github.com/corestoreio/csfw/storage/suspend"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// TransCacher transcodes Go objects. It knows how to encode and cache any
-// Go object and knows how to retrieve from cache and decode into a new Go object.
+// TransCacher transcodes Go objects. It knows how to encode and cache any Go
+// object and knows how to retrieve from cache and decode into a new Go object.
 // Hint: use package storage/transcache.
 type TransCacher interface {
 	Set(key []byte, src interface{}) error
@@ -35,8 +35,13 @@ type TransCacher interface {
 	Get(key []byte, dst interface{}) error
 }
 
+// MaxmindWebserviceBaseURL defines the used base url. The IP address will be
+// added after the last slash.
+const MaxmindWebserviceBaseURL = "https://geoip.maxmind.com/geoip/v2.1/country/"
+
 // mmws resolves to MaxMind WebService
 type mmws struct {
+	suspend.State
 	ipIN       chan net.IP
 	cOUT       chan *Country
 	errOUT     chan error
@@ -49,6 +54,7 @@ type mmws struct {
 
 func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
 	mm := &mmws{
+		State:       suspend.NewStateWithHash(fnv.New64a()),
 		ipIN:        make(chan net.IP),
 		cOUT:        make(chan *Country),
 		errOUT:      make(chan error),
@@ -66,48 +72,67 @@ func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
 }
 
 func workfetch(mm *mmws, ipIN <-chan net.IP, cOUT chan<- *Country, errOUT chan<- error) {
-
 	for {
 		select {
 		case ip, ok := <-ipIN:
 			if !ok {
+				// channel closed, so quit
 				return
 			}
-			c, err := fetch(mm.client, mm.userID, mm.licenseKey, "https://geoip.maxmind.com/geoip/v2.1/country/", ip)
+			c, err := fetch(mm.client, mm.userID, mm.licenseKey, MaxmindWebserviceBaseURL, ip)
 			if err != nil {
 				errOUT <- errors.Wrap(err, "[geoip] mmws.Country.fetch")
+			} else {
+				cOUT <- c
 			}
-
-			if err := mm.TransCacher.Set(ip, c); err != nil {
-				errOUT <- errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
-			}
-			cOUT <- c
 		}
 	}
 }
 
+// Country queries the MaxMind Webserver for one IP address. Implements the CountryRetriever interface.
+// During concurrent requests with the same IP address it avoids querying the MaxMind
+// database twice. It is guaranteed one request to MaxMind for an IP address. Those
+// addresses gets cached in the Transcache along with the retrieved country.
 func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
+
 	var c = new(Country)
 	err := mm.TransCacher.Get(ipAddress, c)
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Get")
 	}
-	if err == nil {
+
+	switch {
+	case err == nil:
+		// cache hit
 		return c, nil
-	}
-	mm.ipIN <- ipAddress
-	select {
-	case ctry := <-mm.cOUT:
-
-		if !ctry.IP.Equal(ipAddress) {
-			// can this happen?
-			panic(fmt.Sprintf("Dude, a bug! IPs are not equal Have %s Want %s", ctry.IP, ipAddress))
+	case mm.ShouldStartBytes(ipAddress):
+		defer mm.DoneBytes(ipAddress) // send Signal and release waiter
+		mm.ipIN <- ipAddress
+		select {
+		case err := <-mm.errOUT:
+			return nil, errors.Wrap(err, "[geoip] mmws.Country.fetch.errOUT")
+		case c = <-mm.cOUT:
+			if err := mm.TransCacher.Set(ipAddress, c); err != nil {
+				return nil, errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
+			}
+			if !c.IP.Equal(ipAddress) {
+				// todo limit recursion
+				// call itself as long until we get our ip. This is pretty rare and no idea
+				// how to 100% test it
+				return mm.Country(ipAddress)
+			}
+			return c, nil
 		}
-
-		return ctry, nil
-	case err := <-mm.errOUT:
-		return nil, errors.Wrap(err, "[geoip] mmws.Country.fetch.errOUT")
+	case mm.ShouldWaitBytes(ipAddress):
+		// try again ...
+		err := mm.TransCacher.Get(ipAddress, c)
+		if err != nil && !errors.IsNotFound(err) {
+			return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Get")
+		}
+		return c, err // can be a not-found error
 	}
+
+	return nil, errors.NewFatalf("[geoip] mmws.Country unreachable code and you reached it 8-)")
 }
 
 func (mm *mmws) Close() error {
@@ -127,26 +152,18 @@ func fetch(hc *http.Client, userID, licenseKey, baseURL string, ipAddress net.IP
 	var country = new(Country)
 	req, err := http.NewRequest("GET", baseURL+ipAddress.String(), nil)
 	if err != nil {
-		return country, err
+		return country, errors.Wrap(err, "[geoip] http.NewRequest")
 	}
 
 	// authorize the request
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Authorization
 	req.SetBasicAuth(userID, licenseKey)
 
-	// execute the request
-
-	resp, err := hc.Do(req)
+	resp, err := hc.Do(req) // execute the request
 	if err != nil {
-		return country, err
+		return country, errors.Wrap(err, "[geoip] http.Client.Do")
 	}
 	defer resp.Body.Close()
-	defer func() {
-		// read until the response is complete
-		if _, err := io.Copy(ioutil.Discard, resp.Body); err != nil {
-			panic(err) // todo remove panic or find another better way to avoid this
-		}
-	}()
 
 	// handle errors that may occur
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Headers

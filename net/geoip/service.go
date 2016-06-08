@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/suspend"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -39,7 +40,7 @@ type Service struct {
 	// Goroutines with the same scope.Hash until the configuration has been
 	// fully loaded and applied and for that specific scope. This function gets
 	// set via WithOptionFactory()
-	optionFactoryState scope.HashState
+	optionFactoryState suspend.State
 
 	// defaultScopeCache has been extracted from the scopeCache to allow faster
 	// access to the standard configuration without accessing a map.
@@ -141,9 +142,9 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			s.Log.Debug("geoip.Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h))
 		}
 		return sCfg
-	case s.optionFactoryState.ShouldStart(h): // 2. map lookup, execute for each scope which needs to initialize the configuration.
+	case s.optionFactoryState.ShouldStart(h.ToUint64()): // 2. map lookup, execute for each scope which needs to initialize the configuration.
 		// gets tested by backendgeoip
-		defer s.optionFactoryState.Done(h) // send Signal and release waiter
+		defer s.optionFactoryState.Done(h.ToUint64()) // send Signal and release waiter
 
 		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
 			return scopedConfig{
@@ -153,7 +154,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart", log.Stringer("scope", h))
 		}
-	case s.optionFactoryState.ShouldWait(h): // 3. map lookup
+	case s.optionFactoryState.ShouldWait(h.ToUint64()): // 3. map lookup
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldWait", log.Stringer("scope", h))
 		}
