@@ -119,13 +119,14 @@ func (tr *Processor) Set(key []byte, src interface{}) error {
 
 	tr.enc[shardID].Lock()
 	defer tr.enc[shardID].Unlock()
+	defer tr.enc[shardID].buf.Reset()
+
 	if err := tr.enc[shardID].Encode(src); err != nil {
 		return errors.NewFatal(err, "[transcache] Set.Encode")
 	}
 
 	var buf = make([]byte, tr.enc[shardID].buf.Len(), tr.enc[shardID].buf.Len())
 	copy(buf, tr.enc[shardID].buf.Bytes()) // copy the encoded data away because we're reusing the buffer
-	tr.enc[shardID].buf.Reset()
 	return errors.NewFatal(tr.Cache.Set(key, buf), "[transcache] Set.Cache.Set")
 }
 
