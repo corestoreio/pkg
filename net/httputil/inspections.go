@@ -22,8 +22,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // todo: refactor
@@ -52,7 +52,7 @@ func (sr *CheckSecureRequest) CtxIs(ctx context.Context, r *http.Request) bool {
 	sg, ok := config.FromContextScopedGetter(ctx)
 	if !ok {
 		if sr.Log.IsDebug() {
-			sr.Log.Debug("net.httputil.CtxIsSecure.FromContextScopedGetter", "ok", ok, "request", r)
+			sr.Log.Debug("net.httputil.CtxIsSecure.FromContextScopedGetter", log.Bool("ok", ok), log.Object("request", r))
 		}
 	}
 	return sr.Is(sg, r)
@@ -74,7 +74,7 @@ func (sr *CheckSecureRequest) Is(sg config.ScopedGetter, r *http.Request) bool {
 	oh, err := sr.WebSecureOffloaderHeader.Get(sg)
 	if err != nil {
 		if sr.Log.IsDebug() {
-			sr.Log.Debug("net.httputil.IsSecure.FromContextReader.String", "err", err, "path", sr.WebSecureOffloaderHeader.Route())
+			sr.Log.Debug("net.httputil.IsSecure.FromContextReader.String", log.Err(err), log.Stringer("path", sr.WebSecureOffloaderHeader.Route()))
 		}
 		return false
 	}
