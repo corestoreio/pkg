@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -38,7 +39,6 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -70,8 +70,11 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				cty, err := geoip.FromContextCountry(r.Context())
 				assert.Nil(t, cty)
-				assert.True(t, errors.IsNotValid(err), "Error: %s", err)
-				assert.Contains(t, err.Error(), `OUT_OF_QUERIES`)
+				if notValid := errors.IsNotValid(err); notValid {
+					assert.Contains(t, err.Error(), `OUT_OF_QUERIES`)
+				} else {
+					assert.True(t, errors.IsNotFound(err), "Error: %s", errors.PrintLoc(err))
+				}
 			})
 		},
 	))
@@ -87,8 +90,11 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				cty, err := geoip.FromContextCountry(r.Context())
 				assert.Nil(t, cty)
-				assert.True(t, errors.IsNotValid(err), "Error: %s", err)
-				assert.Contains(t, err.Error(), ` unexpected EOF`)
+				if notValid := errors.IsNotValid(err); notValid {
+					assert.Contains(t, err.Error(), ` unexpected EOF`)
+				} else {
+					assert.True(t, errors.IsNotFound(err), "Error: %s", errors.PrintLoc(err))
+				}
 			})
 		},
 	))
@@ -102,7 +108,9 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 		func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				cty, err := geoip.FromContextCountry(r.Context())
-				require.NoError(t, err)
+				if err != nil {
+					t.Fatal(errors.PrintLoc(err))
+				}
 				assert.Exactly(t, "DE", cty.Country.IsoCode)
 			})
 		},
@@ -116,7 +124,9 @@ func testBackend_WithGeoIP2Webservice_Redis(
 
 	return func(t *testing.T) {
 		rd := miniredis.NewMiniRedis()
-		require.NoError(t, rd.Start())
+		if err := rd.Start(); err != nil {
+			t.Fatal(err)
+		}
 		defer rd.Close()
 		redConURL := fmt.Sprintf("redis://%s/3", rd.Addr())
 
@@ -144,7 +154,7 @@ func testBackend_WithGeoIP2Webservice_Redis(
 
 		req := func() *http.Request {
 			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
-			req.RemoteAddr = "2a02:d180::" // Germany
+			req.Header.Set("X-Cluster-Client-Ip", "2a02:d180::") // Germany
 			return req
 		}()
 
@@ -152,30 +162,27 @@ func testBackend_WithGeoIP2Webservice_Redis(
 			t.Fatal(errors.PrintLoc(err))
 		}
 		// For the race detector
-		//var wg sync.WaitGroup
-		//for i := 0; i < 10; i++ {
-		//	wg.Add(1)
-		//	go func(wg *sync.WaitGroup) {
-		//		defer wg.Done()
-		geoSrv.WithCountryByIP()(finalHandler(t)).ServeHTTP(nil, req)
-		//	}(&wg)
-		//}
-		//wg.Wait()
-
-		// todo check if the key has been stored in redis
-		// rd.CheckGet(t,)
+		var wg sync.WaitGroup
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func(wg *sync.WaitGroup) {
+				defer wg.Done()
+				geoSrv.WithCountryByIP()(finalHandler(t)).ServeHTTP(nil, req)
+			}(&wg)
+		}
+		wg.Wait()
 	}
 }
 
 func TestBackend_WithAlternativeRedirect(t *testing.T) {
-	//
-	//t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-	//	// @see structure.go why scope.Store and scope.Website can be used.
-	//	mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
-	//	mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
-	//	mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
-	//	mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
-	//}))))
+
+	t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		// @see structure.go why scope.Store and scope.Website can be used.
+		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
+		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
+		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
+		mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
+	}))))
 
 	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
@@ -232,9 +239,9 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 
 		// For the race detector
 		var wg sync.WaitGroup
-		for i := 1; i <= 30; i++ {
+		for i := 1; i <= 40; i++ {
 			wg.Add(1)
-			sleeep := time.Microsecond * time.Duration(rand.Intn(100*i))
+			sleeep := time.Microsecond * time.Duration(rand.Intn(200*i))
 			go func(wg *sync.WaitGroup, sleep time.Duration) {
 				defer wg.Done()
 				time.Sleep(sleep)
@@ -261,16 +268,16 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 		// Exactly one call to ShouldStart
 		// Min 3 calls to ShouldWait
 		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.IsValid`), 7; have < want {
-			t.Errorf("IsValid: Have: %d < Want: %d", have, want)
+			t.Errorf("ConfigByScopedGetter.IsValid: Have: %d < Want: %d", have, want)
 		}
 		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldStart`), 1; have != want {
-			t.Errorf("ShouldStart: Have: %d Want: %d", have, want)
+			t.Errorf("ConfigByScopedGetter.ShouldStart: Have: %d Want: %d", have, want)
 		}
 		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldWait`), 0; have < want {
 			// set to 0 because sometimes no one is waiting
 			// If this fails during -race test with many -count CLI agrs then
 			// it doesn't matter
-			t.Errorf("ShouldWait: Have: %d < Want: %d", have, want)
+			t.Errorf("ConfigByScopedGetter.ShouldWait: Have: %d < Want: %d", have, want)
 		}
 		// println("\n", logBuf.String(), "\n")
 	}

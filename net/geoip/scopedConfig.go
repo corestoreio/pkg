@@ -61,7 +61,7 @@ func defaultScopedConfig(h scope.Hash) scopedConfig {
 // supplied, a non-nil signing method and a non-nil Verifier.
 func (sc scopedConfig) isValid() error {
 	if sc.lastErr != nil {
-		return sc.lastErr
+		return errors.Wrap(sc.lastErr, "[geoip] scopedConfig.isValid as an lastErr")
 	}
 
 	if sc.scopeHash == 0 || sc.IsAllowedFunc == nil ||

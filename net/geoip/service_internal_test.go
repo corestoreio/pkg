@@ -24,6 +24,22 @@ func mustGetTestService(opts ...Option) *Service {
 	return MustNew(append(opts, WithGeoIP2File(maxMindDB))...)
 }
 
+func TestMustNew(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+			} else {
+				t.Fatal("Expecting an error")
+			}
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	s := MustNew(WithGeoIP2File("not found"))
+	assert.Nil(t, s)
+}
+
 func TestNewServiceErrorWithoutOptions(t *testing.T) {
 	s, err := New()
 	assert.NoError(t, err)

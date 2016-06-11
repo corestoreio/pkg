@@ -274,7 +274,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 		wg.Wait()
 	}
 
-	// println("\n", logBuf.String(), "\n")
+	// println("\n\n", logBuf.String(), "\n\n")
 
 	if have, want := strings.Count(logBuf.String(), `geoip.Service.getConfigByScopeID.fallbackToDefault scope: "Scope(Store) ID(1)"`), 1; have < want {
 		t.Errorf("Expecting Scope(Store) ID(1) to fall back to default configuration: Have: %d <= Want: %d", have, want)

@@ -20,8 +20,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// keyctxCountry type is unexported to prevent collisions with context keys defined in
-// other packages.
+// keyctxCountry type is unexported to prevent collisions with context keys
+// defined in other packages.
 type keyctxCountry struct{}
 
 // ctxCountryWrapper to prevent too much calls to runtime.convT2*
@@ -41,8 +41,9 @@ func withContextError(ctx context.Context, err error) context.Context {
 }
 
 // FromContextCountry returns the geoip.Country in ctx if it exists or
-// and error if that one exists. The error has been previously set
-// by WithContextError.
+// an error. The error has been previously set by WithContextError.
+// An error can be for the first request, with a new IP address to fill the cache,
+// of behaviour NotValid but all subsequent requests are of behaviour NotFound.
 func FromContextCountry(ctx context.Context) (*Country, error) {
 	wrp, ok := ctx.Value(keyctxCountry{}).(ctxCountryWrapper)
 	if !ok {

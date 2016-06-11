@@ -21,6 +21,20 @@ import (
 	"github.com/oschwald/geoip2-golang"
 )
 
+// think about that ...
+//type CountryTrimmed struct {
+//	// IP contains the request IP address even if we run behind a proxy
+//	IP      net.IP `json:"ip,omitempty"`
+//	Country struct {
+//		Confidence int               `json:"confidence,omitempty"`
+//		GeoNameID  uint              `json:"geoname_id,omitempty"`
+//		IsoCode    string            `json:"iso_code,omitempty"`
+//	} `json:"country,omitempty"`
+//	MaxMind struct {
+//		QueriesRemaining int `json:"queries_remaining,omitempty"`
+//	} `json:"maxmind,omitempty"`
+//}
+
 // The Country structure corresponds to the data in the GeoIP2/GeoLite2
 // Country databases.
 type Country struct {

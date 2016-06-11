@@ -117,31 +117,40 @@ func (s *Service) useDefaultConfig(h scope.Hash) bool {
 	return s.optionFactoryFunc == nil && h == scope.DefaultHash && s.defaultScopeCache.isValid() == nil
 }
 
-// configByScopedGetter returns the internal configuration depending on the ScopedGetter.
-// Mainly used within the middleware. Exported here to build your own middleware.
-// A nil argument falls back to the default scope configuration.
-// If you have applied the option WithBackend() the configuration will be pulled out
-// one time from the backend service.
+// configByScopedGetter returns the internal configuration depending on the
+// ScopedGetter. Mainly used within the middleware. A nil argument falls back to
+// the default scope configuration. If you have applied the option WithBackend()
+// the configuration will be pulled out only one time from the backend service.
 func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
 
 	h := scope.NewHash(scpGet.Scope())
 	// fallback to default scope
 	if s.useDefaultConfig(h) {
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache", log.Stringer("scope", h), log.Bool("optionFactoryFunc_Nil", s.optionFactoryFunc == nil))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache",
+				log.Stringer("scope", h),
+				log.Bool("optionFactoryFunc_Nil", s.optionFactoryFunc == nil))
 		}
 		return s.defaultScopeCache
 	}
 
 	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests
+	isGeoIPLoaded := s.isGeoIPLoaded()
+
 	switch {
-	case sCfg.isValid() == nil && s.isGeoIPLoaded(): // not nice isGeoIPLoaded, find something better
+	case sCfg.isValid() == nil && isGeoIPLoaded: // not nice isGeoIPLoaded, find something better
 		// cached entry found which can contain the configured scoped configuration or
 		// the default scope configuration.
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h))
 		}
 		return sCfg
+	case s.optionFactoryFunc == nil:
+		// When everything has been preconfigured for each scope via function
+		// options then we might have the case where a scope comes in which does
+		// not match to a scopedConfiguration therefore a fallback to default
+		// scope must be provided.
+		return s.getConfigByScopeID(h, true)
 	case s.optionFactoryState.ShouldStart(h.ToUint64()): // 2. map lookup, execute for each scope which needs to initialize the configuration.
 		// gets tested by backendgeoip
 		defer s.optionFactoryState.Done(h.ToUint64()) // send Signal and release waiter
@@ -152,11 +161,19 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			}
 		}
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart", log.Stringer("scope", h))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart",
+				log.Stringer("scope", h),
+				log.Bool("isGeoIPLoaded_before", isGeoIPLoaded),
+				log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()),
+				log.Err(sCfg.isValid()))
 		}
 	case s.optionFactoryState.ShouldWait(h.ToUint64()): // 3. map lookup
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldWait", log.Stringer("scope", h))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldWait",
+				log.Stringer("scope", h),
+				log.Bool("isGeoIPLoaded_before", isGeoIPLoaded),
+				log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()),
+				log.Err(sCfg.isValid()))
 		}
 		// gets tested by backendgeoip
 		// Wait! After optionFactoryState.Done() has been called in optionFactoryState.Done() we
@@ -164,9 +181,15 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		// newly set scopedConfig value.
 	}
 
+	return s.configByScopedGetter(scpGet)
+
+	//return scopedConfig{
+	//	lastErr: errors.New("daaaaaaam it, should not occur"),
+	//}
+
 	// after applying the new config try to fetch the new scoped configuration
 	// or if not found fall back to the default scope.
-	return s.getConfigByScopeID(h, true) // 4. map lookup
+	// return s.getConfigByScopeID(h, true) // 4. map lookup
 }
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {
@@ -190,7 +213,7 @@ func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedCon
 	}
 	if !ok && !useDefault {
 		return scopedConfig{
-			lastErr: errors.Wrap(errConfigNotFound, "[geoip] Service.getConfigByScopeID"),
+			lastErr: errors.Wrap(errConfigNotFound, "[geoip] Service.getConfigByScopeID.NotFound"),
 		}
 	}
 	if scpCfg.useDefault {

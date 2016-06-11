@@ -95,17 +95,18 @@ func PrepareOptions(be *Backend) geoip.OptionFactoryFunc {
 			return optError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceRedisURL.Get"))
 		}
 
-		var opt transcache.Option
+		var opt [2]transcache.Option
 		switch {
 		case redisURL != nil:
-			opt = tcredis.WithURL(redisURL.String(), nil, true)
+			opt[0] = tcredis.WithURL(redisURL.String(), nil, true)
 		default:
-			opt = tcbigcache.With()
+			opt[0] = tcbigcache.With()
 		}
+		opt[1] = transcache.WithGob(geoip.Country{}) // prime gob with the Country struct
 
 		// for now only encoding/gob can be used, we might make it configurable
 		// to choose the encoder/decoder.
-		tc, err := transcache.NewProcessor(opt)
+		tc, err := transcache.NewProcessor(opt[:]...)
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendgeoip] transcache.NewProcessor"))
 		}

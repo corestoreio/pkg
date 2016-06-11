@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"time"
 
+	"encoding/gob"
+
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
@@ -31,6 +33,10 @@ import (
 )
 
 var _ CountryRetriever = (*mmws)(nil)
+
+func init() {
+	gob.Register(new(Country))
+}
 
 func TestMmws_Country_Failure_Response(t *testing.T) {
 

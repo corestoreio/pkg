@@ -35,9 +35,9 @@ type TransCacher interface {
 	Get(key []byte, dst interface{}) error
 }
 
-// MaxmindWebserviceBaseURL defines the used base url. The IP address will be
+// MaxMindWebserviceBaseURL defines the used base url. The IP address will be
 // added after the last slash.
-const MaxmindWebserviceBaseURL = "https://geoip.maxmind.com/geoip/v2.1/country/"
+const MaxMindWebserviceBaseURL = "https://geoip.maxmind.com/geoip/v2.1/country/"
 
 // mmws resolves to MaxMind WebService
 type mmws struct {
@@ -79,7 +79,7 @@ func workfetch(mm *mmws, ipIN <-chan net.IP, cOUT chan<- *Country, errOUT chan<-
 				// channel closed, so quit
 				return
 			}
-			c, err := fetch(mm.client, mm.userID, mm.licenseKey, MaxmindWebserviceBaseURL, ip)
+			c, err := fetch(mm.client, mm.userID, mm.licenseKey, MaxMindWebserviceBaseURL, ip)
 			if err != nil {
 				errOUT <- errors.Wrap(err, "[geoip] mmws.Country.fetch")
 			} else {
@@ -89,10 +89,11 @@ func workfetch(mm *mmws, ipIN <-chan net.IP, cOUT chan<- *Country, errOUT chan<-
 	}
 }
 
-// Country queries the MaxMind Webserver for one IP address. Implements the CountryRetriever interface.
-// During concurrent requests with the same IP address it avoids querying the MaxMind
-// database twice. It is guaranteed one request to MaxMind for an IP address. Those
-// addresses gets cached in the Transcache along with the retrieved country.
+// Country queries the MaxMind Webserver for one IP address. Implements the
+// CountryRetriever interface. During concurrent requests with the same IP
+// address it avoids querying the MaxMind database twice. It is guaranteed one
+// request to MaxMind for an IP address. Those addresses gets cached in the
+// Transcache along with the retrieved country.
 func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
 
 	var c = new(Country)
@@ -116,23 +117,20 @@ func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
 				return nil, errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
 			}
 			if !c.IP.Equal(ipAddress) {
-				// todo limit recursion
-				// call itself as long until we get our ip. This is pretty rare and no idea
-				// how to 100% test it
+				// call itself as long until we get our ip. This is pretty rare
+				// and no idea how to 100% test it. There might be a 0.0000001%
+				// chance under very high load that a stack(?) overflow can
+				// occur.
 				return mm.Country(ipAddress)
 			}
 			return c, nil
 		}
 	case mm.ShouldWaitBytes(ipAddress):
-		// try again ...
-		err := mm.TransCacher.Get(ipAddress, c)
-		if err != nil && !errors.IsNotFound(err) {
-			return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Get")
-		}
-		return c, err // can be a not-found error
+		// do nothing and wait
+		return mm.Country(ipAddress) // now try again
 	}
 
-	return nil, errors.NewFatalf("[geoip] mmws.Country unreachable code and you reached it 8-)")
+	return nil, errors.Wrapf(err, "[geoip] mmws.Country.TransCacher.Get: IP %q Previous error in fetch.", ipAddress)
 }
 
 func (mm *mmws) Close() error {
