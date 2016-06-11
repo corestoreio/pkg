@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -162,6 +163,13 @@ func (s *Store) WebsiteID() int64 {
 // struct will be encoded to JSON using Go's standard library.
 func (s *Store) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.Data)
+}
+
+// MarshalLog implements the log.Marshaler interface
+func (s *Store) MarshalLog(kv log.KeyValuer) error {
+	kv.AddString("store_code", s.Data.Code.String)
+	kv.AddInt64("store_id", s.Data.StoreID)
+	return nil
 }
 
 // Path returns the sub path from the URL where CoreStore is installed

@@ -18,11 +18,14 @@ import (
 	"encoding/json"
 	"testing"
 
+	"bytes"
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -36,6 +39,7 @@ var _ scope.StoreIDer = (*store.Store)(nil)
 var _ scope.GroupIDer = (*store.Store)(nil)
 var _ scope.WebsiteIDer = (*store.Store)(nil)
 var _ scope.StoreCoder = (*store.Store)(nil)
+var _ log.Marshaler = (*store.Store)(nil)
 
 const TODO_Better_Test_Data = "@todo implement better test data which is equal for each Magento version"
 
@@ -314,8 +318,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 	}
 }
 
-func TestMarshalJSON(t *testing.T) {
-
+func TestStore_MarshalJSON(t *testing.T) {
 	s := store.MustNewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
@@ -326,4 +329,19 @@ func TestMarshalJSON(t *testing.T) {
 	assert.NoError(t, err)
 	have := []byte(`{"StoreID":1,"Code":"de","WebsiteID":1,"GroupID":1,"Name":"Germany","SortOrder":10,"IsActive":true}`)
 	assert.Equal(t, have, jdata, "Have: %s\nWant: %s", have, jdata)
+}
+
+func TestStore_MarshalLog(t *testing.T) {
+	s := store.MustNewStore(
+		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
+		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
+	)
+	buf := bytes.Buffer{}
+	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
+
+	lg.Debug("storeTest", log.Marshal("aStore1", s))
+
+	have := "storeTest store_code: \"de\" store_id: 1"
+	assert.Contains(t, buf.String(), have)
 }
