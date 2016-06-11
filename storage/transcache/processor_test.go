@@ -15,7 +15,6 @@
 package transcache_test
 
 import (
-	"encoding/gob"
 	"encoding/json"
 	"io/ioutil"
 	"net"
@@ -25,14 +24,21 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ transcache.Transcacher = (*transcache.Processor)(nil)
 
-func TestNewProcessor_EncoderError(t *testing.T) {
+func TestNewProcessor_NewError(t *testing.T) {
 	p, err := transcache.NewProcessor()
+	assert.Nil(t, p)
+	assert.True(t, errors.IsFatal(err), "Error: %s", err)
+}
+
+func TestNewProcessor_EncoderError(t *testing.T) {
+	p, err := transcache.NewProcessor(transcache.WithGob())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +53,7 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 }
 
 func TestNewProcessor_DecoderError(t *testing.T) {
-	p, err := transcache.NewProcessor(tcbigcache.With())
+	p, err := transcache.NewProcessor(transcache.WithGob(), tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +73,7 @@ func TestNewProcessor_DecoderError(t *testing.T) {
 }
 
 func TestNewProcessor_GetError(t *testing.T) {
-	p, err := transcache.NewProcessor(tcbigcache.With())
+	p, err := transcache.NewProcessor(transcache.WithGob(), tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,38 +85,71 @@ func TestNewProcessor_GetError(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
+const iterations = 30
+
 func testCountry(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
 	defer wg.Done()
+	cstesting.FatalIfError(t, p.Options(transcache.WithGobPriming(Country{})))
 
 	var val = getTestCountry(t)
+
 	if err := p.Set(key, val); err != nil {
 		t.Fatal(err)
 	}
 
+	for i := 0; i < iterations; i++ {
+		var newVal = new(Country)
+		if err := p.Get(key, newVal); err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t, val, newVal)
+	}
+
+	if err := p.Set(key, Country{}); err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < iterations; i++ {
+		if err := p.Set(key, val); err != nil {
+			t.Fatal(err)
+		}
+	}
 	var newVal = new(Country)
 	if err := p.Get(key, newVal); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, val, newVal)
+
 }
 
 func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
 	defer wg.Done()
+	cstesting.FatalIfError(t, p.Options(transcache.WithGobPriming(TableStoreSlice{})))
 
 	var val = getTestStores()
 	if err := p.Set(key, val); err != nil {
 		t.Fatal(err)
 	}
-
+	for i := 0; i < iterations; i++ {
+		var newVal TableStoreSlice
+		if err := p.Get(key, &newVal); err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t, val, newVal)
+	}
+	if err := p.Set(key, TableStoreSlice{}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < iterations; i++ {
+		if err := p.Set(key, val); err != nil {
+			t.Fatal(err)
+		}
+	}
 	var newVal TableStoreSlice
 	if err := p.Get(key, &newVal); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, val, newVal)
-}
-
-func init() {
-	gob.Register(Country{})
 }
 
 type Country struct {
@@ -190,11 +229,6 @@ func getTestCountry(t interface {
 		t.Fatal(err)
 	}
 	return c
-}
-
-func init() {
-	gob.Register(TableStoreSlice{})
-	gob.Register(TableStore{})
 }
 
 // TableStoreSlice represents a collection type for DB table store

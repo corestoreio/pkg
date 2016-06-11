@@ -26,6 +26,7 @@ import (
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcboltdb"
 	"github.com/corestoreio/csfw/storage/transcache/tcredis"
+	"github.com/corestoreio/csfw/util/cstesting"
 )
 
 // run this with go test -race .
@@ -51,17 +52,10 @@ func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
 }
 
 func newTestNewProcessor(t *testing.T, opts ...transcache.Option) {
-	p, err := transcache.NewProcessor(opts...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var wg sync.WaitGroup
+	p, err := transcache.NewProcessor(append(opts, transcache.WithGob())...)
+	cstesting.FatalIfError(t, err)
 
-	//raw, err := p.Cache.Get(key1)
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//t.Logf("%s => %s\n", key1, raw)
+	var wg sync.WaitGroup
 
 	// to detect race conditions run with -race
 	wg.Add(1)

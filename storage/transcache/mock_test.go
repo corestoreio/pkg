@@ -15,12 +15,13 @@
 package transcache_test
 
 import (
-	"github.com/corestoreio/csfw/storage/transcache"
-	"github.com/corestoreio/csfw/util/errors"
-	"github.com/stretchr/testify/assert"
 	"net"
 	"sync"
 	"testing"
+
+	"github.com/corestoreio/csfw/storage/transcache"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 var _ transcache.Transcacher = (*transcache.Mock)(nil)

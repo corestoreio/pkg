@@ -56,8 +56,8 @@ type Decoder interface {
 	Decode(dst interface{}) error
 }
 
-// 64 is quite good. there are not yet any benefits from higher values
-const encodeShards = 64 // must be power of 2
+// 32 is quite good. there are not yet any benefits from higher values
+const encodeShards = 32 // must be power of 2
 const encodeShardMask uint64 = encodeShards - 1
 
 type encode struct {
@@ -81,36 +81,40 @@ type Processor struct {
 	dec   [encodeShards]decode
 }
 
-// NewProcessor creates a new type with no default cache instance and
-// encoding/gob as the underlying encoder. If you use gob please make sure to
-// use gob.Register() to register your types. You must set a caching service or
-// it panics please see the sub packages tcbigcache, tcbolddb, tcredis ...
+// NewProcessor creates a new type with no default cache instance and no
+// encoder. You must set a caching service or it panics please see the sub
+// packages tcbigcache, tcbolddb and tcredis. You must also set an encoder,
+// which is not optional ;-)
 func NewProcessor(opts ...Option) (*Processor, error) {
 	p := &Processor{
 		Hasher: newDefaultHasher(),
 	}
-
 	for i := 0; i < encodeShards; i++ {
 		p.enc[i].buf = new(bytes.Buffer)
 		p.dec[i].buf = new(bytes.Buffer)
 	}
-
-	for _, opt := range opts {
-		if err := opt(p); err != nil {
-			return nil, errors.Wrap(err, "[transcache] NewProcessor applied options")
-		}
+	if err := p.Options(opts...); err != nil {
+		return nil, err
 	}
-
 	if p.enc[0].Encoder == nil || p.dec[0].Decoder == nil {
-		if err := withGob()(p); err != nil {
-			return nil, errors.Wrap(err, "[transcache] NewProcessor.Option.WithGob")
-		}
+		return nil, errors.NewFatalf("[transcache] NewProcessor cannot work properly without encoder and decoder. Please set.")
 	}
 	return p, nil
 }
 
-func (tr *Processor) shardID(key []byte) uint64 {
-	return tr.Hasher.Sum64(key) & encodeShardMask
+// Options applies option after object creation. Very useful when priming types
+// for the gob encoder.
+func (p *Processor) Options(opts ...Option) error {
+	for _, opt := range opts {
+		if err := opt(p); err != nil {
+			return errors.Wrap(err, "[transcache] NewProcessor applied options")
+		}
+	}
+	return nil
+}
+
+func (p *Processor) shardID(key []byte) uint64 {
+	return p.Hasher.Sum64(key) & encodeShardMask
 }
 
 // Set sets the type src with a key
