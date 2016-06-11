@@ -19,26 +19,16 @@ import (
 )
 
 // ErrorFormater defines the function needed to print out an formatted error.
-type ErrorFormater interface {
+type errorFormater interface {
 	Errorf(format string, args ...interface{})
 }
 
-// EqualPointers compares pointers for equality
-func EqualPointers(t ErrorFormater, expected, actual interface{}) bool {
+// EqualPointers compares pointers for equality. errorFormater is *testing.T.
+func EqualPointers(t errorFormater, expected, actual interface{}) bool {
 	wantP := reflect.ValueOf(expected)
 	haveP := reflect.ValueOf(actual)
 	if wantP.Pointer() != haveP.Pointer() {
 		t.Errorf("Expecting equal pointers\nWant: %p\nHave: %p", expected, actual)
-		return false
-	}
-	return true
-}
-
-func UnEqualPointers(t ErrorFormater, expected, actual interface{}) bool {
-	wantP := reflect.ValueOf(expected)
-	haveP := reflect.ValueOf(actual)
-	if wantP.Pointer() == haveP.Pointer() {
-		t.Errorf("Expecting unequal pointers\nWant: %p\nHave: %p", expected, actual)
 		return false
 	}
 	return true

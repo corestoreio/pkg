@@ -20,7 +20,7 @@ import (
 )
 
 // MockDB creates a mocked database connection. Fatals on error.
-func MockDB(t Fataler) (*dbr.Connection, sqlmock.Sqlmock) {
+func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 	db, sm, err := sqlmock.New()
 	FatalIfError(t, err)
 
