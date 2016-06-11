@@ -30,9 +30,7 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// TODO: fix bug of too many allocs. they are caused by the 3rd party packages for reading MM files.
-// BenchmarkWithAlternativeRedirect-4   	  100000	     13264 ns/op	   17207 B/op	     133 allocs/op
-func BenchmarkWithAlternativeRedirect_Database_NoCache(b *testing.B) {
+func BenchmarkWithAlternativeRedirect(b *testing.B) {
 	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(b, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
@@ -40,12 +38,9 @@ func BenchmarkWithAlternativeRedirect_Database_NoCache(b *testing.B) {
 		mustToPath(b, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
 		mustToPath(b, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	}))
-	benchmarkWithAlternativeRedirect(b, cfgSrv)
-}
+	b.Run("LocalFile_NoCache", benchmarkWithAlternativeRedirect(cfgSrv))
 
-func BenchmarkWithAlternativeRedirect_Webservice_BigCache_Gob(b *testing.B) {
-
-	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cfgSrv = cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(b, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
 		mustToPath(b, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1):  307,
@@ -54,65 +49,68 @@ func BenchmarkWithAlternativeRedirect_Webservice_BigCache_Gob(b *testing.B) {
 		mustToPath(b, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
 		mustToPath(b, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
 	}))
-	benchmarkWithAlternativeRedirect(b, cfgSrv)
+	// to fix the speed here ... BigCache_Gob must be optimized
+	b.Run("Webservice_BigCache_Gob", benchmarkWithAlternativeRedirect(cfgSrv))
 }
 
-func benchmarkWithAlternativeRedirect(b *testing.B, cfgSrv *cfgmock.Service) {
-
-	cfgStruct, err := backendgeoip.NewConfigStructure()
-	if err != nil {
-		b.Fatal(err)
-	}
-	be := backendgeoip.New(cfgStruct)
-	be.WebServiceClient = &http.Client{
-		Transport: cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
-	}
-	scpFnc := backendgeoip.PrepareOptions(be)
-	geoSrv := geoip.MustNew(geoip.WithOptionFactory(scpFnc))
-
-	// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
-	req := func() *http.Request {
-		o, err := scope.SetByCode(scope.Website, "euro")
+func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B) {
+	return func(b *testing.B) {
+		cfgStruct, err := backendgeoip.NewConfigStructure()
 		if err != nil {
 			b.Fatal(err)
 		}
-		storeSrv := storemock.NewEurozzyService(o)
-		req, _ := http.NewRequest("GET", "http://corestore.io", nil)
-		req.RemoteAddr = "2a02:d180::"
-		atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
-		if err != nil {
-			b.Fatal(errors.PrintLoc(err))
+		be := backendgeoip.New(cfgStruct)
+		be.WebServiceClient = &http.Client{
+			Transport: cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
 		}
-		atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
+		scpFnc := backendgeoip.PrepareOptions(be)
+		geoSrv := geoip.MustNew(geoip.WithOptionFactory(scpFnc))
 
-		return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
-	}()
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			rec := httptest.NewRecorder()
-			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-				c, err := geoip.FromContextCountry(r.Context())
-				if c != nil {
-					b.Fatalf("Country must be nil, but is %#v", c)
-				}
-				if err != nil {
-					b.Fatal(errors.PrintLoc(err))
-				}
-
-				panic("Should not be called")
-
-			})).ServeHTTP(rec, req)
-
-			if have, want := rec.Header().Get("Location"), `https://byebye.de.io`; have != want {
-				b.Errorf("Have %q Want %q", have, want)
+		// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
+		req := func() *http.Request {
+			o, err := scope.SetByCode(scope.Website, "euro")
+			if err != nil {
+				b.Fatal(err)
 			}
-			if have, want := rec.Code, 307; have != want {
-				b.Errorf("Have %q Want %q", have, want)
+			storeSrv := storemock.NewEurozzyService(o)
+			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			req.Header.Set("X-Cluster-Client-Ip", "2a02:d180::")
+
+			atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
+			if err != nil {
+				b.Fatal(errors.PrintLoc(err))
 			}
-		}
-	})
+			atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
+
+			return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
+		}()
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				rec := httptest.NewRecorder()
+				geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+					c, err := geoip.FromContextCountry(r.Context())
+					if c != nil {
+						b.Fatalf("Country must be nil, but is %#v", c)
+					}
+					if err != nil {
+						b.Fatal(errors.PrintLoc(err))
+					}
+
+					panic("Should not be called")
+
+				})).ServeHTTP(rec, req)
+
+				if have, want := rec.Header().Get("Location"), `https://byebye.de.io`; have != want {
+					b.Errorf("Have %q Want %q", have, want)
+				}
+				if have, want := rec.Code, 307; have != want {
+					b.Errorf("Have %q Want %q", have, want)
+				}
+			}
+		})
+	}
 }

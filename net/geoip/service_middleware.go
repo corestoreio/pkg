@@ -79,8 +79,9 @@ func (s *Service) WithCountryByIP() mw.Middleware {
 // list of countries for a scope and then uses the function IsAllowedFunc to
 // check if a country is allowed for an IP address. If a country should not
 // access the next handler within the middleware chain it will call an
-// alternative handler to e.g. show a different page or performa a redirect. Use
-// FromContextCountry() to extract the country or an error.
+// alternative handler to e.g. show a different page or perform a redirect. Use
+// FromContextCountry() to extract the country or an error. Tis middleware
+// allows geo blocking.
 func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -25,7 +25,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Service represents a service manager for GeoIP detection.
+// Service represents a service manager for GeoIP detection and restriction.
+// Please consider the law if you would like to implement geo-blocking.
 type Service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
@@ -52,10 +53,10 @@ type Service struct {
 	// geoIP searches the country for an IP address. If nil panics
 	// during execution in the middleware
 	geoIP CountryRetriever
-	// geoIPLoaded checks to only load the GeoIP CountryRetriever once
-	// because we may set that within a request because it is defined
-	// in the backend configuration but later we need to reset
-	// this value to zero to allow reloading.
+	// geoIPLoaded checks to only load the GeoIP CountryRetriever once because
+	// we may set that within a request. It's defined in the backend
+	// configuration but later we need to reset this value to zero to allow
+	// reloading.
 	geoIPLoaded *uint32
 
 	// scopeCache internal cache of already created token configurations
@@ -109,6 +110,8 @@ func (s *Service) Close() error {
 	return s.geoIP.Close()
 }
 
+// isGeoIPLoaded checks if the geoip lookup interface has been set by an object.
+// this can be adjusted dynamically with the scoped configuration.
 func (s *Service) isGeoIPLoaded() bool {
 	return atomic.LoadUint32(s.geoIPLoaded) == 1
 }
@@ -127,14 +130,12 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	// fallback to default scope
 	if s.useDefaultConfig(h) {
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache",
-				log.Stringer("scope", h),
-				log.Bool("optionFactoryFunc_Nil", s.optionFactoryFunc == nil))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.defaultScopeCache", log.Stringer("scope", h), log.Bool("optionFactoryFunc_Nil", s.optionFactoryFunc == nil))
 		}
 		return s.defaultScopeCache
 	}
 
-	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests
+	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests, 99%
 	isGeoIPLoaded := s.isGeoIPLoaded()
 
 	switch {
@@ -146,10 +147,15 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		}
 		return sCfg
 	case s.optionFactoryFunc == nil:
-		// When everything has been preconfigured for each scope via function
-		// options then we might have the case where a scope comes in which does
-		// not match to a scopedConfiguration therefore a fallback to default
-		// scope must be provided.
+		if s.Log.IsDebug() {
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h))
+		}
+		// When everything has been preconfigured for each scope via functional
+		// options then we might have the case where a scope in a request comes
+		// in which does not match to a scopedConfiguration entry in the map
+		// therefore a fallback to default scope must be provided. This fall
+		// back will only be executed once and each scope knows from now on that
+		// it has the configuration of the default scope.
 		return s.getConfigByScopeID(h, true)
 	case s.optionFactoryState.ShouldStart(h.ToUint64()): // 2. map lookup, execute for each scope which needs to initialize the configuration.
 		// gets tested by backendgeoip
@@ -161,35 +167,19 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			}
 		}
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart",
-				log.Stringer("scope", h),
-				log.Bool("isGeoIPLoaded_before", isGeoIPLoaded),
-				log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()),
-				log.Err(sCfg.isValid()))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart", log.Stringer("scope", h), log.Bool("isGeoIPLoaded_before", isGeoIPLoaded), log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()), log.Err(sCfg.isValid()))
 		}
 	case s.optionFactoryState.ShouldWait(h.ToUint64()): // 3. map lookup
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldWait",
-				log.Stringer("scope", h),
-				log.Bool("isGeoIPLoaded_before", isGeoIPLoaded),
-				log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()),
-				log.Err(sCfg.isValid()))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldWait", log.Stringer("scope", h), log.Bool("isGeoIPLoaded_before", isGeoIPLoaded), log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()), log.Err(sCfg.isValid()))
 		}
-		// gets tested by backendgeoip
-		// Wait! After optionFactoryState.Done() has been called in optionFactoryState.Done() we
-		// proceed here and go to the last return statement to search for the
-		// newly set scopedConfig value.
+		// gets tested by backendgeoip.
+		// Wait here! After optionFactoryState.Done() has been called in
+		// optionFactoryState.ShouldStart() we proceed and go to the last return
+		// statement to search for the newly set scopedConfig value.
 	}
 
 	return s.configByScopedGetter(scpGet)
-
-	//return scopedConfig{
-	//	lastErr: errors.New("daaaaaaam it, should not occur"),
-	//}
-
-	// after applying the new config try to fetch the new scoped configuration
-	// or if not found fall back to the default scope.
-	// return s.getConfigByScopeID(h, true) // 4. map lookup
 }
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {

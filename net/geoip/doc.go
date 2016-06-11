@@ -17,5 +17,5 @@
 // This package is compatible to IPv4 and IPv6.
 // Uses the MaxMind database, or MaxMind WebService or alternative country/city detectors.
 //
-// The detected country and all its attributes will be added to a context.
+// The detected country and all its attributes can be added to a context.
 package geoip
