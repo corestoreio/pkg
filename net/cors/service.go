@@ -18,13 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package mwcors
+package cors
 
 import (
 	"net/http"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -118,7 +119,7 @@ func (s *Service) WithCORS() mw.Middleware {
 			requestedStore, err := store.FromContextRequestedStore(ctx)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", "err", err, "ctx", ctx, "req", r)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.Object("request", r))
 				}
 				err = errors.Wrap(err, "[mwcors] FromContextRequestedStore")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -131,7 +132,7 @@ func (s *Service) WithCORS() mw.Middleware {
 			scpCfg, err := s.configByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
 				}
 				err = errors.Wrap(err, "[mwcors] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -139,12 +140,12 @@ func (s *Service) WithCORS() mw.Middleware {
 			}
 
 			if s.defaultScopeCache.log.IsInfo() {
-				s.defaultScopeCache.log.Info("Service.WithCORS.handleActualRequest", "method", r.Method, "scopedConfig", scpCfg)
+				s.defaultScopeCache.log.Info("Service.WithCORS.handleActualRequest", log.String("method", r.Method), log.Object("scopedConfig", scpCfg))
 			}
 
 			if r.Method == methodOptions {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", scpCfg.optionsPassthrough)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.handlePreflight", log.String("method", r.Method), log.Bool("OptionsPassthrough", scpCfg.optionsPassthrough))
 				}
 				scpCfg.handlePreflight(w, r)
 				// Preflight requests are standalone and should stop the chain as some other
@@ -212,7 +213,7 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		if !s.defaultScopeCache.IsValid() {
 			err = errConfigNotFound
 			if s.defaultScopeCache.log.IsDebug() {
-				s.defaultScopeCache.log.Debug("mwcors.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String(), "fallback", fallback)
+				s.defaultScopeCache.log.Debug("cors.Service.getConfigByScopeID.default", log.Err(err), log.Stringer("scope", scope.DefaultHash))
 			}
 		}
 		return s.defaultScopeCache, err

@@ -20,9 +20,9 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/net/mwcors"
-	"github.com/corestoreio/csfw/net/mwcors/backendcors"
-	"github.com/corestoreio/csfw/net/mwcors/internal/corstest"
+	"github.com/corestoreio/csfw/net/cors"
+	"github.com/corestoreio/csfw/net/cors/backendcors"
+	"github.com/corestoreio/csfw/net/cors/internal/corstest"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -53,9 +53,9 @@ func reqWithStore(method string, cfgOpt ...cfgmock.OptionFunc) *http.Request {
 	)
 }
 
-func newCorsService() *mwcors.Service {
-	return mwcors.MustNew(
-		mwcors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+func newCorsService() *cors.Service {
+	return cors.MustNew(
+		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
 	)
 }
 
@@ -233,7 +233,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 		}))
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
-		_, err := mwcors.New(scpFnc(cfgScp)...)
+		_, err := cors.New(scpFnc(cfgScp)...)
 		assert.True(t, test.errBhf(err), "Index %d Error: %s", i, err)
 	}
 }

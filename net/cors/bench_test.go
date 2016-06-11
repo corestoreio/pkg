@@ -18,13 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package mwcors_test
+package cors_test
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/mwcors"
+	"github.com/corestoreio/csfw/net/cors"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -33,7 +33,7 @@ func testHandler(fa interface {
 	Fatal(args ...interface{})
 }) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := mwcors.FromContext(r.Context()); err != nil {
+		if err := cors.FromContext(r.Context()); err != nil {
 			fa.Fatal(errors.PrintLoc(err))
 		}
 		_, _ = w.Write([]byte("bar"))
@@ -70,7 +70,7 @@ func BenchmarkDefault(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("GET")
 	req.Header.Add("Origin", "somedomain.com")
-	c, err := mwcors.New()
+	c, err := cors.New()
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("GET")
 	req.Header.Add("Origin", "somedomain.com")
-	c, err := mwcors.New(mwcors.WithAllowedOrigins(scope.Default, 0, "somedomain.com"))
+	c, err := cors.New(cors.WithAllowedOrigins(scope.Default, 0, "somedomain.com"))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func BenchmarkPreflight(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("OPTIONS")
 	req.Header.Add("Access-Control-Request-Method", "GET")
-	c, err := mwcors.New()
+	c, err := cors.New()
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func BenchmarkPreflightHeader(b *testing.B) {
 	req := reqWithStore("OPTIONS")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "Accept")
-	c, err := mwcors.New()
+	c, err := cors.New()
 	if err != nil {
 		b.Fatal(err)
 	}

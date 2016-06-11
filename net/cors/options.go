@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwcors
+package cors
 
 import (
 	"fmt"
@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // Option defines a function argument for the Cors type to apply options.
@@ -378,8 +378,8 @@ func WithLogger(l log.Logger) Option {
 //	}
 //	pb := backendcors.New(cfgStruct)
 //
-//	cors := mwcors.MustNewService(
-//		mwcors.WithOptionFactory(backendcors.PrepareOptions(pb)),
+//	cors := cors.MustNewService(
+//		cors.WithOptionFactory(backendcors.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) error {

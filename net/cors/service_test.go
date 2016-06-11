@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package mwcors_test
+package cors_test
 
 import (
 	"net/http"
@@ -27,13 +27,13 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/mwcors"
-	"github.com/corestoreio/csfw/net/mwcors/internal/corstest"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/net/cors"
+	"github.com/corestoreio/csfw/net/cors/internal/corstest"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,8 +48,8 @@ func reqWithStore(method string) *http.Request {
 	)
 }
 
-func withError() mwcors.Option {
-	return func(s *mwcors.Service) error {
+func withError() cors.Option {
+	return func(s *cors.Service) error {
 		return errors.NewNotValidf("Paaaaaaaniic!")
 	}
 }
@@ -63,7 +63,7 @@ func TestMustNew_Default(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = mwcors.MustNew(withError())
+	_ = cors.MustNew(withError())
 }
 
 func TestMustNew_Website(t *testing.T) {
@@ -75,7 +75,7 @@ func TestMustNew_Website(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = mwcors.MustNew(withError())
+	_ = cors.MustNew(withError())
 }
 
 func TestMustNew_NoPanic(t *testing.T) {
@@ -85,19 +85,19 @@ func TestMustNew_NoPanic(t *testing.T) {
 			t.Fatalf("Expecting NOT a Panic with error: %s", err)
 		}
 	}()
-	_ = mwcors.MustNew(mwcors.WithMaxAge(scope.Website, 2, -2*time.Second))
+	_ = cors.MustNew(cors.WithMaxAge(scope.Website, 2, -2*time.Second))
 }
 
 func TestNoConfig(t *testing.T) {
-	s := mwcors.MustNew()
+	s := cors.MustNew()
 	req := reqWithStore("GET")
 	corstest.TestNoConfig(t, s, req)
 }
 
 func TestService_Options_Scope_Website(t *testing.T) {
 
-	var newSrv = func(opts ...mwcors.Option) *mwcors.Service {
-		s := mwcors.MustNew(mwcors.WithLogger(log.BlackHole{})) // why can't i append opts... after WithLogger() ?
+	var newSrv = func(opts ...cors.Option) *cors.Service {
+		s := cors.MustNew(cors.WithLogger(log.BlackHole{})) // why can't i append opts... after WithLogger() ?
 		if err := s.Options(opts...); err != nil {
 			t.Fatal(err)
 		}
@@ -105,37 +105,37 @@ func TestService_Options_Scope_Website(t *testing.T) {
 	}
 
 	tests := []struct {
-		srv    *mwcors.Service
+		srv    *cors.Service
 		req    *http.Request
-		tester func(t *testing.T, s *mwcors.Service, req *http.Request)
+		tester func(t *testing.T, s *cors.Service, req *http.Request)
 	}{
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "*")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "*")),
 			reqWithStore("GET"),
 			corstest.TestMatchAllOrigin,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
 			reqWithStore("GET"),
 			corstest.TestAllowedOrigin,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://*.bar.com")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://*.bar.com")),
 			reqWithStore("GET"),
 			corstest.TestWildcardOrigin,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
 			reqWithStore("GET"),
 			corstest.TestDisallowedOrigin,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://*.bar.com")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://*.bar.com")),
 			reqWithStore("GET"),
 			corstest.TestDisallowedWildcardOrigin,
 		},
 		{
-			newSrv(mwcors.WithAllowOriginFunc(scope.Website, 2, func(o string) bool {
+			newSrv(cors.WithAllowOriginFunc(scope.Website, 2, func(o string) bool {
 				r, _ := regexp.Compile("^http://foo") // don't do this on production systems!
 				return r.MatchString(o)
 			})),
@@ -143,32 +143,32 @@ func TestService_Options_Scope_Website(t *testing.T) {
 			corstest.TestAllowedOriginFunc,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), mwcors.WithAllowedMethods(scope.Website, 2, "PUT", "DELETE")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), cors.WithAllowedMethods(scope.Website, 2, "PUT", "DELETE")),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedMethod,
 		},
 		{
-			newSrv(mwcors.WithAllowedMethods(scope.Website, 2, "PUT", "DELETE"), mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), mwcors.WithOptionsPassthrough(scope.Website, 2, true)),
+			newSrv(cors.WithAllowedMethods(scope.Website, 2, "PUT", "DELETE"), cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), cors.WithOptionsPassthrough(scope.Website, 2, true)),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedMethodPassthrough,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), mwcors.WithAllowedHeaders(scope.Website, 2, "X-Header-1", "x-header-2")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), cors.WithAllowedHeaders(scope.Website, 2, "X-Header-1", "x-header-2")),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedHeader,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), mwcors.WithExposedHeaders(scope.Website, 2, "X-Header-1", "x-header-2")),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), cors.WithExposedHeaders(scope.Website, 2, "X-Header-1", "x-header-2")),
 			reqWithStore("GET"),
 			corstest.TestExposedHeader,
 		},
 		{
-			newSrv(mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), mwcors.WithAllowCredentials(scope.Website, 2, true)),
+			newSrv(cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com"), cors.WithAllowCredentials(scope.Website, 2, true)),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedCredentials,
 		},
 		{
-			newSrv(mwcors.WithMaxAge(scope.Website, 2, time.Second*30), mwcors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
+			newSrv(cors.WithMaxAge(scope.Website, 2, time.Second*30), cors.WithAllowedOrigins(scope.Website, 2, "http://foobar.com")),
 			reqWithStore("OPTIONS"),
 			corstest.TestMaxAge,
 		},
@@ -181,40 +181,40 @@ func TestService_Options_Scope_Website(t *testing.T) {
 }
 
 func TestMatchAllOrigin(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "*"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "*"),
 	)
 	req := reqWithStore("GET")
 	corstest.TestMatchAllOrigin(t, s, req)
 }
 
 func TestAllowedOrigin(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 	)
 	req := reqWithStore("GET")
 	corstest.TestAllowedOrigin(t, s, req)
 }
 
 func TestWildcardOrigin(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://*.bar.com"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://*.bar.com"),
 	)
 	req := reqWithStore("GET")
 	corstest.TestWildcardOrigin(t, s, req)
 }
 
 func TestDisallowedOrigin(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 	)
 	req := reqWithStore("GET")
 	corstest.TestDisallowedOrigin(t, s, req)
 }
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://*.bar.com"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://*.bar.com"),
 	)
 	req := reqWithStore("GET")
 	corstest.TestDisallowedWildcardOrigin(t, s, req)
@@ -222,8 +222,8 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 
 func TestAllowedOriginFunc(t *testing.T) {
 	r, _ := regexp.Compile("^http://foo")
-	s := mwcors.MustNew(
-		mwcors.WithAllowOriginFunc(scope.Default, 0, func(o string) bool {
+	s := cors.MustNew(
+		cors.WithAllowOriginFunc(scope.Default, 0, func(o string) bool {
 			return r.MatchString(o)
 		}),
 	)
@@ -232,72 +232,72 @@ func TestAllowedOriginFunc(t *testing.T) {
 }
 
 func TestAllowedMethod(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
 	)
 	req := reqWithStore("OPTIONS")
 	corstest.TestAllowedMethod(t, s, req)
 }
 
 func TestAllowedMethodPassthrough(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
-		mwcors.WithOptionsPassthrough(scope.Default, 0, true),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
+		cors.WithOptionsPassthrough(scope.Default, 0, true),
 	)
 	req := reqWithStore("OPTIONS")
 	corstest.TestAllowedMethodPassthrough(t, s, req)
 }
 
 func TestDisallowedMethod(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithAllowedMethods(scope.Default, 0, "PUT", "DELETE"),
 	)
 	req := reqWithStore("OPTIONS")
 	corstest.TestDisallowedMethod(t, s, req)
 }
 
 func TestAllowedHeader(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithAllowedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithAllowedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
 	)
 	req := reqWithStore("OPTIONS")
 	corstest.TestAllowedHeader(t, s, req)
 }
 
 func TestAllowedWildcardHeader(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithAllowedHeaders(scope.Default, 0, "*"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithAllowedHeaders(scope.Default, 0, "*"),
 	)
 	req := reqWithStore("OPTIONS")
 	corstest.TestAllowedWildcardHeader(t, s, req)
 }
 
 func TestDisallowedHeader(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithAllowedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithAllowedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
 	)
 	req := reqWithStore("OPTIONS")
 	corstest.TestDisallowedHeader(t, s, req)
 }
 
 func TestOriginHeader(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 	)
 	req := reqWithStore("OPTIONS")
 	corstest.TestOriginHeader(t, s, req)
 }
 
 func TestExposedHeader(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithExposedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithExposedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
 	)
 
 	req := reqWithStore("GET")
@@ -305,10 +305,10 @@ func TestExposedHeader(t *testing.T) {
 }
 
 func TestExposedHeader_MultiScope(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithExposedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
-		mwcors.WithAllowCredentials(scope.Website, 1, true),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithExposedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
+		cors.WithAllowCredentials(scope.Website, 1, true),
 	)
 
 	reqDefault, _ := http.NewRequest("GET", "http://corestore.io/reqDefault", nil)
@@ -327,9 +327,9 @@ func TestExposedHeader_MultiScope(t *testing.T) {
 }
 
 func TestAllowedCredentials(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithAllowCredentials(scope.Default, 0, true),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithAllowCredentials(scope.Default, 0, true),
 	)
 
 	req := reqWithStore("OPTIONS")
@@ -337,9 +337,9 @@ func TestAllowedCredentials(t *testing.T) {
 }
 
 func TestMaxAge(t *testing.T) {
-	s := mwcors.MustNew(
-		mwcors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
-		mwcors.WithMaxAge(scope.Default, 0, time.Second*30),
+	s := cors.MustNew(
+		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
+		cors.WithMaxAge(scope.Default, 0, time.Second*30),
 	)
 
 	req := reqWithStore("OPTIONS")

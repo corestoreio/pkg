@@ -12,30 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwcors
+package cors
 
-import (
-	"context"
+import "github.com/corestoreio/csfw/util/errors"
 
-	"github.com/corestoreio/csfw/util/errors"
-)
+const errInvalidDurations = "[mwcors] MaxAge: Invalid Duration seconds: %.0f"
 
-type keyCtxToken struct{}
+const errServiceUnsupportedScope = "[mwcors] Service does not support this: %s. Only default or website scope are allowed."
 
-type wrapperCtx struct {
-	err error
-}
+const errScopedConfigNotValid = `[mwcors] ScopedConfig %s invalid`
 
-// FromContext returns an error not caught by the error handler
-func FromContext(ctx context.Context) error {
-	wrp, ok := ctx.Value(keyCtxToken{}).(wrapperCtx)
-	if !ok {
-		return nil
-	}
-	return errors.Wrap(wrp.err, "[mwcors] FromContext")
-}
-
-// withContextError creates a new context with an error attached.
-func withContextError(ctx context.Context, err error) context.Context {
-	return context.WithValue(ctx, keyCtxToken{}, wrapperCtx{err: err})
-}
+var errConfigNotFound = errors.NewNotFoundf(`[mwcors] ScopedConfig not available`)

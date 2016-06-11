@@ -12,18 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backendcors_test
+package cors
 
-import "github.com/corestoreio/csfw/net/mwcors/backendcors"
+import (
+	"context"
 
-// backend overall backend models for all tests
-var backend *backendcors.Backend
+	"github.com/corestoreio/csfw/util/errors"
+)
 
-// this would belong into the test suit setup
-func init() {
-	cfgStruct, err := backendcors.NewConfigStructure()
-	if err != nil {
-		panic(err)
+type keyCtxToken struct{}
+
+type wrapperCtx struct {
+	err error
+}
+
+// FromContext returns an error not caught by the error handler
+func FromContext(ctx context.Context) error {
+	wrp, ok := ctx.Value(keyCtxToken{}).(wrapperCtx)
+	if !ok {
+		return nil
 	}
-	backend = backendcors.New(cfgStruct)
+	return errors.Wrap(wrp.err, "[mwcors] FromContext")
+}
+
+// withContextError creates a new context with an error attached.
+func withContextError(ctx context.Context, err error) context.Context {
+	return context.WithValue(ctx, keyCtxToken{}, wrapperCtx{err: err})
 }

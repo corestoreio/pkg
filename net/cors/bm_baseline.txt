@@ -7,4 +7,4 @@ BenchmarkAllowedOrigin-4               	 1000000	      1085 ns/op	     112 B/op	
 BenchmarkPreflight-4                   	 1000000	      1153 ns/op	     270 B/op	       0 allocs/op
 BenchmarkPreflightHeader-4             	 1000000	      1045 ns/op	     270 B/op	       0 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/mwcors	12.391s
+ok  	github.com/corestoreio/csfw/net/cors	12.391s

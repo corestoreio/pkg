@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwcors
+package backendcors_test
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/csfw/net/cors/backendcors"
 
-const errInvalidDurations = "[mwcors] MaxAge: Invalid Duration seconds: %.0f"
+// backend overall backend models for all tests
+var backend *backendcors.Backend
 
-const errServiceUnsupportedScope = "[mwcors] Service does not support this: %s. Only default or website scope are allowed."
-
-const errScopedConfigNotValid = `[mwcors] ScopedConfig %s invalid`
-
-var errConfigNotFound = errors.NewNotFoundf(`[mwcors] ScopedConfig not available`)
+// this would belong into the test suit setup
+func init() {
+	cfgStruct, err := backendcors.NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
+	backend = backendcors.New(cfgStruct)
+}
