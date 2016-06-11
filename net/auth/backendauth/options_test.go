@@ -19,8 +19,8 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/net/mwauth"
-	"github.com/corestoreio/csfw/net/mwauth/backendauth"
+	"github.com/corestoreio/csfw/net/auth"
+	"github.com/corestoreio/csfw/net/auth/backendauth"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -50,9 +50,9 @@ func reqWithStore(method string, cfgOpt ...cfgmock.OptionFunc) *http.Request {
 	)
 }
 
-func newService() *mwauth.Service {
-	return mwauth.MustNew(
-		mwauth.WithOptionFactory(backendauth.PrepareOptions(backend)),
+func newService() *auth.Service {
+	return auth.MustNew(
+		auth.WithOptionFactory(backendauth.PrepareOptions(backend)),
 	)
 }
 
@@ -82,7 +82,7 @@ func newService() *mwauth.Service {
 //		}))
 //		cfgScp := cfgSrv.NewScoped(2, 0)
 //
-//		_, err := mwauth.New(scpFnc(cfgScp)...)
+//		_, err := auth.New(scpFnc(cfgScp)...)
 //		assert.True(t, test.errBhf(err), "Index %d Error: %s", i, err)
 //	}
 //}

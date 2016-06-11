@@ -18,13 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package mwauth
+package auth
 
 import (
 	"net/http"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -33,8 +34,8 @@ import (
 
 // Service describes
 type Service struct {
-	// scpOptionFnc optional configuration closure, can be nil. It pulls
-	// out the configuration settings during a request and caches the settings in the
+	// scpOptionFnc optional configuration closure, can be nil. It pulls out the
+	// configuration settings during a request and caches the settings in the
 	// internal map. ScopedOption requires a config.ScopedGetter
 	scpOptionFnc ScopedOptionFunc
 
@@ -42,12 +43,11 @@ type Service struct {
 
 	mu sync.RWMutex
 	// scopeCache internal cache of already created token configurations
-	// scoped.Hash relates to the website ID.
-	// this can become a bottle neck when multiple website IDs supplied by a
-	// request try to access the map. we can use the same pattern like in freecache
-	// to create a segment of 256 slice items to evenly distribute the lock.
-	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
-
+	// scoped.Hash relates to the website ID. this can become a bottle neck when
+	// multiple website IDs supplied by a request try to access the map. we can
+	// use the same pattern like in freecache to create a segment of 256 slice
+	// items to evenly distribute the lock.
+	scopeCache map[scope.Hash]scopedConfig
 }
 
 // New creates a new Cors handler with the provided options.
@@ -85,11 +85,10 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// WithAuthentication to be used as a middleware for ctxhttp.Handler.
-// The applied configuration
-// is used for the all store scopes or if the PkgBackend has been provided then
-// on a website specific level.
-// Middleware expects to find in a context a store.FromContextProvider().
+// WithAuthentication to be used as a middleware for ctxhttp.Handler. The
+// applied configuration is used for the all store scopes or if the PkgBackend
+// has been provided then on a website specific level. Middleware expects to
+// find in a context a store.FromContextProvider().
 func (s *Service) WithAuthentication() mw.Middleware {
 
 	return func(h http.Handler) http.Handler {
@@ -100,7 +99,7 @@ func (s *Service) WithAuthentication() mw.Middleware {
 			requestedStore, err := store.FromContextRequestedStore(ctx)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", "err", err, "ctx", ctx, "req", r)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.Object("request", r))
 				}
 				err = errors.Wrap(err, "[mwauth] FromContextRequestedStore")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -113,7 +112,7 @@ func (s *Service) WithAuthentication() mw.Middleware {
 			/* scpCfg */ _, err = s.configByScopedGetter(requestedStore.Website.Config) // TODO support ALL scopes, @see package geoip
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", "err", err, "requestedStore", requestedStore, "ctx", ctx, "req", r)
+					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
 				}
 				err = errors.Wrap(err, "[mwauth] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -136,11 +135,11 @@ func (s *Service) WithCookieValidation() mw.Middleware {
 	}
 }
 
-// configByScopedGetter returns the internal configuration depending on the ScopedGetter.
-// Mainly used within the middleware. Exported here to build your own middleware.
-// A nil argument falls back to the default scope configuration.
-// If you have applied the option WithBackend() the configuration will be pulled out
-// one time from the backend service.
+// configByScopedGetter returns the internal configuration depending on the
+// ScopedGetter. Mainly used within the middleware. Exported here to build your
+// own middleware. A nil argument falls back to the default scope configuration.
+// If you have applied the option WithBackend() the configuration will be pulled
+// out one time from the backend service.
 func (s *Service) configByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
 
 	h := scope.DefaultHash
@@ -185,9 +184,6 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		var err error
 		if !s.defaultScopeCache.IsValid() {
 			err = errConfigNotFound
-			if s.defaultScopeCache.log.IsDebug() {
-				s.defaultScopeCache.log.Debug("mwauth.Service.getConfigByScopeID.default", "err", err, "scope", scope.DefaultHash.String(), "fallback", fallback)
-			}
 		}
 		return s.defaultScopeCache, err
 	}

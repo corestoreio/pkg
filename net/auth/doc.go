@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mwauth (TODO) provides authentication middleware.
+// Package auth (TODO) provides authentication middleware.
 //
 // Successful authenticated clients may also retrieve a JSON web token.
 // Authentication via basic auth, IP based, LDAP, SAML ...
-package mwauth
+package auth

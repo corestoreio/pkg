@@ -12,30 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwauth
+package auth
 
 import (
 	"context"
+	"testing"
 
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
-type keyCtxToken struct{}
+func TestContextWithError(t *testing.T) {
 
-type wrapperCtx struct {
-	err error
-}
+	const wantErr = errors.UserNotFound("User Contiki not found")
+	ctx := withContextError(context.Background(), wantErr)
+	assert.NotNil(t, ctx)
 
-// FromContext returns an error not caught by the error handler
-func FromContext(ctx context.Context) error {
-	wrp, ok := ctx.Value(keyCtxToken{}).(wrapperCtx)
-	if !ok {
-		return nil
-	}
-	return errors.Wrap(wrp.err, "[mwauth] FromContext")
-}
-
-// withContextError creates a new context with an error attached.
-func withContextError(ctx context.Context, err error) context.Context {
-	return context.WithValue(ctx, keyCtxToken{}, wrapperCtx{err: err})
+	haveErr := FromContext(ctx)
+	assert.True(t, errors.IsUserNotFound(haveErr))
 }

@@ -17,13 +17,13 @@ package backendauth
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/mwauth"
+	"github.com/corestoreio/csfw/net/auth"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Default creates new mwauth.Option slice with the default configuration
+// Default creates new auth.Option slice with the default configuration
 // structure. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) mwauth.ScopedOptionFunc {
+func Default(opts ...cfgmodel.Option) auth.ScopedOptionFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -34,10 +34,10 @@ func Default(opts ...cfgmodel.Option) mwauth.ScopedOptionFunc {
 // PrepareOptions creates a closure around the type Backend. The closure will
 // be used during a scoped request to figure out the configuration depending on
 // the incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Backend) mwauth.ScopedOptionFunc {
+func PrepareOptions(be *Backend) auth.ScopedOptionFunc {
 
-	return func(sg config.ScopedGetter) []mwauth.Option {
-		var opts [8]mwauth.Option
+	return func(sg config.ScopedGetter) []auth.Option {
+		var opts [8]auth.Option
 		var i int
 		scp, id := sg.Scope()
 
@@ -46,7 +46,7 @@ func PrepareOptions(be *Backend) mwauth.ScopedOptionFunc {
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendauth] NetAuthEnable.Get"))
 		}
-		opts[i] = mwauth.WithIsActive(scp, id, on)
+		opts[i] = auth.WithIsActive(scp, id, on)
 		i++
 
 		// and so on ...
@@ -55,8 +55,8 @@ func PrepareOptions(be *Backend) mwauth.ScopedOptionFunc {
 	}
 }
 
-func optError(err error) []mwauth.Option {
-	return []mwauth.Option{func(s *mwauth.Service) error {
+func optError(err error) []auth.Option {
+	return []auth.Option{func(s *auth.Service) error {
 		return err
 	}}
 }

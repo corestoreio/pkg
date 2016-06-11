@@ -12,10 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwauth
+package backendauth_test
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/csfw/net/auth/backendauth"
 
-const errScopedConfigNotValid = `[mwauth] ScopedConfig %s invalid`
+// backend overall backend models for all tests
+var backend *backendauth.Backend
 
-var errConfigNotFound = errors.NewNotFoundf(`[mwauth] ScopedConfig not available`)
+// this would belong into the test suit setup
+func init() {
+	cfgStruct, err := backendauth.NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
+	backend = backendauth.New(cfgStruct)
+}

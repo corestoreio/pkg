@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwauth
+package auth
 
 import (
 	"net/http"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 type Authenticator interface {

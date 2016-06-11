@@ -18,18 +18,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package mwauth_test
+package auth_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/net/mwauth"
+	"github.com/corestoreio/csfw/net/auth"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func withError() mwauth.Option {
-	return func(s *mwauth.Service) error {
+func withError() auth.Option {
+	return func(s *auth.Service) error {
 		return errors.NewNotValidf("Paaaaanic!")
 	}
 }
@@ -43,7 +43,7 @@ func TestMustNew_Default(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = mwauth.MustNew(withError())
+	_ = auth.MustNew(withError())
 }
 
 func TestMustNew_Website(t *testing.T) {
@@ -55,5 +55,5 @@ func TestMustNew_Website(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = mwauth.MustNew(withError())
+	_ = auth.MustNew(withError())
 }

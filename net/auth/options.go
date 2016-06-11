@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwauth
+package auth
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // Option defines a function argument for the Cors type to apply options.
 type Option func(*Service) error
 
 // ScopedOptionFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during
-// a request.
+// options should be returned depending on the scope brought to you during a
+// request.
 type ScopedOptionFunc func(config.ScopedGetter) []Option
 
 // WithDefaultConfig applies the default configuration settings based for
@@ -51,6 +51,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	}
 }
 
+// WithIsActive enables or disables the authentication for a specific scope.
 func WithIsActive(scp scope.Scope, id int64, active bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
@@ -77,8 +78,7 @@ func WithIsActive(scp scope.Scope, id int64, active bool) Option {
 }
 
 // WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes.
-// Mainly used for debugging.
+// subsequent scopes. Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
 		s.defaultScopeCache.log = l
@@ -90,9 +90,9 @@ func WithLogger(l log.Logger) Option {
 // on the incoming scope within a request. For example applies the backend
 // configuration to the service.
 //
-// Once this option function has been set all other manually set option functions,
-// which accept a scope and a scope ID as an argument, will be overwritten by the
-// new values retrieved from the configuration service.
+// Once this option function has been set all other manually set option
+// functions, which accept a scope and a scope ID as an argument, will be
+// overwritten by the new values retrieved from the configuration service.
 //
 //	cfgStruct, err := backendauth.NewConfigStructure()
 //	if err != nil {
@@ -100,8 +100,8 @@ func WithLogger(l log.Logger) Option {
 //	}
 //	pb := backendauth.New(cfgStruct)
 //
-//	cors := mwauth.MustNewService(
-//		mwauth.WithOptionFactory(backendauth.PrepareOptions(pb)),
+//	cors := auth.MustNewService(
+//		auth.WithOptionFactory(backendauth.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) error {

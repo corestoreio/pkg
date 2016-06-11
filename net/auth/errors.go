@@ -12,22 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwauth
+package auth
 
-import (
-	"context"
-	"testing"
+import "github.com/corestoreio/csfw/util/errors"
 
-	"github.com/corestoreio/csfw/util/errors"
-	"github.com/stretchr/testify/assert"
-)
+const errScopedConfigNotValid = `[mwauth] ScopedConfig %s invalid`
 
-func TestContextWithError(t *testing.T) {
-
-	const wantErr = errors.UserNotFound("User Contiki not found")
-	ctx := withContextError(context.Background(), wantErr)
-	assert.NotNil(t, ctx)
-
-	haveErr := FromContext(ctx)
-	assert.True(t, errors.IsUserNotFound(haveErr))
-}
+var errConfigNotFound = errors.NewNotFoundf(`[mwauth] ScopedConfig not available`)
