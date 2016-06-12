@@ -32,7 +32,7 @@ func FromContext(ctx context.Context) error {
 	if !ok {
 		return nil
 	}
-	return errors.Wrap(wrp.err, "[mwcors] FromContext")
+	return errors.Wrap(wrp.err, "[cors] FromContext")
 }
 
 // withContextError creates a new context with an error attached.

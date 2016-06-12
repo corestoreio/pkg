@@ -45,14 +45,14 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) (err error) {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache, err = defaultScopedConfig()
-			return errors.Wrap(err, "[mwcors] Default Scope with Default Config")
+			return errors.Wrap(err, "[cors] Default Scope with Default Config")
 		}
 
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		s.scopeCache[h], err = defaultScopedConfig()
-		return errors.Wrapf(err, "[mwcors] Scope %s with Default Config", h)
+		return errors.Wrapf(err, "[cors] Scope %s with Default Config", h)
 	}
 }
 

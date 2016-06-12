@@ -66,10 +66,10 @@ func New(opts ...Option) (*Service, error) {
 		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
-		return nil, errors.Wrap(err, "[mwcors] Options WithDefaultConfig")
+		return nil, errors.Wrap(err, "[cors] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[mwcors] Options Any Config")
+		return nil, errors.Wrap(err, "[cors] Options Any Config")
 	}
 	return s, nil
 }
@@ -88,7 +88,7 @@ func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil { // can be nil because of the backend options where we have an array instead of a slice.
 			if err := opt(s); err != nil {
-				return errors.Wrap(err, "[mwcors] Service.Options")
+				return errors.Wrap(err, "[cors] Service.Options")
 			}
 		}
 	}
@@ -121,7 +121,7 @@ func (s *Service) WithCORS() mw.Middleware {
 				if s.defaultScopeCache.log.IsDebug() {
 					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.Object("request", r))
 				}
-				err = errors.Wrap(err, "[mwcors] FromContextRequestedStore")
+				err = errors.Wrap(err, "[cors] FromContextRequestedStore")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -134,7 +134,7 @@ func (s *Service) WithCORS() mw.Middleware {
 				if s.defaultScopeCache.log.IsDebug() {
 					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
 				}
-				err = errors.Wrap(err, "[mwcors] ConfigByScopedGetter")
+				err = errors.Wrap(err, "[cors] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
@@ -188,7 +188,7 @@ func (s *Service) configByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 
 	if s.scpOptionFnc != nil {
 		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[mwcors] Options by scpOptionFnc")
+			return scopedConfig{}, errors.Wrap(err, "[cors] Options by scpOptionFnc")
 		}
 	}
 
