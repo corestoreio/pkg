@@ -36,9 +36,10 @@ const (
 // supported by Store type.
 var allKeys = [9]string{KeyAudience, KeyExpiresAt, KeyID, KeyIssuedAt, KeyIssuer, KeyNotBefore, KeySubject, KeyStore, KeyUserID}
 
-// TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
-// You can override it to use another time value.  This is useful for testing or if your
-// server uses a different time zone than your tokens.
+// TimeFunc provides the current time when parsing token to validate "exp" claim
+// (expiration time). You can override it to use another time value.  This is
+// useful for testing or if your server uses a different time zone than your
+// tokens.
 var TimeFunc = time.Now
 
 func verifyConstantTime(aud, cmp []byte, required bool) bool {

@@ -1,5 +1,3 @@
-// +build go1.4
-
 package csjwt_test
 
 import (

@@ -37,9 +37,9 @@ func (m *SigningMethodRSA) Alg() string {
 	return m.Name
 }
 
-// Verify implements the Verify method from SigningMethod interface.
-// For the key you can use any of the WithRSA*Key*() functions.
-// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
+// Verify implements the Verify method from SigningMethod interface. For the key
+// you can use any of the WithRSA*Key*() functions. Error behaviour: Empty,
+// NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
 		return errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Verify.key")
@@ -67,9 +67,9 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 	return errors.NewNotValid(rsa.VerifyPKCS1v15(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig), "[csjwt] SigningMethodRSA.Verify.VerifyPKCS1v15")
 }
 
-// Sign implements the Sign method from SigningMethod interface.
-// For the key you can use any of the WithRSAPrivateKey*() functions.
-// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
+// Sign implements the Sign method from SigningMethod interface. For the key you
+// can use any of the WithRSAPrivateKey*() functions. Error behaviour: Empty,
+// NotImplemented, WriteFailed, NotValid.
 func (m *SigningMethodRSA) Sign(signingString []byte, key Key) ([]byte, error) {
 	if key.Error != nil {
 		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodRSA.Sign.key")

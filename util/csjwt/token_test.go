@@ -17,13 +17,16 @@ package csjwt_test
 import (
 	"testing"
 
+	"bytes"
+
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTokenAlg(t *testing.T) {
-
 	tests := []struct {
 		tok     csjwt.Token
 		wantAlg string
@@ -45,4 +48,22 @@ func TestTokenAlg(t *testing.T) {
 	for i, test := range tests {
 		assert.Exactly(t, test.wantAlg, test.tok.Alg(), "Index %d", i)
 	}
+}
+
+func TestToken_MarshalLog_Ok(t *testing.T) {
+	tk := csjwt.NewToken(jwtclaim.Map{"lang": "Golang", "extractMe": 3.14159})
+	buf := bytes.Buffer{}
+	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
+	lg.Debug("tokenTest", log.Marshal("xtoken", tk))
+	have := `tokenTest token: "eyJ0eXAiOiJKV1QifQo.eyJleHRyYWN0TWUiOjMuMTQxNTksImxhbmciOiJHb2xhbmcifQo"`
+	assert.Contains(t, buf.String(), have)
+}
+
+func TestToken_MarshalLog_Error(t *testing.T) {
+	tk := csjwt.NewToken(jwtclaim.Map{"lang": "Golang", "extractMe": make(chan struct{})})
+	buf := bytes.Buffer{}
+	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
+	lg.Debug("tokenTest", log.Marshal("xtoken", tk))
+	have := `tokenTest token_error: "github.com/corestoreio/csfw/util/csjwt/token.go:111: [csjwt] Token.SigningString.Serialize\ngithub.com/corestoreio/csfw/util/csjwt/encodeDecode.go:54: [csjwt] JSONEncoding.Serialize.Encode\njson: unsupported type: chan struct {}`
+	assert.Contains(t, buf.String(), have)
 }

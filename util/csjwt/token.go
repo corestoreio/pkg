@@ -1,22 +1,38 @@
+// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package csjwt
 
 import (
 	"bytes"
 	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// ContentTypeJWT defines the content type of a token. At the moment only JWT
-// is supported. JWE may be added in the future JSON Web Encryption (JWE).
+// ContentTypeJWT defines the content type of a token. At the moment only JWT is
+// supported. JWE may be added in the future JSON Web Encryption (JWE).
 // https://tools.ietf.org/html/rfc7519
 const ContentTypeJWT = `JWT`
 
-// TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
-// You can override it to use another time value.  This is useful for testing or if your
-// server uses a different time zone than your tokens.
+// TimeFunc provides the current time when parsing token to validate "exp" claim
+// (expiration time). You can override it to use another time value.  This is
+// useful for testing or if your server uses a different time zone than your
+// tokens.
 var TimeFunc = time.Now
 
 // Token represents a JWT Token.  Different fields will be used depending on
@@ -30,11 +46,11 @@ type Token struct {
 	Serializer
 }
 
-// NewToken creates a new Token and presets the header to typ = JWT.
-// A new token has not yet an assigned algorithm. The underlying default
-// template header consists of a two field struct for the minimum
-// requirements. If you need more header fields consider using a map or
-// the jwtclaim.HeadSegments type. Default header from function NewHead().
+// NewToken creates a new Token and presets the header to typ = JWT. A new token
+// has not yet an assigned algorithm. The underlying default template header
+// consists of a two field struct for the minimum requirements. If you need more
+// header fields consider using a map or the jwtclaim.HeadSegments type. Default
+// header from function NewHead().
 func NewToken(c Claimer) Token {
 	return Token{
 		Header: NewHead(),
@@ -42,8 +58,7 @@ func NewToken(c Claimer) Token {
 	}
 }
 
-// Alg returns the assigned algorithm to this token.
-// Can return an empty string.
+// Alg returns the assigned algorithm to this token. Can return an empty string.
 func (t Token) Alg() string {
 	if t.Header == nil {
 		return ""
@@ -52,10 +67,10 @@ func (t Token) Alg() string {
 	return conv.ToString(h)
 }
 
-// SignedString gets the complete, signed token.
-// Sets the header alg to the provided Signer.Alg() value.
-// Returns a byte slice, save for further processing.
-// This functions allows to sign a token with different signing methods.
+// SignedString gets the complete, signed token. Sets the header alg to the
+// provided Signer.Alg() value. Returns a byte slice, save for further
+// processing. This functions allows to sign a token with different signing
+// methods.
 func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 
 	if err := t.Header.Set(headerAlg, method.Alg()); err != nil {
@@ -80,11 +95,10 @@ func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 	return buf.Bytes(), nil
 }
 
-// SigningString generates the signing string.  This is the
-// most expensive part of the whole deal.  Unless you
-// need this for something special, just go straight for
-// the SignedString.
-// Returns a buffer which can be used for further modifications.
+// SigningString generates the signing string. This is the most expensive part
+// of the whole deal.  Unless you need this for something special, just go
+// straight for the SignedString. Returns a buffer which can be used for further
+// modifications.
 func (t Token) SigningString() (buf bytes.Buffer, err error) {
 
 	ser := t.Serializer
@@ -116,4 +130,16 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 		return
 	}
 	return
+}
+
+// MarshalLog marshals the token into an unsigned log.Field. It uses the function
+// SigningString().
+func (t Token) MarshalLog(kv log.KeyValuer) error {
+	buf, err := t.SigningString()
+	if err != nil {
+		kv.AddString("token_error", errors.PrintLoc(err))
+	} else {
+		kv.AddString("token", buf.String())
+	}
+	return nil
 }

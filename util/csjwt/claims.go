@@ -47,12 +47,11 @@ const (
 )
 
 // Header defines the contract for a type to act like a header. It must be able
-// to marshal and unmarshal itself.
-// The members of the JSON object represented by the Decoded JWT Header Segment
-// describe the signature applied to the JWT Header Segment and the JWT Payload
-// Segment and optionally additional properties of the JWT. Implementations MUST
-// understand the entire contents of the header; otherwise, the JWT MUST be
-// rejected for processing.
+// to marshal and unmarshal itself. The members of the JSON object represented
+// by the Decoded JWT Header Segment describe the signature applied to the JWT
+// Header Segment and the JWT Payload Segment and optionally additional
+// properties of the JWT. Implementations MUST understand the entire contents of
+// the header; otherwise, the JWT MUST be rejected for processing.
 type Header interface {
 	// Alg returns the name of the underlying algorithm
 	Alg() string
@@ -64,15 +63,16 @@ type Header interface {
 	Get(key string) (value string, err error)
 }
 
-// Head minimum default header.
-// To extend this header please use the struct jwtclaim.HeadSegments
+// Head minimum default header. To extend this header please use the struct
+// jwtclaim.HeadSegments
 type Head struct {
 	// Alg (algorithm) header parameter identifies the cryptographic algorithm
 	// used to secure the JWT. A list of reserved alg values is in Table 4. The
-	// processing of the "alg" (algorithm) header parameter, if present, requires
-	// that the value of the "alg" header parameter MUST be one that is both
-	// supported and for which there exists a key for use with that algorithm
-	// associated with the issuer of the JWT. This header parameter is REQUIRED.
+	// processing of the "alg" (algorithm) header parameter, if present,
+	// requires that the value of the "alg" header parameter MUST be one that is
+	// both supported and for which there exists a key for use with that
+	// algorithm associated with the issuer of the JWT. This header parameter is
+	// REQUIRED.
 	Algorithm string `json:"alg,omitempty"`
 	// Typ (type) header parameter is used to declare that this data structure
 	// is a JWT. If a "typ" parameter is present, it is RECOMMENDED that its
@@ -80,10 +80,9 @@ type Head struct {
 	Type string `json:"typ,omitempty"`
 }
 
-// NewHead creates a new minimum default header.
-// Arguments alg can be optionally applied one time to define an algorithm
-// but in all cases the algorithm gets set by the signing method.
-// For test cases you can pass an algorithm argument.
+// NewHead creates a new minimum default header. Arguments alg can be optionally
+// applied one time to define an algorithm but in all cases the algorithm gets
+// set by the signing method. For test cases you can pass an algorithm argument.
 // To extend this header please use the struct jwtclaim.HeadSegments
 func NewHead(alg ...string) *Head {
 	var a string
@@ -119,8 +118,8 @@ func (s *Head) GoString() string {
 
 const errHeaderKeyNotSupported = "[csjwt] Header %q not yet supported. Please switch to type jwtclaim.HeadSegments."
 
-// Set sets a value. Key must be one of the constants Header*.
-// Error behaviour: NotSupported
+// Set sets a value. Key must be one of the constants Header*. Error behaviour:
+// NotSupported
 func (s *Head) Set(key, value string) error {
 	switch key {
 	case headerAlg:
@@ -133,8 +132,8 @@ func (s *Head) Set(key, value string) error {
 	return nil
 }
 
-// Get returns a value or nil or an error. Key must be one of the constants Header*.
-// Error behaviour: NotSupported
+// Get returns a value or nil or an error. Key must be one of the constants
+// Header*. Error behaviour: NotSupported
 func (s *Head) Get(key string) (string, error) {
 	switch key {
 	case headerAlg:
@@ -145,9 +144,9 @@ func (s *Head) Get(key string) (string, error) {
 	return "", errors.NewNotSupportedf(errHeaderKeyNotSupported, key)
 }
 
-// MergeClaims merges the sources Claimers into the destination claimer existing token claims and overwrites
-// existing entries. Destination Claimer must be a pointer.
-// Error behaviour: NotSupported
+// MergeClaims merges the sources Claimers into the destination claimer existing
+// token claims and overwrites existing entries. Destination Claimer must be a
+// pointer. Error behaviour: NotSupported
 func MergeClaims(dst Claimer, srcs ...Claimer) error {
 	if dst == nil || len(srcs) == 0 {
 		return nil

@@ -30,23 +30,23 @@ const HTTPFormInputName = `access_token`
 
 // Verification allows to parse and verify a token with custom options.
 type Verification struct {
-	// FormInputName defines the name of the HTML form input type in which
-	// the token has been stored. If empty, the form the gets ignored.
+	// FormInputName defines the name of the HTML form input type in which the
+	// token has been stored. If empty, the form the gets ignored.
 	FormInputName string
-	// CookieName defines the name of the cookie where the token has been
-	// stored. If empty, cookie parsing gets ignored.
+	// CookieName defines the name of the cookie where the token has been stored. If
+	// empty, cookie parsing gets ignored.
 	CookieName string
 	// Methods for verifying and signing a token
 	Methods SignerSlice
 
-	// Decoder interface to pass in a custom decoder parser.
-	// Can be nil, falls back to JSON
+	// Decoder interface to pass in a custom decoder parser. Can be nil, falls
+	// back to JSON.
 	Deserializer
 }
 
 // NewVerification creates new verification parser with the default signing
-// method HS256, if availableSigners slice argument is empty.
-// Nil arguments are forbidden.
+// method HS256, if availableSigners slice argument is empty. Nil arguments are
+// forbidden.
 func NewVerification(availableSigners ...Signer) *Verification {
 	return &Verification{
 		Methods:      availableSigners,
@@ -55,10 +55,9 @@ func NewVerification(availableSigners ...Signer) *Verification {
 }
 
 // Parse parses a rawToken into the destination token and may return an error.
-// You must make sure to set the correct expected
-// headers and claims in the template Token. The Header and Claims field in the
-// destination token must be a pointer as the token itself.
-// Error behaviour: Empty, NotFound, NotValid
+// You must make sure to set the correct expected headers and claims in the
+// template Token. The Header and Claims field in the destination token must be
+// a pointer as the token itself. Error behaviour: Empty, NotFound, NotValid
 func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) error {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
@@ -139,10 +138,10 @@ func (vf *Verification) getMethod(t *Token) (Signer, error) {
 	return nil, errors.NewNotFoundf("[csjwt] Algorithm %q not found in method list %q", alg, vf.Methods)
 }
 
-// ParseFromRequest same as Parse but extracts the token from a request.
-// First it searches for the token bearer in the header HTTPHeaderAuthorization.
-// If not found the request POST form gets parsed and the FormInputName gets
-// used to lookup the token value.
+// ParseFromRequest same as Parse but extracts the token from a request. First
+// it searches for the token bearer in the header HTTPHeaderAuthorization. If
+// not found the request POST form gets parsed and the FormInputName gets used
+// to lookup the token value.
 func (vf *Verification) ParseFromRequest(dst *Token, keyFunc Keyfunc, req *http.Request) error {
 	// Look for an Authorization header
 	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
@@ -186,8 +185,9 @@ func (vf *Verification) parseForm(dst *Token, keyFunc Keyfunc, req *http.Request
 	return errors.NewNotFoundf(errTokenNotInRequest)
 }
 
-// SplitForVerify splits the token into two parts: the payload and the signature.
-// An error gets returned if the number of dots don't match with the JWT standard.
+// SplitForVerify splits the token into two parts: the payload and the
+// signature. An error gets returned if the number of dots don't match with the
+// JWT standard.
 func SplitForVerify(rawToken []byte) (signingString, signature []byte, err error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
@@ -196,8 +196,8 @@ func SplitForVerify(rawToken []byte) (signingString, signature []byte, err error
 	return rawToken[:pos[1]], rawToken[pos[1]+1:], nil
 }
 
-// dotPositions returns the position of the dots within the token slice
-// and if the amount of dots are valid for a JWT.
+// dotPositions returns the position of the dots within the token slice and if
+// the amount of dots are valid for a JWT.
 func dotPositions(t []byte) (pos [2]int, valid bool) {
 	const aDot byte = '.'
 	c := 0

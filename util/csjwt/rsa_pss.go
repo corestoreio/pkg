@@ -8,7 +8,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// SigningMethodRSAPSS implements the RSAPSS family of signing methods signing methods
+// SigningMethodRSAPSS implements the RSAPSS family of signing methods signing
+// methods.
 type SigningMethodRSAPSS struct {
 	SigningMethodRSA
 	Options rsa.PSSOptions
@@ -27,24 +28,27 @@ func newSigningMethodRSAPSS(n string, h crypto.Hash) *SigningMethodRSAPSS {
 	}
 }
 
-// NewSigningMethodPS256 creates a new 256bit RSAPSS SHA instance and registers it.
+// NewSigningMethodPS256 creates a new 256bit RSAPSS SHA instance and registers
+// it.
 func NewSigningMethodPS256() *SigningMethodRSAPSS {
 	return newSigningMethodRSAPSS(PS256, crypto.SHA256)
 }
 
-// NewSigningMethodPS384 creates a new 384bit RSAPSS SHA instance and registers it.
+// NewSigningMethodPS384 creates a new 384bit RSAPSS SHA instance and registers
+// it.
 func NewSigningMethodPS384() *SigningMethodRSAPSS {
 	return newSigningMethodRSAPSS(PS384, crypto.SHA384)
 }
 
-// NewSigningMethodPS512 creates a new 512bit RSAPSS SHA instance and registers it.
+// NewSigningMethodPS512 creates a new 512bit RSAPSS SHA instance and registers
+// it.
 func NewSigningMethodPS512() *SigningMethodRSAPSS {
 	return newSigningMethodRSAPSS(PS512, crypto.SHA512)
 }
 
-// Verify implements the Verify method from SigningMethod interface.
-// For the key you can use any of the WithRSA*Key*() functions.
-// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
+// Verify implements the Verify method from SigningMethod interface. For the key
+// you can use any of the WithRSA*Key*() functions. Error behaviour: Empty,
+// NotImplemented, WriteFailed, NotValid
 func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
 		return errors.Wrap(key.Error, "[csjwt] SigningMethodRSAPSS.Verify.key")
@@ -71,9 +75,9 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) e
 	return errors.NewNotValid(rsa.VerifyPSS(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig, &m.Options), "[csjwt] SigningMethodRSAPSS.Verify.VerifyPSS")
 }
 
-// Sign implements the Sign method from SigningMethod interface.
-// For the key you can use any of the WithRSAPrivateKey*() functions.
-// Error behaviour: Empty, NotImplemented, WriteFailed, NotValid
+// Sign implements the Sign method from SigningMethod interface. For the key you
+// can use any of the WithRSAPrivateKey*() functions. Error behaviour: Empty,
+// NotImplemented, WriteFailed, NotValid.
 func (m *SigningMethodRSAPSS) Sign(signingString []byte, key Key) ([]byte, error) {
 	if key.Error != nil {
 		return nil, errors.Wrap(key.Error, "[csjwt] SigningMethodRSAPSS.Sign.key")

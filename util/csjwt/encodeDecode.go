@@ -58,6 +58,7 @@ func (jp JSONEncoding) Serialize(src interface{}) ([]byte, error) {
 
 // GobEncoding encodes JWT values using encoding/gob. This is the simplest
 // encoder and can handle complex types via gob.Register.
+// TODO(CS): Add gob priming to avoid storing type information in the token.
 type GobEncoding struct{}
 
 // Serialize encodes a value using gob.
@@ -101,8 +102,7 @@ func EncodeSegment(seg []byte) []byte {
 }
 
 // DecodeSegment decodes JWT specific base64url encoding with padding stripped.
-// Returns a new byte slice.
-// Error behaviour: NotValid
+// Returns a new byte slice. Error behaviour: NotValid.
 func DecodeSegment(seg []byte) ([]byte, error) {
 	dbuf := make([]byte, base64.RawURLEncoding.DecodedLen(len(seg)))
 	n, err := base64.RawURLEncoding.Decode(dbuf, seg)

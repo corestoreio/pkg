@@ -8,13 +8,13 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Map default type for the Claim field in a token. Slowest but
-// most flexible type. For speed, use a custom struct type with
-// embedding StandardClaims and ffjson generated en-/decoder.
+// Map default type for the Claim field in a token. Slowest but most flexible
+// type. For speed, use a custom struct type with embedding StandardClaims and
+// ffjson generated en-/decoder.
 type Map map[string]interface{}
 
-// VerifyAudience compares the aud claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// VerifyAudience compares the aud claim against cmp. If required is false, this
+// method will return true if the value matches or is unset
 func (m Map) VerifyAudience(cmp string, req bool) bool {
 	aud := conv.ToByte(m["aud"])
 	return verifyConstantTime(aud, []byte(cmp), req)
@@ -39,34 +39,34 @@ func (m Map) skew() time.Duration {
 	return 0
 }
 
-// Compares the exp claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// Compares the exp claim against cmp. If required is false, this method will
+// return true if the value matches or is unset
 func (m Map) VerifyExpiresAt(cmp int64, req bool) bool {
 	return verifyExp(m.skew(), m.exp(), cmp, req)
 }
 
-// Compares the iat claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// Compares the iat claim against cmp. If required is false, this method will
+// return true if the value matches or is unset.
 func (m Map) VerifyIssuedAt(cmp int64, req bool) bool {
 	return verifyIat(m.iat(), cmp, req)
 }
 
-// Compares the iss claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// Compares the iss claim against cmp. If required is false, this method will
+// return true if the value matches or is unset.
 func (m Map) VerifyIssuer(cmp string, req bool) bool {
 	iss := conv.ToByte(m["iss"])
 	return verifyConstantTime(iss, []byte(cmp), req)
 }
 
-// Compares the nbf claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// Compares the nbf claim against cmp. If required is false, this method will
+// return true if the value matches or is unset.
 func (m Map) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(m.skew(), m.nbf(), cmp, req)
 }
 
-// Validates time based claims "exp, iat, nbf". There is no accounting for
-// clock skew. As well, if any of the above claims are not in the token, it
-// will still be considered a valid claim.
+// Validates time based claims "exp, iat, nbf". There is no accounting for clock
+// skew. As well, if any of the above claims are not in the token, it will still
+// be considered a valid claim.
 func (m Map) Valid() error {
 
 	now := TimeFunc().Unix()

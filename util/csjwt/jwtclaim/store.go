@@ -39,15 +39,16 @@ func NewStore() *Store {
 }
 
 // Store extends the StandardClaim with important fields for requesting the
-// correct store view, user ID and maybe some more useful fields.
-// This struct is for your convenience.
+// correct store view, user ID and maybe some more useful fields. This struct is
+// for your convenience.
 // ffjson: noencoder
 type Store struct {
 	*Standard
 	Store string `json:"store,omitempty"`
-	// UserID add here any user ID you might will be but always bear in mind that
-	// when adding a numeric auto increment ID, like customer_id from the MySQL
-	// table customer_entity or admin_user you might leak sensitive information.
+	// UserID add here any user ID you might will be but always bear in mind
+	// that when adding a numeric auto increment ID, like customer_id from the
+	// MySQL table customer_entity or admin_user you might leak sensitive
+	// information.
 	UserID string `json:"userid,omitempty"`
 }
 

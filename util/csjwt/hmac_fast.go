@@ -21,9 +21,9 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// SigningMethodHMACFast implements the HMAC-SHA family of pre-warmed signing methods.
-// Less allocations, bytes and a little bit faster but maybe the underlying
-// mutex can become the bottleneck.
+// SigningMethodHMACFast implements the HMAC-SHA family of pre-warmed signing
+// methods. Less allocations, bytes and a little bit faster but maybe the
+// underlying mutex can become the bottleneck.
 type SigningMethodHMACFast struct {
 	Name string
 	ht   hmacTank
@@ -78,9 +78,9 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 		return errors.Wrap(err, "[csjwt] SigningMethodHMACFast.Verify.DecodeSegment")
 	}
 
-	// This signing method is symmetric, so we validate the signature
-	// by reproducing the signature from the signing string and key, then
-	// comparing that against the provided signature.
+	// This signing method is symmetric, so we validate the signature by
+	// reproducing the signature from the signing string and key, then comparing
+	// that against the provided signature.
 	hasher := m.ht.get()
 	defer m.ht.put(hasher)
 

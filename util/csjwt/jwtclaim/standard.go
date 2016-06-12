@@ -16,68 +16,63 @@ import (
 type Standard struct {
 	// TimeSkew duration of time skew we allow between signer and verifier.
 	TimeSkew time.Duration `json:"-"`
-	// Audience claim identifies the recipients that the JWT is
-	// intended for.  Each principal intended to process the JWT MUST
-	// identify itself with a value in the audience claim.  If the principal
-	// processing the claim does not identify itself with a value in the
-	// "aud" claim when this claim is present, then the JWT MUST be
-	// rejected.  In the general case, the "aud" value is an array of case-
-	// sensitive strings, each containing a StringOrURI value.  In the
-	// special case when the JWT has one audience, the "aud" value MAY be a
-	// single case-sensitive string containing a StringOrURI value.  The
-	// interpretation of audience values is generally application specific.
-	// Use of this claim is OPTIONAL.
+	// Audience claim identifies the recipients that the JWT is intended for.
+	// Each principal intended to process the JWT MUST identify itself with a
+	// value in the audience claim.  If the principal processing the claim does
+	// not identify itself with a value in the "aud" claim when this claim is
+	// present, then the JWT MUST be rejected.  In the general case, the "aud"
+	// value is an array of case- sensitive strings, each containing a
+	// StringOrURI value.  In the special case when the JWT has one audience,
+	// the "aud" value MAY be a single case-sensitive string containing a
+	// StringOrURI value.  The interpretation of audience values is generally
+	// application specific. Use of this claim is OPTIONAL.
 	Audience string `json:"aud,omitempty"`
-	// ExpiresAt claim identifies the expiration time on
-	// or after which the JWT MUST NOT be accepted for processing.  The
-	// processing of the "exp" claim requires that the current date/time
-	// MUST be before the expiration date/time listed in the "exp" claim.
-	// Implementers MAY provide for some small leeway, usually no more than
-	// a few minutes, to account for clock skew.  Its value MUST be a number
-	// containing a NumericDate value.  Use of this claim is OPTIONAL.
+	// ExpiresAt claim identifies the expiration time on or after which the JWT
+	// MUST NOT be accepted for processing.  The processing of the "exp" claim
+	// requires that the current date/time MUST be before the expiration
+	// date/time listed in the "exp" claim. Implementers MAY provide for some
+	// small leeway, usually no more than a few minutes, to account for clock
+	// skew.  Its value MUST be a number containing a NumericDate value.  Use of
+	// this claim is OPTIONAL.
 	ExpiresAt int64 `json:"exp,omitempty"`
-	// ID claim provides a unique identifier for the JWT.
-	// The identifier value MUST be assigned in a manner that ensures that
-	// there is a negligible probability that the same value will be
-	// accidentally assigned to a different data object; if the application
-	// uses multiple issuers, collisions MUST be prevented among values
-	// produced by different issuers as well.  The "jti" claim can be used
-	// to prevent the JWT from being replayed.  The "jti" value is a case-
-	// sensitive string.  Use of this claim is OPTIONAL.
-	ID string `json:"jti,omitempty"`
-	// IssuedAt claim identifies the time at which the JWT was
-	// issued.  This claim can be used to determine the age of the JWT.  Its
-	// value MUST be a number containing a NumericDate value.  Use of this
+	// ID claim provides a unique identifier for the JWT. The identifier value
+	// MUST be assigned in a manner that ensures that there is a negligible
+	// probability that the same value will be accidentally assigned to a
+	// different data object; if the application uses multiple issuers,
+	// collisions MUST be prevented among values produced by different issuers
+	// as well.  The "jti" claim can be used to prevent the JWT from being
+	// replayed.  The "jti" value is a case- sensitive string.  Use of this
 	// claim is OPTIONAL.
+	ID string `json:"jti,omitempty"`
+	// IssuedAt claim identifies the time at which the JWT was issued.  This
+	// claim can be used to determine the age of the JWT.  Its value MUST be a
+	// number containing a NumericDate value.  Use of this claim is OPTIONAL.
 	IssuedAt int64 `json:"iat,omitempty"`
-	// Issuer claim identifies the principal that issued the
-	// JWT.  The processing of this claim is generally application specific.
-	// The "iss" value is a case-sensitive string containing a StringOrURI
-	// value.  Use of this claim is OPTIONAL.
+	// Issuer claim identifies the principal that issued the JWT.  The
+	// processing of this claim is generally application specific. The "iss"
+	// value is a case-sensitive string containing a StringOrURI value.  Use of
+	// this claim is OPTIONAL.
 	Issuer string `json:"iss,omitempty"`
-	// NotBefore claim identifies the time before which the JWT
-	// MUST NOT be accepted for processing.  The processing of the "nbf"
-	// claim requires that the current date/time MUST be after or equal to
-	// the not-before date/time listed in the "nbf" claim.  Implementers MAY
-	// provide for some small leeway, usually no more than a few minutes, to
-	// account for clock skew.  Its value MUST be a number containing a
-	// NumericDate value.  Use of this claim is OPTIONAL.
+	// NotBefore claim identifies the time before which the JWT MUST NOT be
+	// accepted for processing.  The processing of the "nbf" claim requires that
+	// the current date/time MUST be after or equal to the not-before date/time
+	// listed in the "nbf" claim.  Implementers MAY provide for some small
+	// leeway, usually no more than a few minutes, to account for clock skew.
+	// Its value MUST be a number containing a NumericDate value.  Use of this
+	// claim is OPTIONAL.
 	NotBefore int64 `json:"nbf,omitempty"`
-	// Subject claim identifies the principal that is the
-	// subject of the JWT.  The claims in a JWT are normally statements
-	// about the subject.  The subject value MUST either be scoped to be
-	// locally unique in the context of the issuer or be globally unique.
-	// The processing of this claim is generally application specific.  The
-	// "sub" value is a case-sensitive string containing a StringOrURI
-	// value.  Use of this claim is OPTIONAL.
+	// Subject claim identifies the principal that is the subject of the JWT.
+	// The claims in a JWT are normally statements about the subject.  The
+	// subject value MUST either be scoped to be locally unique in the context
+	// of the issuer or be globally unique. The processing of this claim is
+	// generally application specific.  The "sub" value is a case-sensitive
+	// string containing a StringOrURI value.  Use of this claim is OPTIONAL.
 	Subject string `json:"sub,omitempty"`
 }
 
-// Valid validates time based claims "exp, iat, nbf".
-// There is no accounting for clock skew.
-// As well, if any of the above claims are not in the token, it will still
-// be considered a valid claim.
-// Error behaviour: NotValid
+// Valid validates time based claims "exp, iat, nbf". There is no accounting for
+// clock skew. As well, if any of the above claims are not in the token, it will
+// still be considered a valid claim. Error behaviour: NotValid
 func (s *Standard) Valid() error {
 
 	now := TimeFunc().Unix()
@@ -102,8 +97,8 @@ func (s *Standard) Valid() error {
 	return nil
 }
 
-// Set sets a value. Key must be one of the constants Claim*.
-// Error behaviour: NotSupported, NotValid
+// Set sets a value. Key must be one of the constants Claim*. Error behaviour:
+// NotSupported, NotValid
 func (s *Standard) Set(key string, value interface{}) (err error) {
 	switch key {
 	case KeyAudience:
@@ -136,8 +131,8 @@ func (s *Standard) Set(key string, value interface{}) (err error) {
 	return err
 }
 
-// Get returns a value or nil or an error. Key must be one of the constants Claim*.
-// Error behaviour: NotSupported
+// Get returns a value or nil or an error. Key must be one of the constants
+// Claim*. Error behaviour: NotSupported
 func (s *Standard) Get(key string) (interface{}, error) {
 	switch key {
 	case KeyAudience:
@@ -176,32 +171,32 @@ func (s *Standard) Keys() []string {
 	return allKeys[:7]
 }
 
-// VerifyAudience compares the aud claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// VerifyAudience compares the aud claim against cmp. If required is false, this
+// method will return true if the value matches or is unset.
 func (s *Standard) VerifyAudience(cmp string, req bool) bool {
 	return verifyConstantTime([]byte(s.Audience), []byte(cmp), req)
 }
 
-// VerifyExpiresAt compares the exp claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// VerifyExpiresAt compares the exp claim against cmp. If required is false,
+// this method will return true if the value matches or is unset.
 func (s *Standard) VerifyExpiresAt(cmp int64, req bool) bool {
 	return verifyExp(s.TimeSkew, s.ExpiresAt, cmp, req)
 }
 
-// VerifyIssuedAt compares the iat claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// VerifyIssuedAt compares the iat claim against cmp. If required is false, this
+// method will return true if the value matches or is unset.
 func (s *Standard) VerifyIssuedAt(cmp int64, req bool) bool {
 	return verifyIat(s.IssuedAt, cmp, req)
 }
 
-// VerifyIssuer compares the iss claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// VerifyIssuer compares the iss claim against cmp. If required is false, this
+// method will return true if the value matches or is unset.
 func (s *Standard) VerifyIssuer(cmp string, req bool) bool {
 	return verifyConstantTime([]byte(s.Issuer), []byte(cmp), req)
 }
 
-// VerifyNotBefore compares the nbf claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
+// VerifyNotBefore compares the nbf claim against cmp. If required is false,
+// this method will return true if the value matches or is unset.
 func (s *Standard) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(s.TimeSkew, s.NotBefore, cmp, req)
 }
