@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwjwt_test
+package jwt_test
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/mwjwt"
+	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -36,8 +36,8 @@ import (
 
 const benchTokenCount = 100
 
-func benchBlackList(b *testing.B, bl mwjwt.Blacklister) {
-	jwts := mwjwt.MustNewService()
+func benchBlackList(b *testing.B, bl jwt.Blacklister) {
+	jwts := jwt.MustNewService()
 	var tokens [benchTokenCount][]byte
 
 	for i := 0; i < benchTokenCount; i++ {
@@ -77,8 +77,8 @@ func BenchmarkBlackListFreeCache_Parallel(b *testing.B) {
 	benchBlackList(b, bl)
 }
 
-func bmServeHTTP(b *testing.B, opts ...mwjwt.Option) {
-	jwts, err := mwjwt.NewService(opts...)
+func bmServeHTTP(b *testing.B, opts ...jwt.Option) {
+	jwts, err := jwt.NewService(opts...)
 	if err != nil {
 		b.Error(err)
 	}
@@ -100,7 +100,7 @@ func bmServeHTTP(b *testing.B, opts ...mwjwt.Option) {
 	if err != nil {
 		b.Error(err)
 	}
-	mwjwt.SetHeaderAuthorization(req, token.Raw)
+	jwt.SetHeaderAuthorization(req, token.Raw)
 	w := httptest.NewRecorder()
 
 	cr := cfgmock.NewService()
@@ -122,7 +122,7 @@ func bmServeHTTP(b *testing.B, opts ...mwjwt.Option) {
 	}
 }
 
-var keyBenchmarkHMACPW = mwjwt.WithKey(scope.Default, 0, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
+var keyBenchmarkHMACPW = jwt.WithKey(scope.Default, 0, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
 
 func BenchmarkServeHTTPHMAC(b *testing.B) {
 	bmServeHTTP(b, keyBenchmarkHMACPW)
@@ -132,13 +132,13 @@ func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
 	bl := blacklist.NewMap()
 	bmServeHTTP(b,
 		keyBenchmarkHMACPW,
-		mwjwt.WithBlacklist(bl),
+		jwt.WithBlacklist(bl),
 	)
 	// b.Logf("Blacklist Items %d", bl.Len())
 }
 
 func BenchmarkServeHTTPRSAGenerator(b *testing.B) {
-	bmServeHTTP(b, mwjwt.WithKey(scope.Default, 0, csjwt.WithRSAGenerated()))
+	bmServeHTTP(b, jwt.WithKey(scope.Default, 0, csjwt.WithRSAGenerated()))
 }
 
 func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
@@ -161,9 +161,9 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Single(b *testing.B) {
 
 func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (http.Handler, context.Context, []byte) {
 
-	jwts := mwjwt.MustNewService(
-		mwjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, err := mwjwt.FromContext(r.Context())
+	jwts := jwt.MustNewService(
+		jwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := jwt.FromContext(r.Context())
 			if err != nil {
 				b.Fatal(err) // epic fail
 			}
@@ -171,7 +171,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (http.Handler, 
 		})),
 	)
 	// below two lines comment out enables the null black list
-	//jwts.Blacklist = mwjwt.NewBlackListFreeCache(0)
+	//jwts.Blacklist = jwt.NewBlackListFreeCache(0)
 	jwts.Blacklist = blacklist.NewMap()
 
 	srv := storemock.NewEurozzyService(
@@ -191,7 +191,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (http.Handler, 
 	}
 
 	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := mwjwt.FromContext(r.Context())
+		_, err := jwt.FromContext(r.Context())
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -216,7 +216,7 @@ func getRequestWithToken(b *testing.B, token []byte) *http.Request {
 	if err != nil {
 		b.Fatal(err)
 	}
-	mwjwt.SetHeaderAuthorization(req, token)
+	jwt.SetHeaderAuthorization(req, token)
 	return req
 }
 
@@ -240,18 +240,18 @@ func benchmarkServeHTTPDefaultConfigBlackListLoop(b *testing.B, h http.Handler, 
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	      8366 ns/op	    3194 B/op	      43 allocs/op => no maps, freecache
 func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
-	jwts := mwjwt.MustNewService(
-		mwjwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, err := mwjwt.FromContext(r.Context())
+	jwts := jwt.MustNewService(
+		jwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, err := jwt.FromContext(r.Context())
 			if err != nil {
 				b.Fatal(err)
 			}
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		})),
-		mwjwt.WithExpiration(scope.Default, 0, time.Second*15),
-		mwjwt.WithExpiration(scope.Website, 1, time.Second*25),
-		mwjwt.WithKey(scope.Website, 1, csjwt.WithPasswordRandom()),
-		mwjwt.WithTemplateToken(scope.Website, 1, func() csjwt.Token {
+		jwt.WithExpiration(scope.Default, 0, time.Second*15),
+		jwt.WithExpiration(scope.Website, 1, time.Second*25),
+		jwt.WithKey(scope.Website, 1, csjwt.WithPasswordRandom()),
+		jwt.WithTemplateToken(scope.Website, 1, func() csjwt.Token {
 			return csjwt.Token{
 				Header: csjwt.NewHead(),
 				Claims: jwtclaim.NewStore(),
@@ -261,7 +261,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	// below two lines comment out enables the null black list
 	jwts.Blacklist = blacklist.NewFreeCache(0)
-	//jwts.Blacklist = mwjwt.NewBlackListSimpleMap()
+	//jwts.Blacklist = jwt.NewBlackListSimpleMap()
 	// for now it doesn't matter which blacklist version you use as the bottle neck
 	// is somewhere else.
 
@@ -304,7 +304,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		tok, err := mwjwt.FromContext(ctx)
+		tok, err := jwt.FromContext(ctx)
 		if err != nil {
 			b.Fatalf("Error: %s\n%#v", err, tok)
 		}

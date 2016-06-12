@@ -12,5 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mwjwt provides a middleware for JSON web token authentication.
-package mwjwt
+package jwt
+
+import (
+	"time"
+
+	"github.com/corestoreio/csfw/util/csjwt"
+)
+
+// DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
+// ConfigSigningMethod model returns an empty string.
+const DefaultSigningMethod = csjwt.HS512
+
+// DefaultExpire duration when a token expires
+const DefaultExpire = time.Hour
+
+// DefaultSkew duration of time skew we allow between signer and verifier.
+const DefaultSkew = time.Minute * 2

@@ -22,8 +22,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/mwjwt"
-	"github.com/corestoreio/csfw/net/mwjwt/backendjwt"
+	"github.com/corestoreio/csfw/net/jwt"
+	"github.com/corestoreio/csfw/net/jwt/backendjwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
@@ -46,8 +46,8 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	}
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
-	jwts := mwjwt.MustNewService(
-		mwjwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
+	jwts := jwt.MustNewService(
+		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -101,8 +101,8 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	}
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
-	jwts := mwjwt.MustNewService(
-		mwjwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
+	jwts := jwt.MustNewService(
+		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 	)
 
 	pv := cfgmock.PathValue{
@@ -137,9 +137,9 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	assert.Exactly(t, fmt.Sprintf("%#v", scNew), fmt.Sprintf("%#v", scCached))
 }
 
-func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *mwjwt.Service, pb *backendjwt.Backend) {
+func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *jwt.Service, pb *backendjwt.Backend) {
 	pb = backendjwt.New(cfgStruct, opts...)
-	jwts = mwjwt.MustNewService(mwjwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
+	jwts = jwt.MustNewService(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
 	return
 }
 
@@ -219,7 +219,7 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 
 	assert.Exactly(t, scope.DefaultHash, sc.ScopeHash)
 	assert.False(t, sc.Key.IsEmpty())
-	assert.Exactly(t, mwjwt.DefaultExpire, sc.Expire)
+	assert.Exactly(t, jwt.DefaultExpire, sc.Expire)
 	assert.Exactly(t, csjwt.HS256, sc.SigningMethod.Alg())
 	assert.False(t, sc.EnableJTI)
 	assert.Nil(t, sc.ErrorHandler)

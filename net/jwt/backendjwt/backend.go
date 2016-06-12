@@ -20,9 +20,9 @@ import (
 	"github.com/corestoreio/csfw/config/source"
 )
 
-// Backend just exported for the sake of documentation. See fields
-// for more information. The PkgBackend handles the reading and writing
-// of configuration values within this package.
+// Backend just exported for the sake of documentation. See fields for more
+// information. The PkgBackend handles the reading and writing of configuration
+// values within this package.
 type Backend struct {
 	cfgmodel.PkgBackend
 
@@ -73,18 +73,17 @@ type Backend struct {
 	NetJwtECDSAKeyPassword cfgmodel.Obscure
 }
 
-// New initializes the backend configuration models containing the
-// cfgpath.Route variable to the appropriate entries.
-// The function Load() will be executed to apply the SectionSlice
-// to all models. See Load() for more details.
+// New initializes the backend configuration models containing the cfgpath.Route
+// variable to the appropriate entries. The function Load() will be executed to
+// apply the SectionSlice to all models. See Load() for more details.
 func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	return (&Backend{}).Load(cfgStruct, opts...)
 }
 
-// Load creates the configuration models for each PkgBackend field.
-// Internal mutex will protect the fields during loading.
-// The argument SectionSlice will be applied to all models.
-// Obscure types needs the cfgmodel.Encryptor to be set.
+// Load creates the configuration models for each PkgBackend field. Internal
+// mutex will protect the fields during loading. The argument SectionSlice will
+// be applied to all models. Obscure types needs the cfgmodel.Encryptor to be
+// set.
 func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	pp.Lock()
 	defer pp.Unlock()

@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwjwt
+package jwt
 
 import (
 	"net/http"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(*Service) error
 
 // ScopedOptionFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during
-// a request.
+// options should be returned depending on the scope brought to you during a
+// request.
 type ScopedOptionFunc func(config.ScopedGetter) []Option
 
 // scopedConfig private internal scoped based configuration
@@ -41,11 +41,11 @@ type scopedConfig struct {
 	ScopeHash scope.Hash
 	// Disabled if true disables JWT completely
 	Disabled bool
-	// Key contains the HMAC, RSA or ECDSA sensitive data. Yes the csjwt.Key
-	// must not be embedded into this struct because otherwise when printing
-	// or logging the sensitive data from csjwt.Key gets leaked into loggers
-	// or where ever. If key would be lower case then %#v still prints
-	// every field of the csjwt.Key.
+	// Key contains the HMAC, RSA or ECDSA sensitive data. The csjwt.Key must
+	// not be embedded into this struct because otherwise when printing or
+	// logging the sensitive data from csjwt.Key gets leaked into loggers or
+	// where ever. If key would be lower case then %#v still prints every field
+	// of the csjwt.Key.
 	Key csjwt.Key
 	// Expire defines the duration when the token is about to expire
 	Expire time.Duration
@@ -53,20 +53,21 @@ type scopedConfig struct {
 	Skew time.Duration
 	// SigningMethod how to sign the JWT. For default value see the OptionFuncs
 	SigningMethod csjwt.Signer
-	// Verifier token parser and verifier bound to ONE signing method. Setting
-	// a new SigningMethod also overwrites the JWTVerify pointer.
-	// TODO(newbies): For Verification add Options for setting custom Unmarshaler, HTTP FORM input name and cookie name.
+	// Verifier token parser and verifier bound to ONE signing method. Setting a
+	// new SigningMethod also overwrites the JWTVerify pointer. TODO(newbies):
+	// For Verification add Options for setting custom Unmarshaler, HTTP FORM
+	// input name and cookie name.
 	Verifier *csjwt.Verification
 	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	EnableJTI bool
 	// ErrorHandler specific for this scope. if nil, the the next handler in
 	// the chain will be called.
 	ErrorHandler http.Handler
-	// KeyFunc will receive the parsed token and should return the key for validating.
+	// KeyFunc will receive the parsed token and should return the key for
+	// validating.
 	KeyFunc csjwt.Keyfunc
-	// templateTokenFunc to a create a new template token when parsing
-	// a byte token slice into the template token.
-	// Default value nil.
+	// templateTokenFunc to a create a new template token when parsing a byte
+	// token slice into the template token. Default value nil.
 	templateTokenFunc func() csjwt.Token
 }
 
@@ -97,14 +98,14 @@ func (sc scopedConfig) TemplateToken() (tk csjwt.Token) {
 func (sc scopedConfig) ParseFromRequest(r *http.Request) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
 	err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r)
-	return dst, errors.Wrap(err, "[mwjwt] scopedConfig.Verifier.ParseFromRequest")
+	return dst, errors.Wrap(err, "[jwt] scopedConfig.Verifier.ParseFromRequest")
 }
 
 // Parse parses a raw token.
 func (sc scopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
 	err := sc.Verifier.Parse(&dst, rawToken, sc.KeyFunc)
-	return dst, errors.Wrap(err, "[mwjwt] scopedConfig.Verifier.Parse")
+	return dst, errors.Wrap(err, "[jwt] scopedConfig.Verifier.Parse")
 }
 
 // initKeyFunc generates a closure for a specific scope to compare if the
@@ -116,7 +117,7 @@ func (sc *scopedConfig) initKeyFunc() {
 			return csjwt.Key{}, errors.NewNotImplementedf(errUnknownSigningMethod, have, want)
 		}
 		if sc.Key.Error != nil {
-			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[mwjwt] Key Error")
+			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[jwt] Key Error")
 		}
 		return sc.Key, nil
 	}
@@ -152,18 +153,18 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) (err error) {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache, err = defaultScopedConfig()
-			return errors.Wrap(err, "[mwjwt] Default Scope with Default Config")
+			return errors.Wrap(err, "[jwt] Default Scope with Default Config")
 		}
 
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		s.scopeCache[h], err = defaultScopedConfig()
-		return errors.Wrapf(err, "[mwjwt] Scope %s with Default Config", h)
+		return errors.Wrapf(err, "[jwt] Scope %s with Default Config", h)
 	}
 }
 
-// WithBlacklist sets a new global black list service.
-// Convenience helper function.
+// WithBlacklist sets a new global black list service. Convenience helper
+// function.
 func WithBlacklist(bl Blacklister) Option {
 	return func(s *Service) error {
 		s.Blacklist = bl
@@ -171,8 +172,7 @@ func WithBlacklist(bl Blacklister) Option {
 	}
 }
 
-// WithLogger sets a new global logger.
-// Convenience helper function.
+// WithLogger sets a new global logger. Convenience helper function.
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
 		s.Log = l
@@ -181,8 +181,7 @@ func WithLogger(l log.Logger) Option {
 }
 
 // WithStoreService apply a store service aka. requested store to the middleware
-// to allow a store change if requested via token.
-// Convenience helper function.
+// to allow a store change if requested via token. Convenience helper function.
 func WithStoreService(sr store.Requester) Option {
 	return func(s *Service) error {
 		s.StoreService = sr
@@ -194,9 +193,9 @@ func WithStoreService(sr store.Requester) Option {
 // on the incoming scope within a request. For example applies the backend
 // configuration to the service.
 //
-// Once this option function has been set all other manually set option functions,
-// which accept a scope and a scope ID as an argument, will be overwritten by the
-// new values retrieved from the configuration service.
+// Once this option function has been set all other manually set option
+// functions, which accept a scope and a scope ID as an argument, will be
+// overwritten by the new values retrieved from the configuration service.
 //
 //	cfgStruct, err := backendjwt.NewConfigStructure()
 //	if err != nil {
@@ -204,8 +203,8 @@ func WithStoreService(sr store.Requester) Option {
 //	}
 //	pb := backendjwt.New(cfgStruct)
 //
-//	jwts := mwjwt.MustNewService(
-//		mwjwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
+//	jwts := jwt.MustNewService(
+//		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f ScopedOptionFunc) Option {
 	return func(s *Service) error {
@@ -216,8 +215,8 @@ func WithOptionFactory(f ScopedOptionFunc) Option {
 
 // WithTemplateToken set a custom csjwt.Header and csjwt.Claimer for each scope
 // when parsing a token in a request. Function f will generate a new base token
-// for each request. This allows you to choose using a slow map as a claim
-// or a fast struct based claim. Same goes with the header.
+// for each request. This allows you to choose using a slow map as a claim or a
+// fast struct based claim. Same goes with the header.
 func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
@@ -395,7 +394,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 	h := scope.NewHash(scp, id)
 	if key.Error != nil {
 		return func(s *Service) error {
-			return errors.Wrap(key.Error, "[mwjwt] Key Error")
+			return errors.Wrap(key.Error, "[jwt] Key Error")
 		}
 	}
 	if key.IsEmpty() {
@@ -419,7 +418,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		case csjwt.HS:
 			scNew.SigningMethod, err = csjwt.NewHMACFast256(key)
 			if err != nil {
-				return errors.Wrap(err, "[mwjwt] HMAC Fast 256 error")
+				return errors.Wrap(err, "[jwt] HMAC Fast 256 error")
 			}
 		case csjwt.RS:
 			scNew.SigningMethod = csjwt.NewSigningMethodRS256()

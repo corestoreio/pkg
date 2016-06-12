@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwjwt
+package jwt
 
 import (
 	"context"
@@ -33,10 +33,9 @@ func withContext(ctx context.Context, t csjwt.Token) context.Context {
 	return context.WithValue(ctx, keyCtxToken{}, ctxTokenWrapper{t: t})
 }
 
-// FromContext returns the csjwt.Token in ctx if it exists or an error.
-// If there is no token in the context then the error
-// ErrContextJWTNotFound gets returned.
-// Error behaviour: NotFound
+// FromContext returns the csjwt.Token in ctx if it exists or an error. If there
+// is no token in the context then the error ErrContextJWTNotFound gets
+// returned. Error behaviour: NotFound.
 func FromContext(ctx context.Context) (csjwt.Token, error) {
 
 	wrp, ok := ctx.Value(keyCtxToken{}).(ctxTokenWrapper)
@@ -45,7 +44,7 @@ func FromContext(ctx context.Context) (csjwt.Token, error) {
 	}
 
 	if wrp.err != nil {
-		return wrp.t, errors.Wrap(wrp.err, "[mwjwt] FromContext")
+		return wrp.t, errors.Wrap(wrp.err, "[jwt] FromContext")
 	}
 
 	if wrp.t.Valid {

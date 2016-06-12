@@ -17,15 +17,15 @@ package backendjwt
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/mwjwt"
+	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Default creates new mwjwt.Option slice with the default configuration
-// structure and a noop encryptor/decryptor IF no option arguments have been
-// provided. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) mwjwt.ScopedOptionFunc {
+// Default creates new jwt.Option slice with the default configuration structure
+// and a noop encryptor/decryptor IF no option arguments have been provided. It
+// panics on error, so us it only during the app init phase.
+func Default(opts ...cfgmodel.Option) jwt.ScopedOptionFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -37,53 +37,53 @@ func Default(opts ...cfgmodel.Option) mwjwt.ScopedOptionFunc {
 	return PrepareOptions(New(cfgStruct, opts...))
 }
 
-func optError(err error) []mwjwt.Option {
-	return []mwjwt.Option{func(s *mwjwt.Service) error {
+func optError(err error) []jwt.Option {
+	return []jwt.Option{func(s *jwt.Service) error {
 		return err
 	}}
 }
 
-// PrepareOptions creates a closure around the type Backend. The closure will
-// be used during a scoped request to figure out the configuration depending on
-// the incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
+// PrepareOptions creates a closure around the type Backend. The closure will be
+// used during a scoped request to figure out the configuration depending on the
+// incoming scope. An option array will be returned by the closure.
+func PrepareOptions(be *Backend) jwt.ScopedOptionFunc {
 
-	return func(sg config.ScopedGetter) []mwjwt.Option {
-		var opts [6]mwjwt.Option
+	return func(sg config.ScopedGetter) []jwt.Option {
+		var opts [6]jwt.Option
 		var i int
 		scp, id := sg.Scope()
 
 		off, err := be.NetJwtDisabled.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[backendcors] NetJwtDisabled.Get"))
+			return optError(errors.Wrap(err, "[backendjwt] NetJwtDisabled.Get"))
 		}
-		opts[i] = mwjwt.WithDisable(scp, id, off)
+		opts[i] = jwt.WithDisable(scp, id, off)
 		i++
 
 		exp, err := be.NetJwtExpiration.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[backendcors] NetJwtExpiration.Get"))
+			return optError(errors.Wrap(err, "[backendjwt] NetJwtExpiration.Get"))
 		}
-		opts[i] = mwjwt.WithExpiration(scp, id, exp)
+		opts[i] = jwt.WithExpiration(scp, id, exp)
 		i++
 
 		skew, err := be.NetJwtSkew.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[backendcors] NetJwtSkew.Get"))
+			return optError(errors.Wrap(err, "[backendjwt] NetJwtSkew.Get"))
 		}
-		opts[i] = mwjwt.WithSkew(scp, id, skew)
+		opts[i] = jwt.WithSkew(scp, id, skew)
 		i++
 
 		isJTI, err := be.NetJwtEnableJTI.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[backendcors] NetJwtEnableJTI.Get"))
+			return optError(errors.Wrap(err, "[backendjwt] NetJwtEnableJTI.Get"))
 		}
-		opts[i] = mwjwt.WithTokenID(scp, id, isJTI)
+		opts[i] = jwt.WithTokenID(scp, id, isJTI)
 		i++
 
 		signingMethod, err := be.NetJwtSigningMethod.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[backendcors] NetJwtSigningMethod.Get"))
+			return optError(errors.Wrap(err, "[backendjwt] NetJwtSigningMethod.Get"))
 		}
 
 		var key csjwt.Key
@@ -93,11 +93,11 @@ func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
 
 			rsaKey, err := be.NetJwtRSAKey.Get(sg)
 			if err != nil {
-				return optError(errors.Wrap(err, "[backendcors] NetJwtRSAKey.Get"))
+				return optError(errors.Wrap(err, "[backendjwt] NetJwtRSAKey.Get"))
 			}
 			rsaPW, err := be.NetJwtRSAKeyPassword.Get(sg)
 			if err != nil {
-				return optError(errors.Wrap(err, "[backendcors] NetJwtRSAKeyPassword.Get"))
+				return optError(errors.Wrap(err, "[backendjwt] NetJwtRSAKeyPassword.Get"))
 			}
 			key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
 
@@ -105,11 +105,11 @@ func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
 
 			ecdsaKey, err := be.NetJwtECDSAKey.Get(sg)
 			if err != nil {
-				return optError(errors.Wrap(err, "[backendcors] NetJwtECDSAKey.Get"))
+				return optError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKey.Get"))
 			}
 			ecdsaPW, err := be.NetJwtECDSAKeyPassword.Get(sg)
 			if err != nil {
-				return optError(errors.Wrap(err, "[backendcors] NetJwtECDSAKeyPassword.Get"))
+				return optError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKeyPassword.Get"))
 			}
 			key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
 
@@ -117,18 +117,18 @@ func PrepareOptions(be *Backend) mwjwt.ScopedOptionFunc {
 
 			password, err := be.NetJwtHmacPassword.Get(sg)
 			if err != nil {
-				return optError(errors.Wrap(err, "[backendcors] NetJwtHmacPassword.Get"))
+				return optError(errors.Wrap(err, "[backendjwt] NetJwtHmacPassword.Get"))
 			}
 			key = csjwt.WithPassword(password)
 
 		default:
-			return optError(errors.Errorf("[mwjwt] Unknown signing method: %q", signingMethod.Alg()))
+			return optError(errors.Errorf("[jwt] Unknown signing method: %q", signingMethod.Alg()))
 		}
 
 		// WithSigningMethod must be added at the end of the slice to overwrite default signing methods
-		opts[i] = mwjwt.WithKey(scp, id, key)
+		opts[i] = jwt.WithKey(scp, id, key)
 		i++
-		opts[i] = mwjwt.WithSigningMethod(scp, id, signingMethod)
+		opts[i] = jwt.WithSigningMethod(scp, id, signingMethod)
 		return opts[:]
 	}
 }

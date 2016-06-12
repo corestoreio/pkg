@@ -12,21 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backendjwt_test
-
-import "github.com/corestoreio/csfw/net/mwjwt/backendjwt"
-
-// backend overall backend models for all tests
-var backend *backendjwt.Backend
-
-// this would belong into the test suit setup
-func init() {
-
-	cfgStruct, err := backendjwt.NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-
-	backend = backendjwt.New(cfgStruct)
-
-}
+// Package jwt provides a middleware for JSON web token authentication and store
+// initialization.
+package jwt

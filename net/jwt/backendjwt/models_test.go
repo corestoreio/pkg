@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/net/mwjwt/backendjwt"
+	"github.com/corestoreio/csfw/net/jwt/backendjwt"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )

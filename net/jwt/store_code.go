@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwjwt
+package jwt
 
 import (
 	"github.com/corestoreio/csfw/store"
@@ -22,17 +22,16 @@ import (
 )
 
 // ParamName use in Cookie and JWT important when the user selects a different
-// store within the current website/group context. This name will be used in
-// a cookie or as key value in a token to permanently save the new selected
-// store code.
+// store within the current website/group context. This name will be used in a
+// cookie or as key value in a token to permanently save the new selected store
+// code.
 //
 // Copied from storenet.ParamName to avoid dependency hell.
 const StoreParamName = `store`
 
-// ScopeOptionFromClaim returns a valid store code from a JSON web token
-// or ErrStoreNotFound.
-// Please make sure to add the key storenet.ParamName with the store code
-// to the token claim.
+// ScopeOptionFromClaim returns a valid store code from a JSON web token or
+// ErrStoreNotFound. Please make sure to add the key storenet.ParamName with the
+// store code to the token claim.
 func ScopeOptionFromClaim(tc csjwt.Claimer) (o scope.Option, err error) {
 	err = errors.NewNotFoundf(errStoreNotFound)
 	if tc == nil {
@@ -44,7 +43,7 @@ func ScopeOptionFromClaim(tc csjwt.Claimer) (o scope.Option, err error) {
 		err = store.CodeIsValid(scopeCode)
 		if err == nil {
 			o, err = scope.SetByCode(scope.Store, scopeCode)
-			err = errors.Wrap(err, "[mwjwt] scope.SetByCode")
+			err = errors.Wrap(err, "[jwt] scope.SetByCode")
 		}
 	}
 	return

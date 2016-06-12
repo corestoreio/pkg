@@ -7,4 +7,4 @@ BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4   	  200000	     10196 ns/
 BenchmarkServeHTTP_DefaultConfig_BlackList_Single-4     	  100000	     17158 ns/op	    3849 B/op	      65 allocs/op
 BenchmarkServeHTTP_MultiToken_MultiScope-4              	  200000	      6914 ns/op	    3570 B/op	      43 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/mwjwt	16.944s
+ok  	github.com/corestoreio/csfw/net/jwt	16.944s

@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwjwt
+package jwt
 
 import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
 const (
@@ -31,25 +31,26 @@ const (
 	claimKeyID     = "jti"
 )
 
-// Service main type for handling JWT authentication, generation, blacklists
-// and log outs depending on a scope.
+// Service main type for handling JWT authentication, generation, blacklists and
+// log outs depending on a scope.
 type Service struct {
 	// JTI represents the interface to generate a new UUID aka JWT ID
 	JTI interface {
 		Get() string
 	}
-	// Blacklist concurrent safe black list service which handles blocked tokens.
-	// Default black hole storage. Must be thread safe.
+	// Blacklist concurrent safe black list service which handles blocked
+	// tokens. Default black hole storage. Must be thread safe.
 	Blacklist Blacklister
-	// Log mostly used for debugging. todo(CS) add more logging at useful places
+	// Log mostly used for debugging.
 	Log log.Logger
 
-	// StoreService used in the middleware to set a new requested store, change store.
-	// If nil the requested store extracted from the context won't be changed.
+	// StoreService used in the middleware to set a new requested store, change
+	// store. If nil the requested store extracted from the context won't be
+	// changed.
 	StoreService store.Requester
 
-	// scpOptionFnc optional configuration closure, can be nil. It pulls
-	// out the configuration settings during a request and caches the settings in the
+	// scpOptionFnc optional configuration closure, can be nil. It pulls out the
+	// configuration settings during a request and caches the settings in the
 	// internal map. ScopedOption requires a config.ScopedGetter
 	scpOptionFnc ScopedOptionFunc
 
@@ -57,11 +58,9 @@ type Service struct {
 
 	mu sync.RWMutex
 	// scopeCache internal cache of already created token configurations
-	// scoped.Hash relates to the website ID.
-	// this can become a bottle neck when multiple website IDs supplied by a
-	// request try to access the map. we can use the same pattern like in freecache
-	// to create a segment of 256 slice items to evenly distribute the lock.
-	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
+	// scoped.Hash relates to the website ID. this can become a bottle neck when
+	// multiple website IDs supplied by a request try to access the map.
+	scopeCache map[scope.Hash]scopedConfig
 }
 
 // NewService creates a new token service.
@@ -76,10 +75,10 @@ func NewService(opts ...Option) (*Service, error) {
 	}
 
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
-		return nil, errors.Wrap(err, "[mwjwt] Options WithDefaultConfig")
+		return nil, errors.Wrap(err, "[jwt] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[mwjwt] Options Any Config")
+		return nil, errors.Wrap(err, "[jwt] Options Any Config")
 	}
 	return s, nil
 }
@@ -98,7 +97,7 @@ func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil { // might be nil because of package backendjwt
 			if err := opt(s); err != nil {
-				return errors.Wrap(err, "[mwjwt] Service.Options")
+				return errors.Wrap(err, "[jwt] Service.Options")
 			}
 		}
 	}
@@ -106,7 +105,8 @@ func (s *Service) Options(opts ...Option) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for h := range s.scopeCache {
-		// maybe this can be removed and allow all scopes but we need to change much more.
+		// maybe this can be removed and allow all scopes but we need to change
+		// much more.
 		if scp, _ := h.Unpack(); scp > scope.Website {
 			return errors.NewNotSupportedf(errServiceUnsupportedScope, h)
 		}
@@ -116,43 +116,43 @@ func (s *Service) Options(opts ...Option) error {
 }
 
 // NewToken creates a new signed JSON web token based on the predefined scoped
-// based template token function (WithTemplateToken) and merges the optional
-// 3rd argument into the template token claim.
-// The returned token is owned by the caller. The tokens Raw field contains the
-// freshly signed byte slice. ExpiresAt, IssuedAt and ID are already set and cannot
-// be overwritten, but you can access them. It panics if the provided template
-// token has a nil Header or Claimer field.
+// based template token function (WithTemplateToken) and merges the optional 3rd
+// argument into the template token claim. The returned token is owned by the
+// caller. The tokens Raw field contains the freshly signed byte slice.
+// ExpiresAt, IssuedAt and ID are already set and cannot be overwritten, but you
+// can access them. It panics if the provided template token has a nil Header or
+// Claimer field.
 func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (csjwt.Token, error) {
 	now := csjwt.TimeFunc()
 	var empty csjwt.Token
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return empty, errors.Wrap(err, "[mwjwt] getConfigByScopeID")
+		return empty, errors.Wrap(err, "[jwt] getConfigByScopeID")
 	}
 
 	var tk = cfg.TemplateToken()
 
 	if len(claim) > 0 && claim[0] != nil {
 		if err := csjwt.MergeClaims(tk.Claims, claim...); err != nil {
-			return empty, errors.Wrap(err, "[mwjwt] MergeClaims")
+			return empty, errors.Wrap(err, "[jwt] MergeClaims")
 		}
 	}
 
 	if err := tk.Claims.Set(claimExpiresAt, now.Add(cfg.Expire).Unix()); err != nil {
-		return empty, errors.Wrap(err, "[mwjwt] Claims.Set EXP")
+		return empty, errors.Wrap(err, "[jwt] Claims.Set EXP")
 	}
 	if err := tk.Claims.Set(claimIssuedAt, now.Unix()); err != nil {
-		return empty, errors.Wrap(err, "[mwjwt] Claims.Set IAT")
+		return empty, errors.Wrap(err, "[jwt] Claims.Set IAT")
 	}
 
 	if cfg.EnableJTI && s.JTI != nil {
 		if err := tk.Claims.Set(claimKeyID, s.JTI.Get()); err != nil {
-			return empty, errors.Wrap(err, "[mwjwt] Claims.Set KID")
+			return empty, errors.Wrap(err, "[jwt] Claims.Set KID")
 		}
 	}
 
 	tk.Raw, err = tk.SignedString(cfg.SigningMethod, cfg.Key)
-	return tk, errors.Wrap(err, "[mwjwt] SignedString")
+	return tk, errors.Wrap(err, "[jwt] SignedString")
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration.
@@ -171,18 +171,18 @@ func (s *Service) Parse(rawToken []byte) (csjwt.Token, error) {
 }
 
 // ParseScoped parses a token based on the applied scope and the scope ID.
-// Different configurations are passed to the token parsing function.
-// The black list will be checked for containing entries.
+// Different configurations are passed to the token parsing function. The black
+// list will be checked for containing entries.
 func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt.Token, error) {
 	var emptyTok csjwt.Token
 	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return emptyTok, errors.Wrap(err, "[mwjwt] getConfigByScopeID")
+		return emptyTok, errors.Wrap(err, "[jwt] getConfigByScopeID")
 	}
 
 	token, err := sc.Parse(rawToken)
 	if err != nil {
-		return emptyTok, errors.Wrap(err, "[mwjwt] Parse")
+		return emptyTok, errors.Wrap(err, "[jwt] Parse")
 	}
 
 	var inBL bool
@@ -194,16 +194,15 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 		return token, nil
 	}
 	if s.Log.IsDebug() {
-		s.Log.Debug("mwjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", string(rawToken), "token", token)
+		s.Log.Debug("jwt.Service.Parse", log.Err(err), log.Bool("inBlackList", inBL), log.String("rawToken", string(rawToken)), log.Marshal("token", token))
 	}
 	return emptyTok, errors.NewNotValidf(errTokenParseNotValidOrBlackListed)
 }
 
-// ConfigByScopedGetter returns the internal configuration depending on the ScopedGetter.
-// Mainly used within the middleware. Exported here to build your own middleware.
-// A nil argument falls back to the default scope configuration.
-// If you have applied the option WithBackend() the configuration will be pulled out
-// one time from the backend service.
+// ConfigByScopedGetter returns the internal configuration depending on the
+// ScopedGetter. Mainly used within the middleware. Exported here to build your
+// own middleware. If you have applied the option WithOptionFactory() the
+// configuration will be pulled out one time from the backend service.
 func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
 
 	h := scope.DefaultHash
@@ -211,12 +210,12 @@ func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 		h = scope.NewHash(sg.Scope())
 	}
 	if s.Log.IsDebug() {
-		s.Log.Debug("mwjwt.Service.ConfigByScopedGetter.ScopedGetter", "ScopedGetter_Nil", sg == nil, "scope", h.String())
+		s.Log.Debug("jwt.Service.ConfigByScopedGetter.ScopedGetter", log.Stringer("scope", h))
 	}
 
 	if (s.scpOptionFnc == nil || sg == nil) && h == scope.DefaultHash && s.defaultScopeCache.IsValid() {
 		if s.Log.IsDebug() {
-			s.Log.Debug("mwjwt.Service.ConfigByScopedGetter.defaultScopeCache", "ScopedGetter_Nil", sg == nil, "scpOptionFnc_Nil", s.scpOptionFnc == nil)
+			s.Log.Debug("jwt.Service.ConfigByScopedGetter.defaultScopeCache")
 		}
 		return s.defaultScopeCache, nil
 	}
@@ -230,10 +229,10 @@ func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, er
 
 	if s.scpOptionFnc != nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug("mwjwt.Service.ConfigByScopedGetter.scpOptionFnc", "scope", h.String())
+			s.Log.Debug("jwt.Service.ConfigByScopedGetter.scpOptionFnc", log.Stringer("scope", h))
 		}
 		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[mwjwt] Options by scpOptionFnc")
+			return scopedConfig{}, errors.Wrap(err, "[jwt] Options by scpOptionFnc")
 		}
 	}
 

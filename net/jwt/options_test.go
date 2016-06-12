@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mwjwt_test
+package jwt_test
 
 import (
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/mwjwt"
+	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/csjwt"
@@ -31,9 +31,9 @@ import (
 
 func TestOptionWithTemplateToken(t *testing.T) {
 
-	jwts, err := mwjwt.NewService(
-		// mwjwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
-		mwjwt.WithTemplateToken(scope.Website, 3, func() csjwt.Token {
+	jwts, err := jwt.NewService(
+		// jwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
+		jwt.WithTemplateToken(scope.Website, 3, func() csjwt.Token {
 			sClaim := jwtclaim.NewStore()
 			sClaim.Store = "potato"
 
@@ -76,9 +76,9 @@ func TestOptionWithTemplateToken(t *testing.T) {
 
 func TestOptionWithTokenID(t *testing.T) {
 
-	jwts, err := mwjwt.NewService(
-		mwjwt.WithTokenID(scope.Website, 22, true),
-		mwjwt.WithKey(scope.Website, 22, csjwt.WithPasswordRandom()),
+	jwts, err := jwt.NewService(
+		jwt.WithTokenID(scope.Website, 22, true),
+		jwt.WithKey(scope.Website, 22, csjwt.WithPasswordRandom()),
 	)
 	cstesting.FatalIfError(t, err)
 
@@ -93,9 +93,9 @@ func TestOptionWithTokenID(t *testing.T) {
 
 func TestOptionScopedDefaultExpire(t *testing.T) {
 
-	jwts, err := mwjwt.NewService(
-		mwjwt.WithTokenID(scope.Website, 33, true),
-		mwjwt.WithKey(scope.Website, 33, csjwt.WithPasswordRandom()),
+	jwts, err := jwt.NewService(
+		jwt.WithTokenID(scope.Website, 33, true),
+		jwt.WithKey(scope.Website, 33, csjwt.WithPasswordRandom()),
 	)
 	cstesting.FatalIfError(t, err)
 
@@ -111,14 +111,14 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 	cstesting.FatalIfError(t, err)
 
 	assert.Exactly(t, now.Unix(), conv.ToInt64(iat))
-	assert.Exactly(t, int(mwjwt.DefaultExpire.Seconds()), int(time.Unix(conv.ToInt64(exp), 0).Sub(now).Seconds()+1))
+	assert.Exactly(t, int(jwt.DefaultExpire.Seconds()), int(time.Unix(conv.ToInt64(exp), 0).Sub(now).Seconds()+1))
 }
 
 func TestWithMaxSkew_Valid(t *testing.T) {
-	jwts, err := mwjwt.NewService(
-		mwjwt.WithKey(scope.Website, 44, csjwt.WithPasswordRandom()),
-		mwjwt.WithSkew(scope.Website, 44, time.Second*5),
-		mwjwt.WithExpiration(scope.Website, 44, -time.Second*3),
+	jwts, err := jwt.NewService(
+		jwt.WithKey(scope.Website, 44, csjwt.WithPasswordRandom()),
+		jwt.WithSkew(scope.Website, 44, time.Second*5),
+		jwt.WithExpiration(scope.Website, 44, -time.Second*3),
 	)
 	cstesting.FatalIfError(t, err)
 
@@ -135,10 +135,10 @@ func TestWithMaxSkew_Valid(t *testing.T) {
 }
 
 func TestWithMaxSkew_NotValid(t *testing.T) {
-	jwts, err := mwjwt.NewService(
-		mwjwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
-		mwjwt.WithSkew(scope.Default, 0, time.Second*1),
-		mwjwt.WithExpiration(scope.Default, 0, -time.Second*3),
+	jwts, err := jwt.NewService(
+		jwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
+		jwt.WithSkew(scope.Default, 0, time.Second*1),
+		jwt.WithExpiration(scope.Default, 0, -time.Second*3),
 	)
 	cstesting.FatalIfError(t, err)
 
@@ -153,8 +153,8 @@ func TestWithMaxSkew_NotValid(t *testing.T) {
 
 func TestOptionWithRSAReaderFail(t *testing.T) {
 
-	jm, err := mwjwt.NewService(
-		mwjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
+	jm, err := jwt.NewService(
+		jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
 	)
 	assert.Nil(t, jm)
 	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
@@ -162,24 +162,24 @@ func TestOptionWithRSAReaderFail(t *testing.T) {
 
 var (
 	rsaPrivateKeyFileName        = filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa")
-	keyRsaPrivateNoPassword      = mwjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
-	keyRsaPrivateWrongPassword   = mwjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
-	keyRsaPrivateCorrectPassword = mwjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
+	keyRsaPrivateNoPassword      = jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
+	keyRsaPrivateWrongPassword   = jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
+	keyRsaPrivateCorrectPassword = jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
 )
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
 
-	jm, err := mwjwt.NewService(keyRsaPrivateNoPassword)
+	jm, err := jwt.NewService(keyRsaPrivateNoPassword)
 	assert.True(t, errors.IsEmpty(err), "Error: %s", err)
 	assert.Nil(t, jm)
 
-	jm2, err2 := mwjwt.NewService(keyRsaPrivateWrongPassword)
+	jm2, err2 := jwt.NewService(keyRsaPrivateWrongPassword)
 	assert.True(t, errors.IsNotValid(err2), "Error: %s", err2)
 	assert.Nil(t, jm2)
 }
 
-func testRsaOption(t *testing.T, opt mwjwt.Option) {
-	jwts, err := mwjwt.NewService(opt)
+func testRsaOption(t *testing.T, opt jwt.Option) {
+	jwts, err := jwt.NewService(opt)
 	cstesting.FatalIfError(t, err)
 
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{})
@@ -199,5 +199,5 @@ func TestOptionWithRSAFromFilePassword(t *testing.T) {
 
 func TestOptionWithRSAFromFileNoPassword(t *testing.T) {
 
-	testRsaOption(t, mwjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
+	testRsaOption(t, jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
 }

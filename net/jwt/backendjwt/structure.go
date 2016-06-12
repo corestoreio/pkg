@@ -17,7 +17,7 @@ package backendjwt
 import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/net/mwjwt"
+	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -57,7 +57,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   mwjwt.DefaultExpire.String(),
+							Default:   jwt.DefaultExpire.String(),
 						},
 						element.Field{
 							// Path: net/jwt/skew
@@ -68,7 +68,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   mwjwt.DefaultSkew.String(),
+							Default:   jwt.DefaultSkew.String(),
 						},
 						element.Field{
 							// Path: net/jwt/enable_jti
@@ -89,7 +89,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 35,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   mwjwt.DefaultSigningMethod,
+							Default:   jwt.DefaultSigningMethod,
 						},
 						element.Field{
 							// Path: net/jwt/hmac_password
