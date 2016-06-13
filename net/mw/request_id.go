@@ -14,6 +14,8 @@
 
 package mw
 
+// crypto/rand => http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/
+
 import (
 	"crypto/rand"
 	"encoding/base64"
@@ -32,7 +34,7 @@ const RequestIDHeader = "X-Request-Id"
 
 // reqID is a global Counter used to create new request ids. This ID is not unique
 // across multiple micro services.
-var reqID int64
+var reqID = new(int64)
 
 // RequestIDGenerator defines the functions needed to generate a request
 // prefix id.
@@ -71,7 +73,7 @@ func (rp *requestIDService) Init() {
 
 // NewID returns a new ID unique for the current compilation.
 func (rp *requestIDService) NewID(_ *http.Request) string {
-	return rp.prefix + strconv.FormatInt(atomic.AddInt64(&reqID, 1), 10)
+	return rp.prefix + strconv.FormatInt(atomic.AddInt64(reqID, 1), 10)
 }
 
 // WithRequestID is a middleware that injects a request ID into the response header
