@@ -94,7 +94,7 @@ geniuses listed below:
 
 | Name | Package | License |
 | -------|----------|-------|
-| Steve Francia | [cast](http://github.com/corestoreio/csfw/tree/master/utils/cast) | MIT Copyright (c) 2014 |
+| Steve Francia | [conv](http://github.com/corestoreio/csfw/tree/master/utils/conv) | MIT Copyright (c) 2014 |
 | Steve Francia | [bufferpool](http://github.com/corestoreio/csfw/tree/master/utils/bufferpool) | [Simple Public License, V2.0](http://opensource.org/licenses/Simple-2.0) |
 | Jonathan Novak, Tyler Smith, Michal Bohuslávek | [dbr](http://github.com/corestoreio/csfw/tree/master/storage/dbr) | The MIT License (MIT) 2014 |
 | Martin Angers and Contributors. | [ctxthrottled](http://github.com/corestoreio/csfw/tree/master/net/ctxthrottled) | The MIT License (MIT) 2014 |
@@ -105,7 +105,8 @@ geniuses listed below:
 | Julien Schmidt | [ctxrouter](https://github.com/corestoreio/csfw/tree/master/net/ctxrouter) aka. [httprouter](https://github.com/julienschmidt/httprouter) | Copyright (c) 2013 MIT |
 | Olivier Poitrey| [ctxmw.WithAccessLog](https://github.com/corestoreio/csfw/tree/master/net/ctxmw) & CORS | Copyright (c) 2014-2015  MIT License |
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/csfw/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
-| Uber Technologies, Inc. | [csjwt](https://github.com/corestoreio/csfw/tree/master/util/log) | Copyright (c) 2016 MIT License |
+| Uber Technologies, Inc. | [log](https://github.com/corestoreio/csfw/tree/master/log) | Copyright (c) 2016 MIT License |
+| 2013 The Go Authors | [singleflight](https://github.com/corestoreio/csfw/tree/master/sys/singleflight) | Copyright (c) 2013 BSD Style |
 
 ## Licensing
 
