@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package suspend provides a complicated duplicate function call suppression
+// mechanism.
+//
+// It picks from n-Goroutines the first one to do a job and suspends
+// the following.
+//
+// The following Goroutines may continue once the first one calls a broadcast
+// signal to release the suspended.
 package suspend
 
 import (

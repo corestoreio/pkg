@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package suspend picks from n-Goroutines the first one to do a job and
-// suspends the following.
+// Package sys provides tools to deal with goroutines.
 //
-// The following Goroutines may continue once the first one calls a broadcast
-// signal to release the suspended.
-package suspend
+//
+package sys

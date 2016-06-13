@@ -23,8 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/suspend"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sys/suspend"
 	"github.com/corestoreio/csfw/util/errors"
 )
 

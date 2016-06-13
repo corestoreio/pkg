@@ -17,8 +17,8 @@ package ratelimit
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/storage/suspend"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sys/suspend"
 	"gopkg.in/throttled/throttled.v2"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
