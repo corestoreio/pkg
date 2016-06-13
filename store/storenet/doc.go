@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package storenet defines middleware and functions for net/http and RPC.
+// Package storenet defines store specific middleware and functions for net/http
+// and RPC.
 package storenet

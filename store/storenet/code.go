@@ -23,17 +23,17 @@ import (
 )
 
 // ParamName use in Cookie and JWT important when the user selects a different
-// store within the current website/group context. This name will be used in
-// a cookie or as key value in a token to permanently save the new selected
-// store code.
+// store within the current website/group context. This name will be used in a
+// cookie or as key value in a token to permanently save the new selected store
+// code.
 const ParamName = `store`
 
 // HTTPRequestParamStore name of the GET parameter to set a new store in a
-// current website/group context
+// current website/group context.
 const HTTPRequestParamStore = `___store`
 
-// CodeFromCookie returns from a Request the value of the store cookie.
-// Error behaviour: NotValid, NotSupported or an http.ErrNoCookie
+// CodeFromCookie returns from a Request the value of the store cookie. Error
+// behaviour: NotValid, NotSupported or an http.ErrNoCookie.
 func CodeFromCookie(req *http.Request) (scope.Option, error) {
 	keks, err := req.Cookie(ParamName)
 	if err != nil {

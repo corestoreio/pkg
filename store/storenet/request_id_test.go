@@ -15,9 +15,10 @@
 package storenet_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/storenet"
-	"testing"
 )
 
 var _ mw.RequestIDGenerator = (*storenet.RequestIDService)(nil)

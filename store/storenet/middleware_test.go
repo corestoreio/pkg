@@ -21,12 +21,12 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -259,7 +259,7 @@ var testsMWInitByFormCookie = []struct {
 func TestWithInitStoreByFormCookie(t *testing.T) {
 
 	debugLogBuf := new(bytes.Buffer)
-	lg := log.NewStdLog(log.WithStdWriter(debugLogBuf), log.WithStdLevel(log.StdLevelDebug))
+	lg := logw.NewLog(logw.WithWriter(debugLogBuf), logw.WithLevel(logw.LevelDebug))
 
 	for i, test := range testsMWInitByFormCookie {
 

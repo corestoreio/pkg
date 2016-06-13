@@ -19,18 +19,18 @@ import (
 
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
 )
 
-// WithValidateBaseURL is a middleware which checks if the request base URL
-// is equal to the one defined in the configuration, if not
-// i.e. redirect from http://example.com/store/ to http://www.example.com/store/
-// @see app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
+// WithValidateBaseURL is a middleware which checks if the request base URL is
+// equal to the one defined in the configuration, if not i.e. redirect from
+// http://example.com/store/ to http://www.example.com/store/ @see
+// app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
 // @todo refactor this whole function as BaseURL must be bound to a store type
 func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 
@@ -59,7 +59,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 				requestedStore, err := store.FromContextRequestedStore(r.Context())
 				if err != nil {
 					if l.IsDebug() {
-						l.Debug("http.WithValidateBaseUrl.FromContextServiceReader", "err", err, "req", r)
+						l.Debug("http.WithValidateBaseUrl.FromContextServiceReader", log.Err(err), log.Object("request", r))
 					}
 					serveError(h, w, r, errors.Wrap(err, "[storenet] Context"))
 					return
@@ -68,7 +68,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 				baseURL, err := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
 				if err != nil {
 					if l.IsDebug() {
-						l.Debug("http.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "req", r)
+						l.Debug("http.WithValidateBaseUrl.requestedStore.BaseURL", log.Err(err), log.Object("request", r))
 					}
 					serveError(h, w, r, errors.Wrap(err, "[storenet] BaseURL"))
 					return
@@ -76,7 +76,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 
 				if err := httputil.IsBaseURLCorrect(r, &baseURL); err != nil {
 					if l.IsDebug() {
-						l.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "req", r)
+						l.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", log.Err(err), log.Object("request", r), log.Stringer("baseURL", &baseURL))
 					}
 
 					baseURL.Path = r.URL.Path
@@ -92,9 +92,9 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 	}
 }
 
-// WithInitStoreByFormCookie reads from a GET parameter or cookie the store code.
-// Checks if the store code is valid and allowed. If so it adjusts the context.Context
-// to provide the new requestedStore.
+// WithInitStoreByFormCookie reads from a GET parameter or cookie the store
+// code. Checks if the store code is valid and allowed. If so it adjusts the
+// context.Context to provide the new requestedStore.
 //
 // It calls Getter.RequestedStore() to determine the correct store.
 // 		1. check cookie store, always a string and the store code
@@ -109,7 +109,7 @@ func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 			requestedStore, err := store.FromContextRequestedStore(r.Context())
 			if err != nil {
 				if l.IsDebug() {
-					l.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "req", r)
+					l.Debug("store.WithInitStoreByToken.FromContextServiceReader", log.Err(err), log.Object("request", r))
 				}
 				serveError(h, w, r, errors.Wrap(err, "[storenet] FromContextRequestedStore"))
 				return
@@ -120,14 +120,14 @@ func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 			reqSO, err = CodeFromRequestGET(r)
 			if err != nil {
 				if l.IsDebug() {
-					l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", "err", err, "req", r, "scope", reqSO)
+					l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", log.Err(err), log.Object("request", r), log.Stringer("scope", reqSO))
 				}
 
 				reqSO, err = CodeFromCookie(r)
 				if err != nil {
 					// ignore further processing because all codes are invalid or not found
 					if l.IsDebug() {
-						l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", "err", err, "req", r, "scope", reqSO)
+						l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", log.Err(err), log.Object("request", r), log.Stringer("scope", reqSO))
 					}
 					h.ServeHTTP(w, r)
 					return
@@ -137,7 +137,7 @@ func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 			newRequestedStore, err := rs.RequestedStore(reqSO)
 			if err != nil {
 				if l.IsDebug() {
-					l.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)
+					l.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", log.Err(err), log.Object("request", r), log.Stringer("scope", reqSO))
 				}
 				serveError(h, w, r, errors.Wrap(err, "[storenet] RequestedStore"))
 				return
@@ -150,7 +150,7 @@ func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 				wds, err := newRequestedStore.Website.DefaultStore()
 				if err != nil {
 					if l.IsDebug() {
-						l.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
+						l.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", log.Err(err), log.Object("request", r), log.String("soStoreCode", soStoreCode))
 					}
 					serveError(h, w, r, errors.Wrap(err, "[storenet] Website.DefaultStore"))
 					return
