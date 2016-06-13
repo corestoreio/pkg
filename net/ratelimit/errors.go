@@ -12,25 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxthrottled_test
+package ratelimit
 
-import "testing"
+import "github.com/corestoreio/csfw/util/errors"
 
-func TestNewConfigDuration(t *testing.T) {
-	t.Parallel()
-	//
-	//cobPath, err := backend.CurrencyOptionsBase.ToPath(0, 0)
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//
-	//cr := cfgmock.NewService(
-	//	cfgmock.WithPV(cfgmock.PathValue{
-	//		cobPath.Bind(scope.DefaultID, 0).String(): "CHF",
-	//	}),
-	//)
-	//
-	//cur, err := backend.CurrencyOptionsBase.GetDefault(cr)
-	//assert.NoError(t, err)
-	//assert.Exactly(t, "CHF", cur.String())
-}
+const (
+	errScopedConfigNotValid = `[geoip] ScopedConfig %s is invalid. IsNil(IsAllowedFunc=%t), IsNil(alternativeHandler=%t)`
+)
+
+var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)

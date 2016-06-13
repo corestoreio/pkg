@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxthrottled
+package ratelimit
 
 import (
 	"math"
 	"net/http"
 	"strconv"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/net/context"
 	"gopkg.in/throttled/throttled.v2"
 )
@@ -33,33 +33,28 @@ import (
 // X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset and
 // Retry-After headers will be written to the response based on the
 // values in the RateLimitResult.
-func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
+func (hrl *Service) WithRateLimit() mw.Middleware {
 
-	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+	return func(h http.Handler) http.Handler {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			_, reqStore, err := store.FromContextProvider(ctx)
+			requestedStore, err := store.FromContextRequestedStore(r.Context())
 			if err != nil {
-				return err
+				err = errors.Wrap(err, "[geoip] FromContextProvider")
+				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
+				return
 			}
 
-			var rl throttled.RateLimiter
-			var ok bool
-
-			scopeHash := scope.NewHash(scope.Website, reqStore.WebsiteID())
-			hrl.mu.RLock()
-			rl, ok = hrl.scopedRLs[scopeHash]
-			hrl.mu.RUnlock()
-
-			if !ok {
-				var err error
-				rl, err = hrl.RateLimiterFactory(hrl.Backend, reqStore.Website.Config)
-				if err != nil {
-					return errors.Mask(err)
+			// requestedStore.Config contains the scope for store and then
+			// website or finally can fall back to default scope.
+			scpCfg := hrl.configByScopedGetter(requestedStore.Config)
+			if err := scpCfg.isValid(); err != nil {
+				if hrl.Log.IsDebug() {
+					hrl.Log.Debug("Service.WithIsCountryAllowedByIP.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
 				}
-				hrl.mu.Lock()
-				hrl.scopedRLs[scopeHash] = rl
-				hrl.mu.Unlock()
+				err = errors.Wrap(err, "[geoip] ConfigByScopedGetter")
+				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
+				return
 			}
 
 			var k string
@@ -67,7 +62,7 @@ func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
 				k = hrl.Key(r)
 			}
 
-			limited, context, err := rl.RateLimit(k, 1)
+			limited, context, err := scpCfg.RateLimit(k, 1)
 			if err != nil {
 				return err
 			}

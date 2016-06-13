@@ -12,8 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ctxthrottled implements rate limiting access to resources such
-// as context.Context compatible HTTP endpoints.
-//
-// TODO(cs) Add Examples
-package ctxthrottled
+package backendratelimit_test
+
+import "testing"
+
+func TestNewConfigDuration(t *testing.T) {
+	//
+	//cobPath, err := backend.CurrencyOptionsBase.ToPath(0, 0)
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//
+	//cr := cfgmock.NewService(
+	//	cfgmock.WithPV(cfgmock.PathValue{
+	//		cobPath.Bind(scope.DefaultID, 0).String(): "CHF",
+	//	}),
+	//)
+	//
+	//cur, err := backend.CurrencyOptionsBase.GetDefault(cr)
+	//assert.NoError(t, err)
+	//assert.Exactly(t, "CHF", cur.String())
+}

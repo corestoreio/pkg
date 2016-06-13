@@ -12,20 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxthrottled_test
+package backendratelimit_test
 
-import "github.com/corestoreio/csfw/net/ctxthrottled"
+import (
+	"github.com/corestoreio/csfw/net/ratelimit/backendratelimit"
+)
 
 // backend overall backend models for all tests
-var backend *ctxthrottled.PkgBackend
+var backend *backendratelimit.PkgBackend
 
 // this would belong into the test suit setup
 func init() {
 
-	cfgStruct, err := ctxthrottled.NewConfigStructure()
+	cfgStruct, err := backendratelimit.NewConfigStructure()
 	if err != nil {
 		panic(err)
 	}
 
-	backend = ctxthrottled.NewBackend(cfgStruct)
+	backend = backendratelimit.NewBackend(cfgStruct)
 }

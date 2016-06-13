@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxthrottled
+package backendratelimit
 
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/juju/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
 
@@ -48,7 +47,7 @@ func (md ConfigDuration) Get(sg config.ScopedGetter, requests int) (throttled.Ra
 
 	val, err := md.Str.Get(sg)
 	if err != nil {
-		return throttled.Rate{}, errors.Mask(err)
+		return throttled.Rate{}, errors.Wra(err)
 	}
 
 	if val == "" {

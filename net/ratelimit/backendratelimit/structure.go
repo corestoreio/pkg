@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxthrottled
+package backendratelimit
 
 import (
 	"github.com/corestoreio/csfw/config/cfgpath"
@@ -21,23 +21,23 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// NewConfigStructure global configuration structure for this package.
-// Used in frontend (to display the user all the settings) and in
-// backend (scope checks and default values). See the source code
-// of this function for the overall available sections, groups and fields.
+// NewConfigStructure global configuration structure for this package. Used in
+// frontend (to display the user all the settings) and in backend (scope checks
+// and default values). See the source code of this function for the overall
+// available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
 		element.Section{
 			ID: cfgpath.NewRoute("net"),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:        cfgpath.NewRoute("ctxthrottled"),
+					ID:        cfgpath.NewRoute("shy"),
 					Label:     text.Chars(`Rate throtteling`),
 					SortOrder: 40,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: net/ctxthrottled/burst
+							// Path: net/shy/burst
 							ID:        cfgpath.NewRoute("burst"),
 							Label:     text.Chars(`Burst`),
 							Comment:   text.Chars(`Defines the number of requests that will be allowed to exceed the rate in a single burst and must be greater than or equal to zero`),
@@ -48,7 +48,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   5,
 						},
 						element.Field{
-							// Path: net/ctxthrottled/requests
+							// Path: net/shy/requests
 							ID:        cfgpath.NewRoute("requests"),
 							Label:     text.Chars(`Requests`),
 							Comment:   text.Chars(`Number of requests allowed per time period`),
@@ -59,7 +59,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   100,
 						},
 						element.Field{
-							// Path: net/ctxthrottled/duration
+							// Path: net/shy/duration
 							ID:        cfgpath.NewRoute("duration"),
 							Label:     text.Chars(`Duration`),
 							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),

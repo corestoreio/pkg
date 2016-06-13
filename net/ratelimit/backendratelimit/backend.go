@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxthrottled
+package backendratelimit
 
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
@@ -29,17 +29,17 @@ type PkgBackend struct {
 	// will be allowed to exceed the rate in a single burst and must be
 	// greater than or equal to zero.
 	//
-	// Path: net/ctxthrottled/burst
+	// Path: net/shy/burst
 	RateLimitBurst cfgmodel.Int
 
 	// RateLimitRequests number of requests allowed per time period
 	//
-	// Path: net/ctxthrottled/requests
+	// Path: net/shy/requests
 	RateLimitRequests cfgmodel.Int
 
 	// RateLimitDuration per second (s), minute (i), hour (h), day (d)
 	//
-	// Path: net/ctxthrottled/duration
+	// Path: net/shy/duration
 	RateLimitDuration ConfigDuration
 }
 
@@ -60,9 +60,9 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 
 	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
 
-	pp.RateLimitBurst = cfgmodel.NewInt(`net/ctxthrottled/burst`, opt)
-	pp.RateLimitRequests = cfgmodel.NewInt(`net/ctxthrottled/requests`, opt)
-	pp.RateLimitDuration = NewConfigDuration(`net/ctxthrottled/duration`, opt)
+	pp.RateLimitBurst = cfgmodel.NewInt(`net/shy/burst`, opt)
+	pp.RateLimitRequests = cfgmodel.NewInt(`net/shy/requests`, opt)
+	pp.RateLimitDuration = NewConfigDuration(`net/shy/duration`, opt)
 
 	return pp
 }
