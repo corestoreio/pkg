@@ -171,7 +171,9 @@ func (s State) DoneBytes(key []byte) error {
 
 // Done releases all the waiting Goroutines caught with the function IsRunning()
 // and sets the internal state to done. Any subsequent calls to ShouldWait() and
-// ShouldStart() will fail. You must call Reset() once all is done.
+// ShouldStart() with the same key will restart the process. You must call
+// Reset() to fully clear the internal cache once all of your operations are
+// done.
 func (s State) Done(key uint64) error {
 	if !s.Initialized() {
 		return errors.NewFatalf("[suspend] State not initialized")
@@ -184,10 +186,9 @@ func (s State) Done(key uint64) error {
 	}
 	atomic.StoreUint32(st.status, stateDone)
 	st.Broadcast()
-	s.states[key] = state{
-		// not needed anymore, so set sync.* pointers to nil and copy status
-		status: st.status,
-	}
+
+	// delete key to avoid filling up the map with old entries
+	delete(s.states, key)
 	return nil
 }
 
