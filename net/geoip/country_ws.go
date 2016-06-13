@@ -17,12 +17,10 @@ package geoip
 import (
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"net"
 	"net/http"
-	"runtime"
 
-	"github.com/corestoreio/csfw/sys/suspend"
+	"github.com/corestoreio/csfw/sys/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -41,10 +39,7 @@ const MaxMindWebserviceBaseURL = "https://geoip.maxmind.com/geoip/v2.1/country/"
 
 // mmws resolves to MaxMind WebService
 type mmws struct {
-	suspend.State
-	ipIN       chan net.IP
-	cOUT       chan *Country
-	errOUT     chan error
+	inflight   *singleflight.Group
 	userID     string
 	licenseKey string
 	// client instantiated once and used for all queries to MaxMind.
@@ -54,39 +49,14 @@ type mmws struct {
 
 func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
 	mm := &mmws{
-		State:       suspend.NewStateWithHash(fnv.New64a()),
-		ipIN:        make(chan net.IP),
-		cOUT:        make(chan *Country),
-		errOUT:      make(chan error),
+		inflight:    new(singleflight.Group),
 		userID:      userID,
 		licenseKey:  licenseKey,
 		client:      hc,
 		TransCacher: t,
 	}
 
-	for i := 0; i < runtime.NumCPU(); i++ {
-		go workfetch(mm, mm.ipIN, mm.cOUT, mm.errOUT)
-	}
-
 	return mm
-}
-
-func workfetch(mm *mmws, ipIN <-chan net.IP, cOUT chan<- *Country, errOUT chan<- error) {
-	for {
-		select {
-		case ip, ok := <-ipIN:
-			if !ok {
-				// channel closed, so quit
-				return
-			}
-			c, err := fetch(mm.client, mm.userID, mm.licenseKey, MaxMindWebserviceBaseURL, ip)
-			if err != nil {
-				errOUT <- errors.Wrap(err, "[geoip] mmws.Country.fetch")
-			} else {
-				cOUT <- c
-			}
-		}
-	}
 }
 
 // Country queries the MaxMind Webserver for one IP address. Implements the
@@ -101,40 +71,41 @@ func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Get")
 	}
-
-	switch {
-	case err == nil:
-		// cache hit
+	if err == nil {
 		return c, nil
-	case mm.ShouldStartBytes(ipAddress):
-		defer mm.DoneBytes(ipAddress) // send Signal and release waiter
-		mm.ipIN <- ipAddress
-		select {
-		case err := <-mm.errOUT:
-			return nil, errors.Wrap(err, "[geoip] mmws.Country.fetch.errOUT")
-		case c = <-mm.cOUT:
-			if err := mm.TransCacher.Set(ipAddress, c); err != nil {
-				return nil, errors.Wrap(err, "[geoip] mmws.Country.cacheSave")
-			}
-			if !c.IP.Equal(ipAddress) {
-				// call itself as long until we get our ip. This is pretty rare
-				// and no idea how to 100% test it. There might be a 0.0000001%
-				// chance under very high load that a stack(?) overflow can
-				// occur.
-				return mm.Country(ipAddress)
-			}
-			return c, nil
-		}
-	case mm.ShouldWaitBytes(ipAddress):
-		// do nothing and wait
-		return mm.Country(ipAddress) // now try again
 	}
 
-	return nil, errors.Wrapf(err, "[geoip] mmws.Country.TransCacher.Get: IP %q Previous error in fetch.", ipAddress)
+	// runs the fetching of the HTTP result in another goroutine provided by DoChan()
+	chResult := mm.inflight.DoChan(ipAddress.String(), func() (interface{}, error) {
+		cntry, err := fetch(mm.client, mm.userID, mm.licenseKey, ipAddress)
+		if err != nil {
+			return nil, errors.Wrap(err, "[geoip] mmws.Country.Inflight.DoChan fetch() error")
+		}
+		if err := mm.TransCacher.Set(ipAddress, cntry); err != nil {
+			return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Set")
+		}
+		return cntry, nil
+	})
+
+	select {
+	case res, ok := <-chResult:
+		if !ok {
+			return nil, errors.NewFatalf("[geoip] mmws.Country.Inflight.DoChan returned a closed/unreadable channel")
+		}
+		if res.Err != nil {
+			return nil, errors.Wrap(res.Err, "[geoip] mmws.Country.Inflight.DoChan.Error")
+		}
+		if c, ok = res.Val.(*Country); ok {
+			return c, nil
+		} else {
+			return nil, errors.NewFatalf("[geoip] mmws.Country.InflightDoChan res.Val cannot be type asserted to *Country")
+		}
+	}
+
+	return nil, errors.Wrapf(err, "[geoip] mmws.Country: Nothing to select for IP %q", ipAddress)
 }
 
 func (mm *mmws) Close() error {
-	close(mm.ipIN)
 	return nil
 }
 
@@ -146,9 +117,9 @@ func (mm *mmws) Close() error {
 //	return a.fetch("https://geoip.maxmind.com/geoip/v2.1/insights/", ipAddress)
 //}
 
-func fetch(hc *http.Client, userID, licenseKey, baseURL string, ipAddress net.IP) (*Country, error) {
+func fetch(hc *http.Client, userID, licenseKey string, ipAddress net.IP) (*Country, error) {
 	var country = new(Country)
-	req, err := http.NewRequest("GET", baseURL+ipAddress.String(), nil)
+	req, err := http.NewRequest("GET", MaxMindWebserviceBaseURL+ipAddress.String(), nil)
 	if err != nil {
 		return country, errors.Wrap(err, "[geoip] http.NewRequest")
 	}
@@ -168,7 +139,7 @@ func fetch(hc *http.Client, userID, licenseKey, baseURL string, ipAddress net.IP
 	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
 		var v WebserviceError
 		v.err = json.NewDecoder(resp.Body).Decode(&v)
-		return nil, errors.NewNotValid(v, "[geoip] mmws.fetch URL: "+baseURL)
+		return nil, errors.NewNotValid(v, "[geoip] mmws.fetch URL: "+MaxMindWebserviceBaseURL)
 	}
 
 	// parse the response body

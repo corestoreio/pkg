@@ -117,8 +117,8 @@ func TestMmws_Country_Success(t *testing.T) {
 	}
 	wg.Wait()
 
-	assert.Exactly(t, 4, tcmock.SetCount(), "SetCount")             // 4 because modulus 4
-	if have, want := tcmock.GetCount(), iterations-4; have < want { // because 4 set and 96 hit
+	assert.Exactly(t, 4, tcmock.SetCount(), "SetCount")   // 4 because modulus 4
+	if have, want := tcmock.GetCount(), 60; have < want { // at least 60 should hit the cache and the rest waits and gets a copied result from inflight
 		t.Errorf("Have: %d < Want: %d", have, want)
 	}
 
