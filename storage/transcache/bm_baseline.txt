@@ -1,24 +1,24 @@
-Benchmark_BigCache_Country/Gob_1x-4         	   50000	     28216 ns/op	   15730 B/op	     429 allocs/op
-Benchmark_BigCache_Country/Gob_2x-4         	   30000	     47045 ns/op	   27043 B/op	     747 allocs/op
-Benchmark_BigCache_Country/JSON_1x-4        	   20000	     71231 ns/op	   14455 B/op	     418 allocs/op
-Benchmark_BigCache_Country/JSON_2x-4        	   10000	    111007 ns/op	   21457 B/op	     706 allocs/op
-Benchmark_BigCache_Country/MsgPack_1x-4     	  100000	     23489 ns/op	    5406 B/op	     133 allocs/op
-Benchmark_BigCache_Country/MsgPack_2x-4     	   50000	     39160 ns/op	    9117 B/op	     261 allocs/op
-Benchmark_BigCache_Stores/Gob_1x-4          	  200000	      7798 ns/op	    1136 B/op	      35 allocs/op
-Benchmark_BigCache_Stores/Gob_2x-4          	  200000	     12645 ns/op	    1999 B/op	      64 allocs/op
-Benchmark_BigCache_Stores/JSON_1x-4         	   50000	     26274 ns/op	    5918 B/op	     119 allocs/op
-Benchmark_BigCache_Stores/JSON_2x-4         	   30000	     48810 ns/op	    8802 B/op	     196 allocs/op
-Benchmark_BigCache_Stores/MsgPack_1x-4      	  100000	     13792 ns/op	    1447 B/op	      34 allocs/op
-Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     21718 ns/op	    2247 B/op	      62 allocs/op
-Benchmark_BoltDB_Gob/Country_1x-4           	    5000	    312321 ns/op	   39375 B/op	     491 allocs/op
-Benchmark_BoltDB_Gob/Stores_1x-4            	    5000	    245409 ns/op	   17602 B/op	     100 allocs/op
-Benchmark_Redis_Gob/Country_1x-4            	   10000	    106882 ns/op	   18410 B/op	     436 allocs/op
-Benchmark_Redis_Gob/Country_2x-4            	   10000	    164482 ns/op	   32212 B/op	     758 allocs/op
-Benchmark_Redis_Gob/Stores_1x-4             	   20000	     70704 ns/op	    1924 B/op	      42 allocs/op
-Benchmark_Redis_Gob/Stores_2x-4             	   10000	    100832 ns/op	    3383 B/op	      75 allocs/op
-Benchmark_Redis_MsgPack/Country_1x-4        	   20000	     88569 ns/op	    9131 B/op	     140 allocs/op
-Benchmark_Redis_MsgPack/Country_2x-4        	   10000	    137109 ns/op	   16370 B/op	     272 allocs/op
-Benchmark_Redis_MsgPack/Stores_1x-4         	   20000	     73571 ns/op	    2977 B/op	      41 allocs/op
-Benchmark_Redis_MsgPack/Stores_2x-4         	   10000	    113339 ns/op	    5121 B/op	      73 allocs/op
+Benchmark_BigCache_Country/Gob_1x-4         	   50000	     27743 ns/op	   15741 B/op	     429 allocs/op
+Benchmark_BigCache_Country/Gob_2x-4         	   30000	     45193 ns/op	   27059 B/op	     747 allocs/op
+Benchmark_BigCache_Country/JSON_1x-4        	   20000	     60756 ns/op	   14442 B/op	     418 allocs/op
+Benchmark_BigCache_Country/JSON_2x-4        	   10000	    110858 ns/op	   21430 B/op	     706 allocs/op
+Benchmark_BigCache_Country/MsgPack_1x-4     	   50000	     25712 ns/op	   10730 B/op	     139 allocs/op
+Benchmark_BigCache_Country/MsgPack_2x-4     	   30000	     42964 ns/op	   17324 B/op	     270 allocs/op
+Benchmark_BigCache_Stores/Gob_1x-4          	  200000	      7854 ns/op	    1136 B/op	      35 allocs/op
+Benchmark_BigCache_Stores/Gob_2x-4          	  200000	     11990 ns/op	    2000 B/op	      64 allocs/op
+Benchmark_BigCache_Stores/JSON_1x-4         	   50000	     25751 ns/op	    5917 B/op	     119 allocs/op
+Benchmark_BigCache_Stores/JSON_2x-4         	   30000	     44873 ns/op	    8799 B/op	     196 allocs/op
+Benchmark_BigCache_Stores/MsgPack_1x-4      	  100000	     15413 ns/op	    6757 B/op	      40 allocs/op
+Benchmark_BigCache_Stores/MsgPack_2x-4      	  100000	     24071 ns/op	   10453 B/op	      71 allocs/op
+Benchmark_BoltDB_Gob/Country_1x-4           	    5000	    282996 ns/op	   41777 B/op	     528 allocs/op
+Benchmark_BoltDB_Gob/Stores_1x-4            	    5000	    241388 ns/op	   17873 B/op	     106 allocs/op
+Benchmark_Redis_Gob/Country_1x-4            	   20000	    105060 ns/op	   19733 B/op	     458 allocs/op
+Benchmark_Redis_Gob/Country_2x-4            	   10000	    161372 ns/op	   34331 B/op	     793 allocs/op
+Benchmark_Redis_Gob/Stores_1x-4             	   20000	     70220 ns/op	    1975 B/op	      42 allocs/op
+Benchmark_Redis_Gob/Stores_2x-4             	   10000	    100111 ns/op	    3469 B/op	      76 allocs/op
+Benchmark_Redis_MsgPack/Country_1x-4        	   20000	     96431 ns/op	   14481 B/op	     146 allocs/op
+Benchmark_Redis_MsgPack/Country_2x-4        	   10000	    147528 ns/op	   24639 B/op	     281 allocs/op
+Benchmark_Redis_MsgPack/Stores_1x-4         	   20000	     80508 ns/op	    8297 B/op	      47 allocs/op
+Benchmark_Redis_MsgPack/Stores_2x-4         	   10000	    123921 ns/op	   13339 B/op	      82 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/storage/transcache	42.743s
+ok  	github.com/corestoreio/csfw/storage/transcache	43.361s

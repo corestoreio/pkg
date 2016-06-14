@@ -52,7 +52,7 @@ func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
 }
 
 func newTestNewProcessor(t *testing.T, opts ...transcache.Option) {
-	p, err := transcache.NewProcessor(append(opts, transcache.WithGob())...)
+	p, err := transcache.NewProcessor(append(opts, transcache.WithPooledEncoder(transcache.GobCodec{}, Country{}, TableStoreSlice{}))...)
 	cstesting.FatalIfError(t, err)
 
 	var wg sync.WaitGroup

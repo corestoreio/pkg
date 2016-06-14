@@ -15,7 +15,6 @@
 package transcache_test
 
 import (
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"os"
@@ -112,21 +111,21 @@ func benchmark_stores_enc(iterationsSetGet int, opts ...transcache.Option) func(
 }
 
 func Benchmark_BigCache_Country(b *testing.B) {
-	b.Run("Gob_1x", benchmark_country_enc(1, tcbigcache.With(), transcache.WithGob(Country{})))
-	b.Run("Gob_2x", benchmark_country_enc(2, tcbigcache.With(), transcache.WithGob(Country{})))
-	b.Run("JSON_1x", benchmark_country_enc(1, tcbigcache.With(), transcache.WithEncoder(newJSONEncoder, newJSONDecoder)))
-	b.Run("JSON_2x", benchmark_country_enc(2, tcbigcache.With(), transcache.WithEncoder(newJSONEncoder, newJSONDecoder)))
-	b.Run("MsgPack_1x", benchmark_country_enc(1, tcbigcache.With(), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
-	b.Run("MsgPack_2x", benchmark_country_enc(2, tcbigcache.With(), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
+	b.Run("Gob_1x", benchmark_country_enc(1, tcbigcache.With(), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
+	b.Run("Gob_2x", benchmark_country_enc(2, tcbigcache.With(), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
+	b.Run("JSON_1x", benchmark_country_enc(1, tcbigcache.With(), transcache.WithPooledEncoder(transcache.JSONCodec{})))
+	b.Run("JSON_2x", benchmark_country_enc(2, tcbigcache.With(), transcache.WithPooledEncoder(transcache.JSONCodec{})))
+	b.Run("MsgPack_1x", benchmark_country_enc(1, tcbigcache.With(), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("MsgPack_2x", benchmark_country_enc(2, tcbigcache.With(), transcache.WithEncoder(newMsgPackCodec())))
 }
 
 func Benchmark_BigCache_Stores(b *testing.B) {
-	b.Run("Gob_1x", benchmark_stores_enc(1, tcbigcache.With(), transcache.WithGob(TableStoreSlice{})))
-	b.Run("Gob_2x", benchmark_stores_enc(2, tcbigcache.With(), transcache.WithGob(TableStoreSlice{})))
-	b.Run("JSON_1x", benchmark_stores_enc(1, tcbigcache.With(), transcache.WithEncoder(newJSONEncoder, newJSONDecoder)))
-	b.Run("JSON_2x", benchmark_stores_enc(2, tcbigcache.With(), transcache.WithEncoder(newJSONEncoder, newJSONDecoder)))
-	b.Run("MsgPack_1x", benchmark_stores_enc(1, tcbigcache.With(), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
-	b.Run("MsgPack_2x", benchmark_stores_enc(2, tcbigcache.With(), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
+	b.Run("Gob_1x", benchmark_stores_enc(1, tcbigcache.With(), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
+	b.Run("Gob_2x", benchmark_stores_enc(2, tcbigcache.With(), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
+	b.Run("JSON_1x", benchmark_stores_enc(1, tcbigcache.With(), transcache.WithPooledEncoder(transcache.JSONCodec{})))
+	b.Run("JSON_2x", benchmark_stores_enc(2, tcbigcache.With(), transcache.WithPooledEncoder(transcache.JSONCodec{})))
+	b.Run("MsgPack_1x", benchmark_stores_enc(1, tcbigcache.With(), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("MsgPack_2x", benchmark_stores_enc(2, tcbigcache.With(), transcache.WithEncoder(newMsgPackCodec())))
 }
 
 func getTempFile(t interface {
@@ -142,8 +141,8 @@ func getTempFile(t interface {
 func Benchmark_BoltDB_Gob(b *testing.B) {
 	f := getTempFile(b)
 	defer os.Remove(f)
-	b.Run("Country_1x", benchmark_country_enc(1, transcache.WithGob(Country{}), tcboltdb.WithFile(f, 0600)))
-	b.Run("Stores_1x", benchmark_stores_enc(1, tcboltdb.WithFile(f, 0600), transcache.WithGob(TableStoreSlice{})))
+	b.Run("Country_1x", benchmark_country_enc(1, transcache.WithPooledEncoder(transcache.GobCodec{}, Country{}), tcboltdb.WithFile(f, 0600)))
+	b.Run("Stores_1x", benchmark_stores_enc(1, tcboltdb.WithFile(f, 0600), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
 }
 
 func Benchmark_Redis_Gob(b *testing.B) {
@@ -153,10 +152,10 @@ func Benchmark_Redis_Gob(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithGob(Country{})))
-	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithGob(Country{})))
-	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithGob(TableStoreSlice{})))
-	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithGob(TableStoreSlice{})))
+	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
+	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
+	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
+	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
 }
 
 func Benchmark_Redis_MsgPack(b *testing.B) {
@@ -166,21 +165,27 @@ func Benchmark_Redis_MsgPack(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
-	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
-	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
-	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newUgorjiMsgPackEncoder, newUgorjiMsgPackDecoder)))
+	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
 }
-
-func newJSONEncoder(w io.Writer) transcache.Encoder { return json.NewEncoder(w) }
-func newJSONDecoder(r io.Reader) transcache.Decoder { return json.NewDecoder(r) }
 
 var ugmsgPackHandle codec.MsgpackHandle
 
-func newUgorjiMsgPackDecoder(r io.Reader) transcache.Decoder {
-	return codec.NewDecoder(r, &ugmsgPackHandle)
+// msgPackCodec cannot be pooled because then it uses too much allocs and slows down.
+type msgPackCodec struct{}
+
+func newMsgPackCodec() msgPackCodec {
+	return msgPackCodec{}
 }
 
-func newUgorjiMsgPackEncoder(w io.Writer) transcache.Encoder {
+// NewEncoder returns a new json encoder which writes to w
+func (c msgPackCodec) NewEncoder(w io.Writer) transcache.Encoder {
 	return codec.NewEncoder(w, &ugmsgPackHandle)
+}
+
+// NewDecoder returns a new json decoder which reads from r
+func (c msgPackCodec) NewDecoder(r io.Reader) transcache.Decoder {
+	return codec.NewDecoder(r, &ugmsgPackHandle)
 }

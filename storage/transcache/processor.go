@@ -15,9 +15,9 @@
 package transcache
 
 import (
-	"bytes"
-	"sync"
+	"io"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -43,6 +43,11 @@ type Transcacher interface {
 	Get(key []byte, dst interface{}) error
 }
 
+type Codecer interface {
+	NewEncoder(io.Writer) Encoder
+	NewDecoder(io.Reader) Decoder
+}
+
 // Encoder defines how to encode a type represented by variable src into a byte
 // slice. Encoders must write their data into an io.Writer defined in option
 // function WithEncoder().
@@ -56,29 +61,11 @@ type Decoder interface {
 	Decode(dst interface{}) error
 }
 
-// 32 is quite good. there are not yet any benefits from higher values
-const encodeShards = 32 // must be power of 2
-const encodeShardMask uint64 = encodeShards - 1
-
-type encode struct {
-	Encoder
-	sync.Mutex
-	buf *bytes.Buffer
-}
-
-type decode struct {
-	Decoder
-	sync.Mutex
-	buf *bytes.Buffer
-}
-
 // Processor handles the encoding, decoding and caching
 type Processor struct {
-	Hasher
 	// Cache exported to allow easy debugging and access to raw values.
 	Cache Cacher
-	enc   [encodeShards]encode
-	dec   [encodeShards]decode
+	Codec Codecer
 }
 
 // NewProcessor creates a new type with no default cache instance and no
@@ -86,71 +73,53 @@ type Processor struct {
 // packages tcbigcache, tcbolddb and tcredis. You must also set an encoder,
 // which is not optional ;-)
 func NewProcessor(opts ...Option) (*Processor, error) {
-	p := &Processor{
-		Hasher: newDefaultHasher(),
-	}
-	for i := 0; i < encodeShards; i++ {
-		p.enc[i].buf = new(bytes.Buffer)
-		p.dec[i].buf = new(bytes.Buffer)
-	}
-	if err := p.Options(opts...); err != nil {
-		return nil, err
-	}
-	if p.enc[0].Encoder == nil || p.dec[0].Decoder == nil {
-		return nil, errors.NewFatalf("[transcache] NewProcessor cannot work properly without encoder and decoder. Please set.")
+	p := new(Processor)
+	for _, opt := range opts {
+		if err := opt(p); err != nil {
+			return nil, errors.Wrap(err, "[transcache] NewProcessor applied options")
+		}
 	}
 	return p, nil
 }
 
-// Options applies option after object creation. Very useful when priming types
-// for the gob encoder.
-func (p *Processor) Options(opts ...Option) error {
-	for _, opt := range opts {
-		if err := opt(p); err != nil {
-			return errors.Wrap(err, "[transcache] NewProcessor applied options")
-		}
-	}
-	return nil
-}
-
-func (p *Processor) shardID(key []byte) uint64 {
-	return p.Hasher.Sum64(key) & encodeShardMask
-}
-
 // Set sets the type src with a key
 func (tr *Processor) Set(key []byte, src interface{}) error {
-	shardID := tr.shardID(key)
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
-	tr.enc[shardID].Lock()
-	defer tr.enc[shardID].Unlock()
-	defer tr.enc[shardID].buf.Reset()
+	enc := tr.Codec.NewEncoder(buf)
+	if pc, ok := tr.Codec.(*pooledCodec); ok {
+		defer pc.PutEncoder(enc)
+	}
 
-	if err := tr.enc[shardID].Encode(src); err != nil {
+	if err := enc.Encode(src); err != nil {
 		return errors.NewFatal(err, "[transcache] Set.Encode")
 	}
 
-	var buf = make([]byte, tr.enc[shardID].buf.Len(), tr.enc[shardID].buf.Len())
-	copy(buf, tr.enc[shardID].buf.Bytes()) // copy the encoded data away because we're reusing the buffer
-	return errors.NewFatal(tr.Cache.Set(key, buf), "[transcache] Set.Cache.Set")
+	var copied = make([]byte, buf.Len(), buf.Len())
+	copy(copied, buf.Bytes()) // copy the encoded data away because we're reusing the buffer
+	return errors.NewFatal(tr.Cache.Set(key, copied), "[transcache] Set.Cache.Set")
 }
 
 // Get looks up the key and parses the raw data into the destination pointer
 // dst. You have to check yourself if the returned error is of type NotFound or
 // of any other source. Every caching type defines its own NotFound error.
 func (tr *Processor) Get(key []byte, dst interface{}) error {
-	shardID := tr.shardID(key)
-	tr.dec[shardID].Lock()
-	defer tr.dec[shardID].Unlock()
-	tr.dec[shardID].buf.Reset()
-
 	val, err := tr.Cache.Get(key)
 	if err != nil {
 		return errors.Wrap(err, "[transcache] Get.Cache.Get")
 	}
-	if _, err := tr.dec[shardID].buf.Write(val); err != nil {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	if _, err := buf.Write(val); err != nil {
 		return errors.NewWriteFailed(err, "[transcache] Get.Buffer.Write")
 	}
-	if err := tr.dec[shardID].Decode(dst); err != nil {
+	dec := tr.Codec.NewDecoder(buf)
+	if pc, ok := tr.Codec.(*pooledCodec); ok {
+		defer pc.PutDecoder(dec)
+	}
+	if err := dec.Decode(dst); err != nil {
 		return errors.NewFatal(err, "[transcache] Get.Decode")
 	}
 	return nil

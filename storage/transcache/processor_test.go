@@ -21,24 +21,31 @@ import (
 	"sync"
 	"testing"
 
+	"encoding/gob"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ transcache.Transcacher = (*transcache.Processor)(nil)
 
+func withError() transcache.Option {
+	return func(p *transcache.Processor) error {
+		return errors.NewNotImplementedf("What?")
+	}
+}
+
 func TestNewProcessor_NewError(t *testing.T) {
-	p, err := transcache.NewProcessor()
+	p, err := transcache.NewProcessor(withError())
 	assert.Nil(t, p)
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
+	assert.True(t, errors.IsNotImplemented(err), "Error: %s", err)
 }
 
 func TestNewProcessor_EncoderError(t *testing.T) {
-	p, err := transcache.NewProcessor(transcache.WithGob())
+	p, err := transcache.NewProcessor(transcache.WithPooledEncoder(transcache.GobCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +60,7 @@ func TestNewProcessor_EncoderError(t *testing.T) {
 }
 
 func TestNewProcessor_DecoderError(t *testing.T) {
-	p, err := transcache.NewProcessor(transcache.WithGob(), tcbigcache.With())
+	p, err := transcache.NewProcessor(transcache.WithPooledEncoder(transcache.GobCodec{}), tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +80,7 @@ func TestNewProcessor_DecoderError(t *testing.T) {
 }
 
 func TestNewProcessor_GetError(t *testing.T) {
-	p, err := transcache.NewProcessor(transcache.WithGob(), tcbigcache.With())
+	p, err := transcache.NewProcessor(transcache.WithPooledEncoder(transcache.GobCodec{}), tcbigcache.With())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +96,6 @@ const iterations = 30
 
 func testCountry(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
 	defer wg.Done()
-	cstesting.FatalIfError(t, p.Options(transcache.WithGobPriming(Country{})))
 
 	var val = getTestCountry(t)
 
@@ -124,7 +130,6 @@ func testCountry(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key 
 
 func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, key []byte) {
 	defer wg.Done()
-	cstesting.FatalIfError(t, p.Options(transcache.WithGobPriming(TableStoreSlice{})))
 
 	var val = getTestStores()
 	if err := p.Set(key, val); err != nil {
@@ -150,6 +155,11 @@ func testStoreSlice(t *testing.T, wg *sync.WaitGroup, p *transcache.Processor, k
 		t.Fatal(err)
 	}
 	assert.Exactly(t, val, newVal)
+}
+
+func init() {
+	gob.Register(&Country{})
+	gob.Register(&TableStoreSlice{})
 }
 
 type Country struct {
