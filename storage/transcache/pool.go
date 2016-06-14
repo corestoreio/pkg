@@ -42,13 +42,13 @@ func NewPooledCodec(codec Codecer, types ...interface{}) Codecer {
 			var dec delegateDecoder
 			dec.Decoder = codec.NewDecoder(&dec)
 			if len(types) > 0 {
-				var buf bytes.Buffer
-				enc := codec.NewEncoder(&buf)
+				var buf = new(bytes.Buffer)
+				enc := codec.NewEncoder(buf)
 				if err := enc.Encode(types); err != nil {
 					panic(err)
 				}
 				var testTypes []interface{}
-				dec.Reader = bytes.NewReader(buf.Bytes())
+				dec.Reader = buf
 				if err := dec.Decode(&testTypes); err != nil {
 					panic(err)
 				}
