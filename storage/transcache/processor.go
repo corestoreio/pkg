@@ -43,6 +43,7 @@ type Transcacher interface {
 	Get(key []byte, dst interface{}) error
 }
 
+// Codecer defines the functions needed to create a new Encoder or Decoder
 type Codecer interface {
 	NewEncoder(io.Writer) Encoder
 	NewDecoder(io.Reader) Decoder

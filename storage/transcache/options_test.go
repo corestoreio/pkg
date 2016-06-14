@@ -14,41 +14,10 @@
 
 package transcache_test
 
-import (
-	"bytes"
-	"encoding/gob"
-	"io"
-	"testing"
+import "github.com/corestoreio/csfw/storage/transcache"
+
+var (
+	_ transcache.Codecer = transcache.XMLCodec{}
+	_ transcache.Codecer = transcache.JSONCodec{}
+	_ transcache.Codecer = transcache.GobCodec{}
 )
-
-func xxxTestGobPrimer(t *testing.T) {
-
-	bufEnc := new(bytes.Buffer)
-	enc := gob.NewEncoder(bufEnc)
-	bufDec := new(bytes.Buffer)
-	dec := gob.NewDecoder(bufDec)
-
-	//var tc := Country{}
-	//var tss := TableStoreSlice{}
-	//var ts := TableStore{}
-
-	var primeType interface{}
-	primeType = TableStore{IsActive: true}
-
-	if err := enc.Encode(primeType); err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("Enc1: %#v\n", bufEnc.String())
-
-	if _, err := io.Copy(bufDec, bufEnc); err != nil {
-		t.Fatal(err)
-	}
-
-	var ts TableStore
-	if err := dec.Decode(&ts); err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("Dec1: %#v\n", bufDec.String())
-	t.Logf("Dec2: %#v\n", ts)
-
-}

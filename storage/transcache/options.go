@@ -21,14 +21,9 @@ import (
 	"io"
 )
 
-// Options allows to set custom cache storage and encoder and decoder
+// Option provides convenience helper functions to apply various options while
+// creating a new Processor type.
 type Option func(*Processor) error
-
-var (
-	_ Codecer = XMLCodec{}
-	_ Codecer = JSONCodec{}
-	_ Codecer = GobCodec{}
-)
 
 // XMLCodec is used to encode/decode XML
 type XMLCodec struct{}
@@ -56,7 +51,8 @@ func (c JSONCodec) NewDecoder(r io.Reader) Decoder {
 	return json.NewDecoder(r)
 }
 
-// GobCodec is used to encode/decode using the Gob format.
+// GobCodec is used to encode/decode using the Gob format. You must use
+// gob.Register to add new types to a pooled gob encoder.
 type GobCodec struct{}
 
 // NewEncoder returns a new gob encoder which writes to w
@@ -69,8 +65,7 @@ func (c GobCodec) NewDecoder(r io.Reader) Decoder {
 	return gob.NewDecoder(r)
 }
 
-// WithEncoder sets a custom encoder and decoder like message-pack or protobuf,
-// captnproto, JSON, XML ...
+// WithEncoder sets a custom encoder and decoder.
 func WithEncoder(codec Codecer) Option {
 	return func(p *Processor) error {
 		p.Codec = codec
