@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sys/suspend"
+	"github.com/corestoreio/csfw/sync/suspend"
 	"github.com/corestoreio/csfw/util/errors"
 )
 

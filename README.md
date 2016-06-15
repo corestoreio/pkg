@@ -106,7 +106,7 @@ geniuses listed below:
 | Olivier Poitrey| [ctxmw.WithAccessLog](https://github.com/corestoreio/csfw/tree/master/net/ctxmw) & CORS | Copyright (c) 2014-2015  MIT License |
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/csfw/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
 | Uber Technologies, Inc. | [log](https://github.com/corestoreio/csfw/tree/master/log) | Copyright (c) 2016 MIT License |
-| 2013 The Go Authors | [singleflight](https://github.com/corestoreio/csfw/tree/master/sys/singleflight) | Copyright (c) 2013 BSD Style |
+| 2013 The Go Authors | [singleflight](https://github.com/corestoreio/csfw/tree/master/sync/singleflight) | Copyright (c) 2013 BSD Style |
 
 ## Licensing
 

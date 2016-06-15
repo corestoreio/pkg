@@ -20,7 +20,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/corestoreio/csfw/sys/singleflight"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 

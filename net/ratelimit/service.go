@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sys/suspend"
+	"github.com/corestoreio/csfw/sync/suspend"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
