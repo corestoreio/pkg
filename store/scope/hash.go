@@ -14,7 +14,11 @@
 
 package scope
 
-import "fmt"
+import (
+	"strconv"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
+)
 
 // MaxStoreID maximum allowed ID from package store. Doesn't matter whether we
 // have a website, group or store ID. int24 (8388607) size at the moment.
@@ -32,8 +36,19 @@ type Hash uint32
 
 // String human readable output
 func (h Hash) String() string {
+	// remove this one alloc and optmize further
 	scp, id := h.Unpack()
-	return fmt.Sprintf("Scope(%s) ID(%d)", scp, id)
+	buf := bufferpool.Get()
+	_, _ = buf.WriteString("Scope(")
+	_, _ = buf.WriteString(scp.String())
+	_, _ = buf.WriteString(") ID(")
+	nb := strconv.AppendInt(buf.Bytes(), id, 10)
+	buf.Reset()
+	_, _ = buf.Write(nb)
+	_ = buf.WriteByte(')')
+	ret := buf.String()
+	bufferpool.Put(buf)
+	return ret
 }
 
 // ToUint64 converts the hash

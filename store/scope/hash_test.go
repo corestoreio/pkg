@@ -24,8 +24,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHashString(t *testing.T) {
+var benchmarkHashString string
 
+func BenchmarkHashString(b *testing.B) {
+	s := scope.NewHash(scope.Store, 33)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkHashString = s.String()
+	}
+}
+
+func TestHashString(t *testing.T) {
 	s := scope.NewHash(scope.Store, 33).String()
 	assert.Exactly(t, "Scope(Store) ID(33)", s)
 }
