@@ -15,6 +15,8 @@
 package backendgeoip
 
 import (
+	"encoding/gob"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/geoip"
@@ -23,6 +25,10 @@ import (
 	"github.com/corestoreio/csfw/storage/transcache/tcredis"
 	"github.com/corestoreio/csfw/util/errors"
 )
+
+func init() {
+	gob.Register(geoip.Country{})
+}
 
 // Default creates new geoip.Option slice with the default configuration
 // structure. It panics on error, so us it only during the app init phase.
@@ -102,7 +108,7 @@ func PrepareOptions(be *Backend) geoip.OptionFactoryFunc {
 		default:
 			opt[0] = tcbigcache.With()
 		}
-		opt[1] = transcache.WithGob(geoip.Country{}) // prime gob with the Country struct
+		opt[1] = transcache.WithPooledEncoder(transcache.GobCodec{}, geoip.Country{}) // prime gob with the Country struct
 
 		// for now only encoding/gob can be used, we might make it configurable
 		// to choose the encoder/decoder.

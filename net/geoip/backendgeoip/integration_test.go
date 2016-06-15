@@ -239,9 +239,34 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 
 		// For the race detector
 		var wg sync.WaitGroup
-		for i := 1; i <= 40; i++ {
+
+		for i := 1; i <= 3; i++ { // prime the cache
 			wg.Add(1)
-			sleeep := time.Microsecond * time.Duration(rand.Intn(200*i))
+			sleeep := time.Millisecond * time.Duration(rand.Intn(100*i))
+			go func(wg *sync.WaitGroup, sleep time.Duration) {
+				defer wg.Done()
+				time.Sleep(sleep)
+
+				rec := httptest.NewRecorder()
+				geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					c, err := geoip.FromContextCountry(r.Context())
+					assert.Nil(t, c)
+					if err != nil {
+						println("\nBefore Panicing\n", logBuf.String(), "\n==== P A N I C====\n")
+						panic(errors.PrintLoc(err))
+					}
+					panic("Should not be called")
+
+				})).ServeHTTP(rec, req)
+
+				assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
+				assert.Exactly(t, 307, rec.Code)
+			}(&wg, sleeep)
+		}
+
+		for i := 1; i <= 40; i++ { // now run the requests
+			wg.Add(1)
+			sleeep := time.Microsecond * time.Duration(rand.Intn(100*i))
 			go func(wg *sync.WaitGroup, sleep time.Duration) {
 				defer wg.Done()
 				time.Sleep(sleep)
@@ -264,20 +289,13 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 		}
 		wg.Wait()
 
-		// Min 7 calls IsValid
-		// Exactly one call to ShouldStart
-		// Min 3 calls to ShouldWait
-		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.IsValid`), 7; have < want {
+		// Min 20 calls IsValid
+		// Exactly one call to optionInflight.Do
+		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.IsValid`), 20; have < want {
 			t.Errorf("ConfigByScopedGetter.IsValid: Have: %d < Want: %d", have, want)
 		}
-		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldStart`), 1; have != want {
-			t.Errorf("ConfigByScopedGetter.ShouldStart: Have: %d Want: %d", have, want)
-		}
-		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.ShouldWait`), 0; have < want {
-			// set to 0 because sometimes no one is waiting
-			// If this fails during -race test with many -count CLI agrs then
-			// it doesn't matter
-			t.Errorf("ConfigByScopedGetter.ShouldWait: Have: %d < Want: %d", have, want)
+		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.optionInflight.Do`), 1; have != want {
+			t.Errorf("ConfigByScopedGetter.optionInflight.Do: Have: %d Want: %d", have, want)
 		}
 		// println("\n", logBuf.String(), "\n")
 	}

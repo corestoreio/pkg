@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sys/suspend"
+	"github.com/corestoreio/csfw/sys/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -36,12 +36,12 @@ type Service struct {
 	// in the internal map. ScopedOption requires a config.ScopedGetter. This
 	// function gets set via WithOptionFactory()
 	optionFactoryFunc OptionFactoryFunc
-	// optionFactoryState checks on a per scope.Hash basis if the
-	// configuration loading process takes place. Delays the execution of other
-	// Goroutines with the same scope.Hash until the configuration has been
-	// fully loaded and applied and for that specific scope. This function gets
-	// set via WithOptionFactory()
-	optionFactoryState suspend.State
+	// optionInflight checks on a per scope.Hash basis if the configuration loading
+	// process takes place. Stops the execution of other Goroutines with the
+	// same scope.Hash until the configuration has been fully loaded and applied
+	// and for that specific scope. This function gets set via
+	// WithOptionFactory()
+	optionInflight *singleflight.Group
 
 	// defaultScopeCache has been extracted from the scopeCache to allow faster
 	// access to the standard configuration without accessing a map.
@@ -157,29 +157,21 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		// back will only be executed once and each scope knows from now on that
 		// it has the configuration of the default scope.
 		return s.getConfigByScopeID(h, true)
-	case s.optionFactoryState.ShouldStart(h.ToUint64()): // 2. map lookup, execute for each scope which needs to initialize the configuration.
-		// gets tested by backendgeoip
-		defer s.optionFactoryState.Done(h.ToUint64()) // send Signal and release waiter
+	}
 
+	newScpCfg, _, _ := s.optionInflight.Do(h.String(), func() (interface{}, error) {
 		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
 			return scopedConfig{
 				lastErr: errors.Wrap(err, "[geoip] Options by scpOptionFnc"),
-			}
+			}, nil
 		}
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldStart", log.Stringer("scope", h), log.Bool("isGeoIPLoaded_before", isGeoIPLoaded), log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()), log.Err(sCfg.isValid()))
+			s.Log.Debug("geoip.Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Bool("isGeoIPLoaded_before", isGeoIPLoaded), log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()), log.Err(sCfg.isValid()))
 		}
-	case s.optionFactoryState.ShouldWait(h.ToUint64()): // 3. map lookup
-		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.ConfigByScopedGetter.ShouldWait", log.Stringer("scope", h), log.Bool("isGeoIPLoaded_before", isGeoIPLoaded), log.Bool("isGeoIPLoaded_after", s.isGeoIPLoaded()), log.Err(sCfg.isValid()))
-		}
-		// gets tested by backendgeoip.
-		// Wait here! After optionFactoryState.Done() has been called in
-		// optionFactoryState.ShouldStart() we proceed and go to the last return
-		// statement to search for the newly set scopedConfig value.
-	}
+		return s.getConfigByScopeID(h, true), nil
+	})
 
-	return s.configByScopedGetter(scpGet)
+	return newScpCfg.(scopedConfig)
 }
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {

@@ -24,7 +24,7 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sys/suspend"
+	"github.com/corestoreio/csfw/sys/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -247,7 +247,7 @@ func WithGeoIP2WebserviceHttpClient(t TransCacher, userID, licenseKey string, hc
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
 		s.optionFactoryFunc = f
-		s.optionFactoryState = suspend.NewState()
+		s.optionInflight = new(singleflight.Group)
 		return nil
 	}
 }
