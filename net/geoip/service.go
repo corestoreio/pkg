@@ -66,7 +66,7 @@ type Service struct {
 	scopeCache map[scope.Hash]scopedConfig
 }
 
-// NewService creates a new GeoIP service to be used as a middleware.
+// New creates a new GeoIP service to be used as a middleware or standalone.
 func New(opts ...Option) (*Service, error) {
 	s := &Service{
 		geoIPLoaded: new(uint32),
@@ -103,7 +103,9 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// Closes the underlying GeoIP CountryRetriever service and resets the internal loading state.
+// Close closes the underlying GeoIP CountryRetriever service and resets the
+// internal loading state of the GeoIP flag. It does not yet clear the internal
+// cache.
 func (s *Service) Close() error {
 	atomic.StoreUint32(s.geoIPLoaded, 0)
 	return s.geoIP.Close()
@@ -171,24 +173,19 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		return s.getConfigByScopeID(h, true), nil
 	})
 
-	select {
-	case res, ok := <-scpCfgChan:
-		if !ok {
-			return scopedConfig{lastErr: errors.NewFatalf("[geoip] optionInflight.DoChan returned a closed/unreadable channel")}
-		}
-		if res.Err != nil {
-			return scopedConfig{lastErr: errors.Wrap(res.Err, "[geoip] optionInflight.DoChan.Error")}
-		}
-		sCfg, ok = res.Val.(scopedConfig)
-		if !ok {
-			sCfg.lastErr = errors.NewFatalf("[geoip] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
-		}
-		return sCfg
+	res, ok := <-scpCfgChan
+	if !ok {
+		return scopedConfig{lastErr: errors.NewFatalf("[geoip] optionInflight.DoChan returned a closed/unreadable channel")}
 	}
+	if res.Err != nil {
+		return scopedConfig{lastErr: errors.Wrap(res.Err, "[geoip] optionInflight.DoChan.Error")}
+	}
+	sCfg, ok = res.Val.(scopedConfig)
+	if !ok {
+		sCfg.lastErr = errors.NewFatalf("[geoip] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
+	}
+	return sCfg
 
-	return scopedConfig{
-		lastErr: errors.NewFatalf("[geoip] Nothing to select from channel for scope: %q", h),
-	}
 }
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {

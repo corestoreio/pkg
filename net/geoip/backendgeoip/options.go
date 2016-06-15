@@ -120,7 +120,7 @@ func PrepareOptions(be *Backend) geoip.OptionFactoryFunc {
 		if user != "" && license != "" && timeout > 0 {
 			if be.WebServiceClient != nil {
 				be.WebServiceClient.Timeout = timeout
-				opts[i] = geoip.WithGeoIP2WebserviceHttpClient(tc, user, license, be.WebServiceClient)
+				opts[i] = geoip.WithGeoIP2WebserviceHTTPClient(tc, user, license, be.WebServiceClient)
 			} else {
 				opts[i] = geoip.WithGeoIP2Webservice(tc, user, license, timeout)
 			}

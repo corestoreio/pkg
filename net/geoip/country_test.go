@@ -33,7 +33,7 @@ func TestCountry_JSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	var c Country
-	if err := json.Unmarshal(td, &c); err != nil {
+	if err = json.Unmarshal(td, &c); err != nil {
 		t.Fatal(err)
 	}
 

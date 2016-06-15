@@ -208,7 +208,7 @@ func WithGeoIP2File(filename string) Option {
 	}
 }
 
-// WithGeoIP2WebService uses for each incoming a request a lookup request to the
+// WithGeoIP2Webservice uses for each incoming a request a lookup request to the
 // Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/ and
 // caches the result in Transcacher. Hint: use package storage/transcache. If
 // the httpTimeout is lower 0 then the default 20s get applied.
@@ -216,13 +216,14 @@ func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout 
 	if httpTimeout < 1 {
 		httpTimeout = time.Second * 20
 	}
-	return WithGeoIP2WebserviceHttpClient(t, userID, licenseKey, &http.Client{Timeout: httpTimeout})
+	return WithGeoIP2WebserviceHTTPClient(t, userID, licenseKey, &http.Client{Timeout: httpTimeout})
 }
 
-// WithGeoIP2WebService uses for each incoming a request a lookup request to the
-// Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/ and
-// caches the result in Transcacher. Hint: use package storage/transcache.
-func WithGeoIP2WebserviceHttpClient(t TransCacher, userID, licenseKey string, hc *http.Client) Option {
+// WithGeoIP2WebserviceHTTPClient uses for each incoming a request a lookup
+// request to the Maxmind Webservice
+// http://dev.maxmind.com/geoip/geoip2/web-services/ and caches the result in
+// Transcacher. Hint: use package storage/transcache.
+func WithGeoIP2WebserviceHTTPClient(t TransCacher, userID, licenseKey string, hc *http.Client) Option {
 	return WithGeoIP(newMMWS(t, userID, licenseKey, hc))
 
 }

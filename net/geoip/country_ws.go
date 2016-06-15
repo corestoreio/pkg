@@ -87,22 +87,17 @@ func (mm *mmws) Country(ipAddress net.IP) (*Country, error) {
 		return cntry, nil
 	})
 
-	select {
-	case res, ok := <-chResult:
-		if !ok {
-			return nil, errors.NewFatalf("[geoip] mmws.Country.Inflight.DoChan returned a closed/unreadable channel")
-		}
-		if res.Err != nil {
-			return nil, errors.Wrap(res.Err, "[geoip] mmws.Country.Inflight.DoChan.Error")
-		}
-		if c, ok = res.Val.(*Country); ok {
-			return c, nil
-		} else {
-			return nil, errors.NewFatalf("[geoip] mmws.Country.InflightDoChan res.Val cannot be type asserted to *Country")
-		}
+	res, ok := <-chResult
+	if !ok {
+		return nil, errors.NewFatalf("[geoip] mmws.Country.Inflight.DoChan returned a closed/unreadable channel")
 	}
-
-	return nil, errors.Wrapf(err, "[geoip] mmws.Country: Nothing to select for IP %q", ipAddress)
+	if res.Err != nil {
+		return nil, errors.Wrap(res.Err, "[geoip] mmws.Country.Inflight.DoChan.Error")
+	}
+	if c, ok = res.Val.(*Country); ok {
+		return c, nil
+	}
+	return nil, errors.NewFatalf("[geoip] mmws.Country.InflightDoChan res.Val cannot be type asserted to *Country")
 }
 
 func (mm *mmws) Close() error {
