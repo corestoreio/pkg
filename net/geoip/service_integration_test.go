@@ -187,7 +187,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 	}
 
 	if err := s.Options(
-		geoip.WithAlternativeHandler(scope.Store, 2, finalTestHandler(999, "AT", nil, false)), // for test case 2
+		geoip.WithAlternativeHandler(scope.Store, 2, finalTestHandler(999, "AT", errors.IsUnauthorized, false)), // for test case 2
 		geoip.WithAllowedCountryCodes(scope.Store, 2, "DE", "CH", "FI"),
 	); err != nil {
 		t.Fatal(err)

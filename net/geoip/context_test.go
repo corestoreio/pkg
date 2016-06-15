@@ -16,6 +16,7 @@ package geoip
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/errors"
@@ -24,14 +25,15 @@ import (
 
 func TestContextWithError(t *testing.T) {
 	var wantErr = errors.New("Contiki Context")
-	ctx := withContextError(context.Background(), wantErr)
-	assert.NotNil(t, ctx)
+	req, _ := http.NewRequest("GET", "http://localhost", nil)
+	req = wrapContextError(req, nil, wantErr)
+	assert.NotNil(t, req)
 
-	tok, err := FromContextCountry(ctx)
-	assert.Nil(t, tok)
+	cntry, err := FromContextCountry(req.Context())
+	assert.Nil(t, cntry)
 	assert.EqualError(t, err, wantErr.Error())
 
-	tok, err = FromContextCountry(context.TODO())
-	assert.Nil(t, tok)
+	cntry, err = FromContextCountry(context.TODO())
+	assert.Nil(t, cntry)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }

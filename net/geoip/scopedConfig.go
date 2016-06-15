@@ -28,19 +28,18 @@ type scopedConfig struct {
 	// useDefault if true uses the default configuration and all other fields are
 	// empty.
 	useDefault bool
-	// lastErr used during selecting the config from the scopeCache map and gets
-	// filled if an entry cannot be found.
+	// lastErr used during selecting the config from the scopeCache map.
 	lastErr error
 	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
 
-	// AllowedCountries a model containing a path to the configuration which
-	// countries are allowed within a scope. Current implementation triggers for
-	// each HTTP request a configuration lookup which can be a bottle neck.
+	// AllowedCountries a slice which contains all allowed countries. An
+	// incoming request for a scope checks if the country for an IP is contained
+	// within this slice. Empty slice means that all countries are allowed.
 	allowedCountries []string
 	// IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
 	// allowed to process the request.
-	IsAllowedFunc // func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
+	IsAllowedFunc // func(s *store.Store, c *Country, allowedCountries []string) error
 
 	// alternativeHandler if ip/country is denied we call this handler
 	alternativeHandler http.Handler
@@ -49,9 +48,12 @@ type scopedConfig struct {
 func defaultScopedConfig(h scope.Hash) scopedConfig {
 	return scopedConfig{
 		scopeHash: h,
-		IsAllowedFunc: func(_ *store.Store, c *Country, allowedCountries []string, _ *http.Request) bool {
+		IsAllowedFunc: func(_ *store.Store, c *Country, allowedCountries []string) error {
 			var ac util.StringSlice = allowedCountries
-			return ac.Contains(c.Country.IsoCode)
+			if ac.Contains(c.Country.IsoCode) {
+				return nil
+			}
+			return errors.NewUnauthorizedf(errUnAuthorizedCountry, c.Country.IsoCode, allowedCountries)
 		},
 		alternativeHandler: DefaultAlternativeHandler,
 	}
@@ -71,9 +73,9 @@ func (sc scopedConfig) isValid() error {
 	return nil
 }
 
-func (sc scopedConfig) checkAllow(reqSt *store.Store, c *Country, r *http.Request) bool {
+func (sc scopedConfig) checkAllow(reqSt *store.Store, c *Country) error {
 	if len(sc.allowedCountries) == 0 {
-		return true
+		return nil
 	}
-	return sc.IsAllowedFunc(reqSt, c, sc.allowedCountries, r)
+	return sc.IsAllowedFunc(reqSt, c, sc.allowedCountries)
 }

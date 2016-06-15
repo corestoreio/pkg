@@ -1,14 +1,31 @@
+// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package geoip
 
 import (
 	"bytes"
 	"io"
 	"net"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/corestoreio/csfw/log/logw"
+	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -96,4 +113,54 @@ func TestNewServiceWithGeoIP2Reader(t *testing.T) {
 	haveCty, err := s.geoIP.Country(ip)
 	assert.NoError(t, err)
 	assert.Exactly(t, "FI", haveCty.Country.IsoCode)
+}
+
+func TestNewServiceWithCheckAllow(t *testing.T) {
+	s := mustGetTestService()
+	defer deferClose(t, s)
+
+	req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+	req.Header.Set("Forwarded-For", "2a02:d200::") // IP Range Finland
+
+	t.Run("Scope_Default", func(t *testing.T) {
+
+		if err := s.Options(WithAllowedCountryCodes(scope.Default, 0, "US")); err != nil {
+			t.Fatal(err)
+		}
+
+		scpCfg := s.getConfigByScopeID(scope.DefaultHash, true)
+		if err := scpCfg.isValid(); err != nil {
+			t.Fatal(err)
+		}
+
+		c, err := s.CountryByIP(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		haveErr := scpCfg.checkAllow(nil, c)
+		assert.True(t, errors.IsUnauthorized(haveErr), "Error: %s", haveErr)
+	})
+
+	t.Run("Scope_Store", func(t *testing.T) {
+		if err := s.Options(WithCheckAllow(scope.Store, 331122, func(s *store.Store, c *Country, allowedCountries []string) error {
+			assert.Nil(t, s)
+			assert.Exactly(t, "FI", c.Country.IsoCode)
+			assert.Exactly(t, []string{"ABC"}, allowedCountries)
+			return errors.NewNotImplementedf("You're not allowed")
+		}), WithAllowedCountryCodes(scope.Store, 331122, "ABC")); err != nil {
+			t.Fatal(err)
+		}
+
+		scpCfg := s.getConfigByScopeID(scope.NewHash(scope.Store, 331122), true)
+		if err := scpCfg.isValid(); err != nil {
+			t.Fatal(err)
+		}
+
+		c, err := s.CountryByIP(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		haveErr := scpCfg.checkAllow(nil, c)
+		assert.True(t, errors.IsNotImplemented(haveErr), "Error: %s", haveErr)
+	})
 }

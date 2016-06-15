@@ -237,55 +237,38 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
 		}()
 
-		// For the race detector
-		var wg sync.WaitGroup
+		var subRequest = func(wg *sync.WaitGroup, sleep time.Duration) {
+			defer wg.Done()
+			time.Sleep(sleep)
 
-		for i := 1; i <= 3; i++ { // prime the cache
-			wg.Add(1)
-			sleeep := time.Millisecond * time.Duration(rand.Intn(100*i))
-			go func(wg *sync.WaitGroup, sleep time.Duration) {
-				defer wg.Done()
-				time.Sleep(sleep)
+			rec := httptest.NewRecorder()
+			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				c, err := geoip.FromContextCountry(r.Context())
+				assert.Nil(t, c)
+				if err != nil {
+					println("\nBefore Panicing\n", logBuf.String(), "\n==== P A N I C====\n")
+					panic(errors.PrintLoc(err))
+				}
+				panic("Should not be called")
 
-				rec := httptest.NewRecorder()
-				geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					c, err := geoip.FromContextCountry(r.Context())
-					assert.Nil(t, c)
-					if err != nil {
-						println("\nBefore Panicing\n", logBuf.String(), "\n==== P A N I C====\n")
-						panic(errors.PrintLoc(err))
-					}
-					panic("Should not be called")
+			})).ServeHTTP(rec, req)
 
-				})).ServeHTTP(rec, req)
-
-				assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
-				assert.Exactly(t, 307, rec.Code)
-			}(&wg, sleeep)
+			assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
+			assert.Exactly(t, 307, rec.Code)
 		}
 
-		for i := 1; i <= 40; i++ { // now run the requests
-			wg.Add(1)
-			sleeep := time.Microsecond * time.Duration(rand.Intn(100*i))
-			go func(wg *sync.WaitGroup, sleep time.Duration) {
-				defer wg.Done()
-				time.Sleep(sleep)
-
-				rec := httptest.NewRecorder()
-				geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					c, err := geoip.FromContextCountry(r.Context())
-					assert.Nil(t, c)
-					if err != nil {
-						println("\nBefore Panicing\n", logBuf.String(), "\n==== P A N I C====\n")
-						panic(errors.PrintLoc(err))
-					}
-					panic("Should not be called")
-
-				})).ServeHTTP(rec, req)
-
-				assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
-				assert.Exactly(t, 307, rec.Code)
-			}(&wg, sleeep)
+		// For the race detector
+		var wg sync.WaitGroup
+		wg.Add(3)
+		for i := 1; i <= 3; i++ {
+			// prime the cache
+			go subRequest(&wg, time.Millisecond*time.Duration(rand.Intn(100*i)))
+		}
+		wg.Wait()
+		wg.Add(40)
+		for i := 1; i <= 40; i++ {
+			// now run the requests
+			go subRequest(&wg, time.Microsecond*time.Duration(rand.Intn(100*i)))
 		}
 		wg.Wait()
 

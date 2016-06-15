@@ -38,9 +38,10 @@ type Option func(*Service) error
 type OptionFactoryFunc func(config.ScopedGetter) []Option
 
 // IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
-// allowed to process the request. The StringSlice contains a list of ISO country
-// names fetched from the config.ScopedGetter.
-type IsAllowedFunc func(s *store.Store, c *Country, allowedCountries []string, r *http.Request) bool
+// allowed to process the request. The StringSlice contains a list of ISO
+// country names fetched from the config.ScopedGetter. Return nil to indicate
+// that the request can continue.
+type IsAllowedFunc func(s *store.Store, c *Country, allowedCountries []string) error
 
 // WithDefaultConfig applies the default GeoIP configuration settings based for
 // a specific scope. This function overwrites any previous set options.

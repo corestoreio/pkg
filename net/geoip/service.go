@@ -26,21 +26,22 @@ import (
 )
 
 // Service represents a service manager for GeoIP detection and restriction.
-// Please consider the law if you would like to implement geo-blocking.
+// Please consider the law in your country if you would like to implement geo-blocking.
 type Service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
 	// optionFactoryFunc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings
-	// in the internal map. ScopedOption requires a config.ScopedGetter. This
-	// function gets set via WithOptionFactory()
-	optionFactoryFunc OptionFactoryFunc
-	// optionInflight checks on a per scope.Hash basis if the configuration loading
-	// process takes place. Stops the execution of other Goroutines with the
-	// same scope.Hash until the configuration has been fully loaded and applied
-	// and for that specific scope. This function gets set via
+	// in the internal map scopeCache. This function gets set via
 	// WithOptionFactory()
+	optionFactoryFunc OptionFactoryFunc
+
+	// optionInflight checks on a per scope.Hash basis if the configuration
+	// loading process takes place. Stops the execution of other Goroutines (aka
+	// incoming requests) with the same scope.Hash until the configuration has
+	// been fully loaded and applied and for that specific scope. This function
+	// gets set via WithOptionFactory()
 	optionInflight *singleflight.Group
 
 	// defaultScopeCache has been extracted from the scopeCache to allow faster
@@ -50,20 +51,18 @@ type Service struct {
 	// rwmu protects all fields below
 	rwmu sync.RWMutex
 
-	// geoIP searches the country for an IP address. If nil panics
-	// during execution in the middleware
+	// geoIP searches the country by an IP address. If nil panics during
+	// execution in the middleware.
 	geoIP CountryRetriever
+
 	// geoIPLoaded checks to only load the GeoIP CountryRetriever once because
 	// we may set that within a request. It's defined in the backend
 	// configuration but later we need to reset this value to zero to allow
 	// reloading.
 	geoIPLoaded *uint32
 
-	// scopeCache internal cache of already created token configurations
-	// scoped.Hash relates to the website ID. This can become a bottle neck when
-	// multiple website IDs supplied by a request try to access the map. we can
-	// use the same pattern like in freecache to create a segment of 256 slice
-	// items to evenly distribute the lock.
+	// scopeCache internal cache of the configurations. scoped.Hash relates to
+	// the default,website or store ID.
 	scopeCache map[scope.Hash]scopedConfig
 }
 
@@ -121,9 +120,10 @@ func (s *Service) useDefaultConfig(h scope.Hash) bool {
 }
 
 // configByScopedGetter returns the internal configuration depending on the
-// ScopedGetter. Mainly used within the middleware. A nil argument falls back to
-// the default scope configuration. If you have applied the option WithBackend()
-// the configuration will be pulled out only one time from the backend service.
+// ScopedGetter. Mainly used within the middleware.  If you have applied the
+// option WithOptionFactory() the configuration will be pulled out only one time
+// from the backend configuration service. The field optionInflight handles the
+// guaranteed atomic single loading for each scope.
 func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
 
 	h := scope.NewHash(scpGet.Scope())
@@ -150,7 +150,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h))
 		}
-		// When everything has been preconfigured for each scope via functional
+		// When everything has been pre-configured for each scope via functional
 		// options then we might have the case where a scope in a request comes
 		// in which does not match to a scopedConfiguration entry in the map
 		// therefore a fallback to default scope must be provided. This fall
@@ -159,7 +159,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		return s.getConfigByScopeID(h, true)
 	}
 
-	newScpCfg, _, _ := s.optionInflight.Do(h.String(), func() (interface{}, error) {
+	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
 		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
 			return scopedConfig{
 				lastErr: errors.Wrap(err, "[geoip] Options by scpOptionFnc"),
@@ -171,7 +171,24 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		return s.getConfigByScopeID(h, true), nil
 	})
 
-	return newScpCfg.(scopedConfig)
+	select {
+	case res, ok := <-scpCfgChan:
+		if !ok {
+			return scopedConfig{lastErr: errors.NewFatalf("[geoip] optionInflight.DoChan returned a closed/unreadable channel")}
+		}
+		if res.Err != nil {
+			return scopedConfig{lastErr: errors.Wrap(res.Err, "[geoip] optionInflight.DoChan.Error")}
+		}
+		sCfg, ok = res.Val.(scopedConfig)
+		if !ok {
+			sCfg.lastErr = errors.NewFatalf("[geoip] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
+		}
+		return sCfg
+	}
+
+	return scopedConfig{
+		lastErr: errors.NewFatalf("[geoip] Nothing to select from channel for scope: %q", h),
+	}
 }
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {
