@@ -25,6 +25,7 @@ import (
 	"net/http/httptest"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/corestoreio/csfw/net/cors"
@@ -54,37 +55,55 @@ func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]s
 
 func TestNoConfig(t *testing.T, s *cors.Service, req *http.Request) {
 
-	res := httptest.NewRecorder()
+	h := s.WithCORS()(testHandler(t))
 
-	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
-
-	assertHeaders(t, res.Header(), map[string]string{
-		"Vary": "Origin",
-		"Access-Control-Allow-Origin":      "",
-		"Access-Control-Allow-Methods":     "",
-		"Access-Control-Allow-Headers":     "",
-		"Access-Control-Allow-Credentials": "",
-		"Access-Control-Max-Age":           "",
-		"Access-Control-Expose-Headers":    "",
-	})
+	const iterations = 10
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			res := httptest.NewRecorder()
+			h.ServeHTTP(res, req)
+			assertHeaders(t, res.Header(), map[string]string{
+				"Vary": "Origin",
+				"Access-Control-Allow-Origin":      "",
+				"Access-Control-Allow-Methods":     "",
+				"Access-Control-Allow-Headers":     "",
+				"Access-Control-Allow-Credentials": "",
+				"Access-Control-Max-Age":           "",
+				"Access-Control-Expose-Headers":    "",
+			})
+		}(&wg)
+	}
+	wg.Wait()
 }
 
 func TestMatchAllOrigin(t *testing.T, s *cors.Service, req *http.Request) {
 
-	res := httptest.NewRecorder()
+	h := s.WithCORS()(testHandler(t))
 	req.Header.Add("Origin", "http://foobar.com")
 
-	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
-
-	assertHeaders(t, res.Header(), map[string]string{
-		"Vary": "Origin",
-		"Access-Control-Allow-Origin":      "http://foobar.com",
-		"Access-Control-Allow-Methods":     "",
-		"Access-Control-Allow-Headers":     "",
-		"Access-Control-Allow-Credentials": "",
-		"Access-Control-Max-Age":           "",
-		"Access-Control-Expose-Headers":    "",
-	})
+	const iterations = 10
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			res := httptest.NewRecorder()
+			h.ServeHTTP(res, req)
+			assertHeaders(t, res.Header(), map[string]string{
+				"Vary": "Origin",
+				"Access-Control-Allow-Origin":      "http://foobar.com",
+				"Access-Control-Allow-Methods":     "",
+				"Access-Control-Allow-Headers":     "",
+				"Access-Control-Allow-Credentials": "",
+				"Access-Control-Max-Age":           "",
+				"Access-Control-Expose-Headers":    "",
+			})
+		}(&wg)
+	}
+	wg.Wait()
 }
 
 func TestAllowedOrigin(t *testing.T, s *cors.Service, req *http.Request) {
@@ -180,18 +199,29 @@ func TestAllowedMethod(t *testing.T, s *cors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
-	res := httptest.NewRecorder()
-	s.WithCORS()(testHandler(t)).ServeHTTP(res, req)
+	h := s.WithCORS()(testHandler(t))
 
-	assertHeaders(t, res.Header(), map[string]string{
-		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-		"Access-Control-Allow-Origin":      "http://foobar.com",
-		"Access-Control-Allow-Methods":     "PUT",
-		"Access-Control-Allow-Headers":     "",
-		"Access-Control-Allow-Credentials": "",
-		"Access-Control-Max-Age":           "",
-		"Access-Control-Expose-Headers":    "",
-	})
+	const iterations = 10
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			res := httptest.NewRecorder()
+			h.ServeHTTP(res, req)
+
+			assertHeaders(t, res.Header(), map[string]string{
+				"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+				"Access-Control-Allow-Origin":      "http://foobar.com",
+				"Access-Control-Allow-Methods":     "PUT",
+				"Access-Control-Allow-Headers":     "",
+				"Access-Control-Allow-Credentials": "",
+				"Access-Control-Max-Age":           "",
+				"Access-Control-Expose-Headers":    "",
+			})
+		}(&wg)
+	}
+	wg.Wait()
 }
 
 func TestAllowedMethodPassthrough(t *testing.T, s *cors.Service, req *http.Request) {
