@@ -29,6 +29,7 @@ import (
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -43,21 +44,29 @@ const methodOptions = "OPTIONS"
 // http://enable-cors.org/server.html
 // http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request
 type Service struct {
-	// scpOptionFnc optional configuration closure, can be nil. It pulls
-	// out the configuration settings during a request and caches the settings in the
-	// internal map. ScopedOption requires a config.ScopedGetter
-	scpOptionFnc ScopedOptionFunc
+	// optionFactoryFunc optional configuration closure, can be nil. It pulls
+	// out the configuration settings during a request and caches the settings
+	// in the internal map scopeCache. This function gets set via
+	// WithOptionFactory()
+	optionFactoryFunc OptionFactoryFunc
 
+	// optionInflight checks on a per scope.Hash basis if the configuration
+	// loading process takes place. Stops the execution of other Goroutines (aka
+	// incoming requests) with the same scope.Hash until the configuration has
+	// been fully loaded and applied and for that specific scope. This function
+	// gets set via WithOptionFactory()
+	optionInflight *singleflight.Group
+
+	// defaultScopeCache has been extracted from the scopeCache to allow faster
+	// access to the standard configuration without accessing a map.
 	defaultScopeCache scopedConfig
 
-	mu sync.RWMutex
-	// scopeCache internal cache of already created token configurations
-	// scoped.Hash relates to the website ID.
-	// this can become a bottle neck when multiple website IDs supplied by a
-	// request try to access the map. we can use the same pattern like in freecache
-	// to create a segment of 256 slice items to evenly distribute the lock.
-	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
+	// rwmu protects all fields below
+	rwmu sync.RWMutex
 
+	// scopeCache internal cache of the configurations. scoped.Hash relates to
+	// the default,website or store ID.
+	scopeCache map[scope.Hash]scopedConfig
 }
 
 // New creates a new Cors handler with the provided options.
@@ -93,14 +102,13 @@ func (s *Service) Options(opts ...Option) error {
 		}
 	}
 
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.rwmu.RLock()
+	defer s.rwmu.RUnlock()
 	for h := range s.scopeCache {
 		if scp, _ := h.Unpack(); scp > scope.Website {
 			return errors.NewNotSupportedf(errServiceUnsupportedScope, h)
 		}
 	}
-
 	return nil
 }
 
@@ -129,8 +137,8 @@ func (s *Service) WithCORS() mw.Middleware {
 			// the scpCfg depends on how you have initialized the storeService during app boot.
 			// requestedStore.Website.Config is the reason that all options only support
 			// website scope and not group or store scope.
-			scpCfg, err := s.configByScopedGetter(requestedStore.Website.Config)
-			if err != nil {
+			scpCfg := s.configByScopedGetter(requestedStore.Website.Config)
+			if err := scpCfg.isValid(); err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
 					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
 				}
@@ -163,86 +171,102 @@ func (s *Service) WithCORS() mw.Middleware {
 	}
 }
 
-// configByScopedGetter returns the internal configuration depending on the ScopedGetter.
-// Mainly used within the middleware. Exported here to build your own middleware.
-// A nil argument falls back to the default scope configuration.
-// If you have applied the option WithBackend() the configuration will be pulled out
-// one time from the backend service.
-func (s *Service) configByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
-
-	h := scope.DefaultHash
-	if sg != nil {
-		h = scope.NewHash(sg.Scope())
-	}
-
-	if (s.scpOptionFnc == nil || sg == nil) && h == scope.DefaultHash && s.defaultScopeCache.IsValid() {
-		return s.defaultScopeCache, nil
-	}
-
-	sc, err := s.getConfigByScopeID(false, h)
-	if err == nil {
-		// cached entry found and ignore the error because we fall back to
-		// default scope at the end of this function.
-		return sc, nil
-	}
-
-	if s.scpOptionFnc != nil {
-		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[cors] Options by scpOptionFnc")
-		}
-	}
-
-	// after applying the new config try to fetch the new scoped token configuration
-	return s.getConfigByScopeID(true, h)
+func (s *Service) useDefaultConfig(h scope.Hash) bool {
+	return s.optionFactoryFunc == nil && h == scope.DefaultHash && s.defaultScopeCache.isValid() == nil
 }
 
-func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
-	var empty scopedConfig
-	// requested scope plus ID
-	scpCfg, ok := s.getScopedConfig(hash)
-	if ok {
-		if scpCfg.IsValid() {
-			return scpCfg, nil
+// configByScopedGetter returns the internal configuration depending on the
+// ScopedGetter. Mainly used within the middleware.  If you have applied the
+// option WithOptionFactory() the configuration will be pulled out only one time
+// from the backend configuration service. The field optionInflight handles the
+// guaranteed atomic single loading for each scope.
+func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
+
+	h := scope.NewHash(scpGet.Scope())
+	// fallback to default scope
+	if s.useDefaultConfig(h) {
+		if s.defaultScopeCache.log.IsDebug() {
+			s.defaultScopeCache.log.Debug("cors.Service.ConfigByScopedGetter.defaultScopeCache", log.Stringer("scope", h), log.Bool("optionFactoryFunc_Nil", s.optionFactoryFunc == nil))
 		}
-		return empty, errors.NewNotValidf(errScopedConfigNotValid, hash)
+		return s.defaultScopeCache
 	}
 
-	if fallback {
-		// fallback to default scope
-		var err error
-		if !s.defaultScopeCache.IsValid() {
-			err = errConfigNotFound
-			if s.defaultScopeCache.log.IsDebug() {
-				s.defaultScopeCache.log.Debug("cors.Service.getConfigByScopeID.default", log.Err(err), log.Stringer("scope", scope.DefaultHash))
-			}
+	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests, 99%
+
+	switch {
+	case sCfg.isValid() == nil:
+		// cached entry found which can contain the configured scoped configuration or
+		// the default scope configuration.
+		if s.defaultScopeCache.log.IsDebug() {
+			s.defaultScopeCache.log.Debug("cors.Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h))
 		}
-		return s.defaultScopeCache, err
+		return sCfg
+	case s.optionFactoryFunc == nil:
+		if s.defaultScopeCache.log.IsDebug() {
+			s.defaultScopeCache.log.Debug("cors.Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h))
+		}
+		// When everything has been pre-configured for each scope via functional
+		// options then we might have the case where a scope in a request comes
+		// in which does not match to a scopedConfiguration entry in the map
+		// therefore a fallback to default scope must be provided. This fall
+		// back will only be executed once and each scope knows from now on that
+		// it has the configuration of the default scope.
+		return s.getConfigByScopeID(h, true)
 	}
 
-	// give up, nothing found
-	return empty, errConfigNotFound
+	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
+		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
+			return scopedConfig{
+				lastErr: errors.Wrap(err, "[cors] Options by scpOptionFnc"),
+			}, nil
+		}
+		if s.defaultScopeCache.log.IsDebug() {
+			s.defaultScopeCache.log.Debug("cors.Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Err(sCfg.isValid()))
+		}
+		return s.getConfigByScopeID(h, true), nil
+	})
+
+	res, ok := <-scpCfgChan
+	if !ok {
+		return scopedConfig{lastErr: errors.NewFatalf("[cors] optionInflight.DoChan returned a closed/unreadable channel")}
+	}
+	if res.Err != nil {
+		return scopedConfig{lastErr: errors.Wrap(res.Err, "[cors] optionInflight.DoChan.Error")}
+	}
+	sCfg, ok = res.Val.(scopedConfig)
+	if !ok {
+		sCfg.lastErr = errors.NewFatalf("[cors] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
+	}
+	return sCfg
+
 }
 
-// getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
-// has been acquired in lookupScopedConfig()
-func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
-	s.mu.RLock()
-	sc, ok = s.scopeCache[h]
-	s.mu.RUnlock()
+func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {
 
-	if ok {
-		var hasChanges bool
-		// do some init stuff ...
-		if sc.log == nil {
-			sc.log = s.defaultScopeCache.log // copy logger
-			hasChanges = true
-		}
+	s.rwmu.RLock()
+	scpCfg, ok := s.scopeCache[hash]
+	s.rwmu.RUnlock()
+	if !ok && useDefault {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
-		if hasChanges {
-			s.mu.Lock()
-			s.scopeCache[h] = sc
-			s.mu.Unlock()
+		// all other fields are empty or nil!
+		scpCfg.scopeHash = hash
+		scpCfg.useDefault = true
+		// in very high concurrency this might get executed multiple times but it doesn't
+		// matter that much until the entry into the map has been written.
+		s.scopeCache[hash] = scpCfg
+		if s.defaultScopeCache.log.IsDebug() {
+			s.defaultScopeCache.log.Debug("cors.Service.getConfigByScopeID.fallbackToDefault", log.Stringer("scope", hash))
 		}
 	}
-	return sc, ok
+	if !ok && !useDefault {
+		return scopedConfig{
+			lastErr: errors.Wrap(errConfigNotFound, "[cors] Service.getConfigByScopeID.NotFound"),
+		}
+	}
+	if scpCfg.useDefault {
+		return s.defaultScopeCache
+	}
+	return scpCfg
 }

@@ -25,7 +25,7 @@ import (
 
 // Default creates new cors.Option slice with the default configuration
 // structure. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) cors.ScopedOptionFunc {
+func Default(opts ...cfgmodel.Option) cors.OptionFactoryFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -36,7 +36,7 @@ func Default(opts ...cfgmodel.Option) cors.ScopedOptionFunc {
 // PrepareOptions creates a closure around the type Backend. The closure will
 // be used during a scoped request to figure out the configuration depending on
 // the incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Backend) cors.ScopedOptionFunc {
+func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 
 	return func(sg config.ScopedGetter) []cors.Option {
 		var opts [8]cors.Option

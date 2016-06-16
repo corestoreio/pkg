@@ -15,24 +15,25 @@
 package cors
 
 import (
-	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Option defines a function argument for the Cors type to apply options.
 type Option func(*Service) error
 
-// ScopedOptionFunc a closure around a scoped configuration to figure out which
+// OptionFactoryFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
 // a request.
-type ScopedOptionFunc func(config.ScopedGetter) []Option
+type OptionFactoryFunc func(config.ScopedGetter) []Option
 
 // WithDefaultConfig applies the default CORS configuration settings based for
 // a specific scope. This function overwrites any previous set options.
@@ -48,8 +49,8 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 			return errors.Wrap(err, "[cors] Default Scope with Default Config")
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		s.scopeCache[h], err = defaultScopedConfig()
 		return errors.Wrapf(err, "[cors] Scope %s with Default Config", h)
@@ -67,8 +68,8 @@ func WithExposedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -131,8 +132,8 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -164,8 +165,8 @@ func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) 
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -196,8 +197,8 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -241,8 +242,8 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -271,8 +272,8 @@ func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -299,7 +300,7 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 
 		var age string
 		if sec := seconds.Seconds(); sec > 0 {
-			age = fmt.Sprintf("%.0f", sec)
+			age = strconv.FormatFloat(sec, 'f', 0, 64)
 		} else {
 			return errors.NewNotValidf(errInvalidDurations, sec)
 		}
@@ -309,8 +310,8 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -337,8 +338,8 @@ func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -381,9 +382,10 @@ func WithLogger(l log.Logger) Option {
 //	cors := cors.MustNewService(
 //		cors.WithOptionFactory(backendcors.PrepareOptions(pb)),
 //	)
-func WithOptionFactory(f ScopedOptionFunc) Option {
+func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
-		s.scpOptionFnc = f
+		s.optionInflight = new(singleflight.Group)
+		s.optionFactoryFunc = f
 		return nil
 	}
 }

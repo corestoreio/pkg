@@ -20,13 +20,17 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // scopedConfig private internal scoped based configuration
 type scopedConfig struct {
-	// todo(CS) maybe export more fields
-
-	// scopeHash defines the scope bound to the configuration is.
+	// useDefault if true uses the default configuration and all other fields are
+	// empty.
+	useDefault bool
+	// lastErr used during selecting the config from the scopeCache map.
+	lastErr error
+	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
 
 	// allowedOrigins normalized list of plain allowed origins
@@ -66,10 +70,17 @@ type scopedConfig struct {
 	log log.Logger
 }
 
-// IsValid a configuration for a scope is only then valid when the Key has been
-// supplied, a non-nil signing method and a non-nil Verifier.
-func (sc scopedConfig) IsValid() bool {
-	return sc.scopeHash > 0
+// isValid a configuration for a scope is only then valid when
+// - scopeHash set
+// - min 1x allowedMethods set
+func (sc scopedConfig) isValid() error {
+	if sc.lastErr != nil {
+		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
+	}
+	if sc.scopeHash > 0 && len(sc.allowedMethods) > 0 {
+		return nil
+	}
+	return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash)
 }
 
 func defaultScopedConfig() (scopedConfig, error) {

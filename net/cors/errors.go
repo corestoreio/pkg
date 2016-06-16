@@ -16,10 +16,10 @@ package cors
 
 import "github.com/corestoreio/csfw/util/errors"
 
-const errInvalidDurations = "[cors] MaxAge: Invalid Duration seconds: %.0f"
-
-const errServiceUnsupportedScope = "[cors] Service does not support this: %s. Only default or website scope are allowed."
-
-const errScopedConfigNotValid = `[cors] ScopedConfig %s invalid`
+const (
+	errInvalidDurations        = "[cors] MaxAge: Invalid Duration seconds: %.0f"
+	errServiceUnsupportedScope = "[cors] Service does not support this: %s. Only default or website scope are allowed."
+	errScopedConfigNotValid    = `[cors] ScopedConfig %s is invalid.`
+)
 
 var errConfigNotFound = errors.NewNotFoundf(`[cors] ScopedConfig not available`)
