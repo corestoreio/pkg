@@ -214,6 +214,8 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		return s.getConfigByScopeID(h, true)
 	}
 
+	// the following code gets tested by backendcors package
+
 	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
 		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
 			return scopedConfig{
@@ -221,7 +223,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			}, nil
 		}
 		if s.defaultScopeCache.log.IsDebug() {
-			s.defaultScopeCache.log.Debug("cors.Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Err(sCfg.isValid()))
+			s.defaultScopeCache.log.Debug("cors.Service.ConfigByScopedGetter.optionInflight.DoChan", log.Stringer("scope", h), log.Err(sCfg.isValid()))
 		}
 		return s.getConfigByScopeID(h, true), nil
 	})
@@ -238,7 +240,6 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		sCfg.lastErr = errors.NewFatalf("[cors] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
 	}
 	return sCfg
-
 }
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {

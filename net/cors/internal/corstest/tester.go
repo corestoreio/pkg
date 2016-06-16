@@ -27,6 +27,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/net/cors"
 	"github.com/corestoreio/csfw/util/errors"
@@ -205,8 +206,9 @@ func TestAllowedMethod(t *testing.T, s *cors.Service, req *http.Request) {
 	var wg sync.WaitGroup
 	wg.Add(iterations)
 	for i := 0; i < iterations; i++ {
-		go func(wg *sync.WaitGroup) {
+		go func(wg *sync.WaitGroup, i int) {
 			defer wg.Done()
+			time.Sleep(time.Millisecond * (100 * time.Duration(i)))
 			res := httptest.NewRecorder()
 			h.ServeHTTP(res, req)
 
@@ -219,7 +221,7 @@ func TestAllowedMethod(t *testing.T, s *cors.Service, req *http.Request) {
 				"Access-Control-Max-Age":           "",
 				"Access-Control-Expose-Headers":    "",
 			})
-		}(&wg)
+		}(&wg, i)
 	}
 	wg.Wait()
 }

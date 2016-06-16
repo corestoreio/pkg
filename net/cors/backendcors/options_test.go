@@ -16,10 +16,13 @@ package backendcors_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/cors"
 	"github.com/corestoreio/csfw/net/cors/backendcors"
 	"github.com/corestoreio/csfw/net/cors/internal/corstest"
@@ -114,12 +117,25 @@ func TestAllowedOriginFunc(t *testing.T) {
 }
 
 func TestAllowedMethod(t *testing.T) {
+	var logBuf log.MutexBuffer
+
 	s := newCorsService()
+	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug)))); err != nil {
+		t.Fatal(err)
+	}
+
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
 		mustToPath(t, backend.NetCorsAllowedOrigins.ToPath, scope.Website, 2): "http://foobar.com",
 		mustToPath(t, backend.NetCorsAllowedMethods.ToPath, scope.Website, 2): "PUT\nDELETE",
 	}))
 	corstest.TestAllowedMethod(t, s, req)
+
+	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.optionInflight.DoChan`), 1; have != want {
+		t.Errorf("Have: %v Want: %v", have, want)
+	}
+	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.IsValid`), 9; have != want {
+		t.Errorf("Have: %v Want: %v", have, want)
+	}
 }
 
 func TestAllowedMethodPassthrough(t *testing.T) {

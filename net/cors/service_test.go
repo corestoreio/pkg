@@ -22,6 +22,7 @@ package cors_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"testing"
 	"time"
@@ -66,16 +67,16 @@ func TestMustNew_Default(t *testing.T) {
 	_ = cors.MustNew(withError())
 }
 
-func TestMustNew_Website(t *testing.T) {
+func TestMustNew_Store(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+			assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = cors.MustNew(withError())
+	_ = cors.MustNew(cors.WithAllowCredentials(scope.Store, 3, true))
 }
 
 func TestMustNew_NoPanic(t *testing.T) {
@@ -344,4 +345,33 @@ func TestMaxAge(t *testing.T) {
 
 	req := reqWithStore("OPTIONS")
 	corstest.TestMaxAge(t, s, req)
+}
+
+func TestWithCORS_Error_StoreManager(t *testing.T) {
+	s := cors.MustNew()
+
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := cors.FromContext(r.Context())
+		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	})
+
+	countryHandler := s.WithCORS()(finalHandler)
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "http://corestore.io", nil)
+	assert.NoError(t, err)
+	countryHandler.ServeHTTP(rec, req)
+}
+
+func TestWithCORS_Error_InvalidConfig(t *testing.T) {
+	s := cors.MustNew(cors.WithAllowedMethods(scope.Default, 0))
+
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := cors.FromContext(r.Context())
+		assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	})
+
+	countryHandler := s.WithCORS()(finalHandler)
+	rec := httptest.NewRecorder()
+	req := reqWithStore("GET")
+	countryHandler.ServeHTTP(rec, req)
 }
