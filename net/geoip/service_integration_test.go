@@ -21,8 +21,8 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
@@ -31,6 +31,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -259,19 +260,10 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 			"DE", nil, false},
 	}
 	for i, test := range tests {
-		h := s.WithIsCountryAllowedByIP()(finalTestHandler(i, test.wantCountryISO, test.wantErrorBhf, test.wantAltHandler))
-
 		req := test.req() // within the loop we'll get a race condition
-		var wg sync.WaitGroup
-		// Food for the race detector
-		for j := 0; j < 30; j++ {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup, r *http.Request) {
-				defer wg.Done()
-				h.ServeHTTP(nil, r)
-			}(&wg, req)
-		}
-		wg.Wait()
+		cstesting.NewHTTPParallelUsers(8, 15, 200, time.Millisecond).ServeHTTP(req,
+			s.WithIsCountryAllowedByIP()(finalTestHandler(i, test.wantCountryISO, test.wantErrorBhf, test.wantAltHandler)),
+		)
 	}
 
 	// println("\n\n", logBuf.String(), "\n\n")
@@ -279,5 +271,4 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 	if have, want := strings.Count(logBuf.String(), `geoip.Service.getConfigByScopeID.fallbackToDefault scope: "Scope(Store) ID(1)"`), 1; have < want {
 		t.Errorf("Expecting Scope(Store) ID(1) to fall back to default configuration: Have: %d <= Want: %d", have, want)
 	}
-
 }

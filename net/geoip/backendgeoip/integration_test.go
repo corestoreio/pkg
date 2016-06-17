@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -161,16 +160,8 @@ func testBackend_WithGeoIP2Webservice_Redis(
 		if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
 			t.Fatal(errors.PrintLoc(err))
 		}
-		// For the race detector
-		var wg sync.WaitGroup
-		for i := 0; i < 10; i++ {
-			wg.Add(1)
-			go func(wg *sync.WaitGroup) {
-				defer wg.Done()
-				geoSrv.WithCountryByIP()(finalHandler(t)).ServeHTTP(nil, req)
-			}(&wg)
-		}
-		wg.Wait()
+		// food for the race detector
+		cstesting.NewHTTPParallelUsers(8, 10, 500, time.Millisecond).ServeHTTP(req, geoSrv.WithCountryByIP()(finalHandler(t)))
 	}
 }
 
@@ -237,11 +228,14 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
 		}()
 
-		var subRequest = func(wg *sync.WaitGroup, sleep time.Duration) {
-			defer wg.Done()
-			time.Sleep(sleep)
+		hpu := cstesting.NewHTTPParallelUsers(8, 12, 600, time.Millisecond)
+		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
+			assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
+			assert.Exactly(t, 307, rec.Code)
+		}
 
-			rec := httptest.NewRecorder()
+		// Food for the race detector
+		hpu.ServeHTTP(req,
 			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				c, err := geoip.FromContextCountry(r.Context())
 				assert.Nil(t, c)
@@ -250,27 +244,8 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 					panic(errors.PrintLoc(err))
 				}
 				panic("Should not be called")
-
-			})).ServeHTTP(rec, req)
-
-			assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
-			assert.Exactly(t, 307, rec.Code)
-		}
-
-		// For the race detector
-		var wg sync.WaitGroup
-		wg.Add(3)
-		for i := 1; i <= 3; i++ {
-			// prime the cache
-			go subRequest(&wg, time.Millisecond*time.Duration(rand.Intn(100*i)))
-		}
-		wg.Wait()
-		wg.Add(40)
-		for i := 1; i <= 40; i++ {
-			// now run the requests
-			go subRequest(&wg, time.Microsecond*time.Duration(rand.Intn(100*i)))
-		}
-		wg.Wait()
+			})),
+		)
 
 		// Min 20 calls IsValid
 		// Exactly one call to optionInflight.Do
