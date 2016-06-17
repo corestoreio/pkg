@@ -26,11 +26,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ http.RoundTripper = (*cstesting.HttpTrip)(nil)
+var _ http.RoundTripper = (*cstesting.HTTPTrip)(nil)
 
 func TestNewHttpTrip_Ok(t *testing.T) {
 
-	tr := cstesting.NewHttpTrip(333, "Hello Wørld", nil)
+	tr := cstesting.NewHTTPTrip(333, "Hello Wørld", nil)
 	cl := &http.Client{
 		Transport: tr,
 	}
@@ -72,7 +72,7 @@ func TestNewHttpTrip_Ok(t *testing.T) {
 
 func TestNewHttpTrip_Error(t *testing.T) {
 
-	tr := cstesting.NewHttpTrip(501, "Hello Error", errors.NewNotValidf("test not valid"))
+	tr := cstesting.NewHTTPTrip(501, "Hello Error", errors.NewNotValidf("test not valid"))
 	cl := &http.Client{
 		Transport: tr,
 	}
@@ -97,7 +97,7 @@ func TestNewHttpTrip_Error(t *testing.T) {
 
 func TestNewHttpTrip_Error_FromFile(t *testing.T) {
 
-	tr := cstesting.NewHttpTripFromFile(505, "file_notFOUND.txt")
+	tr := cstesting.NewHTTPTripFromFile(505, "file_notFOUND.txt")
 	cl := &http.Client{
 		Transport: tr,
 	}

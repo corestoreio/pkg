@@ -25,17 +25,17 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// HttpTrip used for mocking the Transport field in http.Client.
-type HttpTrip struct {
+// HTTPTrip used for mocking the Transport field in http.Client.
+type HTTPTrip struct {
 	GenerateResponse func(*http.Request) *http.Response
 	Err              error
 	sync.Mutex
 	RequestCache map[*http.Request]struct{}
 }
 
-// NewHttpTrip creates a new HttpRoundTripper
-func NewHttpTrip(code int, body string, err error) *HttpTrip {
-	return &HttpTrip{
+// NewHTTPTrip creates a new http.RoundTripper
+func NewHTTPTrip(code int, body string, err error) *HTTPTrip {
+	return &HTTPTrip{
 		// use buffer pool
 		GenerateResponse: func(_ *http.Request) *http.Response {
 			return &http.Response{
@@ -48,11 +48,11 @@ func NewHttpTrip(code int, body string, err error) *HttpTrip {
 	}
 }
 
-// NewHttpTripFromFile creates a new trip with content found in the provided file.
+// NewHTTPTripFromFile creates a new trip with content found in the provided file.
 // You must close the body and hence close the file.
-func NewHttpTripFromFile(code int, filename string) *HttpTrip {
+func NewHTTPTripFromFile(code int, filename string) *HTTPTrip {
 	fp, err := os.OpenFile(filename, os.O_RDONLY, 0)
-	return &HttpTrip{
+	return &HTTPTrip{
 		// use buffer pool
 		GenerateResponse: func(_ *http.Request) *http.Response {
 			return &http.Response{
@@ -67,7 +67,7 @@ func NewHttpTripFromFile(code int, filename string) *HttpTrip {
 
 // RoundTrip implements http.RoundTripper and adds the Request to the
 // field Req for later inspection.
-func (tp *HttpTrip) RoundTrip(r *http.Request) (*http.Response, error) {
+func (tp *HTTPTrip) RoundTrip(r *http.Request) (*http.Response, error) {
 	tp.Mutex.Lock()
 	defer tp.Mutex.Unlock()
 	tp.RequestCache[r] = struct{}{}
@@ -80,7 +80,7 @@ func (tp *HttpTrip) RoundTrip(r *http.Request) (*http.Response, error) {
 
 // RequestsMatchAll checks if all requests in the cache matches the predicate
 // function f.
-func (tp *HttpTrip) RequestsMatchAll(t interface {
+func (tp *HTTPTrip) RequestsMatchAll(t interface {
 	Errorf(format string, args ...interface{})
 }, f func(*http.Request) bool) {
 	tp.Mutex.Lock()
@@ -95,7 +95,7 @@ func (tp *HttpTrip) RequestsMatchAll(t interface {
 
 // RequestsCount counts the requests in the cache and compares it with your
 // expected value.
-func (tp *HttpTrip) RequestsCount(t interface {
+func (tp *HTTPTrip) RequestsCount(t interface {
 	Errorf(format string, args ...interface{})
 }, expected int) {
 	tp.Mutex.Lock()

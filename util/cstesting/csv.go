@@ -114,7 +114,6 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 		}
 		j++
 	}
-	return
 }
 
 func parseCol(s string) []byte {
