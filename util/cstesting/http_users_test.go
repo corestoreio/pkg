@@ -52,20 +52,19 @@ func TestHTTPParallelUsers(t *testing.T) {
 	tg := cstesting.NewHTTPParallelUsers(users, loops, rampUpPeriod, time.Second)
 	req := httptest.NewRequest("GET", "http://corestore.io", nil)
 
-	var reqCount = new(int32)
-	tg.ServeHTTP(req, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rec := w.(*httptest.ResponseRecorder)
-
+	tg.AssertResponse = func(rec *httptest.ResponseRecorder) {
 		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderUserID))
 		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderLoopID))
 		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderSleep))
+	}
 
+	var reqCount = new(int32)
+	tg.ServeHTTP(req, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//t.Logf("UserID %s LoopID %s Sleeping %s",
 		//	rec.Header().Get(cstesting.HeaderUserID),
 		//	rec.Header().Get(cstesting.HeaderLoopID),
 		//	rec.Header().Get(cstesting.HeaderSleep),
 		//)
-
 		atomic.AddInt32(reqCount, 1)
 	}))
 

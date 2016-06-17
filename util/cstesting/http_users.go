@@ -37,9 +37,9 @@ type HTTPParallelUsers struct {
 	// Interval an enum set of time.Nanosecond, time.Microsecond, time.Millisecond,
 	// time.Second, time.Minute, time.Hour.
 	Interval time.Duration
-	// NewWriter allows to create for each request a custom Writer. Defaults to
-	// httptest.NewRecorder.
-	NewWriter func() http.ResponseWriter
+	// AssertResponse provides the possibility to check the written data after each
+	// request.
+	AssertResponse func(*httptest.ResponseRecorder)
 }
 
 // Header* got set within an user iteration to allow you to identify a request.
@@ -72,9 +72,6 @@ func NewHTTPParallelUsers(users, loopsPerUser, rampUpPeriod int, interval time.D
 		Loops:        loopsPerUser,
 		RampUpPeriod: rampUpPeriod,
 		Interval:     interval,
-		NewWriter: func() http.ResponseWriter {
-			return httptest.NewRecorder()
-		},
 	}
 }
 
@@ -91,12 +88,17 @@ func (hpu HTTPParallelUsers) ServeHTTP(r *http.Request, h http.Handler) {
 	startDelay := hpu.RampUpPeriod / hpu.Users
 	var user = func(wg *sync.WaitGroup, userID int) {
 		for i := 1; i <= hpu.Loops; i++ {
-			w := hpu.NewWriter()
 			sl := hpu.sleepPerServeHTTP(userID)
+			// go func(sl time.Duration) { // if go, then add WaitGroup
+			w := httptest.NewRecorder()
 			w.Header().Set(HeaderUserID, strconv.Itoa(userID))
 			w.Header().Set(HeaderLoopID, strconv.Itoa(i))
 			w.Header().Set(HeaderSleep, sl.String())
 			h.ServeHTTP(w, r)
+			if hpu.AssertResponse != nil {
+				hpu.AssertResponse(w)
+			}
+			// }(sl)
 			time.Sleep(sl)
 		}
 		wg.Done()
