@@ -15,16 +15,14 @@
 package geoip
 
 import (
+	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"sync"
 	"testing"
-
-	"fmt"
 	"time"
-
-	"encoding/gob"
 
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -41,7 +39,7 @@ func init() {
 func TestMmws_Country_Failure_Response(t *testing.T) {
 
 	ws := newMMWS(transcache.NewMock(), "gopher", "passw0rd", http.DefaultClient)
-	trip := cstesting.NewHttpTrip(400, `{"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
+	trip := cstesting.NewHTTPTrip(400, `{"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
 	assert.Nil(t, c)
@@ -59,7 +57,7 @@ func TestMmws_Country_Failure_Response(t *testing.T) {
 func TestMmws_Country_Failure_JSON(t *testing.T) {
 
 	ws := newMMWS(transcache.NewMock(), "a", "b", http.DefaultClient)
-	trip := cstesting.NewHttpTrip(200, `"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
+	trip := cstesting.NewHTTPTrip(200, `"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
 	assert.Nil(t, c)
@@ -71,7 +69,7 @@ func TestMmws_Country_Cache_GetError(t *testing.T) {
 	tcmock.GetErr = errors.NewAlreadyClosedf("cache already closed ;-)")
 
 	ws := newMMWS(tcmock, "a", "b", http.DefaultClient)
-	trip := cstesting.NewHttpTripFromFile(200, "testdata/response.json")
+	trip := cstesting.NewHTTPTripFromFile(200, "testdata/response.json")
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
 	assert.Nil(t, c)
@@ -83,7 +81,7 @@ func TestMmws_Country_Cache_SetError(t *testing.T) {
 	tcmock.SetErr = errors.NewAlreadyClosedf("cache already closed ;-(")
 
 	ws := newMMWS(tcmock, "a", "b", http.DefaultClient)
-	trip := cstesting.NewHttpTripFromFile(200, "testdata/response.json")
+	trip := cstesting.NewHTTPTripFromFile(200, "testdata/response.json")
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
 	assert.Nil(t, c)
@@ -98,7 +96,7 @@ func TestMmws_Country_Success(t *testing.T) {
 
 	tcmock := transcache.NewMock()
 	ws := newMMWS(tcmock, "gopher", "passw0rd", http.DefaultClient)
-	trip := cstesting.NewHttpTrip(200, string(td), nil)
+	trip := cstesting.NewHTTPTrip(200, string(td), nil)
 	ws.client.Transport = trip
 
 	const iterations = 100
@@ -141,7 +139,7 @@ func BenchmarkMaxMindWebServiceClient(b *testing.B) {
 	// transcache.NewMock has gob encoding
 
 	wsc := newMMWS(transcache.NewMock(), "gopher", "passw0rd", &http.Client{
-		Transport: cstesting.NewHttpTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
+		Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
 	})
 
 	var checkCountry = func(b *testing.B, ip net.IP) {

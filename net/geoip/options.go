@@ -232,7 +232,7 @@ func WithGeoIP2WebserviceHTTPClient(t TransCacher, userID, licenseKey string, hc
 // on the incoming scope within a request. For example applies the backend
 // configuration to the service.
 //
-// WRONG: Once this option function has been set all other manually set option
+// Once this option function has been set, all other manually set option
 // functions, which accept a scope and a scope ID as an argument, will be
 // overwritten by the new values retrieved from the configuration service.
 //
