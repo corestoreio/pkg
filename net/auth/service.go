@@ -99,7 +99,7 @@ func (s *Service) WithAuthentication() mw.Middleware {
 			requestedStore, err := store.FromContextRequestedStore(ctx)
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.Object("request", r))
+					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[mwauth] FromContextRequestedStore")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -112,7 +112,7 @@ func (s *Service) WithAuthentication() mw.Middleware {
 			/* scpCfg */ _, err = s.configByScopedGetter(requestedStore.Website.Config) // TODO support ALL scopes, @see package geoip
 			if err != nil {
 				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
+					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[mwauth] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))

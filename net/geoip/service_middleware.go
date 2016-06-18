@@ -33,7 +33,7 @@ func (s *Service) CountryByIP(r *http.Request) (*Country, error) {
 	if ip == nil {
 		nf := errors.NewNotFoundf(errCannotGetRemoteAddr)
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", log.Err(nf), log.Object("request", r))
+			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", log.Err(nf), log.HTTPRequest("request", r))
 		}
 		return nil, nf
 	}
@@ -43,7 +43,7 @@ func (s *Service) CountryByIP(r *http.Request) (*Country, error) {
 		if s.Log.IsDebug() {
 			s.Log.Debug(
 				"geoip.Service.newContextCountryByIP.GeoIP.Country",
-				log.Err(err), log.Stringer("remote_addr", ip), log.Object("request", r))
+				log.Err(err), log.Stringer("remote_addr", ip), log.HTTPRequest("request", r))
 		}
 		return nil, errors.Wrap(err, "[geoip] getting country")
 	}
@@ -100,7 +100,7 @@ func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
 			scpCfg := s.configByScopedGetter(requestedStore.Config)
 			if err := scpCfg.isValid(); err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithIsCountryAllowedByIP.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
+					s.Log.Debug("Service.WithIsCountryAllowedByIP.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[geoip] ConfigByScopedGetter")
 				h.ServeHTTP(w, wrapContextError(r, nil, err))

@@ -144,7 +144,7 @@ func WithCloseNotify(opts ...Option) Middleware {
 					<-notify
 					cancel()
 					if ob.log.IsDebug() {
-						ob.log.Debug("ctxhttp.WithCloseNotify.cancel", log.Bool("cancelled", true), log.Object("request", r))
+						ob.log.Debug("ctxhttp.WithCloseNotify.cancel", log.Bool("cancelled", true), log.HTTPRequest("request", r))
 					}
 				}()
 			}

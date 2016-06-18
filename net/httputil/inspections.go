@@ -52,7 +52,7 @@ func (sr *CheckSecureRequest) CtxIs(ctx context.Context, r *http.Request) bool {
 	sg, ok := config.FromContextScopedGetter(ctx)
 	if !ok {
 		if sr.Log.IsDebug() {
-			sr.Log.Debug("net.httputil.CtxIsSecure.FromContextScopedGetter", log.Bool("ok", ok), log.Object("request", r))
+			sr.Log.Debug("net.httputil.CtxIsSecure.FromContextScopedGetter", log.Bool("ok", ok), log.HTTPRequest("request", r))
 		}
 	}
 	return sr.Is(sg, r)

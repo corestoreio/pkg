@@ -50,7 +50,7 @@ func (hrl *Service) WithRateLimit() mw.Middleware {
 			scpCfg := hrl.configByScopedGetter(requestedStore.Config)
 			if err := scpCfg.isValid(); err != nil {
 				if hrl.Log.IsDebug() {
-					hrl.Log.Debug("Service.WithIsCountryAllowedByIP.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
+					hrl.Log.Debug("Service.WithIsCountryAllowedByIP.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[geoip] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))

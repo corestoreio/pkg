@@ -98,7 +98,7 @@ func WithRequestID(opts ...Option) Middleware {
 				id = ob.genRID.NewID(r)
 			}
 			if ob.log.IsDebug() {
-				ob.log.Debug("mw.WithRequestID", log.String("id", id), log.Object("request", r))
+				ob.log.Debug("mw.WithRequestID", log.String("id", id), log.HTTPRequest("request", r))
 			}
 			w.Header().Set(RequestIDHeader, id)
 			h.ServeHTTP(w, r)
