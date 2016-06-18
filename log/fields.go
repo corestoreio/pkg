@@ -233,7 +233,10 @@ func (f Field) AddTo(kv KeyValuer) error {
 
 func (f Field) addToHttpRequest(kv KeyValuer, dumpBody bool) error {
 	if r, ok := f.obj.(*http.Request); ok {
-		b, err := httputil.DumpRequest(r, dumpBody)
+		// copy the request to avoid some race conditions
+		r2 := new(http.Request)
+		*r2 = *r
+		b, err := httputil.DumpRequest(r2, dumpBody)
 		if err != nil {
 			return errors.Wrap(err, "[log] AddTo.HTTPRequest.DumpRequest")
 		}
@@ -387,7 +390,8 @@ func Nest(key string, fields ...Field) Field {
 }
 
 // HTTPRequest transforms the request with the function httputil.DumpRequest(r,
-// true) into a string. The body gets logged also.
+// true) into a string. The body gets logged also. Not completely race condition
+// free because it depends on the Body io.ReadCloser implementation.
 //
 // DumpRequest returns the given request in its HTTP/1.x wire representation. It
 // should only be used by servers to debug client requests. The returned
@@ -405,14 +409,16 @@ func HTTPRequest(key string, r *http.Request) Field {
 // todo: add http.DumpRequestOut() with header+body and header only
 
 // HTTPRequestHeader transforms the request with the function
-// httputil.DumpRequest(r, false) into a string. The body gets not logged.
+// httputil.DumpRequest(r, false) into a string. The body gets not logged and
+// hence it is race condition free.
 func HTTPRequestHeader(key string, r *http.Request) Field {
 	return Field{key: key, fieldType: typeHTTPRequestHeader, obj: r}
 }
 
 // HTTPResponse transforms the response with the function
 // httputil.DumpResponse(r, true) into a string. Same behaviour as
-// HTTPRequest(). The body gets logged also.
+// HTTPRequest(). The body gets logged also. Not completely race condition free
+// because it depends on the Body io.ReadCloser implementation.
 func HTTPResponse(key string, r *http.Response) Field {
 	return Field{key: key, fieldType: typeHTTPResponse, obj: r}
 }
