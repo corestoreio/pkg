@@ -38,6 +38,8 @@ import (
 	"encoding"
 	"fmt"
 	"math"
+	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"time"
 
@@ -62,6 +64,9 @@ const (
 	typeObject
 	typeMarshaler
 	typeTextMarshaler
+	typeHTTPRequest
+	typeHTTPRequestHeader
+	typeHTTPResponse
 )
 
 // JSONMarshaler is the interface implemented by types that
@@ -206,8 +211,35 @@ func (f Field) AddTo(kv KeyValuer) error {
 			return errors.Wrap(err, "[log] AddTo.TextMarshaler")
 		}
 		kv.AddString(f.key, string(txt))
+	case typeHTTPRequest:
+		return f.addToHttpRequest(kv, true)
+	case typeHTTPRequestHeader:
+		return f.addToHttpRequest(kv, false)
+	case typeHTTPResponse:
+		if r, ok := f.obj.(*http.Response); ok {
+			b, err := httputil.DumpResponse(r, true)
+			if err != nil {
+				return errors.Wrap(err, "[log] AddTo.HTTPRequest.DumpResponse")
+			}
+			kv.AddString(f.key, string(b))
+		} else {
+			kv.AddString(f.key, fmt.Sprintf("Cannot type assert *http.Response from obj: %#v", f.obj))
+		}
 	default:
 		return errors.NewFatalf("[log] Unknown field type found: %v", f)
+	}
+	return nil
+}
+
+func (f Field) addToHttpRequest(kv KeyValuer, dumpBody bool) error {
+	if r, ok := f.obj.(*http.Request); ok {
+		b, err := httputil.DumpRequest(r, dumpBody)
+		if err != nil {
+			return errors.Wrap(err, "[log] AddTo.HTTPRequest.DumpRequest")
+		}
+		kv.AddString(f.key, string(b))
+	} else {
+		kv.AddString(f.key, fmt.Sprintf("Cannot type assert *http.Request from obj: %#v", f.obj))
 	}
 	return nil
 }
@@ -352,4 +384,35 @@ func Marshal(key string, val Marshaler) Field {
 // namespace.
 func Nest(key string, fields ...Field) Field {
 	return Field{key: key, fieldType: typeMarshaler, obj: Fields(fields)}
+}
+
+// HTTPRequest transforms the request with the function httputil.DumpRequest(r,
+// true) into a string. The body gets logged also.
+//
+// DumpRequest returns the given request in its HTTP/1.x wire representation. It
+// should only be used by servers to debug client requests. The returned
+// representation is an approximation only; some details of the initial request
+// are lost while parsing it into an http.Request. In particular, the order and
+// case of header field names are lost. The order of values in multi-valued
+// headers is kept intact. HTTP/2 requests are dumped in HTTP/1.x form, not in
+// their original binary representations.
+func HTTPRequest(key string, r *http.Request) Field {
+	// i kind don't like importing http and httputil ... but i also don't like
+	// to craft extra another package. maybe someone has a better idea.
+	return Field{key: key, fieldType: typeHTTPRequest, obj: r}
+}
+
+// todo: add http.DumpRequestOut() with header+body and header only
+
+// HTTPRequestHeader transforms the request with the function
+// httputil.DumpRequest(r, false) into a string. The body gets not logged.
+func HTTPRequestHeader(key string, r *http.Request) Field {
+	return Field{key: key, fieldType: typeHTTPRequestHeader, obj: r}
+}
+
+// HTTPResponse transforms the response with the function
+// httputil.DumpResponse(r, true) into a string. Same behaviour as
+// HTTPRequest(). The body gets logged also.
+func HTTPResponse(key string, r *http.Response) Field {
+	return Field{key: key, fieldType: typeHTTPResponse, obj: r}
 }
