@@ -42,7 +42,22 @@ func TestHTTPParallelUsers_WrongInterval(t *testing.T) {
 	}()
 	_ = cstesting.NewHTTPParallelUsers(1, 1, 1, time.Second*2)
 }
-func TestHTTPParallelUsers(t *testing.T) {
+
+func TestHTTPParallelUsers_Single(t *testing.T) {
+	tg := cstesting.NewHTTPParallelUsers(1, 1, 1, time.Nanosecond)
+	req := httptest.NewRequest("GET", "http://corestore.io", nil)
+
+	var reqCount int
+	tg.ServeHTTP(req, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// no race here because one single iteration
+		reqCount++
+	}))
+	if have, want := reqCount, 1; have != want {
+		t.Errorf("Request count mismatch! Have: %v Want: %v", have, want)
+	}
+}
+
+func TestHTTPParallelUsers_Long(t *testing.T) {
 	startTime := time.Now()
 	const (
 		users        = 4
