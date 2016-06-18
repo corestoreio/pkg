@@ -22,122 +22,18 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(*Service) error
 
-// ScopedOptionFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during a
-// request.
-type ScopedOptionFunc func(config.ScopedGetter) []Option
-
-// scopedConfig private internal scoped based configuration
-type scopedConfig struct {
-	// ScopeHash defines the scope bound to the configuration is.
-	ScopeHash scope.Hash
-	// Disabled if true disables JWT completely
-	Disabled bool
-	// Key contains the HMAC, RSA or ECDSA sensitive data. The csjwt.Key must
-	// not be embedded into this struct because otherwise when printing or
-	// logging the sensitive data from csjwt.Key gets leaked into loggers or
-	// where ever. If key would be lower case then %#v still prints every field
-	// of the csjwt.Key.
-	Key csjwt.Key
-	// Expire defines the duration when the token is about to expire
-	Expire time.Duration
-	// Skew duration of time skew we allow between signer and verifier.
-	Skew time.Duration
-	// SigningMethod how to sign the JWT. For default value see the OptionFuncs
-	SigningMethod csjwt.Signer
-	// Verifier token parser and verifier bound to ONE signing method. Setting a
-	// new SigningMethod also overwrites the JWTVerify pointer. TODO(newbies):
-	// For Verification add Options for setting custom Unmarshaler, HTTP FORM
-	// input name and cookie name.
-	Verifier *csjwt.Verification
-	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
-	EnableJTI bool
-	// ErrorHandler specific for this scope. if nil, the the next handler in
-	// the chain will be called.
-	ErrorHandler http.Handler
-	// KeyFunc will receive the parsed token and should return the key for
-	// validating.
-	KeyFunc csjwt.Keyfunc
-	// templateTokenFunc to a create a new template token when parsing a byte
-	// token slice into the template token. Default value nil.
-	templateTokenFunc func() csjwt.Token
-}
-
-// TODO(cs) maybe we can replace csjwt.Token with our own interface definition but seems complex.
-
-// IsValid a configuration for a scope is only then valid when the Key has been
-// supplied, a non-nil signing method and a non-nil Verifier.
-func (sc *scopedConfig) IsValid() bool {
-	return !sc.Key.IsEmpty() && sc.SigningMethod != nil && sc.Verifier != nil
-}
-
-// TemplateToken returns the template token. Default Claim is a map. You can
-// provide your own by setting the template token function. WithTemplateToken()
-func (sc scopedConfig) TemplateToken() (tk csjwt.Token) {
-	if sc.templateTokenFunc != nil {
-		tk = sc.templateTokenFunc()
-	} else {
-		// must be a pointer because of the unmarshalling function
-		// default claim defines a map[string]interface{}
-		tk = csjwt.NewToken(&jwtclaim.Map{})
-	}
-	_ = tk.Claims.Set(jwtclaim.KeyTimeSkew, sc.Skew)
-	return
-}
-
-// ParseFromRequest parses a request to find a token in either the header, a
-// cookie or an HTML form.
-func (sc scopedConfig) ParseFromRequest(r *http.Request) (csjwt.Token, error) {
-	dst := sc.TemplateToken()
-	err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r)
-	return dst, errors.Wrap(err, "[jwt] scopedConfig.Verifier.ParseFromRequest")
-}
-
-// Parse parses a raw token.
-func (sc scopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
-	dst := sc.TemplateToken()
-	err := sc.Verifier.Parse(&dst, rawToken, sc.KeyFunc)
-	return dst, errors.Wrap(err, "[jwt] scopedConfig.Verifier.Parse")
-}
-
-// initKeyFunc generates a closure for a specific scope to compare if the
-// algorithm in the token matches with the current algorithm.
-func (sc *scopedConfig) initKeyFunc() {
-	sc.KeyFunc = func(t *csjwt.Token) (csjwt.Key, error) {
-
-		if have, want := t.Alg(), sc.SigningMethod.Alg(); have != want {
-			return csjwt.Key{}, errors.NewNotImplementedf(errUnknownSigningMethod, have, want)
-		}
-		if sc.Key.Error != nil {
-			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[jwt] Key Error")
-		}
-		return sc.Key, nil
-	}
-}
-
-func defaultScopedConfig() (scopedConfig, error) {
-	key := csjwt.WithPasswordRandom()
-	hs256, err := csjwt.NewHMACFast256(key)
-	sc := scopedConfig{
-		ScopeHash:     scope.DefaultHash,
-		Expire:        DefaultExpire,
-		Skew:          DefaultSkew,
-		Key:           key,
-		SigningMethod: hs256,
-		Verifier:      csjwt.NewVerification(hs256),
-		EnableJTI:     false,
-	}
-	sc.initKeyFunc()
-	return sc, err
-}
+// OptionFactoryFunc a closure around a scoped configuration to figure out which
+// options should be returned depending on the scope brought to you during
+// a request.
+type OptionFactoryFunc func(config.ScopedGetter) []Option
 
 // WithDefaultConfig applies the default JWT configuration settings based for
 // a specific scope.
@@ -152,14 +48,14 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) (err error) {
 		if h == scope.DefaultHash {
-			s.defaultScopeCache, err = defaultScopedConfig()
-			return errors.Wrap(err, "[jwt] Default Scope with Default Config")
+			s.defaultScopeCache = defaultScopedConfig()
+			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		s.scopeCache[h], err = defaultScopedConfig()
-		return errors.Wrapf(err, "[jwt] Scope %s with Default Config", h)
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.scopeCache[h] = defaultScopedConfig()
+		return nil
 	}
 }
 
@@ -189,30 +85,6 @@ func WithStoreService(sr store.Requester) Option {
 	}
 }
 
-// WithOptionFactory applies a function which lazily loads the option depending
-// on the incoming scope within a request. For example applies the backend
-// configuration to the service.
-//
-// Once this option function has been set all other manually set option
-// functions, which accept a scope and a scope ID as an argument, will be
-// overwritten by the new values retrieved from the configuration service.
-//
-//	cfgStruct, err := backendjwt.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	pb := backendjwt.New(cfgStruct)
-//
-//	jwts := jwt.MustNewService(
-//		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
-//	)
-func WithOptionFactory(f ScopedOptionFunc) Option {
-	return func(s *Service) error {
-		s.scpOptionFnc = f
-		return nil
-	}
-}
-
 // WithTemplateToken set a custom csjwt.Header and csjwt.Claimer for each scope
 // when parsing a token in a request. Function f will generate a new base token
 // for each request. This allows you to choose using a slow map as a claim or a
@@ -226,8 +98,8 @@ func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -255,18 +127,20 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
 
 		scNew.SigningMethod = sm
 		scNew.Verifier = csjwt.NewVerification(sm)
+		scNew.initKeyFunc()
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.SigningMethod = scNew.SigningMethod
 			sc.Verifier = scNew.Verifier
+			sc.KeyFunc = scNew.KeyFunc
 			scNew = sc
 		}
 
@@ -288,8 +162,8 @@ func WithErrorHandler(scp scope.Scope, id int64, handler http.Handler) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -315,8 +189,8 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -343,8 +217,8 @@ func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -370,8 +244,8 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -403,8 +277,8 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		}
 	}
 	return func(s *Service) (err error) {
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -461,8 +335,8 @@ func WithDisable(scp scope.Scope, id int64, ok bool) Option {
 			return nil
 		}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -474,6 +348,35 @@ func WithDisable(scp scope.Scope, id int64, ok bool) Option {
 		}
 		scNew.ScopeHash = h
 		s.scopeCache[h] = scNew
+		return nil
+	}
+}
+
+// WithOptionFactory applies a function which lazily loads the options depending
+// on the incoming scope within an HTTP request. For example applies the backend
+// configuration to the service.
+//
+// In the case of the jwt package the configuration will also be used when
+// calling the functions ConfigByScopeID(), NewToken(), Parse(), ParseScoped().
+//
+// Once this option function has been set, all other manually set option
+// functions, which accept a scope and a scope ID as an argument, will be
+// overwritten by the new values retrieved from the configuration service.
+//
+//	cfgStruct, err := backendjwt.NewConfigStructure()
+//	if err != nil {
+//		panic(err)
+//	}
+//	pb := backendjwt.New(cfgStruct)
+//
+//	jwts := jwt.MustNewService(
+//		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), configService),
+//	)
+func WithOptionFactory(f OptionFactoryFunc, rootConfig config.Getter) Option {
+	return func(s *Service) error {
+		s.rootConfig = rootConfig
+		s.optionFactoryFunc = f
+		s.optionInflight = new(singleflight.Group)
 		return nil
 	}
 }

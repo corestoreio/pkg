@@ -35,12 +35,13 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 
 	jwts := MustNewService()
 	// a hack for testing to remove the default setting or make it invalid
-	jwts.defaultScopeCache = scopedConfig{}
+	jwts.defaultScopeCache = ScopedConfig{}
 
 	cr := cfgmock.NewService()
-	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-	assert.Exactly(t, scopedConfig{}, sc)
+	sc := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
+	err := sc.IsValid()
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.Exactly(t, ScopedConfig{}, sc)
 }
 
 func TestServiceWithBackend_DefaultConfig(t *testing.T) {
@@ -48,10 +49,10 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 	jwts := MustNewService()
 
 	cr := cfgmock.NewService()
-	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
-	assert.NoError(t, err)
-	dsc, err := defaultScopedConfig()
-	if err != nil {
+	sc := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
+	assert.NoError(t, sc.IsValid())
+	dsc := defaultScopedConfig()
+	if err := dsc.IsValid(); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, csjwt.HS256, sc.SigningMethod.Alg())
@@ -71,7 +72,9 @@ func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
 	// The returned pointers from store.FromContextReader must be the
 	// same for each request with the same request pattern.
 
-	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(nil))
+	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(
+		cfgmock.NewService(),
+	))
 
 	var equalStorePointer *store.Store
 	jwts := MustNewService(

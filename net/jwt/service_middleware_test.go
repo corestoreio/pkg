@@ -30,6 +30,7 @@ import (
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -307,6 +308,7 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 
 	srvDE := storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})
 	dsvDE, errDE := srvDE.Store()
+	dsvDE.Website.Config = cfgmock.NewService().NewScoped(1, 0)
 
 	tests := []struct {
 		scpOpt         scope.Option
@@ -339,10 +341,10 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 			test.ctx = newStoreServiceWithCtx(test.scpOpt)
 		}
 
-		//buf := &bytes.Buffer{}
+		//logBuf := new(bytes.Buffer)
 
 		jwts := jwt.MustNewService(
-			//jwt.WithLogger(log.NewLog15(log15.LvlDebug, log15.StreamHandler(buf, log15.TerminalFormat()))),
+			//jwt.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 			jwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
 			jwt.WithStoreService(storemock.NewEurozzyService(test.scpOpt)),
 		)
@@ -364,14 +366,22 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 				t.Fatal(errors.PrintLoc(err))
 			}
 		}
-		mw := jwts.WithInitTokenAndStore()(finalInitStoreHandler(t, i, test.wantStoreCode))
-		rec := httptest.NewRecorder()
-		mw.ServeHTTP(rec, newReq(i, token.Raw).WithContext(test.ctx))
+		cstesting.NewHTTPParallelUsers(2, 5, 200, time.Millisecond).ServeHTTP(
+			newReq(i, token.Raw).WithContext(test.ctx),
+			jwts.WithInitTokenAndStore()(finalInitStoreHandler(t, i, test.wantStoreCode)),
+		)
 
-		//t.Log(buf.String())
+		//const searchLogEntry1 = `jwt.Service.ConfigByScopedGetter.IsValid`
+		//if have, want := strings.Count(logBuf.String(), searchLogEntry1), 1; have != want {
+		//	t.Errorf("%s: Have: %v Want: %v", searchLogEntry1, have, want)
+		//}
 	}
 }
 
+// TestService_WithInitTokenAndStore_StoreServiceNil tests to forward a valid
+// request with a vailid token to the next handler in the chain despite the
+// StoreService is nil and the token contains a store code not associated with
+// the current initialized store.
 func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 
 	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(cfgmock.NewService()))
@@ -419,13 +429,21 @@ func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 	})
 	authHandler := jwts.WithInitTokenAndStore()(finalHandler)
 
-	wRec := httptest.NewRecorder()
-
-	authHandler.ServeHTTP(wRec, req.WithContext(ctx))
-	assert.Equal(t, http.StatusAccepted, wRec.Code)
-	assert.Equal(t, ``, wRec.Body.String())
+	hpu := cstesting.NewHTTPParallelUsers(2, 2, 100, time.Nanosecond)
+	hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
+		assert.Equal(t, http.StatusAccepted, rec.Code)
+		assert.Equal(t, ``, rec.Body.String())
+	}
+	hpu.ServeHTTP(req.WithContext(ctx), authHandler)
 }
 
+// TestService_WithInitTokenAndStore_Disabled
+// 1. a request with a valid token
+// should do nothing and just call the next handler in the chain because the
+// token service has been disabled therefore no validation and checking takes
+// place.
+// 2. valid request with website oz must be passed through with an
+// invalid token because JWT disabled
 func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
 
 	jm, err := jwt.NewService(jwt.WithDisable(scope.Website, 2, true))
@@ -435,7 +453,7 @@ func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
 
 	mw := jm.WithInitTokenAndStore()
 
-	// valid request with website euro and token must be validated
+	// 1. valid request with website euro and token must be validated
 	{
 		handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tk, err := jwt.FromContext(r.Context())
@@ -464,7 +482,7 @@ func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
 		assert.Equal(t, http.StatusMultipleChoices, w.Code)
 	}
 
-	// valid request with website oz must be passed through with an invalid token because JWT disabled
+	// 2. valid request with website oz must be passed through with an invalid token because JWT disabled
 	{
 		handler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, err := jwt.FromContext(r.Context())

@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -38,9 +39,11 @@ type Service struct {
 	JTI interface {
 		Get() string
 	}
+
 	// Blacklist concurrent safe black list service which handles blocked
 	// tokens. Default black hole storage. Must be thread safe.
 	Blacklist Blacklister
+
 	// Log mostly used for debugging.
 	Log log.Logger
 
@@ -49,18 +52,32 @@ type Service struct {
 	// changed.
 	StoreService store.Requester
 
-	// scpOptionFnc optional configuration closure, can be nil. It pulls out the
-	// configuration settings during a request and caches the settings in the
-	// internal map. ScopedOption requires a config.ScopedGetter
-	scpOptionFnc ScopedOptionFunc
+	rootConfig config.Getter
 
-	defaultScopeCache scopedConfig
+	// optionFactoryFunc optional configuration closure, can be nil. It pulls
+	// out the configuration settings during a request and caches the settings
+	// in the internal map scopeCache. This function gets set via
+	// WithOptionFactory()
+	optionFactoryFunc OptionFactoryFunc
 
-	mu sync.RWMutex
+	// optionInflight checks on a per scope.Hash basis if the configuration
+	// loading process takes place. Stops the execution of other Goroutines (aka
+	// incoming requests) with the same scope.Hash until the configuration has
+	// been fully loaded and applied and for that specific scope. This function
+	// gets set via WithOptionFactory()
+	optionInflight *singleflight.Group
+
+	// defaultScopeCache has been extracted from the scopeCache to allow faster
+	// access to the standard configuration without accessing a map.
+	defaultScopeCache ScopedConfig
+
+	// rwmu protects all fields below
+	rwmu sync.RWMutex
+
 	// scopeCache internal cache of already created token configurations
 	// scoped.Hash relates to the website ID. this can become a bottle neck when
 	// multiple website IDs supplied by a request try to access the map.
-	scopeCache map[scope.Hash]scopedConfig
+	scopeCache map[scope.Hash]ScopedConfig
 }
 
 // NewService creates a new token service.
@@ -71,7 +88,7 @@ func NewService(opts ...Option) (*Service, error) {
 		JTI:        jti{},
 		Blacklist:  nullBL{},
 		Log:        log.BlackHole{}, // disabled debug and info logging
-		scopeCache: make(map[scope.Hash]scopedConfig),
+		scopeCache: make(map[scope.Hash]ScopedConfig),
 	}
 
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
@@ -102,16 +119,15 @@ func (s *Service) Options(opts ...Option) error {
 		}
 	}
 
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.rwmu.RLock()
+	defer s.rwmu.RUnlock()
 	for h := range s.scopeCache {
-		// maybe this can be removed and allow all scopes but we need to change
-		// much more.
+		// This one checks if the configuraion contains only the default or
+		// website scope. Store scope is neither allowed nor supported.
 		if scp, _ := h.Unpack(); scp > scope.Website {
 			return errors.NewNotSupportedf(errServiceUnsupportedScope, h)
 		}
 	}
-
 	return nil
 }
 
@@ -123,36 +139,37 @@ func (s *Service) Options(opts ...Option) error {
 // can access them. It panics if the provided template token has a nil Header or
 // Claimer field.
 func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (csjwt.Token, error) {
-	now := csjwt.TimeFunc()
 	var empty csjwt.Token
-	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
-	if err != nil {
-		return empty, errors.Wrap(err, "[jwt] getConfigByScopeID")
+	now := csjwt.TimeFunc()
+
+	sc := s.ConfigByScopeID(scp, id)
+	if err := sc.IsValid(); err != nil {
+		return empty, errors.Wrap(err, "[jwt] NewToken.ConfigByScopeID")
 	}
 
-	var tk = cfg.TemplateToken()
+	var tk = sc.TemplateToken()
 
 	if len(claim) > 0 && claim[0] != nil {
 		if err := csjwt.MergeClaims(tk.Claims, claim...); err != nil {
-			return empty, errors.Wrap(err, "[jwt] MergeClaims")
+			return empty, errors.Wrap(err, "[jwt] NewToken.MergeClaims")
 		}
 	}
 
-	if err := tk.Claims.Set(claimExpiresAt, now.Add(cfg.Expire).Unix()); err != nil {
-		return empty, errors.Wrap(err, "[jwt] Claims.Set EXP")
+	if err := tk.Claims.Set(claimExpiresAt, now.Add(sc.Expire).Unix()); err != nil {
+		return empty, errors.Wrap(err, "[jwt] NewToken.Claims.Set EXP")
 	}
 	if err := tk.Claims.Set(claimIssuedAt, now.Unix()); err != nil {
-		return empty, errors.Wrap(err, "[jwt] Claims.Set IAT")
+		return empty, errors.Wrap(err, "[jwt] NewToken.Claims.Set IAT")
 	}
 
-	if cfg.EnableJTI && s.JTI != nil {
+	if sc.EnableJTI && s.JTI != nil {
 		if err := tk.Claims.Set(claimKeyID, s.JTI.Get()); err != nil {
-			return empty, errors.Wrap(err, "[jwt] Claims.Set KID")
+			return empty, errors.Wrap(err, "[jwt] NewToken.Claims.Set KID")
 		}
 	}
-
-	tk.Raw, err = tk.SignedString(cfg.SigningMethod, cfg.Key)
-	return tk, errors.Wrap(err, "[jwt] SignedString")
+	var err error
+	tk.Raw, err = tk.SignedString(sc.SigningMethod, sc.Key)
+	return tk, errors.Wrap(err, "[jwt] NewToken.SignedString")
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration.
@@ -160,8 +177,7 @@ func (s *Service) Logout(token csjwt.Token) error {
 	if len(token.Raw) == 0 || !token.Valid {
 		return nil
 	}
-
-	return s.Blacklist.Set(token.Raw, token.Claims.Expires())
+	return errors.Wrap(s.Blacklist.Set(token.Raw, token.Claims.Expires()), "[jwt] Service.Logout.Blacklist.Set")
 }
 
 // Parse parses a token string with the DefaultID scope and returns the
@@ -174,17 +190,19 @@ func (s *Service) Parse(rawToken []byte) (csjwt.Token, error) {
 // Different configurations are passed to the token parsing function. The black
 // list will be checked for containing entries.
 func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt.Token, error) {
-	var emptyTok csjwt.Token
-	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
-	if err != nil {
-		return emptyTok, errors.Wrap(err, "[jwt] getConfigByScopeID")
+	var empty csjwt.Token
+
+	sc := s.ConfigByScopeID(scp, id)
+	if err := sc.IsValid(); err != nil {
+		return empty, errors.Wrap(err, "[jwt] ParseScoped.ConfigByScopeID")
 	}
 
 	token, err := sc.Parse(rawToken)
 	if err != nil {
-		return emptyTok, errors.Wrap(err, "[jwt] Parse")
+		return empty, errors.Wrap(err, "[jwt] ParseScoped.Parse")
 	}
 
+	// todo simplify
 	var inBL bool
 	isValid := token.Valid && len(token.Raw) > 0
 	if isValid {
@@ -194,100 +212,126 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 		return token, nil
 	}
 	if s.Log.IsDebug() {
-		s.Log.Debug("jwt.Service.Parse", log.Err(err), log.Bool("inBlackList", inBL), log.String("rawToken", string(rawToken)), log.Marshal("token", token))
+		s.Log.Debug("jwt.Service.ParseScoped", log.Err(err), log.Bool("inBlackList", inBL), log.String("rawToken", string(rawToken)), log.Marshal("token", token))
 	}
-	return emptyTok, errors.NewNotValidf(errTokenParseNotValidOrBlackListed)
+	return empty, errors.NewNotValidf(errTokenParseNotValidOrBlackListed)
+}
+
+func (s *Service) useDefaultConfig(h scope.Hash) bool {
+	return s.optionFactoryFunc == nil && h == scope.DefaultHash && s.defaultScopeCache.IsValid() == nil
 }
 
 // ConfigByScopedGetter returns the internal configuration depending on the
 // ScopedGetter. Mainly used within the middleware. Exported here to build your
 // own middleware. If you have applied the option WithOptionFactory() the
 // configuration will be pulled out one time from the backend service.
-func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
-
-	h := scope.DefaultHash
-	if sg != nil {
-		h = scope.NewHash(sg.Scope())
-	}
-	if s.Log.IsDebug() {
-		s.Log.Debug("jwt.Service.ConfigByScopedGetter.ScopedGetter", log.Stringer("scope", h))
-	}
-
-	if (s.scpOptionFnc == nil || sg == nil) && h == scope.DefaultHash && s.defaultScopeCache.IsValid() {
+func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) ScopedConfig {
+	h := scope.NewHash(sg.Scope())
+	// fallback to default scope
+	if s.useDefaultConfig(h) {
 		if s.Log.IsDebug() {
-			s.Log.Debug("jwt.Service.ConfigByScopedGetter.defaultScopeCache")
+			s.Log.Debug("jwt.Service.ConfigByScopedGetter.defaultScopeCache", log.Stringer("scope", h), log.Bool("optionFactoryFunc_Nil", s.optionFactoryFunc == nil))
 		}
-		return s.defaultScopeCache, nil
+		return s.defaultScopeCache
 	}
 
-	sc, err := s.getConfigByScopeID(false, h)
-	if err == nil {
-		// cached entry found and ignore the error because we fall back to
-		// default scope at the end of this function.
-		return sc, nil
-	}
-
-	if s.scpOptionFnc != nil {
+	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests, 99%
+	switch {
+	case sCfg.IsValid() == nil:
+		// cached entry found which can contain the configured scoped configuration or
+		// the default scope configuration.
 		if s.Log.IsDebug() {
-			s.Log.Debug("jwt.Service.ConfigByScopedGetter.scpOptionFnc", log.Stringer("scope", h))
+			s.Log.Debug("jwt.Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h))
 		}
-		if err := s.Options(s.scpOptionFnc(sg)...); err != nil {
-			return scopedConfig{}, errors.Wrap(err, "[jwt] Options by scpOptionFnc")
+		return sCfg
+	case s.optionFactoryFunc == nil:
+		if s.Log.IsDebug() {
+			s.Log.Debug("jwt.Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h))
 		}
+		// When everything has been pre-configured for each scope via functional
+		// options then we might have the case where a scope in a request comes
+		// in which does not match to a scopedConfiguration entry in the map
+		// therefore a fallback to default scope must be provided. This fall
+		// back will only be executed once and each scope knows from now on that
+		// it has the configuration of the default scope.
+		return s.getConfigByScopeID(h, true)
 	}
 
-	// after applying the new config try to fetch the new scoped token configuration
-	return s.getConfigByScopeID(true, h)
+	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
+		if err := s.Options(s.optionFactoryFunc(sg)...); err != nil {
+			return ScopedConfig{
+				lastErr: errors.Wrap(err, "[jwt] Options by scpOptionFnc"),
+			}, nil
+		}
+		if s.Log.IsDebug() {
+			s.Log.Debug("jwt.Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Err(sCfg.IsValid()))
+		}
+		return s.getConfigByScopeID(h, true), nil
+	})
+
+	res, ok := <-scpCfgChan
+	if !ok {
+		return ScopedConfig{lastErr: errors.NewFatalf("[jwt] optionInflight.DoChan returned a closed/unreadable channel")}
+	}
+	if res.Err != nil {
+		return ScopedConfig{lastErr: errors.Wrap(res.Err, "[jwt] optionInflight.DoChan.Error")}
+	}
+	sCfg, ok = res.Val.(ScopedConfig)
+	if !ok {
+		sCfg.lastErr = errors.NewFatalf("[jwt] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
+	}
+	return sCfg
 }
 
 // ConfigByScopeID returns the internal configuration depending on the scope.
-func (s *Service) ConfigByScopeID(scp scope.Scope, id int64) (scopedConfig, error) {
-	return s.getConfigByScopeID(true, scope.NewHash(scp, id))
+// The following pitfall applies if the option function WithOptionFactory() has
+// been used together with the rootConfig (config.Getter): If the scope.Scope is
+// equal to scope.Website then the configuration will be pulled out from
+// function ConfigByScopedGetter() with the website ID as second argument of
+// this function and store ID zero.
+//
+// If the option function WithOptionFactory() has not been used then the
+// configuration will be searched directly in the internal map.
+func (s *Service) ConfigByScopeID(scp scope.Scope, id int64) ScopedConfig {
+	if s.Log.IsDebug() {
+		s.Log.Debug("jwt.Service.ConfigByScopeID", log.Stringer("scope", scope.NewHash(scp, id)), log.Bool("rootConfig_isNil", s.rootConfig == nil))
+	}
+	if s.rootConfig != nil && scp > scope.Absent && scp < scope.Group {
+		// do not forget: there is an automatic fall back to the default scope
+		// IF the ScopedGetter cannot find a configuration value for the website
+		// scope.
+		return s.ConfigByScopedGetter(s.rootConfig.NewScoped(id, 0))
+	}
+	return s.getConfigByScopeID(scope.NewHash(scp, id), false)
 }
 
-func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
-	var empty scopedConfig
-	// requested scope plus ID
-	scpCfg, ok := s.getScopedConfig(hash)
-	if ok {
-		if scpCfg.IsValid() {
-			return scpCfg, nil
-		}
-		return empty, errors.NewNotValidf(errScopedConfigMissingSigningMethod, hash)
-	}
+func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) ScopedConfig {
 
-	if fallback {
-		// fallback to default scope
-		var err error
-		if !s.defaultScopeCache.IsValid() {
-			err = errors.NewNotFoundf(errConfigNotFound, scope.DefaultHash)
-		}
-		return s.defaultScopeCache, err
+	s.rwmu.RLock()
+	scpCfg, ok := s.scopeCache[hash]
+	s.rwmu.RUnlock()
+	if !ok && useDefault {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 
-	}
-
-	// give up, nothing found
-	return empty, errors.NewNotFoundf(errConfigNotFound, hash)
-}
-
-// getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
-// has been acquired in lookupScopedConfig()
-func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
-	s.mu.RLock()
-	sc, ok = s.scopeCache[h]
-	s.mu.RUnlock()
-
-	if ok {
-		var hasChanges bool
-		if nil == sc.KeyFunc {
-			sc.initKeyFunc()
-			hasChanges = true
-		}
-		if hasChanges {
-			s.mu.Lock()
-			s.scopeCache[h] = sc
-			s.mu.Unlock()
+		// all other fields are empty or nil!
+		scpCfg.ScopeHash = hash
+		scpCfg.UseDefault = true
+		// in very high concurrency this might get executed multiple times but
+		// it doesn't matter that much until the entry into the map has been
+		// written.
+		s.scopeCache[hash] = scpCfg
+		if s.Log.IsDebug() {
+			s.Log.Debug("jwt.Service.getConfigByScopeID.fallbackToDefault", log.Stringer("scope", hash))
 		}
 	}
-	return sc, ok
+	if !ok && !useDefault {
+		return ScopedConfig{
+			lastErr: errors.Wrap(errConfigNotFound, "[jwt] Service.getConfigByScopeID.NotFound"),
+		}
+	}
+	if scpCfg.UseDefault {
+		return s.defaultScopeCache
+	}
+	return scpCfg
 }

@@ -36,7 +36,6 @@ func SetHeaderAuthorization(req *http.Request, token []byte) {
 // context.Context. If the requested store is different than the initialized
 // requested store than the new requested store will be saved in the context.
 func (s *Service) WithInitTokenAndStore() mw.Middleware {
-
 	return func(hf http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -49,7 +48,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			requestedStore, err := store.FromContextRequestedStore(ctx)
 			if err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.FromContextProvider", log.Err(err), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.FromContextProvider", log.Err(err), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[jwt] FromContextProvider")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -59,10 +58,10 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			// the scpCfg depends on how you have initialized the storeService during app boot.
 			// requestedStore.Website.Config is the reason that all options only support
 			// website scope and not group or store scope.
-			scpCfg, err := s.ConfigByScopedGetter(requestedStore.Website.Config)
-			if err != nil {
+			scpCfg := s.ConfigByScopedGetter(requestedStore.Website.Config)
+			if err := scpCfg.IsValid(); err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.ConfigByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.ConfigByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[jwt] ConfigByScopedGetter")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -71,7 +70,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 
 			if scpCfg.Disabled {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.Disabled", log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.Disabled", log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				hf.ServeHTTP(w, r)
 				return
@@ -82,19 +81,18 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			}
 
 			token, err := scpCfg.ParseFromRequest(r)
-			switch {
-			case err != nil:
+			if err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.ParseFromRequest", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.ParseFromRequest", log.Err(err), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[jwt] ParseFromRequest")
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
-
-			case s.Blacklist.Has(token.Raw):
-				err := errors.NewNotValidf(errTokenBlacklisted)
+			}
+			if s.Blacklist.Has(token.Raw) {
+				err = errors.NewNotValidf(errTokenBlacklisted)
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.token.blacklist", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.Blacklist.Has", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
@@ -107,7 +105,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			switch {
 			case err != nil && errors.IsNotFound(err):
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.notfound", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.ScopeOptionFromClaim.notFound", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				// move on when the store code cannot be found in the token.
 				hf.ServeHTTP(w, r.WithContext(ctx))
@@ -115,7 +113,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 
 			case err != nil:
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.error", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.ScopeOptionFromClaim.error", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				// invalid syntax of store code
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -124,7 +122,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			case scopeOption.StoreCode() == requestedStore.StoreCode():
 				// move on when there is no change between scopeOption and requestedStore, skip the lookup in func RequestedStore()
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.StoreCodeEqual", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.ScopeOptionFromClaim.StoreCodeEqual", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				hf.ServeHTTP(w, r.WithContext(ctx))
 				return
@@ -132,7 +130,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			case s.StoreService == nil:
 				// when StoreService has not been set, do not change the store despite there is another requested one.
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.ScopeOptionFromClaim.StoreServiceIsNil", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.ScopeOptionFromClaim.StoreServiceIsNil", log.Err(err), log.Marshal("token", token), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 
 				hf.ServeHTTP(w, r.WithContext(ctx))
@@ -143,7 +141,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			if err != nil {
 				err = errors.Wrap(err, "[jwt] storeService.RequestedStore")
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.GetRequestedStore", log.Err(err), log.Marshal("token", token), log.Marshal("newRequestedStore", newRequestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.StoreService.RequestedStore", log.Err(err), log.Marshal("token", token), log.Marshal("newRequestedStore", newRequestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				errHandler.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
@@ -151,7 +149,7 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithInitTokenAndStore.SetRequestedStore", log.Err(err), log.Marshal("token", token), log.Marshal("newRequestedStore", newRequestedStore), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.Object("request", r))
+					s.Log.Debug("jwt.Service.WithInitTokenAndStore.SetRequestedStore", log.Err(err), log.Marshal("token", token), log.Marshal("newRequestedStore", newRequestedStore), log.Marshal("requestedStore", requestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 				}
 				// this should not lead to a bug because the previously set store.Provider and requestedStore
 				// will still exists and have not been/cannot be removed.
@@ -159,7 +157,6 @@ func (s *Service) WithInitTokenAndStore() mw.Middleware {
 			}
 			// yay! we made it! the token and the requested store is valid!
 			hf.ServeHTTP(w, r.WithContext(ctx))
-			return
 		})
 	}
 }

@@ -48,7 +48,7 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 
 func TestInternalOptionNoLeakage(t *testing.T) {
 
-	sc := scopedConfig{
+	sc := ScopedConfig{
 		Key: csjwt.WithPasswordRandom(),
 	}
 	assert.Contains(t, fmt.Sprintf("%v", sc), `csjwt.Key{/*redacted*/}`)

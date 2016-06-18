@@ -16,28 +16,22 @@ package jwt
 
 import "github.com/corestoreio/csfw/util/errors"
 
-var errContextJWTNotFound = errors.NewNotFoundf(`[jwt] Cannot extract token nor an error from the context`)
+var (
+	errContextJWTNotFound = errors.NewNotFoundf(`[jwt] Cannot extract token nor an error from the context`)
+	errConfigNotFound     = errors.NewNotFoundf(`[jwt] ScopedConfig not available`)
+)
 
-const errServiceUnsupportedScope = "[jwt] Service does not support this: %s. Only default or website scope are allowed."
+const (
+	errServiceUnsupportedScope         = "[jwt] Service does not support this: %s. Only default or website scope are allowed."
+	errTokenParseNotValidOrBlackListed = "[jwt] Token not valid or black listed"
+	errScopedConfigNotValid            = `[jwt] ScopedConfig %s is invalid.`
+	errUnknownSigningMethod            = "[jwt] Unknown signing method - Have: %q Want: %q"
+	errUnknownSigningMethodOptions     = "[jwt] Unknown signing method - Have: %q Want: ES, HS or RS"
+	errKeyEmpty                        = "[jwt] Provided key argument is empty"
 
-const errTokenParseNotValidOrBlackListed = "[jwt] Token not valid or black listed"
+	// ErrTokenBlacklisted returned by the middleware if the token can be found
+	// within the black list.
+	errTokenBlacklisted = "[jwt] Token has been black listed"
 
-const errScopedConfigMissingSigningMethod = "[jwt] Incomplete configuration for %s. Missing Signing Method and its Key."
-
-const errConfigNotFound = "[jwt] Cannot find JWT configuration for %s"
-
-const errUnknownSigningMethod = "[jwt] Unknown signing method - Have: %q Want: %q"
-
-const errUnknownSigningMethodOptions = "[jwt] Unknown signing method - Have: %q Want: ES, HS or RS"
-
-const errKeyEmpty = "[jwt] Provided key argument is empty"
-
-// ErrTokenBlacklisted returned by the middleware if the token can be found
-// within the black list.
-const errTokenBlacklisted = "[jwt] Token has been black listed"
-
-// ErrTokenInvalid returned by the middleware to make understandable that
-// a token has been invalidated.
-const errTokenInvalid = "[jwt] Token has become invalid"
-
-const errStoreNotFound = "[jwt] Store not found in token claim"
+	errStoreNotFound = "[jwt] Store not found in token claim"
+)

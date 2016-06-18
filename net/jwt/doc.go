@@ -14,4 +14,8 @@
 
 // Package jwt provides a middleware for JSON web token authentication and store
 // initialization.
+//
+// Further reading:
+// https://float-middle.com/json-web-tokens-jwt-vs-sessions/
+// http://cryto.net/~joepie91/blog/2016/06/13/stop-using-jwt-for-sessions/
 package jwt
