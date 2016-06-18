@@ -167,8 +167,10 @@ func (s *Store) MarshalJSON() ([]byte, error) {
 
 // MarshalLog implements the log.Marshaler interface
 func (s *Store) MarshalLog(kv log.KeyValuer) error {
-	kv.AddString("store_code", s.Data.Code.String)
-	kv.AddInt64("store_id", s.Data.StoreID)
+	if s != nil {
+		kv.AddString("store_code", s.Data.Code.String)
+		kv.AddInt64("store_id", s.Data.StoreID)
+	}
 	return nil
 }
 
