@@ -164,6 +164,9 @@ func (bv baseValue) String() string {
 // ToPath creates a new cfgpath.Path bound to a scope. If the argument scope
 // does not match the defined scope in the Field, the error behaviour
 // Unauthorized gets returned.
+//
+// If you need a string returned, consider calling FQ(Scope,scopeID) or
+// MustFQ(Scope,scopeID). FQ = fully qualified path.
 func (bv baseValue) ToPath(s scope.Scope, scopeID int64) (cfgpath.Path, error) {
 
 	if err := bv.inScope(s, scopeID); err != nil {
