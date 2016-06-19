@@ -16,4 +16,10 @@
 //
 // See README.md for more info.
 // http://self-issued.info/docs/draft-jones-json-web-token.html
+//
+// Further reading: https://float-middle.com/json-web-tokens-jwt-vs-sessions/
+// and http://cryto.net/~joepie91/blog/2016/06/13/stop-using-jwt-for-sessions/
+//
+// https://news.ycombinator.com/item?id=11929267 => For people using JWT as a
+// substitute for stateful sessions, how do you handle renewal (or revocation)?
 package csjwt
