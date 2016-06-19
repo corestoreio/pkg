@@ -16,7 +16,8 @@ package errors
 
 import (
 	"bytes"
-	"strconv"
+
+	"fmt"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
@@ -42,35 +43,6 @@ func FormatLineFunc(errs []error) string {
 // The format of the output is the same as Print.
 // If err is nil, nothing is printed.
 func fprint(buf *bytes.Buffer, err error) {
-	type location interface {
-		Location() (string, int)
-	}
-	type message interface {
-		Message() string
-	}
-
-	for err != nil {
-		location, ok := err.(location)
-		if ok {
-			file, line := location.Location()
-			_, _ = buf.WriteString(file)
-			_, _ = buf.WriteRune(':')
-			_, _ = buf.WriteString(strconv.Itoa(line))
-			_, _ = buf.WriteString(": ")
-		}
-		switch err := err.(type) {
-		case message:
-			_, _ = buf.WriteString(err.Message())
-			_, _ = buf.WriteRune('\n')
-		default:
-			_, _ = buf.WriteString(err.Error())
-			_, _ = buf.WriteRune('\n')
-		}
-
-		cause, ok := err.(causer)
-		if !ok {
-			break
-		}
-		err = cause.Cause()
-	}
+	_, _ = buf.WriteString(fmt.Sprintf("%+v", err))
+	_, _ = buf.WriteRune('\n')
 }

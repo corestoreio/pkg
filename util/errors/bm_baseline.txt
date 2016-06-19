@@ -1,9 +1,9 @@
+BenchmarkAssertBehaviourEmptyStruct-4   	50000000	        39.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAssertBehaviourConstant-4      	20000000	        74.9 ns/op	      16 B/op	       1 allocs/op
+BenchmarkAssertBehaviourPointer-4       	500000000	         3.99 ns/op	       0 B/op	       0 allocs/op
+BenchmarkAssertBehaviourNoMatch-4       	20000000	        73.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMultiErr-4                     	 1000000	      1275 ns/op	      28 B/op	       4 allocs/op
+BenchmarkMultiErrPointer-4              	 2000000	       920 ns/op	     112 B/op	       3 allocs/op
+BenchmarkMultiErrConstant-4             	 2000000	       921 ns/op	     112 B/op	       3 allocs/op
 PASS
-BenchmarkAssertBehaviourEmptyStruct-4	20000000	        61.0 ns/op	       0 B/op	       0 allocs/op
-BenchmarkAssertBehaviourConstant-4   	20000000	        99.5 ns/op	      16 B/op	       1 allocs/op
-BenchmarkAssertBehaviourPointer-4    	50000000	        26.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkAssertBehaviourNoMatch-4    	30000000	        40.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkMultiErr-4                  	 3000000	       480 ns/op	      16 B/op	       1 allocs/op
-BenchmarkMultiErrPointer-4           	 5000000	       419 ns/op	      48 B/op	       1 allocs/op
-BenchmarkMultiErrConstant-4          	 3000000	       416 ns/op	      48 B/op	       1 allocs/op
-ok  	github.com/corestoreio/csfw/util/errors	12.153s
+ok  	github.com/corestoreio/csfw/util/errors	14.405s

@@ -25,7 +25,6 @@
 package errors
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -81,13 +80,6 @@ type nilError struct{}
 
 func (nilError) Error() string { return "nil error" }
 
-type causeError struct {
-	cause error
-}
-
-func (e *causeError) Error() string { return "cause error" }
-func (e *causeError) Cause() error  { return e.cause }
-
 func TestCause(t *testing.T) {
 	x := New("error")
 	tests := []struct {
@@ -111,13 +103,10 @@ func TestCause(t *testing.T) {
 		want: io.EOF,
 	}, {
 		// caused error returns cause
-		err:  &causeError{cause: io.EOF},
+		err:  Wrap(io.EOF, "ignored"),
 		want: io.EOF,
 	}, {
 		err:  x, // return from errors.New
-		want: x,
-	}, {
-		err:  Wrap(Wrap(x, "W1"), "W2"), // return from errors.New
 		want: x,
 	}}
 
@@ -125,49 +114,6 @@ func TestCause(t *testing.T) {
 		got := Cause(tt.err)
 		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("test %d: got %#v, want %#v", i+1, got, tt.want)
-		}
-	}
-}
-
-func TestFprint(t *testing.T) {
-	x := New("error")
-	tests := []struct {
-		err  error
-		want string
-	}{{
-		// nil error is nil
-		err: nil,
-	}, {
-		// explicit nil error is nil
-		err: (error)(nil),
-	}, {
-		// uncaused error is unaffected
-		err:  io.EOF,
-		want: "EOF\n",
-	}, {
-		// caused error returns cause
-		err:  &causeError{cause: io.EOF},
-		want: "cause error\nEOF\n",
-	}, {
-		err:  x, // return from errors.New
-		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:133: error\n",
-	}, {
-		err:  Wrap(x, "message"),
-		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:155: message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:133: error\n",
-	}, {
-		err:  Wrap(Wrap(x, "message"), "another message"),
-		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:158: another message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:158: message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:133: error\n",
-	}, {
-		err:  Wrapf(x, "message"),
-		want: "github.com/corestoreio/csfw/util/errors/errors_test.go:161: message\ngithub.com/corestoreio/csfw/util/errors/errors_test.go:133: error\n",
-	}}
-
-	for i, tt := range tests {
-		var w bytes.Buffer
-		Fprint(&w, tt.err)
-		got := w.String()
-		if got != tt.want {
-			t.Errorf("test %d: Fprint(w, %q): got %q, want %q", i+1, tt.err, got, tt.want)
 		}
 	}
 }
@@ -195,5 +141,43 @@ func TestWrapf(t *testing.T) {
 		if got != tt.want {
 			t.Errorf("Wrapf(%v, %q): got: %v, want %v", tt.err, tt.message, got, tt.want)
 		}
+	}
+}
+
+func TestErrorf(t *testing.T) {
+	tests := []struct {
+		err  error
+		want string
+	}{
+		{Errorf("read error without format specifiers"), "read error without format specifiers"},
+		{Errorf("read error with %d format specifier", 1), "read error with 1 format specifier"},
+	}
+
+	for _, tt := range tests {
+		got := tt.err.Error()
+		if got != tt.want {
+			t.Errorf("Errorf(%v): got: %q, want %q", tt.err, got, tt.want)
+		}
+	}
+}
+
+// errors.New, etc values are not expected to be compared by value
+// but the change in errors#27 made them incomparable. Assert that
+// various kinds of errors have a functional equality operator, even
+// if the result of that equality is always false.
+func TestErrorEquality(t *testing.T) {
+	tests := []struct {
+		err1, err2 error
+	}{
+		{io.EOF, io.EOF},
+		{io.EOF, nil},
+		{io.EOF, errors.New("EOF")},
+		{io.EOF, New("EOF")},
+		{New("EOF"), New("EOF")},
+		{New("EOF"), Errorf("EOF")},
+		{New("EOF"), Wrap(io.EOF, "EOF")},
+	}
+	for _, tt := range tests {
+		_ = tt.err1 == tt.err2 // mustn't panic
 	}
 }

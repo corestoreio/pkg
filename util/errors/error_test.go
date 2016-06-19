@@ -25,21 +25,6 @@ func TestError_Error(t *testing.T) {
 	assert.EqualError(t, e1, "e1")
 }
 
-func TestErrorf(t *testing.T) {
-	var e = Errorf("Error %d", 2)
-	assert.EqualError(t, e, "Error 2")
-}
-
-func TestPrintLoc(t *testing.T) {
-	const pi = 3.141592
-	e1 := Errorf("Error %d", 1)
-	e2 := Wrapf(e1, "Message e %.3f", pi)
-	assert.Exactly(t, "github.com/corestoreio/csfw/util/errors/error_test.go:36: Message e 3.142\ngithub.com/corestoreio/csfw/util/errors/error_test.go:35: Error 1\n", PrintLoc(e2))
-
-	e3 := PrintLoc(nil)
-	assert.Exactly(t, "", e3)
-}
-
 func TestWrapf2(t *testing.T) {
 	var e = Wrapf(nil, "Error %d")
 	assert.Nil(t, e)

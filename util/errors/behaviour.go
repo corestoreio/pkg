@@ -14,44 +14,29 @@
 
 package errors
 
-import (
-	"fmt"
-	"runtime"
-)
+import "fmt"
 
 // BehaviourFunc defines the signature needed for a function to check
 // if an error has a specific behaviour attached.
 type BehaviourFunc func(error) bool
 
-type eb struct {
-	err     error
-	message string
-	location
-}
-
-func (e *eb) Error() string {
-	if e.err == nil {
-		return e.message
-	}
-	return e.message + ": " + e.err.Error()
-}
-
-func ebWrapf(err error, format string, args ...interface{}) eb {
-	pc, _, _, _ := runtime.Caller(2)
-	ret := eb{
-		err:      err,
-		message:  format,
-		location: location(pc),
+func ebWrapf(err error, format string, args ...interface{}) wrapper {
+	ret := wrapper{
+		cause: cause{
+			cause: err,
+			msg:   format,
+		},
+		stack: callers(),
 	}
 	if len(args) > 0 {
-		ret.message = fmt.Sprintf(format, args...)
+		ret.cause.msg = fmt.Sprintf(format, args...)
 	}
 	return ret
 }
 
 // TODO(cs): add notProvisioned,badRequest,methodNotAllowed,notAssigned,...
 
-type notImplemented struct{ eb }
+type notImplemented struct{ wrapper }
 
 const notImplementedTxt Error = "Not implemented"
 
@@ -75,6 +60,16 @@ func IsNotImplemented(err error) bool {
 	type iFace interface {
 		NotImplemented() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *notImplemented:
+		return true
+	case iFace:
+		return et.NotImplemented()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -86,7 +81,7 @@ func IsNotImplemented(err error) bool {
 	return ok
 }
 
-type empty struct{ eb }
+type empty struct{ wrapper }
 
 const emptyTxt Error = "Empty value"
 
@@ -110,7 +105,18 @@ func IsEmpty(err error) bool {
 	type iFace interface {
 		Empty() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *empty:
+		return true
+	case iFace:
+		return et.Empty()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
+
 	var ok bool
 	switch et := err.(type) {
 	case *empty:
@@ -121,7 +127,7 @@ func IsEmpty(err error) bool {
 	return ok
 }
 
-type writeFailed struct{ eb }
+type writeFailed struct{ wrapper }
 
 const writeFailedTxt Error = "WriteFailed value"
 
@@ -145,6 +151,16 @@ func IsWriteFailed(err error) bool {
 	type iFace interface {
 		WriteFailed() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *writeFailed:
+		return true
+	case iFace:
+		return et.WriteFailed()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -156,7 +172,7 @@ func IsWriteFailed(err error) bool {
 	return ok
 }
 
-type fatal struct{ eb }
+type fatal struct{ wrapper }
 
 const fatalTxt Error = "Fatal"
 
@@ -179,6 +195,16 @@ func IsFatal(err error) bool {
 	type iFace interface {
 		Fatal() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *fatal:
+		return true
+	case iFace:
+		return et.Fatal()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -190,7 +216,7 @@ func IsFatal(err error) bool {
 	return ok
 }
 
-type notFound struct{ eb }
+type notFound struct{ wrapper }
 
 const notFoundTxt Error = "Not found"
 
@@ -214,6 +240,16 @@ func IsNotFound(err error) bool {
 	type iFace interface {
 		NotFound() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *notFound:
+		return true
+	case iFace:
+		return et.NotFound()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -225,7 +261,7 @@ func IsNotFound(err error) bool {
 	return ok
 }
 
-type userNotFound struct{ eb }
+type userNotFound struct{ wrapper }
 
 const userNotFoundTxt Error = "User not found"
 
@@ -249,6 +285,16 @@ func IsUserNotFound(err error) bool {
 	type iFace interface {
 		UserNotFound() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *userNotFound:
+		return true
+	case iFace:
+		return et.UserNotFound()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -260,7 +306,7 @@ func IsUserNotFound(err error) bool {
 	return ok
 }
 
-type unauthorized struct{ eb }
+type unauthorized struct{ wrapper }
 
 const unauthorizedTxt Error = "Unauthorized"
 
@@ -284,6 +330,16 @@ func IsUnauthorized(err error) bool {
 	type iFace interface {
 		Unauthorized() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *unauthorized:
+		return true
+	case iFace:
+		return et.Unauthorized()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -295,7 +351,7 @@ func IsUnauthorized(err error) bool {
 	return ok
 }
 
-type alreadyExists struct{ eb }
+type alreadyExists struct{ wrapper }
 
 const alreadyExistsTxt Error = "Already exists"
 
@@ -319,6 +375,16 @@ func IsAlreadyExists(err error) bool {
 	type iFace interface {
 		AlreadyExists() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *alreadyExists:
+		return true
+	case iFace:
+		return et.AlreadyExists()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -330,7 +396,7 @@ func IsAlreadyExists(err error) bool {
 	return ok
 }
 
-type alreadyClosed struct{ eb }
+type alreadyClosed struct{ wrapper }
 
 const alreadyClosedTxt Error = "Already closed"
 
@@ -354,6 +420,16 @@ func IsAlreadyClosed(err error) bool {
 	type iFace interface {
 		AlreadyClosed() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *alreadyClosed:
+		return true
+	case iFace:
+		return et.AlreadyClosed()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -365,7 +441,7 @@ func IsAlreadyClosed(err error) bool {
 	return ok
 }
 
-type notSupported struct{ eb }
+type notSupported struct{ wrapper }
 
 const notSupportedTxt Error = "Not supported"
 
@@ -389,6 +465,16 @@ func IsNotSupported(err error) bool {
 	type iFace interface {
 		NotSupported() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *notSupported:
+		return true
+	case iFace:
+		return et.NotSupported()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -400,7 +486,7 @@ func IsNotSupported(err error) bool {
 	return ok
 }
 
-type notValid struct{ eb }
+type notValid struct{ wrapper }
 
 const notValidTxt Error = "Not valid"
 
@@ -424,6 +510,16 @@ func IsNotValid(err error) bool {
 	type iFace interface {
 		NotValid() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *notValid:
+		return true
+	case iFace:
+		return et.NotValid()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -435,7 +531,7 @@ func IsNotValid(err error) bool {
 	return ok
 }
 
-type temporary struct{ eb }
+type temporary struct{ wrapper }
 
 const temporaryTxt Error = "Temporary"
 
@@ -459,6 +555,16 @@ func IsTemporary(err error) bool {
 	type iFace interface {
 		Temporary() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *temporary:
+		return true
+	case iFace:
+		return et.Temporary()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
@@ -470,7 +576,7 @@ func IsTemporary(err error) bool {
 	return ok
 }
 
-type timeout struct{ eb }
+type timeout struct{ wrapper }
 
 const timeoutTxt Error = "Timeout"
 
@@ -494,6 +600,16 @@ func IsTimeout(err error) bool {
 	type iFace interface {
 		Timeout() bool
 	}
+	// check if direct hit that err implements the behaviour.
+	switch et := err.(type) {
+	case *timeout:
+		return true
+	case iFace:
+		return et.Timeout()
+	}
+
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
 	err = Cause(err)
 	var ok bool
 	switch et := err.(type) {
