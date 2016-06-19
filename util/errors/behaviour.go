@@ -20,7 +20,61 @@ import "fmt"
 // if an error has a specific behaviour attached.
 type BehaviourFunc func(error) bool
 
-func ebWrapf(err error, format string, args ...interface{}) wrapper {
+// Behaviour constants are returned by function IsBehaviour() to detect which
+// behaviour an error has. The order of the constants follows the alphabet.
+// Maybe more constants will be added.
+const (
+	BehaviourAlreadyClosed int = iota + 1
+	BehaviourAlreadyExists
+	BehaviourEmpty
+	BehaviourFatal
+	BehaviourNotFound
+	BehaviourNotImplemented
+	BehaviourNotSupported
+	BehaviourNotValid
+	BehaviourTemporary
+	BehaviourTimeout
+	BehaviourUnauthorized
+	BehaviourUserNotFound
+	BehaviourWriteFailed
+)
+
+// HasBehaviour detects which behaviour an error has. It returns 0 when the
+// behaviour is not defined.
+func HasBehaviour(err error) int {
+	var ret int
+	switch {
+	case IsAlreadyClosed(err):
+		ret = BehaviourAlreadyClosed
+	case IsAlreadyExists(err):
+		ret = BehaviourAlreadyExists
+	case IsFatal(err):
+		ret = BehaviourFatal
+	case IsEmpty(err):
+		ret = BehaviourEmpty
+	case IsNotFound(err):
+		ret = BehaviourNotFound
+	case IsNotImplemented(err):
+		ret = BehaviourNotImplemented
+	case IsNotSupported(err):
+		ret = BehaviourNotSupported
+	case IsNotValid(err):
+		ret = BehaviourNotValid
+	case IsTemporary(err):
+		ret = BehaviourTemporary
+	case IsTimeout(err):
+		ret = BehaviourTimeout
+	case IsUnauthorized(err):
+		ret = BehaviourUnauthorized
+	case IsUserNotFound(err):
+		ret = BehaviourUserNotFound
+	case IsWriteFailed(err):
+		ret = BehaviourWriteFailed
+	}
+	return ret
+}
+
+func errWrapf(err error, format string, args ...interface{}) wrapper {
 	ret := wrapper{
 		cause: cause{
 			cause: err,
@@ -34,11 +88,23 @@ func ebWrapf(err error, format string, args ...interface{}) wrapper {
 	return ret
 }
 
+func errNewf(format string, args ...interface{}) (ret _error) {
+	ret.msg = format
+	ret.stack = callers()
+	if len(args) > 0 {
+		ret.msg = fmt.Sprintf(format, args...)
+	}
+	return
+}
+
 // TODO(cs): add notProvisioned,badRequest,methodNotAllowed,notAssigned,...
 
-type notImplemented struct{ wrapper }
+type (
+	notImplemented  struct{ wrapper }
+	notImplementedf struct{ _error }
+)
 
-const notImplementedTxt Error = "Not implemented"
+// const notImplementedTxt NotImplemented = "Not implemented"
 
 // NewNotImplemented returns an error which wraps err that satisfies
 // IsNotImplemented().
@@ -46,44 +112,46 @@ func NewNotImplemented(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notImplemented{ebWrapf(err, msg)}
+	return &notImplemented{errWrapf(err, msg)}
 }
 
 // NewNotImplementedf returns an formatted error that satisfies IsNotImplemented().
 func NewNotImplementedf(format string, args ...interface{}) error {
-	return &notImplemented{ebWrapf(notImplementedTxt, format, args...)}
+	return &notImplementedf{errNewf(format, args...)}
+}
+
+func isNotImplemented(err error) (ok bool) {
+	type iFace interface {
+		NotImplemented() bool
+	}
+	switch et := err.(type) {
+	case *notImplemented:
+		ok = true
+	case *notImplementedf:
+		ok = true
+	case iFace:
+		ok = et.NotImplemented()
+	}
+	return
 }
 
 // IsNotImplemented reports whether err was created with NewNotImplemented() or
 // has a method receiver "NotImplemented() bool".
 func IsNotImplemented(err error) bool {
-	type iFace interface {
-		NotImplemented() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *notImplemented:
+	if isNotImplemented(err) {
 		return true
-	case iFace:
-		return et.NotImplemented()
 	}
 
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *notImplemented:
-		ok = true
-	case iFace:
-		ok = et.NotImplemented()
-	}
-	return ok
+	return isNotImplemented(Cause(err))
 }
 
-type empty struct{ wrapper }
-
-const emptyTxt Error = "Empty value"
+type (
+	empty  struct{ wrapper }
+	emptyf struct{ _error }
+)
 
 // NewEmpty returns an error which wraps err that satisfies
 // IsEmpty().
@@ -91,45 +159,45 @@ func NewEmpty(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &empty{ebWrapf(err, msg)}
+	return &empty{errWrapf(err, msg)}
 }
 
 // NewEmptyf returns an formatted error that satisfies IsEmpty().
 func NewEmptyf(format string, args ...interface{}) error {
-	return &empty{ebWrapf(emptyTxt, format, args...)}
+	return &emptyf{errNewf(format, args...)}
+}
+
+func isEmpty(err error) (ok bool) {
+	type iFace interface {
+		Empty() bool
+	}
+	switch et := err.(type) {
+	case *empty:
+		ok = true
+	case *emptyf:
+		ok = true
+	case iFace:
+		ok = et.Empty()
+	}
+	return
 }
 
 // IsEmpty reports whether err was created with NewEmpty() or
 // has a method receiver "Empty() bool".
 func IsEmpty(err error) bool {
-	type iFace interface {
-		Empty() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *empty:
+	if isEmpty(err) {
 		return true
-	case iFace:
-		return et.Empty()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-
-	var ok bool
-	switch et := err.(type) {
-	case *empty:
-		ok = true
-	case iFace:
-		ok = et.Empty()
-	}
-	return ok
+	return isEmpty(Cause(err))
 }
 
-type writeFailed struct{ wrapper }
-
-const writeFailedTxt Error = "WriteFailed value"
+type (
+	writeFailed  struct{ wrapper }
+	writeFailedf struct{ _error }
+)
 
 // NewWriteFailed returns an error which wraps err that satisfies
 // IsWriteFailed().
@@ -137,34 +205,22 @@ func NewWriteFailed(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &writeFailed{ebWrapf(err, msg)}
+	return &writeFailed{errWrapf(err, msg)}
 }
 
 // NewWriteFailedf returns an formatted error that satisfies IsWriteFailed().
 func NewWriteFailedf(format string, args ...interface{}) error {
-	return &writeFailed{ebWrapf(writeFailedTxt, format, args...)}
+	return &writeFailedf{errNewf(format, args...)}
 }
 
-// IsWriteFailed reports whether err was created with NewWriteFailed() or
-// has a method receiver "WriteFailed() bool".
-func IsWriteFailed(err error) bool {
+func isWriteFailed(err error) (ok bool) {
 	type iFace interface {
 		WriteFailed() bool
 	}
-	// check if direct hit that err implements the behaviour.
 	switch et := err.(type) {
 	case *writeFailed:
-		return true
-	case iFace:
-		return et.WriteFailed()
-	}
-
-	// unwrap until we get the root cause which might also implement the
-	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *writeFailed:
+		ok = true
+	case *writeFailedf:
 		ok = true
 	case iFace:
 		ok = et.WriteFailed()
@@ -172,53 +228,67 @@ func IsWriteFailed(err error) bool {
 	return ok
 }
 
-type fatal struct{ wrapper }
+// IsWriteFailed reports whether err was created with NewWriteFailed() or
+// has a method receiver "WriteFailed() bool".
+func IsWriteFailed(err error) bool {
+	// check if direct hit that err implements the behaviour.
+	if isWriteFailed(err) {
+		return true
+	}
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
+	return isWriteFailed(Cause(err))
+}
 
-const fatalTxt Error = "Fatal"
+type (
+	fatal  struct{ wrapper }
+	fatalf struct{ _error }
+)
 
 // NewFatal returns an error which wraps err that satisfies IsFatal().
 func NewFatal(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &fatal{ebWrapf(err, msg)}
+	return &fatal{errWrapf(err, msg)}
 }
 
 // NewFatalf returns an formatted error that satisfies IsFatal().
 func NewFatalf(format string, args ...interface{}) error {
-	return &fatal{ebWrapf(fatalTxt, format, args...)}
+	return &fatalf{errNewf(format, args...)}
+}
+
+func isFatal(err error) (ok bool) {
+	type iFace interface {
+		Fatal() bool
+	}
+	switch et := err.(type) {
+	case *fatal:
+		ok = true
+	case *fatalf:
+		ok = true
+	case iFace:
+		ok = et.Fatal()
+	}
+	return
 }
 
 // IsFatal reports whether err was created with NewFatal() or
 // has a method receiver "Fatal() bool".
 func IsFatal(err error) bool {
-	type iFace interface {
-		Fatal() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *fatal:
+	if isFatal(err) {
 		return true
-	case iFace:
-		return et.Fatal()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *fatal:
-		ok = true
-	case iFace:
-		ok = et.Fatal()
-	}
-	return ok
+	return isFatal(Cause(err))
 }
 
-type notFound struct{ wrapper }
-
-const notFoundTxt Error = "Not found"
+type (
+	notFound  struct{ wrapper }
+	notFoundf struct{ _error }
+)
 
 // NewNotFound returns an error which wraps err that satisfies
 // IsNotFound().
@@ -226,34 +296,22 @@ func NewNotFound(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notFound{ebWrapf(err, msg)}
+	return &notFound{errWrapf(err, msg)}
 }
 
 // NewNotFoundf returns an formatted error that satisfies IsNotFound().
 func NewNotFoundf(format string, args ...interface{}) error {
-	return &notFound{ebWrapf(notFoundTxt, format, args...)}
+	return &notFoundf{errNewf(format, args...)}
 }
 
-// IsNotFound reports whether err was created with NewNotFound() or
-// has a method receiver "NotFound() bool".
-func IsNotFound(err error) bool {
+func isNotFound(err error) (ok bool) {
 	type iFace interface {
 		NotFound() bool
 	}
-	// check if direct hit that err implements the behaviour.
 	switch et := err.(type) {
 	case *notFound:
-		return true
-	case iFace:
-		return et.NotFound()
-	}
-
-	// unwrap until we get the root cause which might also implement the
-	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *notFound:
+		ok = true
+	case *notFoundf:
 		ok = true
 	case iFace:
 		ok = et.NotFound()
@@ -261,9 +319,22 @@ func IsNotFound(err error) bool {
 	return ok
 }
 
-type userNotFound struct{ wrapper }
+// IsNotFound reports whether err was created with NewNotFound() or
+// has a method receiver "NotFound() bool".
+func IsNotFound(err error) bool {
+	// check if direct hit that err implements the behaviour.
+	if isNotFound(err) {
+		return true
+	}
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
+	return isNotFound(Cause(err))
+}
 
-const userNotFoundTxt Error = "User not found"
+type (
+	userNotFound  struct{ wrapper }
+	userNotFoundf struct{ _error }
+)
 
 // NewUserNotFound returns an error which wraps err and satisfies
 // IsUserNotFound().
@@ -271,34 +342,22 @@ func NewUserNotFound(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &userNotFound{ebWrapf(err, msg)}
+	return &userNotFound{errWrapf(err, msg)}
 }
 
 // NewUserNotFoundf returns an formatted error that satisfies IsUserNotFound().
 func NewUserNotFoundf(format string, args ...interface{}) error {
-	return &userNotFound{ebWrapf(userNotFoundTxt, format, args...)}
+	return &userNotFoundf{errNewf(format, args...)}
 }
 
-// IsUserNotFound reports whether err was created with NewUserNotFound() or
-// has a method receiver "UserNotFound() bool".
-func IsUserNotFound(err error) bool {
+func isUserNotFound(err error) (ok bool) {
 	type iFace interface {
 		UserNotFound() bool
 	}
-	// check if direct hit that err implements the behaviour.
 	switch et := err.(type) {
 	case *userNotFound:
-		return true
-	case iFace:
-		return et.UserNotFound()
-	}
-
-	// unwrap until we get the root cause which might also implement the
-	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *userNotFound:
+		ok = true
+	case *userNotFoundf:
 		ok = true
 	case iFace:
 		ok = et.UserNotFound()
@@ -306,9 +365,22 @@ func IsUserNotFound(err error) bool {
 	return ok
 }
 
-type unauthorized struct{ wrapper }
+// IsUserNotFound reports whether err was created with NewUserNotFound() or
+// has a method receiver "UserNotFound() bool".
+func IsUserNotFound(err error) bool {
+	// check if direct hit that err implements the behaviour.
+	if isUserNotFound(err) {
+		return true
+	}
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
+	return isUserNotFound(Cause(err))
+}
 
-const unauthorizedTxt Error = "Unauthorized"
+type (
+	unauthorized  struct{ wrapper }
+	unauthorizedf struct{ _error }
+)
 
 // NewUnauthorized returns an error which wraps err and satisfies
 // IsUnauthorized().
@@ -316,44 +388,45 @@ func NewUnauthorized(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &unauthorized{ebWrapf(err, msg)}
+	return &unauthorized{errWrapf(err, msg)}
 }
 
 // NewUnauthorizedf returns an formatted error that satisfies IsUnauthorized().
 func NewUnauthorizedf(format string, args ...interface{}) error {
-	return &unauthorized{ebWrapf(unauthorizedTxt, format, args...)}
+	return &unauthorizedf{errNewf(format, args...)}
+}
+
+func isUnauthorized(err error) (ok bool) {
+	type iFace interface {
+		Unauthorized() bool
+	}
+	switch et := err.(type) {
+	case *unauthorized:
+		ok = true
+	case *unauthorizedf:
+		ok = true
+	case iFace:
+		ok = et.Unauthorized()
+	}
+	return
 }
 
 // IsUnauthorized reports whether err was created with NewUnauthorized() or
 // has a method receiver "Unauthorized() bool".
 func IsUnauthorized(err error) bool {
-	type iFace interface {
-		Unauthorized() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *unauthorized:
+	if isUnauthorized(err) {
 		return true
-	case iFace:
-		return et.Unauthorized()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *unauthorized:
-		ok = true
-	case iFace:
-		ok = et.Unauthorized()
-	}
-	return ok
+	return isUnauthorized(Cause(err))
 }
 
-type alreadyExists struct{ wrapper }
-
-const alreadyExistsTxt Error = "Already exists"
+type (
+	alreadyExists  struct{ wrapper }
+	alreadyExistsf struct{ _error }
+)
 
 // NewAlreadyExists returns an error which wraps err and satisfies
 // IsAlreadyExists().
@@ -361,44 +434,45 @@ func NewAlreadyExists(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &alreadyExists{ebWrapf(err, msg)}
+	return &alreadyExists{errWrapf(err, msg)}
 }
 
 // NewAlreadyExistsf returns an formatted error that satisfies IsAlreadyExists().
 func NewAlreadyExistsf(format string, args ...interface{}) error {
-	return &alreadyExists{ebWrapf(alreadyExistsTxt, format, args...)}
+	return &alreadyExistsf{errNewf(format, args...)}
+}
+
+func isAlreadyExists(err error) (ok bool) {
+	type iFace interface {
+		AlreadyExists() bool
+	}
+	switch et := err.(type) {
+	case *alreadyExists:
+		ok = true
+	case *alreadyExistsf:
+		ok = true
+	case iFace:
+		ok = et.AlreadyExists()
+	}
+	return
 }
 
 // IsAlreadyExists reports whether err was created with NewAlreadyExists() or
 // has a method receiver "AlreadyExists() bool".
 func IsAlreadyExists(err error) bool {
-	type iFace interface {
-		AlreadyExists() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *alreadyExists:
+	if isAlreadyExists(err) {
 		return true
-	case iFace:
-		return et.AlreadyExists()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *alreadyExists:
-		ok = true
-	case iFace:
-		ok = et.AlreadyExists()
-	}
-	return ok
+	return isAlreadyExists(Cause(err))
 }
 
-type alreadyClosed struct{ wrapper }
-
-const alreadyClosedTxt Error = "Already closed"
+type (
+	alreadyClosed  struct{ wrapper }
+	alreadyClosedf struct{ _error }
+)
 
 // NewAlreadyClosed returns an error which wraps err and satisfies
 // IsAlreadyClosed().
@@ -406,34 +480,22 @@ func NewAlreadyClosed(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &alreadyClosed{ebWrapf(err, msg)}
+	return &alreadyClosed{errWrapf(err, msg)}
 }
 
 // NewAlreadyClosedf returns an formatted error that satisfies IsAlreadyClosed().
 func NewAlreadyClosedf(format string, args ...interface{}) error {
-	return &alreadyClosed{ebWrapf(alreadyClosedTxt, format, args...)}
+	return &alreadyClosedf{errNewf(format, args...)}
 }
 
-// IsAlreadyClosed reports whether err was created with NewAlreadyClosed() or
-// has a method receiver "AlreadyClosed() bool".
-func IsAlreadyClosed(err error) bool {
+func isAlreadyClosed(err error) (ok bool) {
 	type iFace interface {
 		AlreadyClosed() bool
 	}
-	// check if direct hit that err implements the behaviour.
 	switch et := err.(type) {
 	case *alreadyClosed:
-		return true
-	case iFace:
-		return et.AlreadyClosed()
-	}
-
-	// unwrap until we get the root cause which might also implement the
-	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *alreadyClosed:
+		ok = true
+	case *alreadyClosedf:
 		ok = true
 	case iFace:
 		ok = et.AlreadyClosed()
@@ -441,9 +503,22 @@ func IsAlreadyClosed(err error) bool {
 	return ok
 }
 
-type notSupported struct{ wrapper }
+// IsAlreadyClosed reports whether err was created with NewAlreadyClosed() or
+// has a method receiver "AlreadyClosed() bool".
+func IsAlreadyClosed(err error) bool {
+	// check if direct hit that err implements the behaviour.
+	if isAlreadyClosed(err) {
+		return true
+	}
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
+	return isAlreadyClosed(Cause(err))
+}
 
-const notSupportedTxt Error = "Not supported"
+type (
+	notSupported  struct{ wrapper }
+	notSupportedf struct{ _error }
+)
 
 // NewNotSupported returns an error which wraps err and satisfies
 // IsNotSupported().
@@ -451,44 +526,45 @@ func NewNotSupported(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notSupported{ebWrapf(err, msg)}
+	return &notSupported{errWrapf(err, msg)}
 }
 
 // NewNotSupportedf returns an formatted error that satisfies IsNotSupported().
 func NewNotSupportedf(format string, args ...interface{}) error {
-	return &notSupported{ebWrapf(notSupportedTxt, format, args...)}
+	return &notSupportedf{errNewf(format, args...)}
+}
+
+func isNotSupported(err error) (ok bool) {
+	type iFace interface {
+		NotSupported() bool
+	}
+	switch et := err.(type) {
+	case *notSupported:
+		ok = true
+	case *notSupportedf:
+		ok = true
+	case iFace:
+		ok = et.NotSupported()
+	}
+	return
 }
 
 // IsNotSupported reports whether err was created with NewNotSupported() or
 // has a method receiver "NotSupported() bool".
 func IsNotSupported(err error) bool {
-	type iFace interface {
-		NotSupported() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *notSupported:
+	if isNotSupported(err) {
 		return true
-	case iFace:
-		return et.NotSupported()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *notSupported:
-		ok = true
-	case iFace:
-		ok = et.NotSupported()
-	}
-	return ok
+	return isNotSupported(Cause(err))
 }
 
-type notValid struct{ wrapper }
-
-const notValidTxt Error = "Not valid"
+type (
+	notValid  struct{ wrapper }
+	notValidf struct{ _error }
+)
 
 // NewNotValid returns an error which wraps err and satisfies
 // IsNotValid().
@@ -496,44 +572,45 @@ func NewNotValid(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &notValid{ebWrapf(err, msg)}
+	return &notValid{errWrapf(err, msg)}
 }
 
 // NewNotValidf returns an formatted error that satisfies IsNotValid().
 func NewNotValidf(format string, args ...interface{}) error {
-	return &notValid{ebWrapf(notValidTxt, format, args...)}
+	return &notValidf{errNewf(format, args...)}
+}
+
+func isNotValid(err error) (ok bool) {
+	type iFace interface {
+		NotValid() bool
+	}
+	switch et := err.(type) {
+	case *notValid:
+		ok = true
+	case *notValidf:
+		ok = true
+	case iFace:
+		ok = et.NotValid()
+	}
+	return
 }
 
 // IsNotValid reports whether err was created with NewNotValid() or
 // has a method receiver "NotValid() bool".
 func IsNotValid(err error) bool {
-	type iFace interface {
-		NotValid() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *notValid:
+	if isNotValid(err) {
 		return true
-	case iFace:
-		return et.NotValid()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *notValid:
-		ok = true
-	case iFace:
-		ok = et.NotValid()
-	}
-	return ok
+	return isNotValid(Cause(err))
 }
 
-type temporary struct{ wrapper }
-
-const temporaryTxt Error = "Temporary"
+type (
+	temporary  struct{ wrapper }
+	temporaryf struct{ _error }
+)
 
 // NewTemporary returns an error which wraps err and satisfies
 // IsTemporary().
@@ -541,44 +618,45 @@ func NewTemporary(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &temporary{ebWrapf(err, msg)}
+	return &temporary{errWrapf(err, msg)}
 }
 
 // NewTemporaryf returns an formatted error that satisfies IsTemporary().
 func NewTemporaryf(format string, args ...interface{}) error {
-	return &temporary{ebWrapf(temporaryTxt, format, args...)}
+	return &temporaryf{errNewf(format, args...)}
+}
+
+func isTemporary(err error) (ok bool) {
+	type iFace interface {
+		Temporary() bool
+	}
+	switch et := err.(type) {
+	case *temporary:
+		ok = true
+	case *temporaryf:
+		ok = true
+	case iFace:
+		ok = et.Temporary()
+	}
+	return
 }
 
 // IsTemporary reports whether err was created with NewTemporary() or
 // has a method receiver "Temporary() bool".
 func IsTemporary(err error) bool {
-	type iFace interface {
-		Temporary() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *temporary:
+	if isTemporary(err) {
 		return true
-	case iFace:
-		return et.Temporary()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *temporary:
-		ok = true
-	case iFace:
-		ok = et.Temporary()
-	}
-	return ok
+	return isTemporary(Cause(err))
 }
 
-type timeout struct{ wrapper }
-
-const timeoutTxt Error = "Timeout"
+type (
+	timeout  struct{ wrapper }
+	timeoutf struct{ _error }
+)
 
 // NewTimeout returns an error which wraps err and satisfies
 // IsTimeout().
@@ -586,37 +664,37 @@ func NewTimeout(err error, msg string) error {
 	if err == nil {
 		return nil
 	}
-	return &timeout{ebWrapf(err, msg)}
+	return &timeout{errWrapf(err, msg)}
 }
 
 // NewTimeoutf returns an formatted error that satisfies IsTimeout().
 func NewTimeoutf(format string, args ...interface{}) error {
-	return &timeout{ebWrapf(timeoutTxt, format, args...)}
+	return &timeoutf{errNewf(format, args...)}
+}
+
+func isTimeout(err error) (ok bool) {
+	type iFace interface {
+		Timeout() bool
+	}
+	switch et := err.(type) {
+	case *timeout:
+		ok = true
+	case *timeoutf:
+		ok = true
+	case iFace:
+		ok = et.Timeout()
+	}
+	return
 }
 
 // IsTimeout reports whether err was created with NewTimeout() or
 // has a method receiver "Timeout() bool".
 func IsTimeout(err error) bool {
-	type iFace interface {
-		Timeout() bool
-	}
 	// check if direct hit that err implements the behaviour.
-	switch et := err.(type) {
-	case *timeout:
+	if isTimeout(err) {
 		return true
-	case iFace:
-		return et.Timeout()
 	}
-
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
-	err = Cause(err)
-	var ok bool
-	switch et := err.(type) {
-	case *timeout:
-		ok = true
-	case iFace:
-		ok = et.Timeout()
-	}
-	return ok
+	return isTimeout(Cause(err))
 }

@@ -38,8 +38,13 @@ func BenchmarkAssertBehaviourEmptyStruct(b *testing.B) {
 	}
 }
 
+type cAlreadyExists string
+
+func (c cAlreadyExists) Error() string       { return string(c) }
+func (c cAlreadyExists) AlreadyExists() bool { return true }
+
 func BenchmarkAssertBehaviourConstant(b *testing.B) {
-	const hell AlreadyExists = "Hell"
+	const hell cAlreadyExists = "Hell"
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -119,6 +124,20 @@ func BenchmarkMultiErrConstant(b *testing.B) {
 		errorHave = merr.Error()
 		if errorHave == "" {
 			b.Fatal("errorHave is empty")
+		}
+	}
+}
+
+var benchmarkHasBehaviour int
+
+func BenchmarkHasBehaviour(b *testing.B) {
+	var wf = NewWriteFailedf("Failed!")
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkHasBehaviour = HasBehaviour(wf)
+		if benchmarkHasBehaviour != BehaviourWriteFailed {
+			b.Errorf("Have: %d Want: %d", benchmarkHasBehaviour, BehaviourWriteFailed)
 		}
 	}
 }

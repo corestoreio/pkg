@@ -36,12 +36,14 @@ func TestErrorContainsAny(t *testing.T) {
 		vf   []BehaviourFunc
 		want bool
 	}{
-		{NotFound("e0"), []BehaviourFunc{IsNotFound}, true},
-		{NotFound("e1"), []BehaviourFunc{IsNotValid}, false},
-		{NotFound("e2"), []BehaviourFunc{IsNotValid, IsNotFound}, true},
+		{NewNotFoundf("e0"), []BehaviourFunc{IsNotFound}, true},
+		{NewNotFoundf("e1"), []BehaviourFunc{IsNotValid}, false},
+		{NewNotFoundf("e2"), []BehaviourFunc{IsNotValid, IsNotFound}, true},
 		{NewNotFound(NewNotValidf("NotValid inner"), "NotFound outer"), []BehaviourFunc{IsNotValid, IsNotFound}, true},
 		// once ErrorContainsAny acts recursive the next line will switch to true
-		{NewNotFound(NewNotValidf("NotValid inner"), "NotFound outer"), []BehaviourFunc{IsNotValid}, false},
+		{NewNotFound(NewNotValidf("NotValid inner"), "NotFound outer"), []BehaviourFunc{IsNotValid}, true},
+		{NewNotFound(NewNotValidf("NotValid inner"), "NotFound outer"), []BehaviourFunc{IsNotFound}, true},
+		{NewNotFound(NewNotValidf("NotValid inner"), "NotFound outer"), []BehaviourFunc{IsAlreadyClosed}, false},
 		{nil, []BehaviourFunc{IsNotValid}, false},
 		{nil, nil, false},
 	}

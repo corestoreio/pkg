@@ -16,8 +16,6 @@ package errors
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -85,7 +83,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsEmpty,
 			want: true,
 		}, {
-			err:  Wrap(Empty("Err88"), "Wrap88"),
+			err:  Wrap(NewEmptyf("Err88"), "Wrap88"),
+			is:   IsEmpty,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewEmptyf("Err92"), "Wrap92"), ""),
 			is:   IsEmpty,
 			want: true,
 		}, {
@@ -119,7 +121,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsWriteFailed,
 			want: true,
 		}, {
-			err:  Wrap(WriteFailed("Error122"), "Wrap122"),
+			err:  Wrap(NewWriteFailedf("Error122"), "Wrap122"),
+			is:   IsWriteFailed,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewWriteFailedf("Error130"), "Wrap130"), ""),
 			is:   IsWriteFailed,
 			want: true,
 		}, {
@@ -153,7 +159,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsNotImplemented,
 			want: true,
 		}, {
-			err:  Wrap(NotImplemented("err156"), "Wrap156"),
+			err:  Wrap(NewNotImplementedf("err156"), "Wrap156"),
+			is:   IsNotImplemented,
+			want: true,
+		}, {
+			err:  NewAlreadyClosed(Wrap(NewNotImplementedf("err160"), "Wrap160"), ""),
 			is:   IsNotImplemented,
 			want: true,
 		}, {
@@ -179,7 +189,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsFatal,
 			want: true,
 		}, {
-			err:  Wrap(Fatal("Err182"), "Wrap182"),
+			err:  Wrap(NewFatalf("Err182"), "Wrap182"),
+			is:   IsFatal,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewFatalf("Err198"), "Wrap198"), ""),
 			is:   IsFatal,
 			want: true,
 		}, {
@@ -209,7 +223,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsNotFound,
 			want: true,
 		}, {
-			err:  Wrap(NotFound("Err212"), "Wrap212"),
+			err:  Wrap(NewNotFoundf("Err212"), "Wrap212"),
+			is:   IsNotFound,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewNotFoundf("Err232"), "Wrap232"), ""),
 			is:   IsNotFound,
 			want: true,
 		}, {
@@ -243,7 +261,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsUserNotFound,
 			want: true,
 		}, {
-			err:  Wrap(UserNotFound("Err246"), "Wrap246"),
+			err:  Wrap(NewUserNotFoundf("Err246"), "Wrap246"),
+			is:   IsUserNotFound,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewUserNotFoundf("Err270"), "Wrap270"), ""),
 			is:   IsUserNotFound,
 			want: true,
 		}, {
@@ -281,7 +303,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsUnauthorized,
 			want: true,
 		}, {
-			err:  Wrap(Unauthorized("Err284"), "Wrap284"),
+			err:  Wrap(NewUnauthorizedf("Err284"), "Wrap284"),
+			is:   IsUnauthorized,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewUnauthorizedf("Err312"), "Wrap312"), ""),
 			is:   IsUnauthorized,
 			want: true,
 		}, {
@@ -319,7 +345,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsAlreadyExists,
 			want: true,
 		}, {
-			err:  Wrap(AlreadyExists("Err322"), "Wrap322"),
+			err:  Wrap(NewAlreadyExistsf("Err322"), "Wrap322"),
+			is:   IsAlreadyExists,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewAlreadyExistsf("Err354"), "Wrap354"), ""),
 			is:   IsAlreadyExists,
 			want: true,
 		}, {
@@ -357,7 +387,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsAlreadyClosed,
 			want: true,
 		}, {
-			err:  Wrap(AlreadyClosed("Err360"), "Wrap360"),
+			err:  Wrap(NewAlreadyClosedf("Err360"), "Wrap360"),
+			is:   IsAlreadyClosed,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewAlreadyClosedf("Err396"), "Wrap396"), ""),
 			is:   IsAlreadyClosed,
 			want: true,
 		}, {
@@ -395,7 +429,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsNotSupported,
 			want: true,
 		}, {
-			err:  Wrap(NotSupported("Err398"), "Wrap398"),
+			err:  Wrap(NewNotSupportedf("Err398"), "Wrap398"),
+			is:   IsNotSupported,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewNotSupportedf("Err438"), "Wrap438"), ""),
 			is:   IsNotSupported,
 			want: true,
 		}, {
@@ -433,7 +471,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsNotValid,
 			want: true,
 		}, {
-			err:  Wrap(NotValid("Err436"), "Wrap436"),
+			err:  Wrap(NewNotValidf("Err436"), "Wrap436"),
+			is:   IsNotValid,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewNotValidf("Err480"), "Wrap480"), ""),
 			is:   IsNotValid,
 			want: true,
 		}, {
@@ -471,7 +513,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsTemporary,
 			want: true,
 		}, {
-			err:  Wrap(Temporary("Err474"), "Wrap474"),
+			err:  Wrap(NewTemporaryf("Err474"), "Wrap474"),
+			is:   IsTemporary,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewTemporaryf("Err522"), "Wrap522"), ""),
 			is:   IsTemporary,
 			want: true,
 		}, {
@@ -509,7 +555,11 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsTimeout,
 			want: true,
 		}, {
-			err:  Wrap(Timeout("Err512"), "Wrap512"),
+			err:  Wrap(NewTimeoutf("Err512"), "Wrap512"),
+			is:   IsTimeout,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewTimeoutf("Err564"), "Wrap564"), "ni562"),
 			is:   IsTimeout,
 			want: true,
 		}, {
@@ -533,48 +583,48 @@ func TestBehaviourPlain(t *testing.T) {
 	}
 }
 
-func TestBehaviourFormat(t *testing.T) {
-	tests := []struct {
-		constErr error
-		errf     func(format string, args ...interface{}) error
-		is       BehaviourFunc
-		want     bool
-	}{
-		{notImplementedTxt, NewNotImplementedf, IsNotImplemented, true},
-		{fatalTxt, NewFatalf, IsFatal, true},
-		{notFoundTxt, NewNotFoundf, IsNotFound, true},
-		{userNotFoundTxt, NewUserNotFoundf, IsUserNotFound, true},
-		{unauthorizedTxt, NewUnauthorizedf, IsUnauthorized, true},
-		{alreadyExistsTxt, NewAlreadyExistsf, IsAlreadyExists, true},
-		{alreadyClosedTxt, NewAlreadyClosedf, IsAlreadyClosed, true},
-		{notSupportedTxt, NewNotSupportedf, IsNotSupported, true},
-		{notValidTxt, NewNotValidf, IsNotValid, true},
-		{temporaryTxt, NewTemporaryf, IsTemporary, true},
-		{timeoutTxt, NewTimeoutf, IsTimeout, true},
+func TestErrWrapf(t *testing.T) {
+	const e Error = "Error1"
+	if haveEB, want := errWrapf(e, "Hello World %#v"), "Hello World %#v"; haveEB.msg != want {
+		t.Errorf("have %q want %q", haveEB.msg, want)
 	}
-	// const substrLocation = `github.com/corestoreio/csfw/util/errors/behaviour.go`
-	const substrLocation = `/behaviour.go`
-	for i, test := range tests {
-		haveErr := test.errf("Gopher %d", i)
-		if want, have := test.want, test.is(haveErr); want != have {
-			t.Errorf("Index %d: Want %t Have %t", i, want, have)
-		}
-		loca := fmt.Sprintf("%+v", haveErr)
-		if !strings.Contains(loca, substrLocation) {
-			t.Errorf("Index %d: Cannot find %q in %q", i, substrLocation, loca)
-		}
-		if substr := test.constErr.Error(); !strings.Contains(loca, substr) {
-			t.Errorf("Index %d: Cannot find %q in %q", i, substr, loca)
-		}
+	if haveEB, want := errWrapf(e, "Hello World %d", 123), "Hello World 123"; haveEB.msg != want {
+		t.Errorf("have %q want %q", haveEB.msg, want)
 	}
 }
 
-func TestEbWrapf(t *testing.T) {
-	const e Error = "Error1"
-	if haveEB, want := ebWrapf(e, "Hello World %#v"), "Hello World %#v"; haveEB.msg != want {
-		t.Errorf("have %q want %q", haveEB.msg, want)
+func TestErrNewf(t *testing.T) {
+	if have, want := errNewf("Hello World %d", 633), "Hello World 633"; have.msg != want {
+		t.Errorf("have %q want %q", have.msg, want)
 	}
-	if haveEB, want := ebWrapf(e, "Hello World %d", 123), "Hello World 123"; haveEB.msg != want {
-		t.Errorf("have %q want %q", haveEB.msg, want)
+	if have, want := errNewf("Hello World %d"), "Hello World %d"; have.msg != want {
+		t.Errorf("have %q want %q", have.msg, want)
+	}
+}
+
+func TestHasBehaviour(t *testing.T) {
+	tests := []struct {
+		err           error
+		wantBehaviour int
+	}{
+		{Error("err27"), 0},
+		{NewAlreadyClosedf("err28"), BehaviourAlreadyClosed},
+		{NewAlreadyExistsf("err29"), BehaviourAlreadyExists},
+		{NewEmptyf("err50"), BehaviourEmpty},
+		{NewFatalf("err31"), BehaviourFatal},
+		{NewNotFoundf("err32"), BehaviourNotFound},
+		{NewNotImplementedf("err33"), BehaviourNotImplemented},
+		{NewNotSupportedf("err34"), BehaviourNotSupported},
+		{NewNotValidf("err35"), BehaviourNotValid},
+		{NewTemporaryf("err36"), BehaviourTemporary},
+		{NewTimeoutf("err37"), BehaviourTimeout},
+		{NewUnauthorizedf("err38"), BehaviourUnauthorized},
+		{NewUserNotFoundf("err39"), BehaviourUserNotFound},
+		{NewWriteFailedf("err40"), BehaviourWriteFailed},
+	}
+	for _, test := range tests {
+		if have, want := HasBehaviour(test.err), test.wantBehaviour; have != want {
+			t.Errorf("%s: Have: %d Want: %d", test.err, have, want)
+		}
 	}
 }

@@ -14,8 +14,6 @@
 
 package errors
 
-const pkgPath = `github.com/corestoreio/csfw/util/errors`
-
 // ErrorContainsAny checks if err contains at least one provided behaviour
 // functions. Does not traverse recursive into the error.
 func ErrorContainsAny(err error, bfs ...BehaviourFunc) bool {
