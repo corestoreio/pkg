@@ -14,25 +14,21 @@
 
 package cstesting
 
-import (
-	"os"
+import "os"
 
-	"github.com/corestoreio/csfw/util/errors"
-)
-
-// fataler describes the function needed to print the output and stop
-// the current running goroutine and hence fail the test.
+// fataler describes the function needed to print the output and stop the
+// current running goroutine and hence fail the test.
 type fataler interface {
-	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
 }
 
 // ChangeEnv temporarily changes the environment for non parallel tests.
 //		defer cstesting.ChangeEnv(t, "PATH", ".")()
 func ChangeEnv(t fataler, key, value string) func() {
 	was := os.Getenv(key)
-	FatalIfError(t, os.Setenv(key, value))
+	fatalIfError(t, os.Setenv(key, value))
 	return func() {
-		FatalIfError(t, os.Setenv(key, was))
+		fatalIfError(t, os.Setenv(key, was))
 	}
 }
 
@@ -40,18 +36,18 @@ func ChangeEnv(t fataler, key, value string) func() {
 //			defer cstesting.ChangeDir(t, os.TempDir())()
 func ChangeDir(t fataler, dir string) func() {
 	wd, err := os.Getwd()
-	FatalIfError(t, err)
-	FatalIfError(t, os.Chdir(dir))
+	fatalIfError(t, err)
+	fatalIfError(t, os.Chdir(dir))
 
 	return func() {
-		FatalIfError(t, os.Chdir(wd))
+		fatalIfError(t, os.Chdir(wd))
 	}
 }
 
-// FatalIfError fails the tests if an unexpected error occurred.
-// If the error is gift wrapped prints the location.
-func FatalIfError(t fataler, err error) {
+// fatalIfError fails the tests if an unexpected error occurred. If the error is
+// gift wrapped prints the location.
+func fatalIfError(t fataler, err error) {
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 }

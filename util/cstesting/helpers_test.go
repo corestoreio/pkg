@@ -15,28 +15,21 @@
 package cstesting_test
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
-
-type fatal struct{ ret string }
-
-func (f *fatal) Fatal(args ...interface{}) {
-	f.ret = fmt.Sprint(args...)
-}
 
 func TestChangeEnv(t *testing.T) {
 	// cannot run parallel
 
 	key := "X_CORESTORE_TESTING"
 	val := "X_CORESTORE_TESTING_VAL1"
-	cstesting.FatalIfError(t, os.Setenv(key, val))
+	require.NoError(t, os.Setenv(key, val))
 
 	f := cstesting.ChangeEnv(t, key, val+"a")
 	assert.Exactly(t, val+"a", os.Getenv(key))
@@ -46,22 +39,16 @@ func TestChangeEnv(t *testing.T) {
 
 func TestChangeDir(t *testing.T) {
 	wdOld, err := os.Getwd()
-	cstesting.FatalIfError(t, err)
+	require.NoError(t, err)
 
 	f := cstesting.ChangeDir(t, os.TempDir())
 	wdNew, err := os.Getwd()
-	cstesting.FatalIfError(t, err)
+	require.NoError(t, err)
 	wdNew = strings.Replace(wdNew, "/private", "", 1)
 	assert.Exactly(t, os.TempDir(), wdNew+string(os.PathSeparator))
 	f()
 
 	wdCurrent, err := os.Getwd()
-	cstesting.FatalIfError(t, err)
+	require.NoError(t, err)
 	assert.Exactly(t, wdOld, wdCurrent)
-}
-
-func TestFatalIfError(t *testing.T) {
-	f := new(fatal)
-	cstesting.FatalIfError(f, errors.New("errrrr"))
-	assert.Exactly(t, "errrrr\n", f.ret)
 }
