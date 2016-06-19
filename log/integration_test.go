@@ -17,13 +17,13 @@ package log_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"strings"
 )
 
 func TestHTTPRequest_Race(t *testing.T) {

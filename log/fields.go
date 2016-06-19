@@ -132,7 +132,7 @@ func (fs Fields) ToString(msg string) string {
 		_, _ = buf.WriteString(separator)
 		_, _ = buf.WriteString(ErrorKeyName)
 		_, _ = buf.WriteString(assignmentChar)
-		_, _ = buf.WriteString(errors.PrintLoc(err))
+		_, _ = buf.WriteString(fmt.Sprintf("%+v", err))
 	}
 	_, _ = buf.WriteRune('\n')
 	return buf.String()

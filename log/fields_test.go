@@ -50,7 +50,8 @@ func TestFields_ToString_Error(t *testing.T) {
 		Float64("k3", 3.14159),
 	}
 	str := fs.ToString("fieldsKey")
-	assert.Contains(t, str, "[log] AddTo.TextMarshaler\nErrToString\n\n")
+	assert.Contains(t, str, "fieldsKey error: ErrToString\n")
+	assert.Contains(t, str, "[log] AddTo.TextMarshaler\n")
 }
 
 func TestField_Bool(t *testing.T) {
@@ -339,8 +340,8 @@ func TestField_Nest_Error(t *testing.T) {
 	if err := f.AddTo(wt); err != nil {
 		t.Fatal(err)
 	}
-	assert.Contains(t, buf.String(), "nest1: \"1\" error:")
-	assert.Contains(t, buf.String(), "[log] AddTo.TextMarshaler\nNestError. Smoke Alarm on ;-)\n")
+	assert.Contains(t, buf.String(), `nest1: "1" error: NestError. Smoke Alarm on ;-)`)
+	assert.Contains(t, buf.String(), `[log] AddTo.TextMarshaler`)
 }
 
 func TestField_HTTPRequest(t *testing.T) {

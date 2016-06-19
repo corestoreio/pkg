@@ -107,7 +107,7 @@ func (wt WriteTypes) AddMarshaler(key string, value Marshaler) error {
 			wt.AssignmentChar = assignmentChar
 		}
 		_, _ = wt.W.WriteString(wt.AssignmentChar)
-		_, _ = wt.W.WriteString(errors.PrintLoc(err))
+		_, _ = wt.W.WriteString(fmt.Sprintf("%+v", err))
 	}
 	return nil
 }
