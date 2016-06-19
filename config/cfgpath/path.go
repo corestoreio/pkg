@@ -134,7 +134,7 @@ func (p Path) String() string {
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
 	if err := p.fq(buf); err != nil {
-		return "[cfgpath] Error: " + errors.PrintLoc(err)
+		return fmt.Sprintf("[cfgpath] Error: %+v", err)
 	}
 	return buf.String()
 }

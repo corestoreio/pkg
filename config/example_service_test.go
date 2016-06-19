@@ -87,7 +87,7 @@ func ExampleService() {
 	val, err = configSrv.String(pathString.Bind(scope.Store, 3)) // different scope ID
 	if err != nil {
 		fmt.Printf("Scope4a: srvString Error: %s\n", err)
-		fmt.Printf("Scope4b: srvString Error: %s\n", errors.PrintLoc(err))
+		fmt.Printf("Scope4b: srvString Error: %v\n", err) // Use %+v to show the full path! :-)
 	}
 	fmt.Printf("Scope4: Is KeyNotFound %t\n", errors.IsNotFound(err))
 
@@ -96,8 +96,6 @@ func ExampleService() {
 	// Scope2: WebsiteGopher
 	// Scope3: StoreGopher
 	// Scope4a: srvString Error: [config] Storage.String.get: [storage] Key not found
-	// Scope4b: srvString Error: github.com/corestoreio/csfw/config/service.go:209: [config] Storage.String.get
-	// [storage] Key not found
-	//
+	// Scope4b: srvString Error: [config] Storage.String.get: [storage] Key not found
 	// Scope4: Is KeyNotFound true
 }

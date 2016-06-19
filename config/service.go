@@ -15,13 +15,14 @@
 package config
 
 import (
+	"time"
+
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
-	"time"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
