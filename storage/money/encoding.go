@@ -59,7 +59,8 @@ func (m Money) Value() (driver.Value, error) {
 }
 
 // Scan scans a value into the Money struct. Returns an error on data loss.
-// Errors will be logged. Initial default settings are the guard and precision value.
+// Errors will be logged. Initial default settings are the guard and precision
+// value.
 func (m *Money) Scan(src interface{}) error {
 	m.applyDefaults()
 

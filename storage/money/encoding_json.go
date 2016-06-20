@@ -42,9 +42,8 @@ type JSONType uint8
 var _ Encoder = new(JSONType)
 var _ Decoder = new(JSONType)
 
-// NewJSONEncoder creates a new encoder depending on the type.
-// Accepts either zero or one argument.
-// Default encoder is JSONLocale
+// NewJSONEncoder creates a new encoder depending on the type. Accepts either
+// zero or one argument. Default encoder is JSONLocale.
 func NewJSONEncoder(jts ...JSONType) Encoder {
 	if len(jts) != 1 {
 		return JSONLocale
@@ -52,9 +51,8 @@ func NewJSONEncoder(jts ...JSONType) Encoder {
 	return jts[0]
 }
 
-// NewJSONDecoder creates a new decoder depending on the type.
-// Accepts either zero or one argument.
-// Default decoder is JSONLocale
+// NewJSONDecoder creates a new decoder depending on the type. Accepts either
+// zero or one argument. Default decoder is JSONLocale.
 func NewJSONDecoder(jts ...JSONType) Decoder {
 	if len(jts) != 1 {
 		return JSONLocale
@@ -150,7 +148,7 @@ OuterLoop:
 
 	if isArray { // now it's an error because no colon found
 		c.m, c.Valid = 0, false
-		return errors.NotValid(`[money] No colon found in JSON array.`)
+		return errors.NewNotValidf(`[money] No colon found in JSON array: %q`, string(runes))
 	}
 
 	switch {

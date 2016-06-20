@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/storage/money"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -293,7 +294,7 @@ func TestSwedishNumber(t *testing.T) {
 	}
 }
 
-func TestAdd(t *testing.T) {
+func TestMoney_Add(t *testing.T) {
 
 	tests := []struct {
 		have1 int64
@@ -303,7 +304,6 @@ func TestAdd(t *testing.T) {
 		{13, 13, 26},
 		{-13, -13, -26},
 		{-45628734653, -45628734653, -91257469306},
-		{math.MaxInt64, 2, 0},
 	}
 
 	for i, test := range tests {
@@ -316,7 +316,23 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestSub(t *testing.T) {
+func TestMoney_Add_Overflow(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.IsNotValid(err), "Error %+v", err)
+			} else {
+				t.Fatal("Expecting an error in the panic")
+			}
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	c := money.New().Set(math.MaxInt64)
+	c.Add(money.New().Set(2))
+}
+
+func TestMoney_Sub(t *testing.T) {
 
 	tests := []struct {
 		have1 int64
@@ -327,7 +343,6 @@ func TestSub(t *testing.T) {
 		{-13, -13, 0},
 		{-13, 13, -26},
 		{-45628734653, -45628734653, 0},
-		{-math.MaxInt64, 2, 0},
 	}
 
 	for i, test := range tests {
@@ -338,6 +353,22 @@ func TestSub(t *testing.T) {
 			t.Errorf("\nWant: %d\nHave: %d\nIndex: %d\n", test.want, have, i)
 		}
 	}
+}
+
+func TestMoney_Sub_Overflow(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.IsNotValid(err), "Error %+v", err)
+			} else {
+				t.Fatal("Expecting an error in the panic")
+			}
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	c := money.New().Set(-math.MaxInt64)
+	c.Sub(money.New().Set(2))
 }
 
 func TestMulNumber(t *testing.T) {

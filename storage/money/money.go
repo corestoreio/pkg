@@ -25,25 +25,23 @@ package money
 */
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"math"
 	"strconv"
-
-	"bytes"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/csmath"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-const errOverflow = errors.NotValid("[money] Integer Overflow")
+var errOverflow = errors.NewNotValidf("[money] Integer Overflow")
 
-// Currency represents a money aka currency type to avoid rounding errors
-// with floats. Includes options for printing, Swedish rounding,
-// database scanning and JSON en/decoding.
+// Currency represents a money aka currency type to avoid rounding errors with
+// floats. Includes options for printing, Swedish rounding, database scanning
+// and JSON en/decoding.
 type Money struct {
-	// Errors may contain errors after some operations.
-	Errors *errors.MultiErr
 	// m money in Guard/DP
 	m int64
 	// FmtCur to allow language and format specific outputs in a currency format
@@ -70,10 +68,10 @@ type Money struct {
 	dpf    float64
 }
 
-// New creates a new empty Money struct with package default values.
-// Formatter can be overridden after you have created the new type.
-// Implements the interfaces: database.Scanner, driver.Valuer,
-// json.Marshaller, json.Unmarshaller
+// New creates a new empty Money struct with package default values. Formatter
+// can be overridden after you have created the new type. Implements the
+// interfaces: database.Scanner, driver.Valuer, json.Marshaller,
+// json.Unmarshaller
 func New(opts ...Option) Money {
 	c := Money{}
 	c.applyDefaults()
@@ -106,8 +104,8 @@ func (m *Money) applyDefaults() {
 	m.Interval = global.swedish
 }
 
-// Options besides New() also Option() can apply options to the current
-// struct. It returns the last set option. More info about the returned function:
+// Options besides New() also Option() can apply options to the current struct.
+// It returns the last set option. More info about the returned function:
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
 func (m *Money) Option(opts ...Option) (previous Option) {
 	for _, o := range opts {
@@ -131,8 +129,8 @@ func (m Money) Getf() float64 {
 	return float64(m.m) / m.dpf
 }
 
-// Geti gets value of money truncating after decimal precision (see Raw() for no truncation).
-// Rounds always down
+// Geti gets value of money truncating after decimal precision (see Raw() for no
+// truncation). Rounds always down.
 func (m Money) Geti() int64 {
 	return m.m / m.dp
 }
@@ -142,7 +140,8 @@ func (m Money) Dec() int64 {
 	return m.Abs().Raw() % m.dp
 }
 
-// Raw returns in int64 the value of Currency (also see Geti(), See Getf() for float64)
+// Raw returns in int64 the value of Currency (also see Geti(), See Getf() for
+// float64)
 func (m Money) Raw() int64 {
 	return m.m
 }
@@ -162,8 +161,8 @@ func (m Money) Setf(f float64) Money {
 	return m.Set(rnd(r, fDPf-float64(r)))
 }
 
-// ParseFloat transforms a string float value into a real float64 value and
-// sets it. Current value will be overridden. Returns a logged error.
+// ParseFloat transforms a string float value into a real float64 value and sets
+// it. Current value will be overridden. Returns a logged error.
 func (m *Money) ParseFloat(s string) error {
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -197,8 +196,8 @@ func (m Money) Localize() (buf bytes.Buffer, err error) {
 	return buf, err
 }
 
-// LocalizeWriter for money type representation in a specific locale.
-// Returns the number bytes written or an error.
+// LocalizeWriter for money type representation in a specific locale. Returns
+// the number bytes written or an error.
 func (m Money) LocalizeWriter(w io.Writer) (int, error) {
 	if false == m.Valid {
 		return w.Write(gNaN)
@@ -206,13 +205,13 @@ func (m Money) LocalizeWriter(w io.Writer) (int, error) {
 	return m.FmtCur.FmtNumber(w, m.Sign(), m.Geti(), m.Precision(), m.Dec())
 }
 
-// String for money type representation in a specific locale.
-// Errors will be appended to MultiErr type.
+// String for money type representation in a specific locale. Errors will be
+// written to the buffer.
 func (m Money) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if _, err := m.LocalizeWriter(buf); err != nil {
-		m.Errors = m.Errors.AppendErrors(err)
+		_, _ = buf.WriteString(fmt.Sprintf("%+v", err)) // better solution?
 	}
 	return buf.String()
 }
@@ -244,8 +243,9 @@ func (m Money) Ftoa() []byte {
 	return m.FtoaAppend(nil)
 }
 
-// FtoaAppend converts the internal floating-point number to a byte slice without
-// any applied formatting and appends it to dst and returns the extended buffer.
+// FtoaAppend converts the internal floating-point number to a byte slice
+// without any applied formatting and appends it to dst and returns the extended
+// buffer.
 func (m Money) FtoaAppend(dst []byte) []byte {
 	if false == m.Valid {
 		return append(dst, gNaN...)
@@ -257,33 +257,31 @@ func (m Money) FtoaAppend(dst []byte) []byte {
 }
 
 // Add adds two Currency types. Returns empty Currency on integer overflow.
-// Errors gets appended to the Multi Error type.
+// Errors gets appended to the Multi Error type. Panics on integer overflow.
 func (m Money) Add(d Money) Money {
 	r := m.m + d.m
 	if (r^m.m)&(r^d.m) < 0 {
-		m.Errors = m.Errors.AppendErrors(errors.Wrap(errOverflow, "[money] Add"))
-		m.m = 0
-		return m
+		panic(errOverflow)
 	}
 	m.m = r
 	m.Valid = true
 	return m
 }
 
-// Sub subtracts one Currency type from another. Returns empty Currency on integer overflow.
-// Errors gets appended to the Multi Error type.
+// Sub subtracts one Currency type from another. Returns empty Currency on
+// integer overflow. Errors gets appended to the Multi Error type. Panics on
+// integer overflow.
 func (m Money) Sub(d Money) Money {
 	r := m.m - d.m
 	if (r^m.m)&^(r^d.m) < 0 {
-		m.Errors = m.Errors.AppendErrors(errors.Wrap(errOverflow, "[money] Sub"))
-		m.m = 0
-		return m
+		panic(errOverflow)
 	}
 	m.m = r
 	return m
 }
 
 // Mul multiplies two Currency types. Both types must have the same precision.
+// Panics on integer overflow.
 func (m Money) Mul(d Money) Money {
 	// @todo c.m*d.m will overflow int64
 	r := csmath.Round(float64(m.m*d.m)/m.dpf, .5, 0)
@@ -372,8 +370,8 @@ func (m Money) CompareTo(d Money) bool {
 }
 
 // rnd rounds int64 remainder rounded half towards plus infinity
-// trunc = the remainder of the float64 calc
-// r     = the result of the int64 cal
+//	trunc = the remainder of the float64 calc
+//	r     = the result of the int64 cal
 func rnd(r int64, trunc float64) int64 {
 	//fmt.Printf("RND 1 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
 	if trunc > 0 {
