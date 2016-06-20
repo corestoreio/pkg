@@ -113,8 +113,8 @@ func installFixtures(db *sql.DB) {
 func TestNewConnection_NotImplemted(t *testing.T) {
 	c, err := NewConnection(WithDriver("ODBC"))
 	assert.Nil(t, c)
-	assert.True(t, errors.IsNotImplemented(err))
-	pl := errors.PrintLoc(err)
+	assert.True(t, errors.IsNotImplemented(err), "Error: %+v", err)
+	pl := fmt.Sprintf("%+v", err)
 	assert.Contains(t, pl, `github.com/corestoreio/csfw/storage/dbr/dbr.go:`)
-	assert.Contains(t, pl, `[dbr] unsupported driver: "ODBC": Not implemented`)
+	assert.Contains(t, pl, `[dbr] unsupported driver: "ODBC`)
 }
