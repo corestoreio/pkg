@@ -25,7 +25,7 @@ import (
 )
 
 func TestWithBigCache_Success(t *testing.T) {
-	p, err := transcache.NewProcessor(With())
+	p, err := transcache.NewProcessor(With(), transcache.WithEncoder(transcache.JSONCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,5 +47,5 @@ func TestWithBigCache_Error(t *testing.T) {
 		Shards: 3,
 	}))
 	assert.Nil(t, p)
-	assert.True(t, errors.IsFatal(err), "Error: %s", err)
+	assert.True(t, errors.IsFatal(err), "Error: %+v", err)
 }

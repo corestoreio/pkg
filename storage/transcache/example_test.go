@@ -17,10 +17,10 @@ package transcache_test
 import (
 	"encoding/gob"
 	"fmt"
+	"log"
+
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
-	"github.com/corestoreio/csfw/util/errors"
-	"log"
 )
 
 type P struct {
@@ -55,16 +55,16 @@ func ExampleWithPooledEncoder() {
 		tcbigcache.With( /*you can set here bigcache.Config*/ ),
 	)
 	if err != nil {
-		log.Fatal("NewProcessor error:", errors.PrintLoc(err))
+		log.Fatalf("NewProcessor error: %+v", err)
 	}
 
 	pythagorasKey := []byte(`Pythagoras`)
 	if err := tc.Set(pythagorasKey, P{3, 4, 5, "Pythagoras"}); err != nil {
-		log.Fatal("Set error 1:", errors.PrintLoc(err))
+		log.Fatalf("Set error 1: %+v", err)
 	}
 	treeHouseKey := []byte(`TreeHouse`)
 	if err := tc.Set(treeHouseKey, P{1782, 1841, 1922, "Treehouse"}); err != nil {
-		log.Fatal("Set error 2:", errors.PrintLoc(err))
+		log.Fatalf("Set error 2: %+v", err)
 	}
 
 	// Get from cache and print the values. Get operations are called more frequently
@@ -72,22 +72,22 @@ func ExampleWithPooledEncoder() {
 	for i := 0; i < 5; i++ {
 		var q Q
 		if err := tc.Get(pythagorasKey, &q); err != nil {
-			log.Fatal("Get error 1:", errors.PrintLoc(err))
+			log.Fatalf("Get error 1: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 
 		if err := tc.Get(treeHouseKey, &q); err != nil {
-			log.Fatal("Get error:", errors.PrintLoc(err))
+			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d, %d}\n", q.Name, *q.X, *q.Y)
 	}
 
 	// We overwrite the previously set values
 	if err := tc.Set(pythagorasKey, R{"Pythagoras2", 'P'}); err != nil {
-		log.Fatal("Set error 1:", errors.PrintLoc(err))
+		log.Fatalf("Set error 1: %+v", err)
 	}
 	if err := tc.Set(treeHouseKey, R{"Treehouse2", 'T'}); err != nil {
-		log.Fatal("Set error 2:", errors.PrintLoc(err))
+		log.Fatalf("Set error 2: %+v", err)
 	}
 
 	// Get from cache and print the values. Get operations are called more frequently
@@ -95,12 +95,12 @@ func ExampleWithPooledEncoder() {
 	for i := 0; i < 5; i++ {
 		var r R
 		if err := tc.Get(pythagorasKey, &r); err != nil {
-			log.Fatal("Get error 3:", errors.PrintLoc(err))
+			log.Fatalf("Get error 3: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)
 
 		if err := tc.Get(treeHouseKey, &r); err != nil {
-			log.Fatal("Get error:", errors.PrintLoc(err))
+			log.Fatalf("Get error: %+v", err)
 		}
 		fmt.Printf("%q: {%d}\n", r.Name, r.Rune)
 	}

@@ -25,7 +25,6 @@ import (
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcboltdb"
 	"github.com/corestoreio/csfw/storage/transcache/tcredis"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/ugorji/go/codec"
 )
 
@@ -53,13 +52,13 @@ func benchmark_country_enc(iterationsSetGet int, opts ...transcache.Option) func
 				i++
 
 				if err := p.Set(key, cntry); err != nil {
-					b.Fatal(errors.PrintLoc(err))
+					b.Fatalf("%+v", err)
 				}
 				// Double execution might detect storing of type information in streaming encoders
 				for j := 0; j < iterationsSetGet; j++ {
 					var newCntry = new(Country)
 					if err := p.Get(key, newCntry); err != nil {
-						b.Fatal(errors.PrintLoc(err))
+						b.Fatalf("%+v", err)
 					}
 					if newCntry.Country.IsoCode != wantCountryISO {
 						b.Fatalf("Country ISO Code must be %q, Have %q", wantCountryISO, newCntry.Country.IsoCode)

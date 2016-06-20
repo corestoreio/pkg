@@ -45,8 +45,11 @@ func With(c ...bigcache.Config) transcache.Option {
 	}
 	return func(p *transcache.Processor) error {
 		c, err := bigcache.NewBigCache(def)
+		if err != nil {
+			return errors.NewFatalf("[tcbigcache] bigcache.NewBigCache. Error: %s", err)
+		}
 		p.Cache = wrapper{c}
-		return errors.NewFatal(err, "[tcbigcache] bigcache.NewBigCache")
+		return nil
 	}
 }
 

@@ -41,7 +41,7 @@ func TestWithBolt_Success(t *testing.T) {
 	fn := getTempFile(t)
 	defer os.Remove(fn)
 
-	p, err := transcache.NewProcessor(WithFile(fn, 0600))
+	p, err := transcache.NewProcessor(WithFile(fn, 0600), transcache.WithEncoder(transcache.XMLCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}

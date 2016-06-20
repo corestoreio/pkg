@@ -38,7 +38,7 @@ func WithClient(opt *redis.Options, ping ...bool) transcache.Option {
 		c := redis.NewClient(opt)
 		if len(ping) > 0 && ping[0] {
 			if _, err := c.Ping().Result(); err != nil {
-				return errors.NewFatal(err, "[tcredis] WithClient Ping")
+				return errors.NewFatalf("[tcredis] WithClient Ping: %s", err)
 			}
 		}
 		p.Cache = wrapper{
@@ -65,7 +65,7 @@ func WithURL(rawurl string, opt *redis.Options, ping ...bool) transcache.Option 
 
 		u, err := url.Parse(rawurl)
 		if err != nil {
-			return errors.NewFatal(err, "[tcredis] WithDialURL url.Parse")
+			return errors.NewFatalf("[tcredis] WithDialURL url.Parse: %s", err)
 		}
 
 		if u.Scheme != "redis" {
@@ -128,7 +128,10 @@ type wrapper struct {
 func (w wrapper) Set(key []byte, value []byte) error {
 	cmd := redis.NewStatusCmd("SET", key, value)
 	w.Client.Process(cmd)
-	return errors.NewFatal(cmd.Err(), "[tcredis] wrapper.Set.NewStatusCmd")
+	if err := cmd.Err(); err != nil {
+		return errors.NewFatalf("[tcredis] wrapper.Set.NewStatusCmd: %s", err)
+	}
+	return nil
 }
 
 var errKeyNotFound = errors.NewNotFoundf(`[tcredis] Key not found`)
@@ -140,11 +143,14 @@ func (w wrapper) Get(key []byte) ([]byte, error) {
 
 	if cmd.Err() != nil {
 		if cmd.Err().Error() != "redis: nil" { // wow that is ugly, how to do better?
-			return nil, errors.NewFatal(cmd.Err(), "[tcredis] wrapper.Get.Cmd")
+			return nil, errors.NewFatalf("[tcredis] wrapper.Get.Cmd: %s", cmd.Err())
 		}
 		return nil, errKeyNotFound
 	}
 
 	raw, err := conv.ToByteE(cmd.Val())
-	return raw, errors.NewFatal(err, "[tcredis] wrapper.Get.conv.ToByte")
+	if err != nil {
+		return nil, errors.NewFatalf("[tcredis] wrapper.Get.conv.ToByte: %s", err)
+	}
+	return raw, nil
 }

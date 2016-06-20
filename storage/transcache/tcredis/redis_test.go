@@ -37,7 +37,7 @@ func TestWithDial_SetGet_Success_Live(t *testing.T) {
 		`)
 	}
 
-	p, err := transcache.NewProcessor(WithURL(redConURL, nil))
+	p, err := transcache.NewProcessor(WithURL(redConURL, nil), transcache.WithEncoder(transcache.XMLCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 		`)
 	}
 
-	p, err := transcache.NewProcessor(WithURL(redConURL, nil))
+	p, err := transcache.NewProcessor(WithURL(redConURL, nil), transcache.WithEncoder(transcache.XMLCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestWithDial_ConFailure(t *testing.T) {
 	p, err := transcache.NewProcessor(WithClient(&redis.Options{
 		Network: "tcp",
 		Addr:    "127.0.0.1:3344", // random port
-	}, true))
+	}, true), transcache.WithEncoder(transcache.JSONCodec{}))
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.True(t, p == nil, "p is not nil")
 }
@@ -196,7 +196,7 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := transcache.NewProcessor(WithURL(test.rawurl, &redis.Options{Network: "udp"}))
+		p, err := transcache.NewProcessor(WithURL(test.rawurl, &redis.Options{Network: "udp"}), transcache.WithEncoder(transcache.JSONCodec{}))
 		if test.errBhf != nil {
 			assert.True(t, test.errBhf(err), "Index %d Error %s", i, err)
 			assert.Nil(t, p, "Index %d", i)

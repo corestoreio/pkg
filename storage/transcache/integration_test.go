@@ -15,18 +15,16 @@
 package transcache_test
 
 import (
+	"fmt"
 	"os"
 	"sync"
 	"testing"
-
-	"fmt"
 
 	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcboltdb"
 	"github.com/corestoreio/csfw/storage/transcache/tcredis"
-	"github.com/corestoreio/csfw/util/cstesting"
 )
 
 // run this with go test -race .
@@ -44,7 +42,7 @@ func TestProcessor_Parallel_GetSet_Bolt(t *testing.T) {
 func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
 	mr := miniredis.NewMiniRedis()
 	if err := mr.Start(); err != nil {
-		t.Fatal(err)
+		t.Fatalf("%+v", err)
 	}
 	defer mr.Close()
 	redConURL := fmt.Sprintf("redis://%s/2", mr.Addr())
@@ -53,7 +51,9 @@ func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
 
 func newTestNewProcessor(t *testing.T, opts ...transcache.Option) {
 	p, err := transcache.NewProcessor(append(opts, transcache.WithPooledEncoder(transcache.GobCodec{}, Country{}, TableStoreSlice{}))...)
-	cstesting.FatalIfError(t, err)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
 
 	var wg sync.WaitGroup
 

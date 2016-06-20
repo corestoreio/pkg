@@ -42,7 +42,7 @@ func WithFile(path string, mode os.FileMode, options ...*bolt.Options) transcach
 
 		db, err := bolt.Open(path, mode, opt)
 		if err != nil {
-			return errors.NewFatal(err, "[tcboltdb] bolt.Open")
+			return errors.NewFatalf("[tcboltdb] bolt.Open: %s", err)
 		}
 		return WithDB(db)(p)
 	}
@@ -54,13 +54,13 @@ func WithDB(db *bolt.DB) transcache.Option {
 	return func(p *transcache.Processor) error {
 
 		err := db.Update(func(tx *bolt.Tx) error {
-			_, err := tx.CreateBucketIfNotExists(BucketName)
-			return errors.NewFatal(err, "[tcboltdb] bolt.CreateBucketIfNotExists")
+			if _, err := tx.CreateBucketIfNotExists(BucketName); err != nil {
+				return errors.NewFatalf("[tcboltdb] bolt.CreateBucketIfNotExists: %s", err)
+			}
+			return nil
 		})
-
 		p.Cache = wrapper{db}
-
-		return err
+		return errors.Wrap(err, "[tcboltdb] db.Update")
 	}
 }
 
@@ -71,7 +71,10 @@ type wrapper struct {
 func (w wrapper) Set(key []byte, value []byte) (err error) {
 	err = w.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(BucketName)
-		return errors.NewFatal(b.Put(key, value), "[tcboltdb] boltWrapper.Set.Put")
+		if err := b.Put(key, value); err != nil {
+			return errors.NewFatalf("[tcboltdb] boltWrapper.Set.Put: %s", err)
+		}
+		return nil
 	})
 	return errors.Wrap(err, "[tcboltdb] boltWrapper.Set.Update")
 }
@@ -87,7 +90,7 @@ func (w wrapper) Get(key []byte) ([]byte, error) {
 		copy(buf, v)
 		return nil
 	}); err != nil {
-		return nil, errors.NewFatal(err, "[tcboltdb] boltWrapper.Get.View")
+		return nil, errors.NewFatalf("[tcboltdb] boltWrapper.Get.View: %s", err)
 	}
 
 	if !found {
