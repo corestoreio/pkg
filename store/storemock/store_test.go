@@ -22,7 +22,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,25 +66,25 @@ func TestMustNewStoreAU_Config(t *testing.T) {
 
 	haveS, err := aust.Website.Config.String(configPath.Route)
 	if err != nil {
-		t.Fatal("fatal", errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "WebsiteScopeString", haveS)
 
 	haveS, err = aust.Website.Config.String(configPath.Route, scope.Default)
 	if err != nil {
-		t.Fatal("fatal", errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
 
 	haveS, err = aust.Config.String(configPath.Route)
 	if err != nil {
-		t.Fatal("fatal", errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "StoreScopeString", haveS)
 
 	haveS, err = aust.Config.String(configPath.Route, scope.Default)
 	if err != nil {
-		t.Fatal("fatal", errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
 

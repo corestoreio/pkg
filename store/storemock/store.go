@@ -15,6 +15,8 @@
 package storemock
 
 import (
+	"fmt"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -67,7 +69,7 @@ func NewStoreAU(cg config.Getter) (*store.Store, error) {
 func MustNewStoreAU(cg config.Getter) *store.Store {
 	st, err := NewStoreAU(cg)
 	if err != nil {
-		panic(errors.PrintLoc(err))
+		panic(fmt.Sprintf("%+v", err))
 	}
 	return st
 }
