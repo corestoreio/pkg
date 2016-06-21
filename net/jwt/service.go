@@ -296,6 +296,10 @@ func (s *Service) ConfigByScopeID(scp scope.Scope, id int64) ScopedConfig {
 	if s.Log.IsDebug() {
 		s.Log.Debug("jwt.Service.ConfigByScopeID", log.Stringer("scope", scope.NewHash(scp, id)), log.Bool("rootConfig_isNil", s.rootConfig == nil))
 	}
+	if s.useDefaultConfig(scope.NewHash(scp, id)) {
+		return s.defaultScopeCache
+	}
+
 	if s.rootConfig != nil && scp > scope.Absent && scp < scope.Group {
 		// do not forget: there is an automatic fall back to the default scope
 		// IF the ScopedGetter cannot find a configuration value for the website

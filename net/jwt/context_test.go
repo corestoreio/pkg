@@ -26,7 +26,7 @@ import (
 
 func TestContextWithError(t *testing.T) {
 
-	const wantErr = errors.UserNotFound("User Contiki not found")
+	var wantErr = errors.NewUserNotFoundf("User Contiki not found")
 	ctx := withContextError(context.Background(), wantErr)
 	assert.NotNil(t, ctx)
 

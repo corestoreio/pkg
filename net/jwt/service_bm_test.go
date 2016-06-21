@@ -31,7 +31,6 @@ import (
 	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 const benchTokenCount = 100
@@ -46,7 +45,7 @@ func benchBlackList(b *testing.B, bl jwt.Blacklister) {
 		}
 		tk, err := jwts.NewToken(scope.Default, 0, claim)
 		if err != nil {
-			b.Fatal(errors.PrintLoc(err))
+			b.Fatalf("%+v", err)
 		}
 		tokens[i] = tk.Raw
 	}
@@ -57,7 +56,7 @@ func benchBlackList(b *testing.B, bl jwt.Blacklister) {
 		for pb.Next() {
 			for i := 0; i < benchTokenCount; i++ {
 				if err := bl.Set(tokens[i], time.Minute); err != nil {
-					b.Fatal(errors.PrintLoc(err))
+					b.Fatalf("%+v", err)
 				}
 				if !bl.Has(tokens[i]) {
 					b.Fatalf("Cannot find token %s with index %d", tokens[i], i)
@@ -187,7 +186,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (http.Handler, 
 		jwtclaim.KeyStore: "at",
 	})
 	if err != nil {
-		b.Fatal(errors.PrintLoc(err))
+		b.Fatalf("%+v", err)
 	}
 
 	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -270,7 +269,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		s.Store = storeCode
 		token, err := jwts.NewToken(scope.Website, 1, s)
 		if err != nil {
-			b.Fatal(errors.PrintLoc(err))
+			b.Fatalf("%+v", err)
 		}
 		return token.Raw
 	}
@@ -285,7 +284,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		// just add garbage to the blacklist
 		tbl := generateToken(strconv.FormatInt(int64(i), 10))
 		if err := jwts.Blacklist.Set(tbl, time.Millisecond*time.Microsecond*time.Duration(i)); err != nil {
-			b.Fatal(errors.PrintLoc(err))
+			b.Fatalf("%+v", err)
 		}
 	}
 

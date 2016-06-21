@@ -40,7 +40,7 @@ func TestService_WithInitTokenAndStore_NoStoreProvider(t *testing.T) {
 	authHandler, _ := testAuth(t, jwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tk, err := jwt.FromContext(r.Context())
 		assert.False(t, tk.Valid)
-		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+		assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
 	})))
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
@@ -63,7 +63,7 @@ func TestService_WithInitTokenAndStore_NoToken(t *testing.T) {
 	authHandler, _ := testAuth(t, jwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tk, err := jwt.FromContext(r.Context())
 		assert.False(t, tk.Valid)
-		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+		assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 	})))
@@ -89,7 +89,7 @@ func TestService_WithInitTokenAndStore_HTTPErrorHandler(t *testing.T) {
 		tok, err := jwt.FromContext(r.Context())
 		assert.False(t, tok.Valid)
 		w.WriteHeader(http.StatusTeapot)
-		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+		assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
 		_, err = w.Write([]byte(err.Error()))
 		if err != nil {
 			t.Fatal(err)
@@ -102,7 +102,7 @@ func TestService_WithInitTokenAndStore_HTTPErrorHandler(t *testing.T) {
 
 	authHandler.ServeHTTP(w, req.WithContext(ctx))
 	assert.Equal(t, http.StatusTeapot, w.Code)
-	assert.Contains(t, w.Body.String(), `token not present in request: Not found`)
+	assert.Contains(t, w.Body.String(), `[csjwt] token not present in request`)
 }
 
 func TestService_WithInitTokenAndStore_Success(t *testing.T) {
@@ -120,10 +120,10 @@ func TestService_WithInitTokenAndStore_Success(t *testing.T) {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, err := jwt.FromContext(r.Context())
 			t.Logf("Token: %#v\n", token)
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}),
 	)); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
@@ -146,7 +146,7 @@ func TestService_WithInitTokenAndStore_Success(t *testing.T) {
 		assert.NotNil(t, ctxToken)
 		xFoo, err := ctxToken.Claims.Get("xfoo")
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 		assert.Exactly(t, "bar", xFoo.(string))
 
@@ -175,10 +175,10 @@ func TestService_WithInitTokenAndStore_InvalidToken(t *testing.T) {
 			token, err := jwt.FromContext(r.Context())
 			assert.Nil(t, token.Raw)
 			assert.False(t, token.Valid)
-			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+			assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 		}),
 	)); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	theToken, err := jwts.NewToken(scope.Website, 12, jwtclaim.Map{
@@ -263,7 +263,7 @@ func TestService_WithInitTokenAndStore_InBlackList(t *testing.T) {
 func testAuth(t *testing.T, opts ...jwt.Option) (http.Handler, []byte) {
 	jm, err := jwt.NewService(opts...)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
@@ -289,7 +289,7 @@ func finalInitStoreHandler(t *testing.T, idx int, wantStoreCode string) http.Han
 	return func(w http.ResponseWriter, r *http.Request) {
 		haveReqStore, err := store.FromContextRequestedStore(r.Context())
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode(), "Index %d", idx)
 	}
@@ -300,7 +300,7 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 	var newReq = func(i int, token []byte) *http.Request {
 		req, err := http.NewRequest("GET", fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 		jwt.SetHeaderAuthorization(req, token)
 		return req
@@ -353,7 +353,7 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 			jwt.StoreParamName: test.tokenStoreCode,
 		})
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 
 		if test.wantErrBhf != nil {
@@ -363,7 +363,7 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 					assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 				}),
 			)); err != nil {
-				t.Fatal(errors.PrintLoc(err))
+				t.Fatalf("%+v", err)
 			}
 		}
 		cstesting.NewHTTPParallelUsers(2, 5, 200, time.Millisecond).ServeHTTP(
@@ -395,7 +395,7 @@ func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 			t.Fatal("Should not be executed this error handler")
 		}),
 	)); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	claimStore := jwtclaim.NewStore()
@@ -448,7 +448,7 @@ func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
 
 	jm, err := jwt.NewService(jwt.WithDisable(scope.Website, 2, true))
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	mw := jm.WithInitTokenAndStore()
@@ -466,14 +466,14 @@ func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
 
 		req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 		theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
 			"noStore": "bar",
 			"zfoo":    4711,
 		})
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 		jwt.SetHeaderAuthorization(req, theToken.Raw)
 
@@ -493,7 +493,7 @@ func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
 
 		req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 		if err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 		jwt.SetHeaderAuthorization(req, []byte(`Invalid Token`))
 

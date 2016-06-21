@@ -41,7 +41,7 @@ import (
 func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
@@ -73,7 +73,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
 	scNew := jwts.ConfigByScopedGetter(sg)
 	if err := scNew.IsValid(); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	assert.True(t, scNew.EnableJTI)
@@ -87,7 +87,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	// test if cache returns the same scopedConfig
 	scCached := jwts.ConfigByScopedGetter(sg)
 	if err := scCached.IsValid(); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	// reflect.DeepEqual returns here false because scCached was copied.
 	assert.Exactly(t, fmt.Sprintf("%#v", scNew), fmt.Sprintf("%#v", scCached))
@@ -97,7 +97,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
@@ -118,7 +118,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 	scNew := jwts.ConfigByScopedGetter(sg)
 	if err := scNew.IsValid(); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	assert.False(t, scNew.EnableJTI)
@@ -131,7 +131,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	// test if cache returns the same scopedConfig
 	scCached := jwts.ConfigByScopedGetter(sg)
 	if err := scCached.IsValid(); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	// reflect.DeepEqual returns here false because scCached was copied.
 	assert.Exactly(t, fmt.Sprintf("%#v", scNew), fmt.Sprintf("%#v", scCached))
@@ -152,7 +152,7 @@ func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
 	}))
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.True(t, errors.IsNotImplemented(sc.IsValid()), "Error: %s", sc.IsValid())
+	assert.True(t, errors.IsNotImplemented(sc.IsValid()), "Error: %+v", sc.IsValid())
 }
 
 func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
@@ -165,7 +165,7 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	err := sc.IsValid()
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 }
 
 func TestServiceWithBackend_InvalidSkew(t *testing.T) {
@@ -178,7 +178,7 @@ func TestServiceWithBackend_InvalidSkew(t *testing.T) {
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	err := sc.IsValid()
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 }
 
 func TestServiceWithBackend_InvalidJTI(t *testing.T) {
@@ -191,7 +191,7 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	err := sc.IsValid()
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 }
 
 func TestServiceWithBackend_RSAFail(t *testing.T) {
@@ -216,7 +216,7 @@ func TestServiceWithBackend_Middleware_Valid_Request(t *testing.T) {
 	// setup overall configuration structure
 	cfgStruct, err := backendjwt.NewConfigStructure()
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	// use that configuration structure to apply it to the configuration models.
@@ -273,7 +273,7 @@ func TestServiceWithBackend_Middleware_Valid_Request(t *testing.T) {
 	stClaim.UserID = "hans_wurst"
 	newToken, err := jwts.NewToken(scope.Website, 1, stClaim)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	jwt.SetHeaderAuthorization(req, newToken.Raw)
 
@@ -289,7 +289,7 @@ func TestServiceWithBackend_Middleware_Valid_Request(t *testing.T) {
 		jwts.WithInitTokenAndStore()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tk, err := jwt.FromContext(r.Context())
 			if err != nil {
-				t.Error(errors.PrintLoc(err))
+				t.Errorf("%+v", err)
 				return
 			}
 			if !tk.Valid {
@@ -300,7 +300,7 @@ func TestServiceWithBackend_Middleware_Valid_Request(t *testing.T) {
 			// here we must have the new request store and not anymore the Austrian store.
 			reqStore, err := store.FromContextRequestedStore(r.Context())
 			if err != nil {
-				t.Error(errors.PrintLoc(err))
+				t.Errorf("%+v", err)
 				return
 			}
 			if have, want := reqStore.StoreCode(), "de"; have != want {

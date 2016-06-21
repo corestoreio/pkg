@@ -27,7 +27,7 @@ func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
 	ccModel := backendjwt.NewConfigSigningMethod("a/x/c")
 	cr := cfgmock.NewService()
 	sm, err := ccModel.Get(cr.NewScoped(1, 1))
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
 }
 
@@ -35,6 +35,6 @@ func TestNewConfigSigningMethodGetPathError(t *testing.T) {
 	ccModel := backendjwt.NewConfigSigningMethod("a//c")
 	cr := cfgmock.NewService()
 	sm, err := ccModel.Get(cr.NewScoped(0, 0))
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
 }

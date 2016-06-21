@@ -44,7 +44,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	assert.EqualValues(t, "de", so.StoreCode())
 
 	so, err = jwt.ScopeOptionFromClaim(nil)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
@@ -58,7 +58,7 @@ func TestStoreCodeFromClaimInvalid(t *testing.T) {
 	})
 
 	so, err := jwt.ScopeOptionFromClaim(token2.Claims)
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)

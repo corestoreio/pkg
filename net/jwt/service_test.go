@@ -35,7 +35,7 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+			assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 		} else {
 			t.Fatal("Expecting a panic")
 		}
@@ -113,7 +113,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	assert.NoError(t, err)
 
 	mt, err := jwts.Parse(malformedToken)
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.False(t, mt.Valid)
 }
 
@@ -156,7 +156,7 @@ func TestServiceIncorrectConfigurationScope(t *testing.T) {
 
 	jwts, err := jwt.NewService(jwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
 	assert.Nil(t, jwts)
-	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
+	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 }
 
 func TestService_NewToken_Merge_Maps(t *testing.T) {
@@ -202,25 +202,25 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 		jwtclaim.KeyUserID: "0815",
 	})
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.NotEmpty(t, theToken.Raw)
 
 	storeID, err := theToken.Claims.Get(jwtclaim.KeyStore)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "de", storeID)
 
 	userID, err := theToken.Claims.Get(jwtclaim.KeyUserID)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "0815", userID)
 
 	expires, err := theToken.Claims.Get(jwtclaim.KeyExpiresAt)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.True(t, conv.ToInt64(expires) > time.Now().Unix())
 }
@@ -234,13 +234,13 @@ func TestService_NewToken_Merge_Fail(t *testing.T) {
 		}),
 	)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	// NewToken has an underlying jwtclaim.NewStore as a claimer
 	theToken, err := jwts.NewToken(scope.Website, 4, jwtclaim.Map{
 		jwtclaim.KeyUserID: "0815",
 	})
-	assert.True(t, errors.IsNotSupported(err), "Error: %s", err)
+	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 	assert.Empty(t, theToken.Raw)
 }

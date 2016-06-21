@@ -40,7 +40,7 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 	cr := cfgmock.NewService()
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
 	err := sc.IsValid()
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Exactly(t, ScopedConfig{}, sc)
 }
 
