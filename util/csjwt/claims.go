@@ -105,6 +105,7 @@ func (s *Head) Typ() string {
 	return s.Type
 }
 
+// String prints the Go representation of the Head.
 func (s *Head) String() string {
 	if s.Algorithm == "" {
 		return `csjwt.NewHead()`
@@ -112,6 +113,7 @@ func (s *Head) String() string {
 	return fmt.Sprintf("csjwt.NewHead(%q)", s.Alg())
 }
 
+// GoString prints the Go representation of the Head.
 func (s *Head) GoString() string {
 	return s.String()
 }

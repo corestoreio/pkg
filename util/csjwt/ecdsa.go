@@ -40,6 +40,7 @@ func NewSigningMethodES512() *SigningMethodECDSA {
 	return newSigningMethodECDSA(ES512, crypto.SHA512, 66, 521)
 }
 
+// Alg returns the name of the underlying algorithm.
 func (m *SigningMethodECDSA) Alg() string {
 	return m.Name
 }

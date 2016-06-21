@@ -33,7 +33,6 @@ type claimMock struct {
 	validErr error
 	setErr   error
 	getErr   error
-	keys     []string
 }
 
 func (c claimMock) Valid() error                            { return c.validErr }
