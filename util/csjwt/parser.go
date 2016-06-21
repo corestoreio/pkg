@@ -81,12 +81,12 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 
 	// parse Header
 	if err := dec.Deserialize(dst.Raw[:pos[0]], dst.Header); err != nil {
-		return errors.NewNotValid(err, errTokenMalformed)
+		return errors.NewNotValidf(errTokenMalformed, err)
 	}
 
 	// parse Claims
 	if err := dec.Deserialize(dst.Raw[pos[0]+1:pos[1]], dst.Claims); err != nil {
-		return errors.NewNotValid(err, errTokenMalformed)
+		return errors.NewNotValidf(errTokenMalformed, err)
 	}
 
 	// validate Claims
@@ -100,7 +100,7 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 	}
 	key, err := keyFunc(dst)
 	if err != nil {
-		return errors.NewNotValid(err, errTokenUnverifiable)
+		return errors.NewNotValidf(errTokenUnverifiable, err)
 	}
 
 	// Lookup signature method
@@ -112,7 +112,7 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 	// Perform validation
 	dst.Signature = dst.Raw[pos[1]+1:]
 	if err := method.Verify(dst.Raw[:pos[1]], dst.Signature, key); err != nil {
-		return errors.NewNotValid(err, errSignatureInvalid)
+		return errors.NewNotValidf(errSignatureInvalid, err)
 	}
 
 	dst.Valid = true
@@ -122,12 +122,12 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 func (vf *Verification) getMethod(t *Token) (Signer, error) {
 
 	if len(vf.Methods) == 0 {
-		return nil, errors.NewEmptyf("[csjwt] No methods supplied to the Verfication Method slice")
+		return nil, errors.NewEmptyf(errVerificationMethodsEmpty)
 	}
 
 	alg := t.Alg()
 	if alg == "" {
-		return nil, errors.NewEmptyf("[csjwt] Cannot find alg entry in token header: %#v", t.Header)
+		return nil, errors.NewEmptyf(errAlgorithmEmpty, t.Header)
 	}
 
 	for _, m := range vf.Methods {
@@ -135,7 +135,7 @@ func (vf *Verification) getMethod(t *Token) (Signer, error) {
 			return m, nil
 		}
 	}
-	return nil, errors.NewNotFoundf("[csjwt] Algorithm %q not found in method list %q", alg, vf.Methods)
+	return nil, errors.NewNotFoundf(errAlgorithmNotFound, alg, vf.Methods)
 }
 
 // ParseFromRequest same as Parse but extracts the token from a request. First

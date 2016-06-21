@@ -37,7 +37,7 @@ func parseRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (*rsa.Priv
 		}
 		var errPEM error
 		if block, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
-			return nil, errors.NewNotValid(errPEM, "[csjwt] parseRSAPrivateKeyFromPEM.DecryptPEMBlock")
+			return nil, errors.NewNotValidf(errKeyDecryptPEMBlockFailed, errPEM)
 		}
 	} else {
 		block = prKeyPEM.Bytes
@@ -47,7 +47,7 @@ func parseRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (*rsa.Priv
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKCS1PrivateKey(block); err != nil {
 		if parsedKey, err = x509.ParsePKCS8PrivateKey(block); err != nil {
-			return nil, errors.NewNotValid(err, "[csjwt] parseRSAPrivateKeyFromPEM.ParsePKCS8PrivateKey")
+			return nil, errors.NewNotValidf(errKeyParsePKCS8PrivateKeyFailed, err)
 		}
 	}
 
@@ -76,7 +76,7 @@ func parseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
 			parsedKey = cert.PublicKey
 		} else {
-			return nil, errors.NewNotValid(err, "[csjwt] parseRSAPublicKeyFromPEM.ParseCertificate")
+			return nil, errors.NewNotValidf(errKeyParseCertificateFailed, err)
 		}
 	}
 

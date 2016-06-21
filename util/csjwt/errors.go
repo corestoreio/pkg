@@ -16,24 +16,30 @@ package csjwt
 
 // Error variables predefined
 const (
-	errSignatureInvalid        = `[csjwt] signature is invalid`
-	errTokenNotInRequest       = `[csjwt] token not present in request`
-	errTokenMalformed          = `[csjwt] token is malformed`
-	errTokenUnverifiable       = `[csjwt] token is unverifiable`
-	errValidationClaimsInvalid = `[csjwt] token claims validation failed`
+	errSignatureInvalid         = `[csjwt] signature is invalid: %s`
+	errTokenNotInRequest        = `[csjwt] token not present in request`
+	errTokenMalformed           = `[csjwt] token is malformed: %s`
+	errTokenUnverifiable        = `[csjwt] token is unverifiable: %s`
+	errValidationClaimsInvalid  = `[csjwt] token claims validation failed`
+	errVerificationMethodsEmpty = `[csjwt] No methods supplied to the Verfication Method slice`
+	errAlgorithmEmpty           = `[csjwt] Cannot find alg entry in token header: %#v`
+	errAlgorithmNotFound        = `[csjwt] Algorithm %q not found in method list %q`
 )
 
 // Private errors no need to make them public
 const (
-	errTokenBaseNil                = `[csjwt] template token header and/or claim are nil`
-	errTokenInvalidSegmentCounts   = `[csjwt] token contains an invalid number of segments`
-	errMissingKeyFunc              = `[csjwt] Missing KeyFunc`
-	errTokenShouldNotContainBearer = `[csjwt] tokenstring should not contain 'bearer '`
-	errKeyEmptyPassword            = "[csjwt] Empty password provided"
-	errKeyMissingPassword          = "[csjwt] Missing password to decrypt private key"
-	errKeyMustBePEMEncoded         = "[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key"
-	errKeyNonECDSAPublicKey        = "[csjwt] invalid key: Not a valid ECDSA public key"
-	errKeyNonRSAPrivateKey         = "[csjwt] invalid key: Not a valid RSA private key"
+	errTokenBaseNil                  = `[csjwt] template token header and/or claim are nil`
+	errTokenInvalidSegmentCounts     = `[csjwt] token contains an invalid number of segments`
+	errMissingKeyFunc                = `[csjwt] Missing KeyFunc`
+	errTokenShouldNotContainBearer   = `[csjwt] tokenstring should not contain 'bearer '`
+	errKeyEmptyPassword              = "[csjwt] Empty password provided"
+	errKeyMissingPassword            = "[csjwt] Missing password to decrypt private key"
+	errKeyDecryptPEMBlockFailed      = "[csjwt] Failed to decrypt PEMBlock: %s"
+	errKeyParsePKCS8PrivateKeyFailed = "[csjwt] Failed to parse PKCS8PrivateKey: %s"
+	errKeyParseCertificateFailed     = "[csjwt] Failed to parse Certificate: %s"
+	errKeyMustBePEMEncoded           = "[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key"
+	errKeyNonECDSAPublicKey          = "[csjwt] invalid key: Not a valid ECDSA public key"
+	errKeyNonRSAPrivateKey           = "[csjwt] invalid key: Not a valid RSA private key"
 )
 
 // ErrECDSAVerification sadly this is missing from crypto/ecdsa compared to crypto/rsa
