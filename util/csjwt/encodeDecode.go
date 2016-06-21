@@ -15,10 +15,11 @@
 package csjwt
 
 import (
+	"bytes"
 	"encoding/base64"
-	"encoding/json"
-
 	"encoding/gob"
+	"encoding/json"
+	"sync"
 
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -58,36 +59,73 @@ func (jp JSONEncoding) Serialize(src interface{}) ([]byte, error) {
 
 // GobEncoding encodes JWT values using encoding/gob. This is the simplest
 // encoder and can handle complex types via gob.Register.
-// TODO(CS): Add gob priming to avoid storing type information in the token.
-type GobEncoding struct{}
+type gobEncoding struct {
+	// TODO(CS): for higher performance remove the mutex and add a sync.Pool
+	// pattern like in the transcache package for all encoders.
+	mu   sync.Mutex
+	pipe *bytes.Buffer
+	enc  *gob.Encoder
+	dec  *gob.Decoder
+}
+
+// NewGobEncoding creates a new primed gob Encoder/Decoder. Newly created
+// Encoder/Decoder will Encode/Decode the passed sample structs without actually
+// writing/reading from their respective Writer/Readers. This is useful for gob
+// which encodes/decodes extra type information whenever it sees a new type.
+// Pass sample values for primeObjects you plan on Encoding/Decoding to this
+// method in order to avoid the storage overhead of encoding their type
+// information for every NewEncoder/NewDecoder. Make sure you use gob.Register()
+// for every type you plan to use otherwise there will be errors. Setting the
+// primeObjects causes a priming of the encoder and decoder for each type. This
+// function panics if the types, used for priming, can neither be encoded nor
+// decoded.
+func NewGobEncoding(primeObjects ...interface{}) *gobEncoding {
+	pipe := new(bytes.Buffer)
+	ge := &gobEncoding{
+		pipe: pipe,
+		enc:  gob.NewEncoder(pipe),
+		dec:  gob.NewDecoder(pipe),
+	}
+
+	if len(primeObjects) > 0 {
+		if err := ge.enc.Encode(primeObjects); err != nil {
+			panic(err)
+		}
+		var testTypes []interface{}
+		if err := ge.dec.Decode(&testTypes); err != nil {
+			panic(err)
+		}
+		ge.pipe.Reset()
+	}
+	return ge
+}
 
 // Serialize encodes a value using gob.
-func (e GobEncoding) Serialize(src interface{}) ([]byte, error) {
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
-	// todo figure out how to use one instance of NewEncoder instead of creating each time a new one
-	enc := gob.NewEncoder(buf)
-	if err := enc.Encode(src); err != nil {
+func (e *gobEncoding) Serialize(src interface{}) ([]byte, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	defer e.pipe.Reset()
+	if err := e.enc.Encode(src); err != nil {
 		return nil, errors.Wrap(err, "[csjwt] GobEncoding.Serialize.Encode")
 	}
-	return EncodeSegment(buf.Bytes()), nil
+	return EncodeSegment(e.pipe.Bytes()), nil
 }
 
 // Deserialize decodes a value using gob.
-func (e GobEncoding) Deserialize(src []byte, dst interface{}) error {
+func (e *gobEncoding) Deserialize(src []byte, dst interface{}) error {
 	srcDec, err := DecodeSegment(src)
 	if err != nil {
 		return errors.Wrap(err, "[csjwt] JSONEncoding.Deserialize.DecodeSegment")
 	}
 
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
-	if _, err := buf.Write(srcDec); err != nil {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.pipe.Reset()
+
+	if _, err := e.pipe.Write(srcDec); err != nil {
 		return errors.Wrap(err, "[csjwt] GobEncoding.Deserialize.Write")
 	}
-	// todo figure out how to use one instance of NewDecoder instead of creating each time a new one
-	dec := gob.NewDecoder(buf)
-	if err := dec.Decode(dst); err != nil {
+	if err := e.dec.Decode(dst); err != nil {
 		return errors.Wrap(err, "[csjwt] GobEncoding.Deserialize.Decode")
 	}
 	return nil

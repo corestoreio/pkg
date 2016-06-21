@@ -39,8 +39,10 @@ func init() {
 }
 
 func TestGobEncoding(t *testing.T) {
-
+	// todo(CS): test for races
 	storeClaim := jwtclaim.NewStore()
+
+	gobEncDec := csjwt.NewGobEncoding(csjwt.NewHead(), storeClaim)
 
 	storeClaim.Store = "ch-en"
 	storeClaim.ID = "2342-234345-234234-23435"
@@ -48,7 +50,7 @@ func TestGobEncoding(t *testing.T) {
 	storeClaim.IssuedAt = time.Now().Unix()
 
 	tk := csjwt.NewToken(storeClaim)
-	tk.Serializer = csjwt.GobEncoding{}
+	tk.Serializer = gobEncDec
 
 	m := csjwt.NewSigningMethodHS512()
 	pw := csjwt.WithPasswordRandom()
@@ -57,6 +59,9 @@ func TestGobEncoding(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("gob", tkChar)
+	if have, want := len(tkChar), 178; have != want {
+		t.Errorf("Gob length tkChar mismatch: Have: %d Want: %d", have, want)
+	}
 
 	// check if it is base64 encoded
 	if !isBase64Token(tkChar) {
@@ -64,7 +69,7 @@ func TestGobEncoding(t *testing.T) {
 	}
 
 	vrf := csjwt.NewVerification(m)
-	vrf.Deserializer = csjwt.GobEncoding{}
+	vrf.Deserializer = gobEncDec
 
 	newTk := csjwt.NewToken(jwtclaim.NewStore())
 
@@ -75,4 +80,52 @@ func TestGobEncoding(t *testing.T) {
 	haveStoreClaim := newTk.Claims.(*jwtclaim.Store)
 	assert.Exactly(t, "ch-en", haveStoreClaim.Store)
 	assert.Exactly(t, "2342-234345-234234-23435", haveStoreClaim.ID)
+}
+
+func BenchmarkTokenDecode(b *testing.B) {
+
+	var testRunner = func(b *testing.B, encDec interface {
+		csjwt.Serializer
+		csjwt.Deserializer
+	}) {
+		storeClaim := jwtclaim.NewStore()
+
+		storeClaim.Store = "ch-de"
+		storeClaim.ID = "2342-987325-234234-23435"
+		storeClaim.ExpiresAt = time.Now().Add(time.Minute * 2).Unix()
+		storeClaim.IssuedAt = time.Now().Unix()
+
+		tk := csjwt.NewToken(storeClaim)
+		tk.Serializer = encDec
+
+		m := csjwt.NewSigningMethodHS256()
+		pw := csjwt.WithPasswordRandom()
+		tkChar, err := tk.SignedString(m, pw)
+		if err != nil {
+			b.Fatalf("%+v", err)
+		}
+
+		vrf := csjwt.NewVerification(m)
+		vrf.Deserializer = encDec
+
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			newTk := csjwt.NewToken(jwtclaim.NewStore())
+			if err := vrf.Parse(&newTk, tkChar, csjwt.NewKeyFunc(m, pw)); err != nil {
+				b.Fatalf("%+v", err)
+			}
+			haveStoreClaim := newTk.Claims.(*jwtclaim.Store)
+			if have, want := haveStoreClaim.Store, "ch-de"; have != want {
+				b.Errorf("Have: %v Want: %v", have, want)
+			}
+		}
+	}
+
+	b.Run("Gob_HS256", func(b *testing.B) {
+		testRunner(b, csjwt.NewGobEncoding(csjwt.NewHead(), jwtclaim.NewStore()))
+	})
+	b.Run("Json_HS256", func(b *testing.B) {
+		testRunner(b, csjwt.JSONEncoding{})
+	})
 }
