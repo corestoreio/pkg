@@ -64,6 +64,6 @@ func TestToken_MarshalLog_Error(t *testing.T) {
 	buf := bytes.Buffer{}
 	lg := logw.NewLog(logw.WithWriter(&buf), logw.WithLevel(logw.LevelDebug))
 	lg.Debug("tokenTest", log.Marshal("xtoken", tk))
-	have := `tokenTest token_error: "github.com/corestoreio/csfw/util/csjwt/token.go:111: [csjwt] Token.SigningString.Serialize\ngithub.com/corestoreio/csfw/util/csjwt/encodeDecode.go:54: [csjwt] JSONEncoding.Serialize.Encode\njson: unsupported type: chan struct {}`
+	have := `tokenTest token_error: "json: unsupported type: chan struct {}`
 	assert.Contains(t, buf.String(), have)
 }

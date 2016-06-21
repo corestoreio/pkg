@@ -23,7 +23,6 @@ import (
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -190,7 +189,9 @@ func TestClaimsExpiresSkew(t *testing.T) {
 		{jwtclaim.Map{"exp": tm.Unix() - 1}, time.Second * 1, true},
 	}
 	for i, test := range tests {
-		cstesting.FatalIfError(t, test.sc.Set(jwtclaim.KeyTimeSkew, test.skew))
+		if err := test.sc.Set(jwtclaim.KeyTimeSkew, test.skew); err != nil {
+			t.Fatalf("%+v", err)
+		}
 		err := test.sc.Valid()
 		assert.Exactly(t, !test.isValid, errors.IsNotValid(err), "Index %d => %s", i, err)
 	}
@@ -215,7 +216,9 @@ func TestClaimsNotBeforeSkew(t *testing.T) {
 		{jwtclaim.Map{"nbf": tm.Unix() - 1}, -time.Second * 2, false},
 	}
 	for i, test := range tests {
-		cstesting.FatalIfError(t, test.sc.Set(jwtclaim.KeyTimeSkew, test.skew))
+		if err := test.sc.Set(jwtclaim.KeyTimeSkew, test.skew); err != nil {
+			t.Fatalf("%+v", err)
+		}
 		err := test.sc.Valid()
 		assert.Exactly(t, !test.isValid, errors.IsNotValid(err), "Index %d => %s", i, err)
 	}
@@ -236,7 +239,7 @@ func TestMap_String_error(t *testing.T) {
 		"k2": 3.14159,
 		"k3": make(chan int),
 	}
-	assert.Exactly(t, "[jwtclaim] Map.String(): json.Marshal Error: json: unsupported type: chan int: Fatal", m.String())
+	assert.Exactly(t, "[jwtclaim] Map.String(): json.Marshal Error: json: unsupported type: chan int", m.String())
 }
 
 func TestStandard_String(t *testing.T) {

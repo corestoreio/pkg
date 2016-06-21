@@ -280,12 +280,12 @@ func TestVerification_ParseFromRequest_Cookie(t *testing.T) {
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})
 	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
-		t.Fatal(errors.PrintLoc(haveErr))
+		t.Fatalf("%+v", haveErr)
 	}
 
 	where, err := haveToken.Claims.Get(`where`)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, `in the cookie dude!`, conv.ToString(where))
 }
@@ -314,12 +314,12 @@ func TestVerification_ParseFromRequest_Form(t *testing.T) {
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})
 	haveErr := vf.ParseFromRequest(&haveToken, csjwt.NewKeyFunc(rs256, pubKey), r)
 	if haveErr != nil {
-		t.Fatal(errors.PrintLoc(haveErr))
+		t.Fatalf("%+v", haveErr)
 	}
 
 	where, err := haveToken.Claims.Get(`where`)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, `in the form dude!`, conv.ToString(where))
 }
@@ -486,7 +486,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 	token := csjwt.NewToken(clm)
 	tokenString, err := token.SignedString(sm, key)
 	if err != nil {
-		b.Fatal(errors.PrintLoc(err))
+		b.Fatalf("%+v", err)
 	}
 
 	r, _ := http.NewRequest("GET", "/", nil)
@@ -502,7 +502,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 		rToken := csjwt.NewToken(mc)
 		err := veri.ParseFromRequest(&rToken, keyFunc, r)
 		if err != nil {
-			b.Fatal(errors.PrintLoc(err))
+			b.Fatalf("%+v", err)
 		}
 		if !rToken.Valid {
 			b.Fatalf("Token not valid: %#v", rToken)

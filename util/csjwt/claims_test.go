@@ -21,7 +21,6 @@ import (
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -128,7 +127,9 @@ func TestClaimExpiresSkew(t *testing.T) {
 	pwKey := csjwt.WithPasswordRandom()
 	hs256 := csjwt.NewSigningMethodHS256()
 	token, err := tk.SignedString(hs256, pwKey)
-	cstesting.FatalIfError(t, err)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
 
 	vrf := csjwt.NewVerification(hs256)
 
@@ -152,6 +153,8 @@ func TestClaimExpiresSkew(t *testing.T) {
 	assert.True(t, parsedTK.Valid, "Token must be valid")
 
 	haveSt, err := parsedTK.Claims.Get(jwtclaim.KeyStore)
-	cstesting.FatalIfError(t, err)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
 	assert.Exactly(t, "HelloWorld", haveSt)
 }

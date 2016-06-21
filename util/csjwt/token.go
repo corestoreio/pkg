@@ -16,6 +16,7 @@ package csjwt
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 
 	"github.com/corestoreio/csfw/log"
@@ -137,7 +138,7 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 func (t Token) MarshalLog(kv log.KeyValuer) error {
 	buf, err := t.SigningString()
 	if err != nil {
-		kv.AddString("token_error", errors.PrintLoc(err))
+		kv.AddString("token_error", fmt.Sprintf("%+v", err))
 	} else {
 		kv.AddString("token", buf.String())
 	}

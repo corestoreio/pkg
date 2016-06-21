@@ -22,7 +22,6 @@ import (
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,19 +30,19 @@ func genParseTk(t *testing.T) (text.Chars, csjwt.Keyfunc) {
 	key := csjwt.WithPasswordRandom()
 	rawTK, err := csjwt.NewToken(&jwtclaim.Map{"extractMe": 3.14159}).SignedString(hs256, key)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	return rawTK, csjwt.NewKeyFunc(hs256, key)
 }
 
 func compareParseTk(t *testing.T, haveTK csjwt.Token, err error) {
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	me, err := haveTK.Claims.Get("extractMe")
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, 3.14159, me)
 }
@@ -62,7 +61,7 @@ func TestParseFromRequest(t *testing.T) {
 
 	r, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	r.Form = url.Values{
 		csjwt.HTTPFormInputName: []string{rawTK.String()},

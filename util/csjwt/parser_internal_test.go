@@ -100,7 +100,7 @@ func BenchmarkVerificationGetMethod(b *testing.B) {
 		for pb.Next() {
 			m, err := vf.getMethod(tokens[i%2])
 			if err != nil {
-				b.Fatal(errors.PrintLoc(err))
+				b.Fatalf("%+v", err)
 			}
 			if have, want := m.Alg(), wantAlg[i%2]; have != want {
 				b.Fatalf("Have %s Want %s", have, want)

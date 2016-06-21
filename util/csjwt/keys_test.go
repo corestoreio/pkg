@@ -93,7 +93,7 @@ func TestKeyParsing(t *testing.T) {
 	for i, test := range tests {
 
 		if test.wantErrBhf != nil {
-			assert.True(t, test.wantErrBhf(test.key.Error), "Index %d => %s\n", i, errors.PrintLoc(test.key.Error))
+			assert.True(t, test.wantErrBhf(test.key.Error), "Index %d => %+v\n", i, test.key.Error)
 		} else {
 			assert.NoError(t, test.key.Error, "Index %d", i)
 		}

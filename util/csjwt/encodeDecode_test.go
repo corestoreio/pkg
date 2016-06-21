@@ -22,7 +22,6 @@ import (
 
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -70,7 +69,7 @@ func TestGobEncoding(t *testing.T) {
 	newTk := csjwt.NewToken(jwtclaim.NewStore())
 
 	if err := vrf.Parse(&newTk, tkChar, csjwt.NewKeyFunc(m, pw)); err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 
 	haveStoreClaim := newTk.Claims.(*jwtclaim.Store)
