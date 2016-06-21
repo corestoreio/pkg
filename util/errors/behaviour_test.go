@@ -91,6 +91,10 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsEmpty,
 			want: true,
 		}, {
+			err:  Wrap(NewEmpty(Wrap(NewNotImplementedf("Err92"), "Wrap92"), ""), ""),
+			is:   IsEmpty,
+			want: false,
+		}, {
 			err:  NewEmptyf("Error3"),
 			is:   IsEmpty,
 			want: true,
@@ -128,6 +132,10 @@ func TestBehaviourPlain(t *testing.T) {
 			err:  NewNotImplemented(Wrap(NewWriteFailedf("Error130"), "Wrap130"), ""),
 			is:   IsWriteFailed,
 			want: true,
+		}, {
+			err:  Wrap(NewWriteFailed(Wrap(NewNotImplementedf("4"), "3"), "2"), "1"),
+			is:   IsWriteFailed,
+			want: false,
 		}, {
 			err:  nil,
 			is:   IsWriteFailed,
