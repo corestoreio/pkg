@@ -44,7 +44,7 @@ func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
 		var err error
 		v, err = conv.ToBoolE(b.Field.Default)
 		if err != nil {
-			return false, errors.Wrap(err, "[cfgmodel] ToBoolE")
+			return false, errors.NewNotValidf("[cfgmodel] ToBoolE: %v", err)
 		}
 	}
 
@@ -89,7 +89,7 @@ func (bt Byte) Get(sg config.ScopedGetter) ([]byte, error) {
 		var err error
 		v, err = conv.ToByteE(bt.Field.Default)
 		if err != nil {
-			return nil, errors.Wrap(err, "[cfgmodel] ToByteE")
+			return nil, errors.NewNotValidf("[cfgmodel] ToByteE: %v", err)
 		}
 	}
 
@@ -134,7 +134,7 @@ func (str Str) Get(sg config.ScopedGetter) (string, error) {
 		var err error
 		v, err = conv.ToStringE(str.Field.Default)
 		if err != nil {
-			return "", errors.Wrap(err, "[cfgmodel] ToStringE")
+			return "", errors.NewNotValidf("[cfgmodel] ToStringE: %v", err)
 		}
 	}
 
@@ -177,7 +177,7 @@ func (i Int) Get(sg config.ScopedGetter) (int, error) {
 		var err error
 		v, err = conv.ToIntE(i.Field.Default)
 		if err != nil {
-			return 0, errors.Wrap(err, "[cfgmodel] ToIntE")
+			return 0, errors.NewNotValidf("[cfgmodel] ToIntE: %v", err)
 		}
 	}
 
@@ -221,7 +221,7 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 			var err error
 			v, err = conv.ToFloat64E(d)
 			if err != nil {
-				return 0, errors.Wrap(err, "[cfgmodel] ToFloat64E")
+				return 0, errors.NewNotValidf("[cfgmodel] ToFloat64E: %v", err)
 			}
 		}
 	}

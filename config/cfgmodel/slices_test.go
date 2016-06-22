@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStringCSVGet(t *testing.T) {
@@ -147,12 +148,12 @@ func TestIntCSV(t *testing.T) {
 		lenient bool
 		have    string
 		want    []int
-		wantErr error
+		wantBhf errors.BehaviourFunc
 	}{
 		{false, "3015,3016", []int{3015, 3016}, nil},
 		{false, "2015,2017", []int{2015, 2017}, nil},
 		{false, "", nil, nil},
-		{false, "2015,,20x17", []int{2015}, errors.New("strconv.ParseInt: parsing \"20x17\": invalid syntax")},
+		{false, "2015,,20x17", []int{2015}, errors.IsNotValid},
 		{true, "2015,,2017", []int{2015, 2017}, nil},
 	}
 	for i, test := range tests {
@@ -164,8 +165,8 @@ func TestIntCSV(t *testing.T) {
 		).NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		if test.wantBhf != nil {
+			assert.True(t, test.wantBhf(haveErr), "Index %d => %+v", i, haveErr)
 			continue
 		}
 		assert.NoError(t, haveErr, "Index %d", i)
@@ -240,7 +241,7 @@ func TestCSVGet(t *testing.T) {
 	assert.Empty(t, b.Options())
 
 	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
-	assert.NoError(t, err)
+	require.NoError(t, err, "%+v", err)
 	assert.Exactly(t,
 		[][]string{{"0", "\"Did you mean...\" Suggestions", "\"meinten Sie...?\""}, {"1", "Accuracy for Suggestions", "Genauigkeit der Vorschläge"}, {"2", "After switching please reindex the<br /><em>Catalog Search Index</em>.", "Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."}, {"3", "CATALOG", "KATALOG"}},
 		sl) // default values from variable configStructure

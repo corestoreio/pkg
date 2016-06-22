@@ -14,8 +14,8 @@
 
 // Package cfgmodel provides types to get/set values of a configuration.
 //
-// Package cfgmodel handles the scope permission checking, validation based
-// on source models and default value handling based on element.Field type.
+// Package cfgmodel handles the scope permission checking, validation based on
+// source models and default value handling based on element.Field type.
 //
 // In Mage world this would be called BackendModel.
 //
@@ -26,17 +26,18 @@
 // The signature of the setter function states in most cases:
 // 		Write(w config.Writer, v interface{}, s scope.Scope, id int64) error
 // The Write() function signature differs within the types to mainly force the
-// type safety. In other packages the Write() signature can be totally different.
+// type safety. In other packages the Write() signature can be totally
+// different.
 //
-// The responsibility of config.Writer adheres to the correct type conversion
-// to the supported type of the underlying storage engine. E.g. for package
+// The responsibility of config.Writer adheres to the correct type conversion to
+// the supported type of the underlying storage engine. E.g. for package
 // config/storage/ccd it config.Writer converts all types to a byte slice.
 //
 //
 // The global PackageConfiguration variable (type element.SectionSlice), which
-// is present in each package, gets set to the cfgmodel.New* variables during init
-// process. The element.Field will be extracted to allow scope checks and access
-// to default values.
+// is present in each package, gets set to the cfgmodel.New* variables during
+// init process. The element.Field will be extracted to allow scope checks and
+// access to default values.
 //
 // The default value gets returned if the Get call to the store configuration
 // value fails or a value is not set.

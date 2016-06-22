@@ -170,7 +170,7 @@ func (ic IntCSV) Get(sg config.ScopedGetter) ([]int, error) {
 		if line != "" {
 			v, err := strconv.Atoi(line)
 			if err != nil && false == ic.Lenient {
-				return ret, err
+				return ret, errors.NewNotValidf(errIntCSVFailedToConvertToInt, line, err)
 			}
 			if err == nil {
 				ret = append(ret, v)
@@ -260,7 +260,10 @@ func (c CSV) Get(sg config.ScopedGetter) ([][]string, error) {
 	r.Comma = c.Comma
 	r.Comment = c.Comment // not possible to set currently the comment
 	res, err := r.ReadAll()
-	return res, errors.NewNotValid(err, "[cfgmodel] CSV.NewReader.ReadAll")
+	if err != nil {
+		return nil, errors.NewNotValidf("[cfgmodel] CSV.NewReader.ReadAll: %v", err)
+	}
+	return res, nil
 }
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
@@ -272,7 +275,7 @@ func (c CSV) Write(w config.Writer, csv [][]string, s scope.Scope, scopeID int64
 	cw := c.NewWriter(buf)
 	cw.Comma = c.Comma
 	if err := cw.WriteAll(csv); err != nil {
-		return errors.NewNotValid(err, "[cfgmodel] CSV.NewWriter.WriteAll")
+		return errors.NewNotValidf("[cfgmodel] CSV.NewWriter.WriteAll: %v", err)
 	}
 
 	return c.baseValue.Write(w, buf.String(), s, scopeID)

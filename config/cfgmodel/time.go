@@ -47,7 +47,7 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 			var err error
 			v, err = conv.ToTimeE(d)
 			if err != nil {
-				return time.Time{}, errors.Wrap(err, "[cfgmodel] ToTimeE")
+				return time.Time{}, errors.NewNotValidf("[cfgmodel] ToTimeE: %v", err)
 			}
 		}
 	}
@@ -96,7 +96,7 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 			var err error
 			v, err = conv.ToDurationE(d)
 			if err != nil {
-				return 0, errors.NewNotValid(err, "[cfgmodel] ToDurationE")
+				return 0, errors.NewNotValidf("[cfgmodel] ToDurationE: %v", err)
 			}
 		}
 	}
@@ -104,8 +104,9 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 	val, err := sg.String(t.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
-		v, err = conv.ToDurationE(val)
-		err = errors.NewNotValid(err, "[cfgmodel] ToDurationE")
+		if v, err = conv.ToDurationE(val); err != nil {
+			err = errors.NewNotValidf("[cfgmodel] ToDurationE: %v", err)
+		}
 	case !errors.IsNotFound(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", t.route)
 	default:

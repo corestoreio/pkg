@@ -49,7 +49,7 @@ func (p URL) Get(sg config.ScopedGetter) (*url.URL, error) {
 	}
 	u, err := url.Parse(rawurl)
 	if err != nil {
-		return nil, errors.NewFatal(err, "[cfgmodel] URL.Parse")
+		return nil, errors.NewFatalf("[cfgmodel] URL.Parse: %v", err)
 	}
 	return u, nil
 }

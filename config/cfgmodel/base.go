@@ -188,13 +188,13 @@ func (bv baseValue) Route() cfgpath.Route {
 // InScope checks if a field from a path is allowed for current scope.
 // Returns nil on success.
 // Error behaviour: Unauthorized
-func (bv baseValue) InScope(sg scope.Scoper) (err error) {
+func (bv baseValue) InScope(sg scope.Scoper) error {
 	return bv.inScope(sg.Scope())
 }
 
 func (bv baseValue) inScope(s scope.Scope, _ int64) (err error) {
 	if bv.hasField() && !bv.Field.Scopes.Has(s) {
-		err = errors.NewUnauthorizedf("[cfgmodel] Scope permission insufficient: Have %q; Want %q; Route: %q", s, bv.Field.Scopes, bv)
+		err = errors.NewUnauthorizedf(errScopePermissionInsufficient, s, bv.Field.Scopes, bv)
 	}
 	return
 }
@@ -234,7 +234,7 @@ func (bv baseValue) ValidateString(v string) (err error) {
 		if jErr != nil {
 			return errors.NewFatal(err, fmt.Sprintf("[cfgmodel] Source: %#v", bv.Source))
 		}
-		err = errors.NewNotValidf("[cfgmodel] The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
+		err = errors.NewNotValidf(errValueNotFoundInOptions, v, jv)
 	}
 	return
 }
