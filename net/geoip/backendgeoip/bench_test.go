@@ -27,7 +27,6 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 func BenchmarkWithAlternativeRedirect(b *testing.B) {
@@ -78,7 +77,7 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 
 			atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
 			if err != nil {
-				b.Fatal(errors.PrintLoc(err))
+				b.Fatalf("%+v", err)
 			}
 			atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
 
@@ -97,7 +96,7 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 						b.Fatalf("Country must be nil, but is %#v", c)
 					}
 					if err != nil {
-						b.Fatal(errors.PrintLoc(err))
+						b.Fatalf("%+v", err)
 					}
 
 					panic("Should not be called")

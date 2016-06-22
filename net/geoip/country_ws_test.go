@@ -42,8 +42,8 @@ func TestMmws_Country_Failure_Response(t *testing.T) {
 	trip := cstesting.NewHTTPTrip(400, `{"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, c)
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 
 	trip.RequestsMatchAll(t, func(r *http.Request) bool {
 		u, p, ok := r.BasicAuth()
@@ -61,7 +61,7 @@ func TestMmws_Country_Failure_JSON(t *testing.T) {
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
 	assert.Nil(t, c)
-	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 }
 
 func TestMmws_Country_Cache_GetError(t *testing.T) {
@@ -73,7 +73,7 @@ func TestMmws_Country_Cache_GetError(t *testing.T) {
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
 	assert.Nil(t, c)
-	assert.True(t, errors.IsAlreadyClosed(err), "Error: %s", err)
+	assert.True(t, errors.IsAlreadyClosed(err), "Error: %+v", err)
 }
 
 func TestMmws_Country_Cache_SetError(t *testing.T) {
@@ -85,7 +85,7 @@ func TestMmws_Country_Cache_SetError(t *testing.T) {
 	ws.client.Transport = trip
 	c, err := ws.Country(net.ParseIP("123.123.123.123"))
 	assert.Nil(t, c)
-	assert.True(t, errors.IsAlreadyClosed(err), "Error: %s", err)
+	assert.True(t, errors.IsAlreadyClosed(err), "Error: %+v", err)
 }
 
 func TestMmws_Country_Success(t *testing.T) {
@@ -116,7 +116,7 @@ func TestMmws_Country_Success(t *testing.T) {
 	wg.Wait()
 
 	assert.Exactly(t, 4, tcmock.SetCount(), "SetCount")   // 4 because modulus 4
-	if have, want := tcmock.GetCount(), 60; have < want { // at least 60 should hit the cache and the rest waits and gets a copied result from inflight
+	if have, want := tcmock.GetCount(), 50; have < want { // at least 50 should hit the cache and the rest waits and gets a copied result from inflight
 		t.Errorf("Have: %d < Want: %d", have, want)
 	}
 

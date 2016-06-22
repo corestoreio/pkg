@@ -82,7 +82,7 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ipc, err := geoip.FromContextCountry(r.Context())
 		assert.Nil(t, ipc)
-		assert.True(t, errors.IsFatal(err), "Error: %s", errors.PrintLoc(err))
+		assert.True(t, errors.IsFatal(err), "Error: %+v", err)
 	})
 
 	countryHandler := s.WithCountryByIP()(finalHandler)
@@ -213,7 +213,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 			req.Header.Set("X-Forwarded-For", "2a02:d200::")
 			st, err := storeSrv.Store(scope.MockID(1)) // German Store
 			if err != nil {
-				t.Fatal(errors.PrintLoc(err))
+				t.Fatalf("%+v", err)
 			}
 			st.Config = cfgmock.NewService().NewScoped(0, 0)
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
@@ -226,7 +226,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 			req.RemoteAddr = "2a02:da80::"
 			st, err := storeSrv.Store(scope.MockID(2)) // Austria Store
 			if err != nil {
-				t.Fatal(errors.PrintLoc(err))
+				t.Fatalf("%+v", err)
 			}
 			st.Config = cfgmock.NewService().NewScoped(1, 2)
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
@@ -239,7 +239,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 			req.RemoteAddr = "Er00r"
 			st, err := storeSrv.Store(scope.MockID(2)) // Austria Store
 			if err != nil {
-				t.Fatal(errors.PrintLoc(err))
+				t.Fatalf("%+v", err)
 			}
 			st.Config = cfgmock.NewService().NewScoped(1, 2)
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))
@@ -252,7 +252,7 @@ func TestWithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 			req.RemoteAddr = "2a02:e240::"
 			st, err := storeSrv.Store(scope.MockID(1)) // DE Store
 			if err != nil {
-				t.Fatal(errors.PrintLoc(err))
+				t.Fatalf("%+v", err)
 			}
 			st.Config = cfgmock.NewService().NewScoped(1, 1) // website (1) euro; store(1) DE
 			return req.WithContext(store.WithContextRequestedStore(req.Context(), st))

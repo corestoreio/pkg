@@ -134,14 +134,14 @@ func fetch(hc *http.Client, userID, licenseKey string, ipAddress net.IP) (*Count
 	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
 		var v WebserviceError
 		v.err = json.NewDecoder(resp.Body).Decode(&v)
-		return nil, errors.NewNotValid(v, "[geoip] mmws.fetch URL: "+MaxMindWebserviceBaseURL)
+		return nil, errors.NewNotValidf("[geoip] mmws.fetch URL %q with Error: %s", MaxMindWebserviceBaseURL, v)
 	}
 
 	// parse the response body
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Body
 
 	if err := json.NewDecoder(resp.Body).Decode(country); err != nil {
-		return nil, errors.NewNotValid(err, "[geoip] json.NewDecoder.Decode")
+		return nil, errors.NewNotValidf("[geoip] json.NewDecoder.Decode: %s", err)
 	}
 	country.IP = ipAddress
 	return country, nil

@@ -47,11 +47,11 @@ func init() {
 }
 
 func mustToPath(t interface {
-	Fatal(...interface{})
+	Fatalf(string, ...interface{})
 }, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
 	p, err := f(s, scopeID)
 	if err != nil {
-		t.Fatal(errors.PrintLoc(err))
+		t.Fatalf("%+v", err)
 	}
 	return p.String()
 }
@@ -72,7 +72,7 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 				if notValid := errors.IsNotValid(err); notValid {
 					assert.Contains(t, err.Error(), `OUT_OF_QUERIES`)
 				} else {
-					assert.True(t, errors.IsNotFound(err), "Error: %s", errors.PrintLoc(err))
+					assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
 				}
 			})
 		},
@@ -92,7 +92,7 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 				if notValid := errors.IsNotValid(err); notValid {
 					assert.Contains(t, err.Error(), ` unexpected EOF`)
 				} else {
-					assert.True(t, errors.IsNotFound(err), "Error: %s", errors.PrintLoc(err))
+					assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
 				}
 			})
 		},
@@ -108,7 +108,7 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				cty, err := geoip.FromContextCountry(r.Context())
 				if err != nil {
-					t.Fatal(errors.PrintLoc(err))
+					t.Fatalf("%+v", err)
 				}
 				assert.Exactly(t, "DE", cty.Country.IsoCode)
 			})
@@ -158,7 +158,7 @@ func testBackend_WithGeoIP2Webservice_Redis(
 		}()
 
 		if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
-			t.Fatal(errors.PrintLoc(err))
+			t.Fatalf("%+v", err)
 		}
 		// food for the race detector
 		cstesting.NewHTTPParallelUsers(8, 10, 500, time.Millisecond).ServeHTTP(req, geoSrv.WithCountryByIP()(finalHandler(t)))
@@ -207,7 +207,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 		// if you try to set the allowed countries with this option, they get
 		// overwritten by the ScopeConfig service.
 		// if err := geoSrv.Options(geoip.WithAllowedCountryCodes(scope.Store, 2, "AT", "CH")); err != nil {
-		//	t.Fatal(errors.PrintLoc(err))
+		//	t.Fatalf("%+v", err)
 		// }
 
 		// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
@@ -221,7 +221,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			req.RemoteAddr = "2a02:d180::"
 			atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
 			if err != nil {
-				t.Fatal(errors.PrintLoc(err))
+				t.Fatalf("%+v", err)
 			}
 			atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
 
@@ -241,7 +241,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 				assert.Nil(t, c)
 				if err != nil {
 					println("\nBefore Panicing\n", logBuf.String(), "\n==== P A N I C====\n")
-					panic(errors.PrintLoc(err))
+					panic(fmt.Sprintf("%+v", err))
 				}
 				panic("Should not be called")
 			})),
