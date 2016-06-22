@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/naughtystrings"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -352,6 +353,16 @@ func TestPathIsValid(t *testing.T) {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
 		} else {
 			assert.NoError(t, haveErr, "Index %d", i)
+		}
+	}
+}
+
+func TestPathValidateNaughtyStrings(t *testing.T) {
+	// nothing is valid from the list of naughty strings
+	for _, str := range naughtystrings.Unencoded() {
+		_, err := cfgpath.NewByParts(str)
+		if err == nil {
+			t.Errorf("Should not be valid: %q", str)
 		}
 	}
 }
