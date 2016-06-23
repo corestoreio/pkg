@@ -30,7 +30,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/cors"
-	"github.com/corestoreio/csfw/net/cors/internal/corstest"
+	corstest "github.com/corestoreio/csfw/net/cors/internal"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"

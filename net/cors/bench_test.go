@@ -26,15 +26,14 @@ import (
 
 	"github.com/corestoreio/csfw/net/cors"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 func testHandler(fa interface {
-	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
 }) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := cors.FromContext(r.Context()); err != nil {
-			fa.Fatal(errors.PrintLoc(err))
+			fa.Fatalf("%+v", err)
 		}
 		_, _ = w.Write([]byte("bar"))
 	}

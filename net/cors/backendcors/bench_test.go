@@ -27,15 +27,14 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/cors"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 func testHandler(fa interface {
-	Fatal(args ...interface{})
+	Fatalf(format string, args ...interface{})
 }) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := cors.FromContext(r.Context()); err != nil {
-			fa.Fatal(errors.PrintLoc(err))
+			fa.Fatalf("%+v", err)
 		}
 		_, _ = w.Write([]byte("bar"))
 	}
@@ -60,7 +59,7 @@ func BenchmarkExposedHeader_WebsiteScope_AllowOriginRegex(b *testing.B) {
 
 	s := newCorsService()
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(b, backend.NetCorsAllowOriginRegex.ToPath, scope.Website, 2): "^http://foo",
+		backend.NetCorsAllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
 	}))
 	req.Header.Set("Origin", "http://foobar.com")
 	//req.Header.Set("Origin", "http://barfoo.com") // not allowed

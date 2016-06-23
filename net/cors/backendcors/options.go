@@ -67,7 +67,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		if len(aor) > 1 {
 			r, err := regexp.Compile(aor)
 			if err != nil {
-				return optError(errors.NewFatal(err, "[backendcors] NetCorsAllowedOriginRegex.regexp.Compile"))
+				return optError(errors.NewFatalf("[backendcors] NetCorsAllowedOriginRegex.regexp.Compile: %s", err))
 			}
 			opts[i] = cors.WithAllowOriginFunc(scp, id, func(o string) bool {
 				return r.MatchString(o)
