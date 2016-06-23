@@ -14,5 +14,8 @@
 
 // Package response provides functions for working with an http response.
 //
+// Every write operation to the ResponseWriter returns the error behaviour
+// WriteFailed.
+//
 // TODO(cs) => github.com/streadway/handy
 package response

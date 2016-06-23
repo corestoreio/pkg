@@ -45,7 +45,8 @@ func TestPrintRender(t *testing.T) {
 	tpl, err := template.New("foo").Parse(`{{define "T"}}Hello, {{.}}!{{end}}`)
 	assert.NoError(t, err)
 	p.Renderer = tpl
-	assert.NoError(t, p.Render(3141, "T", "<script>alert('you have been pwned')</script>"))
+	err = p.Render(3141, "T", "<script>alert('you have been pwned')</script>")
+	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, `Hello, <script>alert('you have been pwned')</script>!`, w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
 	assert.Equal(t, httputil.TextHTMLCharsetUTF8, w.Header().Get(httputil.ContentType))
@@ -121,7 +122,7 @@ func TestPrintStringError(t *testing.T) {
 	p := response.NewPrinter(w, nil)
 
 	err := p.String(31415, "Hello %s", "Gophers")
-	assert.True(t, errors.IsWriteFailed(err), "Error: %s", err)
+	assert.True(t, errors.IsWriteFailed(err), "Error: %+v", err)
 	assert.Exactly(t, ``, w.Body.String())
 	assert.Exactly(t, 31415, w.Code)
 	assert.Equal(t, httputil.TextPlain, w.Header().Get(httputil.ContentType))
@@ -200,7 +201,7 @@ func TestPrintJSONPError(t *testing.T) {
 	p := response.NewPrinter(w, nil)
 
 	err := p.JSONP(3141, "awesomeReact", nonMarshallableChannel)
-	assert.True(t, errors.IsFatal(err), "Error: %s", errors.PrintLoc(err))
+	assert.True(t, errors.IsFatal(err), "Error: %+v", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
 	assert.Equal(t, "", w.Header().Get(httputil.ContentType))

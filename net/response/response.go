@@ -59,9 +59,8 @@ func NewPrinter(w http.ResponseWriter, r *http.Request) Print {
 	}
 }
 
-// Print is a helper type for outputting data to a ResponseWriter. Print
-// act as a non-pointer type. Print functions uses internally a
-// byte buffer pool.
+// Print is a helper type for outputting data to a ResponseWriter. Print act as
+// a non-pointer type. Print functions uses internally a byte buffer pool.
 type Print struct {
 	// FileSystem stubbed out for testing. Default http.Dir
 	FileSystem http.FileSystem
@@ -73,8 +72,8 @@ type Print struct {
 	}
 }
 
-// Render renders a template with data and sends a text/html response with status
-// code. Templates can be registered during `Print` creation.
+// Render renders a template with data and sends a text/html response with
+// status code. Templates can be registered during `Print` creation.
 func (p Print) Render(code int, name string, data interface{}) error {
 	if p.Renderer == nil {
 		return errors.NewEmptyf("[httputil] Print.Render.Renderer is nil")
@@ -82,7 +81,7 @@ func (p Print) Render(code int, name string, data interface{}) error {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := p.Renderer.ExecuteTemplate(buf, name, data); err != nil {
-		return errors.NewFatal(err, "[httputil] Print.Render.ExecuteTemplate failed")
+		return errors.NewFatalf("[httputil] Print.Render.ExecuteTemplate failed: %s", err)
 	}
 	return p.html(code, buf.Bytes())
 }
@@ -94,43 +93,53 @@ func (p Print) HTML(code int, format string, a ...interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "[httputil] Print.HTML.html")
 	}
-	_, err = fmt.Fprintf(p.Response, format, a...)
-	return errors.NewWriteFailed(err, "[httputil] Print.HTML.Fprintf")
+	if _, err = fmt.Fprintf(p.Response, format, a...); err != nil {
+		return errors.NewWriteFailedf("[httputil] Print.HTML.Fprintf: %s", err)
+	}
+	return nil
 }
 
-func (p Print) html(code int, data []byte) (err error) {
+func (p Print) html(code int, data []byte) error {
 	p.Response.Header().Set(httputil.ContentType, httputil.TextHTMLCharsetUTF8)
 	p.Response.WriteHeader(code)
 	if data != nil {
-		_, err = p.Response.Write(data)
+		if _, err := p.Response.Write(data); err != nil {
+			return errors.NewWriteFailedf("[httputil] Print.html.Response.Write: %s", err)
+		}
 	}
-	return errors.NewWriteFailed(err, "[httputil] Print.html.Response.Write")
+	return nil
 }
 
 // String formats according to a format specifier and sends text response with
 // status code.
-func (p Print) String(code int, format string, a ...interface{}) (err error) {
+func (p Print) String(code int, format string, a ...interface{}) error {
 	if err := p.string(code, nil); err != nil {
 		return errors.Wrap(err, "[httputil] Print.String.string")
 	}
-	_, err = fmt.Fprintf(p.Response, format, a...)
-	return errors.NewWriteFailed(err, "[httputil] Print.String.Fprintf")
+	if _, err := fmt.Fprintf(p.Response, format, a...); err != nil {
+		return errors.NewWriteFailedf("[httputil] Print.String.Fprintf: %s", err)
+	}
+	return nil
 }
 
 // WriteString converts a string into []bytes and outputs it. No formatting
 // feature available.
-func (p Print) WriteString(code int, s string) (err error) {
+func (p Print) WriteString(code int, s string) error {
 	p.Response.Header().Set(httputil.ContentType, httputil.TextPlain)
 	p.Response.WriteHeader(code)
-	_, err = io.WriteString(p.Response, s)
-	return errors.NewWriteFailed(err, "[httputil] Print.WriteString")
+	if _, err := io.WriteString(p.Response, s); err != nil {
+		return errors.NewWriteFailedf("[httputil] Print.WriteString: %s", err)
+	}
+	return nil
 }
 
-func (p Print) string(code int, data []byte) (err error) {
+func (p Print) string(code int, data []byte) error {
 	p.Response.Header().Set(httputil.ContentType, httputil.TextPlain)
 	p.Response.WriteHeader(code)
-	_, err = p.Response.Write(data)
-	return errors.NewWriteFailed(err, "[httputil] Print.string")
+	if _, err := p.Response.Write(data); err != nil {
+		return errors.NewWriteFailedf("[httputil] Print.string: %s", err)
+	}
+	return nil
 }
 
 // JSON sends a JSON response with status code.
@@ -139,12 +148,13 @@ func (p Print) JSON(code int, i interface{}) (err error) {
 	defer bufferpool.Put(buf)
 
 	if err := json.NewEncoder(buf).Encode(i); err != nil {
-		return errors.NewFatal(err, "[httputil] Print.JSON.NewEncoder.Encode")
+		return errors.NewFatalf("[httputil] Print.JSON.NewEncoder.Encode: %s", err)
 	}
 	return errors.Wrap(p.json(code, buf.Bytes()), "[httputil] JSON")
 }
 
-// JSONIndent sends a JSON response with status code, but it applies prefix and indent to format the output.
+// JSONIndent sends a JSON response with status code, but it applies prefix and
+// indent to format the output.
 func (p Print) JSONIndent(code int, i interface{}, prefix string, indent string) (err error) {
 	b, err := json.MarshalIndent(i, prefix, indent)
 	if err != nil {
@@ -153,34 +163,38 @@ func (p Print) JSONIndent(code int, i interface{}, prefix string, indent string)
 	return errors.Wrap(p.json(code, b), "[httputil] JSONIndent")
 }
 
-func (p Print) json(code int, b []byte) (err error) {
+func (p Print) json(code int, b []byte) error {
 	p.Response.Header().Set(httputil.ContentType, httputil.ApplicationJSONCharsetUTF8)
 	p.Response.WriteHeader(code)
 	if b != nil {
-		_, err = p.Response.Write(b)
+		if _, err := p.Response.Write(b); err != nil {
+			return errors.NewWriteFailedf("[httputil] Print.json: %s", err)
+		}
 	}
-	return errors.NewWriteFailed(err, "[httputil] Print.json")
+	return nil
 }
 
-// JSONP sends a JSONP response with status code. It uses `callback` to construct
-// the JSONP payload.
-func (p Print) JSONP(code int, callback string, i interface{}) (err error) {
+// JSONP sends a JSONP response with status code. It uses `callback` to
+// construct the JSONP payload.
+func (p Print) JSONP(code int, callback string, i interface{}) error {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	buf.WriteString(callback)
-	buf.WriteRune('(')
+	_, _ = buf.WriteString(callback)
+	_, _ = buf.WriteRune('(')
 
 	if err := json.NewEncoder(buf).Encode(i); err != nil {
-		return errors.NewFatal(err, "[httputil] Print.JSONP.NewEncoder.Encode")
+		return errors.NewFatalf("[httputil] Print.JSONP.NewEncoder.Encode: %s", err)
 	}
-	buf.WriteString(");")
+	_, _ = buf.WriteString(");")
 
 	p.Response.Header().Set(httputil.ContentType, httputil.ApplicationJavaScriptCharsetUTF8)
 	p.Response.WriteHeader(code)
 
-	_, err = p.Response.Write(buf.Bytes())
-	return errors.Wrap(err, "[httputil] Print.JSONP.Response.Write")
+	if _, err := p.Response.Write(buf.Bytes()); err != nil {
+		return errors.NewWriteFailedf("[httputil] Print.JSONP.Response.Write: %s", err)
+	}
+	return nil
 }
 
 // XML sends an XML response with status code.
@@ -189,16 +203,17 @@ func (p Print) XML(code int, i interface{}) (err error) {
 	defer bufferpool.Put(buf)
 
 	if err := xml.NewEncoder(buf).Encode(i); err != nil {
-		return errors.NewFatal(err, "[httputil] Print.XML.NewEncoder.Encode")
+		return errors.NewFatalf("[httputil] Print.XML.NewEncoder.Encode: %s", err)
 	}
 	return errors.Wrap(p.xml(code, buf.Bytes()), "[httputil] Print.XML.xml")
 }
 
-// XMLIndent sends an XML response with status code, but it applies prefix and indent to format the output.
+// XMLIndent sends an XML response with status code, but it applies prefix and
+// indent to format the output.
 func (p Print) XMLIndent(code int, i interface{}, prefix string, indent string) (err error) {
 	b, err := xml.MarshalIndent(i, prefix, indent)
 	if err != nil {
-		return errors.NewFatal(err, "[httputil] Print.XMLIndent.MarshalIndent")
+		return errors.NewFatalf("[httputil] Print.XMLIndent.MarshalIndent: %s", err)
 	}
 	return errors.Wrap(p.xml(code, b), "[httputil] Print.XMLIndent.xml")
 }
@@ -206,18 +221,20 @@ func (p Print) XMLIndent(code int, i interface{}, prefix string, indent string) 
 func (p Print) xml(code int, b []byte) (err error) {
 	p.Response.Header().Set(httputil.ContentType, httputil.ApplicationXMLCharsetUTF8)
 	p.Response.WriteHeader(code)
-	if _, err = p.Response.Write([]byte(xml.Header)); err != nil {
-		return errors.Wrap(err, "[httputil] Print.xml")
+	if _, err := p.Response.Write([]byte(xml.Header)); err != nil {
+		return errors.NewWriteFailedf("[httputil] Print.xml: %s", err)
 	}
 	if b != nil {
-		_, err = p.Response.Write(b)
+		if _, err := p.Response.Write(b); err != nil {
+			return errors.NewWriteFailedf("[httputil] Print.xml.Response.Write: %s", err)
+		}
 	}
-	return errors.Wrap(err, "[httputil] Print.xml.Response.Write")
+	return nil
 }
 
-// File sends a response with the content of the file. If `attachment` is set
-// to true, the client is prompted to save the file with provided `name`,
-// name can be empty, in that case name of the file is used.
+// File sends a response with the content of the file. If `attachment` is set to
+// true, the client is prompted to save the file with provided `name`, name can
+// be empty, in that case name of the file is used.
 func (p Print) File(path, name string, attachment bool) error {
 	dir, file := filepath.Split(path)
 	if attachment {
