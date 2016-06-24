@@ -17,18 +17,20 @@ package backendratelimit
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/net/ratelimit"
+	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
 
 // ConfigDuration handles the allowed duration values like s,i,h and d.
-type ConfigDuration struct {
+type ConfigRate struct {
 	cfgmodel.Str
 }
 
 // NewConfigDuration creates a new duration model with a predefined source slice
 // of all allowed values.
-func NewConfigDuration(path string, opts ...cfgmodel.Option) ConfigDuration {
-	return ConfigDuration{
+func NewConfigDuration(path string, opts ...cfgmodel.Option) ConfigRate {
+	return ConfigRate{
 		Str: cfgmodel.NewStr(
 			path,
 			append(opts, cfgmodel.WithSourceByString(
@@ -43,31 +45,10 @@ func NewConfigDuration(path string, opts ...cfgmodel.Option) ConfigDuration {
 
 // Get returns a new rate. The requests argument declares the number of requests
 // allowed per time period. Invalid duration setting falls back to hourly calculation.
-func (md ConfigDuration) Get(sg config.ScopedGetter, requests int) (throttled.Rate, error) {
-
+func (md ConfigRate) Get(sg config.ScopedGetter, requests int) (throttled.Rate, error) {
 	val, err := md.Str.Get(sg)
 	if err != nil {
-		return throttled.Rate{}, errors.Wra(err)
+		return throttled.Rate{}, errors.Wrap(err, "[ratelimit] ConfigDuration.Str.Get")
 	}
-
-	if val == "" {
-		val = DefaultDuration
-	}
-	return calculateRate(val, requests), nil
-}
-
-func calculateRate(duration string, requests int) (r throttled.Rate) {
-	switch duration {
-	case "s": // second
-		r = throttled.PerSec(requests)
-	case "i": // minute
-		r = throttled.PerMin(requests)
-	case "h": // hour
-		r = throttled.PerHour(requests)
-	case "d": // day
-		r = throttled.PerDay(requests)
-	default:
-		r = throttled.PerHour(requests)
-	}
-	return
+	return ratelimit.CalculateRate(val, requests), nil
 }

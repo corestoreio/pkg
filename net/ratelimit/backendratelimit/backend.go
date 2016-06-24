@@ -22,47 +22,46 @@ import (
 // PkgBackend just exported for the sake of documentation. See fields
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
-type PkgBackend struct {
+type Backend struct {
 	cfgmodel.PkgBackend
 
 	// RateLimitBurst defines the number of requests that
 	// will be allowed to exceed the rate in a single burst and must be
 	// greater than or equal to zero.
 	//
-	// Path: net/shy/burst
+	// Path: net/ratelimit/burst
 	RateLimitBurst cfgmodel.Int
 
 	// RateLimitRequests number of requests allowed per time period
 	//
-	// Path: net/shy/requests
+	// Path: net/ratelimit/requests
 	RateLimitRequests cfgmodel.Int
 
 	// RateLimitDuration per second (s), minute (i), hour (h), day (d)
 	//
-	// Path: net/shy/duration
-	RateLimitDuration ConfigDuration
+	// Path: net/ratelimit/duration
+	RateLimitDuration ConfigRate
 }
 
-// NewBackend initializes the global configuration models containing the
-// cfgpath.Route variable to the appropriate entry.
-// The function Load() will be executed to apply the SectionSlice
-// to all models. See Load() for more details.
-func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
-	return (&PkgBackend{}).Load(cfgStruct)
+// New initializes the backend configuration models containing the cfgpath.Route
+// variable to the appropriate entries. The function Load() will be executed to
+// apply the SectionSlice to all models. See Load() for more details.
+func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
+	return (&Backend{}).Load(cfgStruct, opts...)
 }
 
-// Load creates the configuration models for each PkgBackend field.
-// Internal mutex will protect the fields during loading.
-// The argument SectionSlice will be applied to all models.
-func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
+// Load creates the configuration models for each PkgBackend field. Internal
+// mutex will protect the fields during loading. The argument SectionSlice will
+// be applied to all models.
+func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	pp.Lock()
 	defer pp.Unlock()
 
 	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
 
-	pp.RateLimitBurst = cfgmodel.NewInt(`net/shy/burst`, opt)
-	pp.RateLimitRequests = cfgmodel.NewInt(`net/shy/requests`, opt)
-	pp.RateLimitDuration = NewConfigDuration(`net/shy/duration`, opt)
+	pp.RateLimitBurst = cfgmodel.NewInt(`net/ratelimit/burst`, opt)
+	pp.RateLimitRequests = cfgmodel.NewInt(`net/ratelimit/requests`, opt)
+	pp.RateLimitDuration = NewConfigDuration(`net/ratelimit/duration`, opt)
 
 	return pp
 }

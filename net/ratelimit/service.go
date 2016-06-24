@@ -15,38 +15,38 @@
 package ratelimit
 
 import (
-	"net/http"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sync/suspend"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-// VaryByer is called for each request to generate a key for the
-// limiter. If it is nil, all requests use an empty string key.
-type VaryByer interface {
-	Key(*http.Request) string
-}
 
 // HTTPRateLimit faciliates using a Limiter to limit HTTP requests.
 type Service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
+	// VaryByer is called for each request to generate a key for the limiter. If
+	// it is nil, the middleware panics. The default VaryByer returns an empty
+	// string so that all requests uses the same key. VaryByer must be thread
+	// safe.
+	VaryByer
+
 	// optionFactoryFunc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings
 	// in the internal map. ScopedOption requires a config.ScopedGetter. This
 	// function gets set via WithOptionFactory()
 	optionFactoryFunc OptionFactoryFunc
-	// optionFactoryState checks on a per scope.Hash basis if the
-	// configuration loading process takes place. Delays the execution of other
-	// Goroutines with the same scope.Hash until the configuration has been
-	// fully loaded and applied and for that specific scope. This function gets
-	// set via WithOptionFactory()
-	optionFactoryState suspend.State
+
+	// optionInflight checks on a per scope.Hash basis if the configuration
+	// loading process takes place. Stops the execution of other Goroutines (aka
+	// incoming requests) with the same scope.Hash until the configuration has
+	// been fully loaded and applied and for that specific scope. This function
+	// gets set via WithOptionFactory()
+	optionInflight *singleflight.Group
 
 	// defaultScopeCache has been extracted from the scopeCache to allow faster
 	// access to the standard configuration without accessing a map.
@@ -55,16 +55,9 @@ type Service struct {
 	// rwmu protects all fields below
 	rwmu sync.RWMutex
 
-	// scopeCache internal cache of already created token configurations
-	// scoped.Hash relates to the website ID. This can become a bottle neck when
-	// multiple website IDs supplied by a request try to access the map. we can
-	// use the same pattern like in freecache to create a segment of 256 slice
-	// items to evenly distribute the lock.
+	// scopeCache internal cache of the configurations. scoped.Hash relates to
+	// the default,website or store ID.
 	scopeCache map[scope.Hash]scopedConfig
-
-	// VaryByer is called for each request to generate a key for the
-	// limiter. If it is nil, all requests use an empty string key.
-	VaryByer
 }
 
 // New creates a new rate limit middleware.
@@ -77,13 +70,14 @@ type Service struct {
 func New(opts ...Option) (*Service, error) {
 	s := &Service{
 		Log:        log.BlackHole{},
+		VaryByer:   emptyVaryBy{},
 		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
-		return nil, errors.Wrap(err, "[shy] Options WithDefaultConfig")
+		return nil, errors.Wrap(err, "[ratelimit] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[shy] Options Any Config")
+		return nil, errors.Wrap(err, "[ratelimit] Options Any Config")
 	}
 	return s, nil
 }
@@ -114,9 +108,10 @@ func (s *Service) useDefaultConfig(h scope.Hash) bool {
 }
 
 // configByScopedGetter returns the internal configuration depending on the
-// ScopedGetter. Mainly used within the middleware. A nil argument falls back to
-// the default scope configuration. If you have applied the option WithBackend()
-// the configuration will be pulled out only one time from the backend service.
+// ScopedGetter. Mainly used within the middleware.  If you have applied the
+// option WithOptionFactory() the configuration will be pulled out only one time
+// from the backend configuration service. The field optionInflight handles the
+// guaranteed atomic single loading for each scope.
 func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
 
 	h := scope.NewHash(scpGet.Scope())
@@ -142,36 +137,39 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		if s.Log.IsDebug() {
 			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h))
 		}
-		// When everything has been preconfigured for each scope via functional
+		// When everything has been pre-configured for each scope via functional
 		// options then we might have the case where a scope in a request comes
 		// in which does not match to a scopedConfiguration entry in the map
 		// therefore a fallback to default scope must be provided. This fall
 		// back will only be executed once and each scope knows from now on that
 		// it has the configuration of the default scope.
 		return s.getConfigByScopeID(h, true)
-	case s.optionFactoryState.ShouldStart(h.ToUint64()): // 2. map lookup, execute for each scope which needs to initialize the configuration.
-		// gets tested by backendshy
-		defer s.optionFactoryState.Done(h.ToUint64()) // send Signal and release waiter
-
-		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
-			return scopedConfig{
-				lastErr: errors.Wrap(err, "[shy] Options by scpOptionFnc"),
-			}
-		}
-		if s.Log.IsDebug() {
-			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.ShouldStart", log.Stringer("scope", h), log.Err(sCfg.isValid()))
-		}
-	case s.optionFactoryState.ShouldWait(h.ToUint64()): // 3. map lookup
-		if s.Log.IsDebug() {
-			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.ShouldWait", log.Stringer("scope", h), log.Err(sCfg.isValid()))
-		}
-		// gets tested by backendratelimit.
-		// Wait here! After optionFactoryState.Done() has been called in
-		// optionFactoryState.ShouldStart() we proceed and go to the last return
-		// statement to search for the newly set scopedConfig value.
 	}
 
-	return s.configByScopedGetter(scpGet)
+	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
+		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
+			return scopedConfig{
+				lastErr: errors.Wrap(err, "[geoip] Options by scpOptionFnc"),
+			}, nil
+		}
+		if s.Log.IsDebug() {
+			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Err(sCfg.isValid()))
+		}
+		return s.getConfigByScopeID(h, true), nil
+	})
+
+	res, ok := <-scpCfgChan
+	if !ok {
+		return scopedConfig{lastErr: errors.NewFatalf("[geoip] optionInflight.DoChan returned a closed/unreadable channel")}
+	}
+	if res.Err != nil {
+		return scopedConfig{lastErr: errors.Wrap(res.Err, "[geoip] optionInflight.DoChan.Error")}
+	}
+	sCfg, ok = res.Val.(scopedConfig)
+	if !ok {
+		sCfg.lastErr = errors.NewFatalf("[geoip] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
+	}
+	return sCfg
 }
 
 func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {
@@ -195,7 +193,7 @@ func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedCon
 	}
 	if !ok && !useDefault {
 		return scopedConfig{
-			lastErr: errors.Wrap(errConfigNotFound, "[shy] Service.getConfigByScopeID.NotFound"),
+			lastErr: errors.Wrap(errConfigNotFound, "[geoip] Service.getConfigByScopeID.NotFound"),
 		}
 	}
 	if scpCfg.useDefault {

@@ -12,20 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backendratelimit_test
+package ratelimit
 
 import (
-	"github.com/corestoreio/csfw/net/ratelimit/backendratelimit"
+	"context"
+	"net/http"
+	"testing"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
-// backend overall backend models for all tests
-var backend *backendratelimit.Backend
+func TestContextWithError(t *testing.T) {
+	var wantErr = errors.New("Contiki Context")
+	req, _ := http.NewRequest("GET", "http://localhost", nil)
+	req = wrapContextError(req, wantErr)
+	assert.NotNil(t, req)
 
-// this would belong into the test suit setup
-func init() {
-	cfgStruct, err := backendratelimit.NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	backend = backendratelimit.New(cfgStruct)
+	err := FromContextRateLimit(req.Context())
+	assert.EqualError(t, err, wantErr.Error())
+
+	err = FromContextRateLimit(context.TODO())
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }

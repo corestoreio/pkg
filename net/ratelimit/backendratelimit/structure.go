@@ -31,13 +31,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			ID: cfgpath.NewRoute("net"),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:        cfgpath.NewRoute("shy"),
+					ID:        cfgpath.NewRoute("ratelimit"),
 					Label:     text.Chars(`Rate throtteling`),
 					SortOrder: 40,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: net/shy/burst
+							// Path: net/ratelimit/burst
 							ID:        cfgpath.NewRoute("burst"),
 							Label:     text.Chars(`Burst`),
 							Comment:   text.Chars(`Defines the number of requests that will be allowed to exceed the rate in a single burst and must be greater than or equal to zero`),
@@ -45,10 +45,10 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   5,
+							Default:   20,
 						},
 						element.Field{
-							// Path: net/shy/requests
+							// Path: net/ratelimit/requests
 							ID:        cfgpath.NewRoute("requests"),
 							Label:     text.Chars(`Requests`),
 							Comment:   text.Chars(`Number of requests allowed per time period`),
@@ -59,8 +59,19 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   100,
 						},
 						element.Field{
-							// Path: net/shy/duration
+							// Path: net/ratelimit/duration
 							ID:        cfgpath.NewRoute("duration"),
+							Label:     text.Chars(`Duration`),
+							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
+							Type:      element.TypeText,
+							SortOrder: 30,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   `h`,
+						},
+						element.Field{
+							// Path: net/ratelimit/duration
+							ID:        cfgpath.NewRoute("gcra_max_memory_keys"),
 							Label:     text.Chars(`Duration`),
 							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
 							Type:      element.TypeText,

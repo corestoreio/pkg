@@ -15,10 +15,12 @@
 package ratelimit
 
 import (
+	"net/http"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sync/suspend"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"gopkg.in/throttled/throttled.v2"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
@@ -53,32 +55,72 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	}
 }
 
-// WithVaryBy ...
+// WithVaryBy sets a custom Key by http.Request producer. Convenience helper
+// function.
 func WithVaryBy(vb VaryByer) Option {
-	return func(s *Service) {
+	return func(s *Service) error {
 		s.VaryByer = vb
+		return nil
 	}
 }
 
-// WithScopedRateLimiter creates a rate limiter for a specific scope with its ID.
+// WithRateLimiter creates a rate limiter for a specific scope with its ID.
 // The rate limiter is already warmed up.
-func WithScopedRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option {
-	return func(s *Service) {
-		s.mu.Lock()
-		s.scopedRLs[scope.NewHash(scp, id)] = rl
-		s.mu.Unlock()
+func WithRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.RateLimiter = rl
+			return nil
+		}
+
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.RateLimiter = rl
+
+		if sc, ok := s.scopeCache[h]; ok {
+			sc.RateLimiter = scNew.RateLimiter
+			scNew = sc
+		}
+		scNew.scopeHash = h
+		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
-// WithRateLimiterFactory ...
-func WithRateLimiterFactory(rlf RateLimiterFactory) Option {
-	return func(s *Service) {
-		s.RateLimiterFactory = rlf
+// WithDeniedHandler sets a custom denied handler for a specific scope. The
+// default denied handler returns a simple:
+//		http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.deniedHandler = next
+			return nil
+		}
+
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.deniedHandler = next
+
+		if sc, ok := s.scopeCache[h]; ok {
+			sc.deniedHandler = scNew.deniedHandler
+			scNew = sc
+		}
+		scNew.scopeHash = h
+		s.scopeCache[h] = scNew
+		return nil
 	}
 }
 
 // WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes. Mainly used for debugging.
+// subsequent scopes. Mainly used for debugging. Convenience helper function.
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
 		s.Log = l
@@ -107,79 +149,47 @@ func WithLogger(l log.Logger) Option {
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
 		s.optionFactoryFunc = f
-		s.optionFactoryState = suspend.NewState()
+		s.optionInflight = new(singleflight.Group)
 		return nil
 	}
 }
 
-// DefaultRequests number of requests allowed per time period.
-// Used when *PkgBackend has not been provided.
-var DefaultRequests = 100
-
-// DefaultBurst defines the number of requests that
-// will be allowed to exceed the rate in a single burst and must be
-// greater than or equal to zero.
-// Used when *PkgBackend has not been provided.
-var DefaultBurst = 20
-
-// DefaultDuration per second (s), minute (i), hour (h), day (d)
-// Used when *PkgBackend has not been provided.
-var DefaultDuration = "h"
-
-const MemStoreMaxKeys = 65536
-
 // NewGCRAMemStore creates the default memory based GCRA rate limiter.
 // It uses the PkgBackend models to create a ratelimiter for each scope.
-func NewGCRAMemStore(maxKeys int) RateLimiterFactory {
-	return func(be *PkgBackend, sg config.ScopedGetter) (throttled.RateLimiter, error) {
+func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration string, requests, burst int) Option {
+	return func(s *Service) error {
 
 		rlStore, err := memstore.New(maxKeys)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		rq, err := rateQuota(be, sg)
-		if err != nil {
-			return nil, err
+		rq := throttled.RateQuota{
+			MaxRate:  CalculateRate(duration, requests),
+			MaxBurst: burst,
 		}
 
 		rl, err := throttled.NewGCRARateLimiter(rlStore, rq)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		return rl, nil
+		return WithRateLimiter(scp, id, rl)(s)
 	}
 }
 
-// rateQuota creates a new quota for the GCRARateLimiter
-func rateQuota(be *PkgBackend, sg config.ScopedGetter) (rq throttled.RateQuota, err error) {
-
-	if be == nil {
-		return throttled.RateQuota{
-			MaxRate:  calculateRate(DefaultDuration, DefaultRequests),
-			MaxBurst: DefaultBurst,
-		}, nil
+func CalculateRate(duration string, requests int) (r throttled.Rate) {
+	switch duration {
+	case "s": // second
+		r = throttled.PerSec(requests)
+	case "i": // minute
+		r = throttled.PerMin(requests)
+	case "h": // hour
+		r = throttled.PerHour(requests)
+	case "d": // day
+		r = throttled.PerDay(requests)
+	default:
+		r = throttled.PerHour(requests)
 	}
-
-	burst, err := be.RateLimitBurst.Get(sg)
-	if err != nil {
-		err = errors.Mask(err)
-		return
-	}
-	request, err := be.RateLimitRequests.Get(sg)
-	if err != nil {
-		err = errors.Mask(err)
-		return
-	}
-	if request == 0 {
-		request = DefaultRequests
-	}
-
-	rate, err := be.RateLimitDuration.Get(sg, request)
-	err = errors.Mask(err)
-
-	rq.MaxRate = rate
-	rq.MaxBurst = burst
 	return
 }

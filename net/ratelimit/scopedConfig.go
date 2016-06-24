@@ -35,20 +35,20 @@ type scopedConfig struct {
 
 	// enable or disable a rate limit for a scope
 	enable bool
-	// DeniedHandler can be customized instead of showing a HTTP status 429
+	// deniedHandler can be customized instead of showing a HTTP status 429
 	// error page once the HTTPRateLimit has been reached.
 	// It will be called if the request gets over the limit.
-	DeniedHandler http.Handler
+	deniedHandler http.Handler
+	// RateLimiter on a per scope basis
 	throttled.RateLimiter
 }
 
 func defaultScopedConfig(h scope.Hash) scopedConfig {
 	return scopedConfig{
 		scopeHash: h,
-		DeniedHandler: func(w http.ResponseWriter, _ *http.Request) error {
+		deniedHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-			return nil
-		},
+		}),
 	}
 }
 
@@ -59,9 +59,8 @@ func (sc scopedConfig) isValid() error {
 		return errors.Wrap(sc.lastErr, "[geoip] scopedConfig.isValid as an lastErr")
 	}
 
-	if sc.scopeHash == 0 || sc.RateLimiter == nil ||
-		sc.DeniedHandler == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.DeniedHandler == nil, sc.RateLimiter == nil)
+	if sc.scopeHash == 0 || sc.RateLimiter == nil || sc.deniedHandler == nil {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.deniedHandler == nil, sc.RateLimiter == nil)
 	}
 	return nil
 }

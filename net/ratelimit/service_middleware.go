@@ -23,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/errors"
-	"golang.org/x/net/context"
 	"gopkg.in/throttled/throttled.v2"
 )
 
@@ -33,48 +32,54 @@ import (
 // X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset and
 // Retry-After headers will be written to the response based on the
 // values in the RateLimitResult.
-func (hrl *Service) WithRateLimit() mw.Middleware {
+func (s *Service) WithRateLimit() mw.Middleware {
 
 	return func(h http.Handler) http.Handler {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			requestedStore, err := store.FromContextRequestedStore(r.Context())
 			if err != nil {
-				err = errors.Wrap(err, "[geoip] FromContextProvider")
-				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
+				err = errors.Wrap(err, "[ratelimit] FromContextRequestedStore")
+				h.ServeHTTP(w, wrapContextError(r, err))
 				return
 			}
 
 			// requestedStore.Config contains the scope for store and then
 			// website or finally can fall back to default scope.
-			scpCfg := hrl.configByScopedGetter(requestedStore.Config)
+			scpCfg := s.configByScopedGetter(requestedStore.Config)
 			if err := scpCfg.isValid(); err != nil {
-				if hrl.Log.IsDebug() {
-					hrl.Log.Debug("Service.WithIsCountryAllowedByIP.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithRateLimit.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
 				}
-				err = errors.Wrap(err, "[geoip] ConfigByScopedGetter")
-				h.ServeHTTP(w, r.WithContext(withContextError(r.Context(), err)))
+				err = errors.Wrap(err, "[ratelimit] ConfigByScopedGetter")
+				h.ServeHTTP(w, wrapContextError(r, err))
 				return
 			}
 
-			var k string
-			if hrl.VaryByer != nil {
-				k = hrl.Key(r)
+			isLimited, rlResult, err := scpCfg.RateLimit(s.Key(r), 1)
+			if s.Log.IsDebug() {
+				s.Log.Debug("Service.WithRateLimit.configByScopedGetter.RateLimit",
+					log.Err(err),
+					log.Bool("is_limited", isLimited),
+					log.Object("rate_limit_result", rlResult),
+					log.Stringer("scope", scpCfg.scopeHash),
+					log.Marshal("requestedStore", requestedStore),
+					log.HTTPRequest("request", r),
+				)
 			}
-
-			limited, context, err := scpCfg.RateLimit(k, 1)
 			if err != nil {
-				return err
+				err = errors.Wrap(err, "[ratelimit] scpCfg.RateLimit")
+				h.ServeHTTP(w, wrapContextError(r, err))
+				return
 			}
 
-			setRateLimitHeaders(w, context)
-
-			if !limited {
-				return h.ServeHTTPContext(ctx, w, r)
+			setRateLimitHeaders(w, rlResult)
+			next := scpCfg.deniedHandler
+			if !isLimited {
+				next = h
 			}
-
-			return hrl.DeniedHandler(ctx, w, r)
-		}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 
