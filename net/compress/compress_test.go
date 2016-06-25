@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mw_test
+package compress_test
 
 import (
 	"bytes"
@@ -23,7 +23,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/httputil"
+	csnet "github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/net/compress"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/response"
 	"github.com/klauspost/compress/flate"
@@ -54,10 +55,10 @@ func testCompressReqRes() (w *httptest.ResponseRecorder, r *http.Request) {
 func TestWithCompressorNone(t *testing.T) {
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		assert.Empty(t, w.Header().Get(httputil.ContentEncoding))
-		assert.Empty(t, w.Header().Get(httputil.Vary))
+		assert.Empty(t, w.Header().Get(csnet.ContentEncoding))
+		assert.Empty(t, w.Header().Get(csnet.Vary))
 
-	}, mw.WithCompressor())
+	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
 	finalCH.ServeHTTP(w, r)
@@ -66,30 +67,30 @@ func TestWithCompressorNone(t *testing.T) {
 func TestWithCompressorGZIPHeader(t *testing.T) {
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		assert.Exactly(t, httputil.CompressGZIP, w.Header().Get(httputil.ContentEncoding))
-		assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
+		assert.Exactly(t, csnet.CompressGZIP, w.Header().Get(csnet.ContentEncoding))
+		assert.Exactly(t, csnet.AcceptEncoding, w.Header().Get(csnet.Vary))
 
-	}, mw.WithCompressor())
+	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
-	r.Header.Set(httputil.AcceptEncoding, "deflate, gzip")
+	r.Header.Set(csnet.AcceptEncoding, "deflate, gzip")
 	finalCH.ServeHTTP(w, r)
 }
 
 func TestWithCompressorDeflateHeader(t *testing.T) {
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Exactly(t, httputil.CompressDeflate, w.Header().Get(httputil.ContentEncoding))
-		assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
+		assert.Exactly(t, csnet.CompressDeflate, w.Header().Get(csnet.ContentEncoding))
+		assert.Exactly(t, csnet.AcceptEncoding, w.Header().Get(csnet.Vary))
 
-	}, mw.WithCompressor())
+	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
-	r.Header.Set(httputil.AcceptEncoding, "deflate")
+	r.Header.Set(csnet.AcceptEncoding, "deflate")
 	finalCH.ServeHTTP(w, r)
 }
 
 func TestWithCompressorDeflateConcrete(t *testing.T) {
-	testWithCompressorConcrete(t, httputil.CompressDeflate, func(r io.Reader) string {
+	testWithCompressorConcrete(t, csnet.CompressDeflate, func(r io.Reader) string {
 		fr := flate.NewReader(r)
 		defer func() {
 			if err := fr.Close(); err != nil {
@@ -109,7 +110,7 @@ func TestWithCompressorDeflateConcrete(t *testing.T) {
 }
 
 func TestWithCompressorGZIPConcrete(t *testing.T) {
-	testWithCompressorConcrete(t, httputil.CompressGZIP, func(r io.Reader) string {
+	testWithCompressorConcrete(t, csnet.CompressGZIP, func(r io.Reader) string {
 		zr, err := gzip.NewReader(r)
 		if err != nil {
 			t.Fatal(err)
@@ -133,10 +134,10 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 		if err := response.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			t.Fatal(err)
 		}
-	}, mw.WithCompressor())
+	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
-	r.Header.Set(httputil.AcceptEncoding, header)
+	r.Header.Set(csnet.AcceptEncoding, header)
 	finalCH.ServeHTTP(w, r)
 	assert.False(t, len(testJson) < len(w.Body.Bytes()))
 
@@ -146,9 +147,9 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 		t.Errorf("Want: %d\n\nHave: %d\n", len(testJson), len(uncompressedBody))
 		t.Logf("Want: %s\n\nHave: %s\n", testJson, uncompressedBody)
 	}
-	assert.Exactly(t, header, w.Header().Get(httputil.ContentEncoding))
-	assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
-	assert.Exactly(t, httputil.TextPlain, w.Header().Get(httputil.ContentType))
+	assert.Exactly(t, header, w.Header().Get(csnet.ContentEncoding))
+	assert.Exactly(t, csnet.AcceptEncoding, w.Header().Get(csnet.Vary))
+	assert.Exactly(t, csnet.TextPlain, w.Header().Get(csnet.ContentType))
 
 }
 
@@ -159,10 +160,10 @@ func BenchmarkWithCompressorGZIP_1024B(b *testing.B) {
 		if err := response.NewPrinter(w, r).WriteString(http.StatusOK, testJson); err != nil {
 			b.Fatal(err)
 		}
-	}, mw.WithCompressor())
+	}, compress.WithCompressor())
 
 	w, r := testCompressReqRes()
-	r.Header.Set(httputil.AcceptEncoding, httputil.CompressGZIP)
+	r.Header.Set(csnet.AcceptEncoding, csnet.CompressGZIP)
 
 	b.ResetTimer()
 	b.ReportAllocs()

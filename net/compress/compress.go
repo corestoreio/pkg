@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mw
+package compress
 
 import (
 	"bufio"
@@ -23,7 +23,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/corestoreio/csfw/net/httputil"
+	csnet "github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 )
@@ -44,23 +45,23 @@ var defWriterPool = sync.Pool{
 	},
 }
 
-type compressWriter struct {
+type writer struct {
 	io.Writer
 	http.ResponseWriter
 }
 
-func (w compressWriter) Header() http.Header {
+func (w writer) Header() http.Header {
 	return w.ResponseWriter.Header()
 }
 
-func (w compressWriter) Write(b []byte) (int, error) {
-	if w.Header().Get(httputil.ContentType) == "" {
-		w.Header().Set(httputil.ContentType, http.DetectContentType(b))
+func (w writer) Write(b []byte) (int, error) {
+	if w.Header().Get(csnet.ContentType) == "" {
+		w.Header().Set(csnet.ContentType, http.DetectContentType(b))
 	}
 	return w.Writer.Write(b)
 }
 
-func (w compressWriter) Flush() error {
+func (w writer) Flush() error {
 	if f, ok := w.Writer.(*gzip.Writer); ok {
 		return f.Flush()
 	}
@@ -70,11 +71,11 @@ func (w compressWriter) Flush() error {
 	return nil
 }
 
-func (w compressWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w writer) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return w.ResponseWriter.(http.Hijacker).Hijack()
 }
 
-func (w *compressWriter) CloseNotify() <-chan bool {
+func (w *writer) CloseNotify() <-chan bool {
 	return w.ResponseWriter.(http.CloseNotifier).CloseNotify()
 }
 
@@ -83,7 +84,7 @@ func (w *compressWriter) CloseNotify() <-chan bool {
 // Encoding header. Flush(), Hijack() and CloseNotify() interfaces will be
 // preserved. No header set, no compression takes place. GZIP has priority
 // before deflate.
-func WithCompressor() Middleware {
+func WithCompressor() mw.Middleware {
 
 	// todo(cs): maybe the sync.Pools can be put in here because then
 	// the developer can set the deflate compression level.
@@ -91,11 +92,11 @@ func WithCompressor() Middleware {
 
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			enc := r.Header.Get(httputil.AcceptEncoding)
+			enc := r.Header.Get(csnet.AcceptEncoding)
 
-			if strings.Contains(enc, httputil.CompressGZIP) {
-				w.Header().Set(httputil.ContentEncoding, httputil.CompressGZIP)
-				w.Header().Add(httputil.Vary, httputil.AcceptEncoding)
+			if strings.Contains(enc, csnet.CompressGZIP) {
+				w.Header().Set(csnet.ContentEncoding, csnet.CompressGZIP)
+				w.Header().Add(csnet.Vary, csnet.AcceptEncoding)
 
 				zw := gzWriterPool.Get().(*gzip.Writer)
 				zw.Reset(w)
@@ -103,14 +104,14 @@ func WithCompressor() Middleware {
 					zw.Close()
 					gzWriterPool.Put(zw)
 				}()
-				cw := compressWriter{Writer: zw, ResponseWriter: w}
+				cw := writer{Writer: zw, ResponseWriter: w}
 				h.ServeHTTP(cw, r)
 				return
 			}
 
-			if strings.Contains(enc, httputil.CompressDeflate) {
-				w.Header().Set(httputil.ContentEncoding, httputil.CompressDeflate)
-				w.Header().Add(httputil.Vary, httputil.AcceptEncoding)
+			if strings.Contains(enc, csnet.CompressDeflate) {
+				w.Header().Set(csnet.ContentEncoding, csnet.CompressDeflate)
+				w.Header().Add(csnet.Vary, csnet.AcceptEncoding)
 
 				zw := defWriterPool.Get().(*flate.Writer)
 				zw.Reset(w)
@@ -118,7 +119,7 @@ func WithCompressor() Middleware {
 					zw.Close()
 					defWriterPool.Put(zw)
 				}()
-				cw := compressWriter{Writer: zw, ResponseWriter: w}
+				cw := writer{Writer: zw, ResponseWriter: w}
 				h.ServeHTTP(cw, r)
 				return
 			}

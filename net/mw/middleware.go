@@ -114,7 +114,7 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 				// not sure if an error is here really needed ...
 				if ob.log.IsDebug() {
 					ob.log.Debug(
-						"ctxhttp.SupportXHTTPMethodOverride.switch",
+						"mw.WithXHTTPMethodOverride.switch",
 						log.Err(errUnknownMethod),
 						log.String("method", mo),
 						log.String("form", r.Form.Encode()),
@@ -126,9 +126,8 @@ func WithXHTTPMethodOverride(opts ...Option) Middleware {
 	}
 }
 
-// WithCloseNotify returns a ctxhttp.Handler cancelling the context when the client
-// connection close unexpectedly.
-// Supported options are: SetLogger().
+// WithCloseNotify returns a net.Handler cancelling the context when the client
+// connection close unexpectedly. Supported options are: SetLogger().
 func WithCloseNotify(opts ...Option) Middleware {
 	ob := newOptionBox(opts...)
 	return func(h http.Handler) http.Handler {
@@ -144,7 +143,7 @@ func WithCloseNotify(opts ...Option) Middleware {
 					<-notify
 					cancel()
 					if ob.log.IsDebug() {
-						ob.log.Debug("ctxhttp.WithCloseNotify.cancel", log.Bool("cancelled", true), log.HTTPRequest("request", r))
+						ob.log.Debug("mw.WithCloseNotify.cancel", log.Bool("cancelled", true), log.HTTPRequest("request", r))
 					}
 				}()
 			}
@@ -153,10 +152,10 @@ func WithCloseNotify(opts ...Option) Middleware {
 	}
 }
 
-// WithTimeout returns a ctxhttp.Handler which adds a timeout to the context.
+// WithTimeout returns a net.Handler which adds a timeout to the context.
 //
-// Child handlers have the responsibility to obey the context deadline and to return
-// an appropriate error (or not) response in case of timeout.
+// Child handlers have the responsibility to obey the context deadline and to
+// return an appropriate error (or not) response in case of timeout.
 func WithTimeout(timeout time.Duration) Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

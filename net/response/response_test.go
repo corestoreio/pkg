@@ -21,7 +21,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/corestoreio/csfw/net/httputil"
+	csnet "github.com/corestoreio/csfw/net"
 	"github.com/corestoreio/csfw/net/response"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/spf13/afero"
@@ -49,7 +49,7 @@ func TestPrintRender(t *testing.T) {
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, `Hello, <script>alert('you have been pwned')</script>!`, w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.TextHTMLCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.TextHTMLCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintRenderErrors(t *testing.T) {
@@ -77,7 +77,7 @@ func TestPrintHTML(t *testing.T) {
 	assert.NoError(t, p.HTML(3141, "Hello %s. Wanna have some %.5f?", "Gophers", math.Pi))
 	assert.Exactly(t, `Hello Gophers. Wanna have some 3.14159?`, w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.TextHTMLCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.TextHTMLCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintHTMLError(t *testing.T) {
@@ -90,7 +90,7 @@ func TestPrintHTMLError(t *testing.T) {
 	assert.True(t, errors.IsWriteFailed(err), "Error: %s", err)
 	assert.Exactly(t, ``, w.Body.String())
 	assert.Exactly(t, 31415, w.Code)
-	assert.Equal(t, httputil.TextHTMLCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.TextHTMLCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintString(t *testing.T) {
@@ -101,7 +101,7 @@ func TestPrintString(t *testing.T) {
 	assert.NoError(t, p.String(3141, "Hello %s. Wanna have some %.5f?", "Gophers", math.Pi))
 	assert.Exactly(t, `Hello Gophers. Wanna have some 3.14159?`, w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.TextPlain, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.TextPlain, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintWriteString(t *testing.T) {
@@ -112,7 +112,7 @@ func TestPrintWriteString(t *testing.T) {
 	assert.NoError(t, p.WriteString(3141, "Hello %s. Wanna have some %.5f?"))
 	assert.Exactly(t, `Hello %s. Wanna have some %.5f?`, w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.TextPlain, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.TextPlain, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintStringError(t *testing.T) {
@@ -125,7 +125,7 @@ func TestPrintStringError(t *testing.T) {
 	assert.True(t, errors.IsWriteFailed(err), "Error: %+v", err)
 	assert.Exactly(t, ``, w.Body.String())
 	assert.Exactly(t, 31415, w.Code)
-	assert.Equal(t, httputil.TextPlain, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.TextPlain, w.Header().Get(csnet.ContentType))
 }
 
 type EncData struct {
@@ -147,7 +147,7 @@ func TestPrintJSON(t *testing.T) {
 	assert.NoError(t, p.JSON(3141, encodeData))
 	assert.Exactly(t, "[{\"Title\":\"Camera\",\"SKU\":\"323423423\",\"Price\":45.12},{\"Title\":\"LCD TV\",\"SKU\":\"8785344\",\"Price\":145.99}]\n", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.ApplicationJSONCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.ApplicationJSONCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintJSONError(t *testing.T) {
@@ -159,7 +159,7 @@ func TestPrintJSONError(t *testing.T) {
 	assert.True(t, errors.IsFatal(err), "Errors: %s", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
-	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintJSONIndent(t *testing.T) {
@@ -170,7 +170,7 @@ func TestPrintJSONIndent(t *testing.T) {
 	assert.NoError(t, p.JSONIndent(3141, encodeData, "  ", "\t"))
 	assert.Exactly(t, "[\n  \t{\n  \t\t\"Title\": \"Camera\",\n  \t\t\"SKU\": \"323423423\",\n  \t\t\"Price\": 45.12\n  \t},\n  \t{\n  \t\t\"Title\": \"LCD TV\",\n  \t\t\"SKU\": \"8785344\",\n  \t\t\"Price\": 145.99\n  \t}\n  ]", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.ApplicationJSONCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.ApplicationJSONCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintJSONIndentError(t *testing.T) {
@@ -181,7 +181,7 @@ func TestPrintJSONIndentError(t *testing.T) {
 	assert.EqualError(t, p.JSONIndent(3141, nonMarshallableChannel, "  ", "\t"), "json: unsupported type: chan bool")
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
-	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintJSONP(t *testing.T) {
@@ -192,7 +192,7 @@ func TestPrintJSONP(t *testing.T) {
 	assert.NoError(t, p.JSONP(3141, "awesomeReact", encodeData))
 	assert.Exactly(t, "awesomeReact([{\"Title\":\"Camera\",\"SKU\":\"323423423\",\"Price\":45.12},{\"Title\":\"LCD TV\",\"SKU\":\"8785344\",\"Price\":145.99}]\n);", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.ApplicationJavaScriptCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.ApplicationJavaScriptCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintJSONPError(t *testing.T) {
@@ -204,7 +204,7 @@ func TestPrintJSONPError(t *testing.T) {
 	assert.True(t, errors.IsFatal(err), "Error: %+v", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
-	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintXML(t *testing.T) {
@@ -215,7 +215,7 @@ func TestPrintXML(t *testing.T) {
 	assert.NoError(t, p.XML(3141, encodeData))
 	assert.Exactly(t, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<EncData><Title>Camera</Title><SKU>323423423</SKU><Price>45.12</Price></EncData><EncData><Title>LCD TV</Title><SKU>8785344</SKU><Price>145.99</Price></EncData>", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.ApplicationXMLCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.ApplicationXMLCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintXMLError(t *testing.T) {
@@ -227,7 +227,7 @@ func TestPrintXMLError(t *testing.T) {
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
-	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintXMLIndent(t *testing.T) {
@@ -238,7 +238,7 @@ func TestPrintXMLIndent(t *testing.T) {
 	assert.NoError(t, p.XMLIndent(3141, encodeData, "\n", "\t"))
 	assert.Exactly(t, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<EncData>\n\n\t<Title>Camera</Title>\n\n\t<SKU>323423423</SKU>\n\n\t<Price>45.12</Price>\n\n</EncData>\n\n<EncData>\n\n\t<Title>LCD TV</Title>\n\n\t<SKU>8785344</SKU>\n\n\t<Price>145.99</Price>\n\n</EncData>", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
-	assert.Equal(t, httputil.ApplicationXMLCharsetUTF8, w.Header().Get(httputil.ContentType))
+	assert.Equal(t, csnet.ApplicationXMLCharsetUTF8, w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintXMLIndentError(t *testing.T) {
@@ -250,7 +250,7 @@ func TestPrintXMLIndentError(t *testing.T) {
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
-	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentType))
 }
 
 func TestPrintNoContent(t *testing.T) {
@@ -315,7 +315,7 @@ func TestPrintFileNoAttachment(t *testing.T) {
 	p.FileSystem = testMemFs
 
 	assert.NoError(t, p.File("gopher.svg", "gopher-logo.svg", false))
-	assert.Equal(t, "image/svg+xml", w.Header().Get(httputil.ContentType))
+	assert.Equal(t, "image/svg+xml", w.Header().Get(csnet.ContentType))
 
 	assert.Exactly(t, "<svg/>", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
@@ -331,8 +331,8 @@ func TestPrintFileWithAttachment(t *testing.T) {
 	p.FileSystem = testMemFs
 
 	assert.NoError(t, p.File("gopher.svg", "gopher-logo.svg", true))
-	assert.Equal(t, "image/svg+xml", w.Header().Get(httputil.ContentType))
-	assert.Equal(t, "attachment; filename=gopher-logo.svg", w.Header().Get(httputil.ContentDisposition))
+	assert.Equal(t, "image/svg+xml", w.Header().Get(csnet.ContentType))
+	assert.Equal(t, "attachment; filename=gopher-logo.svg", w.Header().Get(csnet.ContentDisposition))
 
 	assert.Exactly(t, "<svg/>", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
@@ -347,8 +347,8 @@ func TestPrintFileWithAttachmentError(t *testing.T) {
 
 	err = p.File("gopher.svg", "gopher-logo.svg", true)
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
-	assert.Equal(t, "", w.Header().Get(httputil.ContentType))
-	assert.Equal(t, "", w.Header().Get(httputil.ContentDisposition))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentType))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentDisposition))
 
 	assert.Exactly(t, "", w.Body.String())
 	assert.Exactly(t, 200, w.Code)
@@ -378,8 +378,8 @@ func TestPrintFileDirectoryIndex(t *testing.T) {
 	p.FileSystem = testMemFs
 
 	assert.NoError(t, p.File("/test", "", false))
-	assert.Equal(t, "text/html; charset=utf-8", w.Header().Get(httputil.ContentType))
-	assert.Equal(t, "", w.Header().Get(httputil.ContentDisposition))
+	assert.Equal(t, "text/html; charset=utf-8", w.Header().Get(csnet.ContentType))
+	assert.Equal(t, "", w.Header().Get(csnet.ContentDisposition))
 
 	assert.Exactly(t, "<h1>This is a huge h1 tag!</h1>", w.Body.String())
 	assert.Exactly(t, 200, w.Code)

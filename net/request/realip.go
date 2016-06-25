@@ -26,7 +26,7 @@ import (
 
 // ForwardedIPHeaders contains a list of available headers which
 // might contain the client IP address.
-var ForwardedIPHeaders = headers{"X-Forwarded", "X-Forwarded-For", "Forwarded", "Forwarded-For", "X-Real-Ip", "Client-Ip", "X-Cluster-Client-Ip"}
+var ForwardedIPHeaders = headers{csnet.XForwarded, csnet.XForwardedFor, csnet.Forwarded, csnet.ForwardedFor, csnet.XRealIP, csnet.ClientIP, csnet.XClusterClientIP}
 
 type headers [7]string
 

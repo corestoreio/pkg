@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mw
+package accesslog
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/request"
 	"github.com/rs/xstats"
 	"github.com/zenazn/goji/web/mutil"
@@ -31,9 +32,7 @@ import (
 // BlackholeXStat provides a type to disable the stats.
 type BlackholeXStat struct{}
 
-var _ xstats.XStater = (*BlackholeXStat)(nil)
-
-// AddTag implements XStats interface
+// AddTags implements XStats interface
 func (BlackholeXStat) AddTags(tags ...string) {}
 
 // Gauge implements XStats interface
@@ -49,12 +48,14 @@ func (BlackholeXStat) Histogram(stat string, value float64, tags ...string) {}
 func (BlackholeXStat) Timing(stat string, duration time.Duration, tags ...string) {}
 
 // WithAccessLog is a middleware that logs all access requests performed on the
-// sub handler and uses github.com/rs/xstats for collecting stats.
-// Supported option arguments are: SetLogger().
-// Provide none of those falls back to black hole logging. Log level must be
-// set to info.
-func WithAccessLog(x xstats.XStater, opts ...Option) Middleware {
-	ob := newOptionBox(opts...)
+// sub handler and uses github.com/rs/xstats for collecting stats. Default
+// logger uses black hole engine. Log level must be set to info. Logger must be
+// thread safe.
+func WithAccessLog(x xstats.XStater, l ...log.Logger) mw.Middleware {
+	var lg log.Logger = log.BlackHole{}
+	if len(l) == 1 {
+		lg = l[0]
+	}
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -80,8 +81,8 @@ func WithAccessLog(x xstats.XStater, opts ...Option) Middleware {
 			}
 			x.Timing("request_time", reqDur, tags...)
 			x.Histogram("request_size", float64(lw.BytesWritten()), tags...)
-			if ob.log.IsInfo() {
-				ob.log.Info("request",
+			if lg.IsInfo() {
+				lg.Info("request",
 					log.String("proto", r.Proto),
 					log.String("request_uri", r.RequestURI),
 					log.String("method", r.Method),
@@ -101,7 +102,8 @@ func WithAccessLog(x xstats.XStater, opts ...Option) Middleware {
 	}
 }
 
-// ResponseStatus checks the context for timeout, canceled, ok or error.
+// ResponseStatus checks the context for timeout, canceled, ok or error. Used in
+// WithAccessLog().
 func ResponseStatus(ctx context.Context, statusCode int) string {
 	if ctx.Err() != nil {
 		if ctx.Err() == context.DeadlineExceeded {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package httputil provides general functions for http handling
+// Package httputil provides general functions for http handling (refactor)
 //
 // TODO(cs) => github.com/streadway/handy
 package httputil

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputil
+package net
 
 // Method* defines the available methods which this library supports
 const (
@@ -78,8 +78,13 @@ const (
 	Upgrade            = "Upgrade"
 	Vary               = "Vary"
 	WWWAuthenticate    = "WWW-Authenticate"
+	XForwarded         = "X-Forwarded"
 	XForwardedFor      = "X-Forwarded-For"
 	XRealIP            = "X-Real-IP"
+	ClientIP           = "Client-Ip"
+	Forwarded          = "Forwarded"
+	ForwardedFor       = "Forwarded-For"
+	XClusterClientIP   = "X-Cluster-Client-Ip"
 )
 
 // Protocols

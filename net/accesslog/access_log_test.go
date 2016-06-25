@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mw_test
+package accesslog_test
 
 // Idea: github.com/rs/xaccess Copyright (c) 2015 Olivier Poitrey <rs@dailymotion.com> MIT License
 
@@ -25,9 +25,13 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/log/logw"
+	"github.com/corestoreio/csfw/net/accesslog"
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/rs/xstats"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ xstats.XStater = (*accesslog.BlackholeXStat)(nil)
 
 type fakeContext struct {
 	err error
@@ -50,10 +54,10 @@ func (c fakeContext) Value(key interface{}) interface{} {
 }
 
 func TestResponseStatus(t *testing.T) {
-	assert.Equal(t, "ok", mw.ResponseStatus(fakeContext{err: nil}, http.StatusOK))
-	assert.Equal(t, "canceled", mw.ResponseStatus(fakeContext{err: context.Canceled}, http.StatusOK))
-	assert.Equal(t, "timeout", mw.ResponseStatus(fakeContext{err: context.DeadlineExceeded}, http.StatusOK))
-	assert.Equal(t, "error", mw.ResponseStatus(fakeContext{err: nil}, http.StatusFound))
+	assert.Equal(t, "ok", accesslog.ResponseStatus(fakeContext{err: nil}, http.StatusOK))
+	assert.Equal(t, "canceled", accesslog.ResponseStatus(fakeContext{err: context.Canceled}, http.StatusOK))
+	assert.Equal(t, "timeout", accesslog.ResponseStatus(fakeContext{err: context.DeadlineExceeded}, http.StatusOK))
+	assert.Equal(t, "error", accesslog.ResponseStatus(fakeContext{err: nil}, http.StatusFound))
 }
 
 func TestWithAccessLog(t *testing.T) {
@@ -68,7 +72,7 @@ func TestWithAccessLog(t *testing.T) {
 			_, _ = w.Write([]byte{'1', '2', '3'})
 			time.Sleep(time.Millisecond)
 		}),
-		mw.WithAccessLog(mw.BlackholeXStat{}, mw.SetLogger(testLog)),
+		accesslog.WithAccessLog(accesslog.BlackholeXStat{}, testLog),
 	)
 
 	r, _ := http.NewRequest("GET", "/gopherine", nil)

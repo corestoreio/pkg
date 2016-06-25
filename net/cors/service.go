@@ -112,11 +112,10 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// WithCORS to be used as a middleware for ctxhttp.Handler.
-// The applied configuration
-// is used for the all store scopes or if the PkgBackend has been provided then
-// on a website specific level.
-// Middleware expects to find in a context a store.FromContextProvider().
+// WithCORS to be used as a middleware for net.Handler. The applied
+// configuration is used for the all store scopes or if the PkgBackend has been
+// provided then on a website specific level. Middleware expects to find in a
+// context a store.FromContextProvider().
 func (s *Service) WithCORS() mw.Middleware {
 
 	return func(h http.Handler) http.Handler {

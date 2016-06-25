@@ -44,7 +44,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/corestoreio/csfw/net/httputil"
+	csnet "github.com/corestoreio/csfw/net"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -100,7 +100,7 @@ func (p Print) HTML(code int, format string, a ...interface{}) error {
 }
 
 func (p Print) html(code int, data []byte) error {
-	p.Response.Header().Set(httputil.ContentType, httputil.TextHTMLCharsetUTF8)
+	p.Response.Header().Set(csnet.ContentType, csnet.TextHTMLCharsetUTF8)
 	p.Response.WriteHeader(code)
 	if data != nil {
 		if _, err := p.Response.Write(data); err != nil {
@@ -125,7 +125,7 @@ func (p Print) String(code int, format string, a ...interface{}) error {
 // WriteString converts a string into []bytes and outputs it. No formatting
 // feature available.
 func (p Print) WriteString(code int, s string) error {
-	p.Response.Header().Set(httputil.ContentType, httputil.TextPlain)
+	p.Response.Header().Set(csnet.ContentType, csnet.TextPlain)
 	p.Response.WriteHeader(code)
 	if _, err := io.WriteString(p.Response, s); err != nil {
 		return errors.NewWriteFailedf("[httputil] Print.WriteString: %s", err)
@@ -134,7 +134,7 @@ func (p Print) WriteString(code int, s string) error {
 }
 
 func (p Print) string(code int, data []byte) error {
-	p.Response.Header().Set(httputil.ContentType, httputil.TextPlain)
+	p.Response.Header().Set(csnet.ContentType, csnet.TextPlain)
 	p.Response.WriteHeader(code)
 	if _, err := p.Response.Write(data); err != nil {
 		return errors.NewWriteFailedf("[httputil] Print.string: %s", err)
@@ -164,7 +164,7 @@ func (p Print) JSONIndent(code int, i interface{}, prefix string, indent string)
 }
 
 func (p Print) json(code int, b []byte) error {
-	p.Response.Header().Set(httputil.ContentType, httputil.ApplicationJSONCharsetUTF8)
+	p.Response.Header().Set(csnet.ContentType, csnet.ApplicationJSONCharsetUTF8)
 	p.Response.WriteHeader(code)
 	if b != nil {
 		if _, err := p.Response.Write(b); err != nil {
@@ -188,7 +188,7 @@ func (p Print) JSONP(code int, callback string, i interface{}) error {
 	}
 	_, _ = buf.WriteString(");")
 
-	p.Response.Header().Set(httputil.ContentType, httputil.ApplicationJavaScriptCharsetUTF8)
+	p.Response.Header().Set(csnet.ContentType, csnet.ApplicationJavaScriptCharsetUTF8)
 	p.Response.WriteHeader(code)
 
 	if _, err := p.Response.Write(buf.Bytes()); err != nil {
@@ -219,7 +219,7 @@ func (p Print) XMLIndent(code int, i interface{}, prefix string, indent string) 
 }
 
 func (p Print) xml(code int, b []byte) (err error) {
-	p.Response.Header().Set(httputil.ContentType, httputil.ApplicationXMLCharsetUTF8)
+	p.Response.Header().Set(csnet.ContentType, csnet.ApplicationXMLCharsetUTF8)
 	p.Response.WriteHeader(code)
 	if _, err := p.Response.Write([]byte(xml.Header)); err != nil {
 		return errors.NewWriteFailedf("[httputil] Print.xml: %s", err)
@@ -238,10 +238,10 @@ func (p Print) xml(code int, b []byte) (err error) {
 func (p Print) File(path, name string, attachment bool) error {
 	dir, file := filepath.Split(path)
 	if attachment {
-		p.Response.Header().Set(httputil.ContentDisposition, "attachment; filename="+name)
+		p.Response.Header().Set(csnet.ContentDisposition, "attachment; filename="+name)
 	}
 	if err := serveFile(dir, file, p); err != nil {
-		p.Response.Header().Del(httputil.ContentDisposition)
+		p.Response.Header().Del(csnet.ContentDisposition)
 		return errors.Wrap(err, "[httputil] Print.File.serveFile")
 	}
 	return nil
