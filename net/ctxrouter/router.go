@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-// Package ctxrouter is a trie based high performance HTTP request router for pkg context.
+// Package ctxrouter is a trie based high performance HTTP request router for pkg context (TODO: remove/deprecated).
 //
 // A trivial example is:
 //
