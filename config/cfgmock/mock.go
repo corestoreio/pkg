@@ -22,12 +22,10 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/internal/cfgctx"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
-	"golang.org/x/net/context"
 )
 
 type keyNotFound struct{}
@@ -169,16 +167,6 @@ func WithPV(pv PathValue) OptionFunc {
 	return func(mr *Service) {
 		pv.set(mr.db)
 	}
-}
-
-// WithContextGetter adds a cfgmock.Service to a context.
-func WithContextGetter(ctx context.Context, opts ...OptionFunc) context.Context {
-	return context.WithValue(ctx, cfgctx.KeyGetter{}, NewService(opts...))
-}
-
-// WithContextScopedGetter adds a scoped cfgmock.Service to a context.
-func WithContextScopedGetter(websiteID, storeID int64, ctx context.Context, opts ...OptionFunc) context.Context {
-	return context.WithValue(ctx, cfgctx.KeyScopedGetter{}, NewService(opts...).NewScoped(websiteID, storeID))
 }
 
 // WithStorage sets another storage engine to the mock service. This option function
