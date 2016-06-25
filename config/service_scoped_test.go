@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
@@ -207,4 +208,36 @@ func TestScopedServicePermission(t *testing.T) {
 	have, err := sg.String(basePath.Route, ss...)
 	assert.NoError(t, err)
 	assert.Exactly(t, "c", have) // because ScopedGetter bound to store scope
+}
+
+func TestScopedService_Parent(t *testing.T) {
+	tests := []struct {
+		sg               config.ScopedGetter
+		wantCurrentScope scope.Scope
+		wantCurrentId    int64
+		wantParentScope  scope.Scope
+		wantParentID     int64
+	}{
+		{config.NewScopedService(nil, 33, 1), scope.Store, 1, scope.Website, 33},
+		{config.NewScopedService(nil, 3, 0), scope.Website, 3, scope.Default, 0},
+		{config.NewScopedService(nil, 0, 0), scope.Default, 0, scope.Default, 0},
+	}
+	for _, test := range tests {
+		haveScp, haveID := test.sg.Parent()
+		if have, want := haveScp, test.wantParentScope; have != want {
+			t.Errorf("ParentScope: Have: %v Want: %v", have, want)
+		}
+		if have, want := haveID, test.wantParentID; have != want {
+			t.Errorf("ParentScopeID: Have: %v Want: %v", have, want)
+		}
+
+		haveScp, haveID = test.sg.Scope()
+		if have, want := haveScp, test.wantCurrentScope; have != want {
+			t.Errorf("Scope: Have: %v Want: %v", have, want)
+		}
+		if have, want := haveID, test.wantCurrentId; have != want {
+			t.Errorf("ScopeID: Have: %v Want: %v", have, want)
+		}
+
+	}
 }

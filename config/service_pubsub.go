@@ -24,13 +24,13 @@ import (
 
 // MessageReceiver allows you to listen to write actions. The order of calling
 // each subscriber is totally random. If a subscriber panics, it gets securely
-// removed without crashing the whole system.
-// This interface should be implemented in other packages.
-// The Subscriber interface requires the MessageReceiver interface.
+// removed without crashing the whole system. This interface should be
+// implemented in other packages. The Subscriber interface requires the
+// MessageReceiver interface.
 type MessageReceiver interface {
 	// MessageConfig when a configuration value will be written this function
-	// gets called to allow you to listen to changes. Path is never empty.
-	// Path may contains up to three levels. For more details see the Subscriber
+	// gets called to allow you to listen to changes. Path is never empty. Path
+	// may contains up to three levels. For more details see the Subscriber
 	// interface of this package. If an error will be returned, the subscriber
 	// gets unsubscribed/removed.
 	MessageConfig(cfgpath.Path) error
@@ -40,13 +40,14 @@ type MessageReceiver interface {
 // MessageReceiver interfaces. This interface is at the moment only implemented
 // by the config.Service.
 type Subscriber interface {
-	// Subscribe subscribes a MessageReceiver to a path.
-	// Path allows you to filter to which path or part of a path you would like to listen.
-	// A path can be e.g. "system/smtp/host" to receive messages by single host changes or
-	// "system/smtp" to receive message from all smtp changes or "system" to receive changes
-	// for all paths beginning with "system". A path is equal to a topic in a PubSub system.
-	// Path cannot be empty means you cannot listen to all changes.
-	// Returns a unique identifier for the Subscriber for later removal, or an error.
+	// Subscribe subscribes a MessageReceiver to a path. Path allows you to
+	// filter to which path or part of a path you would like to listen. A path
+	// can be e.g. "system/smtp/host" to receive messages by single host changes
+	// or "system/smtp" to receive message from all smtp changes or "system" to
+	// receive changes for all paths beginning with "system". A path is equal to
+	// a topic in a PubSub system. Path cannot be empty means you cannot listen
+	// to all changes. Returns a unique identifier for the Subscriber for later
+	// removal, or an error.
 	Subscribe(cfgpath.Route, MessageReceiver) (subscriptionID int, err error)
 }
 
@@ -80,10 +81,9 @@ func (s *pubSub) Close() error {
 	return <-s.closeErr
 }
 
-// Subscribe adds a Subscriber to be called when a write event happens.
-// See interface Subscriber for a detailed description.
-// Route can be any kind of level and can contain StrScope and Scope ID.
-// Valid routes can be for example:
+// Subscribe adds a Subscriber to be called when a write event happens. See
+// interface Subscriber for a detailed description. Route can be any kind of
+// level and can contain StrScope and Scope ID. Valid routes can be for example:
 //		- StrScope/ID/currency/options/base
 //		- StrScope/ID/currency/options
 //		- StrScope/ID/currency

@@ -125,7 +125,7 @@ func ExampleScopedGetter() {
 	fmt.Println("Scope Value for Default:", val)
 
 	// Scope4 route not found
-	val, err = atStore.Config.Int(cfgpath.MustNewByParts("xx/yy/zz").Route)
+	_, err = atStore.Config.Int(cfgpath.MustNewByParts("xx/yy/zz").Route)
 	if err != nil {
 		fmt.Printf("Scope4: srvString Error: %s\n", err)
 	}

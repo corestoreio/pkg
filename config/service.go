@@ -68,12 +68,17 @@ type Service struct {
 	// Storage is the underlying data holding provider. Only access it
 	// if you know exactly what you are doing.
 	Storage storage.Storager
-	// MultiErr which ServiceOption function arguments are generating
-	// Usually empty (= nil) ;-)
+
+	// internal service to provide async pub/sub features while reading/writing
+	// config values.
 	*pubSub
 
-	// Log can be set for debugging purpose. If nil, it panics.
-	// Default log.Blackhole with disabled debug and info logging.
+	// Log can be set for debugging purpose. If nil, it panics. Default
+	// log.Blackhole with disabled debug and info logging. You should use the
+	// option function WithLogger because the logger gets also set to the
+	// internal pub/sub service. The exported Log can be used in external
+	// package to log within functional option calls. For example in
+	// config/storage/ccd.
 	Log log.Logger
 }
 

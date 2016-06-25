@@ -84,7 +84,7 @@ func ExampleService() {
 	fmt.Println("Scope3:", val)
 
 	// Scope4
-	val, err = configSrv.String(pathString.Bind(scope.Store, 3)) // different scope ID
+	_, err = configSrv.String(pathString.Bind(scope.Store, 3)) // different scope ID
 	if err != nil {
 		fmt.Printf("Scope4a: srvString Error: %s\n", err)
 		fmt.Printf("Scope4b: srvString Error: %v\n", err) // Use %+v to show the full path! :-)

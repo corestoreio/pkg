@@ -22,35 +22,45 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// ScopedGetter is equal to Getter but the underlying implementation takes
-// care of providing the correct scope: default, website or store and bubbling
-// up the scope chain from store -> website -> default if a value won't get
-// found in the desired scope.
+// ScopedGetter is equal to Getter but the underlying implementation takes care
+// of providing the correct scope: default, website or store and bubbling up the
+// scope chain from store -> website -> default if a value won't get found in
+// the desired scope. The cfgpath.Route for each primitive type represents
+// always a path like "section/group/element" without the scope string and scope
+// ID.
 //
-// To restrict bubbling up you can provide a second argument scope.Scope.
-// You can restrict a configuration path to be only used with the default,
-// website or store scope. See the examples. This second argument will mainly
-// be used by the cfgmodel package to use a defined scope in a config.Structure.
-// If you access the ScopedGetter from a store.Store, store.Website type the
-// second argument must already be internally pre-filled.
+// To restrict bubbling up you can provide a second argument scope.Scope. You
+// can restrict a configuration path to be only used with the default, website
+// or store scope. See the examples. This second argument will mainly be used by
+// the cfgmodel package to use a defined scope in a config.Structure. If you
+// access the ScopedGetter from a store.Store, store.Website type the second
+// argument must already be internally pre-filled.
 //
-// This interface is mainly used by the store package. The functions
-// should be the same as in config.Getter but only the different elucidates
-// the route and scope argument. The route represents always "a/b/c" without
-// the scope string and scope ID.
 // Returned error has mostly the behaviour of not found.
 type ScopedGetter interface {
+	// Parent tells you the parent underlying scope and its ID. Store falls back to
+	// website and website falls back to default.
+	Parent() (scope.Scope, int64)
+	// Scope tells you the current underlying scope and its ID.
 	scope.Scoper
+	// Byte traverses through the scopes store->website->default to find
+	// a matching byte slice value.
 	Byte(r cfgpath.Route, s ...scope.Scope) ([]byte, error)
+	// String see Byte()
 	String(r cfgpath.Route, s ...scope.Scope) (string, error)
+	// Bool see Byte()
 	Bool(r cfgpath.Route, s ...scope.Scope) (bool, error)
+	// Float64 see Byte()
 	Float64(r cfgpath.Route, s ...scope.Scope) (float64, error)
+	// Int see Byte()
 	Int(r cfgpath.Route, s ...scope.Scope) (int, error)
+	// Time see Byte()
 	Time(r cfgpath.Route, s ...scope.Scope) (time.Time, error)
 }
 
 // think about that segregation
 //type ScopedStringer interface {
+//  Parent() (scope.Scope, int64)
 //	scope.Scoper
 //	Bind(scope.Scope) ScopedGetter
 //	String(r cfgpath.Route, s ...scope.Scope) (string, error)
@@ -67,8 +77,12 @@ type scopedService struct {
 
 var _ ScopedGetter = (*scopedService)(nil)
 
-// NewScopedService instantiates a ScopedGetter implementation.
-// For internal use only. Exported because of the config/cfgmock package.
+// NewScopedService instantiates a ScopedGetter implementation. For internal use
+// only. Exported because of the config/cfgmock package. Getter specifies the
+// root Getter which does not know about any scope. WebsiteID and StoreID must
+// be in a relation like enforced in the database tables via foreign keys. Empty
+// storeID triggers the website scope. Empty websiteID and empty storeID are
+// triggering the default scope.
 func NewScopedService(r Getter, websiteID, storeID int64) ScopedGetter {
 	ss := scopedService{
 		root:      r,
@@ -79,16 +93,24 @@ func NewScopedService(r Getter, websiteID, storeID int64) ScopedGetter {
 	return ss
 }
 
-// Scope tells you the current underlying scope and its website or store ID
+// Parent tells you the parent underlying scope and its ID. Store falls back to
+// website and website falls back to default.
+func (ss scopedService) Parent() (scope.Scope, int64) {
+	if ss.storeID > 0 {
+		return scope.Website, ss.websiteID
+	}
+	return scope.Default, 0
+}
+
+// Scope tells you the current underlying scope and its ID.
 func (ss scopedService) Scope() (scope.Scope, int64) {
 	switch {
 	case ss.storeID > 0:
 		return scope.Store, ss.storeID
 	case ss.websiteID > 0:
 		return scope.Website, ss.websiteID
-	default:
-		return scope.Default, 0
 	}
+	return scope.Default, 0
 }
 
 func (ss scopedService) isAllowedStore(s ...scope.Scope) bool {
