@@ -38,8 +38,9 @@ const (
 )
 
 // Scoper specifies how to return the scope to which an ID belongs to. ID is one
-// of a website, group or store ID as definied in their database tables.
-// config.ScopedGetter implements Scoper.
+// of a website, group or store ID as defined in their database tables. As long
+// as we do not have returned a Default scope the ID (int64) must always be
+// greater zero.
 type Scoper interface {
 	Scope() (Scope, int64)
 }
