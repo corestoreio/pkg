@@ -15,11 +15,7 @@
 package tcredis
 
 import (
-	"net"
-	"net/url"
-	"regexp"
-	"strconv"
-
+	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
@@ -48,8 +44,6 @@ func WithClient(opt *redis.Options, ping ...bool) transcache.Option {
 	}
 }
 
-var pathDBRegexp = regexp.MustCompile(`/(\d*)\z`)
-
 // WithURL connects to a Redis server at the given URL using the Redis
 // URI scheme. URLs should follow the draft IANA specification for the
 // scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
@@ -63,44 +57,9 @@ var pathDBRegexp = regexp.MustCompile(`/(\d*)\z`)
 func WithURL(rawurl string, opt *redis.Options, ping ...bool) transcache.Option {
 	return func(p *transcache.Processor) error {
 
-		u, err := url.Parse(rawurl)
+		address, password, db, err := url.RedisParseURL(rawurl)
 		if err != nil {
-			return errors.NewFatalf("[tcredis] WithDialURL url.Parse: %s", err)
-		}
-
-		if u.Scheme != "redis" {
-			return errors.NewNotValidf("[tcredis] Invalid Redis URL scheme: %q", u.Scheme)
-		}
-
-		// As per the IANA draft spec, the host defaults to localhost and
-		// the port defaults to 6379.
-		host, port, err := net.SplitHostPort(u.Host)
-		if err != nil {
-			// assume port is missing
-			host = u.Host
-			port = "6379"
-		}
-		if host == "" {
-			host = "localhost"
-		}
-		address := net.JoinHostPort(host, port)
-
-		var password string
-		if u.User != nil {
-			password, _ = u.User.Password()
-		}
-
-		var db int64
-		match := pathDBRegexp.FindStringSubmatch(u.Path)
-		if len(match) == 2 {
-			if len(match[1]) > 0 {
-				db, err = strconv.ParseInt(match[1], 10, 64)
-				if err != nil {
-					return errors.NewNotValidf("[tcredis] Invalid database: %q in %q", u.Path[1:], match[1])
-				}
-			}
-		} else if u.Path != "" {
-			return errors.NewNotValidf("[tcredis] Invalid database: %q", u.Path[1:])
+			return errors.Wrap(err, "[tcredis] url.RedisParseURL")
 		}
 
 		myOpt := &redis.Options{

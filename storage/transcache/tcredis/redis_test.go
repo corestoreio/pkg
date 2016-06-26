@@ -176,7 +176,7 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 			"localhost",
 			errors.IsNotValid, // "invalid redis URL scheme",
 		},
-		// The error message for invalid hosts is diffferent in different
+		// The error message for invalid hosts is different in different
 		// versions of Go, so just check that there is an error message.
 		{
 			"redis://weird url",
@@ -184,7 +184,7 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 		},
 		{
 			"redis://foo:bar:baz",
-			nil,
+			errors.IsNotValid,
 		},
 		{
 			"http://www.google.com",
