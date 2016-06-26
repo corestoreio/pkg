@@ -57,7 +57,7 @@ func WithClient(opt *redis.Options, ping ...bool) transcache.Option {
 func WithURL(rawurl string, opt *redis.Options, ping ...bool) transcache.Option {
 	return func(p *transcache.Processor) error {
 
-		address, password, db, err := url.RedisParseURL(rawurl)
+		address, password, db, err := url.ParseRedis(rawurl)
 		if err != nil {
 			return errors.Wrap(err, "[tcredis] url.RedisParseURL")
 		}

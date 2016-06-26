@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-func TestRedisParseURL(t *testing.T) {
+func TestParseRedis(t *testing.T) {
 	tests := []struct {
 		raw          string
 		wantAddress  string
@@ -111,7 +111,7 @@ func TestRedisParseURL(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		haveAddress, havePW, haveDB, haveErr := url.RedisParseURL(test.raw)
+		haveAddress, havePW, haveDB, haveErr := url.ParseRedis(test.raw)
 
 		if have, want := haveAddress, test.wantAddress; have != want {
 			t.Errorf("(%d) Address: Have: %v Want: %v", i, have, want)
