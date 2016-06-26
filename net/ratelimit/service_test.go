@@ -14,32 +14,55 @@
 
 package ratelimit_test
 
-//
-//type stubLimiter struct {
-//}
-//
-//func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateLimitResult, error) {
-//	switch key {
-//	case "limit":
-//		return true, throttled.RateLimitResult{-1, -1, -1, time.Minute}, nil
-//	case "error":
-//		return false, throttled.RateLimitResult{}, errors.New("stubLimiter error")
-//	default:
-//		return false, throttled.RateLimitResult{1, 2, time.Minute, -1}, nil
-//	}
-//}
-//
-//func newStubLimiter(returnedErr error) ratelimit.RateLimiterFactory {
-//	return func(*ratelimit.PkgBackend, config.ScopedGetter) (throttled.RateLimiter, error) {
-//		return stubLimiter{}, returnedErr
-//	}
-//}
-//
-//type pathGetter struct{}
-//
-//func (pathGetter) Key(r *http.Request) string {
-//	return r.URL.Path
-//}
+import (
+	"net/http"
+	"testing"
+	"time"
+
+	"github.com/corestoreio/csfw/net/ratelimit"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/throttled/throttled.v2"
+)
+
+type stubLimiter struct {
+}
+
+func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateLimitResult, error) {
+	switch key {
+	case "limit":
+		return true, throttled.RateLimitResult{-1, -1, -1, time.Minute}, nil
+	case "error":
+		return false, throttled.RateLimitResult{}, errors.New("stubLimiter error")
+	default:
+		return false, throttled.RateLimitResult{1, 2, time.Minute, -1}, nil
+	}
+}
+
+type pathGetter struct{}
+
+func (pathGetter) Key(r *http.Request) string {
+	return r.URL.Path
+}
+
+var _ ratelimit.VaryByer = (*pathGetter)(nil)
+
+func TestMustNew_Panic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+			} else {
+				t.Fatal("Expecting an error")
+			}
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	_ = ratelimit.MustNew(ratelimit.WithGCRAStore(scope.Default, 0, nil, 'h', 2, -1))
+}
+
 //
 //type httpTestCase struct {
 //	path    string

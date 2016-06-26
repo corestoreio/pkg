@@ -16,15 +16,11 @@ package ratelimit
 
 import (
 	"net/http"
-
-	"net"
-	"net/url"
-	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
@@ -47,9 +43,10 @@ type OptionFactoryFunc func(config.ScopedGetter) []Option
 // a specific scope. This function overwrites any previous set options.
 //
 // Default values are:
-//		- Alternative Handler: variable DefaultAlternativeHandler
-//		- Logger black hole
-//		- Check allow: If allowed countries are empty, all countries are allowed
+//		- Denied Handler: http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+//		- VaryByer: returns an empty key
+// Example:
+//		s := MustNewService(WithDefaultConfig(scope.Store,1), WithVaryBy(scope.Store, 1, myVB))
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
@@ -195,7 +192,7 @@ func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duratio
 
 		rl, err := throttled.NewGCRARateLimiter(store, rq)
 		if err != nil {
-			return err
+			return errors.NewNotValidf("[ratelimit] throttled.NewGCRARateLimiter: %s", err)
 		}
 
 		return WithRateLimiter(scp, id, rl)(s)
@@ -214,8 +211,6 @@ func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration rune, req
 	}
 }
 
-var pathDBRegexp = regexp.MustCompile(`/(\d*)\z`)
-
 // WithGCRARedis creates a new Redis-based store, using the provided pool to get
 // its connections. The keys will have the specified keyPrefix, which
 // may be an empty string, and the database index specified by db will
@@ -225,50 +220,11 @@ var pathDBRegexp = regexp.MustCompile(`/(\d*)\z`)
 func WithGCRARedis(scp scope.Scope, id int64, redisRawUrl string, duration rune, requests, burst int) Option {
 	h := scope.NewHash(scp, id)
 
-	var optErr = func(err error) Option {
-		return func(*Service) error {
-			return err
-		}
-	}
-
-	u, err := url.Parse(redisRawUrl)
+	address, password, db, err := url.ParseRedis(redisRawUrl)
 	if err != nil {
-		return optErr(errors.NewFatalf("[ratelimit] redisRawUrl url.Parse: %s", err))
-	}
-
-	if u.Scheme != "redis" {
-		return optErr(errors.NewNotValidf("[ratelimit] Invalid Redis URL scheme: %q", u.Scheme))
-	}
-
-	// As per the IANA draft spec, the host defaults to localhost and
-	// the port defaults to 6379.
-	host, port, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		// assume port is missing
-		host = u.Host
-		port = "6379"
-	}
-	if host == "" {
-		host = "localhost"
-	}
-	address := net.JoinHostPort(host, port)
-
-	var password string
-	if u.User != nil {
-		password, _ = u.User.Password()
-	}
-
-	var db int64
-	match := pathDBRegexp.FindStringSubmatch(u.Path)
-	if len(match) == 2 {
-		if len(match[1]) > 0 {
-			db, err = strconv.ParseInt(match[1], 10, 64)
-			if err != nil {
-				return optErr(errors.NewNotValidf("[ratelimit] Redis: Invalid database: %q in %q", u.Path[1:], match[1]))
-			}
+		return func(s *Service) error {
+			return errors.Wrap(err, "[ratelimit] url.RedisParseURL")
 		}
-	} else if u.Path != "" {
-		return optErr(errors.NewNotValidf("[ratelimit] Redis: Invalid database: %q", u.Path[1:]))
 	}
 
 	pool := &redis.Pool{

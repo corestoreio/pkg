@@ -26,12 +26,12 @@ import (
 	"gopkg.in/throttled/throttled.v2"
 )
 
-// WithRateLimit wraps an ctxhttp.Handler to limit incoming requests.
-// Requests that are not limited will be passed to the handler
-// unchanged.  Limited requests will be passed to the DeniedHandler.
-// X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset and
-// Retry-After headers will be written to the response based on the
-// values in the RateLimitResult.
+// WithRateLimit wraps an http.Handler to limit incoming requests. Requests that
+// are not limited will be passed to the handler unchanged.  Limited requests
+// will be passed to the DeniedHandler. X-RateLimit-Limit,
+// X-RateLimit-Remaining, X-RateLimit-Reset and Retry-After headers will be
+// written to the response based on the values in the RateLimitResult. The next
+// handler may check an error with FromContextRateLimit().
 func (s *Service) WithRateLimit() mw.Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +48,12 @@ func (s *Service) WithRateLimit() mw.Middleware {
 			scpCfg := s.configByScopedGetter(requestedStore.Config)
 			if err := scpCfg.isValid(); err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithRateLimit.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
+					s.Log.Debug("Service.WithRateLimit.configByScopedGetter.Error",
+						log.Err(err),
+						log.Stringer("scope", scpCfg.scopeHash),
+						log.Marshal("requestedStore", requestedStore),
+						log.HTTPRequest("request", r),
+					)
 				}
 				err = errors.Wrap(err, "[ratelimit] ConfigByScopedGetter")
 				h.ServeHTTP(w, wrapContextError(r, err))

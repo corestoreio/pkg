@@ -24,14 +24,14 @@ import (
 )
 
 func TestContextWithError(t *testing.T) {
-	var wantErr = errors.New("Contiki Context")
+	var wantErr = errors.NewAlreadyClosedf("Contiki Context")
 	req, _ := http.NewRequest("GET", "http://localhost", nil)
 	req = wrapContextError(req, wantErr)
 	assert.NotNil(t, req)
 
 	err := FromContextRateLimit(req.Context())
-	assert.EqualError(t, err, wantErr.Error())
+	assert.True(t, errors.IsAlreadyClosed(err), "Error: %s", err)
 
 	err = FromContextRateLimit(context.TODO())
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.Nil(t, err, "Error: %s", err)
 }

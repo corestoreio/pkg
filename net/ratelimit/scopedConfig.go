@@ -50,13 +50,15 @@ type scopedConfig struct {
 	VaryByer
 }
 
+var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+})
+
 func defaultScopedConfig(h scope.Hash) scopedConfig {
 	return scopedConfig{
-		scopeHash: h,
-		deniedHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-		}),
-		VaryByer: emptyVaryBy{},
+		scopeHash:     h,
+		deniedHandler: defaultDeniedHandler,
+		VaryByer:      emptyVaryBy{},
 	}
 }
 
@@ -68,7 +70,7 @@ func (sc scopedConfig) isValid() error {
 	}
 
 	if sc.scopeHash == 0 || sc.RateLimiter == nil || sc.deniedHandler == nil || sc.VaryByer == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.deniedHandler == nil, sc.RateLimiter == nil)
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.deniedHandler == nil, sc.RateLimiter == nil, sc.VaryByer == nil)
 	}
 	return nil
 }

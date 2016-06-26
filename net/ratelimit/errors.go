@@ -17,7 +17,7 @@ package ratelimit
 import "github.com/corestoreio/csfw/util/errors"
 
 const (
-	errScopedConfigNotValid = `[geoip] ScopedConfig %s is invalid. IsNil(IsAllowedFunc=%t), IsNil(alternativeHandler=%t)`
+	errScopedConfigNotValid = `[geoip] ScopedConfig %s is invalid. IsNil(DeniedHandler=%t), IsNil(RateLimiter=%t), IsNil(VaryByer=%t)`
 )
 
 var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)
