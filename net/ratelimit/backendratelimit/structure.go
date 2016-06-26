@@ -26,6 +26,11 @@ import (
 // and default values). See the source code of this function for the overall
 // available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
+	sortIdx := 10
+	var iter = func() int {
+		sortIdx += 10
+		return sortIdx
+	}
 	return element.NewConfiguration(
 		element.Section{
 			ID: cfgpath.NewRoute("net"),
@@ -33,18 +38,28 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				element.Group{
 					ID:        cfgpath.NewRoute("ratelimit"),
 					Label:     text.Chars(`Rate throtteling`),
-					SortOrder: 40,
-					Scopes:    scope.PermWebsite,
+					SortOrder: 130,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
+						element.Field{
+							// Path: net/ratelimit/disabled
+							ID:        cfgpath.NewRoute("disabled"),
+							Label:     text.Chars(`Disabled`),
+							Comment:   text.Chars(`Set to true to disable rate limiting.`),
+							Type:      element.TypeSelect,
+							SortOrder: iter(),
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermStore,
+						},
 						element.Field{
 							// Path: net/ratelimit/burst
 							ID:        cfgpath.NewRoute("burst"),
 							Label:     text.Chars(`Burst`),
 							Comment:   text.Chars(`Defines the number of requests that will be allowed to exceed the rate in a single burst and must be greater than or equal to zero`),
 							Type:      element.TypeText,
-							SortOrder: 10,
+							SortOrder: iter(),
 							Visible:   element.VisibleYes,
-							Scopes:    scope.PermWebsite,
+							Scopes:    scope.PermStore,
 							Default:   20,
 						},
 						element.Field{
@@ -53,9 +68,9 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Label:     text.Chars(`Requests`),
 							Comment:   text.Chars(`Number of requests allowed per time period`),
 							Type:      element.TypeText,
-							SortOrder: 20,
+							SortOrder: iter(),
 							Visible:   element.VisibleYes,
-							Scopes:    scope.PermWebsite,
+							Scopes:    scope.PermStore,
 							Default:   100,
 						},
 						element.Field{
@@ -64,21 +79,40 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Label:     text.Chars(`Duration`),
 							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
 							Type:      element.TypeText,
-							SortOrder: 30,
+							SortOrder: iter(),
 							Visible:   element.VisibleYes,
-							Scopes:    scope.PermWebsite,
+							Scopes:    scope.PermStore,
 							Default:   `h`,
 						},
+					),
+				},
+				element.Group{
+					ID:        cfgpath.NewRoute("ratelimit_storage"),
+					Label:     text.Chars(`Rate throtteling storage`),
+					SortOrder: 140,
+					Scopes:    scope.PermStore,
+					Fields: element.NewFieldSlice(
+
 						element.Field{
-							// Path: net/ratelimit/duration
-							ID:        cfgpath.NewRoute("gcra_max_memory_keys"),
-							Label:     text.Chars(`Duration`),
-							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
-							Type:      element.TypeText,
-							SortOrder: 30,
+							// Path: net/ratelimit_storage/gcra_memory_enable
+							ID:        cfgpath.NewRoute("gcra_memory_enable"),
+							Label:     text.Chars(`Enable GCRA in-memory key storage`),
+							Comment:   text.Chars(`Enables the in memory storage`),
+							Type:      element.TypeSelect,
+							SortOrder: iter(),
 							Visible:   element.VisibleYes,
-							Scopes:    scope.PermWebsite,
-							Default:   `h`,
+							Scopes:    scope.PermStore,
+						},
+						element.Field{
+							// Path: net/ratelimit_storage/gcra_max_memory_keys
+							ID:        cfgpath.NewRoute("gcra_max_memory_keys"),
+							Label:     text.Chars(`GCRA max memory keys`),
+							Comment:   text.Chars(`If maxKeys > 0, the number of different keys is restricted to the specified amount. In this case, it uses an LRU algorithm to evict older keys to make room for newer ones. If maxKeys <= 0, there is no limit on the number of keys, which may use an unbounded amount of memory.`),
+							Type:      element.TypeText,
+							SortOrder: iter(),
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermStore,
+							Default:   65536,
 						},
 					),
 				},

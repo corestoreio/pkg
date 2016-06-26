@@ -17,12 +17,21 @@ package ratelimit
 import (
 	"net/http"
 
+	"net"
+	"net/url"
+	"regexp"
+	"strconv"
+	"time"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/garyburd/redigo/redis"
 	"gopkg.in/throttled/throttled.v2"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
+	"gopkg.in/throttled/throttled.v2/store/redigostore"
 )
 
 // Option can be used as an argument in NewService to configure it with
@@ -55,11 +64,31 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	}
 }
 
-// WithVaryBy sets a custom Key by http.Request producer. Convenience helper
-// function.
-func WithVaryBy(vb VaryByer) Option {
+// WithVaryBy allows to set a custom key producer. VaryByer is called for each
+// request to generate a key for the limiter. If it is nil, the middleware
+// panics. The default VaryByer returns an empty string so that all requests
+// uses the same key. VaryByer must be thread safe.
+func WithVaryBy(scp scope.Scope, id int64, vb VaryByer) Option {
+	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-		s.VaryByer = vb
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.VaryByer = vb
+			return nil
+		}
+
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.VaryByer = vb
+
+		if sc, ok := s.scopeCache[h]; ok {
+			sc.VaryByer = scNew.VaryByer
+			scNew = sc
+		}
+		scNew.scopeHash = h
+		s.scopeCache[h] = scNew
 		return nil
 	}
 }
@@ -154,22 +183,17 @@ func WithOptionFactory(f OptionFactoryFunc) Option {
 	}
 }
 
-// NewGCRAMemStore creates the default memory based GCRA rate limiter.
-// It uses the PkgBackend models to create a ratelimiter for each scope.
-func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration string, requests, burst int) Option {
+// WithGCRAStore creates a new GCRA rate limiter with a custom storage backend.
+// Duration: (s second,i minute,h hour,d day)
+func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duration rune, requests, burst int) Option {
 	return func(s *Service) error {
-
-		rlStore, err := memstore.New(maxKeys)
-		if err != nil {
-			return err
-		}
 
 		rq := throttled.RateQuota{
 			MaxRate:  CalculateRate(duration, requests),
 			MaxBurst: burst,
 		}
 
-		rl, err := throttled.NewGCRARateLimiter(rlStore, rq)
+		rl, err := throttled.NewGCRARateLimiter(store, rq)
 		if err != nil {
 			return err
 		}
@@ -178,15 +202,107 @@ func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration string, r
 	}
 }
 
-func CalculateRate(duration string, requests int) (r throttled.Rate) {
+// WithGCRAMemStore creates the default memory based GCRA rate limiter.
+// Duration: (s second,i minute,h hour,d day)
+func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration rune, requests, burst int) Option {
+	return func(s *Service) error {
+		rlStore, err := memstore.New(maxKeys)
+		if err != nil {
+			return errors.NewFatalf("[ratelimit] memstore.New MaxKeys(%d): %s", maxKeys, err)
+		}
+		return WithGCRAStore(scp, id, rlStore, duration, requests, burst)(s)
+	}
+}
+
+var pathDBRegexp = regexp.MustCompile(`/(\d*)\z`)
+
+// WithGCRARedis creates a new Redis-based store, using the provided pool to get
+// its connections. The keys will have the specified keyPrefix, which
+// may be an empty string, and the database index specified by db will
+// be selected to store the keys. Any updating operations will reset
+// the key TTL to the provided value rounded down to the nearest
+// second. Depends on Redis 2.6+ for EVAL support.
+func WithGCRARedis(scp scope.Scope, id int64, redisRawUrl string, duration rune, requests, burst int) Option {
+	h := scope.NewHash(scp, id)
+
+	var optErr = func(err error) Option {
+		return func(*Service) error {
+			return err
+		}
+	}
+
+	u, err := url.Parse(redisRawUrl)
+	if err != nil {
+		return optErr(errors.NewFatalf("[ratelimit] redisRawUrl url.Parse: %s", err))
+	}
+
+	if u.Scheme != "redis" {
+		return optErr(errors.NewNotValidf("[ratelimit] Invalid Redis URL scheme: %q", u.Scheme))
+	}
+
+	// As per the IANA draft spec, the host defaults to localhost and
+	// the port defaults to 6379.
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		// assume port is missing
+		host = u.Host
+		port = "6379"
+	}
+	if host == "" {
+		host = "localhost"
+	}
+	address := net.JoinHostPort(host, port)
+
+	var password string
+	if u.User != nil {
+		password, _ = u.User.Password()
+	}
+
+	var db int64
+	match := pathDBRegexp.FindStringSubmatch(u.Path)
+	if len(match) == 2 {
+		if len(match[1]) > 0 {
+			db, err = strconv.ParseInt(match[1], 10, 64)
+			if err != nil {
+				return optErr(errors.NewNotValidf("[ratelimit] Redis: Invalid database: %q in %q", u.Path[1:], match[1]))
+			}
+		}
+	} else if u.Path != "" {
+		return optErr(errors.NewNotValidf("[ratelimit] Redis: Invalid database: %q", u.Path[1:]))
+	}
+
+	pool := &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 30 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", address, redis.DialPassword(password))
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
+
+	return func(s *Service) error {
+		rs, err := redigostore.New(pool, "ratelimit_"+h.String(), int(db))
+		if err != nil {
+			return errors.NewFatalf("[ratelimit] redigostore.New: %s", err)
+		}
+		return WithGCRAStore(scp, id, rs, duration, requests, burst)(s)
+	}
+}
+
+// CalculateRate calculates the rate depending on the duration (s second,i minute,h hour,d day) and the
+// maximum requests. Invalid duration falls back to an hourly calculation.
+func CalculateRate(duration rune, requests int) (r throttled.Rate) {
 	switch duration {
-	case "s": // second
+	case 's': // second
 		r = throttled.PerSec(requests)
-	case "i": // minute
+	case 'i': // minute
 		r = throttled.PerMin(requests)
-	case "h": // hour
+	case 'h': // hour
 		r = throttled.PerHour(requests)
-	case "d": // day
+	case 'd': // day
 		r = throttled.PerDay(requests)
 	default:
 		r = throttled.PerHour(requests)

@@ -25,6 +25,11 @@ import (
 type Backend struct {
 	cfgmodel.PkgBackend
 
+	// RateLimitDisabled set to true to disable the rate limiting.
+	//
+	// Path: net/ratelimit/disabled
+	RateLimitDisabled cfgmodel.Bool
+
 	// RateLimitBurst defines the number of requests that
 	// will be allowed to exceed the rate in a single burst and must be
 	// greater than or equal to zero.
@@ -41,6 +46,21 @@ type Backend struct {
 	//
 	// Path: net/ratelimit/duration
 	RateLimitDuration ConfigRate
+
+	// RateLimitStorageEnableGcraMemory set to true to enable in-memory rate
+	// limit key storage.
+	//
+	// Path: net/ratelimit_storage/gcra_memory_enable
+	RateLimitStorageGcraMemoryEnable cfgmodel.Bool
+
+	// RateLimitStorageGcraMaxMemoryKeys If maxKeys > 0, the number of different
+	// keys is restricted to the specified amount. In this case, it uses an LRU
+	// algorithm to evict older keys to make room for newer ones. If maxKeys <=
+	// 0, there is no limit on the number of keys, which may use an unbounded
+	// amount of memory.
+	//
+	// Path: net/ratelimit_storage/enable_gcra_memory
+	RateLimitStorageGcraMaxMemoryKeys cfgmodel.Int
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route

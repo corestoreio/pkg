@@ -50,5 +50,9 @@ func (md ConfigRate) Get(sg config.ScopedGetter, requests int) (throttled.Rate, 
 	if err != nil {
 		return throttled.Rate{}, errors.Wrap(err, "[ratelimit] ConfigDuration.Str.Get")
 	}
-	return ratelimit.CalculateRate(val, requests), nil
+	if len(val) != 1 {
+		return throttled.Rate{}, errors.NewNotValidf("[ratelimit] ConfigDuration.Str.Get: Val can only be one character long: %q", val)
+	}
+
+	return ratelimit.CalculateRate(rune(val[0]), requests), nil
 }

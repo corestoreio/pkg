@@ -33,7 +33,6 @@ import (
 // Retry-After headers will be written to the response based on the
 // values in the RateLimitResult.
 func (s *Service) WithRateLimit() mw.Middleware {
-
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -56,7 +55,12 @@ func (s *Service) WithRateLimit() mw.Middleware {
 				return
 			}
 
-			isLimited, rlResult, err := scpCfg.RateLimit(s.Key(r), 1)
+			if scpCfg.disabled {
+				h.ServeHTTP(w, r)
+				return
+			}
+
+			isLimited, rlResult, err := scpCfg.requestRateLimit(r)
 			if s.Log.IsDebug() {
 				s.Log.Debug("Service.WithRateLimit.configByScopedGetter.RateLimit",
 					log.Err(err),

@@ -33,14 +33,21 @@ type scopedConfig struct {
 	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
 
-	// enable or disable a rate limit for a scope
-	enable bool
+	// disabled set to true to disable rate limiting
+	disabled bool
 	// deniedHandler can be customized instead of showing a HTTP status 429
 	// error page once the HTTPRateLimit has been reached.
 	// It will be called if the request gets over the limit.
 	deniedHandler http.Handler
-	// RateLimiter on a per scope basis
+
+	// RateLimiter default not set
 	throttled.RateLimiter
+
+	// VaryByer is called for each request to generate a key for the limiter. If
+	// it is nil, the middleware panics. The default VaryByer returns an empty
+	// string so that all requests uses the same key. VaryByer must be thread
+	// safe.
+	VaryByer
 }
 
 func defaultScopedConfig(h scope.Hash) scopedConfig {
@@ -49,6 +56,7 @@ func defaultScopedConfig(h scope.Hash) scopedConfig {
 		deniedHandler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 		}),
+		VaryByer: emptyVaryBy{},
 	}
 }
 
@@ -59,8 +67,12 @@ func (sc scopedConfig) isValid() error {
 		return errors.Wrap(sc.lastErr, "[geoip] scopedConfig.isValid as an lastErr")
 	}
 
-	if sc.scopeHash == 0 || sc.RateLimiter == nil || sc.deniedHandler == nil {
+	if sc.scopeHash == 0 || sc.RateLimiter == nil || sc.deniedHandler == nil || sc.VaryByer == nil {
 		return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.deniedHandler == nil, sc.RateLimiter == nil)
 	}
 	return nil
+}
+
+func (sc scopedConfig) requestRateLimit(r *http.Request) (bool, throttled.RateLimitResult, error) {
+	return sc.RateLimiter.RateLimit(sc.VaryByer.Key(r), 1)
 }

@@ -29,12 +29,6 @@ type Service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
-	// VaryByer is called for each request to generate a key for the limiter. If
-	// it is nil, the middleware panics. The default VaryByer returns an empty
-	// string so that all requests uses the same key. VaryByer must be thread
-	// safe.
-	VaryByer
-
 	// optionFactoryFunc optional configuration closure, can be nil. It pulls
 	// out the configuration settings during a request and caches the settings
 	// in the internal map. ScopedOption requires a config.ScopedGetter. This
@@ -70,7 +64,6 @@ type Service struct {
 func New(opts ...Option) (*Service, error) {
 	s := &Service{
 		Log:        log.BlackHole{},
-		VaryByer:   emptyVaryBy{},
 		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
