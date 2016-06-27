@@ -20,6 +20,7 @@ import (
 )
 
 // TODO: https://github.com/thejerf/gomempool
+// TODO: https://github.com/valyala/bytebufferpool/blob/master/pool.go => self calibrating buffer pool
 
 var bufferPool = New(64) // estimated *cough* average size
 
