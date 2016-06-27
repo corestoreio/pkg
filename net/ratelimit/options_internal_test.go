@@ -15,17 +15,16 @@
 package ratelimit
 
 import (
-	"testing"
-
 	"fmt"
-
 	"net/http"
+	"testing"
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/throttled/throttled.v2"
+	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
 
 type stubLimiter struct{}
@@ -137,4 +136,101 @@ func TestWithDeniedHandler(t *testing.T) {
 		err := s.getConfigByScopeID(w2, false).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
+}
+
+func TestWithGCRAStore(t *testing.T) {
+	w2 := scope.NewHash(scope.Website, 2)
+
+	memStore, err := memstore.New(40)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("CalcError", func(t *testing.T) {
+		s, err := New(WithGCRAStore(scope.Website, 2, nil, 's', 33, -1))
+		assert.Nil(t, s)
+		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	})
+
+	t.Run("Ok", func(t *testing.T) {
+		s := MustNew(
+			WithDefaultConfig(scope.Website, 2),
+			WithGCRAStore(scope.Website, 2, memStore, 's', 100, 10),
+			WithGCRAStore(scope.Default, 0, memStore, 'h', 100, 10),
+		)
+		assert.NotNil(t, s.scopeCache[w2].RateLimiter)
+		assert.NotNil(t, s.defaultScopeCache.RateLimiter)
+	})
+
+	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
+		s := MustNew(
+			WithGCRAStore(scope.Website, 2, memStore, 's', 100, 10),
+			WithDefaultConfig(scope.Website, 2),
+		)
+		assert.Nil(t, s.scopeCache[w2].RateLimiter)
+		err := s.getConfigByScopeID(w2, false).isValid()
+		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	})
+
+}
+
+func TestWithGCRAMemStore(t *testing.T) {
+	s4 := scope.NewHash(scope.Store, 4)
+
+	t.Run("CalcErrorRate", func(t *testing.T) {
+		s, err := New(WithGCRAMemStore(scope.Store, 4, 3333, 's', 100, -1))
+		assert.Nil(t, s)
+		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	})
+
+	t.Run("Ok", func(t *testing.T) {
+		s := MustNew(
+			WithDefaultConfig(scope.Store, 4),
+			WithGCRAMemStore(scope.Store, 4, 3333, 's', 100, 10),
+			WithGCRAMemStore(scope.Default, -1, 2222, 's', 100, 20),
+		)
+		assert.NotNil(t, s.scopeCache[s4].RateLimiter, "Scope Website")
+		assert.NotNil(t, s.defaultScopeCache.RateLimiter, "Scope Default")
+	})
+
+	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
+		s := MustNew(
+			WithGCRAMemStore(scope.Store, 4, 1111, 's', 100, 10),
+			WithDefaultConfig(scope.Store, 4),
+		)
+		assert.Nil(t, s.scopeCache[s4].RateLimiter)
+		err := s.getConfigByScopeID(s4, false).isValid()
+		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	})
+}
+
+func TestWithGCRARedis(t *testing.T) {
+	s4 := scope.NewHash(scope.Store, 4)
+
+	t.Run("CalcErrorRedis", func(t *testing.T) {
+		s, err := New(WithGCRARedis(scope.Store, 4, "redis://localhost/", 's', 100, 10))
+		assert.Nil(t, s)
+		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	})
+
+	t.Run("Ok", func(t *testing.T) {
+		s := MustNew(
+			WithDefaultConfig(scope.Store, 4),
+			WithGCRARedis(scope.Store, 4, "redis://localhost/1", 's', 100, 10),
+			WithGCRARedis(scope.Default, 0, "redis://localhost/2", 's', 100, 10),
+		)
+		assert.NotNil(t, s.scopeCache[s4].RateLimiter, "Scope Website")
+		assert.NotNil(t, s.defaultScopeCache.RateLimiter, "Scope Default")
+	})
+
+	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
+		s := MustNew(
+			WithGCRARedis(scope.Store, 4, "redis://localhost/1", 's', 100, 10),
+			WithDefaultConfig(scope.Store, 4),
+		)
+		assert.Nil(t, s.scopeCache[s4].RateLimiter)
+		err := s.getConfigByScopeID(s4, false).isValid()
+		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	})
+
 }

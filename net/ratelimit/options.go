@@ -194,7 +194,6 @@ func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duratio
 		if err != nil {
 			return errors.NewNotValidf("[ratelimit] throttled.NewGCRARateLimiter: %s", err)
 		}
-
 		return WithRateLimiter(scp, id, rl)(s)
 	}
 }
