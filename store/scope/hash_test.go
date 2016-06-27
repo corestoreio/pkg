@@ -35,6 +35,34 @@ func BenchmarkHashString(b *testing.B) {
 	}
 }
 
+func TestNewHash(t *testing.T) {
+	tests := []struct {
+		scp     scope.Scope
+		id      int64
+		wantScp scope.Scope
+		wantID  int64
+	}{
+		{scope.Default, 0, scope.Default, 0},
+		{scope.Default, -1, scope.Default, 0},
+		{scope.Default, 1, scope.Default, 0},
+		{scope.Store, 1, scope.Store, 1},
+		{scope.Group, 4, scope.Group, 4},
+		{scope.Group, -4, scope.Absent, 0},
+		{scope.Website, scope.MaxStoreID, scope.Website, scope.MaxStoreID},
+		{scope.Website, -scope.MaxStoreID, scope.Absent, 0},
+		{scope.Website, scope.MaxStoreID + 1, scope.Absent, 0},
+	}
+	for i, test := range tests {
+		haveScp, haveID := scope.NewHash(test.scp, test.id).Unpack()
+		if have, want := haveScp, test.wantScp; have != want {
+			t.Errorf("(IDX %d) Scope Have: %v Want: %v", i, have, want)
+		}
+		if have, want := haveID, test.wantID; have != want {
+			t.Errorf("(IDX %d) ID Have: %v Want: %v", i, have, want)
+		}
+	}
+}
+
 func TestHashString(t *testing.T) {
 	s := scope.NewHash(scope.Store, 33).String()
 	assert.Exactly(t, "Scope(Store) ID(33)", s)

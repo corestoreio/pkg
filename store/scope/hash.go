@@ -97,7 +97,7 @@ func (h Hash) Segment() uint8 {
 // error occurs when id is greater than MaxStoreID or smaller 0. An errors
 // occurs when the Scope is Default and id anything else than 0.
 func NewHash(s Scope, id int64) Hash {
-	if id > MaxStoreID || id < 0 {
+	if id > MaxStoreID || (s > Default && id < 0) {
 		return 0
 	}
 	if s < Website {
