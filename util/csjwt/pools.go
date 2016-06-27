@@ -14,36 +14,6 @@
 
 package csjwt
 
-import (
-	"crypto"
-	"crypto/hmac"
-	"hash"
-	"sync"
-
-	"github.com/corestoreio/csfw/util/bufferpool"
-)
+import "github.com/corestoreio/csfw/util/bufferpool"
 
 var bufPool = bufferpool.New(8192) // estimated *cough* average size of JWT 8kb
-
-type hmacTank struct {
-	p *sync.Pool
-}
-
-func (t hmacTank) get() hash.Hash {
-	return t.p.Get().(hash.Hash)
-}
-
-func (t hmacTank) put(h hash.Hash) {
-	h.Reset()
-	t.p.Put(h)
-}
-
-func newHMACTank(ch crypto.Hash, key []byte) hmacTank {
-	return hmacTank{
-		p: &sync.Pool{
-			New: func() interface{} {
-				return hmac.New(ch.New, key)
-			},
-		},
-	}
-}

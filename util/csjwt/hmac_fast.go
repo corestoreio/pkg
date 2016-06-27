@@ -17,8 +17,10 @@ package csjwt
 import (
 	"crypto"
 	"crypto/hmac"
+	"hash"
 
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/hashpool"
 )
 
 // SigningMethodHMACFast implements the HMAC-SHA family of pre-warmed signing
@@ -26,7 +28,7 @@ import (
 // underlying mutex can become the bottleneck.
 type SigningMethodHMACFast struct {
 	Name string
-	ht   hmacTank
+	ht   hashpool.Tank
 }
 
 func newHMACFast(a string, h crypto.Hash, key Key) (Signer, error) {
@@ -42,7 +44,9 @@ func newHMACFast(a string, h crypto.Hash, key Key) (Signer, error) {
 	}
 	return &SigningMethodHMACFast{
 		Name: a,
-		ht:   newHMACTank(h, key.hmacPassword),
+		ht: hashpool.New(func() hash.Hash {
+			return hmac.New(h.New, key.hmacPassword)
+		}),
 	}, nil
 }
 
@@ -81,8 +85,8 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 	// This signing method is symmetric, so we validate the signature by
 	// reproducing the signature from the signing string and key, then comparing
 	// that against the provided signature.
-	hasher := m.ht.get()
-	defer m.ht.put(hasher)
+	hasher := m.ht.Get()
+	defer m.ht.Put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
 		return errors.NewWriteFailed(err, "[csjwt] SigningMethodHMACFast.Verify.hasher.Write")
@@ -100,8 +104,8 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 // Error behaviour: WriteFailed
 func (m *SigningMethodHMACFast) Sign(signingString []byte, _ Key) ([]byte, error) {
 
-	hasher := m.ht.get()
-	defer m.ht.put(hasher)
+	hasher := m.ht.Get()
+	defer m.ht.Put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
 		return nil, errors.NewWriteFailed(err, "[csjwt] SigningMethodHMACFast.Sign.hasher.Write")
