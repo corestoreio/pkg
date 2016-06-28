@@ -43,22 +43,23 @@ const (
 
 // Media types
 const (
+	ApplicationForm                  = "application/x-www-form-urlencoded"
+	ApplicationGob                   = "application/gob"
 	ApplicationJSON                  = "application/json"
 	ApplicationJSONCharsetUTF8       = ApplicationJSON + "; " + CharsetUTF8
 	ApplicationJavaScript            = "application/javascript"
 	ApplicationJavaScriptCharsetUTF8 = ApplicationJavaScript + "; " + CharsetUTF8
+	ApplicationMsgpack               = "application/msgpack"
+	ApplicationProtobuf              = "application/protobuf"
 	ApplicationXML                   = "application/xml"
 	ApplicationXMLCharsetUTF8        = ApplicationXML + "; " + CharsetUTF8
-	ApplicationForm                  = "application/x-www-form-urlencoded"
-	ApplicationProtobuf              = "application/protobuf"
-	ApplicationMsgpack               = "application/msgpack"
+	CompressDeflate                  = "deflate"
+	CompressGZIP                     = "gzip"
+	MultipartForm                    = "multipart/form-data"
 	TextHTML                         = "text/html"
 	TextHTMLCharsetUTF8              = TextHTML + "; " + CharsetUTF8
 	TextPlain                        = "text/plain"
 	TextPlainCharsetUTF8             = TextPlain + "; " + CharsetUTF8
-	MultipartForm                    = "multipart/form-data"
-	CompressGZIP                     = "gzip"
-	CompressDeflate                  = "deflate"
 )
 
 // Charset
@@ -70,26 +71,23 @@ const (
 const (
 	AcceptEncoding     = "Accept-Encoding"
 	Authorization      = "Authorization"
+	ClientIP           = "Client-Ip"
 	ContentDisposition = "Content-Disposition"
 	ContentEncoding    = "Content-Encoding"
 	ContentLength      = "Content-Length"
+	ContentSignature   = "Content-Signature"
 	ContentType        = "Content-Type"
-
-	// Content-Signature: keyId="rsa-key-1",algorithm="rsa-sha256",signature="Base64(RSA-SHA256(signing string))"
-	// Content-Signature: keyId="hmac-key-1",algorithm="hmac-sha1",signature="Base64(HMAC-SHA1(signing string))"
-	ContentSignature = "Content-Signature"
-
-	Location         = "Location"
-	Upgrade          = "Upgrade"
-	Vary             = "Vary"
-	WWWAuthenticate  = "WWW-Authenticate"
-	XForwarded       = "X-Forwarded"
-	XForwardedFor    = "X-Forwarded-For"
-	XRealIP          = "X-Real-Ip"
-	ClientIP         = "Client-Ip"
-	Forwarded        = "Forwarded"
-	ForwardedFor     = "Forwarded-For"
-	XClusterClientIP = "X-Cluster-Client-Ip"
+	Forwarded          = "Forwarded"
+	ForwardedFor       = "Forwarded-For"
+	Location           = "Location"
+	Trailer            = "Trailer"
+	Upgrade            = "Upgrade"
+	Vary               = "Vary"
+	WWWAuthenticate    = "WWW-Authenticate"
+	XClusterClientIP   = "X-Cluster-Client-Ip"
+	XForwarded         = "X-Forwarded"
+	XForwardedFor      = "X-Forwarded-For"
+	XRealIP            = "X-Real-Ip"
 )
 
 // Protocols
