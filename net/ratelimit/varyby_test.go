@@ -15,11 +15,12 @@
 package ratelimit_test
 
 import (
-	"github.com/corestoreio/csfw/net"
-	"github.com/corestoreio/csfw/net/ratelimit"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/net/ratelimit"
 )
 
 func TestVaryBy_Key(t *testing.T) {
