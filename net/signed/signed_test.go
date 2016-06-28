@@ -29,17 +29,13 @@ import (
 
 var data = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
 
-const dataSHA256 = "cc7b14f207d3896a74ba4e4e965d49e6098af2191058edb9e9247caf0db8cd7b"
+const dataSHA256 = `keyId="test",algorithm="rot13",signature="cc7b14f207d3896a74ba4e4e965d49e6098af2191058edb9e9247caf0db8cd7b"`
 
 func TestWithSignature(t *testing.T) {
 
 	hpu := cstesting.NewHTTPParallelUsers(10, 5, 200, time.Millisecond)
 	hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
-
 		if have, want := rec.Header().Get(net.ContentSignature), dataSHA256; have != want {
-			t.Errorf("Signature mismatch Have: %v Want: %v", have, want)
-		}
-		if have, want := rec.Header().Get(net.ContentSignature), "sHa256"; have != want {
 			t.Errorf("Signature mismatch Have: %v Want: %v", have, want)
 		}
 	}

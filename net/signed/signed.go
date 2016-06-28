@@ -19,6 +19,7 @@ import (
 	"hash"
 	"net/http"
 
+	"github.com/corestoreio/csfw/net"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/hashpool"
@@ -41,22 +42,28 @@ func WithSignature(h func() hash.Hash) mw.Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			buf := bp.Get()
-			hsh := hp.Get()
+			alg := hp.Get()
 
 			lw := mutil.WrapWriter(w)
-			lw.Tee(hsh)
+			lw.Tee(alg)
 
+			// use an option to set as header and write into buffer
+			// or set as trailer.
+			lw.Header().Set(net.Trailer, net.ContentSignature)
 			h.ServeHTTP(lw, r)
 
-			tmp := hsh.Sum(buf.Bytes())
+			tmp := alg.Sum(buf.Bytes())
 			buf.Reset()
 			_, _ = buf.Write(tmp)
 
-			// does not work write into buffer and then hash it.
-			// it will work with http.Trailer.Header
-			WriteHTTPContentSignature(w, hex.EncodeToString, "", "", buf.Bytes())
+			sig := Signature{
+				KeyID:     "test",
+				Algorithm: "rot13",
+				Signature: buf.Bytes(),
+			}
+			sig.Write(w, hex.EncodeToString)
 
-			hp.Put(hsh)
+			hp.Put(alg)
 			bp.Put(buf)
 		})
 	}

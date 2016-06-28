@@ -16,4 +16,5 @@
 // to the header.
 //
 // https://tools.ietf.org/html/draft-cavage-http-signatures-00
+// https://tools.ietf.org/html/draft-burke-content-signature-00
 package signed
