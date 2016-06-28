@@ -49,4 +49,7 @@
 // been removed and a default scope has been introduced.
 //
 // More explanation @todo
+// Read more:
+// http://magento-quickies.alanstorm.com/post/146610004255/taming-magento-2s-scope
+// https://cyrillschumacher.com/2015/04/20/magento2-stores-and-scopes/
 package store
