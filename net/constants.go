@@ -74,17 +74,22 @@ const (
 	ContentEncoding    = "Content-Encoding"
 	ContentLength      = "Content-Length"
 	ContentType        = "Content-Type"
-	Location           = "Location"
-	Upgrade            = "Upgrade"
-	Vary               = "Vary"
-	WWWAuthenticate    = "WWW-Authenticate"
-	XForwarded         = "X-Forwarded"
-	XForwardedFor      = "X-Forwarded-For"
-	XRealIP            = "X-Real-IP"
-	ClientIP           = "Client-Ip"
-	Forwarded          = "Forwarded"
-	ForwardedFor       = "Forwarded-For"
-	XClusterClientIP   = "X-Cluster-Client-Ip"
+
+	// Content-Signature: keyId="rsa-key-1",algorithm="rsa-sha256",signature="Base64(RSA-SHA256(signing string))"
+	// Content-Signature: keyId="hmac-key-1",algorithm="hmac-sha1",signature="Base64(HMAC-SHA1(signing string))"
+	ContentSignature = "Content-Signature"
+
+	Location         = "Location"
+	Upgrade          = "Upgrade"
+	Vary             = "Vary"
+	WWWAuthenticate  = "WWW-Authenticate"
+	XForwarded       = "X-Forwarded"
+	XForwardedFor    = "X-Forwarded-For"
+	XRealIP          = "X-Real-Ip"
+	ClientIP         = "Client-Ip"
+	Forwarded        = "Forwarded"
+	ForwardedFor     = "Forwarded-For"
+	XClusterClientIP = "X-Cluster-Client-Ip"
 )
 
 // Protocols
