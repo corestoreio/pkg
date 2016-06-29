@@ -16,15 +16,21 @@ package ratelimit_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ratelimit"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/throttled/throttled.v2"
 )
+
+const errMessage = `stubLimiter TEST error`
 
 type stubLimiter struct {
 }
@@ -34,7 +40,7 @@ func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateL
 	case "limit":
 		return true, throttled.RateLimitResult{-1, -1, -1, time.Minute}, nil
 	case "error":
-		return false, throttled.RateLimitResult{}, errors.New("stubLimiter error")
+		return false, throttled.RateLimitResult{}, errors.NewFatalf(errMessage)
 	default:
 		return false, throttled.RateLimitResult{1, 2, time.Minute, -1}, nil
 	}
@@ -63,48 +69,50 @@ func TestMustNew_Panic(t *testing.T) {
 	_ = ratelimit.MustNew(ratelimit.WithGCRAStore(scope.Default, 0, nil, 'h', 2, -1))
 }
 
-//
-//type httpTestCase struct {
-//	path    string
-//	code    int
-//	headers map[string]string
-//}
-//
-//var finalHandler200 = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
-//	w.WriteHeader(200)
-//	return nil
-//})
-//
-//func TestHTTPRateLimit_WithoutConfig(t *testing.T) {
-//	t.Parallel()
-//	// this test case runs without the backend configuration because
-//	// we're using WithScopedRateLimiter() to set a rate limiter for a specific
-//	// website (ID 1). In real life you must create a rate limiter for each website
-//	// or we can implement a configurable pass-through option which bypasses the RL. that
-//	// means if a rate limiter cannot be found the next HTTP handler gets called.
-//
-//	limiter, err := ratelimit.NewService(
-//		ratelimit.WithVaryBy(pathGetter{}),
-//		ratelimit.WithScopedRateLimiter(scope.Website, 1, stubLimiter{}), // 1 = NewEurozzyService() website euro
-//	)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	ctx := store.WithContextProvider(
-//		context.Background(),
-//		storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro")),
-//	)
-//
-//	handler := limiter.WithRateLimit()(finalHandler200)
-//
-//	runHTTPTestCases(t, ctx, handler, []httpTestCase{
-//		{"ok", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "2", "X-Ratelimit-Reset": "60"}},
-//		{"error", 500, map[string]string{}},
-//		{"limit", 429, map[string]string{"Retry-After": "60"}},
-//	})
-//}
-//
+type httpTestCase struct {
+	path    string
+	code    int
+	headers map[string]string
+}
+
+var finalHandler = func(t *testing.T) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := ratelimit.FromContextRateLimit(r.Context()); err != nil {
+			if !errors.IsFatal(err) {
+				t.Errorf("Have: %+v Want: A fatal error behaviour", err)
+			}
+			w.WriteHeader(500)
+		} else {
+			w.WriteHeader(200)
+		}
+	})
+}
+
+func TestService_WithRateLimit_ScopeStore1(t *testing.T) {
+
+	// this test case runs without the backend configuration because
+	// we're using WithScopedRateLimiter() to set a rate limiter for a specific
+	// website (ID 1). In real life you must create a rate limiter for each website
+	// or we can implement a configurable pass-through option which bypasses the RL. that
+	// means if a rate limiter cannot be found the next HTTP handler gets called.
+
+	limiter, err := ratelimit.New(
+		ratelimit.WithVaryBy(scope.Store, 1, pathGetter{}),
+		ratelimit.WithRateLimiter(scope.Store, 1, stubLimiter{}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler := limiter.WithRateLimit()(finalHandler(t))
+
+	runHTTPTestCases(t, handler, []httpTestCase{
+		{"ok", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "2", "X-Ratelimit-Reset": "60"}},
+		{"error", 500, map[string]string{}},
+		{"limit", 429, map[string]string{"Retry-After": "60"}},
+	})
+}
+
 //func TestHTTPRateLimit_CustomHandlers(t *testing.T) {
 //	t.Parallel()
 //	limiter, err := ratelimit.NewService(
@@ -186,29 +194,34 @@ func TestMustNew_Panic(t *testing.T) {
 //	err = limiter.WithRateLimit()(finalHandler200).ServeHTTPContext(ctx, nil, req)
 //	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
 //}
-//
-//func runHTTPTestCases(t *testing.T, ctx context.Context, h ctxhttp.Handler, cs []httpTestCase) {
-//	for i, c := range cs {
-//		req, err := http.NewRequest("GET", c.path, nil)
-//		if err != nil {
-//			t.Fatal(err)
-//		}
-//
-//		rr := httptest.NewRecorder()
-//		if err := h.ServeHTTPContext(ctx, rr, req); err != nil {
-//			http.Error(rr, err.Error(), http.StatusInternalServerError)
-//		}
-//
-//		if have, want := rr.Code, c.code; have != want {
-//			t.Errorf("Expected request %d at %s to return %d but got %d",
-//				i, c.path, want, have)
-//		}
-//
-//		for name, want := range c.headers {
-//			if have := rr.HeaderMap.Get(name); have != want {
-//				t.Errorf("Expected request %d at %s to have header '%s: %s' but got '%s'",
-//					i, c.path, name, want, have)
-//			}
-//		}
-//	}
-//}
+
+func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
+	for i, c := range cs {
+
+		storeSrv := storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro"))
+
+		req, _ := http.NewRequest("GET", c.path, nil)
+		req.Header.Set("X-Forwarded-For", "2a02:d200::")
+		st, err := storeSrv.Store(scope.MockID(1)) // German Store
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+		st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
+		req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, req)
+
+		if have, want := rr.Code, c.code; have != want {
+			t.Errorf("Expected request %d at %s to return %d but got %d",
+				i, c.path, want, have)
+		}
+
+		for name, want := range c.headers {
+			if have := rr.HeaderMap.Get(name); have != want {
+				t.Errorf("Expected request %d at %s to have header '%s: %s' but got '%s'",
+					i, c.path, name, want, have)
+			}
+		}
+	}
+}

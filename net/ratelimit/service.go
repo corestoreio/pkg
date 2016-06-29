@@ -142,7 +142,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
 		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
 			return scopedConfig{
-				lastErr: errors.Wrap(err, "[geoip] Options by scpOptionFnc"),
+				lastErr: errors.Wrap(err, "[ratelimit] Options by scpOptionFnc"),
 			}, nil
 		}
 		if s.Log.IsDebug() {
@@ -153,14 +153,14 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 
 	res, ok := <-scpCfgChan
 	if !ok {
-		return scopedConfig{lastErr: errors.NewFatalf("[geoip] optionInflight.DoChan returned a closed/unreadable channel")}
+		return scopedConfig{lastErr: errors.NewFatalf("[ratelimit] optionInflight.DoChan returned a closed/unreadable channel")}
 	}
 	if res.Err != nil {
-		return scopedConfig{lastErr: errors.Wrap(res.Err, "[geoip] optionInflight.DoChan.Error")}
+		return scopedConfig{lastErr: errors.Wrap(res.Err, "[ratelimit] optionInflight.DoChan.Error")}
 	}
 	sCfg, ok = res.Val.(scopedConfig)
 	if !ok {
-		sCfg.lastErr = errors.NewFatalf("[geoip] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
+		sCfg.lastErr = errors.NewFatalf("[ratelimit] optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
 	}
 	return sCfg
 }
@@ -186,7 +186,7 @@ func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedCon
 	}
 	if !ok && !useDefault {
 		return scopedConfig{
-			lastErr: errors.Wrap(errConfigNotFound, "[geoip] Service.getConfigByScopeID.NotFound"),
+			lastErr: errors.Wrap(errConfigNotFound, "[ratelimit] Service.getConfigByScopeID.NotFound"),
 		}
 	}
 	if scpCfg.useDefault {

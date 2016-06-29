@@ -17,12 +17,12 @@ package backendratelimit
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/net/geoip"
+	"github.com/corestoreio/csfw/net/ratelimit"
 )
 
-// Default creates new geoip.Option slice with the default configuration
+// Default creates new ratelimit.Option slice with the default configuration
 // structure. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) geoip.OptionFactoryFunc {
+func Default(opts ...cfgmodel.Option) ratelimit.OptionFactoryFunc {
 	cfgStruct, err := NewConfigStructure()
 	if err != nil {
 		panic(err)
@@ -33,26 +33,26 @@ func Default(opts ...cfgmodel.Option) geoip.OptionFactoryFunc {
 // PrepareOptions creates a closure around the type Backend. The closure will be
 // used during a scoped request to figure out the configuration depending on the
 // incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Backend) geoip.OptionFactoryFunc {
+func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
 
-	return func(sg config.ScopedGetter) []geoip.Option {
-		var opts [6]geoip.Option
+	return func(sg config.ScopedGetter) []ratelimit.Option {
+		var opts [6]ratelimit.Option
 		//var i int
 		//scp, id := sg.Scope()
 		//
-		//acc, err := be.NetGeoipAllowedCountries.Get(sg)
+		//acc, err := be.NetRateLimitAllowedCountries.Get(sg)
 		//if err != nil {
-		//	return optError(errors.Wrap(err, "[backendgeoip] NetGeoipAllowedCountries.Get"))
+		//	return optError(errors.Wrap(err, "[backendratelimit] NetRateLimitAllowedCountries.Get"))
 		//}
-		//opts[i] = geoip.WithAllowedCountryCodes(scp, id, acc...)
+		//opts[i] = ratelimit.WithAllowedCountryCodes(scp, id, acc...)
 		//i++
 
 		return opts[:]
 	}
 }
 
-func optError(err error) []geoip.Option {
-	return []geoip.Option{func(s *geoip.Service) error {
+func optError(err error) []ratelimit.Option {
+	return []ratelimit.Option{func(s *ratelimit.Service) error {
 		return err
 	}}
 }

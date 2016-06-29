@@ -163,14 +163,14 @@ func WithLogger(l log.Logger) Option {
 // overwritten by the new values retrieved from the configuration service.
 //
 // Example:
-//	cfgStruct, err := backendgeoip.NewConfigStructure()
+//	cfgStruct, err := backendratelimit.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := backendgeoip.New(cfgStruct)
+//	pb := backendratelimit.New(cfgStruct)
 //
-//	geoSrv := geoip.MustNewService(
-//		geoip.WithOptionFactory(backendgeoip.PrepareOptions(pb)),
+//	geoSrv := ratelimit.MustNewService(
+//		ratelimit.WithOptionFactory(backendratelimit.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
