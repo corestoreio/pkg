@@ -145,6 +145,32 @@ func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
 	}
 }
 
+// WithDisable allows to disable a rate limit or enable it if set to false.
+func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.disabled = isDisabled
+			return nil
+		}
+
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.disabled = isDisabled
+
+		if sc, ok := s.scopeCache[h]; ok {
+			sc.disabled = scNew.disabled
+			scNew = sc
+		}
+		scNew.scopeHash = h
+		s.scopeCache[h] = scNew
+		return nil
+	}
+}
+
 // WithLogger applies a logger to the default scope which gets inherited to
 // subsequent scopes. Mainly used for debugging. Convenience helper function.
 func WithLogger(l log.Logger) Option {
@@ -216,6 +242,16 @@ func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration rune, req
 // be selected to store the keys. Any updating operations will reset
 // the key TTL to the provided value rounded down to the nearest
 // second. Depends on Redis 2.6+ for EVAL support.
+//
+// URLs should follow the draft IANA specification for the
+// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
+//
+//
+// For example:
+// 		redis://localhost:6379/3
+// 		redis://:6380/0 => connects to localhost:6380
+// 		redis:// => connects to localhost:6379 with DB 0
+// 		redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0
 func WithGCRARedis(scp scope.Scope, id int64, redisRawUrl string, duration rune, requests, burst int) Option {
 	h := scope.NewHash(scp, id)
 

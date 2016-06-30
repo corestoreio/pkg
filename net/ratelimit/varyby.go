@@ -23,9 +23,8 @@ import (
 )
 
 // VaryByer is called for each request to generate a key for the limiter. If it
-// returns an empty string, all requests use an empty string key ;-). VaryByer
-// must be thread safe. The rate limiter checks whether a particular key has
-// exceeded a rate limit.
+// returns an empty string, all requests use an empty string key ;-). The rate
+// limiter checks whether a particular key has exceeded a rate limit.
 type VaryByer interface {
 	Key(*http.Request) string
 }
