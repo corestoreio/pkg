@@ -18,6 +18,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ratelimit"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Default creates new ratelimit.Option slice with the default configuration
@@ -37,15 +38,46 @@ func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
 
 	return func(sg config.ScopedGetter) []ratelimit.Option {
 		var opts [6]ratelimit.Option
-		//var i int
-		//scp, id := sg.Scope()
-		//
-		//acc, err := be.NetRateLimitAllowedCountries.Get(sg)
-		//if err != nil {
-		//	return optError(errors.Wrap(err, "[backendratelimit] NetRateLimitAllowedCountries.Get"))
-		//}
-		//opts[i] = ratelimit.WithAllowedCountryCodes(scp, id, acc...)
-		//i++
+		var i int
+		scp, id := sg.Scope()
+
+		disabled, err := be.RateLimitDisabled.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitDisabled.Get"))
+		}
+		opts[i] = ratelimit.WithDisable(scp, id, disabled)
+		i++
+
+		burst, err := be.RateLimitBurst.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitBurst.Get"))
+		}
+		req, err := be.RateLimitRequests.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitRequests.Get"))
+		}
+		dur, err := be.RateLimitDuration.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitDuration.Get"))
+		}
+
+		useInMemMaxKeys, err := be.RateLimitStorageGcraMaxMemoryKeys.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraMaxMemoryKeys.Get"))
+		}
+		redisURL, err := be.RateLimitStorageGcraRedis.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraRedis.Get"))
+		}
+
+		if useInMemMaxKeys > 0 && redisURL == "" {
+			opts[i] = ratelimit.WithGCRAMemStore(scp, id, useInMemMaxKeys, dur, req, burst)
+			i++
+		}
+		if useInMemMaxKeys == 0 && redisURL != "" {
+			opts[i] = ratelimit.WithGCRARedis(scp, id, redisURL, dur, req, burst)
+			i++
+		}
 
 		return opts[:]
 	}
@@ -53,6 +85,6 @@ func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
 
 func optError(err error) []ratelimit.Option {
 	return []ratelimit.Option{func(s *ratelimit.Service) error {
-		return err
+		return err // no need to mask here, not interesting.
 	}}
 }

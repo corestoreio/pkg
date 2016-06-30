@@ -92,27 +92,26 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					SortOrder: 140,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-
-						element.Field{
-							// Path: net/ratelimit_storage/gcra_memory_enable
-							ID:        cfgpath.NewRoute("gcra_memory_enable"),
-							Label:     text.Chars(`Enable GCRA in-memory key storage`),
-							Comment:   text.Chars(`Enables the in memory storage`),
-							Type:      element.TypeSelect,
-							SortOrder: iter(),
-							Visible:   element.VisibleYes,
-							Scopes:    scope.PermStore,
-						},
 						element.Field{
 							// Path: net/ratelimit_storage/gcra_max_memory_keys
 							ID:        cfgpath.NewRoute("gcra_max_memory_keys"),
-							Label:     text.Chars(`GCRA max memory keys`),
-							Comment:   text.Chars(`If maxKeys > 0, the number of different keys is restricted to the specified amount. In this case, it uses an LRU algorithm to evict older keys to make room for newer ones. If maxKeys <= 0, there is no limit on the number of keys, which may use an unbounded amount of memory.`),
+							Label:     text.Chars(`Use GCRA in-memory (max keys)`),
+							Comment:   text.Chars(`If maxKeys > 0 in-memory key storage will be enabled. The max keys  number of different keys is restricted to the specified amount (65536). In this case, it uses an LRU algorithm to evict older keys to make room for newer ones.`),
 							Type:      element.TypeText,
 							SortOrder: iter(),
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermStore,
-							Default:   65536,
+							Default:   0,
+						},
+						element.Field{
+							// Path: net/ratelimit_storage/gcra_redis
+							ID:        cfgpath.NewRoute("gcra_redis"),
+							Label:     text.Chars(`Use GCRA Redis`),
+							Comment:   text.Chars(`If a Redis URL is provided a Redis server will be used for key storage. Setting both entries (in-memory and Redis) then only Redis will be applied. URLs should follow the draft IANA specification for the scheme (https://www.iana.org/assignments/uri-schemes/prov/redis). For example: redis://localhost:6379/3 |  redis://:6380/0 => connects to localhost:6380 | redis:// => connects to localhost:6379 with DB 0 | redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0`),
+							Type:      element.TypeText,
+							SortOrder: iter(),
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},

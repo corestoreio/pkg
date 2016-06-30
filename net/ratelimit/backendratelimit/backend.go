@@ -47,20 +47,26 @@ type Backend struct {
 	// Path: net/ratelimit/duration
 	RateLimitDuration ConfigRate
 
-	// RateLimitStorageEnableGcraMemory set to true to enable in-memory rate
-	// limit key storage.
-	//
-	// Path: net/ratelimit_storage/gcra_memory_enable
-	RateLimitStorageGcraMemoryEnable cfgmodel.Bool
-
-	// RateLimitStorageGcraMaxMemoryKeys If maxKeys > 0, the number of different
+	// RateLimitStorageGcraMaxMemoryKeys If maxKeys > 0 (enabled), the number of different
 	// keys is restricted to the specified amount. In this case, it uses an LRU
-	// algorithm to evict older keys to make room for newer ones. If maxKeys <=
-	// 0, there is no limit on the number of keys, which may use an unbounded
-	// amount of memory.
+	// algorithm to evict older keys to make room for newer ones.
 	//
 	// Path: net/ratelimit_storage/enable_gcra_memory
 	RateLimitStorageGcraMaxMemoryKeys cfgmodel.Int
+
+	// RateLimitStorageGcraRedis a valid Redis URL enables Redis as GCRA key storage.
+	// URLs should follow the draft IANA specification for the
+	// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
+	//
+	//
+	// For example:
+	// 		redis://localhost:6379/3
+	// 		redis://:6380/0 => connects to localhost:6380
+	// 		redis:// => connects to localhost:6379 with DB 0
+	// 		redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0
+	//
+	// Path: net/ratelimit_storage/gcra_redis
+	RateLimitStorageGcraRedis cfgmodel.Str
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
