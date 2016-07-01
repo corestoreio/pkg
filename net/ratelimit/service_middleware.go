@@ -72,7 +72,7 @@ func (s *Service) WithRateLimit() mw.Middleware {
 					log.Bool("is_limited", isLimited),
 					log.Object("rate_limit_result", rlResult),
 					log.Stringer("scope", scpCfg.scopeHash),
-					log.Marshal("requestedStore", requestedStore),
+					log.Marshal("requested_store", requestedStore),
 					log.HTTPRequest("request", r),
 				)
 			}

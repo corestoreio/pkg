@@ -50,12 +50,13 @@ type OptionFactoryFunc func(config.ScopedGetter) []Option
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache = defaultScopedConfig(h)
 			return nil
 		}
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 		s.scopeCache[h] = defaultScopedConfig(h)
 		return nil
 	}
@@ -68,13 +69,13 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 func WithVaryBy(scp scope.Scope, id int64, vb VaryByer) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.VaryByer = vb
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -95,13 +96,13 @@ func WithVaryBy(scp scope.Scope, id int64, vb VaryByer) Option {
 func WithRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.RateLimiter = rl
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -123,13 +124,13 @@ func WithRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option
 func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.deniedHandler = next
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -149,13 +150,13 @@ func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
 func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.disabled = isDisabled
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache

@@ -24,7 +24,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// HTTPRateLimit faciliates using a Limiter to limit HTTP requests.
+// Service creates a middleware that facilitates using a Limiter to limit HTTP
+// requests.
 type Service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
@@ -42,12 +43,12 @@ type Service struct {
 	// gets set via WithOptionFactory()
 	optionInflight *singleflight.Group
 
+	// rwmu protects all fields below
+	rwmu sync.RWMutex
+
 	// defaultScopeCache has been extracted from the scopeCache to allow faster
 	// access to the standard configuration without accessing a map.
 	defaultScopeCache scopedConfig
-
-	// rwmu protects all fields below
-	rwmu sync.RWMutex
 
 	// scopeCache internal cache of the configurations. scoped.Hash relates to
 	// the default,website or store ID.
@@ -115,20 +116,21 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		}
 		return s.defaultScopeCache
 	}
+	p := scope.NewHash(scpGet.Parent())
 
-	sCfg := s.getConfigByScopeID(h, false) // 1. map lookup, but only one lookup during many requests, 99%
+	sCfg := s.getConfigByScopeID(h, p) // 1. map lookup, but only one lookup during many requests, 99%
 
 	switch {
 	case sCfg.isValid() == nil:
 		// cached entry found which can contain the configured scoped configuration or
 		// the default scope configuration.
 		if s.Log.IsDebug() {
-			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h))
+			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h), log.Stringer("parentScope", p))
 		}
 		return sCfg
 	case s.optionFactoryFunc == nil:
 		if s.Log.IsDebug() {
-			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h))
+			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h), log.Stringer("parentScope", p))
 		}
 		// When everything has been pre-configured for each scope via functional
 		// options then we might have the case where a scope in a request comes
@@ -136,7 +138,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		// therefore a fallback to default scope must be provided. This fall
 		// back will only be executed once and each scope knows from now on that
 		// it has the configuration of the default scope.
-		return s.getConfigByScopeID(h, true)
+		return s.getConfigByScopeID(h, scope.DefaultHash)
 	}
 
 	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
@@ -146,9 +148,9 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			}, nil
 		}
 		if s.Log.IsDebug() {
-			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Err(sCfg.isValid()))
+			s.Log.Debug("ratelimit.Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Stringer("parentScope", p), log.Err(sCfg.isValid()))
 		}
-		return s.getConfigByScopeID(h, true), nil
+		return s.getConfigByScopeID(h, p), nil
 	})
 
 	res, ok := <-scpCfgChan
@@ -165,32 +167,83 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	return sCfg
 }
 
-func (s *Service) getConfigByScopeID(hash scope.Hash, useDefault bool) scopedConfig {
-
+func (s *Service) getScpCfg(hash scope.Hash, parent scope.Hash) scopedConfig {
 	s.rwmu.RLock()
 	scpCfg, ok := s.scopeCache[hash]
 	s.rwmu.RUnlock()
-	if !ok && useDefault {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
-		// all other fields are empty or nil!
-		scpCfg.scopeHash = hash
-		scpCfg.useDefault = true
-		// in very high concurrency this might get executed multiple times but it doesn't
-		// matter that much until the entry into the map has been written.
+	if !ok && parent.EqualScope(scope.DefaultHash) {
+		println("176 DEFAULT CURRENT:", hash.String(), " PARENT:", parent.String(), " VALID:", scpCfg.isValid().Error())
+
+		s.rwmu.Lock()
+		scpCfg.fallBackScopeHash = scope.DefaultHash
 		s.scopeCache[hash] = scpCfg
-		if s.Log.IsDebug() {
-			s.Log.Debug("ratelimit.Service.getConfigByScopeID.fallbackToDefault", log.Stringer("scope", hash))
-		}
-	}
-	if !ok && !useDefault {
-		return scopedConfig{
-			lastErr: errors.Wrap(errConfigNotFound, "[ratelimit] Service.getConfigByScopeID.NotFound"),
-		}
-	}
-	if scpCfg.useDefault {
+		s.rwmu.Unlock()
 		return s.defaultScopeCache
 	}
+	if ok && scpCfg.isValid() == nil {
+		return scpCfg
+	}
+	if ok && scpCfg.fallBackScopeHash.EqualScope(scope.DefaultHash) {
+		println("188 DEFAULT CURRENT:", hash.String(), " PARENT:", parent.String(), " VALID:", scpCfg.isValid(), "scpCfg.scope", scpCfg.scopeHash.String())
+		return s.defaultScopeCache
+	}
+
+	return scpCfg
+}
+
+func (s *Service) getConfigByScopeID(hash scope.Hash, parent scope.Hash) scopedConfig {
+
+	scpCfg := s.getScpCfg(hash, parent)
+
+	if scpCfg.fallBackScopeHash.EqualScope(scope.DefaultHash) {
+		if s.Log.IsDebug() {
+			s.Log.Debug("ratelimit.Service.getConfigByScopeID.Hash.FallBackDefault",
+				log.Stringer("scope", hash),
+				log.Stringer("scope_fallback", scpCfg.fallBackScopeHash),
+				log.Stringer("scope_parent", parent),
+			)
+		}
+		return scpCfg
+	}
+
+	// check website scope
+	if scpCfg.fallBackScopeHash == 0 && parent.Scope() == scope.Website {
+		scpCfg = s.getScpCfg(parent, 0)
+
+		if err := scpCfg.isValid(); err == nil {
+			// we found an entry for a website config
+			s.rwmu.Lock()
+			dummy := scopedConfig{
+				scopeHash:         hash,
+				fallBackScopeHash: parent,
+			}
+			s.scopeCache[hash] = dummy
+			s.rwmu.Unlock()
+			if s.Log.IsDebug() {
+				s.Log.Debug("ratelimit.Service.getConfigByScopeID.Parent.Valid",
+					log.Stringer("scope", hash),
+					log.Stringer("scope_parent", parent),
+				)
+			}
+		} else if s.Log.IsDebug() {
+			s.Log.Debug("ratelimit.Service.getConfigByScopeID.Parent.Invalid",
+				log.Stringer("scope", hash),
+				log.Stringer("scope_parent", parent),
+				log.Err(err),
+			)
+		}
+		// return website config
+	}
+
+	if s.Log.IsDebug() {
+		s.Log.Debug("ratelimit.Service.getConfigByScopeID.Return",
+			log.Stringer("scope", hash),
+			log.Stringer("scope_fallback", scpCfg.fallBackScopeHash),
+			log.Stringer("scope_parent", parent),
+			log.ErrWithKey("scpCfg_is_valid", scpCfg.isValid()),
+		)
+	}
+
 	return scpCfg
 }

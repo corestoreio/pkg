@@ -24,14 +24,15 @@ import (
 
 // scopedConfig private internal scoped based configuration
 type scopedConfig struct {
-	// useDefault if true uses the default configuration and all other fields are
-	// empty.
-	useDefault bool
 	// lastErr used during selecting the config from the scopeCache map and gets
 	// filled if an entry cannot be found.
 	lastErr error
 	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
+	// fallBackScopeHash defines the parent scope when the configuration.
+	fallBackScopeHash scope.Hash
+
+	// start of package specific config values
 
 	// disabled set to true to disable rate limiting
 	disabled bool
@@ -40,13 +41,13 @@ type scopedConfig struct {
 	// It will be called if the request gets over the limit.
 	deniedHandler http.Handler
 
-	// RateLimiter default not set
+	// RateLimiter default not set. It gets set either through the developer
+	// calling WithRateLimiter() or via OptionFactoryFunc.
 	throttled.RateLimiter
 
 	// VaryByer is called for each request to generate a key for the limiter. If
 	// it is nil, the middleware panics. The default VaryByer returns an empty
-	// string so that all requests uses the same key. VaryByer must be thread
-	// safe.
+	// string so that all requests uses the same key.
 	VaryByer
 }
 
@@ -56,19 +57,19 @@ var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.
 
 func defaultScopedConfig(h scope.Hash) scopedConfig {
 	return scopedConfig{
-		scopeHash:     h,
-		deniedHandler: defaultDeniedHandler,
-		VaryByer:      emptyVaryBy{},
+		scopeHash:         h,
+		fallBackScopeHash: scope.DefaultHash,
+		deniedHandler:     defaultDeniedHandler,
+		VaryByer:          emptyVaryBy{},
 	}
 }
 
-// IsValid a configuration for a scope is only then valid when the Key has been
-// supplied, a non-nil signing method and a non-nil Verifier.
+// IsValid a configuration for a scope is only then valid when several fields
+// are not empty.
 func (sc scopedConfig) isValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[ratelimit] scopedConfig.isValid has an lastErr")
 	}
-
 	if sc.scopeHash == 0 || sc.RateLimiter == nil || sc.deniedHandler == nil || sc.VaryByer == nil {
 		return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.deniedHandler == nil, sc.RateLimiter == nil, sc.VaryByer == nil)
 	}

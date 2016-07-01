@@ -106,7 +106,7 @@ func TestWithRateLimiter(t *testing.T) {
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
-		err := s.getConfigByScopeID(w2, false).isValid()
+		err := s.getConfigByScopeID(w2, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -133,7 +133,7 @@ func TestWithDeniedHandler(t *testing.T) {
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
 		cstesting.EqualPointers(t, defaultDeniedHandler, s.scopeCache[w2].deniedHandler)
-		err := s.getConfigByScopeID(w2, false).isValid()
+		err := s.getConfigByScopeID(w2, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -168,7 +168,7 @@ func TestWithGCRAStore(t *testing.T) {
 			WithDefaultConfig(scope.Website, 2),
 		)
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
-		err := s.getConfigByScopeID(w2, false).isValid()
+		err := s.getConfigByScopeID(w2, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
@@ -199,7 +199,7 @@ func TestWithGCRAMemStore(t *testing.T) {
 			WithDefaultConfig(scope.Store, 4),
 		)
 		assert.Nil(t, s.scopeCache[s4].RateLimiter)
-		err := s.getConfigByScopeID(s4, false).isValid()
+		err := s.getConfigByScopeID(s4, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -229,7 +229,7 @@ func TestWithGCRARedis(t *testing.T) {
 			WithDefaultConfig(scope.Store, 4),
 		)
 		assert.Nil(t, s.scopeCache[s4].RateLimiter)
-		err := s.getConfigByScopeID(s4, false).isValid()
+		err := s.getConfigByScopeID(s4, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
