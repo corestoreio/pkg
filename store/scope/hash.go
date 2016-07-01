@@ -76,6 +76,41 @@ func (h Hash) Unpack() (s Scope, id int64) {
 	return
 }
 
+// EqualScope compares the scope of two hashes and returns true if their scope
+// matches. This functions checks overflows, would then return false. Two hashes
+// with an Absent scope are never equal.
+func (h Hash) EqualScope(other Hash) bool {
+	hScope := h >> 24
+	if hScope > maxUint8 || hScope <= 0 {
+		return false
+	}
+	oScope := other >> 24
+	if oScope > maxUint8 || oScope <= 0 {
+		return false
+	}
+	return hScope == oScope
+}
+
+// Scope returns the underlying assigned scope.
+func (h Hash) Scope() Scope {
+	hScope := h >> 24
+	if hScope > maxUint8 || hScope < 0 {
+		return Absent
+	}
+	return Scope(hScope)
+}
+
+// ID returns the underlying assigned ID. If the ID overflows the MaxStoreID or
+// is smaller than zero then it returns -1.
+func (h Hash) ID() int64 {
+	h64 := int64(h)
+	prospectID := h64 ^ (h64>>24)<<24
+	if prospectID > MaxStoreID || prospectID < 0 {
+		return -1
+	}
+	return prospectID
+}
+
 // HashMaxSegments maximum supported segments or also known as shards. This
 // constant can be used to create the segmented array in other packages.
 const HashMaxSegments uint16 = 256

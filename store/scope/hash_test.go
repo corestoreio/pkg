@@ -158,6 +158,65 @@ func TestHashValid(t *testing.T) {
 	//t.Logf("[Info] Collision Map length: %d", len(collisionCheck))
 }
 
+func TestHash_EqualScope(t *testing.T) {
+	tests := []struct {
+		h1        scope.Hash
+		h2        scope.Hash
+		wantEqual bool
+	}{
+		{0, 0, false},
+		{0, scope.DefaultHash, false},
+		{scope.DefaultHash, 0, false},
+		{scope.DefaultHash, scope.DefaultHash, true},
+		{scope.NewHash(scope.Absent, 1), scope.NewHash(scope.Absent, 1), false},
+		{scope.NewHash(scope.Store, scope.MaxStoreID), scope.NewHash(scope.Store, scope.MaxStoreID), true},
+		{scope.NewHash(scope.Store, scope.MaxStoreID), scope.NewHash(scope.Store, scope.MaxStoreID+1), false},
+		{scope.NewHash(scope.Store, scope.MaxStoreID+1), scope.NewHash(scope.Store, scope.MaxStoreID), false},
+		{scope.NewHash(scope.Website, -1), scope.NewHash(scope.Website, 1), false},
+	}
+	for i, test := range tests {
+		if have, want := test.h1.EqualScope(test.h2), test.wantEqual; have != want {
+			t.Errorf("IDX %d Have: %v Want: %v", i, have, want)
+		}
+	}
+}
+
+func TestHash_Scope(t *testing.T) {
+	tests := []struct {
+		h scope.Hash
+		s scope.Scope
+	}{
+		{0, 0},
+		{scope.DefaultHash, scope.Default},
+		{scope.NewHash(scope.Store, 1), scope.Store},
+		{scope.NewHash(254, 1), 254},
+	}
+	for i, test := range tests {
+		if have, want := test.h.Scope(), test.s; have != want {
+			t.Errorf("IDX %d Have: %v Want: %v", i, have, want)
+		}
+	}
+}
+
+func TestHash_ID(t *testing.T) {
+	tests := []struct {
+		h  scope.Hash
+		id int64
+	}{
+		{0, 0},
+		{scope.DefaultHash, 0},
+		{scope.NewHash(scope.Website, 33), 33},
+		{scope.NewHash(scope.Website, scope.MaxStoreID), scope.MaxStoreID},
+		{scope.NewHash(scope.Website, scope.MaxStoreID+1), 0},
+		{scope.Hash(scope.Store)<<24 | scope.Hash(scope.MaxStoreID+1), -1},
+	}
+	for i, test := range tests {
+		if have, want := test.h.ID(), test.id; have != want {
+			t.Errorf("IDX %d Have: %v Want: %v", i, have, want)
+		}
+	}
+}
+
 var benchmarkHash scope.Hash
 var benchmarkHashUnpackHash = scope.Hash(67112005)
 var benchmarkHashUnpackScope scope.Scope
