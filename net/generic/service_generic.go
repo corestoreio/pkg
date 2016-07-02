@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ratelimit
+package generic
 
 import (
 	"sync"
@@ -27,8 +27,8 @@ import (
 // auto generated: do not edit. See net/gen eric package
 
 const (
-	prefixError = `[ratelimit] `
-	prefixLog   = `ratelimit.`
+	prefixError = `[generic] `
+	prefixLog   = `generic.`
 )
 
 type service struct {
@@ -105,7 +105,7 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// flushCache ratelimit cache flusher
+// flushCache generic cache flusher
 func (s *Service) flushCache() error {
 	s.scopeCache = make(map[scope.Hash]*scopedConfig)
 	return nil

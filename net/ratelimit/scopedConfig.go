@@ -24,11 +24,7 @@ import (
 
 // scopedConfig private internal scoped based configuration
 type scopedConfig struct {
-	// lastErr used during selecting the config from the scopeCache map and gets
-	// filled if an entry cannot be found.
-	lastErr error
-	// scopeHash defines the scope to which this configuration is bound to.
-	scopeHash scope.Hash
+	scopedConfigGeneric
 
 	// start of package specific config values
 
@@ -55,21 +51,12 @@ var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.
 
 func defaultScopedConfig(h scope.Hash) *scopedConfig {
 	return &scopedConfig{
-		scopeHash:     h,
+		scopedConfigGeneric: scopedConfigGeneric{
+			scopeHash: h,
+		},
 		deniedHandler: defaultDeniedHandler,
 		VaryByer:      emptyVaryBy{},
 	}
-}
-
-func newScopedConfigError(err error) *scopedConfig {
-	return &scopedConfig{lastErr: err}
-}
-
-func (sc *scopedConfig) printScope() string {
-	if sc == nil {
-		return "<nil>"
-	}
-	return sc.scopeHash.String()
 }
 
 // isValid a configuration for a scope is only then valid when several fields

@@ -12,28 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go run ../generic/main_copy.go "$GOPACKAGE"
+package generic
 
-package ratelimit
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/store/scope"
+)
 
-// Service creates a middleware that facilitates using a Limiter to limit HTTP
-// requests.
 type Service struct {
 	service
 }
 
-// New creates a new rate limit middleware.
-//
-// Default DeniedHandler returns http.StatusTooManyRequests.
-//
-// Default RateLimiterFactory is the NewGCRAMemStore(). If *PkgBackend has
-// been provided the values from the configration will be taken otherwise
-// GCRAMemStore() uses the Default* variables.
 func New(opts ...Option) (*Service, error) {
 	return newService(opts...)
 }
 
-// FlushCache clears the internal cache
-func (s *Service) FlushCache() error {
-	return s.flushCache()
+type scopedConfig struct {
+	scopedConfigGeneric
+}
+
+func (sc *scopedConfig) isValid() error {
+	return nil
+}
+
+type Option func(*Service) error
+
+type OptionFactoryFunc func(config.ScopedGetter) []Option
+
+func WithDefaultConfig(scp scope.Scope, id int64) Option {
+	return func(s *Service) error {
+		return nil
+	}
 }
