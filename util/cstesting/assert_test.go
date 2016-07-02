@@ -16,9 +16,10 @@ package cstesting_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type mockErrorf struct {
