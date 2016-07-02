@@ -25,13 +25,7 @@ import (
 
 // scopedConfig private internal scoped based configuration
 type scopedConfig struct {
-	// useDefault if true uses the default configuration and all other fields are
-	// empty.
-	useDefault bool
-	// lastErr used during selecting the config from the scopeCache map.
-	lastErr error
-	// scopeHash defines the scope to which this configuration is bound to.
-	scopeHash scope.Hash
+	scopedConfigGeneric
 
 	// allowedOrigins normalized list of plain allowed origins
 	allowedOrigins []string
@@ -73,29 +67,31 @@ type scopedConfig struct {
 // isValid a configuration for a scope is only then valid when
 // - scopeHash set
 // - min 1x allowedMethods set
-func (sc scopedConfig) isValid() error {
+func (sc *scopedConfig) isValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
 	}
-	if sc.scopeHash > 0 && len(sc.allowedMethods) > 0 {
+	if sc.scopeHash > 0 && len(sc.allowedMethods) > 0 && sc.log != nil {
 		return nil
 	}
 	return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash)
 }
 
-func defaultScopedConfig() (scopedConfig, error) {
-	return scopedConfig{
-		scopeHash: scope.DefaultHash,
+func defaultScopedConfig() *scopedConfig {
+	return &scopedConfig{
+		scopedConfigGeneric: scopedConfigGeneric{
+			scopeHash: scope.DefaultHash,
+		},
 		// Default is spec's "simple" methods
 		allowedMethods: []string{"GET", "POST"},
 		// Use sensible defaults
 		allowedHeaders: []string{"Origin", "Accept", "Content-Type"},
 		log:            log.BlackHole{}, // disabled info and debug logging
-	}, nil
+	}
 }
 
 // handlePreflight handles pre-flight CORS requests
-func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
+func (sc *scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
@@ -161,7 +157,7 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
-func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
+func (sc *scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
@@ -210,7 +206,7 @@ func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 
 // isOriginAllowed checks if a given origin is allowed to perform cross-domain requests
 // on the endpoint
-func (sc scopedConfig) isOriginAllowed(origin string) bool {
+func (sc *scopedConfig) isOriginAllowed(origin string) bool {
 	if sc.allowOriginFunc != nil {
 		return sc.allowOriginFunc(origin)
 	}
@@ -233,7 +229,7 @@ func (sc scopedConfig) isOriginAllowed(origin string) bool {
 
 // isMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
-func (sc scopedConfig) isMethodAllowed(method string) bool {
+func (sc *scopedConfig) isMethodAllowed(method string) bool {
 	if len(sc.allowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
 		return false
@@ -253,7 +249,7 @@ func (sc scopedConfig) isMethodAllowed(method string) bool {
 
 // areHeadersAllowed checks if a given list of headers are allowed to used within
 // a cross-domain request.
-func (sc scopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
+func (sc *scopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
 	if sc.allowedHeadersAll || len(requestedHeaders) == 0 {
 		return true
 	}

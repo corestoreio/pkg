@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"fmt"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
@@ -44,16 +45,16 @@ type OptionFactoryFunc func(config.ScopedGetter) []Option
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) (err error) {
-		if h == scope.DefaultHash {
-			s.defaultScopeCache, err = defaultScopedConfig()
-			return errors.Wrap(err, "[cors] Default Scope with Default Config")
-		}
-
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		s.scopeCache[h], err = defaultScopedConfig()
-		return errors.Wrapf(err, "[cors] Scope %s with Default Config", h)
+		if h == scope.DefaultHash {
+			s.defaultScopeCache = defaultScopedConfig()
+			return nil
+		}
+
+		s.scopeCache[h] = defaultScopedConfig()
+		return nil
 	}
 }
 
@@ -63,13 +64,13 @@ func WithExposedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 	h := scope.NewHash(scp, id)
 	exposedHeaders := convert(headers, http.CanonicalHeaderKey)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.exposedHeaders = exposedHeaders
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -125,15 +126,17 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 	// Note: for origins and methods matching, the spec requires a case-sensitive matching.
 	// As it may error prone, we chose to ignore the spec here.
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		fmt.Printf("allowedOriginsAll(%v)\nallowedOrigins(%v)\nallowedWOrigins(%v)\n\n", allowedOriginsAll, allowedOrigins, allowedWOrigins)
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedOriginsAll = allowedOriginsAll
 			s.defaultScopeCache.allowedOrigins = allowedOrigins
 			s.defaultScopeCache.allowedWOrigins = allowedWOrigins
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -160,13 +163,13 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowOriginFunc = f
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -188,6 +191,9 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 	h := scope.NewHash(scp, id)
 	am := convert(methods, strings.ToUpper)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		// Allowed Methods
 		// Note: for origins and methods matching, the spec requires a case-sensitive matching.
 		// As it may error prone, we chose to ignore the spec here.
@@ -196,9 +202,6 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 			s.defaultScopeCache.allowedMethods = am
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -236,14 +239,14 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 	h := scope.NewHash(scp, id)
 	allowedHeadersAll, allowedHeaders := convertAllowedHeaders(headers...)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedHeadersAll = allowedHeadersAll
 			s.defaultScopeCache.allowedHeaders = allowedHeaders
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -267,13 +270,13 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowCredentials = ok
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -305,13 +308,13 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 			return errors.NewNotValidf(errInvalidDurations, sec)
 		}
 
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.maxAge = age
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache
@@ -333,13 +336,13 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.optionsPassthrough = ok
 			return nil
 		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
 
 		// inherit default config
 		scNew := s.defaultScopeCache

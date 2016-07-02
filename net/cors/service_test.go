@@ -76,7 +76,9 @@ func TestMustNew_Store(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	_ = cors.MustNew(cors.WithAllowCredentials(scope.Store, 3, true))
+	_ = cors.MustNew(func(s *cors.Service) error {
+		return errors.NewNotSupportedf("Not supported!")
+	})
 }
 
 func TestMustNew_NoPanic(t *testing.T) {
@@ -309,7 +311,7 @@ func TestExposedHeader_MultiScope(t *testing.T) {
 	s := cors.MustNew(
 		cors.WithAllowedOrigins(scope.Default, 0, "http://foobar.com"),
 		cors.WithExposedHeaders(scope.Default, 0, "X-Header-1", "x-header-2"),
-		cors.WithAllowCredentials(scope.Website, 1, true),
+		cors.WithAllowCredentials(scope.Website, 1, false),
 	)
 
 	reqDefault, _ := http.NewRequest("GET", "http://corestore.io/reqDefault", nil)
@@ -324,6 +326,9 @@ func TestExposedHeader_MultiScope(t *testing.T) {
 	reqWebsite = reqWebsite.WithContext(
 		store.WithContextRequestedStore(reqWebsite.Context(), atStore, atErr),
 	)
+	if err := s.Options(cors.WithAllowCredentials(scope.Website, 1, true)); err != nil {
+		t.Errorf("%+v", err)
+	}
 	corstest.TestAllowedCredentials(t, s, reqWebsite)
 }
 
