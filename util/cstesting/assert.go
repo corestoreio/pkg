@@ -16,6 +16,7 @@ package cstesting
 
 import (
 	"reflect"
+	"strings"
 )
 
 // ErrorFormater defines the function needed to print out an formatted error.
@@ -32,4 +33,12 @@ func EqualPointers(t errorFormater, expected, actual interface{}) bool {
 		return false
 	}
 	return true
+}
+
+// ContainsCount checks if str contains the substring contains maxOccurrences
+// times.
+func ContainsCount(t errorFormater, str, contains string, maxOccurrences int) {
+	if have, want := strings.Count(str, contains), maxOccurrences; have != want {
+		t.Errorf("%q should contain %q times %d Have: %v Want: %v", str, contains, maxOccurrences, have, want)
+	}
 }
