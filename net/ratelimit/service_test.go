@@ -21,10 +21,13 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/throttled/throttled.v2"
@@ -92,25 +95,52 @@ var finalHandler = func(t *testing.T) http.Handler {
 // because we're using WithRateLimiter() and WithVaryBy() to set a rate limiter
 // for a specific WebsiteID(1). Despite the request will come in with StoreID(1)
 // we must fall back to the websiteID(1) to fetch there the configuration.
-func TestService_WithRateLimit_ScopeStore1(t *testing.T) {
-	//var logBuf log.MutexBuffer
-	limiter, err := ratelimit.New(
-		//ratelimit.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
-		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
-		ratelimit.WithRateLimiter(scope.Website, 1, stubLimiter{}),
-	)
-	if err != nil {
-		t.Fatal(err)
+func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
+
+	var runTest = func(logBuf *log.MutexBuffer, scp scope.Scope, id int64) func(t *testing.T) {
+		return func(t *testing.T) {
+			limiter, err := ratelimit.New(
+				ratelimit.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
+				//ratelimit.WithLogger(logw.NewLog(logw.WithWriter(ioutil.Discard), logw.WithLevel(logw.LevelDebug))),
+				ratelimit.WithVaryBy(scp, id, pathGetter{}),
+				ratelimit.WithRateLimiter(scp, id, stubLimiter{}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			handler := limiter.WithRateLimit()(finalHandler(t))
+
+			runHTTPTestCases(t, handler, []httpTestCase{
+				{"ok", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "2", "X-Ratelimit-Reset": "60"}},
+				{"error", 500, map[string]string{}},
+				{"limit", 429, map[string]string{"Retry-After": "60"}},
+			})
+		}
 	}
 
-	handler := limiter.WithRateLimit()(finalHandler(t))
+	logBuf0 := new(log.MutexBuffer)
+	t.Run("Scope Store Fallback to Default", runTest(logBuf0, scope.Default, 0))
+	//t.Log("FallBack", logBuf0)
+	cstesting.ContainsCount(t, logBuf0.String(), `ratelimit.Service.getScpCfg.DefaultScopeCache`, 1)
 
-	runHTTPTestCases(t, handler, []httpTestCase{
-		{"ok", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "2", "X-Ratelimit-Reset": "60"}},
-		{"error", 500, map[string]string{}},
-		//{"limit", 429, map[string]string{"Retry-After": "60"}},
-	})
-	//println("\n", logBuf.String(), "\n")
+	logBuf1 := new(log.MutexBuffer)
+	t.Run("Scope Store Fallback to Website", runTest(logBuf1, scope.Website, 1))
+	//t.Log("FallBack", logBuf1)
+
+	var logCheck1 = `ratelimit.Service.getConfigByScopeID.Parent.Valid.New`
+	cstesting.ContainsCount(t, logBuf1.String(), logCheck1, 1)
+
+	var logCheck2 = `ratelimit.Service.getConfigByScopeID.Parent.Valid.New`
+	cstesting.ContainsCount(t, logBuf1.String(), logCheck2, 1)
+
+	logBuf2 := new(log.MutexBuffer)
+	t.Run("Scope Store No Fallback", runTest(logBuf2, scope.Store, 1))
+	//t.Log("FallBackNope", logBuf2)
+
+	cstesting.ContainsCount(t, logBuf2.String(), logCheck1, 0)
+	cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 0)
+
 }
 
 //func TestHTTPRateLimit_CustomHandlers(t *testing.T) {
@@ -199,7 +229,6 @@ func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 	for i, c := range cs {
 
 		storeSrv := storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro"))
-
 		req, _ := http.NewRequest("GET", c.path, nil)
 		req.Header.Set("X-Forwarded-For", "2a02:d200::")
 		st, err := storeSrv.Store(scope.MockID(1)) // German Store
@@ -209,19 +238,20 @@ func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 		st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
 		req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 
-		rr := httptest.NewRecorder()
-		h.ServeHTTP(rr, req)
+		hpu := cstesting.NewHTTPParallelUsers(5, 5, 100, time.Microsecond)
+		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
+			if have, want := rec.Code, c.code; have != want {
+				t.Errorf("Expected request %d at %s to return %d but got %d",
+					i, c.path, want, have)
+			}
 
-		if have, want := rr.Code, c.code; have != want {
-			t.Errorf("Expected request %d at %s to return %d but got %d",
-				i, c.path, want, have)
-		}
-
-		for name, want := range c.headers {
-			if have := rr.HeaderMap.Get(name); have != want {
-				t.Errorf("Expected request %d at %s to have header '%s: %s' but got '%s'",
-					i, c.path, name, want, have)
+			for name, want := range c.headers {
+				if have := rec.HeaderMap.Get(name); have != want {
+					t.Errorf("Expected request %d at %s to have header '%s: %s' but got '%s'",
+						i, c.path, name, want, have)
+				}
 			}
 		}
+		hpu.ServeHTTP(req, h)
 	}
 }

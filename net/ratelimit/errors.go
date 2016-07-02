@@ -14,10 +14,7 @@
 
 package ratelimit
 
-import "github.com/corestoreio/csfw/util/errors"
-
 const (
+	errScopedConfigIsNil    = `[ratelimit] ScopedConfig has not yet been initialized, is nil.`
 	errScopedConfigNotValid = `[ratelimit] ScopedConfig %s is invalid. IsNil(DeniedHandler=%t), IsNil(RateLimiter=%t), IsNil(VaryByer=%t)`
 )
-
-var errConfigNotFound = errors.NewNotFoundf(`[ratelimit] ScopedConfig not available`)

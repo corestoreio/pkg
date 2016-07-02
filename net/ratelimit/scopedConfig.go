@@ -29,8 +29,6 @@ type scopedConfig struct {
 	lastErr error
 	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
-	// fallBackScopeHash defines the parent scope when the configuration.
-	fallBackScopeHash scope.Hash
 
 	// start of package specific config values
 
@@ -55,18 +53,32 @@ var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.
 	http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 })
 
-func defaultScopedConfig(h scope.Hash) scopedConfig {
-	return scopedConfig{
-		scopeHash:         h,
-		fallBackScopeHash: scope.DefaultHash,
-		deniedHandler:     defaultDeniedHandler,
-		VaryByer:          emptyVaryBy{},
+func defaultScopedConfig(h scope.Hash) *scopedConfig {
+	return &scopedConfig{
+		scopeHash:     h,
+		deniedHandler: defaultDeniedHandler,
+		VaryByer:      emptyVaryBy{},
 	}
 }
 
-// IsValid a configuration for a scope is only then valid when several fields
-// are not empty.
-func (sc scopedConfig) isValid() error {
+func newScopedConfigError(err error) *scopedConfig {
+	return &scopedConfig{lastErr: err}
+}
+
+func (sc *scopedConfig) printScope() string {
+	if sc == nil {
+		return "<nil>"
+	}
+	return sc.scopeHash.String()
+}
+
+// isValid a configuration for a scope is only then valid when several fields
+// are not empty and scopedConfig itself has a valid pointer.
+func (sc *scopedConfig) isValid() error {
+	if sc == nil {
+		return errors.NewNotValidf(errScopedConfigIsNil)
+	}
+
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[ratelimit] scopedConfig.isValid has an lastErr")
 	}
@@ -76,6 +88,6 @@ func (sc scopedConfig) isValid() error {
 	return nil
 }
 
-func (sc scopedConfig) requestRateLimit(r *http.Request) (bool, throttled.RateLimitResult, error) {
+func (sc *scopedConfig) requestRateLimit(r *http.Request) (bool, throttled.RateLimitResult, error) {
 	return sc.RateLimiter.RateLimit(sc.VaryByer.Key(r), 1)
 }
