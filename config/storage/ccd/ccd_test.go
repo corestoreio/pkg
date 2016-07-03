@@ -68,8 +68,8 @@ func TestDBStorageOneStmt(t *testing.T) {
 	for i, test := range tests {
 
 		prepIns.ExpectExec().WithArgs(
-			driver.Value(test.key.Scope.StrScope()),
-			driver.Value(test.key.ID),
+			driver.Value(test.key.ScopeHash.Scope().StrScope()),
+			driver.Value(test.key.ScopeHash.ID()),
 			driver.Value(test.key.Bytes()),
 			driver.Value(test.wantValue), // value
 			driver.Value(test.wantValue), // value fall back on duplicate key
@@ -86,8 +86,8 @@ func TestDBStorageOneStmt(t *testing.T) {
 	for i, test := range tests {
 
 		prepSel.ExpectQuery().WithArgs(
-			driver.Value(test.key.Scope.StrScope()),
-			driver.Value(test.key.ID),
+			driver.Value(test.key.ScopeHash.Scope().StrScope()),
+			driver.Value(test.key.ScopeHash.ID()),
 			driver.Value(test.key.Bytes()),
 		).WillReturnRows(sqlmock.NewRows([]string{"value"}).FromCSVString(test.wantValue))
 
@@ -107,7 +107,7 @@ func TestDBStorageOneStmt(t *testing.T) {
 
 	mockRows := sqlmock.NewRows([]string{"scope", "scope_id", "path"})
 	for _, test := range tests {
-		mockRows.FromCSVString(fmt.Sprintf("%s,%d,%s", test.key.Scope.StrScope(), test.key.ID, test.key.Chars))
+		mockRows.FromCSVString(fmt.Sprintf("%s,%d,%s", test.key.ScopeHash.Scope().StrScope(), test.key.ScopeHash.ID(), test.key.Chars))
 	}
 	prepAll := dbMock.ExpectPrepare("SELECT scope,scope_id,path FROM `[^`]+` ORDER BY scope,scope_id,path")
 	prepAll.ExpectQuery().WillReturnRows(mockRows)
@@ -159,8 +159,8 @@ func TestDBStorageMultipleStmt_Set(t *testing.T) {
 		}
 
 		prepIns.ExpectExec().WithArgs(
-			driver.Value(test.key.Scope.StrScope()),
-			driver.Value(test.key.ID),
+			driver.Value(test.key.ScopeHash.Scope().StrScope()),
+			driver.Value(test.key.ScopeHash.ID()),
 			driver.Value(test.key.Bytes()),
 			driver.Value(test.wantValue), // value
 			driver.Value(test.wantValue), // value fall back on duplicate key
@@ -206,8 +206,8 @@ func TestDBStorageMultipleStmt_Get(t *testing.T) {
 		}
 
 		prepSel.ExpectQuery().WithArgs(
-			driver.Value(test.key.Scope.StrScope()),
-			driver.Value(test.key.ID),
+			driver.Value(test.key.ScopeHash.Scope().StrScope()),
+			driver.Value(test.key.ScopeHash.ID()),
 			driver.Value(test.key.Bytes()),
 		).WillReturnRows(sqlmock.NewRows([]string{"value"}).FromCSVString(test.wantValue))
 
@@ -252,7 +252,7 @@ func TestDBStorageMultipleStmt_All(t *testing.T) {
 
 		mockRows := sqlmock.NewRows([]string{"scope", "scope_id", "path"})
 		for _, test := range dbStorageMultiTests {
-			mockRows.FromCSVString(fmt.Sprintf("%s,%d,%s", test.key.Scope.StrScope(), test.key.ID, test.key.Chars))
+			mockRows.FromCSVString(fmt.Sprintf("%s,%d,%s", test.key.ScopeHash.Scope().StrScope(), test.key.ScopeHash.ID(), test.key.Chars))
 		}
 		prepAll.ExpectQuery().WillReturnRows(mockRows)
 

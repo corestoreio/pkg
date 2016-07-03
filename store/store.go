@@ -229,7 +229,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		return url.URL{}, fmt.Errorf("Unsupported UrlType: %d", ut)
 	}
 
-	rawURL, err := p.Get(s.Config)
+	rawURL, _, err := p.Get(s.Config)
 	if err != nil {
 		return url.URL{}, err
 	}

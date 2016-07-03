@@ -142,9 +142,10 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 		return errors.Wrapf(err, "[ccd] Set.key.Level. SQL: %q Key: %q", dbs.Write.SQL, key)
 	}
 
-	result, err := stmt.Exec(key.Scope.StrScope(), key.ID, pathLeveled, valStr, valStr)
+	scp, id := key.ScopeHash.Unpack()
+	result, err := stmt.Exec(scp.StrScope(), id, pathLeveled, valStr, valStr)
 	if err != nil {
-		return errors.Wrapf(err, "[ccd] Set.stmt.Exec. SQL: %q KeyID: %d Scope: %q Path: %q Value: %q", dbs.Write.SQL, key.ID, key.Scope, pathLeveled, valStr)
+		return errors.Wrapf(err, "[ccd] Set.stmt.Exec. SQL: %q KeyID: %d Scope: %q Path: %q Value: %q", dbs.Write.SQL, id, scp, pathLeveled, valStr)
 	}
 	if dbs.log.IsDebug() {
 		li, err1 := result.LastInsertId()
@@ -185,7 +186,8 @@ func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 	}
 
 	var data dbr.NullString
-	err = stmt.QueryRow(key.Scope.StrScope(), key.ID, pl).Scan(&data)
+	scp, id := key.ScopeHash.Unpack()
+	err = stmt.QueryRow(scp.StrScope(), id, pl).Scan(&data)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[ccd] Get.QueryRow. SQL: %q Key: %q PathLevel: %q", dbs.Read.SQL, key, pl)
 	}
