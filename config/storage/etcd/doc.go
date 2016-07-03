@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package etcd uses etcd service for reading and writing
-// configuration paths.
+// Package etcd uses etcd service for reading and writing configuration paths.
+//
+// todo(CS): https://github.com/coreos/etcd/tree/master/client
 //
 // Maybe implements synchronization with MySQL core_config_data table.
 package etcd
