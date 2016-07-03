@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"fmt"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
@@ -128,8 +127,6 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
-
-		fmt.Printf("allowedOriginsAll(%v)\nallowedOrigins(%v)\nallowedWOrigins(%v)\n\n", allowedOriginsAll, allowedOrigins, allowedWOrigins)
 
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.allowedOriginsAll = allowedOriginsAll
@@ -364,6 +361,7 @@ func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
 		s.defaultScopeCache.log = l
+		s.Log = l
 		return nil
 	}
 }

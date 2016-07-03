@@ -64,10 +64,14 @@ type scopedConfig struct {
 	log log.Logger
 }
 
+// scopedConfig cannot use pointer based function receivers otherwise we will
+// run into a very rare race condition.
+
 // isValid a configuration for a scope is only then valid when
 // - scopeHash set
 // - min 1x allowedMethods set
-func (sc *scopedConfig) isValid() error {
+// this is the only pointer receiver
+func (sc scopedConfig) isValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
 	}
@@ -91,7 +95,7 @@ func defaultScopedConfig() *scopedConfig {
 }
 
 // handlePreflight handles pre-flight CORS requests
-func (sc *scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
+func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
@@ -157,7 +161,7 @@ func (sc *scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) 
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
-func (sc *scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
+func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
@@ -206,7 +210,7 @@ func (sc *scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reque
 
 // isOriginAllowed checks if a given origin is allowed to perform cross-domain requests
 // on the endpoint
-func (sc *scopedConfig) isOriginAllowed(origin string) bool {
+func (sc scopedConfig) isOriginAllowed(origin string) bool {
 	if sc.allowOriginFunc != nil {
 		return sc.allowOriginFunc(origin)
 	}
@@ -229,7 +233,7 @@ func (sc *scopedConfig) isOriginAllowed(origin string) bool {
 
 // isMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
-func (sc *scopedConfig) isMethodAllowed(method string) bool {
+func (sc scopedConfig) isMethodAllowed(method string) bool {
 	if len(sc.allowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
 		return false
@@ -249,7 +253,7 @@ func (sc *scopedConfig) isMethodAllowed(method string) bool {
 
 // areHeadersAllowed checks if a given list of headers are allowed to used within
 // a cross-domain request.
-func (sc *scopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
+func (sc scopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
 	if sc.allowedHeadersAll || len(requestedHeaders) == 0 {
 		return true
 	}

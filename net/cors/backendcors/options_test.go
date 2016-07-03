@@ -107,11 +107,11 @@ func TestAllowedOriginFunc(t *testing.T) {
 	corstest.TestAllowedOriginFunc(t, s, req)
 }
 
-func TestAllowedMethod(t *testing.T) {
-	var logBuf log.MutexBuffer
+func TestAllowedMethodNoPassthrough(t *testing.T) {
+	var logBuf = new(log.MutexBuffer)
 
 	s := newCorsService()
-	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug)))); err != nil {
+	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug)))); err != nil {
 		t.Fatal(err)
 	}
 
@@ -121,12 +121,13 @@ func TestAllowedMethod(t *testing.T) {
 	}))
 	corstest.TestAllowedMethod(t, s, req)
 
-	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.optionInflight.DoChan`), 1; have != want {
+	if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.optionInflight.Do`), 1; have != want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
-	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.IsValid`), 9; have != want {
+	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.IsValid`), 90; have <= want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
+	//println("\n", logBuf.String())
 }
 
 func TestAllowedMethodPassthrough(t *testing.T) {

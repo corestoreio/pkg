@@ -15,13 +15,12 @@
 package cors
 
 import (
-	"sync"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
+	"sync"
 )
 
 // auto generated: do not edit. See net/gen eric package
@@ -132,38 +131,48 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) *scopedConfig
 		return s.defaultScopeCache
 	}
 	p := scope.NewHash(scpGet.Parent())
+	if s.optionFactoryFunc != nil {
+		p = 0 // no fallback to default or parent, so trigger optionFactoryFunc
+	}
 
-	sCfg := s.getConfigByScopeID(h, p) // 1. map lookup, but only one lookup during many requests, 99%
-
-	switch {
-	case sCfg.isValid() == nil:
+	sCfg := s.getConfigByHash(h, p)
+	if sCfg != nil && sCfg.isValid() == nil {
 		// cached entry found which can contain the configured scoped configuration or
 		// the default scope configuration.
 		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h), log.Stringer("parentScope", p))
+			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.IsValid", log.Stringer("scope", h), log.Stringer("parent_scope", p))
 		}
 		return sCfg
-	case s.optionFactoryFunc == nil:
-		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.optionFactoryFunc.nil", log.Stringer("scope", h), log.Stringer("parentScope", p))
-		}
-		// When everything has been pre-configured for each scope via functional
-		// options then we might have the case where a scope in a request comes
-		// in which does not match to a scopedConfiguration entry in the map
-		// therefore a fallback to default scope must be provided. This fall
-		// back will only be executed once and each scope knows from now on that
-		// it has the configuration of the default scope.
-		return s.getConfigByScopeID(h, scope.DefaultHash)
 	}
+
+	if sCfg == nil && s.optionFactoryFunc != nil {
+		return s.runOptionFactory(scpGet)
+	}
+
+	if s.Log.IsDebug() {
+		s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.2ndTry.Fallback", log.Stringer("scope", h), log.Stringer("parent_scope", scope.DefaultHash))
+	}
+	// When everything has been pre-configured for each scope via functional
+	// options then we might have the case where a scope in a request comes
+	// in which does not match to a scopedConfiguration entry in the map
+	// therefore a fallback to default scope must be provided. This fall
+	// back will only be executed once and each scope knows from now on that
+	// it has the configuration of the default scope.
+	return s.getConfigByHash(h, scope.DefaultHash)
+}
+
+func (s *Service) runOptionFactory(scpGet config.ScopedGetter) *scopedConfig {
+	h := scope.NewHash(scpGet.Scope())
+	p := scope.NewHash(scpGet.Parent())
 
 	scpCfgChan := s.optionInflight.DoChan(h.String(), func() (interface{}, error) {
 		if err := s.Options(s.optionFactoryFunc(scpGet)...); err != nil {
 			return newScopedConfigError(errors.Wrap(err, prefixError+" Options by scpOptionFnc")), nil
 		}
 		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Stringer("parentScope", p), log.Err(sCfg.isValid()))
+			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.optionInflight.Do", log.Stringer("scope", h), log.Stringer("parent_scope", p))
 		}
-		return s.getConfigByScopeID(h, p), nil
+		return s.getConfigByHash(h, p), nil
 	})
 
 	res, ok := <-scpCfgChan
@@ -174,50 +183,22 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) *scopedConfig
 	if res.Err != nil {
 		return newScopedConfigError(errors.Wrap(res.Err, prefixError+" optionInflight.DoChan.Error"))
 	}
-	sCfg, ok = res.Val.(*scopedConfig)
+	sCfg, ok := res.Val.(*scopedConfig)
 	if !ok {
-		sCfg.lastErr = errors.NewFatalf(prefixError + " optionInflight.DoChan res.Val cannot be type asserted to scopedConfig")
+		sCfg = newScopedConfigError(errors.NewFatalf(prefixError + " optionInflight.DoChan res.Val cannot be type asserted to scopedConfig"))
 	}
 	return sCfg
 }
 
-// getScpCfg returns the config for argument "hash" and uses argument "parent"
-// only to check if it must fall back to the default scope. if so the "parent"
-// field gets the defaultScopeCache assigned.
-func (s *Service) getScpCfg(hash scope.Hash, parent scope.Hash) *scopedConfig {
-	s.rwmu.RLock()
-	scpCfg, ok := s.scopeCache[hash]
-	s.rwmu.RUnlock()
-
-	if ok {
-		return scpCfg
-	}
-	if !ok && parent.EqualScope(scope.DefaultHash) {
-		s.rwmu.Lock()
-		scpCfg = s.defaultScopeCache
-		s.scopeCache[hash] = s.defaultScopeCache
-		s.rwmu.Unlock()
-		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.getScpCfg.DefaultScopeCache",
-				log.Stringer("arg_scope", hash),
-				log.Stringer("arg_scope_parent", parent),
-				log.String("scope_applied", scpCfg.printScope()),
-			)
-		}
-		return s.defaultScopeCache
-	}
-	return scpCfg
-}
-
 // getConfigByScopeID returns the correct configuration for a scope and may fall back
 // to the next higher scope: store -> website -> default.
-func (s *Service) getConfigByScopeID(hash scope.Hash, parent scope.Hash) *scopedConfig {
+func (s *Service) getConfigByHash(hash scope.Hash, parent scope.Hash) *scopedConfig {
 
-	scpCfg := s.getScpCfg(hash, parent)
+	scpCfg := s.lookupScopedCache(hash, parent)
 
-	if scpCfg.isValid() == nil {
+	if scpCfg != nil && scpCfg.isValid() == nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.getConfigByScopeID.Hash.Valid.Cached",
+			s.Log.Debug(prefixLog+"Service.getConfigByHash.Hash.Valid.Cached",
 				log.Stringer("arg_scope", hash),
 				log.Stringer("arg_scope_parent", parent),
 				log.String("scope_applied", scpCfg.printScope()),
@@ -229,7 +210,7 @@ func (s *Service) getConfigByScopeID(hash scope.Hash, parent scope.Hash) *scoped
 	// lookup parent configuration scope
 	if parent.Scope() == scope.Website {
 		// overwrite store scope with website scope pointer
-		scpCfg = s.getScpCfg(parent, 0)
+		scpCfg = s.lookupScopedCache(parent, 0)
 
 		if err := scpCfg.isValid(); err == nil {
 			// we found an entry for a website config
@@ -237,14 +218,14 @@ func (s *Service) getConfigByScopeID(hash scope.Hash, parent scope.Hash) *scoped
 			s.scopeCache[hash] = scpCfg // set the hash to the parent website configuration
 			s.rwmu.Unlock()
 			if s.Log.IsDebug() {
-				s.Log.Debug(prefixLog+"Service.getConfigByScopeID.Parent.Valid.New",
+				s.Log.Debug(prefixLog+"Service.getConfigByHash.Parent.Valid.New",
 					log.Stringer("arg_scope", hash),
 					log.Stringer("arg_scope_parent", parent),
 					log.String("scope_applied", scpCfg.printScope()),
 				)
 			}
 		} else if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.getConfigByScopeID.Parent.Invalid",
+			s.Log.Debug(prefixLog+"Service.getConfigByHash.Parent.Invalid",
 				log.Stringer("arg_scope", hash),
 				log.Stringer("arg_scope_parent", parent),
 				log.Err(err),
@@ -254,12 +235,46 @@ func (s *Service) getConfigByScopeID(hash scope.Hash, parent scope.Hash) *scoped
 	}
 
 	if s.Log.IsDebug() {
-		s.Log.Debug(prefixLog+"Service.getConfigByScopeID.Return",
+		var fields = [3]log.Field{
 			log.Stringer("arg_scope", hash),
 			log.Stringer("arg_scope_parent", parent),
-			log.ErrWithKey("scp_cfg_is_valid", scpCfg.isValid()),
-		)
+		}
+		if scpCfg != nil {
+			fields[2] = log.ErrWithKey("scp_cfg_is_valid", scpCfg.isValid())
+		} else {
+			fields[2] = log.Bool("scp_cfg_is_nil", scpCfg == nil)
+		}
+		s.Log.Debug(prefixLog+"Service.getConfigByHash.Return", fields[:]...)
 	}
 
+	return scpCfg
+}
+
+// lookupScopedCache returns the config for argument "hash" and uses argument "parent"
+// only to check if it must fall back to the default scope. if so the "parent"
+// field gets the defaultScopeCache assigned.
+func (s *Service) lookupScopedCache(hash scope.Hash, parent scope.Hash) *scopedConfig {
+	s.rwmu.RLock()
+	scpCfg, ok := s.scopeCache[hash]
+	s.rwmu.RUnlock()
+
+	if ok {
+		return scpCfg
+	}
+
+	if !ok && parent.EqualScope(scope.DefaultHash) {
+		s.rwmu.Lock()
+		scpCfg = s.defaultScopeCache
+		s.scopeCache[hash] = s.defaultScopeCache
+		s.rwmu.Unlock()
+		if s.Log.IsDebug() {
+			s.Log.Debug(prefixLog+"Service.lookupScopedCache.DefaultScopeCache",
+				log.Stringer("arg_scope", hash),
+				log.Stringer("arg_scope_parent", parent),
+				log.String("scope_applied", scpCfg.printScope()),
+			)
+		}
+		return s.defaultScopeCache
+	}
 	return scpCfg
 }
