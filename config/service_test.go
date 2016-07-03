@@ -105,14 +105,16 @@ func TestNotKeyNotFoundError(t *testing.T) {
 
 	scopedSrv := srv.NewScoped(1, 1)
 
-	flat, err := scopedSrv.String(cfgpath.NewRoute("catalog/product/enable_flat"))
+	flat, h, err := scopedSrv.String(cfgpath.NewRoute("catalog/product/enable_flat"))
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Empty(t, flat)
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
-	val, err := scopedSrv.String(cfgpath.NewRoute("catalog"))
+	val, h, err := scopedSrv.String(cfgpath.NewRoute("catalog"))
 	assert.Empty(t, val)
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 	assert.False(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.Exactly(t, scope.Hash(0).String(), h.String())
 }
 
 func TestService_NewScoped(t *testing.T) {
@@ -121,9 +123,10 @@ func TestService_NewScoped(t *testing.T) {
 	assert.NotNil(t, srv)
 
 	scopedSrv := srv.NewScoped(1, 1)
-	sURL, err := scopedSrv.String(cfgpath.NewRoute(config.PathCSBaseURL))
+	sURL, h, err := scopedSrv.String(cfgpath.NewRoute(config.PathCSBaseURL))
 	assert.NoError(t, err)
 	assert.Exactly(t, config.CSBaseURL, sURL)
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
 }
 

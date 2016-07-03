@@ -73,9 +73,9 @@ var defaultsInt = []struct {
 	key cfgpath.Path
 	val int
 }{
-	{pathInt, 314159},                        // Default
-	{pathInt.Bind(scope.Website, 1), 271828}, // Scope 1 = Website euro
-	{pathInt.Bind(scope.Store, 2), 141421},   // Scope 2 = Store at
+	{pathInt, 314159},                // Default
+	{pathInt.BindWebsite(1), 271828}, // Scope 1 = Website euro
+	{pathInt.BindStore(2), 141421},   // Scope 2 = Store at
 }
 
 func ExampleScopedGetter() {
@@ -101,40 +101,40 @@ func ExampleScopedGetter() {
 	// already to the appropriate scopes.
 
 	// Scope1 use store config and hence store value
-	val, err := atStore.Config.Int(pathInt.Route)
+	val, h, err := atStore.Config.Int(pathInt.Route)
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
 	}
-	fmt.Println("Scope Value for Store ID 2:", val)
+	fmt.Println("Scope Value for Store ID 2:", val, " | ", h.String())
 
 	// Scope2 use website config and hence website value
-	val, err = atStore.Website.Config.Int(pathInt.Route)
+	val, h, err = atStore.Website.Config.Int(pathInt.Route)
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
 	}
-	fmt.Println("Scope Value for Website ID 1:", val)
+	fmt.Println("Scope Value for Website ID 1:", val, " | ", h.String())
 
 	// Scope3 force default value
-	val, err = atStore.Config.Int(pathInt.Route, scope.Default)
+	val, h, err = atStore.Config.Int(pathInt.Route, scope.Default)
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
 	}
-	fmt.Println("Scope Value for Default:", val)
+	fmt.Println("Scope Value for Default:", val, " | ", h.String())
 
 	// Scope4 route not found
-	_, err = atStore.Config.Int(cfgpath.MustNewByParts("xx/yy/zz").Route)
+	_, _, err = atStore.Config.Int(cfgpath.MustNewByParts("xx/yy/zz").Route)
 	if err != nil {
 		fmt.Printf("Scope4: srvString Error: %s\n", err)
 	}
 	fmt.Printf("Route IsNotFound %t\n", errors.IsNotFound(err))
 
 	// Output:
-	// Scope Value for Store ID 2: 141421
-	// Scope Value for Website ID 1: 271828
-	// Scope Value for Default: 314159
+	// Scope Value for Store ID 2: 141421  |  Scope(Store) ID(2)
+	// Scope Value for Website ID 1: 271828  |  Scope(Website) ID(1)
+	// Scope Value for Default: 314159  |  Scope(Default) ID(0)
 	// Scope4: srvString Error: [config] Storage.Int.get: [storage] Key not found
 	// Route IsNotFound true
 }
