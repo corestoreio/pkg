@@ -37,27 +37,29 @@ func TestURLGet(t *testing.T) {
 	tests := []struct {
 		scpcfg     config.ScopedGetter
 		wantErrBhf errors.BehaviourFunc
+		wantHash   scope.Hash
 		wantVal    interface{}
 	}{
-		{cfgmock.NewService().NewScoped(0, 1), nil, `http://john%20doe@corestore.io/?q=go+language#foo&bar`},
+		{cfgmock.NewService().NewScoped(0, 1), nil, scope.DefaultHash, `http://john%20doe@corestore.io/?q=go+language#foo&bar`},
 		{cfgmock.NewService(
 			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath.String(): "http://cs.io",
 			}),
-		).NewScoped(0, 1), nil, "http://cs.io"},
+		).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), "http://cs.io"},
 		{cfgmock.NewService(
 			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath.String(): "http://192.168.0.%31/",
 			}),
-		).NewScoped(0, 1), errors.IsFatal, nil},
+		).NewScoped(0, 1), errors.IsFatal, scope.NewHash(scope.Store, 1), nil},
 		{cfgmock.NewService(
 			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath.String(): "",
 			}),
-		).NewScoped(0, 1), nil, nil},
+		).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), nil},
 	}
 	for i, test := range tests {
-		anURL, haveErr := b.Get(test.scpcfg)
+		anURL, haveH, haveErr := b.Get(test.scpcfg)
+		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.Nil(t, anURL, "Index %d", i)
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error %s", i, haveErr)
@@ -100,13 +102,14 @@ func TestBaseURLGet(t *testing.T) {
 
 	assert.Empty(t, b.Options())
 
-	sg, err := b.Get(cfgmock.NewService().NewScoped(0, 1))
+	sg, h, err := b.Get(cfgmock.NewService().NewScoped(0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "{{base_url}}", sg)
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
-	sg, err = b.Get(cfgmock.NewService(
+	sg, h, err = b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath.String(): "http://cs.io",
 		}),
@@ -115,6 +118,7 @@ func TestBaseURLGet(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "http://cs.io", sg)
+	assert.Exactly(t, scope.NewHash(scope.Store, 1).String(), h.String())
 }
 
 func TestBaseURLWrite(t *testing.T) {

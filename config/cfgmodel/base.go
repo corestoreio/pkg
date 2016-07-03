@@ -177,7 +177,8 @@ func (bv baseValue) ToPath(s scope.Scope, scopeID int64) (cfgpath.Path, error) {
 	if err != nil {
 		return cfgpath.Path{}, errors.Wrapf(err, "[cfgmodel] cfgpath.New: %q", bv.route)
 	}
-	return p.Bind(s, scopeID), nil
+	p.ScopeHash = scope.NewHash(s, scopeID)
+	return p, nil
 }
 
 // Route returns a copy of the underlying route.

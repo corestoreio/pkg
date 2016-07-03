@@ -92,15 +92,16 @@ func (p *Obscure) Option(opts ...Option) error {
 }
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is nil.
-func (p Obscure) Get(sg config.ScopedGetter) ([]byte, error) {
+func (p Obscure) Get(sg config.ScopedGetter) ([]byte, scope.Hash, error) {
 	if p.Encryptor == nil {
-		return nil, ErrMissingEncryptor
+		return nil, 0, ErrMissingEncryptor
 	}
-	s, err := p.Byte.Get(sg)
+	s, h, err := p.Byte.Get(sg)
 	if err != nil {
-		return nil, err
+		return nil, h, errors.Wrap(err, "[cfgmodel] Obscure.Byte.Get")
 	}
-	return p.Decrypt(s)
+	s2, err := p.Decrypt(s)
+	return s2, h, errors.Wrap(err, "[cfgmodel] Obscure.Get.Decrypt")
 }
 
 // Write writes a raw value encrypted. Panics if Encryptor interface is nil.

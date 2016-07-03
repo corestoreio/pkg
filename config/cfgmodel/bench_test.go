@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 var benchmarkStr string
@@ -37,12 +38,16 @@ func Benchmark_ParallelStrGetDefault(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			var err error
-			benchmarkStr, err = p1.Get(sg)
+			var h scope.Hash
+			benchmarkStr, h, err = p1.Get(sg)
 			if err != nil {
 				b.Error(err)
 			}
 			if benchmarkStr != want {
 				b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
+			}
+			if h != scope.DefaultHash {
+				b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
 			}
 		}
 	})
@@ -60,12 +65,16 @@ func Benchmark_SingleStrGetDefault(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStr, err = p1.Get(sg)
+		var h scope.Hash
+		benchmarkStr, h, err = p1.Get(sg)
 		if err != nil {
 			b.Error(err)
 		}
 		if benchmarkStr != want {
 			b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
+		}
+		if h != scope.DefaultHash {
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
 		}
 	}
 }
@@ -85,12 +94,16 @@ func Benchmark_SingleByteGetDefault(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkByte, err = p1.Get(sg)
+		var h scope.Hash
+		benchmarkByte, h, err = p1.Get(sg)
 		if err != nil {
 			b.Error(err)
 		}
 		if bytes.Compare(benchmarkByte, want) != 0 {
 			b.Errorf("Have: %s\nWant: %s\n", string(benchmarkByte), string(want))
+		}
+		if h != scope.DefaultHash {
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
 		}
 	}
 }

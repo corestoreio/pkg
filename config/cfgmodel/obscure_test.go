@@ -50,10 +50,11 @@ func (rt rot13) Decrypt(s []byte) ([]byte, error) {
 func TestObscureMissingEncryptor(t *testing.T) {
 
 	m := cfgmodel.NewObscure(`aa/bb/cc`)
-	val, err := m.Get(nil)
+	val, h, err := m.Get(nil)
 	assert.Nil(t, val)
 	assert.EqualError(t, err, cfgmodel.ErrMissingEncryptor.Error())
 	assert.EqualError(t, m.Write(nil, nil, scope.Default, 0), cfgmodel.ErrMissingEncryptor.Error())
+	assert.Exactly(t, scope.Hash(0).String(), h.String())
 }
 
 func TestObscure(t *testing.T) {
@@ -69,7 +70,7 @@ func TestObscure(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveErr := b.Get(cfgmock.NewService(
+	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath: wantCiphered,
 		}),
@@ -78,6 +79,7 @@ func TestObscure(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, wantPlain, haveSL)
+	assert.Exactly(t, scope.DefaultHash.String(), haveH.String())
 
 	mw := new(cfgmock.Write)
 	b.Write(mw, wantPlain, scope.Store, 12)

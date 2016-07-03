@@ -40,29 +40,32 @@ func TestStringCSVGet(t *testing.T) {
 	)
 	assert.NotEmpty(t, b.Options())
 
-	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
 	tests := []struct {
-		have    string
-		want    []string
-		wantErr error
+		have     string
+		want     []string
+		wantHash scope.Hash
+		wantErr  error
 	}{
-		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, nil},
-		{"", nil, nil},
-		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, nil},
-		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, nil},
+		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, scope.DefaultHash, nil},
+		{"", nil, scope.DefaultHash, nil},
+		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, scope.DefaultHash, nil},
+		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, scope.DefaultHash, nil},
 		// todo add errors
 	}
 	for i, test := range tests {
-		haveSL, haveErr := b.Get(cfgmock.NewService(
+		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
 			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath: test.have,
 			}),
 		).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
+		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
@@ -109,7 +112,7 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveErr := b.Get(cfgmock.NewService(
+	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath: `20152016`,
 		}),
@@ -117,8 +120,8 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
-
 	assert.Exactly(t, []string{"2015", "2016"}, haveSL)
+	assert.Exactly(t, scope.DefaultHash.String(), haveH.String())
 }
 
 func TestIntCSV(t *testing.T) {
@@ -138,33 +141,36 @@ func TestIntCSV(t *testing.T) {
 	assert.Len(t, b.Options(), 4)
 	assert.Exactly(t, pathWebCorsIntSlice, b.String())
 	// default values:
-	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 4))
+	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 4))
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Store, 4).String()
 
 	tests := []struct {
-		lenient bool
-		have    string
-		want    []int
-		wantBhf errors.BehaviourFunc
+		lenient  bool
+		have     string
+		want     []int
+		wantHash scope.Hash
+		wantBhf  errors.BehaviourFunc
 	}{
-		{false, "3015,3016", []int{3015, 3016}, nil},
-		{false, "2015,2017", []int{2015, 2017}, nil},
-		{false, "", nil, nil},
-		{false, "2015,,20x17", []int{2015}, errors.IsNotValid},
-		{true, "2015,,2017", []int{2015, 2017}, nil},
+		{false, "3015,3016", []int{3015, 3016}, scope.NewHash(scope.Store, 4), nil},
+		{false, "2015,2017", []int{2015, 2017}, scope.NewHash(scope.Store, 4), nil},
+		{false, "", nil, scope.NewHash(scope.Store, 4), nil},
+		{false, "2015,,20x17", []int{2015}, scope.NewHash(scope.Store, 4), errors.IsNotValid},
+		{true, "2015,,2017", []int{2015, 2017}, scope.NewHash(scope.Store, 4), nil},
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
-		haveSL, haveErr := b.Get(cfgmock.NewService(
+		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
 			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath: test.have,
 			}),
 		).NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
+		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
 		if test.wantBhf != nil {
 			assert.True(t, test.wantBhf(haveErr), "Index %d => %+v", i, haveErr)
 			continue
@@ -217,7 +223,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Website, 34).String()
 
-	haveSL, haveErr := b.Get(cfgmock.NewService(
+	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath: `2015|2016|`,
 		}),
@@ -225,8 +231,8 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
-
 	assert.Exactly(t, []int{2015, 2016}, haveSL)
+	assert.Exactly(t, scope.NewHash(scope.Website, 34).String(), haveH.String())
 }
 
 func TestCSVGet(t *testing.T) {
@@ -240,11 +246,12 @@ func TestCSVGet(t *testing.T) {
 	)
 	assert.Empty(t, b.Options())
 
-	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	require.NoError(t, err, "%+v", err)
 	assert.Exactly(t,
 		[][]string{{"0", "\"Did you mean...\" Suggestions", "\"meinten Sie...?\""}, {"1", "Accuracy for Suggestions", "Genauigkeit der Vorschläge"}, {"2", "After switching please reindex the<br /><em>Catalog Search Index</em>.", "Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."}, {"3", "CATALOG", "KATALOG"}},
 		sl) // default values from variable configStructure
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
 	tests := []struct {
 		have       string
@@ -258,13 +265,14 @@ func TestCSVGet(t *testing.T) {
 		{"Content-Type|X-CS\nApplication", nil, errors.IsNotValid},
 	}
 	for i, test := range tests {
-		haveSL, haveErr := b.Get(cfgmock.NewService(
+		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
 			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath: test.have,
 			}),
 		).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
+		assert.Exactly(t, scope.DefaultHash.String(), haveH.String(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
 			continue

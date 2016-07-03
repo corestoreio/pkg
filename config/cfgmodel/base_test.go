@@ -94,7 +94,7 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, pathWebCorsHeaders, p1.String())
 
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).Bind(scope.Website, wantWebsiteID)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).BindWebsite(wantWebsiteID)
 
 	mw := new(cfgmock.Write)
 	assert.NoError(t, p1.Write(mw, "314159", scope.Website, wantWebsiteID))
@@ -102,9 +102,10 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, "314159", mw.ArgValue.(string))
 
 	sg := cfgmock.NewService().NewScoped(wantWebsiteID, 0)
-	defaultStr, err := p1.Get(sg)
+	defaultStr, h, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
 	sg = cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
@@ -112,9 +113,10 @@ func TestBaseValueString(t *testing.T) {
 		}),
 	).NewScoped(wantWebsiteID, 0)
 
-	customStr, err := p1.Get(sg)
+	customStr, h, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
+	assert.Exactly(t, scope.NewHash(scope.Website, wantWebsiteID).String(), h.String())
 
 	// now change a default value in the packageConfiguration and see it reflects to p1.
 	// but this is not the way to go. You can directly change the field in p1
@@ -128,9 +130,10 @@ func TestBaseValueString(t *testing.T) {
 	// update p1 to apply the change field data
 	p1.Option(WithFieldFromSectionSlice(configStructure))
 
-	ws, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
+	ws, h, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
+	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 }
 
 func TestBaseValueInScope(t *testing.T) {
@@ -187,7 +190,7 @@ func TestBaseValueFQ(t *testing.T) {
 	p := NewValue(pth)
 	fq, err := p.FQ(scope.Store, 4)
 	assert.NoError(t, err)
-	assert.Exactly(t, cfgpath.MustNewByParts(pth).Bind(scope.Store, 4).String(), fq)
+	assert.Exactly(t, cfgpath.MustNewByParts(pth).BindStore(4).String(), fq)
 }
 
 func TestBaseValueMustFQPanic(t *testing.T) {

@@ -36,7 +36,7 @@ func NewTime(path string, opts ...Option) Time {
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 // Get is able to parse available time formats as defined in
 // github.com/corestoreio/csfw/util/conv.StringToDate()
-func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
+func (t Time) Get(sg config.ScopedGetter) (time.Time, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Time
@@ -47,12 +47,12 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 			var err error
 			v, err = conv.ToTimeE(d)
 			if err != nil {
-				return time.Time{}, errors.NewNotValidf("[cfgmodel] ToTimeE: %v", err)
+				return time.Time{}, 0, errors.NewNotValidf("[cfgmodel] ToTimeE: %v", err)
 			}
 		}
 	}
 
-	val, err := sg.Time(t.route, scp)
+	val, h, err := sg.Time(t.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
@@ -61,7 +61,7 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 	default:
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
-	return v, err
+	return v, h, err
 }
 
 // Write writes a time value without validating it against the source.Slice.
@@ -85,7 +85,7 @@ func NewDuration(path string, opts ...Option) Duration {
 // such as "300ms", "-1.5h" or "2h45m".
 // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 // Error behaviour: NotValid
-func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
+func (t Duration) Get(sg config.ScopedGetter) (time.Duration, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Duration
@@ -96,12 +96,12 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 			var err error
 			v, err = conv.ToDurationE(d)
 			if err != nil {
-				return 0, errors.NewNotValidf("[cfgmodel] ToDurationE: %v", err)
+				return 0, 0, errors.NewNotValidf("[cfgmodel] ToDurationE: %v", err)
 			}
 		}
 	}
 
-	val, err := sg.String(t.route, scp)
+	val, h, err := sg.String(t.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
 		if v, err = conv.ToDurationE(val); err != nil {
@@ -112,7 +112,7 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 	default:
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
-	return v, err
+	return v, h, err
 }
 
 // Write writes a duration value without validating it against the source.Slice.
