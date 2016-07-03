@@ -146,24 +146,24 @@ func TestPathNew(t *testing.T) {
 func TestFQ(t *testing.T) {
 
 	tests := []struct {
-		str        scope.StrScope
+		scp        scope.Scope
 		id         int64
 		route      cfgpath.Route
 		want       string
 		wantErrBhf errors.BehaviourFunc
 	}{
-		{scope.StrDefault, 0, cfgpath.Route{}, "", errors.IsEmpty},
-		{scope.StrDefault, 0, cfgpath.NewRoute(""), "", errors.IsEmpty},
-		{scope.StrDefault, 0, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrDefault, 44, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 0, cfgpath.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 343, cfgpath.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/343/system/dev/debug", nil},
-		{scope.StrScope("hello"), 0, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrScope("hello"), 343, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.Default, 0, cfgpath.Route{}, "", errors.IsEmpty},
+		{scope.Default, 0, cfgpath.NewRoute(""), "", errors.IsEmpty},
+		{scope.Default, 0, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.Default, 44, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.Website, 0, cfgpath.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/0/system/dev/debug", nil},
+		{scope.Website, 343, cfgpath.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/343/system/dev/debug", nil},
+		{250, 0, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{250, 343, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
 	}
 	for i, test := range tests {
 		p, pErr := cfgpath.New(test.route)
-		p = p.BindStr(test.str, test.id)
+		p = p.Bind(test.scp, test.id)
 		have, haveErr := p.FQ()
 		if test.wantErrBhf != nil {
 			assert.Empty(t, have.Chars, "Index %d", i)
@@ -179,26 +179,26 @@ func TestFQ(t *testing.T) {
 	}
 
 	r := cfgpath.NewRoute("catalog/frontend/list_allow_all")
-	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", cfgpath.MustNew(r).BindStr(scope.StrStores, 7475).String())
-	p := cfgpath.MustNew(r).BindStr(scope.StrStores, 5)
+	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", cfgpath.MustNew(r).BindStore(7475).String())
+	p := cfgpath.MustNew(r).BindStore(5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "cfgpath.Path{ Route:cfgpath.NewRoute(`catalog/frontend/list_allow_all`), Scope: 4, ID: 5 }", p.GoString())
+	assert.Exactly(t, "cfgpath.Path{ Route:cfgpath.NewRoute(`catalog/frontend/list_allow_all`), ScopeHash: 67108869 }", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 
-	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrStores, 345).String())
+	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStore(345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatal("Did not expect a panic")
 		}
 	}()
-	_ = cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrScope("invalid"), 345)
+	_ = cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).Bind(249, 345)
 }
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
 
-	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrDefault, 345).String())
+	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).Bind(scope.Default, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -207,7 +207,7 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	assert.Exactly(t, "websites/345/xxxxx/yyyyy", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy")).BindStr(scope.StrWebsites, 345).String())
+	assert.Exactly(t, "websites/345/xxxxx/yyyyy", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy")).BindWebsite(345).String())
 }
 
 var benchmarkPathFQ cfgpath.Route
@@ -221,7 +221,7 @@ func BenchmarkPathFQ(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkPathFQ, err = cfgpath.MustNew(p).BindStr(scope.StrWebsites, scopeID).FQ()
+		benchmarkPathFQ, err = cfgpath.MustNew(p).BindWebsite(scopeID).FQ()
 		if err != nil {
 			b.Error(err)
 		}
@@ -242,7 +242,7 @@ func BenchmarkPathHashFull(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkPathHash, err = cfgpath.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(-1)
+		benchmarkPathHash, err = cfgpath.MustNew(p).BindWebsite(scopeID).Hash(-1)
 		if err != nil {
 			b.Error(err)
 		}
@@ -260,7 +260,7 @@ func BenchmarkPathHashLevel2(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkPathHash, err = cfgpath.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(2)
+		benchmarkPathHash, err = cfgpath.MustNew(p).BindWebsite(scopeID).Hash(2)
 		if err != nil {
 			b.Error(err)
 		}
@@ -295,8 +295,8 @@ func TestSplitFQ(t *testing.T) {
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
 		}
-		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Index %d", i)
-		assert.Exactly(t, test.wantScopeID, havePath.ID, "Index %d", i)
+		assert.Exactly(t, test.wantScope, havePath.ScopeHash.Scope().StrScope(), "Index %d", i)
+		assert.Exactly(t, test.wantScopeID, havePath.ScopeHash.ID(), "Index %d", i)
 		l, _ := havePath.Level(-1)
 		assert.Exactly(t, test.wantPath, l.String(), "Index %d", i)
 	}
@@ -344,9 +344,8 @@ func TestPathIsValid(t *testing.T) {
 	}
 	for i, test := range tests {
 		p := cfgpath.Path{
-			Scope: test.s,
-			ID:    test.id,
-			Route: test.have,
+			ScopeHash: scope.NewHash(test.s, test.id),
+			Route:     test.have,
 		}
 		haveErr := p.IsValid()
 		if test.wantErrBhf != nil {
@@ -370,15 +369,13 @@ func TestPathValidateNaughtyStrings(t *testing.T) {
 func TestPathRouteIsValid(t *testing.T) {
 
 	p := cfgpath.Path{
-		Scope: scope.Store,
-		ID:    2,
-		Route: cfgpath.NewRoute(`general/store_information`),
+		ScopeHash: scope.NewHash(scope.Store, 2),
+		Route:     cfgpath.NewRoute(`general/store_information`),
 	}
 	assert.True(t, errors.IsNotValid(p.IsValid()))
 
 	p = cfgpath.Path{
-		Scope:           scope.Store,
-		ID:              2,
+		ScopeHash:       scope.NewHash(scope.Store, 2),
 		Route:           cfgpath.NewRoute(`general/store_information`),
 		RouteLevelValid: true,
 	}
@@ -498,12 +495,12 @@ func TestPathCloneRareUseCase(t *testing.T) {
 	pAssigned := pOrg
 	pCloned := pOrg.Clone()
 
-	assert.Exactly(t, pOrg.Scope, pCloned.Scope)
-	assert.Exactly(t, pOrg.ID, pCloned.ID)
+	assert.Exactly(t, pOrg.ScopeHash.Scope(), pCloned.ScopeHash.Scope())
+	assert.Exactly(t, pOrg.ScopeHash.ID(), pCloned.ScopeHash.ID())
 	assert.Exactly(t, pOrg.Route, pCloned.Route)
 
-	assert.Exactly(t, pOrg.Scope, pAssigned.Scope)
-	assert.Exactly(t, pOrg.ID, pAssigned.ID)
+	assert.Exactly(t, pOrg.ScopeHash.Scope(), pAssigned.ScopeHash.Scope())
+	assert.Exactly(t, pOrg.ScopeHash.ID(), pAssigned.ScopeHash.ID())
 	assert.Exactly(t, pOrg.Route, pAssigned.Route)
 
 	// we're not using Path.Append because it creates internally a new byte slice

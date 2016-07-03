@@ -35,18 +35,18 @@ func TestPathSlice_Contains(t *testing.T) {
 	}{
 		{
 			cfgpath.PathSlice{
-				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 3),
-				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 2),
+				0: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(3),
+				1: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(2),
 			},
-			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 2),
+			cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(2),
 			true,
 		},
 		{
 			cfgpath.PathSlice{
-				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 3),
-				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 2),
+				0: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(3),
+				1: cfgpath.MustNewByParts("aa/bb/cc").BindWebsite(2),
 			},
-			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Store, 2),
+			cfgpath.MustNewByParts("aa/bb/cc").BindStore(2),
 			false,
 		},
 	}
@@ -63,7 +63,7 @@ func TestPathSlice_Sort(t *testing.T) {
 		cfgpath.MustNewByParts("aa/bb/cc"),
 	}
 	ps.Sort()
-	want := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, cfgpath.Path{Route: cfgpath.NewRoute(`bb/cc/dd`), Scope: 1, ID: 0}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), Scope: 1, ID: 0}}
+	want := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), ScopeHash: scope.DefaultHash}, cfgpath.Path{Route: cfgpath.NewRoute(`bb/cc/dd`), ScopeHash: scope.DefaultHash}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), ScopeHash: scope.DefaultHash}}
 	assert.Exactly(t, want, ps)
 }
 

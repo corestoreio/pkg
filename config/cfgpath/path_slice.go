@@ -28,7 +28,7 @@ type PathSlice []Path
 // It must match ID, Scope and Route.
 func (ps PathSlice) Contains(p Path) bool {
 	for _, pps := range ps {
-		if pps.ID == p.ID && pps.Scope == p.Scope && pps.Sum32 == pps.Sum32 {
+		if pps.ScopeHash == p.ScopeHash && pps.Sum32 == pps.Sum32 {
 			return true
 		}
 	}

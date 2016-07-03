@@ -42,9 +42,8 @@ var bSeparator = []byte(sSeparator)
 // Path represents a configuration path bound to a scope.
 type Path struct {
 	Route
-	Scope scope.Scope
-	// ID represents a website, group or store ID
-	ID int64
+	// ScopeHash a path is bound to this Scope and ScopeID
+	ScopeHash scope.Hash
 	// RouteLevelValid allows to bypass validation of separators in a Route
 	// in cases where only a partial Route has been provided.
 	RouteLevelValid bool
@@ -55,7 +54,7 @@ type Path struct {
 // New creates a new validated Path. Scope is assigned to Default.
 func New(rs ...Route) (Path, error) {
 	p := Path{
-		Scope: scope.Default,
+		ScopeHash: scope.DefaultHash,
 	}
 	if len(rs) == 1 {
 		p.Route = rs[0]
@@ -96,35 +95,34 @@ func MustNewByParts(parts ...string) Path {
 	return p
 }
 
-// BindStr binds a path to a new scope with its scope ID.
-// The scope gets extracted from the StrScope.
-func (p Path) BindStr(s scope.StrScope, id int64) Path {
-	p.Scope = s.Scope()
-	p.ID = id
-	return p
-}
-
-// Bind binds a path to a new scope with its scope ID.
-// Group Scope is not supported and falls back to default.
+// Bind binds a path to a new scope with its scope ID. Group Scope is not
+// supported and falls back to default.
 func (p Path) Bind(s scope.Scope, id int64) Path {
-	p.Scope = s
-	p.ID = id
+	p.ScopeHash = scope.NewHash(s, id)
 	return p
 }
 
-// Clone returns a new allocated Path with copied data.
-// Clone is not needed if you before or after the assignment to a new variable
-// use Path.Append() or the classic append(Path.Chars,[]byte() ....) to also
-// allocate a new slice.
+// BindWebsite binds a path to a website scope and its ID. Convenience helper
+// function.
+func (p Path) BindWebsite(id int64) Path {
+	p.ScopeHash = scope.NewHash(scope.Website, id)
+	return p
+}
+
+// BindStore binds a path to a store scope and its ID. Convenience helper
+// function.
+func (p Path) BindStore(id int64) Path {
+	p.ScopeHash = scope.NewHash(scope.Store, id)
+	return p
+}
+
+// Clone returns a new allocated Path with copied data. Clone is not needed if
+// you before or after the assignment to a new variable use Path.Append() or the
+// classic append(Path.Chars,[]byte() ....) to also allocate a new slice.
 func (p Path) Clone() Path {
 	p2 := p
 	p2.Route = p.Route.Clone()
 	return p2
-}
-
-// StrScope wrapper function. Converts the Path.Scope to a StrScope.
-func (p Path) StrScope() string {
-	return scope.FromScope(p.Scope).String()
 }
 
 // String returns a fully qualified path. Errors get logged if debug mode
@@ -141,7 +139,7 @@ func (p Path) String() string {
 
 // GoString returns the internal representation of Path
 func (p Path) GoString() string {
-	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.NewRoute(`%s`), Scope: %d, ID: %d }", p.Route, p.Scope, p.ID)
+	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.NewRoute(`%s`), ScopeHash: %d }", p.Route, p.ScopeHash)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
@@ -208,19 +206,20 @@ func (p Path) fq(buf *bytes.Buffer) error {
 		return err
 	}
 
-	if (p.Scope == scope.Default || p.Scope == scope.Group) && p.ID > 0 {
-		p.Scope = scope.Default
-		p.ID = 0
+	scp, id := p.ScopeHash.Unpack()
+	if scp != scope.Website && scp != scope.Store {
+		scp = scope.Default
+		id = 0
 	}
 
-	if _, err := buf.Write(p.Scope.Bytes()); err != nil {
+	if _, err := buf.Write(scp.Bytes()); err != nil {
 		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	if err := buf.WriteByte(Separator); err != nil {
 		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	bufRaw := buf.Bytes()
-	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
+	bufRaw = strconv.AppendInt(bufRaw, id, 10)
 	buf.Reset()
 	if _, err := buf.Write(bufRaw); err != nil {
 		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
@@ -280,9 +279,8 @@ func SplitFQ(fqPath string) (Path, error) {
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 
 	return Path{
-		Route: NewRoute(fqPath[fi+1:]),
-		Scope: scope.FromString(scopeStr),
-		ID:    scopeID,
+		Route:     NewRoute(fqPath[fi+1:]),
+		ScopeHash: scope.NewHash(scope.FromString(scopeStr), scopeID),
 	}, errors.NewNotValid(err, "[cfgpath] ParseInt")
 }
 

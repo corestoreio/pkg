@@ -24,13 +24,13 @@ import (
 func Example() {
 
 	fmt.Println(cfgpath.MustNew(cfgpath.NewRoute("system/smtp/host")).String())
-	fmt.Println(cfgpath.MustNewByParts("system", "smtp", "host").Bind(scope.Website, 1).String())
+	fmt.Println(cfgpath.MustNewByParts("system", "smtp", "host").BindWebsite(1).String())
 	// alternative way
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStr(scope.StrWebsites, 1).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindWebsite(1).String())
 
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").Bind(scope.Store, 3).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStore(3).String())
 	// alternative way
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStr(scope.StrStores, 3).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStore(3).String())
 	// Group is not supported and falls back to default
 	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").Bind(scope.Group, 4).String())
 
