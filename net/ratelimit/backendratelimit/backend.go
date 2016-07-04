@@ -45,7 +45,7 @@ type Backend struct {
 	// RateLimitDuration per second (s), minute (i), hour (h), day (d)
 	//
 	// Path: net/ratelimit/duration
-	RateLimitDuration ConfigRate
+	RateLimitDuration cfgmodel.Str
 
 	// RateLimitStorageGcraMaxMemoryKeys If maxKeys > 0 (enabled), the number of different
 	// keys is restricted to the specified amount. In this case, it uses an LRU
@@ -83,11 +83,18 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 	pp.Lock()
 	defer pp.Unlock()
 
-	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
+	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	pp.RateLimitBurst = cfgmodel.NewInt(`net/ratelimit/burst`, opt)
-	pp.RateLimitRequests = cfgmodel.NewInt(`net/ratelimit/requests`, opt)
-	pp.RateLimitDuration = NewConfigDuration(`net/ratelimit/duration`, opt)
+	pp.RateLimitBurst = cfgmodel.NewInt(`net/ratelimit/burst`, opts...)
+	pp.RateLimitRequests = cfgmodel.NewInt(`net/ratelimit/requests`, opts...)
+	pp.RateLimitDuration = cfgmodel.NewStr(`net/ratelimit/duration`, append(opts, cfgmodel.WithSourceByString(
+		"s", "Second",
+		"i", "Minute",
+		"h", "Hour",
+		"d", "Day",
+	))...)
+	pp.RateLimitStorageGcraMaxMemoryKeys = cfgmodel.NewInt(`net/ratelimit_storage/enable_gcra_memory`, opts...)
+	pp.RateLimitStorageGcraRedis = cfgmodel.NewStr(`net/ratelimit_storage/gcra_redis`, opts...)
 
 	return pp
 }

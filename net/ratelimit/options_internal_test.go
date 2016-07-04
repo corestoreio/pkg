@@ -46,7 +46,7 @@ func TestCalculateRate(t *testing.T) {
 		{'y', 55, throttled.PerHour(55)},
 	}
 	for _, test := range tests {
-		haveR := CalculateRate(test.duration, test.requests)
+		haveR := calculateRate(test.duration, test.requests)
 		assert.Exactly(t, test.wantRate, haveR)
 	}
 }

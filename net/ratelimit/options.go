@@ -213,7 +213,7 @@ func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duratio
 	return func(s *Service) error {
 
 		rq := throttled.RateQuota{
-			MaxRate:  CalculateRate(duration, requests),
+			MaxRate:  calculateRate(duration, requests),
 			MaxBurst: burst,
 		}
 
@@ -284,9 +284,9 @@ func WithGCRARedis(scp scope.Scope, id int64, redisRawUrl string, duration rune,
 	}
 }
 
-// CalculateRate calculates the rate depending on the duration (s second,i minute,h hour,d day) and the
+// calculateRate calculates the rate depending on the duration (s second,i minute,h hour,d day) and the
 // maximum requests. Invalid duration falls back to an hourly calculation.
-func CalculateRate(duration rune, requests int) (r throttled.Rate) {
+func calculateRate(duration rune, requests int) (r throttled.Rate) {
 	switch duration {
 	case 's': // second
 		r = throttled.PerSec(requests)

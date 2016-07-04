@@ -37,45 +37,54 @@ func Default(opts ...cfgmodel.Option) ratelimit.OptionFactoryFunc {
 func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
 
 	return func(sg config.ScopedGetter) []ratelimit.Option {
-		var opts [6]ratelimit.Option
-		var i int
-		scp, id := sg.Scope()
+		var (
+			opts [6]ratelimit.Option
+			i    int // used as index in opts
+		)
 
-		disabled, err := be.RateLimitDisabled.Get(sg)
+		disabled, scpHash, err := be.RateLimitDisabled.Get(sg)
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendratelimit] RateLimitDisabled.Get"))
+		} else {
+			scp, scpID := scpHash.Unpack()
+			opts[i] = ratelimit.WithDisable(scp, scpID, disabled)
+			i++
 		}
-		opts[i] = ratelimit.WithDisable(scp, id, disabled)
-		i++
 
-		burst, err := be.RateLimitBurst.Get(sg)
+		burst, _, err := be.RateLimitBurst.Get(sg)
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendratelimit] RateLimitBurst.Get"))
 		}
-		req, err := be.RateLimitRequests.Get(sg)
+		req, _, err := be.RateLimitRequests.Get(sg)
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendratelimit] RateLimitRequests.Get"))
 		}
-		dur, err := be.RateLimitDuration.Get(sg)
+		durRaw, _, err := be.RateLimitDuration.Get(sg)
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendratelimit] RateLimitDuration.Get"))
 		}
 
-		useInMemMaxKeys, err := be.RateLimitStorageGcraMaxMemoryKeys.Get(sg)
-		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraMaxMemoryKeys.Get"))
-		}
-		redisURL, err := be.RateLimitStorageGcraRedis.Get(sg)
-		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraRedis.Get"))
+		if len(durRaw) != 1 {
+			return optError(errors.NewFatalf("[backendratelimit] RateLimitDuration invalid character count: %q. Should be one character long.", durRaw))
 		}
 
-		if useInMemMaxKeys > 0 && redisURL == "" {
-			opts[i] = ratelimit.WithGCRAMemStore(scp, id, useInMemMaxKeys, dur, req, burst)
+		dur := rune(durRaw[0])
+
+		useInMemMaxKeys, scpHash, err := be.RateLimitStorageGcraMaxMemoryKeys.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraMaxMemoryKeys.Get"))
+		} else if useInMemMaxKeys > 0 {
+			scp, scpID := scpHash.Unpack()
+			opts[i] = ratelimit.WithGCRAMemStore(scp, scpID, useInMemMaxKeys, dur, req, burst)
 			i++
 		}
-		if useInMemMaxKeys == 0 && redisURL != "" {
-			opts[i] = ratelimit.WithGCRARedis(scp, id, redisURL, dur, req, burst)
+
+		redisURL, scpHash, err := be.RateLimitStorageGcraRedis.Get(sg)
+		if err != nil {
+			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraRedis.Get"))
+		} else if useInMemMaxKeys == 0 && redisURL != "" {
+			scp, scpID := scpHash.Unpack()
+			opts[i] = ratelimit.WithGCRARedis(scp, scpID, redisURL, dur, req, burst)
 			i++
 		}
 
