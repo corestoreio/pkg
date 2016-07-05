@@ -208,20 +208,13 @@ func (s *Service) getConfigByHash(hash scope.Hash, parent scope.Hash) (scpCfg sc
 		scpCfg = *pScpCfg
 	}
 	s.rwmu.RUnlock()
-
-	println("Lock 212", hash.String(), parent.String())
-
 	if ok {
 		return scpCfg
 	}
 
-	println("Lock 218", hash.String(), parent.String())
-
-	// no lock everything until the fall back has been found.
+	// now lock everything until the fall back has been found.
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
-
-	println("Lock 224", hash.String(), parent.String())
 
 	// if the store scope cannot be found, fall back to website.
 	if !ok && parent.Scope() == scope.Website {
@@ -247,86 +240,16 @@ func (s *Service) getConfigByHash(hash scope.Hash, parent scope.Hash) (scpCfg sc
 	}
 
 	return scpCfg
-
-	//scpCfg := s.lookupScopedCache(hash, parent, hash)
-	//
-	//if scpCfg.isValid() == nil {
-	//	if s.Log.IsDebug() {
-	//		s.Log.Debug(prefixLog+"Service.getConfigByHash.Hash.Valid.Cached",
-	//			log.Stringer("arg_scope", hash),
-	//			log.Stringer("arg_scope_parent", parent),
-	//			log.Stringer("scope_applied", scpCfg.scopeHash),
-	//		)
-	//	}
-	//	return scpCfg
-	//}
-	//
-	//// lookup parent configuration scope
-	//if parent.Scope() == scope.Website {
-	//	// overwrite store scope with website scope pointer
-	//	scpCfg = s.lookupScopedCache(parent, 0, hash)
-	//
-	//	//if err := scpCfg.isValid(); err == nil {
-	//	//	// we found an entry for a website config
-	//	//	s.rwmu.Lock()
-	//	//	s.scopeCache[hash] = scpCfg // set the hash to the parent website configuration
-	//	//	s.rwmu.Unlock()
-	//	//	if s.Log.IsDebug() {
-	//	//		s.Log.Debug(prefixLog+"Service.getConfigByHash.Parent.Valid.New",
-	//	//			log.Stringer("arg_scope", hash),
-	//	//			log.Stringer("arg_scope_parent", parent),
-	//	//			log.Stringer("scope_applied", scpCfg.scopeHash),
-	//	//		)
-	//	//	}
-	//	//} else if s.Log.IsDebug() {
-	//	//	s.Log.Debug(prefixLog+"Service.getConfigByHash.Parent.Invalid",
-	//	//		log.Stringer("arg_scope", hash),
-	//	//		log.Stringer("arg_scope_parent", parent),
-	//	//		log.Err(err),
-	//	//	)
-	//	//}
-	//	// return website config
-	//}
-	//
-	//if s.Log.IsDebug() {
-	//	s.Log.Debug(prefixLog+"Service.getConfigByHash.Return",
-	//		log.Stringer("arg_scope", hash),
-	//		log.Stringer("arg_scope_parent", parent),
-	//		log.ErrWithKey("scp_cfg_is_valid", scpCfg.isValid()),
-	//	)
-	//}
-	//
-	//return scpCfg
 }
 
-// lookupScopedCache returns the config for argument "hash" and uses argument "parent"
-// only to check if it must fall back to the default scope. if so the "parent"
-// field gets the defaultScopeCache assigned.
-//func (s *Service) lookupScopedCache(lookUp scope.Hash, parent scope.Hash, setKey scope.Hash) (scpCfg scopedConfig) {
-//	s.rwmu.RLock()
-//	pScpCfg, ok := s.scopeCache[lookUp]
-//	if pScpCfg != nil {
-//		scpCfg = *pScpCfg // pointer get dereferenced in a lock to avoid race conditions
-//	}
-//	s.rwmu.RUnlock()
-//
-//	if ok {
-//		return scpCfg
-//	}
-//
-//	if !ok && parent.EqualScope(scope.DefaultHash) {
-//		s.rwmu.Lock()
-//		scpCfg = *(s.scopeCache[scope.DefaultHash])
-//		s.scopeCache[setKey] = s.scopeCache[scope.DefaultHash]
-//		s.rwmu.Unlock()
-//		if s.Log.IsDebug() {
-//			s.Log.Debug(prefixLog+"Service.lookupScopedCache.DefaultScopeCache",
-//				log.Stringer("arg_scope", lookUp),
-//				log.Stringer("arg_scope_parent", parent),
-//				log.Stringer("arg_set_key", setKey),
-//				log.Stringer("scope_applied", scpCfg.scopeHash),
-//			)
-//		}
-//	}
-//	return scpCfg
-//}
+// optionInheritDefault looks up if the default configuration exists and if not
+// creates a newScopedConfig(). This function can only be used within a
+// functional option because it expects that it runs within a acquired lock.
+func optionInheritDefault(s *Service) *scopedConfig {
+	if sc, ok := s.scopeCache[scope.DefaultHash]; ok && sc != nil {
+		shallowCopy := new(scopedConfig)
+		*shallowCopy = *sc
+		return shallowCopy
+	}
+	return newScopedConfig()
+}

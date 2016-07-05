@@ -77,10 +77,11 @@ func (sc *scopedConfig) isValid() error {
 	if sc.scopeHash > 0 && len(sc.allowedMethods) > 0 && sc.log != nil {
 		return nil
 	}
-	return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash)
+	return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.allowedMethods, sc.log == nil)
 }
 
-func defaultScopedConfig() *scopedConfig {
+// newScopedConfig creates a new object with the minimum needed configuration.
+func newScopedConfig() *scopedConfig {
 	return &scopedConfig{
 		scopedConfigGeneric: scopedConfigGeneric{
 			scopeHash: scope.DefaultHash,

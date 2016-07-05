@@ -20,7 +20,7 @@ const (
 	errScopedConfigIsNil       = `[cors] ScopedConfig has not yet been initialized, is nil.`
 	errInvalidDurations        = "[cors] MaxAge: Invalid Duration seconds: %.0f"
 	errServiceUnsupportedScope = "[cors] Service does not support this: %s. Only default or website scope are allowed."
-	errScopedConfigNotValid    = `[cors] ScopedConfig %s is invalid.`
+	errScopedConfigNotValid    = `[cors] ScopedConfig %s is invalid. AllowedMethods: %v; Logger is nil: %t`
 )
 
 var errConfigNotFound = errors.NewNotFoundf(`[cors] ScopedConfig not available`)

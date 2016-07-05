@@ -46,7 +46,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) (err error) {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
-		s.scopeCache[h] = defaultScopedConfig()
+		s.scopeCache[h] = optionInheritDefault(s)
 		return nil
 	}
 }
@@ -62,7 +62,7 @@ func WithExposedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.exposedHeaders = exposedHeaders
 		sc.scopeHash = h
@@ -116,7 +116,7 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.allowedOriginsAll = allowedOriginsAll
 		sc.allowedOrigins = allowedOrigins
@@ -139,7 +139,7 @@ func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) 
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.allowOriginFunc = f
 		sc.scopeHash = h
@@ -163,7 +163,7 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.allowedMethods = am
 		sc.scopeHash = h
@@ -199,7 +199,7 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.allowedHeadersAll = allowedHeadersAll
 		sc.allowedHeaders = allowedHeaders
@@ -220,7 +220,7 @@ func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.allowCredentials = ok
 		sc.scopeHash = h
@@ -250,7 +250,7 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.maxAge = age
 		sc.scopeHash = h
@@ -270,7 +270,7 @@ func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 
 		sc := s.scopeCache[h]
 		if sc == nil {
-			sc = new(scopedConfig)
+			sc = optionInheritDefault(s)
 		}
 		sc.optionsPassthrough = ok
 		sc.scopeHash = h
