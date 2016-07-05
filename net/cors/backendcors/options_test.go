@@ -30,6 +30,7 @@ import (
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 )
 
 type fataler interface {
@@ -118,13 +119,16 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
+		// backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): false, <== this is the default value
 	}))
-	corstest.TestAllowedMethod(t, s, req)
+	req.Body = ioutil.NopCloser(strings.NewReader("Body of TestAllowedMethod_No_Passthrough"))
+	corstest.TestAllowedMethodNoPassthrough(t, s, req)
 
 	if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.optionInflight.Do`), 1; have != want {
-		t.Errorf("Have: %v Want: %v", have, want)
+		//println("\n", logBuf.String())
+		t.Fatalf("Have: %v Want: %v", have, want)
 	}
-	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.IsValid`), 90; have <= want {
+	if have, want := strings.Count(logBuf.String(), `cors.Service.ConfigByScopedGetter.IsValid`), 88; have <= want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
 	//println("\n", logBuf.String())
@@ -137,6 +141,7 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2):     "PUT\nDELETE",
 		backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): true,
 	}))
+	req.Body = ioutil.NopCloser(strings.NewReader("Body of TestAllowedMethod_Passthrough"))
 	corstest.TestAllowedMethodPassthrough(t, s, req)
 }
 

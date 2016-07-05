@@ -17,6 +17,7 @@
 package cors
 
 import (
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -39,7 +40,11 @@ type Service struct {
 func New(opts ...Option) (*Service, error) {
 	s, err := newService(opts...)
 	if s != nil {
-		s.optionValidation = func() error {
+		s.optionAfterApply = func() error {
+			if err := withLoggerInit(log.BlackHole{})(s); err != nil {
+				return errors.Wrap(err, "[cors] withLoggerInit")
+			}
+
 			s.rwmu.RLock()
 			defer s.rwmu.RUnlock()
 			for h := range s.scopeCache {

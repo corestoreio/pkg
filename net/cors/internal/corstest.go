@@ -32,6 +32,8 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 )
 
+const testHandlerBodyData = `foobar`
+
 func testHandler(fa interface {
 	Fatalf(format string, args ...interface{})
 }) http.HandlerFunc {
@@ -39,7 +41,7 @@ func testHandler(fa interface {
 		if err := cors.FromContext(r.Context()); err != nil {
 			fa.Fatalf("%+v", err)
 		}
-		_, _ = w.Write([]byte("bar"))
+		_, _ = w.Write([]byte(testHandlerBodyData))
 	}
 }
 
@@ -74,7 +76,7 @@ func TestMatchAllOrigin(t *testing.T, s *cors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 
-	hpu := cstesting.NewHTTPParallelUsers(10, 4, 300, time.Microsecond)
+	hpu := cstesting.NewHTTPParallelUsers(4, 4, 300, time.Microsecond)
 	hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
 		assertHeaders(t, rec.Header(), map[string]string{
 			"Vary": "Origin",
@@ -182,7 +184,7 @@ func TestAllowedOriginFunc(t *testing.T, s *cors.Service, req *http.Request) {
 	})
 }
 
-func TestAllowedMethod(t *testing.T, s *cors.Service, req *http.Request) {
+func TestAllowedMethodNoPassthrough(t *testing.T, s *cors.Service, req *http.Request) {
 
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
@@ -198,6 +200,10 @@ func TestAllowedMethod(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Max-Age":           "",
 			"Access-Control-Expose-Headers":    "",
 		})
+
+		if have, want := rec.Body.String(), ""; have != want {
+			t.Errorf("Have: %v Want: %v", have, want)
+		}
 	}
 	hpu.ServeHTTP(req, s.WithCORS()(testHandler(t)))
 }
@@ -218,6 +224,9 @@ func TestAllowedMethodPassthrough(t *testing.T, s *cors.Service, req *http.Reque
 			"Access-Control-Max-Age":           "",
 			"Access-Control-Expose-Headers":    "",
 		})
+		if have, want := rec.Body.String(), testHandlerBodyData; have != want {
+			t.Errorf("Have: %v Want: %v", have, want)
+		}
 	}
 	hpu.ServeHTTP(req, s.WithCORS()(testHandler(t)))
 }

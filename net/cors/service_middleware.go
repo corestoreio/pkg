@@ -36,8 +36,8 @@ func (s *Service) WithCORS() mw.Middleware {
 
 			requestedStore, err := store.FromContextRequestedStore(ctx)
 			if err != nil {
-				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.HTTPRequest("request", r))
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[cors] FromContextRequestedStore")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
@@ -50,21 +50,21 @@ func (s *Service) WithCORS() mw.Middleware {
 			scpCfg := s.configByScopedGetter(requestedStore.Website.Config)
 
 			if err := scpCfg.isValid(); err != nil {
-				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
 				}
 				err = errors.Wrap(err, "[cors] ConfigByScopedGetter")
 				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
 				return
 			}
 
-			if s.defaultScopeCache.log.IsInfo() {
-				s.defaultScopeCache.log.Info("Service.WithCORS.handleActualRequest", log.String("method", r.Method), log.Object("scopedConfig", scpCfg))
+			if s.Log.IsInfo() {
+				s.Log.Info("Service.WithCORS.handleActualRequest", log.String("method", r.Method), log.Object("scopedConfig", scpCfg))
 			}
 
 			if r.Method == methodOptions {
-				if s.defaultScopeCache.log.IsDebug() {
-					s.defaultScopeCache.log.Debug("Service.WithCORS.handlePreflight", log.String("method", r.Method), log.Bool("OptionsPassthrough", scpCfg.optionsPassthrough))
+				if s.Log.IsDebug() {
+					s.Log.Debug("Service.WithCORS.handlePreflight", log.String("method", r.Method), log.Bool("OptionsPassthrough", scpCfg.optionsPassthrough))
 				}
 				scpCfg.handlePreflight(w, r)
 				// Preflight requests are standalone and should stop the chain as some other

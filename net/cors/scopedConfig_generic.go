@@ -14,7 +14,9 @@
 
 package cors
 
-import "github.com/corestoreio/csfw/store/scope"
+import (
+	"github.com/corestoreio/csfw/store/scope"
+)
 
 // auto generated: do not edit. See net/gen eric package
 
@@ -28,17 +30,10 @@ type scopedConfigGeneric struct {
 	scopeHash scope.Hash
 }
 
-func newScopedConfigError(err error) *scopedConfig {
-	return &scopedConfig{
+func newScopedConfigError(err error) scopedConfig {
+	return scopedConfig{
 		scopedConfigGeneric: scopedConfigGeneric{
 			lastErr: err,
 		},
 	}
-}
-
-func (sc *scopedConfig) printScope() string {
-	if sc == nil {
-		return "<nil>"
-	}
-	return sc.scopeHash.String()
 }

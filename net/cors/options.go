@@ -46,12 +46,6 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) (err error) {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache = defaultScopedConfig()
-			return nil
-		}
-
 		s.scopeCache[h] = defaultScopedConfig()
 		return nil
 	}
@@ -66,21 +60,13 @@ func WithExposedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.exposedHeaders = exposedHeaders
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.exposedHeaders = exposedHeaders
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.exposedHeaders = scNew.exposedHeaders
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.exposedHeaders = exposedHeaders
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -128,27 +114,15 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.allowedOriginsAll = allowedOriginsAll
-			s.defaultScopeCache.allowedOrigins = allowedOrigins
-			s.defaultScopeCache.allowedWOrigins = allowedWOrigins
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.allowedOriginsAll = allowedOriginsAll
-		scNew.allowedOrigins = allowedOrigins
-		scNew.allowedWOrigins = allowedWOrigins
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.allowedOriginsAll = scNew.allowedOriginsAll
-			sc.allowedOrigins = scNew.allowedOrigins
-			sc.allowedWOrigins = scNew.allowedWOrigins
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.allowedOriginsAll = allowedOriginsAll
+		sc.allowedOrigins = allowedOrigins
+		sc.allowedWOrigins = allowedWOrigins
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -163,21 +137,13 @@ func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) 
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.allowOriginFunc = f
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.allowOriginFunc = f
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.allowOriginFunc = scNew.allowOriginFunc
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.allowOriginFunc = f
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -195,21 +161,13 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 		// Note: for origins and methods matching, the spec requires a case-sensitive matching.
 		// As it may error prone, we chose to ignore the spec here.
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.allowedMethods = am
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.allowedMethods = am
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.allowedMethods = scNew.allowedMethods
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.allowedMethods = am
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -239,24 +197,14 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.allowedHeadersAll = allowedHeadersAll
-			s.defaultScopeCache.allowedHeaders = allowedHeaders
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.allowedHeadersAll = allowedHeadersAll
-		scNew.allowedHeaders = allowedHeaders
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.allowedHeadersAll = scNew.allowedHeadersAll
-			sc.allowedHeaders = scNew.allowedHeaders
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.allowedHeadersAll = allowedHeadersAll
+		sc.allowedHeaders = allowedHeaders
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -270,21 +218,13 @@ func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.allowCredentials = ok
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.allowCredentials = ok
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.allowCredentials = scNew.allowCredentials
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.allowCredentials = ok
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -308,21 +248,13 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.maxAge = age
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.maxAge = age
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.maxAge = scNew.maxAge
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.maxAge = age
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -336,32 +268,47 @@ func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.optionsPassthrough = ok
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = new(scopedConfig)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.optionsPassthrough = ok
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.optionsPassthrough = scNew.optionsPassthrough
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.optionsPassthrough = ok
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
 
 // WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes.
-// Mainly used for debugging.
+// subsequent scopes. Mainly used for debugging.
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
-		s.defaultScopeCache.log = l
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
 		s.Log = l
+		for _, sc := range s.scopeCache {
+			sc.log = l
+		}
+		return nil
+	}
+}
+
+// withLoggerInit only sets the logger during init process and avoids
+// overwriting existing settings.
+func withLoggerInit(l log.Logger) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		if s.Log == nil {
+			s.Log = l
+		}
+		for _, sc := range s.scopeCache {
+			if sc.log == nil {
+				sc.log = l
+			}
+		}
 		return nil
 	}
 }
