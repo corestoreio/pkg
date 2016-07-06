@@ -23,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -309,31 +308,6 @@ func withLoggerInit(l log.Logger) Option {
 				sc.log = l
 			}
 		}
-		return nil
-	}
-}
-
-// WithOptionFactory applies a function which lazily loads the option depending
-// on the incoming scope within a request. For example applies the backend
-// configuration to the service.
-//
-// Once this option function has been set all other manually set option functions,
-// which accept a scope and a scope ID as an argument, will be overwritten by the
-// new values retrieved from the configuration service.
-//
-//	cfgStruct, err := backendcors.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	pb := backendcors.New(cfgStruct)
-//
-//	cors := cors.MustNewService(
-//		cors.WithOptionFactory(backendcors.PrepareOptions(pb)),
-//	)
-func WithOptionFactory(f OptionFactoryFunc) Option {
-	return func(s *Service) error {
-		s.optionInflight = new(singleflight.Group)
-		s.optionFactoryFunc = f
 		return nil
 	}
 }

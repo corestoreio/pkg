@@ -23,4 +23,4 @@ const (
 	errScopedConfigNotValid    = `[cors] ScopedConfig %s is invalid. AllowedMethods: %v; Logger is nil: %t`
 )
 
-var errConfigNotFound = errors.NewNotFoundf(`[cors] ScopedConfig not available`)
+var errOptionFactoryNotSet = errors.NewNotFoundf(`[cors] OptionFactory not set`)

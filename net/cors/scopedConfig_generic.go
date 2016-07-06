@@ -16,6 +16,7 @@ package cors
 
 import (
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sync/singleflight"
 )
 
 // auto generated: do not edit. See net/gen eric package
@@ -35,5 +36,43 @@ func newScopedConfigError(err error) scopedConfig {
 		scopedConfigGeneric: scopedConfigGeneric{
 			lastErr: err,
 		},
+	}
+}
+
+// optionInheritDefault looks up if the default configuration exists and if not
+// creates a newScopedConfig(). This function can only be used within a
+// functional option because it expects that it runs within a acquired lock.
+func optionInheritDefault(s *Service) *scopedConfig {
+	if sc, ok := s.scopeCache[scope.DefaultHash]; ok && sc != nil {
+		shallowCopy := new(scopedConfig)
+		*shallowCopy = *sc
+		return shallowCopy
+	}
+	return newScopedConfig()
+}
+
+// WithOptionFactory applies a function which lazily loads the option depending
+// on the incoming scope within a request. For example applies the backend
+// configuration to the service.
+//
+// Once this option function has been set all other manually set option functions,
+// which accept a scope and a scope ID as an argument, will be overwritten by the
+// new values retrieved from the configuration service.
+//
+//	cfgStruct, err := backendpkg.NewConfigStructure()
+//	if err != nil {
+//		panic(err)
+//	}
+//	pb := backendpkg.New(cfgStruct)
+//
+//	srv := pkg.MustNewService(
+//		pkg.WithOptionFactory(backendpkg.PrepareOptions(pb)),
+//	)
+func WithOptionFactory(f OptionFactoryFunc) Option {
+	return func(s *Service) error {
+		s.oFactory.Group = new(singleflight.Group)
+		s.oFactory.Group.DisableForget = true
+		s.oFactory.OptionFactoryFunc = f
+		return nil
 	}
 }
