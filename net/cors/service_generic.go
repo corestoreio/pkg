@@ -31,47 +31,22 @@ const (
 	prefixLog   = `cors.`
 )
 
-type optionFactory struct {
-	// OptionFactoryFunc optional configuration closure, can be nil. It pulls
-	// out the configuration settings during a request and caches the settings
-	// in the internal map. ScopedOption requires a config.ScopedGetter. This
-	// function gets set via WithOptionFactory()
-	OptionFactoryFunc
-
-	// Group checks on a per scope.Hash basis if the configuration
-	// loading process takes place. Stops the execution of other Goroutines (aka
-	// incoming requests) with the same scope.Hash until the configuration has
-	// been fully loaded and applied and for that specific scope. This function
-	// gets set via WithOptionFactory()
-	*singleflight.Group
-
-	// rwmu protects all fields below
-	sync.RWMutex
-	applied map[scope.Hash]struct{}
-}
-
-func (of *optionFactory) shouldRun(h scope.Hash) bool {
-	if of.OptionFactoryFunc == nil {
-		return false
-	}
-	of.RLock()
-	_, ok := of.applied[h]
-	of.RUnlock()
-	return !ok
-}
-
-func (of *optionFactory) done(h scope.Hash) {
-	println("optionFactory ==> done!", h.String())
-	of.Lock()
-	of.applied[h] = struct{}{}
-	of.Unlock()
-}
-
 type service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
 
-	oFactory *optionFactory
+	// optionFactory optional configuration closure, can be nil. It pulls out
+	// the configuration settings from a slow backend during a request and
+	// caches the settings in the internal map.  This function gets set via
+	// WithOptionFactory()
+	optionFactory OptionFactoryFunc
+
+	// optionInflight checks on a per scope.Hash basis if the configuration
+	// loading process takes place. Stops the execution of other Goroutines (aka
+	// incoming requests) with the same scope.Hash until the configuration has
+	// been fully loaded and applied for that specific scope. This function gets
+	// set via WithOptionFactory()
+	optionInflight *singleflight.Group
 
 	// optionAfterApply allows to set a custom function which runs every time
 	// after the options has been applied. Gets only executed if not nil.
@@ -88,10 +63,7 @@ type service struct {
 func newService(opts ...Option) (*Service, error) {
 	s := &Service{
 		service: service{
-			Log: log.BlackHole{},
-			oFactory: &optionFactory{
-				applied: make(map[scope.Hash]struct{}),
-			},
+			Log:        log.BlackHole{},
 			scopeCache: make(map[scope.Hash]*scopedConfig),
 		},
 	}
@@ -137,47 +109,51 @@ func (s *Service) flushCache() error {
 // configByScopedGetter returns the internal configuration depending on the
 // ScopedGetter. Mainly used within the middleware.  If you have applied the
 // option WithOptionFactory() the configuration will be pulled out only one time
-// from the backend configuration service. The field Inflight handles the
+// from the backend configuration service. The field optionInflight handles the
 // guaranteed atomic single loading for each scope.
-// It returns never nil.
 func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
 
-	h := scope.NewHash(scpGet.Scope())  // can be store or website or default
-	p := scope.NewHash(scpGet.Parent()) // can be website or default
+	current := scope.NewHash(scpGet.Scope())   // can be store or website or default
+	fallback := scope.NewHash(scpGet.Parent()) // can be website or default
 
-	if s.oFactory.shouldRun(h) {
-		//if s.Log.IsDebug() {
-		//	s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.OptionFactoryRun",
-		//		log.Stringer("requested_scope", h),
-		//		log.Stringer("requested_parent_scope", p),
-		//		log.Stringer("responded_scope", sCfg.scopeHash),
-		//		log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
-		//	)
-		//}
-		//
-		defer s.oFactory.Group.Forget(h.String())
-		scpCfgChan := s.oFactory.DoChan(h.String(), func() (interface{}, error) {
-			defer s.oFactory.done(h)
-			if err := s.Options(s.oFactory.OptionFactoryFunc(scpGet)...); err != nil {
+	// 99.9999 % of the hits; 2nd argument must be zero because we must first
+	// test if a direct entry can be found; if not we must apply either the
+	// optionFactory function or do a fall back to the website scope and/or
+	// default scope.
+	if sCfg := s.getConfigByHash(current, 0); sCfg.isValid() == nil {
+		if s.Log.IsDebug() {
+			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.IsValid",
+				log.Stringer("requested_scope", current),
+				log.Stringer("requested_fallback_scope", scope.Hash(0)),
+				log.Stringer("responded_scope", sCfg.scopeHash),
+				log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
+			)
+		}
+		return sCfg
+	}
+
+	// load the configuration from the slow backend. optionInflight guarantees
+	// that the closure will only be executed once but the returned result gets
+	// returned to all waiting goroutines.
+	if s.optionFactory != nil {
+		res, ok := <-s.optionInflight.DoChan(current.String(), func() (interface{}, error) {
+			if err := s.Options(s.optionFactory(scpGet)...); err != nil {
 				return newScopedConfigError(errors.Wrap(err, prefixError+" Options applied by OptionFactoryFunc")), nil
 			}
-			sCfg := s.getConfigByHash(h, p)
+			sCfg := s.getConfigByHash(current, fallback)
 			if s.Log.IsDebug() {
 				s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.Inflight.Do",
-					log.Stringer("requested_scope", h),
-					log.Stringer("requested_parent_scope", p),
+					log.Stringer("requested_scope", current),
+					log.Stringer("requested_fallback_scope", fallback),
 					log.Stringer("responded_scope", sCfg.scopeHash),
 					log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
 				)
 			}
 			return sCfg, nil
 		})
-
-		res, ok := <-scpCfgChan
-		if !ok {
+		if !ok { // unlikely to happen but you'll never know. how to test that?
 			return newScopedConfigError(errors.NewFatalf(prefixError + " Inflight.DoChan returned a closed/unreadable channel"))
 		}
-
 		if res.Err != nil {
 			return newScopedConfigError(errors.Wrap(res.Err, prefixError+" Inflight.DoChan.Error"))
 		}
@@ -188,31 +164,11 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		return sCfg
 	}
 
-	// 99 % of the hits
-	if sCfg := s.getConfigByHash(h, p); sCfg.isValid() == nil {
-		// cached entry found which can contain the configured scoped configuration or
-		// the default scope configuration.
-
-		// println("Hit allowedOriginsAll", sCfg.allowedOriginsAll, sCfg.scopeHash.String(), "Requested: ", h.String(), p.String())
-
-		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.IsValid",
-				log.Stringer("requested_scope", h),
-				log.Stringer("requested_parent_scope", p),
-				log.Stringer("responded_scope", sCfg.scopeHash),
-				log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
-			)
-		}
-		return sCfg
-	}
-
-	// finaly fall back to default scope
-	p = scope.DefaultHash
-	sCfg := s.getConfigByHash(h, p)
+	sCfg := s.getConfigByHash(current, fallback)
 	if s.Log.IsDebug() {
 		s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.Fallback.Default",
-			log.Stringer("requested_scope", h),
-			log.Stringer("requested_parent_scope", p),
+			log.Stringer("requested_scope", current),
+			log.Stringer("requested_fallback_scope", fallback),
 			log.Stringer("responded_scope", sCfg.scopeHash),
 			log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
 		)
@@ -220,68 +176,24 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	return sCfg
 }
 
-// runOptionFactory uses the external configuration to load the values and
-// executes the functional options. after the options has been applied a call to
-// getConfigByHash() will be made to select the correct cached configuration.
-//func (s *Service) runOptionFactory(scpGet config.ScopedGetter) scopedConfig {
-//	if s.oFactory.OptionFactoryFunc == nil {
-//		return newScopedConfigError(errOptionFactoryNotSet)
-//	}
-//
-//	h := scope.NewHash(scpGet.Scope())
-//	p := scope.NewHash(scpGet.Parent())
-//
-//	scpCfgChan := s.oFactory.DoChan(h.String(), func() (interface{}, error) {
-//		if err := s.Options(s.oFactory.OptionFactoryFunc(scpGet)...); err != nil {
-//			return newScopedConfigError(errors.Wrap(err, prefixError+" Options applied by OptionFactoryFunc")), nil
-//		}
-//		sCfg := s.getConfigByHash(h, p)
-//		if s.Log.IsDebug() {
-//			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.Inflight.Do",
-//				log.Stringer("requested_scope", h),
-//				log.Stringer("requested_parent_scope", p),
-//				log.Stringer("responded_scope", sCfg.scopeHash),
-//				log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
-//			)
-//		}
-//		return sCfg, nil
-//	})
-//
-//	res, ok := <-scpCfgChan
-//	if !ok {
-//		return newScopedConfigError(errors.NewFatalf(prefixError + " Inflight.DoChan returned a closed/unreadable channel"))
-//	}
-//
-//	if res.Err != nil {
-//		return newScopedConfigError(errors.Wrap(res.Err, prefixError+" Inflight.DoChan.Error"))
-//	}
-//	sCfg, ok := res.Val.(scopedConfig)
-//	if !ok {
-//		sCfg = newScopedConfigError(errors.NewFatalf(prefixError + " Inflight.DoChan res.Val cannot be type asserted to scopedConfig"))
-//	}
-//	return sCfg
-//}
-
-// getConfigByScopeID returns the correct configuration for a scope and may fall
+// getConfigByHash returns the correct configuration for a scope and may fall
 // back to the next higher scope: store -> website -> default. if an entry for a
-// scope cannot be found the next higher get looked up and the pointer of the
-// next higher scope gets assigned to the current scope.
-func (s *Service) getConfigByHash(hash scope.Hash, parent scope.Hash) (scpCfg scopedConfig) {
-	// hash can be store or website scope
-	// parent can be website or default scope.
+// scope cannot be found the next higher scope gets looked up and the pointer of
+// the next higher scope gets assigned to the current scope. this makes sure to
+// avoid redundant configurations and enables us to change one scope with an
+// impact on all other scopes which depend on the parent scope.
+func (s *Service) getConfigByHash(current scope.Hash, fallback scope.Hash) (scpCfg scopedConfig) {
+	// current can be store or website scope
+	// fallback can be website or default scope. If 0 then no fall back
 
-	if parent.Scope() < scope.Default {
-		return newScopedConfigError(errors.NewFatalf(prefixError+" Parent scope must be minimum scope.Default: %s", parent))
-	}
-
-	// pointer gets dereferenced in a lock to avoid race conditions while
+	// pointer must get dereferenced in a lock to avoid race conditions while
 	// reading in middleware the config values because we might execute the
 	// functional options for another scope while one scope runs in the
 	// middleware.
 
 	// lookup store/website scope. this should hit 99% of the calls of this function.
 	s.rwmu.RLock()
-	pScpCfg, ok := s.scopeCache[hash]
+	pScpCfg, ok := s.scopeCache[current]
 	if ok && pScpCfg != nil {
 		scpCfg = *pScpCfg
 	}
@@ -289,33 +201,38 @@ func (s *Service) getConfigByHash(hash scope.Hash, parent scope.Hash) (scpCfg sc
 	if ok {
 		return scpCfg
 	}
+	if fallback == 0 {
+		return newScopedConfigError(errConfigNotFound)
+	}
 
-	// now lock everything until the fall back has been found.
+	// slow path: now lock everything until the fall back has been found.
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
 
-	// if the store scope cannot be found, fall back to website.
-	if !ok && parent.Scope() == scope.Website {
-		pScpCfg, ok = s.scopeCache[parent]
+	// if the current scope cannot be found, fall back to fallback scope and
+	// apply the maybe found configuration to the current scope configuration.
+	if !ok && fallback.Scope() == scope.Website {
+		pScpCfg, ok = s.scopeCache[fallback]
 		if ok && pScpCfg != nil {
 			scpCfg = *pScpCfg
 		}
 		if ok && pScpCfg != nil {
-			s.scopeCache[hash] = pScpCfg
+			s.scopeCache[current] = pScpCfg
 			return scpCfg
 		}
 	}
 
-	// default config lookup
+	// if the current and fallback scope cannot be found, fall back to default
+	// scope and apply the maybe found configuration to the current scope
+	// configuration.
 	if !ok {
 		pScpCfg, ok = s.scopeCache[scope.DefaultHash]
 		if ok && pScpCfg != nil {
 			scpCfg = *pScpCfg
 		}
 		if ok && pScpCfg != nil {
-			s.scopeCache[hash] = pScpCfg
+			s.scopeCache[current] = pScpCfg
 		}
 	}
-
 	return scpCfg
 }

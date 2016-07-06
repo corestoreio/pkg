@@ -24,13 +24,14 @@ import (
 // scopedConfigGeneric private internal scoped based configuration used for
 // embedding into scopedConfig type.
 type scopedConfigGeneric struct {
-	// lastErr used during selecting the config from the scopeCache map and gets
-	// filled if an entry cannot be found.
+	// lastErr used during selecting the config from the scopeCache map and infligh
+	// package.
 	lastErr error
 	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
 }
 
+// newScopedConfigError easy helper to create an error
 func newScopedConfigError(err error) scopedConfig {
 	return scopedConfig{
 		scopedConfigGeneric: scopedConfigGeneric{
@@ -41,7 +42,8 @@ func newScopedConfigError(err error) scopedConfig {
 
 // optionInheritDefault looks up if the default configuration exists and if not
 // creates a newScopedConfig(). This function can only be used within a
-// functional option because it expects that it runs within a acquired lock.
+// functional option because it expects that it runs within an acquired lock
+// because of the map.
 func optionInheritDefault(s *Service) *scopedConfig {
 	if sc, ok := s.scopeCache[scope.DefaultHash]; ok && sc != nil {
 		shallowCopy := new(scopedConfig)
@@ -51,13 +53,13 @@ func optionInheritDefault(s *Service) *scopedConfig {
 	return newScopedConfig()
 }
 
-// WithOptionFactory applies a function which lazily loads the option depending
-// on the incoming scope within a request. For example applies the backend
-// configuration to the service.
+// WithOptionFactory applies a function which lazily loads the options from a
+// slow backend depending on the incoming scope within a request. For example
+// applies the backend configuration to the service.
 //
-// Once this option function has been set all other manually set option functions,
-// which accept a scope and a scope ID as an argument, will be overwritten by the
-// new values retrieved from the configuration service.
+// Once this option function has been set all other manually set option
+// functions, which accept a scope and a scope ID as an argument, will NOT be
+// overwritten by the new values retrieved from the configuration service.
 //
 //	cfgStruct, err := backendpkg.NewConfigStructure()
 //	if err != nil {
@@ -70,9 +72,8 @@ func optionInheritDefault(s *Service) *scopedConfig {
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
-		s.oFactory.Group = new(singleflight.Group)
-		s.oFactory.Group.DisableForget = true
-		s.oFactory.OptionFactoryFunc = f
+		s.optionInflight = new(singleflight.Group)
+		s.optionFactory = f
 		return nil
 	}
 }

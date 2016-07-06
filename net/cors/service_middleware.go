@@ -49,6 +49,12 @@ func (s *Service) WithCORS() mw.Middleware {
 			// website scope and not group or store scope.
 			scpCfg := s.configByScopedGetter(requestedStore.Website.Config)
 
+			//fmt.Printf("handleActualRequest U-L-ID %s-%s %#v\n",
+			//	w.Header().Get(cstesting.HeaderUserID),
+			//	w.Header().Get(cstesting.HeaderLoopID),
+			//	scpCfg,
+			//)
+
 			if err := scpCfg.isValid(); err != nil {
 				if s.Log.IsDebug() {
 					s.Log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))

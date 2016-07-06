@@ -15,6 +15,7 @@
 package backendcors_test
 
 import (
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -30,7 +31,6 @@ import (
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 )
 
 type fataler interface {
@@ -61,11 +61,19 @@ func TestNoConfig(t *testing.T) {
 }
 
 func TestMatchAllOrigin(t *testing.T) {
+	var logBuf = new(log.MutexBuffer)
 	s := newCorsService()
 	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
 	// STAR is the default value in the element structure
 	}))
+
+	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelFatal)))); err != nil {
+		t.Fatal(err)
+	}
+
 	corstest.TestMatchAllOrigin(t, s, req)
+	//println("\n", logBuf.String())
+
 }
 
 func TestAllowedOrigin(t *testing.T) {
@@ -124,7 +132,7 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 	req.Body = ioutil.NopCloser(strings.NewReader("Body of TestAllowedMethod_No_Passthrough"))
 	corstest.TestAllowedMethodNoPassthrough(t, s, req)
 
-	if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.optionInflight.Do`), 1; have != want {
+	if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.Inflight.Do`), 1; have != want {
 		//println("\n", logBuf.String())
 		t.Fatalf("Have: %v Want: %v", have, want)
 	}
