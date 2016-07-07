@@ -71,10 +71,38 @@ Now open the trace.log file (around 26MB) and investigate all the allocations
 and refactor your code. Once finished you can achieve results like:
 
 ```
-$ go test -run=😶  -bench=Benchmark_WithInitStoreByToken .
+$ go test -run=NONE -bench=Benchmark_WithInitStoreByToken .
 PASS
 Benchmark_WithInitStoreByToken-4	 2000000	       826 ns/op	     128 B/op	       5 allocs/op
 ok  	github.com/corestoreio/csfw/store	2.569s
+```
+
+### Profiling
+
+```
+$ go test -cpuprofile=cpu.out -benchmem -memprofile=mem.out -run=NONE -bench=NameOfBenchmark -v
+$ go tool pprof packageName.test cpu.out
+Entering interactive mode (type "help" for commands)
+(pprof) top5
+560ms of 1540ms total (36.36%)
+Showing top 5 nodes out of 112 (cum >= 60ms)
+      flat  flat%   sum%        cum   cum%
+     180ms 11.69% 11.69%      400ms 25.97%  runtime.mallocgc
+```
+
+- `flat` is how much time is spent inside of a function.
+- `cum` shows how much time is spent in a function, and also in any code called by a function.
+
+For memory profile:
+
+```
+Sample value selection option (for heap profiles):
+  -inuse_space      Display in-use memory size
+  -inuse_objects    Display in-use object counts
+  -alloc_space      Display allocated memory size
+  -alloc_objects    Display allocated object counts
+
+$ go tool pprof -alloc_objects packageName.test mem.out
 ```
 
 #### Other development helpers
