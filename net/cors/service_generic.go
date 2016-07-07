@@ -15,6 +15,9 @@
 package cors
 
 import (
+	"fmt"
+	"io"
+	"sort"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
@@ -24,11 +27,11 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// auto generated: do not edit. See net/gen eric package
+// auto generated: do not edit. See net/gen_eric package
 
 const (
-	prefixError = `[cors] `
-	prefixLog   = `cors.`
+	prefixError  = `[cors] `
+	prefixLogKey = `cors.`
 )
 
 type service struct {
@@ -71,7 +74,7 @@ func newService(opts ...Option) (*Service, error) {
 		return nil, errors.Wrap(err, prefixError+" Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, prefixError+" Options Any Config")
+		return nil, errors.Wrap(err, prefixError+" Options any config")
 	}
 	return s, nil
 }
@@ -88,7 +91,9 @@ func MustNew(opts ...Option) *Service {
 // Options applies option at creation time or refreshes them.
 func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
-		if opt != nil { // can be nil because of the backend options where we have an array instead of a slice.
+		// opt can be nil because of the backend options where we have an array instead
+		// of a slice.
+		if opt != nil {
 			if err := opt(s); err != nil {
 				return errors.Wrap(err, prefixError+" Service.Options")
 			}
@@ -103,6 +108,27 @@ func (s *Service) Options(opts ...Option) error {
 // flushCache cors cache flusher
 func (s *Service) flushCache() error {
 	s.scopeCache = make(map[scope.Hash]*scopedConfig)
+	return nil
+}
+
+// DebugCache uses Sprintf to write an ordered list into a writer. Only usable
+// for debugging.
+func (s *Service) DebugCache(w io.Writer) error {
+	s.rwmu.RLock()
+	defer s.rwmu.RUnlock()
+	srtScope := make(scope.Hashes, len(s.scopeCache))
+	var i int
+	for scp := range s.scopeCache {
+		srtScope[i] = scp
+		i++
+	}
+	sort.Sort(srtScope)
+	for _, scp := range srtScope {
+		scpCfg := s.scopeCache[scp]
+		if _, err := fmt.Fprintf(w, "%s => [%p]=%#v\n", scp, scpCfg, scpCfg); err != nil {
+			return errors.Wrap(err, prefixError+" DebugCache Fprintf")
+		}
+	}
 	return nil
 }
 
@@ -122,7 +148,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	// default scope.
 	if sCfg := s.getConfigByHash(current, 0); sCfg.isValid() == nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.IsValid",
+			s.Log.Debug(prefixLogKey+"Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
 				log.Stringer("requested_fallback_scope", scope.Hash(0)),
 				log.Stringer("responded_scope", sCfg.scopeHash),
@@ -142,7 +168,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			}
 			sCfg := s.getConfigByHash(current, fallback)
 			if s.Log.IsDebug() {
-				s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.Inflight.Do",
+				s.Log.Debug(prefixLogKey+"Service.ConfigByScopedGetter.Inflight.Do",
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_fallback_scope", fallback),
 					log.Stringer("responded_scope", sCfg.scopeHash),
@@ -166,7 +192,7 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 
 	sCfg := s.getConfigByHash(current, fallback)
 	if s.Log.IsDebug() {
-		s.Log.Debug(prefixLog+"Service.ConfigByScopedGetter.Fallback.Default",
+		s.Log.Debug(prefixLogKey+"Service.ConfigByScopedGetter.Fallback.Default",
 			log.Stringer("requested_scope", current),
 			log.Stringer("requested_fallback_scope", fallback),
 			log.Stringer("responded_scope", sCfg.scopeHash),

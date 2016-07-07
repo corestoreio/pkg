@@ -15,6 +15,8 @@
 package cors
 
 import (
+	"fmt"
+
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 )
@@ -29,6 +31,10 @@ type scopedConfigGeneric struct {
 	lastErr error
 	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
+}
+
+func (scg scopedConfigGeneric) GoString() string {
+	return fmt.Sprintf("scopedConfigGeneric{lastErr: %q, scopeHash: %s}", scg.lastErr, scg.scopeHash.GoString())
 }
 
 // newScopedConfigError easy helper to create an error
@@ -61,14 +67,14 @@ func optionInheritDefault(s *Service) *scopedConfig {
 // functions, which accept a scope and a scope ID as an argument, will NOT be
 // overwritten by the new values retrieved from the configuration service.
 //
-//	cfgStruct, err := backendpkg.NewConfigStructure()
+//	cfgStruct, err := backendcors.NewConfigStructure()
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := backendpkg.New(cfgStruct)
+//	pb := backendcors.New(cfgStruct)
 //
-//	srv := pkg.MustNewService(
-//		pkg.WithOptionFactory(backendpkg.PrepareOptions(pb)),
+//	srv := cors.MustNewService(
+//		cors.WithOptionFactory(backendcors.PrepareOptions(pb)),
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
