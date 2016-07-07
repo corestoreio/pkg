@@ -36,9 +36,9 @@ type Hash uint32
 
 // String human readable output
 func (h Hash) String() string {
-	// remove this one alloc and optmize further
 	scp, id := h.Unpack()
 	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 	_, _ = buf.WriteString("Scope(")
 	_, _ = buf.WriteString(scp.String())
 	_, _ = buf.WriteString(") ID(")
@@ -46,9 +46,22 @@ func (h Hash) String() string {
 	buf.Reset()
 	_, _ = buf.Write(nb)
 	_ = buf.WriteByte(')')
-	ret := buf.String()
-	bufferpool.Put(buf)
-	return ret
+	return buf.String()
+}
+
+// GoString compilable representation of a hash.
+func (h Hash) GoString() string {
+	scp, id := h.Unpack()
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	_, _ = buf.WriteString("scope.NewHash(scope.")
+	_, _ = buf.WriteString(scp.String())
+	_, _ = buf.WriteString(", ")
+	nb := strconv.AppendInt(buf.Bytes(), id, 10)
+	buf.Reset()
+	_, _ = buf.Write(nb)
+	_ = buf.WriteByte(')')
+	return buf.String()
 }
 
 // ToUint64 converts the hash

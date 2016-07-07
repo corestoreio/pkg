@@ -15,6 +15,7 @@
 package scope_test
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"sync"
@@ -22,6 +23,11 @@ import (
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	_ fmt.Stringer   = (*scope.Hash)(nil)
+	_ fmt.GoStringer = (*scope.Hash)(nil)
 )
 
 var benchmarkHashString string
@@ -63,9 +69,38 @@ func TestNewHash(t *testing.T) {
 	}
 }
 
-func TestHashString(t *testing.T) {
-	s := scope.NewHash(scope.Store, 33).String()
-	assert.Exactly(t, "Scope(Store) ID(33)", s)
+func TestHash_String(t *testing.T) {
+	tests := []struct {
+		h    scope.Hash
+		want string
+	}{
+		{scope.DefaultHash, "Scope(Default) ID(0)"},
+		{scope.NewHash(scope.Website, 1), "Scope(Website) ID(1)"},
+		{scope.NewHash(scope.Store, 2), "Scope(Store) ID(2)"},
+		{scope.NewHash(scope.Group, 4), "Scope(Group) ID(4)"},
+		{scope.NewHash(6, 5), "Scope(Scope(6)) ID(5)"},
+		{0, "Scope(Absent) ID(0)"},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.h.String(), "Index %d", i)
+	}
+}
+
+func TestHash_GoString(t *testing.T) {
+	tests := []struct {
+		h    scope.Hash
+		want string
+	}{
+		{scope.DefaultHash, "scope.NewHash(scope.Default, 0)"},
+		{scope.NewHash(scope.Website, 1), "scope.NewHash(scope.Website, 1)"},
+		{scope.NewHash(scope.Store, 2), "scope.NewHash(scope.Store, 2)"},
+		{scope.NewHash(scope.Group, 4), "scope.NewHash(scope.Group, 4)"},
+		{scope.NewHash(6, 5), "scope.NewHash(scope.Scope(6), 5)"},
+		{0, "scope.NewHash(scope.Absent, 0)"},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.h.GoString(), "Index %d", i)
+	}
 }
 
 func TestHashSegment(t *testing.T) {
