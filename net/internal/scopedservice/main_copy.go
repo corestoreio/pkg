@@ -23,15 +23,20 @@ import (
 	"path/filepath"
 )
 
-// This file copies the *_scopedservice.go files to the packages via go:generate
+// This file copies the *_generic.go files to the packages via go:generate
 
 func main() {
 
 	pkgName := os.Args[1]
 
-	files, err := filepath.Glob("../../scopedservice/*_generic.go")
+	files, err := filepath.Glob("../internal/scopedservice/*_generic.go")
 	if err != nil {
 		panic(err)
+	}
+
+	if len(files) == 0 {
+		println("[net/internal/scopedservice] files are empty")
+		os.Exit(1)
 	}
 
 	for _, f := range files {
