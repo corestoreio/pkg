@@ -16,9 +16,9 @@ package scope_test
 
 import (
 	"math"
-	"testing"
-
+	"sort"
 	"sync"
+	"testing"
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -244,4 +244,16 @@ func BenchmarkHashUnPack(b *testing.B) {
 	if benchmarkHashUnpackID != 3141 {
 		b.Fatal("Expecting ID 3141")
 	}
+}
+
+func TestHashes_Sort(t *testing.T) {
+	hs := scope.Hashes{
+		scope.NewHash(scope.Store, 3),
+		scope.NewHash(scope.Website, 1),
+		scope.DefaultHash,
+		scope.NewHash(scope.Store, 4),
+		scope.NewHash(scope.Website, 2),
+	}
+	sort.Sort(hs)
+	assert.Exactly(t, scope.Hashes{0x1000000, 0x2000001, 0x2000002, 0x4000003, 0x4000004}, hs)
 }

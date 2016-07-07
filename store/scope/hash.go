@@ -140,3 +140,15 @@ func NewHash(s Scope, id int64) Hash {
 	}
 	return Hash(s)<<24 | Hash(id)
 }
+
+// Hashes collection of multiple Hash values.
+type Hashes []Hash
+
+// Len is part of sort.Interface.
+func (h Hashes) Len() int { return len(h) }
+
+// Swap is part of sort.Interface.
+func (h Hashes) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+
+// Less is part of sort.Interface.
+func (h Hashes) Less(i, j int) bool { return h[i] < h[j] }
