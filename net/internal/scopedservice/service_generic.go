@@ -15,6 +15,9 @@
 package scopedservice
 
 import (
+	"fmt"
+	"io"
+	"sort"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
@@ -67,11 +70,11 @@ func newService(opts ...Option) (*Service, error) {
 			scopeCache: make(map[scope.Hash]*scopedConfig),
 		},
 	}
-	if err := s.Options(withDefaultConfig(scope.Default, 0)); err != nil {
+	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
 		return nil, errors.Wrap(err, prefixError+" Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, prefixError+" Options Any Config")
+		return nil, errors.Wrap(err, prefixError+" Options any config")
 	}
 	return s, nil
 }
@@ -88,7 +91,9 @@ func MustNew(opts ...Option) *Service {
 // Options applies option at creation time or refreshes them.
 func (s *Service) Options(opts ...Option) error {
 	for _, opt := range opts {
-		if opt != nil { // can be nil because of the backend options where we have an array instead of a slice.
+		// opt can be nil because of the backend options where we have an array instead
+		// of a slice.
+		if opt != nil {
 			if err := opt(s); err != nil {
 				return errors.Wrap(err, prefixError+" Service.Options")
 			}
@@ -103,6 +108,27 @@ func (s *Service) Options(opts ...Option) error {
 // flushCache scopedservice cache flusher
 func (s *Service) flushCache() error {
 	s.scopeCache = make(map[scope.Hash]*scopedConfig)
+	return nil
+}
+
+// DebugCache uses Sprintf to write an ordered list into a writer. Only usable
+// for debugging.
+func (s *Service) DebugCache(w io.Writer) error {
+	s.rwmu.RLock()
+	defer s.rwmu.RUnlock()
+	srtScope := make(scope.Hashes, len(s.scopeCache))
+	var i int
+	for scp := range s.scopeCache {
+		srtScope[i] = scp
+		i++
+	}
+	sort.Sort(srtScope)
+	for _, scp := range srtScope {
+		scpCfg := s.scopeCache[scp]
+		if _, err := fmt.Fprintf(w, "%s => [%p]=%#v\n", scp, scpCfg, scpCfg); err != nil {
+			return errors.Wrap(err, prefixError+" DebugCache Fprintf")
+		}
+	}
 	return nil
 }
 

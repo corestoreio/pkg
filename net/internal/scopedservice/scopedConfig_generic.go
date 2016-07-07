@@ -15,6 +15,8 @@
 package scopedservice
 
 import (
+	"fmt"
+
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 )
@@ -29,6 +31,10 @@ type scopedConfigGeneric struct {
 	lastErr error
 	// scopeHash defines the scope to which this configuration is bound to.
 	scopeHash scope.Hash
+}
+
+func (scg scopedConfigGeneric) GoString() string {
+	return fmt.Sprintf("scopedConfigGeneric{lastErr: %q, scopeHash: %s}", scg.lastErr, scg.scopeHash.GoString())
 }
 
 // newScopedConfigError easy helper to create an error
