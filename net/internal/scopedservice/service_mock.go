@@ -12,35 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package generic
+package scopedservice
 
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
+// Service DO NOT USE
 type Service struct {
 	service
 }
 
+// New DO NOT USE
 func New(opts ...Option) (*Service, error) {
 	return newService(opts...)
 }
 
 type scopedConfig struct {
 	scopedConfigGeneric
+	value string
 }
 
 func (sc *scopedConfig) isValid() error {
+	if sc.lastErr != nil {
+		return sc.lastErr
+	}
 	return nil
 }
 
+func newScopedConfig() *scopedConfig {
+	return &scopedConfig{}
+}
+
+// Option DO NOT USE
 type Option func(*Service) error
 
+// OptionFactoryFunc DO NOT USE
 type OptionFactoryFunc func(config.ScopedGetter) []Option
 
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
+func withDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) error {
+		return withValue(scp, id, "Hello Default Gophers")(s)
+	}
+}
+
+func withValue(scp scope.Scope, id int64, val string) Option {
+	return func(s *Service) error {
+		h := scope.NewHash(scp, id)
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.value = val
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }

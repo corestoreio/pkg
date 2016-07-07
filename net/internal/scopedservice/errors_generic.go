@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package generic gets copied to specific net middleware packages - do not use.
-//
-// All files with _generic.go are getting copied into a middleware package
-// and all occurrences of generic will be replaced with the new package name.
-package generic
+package scopedservice
+
+import "github.com/corestoreio/csfw/util/errors"
+
+var errConfigNotFound = errors.NewNotFoundf(`[scopedservice] ScopedConfig not available`)

@@ -23,28 +23,28 @@ import (
 	"path/filepath"
 )
 
-// This file copies the *_generic.go files to the packages via go:generate
+// This file copies the *_scopedservice.go files to the packages via go:generate
 
 func main() {
 
 	pkgName := os.Args[1]
 
-	genericFiles, err := filepath.Glob("../generic/*_generic.go")
+	files, err := filepath.Glob("../../scopedservice/*_generic.go")
 	if err != nil {
 		panic(err)
 	}
 
-	for _, file := range genericFiles {
-		content, err := ioutil.ReadFile(file)
+	for _, f := range files {
+		content, err := ioutil.ReadFile(f)
 		if err != nil {
 			panic(err)
 		}
 
-		content = bytes.Replace(content, []byte(`generic`), []byte(pkgName), -1)
-		base := filepath.Base(file)
+		content = bytes.Replace(content, []byte(`scopedservice`), []byte(pkgName), -1)
+		base := filepath.Base(f)
 		if err := ioutil.WriteFile(base, content, 0644); err != nil {
 			panic(err)
 		}
-		println(file, "[generic copier] copied to", base, "for package", pkgName)
+		println(f, "[scopedservice copier] copied to", base, "for package", pkgName)
 	}
 }
