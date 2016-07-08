@@ -41,13 +41,7 @@ type OptionFactoryFunc func(config.ScopedGetter) []Option
 //		- Allowed Methods: GET, POST
 //		- Allowed Headers: Origin, Accept, Content-Type
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	h := scope.NewHash(scp, id)
-	return func(s *Service) (err error) {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		s.scopeCache[h] = optionInheritDefault(s)
-		return nil
-	}
+	return withDefaultConfig(scp, id)
 }
 
 // WithExposedHeaders indicates which headers are safe to expose to the

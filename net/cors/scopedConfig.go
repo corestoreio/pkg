@@ -87,10 +87,7 @@ type scopedConfig struct {
 // isValid a configuration for a scope is only then valid when
 // - scopeHash set
 // - min 1x allowedMethods set
-func (sc *scopedConfig) isValid() error {
-	if sc == nil {
-		return errors.NewNotValidf(errScopedConfigIsNil)
-	}
+func (sc scopedConfig) isValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
 	}
