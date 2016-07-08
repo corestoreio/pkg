@@ -55,12 +55,13 @@ func TestWithDefaultConfig(t *testing.T) {
 
 	s := MustNew(WithDefaultConfig(scope.Store, 33))
 	s33 := scope.NewHash(scope.Store, 33)
-	want33 := defaultScopedConfig(s33)
-	want0 := defaultScopedConfig(scope.DefaultHash)
+	want33 := newScopedConfig()
+	want33.scopeHash = s33
+	want0 := newScopedConfig()
 
 	// poor mans comparison function. better solution? Before suggesting please test it :-)
 	assert.Exactly(t, fmt.Sprintf("%#v", want33), fmt.Sprintf("%#v", s.scopeCache[s33]))
-	assert.Exactly(t, fmt.Sprintf("%#v", want0), fmt.Sprintf("%#v", s.defaultScopeCache))
+	assert.Exactly(t, fmt.Sprintf("%#v", want0), fmt.Sprintf("%#v", s.scopeCache[scope.DefaultHash]))
 }
 
 func TestWithVaryBy(t *testing.T) {
@@ -74,7 +75,7 @@ func TestWithVaryBy(t *testing.T) {
 			WithVaryBy(scope.Default, 0, vb),
 		)
 		assert.Exactly(t, vb, s.scopeCache[s33].VaryByer)
-		assert.Exactly(t, vb, s.defaultScopeCache.VaryByer)
+		assert.Exactly(t, vb, s.scopeCache[scope.DefaultHash].VaryByer)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
@@ -97,7 +98,7 @@ func TestWithRateLimiter(t *testing.T) {
 			WithRateLimiter(scope.Default, 0, rsl),
 		)
 		assert.Exactly(t, rsl, s.scopeCache[w2].RateLimiter)
-		assert.Exactly(t, rsl, s.defaultScopeCache.RateLimiter)
+		assert.Exactly(t, rsl, s.scopeCache[scope.DefaultHash].RateLimiter)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
@@ -106,7 +107,7 @@ func TestWithRateLimiter(t *testing.T) {
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
-		err := s.getConfigByScopeID(w2, 0).isValid()
+		err := s.getConfigByHash(w2, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -124,7 +125,7 @@ func TestWithDeniedHandler(t *testing.T) {
 			WithDeniedHandler(scope.Default, 0, dh),
 		)
 		cstesting.EqualPointers(t, dh, s.scopeCache[w2].deniedHandler)
-		cstesting.EqualPointers(t, dh, s.defaultScopeCache.deniedHandler)
+		cstesting.EqualPointers(t, dh, s.scopeCache[scope.DefaultHash].deniedHandler)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
@@ -133,7 +134,7 @@ func TestWithDeniedHandler(t *testing.T) {
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
 		cstesting.EqualPointers(t, defaultDeniedHandler, s.scopeCache[w2].deniedHandler)
-		err := s.getConfigByScopeID(w2, 0).isValid()
+		err := s.getConfigByHash(w2, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -159,7 +160,7 @@ func TestWithGCRAStore(t *testing.T) {
 			WithGCRAStore(scope.Default, 0, memStore, 'h', 100, 10),
 		)
 		assert.NotNil(t, s.scopeCache[w2].RateLimiter)
-		assert.NotNil(t, s.defaultScopeCache.RateLimiter)
+		assert.NotNil(t, s.scopeCache[scope.DefaultHash].RateLimiter)
 	})
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
@@ -168,7 +169,7 @@ func TestWithGCRAStore(t *testing.T) {
 			WithDefaultConfig(scope.Website, 2),
 		)
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
-		err := s.getConfigByScopeID(w2, 0).isValid()
+		err := s.getConfigByHash(w2, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
@@ -190,7 +191,7 @@ func TestWithGCRAMemStore(t *testing.T) {
 			WithGCRAMemStore(scope.Default, -1, 2222, 's', 100, 20),
 		)
 		assert.NotNil(t, s.scopeCache[s4].RateLimiter, "Scope Website")
-		assert.NotNil(t, s.defaultScopeCache.RateLimiter, "Scope Default")
+		assert.NotNil(t, s.scopeCache[scope.DefaultHash].RateLimiter, "Scope Default")
 	})
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
@@ -199,7 +200,7 @@ func TestWithGCRAMemStore(t *testing.T) {
 			WithDefaultConfig(scope.Store, 4),
 		)
 		assert.Nil(t, s.scopeCache[s4].RateLimiter)
-		err := s.getConfigByScopeID(s4, 0).isValid()
+		err := s.getConfigByHash(s4, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -220,7 +221,7 @@ func TestWithGCRARedis(t *testing.T) {
 			WithGCRARedis(scope.Default, 0, "redis://localhost/2", 's', 100, 10),
 		)
 		assert.NotNil(t, s.scopeCache[s4].RateLimiter, "Scope Website")
-		assert.NotNil(t, s.defaultScopeCache.RateLimiter, "Scope Default")
+		assert.NotNil(t, s.scopeCache[scope.DefaultHash].RateLimiter, "Scope Default")
 	})
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
@@ -229,7 +230,7 @@ func TestWithGCRARedis(t *testing.T) {
 			WithDefaultConfig(scope.Store, 4),
 		)
 		assert.Nil(t, s.scopeCache[s4].RateLimiter)
-		err := s.getConfigByScopeID(s4, 0).isValid()
+		err := s.getConfigByHash(s4, 0).isValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 

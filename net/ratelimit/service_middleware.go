@@ -48,7 +48,7 @@ func (s *Service) WithRateLimit() mw.Middleware {
 			scpCfg := s.configByScopedGetter(requestedStore.Config)
 			if err := scpCfg.isValid(); err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithRateLimit.configByScopedGetter.Error",
+					s.Log.Debug("ratelimit.Service.WithRateLimit.configByScopedGetter.Error",
 						log.Err(err),
 						log.Stringer("scope", scpCfg.scopeHash),
 						log.Marshal("requestedStore", requestedStore),
@@ -67,7 +67,7 @@ func (s *Service) WithRateLimit() mw.Middleware {
 
 			isLimited, rlResult, err := scpCfg.requestRateLimit(r)
 			if s.Log.IsDebug() {
-				s.Log.Debug("Service.WithRateLimit.configByScopedGetter.RateLimit",
+				s.Log.Debug("ratelimit.Service.WithRateLimit.requestRateLimit",
 					log.Err(err),
 					log.Bool("is_limited", isLimited),
 					log.Object("rate_limit_result", rlResult),

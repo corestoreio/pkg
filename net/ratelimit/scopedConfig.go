@@ -49,10 +49,11 @@ var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.
 	http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 })
 
-func defaultScopedConfig(h scope.Hash) *scopedConfig {
+// newScopedConfig creates a new object with the minimum needed configuration.
+func newScopedConfig() *scopedConfig {
 	return &scopedConfig{
 		scopedConfigGeneric: scopedConfigGeneric{
-			scopeHash: h,
+			scopeHash: scope.DefaultHash,
 		},
 		deniedHandler: defaultDeniedHandler,
 		VaryByer:      emptyVaryBy{},
@@ -61,11 +62,7 @@ func defaultScopedConfig(h scope.Hash) *scopedConfig {
 
 // isValid a configuration for a scope is only then valid when several fields
 // are not empty and scopedConfig itself has a valid pointer.
-func (sc *scopedConfig) isValid() error {
-	if sc == nil {
-		return errors.NewNotValidf(errScopedConfigIsNil)
-	}
-
+func (sc scopedConfig) isValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[ratelimit] scopedConfig.isValid has an lastErr")
 	}

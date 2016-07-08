@@ -22,7 +22,6 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/garyburd/redigo/redis"
 	"gopkg.in/throttled/throttled.v2"
@@ -35,12 +34,12 @@ import (
 type Option func(*Service) error
 
 // OptionFactoryFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during
-// a request.
+// options should be returned depending on the scope brought to you during a
+// request.
 type OptionFactoryFunc func(config.ScopedGetter) []Option
 
-// WithDefaultConfig applies the default GeoIP configuration settings based for
-// a specific scope. This function overwrites any previous set options.
+// WithDefaultConfig applies the default ratelimit configuration settings based
+// for a specific scope. This function overwrites any previous set options.
 //
 // Default values are:
 //		- Denied Handler: http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
@@ -48,18 +47,7 @@ type OptionFactoryFunc func(config.ScopedGetter) []Option
 // Example:
 //		s := MustNewService(WithDefaultConfig(scope.Store,1), WithVaryBy(scope.Store, 1, myVB))
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	h := scope.NewHash(scp, id)
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache = defaultScopedConfig(h)
-			return nil
-		}
-		s.scopeCache[h] = defaultScopedConfig(h)
-		return nil
-	}
+	return withDefaultConfig(scp, id)
 }
 
 // WithVaryBy allows to set a custom key producer. VaryByer is called for each
@@ -72,21 +60,13 @@ func WithVaryBy(scp scope.Scope, id int64, vb VaryByer) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.VaryByer = vb
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.VaryByer = vb
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.VaryByer = scNew.VaryByer
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.VaryByer = vb
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -99,21 +79,13 @@ func WithRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.RateLimiter = rl
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.RateLimiter = rl
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.RateLimiter = scNew.RateLimiter
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.RateLimiter = rl
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -127,21 +99,13 @@ func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.deniedHandler = next
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.deniedHandler = next
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.deniedHandler = scNew.deniedHandler
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.deniedHandler = next
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -153,21 +117,13 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.disabled = isDisabled
-			return nil
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.disabled = isDisabled
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.disabled = scNew.disabled
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
+		sc.disabled = isDisabled
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -177,32 +133,6 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 func WithLogger(l log.Logger) Option {
 	return func(s *Service) error {
 		s.Log = l
-		return nil
-	}
-}
-
-// WithOptionFactory applies a function which lazily loads the option depending
-// on the incoming scope within a request. For example applies the backend
-// configuration to the service.
-//
-// WRONG: Once this option function has been set all other manually set option
-// functions, which accept a scope and a scope ID as an argument, will be
-// overwritten by the new values retrieved from the configuration service.
-//
-// Example:
-//	cfgStruct, err := backendratelimit.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	pb := backendratelimit.New(cfgStruct)
-//
-//	geoSrv := ratelimit.MustNewService(
-//		ratelimit.WithOptionFactory(backendratelimit.PrepareOptions(pb)),
-//	)
-func WithOptionFactory(f OptionFactoryFunc) Option {
-	return func(s *Service) error {
-		s.optionFactoryFunc = f
-		s.optionInflight = new(singleflight.Group)
 		return nil
 	}
 }

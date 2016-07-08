@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go run ../generic/main_copy.go "$GOPACKAGE"
+//go:generate go run ../internal/scopedservice/main_copy.go "$GOPACKAGE"
 
 package ratelimit
 

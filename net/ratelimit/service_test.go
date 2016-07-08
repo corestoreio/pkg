@@ -122,24 +122,21 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 	logBuf0 := new(log.MutexBuffer)
 	t.Run("Scope Store Fallback to Default", runTest(logBuf0, scope.Default, 0))
 	//t.Log("FallBack", logBuf0)
-	cstesting.ContainsCount(t, logBuf0.String(), `ratelimit.Service.getScpCfg.DefaultScopeCache`, 1)
+	cstesting.ContainsCount(t, logBuf0.String(), `Service.ConfigByScopedGetter.Fallback`, 1)
 
 	logBuf1 := new(log.MutexBuffer)
 	t.Run("Scope Store Fallback to Website", runTest(logBuf1, scope.Website, 1))
 	//t.Log("FallBack", logBuf1)
 
-	var logCheck1 = `ratelimit.Service.getConfigByScopeID.Parent.Valid.New`
+	var logCheck1 = `Service.ConfigByScopedGetter.Fallback requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Website) ID(1)" responded_scope: "Scope(Website) ID(1)`
 	cstesting.ContainsCount(t, logBuf1.String(), logCheck1, 1)
-
-	var logCheck2 = `ratelimit.Service.getConfigByScopeID.Parent.Valid.New`
-	cstesting.ContainsCount(t, logBuf1.String(), logCheck2, 1)
 
 	logBuf2 := new(log.MutexBuffer)
 	t.Run("Scope Store No Fallback", runTest(logBuf2, scope.Store, 1))
 	//t.Log("FallBackNope", logBuf2)
 
-	cstesting.ContainsCount(t, logBuf2.String(), logCheck1, 0)
-	cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 0)
+	var logCheck2 = `Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Store) ID(1)"`
+	cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 150)
 
 }
 
@@ -238,7 +235,7 @@ func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 		st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
 		req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 
-		hpu := cstesting.NewHTTPParallelUsers(5, 5, 100, time.Microsecond)
+		hpu := cstesting.NewHTTPParallelUsers(10, 5, 200, time.Millisecond)
 		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
 			if have, want := rec.Code, c.code; have != want {
 				t.Errorf("Expected request %d at %s to return %d but got %d",
