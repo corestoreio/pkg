@@ -45,7 +45,9 @@ func (sc *scopedConfig) isValid() error {
 }
 
 func newScopedConfig() *scopedConfig {
-	return &scopedConfig{}
+	return &scopedConfig{
+		value: "Hello Default Gophers",
+	}
 }
 
 // Option DO NOT USE
@@ -57,7 +59,7 @@ type OptionFactoryFunc func(config.ScopedGetter) []Option
 // WithDefaultConfig DO NOT USE
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) error {
-		return withValue(scp, id, "Hello Default Gophers")(s)
+		return withDefaultConfig(scp, id)(s)
 	}
 }
 

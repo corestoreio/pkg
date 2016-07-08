@@ -29,11 +29,6 @@ import (
 
 // auto generated: do not edit. See net/gen_eric package
 
-const (
-	prefixError  = `[scopedservice] `
-	prefixLogKey = `scopedservice.`
-)
-
 type service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
@@ -71,10 +66,10 @@ func newService(opts ...Option) (*Service, error) {
 		},
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
-		return nil, errors.Wrap(err, prefixError+" Options WithDefaultConfig")
+		return nil, errors.Wrap(err, "[scopedservice] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, prefixError+" Options any config")
+		return nil, errors.Wrap(err, "[scopedservice] Options any config")
 	}
 	return s, nil
 }
@@ -95,12 +90,12 @@ func (s *Service) Options(opts ...Option) error {
 		// of a slice.
 		if opt != nil {
 			if err := opt(s); err != nil {
-				return errors.Wrap(err, prefixError+" Service.Options")
+				return errors.Wrap(err, "[scopedservice] Service.Options")
 			}
 		}
 	}
 	if s.optionAfterApply != nil {
-		return errors.Wrap(s.optionAfterApply(), prefixError+" optionValidation")
+		return errors.Wrap(s.optionAfterApply(), "[scopedservice] optionValidation")
 	}
 	return nil
 }
@@ -126,7 +121,7 @@ func (s *Service) DebugCache(w io.Writer) error {
 	for _, scp := range srtScope {
 		scpCfg := s.scopeCache[scp]
 		if _, err := fmt.Fprintf(w, "%s => [%p]=%#v\n", scp, scpCfg, scpCfg); err != nil {
-			return errors.Wrap(err, prefixError+" DebugCache Fprintf")
+			return errors.Wrap(err, "[scopedservice] DebugCache Fprintf")
 		}
 	}
 	return nil
@@ -148,11 +143,10 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	// default scope.
 	if sCfg := s.getConfigByHash(current, 0); sCfg.isValid() == nil {
 		if s.Log.IsDebug() {
-			s.Log.Debug(prefixLogKey+"Service.ConfigByScopedGetter.IsValid",
+			s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
 				log.Stringer("requested_fallback_scope", scope.Hash(0)),
 				log.Stringer("responded_scope", sCfg.scopeHash),
-				log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
 			)
 		}
 		return sCfg
@@ -164,11 +158,11 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	if s.optionFactory != nil {
 		res, ok := <-s.optionInflight.DoChan(current.String(), func() (interface{}, error) {
 			if err := s.Options(s.optionFactory(scpGet)...); err != nil {
-				return newScopedConfigError(errors.Wrap(err, prefixError+" Options applied by OptionFactoryFunc")), nil
+				return newScopedConfigError(errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")), nil
 			}
 			sCfg := s.getConfigByHash(current, fallback)
 			if s.Log.IsDebug() {
-				s.Log.Debug(prefixLogKey+"Service.ConfigByScopedGetter.Inflight.Do",
+				s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Inflight.Do",
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_fallback_scope", fallback),
 					log.Stringer("responded_scope", sCfg.scopeHash),
@@ -178,21 +172,23 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			return sCfg, nil
 		})
 		if !ok { // unlikely to happen but you'll never know. how to test that?
-			return newScopedConfigError(errors.NewFatalf(prefixError + " Inflight.DoChan returned a closed/unreadable channel"))
+			return newScopedConfigError(errors.NewFatalf("[scopedservice] Inflight.DoChan returned a closed/unreadable channel"))
 		}
 		if res.Err != nil {
-			return newScopedConfigError(errors.Wrap(res.Err, prefixError+" Inflight.DoChan.Error"))
+			return newScopedConfigError(errors.Wrap(res.Err, "[scopedservice] Inflight.DoChan.Error"))
 		}
 		sCfg, ok := res.Val.(scopedConfig)
 		if !ok {
-			sCfg = newScopedConfigError(errors.NewFatalf(prefixError + " Inflight.DoChan res.Val cannot be type asserted to scopedConfig"))
+			sCfg = newScopedConfigError(errors.NewFatalf("[scopedservice] Inflight.DoChan res.Val cannot be type asserted to scopedConfig"))
 		}
 		return sCfg
 	}
 
 	sCfg := s.getConfigByHash(current, fallback)
+	// under very high load: 20 users within 10 MicroSeconds this might get executed
+	// 1-3 times. more thinking needed.
 	if s.Log.IsDebug() {
-		s.Log.Debug(prefixLogKey+"Service.ConfigByScopedGetter.Fallback.Default",
+		s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Fallback",
 			log.Stringer("requested_scope", current),
 			log.Stringer("requested_fallback_scope", fallback),
 			log.Stringer("responded_scope", sCfg.scopeHash),

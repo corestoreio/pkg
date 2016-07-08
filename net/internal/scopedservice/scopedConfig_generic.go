@@ -59,6 +59,19 @@ func optionInheritDefault(s *Service) *scopedConfig {
 	return newScopedConfig()
 }
 
+// withDefaultConfig triggers the default settings
+func withDefaultConfig(scp scope.Scope, id int64) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		sc := optionInheritDefault(s)
+		sc.scopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
 // WithOptionFactory applies a function which lazily loads the options from a
 // slow backend depending on the incoming scope within a request. For example
 // applies the backend configuration to the service.
