@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -77,6 +78,51 @@ func TestBackend_WithDisable(t *testing.T) {
 		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
 		ratelimit.WithRateLimiter(scope.Website, 1, stubLimiter{}),
 	)
+}
+
+func TestBackend_WithGCRAMemStore(t *testing.T) {
+	var countDenied = new(int32)
+	var countAllowed = new(int32)
+	testBackendConfiguration(t,
+		"http://corestore.io",
+		cfgmock.PathValue{
+			backend.RateLimitDisabled.MustFQ(scope.Website, 1):                 0,
+			backend.RateLimitStorageGcraMaxMemoryKeys.MustFQ(scope.Website, 1): 50,
+			backend.RateLimitBurst.MustFQ(scope.Website, 1):                    3,
+			backend.RateLimitRequests.MustFQ(scope.Website, 1):                 1,
+			backend.RateLimitDuration.MustFQ(scope.Website, 1):                 "i",
+		},
+		func(rec *httptest.ResponseRecorder) {
+			//t.Logf("Code %d Remain:%s Limit:%s Reset:%s",
+			//	rec.Code,
+			//	rec.Header().Get("X-RateLimit-Remaining"),
+			//	rec.Header().Get("X-RateLimit-Limit"),
+			//	rec.Header().Get("X-RateLimit-Reset"),
+			//)
+			if rec.Code != http.StatusTeapot && rec.Code != http.StatusConflict {
+				t.Fatalf("Unexpected http code: %d", rec.Code)
+			}
+		},
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if err := ratelimit.FromContextRateLimit(r.Context()); err != nil {
+				t.Errorf("%+v", err)
+			}
+			w.WriteHeader(http.StatusTeapot)
+			atomic.AddInt32(countAllowed, 1)
+		}),
+		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
+		ratelimit.WithDeniedHandler(scope.Website, 1, http.HandlerFunc(func(w http.ResponseWriter, rec *http.Request) {
+			atomic.AddInt32(countDenied, 1)
+			http.Error(w, "custom limit exceeded", http.StatusConflict)
+		})),
+	)
+
+	if have, want := atomic.LoadInt32(countDenied), int32(5); have != want {
+		t.Errorf("Denied Have: %v Want: %v", have, want)
+	}
+	if have, want := atomic.LoadInt32(countAllowed), int32(4); have != want {
+		t.Errorf("Allowed Have: %v Want: %v", have, want)
+	}
 }
 
 func testBackendConfiguration(

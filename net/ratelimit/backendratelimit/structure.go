@@ -75,9 +75,12 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 						element.Field{
 							// Path: net/ratelimit/duration
-							ID:        cfgpath.NewRoute("duration"),
-							Label:     text.Chars(`Duration`),
-							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
+							ID:    cfgpath.NewRoute("duration"),
+							Label: text.Chars(`Duration`),
+							Comment: text.Chars(`Per second (s), minute (i), hour (h) or day (d). For example, PerMin(60) permits
+60 requests instantly per key followed by one request per second indefinitely
+whereas PerSec(1) only permits one request per second with no tolerance for
+bursts.`),
 							Type:      element.TypeText,
 							SortOrder: iter(),
 							Visible:   element.VisibleYes,
