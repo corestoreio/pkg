@@ -35,18 +35,22 @@ func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateL
 
 func TestCalculateRate(t *testing.T) {
 	tests := []struct {
-		duration rune
-		requests int
-		wantRate throttled.Rate
+		duration   rune
+		requests   int
+		wantRate   throttled.Rate
+		wantErrBhf errors.BehaviourFunc
 	}{
-		{'s', 11, throttled.PerSec(11)},
-		{'i', 22, throttled.PerMin(22)},
-		{'h', 33, throttled.PerHour(33)},
-		{'d', 44, throttled.PerDay(44)},
-		{'y', 55, throttled.PerHour(55)},
+		{'s', 11, throttled.PerSec(11), nil},
+		{'i', 22, throttled.PerMin(22), nil},
+		{'h', 33, throttled.PerHour(33), nil},
+		{'d', 44, throttled.PerDay(44), nil},
+		{'y', 55, throttled.Rate{}, errors.IsNotValid},
 	}
 	for _, test := range tests {
-		haveR := calculateRate(test.duration, test.requests)
+		haveR, err := calculateRate(test.duration, test.requests)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(err), "%+v", err)
+		}
 		assert.Exactly(t, test.wantRate, haveR)
 	}
 }

@@ -16,4 +16,5 @@ package ratelimit
 
 const (
 	errScopedConfigNotValid = `[ratelimit] ScopedConfig %s is invalid. IsNil(DeniedHandler=%t), IsNil(RateLimiter=%t), IsNil(VaryByer=%t)`
+	errUnknownDurationRune  = `[ratelimit] Unknown duration %q. Requests: %d`
 )
