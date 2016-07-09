@@ -93,8 +93,8 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: net/ratelimit_storage/gcra_max_memory_keys
-							ID:        cfgpath.NewRoute("gcra_max_memory_keys"),
+							// Path: net/ratelimit_storage/enable_gcra_memory
+							ID:        cfgpath.NewRoute("enable_gcra_memory"),
 							Label:     text.Chars(`Use GCRA in-memory (max keys)`),
 							Comment:   text.Chars(`If maxKeys > 0 in-memory key storage will be enabled. The max keys  number of different keys is restricted to the specified amount (65536). In this case, it uses an LRU algorithm to evict older keys to make room for newer ones.`),
 							Type:      element.TypeText,
@@ -104,8 +104,8 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   0,
 						},
 						element.Field{
-							// Path: net/ratelimit_storage/gcra_redis
-							ID:        cfgpath.NewRoute("gcra_redis"),
+							// Path: net/ratelimit_storage/enable_gcra_redis
+							ID:        cfgpath.NewRoute("enable_gcra_redis"),
 							Label:     text.Chars(`Use GCRA Redis`),
 							Comment:   text.Chars(`If a Redis URL is provided a Redis server will be used for key storage. Setting both entries (in-memory and Redis) then only Redis will be applied. URLs should follow the draft IANA specification for the scheme (https://www.iana.org/assignments/uri-schemes/prov/redis). For example: redis://localhost:6379/3 |  redis://:6380/0 => connects to localhost:6380 | redis:// => connects to localhost:6379 with DB 0 | redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0`),
 							Type:      element.TypeText,

@@ -79,7 +79,7 @@ func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
 			i++
 		}
 
-		redisURL, scpHash, err := be.RateLimitStorageGcraRedis.Get(sg)
+		redisURL, scpHash, err := be.RateLimitStorageGCRARedis.Get(sg)
 		if err != nil {
 			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraRedis.Get"))
 		} else if useInMemMaxKeys == 0 && redisURL != "" {

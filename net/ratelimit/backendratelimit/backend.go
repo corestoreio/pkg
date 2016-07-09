@@ -54,7 +54,7 @@ type Backend struct {
 	// Path: net/ratelimit_storage/enable_gcra_memory
 	RateLimitStorageGcraMaxMemoryKeys cfgmodel.Int
 
-	// RateLimitStorageGcraRedis a valid Redis URL enables Redis as GCRA key storage.
+	// RateLimitStorageGCRARedis a valid Redis URL enables Redis as GCRA key storage.
 	// URLs should follow the draft IANA specification for the
 	// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
 	//
@@ -65,8 +65,8 @@ type Backend struct {
 	// 		redis:// => connects to localhost:6379 with DB 0
 	// 		redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0
 	//
-	// Path: net/ratelimit_storage/gcra_redis
-	RateLimitStorageGcraRedis cfgmodel.Str
+	// Path: net/ratelimit_storage/enable_gcra_redis
+	RateLimitStorageGCRARedis cfgmodel.Str
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
@@ -85,6 +85,7 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
+	pp.RateLimitDisabled = cfgmodel.NewBool(`net/ratelimit/disabled`, opts...)
 	pp.RateLimitBurst = cfgmodel.NewInt(`net/ratelimit/burst`, opts...)
 	pp.RateLimitRequests = cfgmodel.NewInt(`net/ratelimit/requests`, opts...)
 	pp.RateLimitDuration = cfgmodel.NewStr(`net/ratelimit/duration`, append(opts, cfgmodel.WithSourceByString(
@@ -94,7 +95,7 @@ func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option)
 		"d", "Day",
 	))...)
 	pp.RateLimitStorageGcraMaxMemoryKeys = cfgmodel.NewInt(`net/ratelimit_storage/enable_gcra_memory`, opts...)
-	pp.RateLimitStorageGcraRedis = cfgmodel.NewStr(`net/ratelimit_storage/gcra_redis`, opts...)
+	pp.RateLimitStorageGCRARedis = cfgmodel.NewStr(`net/ratelimit_storage/enable_gcra_redis`, opts...)
 
 	return pp
 }
