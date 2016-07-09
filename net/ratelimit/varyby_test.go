@@ -162,7 +162,7 @@ func TestVaryBy_Key(t *testing.T) {
 	}
 }
 
-// todo: optimize allocs
+// 21 allocs due to the form parsing.
 // BenchmarkVaryBy_Key/non-unicode-4         	  500000	      3694 ns/op	     288 B/op	      21 allocs/op
 // BenchmarkVaryBy_Key/full-unicode-4        	  500000	      3942 ns/op	     288 B/op	      21 allocs/op
 func BenchmarkVaryBy_Key(b *testing.B) {
@@ -181,9 +181,10 @@ func BenchmarkVaryBy_Key(b *testing.B) {
 	const wantNon = "123.123.22.11\nput\ny-valÜe\n/_8_Xy\nbb\n"
 	const wantFull = "123.123.22.11\nput\ny-valüe\n/_8_Xy\nbb\n"
 
+	b.ResetTimer()
 	b.Run("non-unicode", func(b *testing.B) {
 		b.ReportAllocs()
-		//b.ResetTimer()
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			if have, want := vb.Key(r), wantNon; have != want {
 				b.Errorf("Case Non: Have: %q Want: %q", have, want)
@@ -193,7 +194,7 @@ func BenchmarkVaryBy_Key(b *testing.B) {
 
 	b.Run("full-unicode", func(b *testing.B) {
 		b.ReportAllocs()
-		//b.ResetTimer()
+		b.ResetTimer()
 		vb.SafeUnicode = true
 		for i := 0; i < b.N; i++ {
 			if have, want := vb.Key(r), wantFull; have != want {

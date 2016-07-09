@@ -15,6 +15,5 @@
 package ratelimit
 
 const (
-	errScopedConfigIsNil    = `[ratelimit] ScopedConfig has not yet been initialized, is nil.`
 	errScopedConfigNotValid = `[ratelimit] ScopedConfig %s is invalid. IsNil(DeniedHandler=%t), IsNil(RateLimiter=%t), IsNil(VaryByer=%t)`
 )

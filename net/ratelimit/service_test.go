@@ -17,6 +17,7 @@ package ratelimit_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -35,8 +36,7 @@ import (
 
 const errMessage = `stubLimiter TEST error`
 
-type stubLimiter struct {
-}
+type stubLimiter struct{}
 
 func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateLimitResult, error) {
 	switch key {
@@ -44,6 +44,8 @@ func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateL
 		return true, throttled.RateLimitResult{-1, -1, -1, time.Minute}, nil
 	case "error":
 		return false, throttled.RateLimitResult{}, errors.NewFatalf(errMessage)
+	case "panic":
+		panic("RateLimit should not be called")
 	default:
 		return false, throttled.RateLimitResult{1, 2, time.Minute, -1}, nil
 	}
@@ -99,7 +101,7 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 
 	var runTest = func(logBuf *log.MutexBuffer, scp scope.Scope, id int64) func(t *testing.T) {
 		return func(t *testing.T) {
-			limiter, err := ratelimit.New(
+			srv, err := ratelimit.New(
 				ratelimit.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 				//ratelimit.WithLogger(logw.NewLog(logw.WithWriter(ioutil.Discard), logw.WithLevel(logw.LevelDebug))),
 				ratelimit.WithVaryBy(scp, id, pathGetter{}),
@@ -109,7 +111,7 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			handler := limiter.WithRateLimit()(finalHandler(t))
+			handler := srv.WithRateLimit()(finalHandler(t))
 
 			runHTTPTestCases(t, handler, []httpTestCase{
 				{"ok", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "2", "X-Ratelimit-Reset": "60"}},
@@ -140,87 +142,91 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 
 }
 
-//func TestHTTPRateLimit_CustomHandlers(t *testing.T) {
-//	t.Parallel()
-//	limiter, err := ratelimit.NewService(
-//		ratelimit.WithVaryBy(pathGetter{}),
-//		ratelimit.WithRateLimiterFactory(newStubLimiter(nil)),
-//	)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	limiter.DeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) error {
-//		http.Error(w, "custom limit exceeded", 400)
-//		return nil
-//	})
-//
-//	ctx := store.WithContextProvider(
-//		context.Background(),
-//		storemock.NewEurozzyService(
-//			scope.MustSetByCode(scope.Website, "euro"),
-//		),
-//	)
-//
-//	handler := limiter.WithRateLimit()(finalHandler200)
-//
-//	runHTTPTestCases(t, ctx, handler, []httpTestCase{
-//		{"limit", 400, map[string]string{}},
-//		{"error", 500, map[string]string{}},
-//	})
-//}
-//
-//func TestHTTPRateLimit_RateLimiterFactoryError(t *testing.T) {
-//	t.Parallel()
-//
-//	testedErr := errors.New("RateLimiterFactory Error")
-//
-//	limiter, err := ratelimit.New(
-//		ratelimit.WithVaryBy(pathGetter{}),
-//		ratelimit.WithRateLimiterFactory(newStubLimiter(testedErr)),
-//	)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	ctx := store.WithContextProvider(
-//		context.Background(),
-//		storemock.NewEurozzyService(
-//			scope.MustSetByCode(scope.Website, "euro"),
-//		),
-//	)
-//
-//	req, err := http.NewRequest("GET", "/", nil)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	err = limiter.WithRateLimit()(finalHandler200).ServeHTTP( nil, req)
-//	assert.EqualError(t, err, testedErr.Error())
-//}
-//
-//func TestHTTPRateLimit_MissingContext(t *testing.T) {
-//	t.Parallel()
-//
-//	limiter, err := ratelimit.New(
-//		ratelimit.WithVaryBy(pathGetter{}),
-//		ratelimit.WithRateLimiterFactory(newStubLimiter(nil)),
-//	)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	ctx := store.WithContextProvider(
-//		context.Background(),
-//		nil,
-//	)
-//
-//	req, err := http.NewRequest("GET", "/", nil)
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	err = limiter.WithRateLimit()(finalHandler200).ServeHTTPContext(ctx, nil, req)
-//	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
-//}
+func TestService_WithDeniedHandler(t *testing.T) {
+
+	var ac = new(int32)
+
+	srv, err := ratelimit.New(
+		ratelimit.WithVaryBy(scope.Default, 0, pathGetter{}),
+		ratelimit.WithRateLimiter(scope.Default, 0, stubLimiter{}),
+		ratelimit.WithDeniedHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			atomic.AddInt32(ac, 1)
+			http.Error(w, "custom limit exceeded", 400)
+		})),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler := srv.WithRateLimit()(finalHandler(t))
+
+	runHTTPTestCases(t, handler, []httpTestCase{
+		{"limit", 400, map[string]string{}},
+		{"error", 500, map[string]string{}},
+	})
+	if have, want := *ac, int32(runHTTPTestCasesUsers*runHTTPTestCasesLoops); have != want {
+		t.Errorf("WithDeniedHandler call failed: Have: %d Want: %d", have, want)
+	}
+}
+
+func TestService_RequestedStore_NotFound(t *testing.T) {
+	srv, err := ratelimit.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", "/", nil)
+	srv.WithRateLimit()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := ratelimit.FromContextRateLimit(r.Context())
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})).ServeHTTP(nil, req)
+}
+
+func TestService_ScopedConfig_NotFound(t *testing.T) {
+	srv, err := ratelimit.New()
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	if err := srv.FlushCache(); err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	storeSrv := storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro"))
+	req, _ := http.NewRequest("GET", "https://corestore.io", nil)
+	st, err := storeSrv.Store(scope.MockID(1)) // German Store
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
+	req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+
+	srv.WithRateLimit()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := ratelimit.FromContextRateLimit(r.Context())
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+	})).ServeHTTP(nil, req)
+}
+
+func TestService_WithDisabled(t *testing.T) {
+
+	srv, err := ratelimit.New(
+		ratelimit.WithVaryBy(scope.Default, 0, pathGetter{}),
+		ratelimit.WithRateLimiter(scope.Default, 0, stubLimiter{}),
+		ratelimit.WithDisable(scope.Default, 0, true),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler := srv.WithRateLimit()(finalHandler(t))
+	runHTTPTestCases(t, handler, []httpTestCase{
+		{"panic", 200, map[string]string{}},
+	})
+}
+
+const (
+	runHTTPTestCasesUsers = 10
+	runHTTPTestCasesLoops = 5
+)
 
 func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 	for i, c := range cs {
@@ -235,7 +241,7 @@ func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 		st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
 		req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 
-		hpu := cstesting.NewHTTPParallelUsers(10, 5, 200, time.Millisecond)
+		hpu := cstesting.NewHTTPParallelUsers(runHTTPTestCasesUsers, runHTTPTestCasesLoops, 200, time.Millisecond)
 		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
 			if have, want := rec.Code, c.code; have != want {
 				t.Errorf("Expected request %d at %s to return %d but got %d",

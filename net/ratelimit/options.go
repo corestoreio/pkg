@@ -183,10 +183,10 @@ func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration rune, req
 // 		redis://:6380/0 => connects to localhost:6380
 // 		redis:// => connects to localhost:6379 with DB 0
 // 		redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0
-func WithGCRARedis(scp scope.Scope, id int64, redisRawUrl string, duration rune, requests, burst int) Option {
+func WithGCRARedis(scp scope.Scope, id int64, redisRawURL string, duration rune, requests, burst int) Option {
 	h := scope.NewHash(scp, id)
 
-	address, password, db, err := url.ParseRedis(redisRawUrl)
+	address, password, db, err := url.ParseRedis(redisRawURL)
 	if err != nil {
 		return func(s *Service) error {
 			return errors.Wrap(err, "[ratelimit] url.RedisParseURL")
