@@ -15,6 +15,8 @@
 package backend
 
 import (
+	"sync"
+
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
@@ -29,7 +31,7 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	cfgmodel.PkgBackend
+	sync.Mutex
 	// TransEmailIdentCustom1Email => Sender Email.
 	// Path: trans_email/ident_custom1/email
 	// BackendModel: Magento\Config\Model\Config\Backend\Email\Address

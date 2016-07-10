@@ -16,7 +16,6 @@ package cfgmodel
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
@@ -26,12 +25,6 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-// PkgBackend used for embedding in the PkgBackend type in each package. The
-// mutex protects the init process.
-type PkgBackend struct {
-	sync.Mutex
-}
 
 // optionBox groups different types into one struct to allow multiple option
 // functions applied to many different types within this package.
