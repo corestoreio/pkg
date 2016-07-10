@@ -96,5 +96,5 @@ func (be *OptionFactories) Lookup(name string) (OptionFactoryFunc, error) {
 	if off, ok := be.register[name]; ok { // off = OptionFactoryFunc ;-)
 		return off, nil
 	}
-	return nil, errors.NewNotFoundf("[backendratelimit] Requested OptionFactoryFunc %q not registered.", name)
+	return nil, errors.NewNotFoundf("[scopedservice] Requested OptionFactoryFunc %q not registered.", name)
 }
