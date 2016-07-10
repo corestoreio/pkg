@@ -82,7 +82,7 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 			cfg := s.configByScopedGetter(test.cfg)
 
 			if have, want := cfg.value, test.want; have != want {
-				t.Errorf("(%d) Have: %q Want: %q (%s)", i, have, want, cfg.scopeHash)
+				t.Errorf("(%d) Have: %q Want: %q (%s)", i, have, want, cfg.ScopeHash)
 			}
 		}
 	}))
@@ -101,11 +101,11 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	if err := s.DebugCache(buf); err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Regexp(t, `Scope\(Default\) ID\(0\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), scopeHash: scope.NewHash\(scope.Default, 0\)}
-Scope\(Website\) ID\(1\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), scopeHash: scope.NewHash\(scope.Website, 1\)}
-Scope\(Store\) ID\(2\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), scopeHash: scope.NewHash\(scope.Store, 2\)}
-Scope\(Store\) ID\(777\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), scopeHash: scope.NewHash\(scope.Default, 0\)}
-Scope\(Store\) ID\(999\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), scopeHash: scope.NewHash\(scope.Website, 1\)}
+	assert.Regexp(t, `Scope\(Default\) ID\(0\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Default, 0\)}
+Scope\(Website\) ID\(1\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Website, 1\)}
+Scope\(Store\) ID\(2\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Store, 2\)}
+Scope\(Store\) ID\(777\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Default, 0\)}
+Scope\(Store\) ID\(999\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Website, 1\)}
 `, buf.String())
 
 }

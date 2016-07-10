@@ -31,20 +31,22 @@ func New(opts ...Option) (*Service, error) {
 	return newService(opts...)
 }
 
-type scopedConfig struct {
+// ScopedConfig DO NOT USE
+type ScopedConfig struct {
 	scopedConfigGeneric
 	value string
 }
 
-func (sc *scopedConfig) isValid() error {
+// IsValid do not use
+func (sc *ScopedConfig) IsValid() error {
 	if sc.lastErr != nil {
 		return sc.lastErr
 	}
 	return nil
 }
 
-func newScopedConfig() *scopedConfig {
-	return &scopedConfig{
+func newScopedConfig() *ScopedConfig {
+	return &ScopedConfig{
 		value: "Hello Default Gophers",
 	}
 }
@@ -67,7 +69,7 @@ func withValue(scp scope.Scope, id int64, val string) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.value = val
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}

@@ -55,14 +55,14 @@ type service struct {
 
 	// scopeCache internal cache of the configurations. scoped.Hash relates to
 	// the default,website or store ID.
-	scopeCache map[scope.Hash]*scopedConfig
+	scopeCache map[scope.Hash]*ScopedConfig
 }
 
 func newService(opts ...Option) (*Service, error) {
 	s := &Service{
 		service: service{
 			Log:        log.BlackHole{},
-			scopeCache: make(map[scope.Hash]*scopedConfig),
+			scopeCache: make(map[scope.Hash]*ScopedConfig),
 		},
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
@@ -102,7 +102,7 @@ func (s *Service) Options(opts ...Option) error {
 
 // flushCache scopedservice cache flusher
 func (s *Service) flushCache() error {
-	s.scopeCache = make(map[scope.Hash]*scopedConfig)
+	s.scopeCache = make(map[scope.Hash]*ScopedConfig)
 	return nil
 }
 
@@ -132,7 +132,7 @@ func (s *Service) DebugCache(w io.Writer) error {
 // option WithOptionFactory() the configuration will be pulled out only one time
 // from the backend configuration service. The field optionInflight handles the
 // guaranteed atomic single loading for each scope.
-func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
+func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) ScopedConfig {
 
 	current := scope.NewHash(scpGet.Scope())   // can be store or website or default
 	fallback := scope.NewHash(scpGet.Parent()) // can be website or default
@@ -141,12 +141,12 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 	// test if a direct entry can be found; if not we must apply either the
 	// optionFactory function or do a fall back to the website scope and/or
 	// default scope.
-	if sCfg := s.getConfigByHash(current, 0); sCfg.isValid() == nil {
+	if sCfg := s.ConfigByScopeHash(current, 0); sCfg.IsValid() == nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
 				log.Stringer("requested_fallback_scope", scope.Hash(0)),
-				log.Stringer("responded_scope", sCfg.scopeHash),
+				log.Stringer("responded_scope", sCfg.ScopeHash),
 			)
 		}
 		return sCfg
@@ -160,13 +160,13 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 			if err := s.Options(s.optionFactory(scpGet)...); err != nil {
 				return newScopedConfigError(errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")), nil
 			}
-			sCfg := s.getConfigByHash(current, fallback)
+			sCfg := s.ConfigByScopeHash(current, fallback)
 			if s.Log.IsDebug() {
 				s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Inflight.Do",
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_fallback_scope", fallback),
-					log.Stringer("responded_scope", sCfg.scopeHash),
-					log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
+					log.Stringer("responded_scope", sCfg.ScopeHash),
+					log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 				)
 			}
 			return sCfg, nil
@@ -177,34 +177,37 @@ func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig 
 		if res.Err != nil {
 			return newScopedConfigError(errors.Wrap(res.Err, "[scopedservice] Inflight.DoChan.Error"))
 		}
-		sCfg, ok := res.Val.(scopedConfig)
+		sCfg, ok := res.Val.(ScopedConfig)
 		if !ok {
 			sCfg = newScopedConfigError(errors.NewFatalf("[scopedservice] Inflight.DoChan res.Val cannot be type asserted to scopedConfig"))
 		}
 		return sCfg
 	}
 
-	sCfg := s.getConfigByHash(current, fallback)
+	sCfg := s.ConfigByScopeHash(current, fallback)
 	// under very high load: 20 users within 10 MicroSeconds this might get executed
 	// 1-3 times. more thinking needed.
 	if s.Log.IsDebug() {
 		s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Fallback",
 			log.Stringer("requested_scope", current),
 			log.Stringer("requested_fallback_scope", fallback),
-			log.Stringer("responded_scope", sCfg.scopeHash),
-			log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
+			log.Stringer("responded_scope", sCfg.ScopeHash),
+			log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 		)
 	}
 	return sCfg
 }
 
-// getConfigByHash returns the correct configuration for a scope and may fall
-// back to the next higher scope: store -> website -> default. if an entry for a
-// scope cannot be found the next higher scope gets looked up and the pointer of
-// the next higher scope gets assigned to the current scope. this makes sure to
-// avoid redundant configurations and enables us to change one scope with an
-// impact on all other scopes which depend on the parent scope.
-func (s *Service) getConfigByHash(current scope.Hash, fallback scope.Hash) (scpCfg scopedConfig) {
+// ConfigByScopeHash returns the correct configuration for a scope and may fall
+// back to the next higher scope: store -> website -> default. If `current` hash
+// is Store, then the `fallback` can only be Website or Default. If an entry for
+// a scope cannot be found the next higher scope gets looked up and the pointer
+// of the next higher scope gets assigned to the current scope. This prevents
+// redundant configurations and enables us to change one scope configuration
+// with an impact on all other scopes which depend on the parent scope. A zero
+// `fallback` triggers no further lookups. This function does not load any
+// configuration from the backend.
+func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (scpCfg ScopedConfig) {
 	// current can be store or website scope
 	// fallback can be website or default scope. If 0 then no fall back
 

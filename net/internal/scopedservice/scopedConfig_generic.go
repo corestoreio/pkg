@@ -29,17 +29,17 @@ type scopedConfigGeneric struct {
 	// lastErr used during selecting the config from the scopeCache map and infligh
 	// package.
 	lastErr error
-	// scopeHash defines the scope to which this configuration is bound to.
-	scopeHash scope.Hash
+	// ScopeHash defines the scope to which this configuration is bound to.
+	ScopeHash scope.Hash
 }
 
 func (scg scopedConfigGeneric) GoString() string {
-	return fmt.Sprintf("scopedConfigGeneric{lastErr: %q, scopeHash: %s}", scg.lastErr, scg.scopeHash.GoString())
+	return fmt.Sprintf("scopedConfigGeneric{lastErr: %q, ScopeHash: %s}", scg.lastErr, scg.ScopeHash.GoString())
 }
 
 // newScopedConfigError easy helper to create an error
-func newScopedConfigError(err error) scopedConfig {
-	return scopedConfig{
+func newScopedConfigError(err error) ScopedConfig {
+	return ScopedConfig{
 		scopedConfigGeneric: scopedConfigGeneric{
 			lastErr: err,
 		},
@@ -50,9 +50,9 @@ func newScopedConfigError(err error) scopedConfig {
 // creates a newScopedConfig(). This function can only be used within a
 // functional option because it expects that it runs within an acquired lock
 // because of the map.
-func optionInheritDefault(s *Service) *scopedConfig {
+func optionInheritDefault(s *Service) *ScopedConfig {
 	if sc, ok := s.scopeCache[scope.DefaultHash]; ok && sc != nil {
-		shallowCopy := new(scopedConfig)
+		shallowCopy := new(ScopedConfig)
 		*shallowCopy = *sc
 		return shallowCopy
 	}
@@ -66,7 +66,7 @@ func withDefaultConfig(scp scope.Scope, id int64) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		sc := optionInheritDefault(s)
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
