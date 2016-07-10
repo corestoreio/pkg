@@ -16,17 +16,12 @@ package ratelimit
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/garyburd/redigo/redis"
 	"gopkg.in/throttled/throttled.v2"
-	"gopkg.in/throttled/throttled.v2/store/memstore"
-	"gopkg.in/throttled/throttled.v2/store/redigostore"
 )
 
 // Option can be used as an argument in NewService to configure it with
@@ -157,65 +152,6 @@ func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duratio
 			return errors.NewNotValidf("[ratelimit] throttled.NewGCRARateLimiter: %s", err)
 		}
 		return WithRateLimiter(scp, id, rl)(s)
-	}
-}
-
-// WithGCRAMemStore creates the default memory based GCRA rate limiter.
-// Duration: (s second,i minute,h hour,d day)
-func WithGCRAMemStore(scp scope.Scope, id int64, maxKeys int, duration rune, requests, burst int) Option {
-	return func(s *Service) error {
-		rlStore, err := memstore.New(maxKeys)
-		if err != nil {
-			return errors.NewFatalf("[ratelimit] memstore.New MaxKeys(%d): %s", maxKeys, err)
-		}
-		return WithGCRAStore(scp, id, rlStore, duration, requests, burst)(s)
-	}
-}
-
-// WithGCRARedis creates a new Redis-based store, using the provided pool to get
-// its connections. The keys will have the specified keyPrefix, which
-// may be an empty string, and the database index specified by db will
-// be selected to store the keys. Any updating operations will reset
-// the key TTL to the provided value rounded down to the nearest
-// second. Depends on Redis 2.6+ for EVAL support.
-//
-// URLs should follow the draft IANA specification for the
-// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
-//
-//
-// For example:
-// 		redis://localhost:6379/3
-// 		redis://:6380/0 => connects to localhost:6380
-// 		redis:// => connects to localhost:6379 with DB 0
-// 		redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0
-func WithGCRARedis(scp scope.Scope, id int64, redisRawURL string, duration rune, requests, burst int) Option {
-	h := scope.NewHash(scp, id)
-
-	address, password, db, err := url.ParseRedis(redisRawURL)
-	if err != nil {
-		return func(s *Service) error {
-			return errors.Wrap(err, "[ratelimit] url.RedisParseURL")
-		}
-	}
-
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 30 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", address, redis.DialPassword(password))
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-
-	return func(s *Service) error {
-		rs, err := redigostore.New(pool, "ratelimit_"+h.String(), int(db))
-		if err != nil {
-			return errors.NewFatalf("[ratelimit] redigostore.New: %s", err)
-		}
-		return WithGCRAStore(scp, id, rs, duration, requests, burst)(s)
 	}
 }
 

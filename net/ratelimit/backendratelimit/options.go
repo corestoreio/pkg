@@ -19,7 +19,48 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/util/errors"
+	"sync"
 )
+
+var availableGCRA = &struct {
+	sync.RWMutex
+	registered map[string]ratelimit.OptionFactoryFunc
+}{
+	registered: make(map[string]ratelimit.OptionFactoryFunc),
+}
+
+func RegisterGCRA(name string, factory ratelimit.OptionFactoryFunc) {
+	availableGCRA.Lock()
+	defer availableGCRA.Unlock()
+	availableGCRA.registered[name] = factory
+}
+
+func RegisteredGCRA() []string {
+	availableGCRA.Lock()
+	defer availableGCRA.Unlock()
+	var names = make([]string, len(availableGCRA.registered))
+	i := 0
+	for n := range availableGCRA.registered {
+		names[i] = n
+	}
+	i++
+	return names
+}
+
+func DeregisterGCRA(name string) {
+	availableGCRA.Lock()
+	defer availableGCRA.Unlock()
+	delete(availableGCRA.registered, name)
+}
+
+func lookupGCRA(name string) (ratelimit.OptionFactoryFunc, error) {
+	availableGCRA.RLock()
+	defer availableGCRA.RUnlock()
+	if off, ok := availableGCRA.registered[name]; ok {
+		return off
+	}
+	return errors.NewNotFoundf("[backendratelimit] Requested GCRA %q not available", name)
+}
 
 // Default creates new ratelimit.Option slice with the default configuration
 // structure. It panics on error, so us it only during the app init phase.
@@ -47,43 +88,6 @@ func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
 		} else {
 			scp, scpID := scpHash.Unpack()
 			opts[i] = ratelimit.WithDisable(scp, scpID, disabled)
-			i++
-		}
-
-		burst, _, err := be.RateLimitBurst.Get(sg)
-		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitBurst.Get"))
-		}
-		req, _, err := be.RateLimitRequests.Get(sg)
-		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitRequests.Get"))
-		}
-		durRaw, _, err := be.RateLimitDuration.Get(sg)
-		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitDuration.Get"))
-		}
-
-		if len(durRaw) != 1 {
-			return optError(errors.NewFatalf("[backendratelimit] RateLimitDuration invalid character count: %q. Should be one character long.", durRaw))
-		}
-
-		dur := rune(durRaw[0])
-
-		useInMemMaxKeys, scpHash, err := be.RateLimitStorageGcraMaxMemoryKeys.Get(sg)
-		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraMaxMemoryKeys.Get"))
-		} else if useInMemMaxKeys > 0 {
-			scp, scpID := scpHash.Unpack()
-			opts[i] = ratelimit.WithGCRAMemStore(scp, scpID, useInMemMaxKeys, dur, req, burst)
-			i++
-		}
-
-		redisURL, scpHash, err := be.RateLimitStorageGCRARedis.Get(sg)
-		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitStorageGcraRedis.Get"))
-		} else if useInMemMaxKeys == 0 && redisURL != "" {
-			scp, scpID := scpHash.Unpack()
-			opts[i] = ratelimit.WithGCRARedis(scp, scpID, redisURL, dur, req, burst)
 			i++
 		}
 

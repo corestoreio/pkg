@@ -96,6 +96,16 @@ bursts.`),
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						element.Field{
+							// Path: net/ratelimit_storage/gcra_name
+							ID:        cfgpath.NewRoute("gcra_name"),
+							Label:     text.Chars(`Name of the registered GCRA`),
+							Comment:   text.Chars(`Insert the name of the registered GCRA with the function backendratelimit.RegisterGCRA(), during program initialization phase.`),
+							Type:      element.TypeText,
+							SortOrder: iter(),
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermStore,
+						},
+						element.Field{
 							// Path: net/ratelimit_storage/enable_gcra_memory
 							ID:        cfgpath.NewRoute("enable_gcra_memory"),
 							Label:     text.Chars(`Use GCRA in-memory (max keys)`),
