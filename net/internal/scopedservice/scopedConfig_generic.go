@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/sync/singleflight"
 )
 
-// auto generated: do not edit. See net/gen eric package
+// Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
 // scopedConfigGeneric private internal scoped based configuration used for
 // embedding into scopedConfig type.

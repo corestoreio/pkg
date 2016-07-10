@@ -14,8 +14,23 @@
 
 package scopedservice
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/csfw/config"
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-var errConfigNotFound = errors.NewNotFoundf(`[scopedservice] ScopedConfig not available`)
+// Option can be used as an argument in NewService to configure it with
+// different settings.
+type Option func(*Service) error
+
+// OptionFactoryFunc a closure around a scoped configuration to figure out which
+// options should be returned depending on the scope brought to you during a
+// request.
+type OptionFactoryFunc func(config.ScopedGetter) []Option
+
+// OptionError helper function to be used within the backend package or other
+// sub-packages whose functions may return an OptionFactoryFunc.
+func OptionError(err error) []Option {
+	return []Option{func(s *Service) error {
+		return err // no need to mask here, not interesting.
+	}}
+}

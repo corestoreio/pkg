@@ -27,7 +27,7 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// auto generated: do not edit. See net/gen_eric package
+// Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
 type service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.

@@ -17,7 +17,6 @@ package scopedservice
 import (
 	"io"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -49,12 +48,6 @@ func newScopedConfig() *scopedConfig {
 		value: "Hello Default Gophers",
 	}
 }
-
-// Option DO NOT USE
-type Option func(*Service) error
-
-// OptionFactoryFunc DO NOT USE
-type OptionFactoryFunc func(config.ScopedGetter) []Option
 
 // WithDefaultConfig DO NOT USE
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
