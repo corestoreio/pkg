@@ -17,21 +17,11 @@ package ratelimit
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
-
-// Option can be used as an argument in NewService to configure it with
-// different settings.
-type Option func(*Service) error
-
-// OptionFactoryFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during a
-// request.
-type OptionFactoryFunc func(config.ScopedGetter) []Option
 
 // WithDefaultConfig applies the default ratelimit configuration settings based
 // for a specific scope. This function overwrites any previous set options.
@@ -60,7 +50,7 @@ func WithVaryBy(scp scope.Scope, id int64, vb VaryByer) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.VaryByer = vb
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -79,7 +69,7 @@ func WithRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option
 			sc = optionInheritDefault(s)
 		}
 		sc.RateLimiter = rl
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -98,8 +88,8 @@ func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.deniedHandler = next
-		sc.scopeHash = h
+		sc.DeniedHandler = next
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -116,8 +106,8 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.disabled = isDisabled
-		sc.scopeHash = h
+		sc.Disabled = isDisabled
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -134,6 +124,7 @@ func WithLogger(l log.Logger) Option {
 
 // WithGCRAStore creates a new GCRA rate limiter with a custom storage backend.
 // Duration: (s second,i minute,h hour,d day)
+// GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
 func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duration rune, requests, burst int) Option {
 	return func(s *Service) error {
 

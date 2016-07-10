@@ -46,11 +46,11 @@ func (s *Service) WithRateLimit() mw.Middleware {
 			// requestedStore.Config contains the scope for store and then
 			// website or finally can fall back to default scope.
 			scpCfg := s.configByScopedGetter(requestedStore.Config)
-			if err := scpCfg.isValid(); err != nil {
+			if err := scpCfg.IsValid(); err != nil {
 				if s.Log.IsDebug() {
 					s.Log.Debug("ratelimit.Service.WithRateLimit.configByScopedGetter.Error",
 						log.Err(err),
-						log.Stringer("scope", scpCfg.scopeHash),
+						log.Stringer("scope", scpCfg.ScopeHash),
 						log.Marshal("requestedStore", requestedStore),
 						log.HTTPRequest("request", r),
 					)
@@ -60,7 +60,7 @@ func (s *Service) WithRateLimit() mw.Middleware {
 				return
 			}
 
-			if scpCfg.disabled {
+			if scpCfg.Disabled {
 				h.ServeHTTP(w, r)
 				return
 			}
@@ -71,7 +71,7 @@ func (s *Service) WithRateLimit() mw.Middleware {
 					log.Err(err),
 					log.Bool("is_limited", isLimited),
 					log.Object("rate_limit_result", rlResult),
-					log.Stringer("scope", scpCfg.scopeHash),
+					log.Stringer("scope", scpCfg.ScopeHash),
 					log.Marshal("requested_store", requestedStore),
 					log.HTTPRequest("request", r),
 				)
@@ -83,7 +83,7 @@ func (s *Service) WithRateLimit() mw.Middleware {
 			}
 
 			setRateLimitHeaders(w, rlResult)
-			next := scpCfg.deniedHandler
+			next := scpCfg.DeniedHandler
 			if !isLimited {
 				next = h
 			}

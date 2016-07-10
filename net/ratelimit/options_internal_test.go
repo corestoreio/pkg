@@ -60,7 +60,7 @@ func TestWithDefaultConfig(t *testing.T) {
 	s := MustNew(WithDefaultConfig(scope.Store, 33))
 	s33 := scope.NewHash(scope.Store, 33)
 	want33 := newScopedConfig()
-	want33.scopeHash = s33
+	want33.ScopeHash = s33
 	want0 := newScopedConfig()
 
 	// poor mans comparison function. better solution? Before suggesting please test it :-)
@@ -111,7 +111,7 @@ func TestWithRateLimiter(t *testing.T) {
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
-		err := s.getConfigByHash(w2, 0).isValid()
+		err := s.ConfigByScopeHash(w2, 0).IsValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -128,8 +128,8 @@ func TestWithDeniedHandler(t *testing.T) {
 			WithDeniedHandler(scope.Website, 2, dh),
 			WithDeniedHandler(scope.Default, 0, dh),
 		)
-		cstesting.EqualPointers(t, dh, s.scopeCache[w2].deniedHandler)
-		cstesting.EqualPointers(t, dh, s.scopeCache[scope.DefaultHash].deniedHandler)
+		cstesting.EqualPointers(t, dh, s.scopeCache[w2].DeniedHandler)
+		cstesting.EqualPointers(t, dh, s.scopeCache[scope.DefaultHash].DeniedHandler)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
@@ -137,8 +137,8 @@ func TestWithDeniedHandler(t *testing.T) {
 			WithDefaultConfig(scope.Website, 2),
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
-		cstesting.EqualPointers(t, defaultDeniedHandler, s.scopeCache[w2].deniedHandler)
-		err := s.getConfigByHash(w2, 0).isValid()
+		cstesting.EqualPointers(t, defaultDeniedHandler, s.scopeCache[w2].DeniedHandler)
+		err := s.ConfigByScopeHash(w2, 0).IsValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -173,7 +173,7 @@ func TestWithGCRAStore(t *testing.T) {
 			WithDefaultConfig(scope.Website, 2),
 		)
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
-		err := s.getConfigByHash(w2, 0).isValid()
+		err := s.ConfigByScopeHash(w2, 0).IsValid()
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }

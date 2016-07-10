@@ -23,17 +23,17 @@ import (
 )
 
 // scopedConfig private internal scoped based configuration
-type scopedConfig struct {
+type ScopedConfig struct {
 	scopedConfigGeneric
 
 	// start of package specific config values
 
 	// disabled set to true to disable rate limiting
-	disabled bool
+	Disabled bool
 	// deniedHandler can be customized instead of showing a HTTP status 429
 	// error page once the HTTPRateLimit has been reached.
 	// It will be called if the request gets over the limit.
-	deniedHandler http.Handler
+	DeniedHandler http.Handler
 
 	// RateLimiter default not set. It gets set either through the developer
 	// calling WithRateLimiter() or via OptionFactoryFunc.
@@ -50,28 +50,28 @@ var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.
 })
 
 // newScopedConfig creates a new object with the minimum needed configuration.
-func newScopedConfig() *scopedConfig {
-	return &scopedConfig{
+func newScopedConfig() *ScopedConfig {
+	return &ScopedConfig{
 		scopedConfigGeneric: scopedConfigGeneric{
-			scopeHash: scope.DefaultHash,
+			ScopeHash: scope.DefaultHash,
 		},
-		deniedHandler: defaultDeniedHandler,
+		DeniedHandler: defaultDeniedHandler,
 		VaryByer:      emptyVaryBy{},
 	}
 }
 
-// isValid a configuration for a scope is only then valid when several fields
-// are not empty and scopedConfig itself has a valid pointer.
-func (sc scopedConfig) isValid() error {
+// IsValid a configuration for a scope is only then valid when several fields
+// are not empty: RateLimiter, DeniedHandler and VaryByer.
+func (sc ScopedConfig) IsValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[ratelimit] scopedConfig.isValid has an lastErr")
 	}
-	if sc.scopeHash == 0 || sc.RateLimiter == nil || sc.deniedHandler == nil || sc.VaryByer == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.deniedHandler == nil, sc.RateLimiter == nil, sc.VaryByer == nil)
+	if sc.ScopeHash == 0 || sc.RateLimiter == nil || sc.DeniedHandler == nil || sc.VaryByer == nil {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.DeniedHandler == nil, sc.RateLimiter == nil, sc.VaryByer == nil)
 	}
 	return nil
 }
 
-func (sc *scopedConfig) requestRateLimit(r *http.Request) (bool, throttled.RateLimitResult, error) {
+func (sc *ScopedConfig) requestRateLimit(r *http.Request) (bool, throttled.RateLimitResult, error) {
 	return sc.RateLimiter.RateLimit(sc.VaryByer.Key(r), 1)
 }
