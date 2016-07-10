@@ -14,7 +14,12 @@
 
 package scopedservice
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"sync"
+
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/util/errors"
+)
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
@@ -27,10 +32,69 @@ type Option func(*Service) error
 // request.
 type OptionFactoryFunc func(config.ScopedGetter) []Option
 
-// OptionError helper function to be used within the backend package or other
+// OptionsError helper function to be used within the backend package or other
 // sub-packages whose functions may return an OptionFactoryFunc.
-func OptionError(err error) []Option {
+func OptionsError(err error) []Option {
 	return []Option{func(s *Service) error {
 		return err // no need to mask here, not interesting.
 	}}
+}
+
+// NewOptionFactories creates a new struct and inits the internal map.
+func NewOptionFactories() *OptionFactories {
+	return &OptionFactories{
+		register: make(map[string]OptionFactoryFunc),
+	}
+}
+
+// OptionFactories allows to register multiple OptionFactoryFunc identified by
+// their names. Those OptionFactoryFuncs will be loaded in the backend package
+// depending on the configured name under a certain path. This type is embedded
+// in the backendscopedservice.Backend package.
+type OptionFactories struct {
+	rwmu sync.RWMutex
+	// register where the key defines the name as specified in the
+	// configuration path net/ratelimit_storage/gcra_name. The key equals the
+	// 3rd party package name.
+	register map[string]OptionFactoryFunc
+}
+
+// Register adds another functional option factory to the internal register.
+// Overwrites existing entries.
+func (be *OptionFactories) Register(name string, factory OptionFactoryFunc) {
+	be.rwmu.Lock()
+	defer be.rwmu.Unlock()
+	be.register[name] = factory
+}
+
+// Names returns an unordered list of names of all registered functional option
+// factories.
+func (be *OptionFactories) Names() []string {
+	be.rwmu.RLock()
+	defer be.rwmu.RUnlock()
+	var names = make([]string, len(be.register))
+	i := 0
+	for n := range be.register {
+		names[i] = n
+	}
+	i++
+	return names
+}
+
+// Deregister removes a functional option factory from the internal register.
+func (be *OptionFactories) Deregister(name string) {
+	be.rwmu.Lock()
+	defer be.rwmu.Unlock()
+	delete(be.register, name)
+}
+
+// Lookup returns a functional option factory identified by name or an error if
+// the entry doesn't exists. May return a NotFound error behaviour.
+func (be *OptionFactories) Lookup(name string) (OptionFactoryFunc, error) {
+	be.rwmu.RLock()
+	defer be.rwmu.RUnlock()
+	if off, ok := be.register[name]; ok { // off = OptionFactoryFunc ;-)
+		return off, nil
+	}
+	return nil, errors.NewNotFoundf("[backendratelimit] Requested OptionFactoryFunc %q not registered.", name)
 }
