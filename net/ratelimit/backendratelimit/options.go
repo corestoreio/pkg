@@ -16,87 +16,41 @@ package backendratelimit
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/util/errors"
-	"sync"
 )
-
-var availableGCRA = &struct {
-	sync.RWMutex
-	registered map[string]ratelimit.OptionFactoryFunc
-}{
-	registered: make(map[string]ratelimit.OptionFactoryFunc),
-}
-
-func RegisterGCRA(name string, factory ratelimit.OptionFactoryFunc) {
-	availableGCRA.Lock()
-	defer availableGCRA.Unlock()
-	availableGCRA.registered[name] = factory
-}
-
-func RegisteredGCRA() []string {
-	availableGCRA.Lock()
-	defer availableGCRA.Unlock()
-	var names = make([]string, len(availableGCRA.registered))
-	i := 0
-	for n := range availableGCRA.registered {
-		names[i] = n
-	}
-	i++
-	return names
-}
-
-func DeregisterGCRA(name string) {
-	availableGCRA.Lock()
-	defer availableGCRA.Unlock()
-	delete(availableGCRA.registered, name)
-}
-
-func lookupGCRA(name string) (ratelimit.OptionFactoryFunc, error) {
-	availableGCRA.RLock()
-	defer availableGCRA.RUnlock()
-	if off, ok := availableGCRA.registered[name]; ok {
-		return off
-	}
-	return errors.NewNotFoundf("[backendratelimit] Requested GCRA %q not available", name)
-}
-
-// Default creates new ratelimit.Option slice with the default configuration
-// structure. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) ratelimit.OptionFactoryFunc {
-	cfgStruct, err := NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	return PrepareOptions(New(cfgStruct, opts...))
-}
 
 // PrepareOptions creates a closure around the type Backend. The closure will be
 // used during a scoped request to figure out the configuration depending on the
 // incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
 	return func(sg config.ScopedGetter) []ratelimit.Option {
-		var (
-			opts [6]ratelimit.Option
-			i    int // used as index in opts
-		)
+
+		opts := make([]ratelimit.Option, 0, 10)
 
 		disabled, scpHash, err := be.RateLimitDisabled.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[backendratelimit] RateLimitDisabled.Get"))
+			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] RateLimitDisabled.Get"))
 		} else {
 			scp, scpID := scpHash.Unpack()
-			opts[i] = ratelimit.WithDisable(scp, scpID, disabled)
-			i++
+			opts = append(opts, ratelimit.WithDisable(scp, scpID, disabled))
 		}
 
-		return opts[:]
-	}
-}
+		if disabled {
+			return opts
+		}
 
-func optError(err error) []ratelimit.Option {
-	return []ratelimit.Option{func(s *ratelimit.Service) error {
-		return err // no need to mask here, not interesting.
-	}}
+		name, _, err := be.RateLimitGCRAName.Get(sg)
+		if err != nil {
+			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] RateLimitGCRAName.Get"))
+		}
+
+		// name contains the configured ratelimit calculation/storage engine. in this case either
+		// memstore or redigostore. Of course you can plugin your own engine.
+		off, err := be.Lookup(name) // off = OptionFactoryFunc
+		if err != nil {
+			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] Backend.Lookup"))
+		}
+		return append(opts, off(sg)...)
+	}
 }

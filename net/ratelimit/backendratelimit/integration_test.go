@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/net/ratelimit/backendratelimit"
+	"github.com/corestoreio/csfw/net/ratelimit/memstore"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
@@ -61,7 +62,26 @@ func (pathGetter) Key(r *http.Request) string {
 
 var _ ratelimit.VaryByer = (*pathGetter)(nil)
 
+func TestBackend_GCRA_Not_Registered(t *testing.T) {
+	testBackendConfiguration(t, "panic",
+		cfgmock.PathValue{},
+		func(rec *httptest.ResponseRecorder) {
+			assert.Exactly(t, http.StatusTeapot, rec.Code)
+		},
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if err := ratelimit.FromContextRateLimit(r.Context()); err != nil {
+				assert.True(t, errors.IsNotFound(err), "%+v", err)
+			}
+			w.WriteHeader(http.StatusTeapot)
+		}),
+		false, // do not test logger
+		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
+		ratelimit.WithRateLimiter(scope.Website, 1, stubLimiter{}),
+	)
+}
+
 func TestBackend_WithDisable(t *testing.T) {
+
 	testBackendConfiguration(t, "panic",
 		cfgmock.PathValue{
 			backend.RateLimitDisabled.MustFQ(scope.Website, 1): 1,
@@ -75,6 +95,7 @@ func TestBackend_WithDisable(t *testing.T) {
 			}
 			w.WriteHeader(http.StatusTeapot)
 		}),
+		true, // do test logger
 		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
 		ratelimit.WithRateLimiter(scope.Website, 1, stubLimiter{}),
 	)
@@ -83,9 +104,14 @@ func TestBackend_WithDisable(t *testing.T) {
 func TestBackend_WithGCRAMemStore(t *testing.T) {
 	var countDenied = new(int32)
 	var countAllowed = new(int32)
+
+	backend.Register(memstore.NewOptionFactory(backend))
+	defer backend.Deregister(memstore.OptionName)
+
 	testBackendConfiguration(t,
 		"http://corestore.io",
 		cfgmock.PathValue{
+			backend.RateLimitGCRAName.MustFQ(scope.Website, 1):                 "memstore",
 			backend.RateLimitDisabled.MustFQ(scope.Website, 1):                 0,
 			backend.RateLimitStorageGcraMaxMemoryKeys.MustFQ(scope.Website, 1): 50,
 			backend.RateLimitBurst.MustFQ(scope.Website, 1):                    3,
@@ -110,6 +136,7 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 			w.WriteHeader(http.StatusTeapot)
 			atomic.AddInt32(countAllowed, 1)
 		}),
+		true, // do test logger
 		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
 		ratelimit.WithDeniedHandler(scope.Website, 1, http.HandlerFunc(func(w http.ResponseWriter, rec *http.Request) {
 			atomic.AddInt32(countDenied, 1)
@@ -130,6 +157,7 @@ func testBackendConfiguration(
 	pv cfgmock.PathValue,
 	assertResponse func(*httptest.ResponseRecorder),
 	nextH http.Handler,
+	testLogger bool,
 	opts ...ratelimit.Option,
 ) {
 
@@ -167,15 +195,17 @@ func testBackendConfiguration(
 	// Food for the race detector
 	hpu.ServeHTTP(req, srv.WithRateLimit()(nextH))
 
-	// Min 20 calls IsValid
-	// Exactly one call to optionInflight.Do
-	if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.IsValid`), (httpUsers*httpLoops)-1; have < want {
-		t.Errorf("Service.ConfigByScopedGetter.IsValid: Have: %d < Want: %d", have, want)
+	if testLogger {
+		// Min 20 calls IsValid
+		// Exactly one call to optionInflight.Do
+		if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.IsValid`), (httpUsers*httpLoops)-1; have < want {
+			t.Errorf("Service.ConfigByScopedGetter.IsValid: Have: %d < Want: %d", have, want)
+		}
+		if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.Inflight.Do`), 1; have != want {
+			t.Errorf("Service.ConfigByScopedGetter.Inflight.Do: Have: %d Want: %d", have, want)
+		}
+		// println("\n", logBuf.String(), "\n")
 	}
-	if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.Inflight.Do`), 1; have != want {
-		t.Errorf("Service.ConfigByScopedGetter.Inflight.Do: Have: %d Want: %d", have, want)
-	}
-	// println("\n", logBuf.String(), "\n")
 }
 
 func TestBackend_Path_Errors(t *testing.T) {
@@ -186,11 +216,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 		errBhf errors.BehaviourFunc
 	}{
 		{backend.RateLimitDisabled.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitBurst.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitRequests.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitDuration.MustFQ, "[a-z+", errors.IsFatal},
-		{backend.RateLimitStorageGcraMaxMemoryKeys.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitStorageGCRARedis.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.RateLimitGCRAName.MustFQ, struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 

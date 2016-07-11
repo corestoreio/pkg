@@ -12,5 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ratelimit implements HTTP rate limiting.
+// Package ratelimit implements scope based HTTP rate limiting.
+//
+// Sub-package `backendratelimit` implements the external configuration loading.
+// Sub-package `memstore` and `redigostore` provides rate limiting algorithms
+// and their storage possibilities. Both packages should be used as either
+// functional options to a ratelimit service or as functional option factories
+// to the backend type.
 package ratelimit

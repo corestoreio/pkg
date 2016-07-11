@@ -21,6 +21,8 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
+// todo(CS): add config values and path for ratelimit.VaryBy type
+
 // NewConfigStructure global configuration structure for this package. Used in
 // frontend (to display the user all the settings) and in backend (scope checks
 // and default values). See the source code of this function for the overall
@@ -99,7 +101,7 @@ bursts.`),
 							// Path: net/ratelimit_storage/gcra_name
 							ID:        cfgpath.NewRoute("gcra_name"),
 							Label:     text.Chars(`Name of the registered GCRA`),
-							Comment:   text.Chars(`Insert the name of the registered GCRA with the function backendratelimit.RegisterGCRA(), during program initialization phase.`),
+							Comment:   text.Chars(`Insert the name of the registered GCRA during program initialization with the function Backend.Register().`),
 							Type:      element.TypeText,
 							SortOrder: iter(),
 							Visible:   element.VisibleYes,
