@@ -22,27 +22,6 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Default creates new jwt.Option slice with the default configuration structure
-// and a noop encryptor/decryptor IF no option arguments have been provided. It
-// panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) jwt.OptionFactoryFunc {
-	cfgStruct, err := NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	if len(opts) == 0 {
-		opts = append(opts, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
-	}
-
-	return PrepareOptions(New(cfgStruct, opts...))
-}
-
-func optError(err error) []jwt.Option {
-	return []jwt.Option{func(s *jwt.Service) error {
-		return err
-	}}
-}
-
 // PrepareOptions creates a closure around the type Backend. The closure will be
 // used during a scoped request to figure out the configuration depending on the
 // incoming scope. An option array will be returned by the closure.

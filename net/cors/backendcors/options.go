@@ -24,16 +24,6 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Default creates new cors.Option slice with the default configuration
-// structure. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) cors.OptionFactoryFunc {
-	cfgStruct, err := NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	return PrepareOptions(New(cfgStruct, opts...))
-}
-
 // PrepareOptions creates a closure around the type Backend. The closure will
 // be used during a scoped request to figure out the configuration depending on
 // the incoming scope. An option array will be returned by the closure.
@@ -129,10 +119,4 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 
 		return opts[:]
 	}
-}
-
-func optError(err error) []cors.Option {
-	return []cors.Option{func(s *cors.Service) error {
-		return err
-	}}
 }

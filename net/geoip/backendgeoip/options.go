@@ -30,16 +30,6 @@ func init() {
 	gob.Register(geoip.Country{})
 }
 
-// Default creates new geoip.Option slice with the default configuration
-// structure. It panics on error, so us it only during the app init phase.
-func Default(opts ...cfgmodel.Option) geoip.OptionFactoryFunc {
-	cfgStruct, err := NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	return PrepareOptions(New(cfgStruct, opts...))
-}
-
 // PrepareOptions creates a closure around the type Backend. The closure will be
 // used during a scoped request to figure out the configuration depending on the
 // incoming scope. An option array will be returned by the closure.
@@ -129,10 +119,4 @@ func PrepareOptions(be *Backend) geoip.OptionFactoryFunc {
 
 		return opts[:]
 	}
-}
-
-func optError(err error) []geoip.Option {
-	return []geoip.Option{func(s *geoip.Service) error {
-		return err
-	}}
 }
