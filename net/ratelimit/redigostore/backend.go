@@ -21,42 +21,45 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-func RegisterOptionFacory(be *backendratelimit.Backend) (string, ratelimit.OptionFactoryFunc) {
-	return "redigostore", func(sg config.ScopedGetter) []ratelimit.Option {
+// OptionName identifies this package within the register of the
+// backendratelimit.Backend type.
+const OptionName = `redigostore`
+
+// NewOptionFactory creates a new option factory function for the memstore in the
+// backend package to be used for automatic scope based configuration
+// initialization. Configuration values are read from argument `be`.
+func NewOptionFactory(be *backendratelimit.Backend) (string, ratelimit.OptionFactoryFunc) {
+	return OptionName, func(sg config.ScopedGetter) []ratelimit.Option {
 
 		burst, _, err := be.RateLimitBurst.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[redigostore] RateLimitBurst.Get"))
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitBurst.Get"))
 		}
 		req, _, err := be.RateLimitRequests.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[redigostore] RateLimitRequests.Get"))
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitRequests.Get"))
 		}
 		durRaw, _, err := be.RateLimitDuration.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[redigostore] RateLimitDuration.Get"))
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitDuration.Get"))
 		}
 
 		if len(durRaw) != 1 {
-			return optError(errors.NewFatalf("[redigostore] RateLimitDuration invalid character count: %q. Should be one character long.", durRaw))
+			return ratelimit.OptionsError(errors.NewFatalf("[redigostore] RateLimitDuration invalid character count: %q. Should be one character long.", durRaw))
 		}
 
 		dur := rune(durRaw[0])
 
 		redisURL, scpHash, err := be.RateLimitStorageGCRARedis.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[redigostore] RateLimitStorageGcraRedis.Get"))
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitStorageGcraRedis.Get"))
 		}
 		if redisURL != "" {
 			scp, scpID := scpHash.Unpack()
-			return WithGCRA(scp, scpID, redisURL, dur, req, burst)
+			return []ratelimit.Option{
+				WithGCRA(scp, scpID, redisURL, dur, req, burst),
+			}
 		}
-		return errors.NewEmptyf("[redigostore] Redis not active because RateLimitStorageGCRARedis is not set.")
+		return ratelimit.OptionsError(errors.NewEmptyf("[redigostore] Redis not active because RateLimitStorageGCRARedis is not set."))
 	}
-}
-
-func optError(err error) []ratelimit.Option {
-	return []ratelimit.Option{func(s *ratelimit.Service) error {
-		return err // no need to mask here, not interesting.
-	}}
 }

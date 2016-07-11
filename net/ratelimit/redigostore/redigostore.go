@@ -17,6 +17,7 @@ package redigostore
 import (
 	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/store/scope"
@@ -41,8 +42,10 @@ import (
 // 		redis://:6380/0 => connects to localhost:6380
 // 		redis:// => connects to localhost:6379 with DB 0
 // 		redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0
+//
+// GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
+// This function implements a debug log.
 func WithGCRA(scp scope.Scope, id int64, redisRawURL string, duration rune, requests, burst int) ratelimit.Option {
-	// gets tested in ratelimit::options_internal_test.go
 	h := scope.NewHash(scp, id)
 
 	address, password, db, err := url.ParseRedis(redisRawURL)
@@ -53,6 +56,7 @@ func WithGCRA(scp scope.Scope, id int64, redisRawURL string, duration rune, requ
 	}
 
 	pool := &redis.Pool{
+		// todo(CS): maybe make this also configurable ...
 		MaxIdle:     3,
 		IdleTimeout: 30 * time.Second,
 		Dial: func() (redis.Conn, error) {
@@ -64,10 +68,22 @@ func WithGCRA(scp scope.Scope, id int64, redisRawURL string, duration rune, requ
 		},
 	}
 
+	var keyPrefix = "ratelimit_" + h.String()
 	return func(s *ratelimit.Service) error {
-		rs, err := throttledRedis.New(pool, "ratelimit_"+h.String(), int(db))
+		rs, err := throttledRedis.New(pool, keyPrefix, int(db))
 		if err != nil {
-			return errors.NewFatalf("[ratelimit] redigostore.New: %s", err)
+			return errors.NewFatalf("[redigostore] redigostore.New: %s", err)
+		}
+		if s.Log.IsDebug() {
+			s.Log.Debug("ratelimit.redigostore.WithGCRA",
+				log.Stringer("scope", scp),
+				log.Int64("scope_id", id),
+				log.Int("redis_raw_url", redisRawURL),
+				log.Int("key_prefix", keyPrefix),
+				log.String("duration", string(duration)),
+				log.Int("requests", requests),
+				log.Int("burst", burst),
+			)
 		}
 		return ratelimit.WithGCRAStore(scp, id, rs, duration, requests, burst)(s)
 	}
