@@ -22,15 +22,17 @@ import (
 	"gopkg.in/throttled/throttled.v2"
 )
 
-// scopedConfig private internal scoped based configuration
+// ScopedConfig scoped based configuration and should not be embedded into your
+// own types. Call ScopedConfig.ScopeHash to know to which scope this
+// configuration has been bound to.
 type ScopedConfig struct {
 	scopedConfigGeneric
 
 	// start of package specific config values
 
-	// disabled set to true to disable rate limiting
+	// Disabled set to true to disable rate limiting
 	Disabled bool
-	// deniedHandler can be customized instead of showing a HTTP status 429
+	// DeniedHandler can be customized instead of showing a HTTP status 429
 	// error page once the HTTPRateLimit has been reached.
 	// It will be called if the request gets over the limit.
 	DeniedHandler http.Handler

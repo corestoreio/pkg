@@ -23,14 +23,10 @@ import (
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-type preventEmbedder interface {
-	prevent()
-}
-
 // scopedConfigGeneric private internal scoped based configuration used for
-// embedding into scopedConfig type.
+// embedding into scopedConfig type. This type and its parent type ScopedConfig
+// should be embedded.
 type scopedConfigGeneric struct {
-	preventEmbedder
 	// lastErr used during selecting the config from the scopeCache map and infligh
 	// package.
 	lastErr error
