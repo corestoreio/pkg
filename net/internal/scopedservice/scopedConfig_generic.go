@@ -16,12 +16,18 @@ package scopedservice
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sync/singleflight"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
+
+var defaultErrorHandler = func(err error) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, fmt.Sprintf("%+v", err), http.StatusServiceUnavailable)
+	})
+}
 
 // scopedConfigGeneric private internal scoped based configuration used for
 // embedding into scopedConfig type. This type and its parent type ScopedConfig
@@ -32,6 +38,11 @@ type scopedConfigGeneric struct {
 	lastErr error
 	// ScopeHash defines the scope to which this configuration is bound to.
 	ScopeHash scope.Hash
+
+	// ErrorHandler gets called whenever a programmer makes an error. The
+	// default handler prints the error to the client and returns
+	// http.StatusServiceUnavailable
+	ErrorHandler func(error) http.Handler
 }
 
 func (scg scopedConfigGeneric) GoString() string {
@@ -47,6 +58,16 @@ func newScopedConfigError(err error) ScopedConfig {
 	}
 }
 
+// newScopedConfigGeneric creates a new non-pointer generic config with a
+// default scope and an error handler which returns status service unavailable.
+// This function must be embedded in the targeted package newScopedConfig().
+func newScopedConfigGeneric() scopedConfigGeneric {
+	return scopedConfigGeneric{
+		ScopeHash:    scope.DefaultHash,
+		ErrorHandler: defaultErrorHandler,
+	}
+}
+
 // optionInheritDefault looks up if the default configuration exists and if not
 // creates a newScopedConfig(). This function can only be used within a
 // functional option because it expects that it runs within an acquired lock
@@ -58,42 +79,4 @@ func optionInheritDefault(s *Service) *ScopedConfig {
 		return shallowCopy
 	}
 	return newScopedConfig()
-}
-
-// withDefaultConfig triggers the default settings
-func withDefaultConfig(scp scope.Scope, id int64) Option {
-	h := scope.NewHash(scp, id)
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		sc := optionInheritDefault(s)
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
-// WithOptionFactory applies a function which lazily loads the options from a
-// slow backend depending on the incoming scope within a request. For example
-// applies the backend configuration to the service.
-//
-// Once this option function has been set all other manually set option
-// functions, which accept a scope and a scope ID as an argument, will NOT be
-// overwritten by the new values retrieved from the configuration service.
-//
-//	cfgStruct, err := backendscopedservice.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	pb := backendscopedservice.New(cfgStruct)
-//
-//	srv := scopedservice.MustNewService(
-//		scopedservice.WithOptionFactory(backendscopedservice.PrepareOptions(pb)),
-//	)
-func WithOptionFactory(f OptionFactoryFunc) Option {
-	return func(s *Service) error {
-		s.optionInflight = new(singleflight.Group)
-		s.optionFactory = f
-		return nil
-	}
 }

@@ -15,9 +15,12 @@
 package scopedservice
 
 import (
+	"net/http"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -40,6 +43,61 @@ func OptionsError(err error) []Option {
 	}}
 }
 
+// withDefaultConfig triggers the default settings
+func withDefaultConfig(scp scope.Scope, id int64) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		sc := optionInheritDefault(s)
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
+// WithErrorHandler adds a custom error handler. Gets called after the scope can
+// be extracted from the context.Context and the configuration has been found
+// and is valid. The default error handler prints the error to the user and
+// returns a http.StatusServiceUnavailable.
+func WithErrorHandler(scp scope.Scope, id int64, h func(error) http.Handler) Option {
+	sh := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		sc := optionInheritDefault(s)
+		sc.ScopeHash = sh
+		sc.ErrorHandler = h
+		s.scopeCache[sh] = sc
+		return nil
+	}
+}
+
+// WithOptionFactory applies a function which lazily loads the options from a
+// slow backend depending on the incoming scope within a request. For example
+// applies the backend configuration to the service.
+//
+// Once this option function has been set all other manually set option
+// functions, which accept a scope and a scope ID as an argument, will NOT be
+// overwritten by the new values retrieved from the configuration service.
+//
+//	cfgStruct, err := backendscopedservice.NewConfigStructure()
+//	if err != nil {
+//		panic(err)
+//	}
+//	pb := backendscopedservice.New(cfgStruct)
+//
+//	srv := scopedservice.MustNewService(
+//		scopedservice.WithOptionFactory(backendscopedservice.PrepareOptions(pb)),
+//	)
+func WithOptionFactory(f OptionFactoryFunc) Option {
+	return func(s *Service) error {
+		s.optionInflight = new(singleflight.Group)
+		s.optionFactory = f
+		return nil
+	}
+}
+
 // NewOptionFactories creates a new struct and inits the internal map.
 func NewOptionFactories() *OptionFactories {
 	return &OptionFactories{
@@ -54,7 +112,7 @@ func NewOptionFactories() *OptionFactories {
 type OptionFactories struct {
 	rwmu sync.RWMutex
 	// register where the key defines the name as specified in the
-	// configuration path net/ratelimit_storage/gcra_name. The key equals the
+	// configuration path what/ever/path. The key equals the
 	// 3rd party package name.
 	register map[string]OptionFactoryFunc
 }

@@ -16,13 +16,25 @@ package scopedservice
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestWithErrorHandler(t *testing.T) {
+	var eh = func(error) http.Handler { return nil }
+	s, err := newService(WithErrorHandler(scope.Store, 44, eh))
+	assert.NoError(t, err)
+	cfg := s.ConfigByScopeHash(scope.NewHash(scope.Store, 44), 0)
+	assert.NotNil(t, cfg.ErrorHandler)
+	cstesting.EqualPointers(t, eh, cfg.ErrorHandler)
+}
 
 func TestOptionsError(t *testing.T) {
 	opts := OptionsError(errors.NewAlreadyClosedf("Something has already been closed."))
@@ -51,4 +63,17 @@ func TestOptionFactories(t *testing.T) {
 	off3, err := of.Lookup("not found")
 	assert.Nil(t, off3)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
+}
+
+func TestNewScopedConfigGeneric(t *testing.T) {
+
+	scg := newScopedConfigGeneric()
+	assert.Exactly(t, scope.DefaultHash, scg.ScopeHash)
+	assert.Nil(t, scg.lastErr)
+	assert.NotNil(t, scg.ErrorHandler)
+
+	rec := httptest.NewRecorder()
+	scg.ErrorHandler(errors.New("A programmer made a mistake")).ServeHTTP(rec, nil)
+	assert.Exactly(t, http.StatusServiceUnavailable, rec.Code)
+	assert.Contains(t, rec.Body.String(), "A programmer made a mistake")
 }

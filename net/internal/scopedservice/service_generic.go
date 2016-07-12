@@ -17,6 +17,7 @@ package scopedservice
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"sort"
 	"sync"
 
@@ -32,6 +33,12 @@ import (
 type service struct {
 	// Log used for debugging. Defaults to black hole. Panics if nil.
 	Log log.Logger
+
+	// ErrorHandler gets called whenever a programmer makes an error. Most two
+	// cases are: cannot extract scope from the context and scoped configuration
+	// is not valid. The default handler prints the error to the client and
+	// returns http.StatusServiceUnavailable
+	ErrorHandler func(error) http.Handler
 
 	// optionFactory optional configuration closure, can be nil. It pulls out
 	// the configuration settings from a slow backend during a request and
@@ -61,8 +68,9 @@ type service struct {
 func newService(opts ...Option) (*Service, error) {
 	s := &Service{
 		service: service{
-			Log:        log.BlackHole{},
-			scopeCache: make(map[scope.Hash]*ScopedConfig),
+			Log:          log.BlackHole{},
+			ErrorHandler: defaultErrorHandler,
+			scopeCache:   make(map[scope.Hash]*ScopedConfig),
 		},
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
