@@ -13,7 +13,3 @@
 // limitations under the License.
 
 package scopedservice
-
-import "fmt"
-
-var _ fmt.GoStringer = (*scopedConfigGeneric)(nil)

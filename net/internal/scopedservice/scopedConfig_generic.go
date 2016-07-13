@@ -15,7 +15,6 @@
 package scopedservice
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/corestoreio/csfw/net/mw"
@@ -40,10 +39,6 @@ type scopedConfigGeneric struct {
 	// default handler prints the error to the client and returns
 	// http.StatusServiceUnavailable
 	mw.ErrorHandler
-}
-
-func (scg scopedConfigGeneric) GoString() string {
-	return fmt.Sprintf("scopedConfigGeneric{lastErr: %q, ScopeHash: %s}", scg.lastErr, scg.ScopeHash.GoString())
 }
 
 // newScopedConfigError easy helper to create an error

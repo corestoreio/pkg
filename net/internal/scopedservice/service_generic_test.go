@@ -101,11 +101,9 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	if err := s.DebugCache(buf); err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Regexp(t, `Scope\(Default\) ID\(0\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Default, 0\)}
-Scope\(Website\) ID\(1\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Website, 1\)}
-Scope\(Store\) ID\(2\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Store, 2\)}
-Scope\(Store\) ID\(777\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Default, 0\)}
-Scope\(Store\) ID\(999\) => \[[0-9a-zA-Z]+\]=scopedConfigGeneric{lastErr: %!q\(<nil>\), ScopeHash: scope.NewHash\(scope.Website, 1\)}
-`, buf.String())
-
+	assert.Contains(t, buf.String(), `Scope(Default) ID(0) => `)
+	assert.Contains(t, buf.String(), `Scope(Website) ID(1) => `)
+	assert.Contains(t, buf.String(), `Scope(Store) ID(2) => `)
+	assert.Contains(t, buf.String(), `Scope(Store) ID(777) => `)
+	assert.Contains(t, buf.String(), `Scope(Store) ID(999) => `)
 }
