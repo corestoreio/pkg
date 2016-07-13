@@ -13,4 +13,6 @@
 // limitations under the License.
 
 // Package net provides additional network helper functions.
+//
+// context Package: https://twitter.com/peterbourgon/status/752022730812317696
 package net
