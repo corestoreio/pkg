@@ -21,8 +21,8 @@ import (
 )
 
 // Backend just exported for the sake of documentation. See fields for more
-// information. The Backend handles the reading and writing of configuration
-// values within this package.
+// information. Please call the New() function for creating a new Backend
+// object. Only the New() function will set the paths to the fields.
 type Backend struct {
 	*ratelimit.OptionFactories
 
@@ -80,8 +80,8 @@ type Backend struct {
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
-// variable to the appropriate entries. The function Load() will be executed to
-// apply the SectionSlice to all models. See Load() for more details.
+// variable to the appropriate entries in the storage. The argument SectionSlice
+// and opts will be applied to all models.
 func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	be := &Backend{
 		OptionFactories: ratelimit.NewOptionFactories(),
