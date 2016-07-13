@@ -15,13 +15,13 @@
 package ratelimit_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"fmt"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
@@ -109,6 +109,12 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 			)
 			if err != nil {
 				t.Fatal(err)
+			}
+			srv.ErrorHandler = func(err error) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					w.WriteHeader(500)
+					panic(fmt.Sprintf("Root Scope\n%+v", err))
+				})
 			}
 
 			handler := srv.WithRateLimit()(finalHandler(t))

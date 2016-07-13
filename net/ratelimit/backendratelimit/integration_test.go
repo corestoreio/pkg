@@ -69,10 +69,7 @@ func TestBackend_GCRA_Not_Registered(t *testing.T) {
 			assert.Exactly(t, http.StatusTeapot, rec.Code)
 		},
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := ratelimit.FromContextRateLimit(r.Context()); err != nil {
-				assert.True(t, errors.IsNotFound(err), "%+v", err)
-			}
-			w.WriteHeader(http.StatusTeapot)
+			panic("Should not get called")
 		}),
 		false, // do not test logger
 		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
@@ -90,9 +87,6 @@ func TestBackend_WithDisable(t *testing.T) {
 			assert.Exactly(t, http.StatusTeapot, rec.Code)
 		},
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := ratelimit.FromContextRateLimit(r.Context()); err != nil {
-				t.Errorf("%+v", err)
-			}
 			w.WriteHeader(http.StatusTeapot)
 		}),
 		true, // do test logger
@@ -130,9 +124,6 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 			}
 		},
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := ratelimit.FromContextRateLimit(r.Context()); err != nil {
-				t.Errorf("%+v", err)
-			}
 			w.WriteHeader(http.StatusTeapot)
 			atomic.AddInt32(countAllowed, 1)
 		}),
@@ -171,6 +162,13 @@ func testBackendConfiguration(
 	}
 
 	srv := ratelimit.MustNew(append(baseOpts, opts...)...)
+
+	srv.ErrorHandler = func(err error) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusTeapot)
+			assert.True(t, errors.IsNotFound(err), "%+v", err)
+		})
+	}
 
 	req := func() *http.Request {
 		o, err := scope.SetByCode(scope.Website, "euro")

@@ -60,15 +60,19 @@ func withDefaultConfig(scp scope.Scope, id int64) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(scp scope.Scope, id int64, h mw.ErrorHandler) Option {
-	sh := scope.NewHash(scp, id)
+func WithErrorHandler(scp scope.Scope, id int64, eh mw.ErrorHandler) Option {
+	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
-		sc := optionInheritDefault(s)
-		sc.ScopeHash = sh
-		sc.ErrorHandler = h
-		s.scopeCache[sh] = sc
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.ErrorHandler = eh
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
