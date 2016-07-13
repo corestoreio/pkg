@@ -162,7 +162,7 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 		// the scoped configuration is invalid and hence a programmer or package user
 		// made a mistake.
 		if s.Log.IsDebug() {
-			s.Log.Debug("scopedservice.Service.WithRateLimit.configByScopedGetter.Error",
+			s.Log.Debug("scopedservice.Service.configFromContext.configByScopedGetter.Error",
 				log.Err(err),
 				log.Stringer("scope", scpCfg.ScopeHash),
 				log.Marshal("requestedStore", requestedStore),
