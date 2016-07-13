@@ -16,33 +16,52 @@ package cors
 
 import (
 	"fmt"
+	"net/http"
 
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sync/singleflight"
 )
 
-// auto generated: do not edit. See net/gen eric package
+// Auto generated: Do not edit. See net/internal/scopedService package for more details.
+
+var defaultErrorHandler = mw.ErrorWithStatusCode(http.StatusServiceUnavailable)
 
 // scopedConfigGeneric private internal scoped based configuration used for
-// embedding into scopedConfig type.
+// embedding into scopedConfig type. This type and its parent type ScopedConfig
+// should be embedded.
 type scopedConfigGeneric struct {
 	// lastErr used during selecting the config from the scopeCache map and infligh
 	// package.
 	lastErr error
-	// scopeHash defines the scope to which this configuration is bound to.
-	scopeHash scope.Hash
+	// ScopeHash defines the scope to which this configuration is bound to.
+	ScopeHash scope.Hash
+
+	// ErrorHandler gets called whenever a programmer makes an error. The
+	// default handler prints the error to the client and returns
+	// http.StatusServiceUnavailable
+	mw.ErrorHandler
 }
 
 func (scg scopedConfigGeneric) GoString() string {
-	return fmt.Sprintf("scopedConfigGeneric{lastErr: %q, scopeHash: %s}", scg.lastErr, scg.scopeHash.GoString())
+	return fmt.Sprintf("scopedConfigGeneric{lastErr: %q, ScopeHash: %s}", scg.lastErr, scg.ScopeHash.GoString())
 }
 
 // newScopedConfigError easy helper to create an error
-func newScopedConfigError(err error) scopedConfig {
-	return scopedConfig{
+func newScopedConfigError(err error) ScopedConfig {
+	return ScopedConfig{
 		scopedConfigGeneric: scopedConfigGeneric{
 			lastErr: err,
 		},
+	}
+}
+
+// newScopedConfigGeneric creates a new non-pointer generic config with a
+// default scope and an error handler which returns status service unavailable.
+// This function must be embedded in the targeted package newScopedConfig().
+func newScopedConfigGeneric() scopedConfigGeneric {
+	return scopedConfigGeneric{
+		ScopeHash:    scope.DefaultHash,
+		ErrorHandler: defaultErrorHandler,
 	}
 }
 
@@ -50,49 +69,11 @@ func newScopedConfigError(err error) scopedConfig {
 // creates a newScopedConfig(). This function can only be used within a
 // functional option because it expects that it runs within an acquired lock
 // because of the map.
-func optionInheritDefault(s *Service) *scopedConfig {
+func optionInheritDefault(s *Service) *ScopedConfig {
 	if sc, ok := s.scopeCache[scope.DefaultHash]; ok && sc != nil {
-		shallowCopy := new(scopedConfig)
+		shallowCopy := new(ScopedConfig)
 		*shallowCopy = *sc
 		return shallowCopy
 	}
 	return newScopedConfig()
-}
-
-// withDefaultConfig triggers the default settings
-func withDefaultConfig(scp scope.Scope, id int64) Option {
-	h := scope.NewHash(scp, id)
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		sc := optionInheritDefault(s)
-		sc.scopeHash = h
-		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
-// WithOptionFactory applies a function which lazily loads the options from a
-// slow backend depending on the incoming scope within a request. For example
-// applies the backend configuration to the service.
-//
-// Once this option function has been set all other manually set option
-// functions, which accept a scope and a scope ID as an argument, will NOT be
-// overwritten by the new values retrieved from the configuration service.
-//
-//	cfgStruct, err := backendcors.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	pb := backendcors.New(cfgStruct)
-//
-//	srv := cors.MustNewService(
-//		cors.WithOptionFactory(backendcors.PrepareOptions(pb)),
-//	)
-func WithOptionFactory(f OptionFactoryFunc) Option {
-	return func(s *Service) error {
-		s.optionInflight = new(singleflight.Group)
-		s.optionFactory = f
-		return nil
-	}
 }
