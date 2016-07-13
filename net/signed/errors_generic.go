@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package signed (TODO) provides a middleware to sign responses and adds the signature
-// to the header or trailer.
-//
-// With the use of HTTPS this package might not be needed, except theoretically
-// MITM attacks ...
-//
-// https://tools.ietf.org/html/draft-cavage-http-signatures-00
-// https://tools.ietf.org/html/draft-burke-content-signature-00
 package signed
+
+import "github.com/corestoreio/csfw/util/errors"
+
+// Auto generated: Do not edit. See net/internal/scopedService package for more details.
+
+var errConfigNotFound = errors.NewNotFoundf(`[signed] ScopedConfig not available`)

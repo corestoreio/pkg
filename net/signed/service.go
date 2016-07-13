@@ -12,12 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package signed (TODO) provides a middleware to sign responses and adds the signature
-// to the header or trailer.
-//
-// With the use of HTTPS this package might not be needed, except theoretically
-// MITM attacks ...
-//
-// https://tools.ietf.org/html/draft-cavage-http-signatures-00
-// https://tools.ietf.org/html/draft-burke-content-signature-00
+//go:generate go run ../internal/scopedservice/main_copy.go "$GOPACKAGE"
+
 package signed
+
+// Service creates a middleware that facilitates using a Limiter to limit HTTP
+// requests.
+type Service struct {
+	service
+}
+
+// New creates a new signing middleware.
+func New(opts ...Option) (*Service, error) {
+	return newService(opts...)
+}
+
+// FlushCache clears the internal cache
+func (s *Service) FlushCache() error {
+	return s.flushCache()
+}

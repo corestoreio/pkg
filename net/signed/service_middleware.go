@@ -33,7 +33,43 @@ import (
 // Encoding header. Flush(), Hijack() and CloseNotify() interfaces will be
 // preserved. No header set, no compression takes place. GZIP has priority
 // before deflate.
-func WithSignature(h func() hash.Hash) mw.Middleware {
+func WithResponseSignature(h func() hash.Hash) mw.Middleware {
+
+	var hp = hashpool.New(h)
+	var bp = bufferpool.New(h().Size())
+
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			buf := bp.Get()
+			alg := hp.Get()
+
+			lw := mutil.WrapWriter(w)
+			lw.Tee(alg)
+
+			// use an option to set as header and write into buffer
+			// or set as trailer.
+			lw.Header().Set(net.Trailer, net.ContentSignature)
+			h.ServeHTTP(lw, r)
+
+			tmp := alg.Sum(buf.Bytes())
+			buf.Reset()
+			_, _ = buf.Write(tmp)
+
+			sig := Signature{
+				KeyID:     "test",
+				Algorithm: "rot13",
+				Signature: buf.Bytes(),
+			}
+			sig.Write(w, hex.EncodeToString)
+
+			hp.Put(alg)
+			bp.Put(buf)
+		})
+	}
+}
+
+func WithRequestSignatureValidation(h func() hash.Hash) mw.Middleware {
 
 	var hp = hashpool.New(h)
 	var bp = bufferpool.New(h().Size())

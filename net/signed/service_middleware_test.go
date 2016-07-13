@@ -47,5 +47,5 @@ func TestWithSignature(t *testing.T) {
 		if _, err := w.Write(data); err != nil {
 			t.Fatal(err)
 		}
-	}), signed.WithSignature(sha256.New)))
+	}), signed.WithResponseSignature(sha256.New)))
 }
