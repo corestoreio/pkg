@@ -19,8 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 // WithCORS to be used as a middleware for net.Handler. The applied
@@ -28,39 +26,12 @@ import (
 // provided then on a website specific level. Middleware expects to find in a
 // context a store.FromContextProvider().
 func (s *Service) WithCORS() mw.Middleware {
-
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			ctx := r.Context()
-
-			requestedStore, err := store.FromContextRequestedStore(ctx)
-			if err != nil {
-				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithCORS.FromContextProvider", log.Err(err), log.HTTPRequest("request", r))
-				}
-				err = errors.Wrap(err, "[cors] FromContextRequestedStore")
-				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
-				return
-			}
-
-			// the scpCfg depends on how you have initialized the storeService during app boot.
-			// requestedStore.Website.Config is the reason that all options only support
-			// website scope and not group or store scope.
-			scpCfg := s.configByScopedGetter(requestedStore.Website.Config)
-
-			//fmt.Printf("handleActualRequest U-L-ID %s-%s %#v\n",
-			//	w.Header().Get(cstesting.HeaderUserID),
-			//	w.Header().Get(cstesting.HeaderLoopID),
-			//	scpCfg,
-			//)
-
-			if err := scpCfg.isValid(); err != nil {
-				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithCORS.configByScopedGetter", log.Err(err), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
-				}
-				err = errors.Wrap(err, "[cors] ConfigByScopedGetter")
-				h.ServeHTTP(w, r.WithContext(withContextError(ctx, err)))
+			scpCfg := s.configFromContext(w, r)
+			if scpCfg.IsValid() != nil {
+				// every error gets previously logged in the configFromContext() function.
 				return
 			}
 

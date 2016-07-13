@@ -39,12 +39,13 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// scopedConfig private internal scoped based configuration
-type scopedConfig struct {
+// ScopedConfig scoped based configuration and should not be embedded into your
+// own types. Call ScopedConfig.ScopeHash to know to which scope this
+// configuration has been bound to.
+type ScopedConfig struct {
 	scopedConfigGeneric
 
 	// allowedOrigins normalized list of plain allowed origins
@@ -84,25 +85,24 @@ type scopedConfig struct {
 	log log.Logger
 }
 
-// isValid a configuration for a scope is only then valid when
-// - scopeHash set
-// - min 1x allowedMethods set
-func (sc scopedConfig) isValid() error {
+// IsValid a configuration for a scope is only then valid when
+//	- ScopeHash set
+//	- min 1x allowedMethods set
+//	- Logger not nil
+func (sc ScopedConfig) IsValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
 	}
-	if sc.scopeHash > 0 && len(sc.allowedMethods) > 0 && sc.log != nil {
+	if sc.ScopeHash > 0 && len(sc.allowedMethods) > 0 && sc.log != nil {
 		return nil
 	}
-	return errors.NewNotValidf(errScopedConfigNotValid, sc.scopeHash, sc.allowedMethods, sc.log == nil)
+	return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.allowedMethods, sc.log == nil)
 }
 
 // newScopedConfig creates a new object with the minimum needed configuration.
-func newScopedConfig() *scopedConfig {
-	return &scopedConfig{
-		scopedConfigGeneric: scopedConfigGeneric{
-			scopeHash: scope.DefaultHash,
-		},
+func newScopedConfig() *ScopedConfig {
+	return &ScopedConfig{
+		scopedConfigGeneric: newScopedConfigGeneric(),
 		// Default is spec's "simple" methods
 		allowedMethods: []string{"GET", "POST"},
 		// Use sensible defaults
@@ -112,7 +112,7 @@ func newScopedConfig() *scopedConfig {
 }
 
 // handlePreflight handles pre-flight CORS requests
-func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
+func (sc ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	sc.log = log.BlackHole{}
 
 	headers := w.Header()
@@ -180,7 +180,7 @@ func (sc scopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
-func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
+func (sc ScopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
@@ -229,7 +229,7 @@ func (sc scopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 
 // isOriginAllowed checks if a given origin is allowed to perform cross-domain requests
 // on the endpoint
-func (sc scopedConfig) isOriginAllowed(origin string) bool {
+func (sc ScopedConfig) isOriginAllowed(origin string) bool {
 	if sc.allowOriginFunc != nil {
 		return sc.allowOriginFunc(origin)
 	}
@@ -252,7 +252,7 @@ func (sc scopedConfig) isOriginAllowed(origin string) bool {
 
 // isMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
-func (sc scopedConfig) isMethodAllowed(method string) bool {
+func (sc ScopedConfig) isMethodAllowed(method string) bool {
 	if len(sc.allowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
 		return false
@@ -272,7 +272,7 @@ func (sc scopedConfig) isMethodAllowed(method string) bool {
 
 // areHeadersAllowed checks if a given list of headers are allowed to used within
 // a cross-domain request.
-func (sc scopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
+func (sc ScopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
 	if sc.allowedHeadersAll || len(requestedHeaders) == 0 {
 		return true
 	}

@@ -20,19 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-// Option defines a function argument for the Cors type to apply options.
-type Option func(*Service) error
-
-// OptionFactoryFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during
-// a request.
-type OptionFactoryFunc func(config.Scoped) []Option
 
 // WithDefaultConfig applies the default CORS configuration settings based for
 // a specific scope. This function overwrites any previous set options.
@@ -58,7 +49,7 @@ func WithExposedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.exposedHeaders = exposedHeaders
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -114,7 +105,7 @@ func WithAllowedOrigins(scp scope.Scope, id int64, domains ...string) Option {
 		sc.allowedOriginsAll = allowedOriginsAll
 		sc.allowedOrigins = allowedOrigins
 		sc.allowedWOrigins = allowedWOrigins
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -135,7 +126,7 @@ func WithAllowOriginFunc(scp scope.Scope, id int64, f func(origin string) bool) 
 			sc = optionInheritDefault(s)
 		}
 		sc.allowOriginFunc = f
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -159,7 +150,7 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.allowedMethods = am
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -196,7 +187,7 @@ func WithAllowedHeaders(scp scope.Scope, id int64, headers ...string) Option {
 		}
 		sc.allowedHeadersAll = allowedHeadersAll
 		sc.allowedHeaders = allowedHeaders
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -216,7 +207,7 @@ func WithAllowCredentials(scp scope.Scope, id int64, ok bool) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.allowCredentials = ok
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -246,7 +237,7 @@ func WithMaxAge(scp scope.Scope, id int64, seconds time.Duration) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.maxAge = age
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -266,7 +257,7 @@ func WithOptionsPassthrough(scp scope.Scope, id int64, ok bool) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.optionsPassthrough = ok
-		sc.scopeHash = h
+		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}

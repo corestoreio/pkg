@@ -40,6 +40,7 @@ type Service struct {
 func New(opts ...Option) (*Service, error) {
 	s, err := newService(opts...)
 	if s != nil {
+		s.useWebsite = true
 		s.optionAfterApply = func() error {
 			if err := withLoggerInit(log.BlackHole{})(s); err != nil {
 				return errors.Wrap(err, "[cors] withLoggerInit")
