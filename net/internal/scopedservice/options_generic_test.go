@@ -46,7 +46,7 @@ func TestOptionsError(t *testing.T) {
 
 func TestOptionFactories(t *testing.T) {
 
-	var off OptionFactoryFunc = func(config.ScopedGetter) []Option {
+	var off OptionFactoryFunc = func(config.Scoped) []Option {
 		return []Option{
 			withValue(scope.Store, 1, "a value for the store 1 scope"),
 			withValue(scope.Website, 2, "a value for the website 2 scope"),

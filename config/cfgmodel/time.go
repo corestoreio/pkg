@@ -36,7 +36,7 @@ func NewTime(path string, opts ...Option) Time {
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 // Get is able to parse available time formats as defined in
 // github.com/corestoreio/csfw/util/conv.StringToDate()
-func (t Time) Get(sg config.ScopedGetter) (time.Time, scope.Hash, error) {
+func (t Time) Get(sg config.Scoped) (time.Time, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Time
@@ -85,7 +85,7 @@ func NewDuration(path string, opts ...Option) Duration {
 // such as "300ms", "-1.5h" or "2h45m".
 // Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 // Error behaviour: NotValid
-func (t Duration) Get(sg config.ScopedGetter) (time.Duration, scope.Hash, error) {
+func (t Duration) Get(sg config.Scoped) (time.Duration, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Duration

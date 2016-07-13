@@ -28,7 +28,7 @@ import (
 // be used during a scoped request to figure out the configuration depending on
 // the incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
-	return func(sg config.ScopedGetter) []cors.Option {
+	return func(sg config.Scoped) []cors.Option {
 		var (
 			opts  [8]cors.Option
 			i     int // used as index in opts

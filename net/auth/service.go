@@ -140,7 +140,7 @@ func (s *Service) WithCookieValidation() mw.Middleware {
 // own middleware. A nil argument falls back to the default scope configuration.
 // If you have applied the option WithBackend() the configuration will be pulled
 // out one time from the backend service.
-func (s *Service) configByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
+func (s *Service) configByScopedGetter(sg config.Scoped) (scopedConfig, error) {
 
 	h := scope.DefaultHash
 	if sg != nil {

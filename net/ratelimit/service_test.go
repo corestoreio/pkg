@@ -126,19 +126,19 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 	//t.Log("FallBack", logBuf0)
 	cstesting.ContainsCount(t, logBuf0.String(), `Service.ConfigByScopedGetter.Fallback`, 1)
 
-	//logBuf1 := new(log.MutexBuffer)
-	//t.Run("Scope Store Fallback to Website", runTest(logBuf1, scope.Website, 1))
-	////t.Log("FallBack", logBuf1)
-	//
-	//var logCheck1 = `Service.ConfigByScopedGetter.Fallback requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Website) ID(1)" responded_scope: "Scope(Website) ID(1)`
-	//cstesting.ContainsCount(t, logBuf1.String(), logCheck1, 1)
-	//
-	//logBuf2 := new(log.MutexBuffer)
-	//t.Run("Scope Store No Fallback", runTest(logBuf2, scope.Store, 1))
-	////t.Log("FallBackNope", logBuf2)
-	//
-	//var logCheck2 = `Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Store) ID(1)"`
-	//cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 150)
+	logBuf1 := new(log.MutexBuffer)
+	t.Run("Scope Store Fallback to Website", runTest(logBuf1, scope.Website, 1))
+	//t.Log("FallBack", logBuf1)
+
+	var logCheck1 = `Service.ConfigByScopedGetter.Fallback requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Website) ID(1)" responded_scope: "Scope(Website) ID(1)`
+	cstesting.ContainsCount(t, logBuf1.String(), logCheck1, 1)
+
+	logBuf2 := new(log.MutexBuffer)
+	t.Run("Scope Store No Fallback", runTest(logBuf2, scope.Store, 1))
+	//t.Log("FallBackNope", logBuf2)
+
+	var logCheck2 = `Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Store) ID(1)"`
+	cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 150)
 
 }
 

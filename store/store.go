@@ -40,7 +40,7 @@ type Store struct {
 	cr config.Getter // internal root config.Getter which can be overwritten
 	// Config contains a config.Service which takes care of the scope based
 	// configuration values.
-	Config config.ScopedGetter
+	Config config.Scoped
 	// Website points to the current website for this store. No integrity checks.
 	// Can be nil.
 	Website *Website

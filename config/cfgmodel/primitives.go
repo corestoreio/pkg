@@ -34,7 +34,7 @@ func NewBool(path string, opts ...Option) Bool {
 // Get returns a bool value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (b Bool) Get(sg config.ScopedGetter) (bool, scope.Hash, error) {
+func (b Bool) Get(sg config.Scoped) (bool, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v bool
@@ -79,7 +79,7 @@ func NewByte(path string, opts ...Option) Byte {
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
 // The slice is owned by this function. You must copy it away for
 // further modifications.
-func (bt Byte) Get(sg config.ScopedGetter) ([]byte, scope.Hash, error) {
+func (bt Byte) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
 	// This code must be kept in sync with other lookup*() functions
 
 	var v []byte
@@ -124,7 +124,7 @@ func NewStr(path string, opts ...Option) Str {
 // Get returns a string value from ScopedGetter, if empty the
 // *element.Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
-func (str Str) Get(sg config.ScopedGetter) (string, scope.Hash, error) {
+func (str Str) Get(sg config.Scoped) (string, scope.Hash, error) {
 	// This code must be kept in sync with other lookup*() functions
 
 	var v string
@@ -167,7 +167,7 @@ func NewInt(path string, opts ...Option) Int {
 // Get returns an int value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (i Int) Get(sg config.ScopedGetter) (int, scope.Hash, error) {
+func (i Int) Get(sg config.Scoped) (int, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v int
@@ -210,7 +210,7 @@ func NewFloat64(path string, opts ...Option) Float64 {
 // Get returns a float64 value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (f Float64) Get(sg config.ScopedGetter) (float64, scope.Hash, error) {
+func (f Float64) Get(sg config.Scoped) (float64, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v float64

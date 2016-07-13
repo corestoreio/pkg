@@ -139,7 +139,7 @@ func TestBaseValueString(t *testing.T) {
 func TestBaseValueInScope(t *testing.T) {
 
 	tests := []struct {
-		sg         config.ScopedGetter
+		sg         config.Scoped
 		p          scope.Perm
 		wantErrBhf errors.BehaviourFunc
 	}{

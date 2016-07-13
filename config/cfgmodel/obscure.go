@@ -92,7 +92,7 @@ func (p *Obscure) Option(opts ...Option) error {
 }
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is nil.
-func (p Obscure) Get(sg config.ScopedGetter) ([]byte, scope.Hash, error) {
+func (p Obscure) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
 	if p.Encryptor == nil {
 		return nil, 0, ErrMissingEncryptor
 	}

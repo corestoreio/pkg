@@ -35,7 +35,7 @@ func init() {
 // incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Backend) geoip.OptionFactoryFunc {
 
-	return func(sg config.ScopedGetter) []geoip.Option {
+	return func(sg config.Scoped) []geoip.Option {
 		var opts [6]geoip.Option
 		var i int
 		scp, id := sg.Scope()

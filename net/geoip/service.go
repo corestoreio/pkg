@@ -126,7 +126,7 @@ func (s *Service) useDefaultConfig(h scope.Hash) bool {
 // option WithOptionFactory() the configuration will be pulled out only one time
 // from the backend configuration service. The field optionInflight handles the
 // guaranteed atomic single loading for each scope.
-func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) scopedConfig {
+func (s *Service) configByScopedGetter(scpGet config.Scoped) scopedConfig {
 
 	h := scope.NewHash(scpGet.Scope())
 	// fallback to default scope

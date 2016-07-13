@@ -23,11 +23,11 @@ import (
 )
 
 type uniqueID struct {
-	config config.ScopedGetter
+	config config.Scoped
 	lastID uint64
 }
 
-func (u *uniqueID) SetConfig(r config.ScopedGetter) {
+func (u *uniqueID) SetConfig(r config.Scoped) {
 	u.config = r
 }
 

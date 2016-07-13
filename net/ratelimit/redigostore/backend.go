@@ -29,7 +29,7 @@ const OptionName = `redigostore`
 // backend package to be used for automatic scope based configuration
 // initialization. Configuration values are read from argument `be`.
 func NewOptionFactory(be *backendratelimit.Backend) (string, ratelimit.OptionFactoryFunc) {
-	return OptionName, func(sg config.ScopedGetter) []ratelimit.Option {
+	return OptionName, func(sg config.Scoped) []ratelimit.Option {
 
 		burst, _, err := be.RateLimitBurst.Get(sg)
 		if err != nil {

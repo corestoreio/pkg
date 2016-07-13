@@ -26,7 +26,7 @@ import (
 // the incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Backend) auth.ScopedOptionFunc {
 
-	return func(sg config.ScopedGetter) []auth.Option {
+	return func(sg config.Scoped) []auth.Option {
 		var opts [8]auth.Option
 		var i int
 		scp, id := sg.Scope()

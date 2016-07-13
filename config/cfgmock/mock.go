@@ -294,8 +294,8 @@ func (mr *Service) Subscribe(_ cfgpath.Route, s config.MessageReceiver) (subscri
 
 // NewScoped creates a new config.ScopedReader which uses the underlying
 // mocked paths and values.
-func (mr *Service) NewScoped(websiteID, storeID int64) config.ScopedGetter {
-	return config.NewScopedService(mr, websiteID, storeID)
+func (mr *Service) NewScoped(websiteID, storeID int64) config.Scoped {
+	return config.NewScoped(mr, websiteID, storeID)
 }
 
 // From html/template/content.go

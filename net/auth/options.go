@@ -27,7 +27,7 @@ type Option func(*Service) error
 // ScopedOptionFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during a
 // request.
-type ScopedOptionFunc func(config.ScopedGetter) []Option
+type ScopedOptionFunc func(config.Scoped) []Option
 
 // WithDefaultConfig applies the default configuration settings based for
 // a specific scope. This function overwrites any previous set options.

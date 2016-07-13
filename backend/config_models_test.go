@@ -63,7 +63,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 	)
 
 	tests := []struct {
-		sg   config.ScopedGetter
+		sg   config.Scoped
 		want int
 	}{
 		{cr.NewScoped(0, 0), 2},

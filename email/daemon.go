@@ -57,7 +57,7 @@ var ErrMailChannelClosed = errors.New("The mail channel has been closed.")
 type Dialer interface {
 	// SetConfig allows instant access to the system wide configuration by the
 	// current scope ID.
-	SetConfig(config.ScopedGetter)
+	SetConfig(config.Scoped)
 	// Dial initiates the connection to the mail server.
 	Dial() (gomail.SendCloser, error)
 }
@@ -76,7 +76,7 @@ type Daemon struct {
 	sendFunc       gomail.SendFunc
 	closed         bool
 	// Config contains the config.Service
-	Config config.ScopedGetter
+	Config config.Scoped
 	// SmtpTimeout sets the time when the daemon should closes the connection
 	// to the SMTP server if no email was sent in the last default 30 seconds.
 	SmtpTimeout time.Duration
@@ -244,7 +244,7 @@ func (dm *Daemon) IsOffline() bool {
 // Per default it uses localhost:25, creates an unbuffered channel, uses the
 // config.DefaultManager, applies the admin scope (0) and sets the SMTP
 // timeout to 30s.
-func NewDaemon(c config.ScopedGetter, opts ...DaemonOption) (*Daemon, error) {
+func NewDaemon(c config.Scoped, opts ...DaemonOption) (*Daemon, error) {
 	d := &Daemon{
 		Config:      c,
 		SmtpTimeout: time.Second * 30,

@@ -27,7 +27,7 @@ import (
 // incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Backend) jwt.OptionFactoryFunc {
 
-	return func(sg config.ScopedGetter) []jwt.Option {
+	return func(sg config.Scoped) []jwt.Option {
 		var opts [6]jwt.Option
 		var i int
 		scp, id := sg.Scope()

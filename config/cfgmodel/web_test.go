@@ -35,7 +35,7 @@ func TestURLGet(t *testing.T) {
 	assert.Empty(t, b.Options())
 
 	tests := []struct {
-		scpcfg     config.ScopedGetter
+		scpcfg     config.Scoped
 		wantErrBhf errors.BehaviourFunc
 		wantHash   scope.Hash
 		wantVal    interface{}

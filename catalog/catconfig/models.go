@@ -51,7 +51,7 @@ func NewPriceScope(path string, opts ...cfgmodel.Option) PriceScope {
 }
 
 // IsGlobal true if global scope for base currency
-func (p PriceScope) IsGlobal(sg config.ScopedGetter) (bool, error) {
+func (p PriceScope) IsGlobal(sg config.Scoped) (bool, error) {
 	g, err := p.Get(sg)
 	if err != nil {
 		return false, errors.Mask(err)

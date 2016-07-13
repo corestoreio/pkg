@@ -32,7 +32,7 @@ type Option func(*Service) error
 // OptionFactoryFunc a closure around a scoped configuration to figure out which
 // options should be returned depending on the scope brought to you during
 // a request.
-type OptionFactoryFunc func(config.ScopedGetter) []Option
+type OptionFactoryFunc func(config.Scoped) []Option
 
 // WithDefaultConfig applies the default CORS configuration settings based for
 // a specific scope. This function overwrites any previous set options.

@@ -39,7 +39,7 @@ func NewURL(path string, opts ...Option) URL {
 }
 
 // Get returns an URL. If the underlying value is empty returns nil,nil.
-func (p URL) Get(sg config.ScopedGetter) (*url.URL, scope.Hash, error) {
+func (p URL) Get(sg config.Scoped) (*url.URL, scope.Hash, error) {
 	rawurl, h, err := p.Str.Get(sg)
 	if err != nil {
 		return nil, h, errors.Wrap(err, "[cfgmodel] URL.Str.Get")
@@ -73,7 +73,7 @@ func NewBaseURL(path string, opts ...Option) BaseURL {
 }
 
 // Get returns a base URL
-func (p BaseURL) Get(sg config.ScopedGetter) (string, scope.Hash, error) {
+func (p BaseURL) Get(sg config.Scoped) (string, scope.Hash, error) {
 	return p.Str.Get(sg)
 }
 

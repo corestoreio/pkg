@@ -32,7 +32,7 @@ type Website struct {
 	cr config.Getter // internal root config.Getter which can be overridden
 
 	// Config contains the scope based configuration reader.
-	Config config.ScopedGetter
+	Config config.Scoped
 	// Data raw website data from DB table.
 	Data *TableWebsite
 

@@ -46,7 +46,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).Bind(scope.Website, 10)
 	defaultTime := mustParseTime("2012-08-23 09:20:13")
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     time.Time
 	}{
@@ -79,7 +79,7 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).Bind(scope.Website, 10)
 	defaultTime := mustParseTime("2012-08-23 09:20:13")
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     time.Time
 	}{
@@ -163,7 +163,7 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 	defaultDuration := mustParseDuration("1h45m") // default as in the configStructure slice
 
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     time.Duration
 	}{
@@ -196,7 +196,7 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsDuration).Bind(scope.Website, 10)
 	defaultDuration := mustParseDuration("2h44m")
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     time.Duration
 	}{

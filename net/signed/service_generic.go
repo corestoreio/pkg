@@ -180,7 +180,7 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 // option WithOptionFactory() the configuration will be pulled out only one time
 // from the backend configuration service. The field optionInflight handles the
 // guaranteed atomic single loading for each scope.
-func (s *Service) configByScopedGetter(scpGet config.ScopedGetter) ScopedConfig {
+func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
 	current := scope.NewHash(scpGet.Scope())   // can be store or website or default
 	fallback := scope.NewHash(scpGet.Parent()) // can be website or default

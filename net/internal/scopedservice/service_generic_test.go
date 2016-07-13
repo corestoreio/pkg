@@ -67,7 +67,7 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	hpu.ServeHTTP(r, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		tests := []struct {
-			cfg  config.ScopedGetter
+			cfg  config.Scoped
 			want string
 		}{
 			{cfgmock.NewService().NewScoped(0, 0), "Default=0"},

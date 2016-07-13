@@ -17,6 +17,7 @@ package cfgmodel_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
@@ -50,7 +51,7 @@ func (rt rot13) Decrypt(s []byte) ([]byte, error) {
 func TestObscureMissingEncryptor(t *testing.T) {
 
 	m := cfgmodel.NewObscure(`aa/bb/cc`)
-	val, h, err := m.Get(nil)
+	val, h, err := m.Get(config.Scoped{})
 	assert.Nil(t, val)
 	assert.EqualError(t, err, cfgmodel.ErrMissingEncryptor.Error())
 	assert.EqualError(t, m.Write(nil, nil, scope.Default, 0), cfgmodel.ErrMissingEncryptor.Error())

@@ -225,7 +225,7 @@ func (s *Service) useDefaultConfig(h scope.Hash) bool {
 // ScopedGetter. Mainly used within the middleware. Exported here to build your
 // own middleware. If you have applied the option WithOptionFactory() the
 // configuration will be pulled out one time from the backend service.
-func (s *Service) ConfigByScopedGetter(sg config.ScopedGetter) ScopedConfig {
+func (s *Service) ConfigByScopedGetter(sg config.Scoped) ScopedConfig {
 	h := scope.NewHash(sg.Scope())
 	// fallback to default scope
 	if s.useDefaultConfig(h) {

@@ -9,7 +9,7 @@ import (
 // BaseCurrency returns the base currency code of a website.
 // 	1st argument should be a path to catalog/price/scope
 // 	2nd argument should be a path to currency/options/base
-func BaseCurrency(cr config.Getter, sg config.ScopedGetter, ps PriceScope, cc directory.ConfigCurrency) (directory.Currency, error) {
+func BaseCurrency(cr config.Getter, sg config.Scoped, ps PriceScope, cc directory.ConfigCurrency) (directory.Currency, error) {
 	// TODO, and also see test: TestWebsiteBaseCurrency
 	isGlobal, err := ps.IsGlobal(sg)
 	if err != nil {

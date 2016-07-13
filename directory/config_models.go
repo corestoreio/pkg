@@ -52,7 +52,7 @@ func (cc ConfigCurrency) GetDefault(sg config.Getter) (cur Currency, err error) 
 }
 
 // Get tries to retrieve a currency considering the scope
-func (cc ConfigCurrency) Get(sg config.ScopedGetter) (cur Currency, err error) {
+func (cc ConfigCurrency) Get(sg config.Scoped) (cur Currency, err error) {
 	raw, err := cc.Str.Get(sg)
 	if err != nil {
 		err = errors.Mask(err)

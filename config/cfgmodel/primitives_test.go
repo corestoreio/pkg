@@ -212,7 +212,7 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 	assert.Exactly(t, source.YesNo, b.Options())
 
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     bool
 	}{
@@ -238,7 +238,7 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewBool(pathWebCorsCred)
 
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     bool
 	}{
@@ -305,7 +305,7 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsByte)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     []byte
 	}{
@@ -342,7 +342,7 @@ func TestByteGetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     []byte
 	}{
@@ -405,7 +405,7 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     string
 	}{
@@ -442,7 +442,7 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     string
 	}{
@@ -505,7 +505,7 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     int
 	}{
@@ -542,7 +542,7 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     int
 	}{
@@ -605,7 +605,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.Website, 10)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     float64
 	}{
@@ -642,7 +642,7 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.Website, 10)
 	tests := []struct {
-		sg       config.ScopedGetter
+		sg       config.Scoped
 		wantHash scope.Hash
 		want     float64
 	}{

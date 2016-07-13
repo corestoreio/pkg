@@ -24,7 +24,7 @@ import (
 // used during a scoped request to figure out the configuration depending on the
 // incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
-	return func(sg config.ScopedGetter) []ratelimit.Option {
+	return func(sg config.Scoped) []ratelimit.Option {
 
 		opts := make([]ratelimit.Option, 0, 10)
 

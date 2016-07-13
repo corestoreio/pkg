@@ -223,15 +223,15 @@ func TestScopedServicePermission(t *testing.T) {
 
 func TestScopedService_Parent(t *testing.T) {
 	tests := []struct {
-		sg               config.ScopedGetter
+		sg               config.Scoped
 		wantCurrentScope scope.Scope
 		wantCurrentId    int64
 		wantParentScope  scope.Scope
 		wantParentID     int64
 	}{
-		{config.NewScopedService(nil, 33, 1), scope.Store, 1, scope.Website, 33},
-		{config.NewScopedService(nil, 3, 0), scope.Website, 3, scope.Default, 0},
-		{config.NewScopedService(nil, 0, 0), scope.Default, 0, scope.Default, 0},
+		{config.NewScoped(nil, 33, 1), scope.Store, 1, scope.Website, 33},
+		{config.NewScoped(nil, 3, 0), scope.Website, 3, scope.Default, 0},
+		{config.NewScoped(nil, 0, 0), scope.Default, 0, scope.Default, 0},
 	}
 	for _, test := range tests {
 		haveScp, haveID := test.sg.Parent()

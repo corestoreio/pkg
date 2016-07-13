@@ -40,7 +40,7 @@ const (
 // gives you the possibility to fallback the hierarchy levels.
 // These functions are also available in the ScopedGetter interface.
 type Getter interface {
-	NewScoped(websiteID, storeID int64) ScopedGetter
+	NewScoped(websiteID, storeID int64) Scoped
 	Byte(cfgpath.Path) ([]byte, error)
 	String(cfgpath.Path) (string, error)
 	Bool(cfgpath.Path) (bool, error)
@@ -63,7 +63,7 @@ type Writer interface {
 	Write(p cfgpath.Path, value interface{}) error
 }
 
-// Service main configuration provider
+// Service main configuration provider. Please use the NewService() function
 type Service struct {
 	// Storage is the underlying data holding provider. Only access it
 	// if you know exactly what you are doing.
@@ -93,6 +93,7 @@ func NewService(opts ...Option) (*Service, error) {
 		Log:     l,
 	}
 
+	// todo: remove this go ... and the programmer must call it. like Serve() function in http.
 	go s.publish() // yes we know how to quit this goroutine.
 
 	if err := s.Options(opts...); err != nil {
@@ -135,8 +136,8 @@ func (s *Service) Options(opts ...Option) error {
 }
 
 // NewScoped creates a new scope base configuration reader
-func (s *Service) NewScoped(websiteID, storeID int64) ScopedGetter {
-	return NewScopedService(s, websiteID, storeID)
+func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
+	return NewScoped(s, websiteID, storeID)
 }
 
 // ApplyDefaults reads slice Sectioner and applies the keys and values to the

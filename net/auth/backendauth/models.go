@@ -41,7 +41,7 @@ func NewConfigIPRange(path string, opts ...cfgmodel.Option) ConfigIPRange {
 }
 
 // Get ...
-func (cc ConfigIPRange) Get(sg config.ScopedGetter) (net.IPRanges, error) {
+func (cc ConfigIPRange) Get(sg config.Scoped) (net.IPRanges, error) {
 	data, err := cc.CSV.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendauth] Str.Get")
