@@ -17,7 +17,6 @@ package ratelimit
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
@@ -54,11 +53,9 @@ var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.
 // newScopedConfig creates a new object with the minimum needed configuration.
 func newScopedConfig() *ScopedConfig {
 	return &ScopedConfig{
-		scopedConfigGeneric: scopedConfigGeneric{
-			ScopeHash: scope.DefaultHash,
-		},
-		DeniedHandler: defaultDeniedHandler,
-		VaryByer:      emptyVaryBy{},
+		scopedConfigGeneric: newScopedConfigGeneric(),
+		DeniedHandler:       defaultDeniedHandler,
+		VaryByer:            emptyVaryBy{},
 	}
 }
 

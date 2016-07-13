@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
@@ -82,14 +83,8 @@ type httpTestCase struct {
 
 var finalHandler = func(t *testing.T) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := ratelimit.FromContextRateLimit(r.Context()); err != nil {
-			if !errors.IsFatal(err) {
-				t.Errorf("Have: %+v Want: A fatal error behaviour", err)
-			}
-			w.WriteHeader(500)
-		} else {
-			w.WriteHeader(200)
-		}
+		w.WriteHeader(200)
+		w.Write([]byte(`Everything OK dude!`))
 	})
 }
 
@@ -106,6 +101,11 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 				//ratelimit.WithLogger(logw.NewLog(logw.WithWriter(ioutil.Discard), logw.WithLevel(logw.LevelDebug))),
 				ratelimit.WithVaryBy(scp, id, pathGetter{}),
 				ratelimit.WithRateLimiter(scp, id, stubLimiter{}),
+				ratelimit.WithErrorHandler(scp, id, func(err error) http.Handler {
+					return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+						w.WriteHeader(500)
+					})
+				}),
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -126,19 +126,19 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 	//t.Log("FallBack", logBuf0)
 	cstesting.ContainsCount(t, logBuf0.String(), `Service.ConfigByScopedGetter.Fallback`, 1)
 
-	logBuf1 := new(log.MutexBuffer)
-	t.Run("Scope Store Fallback to Website", runTest(logBuf1, scope.Website, 1))
-	//t.Log("FallBack", logBuf1)
-
-	var logCheck1 = `Service.ConfigByScopedGetter.Fallback requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Website) ID(1)" responded_scope: "Scope(Website) ID(1)`
-	cstesting.ContainsCount(t, logBuf1.String(), logCheck1, 1)
-
-	logBuf2 := new(log.MutexBuffer)
-	t.Run("Scope Store No Fallback", runTest(logBuf2, scope.Store, 1))
-	//t.Log("FallBackNope", logBuf2)
-
-	var logCheck2 = `Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Store) ID(1)"`
-	cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 150)
+	//logBuf1 := new(log.MutexBuffer)
+	//t.Run("Scope Store Fallback to Website", runTest(logBuf1, scope.Website, 1))
+	////t.Log("FallBack", logBuf1)
+	//
+	//var logCheck1 = `Service.ConfigByScopedGetter.Fallback requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Website) ID(1)" responded_scope: "Scope(Website) ID(1)`
+	//cstesting.ContainsCount(t, logBuf1.String(), logCheck1, 1)
+	//
+	//logBuf2 := new(log.MutexBuffer)
+	//t.Run("Scope Store No Fallback", runTest(logBuf2, scope.Store, 1))
+	////t.Log("FallBackNope", logBuf2)
+	//
+	//var logCheck2 = `Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Store) ID(1)"`
+	//cstesting.ContainsCount(t, logBuf2.String(), logCheck2, 150)
 
 }
 
@@ -147,6 +147,12 @@ func TestService_WithDeniedHandler(t *testing.T) {
 	var ac = new(int32)
 
 	srv, err := ratelimit.New(
+		ratelimit.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(500)
+				// panic(fmt.Sprintf("Should not get called. Error Handler\n\n%+v", err))
+			})
+		}),
 		ratelimit.WithVaryBy(scope.Default, 0, pathGetter{}),
 		ratelimit.WithRateLimiter(scope.Default, 0, stubLimiter{}),
 		ratelimit.WithDeniedHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -157,8 +163,16 @@ func TestService_WithDeniedHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	srv.ErrorHandler = func(err error) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			panic(fmt.Sprintf("Should not get called. Root Error Handler\n\n%+v", err))
+		})
+	}
 
-	handler := srv.WithRateLimit()(finalHandler(t))
+	handler := srv.WithRateLimit()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		panic("Should not get called this next handler")
+	}))
 
 	runHTTPTestCases(t, handler, []httpTestCase{
 		{"limit", 400, map[string]string{}},
@@ -170,25 +184,54 @@ func TestService_WithDeniedHandler(t *testing.T) {
 }
 
 func TestService_RequestedStore_NotFound(t *testing.T) {
-	srv, err := ratelimit.New()
+	srv, err := ratelimit.New(ratelimit.WithErrorHandler(scope.Default, 0,
+		func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called. Scoped Error Handler\n\n%+v", err))
+			})
+		},
+	))
 	if err != nil {
 		t.Fatal(err)
 	}
+	srv.ErrorHandler = func(err error) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Nil(t, w)
+			assert.NotNil(t, r)
+			if !errors.IsNotFound(err) {
+				t.Errorf("Have: %+v Want: A not found error behaviour", err)
+			}
+		})
+	}
 
 	req := httptest.NewRequest("GET", "/", nil)
-	srv.WithRateLimit()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := ratelimit.FromContextRateLimit(r.Context())
-		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	srv.WithRateLimit()(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		panic("Should not get called!")
 	})).ServeHTTP(nil, req)
 }
 
 func TestService_ScopedConfig_NotFound(t *testing.T) {
-	srv, err := ratelimit.New()
+	srv, err := ratelimit.New(ratelimit.WithErrorHandler(scope.Default, 0,
+		func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called. Scoped Error Handler\n\n%+v", err))
+			})
+		},
+	))
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	if err := srv.FlushCache(); err != nil {
 		t.Fatalf("%+v", err)
+	}
+	srv.ErrorHandler = func(err error) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Nil(t, w)
+			assert.NotNil(t, r)
+			if !errors.IsNotValid(err) {
+				t.Errorf("Have: %+v Want: A not found error behaviour", err)
+			}
+		})
 	}
 
 	storeSrv := storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro"))
@@ -200,9 +243,8 @@ func TestService_ScopedConfig_NotFound(t *testing.T) {
 	st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
 	req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 
-	srv.WithRateLimit()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := ratelimit.FromContextRateLimit(r.Context())
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+	srv.WithRateLimit()(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+		panic("Should not get called!")
 	})).ServeHTTP(nil, req)
 }
 

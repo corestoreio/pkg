@@ -21,7 +21,6 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
@@ -36,30 +35,11 @@ func (s *Service) WithRateLimit() mw.Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			requestedStore, err := store.FromContextRequestedStore(r.Context())
-			if err != nil {
-				err = errors.Wrap(err, "[ratelimit] FromContextRequestedStore")
-				h.ServeHTTP(w, wrapContextError(r, err))
+			scpCfg := s.configFromContext(w, r)
+			if scpCfg.IsValid() != nil {
+				// every error gets previously logged in the configFromContext() function.
 				return
 			}
-
-			// requestedStore.Config contains the scope for store and then
-			// website or finally can fall back to default scope.
-			scpCfg := s.configByScopedGetter(requestedStore.Config)
-			if err := scpCfg.IsValid(); err != nil {
-				if s.Log.IsDebug() {
-					s.Log.Debug("ratelimit.Service.WithRateLimit.configByScopedGetter.Error",
-						log.Err(err),
-						log.Stringer("scope", scpCfg.ScopeHash),
-						log.Marshal("requestedStore", requestedStore),
-						log.HTTPRequest("request", r),
-					)
-				}
-				err = errors.Wrap(err, "[ratelimit] ConfigByScopedGetter")
-				h.ServeHTTP(w, wrapContextError(r, err))
-				return
-			}
-
 			if scpCfg.Disabled {
 				h.ServeHTTP(w, r)
 				return
@@ -71,14 +51,12 @@ func (s *Service) WithRateLimit() mw.Middleware {
 					log.Err(err),
 					log.Bool("is_limited", isLimited),
 					log.Object("rate_limit_result", rlResult),
-					log.Stringer("scope", scpCfg.ScopeHash),
-					log.Marshal("requested_store", requestedStore),
+					log.Stringer("requested_scope", scpCfg.ScopeHash),
 					log.HTTPRequest("request", r),
 				)
 			}
 			if err != nil {
-				err = errors.Wrap(err, "[ratelimit] scpCfg.RateLimit")
-				h.ServeHTTP(w, wrapContextError(r, err))
+				scpCfg.ErrorHandler(errors.Wrap(err, "[ratelimit] scpCfg.RateLimit")).ServeHTTP(w, r)
 				return
 			}
 
