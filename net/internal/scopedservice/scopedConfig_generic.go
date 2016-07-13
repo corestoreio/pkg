@@ -18,16 +18,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-var defaultErrorHandler = func(err error) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, fmt.Sprintf("%+v", err), http.StatusServiceUnavailable)
-	})
-}
+var defaultErrorHandler = mw.ErrorWithStatusCode(http.StatusServiceUnavailable)
 
 // scopedConfigGeneric private internal scoped based configuration used for
 // embedding into scopedConfig type. This type and its parent type ScopedConfig
@@ -42,7 +39,7 @@ type scopedConfigGeneric struct {
 	// ErrorHandler gets called whenever a programmer makes an error. The
 	// default handler prints the error to the client and returns
 	// http.StatusServiceUnavailable
-	ErrorHandler func(error) http.Handler
+	mw.ErrorHandler
 }
 
 func (scg scopedConfigGeneric) GoString() string {

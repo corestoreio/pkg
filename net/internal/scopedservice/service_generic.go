@@ -23,6 +23,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
@@ -38,7 +40,11 @@ type service struct {
 	// cases are: cannot extract scope from the context and scoped configuration
 	// is not valid. The default handler prints the error to the client and
 	// returns http.StatusServiceUnavailable
-	ErrorHandler func(error) http.Handler
+	mw.ErrorHandler
+
+	// useWebsite internal flag used in configFromContext(w,r) to tell the
+	// currenct handler if the scoped configuration is store or website based.
+	useWebsite bool
 
 	// optionFactory optional configuration closure, can be nil. It pulls out
 	// the configuration settings from a slow backend during a request and
@@ -133,6 +139,40 @@ func (s *Service) DebugCache(w io.Writer) error {
 		}
 	}
 	return nil
+}
+
+// configFromContext from a requests context the store gets extracted and the
+// store or website configuration will be used to figured out the scoped
+// configuration. All errors get logged. On error calls the ErrorHandler.
+func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scpCfg ScopedConfig) {
+	// extract the store out of the context and if not found a programmer made a
+	// mistake.
+	requestedStore, err := store.FromContextRequestedStore(r.Context())
+	if err != nil {
+		s.ErrorHandler(errors.Wrap(err, "[scopedservice] FromContextRequestedStore")).ServeHTTP(w, r)
+		return
+	}
+
+	cfg := requestedStore.Config
+	if s.useWebsite {
+		cfg = requestedStore.Website.Config
+	}
+	scpCfg = s.configByScopedGetter(cfg)
+	if err := scpCfg.IsValid(); err != nil {
+		// the scoped configuration is invalid and hence a programmer or package user
+		// made a mistake.
+		if s.Log.IsDebug() {
+			s.Log.Debug("scopedservice.Service.WithRateLimit.configByScopedGetter.Error",
+				log.Err(err),
+				log.Stringer("scope", scpCfg.ScopeHash),
+				log.Marshal("requestedStore", requestedStore),
+				log.HTTPRequest("request", r),
+			)
+		}
+		s.ErrorHandler(errors.Wrap(err, "[scopedservice] ConfigByScopedGetter")).ServeHTTP(w, r)
+		return
+	}
+	return
 }
 
 // configByScopedGetter returns the internal configuration depending on the

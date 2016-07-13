@@ -34,6 +34,7 @@ func TestWithErrorHandler(t *testing.T) {
 	cfg := s.ConfigByScopeHash(scope.NewHash(scope.Store, 44), 0)
 	assert.NotNil(t, cfg.ErrorHandler)
 	cstesting.EqualPointers(t, eh, cfg.ErrorHandler)
+	cstesting.EqualPointers(t, s.ErrorHandler, defaultErrorHandler)
 }
 
 func TestOptionsError(t *testing.T) {

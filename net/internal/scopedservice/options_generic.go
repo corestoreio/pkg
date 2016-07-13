@@ -15,10 +15,10 @@
 package scopedservice
 
 import (
-	"net/http"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
@@ -60,7 +60,7 @@ func withDefaultConfig(scp scope.Scope, id int64) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(scp scope.Scope, id int64, h func(error) http.Handler) Option {
+func WithErrorHandler(scp scope.Scope, id int64, h mw.ErrorHandler) Option {
 	sh := scope.NewHash(scp, id)
 	return func(s *Service) error {
 		s.rwmu.Lock()
