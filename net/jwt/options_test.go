@@ -31,7 +31,7 @@ import (
 
 func TestOptionWithTemplateToken(t *testing.T) {
 
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		// jwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
 		jwt.WithTemplateToken(scope.Website, 3, func() csjwt.Token {
 			sClaim := jwtclaim.NewStore()
@@ -76,7 +76,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 
 func TestOptionWithTokenID(t *testing.T) {
 
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		jwt.WithTokenID(scope.Website, 22, true),
 		jwt.WithKey(scope.Website, 22, csjwt.WithPasswordRandom()),
 	)
@@ -93,7 +93,7 @@ func TestOptionWithTokenID(t *testing.T) {
 
 func TestOptionScopedDefaultExpire(t *testing.T) {
 
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		jwt.WithTokenID(scope.Website, 33, true),
 		jwt.WithKey(scope.Website, 33, csjwt.WithPasswordRandom()),
 	)
@@ -115,7 +115,7 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 }
 
 func TestWithMaxSkew_Valid(t *testing.T) {
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		jwt.WithKey(scope.Website, 44, csjwt.WithPasswordRandom()),
 		jwt.WithSkew(scope.Website, 44, time.Second*5),
 		jwt.WithExpiration(scope.Website, 44, -time.Second*3),
@@ -135,7 +135,7 @@ func TestWithMaxSkew_Valid(t *testing.T) {
 }
 
 func TestWithMaxSkew_NotValid(t *testing.T) {
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		jwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
 		jwt.WithSkew(scope.Default, 0, time.Second*1),
 		jwt.WithExpiration(scope.Default, 0, -time.Second*3),
@@ -153,7 +153,7 @@ func TestWithMaxSkew_NotValid(t *testing.T) {
 
 func TestOptionWithRSAReaderFail(t *testing.T) {
 
-	jm, err := jwt.NewService(
+	jm, err := jwt.New(
 		jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
 	)
 	assert.Nil(t, jm)
@@ -169,17 +169,17 @@ var (
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
 
-	jm, err := jwt.NewService(keyRsaPrivateNoPassword)
+	jm, err := jwt.New(keyRsaPrivateNoPassword)
 	assert.True(t, errors.IsEmpty(err), "Error: %+v", err)
 	assert.Nil(t, jm)
 
-	jm2, err := jwt.NewService(keyRsaPrivateWrongPassword)
+	jm2, err := jwt.New(keyRsaPrivateWrongPassword)
 	assert.True(t, errors.IsNotValid(err), "Error: %+v\nType %d", err, errors.HasBehaviour(err))
 	assert.Nil(t, jm2)
 }
 
 func testRsaOption(t *testing.T, opt jwt.Option) {
-	jwts, err := jwt.NewService(opt)
+	jwts, err := jwt.New(opt)
 	require.NoError(t, err)
 
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{})

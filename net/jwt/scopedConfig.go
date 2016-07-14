@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
@@ -26,13 +25,8 @@ import (
 
 // ScopedConfig contains the configuration for a scope
 type ScopedConfig struct {
-	// useDefault if true uses the default configuration and all other fields are
-	// empty.
-	UseDefault bool
-	// lastErr used during selecting the config from the scopeCache map.
-	lastErr error
-	// ScopeHash defines the scope to which this configuration is bound.
-	ScopeHash scope.Hash
+	scopedConfigGeneric
+
 	// Disabled if true disables JWT completely
 	Disabled bool
 	// Key contains the HMAC, RSA or ECDSA sensitive data. The csjwt.Key must
@@ -54,9 +48,6 @@ type ScopedConfig struct {
 	Verifier *csjwt.Verification
 	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	EnableJTI bool
-	// ErrorHandler specific for this scope. if nil, the the next handler in
-	// the chain will be called.
-	ErrorHandler http.Handler
 	// KeyFunc will receive the parsed token and should return the key for
 	// validating.
 	KeyFunc csjwt.Keyfunc
@@ -127,18 +118,21 @@ func (sc *ScopedConfig) initKeyFunc() {
 	}
 }
 
-func defaultScopedConfig() ScopedConfig {
+func newScopedConfig() *ScopedConfig {
 	key := csjwt.WithPasswordRandom()
 	hs256, err := csjwt.NewHMACFast256(key)
-	sc := ScopedConfig{
-		lastErr:       errors.Wrap(err, "[jwt] defaultScopedConfig.NewHMACFast256"),
-		ScopeHash:     scope.DefaultHash,
-		Expire:        DefaultExpire,
-		Skew:          DefaultSkew,
-		Key:           key,
-		SigningMethod: hs256,
-		Verifier:      csjwt.NewVerification(hs256),
-		EnableJTI:     false,
+	if err != nil {
+		se := newScopedConfigError(errors.Wrap(err, "[jwt] defaultScopedConfig.NewHMACFast256"))
+		return &se
+	}
+	sc := &ScopedConfig{
+		scopedConfigGeneric: newScopedConfigGeneric(),
+		Expire:              DefaultExpire,
+		Skew:                DefaultSkew,
+		Key:                 key,
+		SigningMethod:       hs256,
+		Verifier:            csjwt.NewVerification(hs256),
+		EnableJTI:           false,
 	}
 	sc.initKeyFunc()
 	return sc

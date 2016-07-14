@@ -18,14 +18,12 @@ import (
 	"context"
 
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 type keyCtxToken struct{}
 
 type ctxTokenWrapper struct {
-	t   csjwt.Token
-	err error
+	t csjwt.Token
 }
 
 // withContext creates a new context with csjwt.Token attached.
@@ -36,24 +34,10 @@ func withContext(ctx context.Context, t csjwt.Token) context.Context {
 // FromContext returns the csjwt.Token in ctx if it exists or an error. If there
 // is no token in the context then the error ErrContextJWTNotFound gets
 // returned. Error behaviour: NotFound.
-func FromContext(ctx context.Context) (csjwt.Token, error) {
-
+func FromContext(ctx context.Context) (csjwt.Token, bool) {
 	wrp, ok := ctx.Value(keyCtxToken{}).(ctxTokenWrapper)
 	if !ok {
-		return wrp.t, errContextJWTNotFound
+		return wrp.t, false
 	}
-
-	if wrp.err != nil {
-		return wrp.t, errors.Wrap(wrp.err, "[jwt] FromContext")
-	}
-
-	if wrp.t.Valid {
-		return wrp.t, nil
-	}
-	return wrp.t, errContextJWTNotFound
-}
-
-// withContextError creates a new context with an error attached.
-func withContextError(ctx context.Context, err error) context.Context {
-	return context.WithValue(ctx, keyCtxToken{}, ctxTokenWrapper{err: err})
+	return wrp.t, wrp.t.Valid && ok
 }

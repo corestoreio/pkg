@@ -14,22 +14,8 @@
 
 package jwt
 
-import (
-	"testing"
+import "github.com/corestoreio/csfw/util/errors"
 
-	"context"
+// Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestFromContext(t *testing.T) {
-
-	ctx := withContext(context.Background(), csjwt.Token{})
-	assert.NotNil(t, ctx)
-
-	haveToken, ok := FromContext(ctx)
-	assert.NotNil(t, haveToken)
-	assert.False(t, haveToken.Valid)
-	assert.False(t, ok)
-}
+var errConfigNotFound = errors.NewNotFoundf(`[jwt] ScopedConfig not available`)

@@ -14,13 +14,6 @@
 
 package jwt
 
-import "github.com/corestoreio/csfw/util/errors"
-
-var (
-	errContextJWTNotFound = errors.NewNotFoundf(`[jwt] Cannot extract token nor an error from the context`)
-	errConfigNotFound     = errors.NewNotFoundf(`[jwt] ScopedConfig not available`)
-)
-
 const (
 	errServiceUnsupportedScope         = "[jwt] Service does not support this: %s. Only default or website scope are allowed."
 	errTokenParseNotValidOrBlackListed = "[jwt] Token not valid or black listed"

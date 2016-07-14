@@ -33,7 +33,7 @@ import (
 
 func TestServiceWithBackend_NoBackend(t *testing.T) {
 
-	jwts := MustNewService()
+	jwts := MustNew()
 	// a hack for testing to remove the default setting or make it invalid
 	jwts.defaultScopeCache = ScopedConfig{}
 
@@ -46,7 +46,7 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 
 func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 
-	jwts := MustNewService()
+	jwts := MustNew()
 
 	cr := cfgmock.NewService()
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
@@ -77,7 +77,7 @@ func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
 	))
 
 	var equalStorePointer *store.Store
-	jwts := MustNewService(
+	jwts := MustNew(
 		WithStoreService(storemock.NewEurozzyService(scope.Option{Website: scope.MockCode("oz")})),
 	)
 

@@ -36,7 +36,7 @@ import (
 const benchTokenCount = 100
 
 func benchBlackList(b *testing.B, bl jwt.Blacklister) {
-	jwts := jwt.MustNewService()
+	jwts := jwt.MustNew()
 	var tokens [benchTokenCount][]byte
 
 	for i := 0; i < benchTokenCount; i++ {
@@ -77,7 +77,7 @@ func BenchmarkBlackListFreeCache_Parallel(b *testing.B) {
 }
 
 func bmServeHTTP(b *testing.B, opts ...jwt.Option) {
-	jwts, err := jwt.NewService(opts...)
+	jwts, err := jwt.New(opts...)
 	if err != nil {
 		b.Error(err)
 	}
@@ -160,7 +160,7 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Single(b *testing.B) {
 
 func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (http.Handler, context.Context, []byte) {
 
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, err := jwt.FromContext(r.Context())
 			if err != nil {
@@ -239,7 +239,7 @@ func benchmarkServeHTTPDefaultConfigBlackListLoop(b *testing.B, h http.Handler, 
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	      8366 ns/op	    3194 B/op	      43 allocs/op => no maps, freecache
 func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, err := jwt.FromContext(r.Context())
 			if err != nil {

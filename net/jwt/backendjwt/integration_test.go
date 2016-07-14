@@ -65,7 +65,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 		pb.NetJwtHmacPassword.MustFQ(scope.Website, 1): "pw2",
 	}))
 
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), cfgSrv),
 	)
 
@@ -110,7 +110,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 		pb.NetJwtHmacPassword.MustFQ(scope.Default, 0):  "pw1",
 	}))
 
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), cfgSrv),
 	)
 
@@ -139,7 +139,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 func getJwts(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) (jwts *jwt.Service, pb *backendjwt.Backend) {
 	pb = backendjwt.New(cfgStruct, opts...)
-	jwts = jwt.MustNewService(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), nil))
+	jwts = jwt.MustNew(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), nil))
 	return
 }
 
@@ -259,7 +259,7 @@ func TestServiceWithBackend_Middleware_Valid_Request(t *testing.T) {
 	//assert.Nil(t, scNew.ErrorHandler)
 
 	logBuf := new(bytes.Buffer)
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), cfgSrv),
 		jwt.WithStoreService(storeSrv),

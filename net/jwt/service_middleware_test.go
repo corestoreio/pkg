@@ -114,7 +114,7 @@ func TestService_WithInitTokenAndStore_Success(t *testing.T) {
 	dsv, err := srv.Store()
 	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
 
-	jwts := jwt.MustNewService()
+	jwts := jwt.MustNew()
 
 	if err := jwts.Options(jwt.WithErrorHandler(scope.Default, 0,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -164,7 +164,7 @@ func TestService_WithInitTokenAndStore_InvalidToken(t *testing.T) {
 
 	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(cfgmock.NewService()))
 
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithExpiration(scope.Website, 12, -time.Second),
 		jwt.WithSkew(scope.Website, 12, 0),
 	)
@@ -230,7 +230,7 @@ func TestService_WithInitTokenAndStore_InBlackList(t *testing.T) {
 	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
 
 	bl := &testRealBL{}
-	jm, err := jwt.NewService(
+	jm, err := jwt.New(
 		jwt.WithBlacklist(bl),
 	)
 	assert.NoError(t, err)
@@ -261,7 +261,7 @@ func TestService_WithInitTokenAndStore_InBlackList(t *testing.T) {
 // todo add test for form with input field: access_token
 
 func testAuth(t *testing.T, opts ...jwt.Option) (http.Handler, []byte) {
-	jm, err := jwt.NewService(opts...)
+	jm, err := jwt.New(opts...)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -343,7 +343,7 @@ func TestService_WithInitTokenAndStore_Request(t *testing.T) {
 
 		//logBuf := new(bytes.Buffer)
 
-		jwts := jwt.MustNewService(
+		jwts := jwt.MustNew(
 			//jwt.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 			jwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()),
 			jwt.WithStoreService(storemock.NewEurozzyService(test.scpOpt)),
@@ -386,7 +386,7 @@ func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 
 	ctx := store.WithContextRequestedStore(context.Background(), storemock.MustNewStoreAU(cfgmock.NewService()))
 
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithExpiration(scope.Website, 12, time.Second),
 	)
 
@@ -446,7 +446,7 @@ func TestService_WithInitTokenAndStore_StoreServiceNil(t *testing.T) {
 // invalid token because JWT disabled
 func TestService_WithInitTokenAndStore_Disabled(t *testing.T) {
 
-	jm, err := jwt.NewService(jwt.WithDisable(scope.Website, 2, true))
+	jm, err := jwt.New(jwt.WithDisable(scope.Website, 2, true))
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

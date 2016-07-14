@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -27,11 +28,9 @@ import (
 
 func TestInternalOptionWithErrorHandler(t *testing.T) {
 
-	jwts := MustNewService()
+	jwts := MustNew()
 
-	wsErrH := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		http.Error(w, http.StatusText(http.StatusAccepted), http.StatusAccepted)
-	})
+	wsErrH := mw.ErrorWithStatusCode(http.StatusAccepted)
 
 	if err := jwts.Options(WithErrorHandler(scope.Website, 22, wsErrH)); err != nil {
 		t.Fatal(err)

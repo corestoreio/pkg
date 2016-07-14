@@ -40,12 +40,12 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = jwt.MustNewService(jwt.WithKey(scope.Default, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
+	_ = jwt.MustNew(jwt.WithKey(scope.Default, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
 }
 
 func TestServiceNewDefaultBlacklist(t *testing.T) {
 
-	jwts := jwt.MustNewService()
+	jwts := jwt.MustNew()
 
 	key := []byte("test")
 	assert.Nil(t, jwts.Blacklist.Set(key, time.Hour))
@@ -55,7 +55,7 @@ func TestServiceNewDefaultBlacklist(t *testing.T) {
 
 func TestServiceNewDefault(t *testing.T) {
 
-	jwts := jwt.MustNewService()
+	jwts := jwt.MustNew()
 
 	testClaims := &jwtclaim.Standard{
 		Subject: "gopher",
@@ -82,7 +82,7 @@ func TestServiceNewDefault(t *testing.T) {
 
 func TestServiceNewDefaultRSAError(t *testing.T) {
 
-	jmRSA, err := jwt.NewService(jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
+	jmRSA, err := jwt.New(jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
@@ -102,7 +102,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	}
 
 	keyRand := csjwt.WithPasswordRandom()
-	jwts := jwt.MustNewService(jwt.WithKey(scope.Default, 0, keyRand))
+	jwts := jwt.MustNew(jwt.WithKey(scope.Default, 0, keyRand))
 
 	tk := csjwt.NewToken(jwtclaim.Map{
 		"exp": time.Now().Add(time.Hour).Unix(),
@@ -135,7 +135,7 @@ var _ jwt.Blacklister = (*testBL)(nil)
 func TestServiceLogout(t *testing.T) {
 
 	tbl := &testBL{T: t}
-	jwts := jwt.MustNewService(
+	jwts := jwt.MustNew(
 		jwt.WithBlacklist(tbl),
 	)
 
@@ -154,14 +154,14 @@ func TestServiceLogout(t *testing.T) {
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
 
-	jwts, err := jwt.NewService(jwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
+	jwts, err := jwt.New(jwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
 	assert.Nil(t, jwts)
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 }
 
 func TestService_NewToken_Merge_Maps(t *testing.T) {
 
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		jwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
 	)
 	if err != nil {
@@ -185,7 +185,7 @@ func TestService_NewToken_Merge_Maps(t *testing.T) {
 
 func TestService_NewToken_Merge_Structs(t *testing.T) {
 
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		jwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
 		jwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
 			s := jwtclaim.NewStore()
@@ -227,7 +227,7 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 
 func TestService_NewToken_Merge_Fail(t *testing.T) {
 
-	jwts, err := jwt.NewService(
+	jwts, err := jwt.New(
 		jwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
 		jwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
 			return csjwt.NewToken(&jwtclaim.Standard{})

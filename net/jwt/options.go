@@ -15,25 +15,14 @@
 package jwt
 
 import (
-	"net/http"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-// Option can be used as an argument in NewService to configure a token service.
-type Option func(*Service) error
-
-// OptionFactoryFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during
-// a request.
-type OptionFactoryFunc func(config.Scoped) []Option
 
 // WithDefaultConfig applies the default JWT configuration settings based for
 // a specific scope.
@@ -45,18 +34,7 @@ type OptionFactoryFunc func(config.Scoped) []Option
 //		- HTTP error handler returns http.StatusUnauthorized
 //		- JTI disabled
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	h := scope.NewHash(scp, id)
-	return func(s *Service) (err error) {
-		if h == scope.DefaultHash {
-			s.defaultScopeCache = defaultScopedConfig()
-			return nil
-		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		s.scopeCache[h] = defaultScopedConfig()
-		return nil
-	}
+	return withDefaultConfig(scp, id)
 }
 
 // WithBlacklist sets a new global black list service. Convenience helper
@@ -92,25 +70,16 @@ func WithStoreService(sr store.Requester) Option {
 func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.templateTokenFunc = f
-			return nil
-		}
-
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.templateTokenFunc = f
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.templateTokenFunc = scNew.templateTokenFunc
-			scNew = sc
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
+		sc.templateTokenFunc = f
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -120,61 +89,18 @@ func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.SigningMethod = sm
-			s.defaultScopeCache.Verifier = csjwt.NewVerification(sm)
-			return nil
-		}
-
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		// inherit default config
-		scNew := s.defaultScopeCache
-
-		scNew.SigningMethod = sm
-		scNew.Verifier = csjwt.NewVerification(sm)
-		scNew.initKeyFunc()
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.SigningMethod = scNew.SigningMethod
-			sc.Verifier = scNew.Verifier
-			sc.KeyFunc = scNew.KeyFunc
-			scNew = sc
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
-		return nil
-	}
-}
-
-// WithErrorHandler sets the error handler for a scope and its ID. If the
-// scope.DefaultID will be set the handler gets also applied to the global
-// handler
-func WithErrorHandler(scp scope.Scope, id int64, handler http.Handler) Option {
-	h := scope.NewHash(scp, id)
-	return func(s *Service) error {
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.ErrorHandler = handler
-			return nil
-		}
-
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.ErrorHandler = handler
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.ErrorHandler = scNew.ErrorHandler
-			scNew = sc
-		}
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
+		sc.SigningMethod = sm
+		sc.Verifier = csjwt.NewVerification(sm)
+		sc.initKeyFunc()
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -183,25 +109,16 @@ func WithErrorHandler(scp scope.Scope, id int64, handler http.Handler) Option {
 func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.Expire = d
-			return nil
-		}
-
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.Expire = d
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.Expire = scNew.Expire
-			scNew = sc
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
+		sc.Expire = d
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -211,25 +128,16 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.Skew = d
-			return nil
-		}
-
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.Skew = d
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.Skew = scNew.Skew
-			scNew = sc
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
+		sc.Skew = d
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -238,25 +146,16 @@ func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
 func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.EnableJTI = enable
-			return nil
-		}
-
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.EnableJTI = enable
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.EnableJTI = scNew.EnableJTI
-			scNew = sc
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
+		sc.EnableJTI = enable
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
@@ -280,103 +179,51 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.Key = key
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.ScopeHash = h
 
 		// if you are not satisfied with the bit size of 256 you can change it
 		// by using WithSigningMethod
 		switch key.Algorithm() {
 		case csjwt.ES:
-			scNew.SigningMethod = csjwt.NewSigningMethodES256()
+			sc.SigningMethod = csjwt.NewSigningMethodES256()
 		case csjwt.HS:
-			scNew.SigningMethod, err = csjwt.NewHMACFast256(key)
+			sc.SigningMethod, err = csjwt.NewHMACFast256(key)
 			if err != nil {
 				return errors.Wrap(err, "[jwt] HMAC Fast 256 error")
 			}
 		case csjwt.RS:
-			scNew.SigningMethod = csjwt.NewSigningMethodRS256()
+			sc.SigningMethod = csjwt.NewSigningMethodRS256()
 		default:
 			return errors.NewNotImplementedf(errUnknownSigningMethodOptions, key.Algorithm())
 		}
 
-		scNew.Verifier = csjwt.NewVerification(scNew.SigningMethod)
-		scNew.initKeyFunc()
+		sc.Key = key
+		sc.Verifier = csjwt.NewVerification(sc.SigningMethod)
+		sc.initKeyFunc()
 
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.Key = scNew.Key
-			s.defaultScopeCache.SigningMethod = scNew.SigningMethod
-			s.defaultScopeCache.Verifier = scNew.Verifier
-			s.defaultScopeCache.KeyFunc = scNew.KeyFunc
-			return nil
-		}
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.Key = scNew.Key
-			sc.SigningMethod = scNew.SigningMethod
-			sc.Verifier = scNew.Verifier
-			sc.KeyFunc = scNew.KeyFunc
-			scNew = sc
-		}
-
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
 
 // WithDisable disables the whole JWT processing for a scope.
-func WithDisable(scp scope.Scope, id int64, ok bool) Option {
+func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
-
-		if h == scope.DefaultHash {
-			s.defaultScopeCache.Disabled = ok
-			return nil
-		}
-
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.Disabled = ok
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.Disabled = scNew.Disabled
-			scNew = sc
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
 		}
-		scNew.ScopeHash = h
-		s.scopeCache[h] = scNew
-		return nil
-	}
-}
-
-// WithOptionFactory applies a function which lazily loads the options depending
-// on the incoming scope within an HTTP request. For example applies the backend
-// configuration to the service.
-//
-// In the case of the jwt package the configuration will also be used when
-// calling the functions ConfigByScopeID(), NewToken(), Parse(), ParseScoped().
-//
-// Once this option function has been set, all other manually set option
-// functions, which accept a scope and a scope ID as an argument, will be
-// overwritten by the new values retrieved from the configuration service.
-//
-//	cfgStruct, err := backendjwt.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	pb := backendjwt.New(cfgStruct)
-//
-//	jwts := jwt.MustNewService(
-//		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), configService),
-//	)
-func WithOptionFactory(f OptionFactoryFunc, rootConfig config.Getter) Option {
-	return func(s *Service) error {
-		s.rootConfig = rootConfig
-		s.optionFactoryFunc = f
-		s.optionInflight = new(singleflight.Group)
+		sc.Disabled = isDisabled
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }
