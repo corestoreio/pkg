@@ -124,6 +124,16 @@ func (h Hash) ID() int64 {
 	return prospectID
 }
 
+// ValidParent validates if the parent scope is within the hierarchical chain:
+// default -> website -> store.
+func (h Hash) ValidParent(parent Hash) bool {
+	p, pID := parent.Unpack()
+	c, cID := h.Unpack()
+	return (p == Default && pID == 0 && c == Default && cID == 0) ||
+		(p == Default && pID == 0 && c == Website && cID >= 0) ||
+		(p == Website && pID >= 0 && c == Store && cID >= 0)
+}
+
 // HashMaxSegments maximum supported segments or also known as shards. This
 // constant can be used to create the segmented array in other packages.
 const HashMaxSegments uint16 = 256

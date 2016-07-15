@@ -281,6 +281,21 @@ func BenchmarkHashUnPack(b *testing.B) {
 	}
 }
 
+var benchmarkHash_ValidParent bool
+
+func BenchmarkHash_ValidParent(b *testing.B) {
+	c := scope.NewHash(scope.Store, 33)
+	p := scope.NewHash(scope.Website, 44)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkHash_ValidParent = c.ValidParent(p)
+		if have, want := benchmarkHash_ValidParent, true; have != want {
+			b.Errorf("Have: %v Want: %v", have, want)
+		}
+	}
+}
+
 func TestHashes_Sort(t *testing.T) {
 	hs := scope.Hashes{
 		scope.NewHash(scope.Store, 3),
@@ -291,4 +306,29 @@ func TestHashes_Sort(t *testing.T) {
 	}
 	sort.Sort(hs)
 	assert.Exactly(t, scope.Hashes{0x1000000, 0x2000001, 0x2000002, 0x4000003, 0x4000004}, hs)
+}
+
+func TestHash_ValidParent(t *testing.T) {
+	tests := []struct {
+		c    scope.Hash
+		p    scope.Hash
+		want bool
+	}{
+		{scope.DefaultHash, scope.DefaultHash, true},
+		{scope.NewHash(scope.Website, 1), scope.DefaultHash, true},
+		{scope.NewHash(scope.Website, 0), scope.DefaultHash, true},
+		{scope.NewHash(scope.Store, 1), scope.NewHash(scope.Website, 1), true},
+		{scope.NewHash(scope.Store, -1), scope.NewHash(scope.Website, 1), false},
+		{scope.NewHash(scope.Store, 1), scope.NewHash(scope.Website, -1), false},
+		{scope.NewHash(scope.Store, 0), scope.NewHash(scope.Website, 0), true},
+		{scope.DefaultHash, scope.NewHash(scope.Website, 1), false},
+		{0, 0, false},
+		{0, scope.DefaultHash, false},
+		{scope.DefaultHash, 0, false},
+	}
+	for i, test := range tests {
+		if have, want := test.c.ValidParent(test.p), test.want; have != want {
+			t.Errorf("(%d) Have: %v Want: %v", i, have, want)
+		}
+	}
 }

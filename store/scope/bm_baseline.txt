@@ -1,10 +1,6 @@
-BenchmarkHashString-4              	10000000	       189 ns/op	      32 B/op	       1 allocs/op
-BenchmarkHashPack-4                	2000000000	         0.74 ns/op	       0 B/op	       0 allocs/op
-BenchmarkHashUnPack-4              	1000000000	         2.22 ns/op	       0 B/op	       0 allocs/op
-BenchmarkWebsiteToUint32ByID-4     	20000000	        65.9 ns/op	       8 B/op	       1 allocs/op
-BenchmarkGroupToUint32ByID-4       	30000000	        41.4 ns/op	       8 B/op	       1 allocs/op
-BenchmarkStoreToUint32ByID-4       	20000000	        64.1 ns/op	       8 B/op	       1 allocs/op
-BenchmarkWebsiteToUint32ByCode-4   	20000000	       100 ns/op	      16 B/op	       1 allocs/op
-BenchmarkStoreToUint32ByCode-4     	20000000	       103 ns/op	      16 B/op	       1 allocs/op
+BenchmarkHashString-4         	 5000000	       280 ns/op	      32 B/op	       1 allocs/op
+BenchmarkHashPack-4           	2000000000	         0.74 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHashUnPack-4         	1000000000	         2.22 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHash_ValidParent-4   	200000000	         8.83 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/store/scope	14.438s
+ok  	github.com/corestoreio/csfw/store/scope	8.325s

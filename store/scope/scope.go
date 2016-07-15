@@ -45,37 +45,6 @@ type Scoper interface {
 	Scope() (Scope, int64)
 }
 
-// Interfaces for different scopes. Note that WebsiteIDer may have an underlying
-// WebsiteCoder interface
-type (
-	// WebsiteIDer defines the scope of a website.
-	WebsiteIDer interface {
-		WebsiteID() int64
-	}
-
-	// GroupIDer defines the scope of a group.
-	GroupIDer interface {
-		GroupID() int64
-	}
-
-	// StoreIDer defines the scope of a store.
-	StoreIDer interface {
-		StoreID() int64
-	}
-
-	// GroupCoder not available because not existent.
-
-	// WebsiteCoder defines the scope of a website by returning the store code.
-	WebsiteCoder interface {
-		WebsiteCode() string
-	}
-
-	// StoreCoder defines the scope of a store by returning the store code.
-	StoreCoder interface {
-		StoreCode() string
-	}
-)
-
 const _ScopeName = "AbsentDefaultWebsiteGroupStore"
 
 var _ScopeIndex = [...]uint8{0, 6, 13, 20, 25, 30}
@@ -198,4 +167,12 @@ func FromBytes(b []byte) Scope {
 // StrWebsites or StrStores. Case-sensitive.
 func ValidBytes(b []byte) bool {
 	return bytes.Compare(bDefault, b) == 0 || bytes.Compare(bWebsites, b) == 0 || bytes.Compare(bStores, b) == 0
+}
+
+// ValidParent validates if the parent scope is within the hierarchical chain:
+// default -> website -> store.
+func ValidParent(current Scope, parent Scope) bool {
+	return (parent == Default && current == Default) ||
+		(parent == Default && current == Website) ||
+		(parent == Website && current == Store)
 }

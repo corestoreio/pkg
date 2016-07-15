@@ -119,7 +119,6 @@ func TestValid(t *testing.T) {
 }
 
 func TestFromBytes(t *testing.T) {
-
 	tests := []struct {
 		have []byte
 		want Scope
@@ -135,7 +134,6 @@ func TestFromBytes(t *testing.T) {
 }
 
 func TestValidBytes(t *testing.T) {
-
 	tests := []struct {
 		have []byte
 		want bool
@@ -153,7 +151,6 @@ func TestValidBytes(t *testing.T) {
 }
 
 func TestStrScopeBytes(t *testing.T) {
-
 	tests := []struct {
 		id Scope
 	}{
@@ -164,5 +161,26 @@ func TestStrScopeBytes(t *testing.T) {
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.id.StrScope(), string(test.id.Bytes()), "Index %d", i)
+	}
+}
+
+func TestValidParent(t *testing.T) {
+	tests := []struct {
+		c    Scope
+		p    Scope
+		want bool
+	}{
+		{Default, Default, true},
+		{Website, Default, true},
+		{Store, Website, true},
+		{Default, Website, false},
+		{Absent, Absent, false},
+		{Absent, Default, false},
+		{Default, Absent, false},
+	}
+	for i, test := range tests {
+		if have, want := ValidParent(test.c, test.p), test.want; have != want {
+			t.Errorf("(%d) Have: %v Want: %v", i, have, want)
+		}
 	}
 }
