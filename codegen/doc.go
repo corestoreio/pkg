@@ -28,5 +28,6 @@ All defined variables in the file `config.go` can be changed. File is documented
 
 Why the init() function? https://golang.org/doc/effective_go.html#initialization
 
+TODO(CS) Use https://github.com/AOEpeople/MageTestStand for TravisCI
 */
 package codegen
