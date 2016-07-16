@@ -182,8 +182,8 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 // guaranteed atomic single loading for each scope.
 func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
-	current := scope.NewHash(scpGet.Scope())   // can be store or website or default
-	fallback := scope.NewHash(scpGet.Parent()) // can be website or default
+	current := scope.NewHash(scpGet.Scope()) // can be store or website or default
+	parent := scope.NewHash(scpGet.Parent()) // can be website or default
 
 	// 99.9999 % of the hits; 2nd argument must be zero because we must first
 	// test if a direct entry can be found; if not we must apply either the
@@ -193,7 +193,7 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 		if s.Log.IsDebug() {
 			s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
-				log.Stringer("requested_fallback_scope", scope.Hash(0)),
+				log.Stringer("requested_parent_scope", scope.Hash(0)),
 				log.Stringer("responded_scope", sCfg.ScopeHash),
 			)
 		}
@@ -208,11 +208,11 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 			if err := s.Options(s.optionFactory(scpGet)...); err != nil {
 				return newScopedConfigError(errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")), nil
 			}
-			sCfg := s.ConfigByScopeHash(current, fallback)
+			sCfg := s.ConfigByScopeHash(current, parent)
 			if s.Log.IsDebug() {
 				s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Inflight.Do",
 					log.Stringer("requested_scope", current),
-					log.Stringer("requested_fallback_scope", fallback),
+					log.Stringer("requested_parent_scope", parent),
 					log.Stringer("responded_scope", sCfg.ScopeHash),
 					log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 				)
@@ -232,13 +232,13 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 		return sCfg
 	}
 
-	sCfg := s.ConfigByScopeHash(current, fallback)
+	sCfg := s.ConfigByScopeHash(current, parent)
 	// under very high load: 20 users within 10 MicroSeconds this might get executed
 	// 1-3 times. more thinking needed.
 	if s.Log.IsDebug() {
-		s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Fallback",
+		s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Parent",
 			log.Stringer("requested_scope", current),
-			log.Stringer("requested_fallback_scope", fallback),
+			log.Stringer("requested_parent_scope", parent),
 			log.Stringer("responded_scope", sCfg.ScopeHash),
 			log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 		)
@@ -248,16 +248,16 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
 // ConfigByScopeHash returns the correct configuration for a scope and may fall
 // back to the next higher scope: store -> website -> default. If `current` hash
-// is Store, then the `fallback` can only be Website or Default. If an entry for
+// is Store, then the `parent` can only be Website or Default. If an entry for
 // a scope cannot be found the next higher scope gets looked up and the pointer
 // of the next higher scope gets assigned to the current scope. This prevents
 // redundant configurations and enables us to change one scope configuration
 // with an impact on all other scopes which depend on the parent scope. A zero
-// `fallback` triggers no further lookups. This function does not load any
+// `parent` triggers no further lookups. This function does not load any
 // configuration from the backend.
-func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (scpCfg ScopedConfig) {
+func (s *Service) ConfigByScopeHash(current scope.Hash, parent scope.Hash) (scpCfg ScopedConfig) {
 	// current can be store or website scope
-	// fallback can be website or default scope. If 0 then no fall back
+	// parent can be website or default scope. If 0 then no fall back
 
 	// pointer must get dereferenced in a lock to avoid race conditions while
 	// reading in middleware the config values because we might execute the
@@ -274,7 +274,7 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (sc
 	if ok {
 		return scpCfg
 	}
-	if fallback == 0 {
+	if parent == 0 {
 		return newScopedConfigError(errConfigNotFound)
 	}
 
@@ -282,10 +282,10 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (sc
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
 
-	// if the current scope cannot be found, fall back to fallback scope and
+	// if the current scope cannot be found, fall back to parent scope and
 	// apply the maybe found configuration to the current scope configuration.
-	if !ok && fallback.Scope() == scope.Website {
-		pScpCfg, ok = s.scopeCache[fallback]
+	if !ok && parent.Scope() == scope.Website {
+		pScpCfg, ok = s.scopeCache[parent]
 		if ok && pScpCfg != nil {
 			scpCfg = *pScpCfg
 		}
@@ -295,7 +295,7 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (sc
 		}
 	}
 
-	// if the current and fallback scope cannot be found, fall back to default
+	// if the current and parent scope cannot be found, fall back to default
 	// scope and apply the maybe found configuration to the current scope
 	// configuration.
 	if !ok {
