@@ -112,8 +112,6 @@ func TestStoreSlice(t *testing.T) {
 	assert.True(t, storeSlice.Len() == 2)
 	assert.EqualValues(t, util.Int64Slice{1, 5}, storeSlice.IDs())
 	assert.EqualValues(t, util.StringSlice{"de", "au"}, storeSlice.Codes())
-	assert.EqualValues(t, 5, storeSlice.LastItem().Data.StoreID)
-	assert.Nil(t, (store.StoreSlice{}).LastItem())
 
 	storeSlice2 := storeSlice.Filter(func(s *store.Store) bool {
 		return s.Website.Data.WebsiteID == 2

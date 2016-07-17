@@ -14,10 +14,14 @@
 
 package store
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/corestoreio/csfw/util/errors"
+)
 
 // WebsiteSlice contains pointer to Website struct and some nifty method receivers.
-type WebsiteSlice []*Website
+type WebsiteSlice []Website
 
 // Sort convenience helper
 func (ws *WebsiteSlice) Sort() *WebsiteSlice {
@@ -32,12 +36,12 @@ func (ws WebsiteSlice) Len() int { return len(ws) }
 func (ws *WebsiteSlice) Swap(i, j int) { (*ws)[i], (*ws)[j] = (*ws)[j], (*ws)[i] }
 
 // Less checks the Data field SortOrder if index i < index j.
-func (ws *WebsiteSlice) Less(i, j int) bool {
-	return (*ws)[i].Data.SortOrder < (*ws)[j].Data.SortOrder
+func (ws WebsiteSlice) Less(i, j int) bool {
+	return ws[i].Data.SortOrder < ws[j].Data.SortOrder
 }
 
 // Filter returns a new slice filtered by predicate f
-func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
+func (ws WebsiteSlice) Filter(f func(Website) bool) WebsiteSlice {
 	var nws = make(WebsiteSlice, 0, len(ws))
 	for _, v := range ws {
 		if f(v) {
@@ -47,7 +51,7 @@ func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
 	return nws
 }
 
-func (ws WebsiteSlice) Each(f func(*Website)) WebsiteSlice {
+func (ws WebsiteSlice) Each(f func(Website)) WebsiteSlice {
 	for i := range ws {
 		f(ws[i])
 	}
@@ -59,9 +63,9 @@ func (ws WebsiteSlice) Codes() []string {
 	if len(ws) == 0 {
 		return nil
 	}
-	var c = make([]string, 0, len(ws))
-	for _, w := range ws {
-		c = append(c, w.Data.Code.String)
+	var c = make([]string, len(ws))
+	for i, w := range ws {
+		c[i] = w.Data.Code.String
 	}
 	return c
 }
@@ -76,4 +80,14 @@ func (ws WebsiteSlice) IDs() []int64 {
 		ids = append(ids, w.Data.WebsiteID)
 	}
 	return ids
+}
+
+// Default returns the default website or a not-found error.
+func (ws WebsiteSlice) Default() (Website, error) {
+	for _, w := range ws {
+		if w.Data.IsDefault.Valid && w.Data.IsDefault.Bool {
+			return w, nil
+		}
+	}
+	return Website{}, errors.NewNotFoundf("[store] WebsiteSlice Default Website not found")
 }

@@ -32,15 +32,15 @@ const DefaultStoreID int64 = 0
 type Store struct {
 	// baseConfig which will be handed down to the website
 	baseConfig config.Getter
-	// config contains the scoped configuration which cannot be changed once the
+	// Config contains the scoped configuration which cannot be changed once the
 	// object has been created.
-	config config.Scoped
+	Config config.Scoped
 	// Website points to the current website for this store. No integrity checks.
 	// Can be nil.
-	Website *Website
+	Website Website
 	// Group points to the current store group for this store. No integrity
 	// checks. Can be nil.
-	Group *Group
+	Group Group
 	// Data underlying raw data
 	Data *TableStore
 }
@@ -48,42 +48,42 @@ type Store struct {
 // NewStore creates a new Store. Returns an error if the first three arguments
 // are nil. Returns an error if integrity checks fail. config.Getter will be
 // also set to Group and Website.
-func NewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (*Store, error) {
+func NewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (Store, error) {
 	if ts.WebsiteID != tw.WebsiteID {
-		return nil, errors.NewNotValidf(errStoreIncorrectWebsite)
+		return Store{}, errors.NewNotValidf("[store] NewStore: Store.WebsiteID (%d) != Website.ID (%d)", ts.WebsiteID, tw.WebsiteID)
 	}
 	if tg.WebsiteID != tw.WebsiteID {
-		return nil, errors.NewNotValidf(errStoreIncorrectWebsite)
+		return Store{}, errors.NewNotValidf("[store] NewStore: Group.WebsiteID (%d) != Website.ID (%d)", tg.WebsiteID, tw.WebsiteID)
 	}
 	if ts.GroupID != tg.GroupID {
-		return nil, errors.NewNotValidf(errStoreIncorrectGroup)
+		return Store{}, errors.NewNotValidf("[store] NewStore: Store.GroupID (%d) != Group.ID (%d)", ts.GroupID, tg.GroupID)
 	}
 
 	nw, err := NewWebsite(cfg, tw)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[store] TableWebsite: %#v\n", tw)
+		return Store{}, errors.Wrapf(err, "[store] TableWebsite: %#v\n", tw)
 	}
 
-	var ng *Group
+	var ng Group
 	if ng, err = NewGroup(cfg, tg, SetGroupWebsite(tw)); err != nil {
-		return nil, errors.Wrapf(err, "[store] TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
+		return Store{}, errors.Wrapf(err, "[store] TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
 	}
 
-	s := &Store{
+	s := Store{
 		baseConfig: cfg,
-		config:     cfg.NewScoped(tw.WebsiteID, ts.StoreID),
+		Config:     cfg.NewScoped(tw.WebsiteID, ts.StoreID),
 		Data:       ts,
 		Website:    nw,
 		Group:      ng,
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[store] NewStore Options")
+		return Store{}, errors.Wrap(err, "[store] NewStore Options")
 	}
 	return s, nil
 }
 
 // MustNewStore same as NewStore except that it panics on an error.
-func MustNewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) *Store {
+func MustNewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) Store {
 	s, err := NewStore(cfg, ts, tw, tg, opts...)
 	if err != nil {
 		panic(err)
@@ -98,51 +98,41 @@ func (s *Store) Options(opts ...StoreOption) error {
 			return errors.Wrap(err, "[store] Store.Options")
 		}
 	}
-	if nil != s.Website {
-		s.config = s.baseConfig.NewScoped(s.Website.WebsiteID(), s.StoreID())
+	if s.Website.Data != nil {
+		s.Config = s.baseConfig.NewScoped(s.Website.WebsiteID(), s.StoreID())
 	}
 	return nil
 }
 
-/*
-	TODO(cs) implement Magento\Store\Model\Store
-*/
-
-// Config returns the scoped configuration for the current store.
-func (s *Store) Config() config.Scoped {
-	// returns copied value and don't allow any changes to the internal field
-	return s.config
-}
-
 // StoreID satisfies the interface scope.StoreIDer and returns the store ID.
-func (s *Store) StoreID() int64 {
+func (s Store) StoreID() int64 {
 	return s.Data.StoreID
 }
 
 // StoreCode satisfies the interface scope.StoreCoder and returns the store code.
-func (s *Store) StoreCode() string {
+func (s Store) StoreCode() string {
 	return s.Data.Code.String
 }
 
 // GroupID implements scope.GroupIDer interface
-func (s *Store) GroupID() int64 {
+func (s Store) GroupID() int64 {
 	return s.Data.GroupID
 }
 
 // WebsiteID implements scope.WebsiteIDer interface
-func (s *Store) WebsiteID() int64 {
+func (s Store) WebsiteID() int64 {
 	return s.Data.WebsiteID
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableStore
 // struct will be encoded to JSON using Go's standard library.
-func (s *Store) MarshalJSON() ([]byte, error) {
+func (s Store) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.Data)
 }
 
 // MarshalLog implements the log.Marshaler interface
-func (s *Store) MarshalLog(kv log.KeyValuer) error {
-	if s != nil {
+func (s Store) MarshalLog(kv log.KeyValuer) error {
+	if s.Data != nil {
 		kv.AddString("store_code", s.Data.Code.String)
 		kv.AddInt64("store_id", s.Data.StoreID)
 	}
@@ -150,7 +140,7 @@ func (s *Store) MarshalLog(kv log.KeyValuer) error {
 }
 
 //// Path returns the sub path from the URL where CoreStore is installed
-//func (s *Store) Path() string {
+//func (s Store) Path() string {
 //	url, err := s.BaseURL(config.URLTypeWeb, false)
 //	if err != nil {
 //		return "/"
@@ -163,7 +153,7 @@ func (s *Store) MarshalLog(kv log.KeyValuer) error {
 //     - config.URLTypeWeb
 //     - config.URLTypeStatic
 //     - config.URLTypeMedia
-//func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
+//func (s Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 //
 //	switch isSecure {
 //	case true:
@@ -229,14 +219,14 @@ func (s *Store) MarshalLog(kv log.KeyValuer) error {
 //}
 
 // IsFrontURLSecure returns true from the config if the frontend must be secure.
-//func (s *Store) IsFrontURLSecure() bool {
+//func (s Store) IsFrontURLSecure() bool {
 //	return false // backend.Backend.WebSecureUseInFrontend.Get(s.Config)
 //}
 
 // IsCurrentlySecure checks if a request for a give store aka. scope is secure. Checks
 // include if base URL has been set and if front URL is secure
 // This function might gets executed on every request.
-//func (s *Store) IsCurrentlySecure(r *http.Request) bool {
+//func (s Store) IsCurrentlySecure(r *http.Request) bool {
 //	return false
 //if httputil.IsSecure(s.cr, r) {
 //	return true
@@ -253,7 +243,7 @@ func (s *Store) MarshalLog(kv log.KeyValuer) error {
 // TOOD move net related functions into the storenet package
 
 // RootCategoryID returns the root category ID assigned to this store view.
-func (s *Store) RootCategoryID() int64 {
+func (s Store) RootCategoryID() int64 {
 	return s.Group.Data.RootCategoryID
 }
 
@@ -263,7 +253,7 @@ func (s *Store) RootCategoryID() int64 {
 
 // CurrentCurrency TODO(cs)
 // @see app/code/Magento/Store/Model/Store.php::getCurrentCurrency
-func (s *Store) CurrentCurrency() string {
+func (s Store) CurrentCurrency() string {
 	/*
 		this returns just a string or string slice and no further
 		involvement of the directory package.
@@ -273,10 +263,10 @@ func (s *Store) CurrentCurrency() string {
 	return ""
 }
 
-func (s *Store) DefaultCurrency() string {
+func (s Store) DefaultCurrency() string {
 	return ""
 }
 
-func (s *Store) AvailableCurrencyCodes() []string {
+func (s Store) AvailableCurrencyCodes() []string {
 	return nil
 }

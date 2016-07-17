@@ -21,43 +21,43 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// DefaultWebsiteID is always 0
-const DefaultWebsiteID int64 = 0
-
-// Website represents the overall parent structure of its children Group and Store.
-// A website defines the default group ID. A website can contain custom configuration
-// settings which overrides the default scope but get itself overridden by the Store scope.
+// Website represents the overall parent structure of its children Group and
+// Store. A website defines the default group ID. A website can contain custom
+// configuration settings which overrides the default scope but get itself
+// overridden by the Store scope.
 type Website struct {
 	// baseConfig which will be handed down to the website
 	baseConfig config.Getter
-	// config contains the scoped configuration which cannot be changed once the
+	// Config contains the scoped configuration which cannot be changed once the
 	// object has been created.
-	config config.Scoped
+	Config config.Scoped
 
-	// Data raw website data from DB table.
+	// Data raw website data from DB table. If nil, website object is invalid
 	Data *TableWebsite
 
-	// Groups contains a slice to all groups associated to one website. This slice can be nil.
+	// Groups contains a slice to all groups associated to one website. This slice
+	// can be nil.
 	Groups GroupSlice
-	// Stores contains a slice to all stores associated to one website. This slice can be nil.
+	// Stores contains a slice to all stores associated to one website. This slice
+	// can be nil.
 	Stores StoreSlice
 }
 
 // NewWebsite creates a new website pointer with the config.DefaultManager.
-func NewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
-	w := &Website{
+func NewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) (Website, error) {
+	w := Website{
 		baseConfig: cfg,
-		config:     cfg.NewScoped(tw.WebsiteID, 0),
+		Config:     cfg.NewScoped(tw.WebsiteID, 0),
 		Data:       tw,
 	}
 	if err := w.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[store] NewWebsite Options")
+		return Website{}, errors.Wrap(err, "[store] NewWebsite Options")
 	}
 	return w, nil
 }
 
 // MustNewWebsite same as NewWebsite but panics on error.
-func MustNewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) *Website {
+func MustNewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) Website {
 	w, err := NewWebsite(cfg, tw, opts...)
 	if err != nil {
 		panic(err)
@@ -75,24 +75,18 @@ func (w *Website) Options(opts ...WebsiteOption) error {
 	return nil
 }
 
-// Config returns the scoped configuration for the current website.
-func (w *Website) Config() config.Scoped {
-	// returns copied value and don't allow any changes to the internal field
-	return w.config
-}
-
 // WebsiteID satisfies the interface scope.WebsiteIDer and returns the website ID.
-func (w *Website) WebsiteID() int64 { return w.Data.WebsiteID }
+func (w Website) WebsiteID() int64 { return w.Data.WebsiteID }
 
 // WebsiteCode satisfies the interface scope.WebsiteCoder and returns the code.
-func (w *Website) WebsiteCode() string { return w.Data.Code.String }
+func (w Website) WebsiteCode() string { return w.Data.Code.String }
 
 // GroupID implements the GroupIDer interface and returns the default group ID.
-func (w *Website) GroupID() int64 { return w.Data.DefaultGroupID }
+func (w Website) GroupID() int64 { return w.Data.DefaultGroupID }
 
 // StoreID implements the StoreIDer interface and returns the default store ID.
 // It may return a zero when calling DefaultGroup() may returns an error.
-func (w *Website) StoreID() int64 {
+func (w Website) StoreID() int64 {
 	g, err := w.DefaultGroup()
 	if err != nil {
 		return 0
@@ -102,26 +96,26 @@ func (w *Website) StoreID() int64 {
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
 // struct will be encoded to JSON.
-func (w *Website) MarshalJSON() ([]byte, error) {
+func (w Website) MarshalJSON() ([]byte, error) {
 	// @todo while generating the TableStore structs we can generate the ffjson code ...
 	return json.Marshal(w.Data)
 }
 
 // DefaultGroup returns the default Group or an error if not found
-func (w *Website) DefaultGroup() (*Group, error) {
+func (w Website) DefaultGroup() (Group, error) {
 	for _, g := range w.Groups {
 		if w.Data.DefaultGroupID == g.Data.GroupID {
 			return g, nil
 		}
 	}
-	return nil, errors.NewNotFoundf(errWebsiteDefaultGroupNotFound)
+	return Group{}, errors.NewNotFoundf(errWebsiteDefaultGroupNotFound)
 }
 
 // DefaultStore returns the default store which via the default group.
-func (w *Website) DefaultStore() (*Store, error) {
+func (w Website) DefaultStore() (Store, error) {
 	g, err := w.DefaultGroup()
 	if err != nil {
-		return nil, errors.Wrap(err, "DefaultGroup")
+		return Store{}, errors.Wrap(err, "[store] DefaultGroup")
 	}
 	return g.DefaultStore()
 }

@@ -17,7 +17,7 @@ package store
 import "sort"
 
 // GroupSlice collection of Group. GroupSlice has some nice method receivers.
-type GroupSlice []*Group
+type GroupSlice []Group
 
 // Sort convenience helper
 func (gs *GroupSlice) Sort() *GroupSlice {
@@ -37,7 +37,7 @@ func (gs *GroupSlice) Less(i, j int) bool {
 }
 
 // Filter returns a new slice filtered by predicate f
-func (gs GroupSlice) Filter(f func(*Group) bool) GroupSlice {
+func (gs GroupSlice) Filter(f func(Group) bool) GroupSlice {
 	var ret GroupSlice
 	for _, v := range gs {
 		if f(v) {
@@ -47,7 +47,7 @@ func (gs GroupSlice) Filter(f func(*Group) bool) GroupSlice {
 	return ret
 }
 
-func (gs GroupSlice) Each(f func(*Group)) GroupSlice {
+func (gs GroupSlice) Each(f func(Group)) GroupSlice {
 	for i := range gs {
 		f(gs[i])
 	}

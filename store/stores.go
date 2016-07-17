@@ -18,7 +18,7 @@ import "sort"
 
 // StoreSlice a collection of pointers to the Store structs.
 // StoreSlice has some nifty method receivers.
-type StoreSlice []*Store
+type StoreSlice []Store
 
 // Sort convenience helper
 func (ss *StoreSlice) Sort() *StoreSlice {
@@ -36,7 +36,7 @@ func (ss *StoreSlice) Less(i, j int) bool {
 }
 
 // Filter returns a new slice filtered by predicate f
-func (ss StoreSlice) Filter(f func(*Store) bool) StoreSlice {
+func (ss StoreSlice) Filter(f func(Store) bool) StoreSlice {
 	var stores StoreSlice
 	for _, v := range ss {
 		if f(v) {
@@ -46,7 +46,7 @@ func (ss StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 	return stores
 }
 
-func (ss StoreSlice) Each(f func(*Store)) StoreSlice {
+func (ss StoreSlice) Each(f func(Store)) StoreSlice {
 	for i := range ss {
 		f(ss[i])
 	}
@@ -58,9 +58,23 @@ func (ss StoreSlice) Codes() []string {
 	if len(ss) == 0 {
 		return nil
 	}
+	var c = make([]string, len(ss))
+	for i, st := range ss {
+		c[i] = st.StoreCode()
+	}
+	return c
+}
+
+// ActiveCodes returns all active store codes
+func (ss StoreSlice) ActiveCodes() []string {
+	if len(ss) == 0 {
+		return nil
+	}
 	var c = make([]string, 0, len(ss))
 	for _, st := range ss {
-		c = append(c, st.Data.Code.String)
+		if st.Data.IsActive {
+			c = append(c, st.StoreCode())
+		}
 	}
 	return c
 }
@@ -70,17 +84,23 @@ func (ss StoreSlice) IDs() []int64 {
 	if len(ss) == 0 {
 		return nil
 	}
-	var ids = make([]int64, 0, len(ss))
-	for _, st := range ss {
-		ids = append(ids, st.Data.StoreID)
+	ids := make([]int64, len(ss))
+	for i, st := range ss {
+		ids[i] = st.Data.StoreID
 	}
 	return ids
 }
 
-// LastItem returns the last item of this slice or nil
-func (ss StoreSlice) LastItem() *Store {
-	if ss.Len() > 0 {
-		return ss[ss.Len()-1]
+// ActiveIDs returns all active store IDs
+func (ss StoreSlice) ActiveIDs() []int64 {
+	if len(ss) == 0 {
+		return nil
 	}
-	return nil
+	var ids = make([]int64, 0, len(ss))
+	for _, st := range ss {
+		if st.Data.IsActive {
+			ids = append(ids, st.Data.StoreID)
+		}
+	}
+	return ids
 }

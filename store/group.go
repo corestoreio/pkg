@@ -35,26 +35,26 @@ type Group struct {
 	Data *TableGroup
 	// Stores contains a slice to all stores associated to this group. Can be nil.
 	Stores StoreSlice
-	// Website contains the Website which belongs to this group. Can be nil.
-	Website *Website
+	// Website contains the Website which belongs to this group.
+	Website Website
 }
 
 // NewGroup creates a new Group. Returns an error if 1st argument is nil. Config
 // will only be set if there has been a Website provided via an option argument.
 // Error behaviour: Empty
-func NewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) (*Group, error) {
-	g := &Group{
+func NewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) (Group, error) {
+	g := Group{
 		baseConfig: cfg,
 		Data:       tg,
 	}
 	if err := g.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[store] NewGroup Options")
+		return Group{}, errors.Wrap(err, "[store] NewGroup Options")
 	}
 	return g, nil
 }
 
 // MustNewGroup creates a NewGroup but panics on error.
-func MustNewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) *Group {
+func MustNewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) Group {
 	g, err := NewGroup(cfg, tg, opts...)
 	if err != nil {
 		panic(err)
@@ -72,19 +72,14 @@ func (g *Group) Options(opts ...GroupOption) error {
 	return nil
 }
 
-// GroupID satisfies interface scope.GroupIDer and returns the group ID.
-func (g *Group) GroupID() int64 {
+// GroupID returns the under
+func (g Group) GroupID() int64 {
 	return g.Data.GroupID
-}
-
-// StoreID satisfies interface scope.StoreIDer and returns the default store ID.
-func (g *Group) StoreID() int64 {
-	return g.Data.DefaultStoreID
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
 // struct will be encoded to JSON.
-func (g *Group) MarshalJSON() ([]byte, error) {
+func (g Group) MarshalJSON() ([]byte, error) {
 	// @todo while generating the TableStore structs we can generate the ffjson code ...
 	return json.Marshal(g.Data)
 }
@@ -94,15 +89,11 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 // DefaultStoreID. The returned *Store does not contain that much data to other
 // Website or Groups.
 // Error behaviour: NotFound
-func (g *Group) DefaultStore() (*Store, error) {
+func (g Group) DefaultStore() (Store, error) {
 	for _, sb := range g.Stores {
 		if sb.Data.StoreID == g.Data.DefaultStoreID {
 			return sb, nil
 		}
 	}
-	return nil, errors.NewNotFoundf(errGroupDefaultStoreNotFound)
+	return Store{}, errors.NewNotFoundf(errGroupDefaultStoreNotFound)
 }
-
-/*
-	@todo implement Magento\Store\Model\Group
-*/

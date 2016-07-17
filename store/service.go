@@ -15,13 +15,13 @@
 package store
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"context"
+	"sync"
+	"sync/atomic"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
-	"net/http"
-	"sync"
-	"sync/atomic"
 )
 
 // Requester knows how to retrieve a specific store depending on the
@@ -33,7 +33,7 @@ type Requester interface {
 	// website or store group was specified explicitly. RequestedStore returns
 	// either an error or the store. RequestedStore will be mostly used within
 	// an HTTP request.
-	RequestedStore(int64) (activeStore *Store, err error)
+	RequestedStore(ctx context.Context, storeCode string) (activeStore *Store, err error)
 }
 
 // IDbyCode returns for a website code or store code the id. Group scope is not
@@ -44,16 +44,12 @@ type CodeToIDMapper interface {
 	IDbyCode(scp scope.Scope, code string) (id int64, err error)
 }
 
-// depends on the run mode
-type AvailabilityChecker interface {
-	AllowedStoreIds(scope.Hash) []int64
-	DefaultStoreId(scope.Hash) int64
-}
-
+// AvailabilityChecker depends on the run mode from package scope. Hash will be provided via the RunModeFunc type.
 // RunModeFunc initialized the runmode and and scope/ID for the current request.
-// app/code/Magento/Store/App/FrontController/Plugin/DefaultStore.php
-// The returned Hash will be used in interface DefaultAllower
-type RunModeFunc func(config.Getter, *http.Request) scope.Hash
+type AvailabilityChecker interface {
+	AllowedStoreIds(runMode scope.Hash) ([]int64, error)
+	DefaultStoreID(runMode scope.Hash) (int64, error)
+}
 
 type (
 	// Service represents type which handles the underlying storage and takes
@@ -79,9 +75,9 @@ type (
 		stores   StoreSlice
 
 		// int64 key identifies a website, group or store
-		cacheWebsite map[int64]*Website
-		cacheGroup   map[int64]*Group
-		cacheStore   map[int64]*Store
+		cacheWebsite map[int64]Website
+		cacheGroup   map[int64]Group
+		cacheStore   map[int64]Store
 	}
 )
 
@@ -98,7 +94,7 @@ func NewService(st *Storage) (*Service, error) {
 		defaultStoreID: -1,
 	}
 	if err := srv.ApplyStorage(st); err != nil {
-		return errors.Wrap(err, "[store] NewService.ApplyStorage")
+		return nil, errors.Wrap(err, "[store] NewService.ApplyStorage")
 	}
 	return srv, nil
 }
@@ -121,16 +117,16 @@ func (s *Service) ApplyStorage(st *Storage) error {
 	defer s.mu.Unlock()
 
 	s.backend = st
-	s.cacheWebsite = make(map[int64]*Website)
-	s.cacheGroup = make(map[int64]*Group)
-	s.cacheStore = make(map[int64]*Store)
+	s.cacheWebsite = make(map[int64]Website)
+	s.cacheGroup = make(map[int64]Group)
+	s.cacheStore = make(map[int64]Store)
 
 	ws, err := st.Websites()
 	if err != nil {
 		return errors.Wrap(err, "[store] NewService.Websites")
 	}
 	s.websites = ws
-	ws.Each(func(w *Website) {
+	ws.Each(func(w Website) {
 		s.cacheWebsite[w.Data.WebsiteID] = w
 	})
 
@@ -139,7 +135,7 @@ func (s *Service) ApplyStorage(st *Storage) error {
 		return errors.Wrap(err, "[store] NewService.Groups")
 	}
 	s.groups = gs
-	gs.Each(func(g *Group) {
+	gs.Each(func(g Group) {
 		s.cacheGroup[g.Data.GroupID] = g
 	})
 
@@ -148,33 +144,52 @@ func (s *Service) ApplyStorage(st *Storage) error {
 		return errors.Wrap(err, "[store] NewService.Stores")
 	}
 	s.stores = ss
-	ss.Each(func(str *Store) {
+	ss.Each(func(str Store) {
 		s.cacheStore[str.Data.StoreID] = str
 	})
 	return nil
 }
 
-func (s *Service) AllowedStoreIds(h scope.Hash) ([]int64, error) {
-	scp, id := h.Unpack()
+func (s *Service) AllowedStoreIds(runMode scope.Hash) ([]int64, error) {
+	scp, id := runMode.Unpack()
+
 	switch scp {
 	case scope.Store:
-		var ids = make([]int64, 0, len(s.cacheStore))
-		for _, st := range s.cacheStore {
-			if st.Data.IsActive {
-				ids = append(ids, st.Data.StoreID)
-			}
-		}
-		return ids
+		return s.stores.ActiveIDs(), nil
+
 	case scope.Group:
-	case scope.Website:
+		g, err := s.Group(id) // if ID == 0 then admin group
+		if err != nil {
+			return nil, errors.Wrapf(err, "[store] AllowedStoreIds.Group Scope %s ID %d", scp, id)
+		}
+		return g.Stores.ActiveIDs(), nil
 	}
-	return nil, errors.NewNotSupportedf("[store] Unknown Scope: %q", scp)
+
+	var w Website
+	if scp == scope.Website {
+		var err error
+		w, err = s.Website(id) // id ID == 0 then admin website
+		if err != nil {
+			return nil, errors.Wrapf(err, "[store] AllowedStoreIds.Website Scope %s ID %d", scp, id)
+		}
+	} else {
+		var err error
+		w, err = s.websites.Default()
+		if err != nil {
+			return nil, errors.Wrapf(err, "[store] AllowedStoreIds.Website.Default Scope %s ID %d", scp, id)
+		}
+	}
+	g, err := w.DefaultGroup()
+	if err != nil {
+		return nil, errors.Wrapf(err, "[store] AllowedStoreIds.DefaultGroup Scope %s ID %d", scp, id)
+	}
+	return g.Stores.ActiveIDs(), nil
 }
 
 // findDefaultStoreByScope tries to detect the default store by a given scope option.
 // Precedence of detection by passed scope.Option: 1. Store 2. Group 3. Website
-func (s *Service) DefaultStoreID(h scope.Hash) (int64, error) {
-	scp, id := h.Unpack()
+func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
+	scp, id := runMode.Unpack()
 	switch scp {
 	case scope.Store:
 		st, err := s.Store(id)
@@ -182,7 +197,7 @@ func (s *Service) DefaultStoreID(h scope.Hash) (int64, error) {
 			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
 		if !st.Data.IsActive {
-			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", h, st.StoreID())
+			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.StoreID())
 		}
 		return st.StoreID(), nil
 
@@ -191,30 +206,35 @@ func (s *Service) DefaultStoreID(h scope.Hash) (int64, error) {
 		if err != nil {
 			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
-		st, err := s.Store(g.StoreID())
+		st, err := s.Store(g.Data.DefaultStoreID)
 		if err != nil {
 			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
 		if !st.Data.IsActive {
-			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", h, st.StoreID())
+			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.StoreID())
 		}
 		return st.StoreID(), nil
-
-	case scope.Website:
-		w, err := s.Website(id)
-		if err != nil {
-			return nil, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
-		}
-		st, err := w.DefaultStore()
-		if err != nil {
-			return nil, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
-		}
-		if !st.Data.IsActive {
-			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", h, st.StoreID())
-		}
-		return st, nil
 	}
-	return nil, errors.NewNotSupportedf("[store] Unknown Scope: %q", scp)
+
+	var w Website
+	if scp == scope.Website {
+		var err error
+		w, err = s.Website(id)
+		if err != nil {
+			return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website Scope %s ID %d", scp, id)
+		}
+	} else {
+		var err error
+		w, err = s.websites.Default()
+		if err != nil {
+			return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.Default Scope %s ID %d", scp, id)
+		}
+	}
+	st, err := w.DefaultStore()
+	if err != nil {
+		return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
+	}
+	return st.Data.StoreID, nil
 }
 
 // IDbyCode returns for a website code or store code the id. It iterates over
@@ -231,18 +251,15 @@ func (s *Service) IDbyCode(scp scope.Scope, code string) (int64, error) {
 	// todo maybe add map cache
 	switch scp {
 	case scope.Store:
-		for _, cs := range s.cacheStore {
-			if cs.StoreCode() == code {
-				return cs.StoreID(), nil
-			}
+		if ts, ok := s.backend.stores.FindByCode(code); ok {
+			return ts.StoreID, nil
 		}
 		return 0, errors.NewNotFoundf("[store] Code %q not found in %s", code, scp)
 	case scope.Website:
-		for _, cs := range s.cacheWebsite {
-			if cs.WebsiteCode() == code {
-				return cs.WebsiteID(), nil
-			}
+		if tw, ok := s.backend.websites.FindByCode(code); ok {
+			return tw.WebsiteID, nil
 		}
+		return 0, errors.NewNotFoundf("[store] Code %q not found in %s", code, scp)
 	case scope.Default:
 		return 0, nil
 	}
@@ -313,40 +330,34 @@ func (s *Service) RequestedStore(id int64) (activeStore *Store, err error) {
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the Website of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (s *Service) Website(id int64) (*Website, error) {
+func (s *Service) Website(id int64) (Website, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if cs, ok := s.cacheWebsite[id]; ok {
 		return cs, nil
 	}
-	return nil, errors.NewNotFoundf("[store] Cannot find Website ID %d", id)
+	return Website{}, errors.NewNotFoundf("[store] Cannot find Website ID %d", id)
 }
 
 // Websites returns a cached slice containing all pointers to Websites with its associated
 // groups and stores. It panics when the integrity is incorrect.
-func (s *Service) Websites() WebsiteSlice {
+func (s *Service) Websites(h scope.Hash) WebsiteSlice {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	ws := make(WebsiteSlice, len(s.cacheWebsite))
-	i := 0
-	for _, cw := range s.cacheWebsite {
-		ws[i] = cw
-		i++
-	}
-	return ws
+	return s.websites
 }
 
 // Group returns a cached Group which contains all related stores and its website.
 // Only the argument ID is supported.
 // If no argument has been supplied then the Group of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (s *Service) Group(id int64) (*Group, error) {
+func (s *Service) Group(id int64) (Group, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if cg, ok := s.cacheGroup[id]; ok {
 		return cg, nil
 	}
-	return nil, errors.NewNotFoundf("[store] Cannot find Group ID %d", id)
+	return Group{}, errors.NewNotFoundf("[store] Cannot find Group ID %d", id)
 }
 
 // Groups returns a cached slice containing all pointers to Groups with its associated
@@ -354,26 +365,20 @@ func (s *Service) Group(id int64) (*Group, error) {
 func (s *Service) Groups(h scope.Hash) GroupSlice {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	gs := make(GroupSlice, len(s.cacheGroup))
-	i := 0
-	for _, cg := range s.cacheGroup {
-		gs[i] = cg
-		i++
-	}
-	return gs
+	return s.groups
 }
 
 // Store returns the cached Store view containing its group and its website.
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (s *Service) Store(id int64) (*Store, error) {
+func (s *Service) Store(id int64) (Store, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if cs, ok := s.cacheStore[id]; ok {
 		return cs, nil
 	}
-	return nil, errors.NewNotFoundf("[store] Cannot find Store ID %d", id)
+	return Store{}, errors.NewNotFoundf("[store] Cannot find Store ID %d", id)
 }
 
 // Stores returns a cached Store slice. Can return an error when the website or
@@ -381,18 +386,11 @@ func (s *Service) Store(id int64) (*Store, error) {
 func (s *Service) Stores(h scope.Hash) StoreSlice {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	ss := make(StoreSlice, len(s.cacheStore))
-	i := 0
-	for _, cs := range s.cacheStore {
-		ss[i] = cs
-		i++
-	}
-	return ss
+	return s.stores
 }
 
-// DefaultStoreView returns the default store view, independent of the
-// applied scope.Option while creating the service.
-func (s *Service) DefaultStoreView() (*Store, error) {
+// DefaultStoreView returns the overall default store view.
+func (s *Service) DefaultStoreView() (Store, error) {
 	if s.defaultStoreID >= 0 {
 		s.mu.RLock()
 		defer s.mu.RUnlock() // bug
@@ -403,7 +401,7 @@ func (s *Service) DefaultStoreView() (*Store, error) {
 
 	id, err := s.backend.DefaultStoreID()
 	if err != nil {
-		return nil, errors.Wrap(err, "[store] Service.storage.DefaultStoreView")
+		return Store{}, errors.Wrap(err, "[store] Service.storage.DefaultStoreView")
 	}
 	atomic.StoreInt64(&s.defaultStoreID, id)
 	return s.Store(id)

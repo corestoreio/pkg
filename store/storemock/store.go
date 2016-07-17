@@ -25,33 +25,33 @@ import (
 
 // RequestedStoreAU satisfies the interface store.Requester and returns always
 // the Australian store.
-type RequestedStoreAU struct {
-	// Getter will be applied to the function NewStoreAU()
-	config.Getter
-	// ScpOpt contains the scope which has been passed into the function
-	// RequestedStore() for later inspection.
-	RequestedStoreID int64
-}
-
-func (rs *RequestedStoreAU) RequestedStore(id int64) (activeStore *store.Store, err error) {
-	rs.RequestedStoreID = id
-	return NewStoreAU(rs.Getter)
-}
-
-// NewRequestedStoreAU creates a new type. Only one argument may be passed.
-func NewRequestedStoreAU(cgs ...config.Getter) *RequestedStoreAU {
-	var cg config.Getter
-	if len(cgs) > 0 {
-		cg = cgs[0]
-	}
-	return &RequestedStoreAU{
-		Getter: cg,
-	}
-}
+//type RequestedStoreAU struct {
+//	// Getter will be applied to the function NewStoreAU()
+//	config.Getter
+//	// ScpOpt contains the scope which has been passed into the function
+//	// RequestedStore() for later inspection.
+//	RequestedStoreID int64
+//}
+//
+//func (rs *RequestedStoreAU) RequestedStore(id int64) (activeStore *store.Store, err error) {
+//	rs.RequestedStoreID = id
+//	return NewStoreAU(rs.Getter)
+//}
+//
+//// NewRequestedStoreAU creates a new type. Only one argument may be passed.
+//func NewRequestedStoreAU(cgs ...config.Getter) *RequestedStoreAU {
+//	var cg config.Getter
+//	if len(cgs) > 0 {
+//		cg = cgs[0]
+//	}
+//	return &RequestedStoreAU{
+//		Getter: cg,
+//	}
+//}
 
 // NewStoreAU creates a new Store with an attached config.
 // Store ID 5, Code "au"; Website ID 2, Code "oz"; GroupID 3.
-func NewStoreAU(cfg config.Getter) (*store.Store, error) {
+func NewStoreAU(cfg config.Getter) (store.Store, error) {
 	st, err := store.NewStore(
 		cfg,
 		&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
@@ -63,7 +63,7 @@ func NewStoreAU(cfg config.Getter) (*store.Store, error) {
 
 // MustNewStoreAU creates a new Store with an attached config.
 // Store ID 5, Code "au"; Website ID 2, Code "oz"; GroupID 3.
-func MustNewStoreAU(cg config.Getter) *store.Store {
+func MustNewStoreAU(cg config.Getter) store.Store {
 	st, err := NewStoreAU(cg)
 	if err != nil {
 		panic(fmt.Sprintf("%+v", err))

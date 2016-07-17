@@ -27,6 +27,7 @@ import (
 
 var _ store.Requester = (*store.Service)(nil)
 var _ store.CodeToIDMapper = (*store.Service)(nil)
+var _ store.AvailabilityChecker = (*store.Service)(nil)
 
 //func init() {
 // Reminder to myself:

@@ -19,7 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -86,10 +85,10 @@ func (st *Storage) website(id int64) (*TableWebsite, bool) {
 
 // Website creates a new Website pointer from an ID including all of its groups
 // and all related stores. Returns a NotFound error behaviour.
-func (st *Storage) Website(id int64) (*Website, error) {
+func (st *Storage) Website(id int64) (Website, error) {
 	w, found := st.website(id)
 	if !found {
-		return nil, errors.NewNotFoundf("[store] WebsiteID %d", id)
+		return Website{}, errors.NewNotFoundf("[store] WebsiteID %d", id)
 	}
 	return NewWebsite(st.baseConfig, w, SetWebsiteGroupsStores(st.groups, st.stores))
 }
@@ -116,15 +115,15 @@ func (st *Storage) group(id int64) (*TableGroup, bool) {
 
 // Group creates a new Group pointer for an ID which contains all related store-
 // and its website-pointers.
-func (st *Storage) Group(id int64) (*Group, error) {
+func (st *Storage) Group(id int64) (Group, error) {
 	g, found := st.group(id)
 	if !found {
-		return nil, errors.NewNotFoundf("[store] Group %d", id)
+		return Group{}, errors.NewNotFoundf("[store] Group %d", id)
 	}
 
 	w, found := st.website(g.WebsiteID)
 	if !found {
-		return nil, errors.NewNotFoundf("[store] Website. WebsiteID %d GroupID %v", g.WebsiteID, id)
+		return Group{}, errors.NewNotFoundf("[store] Website. WebsiteID %d GroupID %v", g.WebsiteID, id)
 	}
 	return NewGroup(st.baseConfig, g, SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 }
@@ -156,28 +155,30 @@ func (st *Storage) store(id int64) (*TableStore, bool) {
 // Store creates a new Store pointer containing its group and its website.
 // Returns an error if the integrity is incorrect. May return a NotFound error
 // behaviour.
-func (st *Storage) Store(id int64) (*Store, error) {
+func (st *Storage) Store(id int64) (Store, error) {
+	var ns Store
 	s, found := st.store(id)
 	if !found {
-		return nil, errors.NewNotFoundf("[store] Store: %d", id)
+		return ns, errors.NewNotFoundf("[store] Store: %d", id)
 	}
 	w, found := st.website(s.WebsiteID)
 	if !found {
-		return nil, errors.NewNotFoundf("[store] WebsiteID: %d", s.WebsiteID)
+		return ns, errors.NewNotFoundf("[store] WebsiteID: %d", s.WebsiteID)
 	}
 	g, found := st.group(s.GroupID)
 	if !found {
-		return nil, errors.NewNotFoundf("[store] GroupID: %d", s.GroupID)
+		return ns, errors.NewNotFoundf("[store] GroupID: %d", s.GroupID)
 	}
-	ns, err := NewStore(st.baseConfig, s, w, g)
+	var err error
+	ns, err = NewStore(st.baseConfig, s, w, g)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[store] StoreID %d WebsiteID %d GroupID %d", s.StoreID, w.WebsiteID, g.GroupID)
+		return ns, errors.Wrapf(err, "[store] StoreID %d WebsiteID %d GroupID %d", s.StoreID, w.WebsiteID, g.GroupID)
 	}
 	if err := ns.Website.Options(SetWebsiteGroupsStores(st.groups, st.stores)); err != nil {
-		return nil, errors.Wrap(err, "")
+		return ns, errors.Wrap(err, "")
 	}
 	if err := ns.Group.Options(SetGroupStores(st.stores, w)); err != nil {
-		return nil, errors.Wrap(err, "")
+		return ns, errors.Wrap(err, "")
 	}
 	return ns, nil
 }
@@ -203,12 +204,12 @@ func (st *Storage) DefaultStoreID() (int64, error) {
 		if w.IsDefault.Bool && w.IsDefault.Valid {
 			g, found := st.group(w.DefaultGroupID)
 			if !found {
-				return nil, errors.NewNotFoundf("[store] WebsiteID %d DefaultGroupID %d", w.WebsiteID, w.DefaultGroupID)
+				return 0, errors.NewNotFoundf("[store] WebsiteID %d DefaultGroupID %d", w.WebsiteID, w.DefaultGroupID)
 			}
 			return g.DefaultStoreID, nil
 		}
 	}
-	return nil, errors.NewNotFoundf(errStoreDefaultNotFound)
+	return 0, errors.NewNotFoundf(errStoreDefaultNotFound)
 }
 
 // ReInit reloads all websites, groups and stores concurrently from the
