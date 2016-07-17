@@ -17,21 +17,19 @@ package store_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ scope.GroupIDer = (*store.Group)(nil)
-var _ scope.StoreIDer = (*store.Group)(nil)
-
 func TestNewGroup(t *testing.T) {
 
 	g, err := store.NewGroup(
+		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 	)
 	assert.NoError(t, err)
@@ -46,6 +44,7 @@ func TestNewGroup(t *testing.T) {
 func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
 
 	ng, err := store.NewGroup(
+		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)}),
 	)
@@ -56,6 +55,7 @@ func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
 func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
 
 	g, err := store.NewGroup(
+		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupStores(
 			store.TableStoreSlice{
@@ -71,6 +71,7 @@ func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
 func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
 
 	g, err := store.NewGroup(
+		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupStores(
 			store.TableStoreSlice{
@@ -86,6 +87,7 @@ func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
 func TestNewGroupSetStores(t *testing.T) {
 
 	g, err := store.NewGroup(
+		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupStores(
 			store.TableStoreSlice{

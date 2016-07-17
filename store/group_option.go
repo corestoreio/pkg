@@ -14,32 +14,21 @@
 
 package store
 
-import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util/errors"
-)
+import "github.com/corestoreio/csfw/util/errors"
 
 // GroupOption can be used as an argument in NewGroup to configure a group.
-type GroupOption func(*Group)
-
-// SetGroupConfig sets the config.Getter to the Group. You should call this
-// function before calling other option functions otherwise your preferred
-// config.Getter won't be inherited to a Website or a Store.
-func SetGroupConfig(cr config.Getter) GroupOption { return func(g *Group) { g.cr = cr } }
+type GroupOption func(*Group) error
 
 // SetGroupWebsite assigns a website to a group. If website ID does not match
 // the group website ID then add error will be generated.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
-	return func(g *Group) {
-		if g.optionError != nil {
-			return
-		}
+	return func(g *Group) error {
 		if g.Data.WebsiteID != tw.WebsiteID {
-			g.optionError = errors.NewNotFoundf(errGroupWebsiteNotFound)
-			return
+			return errors.NewNotFoundf(errGroupWebsiteNotFound)
 		}
-		g.Website, g.optionError = NewWebsite(tw, SetWebsiteConfig(g.cr))
-		g.optionError = errors.Wrap(g.optionError, "[store] SetGroupWebsite.NewWebsite")
+		var err error
+		g.Website, err = NewWebsite(g.baseConfig, tw)
+		return errors.Wrap(err, "[store] SetGroupWebsite.NewWebsite")
 	}
 }
 
@@ -47,29 +36,20 @@ func SetGroupWebsite(tw *TableWebsite) GroupOption {
 // assigned to a group. Either Website must be set before calling SetGroupStores() or
 // the second argument may not be nil. Does nothing if tss variable is nil.
 func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
-	return func(g *Group) {
-		if tss == nil {
-			g.Stores = nil
-			return
-		}
-		if g.Website == nil && w == nil {
-			g.optionError = errors.NewNotFoundf(errGroupWebsiteNotFound)
-			return
-		}
+	return func(g *Group) error {
 		if w == nil {
 			w = g.Website.Data
 		}
 		if w.WebsiteID != g.Data.WebsiteID {
-			g.optionError = errors.NewNotValidf(errGroupWebsiteIntegrityFailed)
-			return
+			return errors.NewNotValidf(errGroupWebsiteIntegrityFailed)
 		}
 		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
-			ns, err := NewStore(s, w, g.Data, WithStoreConfig(g.cr))
+			ns, err := NewStore(g.baseConfig, s, w, g.Data)
 			if err != nil {
-				g.optionError = errors.Wrapf(err, "[store] SetGroupStores.FilterByGroupID.NewStore. StoreID %d WebsiteID %d Group %v", s.StoreID, w.WebsiteID, g.Data)
-				return
+				return errors.Wrapf(err, "[store] SetGroupStores.FilterByGroupID.NewStore. StoreID %d WebsiteID %d Group %v", s.StoreID, w.WebsiteID, g.Data)
 			}
 			g.Stores = append(g.Stores, ns)
 		}
+		return nil
 	}
 }

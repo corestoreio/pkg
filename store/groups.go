@@ -47,6 +47,13 @@ func (gs GroupSlice) Filter(f func(*Group) bool) GroupSlice {
 	return ret
 }
 
+func (gs GroupSlice) Each(f func(*Group)) GroupSlice {
+	for i := range gs {
+		f(gs[i])
+	}
+	return gs
+}
+
 // IDs returns all group IDs
 func (gs GroupSlice) IDs() []int64 {
 	if len(gs) == 0 {

@@ -17,23 +17,19 @@ package store_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ scope.WebsiteIDer = (*store.Website)(nil)
-var _ scope.StoreIDer = (*store.Website)(nil)
-var _ scope.GroupIDer = (*store.Website)(nil)
-var _ scope.WebsiteCoder = (*store.Website)(nil)
-
 func TestNewWebsite(t *testing.T) {
 
 	w, err := store.NewWebsite(
+		cfgmock.NewService(),
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 	)
 	assert.NoError(t, err)
@@ -53,6 +49,7 @@ func TestNewWebsite(t *testing.T) {
 func TestNewWebsiteSetGroupsStores(t *testing.T) {
 
 	w, err := store.NewWebsite(
+		cfgmock.NewService(),
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		store.SetWebsiteGroupsStores(
 			store.TableGroupSlice{
@@ -106,10 +103,11 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 func TestNewWebsiteStoreIDError(t *testing.T) {
 
 	w, err := store.NewWebsite(
+		cfgmock.NewService(),
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 	)
 	assert.NoError(t, err)
-	assert.Exactly(t, scope.UnavailableStoreID, w.StoreID())
+	assert.Exactly(t, 0, w.StoreID())
 }
 
 func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {

@@ -15,42 +15,35 @@
 package store
 
 import (
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
 // StorageOption option func for NewStorage()
-type StorageOption func(*storage)
+type StorageOption func(*Storage) error
 
 // SetStorageWebsites adds the TableWebsiteSlice to the Storage. By default, the slice is nil.
 func SetStorageWebsites(tws ...*TableWebsite) StorageOption {
-	return func(s *storage) { s.websites = TableWebsiteSlice(tws) }
+	return func(s *Storage) error {
+		s.websites = append(s.websites, tws...)
+		return nil
+	}
 }
 
 // SetStorageGroups adds the TableGroupSlice to the Storage. By default, the slice is nil.
 func SetStorageGroups(tgs ...*TableGroup) StorageOption {
-	return func(s *storage) { s.groups = TableGroupSlice(tgs) }
+	return func(s *Storage) error { s.groups = TableGroupSlice(tgs); return nil }
 }
 
 // SetStorageStores adds the TableStoreSlice to the Storage. By default, the slice is nil.
 func SetStorageStores(tss ...*TableStore) StorageOption {
-	return func(s *storage) { s.stores = TableStoreSlice(tss) }
-}
-
-// WithStorageConfig sets the configuration Getter. Optional.
-// If not set all websites, groups and stores have a nil Config.
-func WithStorageConfig(cr config.Getter) StorageOption {
-	return func(s *storage) { s.cr = cr }
+	return func(s *Storage) error { s.stores = TableStoreSlice(tss); return nil }
 }
 
 // WithDatabaseInit triggers the ReInit function to load the data from the
 // database.
 func WithDatabaseInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) StorageOption {
-	return func(s *storage) {
-		if s.optionError != nil {
-			return
-		}
-		s.optionError = errors.Wrap(s.ReInit(dbrSess, cbs...), "[store] storage ReInit")
+	return func(s *Storage) error {
+		return errors.Wrap(s.ReInit(dbrSess, cbs...), "[store] storage ReInit")
 	}
 }

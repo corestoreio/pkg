@@ -19,26 +19,18 @@ import (
 	"testing"
 
 	"bytes"
-	"github.com/corestoreio/csfw/backend"
-	"github.com/corestoreio/csfw/config"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ scope.StoreIDer = (*store.Store)(nil)
-var _ scope.GroupIDer = (*store.Store)(nil)
-var _ scope.WebsiteIDer = (*store.Store)(nil)
-var _ scope.StoreCoder = (*store.Store)(nil)
 var _ log.Marshaler = (*store.Store)(nil)
 
 const TODO_Better_Test_Data = "@todo implement better test data which is equal for each Magento version"
@@ -62,7 +54,7 @@ func TestNewStore(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		s, err := store.NewStore(test.s, test.w, test.g)
+		s, err := store.NewStore(cfgmock.NewService(), test.s, test.w, test.g)
 		assert.NoError(t, err)
 		assert.NotNil(t, s)
 		assert.EqualValues(t, test.w.WebsiteID, s.Website.Data.WebsiteID)
@@ -80,6 +72,7 @@ func TestNewStore(t *testing.T) {
 func TestNewStoreErrorIncorrectGroup(t *testing.T) {
 
 	s, err := store.NewStore(
+		cfgmock.NewService(),
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
@@ -91,6 +84,7 @@ func TestNewStoreErrorIncorrectGroup(t *testing.T) {
 func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
 
 	s, err := store.NewStore(
+		cfgmock.NewService(),
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
@@ -103,11 +97,13 @@ func TestStoreSlice(t *testing.T) {
 
 	storeSlice := store.StoreSlice{
 		store.MustNewStore(
+			cfgmock.NewService(),
 			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		),
 		store.MustNewStore(
+			cfgmock.NewService(),
 			&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -236,90 +232,92 @@ func TestTableStoreSliceIDs(t *testing.T) {
 	assert.Nil(t, ts.Extract().StoreID())
 }
 
-func TestStoreBaseURLandPath(t *testing.T) {
-
-	t.Skip("@todo refactor and move these functions into another package")
-
-	s, err := store.NewStore(
-		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
-		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 1},
-	)
-	assert.NoError(t, err)
-	if s == nil {
-		t.Fail()
-	}
-
-	tests := []struct {
-		haveR        config.Getter
-		haveUT       config.URLType
-		haveIsSecure bool
-		wantBaseUrl  string
-		wantPath     string
-	}{
-		{
-			cfgmock.NewService(cfgmock.WithString(
-				func(path string) (string, error) {
-
-					switch path {
-					// scope is here store but config.ScopedGetter must fall back to default
-					case backend.Backend.WebSecureBaseURL.String():
-						return "https://corestore.io", nil
-					case backend.Backend.WebUnsecureBaseURL.String():
-						return "http://corestore.io", nil
-					}
-					return "", errors.NewNotFoundf("Invalid path: %s", path)
-				},
-			)),
-			config.URLTypeWeb, true, "https://corestore.io/", "/",
-		},
-		{
-			cfgmock.NewService(cfgmock.WithString(
-				func(path string) (string, error) {
-					switch path {
-					case backend.Backend.WebSecureBaseURL.String():
-						return "https://myplatform.io/customer1", nil
-					case backend.Backend.WebUnsecureBaseURL.String():
-						return "http://myplatform.io/customer1", nil
-					}
-					return "", errors.NewNotFoundf("Invalid path: %s", path)
-				},
-			)),
-			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
-		},
-		{
-			cfgmock.NewService(cfgmock.WithString(
-				func(p string) (string, error) {
-					switch p {
-					case backend.Backend.WebSecureBaseURL.String():
-						return cfgmodel.PlaceholderBaseURL, nil
-					case backend.Backend.WebUnsecureBaseURL.String():
-						return cfgmodel.PlaceholderBaseURL, nil
-					case cfgpath.MustNewByParts(config.PathCSBaseURL).String():
-						return config.CSBaseURL, nil
-					}
-					return "", errors.NewNotFoundf("Invalid path: %s", p)
-				},
-			)),
-			config.URLTypeWeb, false, config.CSBaseURL, "/",
-		},
-	}
-
-	for i, test := range tests {
-		s.Options(store.WithStoreConfig(test.haveR))
-		assert.NotNil(t, s.Config, "Index %d", i)
-		baseURL, err := s.BaseURL(test.haveUT, test.haveIsSecure)
-		assert.NoError(t, err)
-		assert.EqualValues(t, test.wantBaseUrl, baseURL.String())
-		assert.EqualValues(t, test.wantPath, s.Path())
-
-		_, err = s.BaseURL(config.URLTypeAbsent, false)
-		assert.NoError(t, err)
-	}
-}
+//func TestStoreBaseURLandPath(t *testing.T) {
+//
+//	t.Skip("@todo refactor and move these functions into another package")
+//
+//	s, err := store.NewStore(
+//		cfgmock.NewService(),
+//		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+//		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
+//		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 1},
+//	)
+//	assert.NoError(t, err)
+//	if s == nil {
+//		t.Fail()
+//	}
+//
+//	tests := []struct {
+//		haveR        config.Getter
+//		haveUT       config.URLType
+//		haveIsSecure bool
+//		wantBaseUrl  string
+//		wantPath     string
+//	}{
+//		{
+//			cfgmock.NewService(cfgmock.WithString(
+//				func(path string) (string, error) {
+//
+//					switch path {
+//					// scope is here store but config.ScopedGetter must fall back to default
+//					case backend.Backend.WebSecureBaseURL.String():
+//						return "https://corestore.io", nil
+//					case backend.Backend.WebUnsecureBaseURL.String():
+//						return "http://corestore.io", nil
+//					}
+//					return "", errors.NewNotFoundf("Invalid path: %s", path)
+//				},
+//			)),
+//			config.URLTypeWeb, true, "https://corestore.io/", "/",
+//		},
+//		{
+//			cfgmock.NewService(cfgmock.WithString(
+//				func(path string) (string, error) {
+//					switch path {
+//					case backend.Backend.WebSecureBaseURL.String():
+//						return "https://myplatform.io/customer1", nil
+//					case backend.Backend.WebUnsecureBaseURL.String():
+//						return "http://myplatform.io/customer1", nil
+//					}
+//					return "", errors.NewNotFoundf("Invalid path: %s", path)
+//				},
+//			)),
+//			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
+//		},
+//		{
+//			cfgmock.NewService(cfgmock.WithString(
+//				func(p string) (string, error) {
+//					switch p {
+//					case backend.Backend.WebSecureBaseURL.String():
+//						return cfgmodel.PlaceholderBaseURL, nil
+//					case backend.Backend.WebUnsecureBaseURL.String():
+//						return cfgmodel.PlaceholderBaseURL, nil
+//					case cfgpath.MustNewByParts(config.PathCSBaseURL).String():
+//						return config.CSBaseURL, nil
+//					}
+//					return "", errors.NewNotFoundf("Invalid path: %s", p)
+//				},
+//			)),
+//			config.URLTypeWeb, false, config.CSBaseURL, "/",
+//		},
+//	}
+//
+//	for i, test := range tests {
+//		s.Options(store.WithStoreConfig(test.haveR))
+//		assert.NotNil(t, s.Config, "Index %d", i)
+//		baseURL, err := s.BaseURL(test.haveUT, test.haveIsSecure)
+//		assert.NoError(t, err)
+//		assert.EqualValues(t, test.wantBaseUrl, baseURL.String())
+//		assert.EqualValues(t, test.wantPath, s.Path())
+//
+//		_, err = s.BaseURL(config.URLTypeAbsent, false)
+//		assert.NoError(t, err)
+//	}
+//}
 
 func TestStore_MarshalJSON(t *testing.T) {
 	s := store.MustNewStore(
+		cfgmock.NewService(),
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
@@ -333,6 +331,7 @@ func TestStore_MarshalJSON(t *testing.T) {
 
 func TestStore_MarshalLog(t *testing.T) {
 	s := store.MustNewStore(
+		cfgmock.NewService(),
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},

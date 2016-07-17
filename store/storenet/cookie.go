@@ -29,11 +29,11 @@ type Cookie struct {
 // NewCookie creates a new pre-configured cookie.
 // TODO(cs) create cookie manager to stick to the limits of http://www.ietf.org/rfc/rfc2109.txt page 15
 // @see http://browsercookielimits.squawky.net/
-func (c Cookie) New() *http.Cookie {
+func (c Cookie) New(path string) *http.Cookie {
 	return &http.Cookie{
 		Name:     ParamName,
 		Value:    "",
-		Path:     c.Store.Path(),
+		Path:     path,
 		Domain:   "",
 		Secure:   false,
 		HttpOnly: true,

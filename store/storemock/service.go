@@ -15,97 +15,15 @@
 package storemock
 
 import (
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 )
-
-// NewService creates a new StoreService
-func NewService(so scope.Option, opts ...func(ms *Storage)) (*store.Service, error) {
-	ms := &Storage{}
-	for _, opt := range opts {
-		opt(ms)
-	}
-	return store.NewService(so, ms)
-}
-
-// MustNewService creates a new StoreService but panics on error
-func MustNewService(so scope.Option, opts ...func(ms *Storage)) *store.Service {
-	ms := &Storage{}
-	for _, opt := range opts {
-		opt(ms)
-	}
-	return store.MustNewService(so, ms)
-}
-
-// Storage main underlying data container
-type Storage struct {
-	MockWebsite      func() (*store.Website, error)
-	MockWebsiteSlice func() (store.WebsiteSlice, error)
-	MockGroup        func() (*store.Group, error)
-	MockGroupSlice   func() (store.GroupSlice, error)
-	MockStore        func() (*store.Store, error)
-	MockDefaultStore func() (*store.Store, error)
-	MockStoreSlice   func() (store.StoreSlice, error)
-}
-
-var _ store.Storager = (*Storage)(nil)
-
-func (ms *Storage) Website(_ scope.WebsiteIDer) (*store.Website, error) {
-	if ms.MockWebsite == nil {
-		return nil, errors.NewNotFoundf("[storemock] Website is nil")
-	}
-	return ms.MockWebsite()
-}
-func (ms *Storage) Websites() (store.WebsiteSlice, error) {
-	if ms.MockWebsiteSlice == nil {
-		return nil, nil
-	}
-	return ms.MockWebsiteSlice()
-}
-func (ms *Storage) Group(_ scope.GroupIDer) (*store.Group, error) {
-	if ms.MockGroup == nil {
-		return nil, errors.NewNotFoundf("[storemock] Group is nil")
-	}
-	return ms.MockGroup()
-}
-func (ms *Storage) Groups() (store.GroupSlice, error) {
-	if ms.MockGroupSlice == nil {
-		return nil, nil
-	}
-	return ms.MockGroupSlice()
-}
-func (ms *Storage) Store(_ scope.StoreIDer) (*store.Store, error) {
-	if ms.MockStore == nil {
-		return nil, errors.NewNotFoundf("[storemock] Store is nil")
-	}
-	return ms.MockStore()
-}
-
-func (ms *Storage) Stores() (store.StoreSlice, error) {
-	if ms.MockStoreSlice == nil {
-		return nil, nil
-	}
-	return ms.MockStoreSlice()
-}
-func (ms *Storage) DefaultStoreView() (*store.Store, error) {
-	if ms.MockDefaultStore != nil {
-		return ms.MockDefaultStore()
-	}
-	if ms.MockStore != nil {
-		return ms.MockStore()
-	}
-	return nil, errors.NewNotFoundf("[storemock] Store")
-}
-func (ms *Storage) ReInit(dbr.SessionRunner, ...dbr.SelectCb) error {
-	return nil
-}
 
 // NewEurozzyService creates a fully initialized store.Service with 3 websites,
 // 4 groups and 7 stores used for testing. Panics on error.
 // Website 1 contains Europe and website 2 contains Australia/New Zealand.
-func NewEurozzyService(so scope.Option, opts ...store.StorageOption) *store.Service {
+func NewEurozzyService(cfg config.Getter, opts ...store.StorageOption) *store.Service {
 	// Yes weird naming, but feel free to provide a better name 8-)
 
 	defaultOpts := []store.StorageOption{
@@ -130,6 +48,5 @@ func NewEurozzyService(so scope.Option, opts ...store.StorageOption) *store.Serv
 			&store.TableStore{IsActive: false, StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
 		),
 	}
-
-	return store.MustNewService(so, store.MustNewStorage(append(defaultOpts, opts...)...))
+	return store.MustNewService(store.MustNewStorage(cfg, append(defaultOpts, opts...)...))
 }

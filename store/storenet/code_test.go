@@ -124,7 +124,7 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		so, err := storenet.CodeFromRequestGET(test.req)
+		so, err := storenet.CodeFromRequest(test.req)
 		testStoreCodeFrom(t, i, err, test.wantErrBhf, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }

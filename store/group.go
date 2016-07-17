@@ -25,30 +25,27 @@ import (
 const DefaultGroupID int64 = 0
 
 // Group defines the root category id and default store id for a set of stores.
-// A group is assigned to one website and a group can have multiple stores.
-// A group does not have any kind of configuration setting.
+// A group is assigned to one website and a group can have multiple stores. A
+// group does not have any kind of configuration setting but hands down the
+// BaseConfig to the stores and the Website.
 type Group struct {
-	// cr internal root config.Getter which will be applied to stores and websites
-	cr config.Getter
-	// Data contains the raw group data.
+	// baseConfig base config.Getter which will be applied to stores and websites.
+	baseConfig config.Getter
+	// Data contains the raw group data. Cannot be nil
 	Data *TableGroup
 	// Stores contains a slice to all stores associated to this group. Can be nil.
 	Stores StoreSlice
 	// Website contains the Website which belongs to this group. Can be nil.
 	Website *Website
-	// optionError use by functional option arguments to indicate that one
-	// option has triggered an error and hence the other can options can
-	// skip their process.
-	optionError error
 }
 
-// NewGroup creates a new Group. Returns an error if 1st argument is nil.
-// Config will only be set if there has been a Website provided via
-// an option argument.
+// NewGroup creates a new Group. Returns an error if 1st argument is nil. Config
+// will only be set if there has been a Website provided via an option argument.
 // Error behaviour: Empty
-func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
+func NewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) (*Group, error) {
 	g := &Group{
-		Data: tg,
+		baseConfig: cfg,
+		Data:       tg,
 	}
 	if err := g.Options(opts...); err != nil {
 		return nil, errors.Wrap(err, "[store] NewGroup Options")
@@ -57,27 +54,19 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
 }
 
 // MustNewGroup creates a NewGroup but panics on error.
-func MustNewGroup(tg *TableGroup, opts ...GroupOption) *Group {
-	g, err := NewGroup(tg, opts...)
+func MustNewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) *Group {
+	g, err := NewGroup(cfg, tg, opts...)
 	if err != nil {
 		panic(err)
 	}
 	return g
 }
 
-// Options sets the options to a Group.
+// Options applies different options to a Group.
 func (g *Group) Options(opts ...GroupOption) error {
 	for _, opt := range opts {
-		opt(g)
-	}
-	if g.optionError != nil {
-		// clear error or next call to Options() will fail.
-		defer func() { g.optionError = nil }()
-		return g.optionError
-	}
-	if g.Website != nil {
-		if err := g.Website.Options(SetWebsiteConfig(g.cr)); err != nil {
-			return errors.Wrapf(err, "[store] Group %#v", g)
+		if err := opt(g); err != nil {
+			return errors.Wrap(err, "[store] Group.Options")
 		}
 	}
 	return nil

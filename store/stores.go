@@ -46,6 +46,13 @@ func (ss StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 	return stores
 }
 
+func (ss StoreSlice) Each(f func(*Store)) StoreSlice {
+	for i := range ss {
+		f(ss[i])
+	}
+	return ss
+}
+
 // Codes returns all store codes
 func (ss StoreSlice) Codes() []string {
 	if len(ss) == 0 {

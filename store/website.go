@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -29,10 +28,12 @@ const DefaultWebsiteID int64 = 0
 // A website defines the default group ID. A website can contain custom configuration
 // settings which overrides the default scope but get itself overridden by the Store scope.
 type Website struct {
-	cr config.Getter // internal root config.Getter which can be overridden
+	// baseConfig which will be handed down to the website
+	baseConfig config.Getter
+	// config contains the scoped configuration which cannot be changed once the
+	// object has been created.
+	config config.Scoped
 
-	// Config contains the scope based configuration reader.
-	Config config.Scoped
 	// Data raw website data from DB table.
 	Data *TableWebsite
 
@@ -40,16 +41,14 @@ type Website struct {
 	Groups GroupSlice
 	// Stores contains a slice to all stores associated to one website. This slice can be nil.
 	Stores StoreSlice
-	// optionError use by functional option arguments to indicate that one
-	// option has triggered an error and hence the other can options can
-	// skip their process.
-	optionError error
 }
 
 // NewWebsite creates a new website pointer with the config.DefaultManager.
-func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
+func NewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 	w := &Website{
-		Data: tw,
+		baseConfig: cfg,
+		config:     cfg.NewScoped(tw.WebsiteID, 0),
+		Data:       tw,
 	}
 	if err := w.Options(opts...); err != nil {
 		return nil, errors.Wrap(err, "[store] NewWebsite Options")
@@ -58,8 +57,8 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 }
 
 // MustNewWebsite same as NewWebsite but panics on error.
-func MustNewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
-	w, err := NewWebsite(tw, opts...)
+func MustNewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) *Website {
+	w, err := NewWebsite(cfg, tw, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -69,17 +68,17 @@ func MustNewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 // Options sets the options on a Website
 func (w *Website) Options(opts ...WebsiteOption) error {
 	for _, opt := range opts {
-		opt(w)
-	}
-	if w.optionError != nil {
-		// clear error or next call to Options() will fail.
-		defer func() { w.optionError = nil }()
-		return w.optionError
-	}
-	if w.cr != nil {
-		w.Config = w.cr.NewScoped(w.WebsiteID(), 0) // Scope Store is not available
+		if err := opt(w); err != nil {
+			return errors.Wrap(err, "[store] Website.Options")
+		}
 	}
 	return nil
+}
+
+// Config returns the scoped configuration for the current website.
+func (w *Website) Config() config.Scoped {
+	// returns copied value and don't allow any changes to the internal field
+	return w.config
 }
 
 // WebsiteID satisfies the interface scope.WebsiteIDer and returns the website ID.
@@ -89,17 +88,14 @@ func (w *Website) WebsiteID() int64 { return w.Data.WebsiteID }
 func (w *Website) WebsiteCode() string { return w.Data.Code.String }
 
 // GroupID implements the GroupIDer interface and returns the default group ID.
-func (w *Website) GroupID() int64 {
-	return w.Data.DefaultGroupID
-}
+func (w *Website) GroupID() int64 { return w.Data.DefaultGroupID }
 
 // StoreID implements the StoreIDer interface and returns the default store ID.
-// It may return a scope.UnavailableStoreID when finding the DefaultGroup()
-// returns an error. Error will be logged.
+// It may return a zero when calling DefaultGroup() may returns an error.
 func (w *Website) StoreID() int64 {
 	g, err := w.DefaultGroup()
 	if err != nil {
-		return scope.UnavailableStoreID
+		return 0
 	}
 	return g.Data.DefaultStoreID
 }

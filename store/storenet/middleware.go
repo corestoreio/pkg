@@ -23,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -102,6 +101,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber, l log.Logger) mw.Middleware {
 func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 
 	// todo: build this in an equal way like the JSON web token service
+	// todo check if store is not active anymore, and if inactive call error handler
 
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -114,24 +114,14 @@ func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 				serveError(h, w, r, errors.Wrap(err, "[storenet] FromContextRequestedStore"))
 				return
 			}
+			storeCode := CodeFromRequest(r)
 
-			var reqSO scope.Option
-
-			reqSO, err = CodeFromRequestGET(r)
-			if err != nil {
+			if storeCode == "" {
 				if l.IsDebug() {
 					l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", log.Err(err), log.Object("request", r), log.Stringer("scope", reqSO))
 				}
-
-				reqSO, err = CodeFromCookie(r)
-				if err != nil {
-					// ignore further processing because all codes are invalid or not found
-					if l.IsDebug() {
-						l.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", log.Err(err), log.Object("request", r), log.Stringer("scope", reqSO))
-					}
-					h.ServeHTTP(w, r)
-					return
-				}
+				h.ServeHTTP(w, r)
+				return
 			}
 
 			newRequestedStore, err := rs.RequestedStore(reqSO)
@@ -156,6 +146,7 @@ func WithInitStoreByFormCookie(rs store.Requester, l log.Logger) mw.Middleware {
 					return
 				}
 				keks := Cookie{Store: newRequestedStore}
+				// todo: delete store cookie when the store is not active anymore
 				if wds.Data.Code.String == soStoreCode {
 					keks.Delete(w) // cookie not needed anymore
 				} else {

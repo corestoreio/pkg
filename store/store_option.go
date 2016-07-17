@@ -14,12 +14,5 @@
 
 package store
 
-import "github.com/corestoreio/csfw/config"
-
 // StoreOption can be used as an argument in NewStore to configure a store.
-type StoreOption func(s *Store)
-
-// WithStoreConfig sets the config.Getter to the Store. You should call this
-// function before calling other option functions otherwise your preferred
-// config.Getter won't be inherited to a Website or a Group.
-func WithStoreConfig(cr config.Getter) StoreOption { return func(s *Store) { s.cr = cr } }
+type StoreOption func(s *Store) error

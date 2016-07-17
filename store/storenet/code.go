@@ -18,8 +18,6 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 // ParamName use in Cookie and JWT important when the user selects a different
@@ -32,29 +30,28 @@ const ParamName = `store`
 // current website/group context.
 const HTTPRequestParamStore = `___store`
 
-// CodeFromCookie returns from a Request the value of the store cookie. Error
-// behaviour: NotValid, NotSupported or an http.ErrNoCookie.
-func CodeFromCookie(req *http.Request) (scope.Option, error) {
-	keks, err := req.Cookie(ParamName)
-	if err != nil {
-		return scope.Option{}, errors.NewNotFound(err, "[storenet] Cookie")
+// CodeFromRequest returns from a request form, with the field name of the value
+// of constant HTTPRequestParamStore, the value of the store code. If empty it
+// falls back to the cookie name defined in constant ParamName. An error of
+// NotValid gets returned if the code cannot be validated.
+func CodeFromRequest(req *http.Request) (code string, valid bool) {
+	code = req.URL.Query().Get(HTTPRequestParamStore)
+	if code == "" {
+		code, _ = CodeFromCookie(req)
 	}
-	return setByCode(keks.Value)
+
+	if err := store.CodeIsValid(code); err == nil {
+		valid = true
+	}
+	return
 }
 
-// CodeFromRequestGET returns from a Request form the value of the store code or
-// an ErrStoreNotFound.
-func CodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
-	return setByCode(req.URL.Query().Get(HTTPRequestParamStore))
-}
-
-func setByCode(scopeCode string) (scope.Option, error) {
-	if err := store.CodeIsValid(scopeCode); err != nil {
-		return scope.Option{}, errors.Wrap(err, "[storenet] Code not valid")
+func CodeFromCookie(req *http.Request) (code string, valid bool) {
+	if keks, err := req.Cookie(ParamName); err == nil {
+		code = keks.Value
 	}
-	o, err := scope.SetByCode(scope.Store, scopeCode)
-	if err != nil {
-		return scope.Option{}, errors.Wrap(err, "[storenet] Unknown scope")
+	if err := store.CodeIsValid(code); err == nil {
+		valid = true
 	}
-	return o, nil
+	return
 }

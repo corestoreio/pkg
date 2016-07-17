@@ -20,16 +20,15 @@ const errStoreChangeNotAllowed = "[store] Store change not allowed"
 
 const (
 	errStoreNotFound         = "[store] Store not found"
+	errStoreDefaultNotFound  = "[store] Default Store ID not found"
 	errStoreNotActive        = "[store] Store not active"
-	errArgumentCannotBeNil   = "[store] An argument cannot be nil"
 	errStoreIncorrectGroup   = "[store] Incorrect group"
 	errStoreIncorrectWebsite = "[store] Incorrect website"
 	errStoreCodeInvalid      = "[store] The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter. Have: %q"
 )
 
 const (
-	errGroupNotFound               = "[store] Group not found"
-	errGroupDefaultStoreNotFound   = "[store] Group default store not found"
+	errGroupDefaultStoreNotFound   = "[store] Group default store %d not found"
 	errGroupWebsiteNotFound        = "[store] Group Website not found or nil or ID do not match"
 	errGroupWebsiteIntegrityFailed = "[store] Groups WebsiteID does not match the Websites ID"
 )
@@ -37,6 +36,5 @@ const (
 // ErrWebsite* are general errors when handling with the Website type.
 // They are self explanatory.
 const (
-	errWebsiteNotFound             = "[store] Website not found"
 	errWebsiteDefaultGroupNotFound = "[store] Website Default Group not found"
 )

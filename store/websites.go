@@ -47,6 +47,13 @@ func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
 	return nws
 }
 
+func (ws WebsiteSlice) Each(f func(*Website)) WebsiteSlice {
+	for i := range ws {
+		f(ws[i])
+	}
+	return ws
+}
+
 // Codes returns all website codes
 func (ws WebsiteSlice) Codes() []string {
 	if len(ws) == 0 {

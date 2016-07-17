@@ -17,6 +17,7 @@ package store_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -28,7 +29,11 @@ import (
 
 // todo inspect the high allocs
 
+// check if interface has been implemented
+var _ store.Storager = (*store.Storage)(nil)
+
 var testStorage = store.MustNewStorage(
+	cfgmock.NewService(),
 	store.SetStorageWebsites(
 		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
@@ -356,7 +361,7 @@ func TestStorageStores(t *testing.T) {
 
 func TestDefaultStoreView(t *testing.T) {
 
-	st, err := testStorage.DefaultStoreView()
+	st, err := testStorage.DefaultStore()
 	assert.NoError(t, err)
 	assert.EqualValues(t, "at", st.Data.Code.String)
 
@@ -372,7 +377,7 @@ func TestDefaultStoreView(t *testing.T) {
 			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
-	dSt, err := tst.DefaultStoreView()
+	dSt, err := tst.DefaultStore()
 	assert.Nil(t, dSt)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
@@ -385,7 +390,7 @@ func TestDefaultStoreView(t *testing.T) {
 		),
 		store.SetStorageStores(),
 	)
-	dSt2, err := tst2.DefaultStoreView()
+	dSt2, err := tst2.DefaultStore()
 	assert.Nil(t, dSt2)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
@@ -437,7 +442,7 @@ func BenchmarkStorageDefaultStoreView(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageStore, err = testStorage.DefaultStoreView()
+		benchmarkStorageStore, err = testStorage.DefaultStore()
 		if err != nil {
 			b.Error(err)
 		}
