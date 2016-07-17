@@ -16,8 +16,9 @@ package scope_test
 
 import (
 	"context"
-	"github.com/corestoreio/csfw/store/scope"
 	"testing"
+
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 func TestFromContext(t *testing.T) {
