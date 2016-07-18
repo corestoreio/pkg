@@ -31,6 +31,8 @@ func TestNewGroup(t *testing.T) {
 	g, err := store.NewGroup(
 		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+		nil,
+		nil,
 	)
 	assert.NoError(t, err)
 	assert.EqualValues(t, "DACH Group", g.Data.Name)
@@ -46,7 +48,8 @@ func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
 	ng, err := store.NewGroup(
 		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)}),
+		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
+		nil,
 	)
 	assert.Nil(t, ng)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)

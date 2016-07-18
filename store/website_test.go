@@ -95,9 +95,9 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 	assert.NotNil(t, w.Groups)
 	assert.EqualValues(t, util.Int64Slice{1, 2}, w.Groups.IDs())
 
-	assert.Exactly(t, int64(2), w.StoreID())
+	assert.Exactly(t, int64(2), w.DefaultStoreID())
 	assert.Exactly(t, int64(1), w.GroupID())
-	assert.Equal(t, "euro", w.WebsiteCode())
+	assert.Equal(t, "euro", w.Code())
 }
 
 func TestNewWebsiteStoreIDError(t *testing.T) {
@@ -107,7 +107,7 @@ func TestNewWebsiteStoreIDError(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 	)
 	assert.NoError(t, err)
-	assert.Exactly(t, 0, w.StoreID())
+	assert.Exactly(t, 0, w.DefaultStoreID())
 }
 
 func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {

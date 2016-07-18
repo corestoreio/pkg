@@ -29,8 +29,8 @@ const (
 
 const (
 	errGroupDefaultStoreNotFound   = "[store] Group default store %d not found"
-	errGroupWebsiteNotFound        = "[store] Group Website not found or nil or ID do not match"
-	errGroupWebsiteIntegrityFailed = "[store] Groups WebsiteID does not match the Websites ID"
+	errGroupWebsiteIntegrityFailed = "[store] Groups WebsiteID %d does not match the Websites ID %d"
+	errGroupStoreIntegrityFailed   = "[store] Groups Store ID %d with its Group ID %d does not match the Group ID %d"
 )
 
 // ErrWebsite* are general errors when handling with the Website type.

@@ -26,15 +26,11 @@ import (
 // configuration settings which overrides the default scope but get itself
 // overridden by the Store scope.
 type Website struct {
-	// baseConfig which will be handed down to the website
-	baseConfig config.Getter
 	// Config contains the scoped configuration which cannot be changed once the
 	// object has been created.
 	Config config.Scoped
-
 	// Data raw website data from DB table. If nil, website object is invalid
 	Data *TableWebsite
-
 	// Groups contains a slice to all groups associated to one website. This slice
 	// can be nil.
 	Groups GroupSlice
@@ -43,55 +39,96 @@ type Website struct {
 	Stores StoreSlice
 }
 
-// NewWebsite creates a new website pointer with the config.DefaultManager.
-func NewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) (Website, error) {
+// NewWebsite creates a new Website with its depended groups and stores.
+func NewWebsite(cfg config.Getter, tw *TableWebsite, tgs TableGroupSlice, tss TableStoreSlice) (Website, error) {
 	w := Website{
-		baseConfig: cfg,
-		Config:     cfg.NewScoped(tw.WebsiteID, 0),
-		Data:       tw,
+		Config: cfg.NewScoped(tw.WebsiteID, 0),
+		Data:   tw,
 	}
-	if err := w.Options(opts...); err != nil {
-		return Website{}, errors.Wrap(err, "[store] NewWebsite Options")
+	if err := w.SetGroupsStores(tgs, tss); err != nil {
+		return Website{}, errors.Wrap(err, "[store] NewWebsite.SetWebsiteGroupsStores")
 	}
 	return w, nil
 }
 
 // MustNewWebsite same as NewWebsite but panics on error.
-func MustNewWebsite(cfg config.Getter, tw *TableWebsite, opts ...WebsiteOption) Website {
-	w, err := NewWebsite(cfg, tw, opts...)
+func MustNewWebsite(cfg config.Getter, tw *TableWebsite, tgs TableGroupSlice, tss TableStoreSlice) Website {
+	w, err := NewWebsite(cfg, tw, tgs, tss)
 	if err != nil {
 		panic(err)
 	}
 	return w
 }
 
-// Options sets the options on a Website
-func (w *Website) Options(opts ...WebsiteOption) error {
-	for _, opt := range opts {
-		if err := opt(w); err != nil {
-			return errors.Wrap(err, "[store] Website.Options")
+// Validate checks the internal integrity. May panic when the data has not been
+// set. Empty Groups or Stores are valid settings.
+func (w Website) Validate() error {
+	for _, g := range w.Groups {
+		if w.GroupID() != g.Data.GroupID {
+			return errors.NewNotValidf("[store] Website.Validate: Website Group ID %d does not match Store Group ID %d", w.GroupID(), g.Data.GroupID)
 		}
+	}
+	for _, s := range w.Stores {
+		if w.ID() != s.Data.WebsiteID {
+			return errors.NewNotValidf("[store] Website.Validate: Website ID %d does not match Store Website ID %d", w.ID(), s.Data.WebsiteID)
+		}
+	}
+	if w.Config.WebsiteID != w.ID() {
+		return errors.NewNotValidf("[store] Website.Validate: Config Website ID %d does not match Website ID %d", w.Config.WebsiteID, w.ID())
 	}
 	return nil
 }
 
-// WebsiteID satisfies the interface scope.WebsiteIDer and returns the website ID.
-func (w Website) WebsiteID() int64 { return w.Data.WebsiteID }
+// SetGroupsStores uses a group slice and a table store slice to set the groups
+// associated to this website and the stores associated to this website. It
+// returns an error if the data integrity is incorrect.
+func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) error {
 
-// WebsiteCode satisfies the interface scope.WebsiteCoder and returns the code.
-func (w Website) WebsiteCode() string { return w.Data.Code.String }
+	groups := tgs.Filter(func(tg *TableGroup) bool {
+		return tg.WebsiteID == w.Data.WebsiteID
+	})
 
-// GroupID implements the GroupIDer interface and returns the default group ID.
+	w.Groups = make(GroupSlice, groups.Len(), groups.Len())
+	for i, g := range groups {
+		var err error
+		w.Groups[i], err = NewGroup(w.Config.Root, g, w.Data, tss)
+		if err != nil {
+			return errors.Wrapf(err, "[store] NewGroup. Group %#v Website Data: %#v", g, w.Data)
+		}
+	}
+	stores := tss.FilterByWebsiteID(w.Data.WebsiteID)
+	w.Stores = make(StoreSlice, stores.Len(), stores.Len())
+	for i, s := range stores {
+		group, found := tgs.FindByGroupID(s.GroupID)
+		if !found {
+			return errors.NewNotFoundf("[store] Website Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs)
+		}
+		var err error
+		w.Stores[i], err = NewStore(w.Config.Root, s, w.Data, group)
+		if err != nil {
+			return errors.Wrapf(err, "[store] NewStore. Store %#v Website Data %#v Group %#v", s, w.Data, group)
+		}
+	}
+	return w.Validate()
+}
+
+// ID returns the website ID.
+func (w Website) ID() int64 { return w.Data.WebsiteID }
+
+// Code returns the website code.
+func (w Website) Code() string { return w.Data.Code.String }
+
+// GroupID returns the associated group ID.
 func (w Website) GroupID() int64 { return w.Data.DefaultGroupID }
 
-// StoreID implements the StoreIDer interface and returns the default store ID.
-// It may return a zero when calling DefaultGroup() may returns an error.
-func (w Website) StoreID() int64 {
+// DefaultStoreID returns the default store ID associated to the underlying
+// group.
+func (w Website) DefaultStoreID() (int64, error) {
 	g, err := w.DefaultGroup()
 	if err != nil {
-		return 0
+		return 0, errors.Wrap(err, "[store] Website.DefaultStoreID")
 	}
-	return g.Data.DefaultStoreID
+	return g.Data.DefaultStoreID, nil
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
@@ -101,7 +138,7 @@ func (w Website) MarshalJSON() ([]byte, error) {
 	return json.Marshal(w.Data)
 }
 
-// DefaultGroup returns the default Group or an error if not found
+// DefaultGroup returns the default Group or an error if not found.
 func (w Website) DefaultGroup() (Group, error) {
 	for _, g := range w.Groups {
 		if w.Data.DefaultGroupID == g.Data.GroupID {
@@ -111,11 +148,11 @@ func (w Website) DefaultGroup() (Group, error) {
 	return Group{}, errors.NewNotFoundf(errWebsiteDefaultGroupNotFound)
 }
 
-// DefaultStore returns the default store which via the default group.
+// DefaultStore returns the default store associated to the underlying group.
 func (w Website) DefaultStore() (Store, error) {
 	g, err := w.DefaultGroup()
 	if err != nil {
-		return Store{}, errors.Wrap(err, "[store] DefaultGroup")
+		return Store{}, errors.Wrap(err, "[store] Website.DefaultGroup")
 	}
 	return g.DefaultStore()
 }

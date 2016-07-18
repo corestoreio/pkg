@@ -61,9 +61,9 @@ func TestNewStore(t *testing.T) {
 		assert.EqualValues(t, test.g.GroupID, s.Group.Data.GroupID)
 		assert.EqualValues(t, test.s.Code, s.Data.Code)
 		assert.NotNil(t, s.Group.Website)
-		assert.NotEmpty(t, s.Group.Website.WebsiteID())
+		assert.NotEmpty(t, s.Group.Website.ID())
 		assert.Nil(t, s.Group.Stores)
-		assert.EqualValues(t, test.s.StoreID, s.StoreID())
+		assert.EqualValues(t, test.s.StoreID, s.ID())
 		assert.EqualValues(t, test.s.GroupID, s.GroupID())
 		assert.EqualValues(t, test.s.WebsiteID, s.WebsiteID())
 	}

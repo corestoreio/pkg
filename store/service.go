@@ -197,9 +197,9 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
 		if !st.Data.IsActive {
-			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.StoreID())
+			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 		}
-		return st.StoreID(), nil
+		return st.ID(), nil
 
 	case scope.Group:
 		g, err := s.Group(id)
@@ -211,9 +211,9 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
 		if !st.Data.IsActive {
-			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.StoreID())
+			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 		}
-		return st.StoreID(), nil
+		return st.ID(), nil
 	}
 
 	var w Website
@@ -266,9 +266,10 @@ func (s *Service) IDbyCode(scp scope.Scope, code string) (int64, error) {
 	return 0, errors.NewNotSupportedf("[store] Scope %q not supported", scp)
 }
 
-// RequestedStore see interface description Getter.RequestedStore.
+// RequestedStore  ...
 // Error behaviour: Unauthorized, NotFound, NotSupported
-func (s *Service) RequestedStore(id int64) (activeStore *Store, err error) {
+func (s *Service) RequestedStore(runMode scope.Hash, id int64) (activeStore *Store, err error) {
+	// TODO not needed anymore
 
 	//activeStore, err = sm.findDefaultStoreByScope(scope.Store, id)
 	//if err != nil {

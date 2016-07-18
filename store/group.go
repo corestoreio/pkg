@@ -21,16 +21,11 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// DefaultGroupID defines the default group id which is always 0.
-const DefaultGroupID int64 = 0
-
 // Group defines the root category id and default store id for a set of stores.
 // A group is assigned to one website and a group can have multiple stores. A
 // group does not have any kind of configuration setting but hands down the
 // BaseConfig to the stores and the Website.
 type Group struct {
-	// baseConfig base config.Getter which will be applied to stores and websites.
-	baseConfig config.Getter
 	// Data contains the raw group data. Cannot be nil
 	Data *TableGroup
 	// Stores contains a slice to all stores associated to this group. Can be nil.
@@ -39,41 +34,64 @@ type Group struct {
 	Website Website
 }
 
-// NewGroup creates a new Group. Returns an error if 1st argument is nil. Config
-// will only be set if there has been a Website provided via an option argument.
-// Error behaviour: Empty
-func NewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) (Group, error) {
+// NewGroup creates a new Group with its depended Website and Stores.
+func NewGroup(cfg config.Getter, tg *TableGroup, tw *TableWebsite, tss TableStoreSlice) (Group, error) {
 	g := Group{
-		baseConfig: cfg,
-		Data:       tg,
+		Data: tg,
 	}
-	if err := g.Options(opts...); err != nil {
-		return Group{}, errors.Wrap(err, "[store] NewGroup Options")
+	if err := g.SetWebsiteStores(cfg, tw, tss); err != nil {
+		return Group{}, errors.Wrap(err, "[store] NewGroup.SetWebsiteStores")
 	}
 	return g, nil
 }
 
 // MustNewGroup creates a NewGroup but panics on error.
-func MustNewGroup(cfg config.Getter, tg *TableGroup, opts ...GroupOption) Group {
-	g, err := NewGroup(cfg, tg, opts...)
+func MustNewGroup(cfg config.Getter, tg *TableGroup, tw *TableWebsite, tss TableStoreSlice) Group {
+	g, err := NewGroup(cfg, tg, tw, tss)
 	if err != nil {
 		panic(err)
 	}
 	return g
 }
 
-// Options applies different options to a Group.
-func (g *Group) Options(opts ...GroupOption) error {
-	for _, opt := range opts {
-		if err := opt(g); err != nil {
-			return errors.Wrap(err, "[store] Group.Options")
+// Validate checks the internal integrity. May panic when the data has not been
+// set. Empty Website or Stores are valid settings.
+func (g Group) Validate() error {
+	if g.Website.Data == nil {
+		return nil
+	}
+	if gw, ww := g.Data.WebsiteID, g.Website.ID(); gw != ww {
+		return errors.NewNotValidf(errGroupWebsiteIntegrityFailed, gw, ww)
+	}
+	for _, s := range g.Stores {
+		if s.Data.GroupID != g.ID() {
+			return errors.NewNotValidf(errGroupStoreIntegrityFailed, s.ID(), s.Data.GroupID, g.ID())
 		}
 	}
 	return nil
 }
 
-// GroupID returns the under
-func (g Group) GroupID() int64 {
+// SetWebsiteStores applies a raw website and multiple stores belonging to the
+// group. Validates the internal integrity afterwards.
+func (g *Group) SetWebsiteStores(cfg config.Getter, w *TableWebsite, tss TableStoreSlice) error {
+	var err error
+	g.Website, err = NewWebsite(cfg, w, TableGroupSlice{g.Data}, tss)
+	if err != nil {
+		return errors.Wrap(err, "[store] SetWebsiteStores.NewWebsite")
+	}
+
+	for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
+		ns, err := NewStore(cfg, s, w, g.Data)
+		if err != nil {
+			return errors.Wrapf(err, "[store] SetWebsiteStores.FilterByGroupID.NewStore. StoreID %d WebsiteID %d Group %v", s.StoreID, w.WebsiteID, g.Data)
+		}
+		g.Stores = append(g.Stores, ns)
+	}
+	return g.Validate()
+}
+
+// ID returns the group ID.
+func (g Group) ID() int64 {
 	return g.Data.GroupID
 }
 
@@ -84,16 +102,12 @@ func (g Group) MarshalJSON() ([]byte, error) {
 	return json.Marshal(g.Data)
 }
 
-// DefaultStore returns the default *Store or an error. If an error will be returned of
-// type ErrGroupDefaultStoreNotFound you can then access Data field to get the
-// DefaultStoreID. The returned *Store does not contain that much data to other
-// Website or Groups.
-// Error behaviour: NotFound
+// DefaultStore returns the default Store or an error of behaviour NotFound.
 func (g Group) DefaultStore() (Store, error) {
 	for _, sb := range g.Stores {
 		if sb.Data.StoreID == g.Data.DefaultStoreID {
 			return sb, nil
 		}
 	}
-	return Store{}, errors.NewNotFoundf(errGroupDefaultStoreNotFound)
+	return Store{}, errors.NewNotFoundf(errGroupDefaultStoreNotFound, g.Data.DefaultStoreID)
 }

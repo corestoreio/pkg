@@ -14,11 +14,6 @@
 
 package store
 
-import (
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/errors"
-)
-
 // StorageOption option func for NewStorage()
 type StorageOption func(*Storage) error
 
@@ -38,12 +33,4 @@ func SetStorageGroups(tgs ...*TableGroup) StorageOption {
 // SetStorageStores adds the TableStoreSlice to the Storage. By default, the slice is nil.
 func SetStorageStores(tss ...*TableStore) StorageOption {
 	return func(s *Storage) error { s.stores = TableStoreSlice(tss); return nil }
-}
-
-// WithDatabaseInit triggers the ReInit function to load the data from the
-// database.
-func WithDatabaseInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) StorageOption {
-	return func(s *Storage) error {
-		return errors.Wrap(s.ReInit(dbrSess, cbs...), "[store] storage ReInit")
-	}
 }

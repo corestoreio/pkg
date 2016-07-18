@@ -30,96 +30,94 @@ const DefaultStoreID int64 = 0
 // have its own configuration settings which overrides the default scope and
 // website scope.
 type Store struct {
-	// baseConfig which will be handed down to the website
-	baseConfig config.Getter
 	// Config contains the scoped configuration which cannot be changed once the
 	// object has been created.
 	Config config.Scoped
+	// Data underlying raw data
+	Data *TableStore
 	// Website points to the current website for this store. No integrity checks.
 	// Can be nil.
 	Website Website
 	// Group points to the current store group for this store. No integrity
 	// checks. Can be nil.
 	Group Group
-	// Data underlying raw data
-	Data *TableStore
 }
 
 // NewStore creates a new Store. Returns an error if the first three arguments
 // are nil. Returns an error if integrity checks fail. config.Getter will be
 // also set to Group and Website.
-func NewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (Store, error) {
-	if ts.WebsiteID != tw.WebsiteID {
-		return Store{}, errors.NewNotValidf("[store] NewStore: Store.WebsiteID (%d) != Website.ID (%d)", ts.WebsiteID, tw.WebsiteID)
-	}
-	if tg.WebsiteID != tw.WebsiteID {
-		return Store{}, errors.NewNotValidf("[store] NewStore: Group.WebsiteID (%d) != Website.ID (%d)", tg.WebsiteID, tw.WebsiteID)
-	}
-	if ts.GroupID != tg.GroupID {
-		return Store{}, errors.NewNotValidf("[store] NewStore: Store.GroupID (%d) != Group.ID (%d)", ts.GroupID, tg.GroupID)
-	}
-
-	nw, err := NewWebsite(cfg, tw)
-	if err != nil {
-		return Store{}, errors.Wrapf(err, "[store] TableWebsite: %#v\n", tw)
-	}
-
-	var ng Group
-	if ng, err = NewGroup(cfg, tg, SetGroupWebsite(tw)); err != nil {
-		return Store{}, errors.Wrapf(err, "[store] TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
-	}
-
+func NewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup) (Store, error) {
 	s := Store{
-		baseConfig: cfg,
-		Config:     cfg.NewScoped(tw.WebsiteID, ts.StoreID),
-		Data:       ts,
-		Website:    nw,
-		Group:      ng,
+		Data: ts,
 	}
-	if err := s.Options(opts...); err != nil {
-		return Store{}, errors.Wrap(err, "[store] NewStore Options")
+	if err := s.SetWebsiteGroup(cfg, tw, tg); err != nil {
+		return Store{}, errors.Wrap(err, "[store] NewStore.SetWebsiteGroup")
 	}
 	return s, nil
 }
 
 // MustNewStore same as NewStore except that it panics on an error.
-func MustNewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) Store {
-	s, err := NewStore(cfg, ts, tw, tg, opts...)
+func MustNewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup) Store {
+	s, err := NewStore(cfg, ts, tw, tg)
 	if err != nil {
 		panic(err)
 	}
 	return s
 }
 
-// Options sets the options to the Store struct.
-func (s *Store) Options(opts ...StoreOption) error {
-	for _, opt := range opts {
-		if err := opt(s); err != nil {
-			return errors.Wrap(err, "[store] Store.Options")
-		}
+// Validate checks the internal integrity. May panic when the data has not been
+// set.
+func (s Store) Validate() error {
+	if s.WebsiteID() != s.Website.ID() {
+		return errors.NewNotValidf("[store] NewStore: Store.WebsiteID (%d) != Website.ID (%d)", s.WebsiteID(), s.Website.ID())
 	}
-	if s.Website.Data != nil {
-		s.Config = s.baseConfig.NewScoped(s.Website.WebsiteID(), s.StoreID())
+	if s.Group.Website.ID() != s.WebsiteID() {
+		return errors.NewNotValidf("[store] NewStore: Group.WebsiteID (%d) != Website.ID (%d)", s.Group.Website.ID(), s.WebsiteID())
+	}
+	if s.GroupID() != s.Group.ID() {
+		return errors.NewNotValidf("[store] NewStore: Store.GroupID (%d) != Group.ID (%d)", s.GroupID(), s.Group.ID())
+	}
+	if s.Config.WebsiteID != s.WebsiteID() {
+		return errors.NewNotValidf("[store] Store.Validate: Config Website ID %d does not match Website ID %d", s.Config.WebsiteID, s.WebsiteID())
+	}
+	if s.Config.StoreID != s.ID() {
+		return errors.NewNotValidf("[store] Store.Validate: Config Store ID %d does not match Store ID %d", s.Config.StoreID, s.ID())
 	}
 	return nil
 }
 
-// StoreID satisfies the interface scope.StoreIDer and returns the store ID.
-func (s Store) StoreID() int64 {
+// SetWebsiteGroup uses a raw website and a table store slice to set the groups
+// associated to this website and the stores associated to this website. It
+// returns an error if the data integrity is incorrect.
+func (s *Store) SetWebsiteGroup(cfg config.Getter, tw *TableWebsite, tg *TableGroup) error {
+	var err error
+	s.Website, err = NewWebsite(cfg, tw, TableGroupSlice{tg}, TableStoreSlice{s.Data})
+	if err != nil {
+		return errors.Wrapf(err, "[store] Store.SetWebsiteGroup.NewWebsite")
+	}
+	if s.Group, err = NewGroup(cfg, tg, tw, TableStoreSlice{s.Data}); err != nil {
+		return errors.Wrapf(err, "[store] TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
+	}
+	s.Config = cfg.NewScoped(tw.WebsiteID, s.ID())
+	return s.Validate()
+}
+
+// ID returns the store id
+func (s Store) ID() int64 {
 	return s.Data.StoreID
 }
 
-// StoreCode satisfies the interface scope.StoreCoder and returns the store code.
-func (s Store) StoreCode() string {
+// Code returns the store code.
+func (s Store) Code() string {
 	return s.Data.Code.String
 }
 
-// GroupID implements scope.GroupIDer interface
+// GroupID returns the associated group ID.
 func (s Store) GroupID() int64 {
 	return s.Data.GroupID
 }
 
-// WebsiteID implements scope.WebsiteIDer interface
+// WebsiteID returns the associated website ID.
 func (s Store) WebsiteID() int64 {
 	return s.Data.WebsiteID
 }
@@ -240,33 +238,33 @@ func (s Store) MarshalLog(kv log.KeyValuer) error {
 //return secureBaseURL.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !? other schemes?
 //}
 
-// TOOD move net related functions into the storenet package
+// TODO move net related functions into the storenet package
 
 // RootCategoryID returns the root category ID assigned to this store view.
 func (s Store) RootCategoryID() int64 {
 	return s.Group.Data.RootCategoryID
 }
 
-/*
-	Store Currency
-*/
-
-// CurrentCurrency TODO(cs)
-// @see app/code/Magento/Store/Model/Store.php::getCurrentCurrency
-func (s Store) CurrentCurrency() string {
-	/*
-		this returns just a string or string slice and no further
-		involvement of the directory package.
-
-		or those functions move directly into the directory package
-	*/
-	return ""
-}
-
-func (s Store) DefaultCurrency() string {
-	return ""
-}
-
-func (s Store) AvailableCurrencyCodes() []string {
-	return nil
-}
+///*
+//	Store Currency
+//*/
+//
+//// CurrentCurrency TODO(cs)
+//// @see app/code/Magento/Store/Model/Store.php::getCurrentCurrency
+//func (s Store) CurrentCurrency() string {
+//	/*
+//		this returns just a string or string slice and no further
+//		involvement of the directory package.
+//
+//		or those functions move directly into the directory package
+//	*/
+//	return ""
+//}
+//
+//func (s Store) DefaultCurrency() string {
+//	return ""
+//}
+//
+//func (s Store) AvailableCurrencyCodes() []string {
+//	return nil
+//}

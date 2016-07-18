@@ -60,7 +60,7 @@ func (ss StoreSlice) Codes() []string {
 	}
 	var c = make([]string, len(ss))
 	for i, st := range ss {
-		c[i] = st.StoreCode()
+		c[i] = st.Code()
 	}
 	return c
 }
@@ -73,7 +73,7 @@ func (ss StoreSlice) ActiveCodes() []string {
 	var c = make([]string, 0, len(ss))
 	for _, st := range ss {
 		if st.Data.IsActive {
-			c = append(c, st.StoreCode())
+			c = append(c, st.Code())
 		}
 	}
 	return c
