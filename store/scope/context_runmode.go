@@ -22,8 +22,8 @@ import (
 type ctxRunModeKey struct{}
 
 // defaultRunMode defines the default run mode if the programmer hasn't applied
-// the function RunMode.WithContext() to specify a specific run mode.
-// It indicates the fall back to the default website and its default store.
+// the function RunMode.WithContext() to specify a specific run mode. It
+// indicates the fall back to the default website and its default store.
 const defaultRunMode Hash = 0
 
 // RunMode core type to initialize the run mode of the current request. Allows
@@ -34,12 +34,9 @@ type RunMode struct {
 	ModeFunc func(http.ResponseWriter, *http.Request) Hash
 }
 
-// WithContext sets the main run mode for a request. Precedence for applying the
-// mode are: First field Mode and if not nil field ModeFunc. Returns a shallow
-// copy of the http.Request and the applied run mode Hash.
-func (rm RunMode) WithContext(w http.ResponseWriter, r *http.Request) (*http.Request, Hash) {
-	ctx := r.Context()
-
+// CalculateMode calls the user defined Mode field or ModeFunction. On an
+// invalid mode it falls back to the default run mode, which is a zero Hash.
+func (rm RunMode) CalculateMode(w http.ResponseWriter, r *http.Request) Hash {
 	h := rm.Mode
 	if rm.ModeFunc != nil {
 		h = rm.ModeFunc(w, r)
@@ -48,8 +45,13 @@ func (rm RunMode) WithContext(w http.ResponseWriter, r *http.Request) (*http.Req
 		// fall back to default because only Website, Group and Store are allowed.
 		h = defaultRunMode
 	}
-	ctx = context.WithValue(ctx, ctxRunModeKey{}, h)
-	return r.WithContext(ctx), h
+	return h
+}
+
+// WithContextRunMode sets the main run mode for the current request. Use the
+// Hash value returned from the function RunMode.CalculateMode(r, w).
+func WithContextRunMode(ctx context.Context, runMode Hash) context.Context {
+	return context.WithValue(ctx, ctxRunModeKey{}, runMode)
 }
 
 // FromContextRunMode returns the run mode Hash from a context. If no entry can

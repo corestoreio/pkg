@@ -46,12 +46,15 @@ func TestRunMode(t *testing.T) {
 	for i, test := range tests {
 		req := httptest.NewRequest("GET", "http://corestore.io", nil)
 
-		req2, haveMode := scope.RunMode{
+		haveMode := scope.RunMode{
 			Mode:     test.mode,
 			ModeFunc: test.modeFunc,
-		}.WithContext(nil, req)
+		}.CalculateMode(nil, req)
+
+		ctx := scope.WithContextRunMode(req.Context(), haveMode)
+
 		assert.Exactly(t, test.want, haveMode, "Index %d", i)
-		assert.Exactly(t, test.want, scope.FromContextRunMode(req2.Context()), "Index %d", i)
+		assert.Exactly(t, test.want, scope.FromContextRunMode(ctx), "Index %d", i)
 	}
 	assert.Exactly(t, scope.Hash(0), scope.FromContextRunMode(context.Background()))
 }
