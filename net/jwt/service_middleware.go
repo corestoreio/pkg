@@ -117,7 +117,7 @@ func (s *Service) WithInitTokenAndStore(hf http.Handler) http.Handler {
 			return
 		}
 
-		if newRequestedStore.StoreID() != requestedStore.StoreID() {
+		if newRequestedStore.ID() != requestedStore.StoreID() {
 			if s.Log.IsDebug() {
 				s.Log.Debug("jwt.Service.WithInitTokenAndStore.SetRequestedStore", log.Err(err), log.Marshal("token", token), log.Marshal("newRequestedStore", newRequestedStore), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}

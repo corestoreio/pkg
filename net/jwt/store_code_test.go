@@ -36,7 +36,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	)
 
 	token := csjwt.NewToken(jwtclaim.Map{
-		jwt.StoreParamName: s.StoreCode(),
+		jwt.StoreParamName: s.Code(),
 	})
 
 	so, err := jwt.ScopeOptionFromClaim(token.Claims)

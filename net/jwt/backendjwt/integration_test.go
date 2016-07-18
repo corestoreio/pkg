@@ -243,7 +243,7 @@ func TestServiceWithBackend_Middleware_Valid_Request(t *testing.T) {
 		req.Header.Set("X-Cluster-Client-Ip", "2a02:d180::") // Germany
 
 		st, err := storeSrv.Store() // returns the default store: AT austria
-		if have, want := st.StoreCode(), "at"; have != want {
+		if have, want := st.Code(), "at"; have != want {
 			t.Errorf("Default Store: Have: %v Want: %v", have, want)
 		}
 

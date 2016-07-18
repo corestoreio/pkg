@@ -246,7 +246,7 @@ func TestService_ScopedConfig_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
+	st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.ID())
 	req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 
 	srv.WithRateLimit()(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
@@ -286,7 +286,7 @@ func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
-		st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.StoreID())
+		st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.ID())
 		req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
 
 		hpu := cstesting.NewHTTPParallelUsers(runHTTPTestCasesUsers, runHTTPTestCasesLoops, 200, time.Millisecond)
