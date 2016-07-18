@@ -17,6 +17,8 @@ package geoip
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 
@@ -127,7 +129,12 @@ func fetch(hc *http.Client, userID, licenseKey string, ipAddress net.IP) (*Count
 	if err != nil {
 		return country, errors.Wrap(err, "[geoip] http.Client.Do")
 	}
-	defer resp.Body.Close()
+	defer func() {
+		// https://medium.com/@cep21/go-client-library-best-practices-83d877d604ca#.4tut4svib
+		const maxCopySize = 2 << 10
+		io.CopyN(ioutil.Discard, resp.Body, maxCopySize)
+		resp.Close()
+	}()
 
 	// handle errors that may occur
 	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Headers
