@@ -25,6 +25,15 @@ type ctxScopeWrapper struct {
 	p Hash // parent
 }
 
+// WithContext adds the requestedStore to the context.
+// This function must only be used one time to set the requested store for one
+// request. Usually a store gets initialized by the store.NewService() init,
+// JSON web token middleware or cookie and form based middleware.
+// Only one error can be passed, multiple errors get ignored from the 2nd position.
+func WithContext(ctx context.Context, current Hash, parent Hash) context.Context {
+	return context.WithValue(ctx, ctxScopeKey{}, ctxScopeWrapper{c: current, p: parent})
+}
+
 // FromContext returns the requested current scope and its parent from a
 // context. This scope is only valid for the current request. A scope gets set
 // via HTTP form, cookie, JSON Web Token or GeoIP or other fancy features. The
@@ -36,13 +45,4 @@ func FromContext(ctx context.Context) (current Hash, parent Hash, ok bool) {
 		return 0, 0, false
 	}
 	return w.c, w.p, w.c.ValidParent(w.p)
-}
-
-// WithContext adds the requestedStore to the context.
-// This function must only be used one time to set the requested store for one
-// request. Usually a store gets initialized by the store.NewService() init,
-// JSON web token middleware or cookie and form based middleware.
-// Only one error can be passed, multiple errors get ignored from the 2nd position.
-func WithContext(ctx context.Context, current Hash, parent Hash) context.Context {
-	return context.WithValue(ctx, ctxScopeKey{}, ctxScopeWrapper{c: current, p: parent})
 }

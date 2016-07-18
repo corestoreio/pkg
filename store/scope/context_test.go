@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFromContext(t *testing.T) {
@@ -52,4 +53,8 @@ func TestFromContext(t *testing.T) {
 			t.Errorf("Parent Have: %v Want: %v", have, want)
 		}
 	}
+	c, h, ok := scope.FromContext(context.Background())
+	assert.Exactly(t, scope.Hash(0), c)
+	assert.Exactly(t, scope.Hash(0), h)
+	assert.False(t, ok)
 }
