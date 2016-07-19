@@ -15,26 +15,14 @@
 package store
 
 import (
-	"context"
 	"sync"
 	"sync/atomic"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-// Requester knows how to retrieve a specific store depending on the
-// scope.Option.
-type Requester interface {
-	// RequestedStore figures out the default active store for a storeID. It
-	// takes into account that Getter is bound to a specific scope.Scope. It
-	// also prevents running a store from another website or store group, if
-	// website or store group was specified explicitly. RequestedStore returns
-	// either an error or the store. RequestedStore will be mostly used within
-	// an HTTP request.
-	RequestedStore(ctx context.Context, storeCode string) (activeStore *Store, err error)
-}
 
 // IDbyCode returns for a website code or store code the id. Group scope is not
 // supported because the group table does not contain a code string column. A
@@ -44,71 +32,73 @@ type CodeToIDMapper interface {
 	IDbyCode(scp scope.Scope, code string) (id int64, err error)
 }
 
-// AvailabilityChecker depends on the run mode from package scope. Hash will be provided via the RunModeFunc type.
-// RunModeFunc initialized the runmode and and scope/ID for the current request.
+// AvailabilityChecker depends on the run mode from package scope. The Hash
+// argument will be provided via scope.RunMode type or the
+// scope.FromContextRunMode(ctx) function. runMode is called in M world:
+// MAGE_RUN_CODE and MAGE_RUN_TYPE. The MAGE_RUN_TYPE can be either website or
+// store scope and MAGE_RUN_CODE any defined website or store code from the
+// database.
 type AvailabilityChecker interface {
+	// AllowedStoreIds returns all active store IDs for a run mode.
 	AllowedStoreIds(runMode scope.Hash) ([]int64, error)
+	// DefaultStoreID returns the default active store ID depending on the run mode.
+	// Error behaviour is mostly of type NotValid.
 	DefaultStoreID(runMode scope.Hash) (int64, error)
 }
 
-type (
-	// Service represents type which handles the underlying storage and takes
-	// care of the default stores. A Service is bound a specific scope.Scope.
-	// Depending on the scope it is possible or not to switch stores. A Service
-	// contains also a config.Getter which gets passed to the scope of a
-	// Store(), Group() or Website() so that you always have the possibility to
-	// access a scoped based configuration value. This Service uses three
-	// internal maps to cache the pointers of Website, Group and Store.
-	Service struct {
+// Service represents type which handles the underlying storage and takes
+// care of the default stores. A Service is bound a specific scope.Scope.
+// Depending on the scope it is possible or not to switch stores. A Service
+// contains also a config.Getter which gets passed to the scope of a
+// Store(), Group() or Website() so that you always have the possibility to
+// access a scoped based configuration value. This Service uses three
+// internal maps to cache Websites, Groups and Stores.
+type Service struct {
 
-		// backend communicates with the database in reading mode and creates
-		// new store, group and website pointers. If nil, panics.
-		backend *Storage
-		// defaultStore someone must be always the default guy. Handled via atomic
-		// package.
-		defaultStoreID int64
-		// mu protects the following fields
-		mu sync.RWMutex
-		// in general these caches can be optimized
-		websites WebsiteSlice
-		groups   GroupSlice
-		stores   StoreSlice
+	// backend communicates with the database in reading mode and creates
+	// new store, group and website pointers. If nil, panics.
+	backend *factory
+	// defaultStore someone must be always the default guy. Handled via atomic
+	// package.
+	defaultStoreID int64
+	// mu protects the following fields
+	mu sync.RWMutex
+	// in general these caches can be optimized
+	websites WebsiteSlice
+	groups   GroupSlice
+	stores   StoreSlice
 
-		// int64 key identifies a website, group or store
-		cacheWebsite map[int64]Website
-		cacheGroup   map[int64]Group
-		cacheStore   map[int64]Store
-	}
-)
+	// int64 key identifies a website, group or store
+	cacheWebsite map[int64]Website
+	cacheGroup   map[int64]Group
+	cacheStore   map[int64]Store
+}
 
 // NewService creates a new store Service which handles websites, groups and
-// stores. A Service can only act on a certain scope (MAGE_RUN_TYPE) and scope
-// ID (MAGE_RUN_CODE). Default scope.Scope is always the scope.WebsiteID
-// constant. This function is mainly used when booting the app to set the
-// environment configuration Also all other calls to any method receiver with
-// nil arguments depends on the internal appStore which reflects the default
-// store ID.
-func NewService(st *Storage) (*Service, error) {
+// stores. You must either provide the functional options or call LoadFromDB()
+// to setup the internal cache.
+func NewService(cfg config.Getter, opts ...Option) (*Service, error) {
 	srv := &Service{
-		backend:        st,
 		defaultStoreID: -1,
 	}
-	if err := srv.ApplyStorage(st); err != nil {
+	if err := srv.loadFromOptions(cfg, opts...); err != nil {
 		return nil, errors.Wrap(err, "[store] NewService.ApplyStorage")
 	}
 	return srv, nil
 }
 
 // MustNewService same as NewService, but panics on error.
-func MustNewService(st *Storage) *Service {
-	m, err := NewService(st)
+func MustNewService(cfg config.Getter, opts ...Option) *Service {
+	m, err := NewService(cfg, opts...)
 	if err != nil {
 		panic(err)
 	}
 	return m
 }
 
-func (s *Service) ApplyStorage(st *Storage) error {
+// loadFromOptions main function to set up the internal caches from the factory.
+// Does nothing when the options have not been passed.
+func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 	if s == nil {
 		s = new(Service)
 		s.defaultStoreID = -1
@@ -116,12 +106,17 @@ func (s *Service) ApplyStorage(st *Storage) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.backend = st
+	be, err := newFactory(cfg, opts...)
+	if err != nil {
+		return errors.Wrap(err, "[store] NewService.NewFactory")
+	}
+
+	s.backend = be
 	s.cacheWebsite = make(map[int64]Website)
 	s.cacheGroup = make(map[int64]Group)
 	s.cacheStore = make(map[int64]Store)
 
-	ws, err := st.Websites()
+	ws, err := s.backend.Websites()
 	if err != nil {
 		return errors.Wrap(err, "[store] NewService.Websites")
 	}
@@ -130,7 +125,7 @@ func (s *Service) ApplyStorage(st *Storage) error {
 		s.cacheWebsite[w.Data.WebsiteID] = w
 	})
 
-	gs, err := st.Groups()
+	gs, err := s.backend.Groups()
 	if err != nil {
 		return errors.Wrap(err, "[store] NewService.Groups")
 	}
@@ -139,7 +134,7 @@ func (s *Service) ApplyStorage(st *Storage) error {
 		s.cacheGroup[g.Data.GroupID] = g
 	})
 
-	ss, err := st.Stores()
+	ss, err := s.backend.Stores()
 	if err != nil {
 		return errors.Wrap(err, "[store] NewService.Stores")
 	}
@@ -150,6 +145,7 @@ func (s *Service) ApplyStorage(st *Storage) error {
 	return nil
 }
 
+// AllowedStoreIds returns all active store IDs for a run mode.
 func (s *Service) AllowedStoreIds(runMode scope.Hash) ([]int64, error) {
 	scp, id := runMode.Unpack()
 
@@ -186,8 +182,8 @@ func (s *Service) AllowedStoreIds(runMode scope.Hash) ([]int64, error) {
 	return g.Stores.ActiveIDs(), nil
 }
 
-// findDefaultStoreByScope tries to detect the default store by a given scope option.
-// Precedence of detection by passed scope.Option: 1. Store 2. Group 3. Website
+// DefaultStoreID returns the default active store ID depending on the run mode.
+// Error behaviour is mostly of type NotValid.
 func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 	scp, id := runMode.Unpack()
 	switch scp {
@@ -234,6 +230,9 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 	if err != nil {
 		return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
 	}
+	if !st.Data.IsActive {
+		return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
+	}
 	return st.Data.StoreID, nil
 }
 
@@ -266,47 +265,6 @@ func (s *Service) IDbyCode(scp scope.Scope, code string) (int64, error) {
 	return 0, errors.NewNotSupportedf("[store] Scope %q not supported", scp)
 }
 
-// RequestedStore  ...
-// Error behaviour: Unauthorized, NotFound, NotSupported
-func (s *Service) RequestedStore(runMode scope.Hash, id int64) (activeStore *Store, err error) {
-	// TODO not needed anymore
-
-	//activeStore, err = sm.findDefaultStoreByScope(scope.Store, id)
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "[store] findDefaultStoreByScope")
-	//}
-	//
-	////	activeStore, err = sm.newActiveStore(activeStore) // this is the active store from a request.
-	//// todo rethink here if we really need a newActiveStore
-	//// newActiveStore creates a new Store, Website and Group pointers !!!
-	////	if activeStore == nil || err != nil {
-	////		// store is not active so ignore
-	////		return nil, err
-	////	}
-	//
-	//if false == activeStore.Data.IsActive {
-	//	return nil, errors.NewUnauthorizedf(errStoreNotActive)
-	//}
-	//
-	//allowStoreChange := false
-	//switch sm.boundToScope {
-	//case scope.Store:
-	//	allowStoreChange = true
-	//	break
-	//case scope.Group:
-	//	allowStoreChange = activeStore.Data.GroupID == sm.appStore.Data.GroupID
-	//	break
-	//case scope.Website:
-	//	allowStoreChange = activeStore.Data.WebsiteID == sm.appStore.Data.WebsiteID
-	//	break
-	//}
-	//
-	//if allowStoreChange {
-	//	return activeStore, nil
-	//}
-	return nil, errors.NewUnauthorizedf(errStoreChangeNotAllowed)
-}
-
 // IsSingleStoreMode check if Single-Store mode is enabled in configuration and from Store count < 3.
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
@@ -326,11 +284,8 @@ func (s *Service) RequestedStore(runMode scope.Hash, id int64) (activeStore *Sto
 //	return ss.Len() < 3
 //}
 
-// Website returns the cached Website pointer from an ID or code including all of its
-// groups and all related stores. It panics when the integrity is incorrect.
-// If ID and code are available then the non-empty code has precedence.
-// If no argument has been supplied then the Website of the internal appStore
-// will be returned. If more than one argument has been provided it returns an error.
+// Website returns the cached Website from an ID including all of its groups and
+// all related stores.
 func (s *Service) Website(id int64) (Website, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -340,18 +295,15 @@ func (s *Service) Website(id int64) (Website, error) {
 	return Website{}, errors.NewNotFoundf("[store] Cannot find Website ID %d", id)
 }
 
-// Websites returns a cached slice containing all pointers to Websites with its associated
-// groups and stores. It panics when the integrity is incorrect.
-func (s *Service) Websites(h scope.Hash) WebsiteSlice {
+// Websites returns a cached slice containing all Websites with its associated
+// groups and stores. You shall not modify the returned slice.
+func (s *Service) Websites() WebsiteSlice {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.websites
 }
 
 // Group returns a cached Group which contains all related stores and its website.
-// Only the argument ID is supported.
-// If no argument has been supplied then the Group of the internal appStore
-// will be returned. If more than one argument has been provided it returns an error.
 func (s *Service) Group(id int64) (Group, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -361,18 +313,15 @@ func (s *Service) Group(id int64) (Group, error) {
 	return Group{}, errors.NewNotFoundf("[store] Cannot find Group ID %d", id)
 }
 
-// Groups returns a cached slice containing all pointers to Groups with its associated
-// stores and websites. It panics when the integrity is incorrect.
-func (s *Service) Groups(h scope.Hash) GroupSlice {
+// Groups returns a cached slice containing all  Groups with its associated
+// stores and websites. You shall not modify the returned slice.
+func (s *Service) Groups() GroupSlice {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.groups
 }
 
 // Store returns the cached Store view containing its group and its website.
-// If ID and code are available then the non-empty code has precedence.
-// If no argument has been supplied then the appStore
-// will be returned. If more than one argument has been provided it returns an error.
 func (s *Service) Store(id int64) (Store, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -382,9 +331,9 @@ func (s *Service) Store(id int64) (Store, error) {
 	return Store{}, errors.NewNotFoundf("[store] Cannot find Store ID %d", id)
 }
 
-// Stores returns a cached Store slice. Can return an error when the website or
-// the group cannot be found.
-func (s *Service) Stores(h scope.Hash) StoreSlice {
+// Stores returns a cached Store slice containing all related websites and groups.
+// You shall not modify the returned slice.
+func (s *Service) Stores() StoreSlice {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.stores
@@ -408,46 +357,54 @@ func (s *Service) DefaultStoreView() (Store, error) {
 	return s.Store(id)
 }
 
-// ReInit reloads the website, store group and store view data from the database.
+// LoadFromDB reloads the website, store group and store view data from the database.
 // After reloading internal cache will be cleared if there are no errors.
-func (sm *Service) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
+func (s *Service) LoadFromDB(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
 
-	if err := sm.backend.ReInit(dbrSess, cbs...); err != nil {
-		return errors.Wrap(err, "[store] ReInit.Backend")
+	if err := s.backend.LoadFromDB(dbrSess, cbs...); err != nil {
+		return errors.Wrap(err, "[store] LoadFromDB.Backend")
 	}
-	sm.ClearCache()
-	if err := sm.ApplyStorage(sm.backend); err != nil {
-		return errors.Wrap(err, "[store] ReInit.ApplyStorage")
-	}
-	return nil
+
+	s.ClearCache()
+
+	err := s.loadFromOptions(
+		s.backend.baseConfig,
+		WithTableWebsites(s.backend.websites...),
+		WithTableGroups(s.backend.groups...),
+		WithTableStores(s.backend.stores...),
+	)
+	return errors.Wrap(err, "[store] LoadFromDB.ApplyStorage")
 }
 
 // ClearCache resets the internal caches which stores the pointers to Websites,
 // Groups or Stores. The ReInit() also uses this method to clear caches before
 // the Storage gets reloaded.
-func (sm *Service) ClearCache() {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-	if len(sm.cacheWebsite) > 0 {
-		for k := range sm.cacheWebsite {
-			delete(sm.cacheWebsite, k)
+func (s *Service) ClearCache() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.cacheWebsite) > 0 {
+		for k := range s.cacheWebsite {
+			delete(s.cacheWebsite, k)
 		}
 	}
-	if len(sm.cacheGroup) > 0 {
-		for k := range sm.cacheGroup {
-			delete(sm.cacheGroup, k)
+	if len(s.cacheGroup) > 0 {
+		for k := range s.cacheGroup {
+			delete(s.cacheGroup, k)
 		}
 	}
-	if len(sm.cacheStore) > 0 {
-		for k := range sm.cacheStore {
-			delete(sm.cacheStore, k)
+	if len(s.cacheStore) > 0 {
+		for k := range s.cacheStore {
+			delete(s.cacheStore, k)
 		}
 	}
-	sm.defaultStoreID = -1
+	s.defaultStoreID = -1
+	s.websites = nil
+	s.groups = nil
+	s.stores = nil
 }
 
 // IsCacheEmpty returns true if the internal cache is empty.
-func (sm *Service) IsCacheEmpty() bool {
-	return len(sm.cacheWebsite) == 0 && len(sm.cacheGroup) == 0 && len(sm.cacheStore) == 0 &&
-		sm.defaultStoreID == -1
+func (s *Service) IsCacheEmpty() bool {
+	return len(s.cacheWebsite) == 0 && len(s.cacheGroup) == 0 && len(s.cacheStore) == 0 &&
+		s.defaultStoreID == -1
 }

@@ -58,6 +58,15 @@ func (ws WebsiteSlice) Each(f func(Website)) WebsiteSlice {
 	return ws
 }
 
+func (ws WebsiteSlice) FindByID(id int64) Website {
+	for _, w := range ws {
+		if w.ID() == id {
+			return w
+		}
+	}
+	return Website{}
+}
+
 // Codes returns all website codes
 func (ws WebsiteSlice) Codes() []string {
 	if len(ws) == 0 {

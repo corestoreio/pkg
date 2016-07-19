@@ -22,10 +22,10 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Storage contains the raw slices from the database and can read from the
+// factory contains the raw slices from the database and can read from the
 // database. It creates for each call to each of its method receivers new
-// pointers to Stores, Groups or Websites.
-type Storage struct {
+// Stores, Groups or Websites.
+type factory struct {
 	// baseConfig parent config service. can only be set once.
 	baseConfig config.Getter
 	mu         sync.RWMutex
@@ -34,29 +34,13 @@ type Storage struct {
 	stores     TableStoreSlice
 }
 
-// NewStorage creates a new storage object which handles the raw data from the
-// three database tables for website, group and store. You can either provide
-// the raw data separately for each type or pass an option to load it from the
-// database. Passing no function option causes panics on nil.
-//		sto, err = store.NewStorage(
-//			cfg,
-//			store.SetStorageWebsites(
-//				&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
-//				...
-//			),
-//			store.SetStorageGroups(
-//				&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
-//				...
-//			),
-//			store.SetStorageStores(
-//				&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-//				...
-//			),
-//		)
-//		// or alternatively:
-// 		sto, err = store.NewStorage(cfg).ReInit(dbrSession)
-func NewStorage(cfg config.Getter, opts ...StorageOption) (*Storage, error) {
-	s := &Storage{
+// newFactory creates a new object which handles the raw data from the three
+// database tables for website, group and store. You can either provide the raw
+// data separately for each type or pass an option to load it from the database.
+// To set the raw data either call the WithTable*() functions or use ReInit()
+// and a DB connection.
+func newFactory(cfg config.Getter, opts ...Option) (*factory, error) {
+	s := &factory{
 		baseConfig: cfg,
 	}
 	for _, opt := range opts {
@@ -69,23 +53,14 @@ func NewStorage(cfg config.Getter, opts ...StorageOption) (*Storage, error) {
 	return s, nil
 }
 
-// MustNewStorage same as NewStorage but panics on error.
-func MustNewStorage(cfg config.Getter, opts ...StorageOption) *Storage {
-	s, err := NewStorage(cfg, opts...)
-	if err != nil {
-		panic(err)
-	}
-	return s
-}
-
 // website returns a TableWebsite by using the id.
-func (st Storage) website(id int64) (*TableWebsite, bool) {
+func (st factory) website(id int64) (*TableWebsite, bool) {
 	return st.websites.FindByWebsiteID(id)
 }
 
 // Website creates a new Website  from an ID including all of its groups
 // and all related stores. Returns a NotFound error behaviour.
-func (st Storage) Website(id int64) (Website, error) {
+func (st factory) Website(id int64) (Website, error) {
 	w, found := st.website(id)
 	if !found {
 		return Website{}, errors.NewNotFoundf("[store] WebsiteID %d", id)
@@ -96,7 +71,7 @@ func (st Storage) Website(id int64) (Website, error) {
 // Websites creates a slice containing all new pointers to Websites with its
 // associated new groups and new store pointers. It returns an error if the
 // integrity is incorrect or NotFound errors.
-func (st Storage) Websites() (WebsiteSlice, error) {
+func (st factory) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(st.websites), len(st.websites))
 	for i, w := range st.websites {
 		var err error
@@ -109,13 +84,13 @@ func (st Storage) Websites() (WebsiteSlice, error) {
 }
 
 // group returns a TableGroup by using a group id as argument.
-func (st Storage) group(id int64) (*TableGroup, bool) {
+func (st factory) group(id int64) (*TableGroup, bool) {
 	return st.groups.FindByGroupID(id)
 }
 
 // Group creates a new Group  for an ID which contains all related store-
 // and its website-pointers.
-func (st Storage) Group(id int64) (Group, error) {
+func (st factory) Group(id int64) (Group, error) {
 	g, found := st.group(id)
 	if !found {
 		return Group{}, errors.NewNotFoundf("[store] Group %d", id)
@@ -131,7 +106,7 @@ func (st Storage) Group(id int64) (Group, error) {
 // Groups creates a slice containing all pointers to Groups with its associated
 // new store- and new website-pointers. It returns an error if the integrity is
 // incorrect or a NotFound error.
-func (st Storage) Groups() (GroupSlice, error) {
+func (st factory) Groups() (GroupSlice, error) {
 	groups := make(GroupSlice, len(st.groups), len(st.groups))
 	for i, g := range st.groups {
 		w, found := st.website(g.WebsiteID)
@@ -148,14 +123,14 @@ func (st Storage) Groups() (GroupSlice, error) {
 }
 
 // store returns a TableStore by an id.
-func (st Storage) store(id int64) (*TableStore, bool) {
+func (st factory) store(id int64) (*TableStore, bool) {
 	return st.stores.FindByStoreID(id)
 }
 
 // Store creates a new Store  containing its group and its website.
 // Returns an error if the integrity is incorrect. May return a NotFound error
 // behaviour.
-func (st Storage) Store(id int64) (Store, error) {
+func (st factory) Store(id int64) (Store, error) {
 	var ns Store
 	s, found := st.store(id)
 	if !found {
@@ -185,7 +160,7 @@ func (st Storage) Store(id int64) (Store, error) {
 
 // Stores creates a new store slice with all of its new Group and new Website
 // pointers. Can return an error when the website or the group cannot be found.
-func (st Storage) Stores() (StoreSlice, error) {
+func (st factory) Stores() (StoreSlice, error) {
 	stores := make(StoreSlice, len(st.stores), len(st.stores))
 	for i, s := range st.stores {
 		var err error
@@ -199,7 +174,7 @@ func (st Storage) Stores() (StoreSlice, error) {
 // DefaultStoreID traverses through the websites to find the default website
 // and gets the default group which has the default store id assigned to. Only
 // one website can be the default one.
-func (st Storage) DefaultStoreID() (int64, error) {
+func (st factory) DefaultStoreID() (int64, error) {
 	for _, w := range st.websites {
 		if w.IsDefault.Bool && w.IsDefault.Valid {
 			g, found := st.group(w.DefaultGroupID)
@@ -212,9 +187,9 @@ func (st Storage) DefaultStoreID() (int64, error) {
 	return 0, errors.NewNotFoundf(errStoreDefaultNotFound)
 }
 
-// ReInit reloads all websites, groups and stores concurrently from the
+// LoadFromDB reloads all websites, groups and stores concurrently from the
 // database. On error  all internal slices will be reset to nil.
-func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
+func (st *factory) LoadFromDB(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 
@@ -227,7 +202,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 		}
 		st.websites = nil
 		_, err := st.websites.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Wrap(err, "[store] websites")
+		errc <- errors.Wrap(err, "[store] SQLSelect websites")
 	}()
 
 	go func() {
@@ -236,7 +211,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 		}
 		st.groups = nil
 		_, err := st.groups.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Wrap(err, "[store] groups")
+		errc <- errors.Wrap(err, "[store] SQLSelect groups")
 	}()
 
 	go func() {
@@ -245,7 +220,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error 
 		}
 		st.stores = nil
 		_, err := st.stores.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Wrap(err, "[store] stores")
+		errc <- errors.Wrap(err, "[store] SQLSelect stores")
 	}()
 
 	for i := 0; i < 3; i++ {

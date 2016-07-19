@@ -54,6 +54,15 @@ func (gs GroupSlice) Each(f func(Group)) GroupSlice {
 	return gs
 }
 
+func (gs GroupSlice) FindByID(id int64) Group {
+	for _, g := range gs {
+		if g.ID() == id {
+			return g
+		}
+	}
+	return Group{}
+}
+
 // IDs returns all group IDs
 func (gs GroupSlice) IDs() []int64 {
 	if len(gs) == 0 {

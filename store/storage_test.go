@@ -30,22 +30,22 @@ import (
 // todo inspect the high allocs
 
 // check if interface has been implemented
-var _ store.Storager = (*store.Storage)(nil)
+var _ store.Storager = (*store.factory)(nil)
 
 var testStorage = store.MustNewStorage(
 	cfgmock.NewService(),
-	store.SetStorageWebsites(
+	store.WithTableWebsites(
 		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 	),
-	store.SetStorageGroups(
+	store.WithTableGroups(
 		&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	),
-	store.SetStorageStores(
+	store.WithTableStores(
 		&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 		&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -249,13 +249,13 @@ func TestGroupSliceFilter(t *testing.T) {
 func TestStorageGroupNoWebsite(t *testing.T) {
 
 	var tst = store.MustNewStorage(
-		store.SetStorageWebsites(
+		store.WithTableWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
-		store.SetStorageGroups(
+		store.WithTableGroups(
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
-		store.SetStorageStores(
+		store.WithTableStores(
 			&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
@@ -366,13 +366,13 @@ func TestDefaultStoreView(t *testing.T) {
 	assert.EqualValues(t, "at", st.Data.Code.String)
 
 	var tst = store.MustNewStorage(
-		store.SetStorageWebsites(
+		store.WithTableWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
-		store.SetStorageGroups(
+		store.WithTableGroups(
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
-		store.SetStorageStores(
+		store.WithTableStores(
 			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
@@ -382,13 +382,13 @@ func TestDefaultStoreView(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	var tst2 = store.MustNewStorage(
-		store.SetStorageWebsites(
+		store.WithTableWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(true)},
 		),
-		store.SetStorageGroups(
+		store.WithTableGroups(
 			&store.TableGroup{GroupID: 33, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
-		store.SetStorageStores(),
+		store.WithTableStores(),
 	)
 	dSt2, err := tst2.DefaultStore()
 	assert.Nil(t, dSt2)
@@ -398,9 +398,9 @@ func TestDefaultStoreView(t *testing.T) {
 func TestStorageStoreErrors(t *testing.T) {
 
 	var nsw = store.MustNewStorage(
-		store.SetStorageWebsites(),
-		store.SetStorageGroups(),
-		store.SetStorageStores(
+		store.WithTableWebsites(),
+		store.WithTableGroups(),
+		store.WithTableStores(
 			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
@@ -414,13 +414,13 @@ func TestStorageStoreErrors(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), err.Error())
 
 	var nsg = store.MustNewStorage(
-		store.SetStorageWebsites(
+		store.WithTableWebsites(
 			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
-		store.SetStorageGroups(
+		store.WithTableGroups(
 			&store.TableGroup{GroupID: 13, WebsiteID: 12, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 4},
 		),
-		store.SetStorageStores(
+		store.WithTableStores(
 			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),

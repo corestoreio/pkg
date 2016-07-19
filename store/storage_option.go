@@ -14,23 +14,23 @@
 
 package store
 
-// StorageOption option func for NewStorage()
-type StorageOption func(*Storage) error
+// Option type to pass options to the service type.
+type Option func(*factory) error
 
-// SetStorageWebsites adds the TableWebsiteSlice to the Storage. By default, the slice is nil.
-func SetStorageWebsites(tws ...*TableWebsite) StorageOption {
-	return func(s *Storage) error {
+// WithTableWebsites appends the data from the DB table website to the service.
+func WithTableWebsites(tws ...*TableWebsite) Option {
+	return func(s *factory) error {
 		s.websites = append(s.websites, tws...)
 		return nil
 	}
 }
 
-// SetStorageGroups adds the TableGroupSlice to the Storage. By default, the slice is nil.
-func SetStorageGroups(tgs ...*TableGroup) StorageOption {
-	return func(s *Storage) error { s.groups = TableGroupSlice(tgs); return nil }
+// WithTableGroups appends the data from the DB table groups to the service.
+func WithTableGroups(tgs ...*TableGroup) Option {
+	return func(s *factory) error { s.groups = TableGroupSlice(tgs); return nil }
 }
 
-// SetStorageStores adds the TableStoreSlice to the Storage. By default, the slice is nil.
-func SetStorageStores(tss ...*TableStore) StorageOption {
-	return func(s *Storage) error { s.stores = TableStoreSlice(tss); return nil }
+// WithTableStores appends the data from the DB table store to the service.
+func WithTableStores(tss ...*TableStore) Option {
+	return func(s *factory) error { s.stores = TableStoreSlice(tss); return nil }
 }
