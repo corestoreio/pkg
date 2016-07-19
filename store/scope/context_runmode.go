@@ -27,7 +27,8 @@ type ctxRunModeKey struct{}
 const defaultRunMode Hash = 0
 
 // RunMode core type to initialize the run mode of the current request. Allows
-// you to create a multi-site / multi-tenant setup.
+// you to create a multi-site / multi-tenant setup. An implementation of this
+// lives in storenet.AppRunMode.WithRunMode() middleware.
 type RunMode struct {
 	Mode Hash
 	// ModeFunc if not nil you can create your own function to set a run mode.
