@@ -32,7 +32,7 @@ type ctxCountryWrapper struct {
 }
 
 // WithContextCountry creates a new context with geoip.Country attached.
-func WithContextCountry(ctx context.Context, c *Country) context.Context {
+func withContextCountry(ctx context.Context, c *Country) context.Context {
 	return context.WithValue(ctx, keyctxCountry{}, ctxCountryWrapper{c: c})
 }
 

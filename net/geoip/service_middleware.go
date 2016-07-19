@@ -57,7 +57,7 @@ func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Coun
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "[geoip] CountryByIP")
 	}
-	return WithContextCountry(r.Context(), c), c, nil
+	return withContextCountry(r.Context(), c), c, nil
 }
 
 // WithCountryByIP is a simple middleware which detects the country via an IP
