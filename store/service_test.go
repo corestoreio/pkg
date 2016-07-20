@@ -20,7 +20,6 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -68,7 +67,7 @@ func TestMustNewService(t *testing.T) {
 		{4444, errors.IsNotFound},
 		{0, errors.IsNotFound},
 	}
-	serviceEmpty := store.MustNewService(store.MustNewStorage(cfgmock.NewService()))
+	serviceEmpty := store.MustNewService(cfgmock.NewService())
 	for i, test := range tests {
 		s, err := serviceEmpty.Store(test.have)
 		assert.Nil(t, s, "Index %d")
@@ -79,12 +78,12 @@ func TestMustNewService(t *testing.T) {
 
 func TestNewServiceDefaultStoreView(t *testing.T) {
 
-	serviceDefaultStore := store.MustNewService(store.MustNewStorage(
+	serviceDefaultStore := store.MustNewService(
 		cfgmock.NewService(),
 		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
 		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
-	))
+	)
 
 	// call it twice to test internal caching
 	s, err := serviceDefaultStore.DefaultStoreView()
@@ -101,26 +100,9 @@ func TestNewServiceDefaultStoreView(t *testing.T) {
 	assert.True(t, serviceDefaultStore.IsCacheEmpty())
 }
 
-var benchmarkServiceStore store.Store
-
-// BenchmarkServiceGetStore-4              	 5000000	       256 ns/op	      16 B/op	       1 allocs/op
-func BenchmarkServiceGetStore(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkServiceStore, err = serviceStoreSimpleTest.Store(1)
-		if err != nil {
-			b.Error(err)
-		}
-		if benchmarkServiceStore == nil {
-			b.Error("benchmarkServiceStore is nil")
-		}
-	}
-}
-
 func TestNewServiceStores(t *testing.T) {
 
-	serviceStores := store.MustNewService(store.MustNewStorage(
+	serviceStores := store.MustNewService(
 		cfgmock.NewService(),
 		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
@@ -129,7 +111,7 @@ func TestNewServiceStores(t *testing.T) {
 			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
 			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 		),
-	))
+	)
 
 	// call it twice to test internal caching
 	ss := serviceStores.Stores()
@@ -155,34 +137,17 @@ func TestMustNewServiceStores(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	ss, err := storemock.MustNewService(0, func(ms *storemock.Storage) {
-		ms.MockStoreSlice = func() (store.StoreSlice, error) {
-			return nil, nil
-		}
-	}).Stores()
+	ss := store.MustNewService(cfgmock.NewService(), store.WithTableStores(nil), store.WithTableWebsites(nil), store.WithTableGroups(nil)).Stores()
 	assert.Nil(t, ss)
-	assert.NoError(t, err)
 }
 
 func TestNewServiceGroup(t *testing.T) {
 
-	var serviceGroupSimpleTest = storemock.MustNewService(0, func(ms *storemock.Storage) {
-		ms.MockGroup = func() (*store.Group, error) {
-			return store.NewGroup(
-				cfgmock.NewService(),
-				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
-			)
-		}
-		ms.MockStore = func() (*store.Store, error) {
-			return store.NewStore(
-				cfgmock.NewService(),
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-			)
-		}
-	})
+	serviceGroupSimpleTest := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+	)
 
 	tests := []struct {
 		m               *store.Service
@@ -215,29 +180,20 @@ func TestNewServiceGroup(t *testing.T) {
 
 func TestNewServiceGroups(t *testing.T) {
 
-	serviceGroups := storemock.MustNewService(0, func(ms *storemock.Storage) {
-		ms.MockGroupSlice = func() (store.GroupSlice, error) {
-			return store.GroupSlice{}, nil
-		}
-		ms.MockStore = func() (*store.Store, error) {
-			return store.NewStore(
-				cfgmock.NewService(),
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-			)
-		}
-	})
+	serviceGroups := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+	)
 
 	// call it twice to test internal caching
-	ss, err := serviceGroups.Groups()
+	ss := serviceGroups.Groups()
 	assert.NotNil(t, ss)
-	assert.NoError(t, err)
+
 	assert.Len(t, ss, 0)
 
-	ss, err = serviceGroups.Groups()
+	ss = serviceGroups.Groups()
 	assert.NotNil(t, ss)
-	assert.NoError(t, err)
 	assert.Len(t, ss, 0)
 
 	assert.False(t, serviceGroups.IsCacheEmpty())
@@ -247,22 +203,11 @@ func TestNewServiceGroups(t *testing.T) {
 
 func TestNewServiceWebsite(t *testing.T) {
 
-	var serviceWebsite = storemock.MustNewService(0, func(ms *storemock.Storage) {
-		ms.MockWebsite = func() (*store.Website, error) {
-			return store.NewWebsite(
-				cfgmock.NewService(),
-				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-			)
-		}
-		ms.MockStore = func() (*store.Store, error) {
-			return store.NewStore(
-				cfgmock.NewService(),
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-			)
-		}
-	})
+	serviceWebsite := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+	)
 
 	tests := []struct {
 		m               *store.Service
@@ -292,84 +237,76 @@ func TestNewServiceWebsite(t *testing.T) {
 
 }
 
-func TestNewServiceWebsites(t *testing.T) {
+//func TestNewServiceWebsites(t *testing.T) {
+//
+//	serviceWebsites := store.MustNewService(cfgmock.NewService(),
+//		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+//		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+//		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+//	)
+//
+//	tests := []struct {
+//		m       *store.Service
+//		wantErr error
+//		wantNil bool
+//	}{
+//		{serviceWebsites, nil, false},
+//		{serviceWebsites, nil, false},
+//		//{storemock.MustNewService(0, func(ms *storemock.Storage) {
+//		//	ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
+//		//		return nil, nil
+//		//	}
+//		//	ms.MockStore = func() (*store.Store, error) {
+//		//		return store.NewStore(
+//		//			cfgmock.NewService(),
+//		//			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+//		//			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+//		//			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+//		//		)
+//		//	}
+//		//}), nil, true},
+//	}
+//
+//	for _, test := range tests {
+//		haveWS, haveErr := test.m.Websites()
+//		if test.wantErr != nil {
+//			assert.Error(t, haveErr, "%#v", test)
+//			assert.Nil(t, haveWS, "%#v", test)
+//		} else {
+//			assert.NoError(t, haveErr, "%#v", test)
+//			if test.wantNil {
+//				assert.Nil(t, haveWS, "%#v", test)
+//			} else {
+//				assert.NotNil(t, haveWS, "%#v", test)
+//			}
+//		}
+//	}
+//
+//	assert.False(t, serviceWebsites.IsCacheEmpty())
+//	serviceWebsites.ClearCache()
+//	assert.True(t, serviceWebsites.IsCacheEmpty())
+//}
 
-	serviceWebsites := storemock.MustNewService(0, func(ms *storemock.Storage) {
-		ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
-			return store.WebsiteSlice{}, nil
-		}
-		ms.MockStore = func() (*store.Store, error) {
-			return store.NewStore(
-				cfgmock.NewService(),
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-			)
-		}
-	})
-
-	tests := []struct {
-		m       *store.Service
-		wantErr error
-		wantNil bool
-	}{
-		{serviceWebsites, nil, false},
-		{serviceWebsites, nil, false},
-		{storemock.MustNewService(0, func(ms *storemock.Storage) {
-			ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
-				return nil, nil
-			}
-			ms.MockStore = func() (*store.Store, error) {
-				return store.NewStore(
-					cfgmock.NewService(),
-					&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-					&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-				)
-			}
-		}), nil, true},
-	}
-
-	for _, test := range tests {
-		haveWS, haveErr := test.m.Websites()
-		if test.wantErr != nil {
-			assert.Error(t, haveErr, "%#v", test)
-			assert.Nil(t, haveWS, "%#v", test)
-		} else {
-			assert.NoError(t, haveErr, "%#v", test)
-			if test.wantNil {
-				assert.Nil(t, haveWS, "%#v", test)
-			} else {
-				assert.NotNil(t, haveWS, "%#v", test)
-			}
-		}
-	}
-
-	assert.False(t, serviceWebsites.IsCacheEmpty())
-	serviceWebsites.ClearCache()
-	assert.True(t, serviceWebsites.IsCacheEmpty())
-}
-
-type testNewServiceRequestedStore struct {
-	haveStoreID   int64
-	wantStoreCode string
-	wantErrBhf    errors.BehaviourFunc
-}
-
-func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceRequestedStore) {
-	for i, test := range tests {
-		haveStore, haveErr := sm.RequestedStore(test.haveStoreID)
-		if test.wantErrBhf != nil {
-			assert.Nil(t, haveStore, "Index: %d: %#v", i, test)
-			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
-		} else {
-			assert.NotNil(t, haveStore, "Index %d", i)
-			assert.NoError(t, haveErr, "Index %d => %#v", i, test)
-			assert.EqualValues(t, test.wantStoreCode, haveStore.Data.Code.String, "Index %d", i)
-		}
-	}
-	sm.ClearCache(true)
-}
+//type testNewServiceRequestedStore struct {
+//	haveStoreID   int64
+//	wantStoreCode string
+//	wantErrBhf    errors.BehaviourFunc
+//}
+//
+//func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceRequestedStore) {
+//	for i, test := range tests {
+//		haveStore, haveErr := sm.RequestedStore(test.haveStoreID)
+//		if test.wantErrBhf != nil {
+//			assert.Nil(t, haveStore, "Index: %d: %#v", i, test)
+//			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
+//		} else {
+//			assert.NotNil(t, haveStore, "Index %d", i)
+//			assert.NoError(t, haveErr, "Index %d => %#v", i, test)
+//			assert.EqualValues(t, test.wantStoreCode, haveStore.Data.Code.String, "Index %d", i)
+//		}
+//	}
+//	sm.ClearCache(true)
+//}
 
 //func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 //

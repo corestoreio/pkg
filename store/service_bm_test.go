@@ -1,0 +1,37 @@
+// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package store_test
+
+import (
+	"github.com/corestoreio/csfw/store"
+	"testing"
+)
+
+var benchmarkServiceStore store.Store
+
+// BenchmarkServiceGetStore-4              	 5000000	       256 ns/op	      16 B/op	       1 allocs/op
+func BenchmarkServiceGetStore(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		var err error
+		benchmarkServiceStore, err = serviceStoreSimpleTest.Store(1)
+		if err != nil {
+			b.Error(err)
+		}
+		if err := benchmarkServiceStore.Validate(); err != nil {
+			b.Errorf("benchmarkServiceStore contains errors: %+v", err)
+		}
+	}
+}
