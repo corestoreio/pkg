@@ -69,6 +69,13 @@ func NewScoped(r Getter, websiteID, storeID int64) Scoped {
 	}
 }
 
+// IsValid checks if the object has been set up correctly.
+func (ss Scoped) IsValid() bool {
+	return ss.Root != nil && ((ss.WebsiteID == 0 && ss.StoreID == 0) ||
+		(ss.WebsiteID > 0 && ss.StoreID == 0) ||
+		(ss.WebsiteID > 0 && ss.StoreID > 0))
+}
+
 // Parent tells you the parent underlying scope and its ID. Store falls back to
 // website and website falls back to default.
 func (ss Scoped) Parent() (scope.Scope, int64) {

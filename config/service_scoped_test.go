@@ -28,6 +28,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestScoped_IsValid(t *testing.T) {
+	tests := []struct {
+		s    config.Scoped
+		want bool
+	}{
+		{config.Scoped{}, true}, // todo
+	}
+	for _, test := range tests {
+		if have, want := test.s.IsValid(), test.want; have != want {
+			t.Errorf("Have: %v Want: %v", have, want)
+		}
+	}
+}
+
 func TestScopedServiceScope(t *testing.T) {
 
 	tests := []struct {
