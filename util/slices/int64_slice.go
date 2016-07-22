@@ -12,59 +12,67 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package slices
 
-import "sort"
+import (
+	"sort"
 
-// Int64Slice contains Map/Filter/Reduce/Sort/Unique/etc method receivers for []int64.
+	"github.com/corestoreio/csfw/util/errors"
+)
+
+var errOutOfRange = errors.NewFatalf("[slices] Index out of range")
+
+// Int64Slice contains Map/Filter/Reduce/Sort/Unique/etc method receivers for
+// []int64.
 // @todo think about the necessary gen functions
 // +gen slice:"Where,Count,GroupBy[int64]"
-type Int64Slice []int64
+type Int64 []int64
 
 // ToInt64 converts to type int64 slice.
-func (l Int64Slice) ToInt64() []int64 { return []int64(l) }
+func (l Int64) ToInt64() []int64 { return []int64(l) }
 
 // Len returns the length
-func (l Int64Slice) Len() int { return len(l) }
+func (l Int64) Len() int { return len(l) }
 
 // Less compares two slice values
-func (l Int64Slice) Less(i, j int) bool { return l[i] < l[j] }
+func (l Int64) Less(i, j int) bool { return l[i] < l[j] }
 
 // Swap changes the position
-func (l Int64Slice) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+func (l Int64) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 
 // Sort is a convenience method.
-func (l Int64Slice) Sort() Int64Slice { sort.Stable(l); return l }
+func (l Int64) Sort() Int64 { sort.Stable(l); return l }
 
 // Reverse is a convenience method.
-func (l Int64Slice) Reverse() Int64Slice { sort.Stable(sort.Reverse(l)); return l }
+func (l Int64) Reverse() Int64 { sort.Stable(sort.Reverse(l)); return l }
 
 // Append adds s (variadic) to the Int64Slice
-func (l *Int64Slice) Append(s ...int64) Int64Slice {
+func (l *Int64) Append(s ...int64) Int64 {
 	*l = append(*l, s...)
 	return *l
 }
 
-// Update sets the int64 s on index i. If index is not found returns an ErrOutOfRange.
-func (l *Int64Slice) Update(i int, s int64) error {
+// Update sets the int64 s on index i. If index is not found returns an fatal
+// error behaviour.
+func (l *Int64) Update(i int, s int64) error {
 	if i > l.Len() || i < 0 {
-		return ErrOutOfRange
+		return errOutOfRange
 	}
 	(*l)[i] = s
 	return nil
 }
 
 // Delete removes index i from slice
-func (l *Int64Slice) Delete(i int) error {
+func (l *Int64) Delete(i int) error {
 	if i > l.Len()-1 || i < 0 {
-		return ErrOutOfRange
+		return errOutOfRange
 	}
 	*l = append((*l)[:i], (*l)[i+1:]...)
 	return nil
 }
 
 // Index returns -1 if not found or the current index for target t.
-func (l Int64Slice) Index(t int64) int {
+func (l Int64) Index(t int64) int {
 	for i, v := range l {
 		if v == t {
 			return i
@@ -74,12 +82,12 @@ func (l Int64Slice) Index(t int64) int {
 }
 
 // Contains returns true if the target int64 t is in the slice.
-func (l Int64Slice) Contains(t int64) bool {
+func (l Int64) Contains(t int64) bool {
 	return l.Index(t) >= 0
 }
 
 // Any returns true if one of the int64s in the slice satisfies the predicate f.
-func (l Int64Slice) Any(f func(int64) bool) bool {
+func (l Int64) Any(f func(int64) bool) bool {
 	for _, v := range l {
 		if f(v) {
 			return true
@@ -89,7 +97,7 @@ func (l Int64Slice) Any(f func(int64) bool) bool {
 }
 
 // All returns true if all of the int64s in the slice satisfy the predicate f.
-func (l Int64Slice) All(f func(int64) bool) bool {
+func (l Int64) All(f func(int64) bool) bool {
 	for _, v := range l {
 		if !f(v) {
 			return false
@@ -98,8 +106,9 @@ func (l Int64Slice) All(f func(int64) bool) bool {
 	return true
 }
 
-// Reduce reduces itself containing all int64s in the slice that satisfy the predicate f.
-func (l *Int64Slice) Reduce(f func(int64) bool) Int64Slice {
+// Reduce reduces itself containing all int64s in the slice that satisfy the
+// predicate f.
+func (l *Int64) Reduce(f func(int64) bool) Int64 {
 	vsf := (*l)[:0]
 	for _, v := range *l {
 		if f(v) {
@@ -110,8 +119,9 @@ func (l *Int64Slice) Reduce(f func(int64) bool) Int64Slice {
 	return *l
 }
 
-// Map changes itself containing the results of applying the function f to each int64 in itself.
-func (l *Int64Slice) Map(f func(int64) int64) Int64Slice {
+// Map changes itself containing the results of applying the function f to each
+// int64 in itself.
+func (l *Int64) Map(f func(int64) int64) Int64 {
 	for i, v := range *l {
 		(*l)[i] = f(v)
 	}
@@ -119,7 +129,7 @@ func (l *Int64Slice) Map(f func(int64) int64) Int64Slice {
 }
 
 // Sum returns the sum
-func (l Int64Slice) Sum() int64 {
+func (l Int64) Sum() int64 {
 	var s int64
 	for _, v := range l {
 		s += v
@@ -128,7 +138,7 @@ func (l Int64Slice) Sum() int64 {
 }
 
 // Unique removes duplicate entries.
-func (l *Int64Slice) Unique() Int64Slice {
+func (l *Int64) Unique() Int64 {
 	unique := (*l)[:0]
 	for _, p := range *l {
 		found := false

@@ -12,24 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util_test
+package slices_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/slices"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStringSliceReduceContains(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
-		haveSL util.StringSlice
+		haveSL slices.String
 		haveIN []string
 		want   []string
 	}{
 		{
-			util.StringSlice{
+			slices.String{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
@@ -42,7 +43,7 @@ func TestStringSliceReduceContains(t *testing.T) {
 			},
 		},
 		{
-			util.StringSlice{"GoLang", "RustLang", "PHP Script", "JScript"},
+			slices.String{"GoLang", "RustLang", "PHP Script", "JScript"},
 			[]string{"Script"},
 			[]string{"GoLang", "RustLang"},
 		},
@@ -55,7 +56,7 @@ func TestStringSliceReduceContains(t *testing.T) {
 	}
 }
 
-var benchStringSliceReduceContains util.StringSlice
+var benchStringSliceReduceContains slices.String
 var benchStringSliceReduceContainsData = []string{"is_required", "default_value"}
 
 // BenchmarkStringSliceReduceContains	 1000000	      1841 ns/op	      96 B/op	       2 allocs/op <- Go 1.4.2
@@ -64,7 +65,7 @@ func BenchmarkStringSliceReduceContains(b *testing.B) {
 
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		l := util.StringSlice{
+		l := slices.String{
 			"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 			"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 			"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
@@ -76,16 +77,16 @@ func BenchmarkStringSliceReduceContains(b *testing.B) {
 }
 
 func TestStringSliceUpdate(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
-		haveSL util.StringSlice
+		haveSL slices.String
 		haveD  string
 		haveI  int
-		err    error
+		err    errors.BehaviourFunc
 		want   []string
 	}{
 		{
-			haveSL: util.StringSlice{
+			haveSL: slices.String{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
@@ -102,7 +103,7 @@ func TestStringSliceUpdate(t *testing.T) {
 			},
 		},
 		{
-			haveSL: util.StringSlice{
+			haveSL: slices.String{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
@@ -110,7 +111,7 @@ func TestStringSliceUpdate(t *testing.T) {
 			},
 			haveD: "default_value",
 			haveI: 6,
-			err:   util.ErrOutOfRange,
+			err:   errors.IsFatal,
 			want: []string{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
@@ -120,22 +121,25 @@ func TestStringSliceUpdate(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		assert.Equal(t, test.err, test.haveSL.Update(test.haveI, test.haveD))
-		assert.Equal(t, test.want, test.haveSL.ToString())
+	for i, test := range tests {
+		err := test.haveSL.Update(test.haveI, test.haveD)
+		if test.err != nil {
+			assert.True(t, test.err(err))
+		}
+		assert.Equal(t, test.want, test.haveSL.ToString(), "Index %d", i)
 	}
 }
 
 func TestStringSlice(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"Maybe", "GoLang", "should", "have", "generics", "but", "who", "needs", "them", "?", ";-)"}
+
+	l := slices.String{"Maybe", "GoLang", "should", "have", "generics", "but", "who", "needs", "them", "?", ";-)"}
 	assert.Len(t, l, l.Len())
 	assert.Equal(t, 1, l.Index("GoLang"))
 	assert.Equal(t, -1, l.Index("Golang"))
 	assert.True(t, l.Contains("GoLang"))
 	assert.False(t, l.Contains("Golang"))
 
-	l2 := util.StringSlice{"Maybe", "GoLang"}
+	l2 := slices.String{"Maybe", "GoLang"}
 	l2.Map(func(s string) string {
 		return s + "2"
 	})
@@ -146,18 +150,18 @@ func TestStringSlice(t *testing.T) {
 }
 
 func TestStringSliceDelete(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"Maybe", "GoLang", "should"}
+
+	l := slices.String{"Maybe", "GoLang", "should"}
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe", "should"}, l.ToString())
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe"}, l.ToString())
-	assert.EqualError(t, l.Delete(1), util.ErrOutOfRange.Error())
+	assert.True(t, errors.IsFatal(l.Delete(1)))
 }
 
 func TestStringSliceReduce(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"Maybe", "GoLang", "should"}
+
+	l := slices.String{"Maybe", "GoLang", "should"}
 	assert.EqualValues(t, []string{"GoLang"}, l.Reduce(func(s string) bool {
 		return s == "GoLang"
 	}).ToString())
@@ -165,8 +169,8 @@ func TestStringSliceReduce(t *testing.T) {
 }
 
 func TestStringSliceFilter(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"All", "Go", "Code", "is"}
+
+	l := slices.String{"All", "Go", "Code", "is"}
 	rl := l.Filter(func(s string) bool {
 		return s == "Go"
 	}).ToString()
@@ -179,46 +183,46 @@ func TestStringSliceFilter(t *testing.T) {
 }
 
 func TestStringSliceUnique(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
+
+	l := slices.String{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
 	assert.Equal(t, []string{"Maybe", "GoLang", "or", "RostLang"}, l.Unique().ToString())
 }
 
-var benchStringSliceUnique util.StringSlice
+var benchStringSliceUnique slices.String
 
 // BenchmarkStringSliceUnique	 2000000	       612 ns/op	     160 B/op	       2 allocs/op <- Go 1.4.2
 // BenchmarkStringSliceUnique  	10000000	       179 ns/op	     128 B/op	       1 allocs/op <- Go 1.5
 func BenchmarkStringSliceUnique(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		l := util.StringSlice{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
+		l := slices.String{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
 		l.Unique()
 		benchStringSliceUnique = l
 	}
 }
 
 func TestStringSliceSplit(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"a", "b"}
+
+	l := slices.String{"a", "b"}
 	assert.Equal(t, []string{"a", "b", "c", "d"}, l.Split("c,d", ",").ToString())
 	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f", ""}, l.Split("e,f,", ",").ToString())
 }
 
 func TestStringSliceJoin(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"a", "b"}
+
+	l := slices.String{"a", "b"}
 	assert.Equal(t, "a,b", l.Join(","))
 }
 
 func TestStringSliceSort(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"c", "a", "z", "b"}
+
+	l := slices.String{"c", "a", "z", "b"}
 	assert.Equal(t, "a,b,c,z", l.Sort().Join(","))
 }
 
 func TestStringSliceAny(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"c", "a", "z", "b"}
+
+	l := slices.String{"c", "a", "z", "b"}
 	assert.True(t, l.Any(func(s string) bool {
 		return s == "z"
 	}))
@@ -228,8 +232,8 @@ func TestStringSliceAny(t *testing.T) {
 }
 
 func TestStringSliceAll(t *testing.T) {
-	t.Parallel()
-	l := util.StringSlice{"c", "a", "z", "b"}
+
+	l := slices.String{"c", "a", "z", "b"}
 	assert.True(t, l.All(func(s string) bool {
 		return len(s) == 1
 	}))
@@ -240,31 +244,31 @@ func TestStringSliceAll(t *testing.T) {
 }
 
 func TestStringSliceSplitStringer8(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		haveName  string
 		haveIndex []uint8
-		want      util.StringSlice
+		want      slices.String
 	}{
 		{
 			"ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore",
 			[]uint8{0, 11, 23, 35, 45, 55},
-			util.StringSlice{"ScopeAbsent", "ScopeDefault", "ScopeWebsite", "ScopeGroup", "ScopeStore"},
+			slices.String{"ScopeAbsent", "ScopeDefault", "ScopeWebsite", "ScopeGroup", "ScopeStore"},
 		},
 		{
 			"TypeCustomTypeHiddenTypeObscureTypeMultiselectTypeSelectTypeTextTypeTime",
 			[]uint8{10, 20, 31, 46, 56, 64, 72},
-			util.StringSlice{"TypeHidden", "TypeObscure", "TypeMultiselect", "TypeSelect", "TypeText", "TypeTime"},
+			slices.String{"TypeHidden", "TypeObscure", "TypeMultiselect", "TypeSelect", "TypeText", "TypeTime"},
 		},
 	}
 	for _, test := range tests {
-		var a util.StringSlice
+		var a slices.String
 		have := a.SplitStringer8(test.haveName, test.haveIndex...)
 		assert.Exactly(t, test.want, have)
 	}
 }
 
-var benchStringSliceSplitStringer8 util.StringSlice
+var benchStringSliceSplitStringer8 slices.String
 
 // BenchmarkStringSliceSplitStringer8	 1000000	      1041 ns/op	     240 B/op	       4 allocs/op <- Go 1.4.2
 // BenchmarkStringSliceSplitStringer8-4	 2000000	       673 ns/op	     240 B/op	       4 allocs/op <- Go 1.5
@@ -280,15 +284,15 @@ func BenchmarkStringSliceSplitStringer8(b *testing.B) {
 }
 
 func TestStringSliceContainsReverse(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have string
-		in   util.StringSlice
+		in   slices.String
 		want bool
 	}{
-		{"I live in the black forest", util.StringSlice{"black"}, true},
-		{"I live in the black forest", util.StringSlice{"blagg", "forest"}, true},
-		{"I live in the black forest", util.StringSlice{"blagg", "wald"}, false},
+		{"I live in the black forest", slices.String{"black"}, true},
+		{"I live in the black forest", slices.String{"blagg", "forest"}, true},
+		{"I live in the black forest", slices.String{"blagg", "wald"}, false},
 		{"We don't have any Internet connection", nil, false},
 	}
 
@@ -298,16 +302,16 @@ func TestStringSliceContainsReverse(t *testing.T) {
 }
 
 func TestStringSliceStartsWithReverse(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
 		have string
-		in   util.StringSlice
+		in   slices.String
 		want bool
 	}{
-		{"grand_total", util.StringSlice{"grand_"}, true},
-		{"base_discount_amount", util.StringSlice{"amount"}, false},
-		{"base_grand_total", util.StringSlice{"grand_", "base_"}, true},
-		{"base_grand_total", util.StringSlice{"xgrand_", "zbase_"}, false},
+		{"grand_total", slices.String{"grand_"}, true},
+		{"base_discount_amount", slices.String{"amount"}, false},
+		{"base_grand_total", slices.String{"grand_", "base_"}, true},
+		{"base_grand_total", slices.String{"xgrand_", "zbase_"}, false},
 		{"base_grand_total", nil, false},
 	}
 
