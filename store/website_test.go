@@ -21,8 +21,8 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/slices"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,105 +31,113 @@ func TestNewWebsite(t *testing.T) {
 	w, err := store.NewWebsite(
 		cfgmock.NewService(),
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+		nil,
+		nil,
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, "euro", w.Data.Code.String)
 
 	dg, err := w.DefaultGroup()
-	assert.Nil(t, dg)
+	assert.Nil(t, dg.Validate())
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	ds, err := w.DefaultStore()
-	assert.Nil(t, ds)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	err = ds.Validate()
+	assert.True(t, errors.IsNotValid(err))
 	assert.Nil(t, w.Stores)
 	assert.Nil(t, w.Groups)
 }
 
 func TestNewWebsiteSetGroupsStores(t *testing.T) {
 
-	w, err := store.NewWebsite(
+	w := store.MustNewWebsite(
 		cfgmock.NewService(),
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-		store.SetWebsiteGroupsStores(
-			store.TableGroupSlice{
-				&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
-				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-				&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
-				&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
-			},
-			store.TableStoreSlice{
-				&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-				&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-				&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-				&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
-			},
-		),
+		store.TableGroupSlice{
+			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
+			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+			&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
+			&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
+		},
+		store.TableStoreSlice{
+			&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+			&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
+		},
 	)
+
+	ds, err := w.DefaultStore()
+	assert.NotNil(t, ds)
+	assert.Exactly(t, "at", ds.Code(), "get default store: %#v", ds)
 	assert.NoError(t, err)
 
 	dg, err := w.DefaultGroup()
 	assert.NotNil(t, dg)
-	assert.EqualValues(t, "DACH Group", dg.Data.Name, "get default group: %#v", dg)
-	assert.NoError(t, err)
-
-	ds, err := w.DefaultStore()
-	assert.NotNil(t, ds)
-	assert.EqualValues(t, "at", ds.Data.Code.String, "get default store: %#v", ds)
+	assert.Exactly(t, "DACH Group", dg.Name(), "get default group: %#v", dg)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, dg.Stores)
-	assert.EqualValues(t, util.StringSlice{"de", "at", "ch"}, dg.Stores.Codes())
+	assert.Exactly(t, []string{"de", "at", "ch"}, dg.Stores.Codes())
 
 	for _, st := range dg.Stores {
-		assert.EqualValues(t, "DACH Group", st.Group.Data.Name)
-		assert.EqualValues(t, "Europe", st.Website.Data.Name.String)
+		assert.Empty(t, st.Group.Name())
+		assert.Empty(t, st.Website.Name())
 	}
 
 	assert.NotNil(t, w.Stores)
-	assert.EqualValues(t, util.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
+	assert.EqualValues(t, slices.String{"de", "uk", "at", "ch"}, w.Stores.Codes())
 
 	assert.NotNil(t, w.Groups)
-	assert.EqualValues(t, util.Int64Slice{1, 2}, w.Groups.IDs())
+	assert.EqualValues(t, slices.Int64{1, 2}, w.Groups.IDs())
 
-	assert.Exactly(t, int64(2), w.DefaultStoreID())
-	assert.Exactly(t, int64(1), w.GroupID())
+	dsi, err := w.DefaultStoreID()
+	assert.NoError(t, err)
+	assert.Exactly(t, int64(2), dsi)
+	assert.Exactly(t, int64(1), w.DefaultGroupID())
 	assert.Equal(t, "euro", w.Code())
 }
 
 func TestNewWebsiteStoreIDError(t *testing.T) {
+	w, err := store.NewWebsite(
+		cfgmock.NewService(),
+		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+		nil,
+		nil,
+	)
+	assert.NoError(t, err)
+	dsi, err := w.DefaultStoreID()
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.Empty(t, dsi)
+}
+
+func TestNewWebsiteSetGroupsStores_Filter_Invalid(t *testing.T) {
 
 	w, err := store.NewWebsite(
 		cfgmock.NewService(),
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+		store.TableGroupSlice{
+			&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
+		},
+		store.TableStoreSlice{
+			&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
+		},
 	)
-	assert.NoError(t, err)
-	assert.Exactly(t, 0, w.DefaultStoreID())
-}
-
-func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
-
-	w, err := store.NewWebsite(
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-		store.SetWebsiteGroupsStores(
-			store.TableGroupSlice{
-				0: &store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
-			},
-			store.TableStoreSlice{
-				&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-				&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-				&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
-			},
-		),
-	)
-	assert.Nil(t, w)
-	assert.Contains(t, err.Error(), "Integrity error")
+	assert.NotNil(t, w)
+	assert.NoError(t, err, "%+v", err)
+	err = w.Validate()
+	assert.NoError(t, err, "%+v", err)
+	assert.Exactly(t, []int64(nil), w.Groups.IDs())
+	assert.Exactly(t, []int64{1, 4, 2, 3}, w.Stores.IDs())
 }
 
 // TODO

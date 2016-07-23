@@ -41,9 +41,12 @@ type Website struct {
 
 // NewWebsite creates a new Website with its depended groups and stores.
 func NewWebsite(cfg config.Getter, tw *TableWebsite, tgs TableGroupSlice, tss TableStoreSlice) (Website, error) {
+	// tw cannot be nil, but tgs and tss can be
 	w := Website{
-		Config: cfg.NewScoped(tw.WebsiteID, 0),
-		Data:   tw,
+		Data: tw,
+	}
+	if tw != nil {
+		w.Config = cfg.NewScoped(tw.WebsiteID, 0) // todo 0 could be a bug because admin store view, should be maybe -1
 	}
 	if err := w.SetGroupsStores(tgs, tss); err != nil {
 		return Website{}, errors.Wrap(err, "[store] NewWebsite.SetWebsiteGroupsStores")
@@ -60,82 +63,89 @@ func MustNewWebsite(cfg config.Getter, tw *TableWebsite, tgs TableGroupSlice, ts
 	return w
 }
 
-// Validate checks the internal integrity. May panic when the data has not been
-// set. Empty Groups or Stores are valid settings.
-func (w Website) Validate() error {
-	for _, g := range w.Groups {
-		if w.GroupID() != g.Data.GroupID {
-			return errors.NewNotValidf("[store] Website.Validate: Website Group ID %d does not match Store Group ID %d", w.GroupID(), g.Data.GroupID)
-		}
-	}
-	for _, s := range w.Stores {
-		if w.ID() != s.Data.WebsiteID {
-			return errors.NewNotValidf("[store] Website.Validate: Website ID %d does not match Store Website ID %d", w.ID(), s.Data.WebsiteID)
-		}
-	}
-	if w.Config.WebsiteID != w.ID() {
-		return errors.NewNotValidf("[store] Website.Validate: Config Website ID %d does not match Website ID %d", w.Config.WebsiteID, w.ID())
-	}
-	return nil
-}
-
 // SetGroupsStores uses a group slice and a table store slice to set the groups
 // associated to this website and the stores associated to this website. It
 // returns an error if the data integrity is incorrect.
 func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) error {
+	if tgs == nil && tss == nil {
+		// avoid recursion and stack overflow
+		return nil
+	}
 
 	groups := tgs.Filter(func(tg *TableGroup) bool {
-		return tg.WebsiteID == w.Data.WebsiteID
+		return tg != nil && tg.WebsiteID == w.ID()
 	})
 
 	w.Groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
 		var err error
-		w.Groups[i], err = NewGroup(w.Config.Root, g, w.Data, tss)
+		w.Groups[i], err = NewGroup(w.Config.Root, g, nil, tss) // passing nil to limit the recursion
 		if err != nil {
 			return errors.Wrapf(err, "[store] NewGroup. Group %#v Website Data: %#v", g, w.Data)
 		}
 	}
-	stores := tss.FilterByWebsiteID(w.Data.WebsiteID)
+	stores := tss.FilterByWebsiteID(w.ID())
 	w.Stores = make(StoreSlice, stores.Len(), stores.Len())
 	for i, s := range stores {
-		group, found := tgs.FindByGroupID(s.GroupID)
-		if !found {
-			return errors.NewNotFoundf("[store] Website Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs)
-		}
 		var err error
-		w.Stores[i], err = NewStore(w.Config.Root, s, w.Data, group)
+		w.Stores[i], err = NewStore(w.Config.Root, s, nil, nil)
 		if err != nil {
-			return errors.Wrapf(err, "[store] NewStore. Store %#v Website Data %#v Group %#v", s, w.Data, group)
+			return errors.Wrapf(err, "[store] NewStore. Store %#v Website Data %#v", s, w.Data)
 		}
 	}
 	return w.Validate()
 }
 
-// ID returns the website ID.
-func (w Website) ID() int64 { return w.Data.WebsiteID }
-
-// Code returns the website code.
-func (w Website) Code() string { return w.Data.Code.String }
-
-// GroupID returns the associated group ID.
-func (w Website) GroupID() int64 { return w.Data.DefaultGroupID }
-
-// DefaultStoreID returns the default store ID associated to the underlying
-// group.
-func (w Website) DefaultStoreID() (int64, error) {
-	g, err := w.DefaultGroup()
-	if err != nil {
-		return 0, errors.Wrap(err, "[store] Website.DefaultStoreID")
+// Validate checks the internal integrity. May panic when the data has not been
+// set. Empty Groups or Stores are valid settings.
+func (w Website) Validate() error {
+	for _, g := range w.Groups {
+		if w.Data != nil && g.Data != nil && w.ID() != g.Data.WebsiteID {
+			return errors.NewNotValidf("[store] Website %d != Group.WebsiteID %d", w.ID(), g.Data.WebsiteID)
+		}
 	}
-	return g.Data.DefaultStoreID, nil
+	for _, s := range w.Stores {
+		if w.ID() != s.Data.WebsiteID {
+			return errors.NewNotValidf("[store] Website ID %d != Store Website ID %d", w.ID(), s.Data.WebsiteID)
+		}
+	}
+	if w.Config.WebsiteID != w.ID() {
+		return errors.NewNotValidf("[store] Website ID %d != Config Website ID %d", w.ID(), w.Config.WebsiteID)
+	}
+	return nil
 }
 
-// MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
-// struct will be encoded to JSON.
-func (w Website) MarshalJSON() ([]byte, error) {
-	// @todo while generating the TableStore structs we can generate the ffjson code ...
-	return json.Marshal(w.Data)
+// ID returns the website ID. If Data is nil, returns -1.
+func (w Website) ID() int64 {
+	if w.Data == nil {
+		return -1
+	}
+	return w.Data.WebsiteID
+}
+
+// Code returns the website code. Returns an empty string if Data is nil.
+func (w Website) Code() string {
+	if w.Data == nil {
+		return ""
+	}
+	return w.Data.Code.String
+}
+
+// Name returns the website name. Returns an empty string if Data is nil.
+func (w Website) Name() string {
+	if w.Data == nil {
+		return ""
+	}
+	return w.Data.Name.String
+}
+
+// DefaultGroupID returns the associated default group ID. If Data is nil,
+// returns -1.
+func (w Website) DefaultGroupID() int64 {
+	if w.Data == nil {
+		return -1
+	}
+	return w.Data.DefaultGroupID
 }
 
 // DefaultGroup returns the default Group or an error if not found.
@@ -148,13 +158,30 @@ func (w Website) DefaultGroup() (Group, error) {
 	return Group{}, errors.NewNotFoundf(errWebsiteDefaultGroupNotFound)
 }
 
+// DefaultStoreID returns the default store ID associated to the underlying
+// group.
+func (w Website) DefaultStoreID() (int64, error) {
+	g, err := w.DefaultGroup()
+	if err != nil {
+		return 0, errors.Wrap(err, "[store] Website.DefaultStoreID")
+	}
+	return g.DefaultStoreID(), nil
+}
+
 // DefaultStore returns the default store associated to the underlying group.
 func (w Website) DefaultStore() (Store, error) {
 	g, err := w.DefaultGroup()
 	if err != nil {
 		return Store{}, errors.Wrap(err, "[store] Website.DefaultGroup")
 	}
-	return g.DefaultStore()
+	return w.Stores.FindByID(g.DefaultStoreID()), nil
+}
+
+// MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
+// struct will be encoded to JSON.
+func (w Website) MarshalJSON() ([]byte, error) {
+	// @todo while generating the TableStore structs we can generate the ffjson code ...
+	return json.Marshal(w.Data)
 }
 
 /*

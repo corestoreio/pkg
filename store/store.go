@@ -17,6 +17,8 @@ package store
 import (
 	"encoding/json"
 
+	"fmt"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
@@ -47,6 +49,7 @@ type Store struct {
 // are nil. Returns an error if integrity checks fail. config.Getter will be
 // also set to Group and Website.
 func NewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *TableGroup) (Store, error) {
+	// ts cannot be nil but tw and tg can be nil
 	s := Store{
 		Data: ts,
 	}
@@ -65,60 +68,89 @@ func MustNewStore(cfg config.Getter, ts *TableStore, tw *TableWebsite, tg *Table
 	return s
 }
 
-// Validate checks the internal integrity. May panic when the data has not been
-// set.
-func (s Store) Validate() error {
-	if s.WebsiteID() != s.Website.ID() {
-		return errors.NewNotValidf("[store] NewStore: Store.WebsiteID (%d) != Website.ID (%d)", s.WebsiteID(), s.Website.ID())
-	}
-	if s.Group.Website.ID() != s.WebsiteID() {
-		return errors.NewNotValidf("[store] NewStore: Group.WebsiteID (%d) != Website.ID (%d)", s.Group.Website.ID(), s.WebsiteID())
-	}
-	if s.GroupID() != s.Group.ID() {
-		return errors.NewNotValidf("[store] NewStore: Store.GroupID (%d) != Group.ID (%d)", s.GroupID(), s.Group.ID())
-	}
-	if s.Config.WebsiteID != s.WebsiteID() {
-		return errors.NewNotValidf("[store] Store.Validate: Config Website ID %d does not match Website ID %d", s.Config.WebsiteID, s.WebsiteID())
-	}
-	if s.Config.StoreID != s.ID() {
-		return errors.NewNotValidf("[store] Store.Validate: Config Store ID %d does not match Store ID %d", s.Config.StoreID, s.ID())
-	}
-	return nil
-}
-
 // SetWebsiteGroup uses a raw website and a table store slice to set the groups
 // associated to this website and the stores associated to this website. It
 // returns an error if the data integrity is incorrect.
 func (s *Store) SetWebsiteGroup(cfg config.Getter, tw *TableWebsite, tg *TableGroup) error {
+
+	s.Config = cfg.NewScoped(s.WebsiteID(), s.ID())
+
+	if tw == nil && tg == nil {
+		// avoid recursion and stack overflow
+		return nil
+	}
+
 	var err error
-	s.Website, err = NewWebsite(cfg, tw, TableGroupSlice{tg}, TableStoreSlice{s.Data})
+	s.Website, err = NewWebsite(cfg, tw, nil, nil) // avoid recursion so store must be nil
 	if err != nil {
 		return errors.Wrapf(err, "[store] Store.SetWebsiteGroup.NewWebsite")
 	}
-	if s.Group, err = NewGroup(cfg, tg, tw, TableStoreSlice{s.Data}); err != nil {
+	if s.Group, err = NewGroup(cfg, tg, nil, nil); err != nil { // avoid recursion so store must be nil
 		return errors.Wrapf(err, "[store] TableGroup: %#v\nTableWebsite: %#v\n", tg, tw)
 	}
-	s.Config = cfg.NewScoped(tw.WebsiteID, s.ID())
+
 	return s.Validate()
 }
 
-// ID returns the store id
+// Validate checks the internal integrity. May panic when the data has not been
+// set.
+func (s Store) Validate() (err error) {
+	switch {
+	case s.WebsiteID() != s.Website.ID():
+		err = errors.NewNotValidf("[store] Store %d: WebsiteID %d != Website.ID %d", s.ID(), s.WebsiteID(), s.Website.ID())
+
+	case s.Group.Website.Data != nil && s.Group.Website.ID() != s.WebsiteID():
+		err = errors.NewNotValidf("[store] Store %d: Group.WebsiteID %d != Website.ID %d", s.ID(), s.Group.Website.ID(), s.WebsiteID())
+
+	case s.GroupID() != s.Group.ID():
+		err = errors.NewNotValidf("[store] Store %d: Store.GroupID %d != Group.ID %d", s.ID(), s.GroupID(), s.Group.ID())
+
+	case s.Config.WebsiteID != s.WebsiteID():
+		err = errors.NewNotValidf("[store] Store %d: Website ID %d != Config Website ID %d", s.ID(), s.WebsiteID(), s.Config.WebsiteID)
+
+	case s.Config.StoreID != s.ID():
+		err = errors.NewNotValidf("[store] Store %d: Store ID %d != Config Store ID %d", s.ID(), s.ID(), s.Config.StoreID)
+	}
+	return err
+}
+
+// ID returns the store id. If Data is nil returns -1.
 func (s Store) ID() int64 {
+	if s.Data == nil {
+		return -1
+	}
 	return s.Data.StoreID
 }
 
-// Code returns the store code.
+// Code returns the store code. Returns empty if Data is nil.
 func (s Store) Code() string {
+	if s.Data == nil {
+		return ""
+	}
 	return s.Data.Code.String
 }
 
-// GroupID returns the associated group ID.
+// Name returns the store name. Returns empty if Data is nil.
+func (s Store) Name() string {
+	if s.Data == nil {
+		return ""
+	}
+	return s.Data.Name
+}
+
+// GroupID returns the associated group ID. If data is nil returns -1.
 func (s Store) GroupID() int64 {
+	if s.Data == nil {
+		return -1
+	}
 	return s.Data.GroupID
 }
 
-// WebsiteID returns the associated website ID.
+// WebsiteID returns the associated website ID. If data is nil returns -1.
 func (s Store) WebsiteID() int64 {
+	if s.Data == nil {
+		return -1
+	}
 	return s.Data.WebsiteID
 }
 
@@ -135,6 +167,22 @@ func (s Store) MarshalLog(kv log.KeyValuer) error {
 		kv.AddInt64("store_id", s.Data.StoreID)
 	}
 	return nil
+}
+
+// String returns human readable information about a Store. The returned string
+// may change in the future to provide better informations.
+func (s Store) String() string {
+	return fmt.Sprintf(`Store[ID:%d Code:%q Name:%q] Website[ID:%d Code:%q Name:%q] Group[ID:%d Name:%q] Valid: %t`,
+		s.ID(),
+		s.Name(),
+		s.Code(),
+		s.Website.ID(),
+		s.Website.Code(),
+		s.Website.Name(),
+		s.Group.ID(),
+		s.Group.Name(),
+		s.Validate() == nil,
+	)
 }
 
 //// Path returns the sub path from the URL where CoreStore is installed

@@ -368,7 +368,7 @@ func (s *Service) LoadFromDB(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) err
 	s.ClearCache()
 
 	err := s.loadFromOptions(
-		s.backend.baseConfig,
+		s.backend.rootConfig,
 		WithTableWebsites(s.backend.websites...),
 		WithTableGroups(s.backend.groups...),
 		WithTableStores(s.backend.stores...),

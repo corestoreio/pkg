@@ -17,6 +17,8 @@ package store_test
 import (
 	"testing"
 
+	"sync"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -34,23 +36,22 @@ var serviceStoreSimpleTest = store.MustNewService(
 	store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 )
 
-func TestNewServiceStore(t *testing.T) {
+func TestNewServiceStore_QueryInvalidStore(t *testing.T) {
 
 	assert.False(t, serviceStoreSimpleTest.IsCacheEmpty())
 
 	s, err := serviceStoreSimpleTest.Store(-1)
-	assert.NoError(t, err)
-	assert.NotNil(t, s)
-	assert.EqualValues(t, "de", s.Data.Code.String)
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	err = s.Validate()
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
+	assert.EqualValues(t, "", s.Code())
 
 	assert.False(t, serviceStoreSimpleTest.IsCacheEmpty())
 	serviceStoreSimpleTest.ClearCache()
 	assert.True(t, serviceStoreSimpleTest.IsCacheEmpty())
-
 }
 
-func TestMustNewService(t *testing.T) {
-
+func TestMustNewService_Panic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -59,6 +60,13 @@ func TestMustNewService(t *testing.T) {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
+	_ = store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+	)
+}
+
+func TestMustNewService_NoPanic(t *testing.T) {
 	tests := []struct {
 		have       int64
 		wantErrBhf errors.BehaviourFunc
@@ -70,13 +78,36 @@ func TestMustNewService(t *testing.T) {
 	serviceEmpty := store.MustNewService(cfgmock.NewService())
 	for i, test := range tests {
 		s, err := serviceEmpty.Store(test.have)
-		assert.Nil(t, s, "Index %d")
+		assert.Error(t, s.Validate(), "Index %d", i)
 		assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 	}
-	assert.True(t, serviceStoreSimpleTest.IsCacheEmpty())
 }
 
-func TestNewServiceDefaultStoreView(t *testing.T) {
+func TestNewService_DefaultStoreView_OK(t *testing.T) {
+
+	serviceDefaultStore := store.MustNewService(
+		cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+	)
+
+	// call it twice to test internal caching
+	s, err := serviceDefaultStore.DefaultStoreView()
+	assert.NotNil(t, s)
+	assert.NoError(t, err)
+	assert.Exactly(t, "de", s.Code())
+
+	s, err = serviceDefaultStore.DefaultStoreView()
+	assert.NotNil(t, s)
+	assert.NoError(t, err)
+	assert.Exactly(t, "de", s.Code())
+	assert.False(t, serviceDefaultStore.IsCacheEmpty())
+	serviceDefaultStore.ClearCache()
+	assert.True(t, serviceDefaultStore.IsCacheEmpty())
+}
+
+func TestNewService_DefaultStoreView_NOK(t *testing.T) {
 
 	serviceDefaultStore := store.MustNewService(
 		cfgmock.NewService(),
@@ -88,18 +119,10 @@ func TestNewServiceDefaultStoreView(t *testing.T) {
 	// call it twice to test internal caching
 	s, err := serviceDefaultStore.DefaultStoreView()
 	assert.NotNil(t, s)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, s.Data.Code.String)
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.Exactly(t, "", s.Code())
 
-	s, err = serviceDefaultStore.DefaultStoreView()
-	assert.NotNil(t, s)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, s.Data.Code.String)
-	assert.False(t, serviceDefaultStore.IsCacheEmpty())
-	serviceDefaultStore.ClearCache()
-	assert.True(t, serviceDefaultStore.IsCacheEmpty())
 }
-
 func TestNewServiceStores(t *testing.T) {
 
 	serviceStores := store.MustNewService(
@@ -128,17 +151,20 @@ func TestNewServiceStores(t *testing.T) {
 }
 
 func TestMustNewServiceStores(t *testing.T) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
-			assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+			assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
+			//t.Logf("%+v", err)
 		} else {
 			t.Fatal("Expecting a Panic")
 		}
 	}()
-	ss := store.MustNewService(cfgmock.NewService(), store.WithTableStores(nil), store.WithTableWebsites(nil), store.WithTableGroups(nil)).Stores()
-	assert.Nil(t, ss)
+	_ = store.MustNewService(cfgmock.NewService(),
+		store.WithTableStores(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableGroups(&store.TableGroup{GroupID: 10, WebsiteID: 21, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+	)
 }
 
 func TestNewServiceGroup(t *testing.T) {
@@ -152,26 +178,26 @@ func TestNewServiceGroup(t *testing.T) {
 	tests := []struct {
 		m               *store.Service
 		have            int64
-		wantErr         error
+		wantErr         errors.BehaviourFunc
 		wantGroupName   string
 		wantWebsiteCode string
 	}{
-		{serviceGroupSimpleTest, 20, nil, "DACH Group", "euro"},
-		{serviceGroupSimpleTest, 1, nil, "DACH Group", "euro"},
+		{serviceGroupSimpleTest, 20, errors.IsNotFound, "DACH Group", "euro"},
 		{serviceGroupSimpleTest, 1, nil, "DACH Group", "euro"},
 	}
 
 	for i, test := range tests {
 		g, err := test.m.Group(test.have)
 		if test.wantErr != nil {
-			assert.Nil(t, g, "Index %d", i)
-			assert.EqualError(t, test.wantErr, err.Error(), "test %#v", test)
-		} else {
-			assert.NotNil(t, g, "test %#v", test)
-			assert.NoError(t, err, "test %#v", test)
-			assert.Equal(t, test.wantGroupName, g.Data.Name)
-			assert.Equal(t, test.wantWebsiteCode, g.Website.Data.Code.String)
+			assert.NoError(t, g.Validate(), "Index %d", i)
+			assert.True(t, test.wantErr(err), "Index %d\n%+v", i, err)
+			continue
 		}
+		assert.NotNil(t, g, "Index %d", i)
+		assert.NoError(t, err, "Index %d\n%#v", i, err)
+		assert.Exactly(t, test.wantGroupName, g.Name(), "Index %d", i)
+		assert.Exactly(t, test.wantWebsiteCode, g.Website.Code(), "Index %d", i)
+
 	}
 	assert.False(t, serviceGroupSimpleTest.IsCacheEmpty())
 	serviceGroupSimpleTest.ClearCache()
@@ -181,20 +207,22 @@ func TestNewServiceGroup(t *testing.T) {
 func TestNewServiceGroups(t *testing.T) {
 
 	serviceGroups := store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
-		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
 		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
 	)
-
-	// call it twice to test internal caching
-	ss := serviceGroups.Groups()
-	assert.NotNil(t, ss)
-
-	assert.Len(t, ss, 0)
-
-	ss = serviceGroups.Groups()
-	assert.NotNil(t, ss)
-	assert.Len(t, ss, 0)
+	const iterations = 10
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			ss := serviceGroups.Groups()
+			assert.NotNil(t, ss)
+			assert.Len(t, ss, 1)
+		}(&wg)
+	}
+	wg.Wait()
 
 	assert.False(t, serviceGroups.IsCacheEmpty())
 	serviceGroups.ClearCache()
@@ -212,23 +240,23 @@ func TestNewServiceWebsite(t *testing.T) {
 	tests := []struct {
 		m               *store.Service
 		have            int64
-		wantErr         error
+		wantErr         errors.BehaviourFunc
 		wantWebsiteCode string
 	}{
 		{serviceWebsite, 1, nil, "euro"},
-		{serviceWebsite, 0, nil, "euro"},
-		{serviceWebsite, 0, nil, "euro"},
+		{serviceWebsite, 0, errors.IsNotFound, ""},
+		{serviceWebsite, 0, errors.IsNotFound, ""},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		haveW, haveErr := test.m.Website(test.have)
 		if test.wantErr != nil {
-			assert.Error(t, haveErr, "%#v", test)
-			assert.Nil(t, haveW, "%#v", test)
+			assert.True(t, test.wantErr(haveErr), "Index %d\n%+v", i, haveErr)
+			assert.True(t, errors.IsNotValid(haveW.Validate()), "Index %d", i)
 		} else {
-			assert.NoError(t, haveErr, "%#v", test)
-			assert.NotNil(t, haveW, "%#v", test)
-			assert.Equal(t, test.wantWebsiteCode, haveW.Data.Code.String)
+			assert.NoError(t, haveErr, "Index %d\n%+v", i, haveErr)
+			assert.NotNil(t, haveW, "Index %d", i)
+			assert.Exactly(t, test.wantWebsiteCode, haveW.Code(), "Index %d", i)
 		}
 	}
 	assert.False(t, serviceWebsite.IsCacheEmpty())

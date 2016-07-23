@@ -20,8 +20,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/slices"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,7 +51,7 @@ var testFactory = mustNewFactory(
 	),
 )
 
-func TestStorageWebsite(t *testing.T) {
+func TestFactoryWebsite(t *testing.T) {
 
 	tests := []struct {
 		have       int64
@@ -65,7 +65,7 @@ func TestStorageWebsite(t *testing.T) {
 	for i, test := range tests {
 		w, err := testFactory.Website(test.have)
 		if test.wantErrBhf != nil {
-			assert.Nil(t, w)
+			assert.Error(t, w.Validate(), "Index %d", i)
 			assert.True(t, test.wantErrBhf(err), "Index %d Error: %s", i, err)
 		} else {
 			assert.NotNil(t, w, "Index %d", i)
@@ -83,26 +83,26 @@ func TestStorageWebsite(t *testing.T) {
 	assert.EqualValues(t, "DACH Group", dGroup.Data.Name)
 
 	assert.NotNil(t, w.Groups)
-	assert.EqualValues(t, util.Int64Slice{1, 2}, w.Groups.IDs())
+	assert.EqualValues(t, slices.Int64{1, 2}, w.Groups.IDs())
 
 	assert.NotNil(t, w.Stores)
-	assert.EqualValues(t, util.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
+	assert.EqualValues(t, slices.String{"de", "uk", "at", "ch"}, w.Stores.Codes())
 }
 
-func TestStorageWebsites(t *testing.T) {
+func TestFactoryWebsites(t *testing.T) {
 
 	websites, err := testFactory.Websites()
 	assert.NoError(t, err)
-	assert.EqualValues(t, util.StringSlice{"admin", "euro", "oz"}, websites.Codes())
-	assert.EqualValues(t, util.Int64Slice{0, 1, 2}, websites.IDs())
+	assert.EqualValues(t, slices.String{"admin", "euro", "oz"}, websites.Codes())
+	assert.EqualValues(t, slices.Int64{0, 1, 2}, websites.IDs())
 
 	var ids = []struct {
-		g util.Int64Slice
-		s util.Int64Slice
+		g slices.Int64
+		s slices.Int64
 	}{
-		{util.Int64Slice{0}, util.Int64Slice{0}},             //admin
-		{util.Int64Slice{1, 2}, util.Int64Slice{1, 4, 2, 3}}, // dach
-		{util.Int64Slice{3}, util.Int64Slice{5, 6}},          // oz
+		{slices.Int64{0}, slices.Int64{0}},             //admin
+		{slices.Int64{1, 2}, slices.Int64{1, 4, 2, 3}}, // dach
+		{slices.Int64{3}, slices.Int64{5, 6}},          // oz
 	}
 
 	for i, w := range websites {
@@ -123,10 +123,10 @@ func TestWebsiteSliceFilter(t *testing.T) {
 	gs := websites.Filter(func(w Website) bool {
 		return w.Data.WebsiteID > 0
 	})
-	assert.EqualValues(t, util.Int64Slice{1, 2}, gs.IDs())
+	assert.EqualValues(t, slices.Int64{1, 2}, gs.IDs())
 }
 
-func TestStorageGroup(t *testing.T) {
+func TestFactoryGroup(t *testing.T) {
 
 	tests := []struct {
 		id         int64
@@ -140,7 +140,7 @@ func TestStorageGroup(t *testing.T) {
 	for i, test := range tests {
 		g, err := testFactory.Group(test.id)
 		if test.wantErrBhf != nil {
-			assert.Nil(t, g)
+			assert.NoError(t, g.Validate())
 			assert.True(t, test.wantErrBhf(err), "Index %d Error: %s", i, err)
 		} else {
 			assert.NotNil(t, g, "Index %d", i)
@@ -160,17 +160,17 @@ func TestStorageGroup(t *testing.T) {
 	assert.EqualValues(t, "oz", g.Website.Data.Code.String)
 
 	assert.NotNil(t, g.Stores)
-	assert.EqualValues(t, util.StringSlice{"au", "nz"}, g.Stores.Codes())
+	assert.EqualValues(t, slices.String{"au", "nz"}, g.Stores.Codes())
 }
 
-func TestStorageGroups(t *testing.T) {
+func TestFactoryGroups(t *testing.T) {
 
 	groups, err := testFactory.Groups()
 	assert.NoError(t, err)
-	assert.EqualValues(t, util.Int64Slice{3, 1, 0, 2}, groups.IDs())
+	assert.EqualValues(t, slices.Int64{3, 1, 0, 2}, groups.IDs())
 	assert.True(t, groups.Len() == 4)
 
-	var ids = []util.Int64Slice{
+	var ids = []slices.Int64{
 		{5, 6},    // oz
 		{1, 2, 3}, // dach
 		{0},       // default
@@ -190,10 +190,10 @@ func TestGroupSliceFilter(t *testing.T) {
 	gs := groups.Filter(func(g Group) bool {
 		return g.Data.GroupID > 0
 	})
-	assert.EqualValues(t, util.Int64Slice{3, 1, 2}, gs.IDs())
+	assert.EqualValues(t, slices.Int64{3, 1, 2}, gs.IDs())
 }
 
-func TestStorageGroupNoWebsite(t *testing.T) {
+func TestFactoryGroupNoWebsite(t *testing.T) {
 
 	var tst = mustNewFactory(
 		cfgmock.NewService(),
@@ -209,7 +209,7 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 		),
 	)
 	g, err := tst.Group(3)
-	assert.Nil(t, g)
+	assert.NoError(t, g.Validate())
 	assert.True(t, errors.IsNotFound(err), err.Error())
 
 	gs, err := tst.Groups()
@@ -217,7 +217,7 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), err.Error())
 }
 
-func TestStorageStore(t *testing.T) {
+func TestFactoryStore(t *testing.T) {
 
 	tests := []struct {
 		have       int64
@@ -231,7 +231,8 @@ func TestStorageStore(t *testing.T) {
 	for i, test := range tests {
 		s, err := testFactory.Store(test.have)
 		if test.wantErrBhf != nil {
-			assert.Nil(t, s, "%#v", test)
+			errV := s.Validate()
+			assert.Error(t, errV, "Index %d: %+v", i, errV)
 			assert.True(t, test.wantErrBhf(err), "Index: %d Error: %s", i, err)
 		} else {
 			assert.NotNil(t, s, "Index %d", i)
@@ -244,23 +245,24 @@ func TestStorageStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
-	assert.EqualValues(t, "DACH Group", s.Group.Data.Name)
+	assert.Exactly(t, "DACH Group", s.Group.Data.Name)
 
-	assert.EqualValues(t, "euro", s.Website.Data.Code.String)
+	assert.Exactly(t, "euro", s.Website.Data.Code.String)
 	wg, err := s.Website.DefaultGroup()
 	assert.NotNil(t, wg)
-	assert.EqualValues(t, "DACH Group", wg.Data.Name)
-	wgs, err := wg.DefaultStore()
-	assert.NoError(t, err)
-	assert.EqualValues(t, "at", wgs.Data.Code.String)
+	assert.Exactly(t, "DACH Group", wg.Data.Name)
+
+	wgs, err := testFactory.Store(wg.DefaultStoreID())
+	assert.NoError(t, err, "%+v", err)
+	assert.Exactly(t, "at", wgs.Code(), " WebsiteGroup Stores: %#v", wg.Stores)
 }
 
-func TestStorageStores(t *testing.T) {
+func TestFactoryStores(t *testing.T) {
 
 	stores, err := testFactory.Stores()
 	assert.NoError(t, err)
-	assert.EqualValues(t, util.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, stores.Codes())
-	assert.EqualValues(t, util.Int64Slice{0, 5, 1, 4, 2, 6, 3}, stores.IDs())
+	assert.EqualValues(t, slices.String{"admin", "au", "de", "uk", "at", "nz", "ch"}, stores.Codes())
+	assert.EqualValues(t, slices.Int64{0, 5, 1, 4, 2, 6, 3}, stores.IDs())
 
 	var ids = []struct {
 		g string
@@ -319,7 +321,7 @@ func TestDefaultStoreView(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
-func TestStorageStoreErrors(t *testing.T) {
+func TestFactoryStoreErrors(t *testing.T) {
 
 	var nsw = mustNewFactory(
 		cfgmock.NewService(),
@@ -331,7 +333,7 @@ func TestStorageStoreErrors(t *testing.T) {
 		),
 	)
 	stw, err := nsw.Store(6)
-	assert.Nil(t, stw)
+	assert.Error(t, stw.Validate())
 	assert.True(t, errors.IsNotFound(err), err.Error())
 
 	stws, err := nsw.Stores()
@@ -353,7 +355,7 @@ func TestStorageStoreErrors(t *testing.T) {
 	)
 
 	stg, err := nsg.Store(6)
-	assert.Nil(t, stg)
+	assert.Error(t, stg.Validate())
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 
 	stgs, err := nsg.Stores()
@@ -361,7 +363,7 @@ func TestStorageStoreErrors(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
-func TestStorageReInit(t *testing.T) {
+func TestFactoryReInit(t *testing.T) {
 	// quick implement, use mock of dbr.SessionRunner and remove connection
 
 	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {

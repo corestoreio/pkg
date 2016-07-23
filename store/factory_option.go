@@ -27,10 +27,16 @@ func WithTableWebsites(tws ...*TableWebsite) Option {
 
 // WithTableGroups appends the data from the DB table groups to the service.
 func WithTableGroups(tgs ...*TableGroup) Option {
-	return func(s *factory) error { s.groups = TableGroupSlice(tgs); return nil }
+	return func(s *factory) error {
+		s.groups = append(s.groups, tgs...)
+		return nil
+	}
 }
 
 // WithTableStores appends the data from the DB table store to the service.
 func WithTableStores(tss ...*TableStore) Option {
-	return func(s *factory) error { s.stores = TableStoreSlice(tss); return nil }
+	return func(s *factory) error {
+		s.stores = append(s.stores, tss...)
+		return nil
+	}
 }

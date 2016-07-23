@@ -15,8 +15,9 @@
 package store_test
 
 import (
-	"github.com/corestoreio/csfw/store"
 	"testing"
+
+	"github.com/corestoreio/csfw/store"
 )
 
 var benchmarkServiceStore store.Store

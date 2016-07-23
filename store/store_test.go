@@ -20,18 +20,21 @@ import (
 
 	"bytes"
 
+	"fmt"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/slices"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ log.Marshaler = (*store.Store)(nil)
+var _ fmt.Stringer = (*store.Store)(nil)
 
 const TODO_Better_Test_Data = "@todo implement better test data which is equal for each Magento version"
 
@@ -77,8 +80,9 @@ func TestNewStoreErrorIncorrectGroup(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
-	assert.Nil(t, s)
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	err = s.Validate()
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 }
 
 func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
@@ -89,8 +93,9 @@ func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
-	assert.Nil(t, s)
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	err = s.Validate()
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 }
 
 func TestStoreSlice(t *testing.T) {
@@ -110,16 +115,16 @@ func TestStoreSlice(t *testing.T) {
 		),
 	}
 	assert.True(t, storeSlice.Len() == 2)
-	assert.EqualValues(t, util.Int64Slice{1, 5}, storeSlice.IDs())
-	assert.EqualValues(t, util.StringSlice{"de", "au"}, storeSlice.Codes())
+	assert.EqualValues(t, slices.Int64{1, 5}, storeSlice.IDs())
+	assert.EqualValues(t, slices.String{"de", "au"}, storeSlice.Codes())
 
-	storeSlice2 := storeSlice.Filter(func(s *store.Store) bool {
+	storeSlice2 := storeSlice.Filter(func(s store.Store) bool {
 		return s.Website.Data.WebsiteID == 2
 	})
 	assert.True(t, storeSlice2.Len() == 1)
 	assert.Equal(t, "au", storeSlice2[0].Data.Code.String)
-	assert.EqualValues(t, util.Int64Slice{5}, storeSlice2.IDs())
-	assert.EqualValues(t, util.StringSlice{"au"}, storeSlice2.Codes())
+	assert.EqualValues(t, slices.Int64{5}, storeSlice2.IDs())
+	assert.EqualValues(t, slices.String{"au"}, storeSlice2.Codes())
 
 	assert.Nil(t, (store.StoreSlice{}).IDs())
 	assert.Nil(t, (store.StoreSlice{}).Codes())
@@ -212,7 +217,7 @@ func TestTableStoreSliceCodes(t *testing.T) {
 
 	codes := testStores.Extract().Code()
 	assert.NotNil(t, codes)
-	assert.Equal(t, util.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, codes)
+	assert.Equal(t, slices.String{"admin", "au", "de", "uk", "at", "nz", "ch"}, codes)
 
 	var ts = store.TableStoreSlice{}
 	assert.Nil(t, ts.Extract().Code())
@@ -224,7 +229,7 @@ func TestTableStoreSliceIDs(t *testing.T) {
 
 	ids := testStores.Extract().StoreID()
 	assert.NotNil(t, ids)
-	assert.Equal(t, util.Int64Slice{0, 5, 1, 4, 2, 6, 3}, ids)
+	assert.Equal(t, slices.Int64{0, 5, 1, 4, 2, 6, 3}, ids)
 
 	var ts = store.TableStoreSlice{}
 	assert.Nil(t, ts.Extract().StoreID())

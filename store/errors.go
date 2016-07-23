@@ -14,23 +14,13 @@
 
 package store
 
-// ErrStoreChangeNotAllowed if a given store within a website would like to
-// switch to another store in a different website.
-const errStoreChangeNotAllowed = "[store] Store change not allowed"
-
 const (
-	errStoreNotFound         = "[store] Store not found"
-	errStoreDefaultNotFound  = "[store] Default Store ID not found"
-	errStoreNotActive        = "[store] Store not active"
-	errStoreIncorrectGroup   = "[store] Incorrect group"
-	errStoreIncorrectWebsite = "[store] Incorrect website"
-	errStoreCodeInvalid      = "[store] The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter. Have: %q"
+	errStoreDefaultNotFound = "[store] Default Store ID not found"
+	errStoreCodeInvalid     = "[store] The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter. Have: %q"
 )
 
 const (
-	errGroupDefaultStoreNotFound   = "[store] Group default store %d not found"
-	errGroupWebsiteIntegrityFailed = "[store] Groups WebsiteID %d does not match the Websites ID %d"
-	errGroupStoreIntegrityFailed   = "[store] Groups Store ID %d with its Group ID %d does not match the Group ID %d"
+	errGroupDefaultStoreNotFound = "[store] Group default store %d not found"
 )
 
 // ErrWebsite* are general errors when handling with the Website type.

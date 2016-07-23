@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,8 +38,10 @@ func TestNewGroup(t *testing.T) {
 	assert.Nil(t, g.Stores)
 
 	gStores2, err := g.DefaultStore()
-	assert.Nil(t, gStores2)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+
+	err = gStores2.Validate()
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 }
 
 func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
@@ -51,12 +52,11 @@ func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		nil,
 	)
-	assert.Nil(t, ng)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	assert.NoError(t, ng.Validate())
 }
 
-func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
-
+func TestNewGroupSetStores_WebsiteIsNil(t *testing.T) {
 	g, err := store.NewGroup(
 		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
@@ -65,12 +65,14 @@ func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
 			&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 		},
 	)
-	assert.Nil(t, g)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.False(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.NoError(t, g.Validate())
+	assert.Exactly(t, int64(1), g.ID())
+	assert.Exactly(t, []int64(nil), g.Stores.IDs())
+	assert.Exactly(t, int64(-1), g.Website.ID())
 }
 
 func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
-
 	g, err := store.NewGroup(
 		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
@@ -79,13 +81,12 @@ func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
 			&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 		},
 	)
-	assert.Nil(t, g)
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+	assert.NoError(t, g.Validate())
 }
 
 func TestNewGroupSetStores(t *testing.T) {
-
-	g, err := store.NewGroup(
+	g := store.MustNewGroup(
 		cfgmock.NewService(),
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
@@ -99,16 +100,15 @@ func TestNewGroupSetStores(t *testing.T) {
 			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 		},
 	)
-	assert.NoError(t, err)
 
 	assert.NotNil(t, g.Stores)
-	assert.EqualValues(t, util.StringSlice{"de", "at", "ch"}, g.Stores.Codes())
+	assert.Exactly(t, []string{"de", "at", "ch"}, g.Stores.Codes())
 
 	gDefaultStore, err := g.DefaultStore()
 	assert.NoError(t, err)
-	assert.EqualValues(t, "euro", gDefaultStore.Website.Data.Code.String)
-	assert.EqualValues(t, "DACH Group", gDefaultStore.Group.Data.Name)
-	assert.EqualValues(t, "at", gDefaultStore.Data.Code.String)
+	assert.Exactly(t, g.WebsiteID(), gDefaultStore.WebsiteID())
+	assert.Exactly(t, g.ID(), gDefaultStore.GroupID())
+	assert.Exactly(t, "at", gDefaultStore.Code())
 }
 
 var testGroups = store.TableGroupSlice{

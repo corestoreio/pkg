@@ -17,8 +17,6 @@ package store
 import (
 	"sync"
 
-	"fmt"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
@@ -28,8 +26,8 @@ import (
 // database. It creates for each call to each of its method receivers new
 // Stores, Groups or Websites.
 type factory struct {
-	// baseConfig parent config service. can only be set once.
-	baseConfig config.Getter
+	// rootConfig parent config service. can only be set once.
+	rootConfig config.Getter
 	mu         sync.RWMutex
 	websites   TableWebsiteSlice
 	groups     TableGroupSlice
@@ -43,7 +41,7 @@ type factory struct {
 // and a DB connection.
 func newFactory(cfg config.Getter, opts ...Option) (*factory, error) {
 	s := &factory{
-		baseConfig: cfg,
+		rootConfig: cfg,
 	}
 	for _, opt := range opts {
 		if opt != nil {
@@ -58,7 +56,7 @@ func newFactory(cfg config.Getter, opts ...Option) (*factory, error) {
 func mustNewFactory(cfg config.Getter, opts ...Option) *factory {
 	f, err := newFactory(cfg, opts...)
 	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
+		panic(err)
 	}
 	return f
 }
@@ -75,7 +73,7 @@ func (f factory) Website(id int64) (Website, error) {
 	if !found {
 		return Website{}, errors.NewNotFoundf("[store] WebsiteID %d", id)
 	}
-	return NewWebsite(f.baseConfig, w, f.groups, f.stores)
+	return NewWebsite(f.rootConfig, w, f.groups, f.stores)
 }
 
 // Websites creates a slice containing all new pointers to Websites with its
@@ -85,7 +83,7 @@ func (f factory) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(f.websites), len(f.websites))
 	for i, w := range f.websites {
 		var err error
-		websites[i], err = NewWebsite(f.baseConfig, w, f.groups, f.stores)
+		websites[i], err = NewWebsite(f.rootConfig, w, f.groups, f.stores)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[store] Storage.Websites. WebsiteID: %d", w.WebsiteID)
 		}
@@ -110,7 +108,7 @@ func (f factory) Group(id int64) (Group, error) {
 	if !found {
 		return Group{}, errors.NewNotFoundf("[store] Website. WebsiteID %d GroupID %v", g.WebsiteID, id)
 	}
-	return NewGroup(f.baseConfig, g, w, f.stores)
+	return NewGroup(f.rootConfig, g, w, f.stores)
 }
 
 // Groups creates a slice containing all pointers to Groups with its associated
@@ -121,10 +119,10 @@ func (f factory) Groups() (GroupSlice, error) {
 	for i, g := range f.groups {
 		w, found := f.website(g.WebsiteID)
 		if !found {
-			return nil, errors.NewNotFoundf("[store] WebsiteID %d", g.WebsiteID)
+			return nil, errors.NewNotFoundf("[store] WebsiteID %d not found in Group Slice with its Website IDs %v", g.WebsiteID, f.websites.Extract().WebsiteID())
 		}
 		var err error
-		groups[i], err = NewGroup(f.baseConfig, g, w, f.stores)
+		groups[i], err = NewGroup(f.rootConfig, g, w, f.stores)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[store] GroupID %d WebsiteID %d", g.GroupID, g.WebsiteID)
 		}
@@ -155,14 +153,14 @@ func (f factory) Store(id int64) (Store, error) {
 		return ns, errors.NewNotFoundf("[store] GroupID: %d", s.GroupID)
 	}
 	var err error
-	ns, err = NewStore(f.baseConfig, s, w, g)
+	ns, err = NewStore(f.rootConfig, s, w, g)
 	if err != nil {
 		return ns, errors.Wrapf(err, "[store] StoreID %d WebsiteID %d GroupID %d", s.StoreID, w.WebsiteID, g.GroupID)
 	}
 	if err := ns.Website.SetGroupsStores(f.groups, f.stores); err != nil {
 		return ns, errors.Wrap(err, "")
 	}
-	if err := ns.Group.SetWebsiteStores(f.baseConfig, w, f.stores); err != nil {
+	if err := ns.Group.SetWebsiteStores(f.rootConfig, w, f.stores); err != nil {
 		return ns, errors.Wrap(err, "[store] Storage.Store.Group.SetWebsiteStores")
 	}
 	return ns, nil

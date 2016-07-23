@@ -53,6 +53,15 @@ func (ss StoreSlice) Each(f func(Store)) StoreSlice {
 	return ss
 }
 
+func (ss StoreSlice) FindByID(id int64) Store {
+	for _, s := range ss {
+		if s.ID() == id {
+			return s
+		}
+	}
+	return Store{}
+}
+
 // Codes returns all store codes
 func (ss StoreSlice) Codes() []string {
 	if len(ss) == 0 {
