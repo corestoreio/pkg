@@ -212,7 +212,7 @@ func (p Path) fq(buf *bytes.Buffer) error {
 		id = 0
 	}
 
-	if _, err := buf.Write(scp.Bytes()); err != nil {
+	if _, err := buf.Write(scp.StrBytes()); err != nil {
 		return errors.NewWriteFailed(err, "[cfgpath] buf.Write")
 	}
 	if err := buf.WriteByte(Separator); err != nil {

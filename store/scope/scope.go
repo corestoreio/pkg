@@ -45,6 +45,17 @@ type Scoper interface {
 	Scope() (Scope, int64)
 }
 
+var (
+	jsonDefault = []byte(`"Default"`)
+	jsonWebsite = []byte(`"Website"`)
+	jsonGroup   = []byte(`"Group"`)
+	jsonStore   = []byte(`"Store"`)
+
+	sbWebsite = []byte(`Website`)
+	sbGroup   = []byte(`Group`)
+	sbStore   = []byte(`Store`)
+)
+
 const _ScopeName = "AbsentDefaultWebsiteGroupStore"
 
 var _ScopeIndex = [...]uint8{0, 6, 13, 20, 25, 30}
@@ -63,9 +74,32 @@ func (i Scope) StrScope() string {
 	return FromScope(i).String()
 }
 
-// Bytes returns the StrScope as byte slice from a Scope. The returned byte
-// slice is owned by this package. You must copy it for further use.
-func (i Scope) Bytes() []byte {
+// MarshalJSON implements the Marshaler interface. The returned byte slice is
+// owned by the callee. You must copy it for further use.
+func (s Scope) MarshalJSON() ([]byte, error) {
+	var ret []byte
+	switch s {
+	case Website:
+		ret = jsonWebsite
+	case Group:
+		ret = jsonGroup
+	case Store:
+		ret = jsonStore
+	default:
+		ret = jsonDefault
+	}
+	return ret, nil
+}
+
+// UnmarshalJSON implements the Unmarshaler interface
+func (s *Scope) UnmarshalJSON(b []byte) error {
+	*s = FromBytes(b)
+	return nil
+}
+
+// StrBytes returns the StrScope as byte slice from a Scope. The returned byte
+// slice is owned by the callee. You must copy it for further use.
+func (i Scope) StrBytes() []byte {
 	switch i {
 	case Website:
 		return bWebsites
@@ -151,13 +185,27 @@ func Valid(s string) bool {
 	return false
 }
 
-// FromBytes returns the scope ID from a byte slice: default, websites or
-// stores. Opposite of FromScope
+// FromBytes returns the scope ID from a byte slice. Supported values are
+// default, websites, stores, Default, Website, Group and store. Case sensitive.
 func FromBytes(b []byte) Scope {
 	switch {
 	case bytes.Compare(bWebsites, b) == 0:
 		return Website
 	case bytes.Compare(bStores, b) == 0:
+		return Store
+
+	case bytes.Compare(jsonWebsite, b) == 0:
+		return Website
+	case bytes.Compare(jsonGroup, b) == 0:
+		return Group
+	case bytes.Compare(jsonStore, b) == 0:
+		return Store
+
+	case bytes.Compare(sbWebsite, b) == 0:
+		return Website
+	case bytes.Compare(sbGroup, b) == 0:
+		return Group
+	case bytes.Compare(sbStore, b) == 0:
 		return Store
 	}
 	return Default

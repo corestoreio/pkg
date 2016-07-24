@@ -15,10 +15,14 @@
 package scope
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+var _ json.Marshaler = (*Scope)(nil)
+var _ json.Unmarshaler = (*Scope)(nil)
 
 func TestScopeBits(t *testing.T) {
 
@@ -160,7 +164,7 @@ func TestStrScopeBytes(t *testing.T) {
 		{44},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.id.StrScope(), string(test.id.Bytes()), "Index %d", i)
+		assert.Exactly(t, test.id.StrScope(), string(test.id.StrBytes()), "Index %d", i)
 	}
 }
 
@@ -183,4 +187,70 @@ func TestValidParent(t *testing.T) {
 			t.Errorf("(%d) Have: %v Want: %v", i, have, want)
 		}
 	}
+}
+
+func TestScope_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		s    Scope
+		want []byte
+	}{
+		{Default, jsonDefault},
+		{Website, jsonWebsite},
+		{Group, jsonGroup},
+		{Store, jsonStore},
+		{Absent, jsonDefault},
+		{128, jsonDefault},
+	}
+	for i, test := range tests {
+		have, err := test.s.MarshalJSON()
+		if err != nil {
+			t.Fatal(i, err)
+		}
+		assert.Exactly(t, test.want, have, "Index %d", i)
+	}
+}
+
+func TestScope_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		raw  []byte
+		want Scope
+	}{
+		{jsonDefault, Default},
+		{jsonWebsite, Website},
+		{jsonGroup, Group},
+		{jsonStore, Store},
+		{[]byte("Evi'l\x00"), Default},
+	}
+	for i, test := range tests {
+		var have Scope
+		if err := have.UnmarshalJSON(test.raw); err != nil {
+			t.Fatal(i, err)
+		}
+		assert.Exactly(t, test.want, have, "Index %d", i)
+	}
+}
+
+func TestScope_JSON(t *testing.T) {
+
+	type x struct {
+		Str string `json:"str"`
+		Scp Scope  `json:"myScope"`
+		ID  int64  `json:"id"`
+	}
+
+	var xt = x{
+		Str: "Gopher",
+		Scp: Website,
+		ID:  3,
+	}
+	raw, err := json.Marshal(xt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var xt2 x
+	if err := json.Unmarshal(raw, &xt2); err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, xt, xt2)
 }
