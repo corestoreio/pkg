@@ -105,6 +105,7 @@ type Country struct {
 // CountryRetriever implements how to lookup the Country for an IP address.
 // Supports IPv4 and IPv6 addresses.
 type CountryRetriever interface {
+	// Country todo add context for cancelling
 	Country(net.IP) (*Country, error)
 	// Close may be called on shutdown of the overall app and terminates
 	// the underlying lookup service.
