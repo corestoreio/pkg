@@ -14,7 +14,19 @@
 
 package store
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/corestoreio/csfw/config"
+)
+
+func mustNewFactory(cfg config.Getter, opts ...Option) *factory {
+	f, err := newFactory(cfg, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
 
 var benchmarkFactoryWebsite Website
 var benchmarkFactoryWebsiteDefaultGroup Group

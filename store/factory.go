@@ -53,22 +53,14 @@ func newFactory(cfg config.Getter, opts ...Option) (*factory, error) {
 	return s, nil
 }
 
-func mustNewFactory(cfg config.Getter, opts ...Option) *factory {
-	f, err := newFactory(cfg, opts...)
-	if err != nil {
-		panic(err)
-	}
-	return f
-}
-
 // website returns a TableWebsite by using the id.
-func (f factory) website(id int64) (*TableWebsite, bool) {
+func (f *factory) website(id int64) (*TableWebsite, bool) {
 	return f.websites.FindByWebsiteID(id)
 }
 
 // Website creates a new Website  from an ID including all of its groups
 // and all related stores. Returns a NotFound error behaviour.
-func (f factory) Website(id int64) (Website, error) {
+func (f *factory) Website(id int64) (Website, error) {
 	w, found := f.website(id)
 	if !found {
 		return Website{}, errors.NewNotFoundf("[store] WebsiteID %d", id)
@@ -79,7 +71,7 @@ func (f factory) Website(id int64) (Website, error) {
 // Websites creates a slice containing all new pointers to Websites with its
 // associated new groups and new store pointers. It returns an error if the
 // integrity is incorrect or NotFound errors.
-func (f factory) Websites() (WebsiteSlice, error) {
+func (f *factory) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(f.websites), len(f.websites))
 	for i, w := range f.websites {
 		var err error
@@ -92,13 +84,13 @@ func (f factory) Websites() (WebsiteSlice, error) {
 }
 
 // group returns a TableGroup by using a group id as argument.
-func (f factory) group(id int64) (*TableGroup, bool) {
+func (f *factory) group(id int64) (*TableGroup, bool) {
 	return f.groups.FindByGroupID(id)
 }
 
 // Group creates a new Group  for an ID which contains all related store-
 // and its website-pointers.
-func (f factory) Group(id int64) (Group, error) {
+func (f *factory) Group(id int64) (Group, error) {
 	g, found := f.group(id)
 	if !found {
 		return Group{}, errors.NewNotFoundf("[store] Group %d", id)
@@ -114,7 +106,7 @@ func (f factory) Group(id int64) (Group, error) {
 // Groups creates a slice containing all pointers to Groups with its associated
 // new store- and new website-pointers. It returns an error if the integrity is
 // incorrect or a NotFound error.
-func (f factory) Groups() (GroupSlice, error) {
+func (f *factory) Groups() (GroupSlice, error) {
 	groups := make(GroupSlice, len(f.groups), len(f.groups))
 	for i, g := range f.groups {
 		w, found := f.website(g.WebsiteID)
@@ -131,14 +123,14 @@ func (f factory) Groups() (GroupSlice, error) {
 }
 
 // store returns a TableStore by an id.
-func (f factory) store(id int64) (*TableStore, bool) {
+func (f *factory) store(id int64) (*TableStore, bool) {
 	return f.stores.FindByStoreID(id)
 }
 
 // Store creates a new Store  containing its group and its website.
 // Returns an error if the integrity is incorrect. May return a NotFound error
 // behaviour.
-func (f factory) Store(id int64) (Store, error) {
+func (f *factory) Store(id int64) (Store, error) {
 	var ns Store
 	s, found := f.store(id)
 	if !found {
@@ -168,7 +160,7 @@ func (f factory) Store(id int64) (Store, error) {
 
 // Stores creates a new store slice with all of its new Group and new Website
 // pointers. Can return an error when the website or the group cannot be found.
-func (f factory) Stores() (StoreSlice, error) {
+func (f *factory) Stores() (StoreSlice, error) {
 	stores := make(StoreSlice, len(f.stores), len(f.stores))
 	for i, s := range f.stores {
 		var err error
@@ -182,7 +174,7 @@ func (f factory) Stores() (StoreSlice, error) {
 // DefaultStoreID traverses through the websites to find the default website
 // and gets the default group which has the default store id assigned to. Only
 // one website can be the default one.
-func (f factory) DefaultStoreID() (int64, error) {
+func (f *factory) DefaultStoreID() (int64, error) {
 	for _, w := range f.websites {
 		if w.IsDefault.Bool && w.IsDefault.Valid {
 			g, found := f.group(w.DefaultGroupID)

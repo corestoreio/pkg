@@ -14,7 +14,13 @@
 
 package store
 
-// ScopeTree todo app/code/Magento/Store/Model/ScopeTreeProvider.php
-func ScopeTree(s *Service) {
-	// todo app/code/Magento/Store/Model/ScopeTreeProvider.php
+import (
+	"github.com/corestoreio/csfw/store/scope"
+)
+
+// Tree represents a hierarchical structure of all available scopes.
+type Tree struct {
+	Scope  scope.Scope `json:"scope",xml:"scope"`
+	ID     int64       `json:"id",xml:"id"`
+	Scopes []Tree      `json:"scopes,omitempty",xml:"scopes,omitempty"`
 }

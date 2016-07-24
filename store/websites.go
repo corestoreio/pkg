@@ -17,6 +17,7 @@ package store
 import (
 	"sort"
 
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -52,8 +53,17 @@ func (ws WebsiteSlice) Filter(f func(Website) bool) WebsiteSlice {
 }
 
 func (ws WebsiteSlice) Each(f func(Website)) WebsiteSlice {
-	for i := range ws {
-		f(ws[i])
+	for _, w := range ws {
+		f(w)
+	}
+	return ws
+}
+
+// Map applies predicate f on each item within the slice and allows changing it.
+func (ws WebsiteSlice) Map(f func(*Website)) WebsiteSlice {
+	for i, w := range ws {
+		f(&w)
+		ws[i] = w
 	}
 	return ws
 }
@@ -99,4 +109,41 @@ func (ws WebsiteSlice) Default() (Website, error) {
 		}
 	}
 	return Website{}, errors.NewNotFoundf("[store] WebsiteSlice Default Website not found")
+}
+
+// Tree returns the hierarchical overview of the scopes: default -> website
+// -> group -> store represented in a Tree.
+func (ws WebsiteSlice) Tree() Tree {
+	t := Tree{
+		Scope: scope.Default,
+	}
+
+	t.Scopes = make([]Tree, 0, ws.Len())
+	ws.Each(func(w Website) {
+		tw := Tree{
+			Scope: scope.Website,
+			ID:    w.ID(),
+		}
+
+		tw.Scopes = make([]Tree, 0, w.Groups.Len())
+		w.Groups.Each(func(g Group) {
+			tg := Tree{
+				Scope: scope.Group,
+				ID:    g.ID(),
+			}
+
+			tg.Scopes = make([]Tree, 0, g.Stores.Len())
+			g.Stores.Each(func(s Store) {
+				ts := Tree{
+					Scope: scope.Store,
+					ID:    s.ID(),
+				}
+				tg.Scopes = append(tg.Scopes, ts)
+			})
+
+			tw.Scopes = append(tw.Scopes, tg)
+		})
+		t.Scopes = append(t.Scopes, tw)
+	})
+	return t
 }

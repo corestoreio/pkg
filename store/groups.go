@@ -47,9 +47,19 @@ func (gs GroupSlice) Filter(f func(Group) bool) GroupSlice {
 	return ret
 }
 
+// Each applies predicate f on each item within the slice without changing it.
 func (gs GroupSlice) Each(f func(Group)) GroupSlice {
-	for i := range gs {
-		f(gs[i])
+	for _, g := range gs {
+		f(g)
+	}
+	return gs
+}
+
+// Map applies predicate f on each item within the slice and allows changing it.
+func (gs GroupSlice) Map(f func(*Group)) GroupSlice {
+	for i, g := range gs {
+		f(&g)
+		gs[i] = g
 	}
 	return gs
 }

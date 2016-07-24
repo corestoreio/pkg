@@ -46,9 +46,19 @@ func (ss StoreSlice) Filter(f func(Store) bool) StoreSlice {
 	return stores
 }
 
+// Each applies predicate f on each item within the slice.
 func (ss StoreSlice) Each(f func(Store)) StoreSlice {
-	for i := range ss {
-		f(ss[i])
+	for _, s := range ss {
+		f(s)
+	}
+	return ss
+}
+
+// Map applies predicate f on each item within the slice and allows changing it.
+func (ss StoreSlice) Map(f func(*Store)) StoreSlice {
+	for i, s := range ss {
+		f(&s)
+		ss[i] = s
 	}
 	return ss
 }

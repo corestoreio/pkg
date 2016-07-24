@@ -521,25 +521,3 @@ func TestNewServiceReInit(t *testing.T) {
 	//storeService.ClearCache()
 	//assert.True(t, storeService.IsCacheEmpty())
 }
-
-/*
-	MOCKS
-*/
-
-//type mockIDCode struct {
-//	id   int64
-//	code string
-//}
-//
-//func (ic mockIDCode) StoreID() int64 {
-//	return ic.id
-//}
-//func (ic mockIDCode) StoreCode() string {
-//	return ic.code
-//}
-//func (ic mockIDCode) WebsiteID() int64 {
-//	return ic.id
-//}
-//func (ic mockIDCode) WebsiteCode() string {
-//	return ic.code
-//}

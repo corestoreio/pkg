@@ -235,89 +235,6 @@ func TestTableStoreSliceIDs(t *testing.T) {
 	assert.Nil(t, ts.Extract().StoreID())
 }
 
-//func TestStoreBaseURLandPath(t *testing.T) {
-//
-//	t.Skip("@todo refactor and move these functions into another package")
-//
-//	s, err := store.NewStore(
-//		cfgmock.NewService(),
-//		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-//		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
-//		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 1},
-//	)
-//	assert.NoError(t, err)
-//	if s == nil {
-//		t.Fail()
-//	}
-//
-//	tests := []struct {
-//		haveR        config.Getter
-//		haveUT       config.URLType
-//		haveIsSecure bool
-//		wantBaseUrl  string
-//		wantPath     string
-//	}{
-//		{
-//			cfgmock.NewService(cfgmock.WithString(
-//				func(path string) (string, error) {
-//
-//					switch path {
-//					// scope is here store but config.ScopedGetter must fall back to default
-//					case backend.Backend.WebSecureBaseURL.String():
-//						return "https://corestore.io", nil
-//					case backend.Backend.WebUnsecureBaseURL.String():
-//						return "http://corestore.io", nil
-//					}
-//					return "", errors.NewNotFoundf("Invalid path: %s", path)
-//				},
-//			)),
-//			config.URLTypeWeb, true, "https://corestore.io/", "/",
-//		},
-//		{
-//			cfgmock.NewService(cfgmock.WithString(
-//				func(path string) (string, error) {
-//					switch path {
-//					case backend.Backend.WebSecureBaseURL.String():
-//						return "https://myplatform.io/customer1", nil
-//					case backend.Backend.WebUnsecureBaseURL.String():
-//						return "http://myplatform.io/customer1", nil
-//					}
-//					return "", errors.NewNotFoundf("Invalid path: %s", path)
-//				},
-//			)),
-//			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
-//		},
-//		{
-//			cfgmock.NewService(cfgmock.WithString(
-//				func(p string) (string, error) {
-//					switch p {
-//					case backend.Backend.WebSecureBaseURL.String():
-//						return cfgmodel.PlaceholderBaseURL, nil
-//					case backend.Backend.WebUnsecureBaseURL.String():
-//						return cfgmodel.PlaceholderBaseURL, nil
-//					case cfgpath.MustNewByParts(config.PathCSBaseURL).String():
-//						return config.CSBaseURL, nil
-//					}
-//					return "", errors.NewNotFoundf("Invalid path: %s", p)
-//				},
-//			)),
-//			config.URLTypeWeb, false, config.CSBaseURL, "/",
-//		},
-//	}
-//
-//	for i, test := range tests {
-//		s.Options(store.WithStoreConfig(test.haveR))
-//		assert.NotNil(t, s.Config, "Index %d", i)
-//		baseURL, err := s.BaseURL(test.haveUT, test.haveIsSecure)
-//		assert.NoError(t, err)
-//		assert.EqualValues(t, test.wantBaseUrl, baseURL.String())
-//		assert.EqualValues(t, test.wantPath, s.Path())
-//
-//		_, err = s.BaseURL(config.URLTypeAbsent, false)
-//		assert.NoError(t, err)
-//	}
-//}
-
 func TestStore_MarshalJSON(t *testing.T) {
 	s := store.MustNewStore(
 		cfgmock.NewService(),
@@ -344,6 +261,6 @@ func TestStore_MarshalLog(t *testing.T) {
 
 	lg.Debug("storeTest", log.Marshal("aStore1", s))
 
-	have := "storeTest store_code: \"de\" store_id: 1"
+	have := `store_id: 1 store_code: "de"`
 	assert.Contains(t, buf.String(), have)
 }

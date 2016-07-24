@@ -27,6 +27,7 @@ const StoreCodeMaxLen = 32
 // a-zA-Z0-9_ or store code length is greater than 32 characters.
 // Error behaviour: NotValid
 func CodeIsValid(c string) error {
+	// maybe we can weaken that to allow emoji 8-)
 	if c == "" || len(c) > StoreCodeMaxLen {
 		return errors.NewNotValidf(errStoreCodeInvalid, c)
 	}

@@ -14,6 +14,8 @@
 
 package store
 
+// todo: add more constants
+
 const (
 	errStoreDefaultNotFound = "[store] Default Store ID not found"
 	errStoreCodeInvalid     = "[store] The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter. Have: %q"
