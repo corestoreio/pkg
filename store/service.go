@@ -39,8 +39,8 @@ type CodeToIDMapper interface {
 // store scope and MAGE_RUN_CODE any defined website or store code from the
 // database.
 type AvailabilityChecker interface {
-	// AllowedStoreIds returns all active store IDs for a run mode.
-	AllowedStoreIds(runMode scope.Hash) ([]int64, error)
+	// AllowedStoreIDs returns all active store IDs for a run mode.
+	AllowedStoreIDs(runMode scope.Hash) ([]int64, error)
 	// DefaultStoreID returns the default active store ID depending on the run mode.
 	// Error behaviour is mostly of type NotValid.
 	DefaultStoreID(runMode scope.Hash) (int64, error)
@@ -121,9 +121,16 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 		return errors.Wrap(err, "[store] NewService.Websites")
 	}
 	s.websites = ws
+	var wsDefaultCounter = make([]int64, 0, ws.Len())
 	ws.Each(func(w Website) {
 		s.cacheWebsite[w.Data.WebsiteID] = w
+		if w.Data.IsDefault.Valid && w.Data.IsDefault.Bool {
+			wsDefaultCounter = append(wsDefaultCounter, w.Data.WebsiteID)
+		}
 	})
+	if len(wsDefaultCounter) != 1 {
+		return errors.NewNotValidf("[store] NewService: Only one Website can be the default Website. Have: %v. All Website IDs: %v", wsDefaultCounter, ws.IDs())
+	}
 
 	gs, err := s.backend.Groups()
 	if err != nil {
@@ -145,8 +152,8 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 	return nil
 }
 
-// AllowedStoreIds returns all active store IDs for a run mode.
-func (s *Service) AllowedStoreIds(runMode scope.Hash) ([]int64, error) {
+// AllowedStoreIDs returns all active store IDs for a run mode.
+func (s *Service) AllowedStoreIDs(runMode scope.Hash) ([]int64, error) {
 	scp, id := runMode.Unpack()
 
 	switch scp {
@@ -156,7 +163,7 @@ func (s *Service) AllowedStoreIds(runMode scope.Hash) ([]int64, error) {
 	case scope.Group:
 		g, err := s.Group(id) // if ID == 0 then admin group
 		if err != nil {
-			return nil, errors.Wrapf(err, "[store] AllowedStoreIds.Group Scope %s ID %d", scp, id)
+			return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.Group Scope %s ID %d", scp, id)
 		}
 		return g.Stores.ActiveIDs(), nil
 	}
@@ -166,18 +173,18 @@ func (s *Service) AllowedStoreIds(runMode scope.Hash) ([]int64, error) {
 		var err error
 		w, err = s.Website(id) // id ID == 0 then admin website
 		if err != nil {
-			return nil, errors.Wrapf(err, "[store] AllowedStoreIds.Website Scope %s ID %d", scp, id)
+			return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.Website Scope %s ID %d", scp, id)
 		}
 	} else {
 		var err error
 		w, err = s.websites.Default()
 		if err != nil {
-			return nil, errors.Wrapf(err, "[store] AllowedStoreIds.Website.Default Scope %s ID %d", scp, id)
+			return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.Website.Default Scope %s ID %d", scp, id)
 		}
 	}
 	g, err := w.DefaultGroup()
 	if err != nil {
-		return nil, errors.Wrapf(err, "[store] AllowedStoreIds.DefaultGroup Scope %s ID %d", scp, id)
+		return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.DefaultGroup Scope %s ID %d", scp, id)
 	}
 	return g.Stores.ActiveIDs(), nil
 }
@@ -243,7 +250,8 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 // 0. Implements interface CodeToIDMapper.
 func (s *Service) IDbyCode(scp scope.Scope, code string) (int64, error) {
 	if code == "" {
-		return 0, errors.NewEmptyf("[store] Service IDByCode: Code canot be empty.")
+		id, err := s.DefaultStoreID(0)
+		return id, errors.Wrap(err, "[store] IDbyCode.DefaultStoreID")
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()

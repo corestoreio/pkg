@@ -15,15 +15,15 @@
 package store_test
 
 import (
-	"testing"
-
-	"sync"
-
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"sync"
+	"testing"
 )
 
 var _ store.CodeToIDMapper = (*store.Service)(nil)
@@ -75,12 +75,24 @@ func TestMustNewService_NoPanic(t *testing.T) {
 		{4444, errors.IsNotFound},
 		{0, errors.IsNotFound},
 	}
-	serviceEmpty := store.MustNewService(cfgmock.NewService())
+	serviceEmpty := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+	)
 	for i, test := range tests {
 		s, err := serviceEmpty.Store(test.have)
 		assert.Error(t, s.Validate(), "Index %d", i)
 		assert.True(t, test.wantErrBhf(err), "Index %d => %s", i, err)
 	}
+}
+
+func TestMustNewService_DefaultWebsiteCheck(t *testing.T) {
+
+	s, err := store.NewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 12, Code: dbr.NewNullString("euro2"), IsDefault: dbr.NewNullBool(true)}),
+	)
+	assert.Nil(t, s)
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 }
 
 func TestNewService_DefaultStoreView_OK(t *testing.T) {
@@ -123,7 +135,7 @@ func TestNewService_DefaultStoreView_NOK(t *testing.T) {
 	assert.Exactly(t, "", s.Code())
 
 }
-func TestNewServiceStores(t *testing.T) {
+func TestNewService_Stores(t *testing.T) {
 
 	serviceStores := store.MustNewService(
 		cfgmock.NewService(),
@@ -150,7 +162,7 @@ func TestNewServiceStores(t *testing.T) {
 	assert.True(t, serviceStores.IsCacheEmpty())
 }
 
-func TestMustNewServiceStores(t *testing.T) {
+func TestMustNewService_Stores_Panic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -167,7 +179,7 @@ func TestMustNewServiceStores(t *testing.T) {
 	)
 }
 
-func TestNewServiceGroup(t *testing.T) {
+func TestNewService_Group(t *testing.T) {
 
 	serviceGroupSimpleTest := store.MustNewService(cfgmock.NewService(),
 		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
@@ -204,7 +216,7 @@ func TestNewServiceGroup(t *testing.T) {
 	assert.True(t, serviceGroupSimpleTest.IsCacheEmpty())
 }
 
-func TestNewServiceGroups(t *testing.T) {
+func TestNewService_Groups(t *testing.T) {
 
 	serviceGroups := store.MustNewService(cfgmock.NewService(),
 		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
@@ -229,7 +241,7 @@ func TestNewServiceGroups(t *testing.T) {
 	assert.True(t, serviceGroups.IsCacheEmpty())
 }
 
-func TestNewServiceWebsite(t *testing.T) {
+func TestNewService_Website(t *testing.T) {
 
 	serviceWebsite := store.MustNewService(cfgmock.NewService(),
 		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
@@ -265,259 +277,142 @@ func TestNewServiceWebsite(t *testing.T) {
 
 }
 
-//func TestNewServiceWebsites(t *testing.T) {
-//
-//	serviceWebsites := store.MustNewService(cfgmock.NewService(),
-//		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
-//		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
-//		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
-//	)
-//
-//	tests := []struct {
-//		m       *store.Service
-//		wantErr error
-//		wantNil bool
-//	}{
-//		{serviceWebsites, nil, false},
-//		{serviceWebsites, nil, false},
-//		//{storemock.MustNewService(0, func(ms *storemock.Storage) {
-//		//	ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
-//		//		return nil, nil
-//		//	}
-//		//	ms.MockStore = func() (*store.Store, error) {
-//		//		return store.NewStore(
-//		//			cfgmock.NewService(),
-//		//			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-//		//			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-//		//			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-//		//		)
-//		//	}
-//		//}), nil, true},
-//	}
-//
-//	for _, test := range tests {
-//		haveWS, haveErr := test.m.Websites()
-//		if test.wantErr != nil {
-//			assert.Error(t, haveErr, "%#v", test)
-//			assert.Nil(t, haveWS, "%#v", test)
-//		} else {
-//			assert.NoError(t, haveErr, "%#v", test)
-//			if test.wantNil {
-//				assert.Nil(t, haveWS, "%#v", test)
-//			} else {
-//				assert.NotNil(t, haveWS, "%#v", test)
-//			}
-//		}
-//	}
-//
-//	assert.False(t, serviceWebsites.IsCacheEmpty())
-//	serviceWebsites.ClearCache()
-//	assert.True(t, serviceWebsites.IsCacheEmpty())
-//}
+func TestNewService_Websites(t *testing.T) {
+	srv := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(
+			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("European Union"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), Name: dbr.NewNullString("Britain (without Scotland)"), SortOrder: 0, DefaultGroupID: 2},
+		),
+	)
+	assert.Exactly(t, []int64{1, 2}, srv.Websites().IDs())
+	assert.Exactly(t, []string{"euro", "uk"}, srv.Websites().Codes())
+}
 
-//type testNewServiceRequestedStore struct {
-//	haveStoreID   int64
-//	wantStoreCode string
-//	wantErrBhf    errors.BehaviourFunc
-//}
-//
-//func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceRequestedStore) {
-//	for i, test := range tests {
-//		haveStore, haveErr := sm.RequestedStore(test.haveStoreID)
-//		if test.wantErrBhf != nil {
-//			assert.Nil(t, haveStore, "Index: %d: %#v", i, test)
-//			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
-//		} else {
-//			assert.NotNil(t, haveStore, "Index %d", i)
-//			assert.NoError(t, haveErr, "Index %d => %#v", i, test)
-//			assert.EqualValues(t, test.wantStoreCode, haveStore.Data.Code.String, "Index %d", i)
-//		}
-//	}
-//	sm.ClearCache(true)
-//}
+func TestService_AllowedStoreIds(t *testing.T) {
+	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
+	tests := []struct {
+		srv        *store.Service
+		runMode    scope.Hash
+		wantIDs    []int64
+		wantErrBhf errors.BehaviourFunc
+	}{
+		{eurSrv, 0, []int64{1, 2}, nil},                               // fall back to default website -> default group -> default store
+		{eurSrv, scope.NewHash(scope.Website, 0), []int64{0}, nil},    // admin scope
+		{eurSrv, scope.NewHash(scope.Website, 1), []int64{1, 2}, nil}, // euro scope, not included ch, because not active, and UK, different group
+		{eurSrv, scope.NewHash(scope.Website, 2), []int64{5, 6}, nil}, // oz scope
+		{eurSrv, scope.NewHash(scope.Website, 9999), nil, errors.IsNotFound},
+		{eurSrv, scope.NewHash(scope.Group, 0), []int64{0}, nil},    // admin scope
+		{eurSrv, scope.NewHash(scope.Group, 1), []int64{1, 2}, nil}, // dach scope
+		{eurSrv, scope.NewHash(scope.Group, 2), []int64{4}, nil},    // uk scope
+		{eurSrv, scope.NewHash(scope.Group, 3), []int64{5, 6}, nil}, // au scope
+		{eurSrv, scope.NewHash(scope.Group, 9999), nil, errors.IsNotFound},
+		{eurSrv, scope.NewHash(scope.Store, 0), []int64{0, 5, 1, 4, 2, 6}, nil},
+		{eurSrv, scope.NewHash(scope.Store, 1), []int64{0, 5, 1, 4, 2, 6}, nil},
+		{eurSrv, scope.NewHash(scope.Store, 9999), []int64{0, 5, 1, 4, 2, 6}, nil},
+		{store.MustNewService(cfgmock.NewService(),
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		), 0, nil, errors.IsNotFound},
+	}
+	for i, test := range tests {
+		haveIDs, haveErr := test.srv.AllowedStoreIDs(test.runMode)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "(%d) %+v", i, haveErr)
+			assert.Nil(t, haveIDs, "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "(%d) %+v", i, haveErr)
+		assert.Exactly(t, test.wantIDs, haveIDs, "Index %d", i)
+	}
+}
 
-//func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
-//
-//	sm := storemock.NewEurozzyService(scope.NewHash(scope.Store, 1), cfgmock.NewService())
-//
-//	if haveStore, haveErr := sm.RequestedStore(1); haveErr != nil {
-//		t.Fatal(haveErr)
-//	} else {
-//		assert.NoError(t, haveErr)
-//		assert.Exactly(t, int64(1), haveStore.StoreID())
-//	}
-//
-//	if s, err := sm.Store(); err == nil {
-//		assert.EqualValues(t, "de", s.Data.Code.String)
-//	} else {
-//		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-//		t.Fail()
-//	}
-//
-//	if s, err := sm.Store(123); err == nil {
-//		assert.Error(t, err)
-//		t.Fail()
-//	} else {
-//		assert.Nil(t, s)
-//		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-//	}
-//
-//	tests := []testNewServiceRequestedStore{
-//		{232 , "", errors.IsNotFound},
-//		{0, "de", errors.IsNotSupported},
-//
-//
-//		{6 , "nz", nil},
-//		{3, "", errors.IsUnauthorized},
-//
-//		{1, "de", nil},
-//		{2 , "at", nil},
-//
-//		{2 , "at", nil},
-//		{5, "au", nil},
-//		{3, "", errors.IsUnauthorized},
-//	}
-//	runTestsRequestedStore(t, sm, tests)
-//}
-//
-//func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
-//
-//	sm := storemock.NewEurozzyService(scope.NewHash(scope.Group,1),cfgmock.NewService())
-//	if haveStore, haveErr := sm.RequestedStore(1); haveErr != nil {
-//		t.Fatal(haveErr)
-//	} else {
-//		assert.NoError(t, haveErr)
-//		assert.Exactly(t, int64(2), haveStore.StoreID())
-//	}
-//
-//	if s, err := sm.Store(); err == nil {
-//		assert.EqualValues(t, "at", s.Data.Code.String)
-//	} else {
-//		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-//		t.Fail()
-//	}
-//
-//	if g, err := sm.Group(); err == nil {
-//		assert.EqualValues(t, 1, g.Data.GroupID)
-//	} else {
-//		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-//		t.Fail()
-//	}
-//
-//	//	// we're testing here against Group ID = 1
-//	tests := []testNewServiceRequestedStore{
-//		{scope.Option{Group: scope.MockID(232)}, "", errors.IsNotFound},
-//
-//		{232)}, "", errors.IsNotFound},
-//		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", errors.IsNotFound},
-//
-//		{6)}, "nz", errors.IsUnauthorized},
-//		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
-//
-//		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
-//		{2)}, "at", nil},
-//
-//		{2)}, "at", nil},
-//		{scope.Option{Store: scope.MockCode("au")}, "au", errors.IsUnauthorized},
-//		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
-//
-//		{scope.Option{Group: scope.MockCode("ch")}, "", errors.IsNotFound},
-//		{scope.Option{Group: scope.MockID(2)}, "", errors.IsUnauthorized},
-//		{scope.Option{Group: scope.MockID(1)}, "at", nil},
-//
-//		{scope.Option{Website: scope.MockCode("xxxx")}, "", errors.IsNotFound},
-//		{scope.Option{Website: scope.MockID(2)}, "", errors.IsUnauthorized},
-//		{scope.Option{Website: scope.MockID(1)}, "at", nil},
-//	}
-//	runTestsRequestedStore(t, sm, tests)
-//}
-//
-//func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
-//
-//	sm := storemock.NewEurozzyService(scope.NewHash(scope.Website,1),cfgmock.NewService())
-//
-//	if haveStore, haveErr := sm.RequestedStore(1); haveErr != nil {
-//		t.Fatal(haveErr)
-//	} else {
-//		assert.NoError(t, haveErr)
-//		assert.Exactly(t, int64(2), haveStore.StoreID())
-//	}
-//
-//	if s, err := sm.Store(); err == nil {
-//		assert.EqualValues(t, "at", s.Data.Code.String)
-//	} else {
-//		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-//		t.Fail()
-//	}
-//
-//	if w, err := sm.Website(); err == nil {
-//		assert.EqualValues(t, "euro", w.Data.Code.String)
-//	} else {
-//		assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-//		t.Fail()
-//	}
-//
-//	// test against website euro
-//	tests := []testNewServiceRequestedStore{
-//		{scope.Option{Website: scope.MockID(232)}, "", errors.IsNotFound},
-//		{scope.Option{Website: scope.MockCode("\U0001f631")}, "", errors.IsNotFound},
-//		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", errors.IsNotFound},
-//
-//		{6)}, "", errors.IsUnauthorized},
-//		{scope.Option{Website: scope.MockCode("oz")}, "", errors.IsUnauthorized},
-//		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
-//
-//		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
-//		{2)}, "at", nil},
-//
-//		{2)}, "at", nil},
-//		{scope.Option{Store: scope.MockCode("au")}, "au", errors.IsUnauthorized},
-//		{scope.Option{Store: scope.MockCode("ch")}, "", errors.IsUnauthorized},
-//
-//		{scope.Option{Group: scope.MockID(3)}, "", errors.IsUnauthorized},
-//	}
-//	runTestsRequestedStore(t, sm, tests)
-//}
+func TestService_DefaultStoreID(t *testing.T) {
+	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
+	tests := []struct {
+		srv        *store.Service
+		runMode    scope.Hash
+		wantID     int64
+		wantErrBhf errors.BehaviourFunc
+	}{
+		{eurSrv, 0, 2, nil},                               // fall back to default website -> default group -> default store
+		{eurSrv, scope.NewHash(scope.Website, 0), 0, nil}, // admin scope
+		{eurSrv, scope.NewHash(scope.Website, 1), 2, nil}, // euro scope, not included ch, because not active, and UK, different group
+		{eurSrv, scope.NewHash(scope.Website, 2), 5, nil}, // oz scope
+		{eurSrv, scope.NewHash(scope.Website, 9999), 0, errors.IsNotFound},
+		{store.MustNewService(cfgmock.NewService(), // default store not active
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
+		), scope.NewHash(scope.Website, 1), 0, errors.IsNotValid},
 
-func TestNewServiceReInit(t *testing.T) {
+		{eurSrv, scope.NewHash(scope.Group, 0), 0, nil}, // admin scope
+		{eurSrv, scope.NewHash(scope.Group, 1), 2, nil}, // dach scope
+		{eurSrv, scope.NewHash(scope.Group, 2), 4, nil}, // uk scope
+		{eurSrv, scope.NewHash(scope.Group, 3), 5, nil}, // au scope
+		{eurSrv, scope.NewHash(scope.Group, 9999), 0, errors.IsNotFound},
+		{store.MustNewService(cfgmock.NewService(), // default store not active
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
+		), scope.NewHash(scope.Group, 1), 0, errors.IsNotValid},
+		{store.MustNewService(cfgmock.NewService(), // default store not found
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
+		), scope.NewHash(scope.Group, 1), 0, errors.IsNotFound},
 
-	t.Skip(TODO_Better_Test_Data)
+		{eurSrv, scope.NewHash(scope.Store, 0), 0, nil},
+		{eurSrv, scope.NewHash(scope.Store, 1), 1, nil},
+		{eurSrv, scope.NewHash(scope.Store, 9999), 0, errors.IsNotFound},
+		{eurSrv, scope.NewHash(scope.Store, 3), 0, errors.IsNotValid}, // ch store is not active
 
-	//// quick implement, use mock of dbr.SessionRunner and remove connection
-	//dbc := csdb.MustConnectTest()
-	//defer func() { assert.NoError(t, dbc.Close()) }()
-	//dbrSess := dbc.NewSession()
-	//
-	//storeService := store.MustNewService(0, store.MustNewStorage(nil /* trick it*/))
-	//if err := storeService.ReInit(dbrSess); err != nil {
-	//	t.Fatal(err)
-	//}
-	//
-	//tests := []struct {
-	//	have       scope.StoreIDer
-	//	wantErrBhf errors.BehaviourFunc
-	//}{
-	//	{scope.MockCode("dede"), nil},
-	//	{scope.MockCode("czcz"), errors.IsNotFound},
-	//	{scope.MockID(1), nil},
-	//	{scope.MockID(100), errors.IsNotFound},
-	//	{mockIDCode{1, "dede"}, nil},
-	//	{mockIDCode{2, "czfr"}, errors.IsNotFound},
-	//	{mockIDCode{2, ""}, nil},
-	//}
-	//
-	//for i, test := range tests {
-	//	s, err := storeService.Store(test.have)
-	//	if test.wantErrBhf == nil {
-	//		assert.NoError(t, err, "Index %d", i)
-	//		assert.NotNil(t, s, "Index %d", i)
-	//		//			assert.NotEmpty(t, s.Data.Code.String, "%#v", s.Data)
-	//	} else {
-	//		assert.True(t, test.wantErrBhf(err), "Index %d Error: %s", i, err)
-	//		assert.Nil(t, s, "Index %d", i)
-	//	}
-	//}
-	//assert.False(t, storeService.IsCacheEmpty())
-	//storeService.ClearCache()
-	//assert.True(t, storeService.IsCacheEmpty())
+		{store.MustNewService(cfgmock.NewService(),
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		), 0, 0, errors.IsNotFound},
+	}
+	for i, test := range tests {
+		haveID, haveErr := test.srv.DefaultStoreID(test.runMode)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "(%d) %+v", i, haveErr)
+			assert.Exactly(t, test.wantID, haveID, "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "(%d) %+v", i, haveErr)
+		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
+	}
+}
+
+func TestService_IDbyCode(t *testing.T) {
+	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
+	tests := []struct {
+		srv        *store.Service
+		scp        scope.Scope
+		code       string
+		wantID     int64
+		wantErrBhf errors.BehaviourFunc
+	}{
+		{eurSrv, 0, "", 2, nil},
+		{eurSrv, scope.Default, "x", 0, nil},
+		{eurSrv, scope.Website, "admin", 0, nil},
+		{eurSrv, scope.Website, "euro", 1, nil},
+		{eurSrv, scope.Website, "oz", 2, nil},
+		{eurSrv, scope.Website, "uk", 0, errors.IsNotFound},
+		{eurSrv, scope.Absent, "uk", 0, errors.IsNotSupported},
+		{eurSrv, scope.Group, "uk", 0, errors.IsNotSupported},
+		{eurSrv, scope.Store, "admin", 0, nil},
+		{eurSrv, scope.Store, "au", 5, nil},
+		{eurSrv, scope.Store, "xx", 0, errors.IsNotFound},
+	}
+	for i, test := range tests {
+		haveID, haveErr := test.srv.IDbyCode(test.scp, test.code)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "(%d) %+v", i, haveErr)
+			assert.Exactly(t, test.wantID, haveID, "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "(%d) %+v", i, haveErr)
+		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
+	}
 }
