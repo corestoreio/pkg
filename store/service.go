@@ -60,10 +60,11 @@ type Service struct {
 	// flag is false, single store mode cannot be enabled at all.
 	SingleStoreModeEnabled bool
 
-	// singleStoreModel contains the path to the configuration flag. As we do
+	// BackendSingleStore contains the path to the configuration flag. As we do
 	// not set the overall structure this model is not aware of a scope and
-	// hence always uses the store scope.
-	singleStoreModel cfgmodel.Bool
+	// hence always uses the store scope. Default value: true.
+	// Path: general/single_store_mode/enabled
+	BackendSingleStore cfgmodel.BoolGetter
 
 	// backend communicates with the database in reading mode and creates
 	// new store, group and website pointers. If nil, panics.
@@ -89,7 +90,6 @@ type Service struct {
 func newService() *Service {
 	return &Service{
 		SingleStoreModeEnabled: true,
-		singleStoreModel:       cfgmodel.NewBool(`general/single_store_mode/enabled`),
 		defaultStoreID:         -1,
 		cacheWebsite:           make(map[int64]Website),
 		cacheGroup:             make(map[int64]Group),
@@ -325,17 +325,18 @@ func (sm *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
 		return has, nil
 	}
 
-	b, _, err := sm.singleStoreModel.Get(cfg)
-	if err != nil {
-		return false, errors.Wrap(err, "[store] Service.IsSingleStoreMode")
+	var b = true
+	if sm.BackendSingleStore != nil {
+		var err error
+		b, _, err = sm.BackendSingleStore.Get(cfg)
+		if err != nil {
+			return false, errors.Wrap(err, "[store] Service.IsSingleStoreMode")
+		}
 	}
-
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-
 	has = sm.HasSingleStore() && b
+	sm.mu.Lock()
 	sm.cacheSingleStore[key] = has
-
+	sm.mu.Unlock()
 	return has, nil
 }
 

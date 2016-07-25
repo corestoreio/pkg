@@ -15,15 +15,19 @@
 package store_test
 
 import (
+	"sync"
+	"testing"
+
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"sync"
-	"testing"
 )
 
 var _ store.CodeToIDMapper = (*store.Service)(nil)
@@ -442,6 +446,64 @@ func TestService_HasSingleStore(t *testing.T) {
 	wg.Wait()
 }
 
+var _ cfgmodel.BoolGetter = (*backendSingleStoreMock)(nil)
+
+type backendSingleStoreMock struct {
+	bool
+	scope.Hash
+	error
+}
+
+func (m backendSingleStoreMock) Get(_ config.Scoped) (bool, scope.Hash, error) {
+	return m.bool, m.Hash, m.error
+}
+
 func TestService_IsSingleStoreMode(t *testing.T) {
-	t.Error("Todo")
+
+	s := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+	)
+
+	// no stores and backend not set so true
+	sCfg := cfgmock.NewService().NewScoped(0, 0)
+	b, err := s.IsSingleStoreMode(sCfg)
+	assert.NoError(t, err, "%+v", err)
+	assert.True(t, b)
+
+	// no stores and backend set but configured with false
+	s.ClearCache()
+	sCfg = cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		cfgpath.MustNewByParts(`general/single_store_mode/enabled`).BindStore(2).String(): 0,
+	})).NewScoped(1, 2)
+	s.BackendSingleStore = cfgmodel.NewBool(`general/single_store_mode/enabled`, cfgmodel.WithScopeStore())
+	b, err = s.IsSingleStoreMode(sCfg)
+	assert.NoError(t, err, "%+v", err)
+	assert.False(t, b)
+
+	// no stores and backend set but returns an error
+	s.ClearCache()
+	tErr := errors.NewNotImplementedf("Ups")
+	s.BackendSingleStore = backendSingleStoreMock{error: tErr}
+	b, err = s.IsSingleStoreMode(config.Scoped{})
+	assert.True(t, errors.IsNotImplemented(tErr), "%+v", tErr)
+	assert.False(t, b)
+
+	s2 := storemock.NewEurozzyService(cfgmock.NewService())
+	s2.BackendSingleStore = backendSingleStoreMock{} // returns false always no error
+	assert.False(t, s2.HasSingleStore())
+
+	b, err = s2.IsSingleStoreMode(sCfg)
+	assert.NoError(t, err, "%+v", err)
+	assert.False(t, b)
+
+	s2.ClearCache()
+	s2.BackendSingleStore = backendSingleStoreMock{bool: true}
+	b, err = s2.IsSingleStoreMode(sCfg)
+	assert.NoError(t, err, "%+v", err)
+	assert.True(t, b)
+
+	// call it twice to test cache
+	b, err = s2.IsSingleStoreMode(sCfg)
+	assert.NoError(t, err, "%+v", err)
+	assert.True(t, b)
 }
