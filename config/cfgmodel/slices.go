@@ -23,9 +23,9 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/slices"
 )
 
 // CSVComma separates CSV values. Default value.
@@ -95,7 +95,7 @@ func (str StringCSV) Get(sg config.Scoped) ([]string, scope.Hash, error) {
 	if s == "" {
 		return nil, h, nil
 	}
-	var ret util.StringSlice = strings.Split(s, string(str.Comma))
+	var ret slices.String = strings.Split(s, string(str.Comma))
 	return ret.Unique(), h, nil
 }
 

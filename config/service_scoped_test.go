@@ -29,15 +29,25 @@ import (
 )
 
 func TestScoped_IsValid(t *testing.T) {
+	cfg := cfgmock.NewService()
 	tests := []struct {
 		s    config.Scoped
 		want bool
 	}{
-		{config.Scoped{}, true}, // todo
+		{config.Scoped{}, false},
+		{config.Scoped{WebsiteID: 1, StoreID: 0}, false},
+		{config.Scoped{WebsiteID: 1, StoreID: 1}, false},
+		{config.Scoped{WebsiteID: 0, StoreID: 1}, false},
+		{config.Scoped{Root: cfg}, true},
+		{config.Scoped{Root: cfg, WebsiteID: 1, StoreID: 0}, true},
+		{config.Scoped{Root: cfg, WebsiteID: 1, StoreID: 1}, true},
+		{config.Scoped{Root: cfg, WebsiteID: 0, StoreID: 1}, false},
+		{config.Scoped{Root: cfg, WebsiteID: 1, StoreID: -1}, false},
+		{config.Scoped{Root: cfg, WebsiteID: -1, StoreID: -1}, false},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		if have, want := test.s.IsValid(), test.want; have != want {
-			t.Errorf("Have: %v Want: %v", have, want)
+			t.Errorf("Idx %d => Have: %v Want: %v", i, have, want)
 		}
 	}
 }

@@ -27,8 +27,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/naughtystrings"
+	"github.com/corestoreio/csfw/util/slices"
 )
 
 // These checks, if a type implements an interface, belong into the test package
@@ -414,7 +414,7 @@ func TestRouteValidate(t *testing.T) {
 }
 
 func TestRouteValidateNaughtyStrings(t *testing.T) {
-	var valids util.StringSlice = []string{"undefined", "undef", "null", "NULL", "nil", "NIL", "true", "false", "True", "False", "None", "hasOwnProperty", "0", "1", "1/2", "1E2", "1E02", "1/0", "0/0", "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", "NaN", "Infinity", "INF", "0x0", "0xffffffff", "0xffffffffffffffff", "0xabad1dea", "123456789012345678901234567890123456789", "01000", "08", "09", "_", "CON", "PRN", "AUX", "NUL", "COM1", "LPT1", "LPT2", "LPT3", "COM2", "COM3", "COM4", "evaluate", "mocha", "expression", "classic", "basement"}
+	var valids slices.String = []string{"undefined", "undef", "null", "NULL", "nil", "NIL", "true", "false", "True", "False", "None", "hasOwnProperty", "0", "1", "1/2", "1E2", "1E02", "1/0", "0/0", "999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", "NaN", "Infinity", "INF", "0x0", "0xffffffff", "0xffffffffffffffff", "0xabad1dea", "123456789012345678901234567890123456789", "01000", "08", "09", "_", "CON", "PRN", "AUX", "NUL", "COM1", "LPT1", "LPT2", "LPT3", "COM2", "COM3", "COM4", "evaluate", "mocha", "expression", "classic", "basement"}
 	for _, str := range naughtystrings.Unencoded() {
 		r := cfgpath.NewRoute(str)
 		if err := r.Validate(); valids.Contains(str) && err != nil {
