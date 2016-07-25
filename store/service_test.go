@@ -416,3 +416,32 @@ func TestService_IDbyCode(t *testing.T) {
 		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
 	}
 }
+
+func TestService_HasSingleStore(t *testing.T) {
+	s := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+	)
+	s1 := store.MustNewService(cfgmock.NewService(),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+	)
+	s1.SingleStoreModeEnabled = false
+
+	s2 := storemock.NewEurozzyService(cfgmock.NewService())
+
+	const iterations = 10
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			assert.True(t, s.HasSingleStore())   // no stores so true
+			assert.False(t, s1.HasSingleStore()) // no stores but globally disabled so false
+			assert.False(t, s2.HasSingleStore()) // lots of stores so false
+		}(&wg)
+	}
+	wg.Wait()
+}
+
+func TestService_IsSingleStoreMode(t *testing.T) {
+	t.Error("Todo")
+}

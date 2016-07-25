@@ -19,6 +19,7 @@ import (
 	"sync/atomic"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
@@ -46,14 +47,23 @@ type AvailabilityChecker interface {
 	DefaultStoreID(runMode scope.Hash) (int64, error)
 }
 
-// Service represents type which handles the underlying storage and takes
-// care of the default stores. A Service is bound a specific scope.Scope.
-// Depending on the scope it is possible or not to switch stores. A Service
-// contains also a config.Getter which gets passed to the scope of a
-// Store(), Group() or Website() so that you always have the possibility to
-// access a scoped based configuration value. This Service uses three
-// internal maps to cache Websites, Groups and Stores.
+// Service represents type which handles the underlying storage and takes care
+// of the default stores. A Service is bound a specific scope.Scope. Depending
+// on the scope it is possible or not to switch stores. A Service contains also
+// a config.Getter which gets passed to the scope of a Store(), Group() or
+// Website() so that you always have the possibility to access a scoped based
+// configuration value. This Service uses three internal maps to cache Websites,
+// Groups and Stores.
 type Service struct {
+	// SingleStoreModeEnabled default value true to enable globally single store
+	// mode but might get overwritten via a store scope configuration flag. If this
+	// flag is false, single store mode cannot be enabled at all.
+	SingleStoreModeEnabled bool
+
+	// singleStoreModel contains the path to the configuration flag. As we do
+	// not set the overall structure this model is not aware of a scope and
+	// hence always uses the store scope.
+	singleStoreModel cfgmodel.Bool
 
 	// backend communicates with the database in reading mode and creates
 	// new store, group and website pointers. If nil, panics.
@@ -61,6 +71,7 @@ type Service struct {
 	// defaultStore someone must be always the default guy. Handled via atomic
 	// package.
 	defaultStoreID int64
+
 	// mu protects the following fields
 	mu sync.RWMutex
 	// in general these caches can be optimized
@@ -69,18 +80,29 @@ type Service struct {
 	stores   StoreSlice
 
 	// int64 key identifies a website, group or store
-	cacheWebsite map[int64]Website
-	cacheGroup   map[int64]Group
-	cacheStore   map[int64]Store
+	cacheWebsite     map[int64]Website
+	cacheGroup       map[int64]Group
+	cacheStore       map[int64]Store
+	cacheSingleStore map[scope.Hash]bool
+}
+
+func newService() *Service {
+	return &Service{
+		SingleStoreModeEnabled: true,
+		singleStoreModel:       cfgmodel.NewBool(`general/single_store_mode/enabled`),
+		defaultStoreID:         -1,
+		cacheWebsite:           make(map[int64]Website),
+		cacheGroup:             make(map[int64]Group),
+		cacheStore:             make(map[int64]Store),
+		cacheSingleStore:       make(map[scope.Hash]bool),
+	}
 }
 
 // NewService creates a new store Service which handles websites, groups and
 // stores. You must either provide the functional options or call LoadFromDB()
 // to setup the internal cache.
 func NewService(cfg config.Getter, opts ...Option) (*Service, error) {
-	srv := &Service{
-		defaultStoreID: -1,
-	}
+	srv := newService()
 	if err := srv.loadFromOptions(cfg, opts...); err != nil {
 		return nil, errors.Wrap(err, "[store] NewService.ApplyStorage")
 	}
@@ -100,8 +122,7 @@ func MustNewService(cfg config.Getter, opts ...Option) *Service {
 // Does nothing when the options have not been passed.
 func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 	if s == nil {
-		s = new(Service)
-		s.defaultStoreID = -1
+		s = newService()
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -112,9 +133,6 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 	}
 
 	s.backend = be
-	s.cacheWebsite = make(map[int64]Website)
-	s.cacheGroup = make(map[int64]Group)
-	s.cacheStore = make(map[int64]Store)
 
 	ws, err := s.backend.Websites()
 	if err != nil {
@@ -273,24 +291,53 @@ func (s *Service) IDbyCode(scp scope.Scope, code string) (int64, error) {
 	return 0, errors.NewNotSupportedf("[store] Scope %q not supported", scp)
 }
 
-// IsSingleStoreMode check if Single-Store mode is enabled in configuration and from Store count < 3.
-// This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
-// if Magento has only one store view but it does not check the store view collection.
-//func (sm *Service) IsSingleStoreMode() bool {
-//	// refactor and remove dependency to backend.Backend
-//	return sm.HasSingleStore() // && backend.Backend.GeneralSingleStoreModeEnabled.Get(sm.cr.NewScoped(0, 0)) // default scope
-//}
-//
-//// HasSingleStore checks if we only have one store view besides the admin store view.
-//// Mostly used in models to the set store id and in blocks to not display the store switch.
-//func (sm *Service) HasSingleStore() bool {
-//	ss, err := sm.Stores()
-//	if err != nil {
-//		return false
-//	}
-//	// that means: index 0 is admin store and always present plus one more store view.
-//	return ss.Len() < 3
-//}
+// HasSingleStore checks if we only have one store view besides the admin store
+// view. Mostly used in models to the set store id and in blocks to not display
+// the e.g. store switch. Global flag.
+func (sm *Service) HasSingleStore() bool {
+	sm.mu.RLock()
+	has, ok := sm.cacheSingleStore[scope.DefaultHash]
+	sm.mu.RUnlock()
+	if ok {
+		return has
+	}
+
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	has = sm.SingleStoreModeEnabled && sm.stores.Len() < 3
+	sm.cacheSingleStore[scope.DefaultHash] = has
+
+	return has
+}
+
+// IsSingleStoreMode check if Single-Store mode is enabled in the backend
+// configuration and there are less than three Stores. This flag only shows that
+// admin does not want to show certain UI components at backend (like store
+// switchers etc). Store scope specific flag.
+func (sm *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
+
+	key := scope.NewHash(cfg.Scope())
+	sm.mu.RLock()
+	has, ok := sm.cacheSingleStore[key]
+	sm.mu.RUnlock()
+	if ok {
+		return has, nil
+	}
+
+	b, _, err := sm.singleStoreModel.Get(cfg)
+	if err != nil {
+		return false, errors.Wrap(err, "[store] Service.IsSingleStoreMode")
+	}
+
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	has = sm.HasSingleStore() && b
+	sm.cacheSingleStore[key] = has
+
+	return has, nil
+}
 
 // Website returns the cached Website from an ID including all of its groups and
 // all related stores.
@@ -405,6 +452,7 @@ func (s *Service) ClearCache() {
 			delete(s.cacheStore, k)
 		}
 	}
+	s.cacheSingleStore = make(map[scope.Hash]bool)
 	s.defaultStoreID = -1
 	s.websites = nil
 	s.groups = nil
