@@ -34,11 +34,11 @@ const PermWebsite Perm = 1<<Default | 1<<Website
 const PermDefault Perm = 1 << Default
 
 // PermStoreReverse convenient helper to enforce hierarchy levels. Only used in
-// config.scopedService implementation.
+// config.Scoped implementation.
 const PermStoreReverse Perm = 1 << Store
 
 // PermWebsiteReverse convenient helper to enforce hierarchy levels. Only used in
-// config.scopedService implementation.
+// config.Scoped implementation.
 const PermWebsiteReverse Perm = 1<<Store | 1<<Website
 
 // All applies DefaultID, WebsiteID and StoreID scopes
