@@ -54,7 +54,7 @@ func WithFieldFromSectionSlice(cfgStruct element.SectionSlice) Option {
 	}
 }
 
-// WithField adds a Field to the model.
+// WithField adds a Field to the model. Convenient helper function.
 func WithField(f *element.Field) Option {
 	return func(b *optionBox) error {
 		b.Field = f
@@ -62,7 +62,8 @@ func WithField(f *element.Field) Option {
 	}
 }
 
-// WithSource sets a source slice for Options() and validation.
+// WithSource sets a source slice for Options() and validation. Convenient
+// helper function.
 func WithSource(vl source.Slice) Option {
 	return func(b *optionBox) error {
 		b.Source = vl
@@ -70,8 +71,8 @@ func WithSource(vl source.Slice) Option {
 	}
 }
 
-// WithSourceByString sets a source slice for Options() and validation.
-// Wrapper for source.NewByString
+// WithSourceByString sets a source slice for Options() and validation. Wrapper
+// for source.NewByString.  Convenient helper function.
 func WithSourceByString(pairs ...string) Option {
 	return func(b *optionBox) (err error) {
 		b.Source, err = source.NewByString(pairs...)
@@ -79,8 +80,8 @@ func WithSourceByString(pairs ...string) Option {
 	}
 }
 
-// WithSourceByInt sets a source slice for Options() and validation.
-// Wrapper for source.NewByInt
+// WithSourceByInt sets a source slice for Options() and validation. Wrapper for
+// source.NewByInt. Convenient helper function.
 func WithSourceByInt(vli source.Ints) Option {
 	return func(b *optionBox) error {
 		b.Source = source.NewByInt(vli)
@@ -88,11 +89,36 @@ func WithSourceByInt(vli source.Ints) Option {
 	}
 }
 
-// baseValue defines the path in the "core_config_data" table like a/b/c. All
-// other types in this package inherits from this path type.
+// WithScopeStore sets the initial scope to Store. Not needed when using Fields.
+// Convenient helper function.
+func WithScopeStore() Option {
+	return func(b *optionBox) error {
+		b.Scopes = scope.PermStore
+		return nil
+	}
+}
+
+// WithScopeWebsite sets the initial scope to Website. Not needed when using
+// Fields. Convenient helper function.
+func WithScopeWebsite() Option {
+	return func(b *optionBox) error {
+		b.Scopes = scope.PermWebsite
+		return nil
+	}
+}
+
+// BaseValue represents a Value Object and defines the path in the
+// "core_config_data" table like a/b/c. It gets embedded into other types within
+// this package.
 type baseValue struct {
-	// contains the path like web/cors/exposed_headers but has no scope
+	// route contains the path like web/cors/exposed_headers but has no scope.
+	// Immutable.
 	route cfgpath.Route
+
+	// Scopes defaults to scope.Default and is used as an initial value for
+	// triggering the hierarchical fallback in the Get() functions. This value
+	// gets overwritten when the field *Field below gets set.
+	Scopes scope.Perm
 
 	// Field is used for scope permission checks and retrieving the default
 	// value. A nil field gets ignored. Field will be set through the option
@@ -109,9 +135,9 @@ type baseValue struct {
 	OptionError error
 }
 
-// NewValue creates a new baseValue type and the error gets packed into the field
-// OptionError which you can check.
-func NewValue(path string, opts ...Option) baseValue {
+// newBaseValue creates a new BaseValue type and applies different options.
+// Those options can also be set via the structs direct field.
+func newBaseValue(path string, opts ...Option) baseValue {
 	b := baseValue{
 		route: cfgpath.NewRoute(path),
 	}
@@ -133,8 +159,18 @@ func (bv *baseValue) Option(opts ...Option) error {
 	return nil
 }
 
-func (bv baseValue) hasField() bool {
+// HasField returns true if the Field has been set and the Fields ID is not
+// empty.
+func (bv baseValue) HasField() bool {
 	return bv.Field != nil && bv.Field.ID.IsEmpty() == false
+}
+
+func (bv baseValue) initScope() (p scope.Perm) {
+	p = scope.PermDefault
+	if bv.Scopes > 0 {
+		p = bv.Scopes
+	}
+	return
 }
 
 // Write writes a value v to the config.Writer without checking if the value has
@@ -159,7 +195,8 @@ func (bv baseValue) String() string {
 // Unauthorized gets returned.
 //
 // If you need a string returned, consider calling FQ(Scope,scopeID) or
-// MustFQ(Scope,scopeID). FQ = fully qualified path.
+// MustFQ(Scope,scopeID). FQ = fully qualified path. The returned route in the
+// path is owned by the callee.
 func (bv baseValue) ToPath(s scope.Scope, scopeID int64) (cfgpath.Path, error) {
 
 	if err := bv.inScope(s, scopeID); err != nil {
@@ -179,16 +216,21 @@ func (bv baseValue) Route() cfgpath.Route {
 	return bv.route.Clone()
 }
 
-// InScope checks if a field from a path is allowed for current scope.
-// Returns nil on success.
-// Error behaviour: Unauthorized
+// InScope checks if a field from a path is allowed for current scope. Returns
+// nil on success. Error behaviour: Unauthorized
 func (bv baseValue) InScope(sg scope.Scoper) error {
 	return bv.inScope(sg.Scope())
 }
 
 func (bv baseValue) inScope(s scope.Scope, _ int64) (err error) {
-	if bv.hasField() && !bv.Field.Scopes.Has(s) {
-		err = errors.NewUnauthorizedf(errScopePermissionInsufficient, s, bv.Field.Scopes, bv)
+	if bv.HasField() {
+		if !bv.Field.Scopes.Has(s) {
+			return errors.NewUnauthorizedf(errScopePermissionInsufficient, s, bv.Field.Scopes, bv)
+		}
+		return nil
+	}
+	if perms := bv.initScope(); !perms.Has(s) {
+		err = errors.NewUnauthorizedf(errScopePermissionInsufficient, s, perms, bv)
 	}
 	return
 }
@@ -218,6 +260,11 @@ func (bv baseValue) MustFQ(s scope.Scope, scopeID int64) string {
 		panic(err)
 	}
 	return p.String()
+}
+
+// IsSet checks if the route has been set.
+func (bv baseValue) IsSet() bool {
+	return bv.route.IsEmpty() == false
 }
 
 // ValidateString checks if string v is contained in Source source.Slice.

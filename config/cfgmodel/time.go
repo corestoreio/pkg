@@ -28,7 +28,7 @@ type Time struct{ baseValue }
 
 // NewTime creates a new Time cfgmodel with a given path.
 func NewTime(path string, opts ...Option) Time {
-	return Time{baseValue: NewValue(path, opts...)}
+	return Time{baseValue: newBaseValue(path, opts...)}
 }
 
 // Get returns a time value from ScopedGetter, if empty the
@@ -40,7 +40,7 @@ func (t Time) Get(sg config.Scoped) (time.Time, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Time
-	var scp = scope.Default
+	var scp = t.initScope().Top()
 	if t.Field != nil {
 		scp = t.Field.Scopes.Top()
 		if d := t.Field.Default; d != nil {
@@ -89,7 +89,7 @@ func (t Duration) Get(sg config.Scoped) (time.Duration, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Duration
-	var scp = scope.Default
+	var scp = t.initScope().Top()
 	if t.Field != nil {
 		scp = t.Field.Scopes.Top()
 		if d := t.Field.Default; d != nil {

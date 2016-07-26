@@ -89,7 +89,7 @@ var configStructure = element.MustNewConfiguration(
 
 func TestBaseValueString(t *testing.T) {
 
-	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	const pathWebCorsHeaders = "web/cors/exposed_headers" // also perm website
 	p1 := NewStr(pathWebCorsHeaders, WithFieldFromSectionSlice(configStructure))
 	assert.Exactly(t, pathWebCorsHeaders, p1.String())
 
@@ -97,8 +97,10 @@ func TestBaseValueString(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).BindWebsite(wantWebsiteID)
 
 	mw := new(cfgmock.Write)
-	assert.NoError(t, p1.Write(mw, "314159", scope.Website, wantWebsiteID))
+	err := p1.Write(mw, "314159", scope.Website, wantWebsiteID)
+	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
+
 	assert.Exactly(t, "314159", mw.ArgValue.(string))
 
 	sg := cfgmock.NewService().NewScoped(wantWebsiteID, 0)
@@ -136,7 +138,7 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 }
 
-func TestBaseValueInScope(t *testing.T) {
+func TestBaseValue_InScope(t *testing.T) {
 
 	tests := []struct {
 		sg         config.Scoped
@@ -170,7 +172,7 @@ func TestBaseValueInScope(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		p1 := NewValue("a/b/c", WithField(&element.Field{
+		p1 := newBaseValue("a/b/c", WithField(&element.Field{
 			ID:     cfgpath.NewRoute(`c`),
 			Scopes: test.p,
 		}))
@@ -184,12 +186,26 @@ func TestBaseValueInScope(t *testing.T) {
 	}
 }
 
-func TestBaseValueFQ(t *testing.T) {
+func TestBaseValue_InScope_Perm(t *testing.T) {
+	bv := newBaseValue("x/y/z", WithScopeStore())
+	assert.NoError(t, bv.inScope(scope.Store, 0))
+	assert.NoError(t, bv.inScope(scope.Website, 0))
+
+	bv = newBaseValue("x/y/z", WithScopeWebsite())
+	assert.Error(t, bv.inScope(scope.Store, 0))
+	assert.NoError(t, bv.inScope(scope.Website, 0))
+
+	bv = newBaseValue("x/y/z")
+	assert.Error(t, bv.inScope(scope.Store, 0))
+	assert.Error(t, bv.inScope(scope.Website, 0))
+}
+
+func TestBaseValue_FQ(t *testing.T) {
 
 	const pth = "aa/bb/cc"
-	p := NewValue(pth)
+	p := newBaseValue(pth, WithScopeStore())
 	fq, err := p.FQ(scope.Store, 4)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, cfgpath.MustNewByParts(pth).BindStore(4).String(), fq)
 }
 
@@ -204,8 +220,8 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 		}
 	}()
 	const pth = "a/b/c"
-	p := NewValue(pth)
-	fq := p.MustFQ(scope.Store, 4)
+	p := newBaseValue(pth, WithScopeStore())
+	fq := p.MustFQ(scope.Website, 4)
 	assert.Empty(t, fq)
 }
 
@@ -217,7 +233,7 @@ func TestBaseValueToPath(t *testing.T) {
 
 func testBaseValueToPath(route cfgpath.Route, s scope.Scope, sid int64, wantErrBhf errors.BehaviourFunc) func(*testing.T) {
 	return func(t *testing.T) {
-		bv := NewValue(route.String())
+		bv := newBaseValue(route.String())
 
 		bv.Field = &element.Field{
 			ID:     cfgpath.NewRoute("cc"),
@@ -237,7 +253,7 @@ func testBaseValueToPath(route cfgpath.Route, s scope.Scope, sid int64, wantErrB
 
 func TestBaseValueRoute(t *testing.T) {
 
-	org := NewValue("aa/bb/cc")
+	org := newBaseValue("aa/bb/cc")
 	clone := org.Route()
 
 	if &(org.route) == &clone { // comparing pointer addresses
@@ -245,4 +261,12 @@ func TestBaseValueRoute(t *testing.T) {
 		// because clone should be a clone ;-)
 		t.Error("Should not be equal")
 	}
+}
+
+func TestBaseValue_IsSet(t *testing.T) {
+	r := newBaseValue("aa/bb/cc")
+	assert.True(t, r.IsSet())
+
+	r = baseValue{}
+	assert.False(t, r.IsSet())
 }

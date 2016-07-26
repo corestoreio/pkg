@@ -17,7 +17,6 @@ package cfgmodel_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
@@ -48,15 +47,6 @@ func (rt rot13) Encrypt(s []byte) ([]byte, error) {
 func (rt rot13) Decrypt(s []byte) ([]byte, error) {
 	return rt.Encrypt(s)
 }
-func TestObscureMissingEncryptor(t *testing.T) {
-
-	m := cfgmodel.NewObscure(`aa/bb/cc`)
-	val, h, err := m.Get(config.Scoped{})
-	assert.Nil(t, val)
-	assert.EqualError(t, err, cfgmodel.ErrMissingEncryptor.Error())
-	assert.EqualError(t, m.Write(nil, nil, scope.Default, 0), cfgmodel.ErrMissingEncryptor.Error())
-	assert.Exactly(t, scope.Hash(0).String(), h.String())
-}
 
 func TestObscure(t *testing.T) {
 
@@ -68,6 +58,7 @@ func TestObscure(t *testing.T) {
 		cfgPath,
 		cfgmodel.WithCSVComma(''), // trick it
 		cfgmodel.WithEncryptor(rot13{}),
+		cfgmodel.WithScopeStore(),
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 

@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -26,14 +25,14 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Default storage engine with build-in in-memory map.
-// the config.NewService or config.MustNewService gets only instantiated once
-// during app start up.
-var configSrv2 = config.MustNewService( /*options*/ )
+// Config Service, the Default storage engine with build-in in-memory map. The
+// config.NewService or config.MustNewService gets only instantiated once during
+// app start up.
+var configService = config.MustNewService( /*options*/ )
 
 // The store.MustNewService gets only instantiated once during app start up.
 var storeSrv = store.MustNewService(
-	cfgmock.NewService(),
+	configService,
 
 	// Storage gets usually loaded from the database tables containing
 	// website, group and store. For the sake of this example the storage
@@ -80,7 +79,7 @@ func ExampleScopedGetter() {
 	// via function ApplyCoreConfigData()
 
 	for _, vi := range defaultsInt {
-		if err := configSrv2.Write(vi.key, vi.val); err != nil {
+		if err := configService.Write(vi.key, vi.val); err != nil {
 			fmt.Printf("Write Error: %s", err)
 			return
 		}
@@ -98,7 +97,7 @@ func ExampleScopedGetter() {
 	// Scope1 use store config and hence store value
 	val, h, err := atStore.Config.Int(pathInt.Route)
 	if err != nil {
-		fmt.Printf("srvString Error: %s", err)
+		fmt.Printf("srvString1 %s Error: %+v", h, err)
 		return
 	}
 	fmt.Println("Scope Value for Store ID 2:", val, " | ", h.String())
@@ -106,7 +105,7 @@ func ExampleScopedGetter() {
 	// Scope2 use website config and hence website value
 	val, h, err = atStore.Website.Config.Int(pathInt.Route)
 	if err != nil {
-		fmt.Printf("srvString Error: %s", err)
+		fmt.Printf("srvString2 Error: %+v", err)
 		return
 	}
 	fmt.Println("Scope Value for Website ID 1:", val, " | ", h.String())
@@ -114,7 +113,7 @@ func ExampleScopedGetter() {
 	// Scope3 force default value
 	val, h, err = atStore.Config.Int(pathInt.Route, scope.Default)
 	if err != nil {
-		fmt.Printf("srvString Error: %s", err)
+		fmt.Printf("srvString3 Error: %+v", err)
 		return
 	}
 	fmt.Println("Scope Value for Default:", val, " | ", h.String())

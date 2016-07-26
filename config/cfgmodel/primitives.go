@@ -27,7 +27,7 @@ type Bool struct{ baseValue }
 // NewBool creates a new Bool cfgmodel with a given path.
 func NewBool(path string, opts ...Option) Bool {
 	return Bool{
-		baseValue: NewValue(path, opts...),
+		baseValue: newBaseValue(path, opts...),
 	}
 }
 
@@ -38,8 +38,8 @@ func (b Bool) Get(sg config.Scoped) (bool, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v bool
-	var scp = scope.Default
-	if b.hasField() {
+	var scp = b.initScope().Top()
+	if b.HasField() {
 		scp = b.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToBoolE(b.Field.Default)
@@ -71,7 +71,7 @@ type Byte struct{ baseValue }
 
 // NewByte creates a new Byte cfgmodel with a given path.
 func NewByte(path string, opts ...Option) Byte {
-	return Byte{baseValue: NewValue(path, opts...)}
+	return Byte{baseValue: newBaseValue(path, opts...)}
 }
 
 // Get returns a byte slice from ScopedGetter, if empty the
@@ -83,8 +83,8 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
 	// This code must be kept in sync with other lookup*() functions
 
 	var v []byte
-	var scp = scope.Default
-	if bt.hasField() {
+	var scp = bt.initScope().Top()
+	if bt.HasField() {
 		scp = bt.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToByteE(bt.Field.Default)
@@ -118,7 +118,7 @@ type Str struct{ baseValue }
 
 // NewStr creates a new Str cfgmodel with a given path.
 func NewStr(path string, opts ...Option) Str {
-	return Str{baseValue: NewValue(path, opts...)}
+	return Str{baseValue: newBaseValue(path, opts...)}
 }
 
 // Get returns a string value from ScopedGetter, if empty the
@@ -128,8 +128,8 @@ func (str Str) Get(sg config.Scoped) (string, scope.Hash, error) {
 	// This code must be kept in sync with other lookup*() functions
 
 	var v string
-	var scp = scope.Default
-	if str.hasField() {
+	var scp = str.initScope().Top()
+	if str.HasField() {
 		scp = str.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToStringE(str.Field.Default)
@@ -161,7 +161,7 @@ type Int struct{ baseValue }
 
 // NewInt creates a new Int cfgmodel with a given path.
 func NewInt(path string, opts ...Option) Int {
-	return Int{baseValue: NewValue(path, opts...)}
+	return Int{baseValue: newBaseValue(path, opts...)}
 }
 
 // Get returns an int value from ScopedGetter, if empty the
@@ -171,8 +171,8 @@ func (i Int) Get(sg config.Scoped) (int, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v int
-	var scp = scope.Default
-	if i.hasField() {
+	var scp = i.initScope().Top()
+	if i.HasField() {
 		scp = i.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToIntE(i.Field.Default)
@@ -204,7 +204,7 @@ type Float64 struct{ baseValue }
 
 // NewFloat64 creates a new Float64 cfgmodel with a given path.
 func NewFloat64(path string, opts ...Option) Float64 {
-	return Float64{baseValue: NewValue(path, opts...)}
+	return Float64{baseValue: newBaseValue(path, opts...)}
 }
 
 // Get returns a float64 value from ScopedGetter, if empty the
@@ -214,8 +214,8 @@ func (f Float64) Get(sg config.Scoped) (float64, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v float64
-	var scp = scope.Default
-	if f.hasField() {
+	var scp = f.initScope().Top()
+	if f.HasField() {
 		scp = f.Field.Scopes.Top()
 		if d := f.Field.Default; d != nil {
 			var err error

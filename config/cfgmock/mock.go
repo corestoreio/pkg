@@ -28,11 +28,6 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-type keyNotFound struct{}
-
-func (a keyNotFound) Error() string  { return "[cfgmock] Get() Path" }
-func (a keyNotFound) NotFound() bool { return true }
-
 // Write used for testing when writing configuration values.
 type Write struct {
 	// WriteError gets always returned by Write
@@ -222,7 +217,7 @@ func (mr *Service) Byte(p cfgpath.Path) ([]byte, error) {
 	case mr.FByte != nil:
 		return mr.FByte(p.String())
 	default:
-		return nil, keyNotFound{}
+		return nil, errors.NewNotFoundf("[cfgmock] Path %q", p)
 	}
 }
 
@@ -234,7 +229,7 @@ func (mr *Service) String(p cfgpath.Path) (string, error) {
 	case mr.FString != nil:
 		return mr.FString(p.String())
 	default:
-		return "", keyNotFound{}
+		return "", errors.NewNotFoundf("[cfgmock] Path %q", p)
 	}
 }
 
@@ -246,7 +241,7 @@ func (mr *Service) Bool(p cfgpath.Path) (bool, error) {
 	case mr.FBool != nil:
 		return mr.FBool(p.String())
 	default:
-		return false, keyNotFound{}
+		return false, errors.NewNotFoundf("[cfgmock] Path %q", p)
 	}
 }
 
@@ -258,7 +253,7 @@ func (mr *Service) Float64(p cfgpath.Path) (float64, error) {
 	case mr.FFloat64 != nil:
 		return mr.FFloat64(p.String())
 	default:
-		return 0.0, keyNotFound{}
+		return 0.0, errors.NewNotFoundf("[cfgmock] Path %q", p)
 	}
 }
 
@@ -270,7 +265,7 @@ func (mr *Service) Int(p cfgpath.Path) (int, error) {
 	case mr.FInt != nil:
 		return mr.FInt(p.String())
 	default:
-		return 0, keyNotFound{}
+		return 0, errors.NewNotFoundf("[cfgmock] Path %q", p)
 	}
 }
 
@@ -282,7 +277,7 @@ func (mr *Service) Time(p cfgpath.Path) (time.Time, error) {
 	case mr.FTime != nil:
 		return mr.FTime(p.String())
 	default:
-		return time.Time{}, keyNotFound{}
+		return time.Time{}, errors.NewNotFoundf("[cfgmock] Path %q", p)
 	}
 }
 
