@@ -712,3 +712,34 @@ func TestNewInt_Option_Error(t *testing.T) {
 	))
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
+
+func TestBaseValue_LastError(t *testing.T) {
+
+	wantErr := errors.NewNotImplementedf("Something has not been implemented, e.g. Generics")
+
+	b := cfgmodel.NewBool("a/b/c")
+	b.LastError = wantErr
+	_, _, haveErr := b.Get(config.Scoped{})
+	assert.True(t, errors.IsNotImplemented(haveErr))
+
+	by := cfgmodel.NewByte(`a/b/c`)
+	by.LastError = wantErr
+	_, _, haveErr = by.Get(config.Scoped{})
+	assert.True(t, errors.IsNotImplemented(haveErr))
+
+	str := cfgmodel.NewStr(`a/b/c`)
+	str.LastError = wantErr
+	_, _, haveErr = str.Get(config.Scoped{})
+	assert.True(t, errors.IsNotImplemented(haveErr))
+
+	i := cfgmodel.NewInt(`a/b/c`)
+	i.LastError = wantErr
+	_, _, haveErr = i.Get(config.Scoped{})
+	assert.True(t, errors.IsNotImplemented(haveErr))
+
+	f := cfgmodel.NewFloat64(`a/b/c`)
+	f.LastError = wantErr
+	_, _, haveErr = f.Get(config.Scoped{})
+	assert.True(t, errors.IsNotImplemented(haveErr))
+
+}

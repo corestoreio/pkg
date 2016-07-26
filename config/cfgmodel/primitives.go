@@ -37,6 +37,10 @@ func NewBool(path string, opts ...Option) Bool {
 func (b Bool) Get(sg config.Scoped) (bool, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
+	if b.LastError != nil {
+		return false, 0, errors.Wrap(b.LastError, "[cfgmodel] Bool.Get.LastError")
+	}
+
 	var v bool
 	var scp = b.initScope().Top()
 	if b.HasField() {
@@ -80,7 +84,11 @@ func NewByte(path string, opts ...Option) Byte {
 // The slice is owned by this function. You must copy it away for
 // further modifications.
 func (bt Byte) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
-	// This code must be kept in sync with other lookup*() functions
+	// This code must be kept in sync with other Get() functions
+
+	if bt.LastError != nil {
+		return nil, 0, errors.Wrap(bt.LastError, "[cfgmodel] Byte.Get.LastError")
+	}
 
 	var v []byte
 	var scp = bt.initScope().Top()
@@ -125,7 +133,11 @@ func NewStr(path string, opts ...Option) Str {
 // *element.Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
 func (str Str) Get(sg config.Scoped) (string, scope.Hash, error) {
-	// This code must be kept in sync with other lookup*() functions
+	// This code must be kept in sync with other Get() functions
+
+	if str.LastError != nil {
+		return "", 0, errors.Wrap(str.LastError, "[cfgmodel] Str.Get.LastError")
+	}
 
 	var v string
 	var scp = str.initScope().Top()
@@ -170,6 +182,10 @@ func NewInt(path string, opts ...Option) Int {
 func (i Int) Get(sg config.Scoped) (int, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
 
+	if i.LastError != nil {
+		return 0, 0, errors.Wrap(i.LastError, "[cfgmodel] Int.Get.LastError")
+	}
+
 	var v int
 	var scp = i.initScope().Top()
 	if i.HasField() {
@@ -212,6 +228,10 @@ func NewFloat64(path string, opts ...Option) Float64 {
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 func (f Float64) Get(sg config.Scoped) (float64, scope.Hash, error) {
 	// This code must be kept in sync with other Get() functions
+
+	if f.LastError != nil {
+		return 0, 0, errors.Wrap(f.LastError, "[cfgmodel] Float64.Get.LastError")
+	}
 
 	var v float64
 	var scp = f.initScope().Top()

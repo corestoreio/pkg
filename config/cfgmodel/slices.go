@@ -64,7 +64,7 @@ func NewStringCSV(path string, opts ...Option) StringCSV {
 		Comma: CSVComma,
 		Str:   NewStr(path),
 	}
-	ret.OptionError = (&ret).Option(opts...)
+	ret.LastError = (&ret).Option(opts...)
 	return ret
 }
 
@@ -129,7 +129,7 @@ func NewIntCSV(path string, opts ...Option) IntCSV {
 		Str:       NewStr(path),
 		Separator: CSVComma,
 	}
-	ret.OptionError = (&ret).Option(opts...)
+	ret.LastError = (&ret).Option(opts...)
 	return ret
 }
 
@@ -226,7 +226,7 @@ func NewCSV(path string, opts ...Option) CSV {
 		NewReader: csv.NewReader,
 		NewWriter: csv.NewWriter,
 	}
-	ret.OptionError = (&ret).Option(opts...)
+	ret.LastError = (&ret).Option(opts...)
 	return ret
 }
 

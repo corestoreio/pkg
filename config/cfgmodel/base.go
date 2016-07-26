@@ -130,9 +130,10 @@ type baseValue struct {
 	// Validation gets triggered only when the slice has been set. The Options()
 	// function will be used to access this slice.
 	Source source.Slice
-	// OptionError might contain an error when an applied function option returns an
-	// error. Only used in the function MustNewValue()
-	OptionError error
+	// LastError might contain an error when an applied functional option
+	// returns an error in any New*() constructor. Exported for testing reasons.
+	// Every Get() function in a primitive type checks for this error.
+	LastError error
 }
 
 // newBaseValue creates a new BaseValue type and applies different options.
@@ -141,12 +142,13 @@ func newBaseValue(path string, opts ...Option) baseValue {
 	b := baseValue{
 		route: cfgpath.NewRoute(path),
 	}
-	b.OptionError = (&b).Option(opts...)
+	b.LastError = (&b).Option(opts...)
 	return b
 }
 
-// Option sets the options and returns the last set previous option
+// Option sets the options and resets the LastError field to nil.
 func (bv *baseValue) Option(opts ...Option) error {
+	bv.LastError = nil
 	ob := &optionBox{
 		baseValue: bv,
 	}
@@ -175,8 +177,7 @@ func (bv baseValue) initScope() (p scope.Perm) {
 
 // Write writes a value v to the config.Writer without checking if the value has
 // changed. Checks if the Scope matches as defined in the non-nil
-// ConfigStructure.
-// Error behaviour: Unauthorized
+// ConfigStructure. Error behaviour: Unauthorized
 func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, scopeID int64) error {
 	pp, err := bv.ToPath(s, scopeID)
 	if err != nil {
