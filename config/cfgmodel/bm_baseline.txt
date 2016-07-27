@@ -1,5 +1,7 @@
-Benchmark_ParallelStrGetDefault-4   	  500000	      2437 ns/op	       1 B/op	       1 allocs/op
-Benchmark_SingleStrGetDefault-4     	 1000000	      1714 ns/op	       1 B/op	       1 allocs/op
-Benchmark_SingleByteGetDefault-4    	 1000000	      1515 ns/op	       1 B/op	       1 allocs/op
+Benchmark_ParallelStrGetDefault-4   	  500000	      2293 ns/op	       0 B/op	       0 allocs/op
+Benchmark_SingleStrGetDefault-4     	 1000000	      1644 ns/op	       0 B/op	       0 allocs/op
+Benchmark_SingleStrGetWebsite-4     	 1000000	      1496 ns/op	       0 B/op	       0 allocs/op
+Benchmark_SingleByteGetDefault-4    	 1000000	      1419 ns/op	       0 B/op	       0 allocs/op
+Benchmark_SingleFloat64GetStore-4   	 1000000	      1309 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/config/cfgmodel	4.525s
+ok  	github.com/corestoreio/csfw/config/cfgmodel	7.122s

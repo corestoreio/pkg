@@ -25,7 +25,6 @@ import (
 
 var benchmarkStr string
 
-// Benchmark_ParallelStrGetDefault-4	 1000000	      2368 ns/op	      97 B/op	       4 allocs/op
 func Benchmark_ParallelStrGetDefault(b *testing.B) {
 	const want = `Content-Type,X-CoreStore-ID`
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
@@ -53,7 +52,6 @@ func Benchmark_ParallelStrGetDefault(b *testing.B) {
 	})
 }
 
-// Benchmark_SingleStrGetDefault-4  	 1000000	      1871 ns/op	      97 B/op	       4 allocs/op
 func Benchmark_SingleStrGetDefault(b *testing.B) {
 	const want = `Content-Type,X-CoreStore-ID`
 	p1 := cfgmodel.NewStr("web/cors/exposed_headers", cfgmodel.WithFieldFromSectionSlice(configStructure))
@@ -79,9 +77,36 @@ func Benchmark_SingleStrGetDefault(b *testing.B) {
 	}
 }
 
+func Benchmark_SingleStrGetWebsite(b *testing.B) {
+	const want = `Content-Application`
+	var wantHash = scope.NewHash(scope.Website, 2)
+	p1 := cfgmodel.NewStr("web/cors/exposed_headers", cfgmodel.WithFieldFromSectionSlice(configStructure))
+
+	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		p1.MustFQ(scope.Website, 2): want,
+	})).NewScoped(2, 4)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		var err error
+		var h scope.Hash
+		benchmarkStr, h, err = p1.Get(sg)
+		if err != nil {
+			b.Error(err)
+		}
+		if benchmarkStr != want {
+			b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
+		}
+		if h != wantHash {
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
+		}
+	}
+}
+
 var benchmarkByte []byte
 
-// Benchmark_SingleByteGetDefault-4 	 1000000	      1363 ns/op	       1 B/op	       1 allocs/op
 func Benchmark_SingleByteGetDefault(b *testing.B) {
 	var want = []byte(`Hello Dud€`)
 
@@ -103,6 +128,39 @@ func Benchmark_SingleByteGetDefault(b *testing.B) {
 			b.Errorf("Have: %s\nWant: %s\n", string(benchmarkByte), string(want))
 		}
 		if h != scope.DefaultHash {
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
+		}
+	}
+}
+
+var benchmark_SingleFloat64GetStore float64
+
+func Benchmark_SingleFloat64GetStore(b *testing.B) {
+	const want float64 = 3.14159
+	var wantHash = scope.NewHash(scope.Store, 4)
+	p1 := cfgmodel.NewFloat64("web/cors/float64_store", cfgmodel.WithFieldFromSectionSlice(configStructure))
+	if p1.LastError != nil {
+		b.Fatalf("%+v", p1.LastError)
+	}
+
+	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		p1.MustFQ(scope.Store, 4): want,
+	})).NewScoped(2, 4)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		var err error
+		var h scope.Hash
+		benchmark_SingleFloat64GetStore, h, err = p1.Get(sg)
+		if err != nil {
+			b.Error(err)
+		}
+		if benchmark_SingleFloat64GetStore != want {
+			b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
+		}
+		if h != wantHash {
 			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
 		}
 	}

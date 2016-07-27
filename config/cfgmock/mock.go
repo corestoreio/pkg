@@ -28,6 +28,16 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
+// keyNotFound for performance and allocs reasons in benchmarks to test properly
+// the cfg* code and not the configuration Service. The NotFound error has been
+// hard coded which does not record the position where the error happens. We can
+// maybe add the path which was not found but that will trigger 2 allocs because
+// of the sprintf ... which could be bypassed with a bufferpool ;-)
+type keyNotFound struct{}
+
+func (a keyNotFound) Error() string  { return "[cfgmock] Get() Path" }
+func (a keyNotFound) NotFound() bool { return true }
+
 // Write used for testing when writing configuration values.
 type Write struct {
 	// WriteError gets always returned by Write
@@ -217,7 +227,7 @@ func (mr *Service) Byte(p cfgpath.Path) ([]byte, error) {
 	case mr.FByte != nil:
 		return mr.FByte(p.String())
 	default:
-		return nil, errors.NewNotFoundf("[cfgmock] Path %q", p)
+		return nil, keyNotFound{}
 	}
 }
 
@@ -229,7 +239,7 @@ func (mr *Service) String(p cfgpath.Path) (string, error) {
 	case mr.FString != nil:
 		return mr.FString(p.String())
 	default:
-		return "", errors.NewNotFoundf("[cfgmock] Path %q", p)
+		return "", keyNotFound{}
 	}
 }
 
@@ -241,7 +251,7 @@ func (mr *Service) Bool(p cfgpath.Path) (bool, error) {
 	case mr.FBool != nil:
 		return mr.FBool(p.String())
 	default:
-		return false, errors.NewNotFoundf("[cfgmock] Path %q", p)
+		return false, keyNotFound{}
 	}
 }
 
@@ -253,7 +263,7 @@ func (mr *Service) Float64(p cfgpath.Path) (float64, error) {
 	case mr.FFloat64 != nil:
 		return mr.FFloat64(p.String())
 	default:
-		return 0.0, errors.NewNotFoundf("[cfgmock] Path %q", p)
+		return 0.0, keyNotFound{}
 	}
 }
 
@@ -265,7 +275,7 @@ func (mr *Service) Int(p cfgpath.Path) (int, error) {
 	case mr.FInt != nil:
 		return mr.FInt(p.String())
 	default:
-		return 0, errors.NewNotFoundf("[cfgmock] Path %q", p)
+		return 0, keyNotFound{}
 	}
 }
 
@@ -277,7 +287,7 @@ func (mr *Service) Time(p cfgpath.Path) (time.Time, error) {
 	case mr.FTime != nil:
 		return mr.FTime(p.String())
 	default:
-		return time.Time{}, errors.NewNotFoundf("[cfgmock] Path %q", p)
+		return time.Time{}, keyNotFound{}
 	}
 }
 

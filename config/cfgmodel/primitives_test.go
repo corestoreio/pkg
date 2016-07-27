@@ -139,6 +139,15 @@ var configStructure = element.MustNewConfiguration(
 2|"After switching please reindex the<br /><em>Catalog Search Index</em>."|"Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."
 3|"CATALOG"|"KATALOG"`,
 					},
+					element.Field{
+						// Path: `web/cors/float64_store`,
+						ID:        cfgpath.NewRoute("float64_store"),
+						Type:      element.TypeText,
+						SortOrder: 40,
+						Visible:   element.VisibleYes,
+						Scopes:    scope.PermStore,
+						Default:   2.7182,
+					},
 				),
 			},
 
