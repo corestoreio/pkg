@@ -64,7 +64,7 @@ type Service struct {
 	// not set the overall structure this model is not aware of a scope and
 	// hence always uses the store scope. Default value: true.
 	// Path: general/single_store_mode/enabled
-	BackendSingleStore cfgmodel.BoolGetter
+	BackendSingleStore cfgmodel.Bool
 
 	// backend communicates with the database in reading mode and creates
 	// new store, group and website pointers. If nil, panics.
@@ -326,7 +326,7 @@ func (sm *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
 	}
 
 	var b = true
-	if sm.BackendSingleStore != nil {
+	if sm.BackendSingleStore.IsSet() {
 		var err error
 		b, _, err = sm.BackendSingleStore.Get(cfg)
 		if err != nil {
