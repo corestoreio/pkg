@@ -15,22 +15,19 @@
 package store_test
 
 import (
-	"encoding/json"
-	"testing"
-
 	"bytes"
-
+	"encoding/json"
 	"fmt"
-
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/slices"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 var _ log.Marshaler = (*store.Store)(nil)
@@ -141,21 +138,27 @@ var testStores = store.TableStoreSlice{
 }
 
 func TestTableStoreSliceLoad(t *testing.T) {
-	// quick implement, use mock of dbr.SessionRunner and remove connection
 
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skip(err)
-	}
-	dbCon := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbCon.Close()) }()
-	// store.TableCollection initialized with test TestTableGroupSliceLoad()
+	dbrCon, dbMock := cstesting.MockDB(t)
+	dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnRows(
+		cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_view.csv")),
+	)
+
+	// store.TableCollection already initialized
 
 	var stores store.TableStoreSlice
-	_, err := stores.SQLSelect(dbCon.NewSession())
+	rows, err := stores.SQLSelect(dbrCon.NewSession())
 	assert.NoError(t, err)
-	assert.True(t, stores.Len() >= 2) // @todo proper test data in database
+
+	if err := dbMock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	assert.Exactly(t, 16, rows)
+
+	assert.Len(t, stores, 16)
 	for _, s := range stores {
-		assert.True(t, len(s.Code.String) > 1)
+		assert.True(t, len(s.Name) > 1)
 	}
 }
 
@@ -213,26 +216,26 @@ func TestTableStoreSliceFilterByWebsiteID(t *testing.T) {
 
 func TestTableStoreSliceCodes(t *testing.T) {
 
-	t.Skip(TODO_Better_Test_Data)
+	t.Log(TODO_Better_Test_Data)
 
 	codes := testStores.Extract().Code()
 	assert.NotNil(t, codes)
-	assert.Equal(t, slices.String{"admin", "au", "de", "uk", "at", "nz", "ch"}, codes)
+	assert.Equal(t, []string{"admin", "au", "de", "uk", "at", "nz", "ch"}, codes)
 
 	var ts = store.TableStoreSlice{}
-	assert.Nil(t, ts.Extract().Code())
+	assert.Empty(t, ts.Extract().Code())
 }
 
 func TestTableStoreSliceIDs(t *testing.T) {
 
-	t.Skip(TODO_Better_Test_Data)
+	t.Log(TODO_Better_Test_Data)
 
 	ids := testStores.Extract().StoreID()
 	assert.NotNil(t, ids)
-	assert.Equal(t, slices.Int64{0, 5, 1, 4, 2, 6, 3}, ids)
+	assert.Equal(t, []int64{0, 5, 1, 4, 2, 6, 3}, ids)
 
 	var ts = store.TableStoreSlice{}
-	assert.Nil(t, ts.Extract().StoreID())
+	assert.Empty(t, ts.Extract().StoreID())
 }
 
 func TestStore_MarshalJSON(t *testing.T) {

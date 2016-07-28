@@ -15,11 +15,13 @@
 package store
 
 import (
+	"context"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 // factory contains the raw slices from the database and can read from the
@@ -193,44 +195,26 @@ func (f *factory) LoadFromDB(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) err
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	errc := make(chan error)
-	defer close(errc)
-	// not sure about those three go
-	go func() {
-		for i := range f.websites {
-			f.websites[i] = nil // I'm not quite sure if that is needed to clear the pointers
-		}
+	// todo investigate how to use ctx to cancel the DB query and under which condition
+	ctx := context.Background()
+	eg, _ := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
 		f.websites = nil
 		_, err := f.websites.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Wrap(err, "[store] SQLSelect websites")
-	}()
-
-	go func() {
-		for i := range f.groups {
-			f.groups[i] = nil // I'm not quite sure if that is needed to clear the pointers
-		}
+		return errors.Wrap(err, "[store] SQLSelect Websites")
+	})
+	eg.Go(func() error {
 		f.groups = nil
 		_, err := f.groups.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Wrap(err, "[store] SQLSelect groups")
-	}()
-
-	go func() {
-		for i := range f.stores {
-			f.stores[i] = nil // I'm not quite sure if that is needed to clear the pointers
-		}
+		return errors.Wrap(err, "[store] SQLSelect Groups")
+	})
+	eg.Go(func() error {
 		f.stores = nil
 		_, err := f.stores.SQLSelect(dbrSess, cbs...)
-		errc <- errors.Wrap(err, "[store] SQLSelect stores")
-	}()
+		return errors.Wrap(err, "[store] SQLSelect Stores")
+	})
 
-	for i := 0; i < 3; i++ {
-		if err := <-errc; err != nil {
-			// in case of error clear all
-			f.websites = nil
-			f.groups = nil
-			f.stores = nil
-			return err
-		}
-	}
-	return nil
+	return errors.Wrap(eg.Wait(), "[store] LoadFromDB.Wait")
+
 }

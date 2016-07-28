@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/slices"
@@ -361,38 +360,4 @@ func TestFactoryStoreErrors(t *testing.T) {
 	stgs, err := nsg.Stores()
 	assert.Nil(t, stgs)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-}
-
-func TestFactoryReInit(t *testing.T) {
-	// quick implement, use mock of dbr.SessionRunner and remove connection
-
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skip(err)
-	}
-	dbCon := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbCon.Close()) }()
-
-	nsg := mustNewFactory(nil, nil, nil)
-	assert.NoError(t, nsg.LoadFromDB(dbCon.NewSession()))
-
-	stores, err := nsg.Stores()
-	assert.NoError(t, err)
-	assert.True(t, stores.Len() > 0, "Expecting at least one store loaded from DB")
-	for _, s := range stores {
-		assert.NotEmpty(t, s.Data.Code.String, "Store: %#v", s.Data)
-	}
-
-	groups, err := nsg.Groups()
-	assert.True(t, groups.Len() > 0, "Expecting at least one group loaded from DB")
-	assert.NoError(t, err)
-	for _, g := range groups {
-		assert.NotEmpty(t, g.Data.Name, "Group: %#v", g.Data)
-	}
-
-	websites, err := nsg.Websites()
-	assert.True(t, websites.Len() > 0, "Expecting at least one website loaded from DB")
-	assert.NoError(t, err)
-	for _, w := range websites {
-		assert.NotEmpty(t, w.Data.Code.String, "Website: %#v", w.Data)
-	}
 }

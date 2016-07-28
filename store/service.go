@@ -146,7 +146,7 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 			wsDefaultCounter = append(wsDefaultCounter, w.Data.WebsiteID)
 		}
 	})
-	if len(wsDefaultCounter) != 1 {
+	if ws.Len() > 0 && len(wsDefaultCounter) != 1 {
 		return errors.NewNotValidf("[store] NewService: Only one Website can be the default Website. Have: %v. All Website IDs: %v", wsDefaultCounter, ws.IDs())
 	}
 

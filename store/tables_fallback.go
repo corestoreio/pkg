@@ -37,14 +37,16 @@ const (
 	TableIndexZZZ                       // the maximum index, which is not available.
 )
 
-func init() {
-	TableCollection = csdb.MustNewTableService(
-		csdb.WithTable(TableIndexStore, "store"),
-		csdb.WithTable(TableIndexGroup, "store_group"),
-		csdb.WithTable(TableIndexWebsite, "store_website"),
-	)
-	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
-}
+// will be initialized in tables_fallback_test.go
+//
+//func init() {
+//	TableCollection = csdb.MustNewTableService(
+//		csdb.WithTable(TableIndexStore, "store"),
+//		csdb.WithTable(TableIndexGroup, "store_group"),
+//		csdb.WithTable(TableIndexWebsite, "store_website"),
+//	)
+//	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
+//}
 
 // TableStoreSlice represents a collection type for DB table store
 // Generated via tableToStruct.

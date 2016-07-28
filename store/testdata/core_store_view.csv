@@ -1,0 +1,17 @@
+"store_id","code","website_id","group_id","name","sort_order","is_active"
+0,"admin",0,0,"Admin",0,1
+2,"dede",2,2,"de",1,1
+5,"deen",2,2,"en",4,1
+6,"chde",3,3,"de",1,1
+7,"chfr",3,3,"fr",2,1
+8,"chit",3,3,"it",3,1
+9,"chen",3,3,"en",4,1
+10,"itit",4,4,"it",1,1
+11,"itde",4,4,"de",2,1
+12,"frfr",5,5,"fr",1,1
+13,"befr",6,6,"fr",1,1
+14,"been",6,6,"en",2,1
+15,"lufr",7,7,"fr",1,1
+16,"lude",7,7,"de",2,1
+17,"atde",8,8,"de",1,1
+18,"inten",9,9,"en",1,1

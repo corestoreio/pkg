@@ -111,6 +111,13 @@ func (ws WebsiteSlice) Default() (Website, error) {
 	return Website{}, errors.NewNotFoundf("[store] WebsiteSlice Default Website not found")
 }
 
+// Tree represents a hierarchical structure of all available scopes.
+type Tree struct {
+	Scope  scope.Scope `json:"scope",xml:"scope"`
+	ID     int64       `json:"id",xml:"id"`
+	Scopes []Tree      `json:"scopes,omitempty",xml:"scopes,omitempty"`
+}
+
 // Tree returns the hierarchical overview of the scopes: default -> website
 // -> group -> store represented in a Tree.
 func (ws WebsiteSlice) Tree() Tree {

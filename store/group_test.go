@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -120,21 +120,24 @@ var testGroups = store.TableGroupSlice{
 
 func TestTableGroupSliceLoad(t *testing.T) {
 
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skip(err)
-	}
-	dbCon := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbCon.Close()) }()
-	if err := store.TableCollection.Init(dbCon.NewSession()); err != nil {
-		t.Fatal(err)
-	}
+	dbrCon, dbMock := cstesting.MockDB(t)
+	dbMock.ExpectQuery("SELECT (.+) FROM `store_group`(.+) ORDER BY(.+)").WillReturnRows(
+		cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_group_view.csv")),
+	)
+
+	// store.TableCollection already initialized
 
 	var groups store.TableGroupSlice
-	rows, err := groups.SQLSelect(dbCon.NewSession())
+	rows, err := groups.SQLSelect(dbrCon.NewSession())
 	assert.NoError(t, err)
-	assert.True(t, rows > 0)
 
-	assert.True(t, groups.Len() >= 2)
+	if err := dbMock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	assert.Exactly(t, 9, rows)
+
+	assert.Len(t, groups, 9)
 	for _, s := range groups {
 		assert.True(t, len(s.Name) > 1)
 	}
