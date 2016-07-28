@@ -53,3 +53,78 @@ func TestGroupSlice_Map_Each(t *testing.T) {
 		})
 	assert.Exactly(t, []int64{4, 4}, gs.IDs())
 }
+
+func TestGroupSlice_Sort(t *testing.T) {
+	gs := store.GroupSlice{
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 2, WebsiteID: 1, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 1, WebsiteID: 2, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 3, WebsiteID: 2, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+	}
+	gs.Sort()
+	assert.Exactly(t, []int64{1, 2, 3}, gs.IDs())
+}
+
+func TestGroupSlice_IDs(t *testing.T) {
+	gs := store.GroupSlice{
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 2, WebsiteID: 1, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 1, WebsiteID: 2, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 3, WebsiteID: 2, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+	}
+	assert.Exactly(t, []int64{2, 1, 3}, gs.IDs())
+	assert.Nil(t, store.GroupSlice{}.IDs())
+}
+
+func TestGroupSlice_FindByID(t *testing.T) {
+	gs := store.GroupSlice{
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 2, WebsiteID: 1, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 1, WebsiteID: 2, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+		store.MustNewGroup(
+			cfgmock.NewService(),
+			&store.TableGroup{GroupID: 3, WebsiteID: 2, RootCategoryID: 2, DefaultStoreID: 2},
+			nil,
+			nil,
+		),
+	}
+	assert.Exactly(t, int64(1), gs.FindByID(1).ID())
+	assert.Nil(t, gs.FindByID(44).Data)
+}

@@ -53,3 +53,78 @@ func TestWebsiteSlice_Map_Each(t *testing.T) {
 		})
 	assert.Exactly(t, []int64{4}, ws.IDs())
 }
+
+func TestWebsiteSlice_Sort(t *testing.T) {
+	ws := store.WebsiteSlice{
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 3, Code: dbr.NewNullString("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+	}
+	ws.Sort()
+	assert.Exactly(t, []int64{2, 1, 3}, ws.IDs())
+}
+
+func TestWebsiteSlice_Codes(t *testing.T) {
+	ws := store.WebsiteSlice{
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 3, Code: dbr.NewNullString("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+	}
+	assert.Exactly(t, []string{"euro", "uk", "ch"}, ws.Codes())
+	assert.Nil(t, store.WebsiteSlice{}.Codes())
+}
+
+func TestWebsiteSlice_IDs(t *testing.T) {
+	ws := store.WebsiteSlice{
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+		store.MustNewWebsite(
+			cfgmock.NewService(),
+			&store.TableWebsite{WebsiteID: 3, Code: dbr.NewNullString("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			nil,
+			nil,
+		),
+	}
+	assert.Exactly(t, []int64{1, 2, 3}, ws.IDs())
+	assert.Nil(t, store.WebsiteSlice{}.IDs())
+}

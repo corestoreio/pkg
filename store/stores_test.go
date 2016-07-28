@@ -49,5 +49,79 @@ func TestStoreSlice_Map_Each(t *testing.T) {
 		})
 
 	assert.Exactly(t, []int64{4, 4}, ss.IDs())
+}
 
+func TestStoreSlice_ActiveCodes(t *testing.T) {
+	ss := store.StoreSlice{
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			nil,
+			nil,
+		),
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false},
+			nil,
+			nil,
+		),
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
+			nil,
+			nil,
+		),
+	}
+	assert.Exactly(t, []string{"de", "ch"}, ss.ActiveCodes())
+	assert.Nil(t, store.StoreSlice{}.ActiveCodes())
+}
+
+func TestStoreSlice_ActiveIDs(t *testing.T) {
+	ss := store.StoreSlice{
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			nil,
+			nil,
+		),
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false},
+			nil,
+			nil,
+		),
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
+			nil,
+			nil,
+		),
+	}
+	assert.Exactly(t, []int64{1, 3}, ss.ActiveIDs())
+	assert.Nil(t, store.StoreSlice{}.ActiveIDs())
+}
+
+func TestStoreSlice_Sort(t *testing.T) {
+	ss := store.StoreSlice{
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 2, IsActive: true},
+			nil,
+			nil,
+		),
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 1, IsActive: false},
+			nil,
+			nil,
+		),
+		store.MustNewStore(
+			cfgmock.NewService(),
+			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 3, IsActive: true},
+			nil,
+			nil,
+		),
+	}
+	ss.Sort()
+	assert.Exactly(t, []int64{2, 1, 3}, ss.IDs())
 }
