@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet_test
+package runmode_test
 
 //// Benchmark_WithValidateBaseUrl-4         	    3000	    489089 ns/op	  188333 B/op	     272 allocs/op => with debug enabled
 //// Benchmark_WithValidateBaseUrl-4         	  200000	      8925 ns/op	    2924 B/op	      49 allocs/op => no debug
@@ -23,7 +23,7 @@ package storenet_test
 //		b.Fatal(err)
 //	}
 //
-//	finalHandler := storenet.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//	finalHandler := runmode.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 //		return errors.New("This handler should not be called!")
 //	}))
 //	want := "https://www.corestore.io/customer/comments/view?id=1916#tab=ratings"
@@ -43,7 +43,7 @@ package storenet_test
 //
 //func benchValidationHandler(b *testing.B, wantStoreCode string) ctxhttp.HandlerFunc {
 //	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-//		_, haveReqStore, err := storenet.FromContextProvider(ctx)
+//		_, haveReqStore, err := runmode.FromContextProvider(ctx)
 //		if err != nil {
 //			return err
 //		}
@@ -64,7 +64,7 @@ package storenet_test
 //	wantStoreCode := "nz"
 //	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, wantStoreCode)
 //
-//	mw := storenet.WithInitStoreByToken()(benchValidationHandler(b, wantStoreCode))
+//	mw := runmode.WithInitStoreByToken()(benchValidationHandler(b, wantStoreCode))
 //
 //	rec := httptest.NewRecorder()
 //	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list/", nil)
@@ -86,9 +86,9 @@ package storenet_test
 //	b.ReportAllocs()
 //
 //	wantStoreCode := "nz"
-//	ctx := storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Website: scope.MockID(2)}))
+//	ctx := runmode.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Website: scope.MockID(2)}))
 //
-//	mw := storenet.WithInitStoreByFormCookie()(benchValidationHandler(b, wantStoreCode))
+//	mw := runmode.WithInitStoreByFormCookie()(benchValidationHandler(b, wantStoreCode))
 //
 //	rec := httptest.NewRecorder()
 //	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list/", nil)

@@ -12,6 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package storenet defines store specific middleware and functions for net/http
-// and RPC.
-package storenet
+// Package runmode defines store specific middleware to initialize the scope.
+package runmode

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet_test
+package runmode_test
 
 //import (
 //	"bytes"
@@ -27,7 +27,7 @@ package storenet_test
 //	"github.com/corestoreio/csfw/storage/dbr"
 //	"github.com/corestoreio/csfw/store"
 //	"github.com/corestoreio/csfw/store/scope"
-//	"github.com/corestoreio/csfw/store/storenet"
+//	"github.com/corestoreio/csfw/net/runmode"
 //	"github.com/corestoreio/csfw/util/log"
 //	"context"
 //)
@@ -90,7 +90,7 @@ package storenet_test
 //			return nil
 //		}, //
 //		jwtService.WithParseAndValidate(),
-//		storenet.WithInitStoreByToken(),
+//		runmode.WithInitStoreByToken(),
 //	)
 //
 //	ts := httptest.NewServer(ctxhttp.NewAdapter(ctx, finalHandler))

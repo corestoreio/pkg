@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet_test
+package runmode
 
 import (
 	"net/http"
@@ -20,10 +20,11 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ CodeExtracter = (*ExtractCode)(nil)
 
 func TestStoreCodeFromCookie(t *testing.T) {
 
@@ -46,30 +47,31 @@ func TestStoreCodeFromCookie(t *testing.T) {
 		wantID     int64
 	}{
 		{
-			getRootRequest(&http.Cookie{Name: storenet.ParamName, Value: "dede"}),
+			getRootRequest(&http.Cookie{Name: FieldName, Value: "dede"}),
 			nil,
 			scope.Store,
 			"dede",
-			scope.UnavailableStoreID,
+			0,
 		},
 		{
-			getRootRequest(&http.Cookie{Name: storenet.ParamName, Value: "ded'e"}),
+			getRootRequest(&http.Cookie{Name: FieldName, Value: "ded'e"}),
 			errors.IsNotValid,
 			scope.Default,
 			"",
-			scope.UnavailableStoreID,
+			0,
 		},
 		{
 			getRootRequest(&http.Cookie{Name: "invalid", Value: "dede"}),
 			errors.IsNotFound,
 			scope.Default,
 			"",
-			scope.UnavailableStoreID,
+			0,
 		},
 	}
 	for i, test := range tests {
-		so, err := storenet.CodeFromCookie(test.req)
-		testStoreCodeFrom(t, i, err, test.wantErrBhf, so, test.wantScope, test.wantCode, test.wantID)
+		c := ExtractCode{FieldName: FieldName}
+		code, err := c.fromCookie(test.req)
+		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
 	}
 }
 
@@ -102,51 +104,52 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		wantID     int64
 	}{
 		{
-			getRootRequest(storenet.HTTPRequestParamStore, "dede"),
+			getRootRequest(URLFieldName, "dede"),
 			nil,
 			scope.Store,
 			"dede",
-			scope.UnavailableStoreID,
+			0,
 		},
 		{
-			getRootRequest(storenet.HTTPRequestParamStore, "ded¢e"),
+			getRootRequest(URLFieldName, "ded¢e"),
 			errors.IsNotValid,
 			scope.Default,
 			"",
-			scope.UnavailableStoreID,
+			0,
 		},
 		{
 			getRootRequest("invalid", "dede"),
 			errors.IsNotValid,
 			scope.Default,
 			"",
-			scope.UnavailableStoreID,
+			0,
 		},
 	}
 	for i, test := range tests {
-		so, err := storenet.CodeFromRequest(test.req)
-		testStoreCodeFrom(t, i, err, test.wantErrBhf, so, test.wantScope, test.wantCode, test.wantID)
+		c := ExtractCode{URLFieldName: URLFieldName, FieldName: FieldName}
+		code, err := c.FromRequest(test.req)
+		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
 	}
 }
 
-func testStoreCodeFrom(t *testing.T, i int, haveErr error, wantErrBhf errors.BehaviourFunc, haveScope scope.Option, wantScope scope.Scope, wantCode string, wantID int64) {
+func testStoreCodeFrom(t *testing.T, i int, haveErr error, wantErrBhf errors.BehaviourFunc, haveCode string, wantScope scope.Scope, wantCode string, wantID int64) {
 	if wantErrBhf != nil {
 		assert.True(t, wantErrBhf(haveErr), "Index: %d => %s", i, haveErr)
 	}
-	switch sos := haveScope.Scope(); sos {
+	switch sos := haveCode.Scope(); sos {
 	case scope.Store:
-		assert.Exactly(t, wantID, haveScope.Store.StoreID(), "Index: %d", i)
+		assert.Exactly(t, wantID, haveCode.Store.StoreID(), "Index: %d", i)
 	case scope.Group:
-		assert.Exactly(t, wantID, haveScope.Group.GroupID(), "Index: %d", i)
+		assert.Exactly(t, wantID, haveCode.Group.GroupID(), "Index: %d", i)
 	case scope.Website:
-		assert.Exactly(t, wantID, haveScope.Website.WebsiteID(), "Index: %d", i)
+		assert.Exactly(t, wantID, haveCode.Website.WebsiteID(), "Index: %d", i)
 	case scope.Default:
-		assert.Nil(t, haveScope.Store, "Index: %d", i)
-		assert.Nil(t, haveScope.Group, "Index: %d", i)
-		assert.Nil(t, haveScope.Website, "Index: %d", i)
+		assert.Nil(t, haveCode.Store, "Index: %d", i)
+		assert.Nil(t, haveCode.Group, "Index: %d", i)
+		assert.Nil(t, haveCode.Website, "Index: %d", i)
 	default:
 		t.Fatalf("Unknown scope: %d", sos)
 	}
-	assert.Exactly(t, wantScope, haveScope.Scope(), "Index: %d", i)
-	assert.Exactly(t, wantCode, haveScope.StoreCode(), "Index: %d", i)
+	assert.Exactly(t, wantScope, haveCode.Scope(), "Index: %d", i)
+	assert.Exactly(t, wantCode, haveCode.StoreCode(), "Index: %d", i)
 }

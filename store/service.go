@@ -25,10 +25,12 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// IDbyCode returns for a website code or store code the id. Group scope is not
-// supported because the group table does not contain a code string column. A
-// not-supported error behaviour gets returned if an invalid scope has been
-// provided. Default scope returns always 0.
+// CodeToIDMapper returns for a website code or store code the id. Group scope
+// is not supported because the group table does not contain a code string
+// column. A not-supported error behaviour gets returned if an invalid scope has
+// been provided. A not-found error behaviour gets returned if the code cannot
+// be found. This function does not consider if a store or website is active or
+// not. The scope.Default returns always zero.
 type CodeToIDMapper interface {
 	IDbyCode(scp scope.Scope, code string) (id int64, err error)
 }
@@ -261,11 +263,13 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 	return st.Data.StoreID, nil
 }
 
-// IDbyCode returns for a website code or store code the id. It iterates over
-// the internal cache maps. Group scope is not supported because the group table
-// does not contain a code string column. A not-supported error behaviour gets
-// returned if an invalid scope has been provided. Default scope returns always
-// 0. Implements interface CodeToIDMapper.
+// IDbyCode returns for a website code or store code the id. Group scope is not
+// supported because the group table does not contain a code string column. A
+// not-supported error behaviour gets returned if an invalid scope has been
+// provided. A not-found error behaviour gets returned if the code cannot be
+// found. This function does not consider if a store or website is active or
+// not. The scope.Default returns always zero. Implements interface
+// CodeToIDMapper.
 func (s *Service) IDbyCode(scp scope.Scope, code string) (int64, error) {
 	if code == "" {
 		id, err := s.DefaultStoreID(0)

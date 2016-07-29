@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet_test
+package runmode_test
 
 import (
 	"bytes"
@@ -22,10 +22,10 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log/logw"
+	"github.com/corestoreio/csfw/net/runmode"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -80,7 +80,7 @@ import (
 //	req, err := http.NewRequest(httputil.MethodGet, "http://corestore.io/catalog/product/view", nil)
 //	assert.NoError(t, err)
 //
-//	err = storenet.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t)).ServeHTTPContext(context.Background(), w, req)
+//	err = runmode.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t)).ServeHTTPContext(context.Background(), w, req)
 //	assert.NoError(t, err)
 //}
 //
@@ -96,7 +96,7 @@ import (
 //	req, err := http.NewRequest(httputil.MethodGet, "http://corestore.io/catalog/product/view", nil)
 //	assert.NoError(t, err)
 //
-//	mw := storenet.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
+//	mw := runmode.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
 //
 //	err = mw.ServeHTTPContext(context.Background(), w, req)
 //	assert.EqualError(t, err, store.errContextProviderNotFound.Error())
@@ -153,7 +153,7 @@ import (
 //	}
 //
 //	for i, test := range tests {
-//		mw := storenet.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//		mw := runmode.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 //			return fmt.Errorf("This handler should not be called! Iindex %d", i)
 //		}))
 //		assert.NoError(t, mw.ServeHTTPContext(middlewareCtxStoreService, test.rec, test.req), "Index %d", i)
@@ -194,64 +194,64 @@ var testsMWInitByFormCookie = []struct {
 	wantLog       string
 }{
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "uk"}),
-		scope.Option{Store: scope.MockID(1)}, "uk", nil, storenet.ParamName + "=uk;", "fix me5",
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+		scope.Option{Store: scope.MockID(1)}, "uk", nil, runmode.FieldName + "=uk;", "fix me5",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
-		scope.Option{Store: scope.MockID(1)}, "uk", nil, storenet.ParamName + "=uk;", "", // generates a new 1year valid cookie
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
+		scope.Option{Store: scope.MockID(1)}, "uk", nil, runmode.FieldName + "=uk;", "", // generates a new 1year valid cookie
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=%20uk", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=%20uk", nil),
 		scope.Option{Store: scope.MockID(1)}, "de", nil, "", "fix me4",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "de"}),
-		scope.Option{Group: scope.MockID(1)}, "de", nil, storenet.ParamName + "=de;", "fix me3",
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+		scope.Option{Group: scope.MockID(1)}, "de", nil, runmode.FieldName + "=de;", "fix me3",
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io", nil),
 		scope.Option{Group: scope.MockID(1)}, "at", nil, "", http.ErrNoCookie.Error(),
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=de", nil),
-		scope.Option{Group: scope.MockID(1)}, "de", nil, storenet.ParamName + "=de;", "", // generates a new 1y valid cookie
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=de", nil),
+		scope.Option{Group: scope.MockID(1)}, "de", nil, runmode.FieldName + "=de;", "", // generates a new 1y valid cookie
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=at", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", nil, storenet.ParamName + "=;", "", // generates a delete cookie
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=at", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", nil, runmode.FieldName + "=;", "", // generates a delete cookie
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=cz", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=cz", nil),
 		scope.Option{Group: scope.MockID(1)}, "at", errors.IsNotFound, "", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
 		scope.Option{Group: scope.MockID(1)}, "at", errors.IsUnauthorized, "", "",
 	},
 
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "nz"}),
-		scope.Option{Website: scope.MockID(2)}, "nz", nil, storenet.ParamName + "=nz;", "fix me2",
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "nz"}),
+		scope.Option{Website: scope.MockID(2)}, "nz", nil, runmode.FieldName + "=nz;", "fix me2",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "n'z"}),
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "n'z"}),
 		scope.Option{Website: scope.MockID(2)}, "au", nil, "", "fix me1",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
 		scope.Option{Website: scope.MockID(2)}, "au", errors.IsUnauthorized, "", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=nz", nil),
-		scope.Option{Website: scope.MockID(2)}, "nz", nil, storenet.ParamName + "=nz;", "",
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=nz", nil),
+		scope.Option{Website: scope.MockID(2)}, "nz", nil, runmode.FieldName + "=nz;", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=ch", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=ch", nil),
 		scope.Option{Website: scope.MockID(1)}, "at", errors.IsUnauthorized, "", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=nz", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=nz", nil),
 		scope.Option{Website: scope.MockID(1)}, "at", errors.IsUnauthorized, "", "",
 	},
 }
@@ -267,7 +267,7 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 		dsv, err := srv.DefaultStoreView()
 		ctx := store.WithContextRequestedStore(test.req.Context(), dsv, errors.Wrap(err, "DefaultStoreView"))
 
-		mw := storenet.WithInitStoreByFormCookie(srv, lg)(finalInitStoreHandler(t, test.wantStoreCode, test.wantErrBhf))
+		mw := runmode.WithInitStoreByFormCookie(srv, lg)(finalInitStoreHandler(t, test.wantStoreCode, test.wantErrBhf))
 
 		rec := httptest.NewRecorder()
 		mw.ServeHTTP(rec, test.req.WithContext(ctx))
