@@ -21,10 +21,11 @@ import (
 
 type ctxRunModeKey struct{}
 
-// defaultRunMode defines the default run mode if the programmer hasn't applied
-// the function RunMode.WithContext() to specify a specific run mode. It
-// indicates the fall back to the default website and its default store.
-const defaultRunMode Hash = 0
+// DefaultRunMode defines the default run mode if the programmer hasn't applied
+// the field Mode or the function RunMode.WithContext() to specify a specific
+// run mode. It indicates the fall back to the default website and its default
+// store.
+const DefaultRunMode Hash = 0
 
 // RunMode core type to initialize the run mode of the current request. Allows
 // you to create a multi-site / multi-tenant setup. An implementation of this
@@ -44,7 +45,7 @@ func (rm RunMode) CalculateMode(w http.ResponseWriter, r *http.Request) Hash {
 	}
 	if s := h.Scope(); s < Website || s > Store {
 		// fall back to default because only Website, Group and Store are allowed.
-		h = defaultRunMode
+		h = DefaultRunMode
 	}
 	return h
 }
@@ -61,7 +62,7 @@ func WithContextRunMode(ctx context.Context, runMode Hash) context.Context {
 func FromContextRunMode(ctx context.Context) Hash {
 	h, ok := ctx.Value(ctxRunModeKey{}).(Hash)
 	if !ok {
-		return defaultRunMode // indicates a fall back to a default store of the default website
+		return DefaultRunMode // indicates a fall back to a default store of the default website
 	}
 	return h
 }
