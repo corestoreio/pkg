@@ -36,8 +36,5 @@ func withContext(ctx context.Context, t csjwt.Token) context.Context {
 // returned. Error behaviour: NotFound.
 func FromContext(ctx context.Context) (csjwt.Token, bool) {
 	wrp, ok := ctx.Value(keyCtxToken{}).(ctxTokenWrapper)
-	if !ok {
-		return wrp.t, false
-	}
-	return wrp.t, wrp.t.Valid && ok
+	return wrp.t, ok
 }
