@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet_test
+package request_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/corestoreio/csfw/net/request"
 )
 
-var _ mw.RequestIDGenerator = (*storenet.RequestIDService)(nil)
+var _ mw.RequestIDGenerator = (*request.RequestIDService)(nil)
 
 func TestDefaultRequestPrefix(t *testing.T) {
 	//s := requestIDService{}

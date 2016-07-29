@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet
+package request
 
 // crypto/rand => http://blog.sgmansfield.com/2016/06/managing-syscall-overhead-with-crypto-rand/
 
