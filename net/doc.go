@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package net provides additional network helper functions.
+// Package net provides additional network helper functions and in subpackages middleware.
 //
 // context Package: https://twitter.com/peterbourgon/status/752022730812317696
 package net
