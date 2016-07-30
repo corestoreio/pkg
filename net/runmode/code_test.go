@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ CodeExtracter = (*ExtractCode)(nil)
+var _ StoreCodeExtracter = (*ExtractStoreCode)(nil)
 
 func TestStoreCodeFromCookie(t *testing.T) {
 
@@ -69,7 +69,7 @@ func TestStoreCodeFromCookie(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		c := ExtractCode{FieldName: FieldName}
+		c := ExtractStoreCode{FieldName: FieldName}
 		code, err := c.fromCookie(test.req)
 		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
 	}
@@ -126,7 +126,7 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		c := ExtractCode{URLFieldName: URLFieldName, FieldName: FieldName}
+		c := ExtractStoreCode{URLFieldName: URLFieldName, FieldName: FieldName}
 		code, err := c.FromRequest(test.req)
 		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
 	}

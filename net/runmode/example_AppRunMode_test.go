@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package runmode defines store specific middleware to initialize the scope and
-// its ID per request.
-package runmode
+package runmode_test
+
+func ExampleAppRunMode() {
+	// todo
+}

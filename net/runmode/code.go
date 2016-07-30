@@ -20,26 +20,26 @@ import (
 	"github.com/corestoreio/csfw/store"
 )
 
-// CodeExtracter knows how to extract a website/store code from
+// StoreCodeExtracter knows how to extract a store code from
 // a request.
-type CodeExtracter interface {
-	// FromRequest returns the code and valid which has three values: 0 not
-	// valid, 10 valid and code found in GET query string, 20 valid and code
-	// found in cookie.
+type StoreCodeExtracter interface {
+	// FromRequest returns the store code and a valid type which has three
+	// values: 0 not valid, 10 valid and code found in GET query string, 20
+	// valid and code found in cookie.
 	FromRequest(req *http.Request) (code string, valid int8)
 }
 
 // FieldName use in Cookies and JSON Web Tokens (JWT) to identify an active
-// store besides from the default loaded store. Default value.
+// store besides from the default loaded store. This is the default value.
 const FieldName = `store`
 
 // URLFieldName name of the GET parameter to set a new store in a current
-// website/group context. Default value.
+// website/group context.  This is the default value.
 const URLFieldName = `___store`
 
-// ExtractCode can extract the website or store code from an HTTP Request. This
-// code is then responsible for initiating the runMode.
-type ExtractCode struct {
+// ExtractStoreCode can extract the store code from an HTTP Request. This code
+// is then responsible for changing the runMode.
+type ExtractStoreCode struct {
 	// FieldName optional custom name, defaults to constant FieldName
 	FieldName string
 	// URLFieldName optional custom name, defaults to constant URLFieldName
@@ -47,19 +47,19 @@ type ExtractCode struct {
 }
 
 // FromRequest returns from a GET request with a query string the value of the
-// website/store code. If no code can be found in the query string, this
-// function falls back to the cookie name defined in field FieldName. Valid has
-// three values: 0 not valid, 10 valid and code found in GET query string, 20
-// valid and code found in cookie.
-func (c ExtractCode) FromRequest(req *http.Request) (code string, valid int8) {
+// store code. If no code can be found in the query string, this function falls
+// back to the cookie name defined in field FieldName. Valid has three values: 0
+// not valid, 10 valid and code found in GET query string, 20 valid and code
+// found in cookie. Implements interface StoreCodeExtracter.
+func (e ExtractStoreCode) FromRequest(req *http.Request) (code string, valid int8) {
 	// todo find a better solution for the valid type
 	hps := URLFieldName
-	if c.URLFieldName != "" {
-		hps = c.URLFieldName
+	if e.URLFieldName != "" {
+		hps = e.URLFieldName
 	}
 	code = req.URL.Query().Get(hps)
 	if code == "" {
-		return c.fromCookie(req)
+		return e.fromCookie(req)
 	}
 	if err := store.CodeIsValid(code); err == nil {
 		valid = 10
@@ -69,10 +69,10 @@ func (c ExtractCode) FromRequest(req *http.Request) (code string, valid int8) {
 
 // fromCookie extracts a store from a cookie using the field name FieldName as
 // an identifier.
-func (c ExtractCode) fromCookie(req *http.Request) (code string, valid int8) {
+func (e ExtractStoreCode) fromCookie(req *http.Request) (code string, valid int8) {
 	p := FieldName
-	if c.FieldName != "" {
-		p = c.FieldName
+	if e.FieldName != "" {
+		p = e.FieldName
 	}
 	if keks, err := req.Cookie(p); err == nil {
 		code = keks.Value
