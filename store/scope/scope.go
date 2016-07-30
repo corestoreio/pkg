@@ -194,23 +194,23 @@ func Valid(s string) bool {
 // default, websites, stores, Default, Website, Group and store. Case sensitive.
 func FromBytes(b []byte) Scope {
 	switch {
-	case bytes.Compare(bWebsites, b) == 0:
+	case bytes.Equal(bWebsites, b):
 		return Website
-	case bytes.Compare(bStores, b) == 0:
+	case bytes.Equal(bStores, b):
 		return Store
 
-	case bytes.Compare(jsonWebsite, b) == 0:
+	case bytes.Equal(jsonWebsite, b):
 		return Website
-	case bytes.Compare(jsonGroup, b) == 0:
+	case bytes.Equal(jsonGroup, b):
 		return Group
-	case bytes.Compare(jsonStore, b) == 0:
+	case bytes.Equal(jsonStore, b):
 		return Store
 
-	case bytes.Compare(sbWebsite, b) == 0:
+	case bytes.Equal(sbWebsite, b):
 		return Website
-	case bytes.Compare(sbGroup, b) == 0:
+	case bytes.Equal(sbGroup, b):
 		return Group
-	case bytes.Compare(sbStore, b) == 0:
+	case bytes.Equal(sbStore, b):
 		return Store
 	}
 	return Default
@@ -219,7 +219,7 @@ func FromBytes(b []byte) Scope {
 // ValidBytes checks if b is a valid byte Scope of either StrDefault,
 // StrWebsites or StrStores. Case-sensitive.
 func ValidBytes(b []byte) bool {
-	return bytes.Compare(bDefault, b) == 0 || bytes.Compare(bWebsites, b) == 0 || bytes.Compare(bStores, b) == 0
+	return bytes.Equal(bDefault, b) || bytes.Equal(bWebsites, b) || bytes.Equal(bStores, b)
 }
 
 // ValidParent validates if the parent scope is within the hierarchical chain:
