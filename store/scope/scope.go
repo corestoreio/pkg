@@ -61,17 +61,17 @@ const _ScopeName = "AbsentDefaultWebsiteGroupStore"
 var _ScopeIndex = [...]uint8{0, 6, 13, 20, 25, 30}
 
 // String human readable name of Group. For Marshaling see Perm
-func (i Scope) String() string {
-	if i+1 >= Scope(len(_ScopeIndex)) {
-		return fmt.Sprintf("Scope(%d)", i)
+func (s Scope) String() string {
+	if s+1 >= Scope(len(_ScopeIndex)) {
+		return fmt.Sprintf("Scope(%d)", s)
 	}
-	return _ScopeName[_ScopeIndex[i]:_ScopeIndex[i+1]]
+	return _ScopeName[_ScopeIndex[s]:_ScopeIndex[s+1]]
 }
 
 // StrScope converts the underlying scope ID to one of the three available scope
 // strings in database table core_config_data.
-func (i Scope) StrScope() string {
-	return FromScope(i).String()
+func (s Scope) StrScope() string {
+	return FromScope(s).String()
 }
 
 // MarshalJSON implements the Marshaler interface. The returned byte slice is
@@ -99,14 +99,19 @@ func (s *Scope) UnmarshalJSON(b []byte) error {
 
 // StrBytes returns the StrScope as byte slice from a Scope. The returned byte
 // slice is owned by the callee. You must copy it for further use.
-func (i Scope) StrBytes() []byte {
-	switch i {
+func (s Scope) StrBytes() []byte {
+	switch s {
 	case Website:
 		return bWebsites
 	case Store:
 		return bStores
 	}
 	return bDefault
+}
+
+// ToHash calls NewHash for your convenience.
+func (s Scope) ToHash(id int64) Hash {
+	return NewHash(s, id)
 }
 
 // StrScope represents a string scope from table core_config_data column scope

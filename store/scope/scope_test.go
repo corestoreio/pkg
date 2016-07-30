@@ -254,3 +254,18 @@ func TestScope_JSON(t *testing.T) {
 	}
 	assert.Exactly(t, xt, xt2)
 }
+
+func TestScope_ToHash(t *testing.T) {
+	tests := []struct {
+		s    Scope
+		id   int64
+		want Hash
+	}{
+		{Website, 1, NewHash(Website, 1)},
+		{Store, 4, NewHash(Store, 4)},
+		{0, 0, 0},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.s.ToHash(test.id), "Index %d", i)
+	}
+}
