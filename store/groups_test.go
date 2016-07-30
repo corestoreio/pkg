@@ -125,6 +125,11 @@ func TestGroupSlice_FindByID(t *testing.T) {
 			nil,
 		),
 	}
-	assert.Exactly(t, int64(1), gs.FindByID(1).ID())
-	assert.Nil(t, gs.FindByID(44).Data)
+
+	g, gOK := gs.FindByID(1)
+	assert.True(t, gOK)
+	assert.Exactly(t, int64(1), g.ID())
+	g, gOK = gs.FindByID(44)
+	assert.Nil(t, g.Data)
+	assert.False(t, gOK)
 }

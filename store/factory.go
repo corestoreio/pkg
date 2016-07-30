@@ -186,7 +186,7 @@ func (f *factory) DefaultStoreID() (int64, error) {
 			return g.DefaultStoreID, nil
 		}
 	}
-	return 0, errors.NewNotFoundf(errStoreDefaultNotFound)
+	return 0, errors.NewNotFoundf(errStoreIDDefaultNotFound)
 }
 
 // LoadFromDB reloads all websites, groups and stores concurrently from the

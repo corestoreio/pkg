@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
@@ -27,7 +29,6 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/slices"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var _ log.Marshaler = (*store.Store)(nil)

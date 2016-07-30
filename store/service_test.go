@@ -391,29 +391,30 @@ func TestService_DefaultStoreID(t *testing.T) {
 	}
 }
 
-func TestService_IDbyCode(t *testing.T) {
+func TestService_StoreIDbyCode(t *testing.T) {
 	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
 	tests := []struct {
 		srv        *store.Service
-		scp        scope.Scope
+		runMode    scope.Hash
 		code       string
 		wantID     int64
 		wantErrBhf errors.BehaviourFunc
 	}{
 		{eurSrv, 0, "", 2, nil},
-		{eurSrv, scope.Default, "x", 0, nil},
-		{eurSrv, scope.Website, "admin", 0, nil},
-		{eurSrv, scope.Website, "euro", 1, nil},
-		{eurSrv, scope.Website, "oz", 2, nil},
-		{eurSrv, scope.Website, "uk", 0, errors.IsNotFound},
-		{eurSrv, scope.Absent, "uk", 0, errors.IsNotSupported},
-		{eurSrv, scope.Group, "uk", 0, errors.IsNotSupported},
-		{eurSrv, scope.Store, "admin", 0, nil},
-		{eurSrv, scope.Store, "au", 5, nil},
-		{eurSrv, scope.Store, "xx", 0, errors.IsNotFound},
+		{eurSrv, scope.DefaultHash, "x", 0, nil},
+		{eurSrv, scope.Website.ToHash(0), "admin", 0, nil},
+		{eurSrv, scope.Website.ToHash(1), "de", 1, nil},
+		{eurSrv, scope.Website.ToHash(2), "nz", 6, nil},
+		{eurSrv, scope.Website.ToHash(3), "uk", 0, errors.IsNotFound},
+		{eurSrv, scope.Absent.ToHash(0), "uk", 0, errors.IsNotSupported},
+		{eurSrv, scope.Group.ToHash(2), "uk", 4, nil},
+		{eurSrv, scope.Group.ToHash(99), "uk", 0, errors.IsNotFound},
+		{eurSrv, scope.Store.ToHash(0), "admin", 0, nil},
+		{eurSrv, scope.Store.ToHash(0), "au", 5, nil},
+		{eurSrv, scope.Store.ToHash(0), "xx", 0, errors.IsNotFound},
 	}
 	for i, test := range tests {
-		haveID, haveErr := test.srv.IDbyCode(test.scp, test.code)
+		haveID, haveErr := test.srv.StoreIDbyCode(test.runMode, test.code)
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "(%d) %+v", i, haveErr)
 			assert.Exactly(t, test.wantID, haveID, "Index %d", i)

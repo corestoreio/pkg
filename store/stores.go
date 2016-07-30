@@ -63,13 +63,14 @@ func (ss StoreSlice) Map(f func(*Store)) StoreSlice {
 	return ss
 }
 
-func (ss StoreSlice) FindByID(id int64) Store {
+// FindByID filters by Id, returns the website and true if found.
+func (ss StoreSlice) FindByID(id int64) (Store, bool) {
 	for _, s := range ss {
 		if s.ID() == id {
-			return s
+			return s, true
 		}
 	}
-	return Store{}
+	return Store{}, false
 }
 
 // Codes returns all store codes

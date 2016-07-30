@@ -64,13 +64,14 @@ func (gs GroupSlice) Map(f func(*Group)) GroupSlice {
 	return gs
 }
 
-func (gs GroupSlice) FindByID(id int64) Group {
+// FindByID filters by Id, returns the website and true if found.
+func (gs GroupSlice) FindByID(id int64) (Group, bool) {
 	for _, g := range gs {
 		if g.ID() == id {
-			return g
+			return g, true
 		}
 	}
-	return Group{}
+	return Group{}, false
 }
 
 // IDs returns all group IDs

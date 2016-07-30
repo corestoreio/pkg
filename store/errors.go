@@ -17,8 +17,8 @@ package store
 // todo: add more constants
 
 const (
-	errStoreDefaultNotFound = "[store] Default Store ID not found"
-	errStoreCodeInvalid     = "[store] The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter. Have: %q"
+	errStoreIDDefaultNotFound = "[store] Default Store ID not found"
+	errStoreCodeInvalid       = "[store] The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter. Have: %q"
 )
 
 const (
@@ -29,4 +29,5 @@ const (
 // They are self explanatory.
 const (
 	errWebsiteDefaultGroupNotFound = "[store] Website Default Group not found"
+	errWebsiteStoreDefaultNotFound = "[store] Website Default Store not found"
 )

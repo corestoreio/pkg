@@ -174,7 +174,10 @@ func (w Website) DefaultStore() (Store, error) {
 	if err != nil {
 		return Store{}, errors.Wrap(err, "[store] Website.DefaultGroup")
 	}
-	return w.Stores.FindByID(g.DefaultStoreID()), nil
+	if ds, ok := w.Stores.FindByID(g.DefaultStoreID()); ok {
+		return ds, nil
+	}
+	return Store{}, errors.NewNotFoundf(errWebsiteStoreDefaultNotFound)
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite

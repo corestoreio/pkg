@@ -25,14 +25,14 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// CodeToIDMapper returns for a website code or store code the id. Group scope
-// is not supported because the group table does not contain a code string
-// column. A not-supported error behaviour gets returned if an invalid scope has
-// been provided. A not-found error behaviour gets returned if the code cannot
-// be found. This function does not consider if a store or website is active or
-// not. The scope.Default returns always zero.
+// CodeToIDMapper returns for a storeCode its internal ID depending on the
+// runMode. A not-supported error behaviour gets returned if an invalid scope
+// has been provided. A not-found error behaviour gets returned if the code
+// cannot be found. This function does not consider if a store or website is
+// active or not. The runMode equals to scope.DefaultHash, the returned ID is
+// always 0.
 type CodeToIDMapper interface {
-	IDbyCode(scp scope.Scope, code string) (id int64, err error)
+	StoreIDbyCode(runMode scope.Hash, storeCode string) (id int64, err error)
 }
 
 // AvailabilityChecker depends on the run mode from package scope. The Hash
@@ -263,36 +263,46 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 	return st.Data.StoreID, nil
 }
 
-// IDbyCode returns for a website code or store code the id. Group scope is not
-// supported because the group table does not contain a code string column. A
-// not-supported error behaviour gets returned if an invalid scope has been
-// provided. A not-found error behaviour gets returned if the code cannot be
-// found. This function does not consider if a store or website is active or
-// not. The scope.Default returns always zero. Implements interface
-// CodeToIDMapper.
-func (s *Service) IDbyCode(scp scope.Scope, code string) (int64, error) {
-	if code == "" {
+// StoreIDbyCode returns for a storeCode its internal ID depending on the
+// runMode. A not-supported error behaviour gets returned if an invalid scope
+// has been provided. A not-found error behaviour gets returned if the code
+// cannot be found. This function does not consider if a store or website is
+// active or not. The runMode equals to scope.DefaultHash, the returned ID is
+// always 0. Implements interface CodeToIDMapper.
+func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (int64, error) {
+	if storeCode == "" {
 		id, err := s.DefaultStoreID(0)
 		return id, errors.Wrap(err, "[store] IDbyCode.DefaultStoreID")
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	// todo maybe add map cache
-	switch scp {
+	switch runMode.Scope() {
 	case scope.Store:
-		if ts, ok := s.backend.stores.FindByCode(code); ok {
-			return ts.StoreID, nil
+		for _, st := range s.stores {
+			if st.Code() == storeCode {
+				return st.ID(), nil
+			}
 		}
-		return 0, errors.NewNotFoundf("[store] Code %q not found in %s", code, scp)
+		return 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
+	case scope.Group:
+		for _, st := range s.stores {
+			if st.GroupID() == runMode.ID() && st.Code() == storeCode {
+				return st.ID(), nil
+			}
+		}
+		return 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 	case scope.Website:
-		if tw, ok := s.backend.websites.FindByCode(code); ok {
-			return tw.WebsiteID, nil
+		for _, st := range s.stores {
+			if st.WebsiteID() == runMode.ID() && st.Code() == storeCode {
+				return st.ID(), nil
+			}
 		}
-		return 0, errors.NewNotFoundf("[store] Code %q not found in %s", code, scp)
+		return 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 	case scope.Default:
 		return 0, nil
 	}
-	return 0, errors.NewNotSupportedf("[store] Scope %q not supported", scp)
+	return 0, errors.NewNotSupportedf("[store] RunMode %q not supported", runMode)
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store
