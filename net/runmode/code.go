@@ -21,15 +21,26 @@ import (
 
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"strings"
 )
 
-// StoreCodeProcesser knows how to extract a store code from
-// a request.
+// StoreCodeProcesser gets used in the middleware WithRunMode() to extract a
+// store code from a Request and modify the response by for example setting
+// cookies.
 type StoreCodeProcesser interface {
-	// FromRequest returns the valid non-empty store code.
+	// FromRequest returns the valid non-empty store code. Returns an empty
+	// store code on all other cases.
 	FromRequest(req *http.Request) (code string)
-
+	// ProcessDenied gets called in the middleware WithRunMode whenever a store
+	// ID isn't allowed to proceed. The variable newStoreID reflects the denied
+	// store ID. The returned Handler may be called instead of the ErrorHandler.
+	// If the returned Handler is nil, the ErrorHandler gets called.
 	ProcessDenied(runMode scope.Hash, newStoreID int64) http.Handler
+	// ProcessAllowed gets called whenever a new store ID gets set (if differs
+	// from the runMode) and the store ID is allowed to proceed. The variable
+	// newStoreID contains the new ID. The ResponseWriter and Request variables
+	// can be used for additional information writing and extracting. The next
+	// Handler in the chain will be always called.
 	ProcessAllowed(runMode scope.Hash, newStoreID int64, w http.ResponseWriter, r *http.Request)
 }
 
@@ -41,12 +52,14 @@ const FieldName = `store`
 // website/group context.  This is the default value.
 const URLFieldName = `___store`
 
-// ExtractStoreCode can extract the store code from an HTTP Request. This code
+// ProcessStoreCode can extract the store code from an HTTP Request. This code
 // is then responsible for changing the runMode.
-type ExtractStoreCode struct {
-	// FieldName optional custom name, defaults to constant FieldName
+type ProcessStoreCode struct {
+	// FieldName optional custom name, defaults to constant FieldName. Cannot be
+	// changed after the first call to FromRequest().
 	FieldName string
-	// URLFieldName optional custom name, defaults to constant URLFieldName
+	// URLFieldName optional custom name, defaults to constant URLFieldName. Cannot
+	// be changed after the first call to FromRequest().
 	URLFieldName string
 
 	// CookieTemplate optional pre-configured cookie to set the store
@@ -57,6 +70,20 @@ type ExtractStoreCode struct {
 	// CookieExpiresDelete defaults to minus ten years to delete the store code
 	// cookie.
 	CookieExpiresDelete time.Time
+
+	// pre-calculated keys for strings.Contain
+	keyFieldName    string
+	keyURLFieldName string
+}
+
+func (e *ProcessStoreCode) keyURLFN() (string, string) {
+	if e.URLFieldName == "" {
+		e.URLFieldName = URLFieldName
+	}
+	if e.keyURLFieldName == "" {
+		e.keyURLFieldName = e.URLFieldName + "="
+	}
+	return e.URLFieldName, e.keyURLFieldName
 }
 
 // FromRequest returns from a GET request with a query string the value of the
@@ -64,39 +91,42 @@ type ExtractStoreCode struct {
 // back to the cookie name defined in field FieldName. Valid has three values: 0
 // not valid, 10 valid and code found in GET query string, 20 valid and code
 // found in cookie. Implements interface StoreCodeExtracter.
-func (e ExtractStoreCode) FromRequest(req *http.Request) (code string) {
-	// todo find a better solution for the valid type
-	hps := URLFieldName
-	if e.URLFieldName != "" {
-		hps = e.URLFieldName
+func (e *ProcessStoreCode) FromRequest(req *http.Request) string {
+	fn, fnK := e.keyURLFN()
+	if strings.Contains(req.URL.RawQuery, fnK) {
+		code := req.URL.Query().Get(fn)
+		if err := store.CodeIsValid(code); err == nil {
+			return code
+		}
 	}
-	code = req.URL.Query().Get(hps)
-	if code == "" {
-		return e.fromCookie(req)
+	return e.fromCookie(req)
+}
+
+func (e *ProcessStoreCode) keyFN() (string, string) {
+	if e.FieldName == "" {
+		e.FieldName = FieldName
 	}
-	if err := store.CodeIsValid(code); err == nil {
-		return code
+	if e.keyFieldName == "" {
+		e.keyFieldName = e.FieldName + "="
 	}
-	return ""
+	return e.FieldName, e.keyFieldName
 }
 
 // fromCookie extracts a store from a cookie using the field name FieldName as
 // an identifier.
-func (e ExtractStoreCode) fromCookie(req *http.Request) (code string) {
-	p := FieldName
-	if e.FieldName != "" {
-		p = e.FieldName
-	}
-	if keks, err := req.Cookie(p); err == nil {
-		code = keks.Value
-	}
-	if err := store.CodeIsValid(code); err == nil {
-		return code
+func (e *ProcessStoreCode) fromCookie(req *http.Request) string {
+	fn, fnK := e.keyFN()
+	if c := req.Header.Get("Cookie"); c != "" && strings.Contains(c, fnK) {
+		if keks, err := req.Cookie(fn); err == nil {
+			if err := store.CodeIsValid(keks.Value); err == nil {
+				return keks.Value
+			}
+		}
 	}
 	return ""
 }
 
-func (a ExtractStoreCode) newCookie(r *http.Request) *http.Cookie {
+func (a *ProcessStoreCode) newCookie(r *http.Request) *http.Cookie {
 	// sync.Pool for cookies, refactor Cookies.String() in stdlib
 	if a.CookieTemplate != nil {
 		return a.CookieTemplate(r)
@@ -118,21 +148,21 @@ func (a ExtractStoreCode) newCookie(r *http.Request) *http.Cookie {
 	}
 }
 
-func (a ExtractStoreCode) getCookieExpiresSet() time.Time {
+func (a *ProcessStoreCode) getCookieExpiresSet() time.Time {
 	if a.CookieExpiresSet.IsZero() {
 		return time.Now().AddDate(1, 0, 0) // one year valid
 	}
 	return a.CookieExpiresSet
 }
 
-func (a ExtractStoreCode) getCookieExpiresDelete() time.Time {
+func (a ProcessStoreCode) getCookieExpiresDelete() time.Time {
 	if a.CookieExpiresDelete.IsZero() {
 		return time.Now().AddDate(-10, 0, 0) // -10 years
 	}
 	return a.CookieExpiresDelete
 }
 
-func (a ExtractStoreCode) ProcessDenied(runMode scope.Hash, newStoreID int64) http.Handler {
+func (a *ProcessStoreCode) ProcessDenied(runMode scope.Hash, newStoreID int64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// if store code found in cookie and not valid anymore, delete the cookie.
 		if c := a.fromCookie(r); c != "" {
@@ -143,13 +173,11 @@ func (a ExtractStoreCode) ProcessDenied(runMode scope.Hash, newStoreID int64) ht
 	})
 }
 
-func (a ExtractStoreCode) ProcessAllowed(runMode scope.Hash, newStoreID int64, w http.ResponseWriter, r *http.Request) {
+func (a *ProcessStoreCode) ProcessAllowed(runMode scope.Hash, newStoreID int64, w http.ResponseWriter, r *http.Request) {
+	// no cookie found but the code changed
 	if c := a.fromCookie(r); c == "" {
-
-	}
-	if reqStoreCodeValid < 20 { // no cookie found but the code changed
 		// set cookie once with the new code
-		keks := a.getCookie(r)
+		keks := a.newCookie(r)
 		keks.Expires = a.getCookieExpiresSet()
 		http.SetCookie(w, keks)
 	}

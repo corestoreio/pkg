@@ -96,6 +96,8 @@ type AppRunMode struct {
 	// CodeToIDMapper must be set or middleware panics.
 	store.CodeToIDMapper
 
+	// Following fields are optional
+
 	// ErrorHandler optional custom error handler. Defaults to sending an HTTP
 	// status code 500 and exposing the real error including full paths.
 	mw.ErrorHandler
@@ -106,7 +108,7 @@ type AppRunMode struct {
 	// store. To use the admin area enable scope.Store and ID 0.
 	scope.RunMode
 	// StoreCodeProcesser extracts the store code from an HTTP requests.
-	// Optional. Defaults to type ExtractStoreCode.
+	// Optional. Defaults to type ProcessStoreCode.
 	StoreCodeProcesser
 	// DisableStoreCodeProcesser set to true and set StoreCodeProcesser to nil
 	// to disable store code handling
@@ -155,7 +157,7 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 	if aGetCode == nil {
 		aGetCode = nullCodeProcessor{}
 		if !a.DisableStoreCodeProcesser {
-			aGetCode = ExtractStoreCode{}
+			aGetCode = &ProcessStoreCode{}
 		}
 	}
 	return func(next http.Handler) http.Handler {

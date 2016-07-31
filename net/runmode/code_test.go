@@ -20,16 +20,15 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/runmode"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"net/http/httptest"
 )
 
-var _ runmode.StoreCodeProcesser = (*runmode.ExtractStoreCode)(nil)
+var _ runmode.StoreCodeProcesser = (*runmode.ProcessStoreCode)(nil)
 
-func TestStoreCodeFromCookie(t *testing.T) {
+func TestProcessStoreCode_FromRequest(t *testing.T) {
 
-	var getRootRequest = func(c *http.Cookie) *http.Request {
+	var getCookieRequest = func(c *http.Cookie) *http.Request {
 		rootRequest, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
 			t.Fatalf("Root request error: %s", err)
@@ -40,46 +39,7 @@ func TestStoreCodeFromCookie(t *testing.T) {
 		return rootRequest
 	}
 
-	tests := []struct {
-		req        *http.Request
-		wantErrBhf errors.BehaviourFunc
-		wantScope  scope.Scope
-		wantCode   string
-		wantID     int64
-	}{
-		{
-			getRootRequest(&http.Cookie{Name: runmode.FieldName, Value: "dede"}),
-			nil,
-			scope.Store,
-			"dede",
-			0,
-		},
-		{
-			getRootRequest(&http.Cookie{Name: runmode.FieldName, Value: "ded'e"}),
-			errors.IsNotValid,
-			scope.Default,
-			"",
-			0,
-		},
-		{
-			getRootRequest(&http.Cookie{Name: "invalid", Value: "dede"}),
-			errors.IsNotFound,
-			scope.Default,
-			"",
-			0,
-		},
-	}
-	for i, test := range tests {
-		c := runmode.ExtractStoreCode{FieldName: runmode.FieldName}
-		code, err := c.FromCookie(test.req)
-		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
-	}
-}
-
-func TestStoreCodeFromRequestGET(t *testing.T) {
-
-	var getRootRequest = func(kv ...string) *http.Request {
-
+	var getGETRequest = func(kv ...string) *http.Request {
 		reqURL := "http://corestore.io/"
 		var uv url.Values
 		if len(kv)%2 == 0 {
@@ -93,64 +53,84 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Root request error: %s", err)
 		}
-
 		return rootRequest
 	}
 
 	tests := []struct {
-		req        *http.Request
-		wantErrBhf errors.BehaviourFunc
-		wantScope  scope.Scope
-		wantCode   string
-		wantID     int64
+		req      *http.Request
+		wantCode string
 	}{
 		{
-			getRootRequest(runmode.URLFieldName, "dede"),
-			nil,
-			scope.Store,
+			getCookieRequest(&http.Cookie{Name: runmode.FieldName, Value: "dede"}),
 			"dede",
-			0,
 		},
 		{
-			getRootRequest(runmode.URLFieldName, "ded¢e"),
-			errors.IsNotValid,
-			scope.Default,
+			getCookieRequest(&http.Cookie{Name: runmode.FieldName, Value: "ded'e"}),
 			"",
-			0,
 		},
 		{
-			getRootRequest("invalid", "dede"),
-			errors.IsNotValid,
-			scope.Default,
+			getCookieRequest(&http.Cookie{Name: "invalid", Value: "dede"}),
 			"",
-			0,
+		},
+
+		{
+			getGETRequest(runmode.URLFieldName, "dede"),
+			"dede",
+		},
+		{
+			getGETRequest(runmode.URLFieldName, "ded¢e"),
+			"",
+		},
+		{
+			getGETRequest("invalid", "dede"),
+			"",
 		},
 	}
 	for i, test := range tests {
-		c := runmode.ExtractStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
-		code, err := c.FromQueryString(test.req)
-		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
+		c := &runmode.ProcessStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+		code := c.FromRequest(test.req)
+		assert.Exactly(t, test.wantCode, code, "Index %d", i)
 	}
 }
 
-func testStoreCodeFrom(t *testing.T, i int, haveErr error, wantErrBhf errors.BehaviourFunc, haveCode string, wantScope scope.Scope, wantCode string, wantID int64) {
-	if wantErrBhf != nil {
-		assert.True(t, wantErrBhf(haveErr), "Index: %d => %s", i, haveErr)
-	}
-	switch sos := haveCode.Scope(); sos {
-	case scope.Store:
-		assert.Exactly(t, wantID, haveCode.Store.StoreID(), "Index: %d", i)
-	case scope.Group:
-		assert.Exactly(t, wantID, haveCode.Group.GroupID(), "Index: %d", i)
-	case scope.Website:
-		assert.Exactly(t, wantID, haveCode.Website.WebsiteID(), "Index: %d", i)
-	case scope.Default:
-		assert.Nil(t, haveCode.Store, "Index: %d", i)
-		assert.Nil(t, haveCode.Group, "Index: %d", i)
-		assert.Nil(t, haveCode.Website, "Index: %d", i)
-	default:
-		t.Fatalf("Unknown scope: %d", sos)
-	}
-	assert.Exactly(t, wantScope, haveCode.Scope(), "Index: %d", i)
-	assert.Exactly(t, wantCode, haveCode.StoreCode(), "Index: %d", i)
+var benchmarkProcessStoreCode_FromRequest_Cookie string
+
+//BenchmarkProcessStoreCode_FromRequest_Cookie/Found-4         	  500000	      3047 ns/op	     296 B/op	       3 allocs/op
+//BenchmarkProcessStoreCode_FromRequest_Cookie/NotFound-4      	10000000	       110 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
+	c := &runmode.ProcessStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+	const defaultCookie = `mage-translation-storage=%7B%7D; mage-translation-file-version=%7B%7D; mage-cache-storage=%7B%7D; mage-cache-storage-section-invalidation=%7B%7D; mage-cache-sessid=true; PHPSESSID=ogb786ncug3gunsnoevjem7n32; form_key=6DnQ2Xiy2oMpp7FB`
+
+	b.Run("Found", func(b *testing.B) {
+
+		req := httptest.NewRequest("GET", "https://corestoreio.io?a=b", nil)
+		req.Header.Set("Cookie", defaultCookie)
+		req.AddCookie(&http.Cookie{Name: runmode.FieldName, Value: "dede"})
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		for i := 0; i < b.N; i++ {
+			benchmarkProcessStoreCode_FromRequest_Cookie = c.FromRequest(req)
+			if benchmarkProcessStoreCode_FromRequest_Cookie == "" {
+				b.Fatal("benchmarkProcessStoreCode_FromRequest_Cookie is empty")
+			}
+		}
+	})
+
+	b.Run("NotFound", func(b *testing.B) {
+		req := httptest.NewRequest("GET", "https://corestoreio.io?c=d", nil)
+		req.Header.Set("Cookie", defaultCookie)
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		for i := 0; i < b.N; i++ {
+			benchmarkProcessStoreCode_FromRequest_Cookie = c.FromRequest(req)
+			if benchmarkProcessStoreCode_FromRequest_Cookie != "" {
+				b.Fatal("benchmarkProcessStoreCode_FromRequest_Cookie is NOT empty")
+			}
+		}
+	})
+
 }
