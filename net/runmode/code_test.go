@@ -12,19 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runmode
+package runmode_test
 
 import (
 	"net/http"
 	"net/url"
 	"testing"
 
+	"github.com/corestoreio/csfw/net/runmode"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ StoreCodeExtracter = (*ExtractStoreCode)(nil)
+var _ runmode.StoreCodeProcesser = (*runmode.ExtractStoreCode)(nil)
 
 func TestStoreCodeFromCookie(t *testing.T) {
 
@@ -47,14 +48,14 @@ func TestStoreCodeFromCookie(t *testing.T) {
 		wantID     int64
 	}{
 		{
-			getRootRequest(&http.Cookie{Name: FieldName, Value: "dede"}),
+			getRootRequest(&http.Cookie{Name: runmode.FieldName, Value: "dede"}),
 			nil,
 			scope.Store,
 			"dede",
 			0,
 		},
 		{
-			getRootRequest(&http.Cookie{Name: FieldName, Value: "ded'e"}),
+			getRootRequest(&http.Cookie{Name: runmode.FieldName, Value: "ded'e"}),
 			errors.IsNotValid,
 			scope.Default,
 			"",
@@ -69,8 +70,8 @@ func TestStoreCodeFromCookie(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		c := ExtractStoreCode{FieldName: FieldName}
-		code, err := c.fromCookie(test.req)
+		c := runmode.ExtractStoreCode{FieldName: runmode.FieldName}
+		code, err := c.FromCookie(test.req)
 		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
 	}
 }
@@ -104,14 +105,14 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		wantID     int64
 	}{
 		{
-			getRootRequest(URLFieldName, "dede"),
+			getRootRequest(runmode.URLFieldName, "dede"),
 			nil,
 			scope.Store,
 			"dede",
 			0,
 		},
 		{
-			getRootRequest(URLFieldName, "ded¢e"),
+			getRootRequest(runmode.URLFieldName, "ded¢e"),
 			errors.IsNotValid,
 			scope.Default,
 			"",
@@ -126,8 +127,8 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		c := ExtractStoreCode{URLFieldName: URLFieldName, FieldName: FieldName}
-		code, err := c.FromRequest(test.req)
+		c := runmode.ExtractStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+		code, err := c.FromQueryString(test.req)
 		testStoreCodeFrom(t, i, err, test.wantErrBhf, code, test.wantScope, test.wantCode, test.wantID)
 	}
 }

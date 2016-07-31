@@ -15,9 +15,7 @@
 package runmode
 
 import (
-	"net"
 	"net/http"
-	"time"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
@@ -107,52 +105,30 @@ type AppRunMode struct {
 	// scope.DefaultRunMode which selects the default website with its default
 	// store. To use the admin area enable scope.Store and ID 0.
 	scope.RunMode
-	// CodeExtracter extracts the store code from an HTTP requests. Optional.
-	// Defaults to type ExtractStoreCode.
-	StoreCodeExtracter
-	// CookieTemplate optional pre-configured cookie to set the store
-	// code. Expiration time and value will get overwritten.
-	CookieTemplate func(*http.Request) *http.Cookie
-	// CookieExpiresSet defaults to one year expiration for the store code.
-	CookieExpiresSet time.Time
-	// CookieExpiresDelete defaults to minus ten years to delete the store code
-	// cookie.
-	CookieExpiresDelete time.Time
+	// StoreCodeProcesser extracts the store code from an HTTP requests.
+	// Optional. Defaults to type ExtractStoreCode.
+	StoreCodeProcesser
+	// DisableStoreCodeProcesser set to true and set StoreCodeProcesser to nil
+	// to disable store code handling
+	DisableStoreCodeProcesser bool
 }
 
-func (a AppRunMode) getCookie(r *http.Request) *http.Cookie {
-	if a.CookieTemplate != nil {
-		return a.CookieTemplate(r)
-	}
-	d, _, err := net.SplitHostPort(r.Host)
+func (a AppRunMode) checkStoreIDAllowed(runMode scope.Hash, newStoreID int64) (allowedStoreIDs []int64, isStoreAllowed bool, err error) {
+
+	// which store IDs are allowed depending on our runMode? Check if the newStoreID is
+	// within the allowed store IDs.
+	allowedStoreIDs, err = a.AllowedStoreIDs(runMode)
 	if err != nil {
-		d = r.Host // might be a bug ...
+		return nil, false, errors.Wrap(err, "[store] WithRunMode.checkStoreIDAllowed")
 	}
-	var isSecure bool
-	if r.TLS != nil {
-		isSecure = true
-	}
-	return &http.Cookie{
-		Name:     FieldName,
-		Path:     "/", // we can sit behind a proxy, so path must be configurable
-		Domain:   d,
-		Secure:   isSecure,
-		HttpOnly: true, // disable for JavaScript access
-	}
-}
 
-func (a AppRunMode) getCookieExpiresSet() time.Time {
-	if a.CookieExpiresSet.IsZero() {
-		return time.Now().AddDate(1, 0, 0) // one year valid
+	for _, s := range allowedStoreIDs {
+		if s == newStoreID {
+			isStoreAllowed = true
+			return
+		}
 	}
-	return a.CookieExpiresSet
-}
-
-func (a AppRunMode) getCookieExpiresDelete() time.Time {
-	if a.CookieExpiresDelete.IsZero() {
-		return time.Now().AddDate(-10, 0, 0) // -10 years
-	}
-	return a.CookieExpiresDelete
+	return
 }
 
 // WithRunMode sets for each request the overall runMode aka. scope. The following steps
@@ -175,9 +151,12 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 	if aErrH == nil {
 		aErrH = mw.ErrorWithStatusCode(http.StatusInternalServerError)
 	}
-	aGetCode := a.StoreCodeExtracter
+	aGetCode := a.StoreCodeProcesser
 	if aGetCode == nil {
-		aGetCode = ExtractStoreCode{}
+		aGetCode = nullCodeProcessor{}
+		if !a.DisableStoreCodeProcesser {
+			aGetCode = ExtractStoreCode{}
+		}
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -202,15 +181,17 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 
 			// extracts the code from GET and/or Cookie or custom implementation and get the
 			// new runID.
-			reqStoreCode, reqStoreCodeValid := a.StoreCodeExtracter.FromRequest(r)
-			if reqStoreCodeValid > 0 {
+			var reqStoreCode string
+			reqStoreCode = a.StoreCodeProcesser.FromRequest(r)
+			if reqStoreCode != "" {
 				var err error
 				// convert the code string into its internal ID depending on the scope.
 				newStoreID, err = a.StoreIDbyCode(runMode, reqStoreCode)
 				if err != nil && !errors.IsNotFound(err) {
 					if aLog.IsDebug() {
-						aLog.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqStoreCode),
-							log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						aLog.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err),
+							log.String("http_store_code", reqStoreCode), log.Int64("store_id", newStoreID),
+							log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 					}
 					aErrH(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
 					return
@@ -223,7 +204,7 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 
 			// which store IDs are allowed depending on our runMode? Check if the newStoreID is
 			// within the allowed store IDs.
-			allowedStoreIDs, err := a.AllowedStoreIDs(runMode)
+			allowedStoreIDs, isStoreAllowed, err := a.checkStoreIDAllowed(runMode, newStoreID)
 			if err != nil {
 				if aLog.IsDebug() {
 					aLog.Debug("runmode.WithRunMode.AllowedStoreIDs.Error", log.Err(err),
@@ -232,48 +213,34 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 				aErrH(errors.Wrap(err, "[store] WithRunMode.AllowedStoreIDs")).ServeHTTP(w, r)
 				return
 			}
-			var isStoreAllowed bool
-			for _, s := range allowedStoreIDs {
-				if s == newStoreID {
-					isStoreAllowed = true
-				}
-			}
 
-			// if the runID is zero, it can be the admin scope OR if our store ID
-			// cannot be found in the list of allowed store IDs we must look up the
-			// DefaultStoreID for the runMode.
+			// not found, not active, whatever, we cannot proceed.
 			if !isStoreAllowed {
 				if aLog.IsDebug() {
 					aLog.Debug("runmode.WithRunMode.StoreNotAllowed",
-						log.Bool("is_store_allowed", isStoreAllowed),
-						log.Int64s("allowed_store_IDs", allowedStoreIDs...),
+						log.Bool("is_store_allowed", isStoreAllowed), log.Int64s("allowed_store_IDs", allowedStoreIDs...),
 						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-
-				// not found, not active, whatever, we cannot proceed.
-				aErrH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, newStoreID)).ServeHTTP(w, r)
+				h := a.StoreCodeProcesser.ProcessDenied(runMode, newStoreID)
+				if h == nil {
+					h = aErrH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, newStoreID))
+				}
+				h.ServeHTTP(w, r)
 				return
 			}
 
-			// if store code found in cookie and not valid anymore, delete the cookie.
-			if reqStoreCodeValid == 20 && !isStoreAllowed {
-				keks := a.getCookie(r)
-				keks.Expires = a.getCookieExpiresDelete()
-				http.SetCookie(w, keks)
-			}
-
 			// if runMode is allowed to change, update the runMode Hash and then put it into the context
+			previousRunMode := runMode
 			if isStoreAllowed && newStoreID != runMode.ID() {
+				a.StoreCodeProcesser.ProcessAllowed(runMode, newStoreID, w, r)
 				runMode = scope.NewHash(runMode.Scope(), newStoreID)
-
-				if reqStoreCodeValid < 20 { // no cookie found but the code changed
-					// set cookie once with the new code
-					keks := a.getCookie(r)
-					keks.Expires = a.getCookieExpiresSet()
-					http.SetCookie(w, keks)
-				}
 			}
-
+			if aLog.IsDebug() {
+				aLog.Debug("runmode.WithRunMode.NextHandler",
+					log.Bool("is_store_allowed", isStoreAllowed), log.Int64s("allowed_store_IDs", allowedStoreIDs...),
+					log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode),
+					log.Stringer("previous_run_mode", previousRunMode), log.HTTPRequest("request", r))
+			}
 			next.ServeHTTP(w, r.WithContext(scope.WithContextRunMode(r.Context(), runMode)))
 		})
 	}
