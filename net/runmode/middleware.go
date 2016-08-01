@@ -107,12 +107,12 @@ type AppRunMode struct {
 	// scope.DefaultRunMode which selects the default website with its default
 	// store. To use the admin area enable scope.Store and ID 0.
 	scope.RunMode
-	// StoreCodeProcesser extracts the store code from an HTTP requests.
+	// StoreCodeProcessor extracts the store code from an HTTP requests.
 	// Optional. Defaults to type ProcessStoreCode.
-	StoreCodeProcesser
-	// DisableStoreCodeProcesser set to true and set StoreCodeProcesser to nil
+	StoreCodeProcessor
+	// DisableStoreCodeProcessor set to true and set StoreCodeProcessor to nil
 	// to disable store code handling
-	DisableStoreCodeProcesser bool
+	DisableStoreCodeProcessor bool
 }
 
 func (a AppRunMode) checkStoreIDAllowed(runMode scope.Hash, newStoreID int64) (allowedStoreIDs []int64, isStoreAllowed bool, err error) {
@@ -153,10 +153,10 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 	if aErrH == nil {
 		aErrH = mw.ErrorWithStatusCode(http.StatusInternalServerError)
 	}
-	aGetCode := a.StoreCodeProcesser
+	aGetCode := a.StoreCodeProcessor
 	if aGetCode == nil {
 		aGetCode = nullCodeProcessor{}
-		if !a.DisableStoreCodeProcesser {
+		if !a.DisableStoreCodeProcessor {
 			aGetCode = &ProcessStoreCode{}
 		}
 	}
@@ -184,7 +184,7 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 			// extracts the code from GET and/or Cookie or custom implementation and get the
 			// new runID.
 			var reqStoreCode string
-			reqStoreCode = a.StoreCodeProcesser.FromRequest(r)
+			reqStoreCode = a.StoreCodeProcessor.FromRequest(r)
 			if reqStoreCode != "" {
 				var err error
 				// convert the code string into its internal ID depending on the scope.
@@ -223,18 +223,15 @@ func (a AppRunMode) WithRunMode() mw.Middleware {
 						log.Bool("is_store_allowed", isStoreAllowed), log.Int64s("allowed_store_IDs", allowedStoreIDs...),
 						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				h := a.StoreCodeProcesser.ProcessDenied(runMode, newStoreID)
-				if h == nil {
-					h = aErrH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, newStoreID))
-				}
-				h.ServeHTTP(w, r)
+				a.StoreCodeProcessor.ProcessDenied(runMode, newStoreID, w, r)
+				aErrH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, newStoreID)).ServeHTTP(w, r)
 				return
 			}
 
 			// if runMode is allowed to change, update the runMode Hash and then put it into the context
+			a.StoreCodeProcessor.ProcessAllowed(runMode, newStoreID, w, r)
 			previousRunMode := runMode
 			if isStoreAllowed && newStoreID != runMode.ID() {
-				a.StoreCodeProcesser.ProcessAllowed(runMode, newStoreID, w, r)
 				runMode = scope.NewHash(runMode.Scope(), newStoreID)
 			}
 			if aLog.IsDebug() {

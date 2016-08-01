@@ -16,15 +16,19 @@ package runmode_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/net/runmode"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"net/http/httptest"
 )
 
-var _ runmode.StoreCodeProcesser = (*runmode.ProcessStoreCode)(nil)
+var _ runmode.StoreCodeProcessor = (*runmode.ProcessStoreCode)(nil)
+
+const defaultCookieContent = `mage-translation-storage=%7B%7D; mage-translation-file-version=%7B%7D; mage-cache-storage=%7B%7D; mage-cache-storage-section-invalidation=%7B%7D; mage-cache-sessid=true; PHPSESSID=ogb786ncug3gunsnoevjem7n32; form_key=6DnQ2Xiy2oMpp7FB`
 
 func TestProcessStoreCode_FromRequest(t *testing.T) {
 
@@ -99,12 +103,11 @@ var benchmarkProcessStoreCode_FromRequest_Cookie string
 //BenchmarkProcessStoreCode_FromRequest_Cookie/NotFound-4      	10000000	       110 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 	c := &runmode.ProcessStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
-	const defaultCookie = `mage-translation-storage=%7B%7D; mage-translation-file-version=%7B%7D; mage-cache-storage=%7B%7D; mage-cache-storage-section-invalidation=%7B%7D; mage-cache-sessid=true; PHPSESSID=ogb786ncug3gunsnoevjem7n32; form_key=6DnQ2Xiy2oMpp7FB`
 
 	b.Run("Found", func(b *testing.B) {
 
 		req := httptest.NewRequest("GET", "https://corestoreio.io?a=b", nil)
-		req.Header.Set("Cookie", defaultCookie)
+		req.Header.Set("Cookie", defaultCookieContent)
 		req.AddCookie(&http.Cookie{Name: runmode.FieldName, Value: "dede"})
 
 		b.ResetTimer()
@@ -120,7 +123,7 @@ func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 
 	b.Run("NotFound", func(b *testing.B) {
 		req := httptest.NewRequest("GET", "https://corestoreio.io?c=d", nil)
-		req.Header.Set("Cookie", defaultCookie)
+		req.Header.Set("Cookie", defaultCookieContent)
 
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -133,4 +136,51 @@ func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 		}
 	})
 
+}
+
+func TestProcessStoreCode_ProcessDenied(t *testing.T) {
+	req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
+	req.Header.Set("Cookie", defaultCookieContent)
+	req.AddCookie(&http.Cookie{Name: runmode.FieldName, Value: "chfr"})
+	rec := httptest.NewRecorder()
+	c := &runmode.ProcessStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+	c.CookieExpiresDelete = time.Unix(1470022673, 0) // just a random unix time
+	c.ProcessDenied(0, 0, rec, req)
+	assert.Exactly(t, `store=; Path=/; Domain=corestoreio.io; Expires=Mon, 01 Aug 2016 03:37:53 GMT; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
+
+	c.CookieExpiresDelete = time.Time{}
+	assert.Regexp(t, `store=; Path=/; Domain=corestoreio.io; Expires=[^;]+; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
+}
+
+func TestProcessStoreCode_ProcessAllowed(t *testing.T) {
+	c := &runmode.ProcessStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+	c.CookieExpiresDelete = time.Unix(1460000000, 0) // just a random unix time
+	c.CookieExpiresSet = time.Unix(1470000000, 0)    // just a random unix time
+
+	t.Run("Delete", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
+		req.Header.Set("Cookie", defaultCookieContent)
+		req.AddCookie(&http.Cookie{Name: runmode.FieldName, Value: "chfr"})
+		rec := httptest.NewRecorder()
+
+		// write a delete cookie, because we have a cookie with a store code
+		c.ProcessAllowed(scope.Website.ToHash(1), 1, rec, req)
+		assert.Exactly(t, `store=; Path=/; Domain=corestoreio.io; Expires=Thu, 07 Apr 2016 03:33:20 GMT; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
+	})
+
+	t.Run("SetNew", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
+		req.Header.Set("Cookie", defaultCookieContent)
+		rec := httptest.NewRecorder()
+		c.ProcessAllowed(scope.Website.ToHash(1), 2, rec, req)
+		assert.Exactly(t, `store=todo; Path=/; Domain=corestoreio.io; Expires=Sun, 31 Jul 2016 21:20:00 GMT; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
+	})
+
+	t.Run("SetNone", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
+		req.Header.Set("Cookie", defaultCookieContent)
+		rec := httptest.NewRecorder()
+		c.ProcessAllowed(scope.Website.ToHash(1), 1, rec, req)
+		assert.Empty(t, rec.Header().Get("Set-Cookie"))
+	})
 }
