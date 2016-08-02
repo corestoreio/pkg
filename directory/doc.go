@@ -14,4 +14,6 @@
 
 // Package directory provides features for currencies, currency rates,
 // conversion of prices to a specified currency format, countries and regions.
+//
+// @todo think about: https://github.com/mledoze/countries
 package directory
