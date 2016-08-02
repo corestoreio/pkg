@@ -35,17 +35,18 @@ type CodeToIDMapper interface {
 	StoreIDbyCode(runMode scope.Hash, storeCode string) (id int64, err error)
 }
 
-// AvailabilityChecker depends on the run mode from package scope. The Hash
-// argument will be provided via scope.RunMode type or the
-// scope.FromContextRunMode(ctx) function. runMode is called in M world:
-// MAGE_RUN_CODE and MAGE_RUN_TYPE. The MAGE_RUN_TYPE can be either website or
-// store scope and MAGE_RUN_CODE any defined website or store code from the
-// database.
-type AvailabilityChecker interface {
-	// AllowedStoreIDs returns all active store IDs for a run mode.
-	AllowedStoreIDs(runMode scope.Hash) ([]int64, error)
-	// DefaultStoreID returns the default active store ID depending on the run mode.
-	// Error behaviour is mostly of type NotValid.
+// StoreChecker depends on the runMode from package scope. The Hash argument
+// will be provided via scope.RunMode type or the scope.FromContextRunMode(ctx)
+// function. runMode is named in Mage world: MAGE_RUN_CODE and MAGE_RUN_TYPE.
+// The MAGE_RUN_TYPE can be either website or store scope and MAGE_RUN_CODE any
+// defined website or store code from the database.
+type StoreChecker interface {
+	// IsAllowedStoreID checks if the store ID is allowed within the runMode.
+	// Returns true on success and the appropriate code which is guaranteed to
+	// be not empty.
+	IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, code string, err error)
+	// DefaultStoreID returns the default active store ID depending on the run
+	// mode. Error behaviour is mostly of type NotValid.
 	DefaultStoreID(runMode scope.Hash) (int64, error)
 }
 
@@ -58,8 +59,8 @@ type AvailabilityChecker interface {
 // Groups and Stores.
 type Service struct {
 	// SingleStoreModeEnabled default value true to enable globally single store
-	// mode but might get overwritten via a store scope configuration flag. If this
-	// flag is false, single store mode cannot be enabled at all.
+	// mode but might get overwritten via a store scope configuration flag. If
+	// this flag is false, single store mode cannot be enabled at all.
 	SingleStoreModeEnabled bool
 
 	// BackendSingleStore contains the path to the configuration flag. As we do
@@ -172,41 +173,52 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 	return nil
 }
 
-// AllowedStoreIDs returns all active store IDs for a run mode.
-func (s *Service) AllowedStoreIDs(runMode scope.Hash) ([]int64, error) {
+// IsAllowedStoreID checks if the storeID is allowed for the current runMode. Returns
+// additionally the Stores code.
+func (s *Service) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, storeCode string, _ error) {
 	scp, id := runMode.Unpack()
 
+	var testStores StoreSlice
 	switch scp {
 	case scope.Store:
-		return s.stores.ActiveIDs(), nil
+		testStores = s.stores
 
 	case scope.Group:
 		g, err := s.Group(id) // if ID == 0 then admin group
 		if err != nil {
-			return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.Group Scope %s ID %d", scp, id)
+			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.Group Scope %s ID %d", scp, id)
 		}
-		return g.Stores.ActiveIDs(), nil
+		testStores = g.Stores
+
+	case scope.Website:
+		w, err := s.Website(id) // id ID == 0 then admin website
+		if err != nil {
+			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.Website Scope %s ID %d", scp, id)
+		}
+		g, err := w.DefaultGroup()
+		if err != nil {
+			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.DefaultGroup Scope %s ID %d", scp, id)
+		}
+		testStores = g.Stores
+
+	default:
+		w, err := s.websites.Default()
+		if err != nil {
+			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.Website.Default Scope %s ID %d", scp, id)
+		}
+		g, err := w.DefaultGroup()
+		if err != nil {
+			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.DefaultGroup Scope %s ID %d", scp, id)
+		}
+		testStores = g.Stores
 	}
 
-	var w Website
-	if scp == scope.Website {
-		var err error
-		w, err = s.Website(id) // id ID == 0 then admin website
-		if err != nil {
-			return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.Website Scope %s ID %d", scp, id)
-		}
-	} else {
-		var err error
-		w, err = s.websites.Default()
-		if err != nil {
-			return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.Website.Default Scope %s ID %d", scp, id)
+	for _, st := range testStores {
+		if st.Data != nil && st.Data.IsActive && st.ID() == storeID {
+			return true, st.Code(), nil
 		}
 	}
-	g, err := w.DefaultGroup()
-	if err != nil {
-		return nil, errors.Wrapf(err, "[store] AllowedStoreIDs.DefaultGroup Scope %s ID %d", scp, id)
-	}
-	return g.Stores.ActiveIDs(), nil
+	return false, "", nil
 }
 
 // DefaultStoreID returns the default active store ID depending on the run mode.
@@ -257,7 +269,7 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 	if err != nil {
 		return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
 	}
-	if !st.Data.IsActive {
+	if st.Data == nil || !st.Data.IsActive {
 		return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 	}
 	return st.Data.StoreID, nil
