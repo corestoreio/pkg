@@ -26,8 +26,8 @@ import (
 )
 
 // StoreCodeProcessor gets used in the middleware WithRunMode() to extract a
-// store code from a Request and modify the response by for example setting
-// cookies.
+// store code from a Request and modify the response; for example setting
+// cookies to persists the selected store.
 type StoreCodeProcessor interface {
 	// FromRequest returns the valid non-empty store code. Returns an empty
 	// store code on all other cases.
@@ -37,12 +37,14 @@ type StoreCodeProcessor interface {
 	// store ID. The ResponseWriter and Request variables can be used for
 	// additional information writing and extracting. The error Handler  will
 	// always be called.
-	ProcessDenied(runMode scope.Hash, newStoreID int64, w http.ResponseWriter, r *http.Request)
-	// ProcessAllowed gets called whenever a new store ID is allowed to proceed.
-	// The variable newStoreID contains the new ID. The ResponseWriter and
-	// Request variables can be used for additional information writing and
-	// extracting. The next Handler in the chain will be always called.
-	ProcessAllowed(runMode scope.Hash, newStoreID int64, w http.ResponseWriter, r *http.Request)
+	ProcessDenied(runMode scope.Hash, newID int64, w http.ResponseWriter, r *http.Request)
+	// ProcessAllowed enables to adjust the ResponseWriter based on the new
+	// store ID. The variable newStoreID contains the new ID, which can also be
+	// 0. The code is guaranteed to be not empty, a valid store code, and always
+	// points to an existing active store. The ResponseWriter and Request
+	// variables can be used for additional information writing and extracting.
+	// The next Handler in the chain will after this function be called.
+	ProcessAllowed(runMode scope.Hash, newID int64, storeCode string, w http.ResponseWriter, r *http.Request)
 }
 
 // FieldName use in Cookies and JSON Web Tokens (JWT) to identify an active
@@ -168,6 +170,7 @@ func (a *ProcessStoreCode) writeDeleteCookie(w http.ResponseWriter, r *http.Requ
 	if c := a.fromCookie(r); c != "" {
 		keks := a.newCookie(r)
 		keks.Expires = a.getCookieExpiresDelete()
+		keks.Value = ""
 		http.SetCookie(w, keks)
 	}
 }
@@ -180,7 +183,7 @@ func (a *ProcessStoreCode) ProcessDenied(runMode scope.Hash, newStoreID int64, w
 
 // ProcessAllowed deletes the store code cookie if found and stores are equal or
 // sets a store code cookie if the stores differ.
-func (a *ProcessStoreCode) ProcessAllowed(runMode scope.Hash, newStoreID int64, w http.ResponseWriter, r *http.Request) {
+func (a *ProcessStoreCode) ProcessAllowed(runMode scope.Hash, newStoreID int64, storeCode string, w http.ResponseWriter, r *http.Request) {
 
 	if runMode.ID() == newStoreID {
 		a.writeDeleteCookie(w, r)
@@ -192,7 +195,7 @@ func (a *ProcessStoreCode) ProcessAllowed(runMode scope.Hash, newStoreID int64, 
 	// set cookie once with the new code
 	keks := a.newCookie(r)
 	keks.Expires = a.getCookieExpiresSet()
-	keks.Value = "todo"
+	keks.Value = storeCode
 	http.SetCookie(w, keks)
 }
 
@@ -201,7 +204,7 @@ type nullCodeProcessor struct{}
 func (nc nullCodeProcessor) FromRequest(_ *http.Request) string { return "" }
 func (nc nullCodeProcessor) ProcessDenied(_ scope.Hash, _ int64, _ http.ResponseWriter, _ *http.Request) {
 }
-func (nc nullCodeProcessor) ProcessAllowed(_ scope.Hash, _ int64, _ http.ResponseWriter, _ *http.Request) {
+func (nc nullCodeProcessor) ProcessAllowed(_ scope.Hash, _ int64, _ string, _ http.ResponseWriter, _ *http.Request) {
 }
 
 var _ StoreCodeProcessor = (*nullCodeProcessor)(nil)

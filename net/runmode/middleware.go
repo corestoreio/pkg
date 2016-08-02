@@ -89,15 +89,8 @@ import (
 //	}
 //}
 
-// AppRunMode initialized for each request the main important runMode.
-type AppRunMode struct {
-	// AvailabilityChecker must be set or middleware panics.
-	store.AvailabilityChecker
-	// CodeToIDMapper must be set or middleware panics.
-	store.CodeToIDMapper
-
-	// Following fields are optional
-
+// Options additional customizations for the runMode middleware.
+type Options struct {
 	// ErrorHandler optional custom error handler. Defaults to sending an HTTP
 	// status code 500 and exposing the real error including full paths.
 	mw.ErrorHandler
@@ -115,24 +108,6 @@ type AppRunMode struct {
 	DisableStoreCodeProcessor bool
 }
 
-func (a AppRunMode) checkStoreIDAllowed(runMode scope.Hash, newStoreID int64) (allowedStoreIDs []int64, isStoreAllowed bool, err error) {
-
-	// which store IDs are allowed depending on our runMode? Check if the newStoreID is
-	// within the allowed store IDs.
-	allowedStoreIDs, err = a.AllowedStoreIDs(runMode)
-	if err != nil {
-		return nil, false, errors.Wrap(err, "[store] WithRunMode.checkStoreIDAllowed")
-	}
-
-	for _, s := range allowedStoreIDs {
-		if s == newStoreID {
-			isStoreAllowed = true
-			return
-		}
-	}
-	return
-}
-
 // WithRunMode sets for each request the overall runMode aka. scope. The following steps
 // will be performed:
 //	1. Call to AppRunMode.RunMode.CalculateMode to get the default run mode.
@@ -141,102 +116,102 @@ func (a AppRunMode) checkStoreIDAllowed(runMode scope.Hash, newStoreID int64) (a
 //	2c. Lookup CodeToIDMapper.IDbyCode() to get the website/store ID from a website/store code.
 //	3. Retrieve all AllowedStoreIDs based on the runMode
 //	4. Check if the website/store ID
-func (a AppRunMode) WithRunMode() mw.Middleware {
+func WithRunMode(ac store.AvailabilityChecker, cim store.CodeToIDMapper, o Options) mw.Middleware {
 
 	// todo: code/Magento/Store/App/Request/PathInfoProcessor.php => req.isDirectAccessFrontendName()
 
-	aLog := a.Log
-	if aLog == nil {
-		aLog = log.BlackHole{} // disabled debug and info logging
+	lg := o.Log
+	if lg == nil {
+		lg = log.BlackHole{} // disabled debug and info logging
 	}
-	aErrH := a.ErrorHandler
-	if aErrH == nil {
-		aErrH = mw.ErrorWithStatusCode(http.StatusInternalServerError)
+	errH := o.ErrorHandler
+	if errH == nil {
+		errH = mw.ErrorWithStatusCode(http.StatusInternalServerError)
 	}
-	aGetCode := a.StoreCodeProcessor
-	if aGetCode == nil {
-		aGetCode = nullCodeProcessor{}
-		if !a.DisableStoreCodeProcessor {
-			aGetCode = &ProcessStoreCode{}
+	procCode := o.StoreCodeProcessor
+	if procCode == nil {
+		procCode = nullCodeProcessor{}
+		if !o.DisableStoreCodeProcessor {
+			procCode = &ProcessStoreCode{}
 		}
 	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			// set run mode
-			runMode := a.CalculateMode(w, r)
+			runMode := o.CalculateMode(w, r)
 
 			// find the default store ID for the runMode
-			newStoreID, err := a.DefaultStoreID(runMode)
+			newStoreID, err := ac.DefaultStoreID(runMode)
 			if err != nil {
-				if aLog.IsDebug() {
-					aLog.Debug("runmode.WithRunMode.DefaultStoreID.Error", log.Err(err),
+				if lg.IsDebug() {
+					lg.Debug("runmode.WithRunMode.DefaultStoreID.Error", log.Err(err),
 						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				aErrH(errors.Wrap(err, "[store] WithRunMode.DefaultStoreID")).ServeHTTP(w, r)
+				errH(errors.Wrap(err, "[store] WithRunMode.DefaultStoreID")).ServeHTTP(w, r)
 				return
 			}
-			if aLog.IsDebug() {
-				aLog.Debug("runmode.WithRunMode.DefaultStoreID",
+			if lg.IsDebug() {
+				lg.Debug("runmode.WithRunMode.DefaultStoreID",
 					log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 			}
 
 			// extracts the code from GET and/or Cookie or custom implementation and get the
 			// new runID.
 			var reqStoreCode string
-			reqStoreCode = a.StoreCodeProcessor.FromRequest(r)
+			reqStoreCode = procCode.FromRequest(r)
 			if reqStoreCode != "" {
 				var err error
 				// convert the code string into its internal ID depending on the scope.
-				newStoreID, err = a.StoreIDbyCode(runMode, reqStoreCode)
+				newStoreID, err = cim.StoreIDbyCode(runMode, reqStoreCode)
 				if err != nil && !errors.IsNotFound(err) {
-					if aLog.IsDebug() {
-						aLog.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err),
+					if lg.IsDebug() {
+						lg.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err),
 							log.String("http_store_code", reqStoreCode), log.Int64("store_id", newStoreID),
 							log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 					}
-					aErrH(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
+					errH(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
 					return
 				}
-				if aLog.IsDebug() {
-					aLog.Debug("runmode.WithRunMode.CodeFromRequest", log.String("http_store_code", reqStoreCode),
+				if lg.IsDebug() {
+					lg.Debug("runmode.WithRunMode.CodeFromRequest", log.String("http_store_code", reqStoreCode),
 						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
 			} // ignore everything else
 
 			// which store IDs are allowed depending on our runMode? Check if the newStoreID is
 			// within the allowed store IDs.
-			allowedStoreIDs, isStoreAllowed, err := a.checkStoreIDAllowed(runMode, newStoreID)
+			isStoreAllowed, storeCode, err := ac.IsAllowedStoreID(runMode, newStoreID)
 			if err != nil {
-				if aLog.IsDebug() {
-					aLog.Debug("runmode.WithRunMode.AllowedStoreIDs.Error", log.Err(err),
+				if lg.IsDebug() {
+					lg.Debug("runmode.WithRunMode.AllowedStoreIDs.Error", log.Err(err),
 						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				aErrH(errors.Wrap(err, "[store] WithRunMode.AllowedStoreIDs")).ServeHTTP(w, r)
+				errH(errors.Wrap(err, "[store] WithRunMode.AllowedStoreIDs")).ServeHTTP(w, r)
 				return
 			}
 
 			// not found, not active, whatever, we cannot proceed.
 			if !isStoreAllowed {
-				if aLog.IsDebug() {
-					aLog.Debug("runmode.WithRunMode.StoreNotAllowed",
-						log.Bool("is_store_allowed", isStoreAllowed), log.Int64s("allowed_store_IDs", allowedStoreIDs...),
+				if lg.IsDebug() {
+					lg.Debug("runmode.WithRunMode.StoreNotAllowed",
+						log.Bool("is_store_allowed", isStoreAllowed), log.String("store_code", storeCode),
 						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				a.StoreCodeProcessor.ProcessDenied(runMode, newStoreID, w, r)
-				aErrH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, newStoreID)).ServeHTTP(w, r)
+				procCode.ProcessDenied(runMode, newStoreID, w, r)
+				errH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, newStoreID)).ServeHTTP(w, r)
 				return
 			}
 
 			// if runMode is allowed to change, update the runMode Hash and then put it into the context
-			a.StoreCodeProcessor.ProcessAllowed(runMode, newStoreID, w, r)
+			procCode.ProcessAllowed(runMode, newStoreID, storeCode, w, r)
 			previousRunMode := runMode
 			if isStoreAllowed && newStoreID != runMode.ID() {
 				runMode = scope.NewHash(runMode.Scope(), newStoreID)
 			}
-			if aLog.IsDebug() {
-				aLog.Debug("runmode.WithRunMode.NextHandler",
-					log.Bool("is_store_allowed", isStoreAllowed), log.Int64s("allowed_store_IDs", allowedStoreIDs...),
+			if lg.IsDebug() {
+				lg.Debug("runmode.WithRunMode.NextHandler",
+					log.Bool("is_store_allowed", isStoreAllowed), log.String("store_code", storeCode),
 					log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode),
 					log.Stringer("previous_run_mode", previousRunMode), log.HTTPRequest("request", r))
 			}
