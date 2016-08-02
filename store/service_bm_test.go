@@ -17,22 +17,189 @@ package store_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 )
 
-var benchmarkServiceStore store.Store
+// benchmarkStoreService refactor and use a function which generates a huge
+// Service containing thousands of websites, groups and stores. Use then build
+// tags to create benchmark only tests.
+var benchmarkStoreService = storemock.NewEurozzyService(cfgmock.NewService())
 
-// BenchmarkServiceGetStore-4              	 5000000	       256 ns/op	      16 B/op	       1 allocs/op
-func BenchmarkServiceGetStore(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkServiceStore, err = serviceStoreSimpleTest.Store(1)
-		if err != nil {
-			b.Error(err)
-		}
-		if err := benchmarkServiceStore.Validate(); err != nil {
-			b.Errorf("benchmarkServiceStore contains errors: %+v", err)
+func Benchmark_Service_IsAllowedStoreID(b *testing.B) {
+
+	var runner = func(runMode scope.Hash, storeID int64) func(pb *testing.PB) {
+		return func(pb *testing.PB) {
+			var isA bool
+			var stC string
+			for pb.Next() {
+				var err error
+				isA, stC, err = benchmarkStoreService.IsAllowedStoreID(runMode, storeID)
+				if err != nil {
+					b.Error(err)
+				}
+				if !isA {
+					b.Fatal("StoreID must be allowed")
+				}
+				if stC == "" {
+					b.Fatal("StoreCode cannot be empty")
+				}
+			}
 		}
 	}
+
+	b.Run("Store", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Store, 1), 6))
+	})
+	b.Run("Group", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Group, 1), 2))
+	})
+	b.Run("Website", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Website, 1), 2))
+	})
+	b.Run("Default", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.DefaultHash, 2)) // at store
+	})
+}
+
+func Benchmark_Service_DefaultStoreID(b *testing.B) {
+
+	var runner = func(runMode scope.Hash) func(pb *testing.PB) {
+		return func(pb *testing.PB) {
+			var bmss int64
+			for pb.Next() {
+				var err error
+				bmss, err = benchmarkStoreService.DefaultStoreID(runMode)
+				if err != nil {
+					b.Fatalf("%+v", err)
+				}
+				if bmss < 1 {
+					b.Fatalf("StoreID must be greater than zero: %d", bmss)
+				}
+			}
+		}
+	}
+
+	b.Run("Store", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Store, 1)))
+	})
+	b.Run("Group", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Group, 2)))
+	})
+	b.Run("Website", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Website, 1)))
+	})
+	b.Run("Default", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.DefaultHash))
+	})
+}
+
+func Benchmark_Service_StoreIDbyCode(b *testing.B) {
+
+	var runner = func(runMode scope.Hash, storeCode string) func(pb *testing.PB) {
+		return func(pb *testing.PB) {
+			var bmss int64
+			for pb.Next() {
+				var err error
+				bmss, err = benchmarkStoreService.StoreIDbyCode(runMode, storeCode)
+				if err != nil {
+					b.Fatalf("%+v", err)
+				}
+				if bmss < 1 {
+					b.Fatalf("StoreID must be greater than zero: %d", bmss)
+				}
+			}
+		}
+	}
+
+	b.Run("Store", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Store, 1), "nz"))
+	})
+	b.Run("Group", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Group, 2), "uk"))
+	})
+	b.Run("Website", func(b *testing.B) {
+		b.ReportAllocs()
+		b.RunParallel(runner(scope.NewHash(scope.Website, 1), "at"))
+	})
+}
+
+func Benchmark_Service_GetStore(b *testing.B) {
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		var bmss store.Store
+		for pb.Next() {
+			var err error
+			bmss, err = benchmarkStoreService.Store(6)
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if err := bmss.Validate(); err != nil {
+				b.Fatalf("contains errors: %+v", err)
+			}
+		}
+	})
+}
+
+func Benchmark_Service_DefaultStoreView(b *testing.B) {
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		var bmss store.Store
+		for pb.Next() {
+			var err error
+			bmss, err = benchmarkStoreService.DefaultStoreView()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if err := bmss.Validate(); err != nil {
+				b.Fatalf("contains errors: %+v", err)
+			}
+		}
+	})
+}
+
+func Benchmark_Service_GetGroup(b *testing.B) {
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		var bmsg store.Group
+		for pb.Next() {
+			var err error
+			bmsg, err = benchmarkStoreService.Group(2)
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if err := bmsg.Validate(); err != nil {
+				b.Fatalf("contains errors: %+v", err)
+			}
+		}
+	})
+}
+
+func Benchmark_Service_GetWebsite(b *testing.B) {
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		var bmsw store.Website
+		for pb.Next() {
+			var err error
+			bmsw, err = benchmarkStoreService.Website(2)
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if err := bmsw.Validate(); err != nil {
+				b.Fatalf("contains errors: %+v", err)
+			}
+		}
+	})
 }

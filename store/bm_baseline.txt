@@ -1,0 +1,22 @@
+BenchmarkFactoryWebsiteGetDefaultGroup-4   	  500000	      3412 ns/op	    3536 B/op	      10 allocs/op
+BenchmarkFactoryGroupGetDefaultStore-4     	 2000000	       963 ns/op	     832 B/op	       3 allocs/op
+BenchmarkFactoryStoreGetWebsite-4          	  300000	      5150 ns/op	    5392 B/op	      14 allocs/op
+BenchmarkFactoryDefaultStoreView-4         	100000000	        13.4 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_IsAllowedStoreID/Store-4 	20000000	        76.2 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_IsAllowedStoreID/Group-4 	20000000	       120 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_IsAllowedStoreID/Website-4         	10000000	       126 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_IsAllowedStoreID/Default-4         	30000000	        57.3 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_DefaultStoreID/Store-4             	20000000	        99.5 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_DefaultStoreID/Group-4             	10000000	       169 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_DefaultStoreID/Website-4           	10000000	       162 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_DefaultStoreID/Default-4           	20000000	        96.1 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_StoreIDbyCode/Store-4              	10000000	       139 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_StoreIDbyCode/Group-4              	10000000	       120 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_StoreIDbyCode/Website-4            	10000000	       138 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_GetStore-4                         	10000000	       128 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_DefaultStoreView-4                 	10000000	       126 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_GetGroup-4                         	20000000	       102 ns/op	       0 B/op	       0 allocs/op
+Benchmark_Service_GetWebsite-4                       	20000000	       112 ns/op	       0 B/op	       0 allocs/op
+BenchmarkScopeTree-4                                 	 1000000	      1338 ns/op	     608 B/op	       8 allocs/op
+PASS
+ok  	github.com/corestoreio/csfw/store	35.801s
