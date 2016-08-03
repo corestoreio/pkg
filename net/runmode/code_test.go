@@ -153,7 +153,7 @@ func TestProcessStoreCode_ProcessDenied(t *testing.T) {
 }
 
 func TestProcessStoreCode_ProcessAllowed(t *testing.T) {
-	c := &runmode.ProcessStoreCode{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+	c := &runmode.ProcessStoreCode{}
 	c.CookieExpiresDelete = time.Unix(1460000000, 0) // just a random unix time
 	c.CookieExpiresSet = time.Unix(1470000000, 0)    // just a random unix time
 

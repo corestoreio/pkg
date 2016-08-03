@@ -14,132 +14,152 @@
 
 package runmode_test
 
-//
-//func getMWTestRequest(m, u string, c *http.Cookie) *http.Request {
-//	req, err := http.NewRequest(m, u, nil)
-//	if err != nil {
-//		panic(err)
-//	}
-//	if c != nil {
-//		req.AddCookie(c)
-//	}
-//	return req
-//}
-//
-//func finalInitStoreHandler(t *testing.T, wantStoreCode string, wantErrBhf errors.BehaviourFunc) http.HandlerFunc {
-//	return func(w http.ResponseWriter, r *http.Request) {
-//		haveReqStore, err := store.FromContextRequestedStore(r.Context())
-//		if wantErrBhf != nil {
-//			assert.True(t, wantErrBhf(err), "\nIndex Error %s", err)
-//		}
-//		if err != nil {
-//			t.Fatal(err)
-//		}
-//		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode())
-//	}
-//}
-//
-//var testsMWInitByFormCookie = []struct {
-//	req           *http.Request
-//	haveSO        scope.Option
-//	wantStoreCode string // this is the default store in a scope, lookup in getInitializedStoreService
-//	wantErrBhf    errors.BehaviourFunc
-//	wantCookie    string // the newly set cookie
-//	wantLog       string
-//}{
-//	{
-//		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
-//		scope.Option{Store: scope.MockID(1)}, "uk", nil, runmode.FieldName + "=uk;", "fix me5",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
-//		scope.Option{Store: scope.MockID(1)}, "uk", nil, runmode.FieldName + "=uk;", "", // generates a new 1year valid cookie
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=%20uk", nil),
-//		scope.Option{Store: scope.MockID(1)}, "de", nil, "", "fix me4",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
-//		scope.Option{Group: scope.MockID(1)}, "de", nil, runmode.FieldName + "=de;", "fix me3",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io", nil),
-//		scope.Option{Group: scope.MockID(1)}, "at", nil, "", http.ErrNoCookie.Error(),
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=de", nil),
-//		scope.Option{Group: scope.MockID(1)}, "de", nil, runmode.FieldName + "=de;", "", // generates a new 1y valid cookie
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=at", nil),
-//		scope.Option{Group: scope.MockID(1)}, "at", nil, runmode.FieldName + "=;", "", // generates a delete cookie
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=cz", nil),
-//		scope.Option{Group: scope.MockID(1)}, "at", errors.IsNotFound, "", "",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
-//		scope.Option{Group: scope.MockID(1)}, "at", errors.IsUnauthorized, "", "",
-//	},
-//
-//	{
-//		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "nz"}),
-//		scope.Option{Website: scope.MockID(2)}, "nz", nil, runmode.FieldName + "=nz;", "fix me2",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "n'z"}),
-//		scope.Option{Website: scope.MockID(2)}, "au", nil, "", "fix me1",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
-//		scope.Option{Website: scope.MockID(2)}, "au", errors.IsUnauthorized, "", "",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=nz", nil),
-//		scope.Option{Website: scope.MockID(2)}, "nz", nil, runmode.FieldName + "=nz;", "",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=ch", nil),
-//		scope.Option{Website: scope.MockID(1)}, "at", errors.IsUnauthorized, "", "",
-//	},
-//	{
-//		getMWTestRequest("GET", "http://cs.io/?"+runmode.URLFieldName+"=nz", nil),
-//		scope.Option{Website: scope.MockID(1)}, "at", errors.IsUnauthorized, "", "",
-//	},
-//}
-//
-//func TestWithInitStoreByFormCookie(t *testing.T) {
-//
-//	debugLogBuf := new(bytes.Buffer)
-//	lg := logw.NewLog(logw.WithWriter(debugLogBuf), logw.WithLevel(logw.LevelDebug))
-//
-//	for i, test := range testsMWInitByFormCookie {
-//
-//		srv := storemock.NewEurozzyService(test.haveSO, store.WithStorageConfig(cfgmock.NewService()))
-//		dsv, err := srv.DefaultStoreView()
-//		ctx := store.WithContextRequestedStore(test.req.Context(), dsv, errors.Wrap(err, "DefaultStoreView"))
-//
-//		mw := runmode.WithInitStoreByFormCookie(srv, lg)(finalInitStoreHandler(t, test.wantStoreCode, test.wantErrBhf))
-//
-//		rec := httptest.NewRecorder()
-//		mw.ServeHTTP(rec, test.req.WithContext(ctx))
-//
-//		if test.wantLog != "" {
-//			assert.Contains(t, debugLogBuf.String(), test.wantLog, "\nIndex %d\n", i)
-//			debugLogBuf.Reset()
-//			continue
-//		} else {
-//			assert.Empty(t, debugLogBuf.String(), "\nIndex %d\n", i)
-//		}
-//
-//		newKeks := rec.HeaderMap.Get("Set-Cookie")
-//		if test.wantCookie != "" {
-//			assert.Contains(t, newKeks, test.wantCookie, "\nIndex %d\n", i)
-//		} else {
-//			assert.Empty(t, newKeks, "%#v", test)
-//		}
-//		debugLogBuf.Reset()
-//	}
-//}
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/csfw/net/runmode"
+	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
+)
+
+func getReq(m, t string, c *http.Cookie) *http.Request {
+	req := httptest.NewRequest(m, t, nil)
+	if c != nil {
+		req.AddCookie(c)
+	}
+	return req
+}
+
+type testStoreService struct {
+	isAllowed         bool
+	allowedCode       string
+	allowedErr        error
+	defaultStoreID    int64
+	defaultStoreIDErr error
+
+	storeIDbyCode    int64
+	storeIDbyCodeErr error
+}
+
+func (s testStoreService) IsAllowedStoreID(runMode scope.Hash, storeID int64) (bool, string, error) {
+	return s.isAllowed, s.allowedCode, s.allowedErr
+}
+func (s testStoreService) DefaultStoreID(runMode scope.Hash) (int64, error) {
+	return s.defaultStoreID, s.defaultStoreIDErr
+}
+func (s testStoreService) StoreIDbyCode(runMode scope.Hash, storeCode string) (int64, error) {
+	return s.storeIDbyCode, s.storeIDbyCodeErr
+}
+
+func finalHandler(t *testing.T, wantRunMode scope.Hash) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		haveRunMode := scope.FromContextRunMode(r.Context())
+		assert.Exactly(t, wantRunMode, haveRunMode)
+	}
+}
+
+func TestWithRunMode(t *testing.T) {
+
+	var withRunModeErrH = func(t assert.TestingT, errBhf errors.BehaviourFunc) mw.ErrorHandler {
+		return func(haveErr error) http.Handler {
+			if errBhf != nil {
+				assert.True(t, errBhf(haveErr), "%+v", haveErr)
+			} else {
+				assert.NoError(t, haveErr, "%+v", haveErr)
+			}
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+			})
+		}
+	}
+
+	var testsWithRunMode = []struct {
+		req         *http.Request
+		storeCheck  store.StoreChecker
+		codeIDMap   store.CodeToIDMapper
+		options     runmode.Options
+		wantRunMode scope.Hash
+		wantCookie  string // the newly set cookie
+	}{
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+			testStoreService{isAllowed: true, allowedCode: "uk", allowedErr: nil, defaultStoreID: 1, defaultStoreIDErr: nil},
+			testStoreService{storeIDbyCode: 999, storeIDbyCodeErr: nil},
+			runmode.Options{ErrorHandler: withRunModeErrH(t, nil)},
+			scope.DefaultRunMode, runmode.FieldName + "=uk;",
+		},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
+		//	scope.Store.ToHash(1), "uk", nil, runmode.FieldName + "=uk;" , // generates a new 1year valid cookie
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=%20uk", nil),
+		//	scope.Store.ToHash(1), "de", nil, "" ,
+		//},
+		//{
+		//	getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+		//	scope.Group.ToHash(1), "de", nil, runmode.FieldName + "=de;" ,
+		//},
+		//{
+		//	getReq("GET", "http://cs.io", nil),
+		//	scope.Group.ToHash(1), "at", nil, "",
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=de", nil),
+		//	scope.Group.ToHash(1), "de", nil, runmode.FieldName + "=de;",   // generates a new 1y valid cookie
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=at", nil),
+		//	scope.Group.ToHash(1), "at", nil, runmode.FieldName + "=;",   // generates a delete cookie
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=cz", nil),
+		//	scope.Group.ToHash(1), "at", errors.IsNotFound, "",
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
+		//	scope.Group.ToHash(1), "at", errors.IsUnauthorized, "",
+		//},
+		//
+		//{
+		//	getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "nz"}),
+		//	scope.Website.ToHash(2), "nz", nil, runmode.FieldName + "=nz;",
+		//},
+		//{
+		//	getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "n'z"}),
+		//	scope.Website.ToHash(2), "au", nil, "",
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=uk", nil),
+		//	scope.Website.ToHash(2), "au", errors.IsUnauthorized, "",
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=nz", nil),
+		//	scope.Website.ToHash(2), "nz", nil, runmode.FieldName + "=nz;",
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=ch", nil),
+		//	scope.Website.ToHash(1), "at", errors.IsUnauthorized, "",
+		//},
+		//{
+		//	getReq("GET", "http://cs.io/?"+runmode.URLFieldName+"=nz", nil),
+		//	scope.Website.ToHash(1), "at", errors.IsUnauthorized, "",
+		//},
+	}
+
+	for _, test := range testsWithRunMode {
+
+		mw := runmode.WithRunMode(test.storeCheck, test.codeIDMap, test.options)(finalHandler(t, test.wantRunMode))
+		rec := httptest.NewRecorder()
+		mw.ServeHTTP(rec, test.req)
+		if test.wantCookie != "" {
+			assert.Contains(t, rec.Header().Get("Set-Cookie"), test.wantCookie)
+		}
+	}
+
+}

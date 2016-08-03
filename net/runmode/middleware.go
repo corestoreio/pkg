@@ -116,7 +116,7 @@ type Options struct {
 //	2c. Lookup CodeToIDMapper.IDbyCode() to get the website/store ID from a website/store code.
 //	3. Retrieve all AllowedStoreIDs based on the runMode
 //	4. Check if the website/store ID
-func WithRunMode(ac store.AvailabilityChecker, cim store.CodeToIDMapper, o Options) mw.Middleware {
+func WithRunMode(ac store.StoreChecker, cim store.CodeToIDMapper, o Options) mw.Middleware {
 
 	// todo: code/Magento/Store/App/Request/PathInfoProcessor.php => req.isDirectAccessFrontendName()
 
