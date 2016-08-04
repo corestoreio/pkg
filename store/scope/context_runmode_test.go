@@ -58,3 +58,17 @@ func TestRunMode(t *testing.T) {
 	}
 	assert.Exactly(t, scope.Hash(0), scope.FromContextRunMode(context.Background()))
 }
+
+func TestWithContextRunMode(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			assert.NotEmpty(t, r.(string))
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+
+	ctx := context.Background()
+	ctx = scope.WithContextRunMode(ctx, scope.DefaultHash)
+	_ = scope.WithContextRunMode(ctx, scope.DefaultHash)
+}

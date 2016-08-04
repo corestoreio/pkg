@@ -50,9 +50,13 @@ func (rm RunMode) CalculateMode(w http.ResponseWriter, r *http.Request) Hash {
 	return h
 }
 
-// WithContextRunMode sets the main run mode for the current request. Use the
-// Hash value returned from the function RunMode.CalculateMode(r, w).
+// WithContextRunMode sets the main run mode for the current request. It panics
+// when called multiple times for the current context. This function is used in
+// net/runmode together with function RunMode.CalculateMode(r, w).
 func WithContextRunMode(ctx context.Context, runMode Hash) context.Context {
+	if _, ok := ctx.Value(ctxRunModeKey{}).(Hash); ok {
+		panic("[scope] You are not allowed to set the runMode more than once for the current context.")
+	}
 	return context.WithValue(ctx, ctxRunModeKey{}, runMode)
 }
 
