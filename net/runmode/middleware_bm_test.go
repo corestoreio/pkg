@@ -13,3 +13,9 @@
 // limitations under the License.
 
 package runmode_test
+
+import "testing"
+
+func BenchmarkWithRunMode(b *testing.B) {
+
+}

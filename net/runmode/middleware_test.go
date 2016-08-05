@@ -15,16 +15,18 @@
 package runmode_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"fmt"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/runmode"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -216,4 +218,106 @@ func TestWithRunMode(t *testing.T) {
 		assert.Exactly(t, http.StatusText(test.wantRespCode), http.StatusText(rec.Code), "Index %d", i)
 	}
 
+}
+
+func TestWithRunMode_StoreService(t *testing.T) {
+	srv := storemock.NewEurozzyService(cfgmock.NewService())
+
+	tests := []struct {
+		req           *http.Request
+		options       runmode.Options
+		wantStoreID   int64
+		wantWebsiteID int64
+		wantCtx       bool
+		wantRespCode  int
+	}{
+		{
+			getReq("GET", "http://cs.io", nil),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			2, 1, true, http.StatusAccepted, // at
+		},
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			1, 1, true, http.StatusAccepted, // de
+		},
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			4, 1, true, http.StatusAccepted, // uk
+		},
+		{
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", runmode.URLFieldName), nil),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			2, 1, true, http.StatusAccepted, // ch, but inactive and then fall back to AT
+		},
+
+		{
+			getReq("GET", "http://cs.io", nil),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
+			5, 2, true, http.StatusAccepted, // au
+		},
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "nz"}),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
+			6, 2, true, http.StatusAccepted, // nz
+		},
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
+			5, 2, true, http.StatusAccepted, // au
+		},
+
+		{
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=", runmode.URLFieldName), nil),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			1, 1, true, http.StatusAccepted, // de
+		},
+		{
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=at", runmode.URLFieldName), nil),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			2, 1, true, http.StatusAccepted, // at
+		},
+		{
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=nz", runmode.URLFieldName), nil),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			6, 2, true, http.StatusAccepted, // nz
+		},
+		{
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", runmode.URLFieldName), nil),
+			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			1, 1, true, http.StatusAccepted, // de
+		},
+
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "dXe"}),
+			runmode.Options{},
+			2, 1, true, http.StatusAccepted, // at
+		},
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+			runmode.Options{},
+			1, 1, true, http.StatusAccepted, // at
+		},
+		{
+			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "nz"}),
+			runmode.Options{},
+			2, 1, true, http.StatusAccepted, // at, switch to nz not allowed
+		},
+	}
+	for i, test := range tests {
+		test.options.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
+
+		rmmw := runmode.WithRunMode(srv, test.options)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			haveStoreID, haveWebsiteID, haveOK := scope.FromContext(r.Context())
+			assert.Exactly(t, test.wantCtx, haveOK, "Context; Index %d", i)
+			assert.Exactly(t, test.wantStoreID, haveStoreID, "Store; Index %d", i)
+			assert.Exactly(t, test.wantWebsiteID, haveWebsiteID, "Website; Index %d", i)
+			assert.NotEmpty(t, scope.FromContextRunMode(r.Context()), "Index %d", i)
+			w.WriteHeader(http.StatusAccepted)
+		}))
+		rec := httptest.NewRecorder()
+		rmmw.ServeHTTP(rec, test.req)
+		assert.Exactly(t, test.wantRespCode, rec.Code, "Index %d => %s", i, rec.Body)
+	}
 }
