@@ -21,6 +21,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
+// todo create compatible type for interface net/runmode.StoreCodeProcessor
+
 // StoreParamName use in Cookie and JWT important when the user selects a
 // different store within the current website/group context. This name will be
 // used in a cookie or as key value in a token to permanently save the new
