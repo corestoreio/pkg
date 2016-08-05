@@ -313,18 +313,18 @@ func TestService_IsAllowedStoreID(t *testing.T) {
 		{eurSrv, scope.NewHash(scope.Website, 1), 1, true, "de", nil},    // euro scope, not included ch, because not active, and UK, different group
 		{eurSrv, scope.NewHash(scope.Website, 1), 2, true, "at", nil},    // euro scope, not included ch, because not active, and UK, different group
 		{eurSrv, scope.NewHash(scope.Website, 1), 3, false, "", nil},     // euro scope, not included ch
-		{eurSrv, scope.NewHash(scope.Website, 1), 4, false, "", nil},     // euro scope, uk not allowed
+		{eurSrv, scope.NewHash(scope.Website, 1), 4, true, "uk", nil},    // euro scope, uk allowed
 		{eurSrv, scope.NewHash(scope.Website, 2), 5, true, "au", nil},    // oz scope
 		{eurSrv, scope.NewHash(scope.Website, 2), 6, true, "nz", nil},    // oz scope
 		{eurSrv, scope.NewHash(scope.Website, 2), 1, false, "", nil},     // oz scope
-		{eurSrv, scope.NewHash(scope.Website, 9999), 1, false, "", errors.IsNotFound},
+		{eurSrv, scope.NewHash(scope.Website, 9999), 1, false, "", nil},
 		{eurSrv, scope.NewHash(scope.Website, 1), 9999, false, "", nil},
-		{eurSrv, scope.NewHash(scope.Group, 0), 0, true, "admin", nil},              // admin scope
-		{eurSrv, scope.NewHash(scope.Group, 1), 1, true, "de", nil},                 // dach scope
-		{eurSrv, scope.NewHash(scope.Group, 1), 2, true, "at", nil},                 // dach scope
-		{eurSrv, scope.NewHash(scope.Group, 2), 4, true, "uk", nil},                 // uk scope
-		{eurSrv, scope.NewHash(scope.Group, 2), 5, false, "", nil},                  // uk scope
-		{eurSrv, scope.NewHash(scope.Group, 9999), 4, false, "", errors.IsNotFound}, // uk scope
+		{eurSrv, scope.NewHash(scope.Group, 0), 0, true, "admin", nil}, // admin scope
+		{eurSrv, scope.NewHash(scope.Group, 1), 1, true, "de", nil},    // dach scope
+		{eurSrv, scope.NewHash(scope.Group, 1), 2, true, "at", nil},    // dach scope
+		{eurSrv, scope.NewHash(scope.Group, 2), 4, true, "uk", nil},    // uk scope
+		{eurSrv, scope.NewHash(scope.Group, 2), 5, false, "", nil},     // uk scope
+		{eurSrv, scope.NewHash(scope.Group, 9999), 4, false, "", nil},  // uk scope
 		{eurSrv, scope.NewHash(scope.Store, 0), 5, true, "au", nil},
 		{eurSrv, scope.NewHash(scope.Store, 0), 1, true, "de", nil},
 		{eurSrv, scope.NewHash(scope.Store, 0), 3, false, "", nil},
@@ -422,12 +422,13 @@ func TestService_StoreIDbyCode(t *testing.T) {
 		wantErrBhf    errors.BehaviourFunc
 	}{
 		{eurSrv, 0, "", 2, 1, nil},
-		{eurSrv, scope.DefaultHash, "x", 0, 0, nil},
+		{eurSrv, scope.DefaultHash, "x", 0, 0, errors.IsNotFound},
 		{eurSrv, scope.Website.ToHash(0), "admin", 0, 0, nil},
 		{eurSrv, scope.Website.ToHash(1), "de", 1, 1, nil},
 		{eurSrv, scope.Website.ToHash(2), "nz", 6, 2, nil},
 		{eurSrv, scope.Website.ToHash(3), "uk", 0, 0, errors.IsNotFound},
-		{eurSrv, scope.Absent.ToHash(0), "uk", 0, 0, errors.IsNotSupported},
+		{eurSrv, scope.Absent.ToHash(0), "uk", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.Absent.ToHash(0), "at", 2, 1, nil},
 		{eurSrv, scope.Group.ToHash(2), "uk", 4, 1, nil},
 		{eurSrv, scope.Group.ToHash(99), "uk", 0, 0, errors.IsNotFound},
 		{eurSrv, scope.Store.ToHash(0), "admin", 0, 0, nil},

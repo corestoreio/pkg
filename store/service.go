@@ -174,46 +174,43 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 // IsAllowedStoreID checks if the storeID is allowed for the current runMode. Returns
 // additionally the Stores code.
 func (s *Service) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, storeCode string, _ error) {
-	scp, id := runMode.Unpack()
+	scp, scpID := runMode.Unpack()
 
-	var testStores StoreSlice
 	switch scp {
 	case scope.Store:
-		testStores = s.stores
-
+		for _, st := range s.stores {
+			if st.IsActive() && st.ID() == storeID {
+				return true, st.Code(), nil
+			}
+		}
+		return false, "", nil
 	case scope.Group:
-		g, err := s.Group(id) // if ID == 0 then admin group
-		if err != nil {
-			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.Group Scope %s ID %d", scp, id)
+		for _, st := range s.stores {
+			if st.IsActive() && st.GroupID() == scpID && st.ID() == storeID {
+				return true, st.Code(), nil
+			}
 		}
-		testStores = g.Stores
-
+		return false, "", nil
 	case scope.Website:
-		w, err := s.Website(id) // id ID == 0 then admin website
-		if err != nil {
-			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.Website Scope %s ID %d", scp, id)
+		for _, st := range s.stores {
+			if st.IsActive() && st.WebsiteID() == scpID && st.ID() == storeID {
+				return true, st.Code(), nil
+			}
 		}
-		g, err := w.DefaultGroup()
-		if err != nil {
-			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.DefaultGroup Scope %s ID %d", scp, id)
-		}
-		testStores = g.Stores
-
+		return false, "", nil
 	default:
 		w, err := s.websites.Default()
 		if err != nil {
-			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.Website.Default Scope %s ID %d", scp, id)
+			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.Website.Default Scope %s ID %d", scp, scpID)
 		}
 		g, err := w.DefaultGroup()
 		if err != nil {
-			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.DefaultGroup Scope %s ID %d", scp, id)
+			return false, "", errors.Wrapf(err, "[store] IsAllowedStoreID.DefaultGroup Scope %s ID %d", scp, scpID)
 		}
-		testStores = g.Stores
-	}
-
-	for _, st := range testStores {
-		if st.Data != nil && st.Data.IsActive && st.ID() == storeID {
-			return true, st.Code(), nil
+		for _, st := range s.stores {
+			if st.IsActive() && st.WebsiteID() == w.ID() && st.GroupID() == g.ID() && st.ID() == storeID {
+				return true, st.Code(), nil
+			}
 		}
 	}
 	return false, "", nil
@@ -229,7 +226,7 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (storeId, websiteID int64, 
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
-		if !st.Data.IsActive {
+		if !st.IsActive() {
 			return 0, 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 		}
 		return st.ID(), st.WebsiteID(), nil
@@ -243,7 +240,7 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (storeId, websiteID int64, 
 		if err != nil {
 			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
-		if !st.Data.IsActive {
+		if !st.IsActive() {
 			return 0, 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 		}
 		return st.ID(), st.WebsiteID(), nil
@@ -267,13 +264,13 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (storeId, websiteID int64, 
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
 	}
-	if st.Data == nil || !st.Data.IsActive {
+	if st.Data == nil || !st.IsActive() {
 		return 0, 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 	}
 	return st.ID(), st.WebsiteID(), nil
 }
 
-// StoreIDbyCode returns for a storeCode its internal ID depending on the
+// StoreIDbyCode returns for a storeCode its internal active ID depending on the
 // runMode. A not-supported error behaviour gets returned if an invalid scope
 // has been provided. A not-found error behaviour gets returned if the code
 // cannot be found. This function does not consider if a store or website is
@@ -290,29 +287,38 @@ func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, 
 	switch runMode.Scope() {
 	case scope.Store:
 		for _, st := range s.stores {
-			if st.Code() == storeCode {
+			if st.IsActive() && st.Code() == storeCode {
 				return st.ID(), st.WebsiteID(), nil
 			}
 		}
-		return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 	case scope.Group:
 		for _, st := range s.stores {
-			if st.GroupID() == runMode.ID() && st.Code() == storeCode {
+			if st.IsActive() && st.GroupID() == runMode.ID() && st.Code() == storeCode {
 				return st.ID(), st.WebsiteID(), nil
 			}
 		}
-		return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 	case scope.Website:
 		for _, st := range s.stores {
-			if st.WebsiteID() == runMode.ID() && st.Code() == storeCode {
+			if st.IsActive() && st.WebsiteID() == runMode.ID() && st.Code() == storeCode {
 				return st.ID(), st.WebsiteID(), nil
 			}
 		}
-		return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
-	case scope.Default:
-		return 0, 0, nil
+	default:
+		w, err := s.websites.Default()
+		if err != nil {
+			return 0, 0, errors.Wrapf(err, "[store] StoreIDbyCode.Website.Default RunMode %s", runMode)
+		}
+		g, err := w.DefaultGroup()
+		if err != nil {
+			return 0, 0, errors.Wrapf(err, "[store] StoreIDbyCode.DefaultGroup RunMode %s", runMode)
+		}
+		for _, st := range s.stores {
+			if st.IsActive() && st.WebsiteID() == w.ID() && st.GroupID() == g.ID() && st.Code() == storeCode {
+				return st.ID(), st.WebsiteID(), nil
+			}
+		}
 	}
-	return 0, 0, errors.NewNotSupportedf("[store] RunMode %q not supported", runMode)
+	return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store

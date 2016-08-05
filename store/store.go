@@ -154,6 +154,14 @@ func (s Store) WebsiteID() int64 {
 	return s.Data.WebsiteID
 }
 
+// IsActive returns true if data is not nil and store is active.
+func (s Store) IsActive() bool {
+	if s.Data == nil {
+		return false
+	}
+	return s.Data.IsActive
+}
+
 // MarshalJSON satisfies interface for JSON marshalling. The TableStore
 // struct will be encoded to JSON using Go's standard library.
 func (s Store) MarshalJSON() ([]byte, error) {

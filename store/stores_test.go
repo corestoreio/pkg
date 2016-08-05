@@ -74,6 +74,17 @@ func TestStoreSlice_ActiveCodes(t *testing.T) {
 	}
 	assert.Exactly(t, []string{"de", "ch"}, ss.ActiveCodes())
 	assert.Nil(t, store.StoreSlice{}.ActiveCodes())
+	fs, ok := ss.FindOne(func(s store.Store) bool {
+		return s.Code() == "at"
+	})
+	assert.True(t, ok)
+	assert.Exactly(t, "at", fs.Code())
+
+	fs, ok = ss.FindOne(func(s store.Store) bool {
+		return s.Code() == "xx"
+	})
+	assert.False(t, ok)
+	assert.Exactly(t, "", fs.Code())
 }
 
 func TestStoreSlice_ActiveIDs(t *testing.T) {

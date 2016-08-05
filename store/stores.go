@@ -73,6 +73,16 @@ func (ss StoreSlice) FindByID(id int64) (Store, bool) {
 	return Store{}, false
 }
 
+// FindOne filters by predicate f and returns the first hit.
+func (ss StoreSlice) FindOne(f func(Store) bool) (Store, bool) {
+	for _, s := range ss {
+		if f(s) {
+			return s, true
+		}
+	}
+	return Store{}, false
+}
+
 // Codes returns all store codes
 func (ss StoreSlice) Codes() []string {
 	if len(ss) == 0 {
