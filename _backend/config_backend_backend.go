@@ -198,54 +198,6 @@ type PkgBackend struct {
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevStaticSign cfgmodel.Bool
 
-	// GeneralStoreInformationName => Store Name.
-	// Path: general/store_information/name
-	GeneralStoreInformationName cfgmodel.Str
-
-	// GeneralStoreInformationPhone => Store Phone Number.
-	// Path: general/store_information/phone
-	GeneralStoreInformationPhone cfgmodel.Str
-
-	// GeneralStoreInformationHours => Store Hours of Operation.
-	// Path: general/store_information/hours
-	GeneralStoreInformationHours cfgmodel.Str
-
-	// GeneralStoreInformationCountryID => Country.
-	// Path: general/store_information/country_id
-	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	GeneralStoreInformationCountryID cfgmodel.Str
-
-	// GeneralStoreInformationRegionID => Region/State.
-	// Path: general/store_information/region_id
-	GeneralStoreInformationRegionID cfgmodel.Str
-
-	// GeneralStoreInformationPostcode => ZIP/Postal Code.
-	// Path: general/store_information/postcode
-	GeneralStoreInformationPostcode cfgmodel.Str
-
-	// GeneralStoreInformationCity => City.
-	// Path: general/store_information/city
-	GeneralStoreInformationCity cfgmodel.Str
-
-	// GeneralStoreInformationStreetLine1 => Street Address.
-	// Path: general/store_information/street_line1
-	GeneralStoreInformationStreetLine1 cfgmodel.Str
-
-	// GeneralStoreInformationStreetLine2 => Street Address Line 2.
-	// Path: general/store_information/street_line2
-	GeneralStoreInformationStreetLine2 cfgmodel.Str
-
-	// GeneralStoreInformationMerchantVatNumber => VAT Number.
-	// Path: general/store_information/merchant_vat_number
-	GeneralStoreInformationMerchantVatNumber cfgmodel.Str
-
-	// GeneralSingleStoreModeEnabled => Enable Single-Store Mode.
-	// This setting will not be taken into account if system has more than one
-	// store view.
-	// Path: general/single_store_mode/enabled
-	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	GeneralSingleStoreModeEnabled cfgmodel.Bool
-
 	// SystemSMTPDisable => Disable Email Communications.
 	// Path: system/smtp/disable
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -516,17 +468,6 @@ func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.DevCSSMinifyFiles = cfgmodel.NewBool(`dev/css/minify_files`, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
 	pp.DevImageDefaultAdapter = cfgmodel.NewStr(`dev/image/default_adapter`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 	pp.DevStaticSign = cfgmodel.NewBool(`dev/static/sign`, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
-	pp.GeneralStoreInformationName = cfgmodel.NewStr(`general/store_information/name`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationPhone = cfgmodel.NewStr(`general/store_information/phone`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationHours = cfgmodel.NewStr(`general/store_information/hours`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationCountryID = cfgmodel.NewStr(`general/store_information/country_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationRegionID = cfgmodel.NewStr(`general/store_information/region_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationPostcode = cfgmodel.NewStr(`general/store_information/postcode`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationCity = cfgmodel.NewStr(`general/store_information/city`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationStreetLine1 = cfgmodel.NewStr(`general/store_information/street_line1`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationStreetLine2 = cfgmodel.NewStr(`general/store_information/street_line2`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralStoreInformationMerchantVatNumber = cfgmodel.NewStr(`general/store_information/merchant_vat_number`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralSingleStoreModeEnabled = cfgmodel.NewBool(`general/single_store_mode/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.EnableDisable))
 	pp.SystemSMTPDisable = cfgmodel.NewBool(`system/smtp/disable`, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.EnableDisable))
 	pp.SystemSMTPHost = cfgmodel.NewStr(`system/smtp/host`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 	pp.SystemSMTPPort = cfgmodel.NewStr(`system/smtp/port`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
