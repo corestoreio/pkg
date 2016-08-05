@@ -14,8 +14,81 @@
 
 package runmode_test
 
-import "testing"
+import (
+	"fmt"
+	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/net/runmode"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
 
 func BenchmarkWithRunMode(b *testing.B) {
+	srv := storemock.NewEurozzyService(cfgmock.NewService())
+
+	var runner = func(req *http.Request, runMode scope.Hash, wantStoreID, wantWebsiteID int64) func(b *testing.B) {
+		return func(b *testing.B) {
+			rmmw := runmode.WithRunMode(srv, runmode.Options{
+				Log:     log.BlackHole{}, // disabled debug and info logging
+				RunMode: scope.RunMode{Mode: runMode},
+			})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				haveStoreID, haveWebsiteID, haveOK := scope.FromContext(r.Context())
+				if !haveOK {
+					b.Fatal("Missing scope context for store and website")
+				}
+				if have, want := haveStoreID, wantStoreID; have != want {
+					b.Fatalf("Have: %v Want AT Store: %v", have, want)
+				}
+				if have, want := haveWebsiteID, wantWebsiteID; have != want {
+					b.Fatalf("Have: %v Want Euro Website: %v", have, want)
+				}
+				w.WriteHeader(http.StatusTeapot)
+			}))
+
+			b.ResetTimer()
+			b.ReportAllocs()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					rec := httptest.NewRecorder() // 4 allocs
+					rmmw.ServeHTTP(rec, req)
+					if have, want := rec.Code, http.StatusTeapot; have != want {
+						b.Fatalf("Have: %v Want: %v", have, want)
+					}
+				}
+			})
+			//rec := httptest.NewRecorder() // 4 allocs
+			//for i := 0; i < b.N; i++ {
+			//	rmmw.ServeHTTP(rec, req)
+			//	if have, want := rec.Code, http.StatusTeapot; have != want {
+			//		b.Fatalf("Have: %v Want: %v", have, want)
+			//	}
+			//}
+		}
+	}
+
+	b.Run("Website Default", runner(
+		getReq("GET", "http://cs.io", nil),
+		scope.NewHash(scope.Website, 1), 2, 1)) // 2 = at; 1 = euro
+
+	b.Run("Website OZ", runner(
+		getReq("GET", "http://cs.io", nil),
+		scope.NewHash(scope.Website, 2), 5, 2)) // 5 = au; 2 = oz
+
+	b.Run("Store DE Cookie", runner(
+		getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+		scope.NewHash(scope.Website, 1), 1, 1)) // 2 = at; 1 = euro
+	b.Run("Store DE GET", runner(
+		getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=de", runmode.URLFieldName), nil),
+		scope.NewHash(scope.Website, 1), 1, 1)) // 2 = at; 1 = euro
+
+	b.Run("Store UK Cookie", runner(
+		getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+		scope.NewHash(scope.Website, 1), 4, 1)) // 4 = uk; 1 = euro
+	b.Run("Store UK GET", runner(
+		getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=uk", runmode.URLFieldName), nil),
+		scope.NewHash(scope.Website, 1), 4, 1)) // 4 = uk; 1 = euro
 
 }
