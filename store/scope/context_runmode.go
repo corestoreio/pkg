@@ -53,6 +53,7 @@ func (rm RunMode) CalculateMode(w http.ResponseWriter, r *http.Request) Hash {
 // WithContextRunMode sets the main run mode for the current request. It panics
 // when called multiple times for the current context. This function is used in
 // net/runmode together with function RunMode.CalculateMode(r, w).
+// Use case for the runMode: Cache Keys and app initialization.
 func WithContextRunMode(ctx context.Context, runMode Hash) context.Context {
 	if _, ok := ctx.Value(ctxRunModeKey{}).(Hash); ok {
 		panic("[scope] You are not allowed to set the runMode more than once for the current context.")
@@ -63,6 +64,7 @@ func WithContextRunMode(ctx context.Context, runMode Hash) context.Context {
 // FromContextRunMode returns the run mode Hash from a context. If no entry can
 // be found in the context the returned Hash has a default value. This default
 // value indicates the fall back to the default website and its default store.
+// Use case for the runMode: Cache Keys and app initialization.
 func FromContextRunMode(ctx context.Context) Hash {
 	h, ok := ctx.Value(ctxRunModeKey{}).(Hash)
 	if !ok {
