@@ -31,20 +31,20 @@ import (
 type StoreCodeProcessor interface {
 	// FromRequest returns the valid non-empty store code. Returns an empty
 	// store code on all other cases.
-	FromRequest(req *http.Request) (code string)
+	FromRequest(runMode scope.Hash, req *http.Request) (code string)
 	// ProcessDenied gets called in the middleware WithRunMode whenever a store
 	// ID isn't allowed to proceed. The variable newStoreID reflects the denied
 	// store ID. The ResponseWriter and Request variables can be used for
 	// additional information writing and extracting. The error Handler  will
 	// always be called.
-	ProcessDenied(runMode scope.Hash, newID int64, w http.ResponseWriter, r *http.Request)
+	ProcessDenied(runMode scope.Hash, oldStoreID, newStoreID int64, w http.ResponseWriter, r *http.Request)
 	// ProcessAllowed enables to adjust the ResponseWriter based on the new
 	// store ID. The variable newStoreID contains the new ID, which can also be
 	// 0. The code is guaranteed to be not empty, a valid store code, and always
 	// points to an existing active store. The ResponseWriter and Request
 	// variables can be used for additional information writing and extracting.
 	// The next Handler in the chain will after this function be called.
-	ProcessAllowed(runMode scope.Hash, newID int64, storeCode string, w http.ResponseWriter, r *http.Request)
+	ProcessAllowed(runMode scope.Hash, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request)
 }
 
 // FieldName use in Cookies and JSON Web Tokens (JWT) to identify an active
@@ -96,7 +96,7 @@ func (e *ProcessStoreCodeCookie) keyURLFN() (string, string) {
 // back to the cookie name defined in field FieldName. Valid has three values: 0
 // not valid, 10 valid and code found in GET query string, 20 valid and code
 // found in cookie. Implements interface StoreCodeExtracter.
-func (e *ProcessStoreCodeCookie) FromRequest(req *http.Request) string {
+func (e *ProcessStoreCodeCookie) FromRequest(_ scope.Hash, req *http.Request) string {
 	fn, fnK := e.keyURLFN()
 	if strings.Contains(req.URL.RawQuery, fnK) {
 		code := req.URL.Query().Get(fn)
@@ -179,7 +179,7 @@ func (a *ProcessStoreCodeCookie) deleteStoreCookie(w http.ResponseWriter, r *htt
 }
 
 // ProcessDenied deletes the store code cookie, if a store cookie can be found.
-func (a *ProcessStoreCodeCookie) ProcessDenied(runMode scope.Hash, newStoreID int64, w http.ResponseWriter, r *http.Request) {
+func (a *ProcessStoreCodeCookie) ProcessDenied(_ scope.Hash, _, _ int64, w http.ResponseWriter, r *http.Request) {
 	// if store code found in cookie and not valid anymore, delete the cookie.
 	if c := a.fromCookie(r); c != "" {
 		a.deleteStoreCookie(w, r)
@@ -188,27 +188,27 @@ func (a *ProcessStoreCodeCookie) ProcessDenied(runMode scope.Hash, newStoreID in
 
 // ProcessAllowed deletes the store code cookie if found and stores are equal or
 // sets a store code cookie if the stores differ.
-func (a *ProcessStoreCodeCookie) ProcessAllowed(runMode scope.Hash, newStoreID int64, storeCode string, w http.ResponseWriter, r *http.Request) {
+func (a *ProcessStoreCodeCookie) ProcessAllowed(_ scope.Hash, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request) {
 	c := a.fromCookie(r)
 
-	if c != "" && runMode.ID() == newStoreID {
+	if c != "" && oldStoreID == newStoreID {
 		// cookie not needed anymore, so delete it.
 		a.deleteStoreCookie(w, r)
 		return
 	}
 
-	// no cookie found but the code changed so set cookie once with the new code
-	if c == "" && runMode.ID() != newStoreID {
-		a.setStoreCookie(storeCode, w, r)
+	// no cookie found but the code changed, so set cookie once with the new code
+	if c == "" && oldStoreID != newStoreID {
+		a.setStoreCookie(newStoreCode, w, r)
 	}
 }
 
 type nullCodeProcessor struct{}
 
-func (nc nullCodeProcessor) FromRequest(_ *http.Request) string { return "" }
-func (nc nullCodeProcessor) ProcessDenied(_ scope.Hash, _ int64, _ http.ResponseWriter, _ *http.Request) {
+func (nc nullCodeProcessor) FromRequest(_ scope.Hash, _ *http.Request) string { return "" }
+func (nc nullCodeProcessor) ProcessDenied(_ scope.Hash, _, _ int64, _ http.ResponseWriter, _ *http.Request) {
 }
-func (nc nullCodeProcessor) ProcessAllowed(_ scope.Hash, _ int64, _ string, _ http.ResponseWriter, _ *http.Request) {
+func (nc nullCodeProcessor) ProcessAllowed(_ scope.Hash, _, _ int64, _ string, _ http.ResponseWriter, _ *http.Request) {
 }
 
 var _ StoreCodeProcessor = (*nullCodeProcessor)(nil)

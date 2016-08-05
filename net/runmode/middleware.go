@@ -101,7 +101,7 @@ type Options struct {
 	// store. To use the admin area enable scope.Store and ID 0.
 	scope.RunMode
 	// StoreCodeProcessor extracts the store code from an HTTP requests.
-	// Optional. Defaults to type ProcessStoreCode.
+	// Optional. Defaults to type ProcessStoreCodeCookie.
 	StoreCodeProcessor
 	// DisableStoreCodeProcessor set to true and set StoreCodeProcessor to nil
 	// to disable store code handling
@@ -116,7 +116,7 @@ type Options struct {
 //	2c. Lookup CodeToIDMapper.IDbyCode() to get the website/store ID from a website/store code.
 //	3. Retrieve all AllowedStoreIDs based on the runMode
 //	4. Check if the website/store ID
-func WithRunMode(ac store.StoreChecker, cim store.CodeToIDMapper, o Options) mw.Middleware {
+func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 
 	// todo: code/Magento/Store/App/Request/PathInfoProcessor.php => req.isDirectAccessFrontendName()
 
@@ -132,7 +132,7 @@ func WithRunMode(ac store.StoreChecker, cim store.CodeToIDMapper, o Options) mw.
 	if procCode == nil {
 		procCode = nullCodeProcessor{}
 		if !o.DisableStoreCodeProcessor {
-			procCode = &ProcessStoreCode{}
+			procCode = &ProcessStoreCodeCookie{}
 		}
 	}
 	return func(next http.Handler) http.Handler {
@@ -140,52 +140,60 @@ func WithRunMode(ac store.StoreChecker, cim store.CodeToIDMapper, o Options) mw.
 
 			// set run mode
 			runMode := o.CalculateMode(w, r)
+			r = r.WithContext(scope.WithContextRunMode(r.Context(), runMode))
 
 			// find the default store ID for the runMode
-			newStoreID, err := ac.DefaultStoreID(runMode)
+			storeID, websiteID, err := sf.DefaultStoreID(runMode)
+			oldStoreID := storeID
 			if err != nil {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.DefaultStoreID.Error", log.Err(err),
-						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
 				errH(errors.Wrap(err, "[store] WithRunMode.DefaultStoreID")).ServeHTTP(w, r)
 				return
 			}
 			if lg.IsDebug() {
-				lg.Debug("runmode.WithRunMode.DefaultStoreID",
-					log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+				lg.Debug("runmode.WithRunMode.DefaultStoreID", log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 			}
 
 			// extracts the code from GET and/or Cookie or custom implementation and get the
-			// new runID.
-			var reqStoreCode string
-			reqStoreCode = procCode.FromRequest(r)
-			if reqStoreCode != "" {
-				var err error
+			// new store and website ID.
+			if reqCode := procCode.FromRequest(runMode, r); reqCode != "" {
 				// convert the code string into its internal ID depending on the scope.
-				newStoreID, err = cim.StoreIDbyCode(runMode, reqStoreCode)
+				newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
 				if err != nil && !errors.IsNotFound(err) {
 					if lg.IsDebug() {
-						lg.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err),
-							log.String("http_store_code", reqStoreCode), log.Int64("store_id", newStoreID),
+						lg.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
+							log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 							log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 					}
 					errH(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
 					return
 				}
-				if lg.IsDebug() {
-					lg.Debug("runmode.WithRunMode.CodeFromRequest", log.String("http_store_code", reqStoreCode),
-						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+				if err == nil {
+					storeID = newStoreID
+					websiteID = newWebsiteID
 				}
-			} // ignore everything else
+				if lg.IsDebug() {
+					lg.Debug("runmode.WithRunMode.CodeFromRequest", log.Err(err), log.String("http_store_code", reqCode),
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+				}
+			}
 
-			// which store IDs are allowed depending on our runMode? Check if the newStoreID is
+			r = r.WithContext(scope.WithContext(r.Context(), storeID, websiteID))
+
+			// which store IDs are allowed depending on our runMode? Check if the storeID is
 			// within the allowed store IDs.
-			isStoreAllowed, storeCode, err := ac.IsAllowedStoreID(runMode, newStoreID)
+			isStoreAllowed, storeCode, err := sf.IsAllowedStoreID(runMode, storeID)
 			if err != nil {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.AllowedStoreIDs.Error", log.Err(err),
-						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
 				errH(errors.Wrap(err, "[store] WithRunMode.AllowedStoreIDs")).ServeHTTP(w, r)
 				return
@@ -196,26 +204,24 @@ func WithRunMode(ac store.StoreChecker, cim store.CodeToIDMapper, o Options) mw.
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.StoreNotAllowed",
 						log.Bool("is_store_allowed", isStoreAllowed), log.String("store_code", storeCode),
-						log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				procCode.ProcessDenied(runMode, newStoreID, w, r)
-				errH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, newStoreID)).ServeHTTP(w, r)
+				procCode.ProcessDenied(runMode, oldStoreID, storeID, w, r)
+				errH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, storeID)).ServeHTTP(w, r)
 				return
 			}
 
 			// if runMode is allowed to change, update the runMode Hash and then put it into the context
-			procCode.ProcessAllowed(runMode, newStoreID, storeCode, w, r)
-			previousRunMode := runMode
-			if isStoreAllowed && newStoreID != runMode.ID() {
-				runMode = scope.NewHash(runMode.Scope(), newStoreID)
-			}
+			procCode.ProcessAllowed(runMode, oldStoreID, storeID, storeCode, w, r)
+
 			if lg.IsDebug() {
 				lg.Debug("runmode.WithRunMode.NextHandler",
 					log.Bool("is_store_allowed", isStoreAllowed), log.String("store_code", storeCode),
-					log.Int64("store_id", newStoreID), log.Stringer("run_mode", runMode),
-					log.Stringer("previous_run_mode", previousRunMode), log.HTTPRequest("request", r))
+					log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 			}
-			next.ServeHTTP(w, r.WithContext(scope.WithContextRunMode(r.Context(), runMode)))
+			next.ServeHTTP(w, r)
 		})
 	}
 }

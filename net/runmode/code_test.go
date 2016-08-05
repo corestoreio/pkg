@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/runmode"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,7 +91,7 @@ func TestProcessStoreCode_FromRequest(t *testing.T) {
 	}
 	for i, test := range tests {
 		c := &runmode.ProcessStoreCodeCookie{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
-		code := c.FromRequest(test.req)
+		code := c.FromRequest(0, test.req)
 		assert.Exactly(t, test.wantCode, code, "Index %d", i)
 	}
 }
@@ -114,7 +113,7 @@ func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			benchmarkProcessStoreCode_FromRequest_Cookie = c.FromRequest(req)
+			benchmarkProcessStoreCode_FromRequest_Cookie = c.FromRequest(0, req)
 			if benchmarkProcessStoreCode_FromRequest_Cookie == "" {
 				b.Fatal("benchmarkProcessStoreCode_FromRequest_Cookie is empty")
 			}
@@ -129,7 +128,7 @@ func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			benchmarkProcessStoreCode_FromRequest_Cookie = c.FromRequest(req)
+			benchmarkProcessStoreCode_FromRequest_Cookie = c.FromRequest(0, req)
 			if benchmarkProcessStoreCode_FromRequest_Cookie != "" {
 				b.Fatal("benchmarkProcessStoreCode_FromRequest_Cookie is NOT empty")
 			}
@@ -145,7 +144,7 @@ func TestProcessStoreCode_ProcessDenied(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := &runmode.ProcessStoreCodeCookie{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
 	c.CookieExpiresDelete = time.Unix(1470022673, 0) // just a random unix time
-	c.ProcessDenied(0, 0, rec, req)
+	c.ProcessDenied(0, 0, 0, rec, req)
 	assert.Exactly(t, `store=; Path=/; Domain=corestoreio.io; Expires=Mon, 01 Aug 2016 03:37:53 GMT; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
 
 	c.CookieExpiresDelete = time.Time{}
@@ -164,7 +163,7 @@ func TestProcessStoreCode_ProcessAllowed(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		// write a delete cookie, because we have a cookie with a store code
-		c.ProcessAllowed(scope.Website.ToHash(1), 1, "aWebsiteCode", rec, req)
+		c.ProcessAllowed(0, 1, 1, "aWebsiteCode", rec, req)
 		assert.Exactly(t, `store=; Path=/; Domain=corestoreio.io; Expires=Thu, 07 Apr 2016 03:33:20 GMT; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
 	})
 
@@ -172,7 +171,7 @@ func TestProcessStoreCode_ProcessAllowed(t *testing.T) {
 		req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
 		req.Header.Set("Cookie", defaultCookieContent)
 		rec := httptest.NewRecorder()
-		c.ProcessAllowed(scope.Website.ToHash(1), 2, "ANewStoreCode", rec, req)
+		c.ProcessAllowed(0, 1, 2, "ANewStoreCode", rec, req)
 		assert.Exactly(t, `store=ANewStoreCode; Path=/; Domain=corestoreio.io; Expires=Sun, 31 Jul 2016 21:20:00 GMT; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
 	})
 
@@ -180,7 +179,7 @@ func TestProcessStoreCode_ProcessAllowed(t *testing.T) {
 		req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
 		req.Header.Set("Cookie", defaultCookieContent)
 		rec := httptest.NewRecorder()
-		c.ProcessAllowed(scope.Website.ToHash(1), 1, "aWebSiteCode", rec, req)
+		c.ProcessAllowed(0, 1, 1, "aWebSiteCode", rec, req)
 		assert.Empty(t, rec.Header().Get("Set-Cookie"))
 	})
 }
