@@ -19,19 +19,23 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ store.Requester = (*storemock.RequestedStoreAU)(nil)
-
 func TestMustNewStoreAU_ConfigNil(t *testing.T) {
-	sAU := storemock.MustNewStoreAU(nil)
+	sAU := storemock.MustNewStoreAU(cfgmock.NewService())
 	assert.NotNil(t, sAU)
-	assert.Nil(t, sAU.Config)
-	assert.Nil(t, sAU.Website.Config)
+	assert.NotNil(t, sAU.Config)
+	assert.NotNil(t, sAU.Website.Config)
+
+	assert.Exactly(t, int64(5), sAU.Config.StoreID)
+	assert.Exactly(t, int64(2), sAU.Config.WebsiteID)
+
+	assert.Exactly(t, int64(0), sAU.Website.Config.StoreID)
+	assert.Exactly(t, int64(2), sAU.Website.Config.WebsiteID)
+
 }
 
 func TestMustNewStoreAU_ConfigNonNil(t *testing.T) {
@@ -39,20 +43,6 @@ func TestMustNewStoreAU_ConfigNonNil(t *testing.T) {
 	assert.NotNil(t, sAU)
 	assert.NotNil(t, sAU.Config)
 	assert.NotNil(t, sAU.Website.Config)
-}
-
-func TestRequestedStoreAU(t *testing.T) {
-
-	rsau := &storemock.RequestedStoreAU{
-		Getter: cfgmock.NewService(),
-	}
-	rStore, err := rsau.RequestedStore(scope.Option{Store: scope.MockCode("unimportant")})
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.NotNil(t, rStore)
-	assert.NotNil(t, rStore.Config)
-	assert.NotNil(t, rStore.Website.Config)
 }
 
 func TestMustNewStoreAU_Config(t *testing.T) {
@@ -64,28 +54,32 @@ func TestMustNewStoreAU_Config(t *testing.T) {
 		configPath.Bind(scope.Store, 5).String():   "StoreScopeString",
 	})))
 
-	haveS, err := aust.Website.Config.String(configPath.Route)
+	haveS, scp, err := aust.Website.Config.String(configPath.Route)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "WebsiteScopeString", haveS)
+	assert.Exactly(t, scope.NewHash(scope.Website, 2), scp)
 
-	haveS, err = aust.Website.Config.String(configPath.Route, scope.Default)
+	haveS, scp, err = aust.Website.Config.String(configPath.Route, scope.Default)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
+	assert.Exactly(t, scope.DefaultHash, scp)
 
-	haveS, err = aust.Config.String(configPath.Route)
+	haveS, scp, err = aust.Config.String(configPath.Route)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "StoreScopeString", haveS)
+	assert.Exactly(t, scope.NewHash(scope.Store, 5), scp)
 
-	haveS, err = aust.Config.String(configPath.Route, scope.Default)
+	haveS, scp, err = aust.Config.String(configPath.Route, scope.Default)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
+	assert.Exactly(t, scope.DefaultHash, scp)
 
 }

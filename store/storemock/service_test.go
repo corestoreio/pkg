@@ -17,54 +17,46 @@ package storemock_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewEurozzyService_Euro(t *testing.T) {
 
-	so, err := scope.SetByID(scope.Website, 1) // website euro
-	if err != nil {
-		t.Fatal(err)
-	}
-	ns := storemock.NewEurozzyService(so)
+	ns := storemock.NewEurozzyService(cfgmock.NewService())
 	assert.NotNil(t, ns)
 
-	s, err := ns.Store(scope.MockID(4))
+	s, err := ns.Store(4)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "uk", s.Data.Code.String)
 
-	s, err = ns.Store()
+	s, err = ns.Store(3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "at", s.Data.Code.String)
+	assert.Exactly(t, "ch", s.Data.Code.String)
 }
 
 func TestNewEurozzyService_ANZ(t *testing.T) {
 
-	so, err := scope.SetByCode(scope.Website, "oz") // website AU
-	if err != nil {
-		t.Fatal(err)
-	}
-	ns := storemock.NewEurozzyService(so)
+	ns := storemock.NewEurozzyService(cfgmock.NewService())
 	assert.NotNil(t, ns)
 
-	s, err := ns.Store(scope.MockID(4))
+	s, err := ns.Store(4)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "uk", s.Data.Code.String)
 
-	s, err = ns.Store()
+	s, err = ns.Store(3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, "au", s.Data.Code.String)
-	assert.Exactly(t, int64(2), s.WebsiteID())
+	assert.Exactly(t, "ch", s.Data.Code.String)
+	assert.Exactly(t, int64(1), s.WebsiteID())
 
 	s, err = ns.DefaultStoreView()
 	if err != nil {
