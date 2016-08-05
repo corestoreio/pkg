@@ -25,29 +25,27 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// CodeToIDMapper returns for a storeCode its internal ID depending on the
-// runMode. A not-supported error behaviour gets returned if an invalid scope
-// has been provided. A not-found error behaviour gets returned if the code
-// cannot be found. This function does not consider if a store or website is
-// active or not. The runMode equals to scope.DefaultHash, the returned ID is
-// always 0.
-type CodeToIDMapper interface {
-	StoreIDbyCode(runMode scope.Hash, storeCode string) (id int64, err error)
-}
-
-// StoreChecker depends on the runMode from package scope. The Hash argument
-// will be provided via scope.RunMode type or the scope.FromContextRunMode(ctx)
-// function. runMode is named in Mage world: MAGE_RUN_CODE and MAGE_RUN_TYPE.
-// The MAGE_RUN_TYPE can be either website or store scope and MAGE_RUN_CODE any
-// defined website or store code from the database.
-type StoreChecker interface {
+// Finder depends on the runMode from package scope and finds the active store
+// depending on the run mode. The Hash argument will be provided via
+// scope.RunMode type or the scope.FromContextRunMode(ctx) function. runMode is
+// named in Mage world: MAGE_RUN_CODE and MAGE_RUN_TYPE. The MAGE_RUN_TYPE can
+// be either website or store scope and MAGE_RUN_CODE any defined website or
+// store code from the database. In our case we must pass an ID and not a code
+// string.
+type Finder interface {
+	// DefaultStoreID returns the default active store ID and its website ID
+	// depending on the run mode. Error behaviour is mostly of type NotValid.
+	DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error)
 	// IsAllowedStoreID checks if the store ID is allowed within the runMode.
-	// Returns true on success and the appropriate code which is guaranteed to
-	// be not empty.
-	IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, code string, err error)
-	// DefaultStoreID returns the default active store ID depending on the run
-	// mode. Error behaviour is mostly of type NotValid.
-	DefaultStoreID(runMode scope.Hash) (int64, error)
+	// Returns true on success and the appropriate store code which is
+	// guaranteed to be not empty.
+	IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, storeCode string, err error)
+	// StoreIDbyCode returns, depending on the runMode, for a storeCode its
+	// internal active store ID and its website ID. A not-supported error
+	// behaviour gets returned if an invalid scope has been provided. A
+	// not-found error behaviour gets returned if the code cannot be found. If
+	// the runMode equals to scope.DefaultHash, the returned ID is always 0.
+	StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error)
 }
 
 // Service represents type which handles the underlying storage and takes care
@@ -223,32 +221,32 @@ func (s *Service) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed
 
 // DefaultStoreID returns the default active store ID depending on the run mode.
 // Error behaviour is mostly of type NotValid.
-func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
+func (s *Service) DefaultStoreID(runMode scope.Hash) (storeId, websiteID int64, _ error) {
 	scp, id := runMode.Unpack()
 	switch scp {
 	case scope.Store:
 		st, err := s.Store(id)
 		if err != nil {
-			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
+			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
 		if !st.Data.IsActive {
-			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
+			return 0, 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 		}
-		return st.ID(), nil
+		return st.ID(), st.WebsiteID(), nil
 
 	case scope.Group:
 		g, err := s.Group(id)
 		if err != nil {
-			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
+			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
 		st, err := s.Store(g.Data.DefaultStoreID)
 		if err != nil {
-			return 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
+			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID Scope %s ID %d", scp, id)
 		}
 		if !st.Data.IsActive {
-			return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
+			return 0, 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 		}
-		return st.ID(), nil
+		return st.ID(), st.WebsiteID(), nil
 	}
 
 	var w Website
@@ -256,23 +254,23 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 		var err error
 		w, err = s.Website(id)
 		if err != nil {
-			return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website Scope %s ID %d", scp, id)
+			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website Scope %s ID %d", scp, id)
 		}
 	} else {
 		var err error
 		w, err = s.websites.Default()
 		if err != nil {
-			return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.Default Scope %s ID %d", scp, id)
+			return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.Default Scope %s ID %d", scp, id)
 		}
 	}
 	st, err := w.DefaultStore()
 	if err != nil {
-		return 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
+		return 0, 0, errors.Wrapf(err, "[store] DefaultStoreID.Website.DefaultStore Scope %s ID %d", scp, id)
 	}
 	if st.Data == nil || !st.Data.IsActive {
-		return 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
+		return 0, 0, errors.NewNotValidf("[store] DefaultStoreID %s the store ID %d is not active", runMode, st.ID())
 	}
-	return st.Data.StoreID, nil
+	return st.ID(), st.WebsiteID(), nil
 }
 
 // StoreIDbyCode returns for a storeCode its internal ID depending on the
@@ -281,10 +279,10 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (int64, error) {
 // cannot be found. This function does not consider if a store or website is
 // active or not. The runMode equals to scope.DefaultHash, the returned ID is
 // always 0. Implements interface CodeToIDMapper.
-func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (int64, error) {
+func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, _ error) {
 	if storeCode == "" {
-		id, err := s.DefaultStoreID(0)
-		return id, errors.Wrap(err, "[store] IDbyCode.DefaultStoreID")
+		sID, wID, err := s.DefaultStoreID(0)
+		return sID, wID, errors.Wrap(err, "[store] IDbyCode.DefaultStoreID")
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -293,28 +291,28 @@ func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (int64, er
 	case scope.Store:
 		for _, st := range s.stores {
 			if st.Code() == storeCode {
-				return st.ID(), nil
+				return st.ID(), st.WebsiteID(), nil
 			}
 		}
-		return 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
+		return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 	case scope.Group:
 		for _, st := range s.stores {
 			if st.GroupID() == runMode.ID() && st.Code() == storeCode {
-				return st.ID(), nil
+				return st.ID(), st.WebsiteID(), nil
 			}
 		}
-		return 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
+		return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 	case scope.Website:
 		for _, st := range s.stores {
 			if st.WebsiteID() == runMode.ID() && st.Code() == storeCode {
-				return st.ID(), nil
+				return st.ID(), st.WebsiteID(), nil
 			}
 		}
-		return 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
+		return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 	case scope.Default:
-		return 0, nil
+		return 0, 0, nil
 	}
-	return 0, errors.NewNotSupportedf("[store] RunMode %q not supported", runMode)
+	return 0, 0, errors.NewNotSupportedf("[store] RunMode %q not supported", runMode)
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store

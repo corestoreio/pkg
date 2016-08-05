@@ -75,7 +75,7 @@ func Benchmark_Service_DefaultStoreID(b *testing.B) {
 			var bmss int64
 			for pb.Next() {
 				var err error
-				bmss, err = benchmarkStoreService.DefaultStoreID(runMode)
+				bmss, _, err = benchmarkStoreService.DefaultStoreID(runMode)
 				if err != nil {
 					b.Fatalf("%+v", err)
 				}
@@ -111,7 +111,7 @@ func Benchmark_Service_StoreIDbyCode(b *testing.B) {
 			var bmss int64
 			for pb.Next() {
 				var err error
-				bmss, err = benchmarkStoreService.StoreIDbyCode(runMode, storeCode)
+				bmss, _, err = benchmarkStoreService.StoreIDbyCode(runMode, storeCode)
 				if err != nil {
 					b.Fatalf("%+v", err)
 				}
