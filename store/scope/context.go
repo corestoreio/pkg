@@ -21,29 +21,25 @@ import (
 type ctxScopeKey struct{}
 
 type ctxScopeWrapper struct {
-	c Hash // current
-	p Hash // parent
+	storeID   int64
+	websiteID int64
 }
 
-// WithContext adds the requested scope with its parent scope to the context.
-// Usually the requested scope/hash sets to store with its ID and parent to
-// website with its ID. Different middlewares may call this function to set a
-// new scope depending on different conditions. For example the JSON web token
-// middleware can set a scope because the JWT contains a new store scope. Or a
-// geoip middleware can set the scope depending on geo location information.
-func WithContext(ctx context.Context, current Hash, parent Hash) context.Context {
-	return context.WithValue(ctx, ctxScopeKey{}, ctxScopeWrapper{c: current, p: parent})
+// WithContext adds the store scope with its parent website scope to the
+// context. Different middlewares may call this function to set a new scope
+// depending on different conditions. For example the JSON web token middleware
+// can set a scope because the JWT contains a new store code. Or a geoip
+// middleware can set the scope depending on geo location information. These IDs
+// will be later used to e.g. read the scoped configuration.
+func WithContext(ctx context.Context, storeID, websiteID int64) context.Context {
+	return context.WithValue(ctx, ctxScopeKey{}, ctxScopeWrapper{storeID: storeID, websiteID: websiteID})
 }
 
-// FromContext returns the requested current scope and its parent from a
-// context. This scope is only valid for the current context in a request. A
-// scope gets set via HTTP form, cookie, JSON Web Token or GeoIP or other fancy
-// features. The returned bool checks also if the current and parent Hash are
-// valid in their hierarchical relation.
-func FromContext(ctx context.Context) (current Hash, parent Hash, ok bool) {
+// FromContext returns the requested current store scope and its parent website
+// scope from a context. This scope is only valid for the current context in a
+// request. A scope gets set via HTTP form, cookie, JSON Web Token or GeoIP or
+// other fancy features.
+func FromContext(ctx context.Context) (storeID, websiteID int64, ok bool) {
 	w, ok := ctx.Value(ctxScopeKey{}).(ctxScopeWrapper)
-	if !ok {
-		return 0, 0, false
-	}
-	return w.c, w.p, w.c.ValidParent(w.p)
+	return w.storeID, w.websiteID, ok && w.storeID >= 0 && w.websiteID >= 0
 }

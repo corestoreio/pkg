@@ -24,37 +24,32 @@ import (
 
 func TestFromContext(t *testing.T) {
 	tests := []struct {
-		c    scope.Hash
-		p    scope.Hash
+		stID int64
+		wID  int64
 		want bool
 	}{
-		{scope.DefaultHash, scope.DefaultHash, true},
-		{scope.NewHash(scope.Website, 1), scope.DefaultHash, true},
-		{scope.NewHash(scope.Website, 0), scope.DefaultHash, true},
-		{scope.NewHash(scope.Store, 1), scope.NewHash(scope.Website, 1), true},
-		{scope.NewHash(scope.Store, -1), scope.NewHash(scope.Website, 1), false},
-		{scope.NewHash(scope.Store, 1), scope.NewHash(scope.Website, -1), false},
-		{scope.NewHash(scope.Store, 0), scope.NewHash(scope.Website, 0), true},
-		{scope.DefaultHash, scope.NewHash(scope.Website, 1), false},
-		{0, 0, false},
-		{0, scope.DefaultHash, false},
-		{scope.DefaultHash, 0, false},
+		{0, 0, true},
+		{1, 1, true},
+		{0, 1, true},
+		{1, 0, true},
+		{-1, 1, false},
+		{1, -1, false},
 	}
 	for i, test := range tests {
-		ctx := scope.WithContext(context.TODO(), test.c, test.p)
-		haveC, haveP, haveOK := scope.FromContext(ctx)
+		ctx := scope.WithContext(context.TODO(), test.stID, test.wID)
+		haveStoreID, haveWebsiteID, haveOK := scope.FromContext(ctx)
 		if have, want := haveOK, test.want; have != want {
 			t.Errorf("(%d) Have: %v Want: %v", i, have, want)
 		}
-		if have, want := haveC, test.c; have != want {
+		if have, want := haveStoreID, test.stID; have != want {
 			t.Errorf("Current Have: %v Want: %v", have, want)
 		}
-		if have, want := haveP, test.p; have != want {
+		if have, want := haveWebsiteID, test.wID; have != want {
 			t.Errorf("Parent Have: %v Want: %v", have, want)
 		}
 	}
-	c, h, ok := scope.FromContext(context.Background())
-	assert.Exactly(t, scope.Hash(0), c)
-	assert.Exactly(t, scope.Hash(0), h)
+	st, w, ok := scope.FromContext(context.Background())
+	assert.Exactly(t, int64(0), st)
+	assert.Exactly(t, int64(0), w)
 	assert.False(t, ok)
 }
