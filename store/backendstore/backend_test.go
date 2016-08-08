@@ -15,11 +15,14 @@
 package backendstore_test
 
 import (
-	"bytes"
 	"testing"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store/backendstore"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 // backend overall backend models for all tests
@@ -34,9 +37,66 @@ func init() {
 	backend = backendstore.New(cfgStruct)
 }
 
-func TestConfiguration_FormatAddressText(t *testing.T) {
-	var buf = new(bytes.Buffer)
-	sg := cfgmock.NewService().NewScoped(3, 4)
-	backend.FormatAddressText("", buf, sg)
-	t.Log(buf.String())
+type mockIntToStr struct {
+	error
+	string
+}
+
+func (mis mockIntToStr) IntToStr(_ config.Scoped, id int) (string, error) {
+	switch id {
+	case 144:
+		return "Germany", nil
+	case 5:
+		return "Berlin", nil
+	}
+	return mis.string, mis.error
+}
+
+func TestConfiguration_AddressData(t *testing.T) {
+	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		backend.GeneralStoreInformationName.MustFQ(scope.Website, 3):              `CoreStore SA`,
+		backend.GeneralStoreInformationPhone.MustFQ(scope.Website, 3):             `32608`,
+		backend.GeneralStoreInformationHours.MustFQ(scope.Website, 3):             `11am-7pm`,
+		backend.GeneralStoreInformationCountryID.MustFQ(scope.Website, 3):         144,
+		backend.GeneralStoreInformationRegionID.MustFQ(scope.Website, 3):          5,
+		backend.GeneralStoreInformationPostcode.MustFQ(scope.Website, 3):          `10100`,
+		backend.GeneralStoreInformationCity.MustFQ(scope.Website, 3):              `Shopville`,
+		backend.GeneralStoreInformationStreetLine1.MustFQ(scope.Website, 3):       `Market Str 134`,
+		backend.GeneralStoreInformationStreetLine2.MustFQ(scope.Website, 3):       `Booth 987`,
+		backend.GeneralStoreInformationMerchantVatNumber.MustFQ(scope.Website, 3): `DE12345678`,
+	})).NewScoped(3, 4)
+
+	backend.GeneralStoreInformationCountryID.MapIntResolver = mockIntToStr{}
+	backend.GeneralStoreInformationRegionID.MapIntResolver = mockIntToStr{}
+
+	ad, err := backend.StoreInformation(sg)
+	assert.NoError(t, err)
+	want := &backendstore.StoreInformation{Name: "CoreStore SA", Phone: "32608", Hours: "11am-7pm", Country: "Germany", Region: "Berlin", PostCode: "10100", City: "Shopville", StreetLine1: "Market Str 134", StreetLine2: "Booth 987", Vat: "DE12345678"}
+	assert.Exactly(t, want, ad)
+}
+
+func TestConfiguration_AddressData_Country_Error(t *testing.T) {
+	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{})).NewScoped(3, 4)
+
+	backend.GeneralStoreInformationCountryID.MapIntResolver = mockIntToStr{
+		error: errors.NewNotSupportedf("Some countries are not supported"),
+	}
+	backend.GeneralStoreInformationRegionID.MapIntResolver = mockIntToStr{}
+
+	ad, err := backend.StoreInformation(sg)
+	assert.True(t, errors.IsNotSupported(err), "%+v", err)
+	assert.Nil(t, ad)
+}
+
+func TestConfiguration_AddressData_Region_Error(t *testing.T) {
+	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{})).NewScoped(3, 4)
+
+	backend.GeneralStoreInformationRegionID.MapIntResolver = mockIntToStr{
+		error: errors.NewUnauthorizedf("Some countries are not supported"),
+	}
+	backend.GeneralStoreInformationCountryID.MapIntResolver = mockIntToStr{}
+
+	ad, err := backend.StoreInformation(sg)
+	assert.True(t, errors.IsUnauthorized(err), "%+v", err)
+	assert.Nil(t, ad)
 }

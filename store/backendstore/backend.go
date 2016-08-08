@@ -15,9 +15,6 @@
 package backendstore
 
 import (
-	"io"
-	"text/template"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
@@ -78,12 +75,7 @@ type Configuration struct {
 	// will not be taken into account if system has more than one store view.
 	// Path: general/single_store_mode/enabled
 	GeneralSingleStoreModeEnabled cfgmodel.Bool
-
-	TemplateAddress *template.Template
 }
-
-const TemplateAddressText = `"{{name}}\n{{street_line1}}\n{{with street_line2}}{{.}}\n{{end}}
-            {{city}}, {{region}} {{postcode}},\n{{country}}`
 
 // New initializes the backend configuration models containing the cfgpath.Route
 // variable to the appropriate entries in the storage. The argument SectionSlice
@@ -108,7 +100,9 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 	return be
 }
 
-type addressData struct {
+// StoreInformation defines the address data for a merchant. Might be usable in
+// e.g. text/template or html/template.
+type StoreInformation struct {
 	Name        string
 	Phone       string
 	Hours       string
@@ -121,7 +115,10 @@ type addressData struct {
 	Vat         string
 }
 
-func (c *Configuration) scopedAddressData(sg config.Scoped) (*addressData, error) {
+// StoreInformation reads the store information from the configuration depending
+// on the scope. Might be usable in e.g. text/template or html/template. Does
+// not yet cache internally per scope the data.
+func (c *Configuration) StoreInformation(sg config.Scoped) (*StoreInformation, error) {
 	name, _, err := c.GeneralStoreInformationName.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationName")
@@ -163,7 +160,7 @@ func (c *Configuration) scopedAddressData(sg config.Scoped) (*addressData, error
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationMerchantVatNumber")
 	}
 
-	return &addressData{
+	return &StoreInformation{
 		Name:        name,
 		Phone:       phone,
 		Hours:       hours,
@@ -175,23 +172,4 @@ func (c *Configuration) scopedAddressData(sg config.Scoped) (*addressData, error
 		StreetLine2: sl2,
 		Vat:         vat,
 	}, nil
-}
-
-func (c *Configuration) FormatAddressText(name string, w io.Writer, sg config.Scoped) error {
-	if name == "" {
-		name = "address"
-	}
-	if c.TemplateAddress == nil {
-		// lazy init or user already created a custom template object
-		var err error
-		c.TemplateAddress, err = template.New(name).Parse(TemplateAddressText)
-		if err != nil {
-			return errors.Wrap(err, "[backendstore] Template.Parse")
-		}
-	}
-	data, err := c.scopedAddressData(sg)
-	if err != nil {
-		return errors.Wrap(err, "[backendstore] Template.scopedAddressData")
-	}
-	return errors.Wrap(c.TemplateAddress.ExecuteTemplate(w, name, data), "[backendstore] Template.Execute")
 }
