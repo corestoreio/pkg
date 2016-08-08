@@ -26,7 +26,6 @@ import (
 // and default values). See the source code of this function for the overall
 // available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
-
 	return element.NewConfiguration(
 		element.Section{
 			ID:        cfgpath.NewRoute("general"),
