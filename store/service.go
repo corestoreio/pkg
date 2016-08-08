@@ -61,13 +61,12 @@ type Service struct {
 	// this flag is false, single store mode cannot be enabled at all.
 	SingleStoreModeEnabled bool
 
-	// BackendSingleStore contains the path to the configuration flag. As we do
-	// not set the overall structure this model is not aware of a scope and
-	// hence always uses the store scope. Default value: true.
-	// Path: general/single_store_mode/enabled
+	// BackendSingleStore contains the path to the configuration flag which
+	// limits the Service to a single store  Default value: false. Setting this
+	// value is optional.
 	BackendSingleStore cfgmodel.Bool
 
-	// backend communicates with the database in reading mode and creates
+	// backend communicates with the database in rw mode and creates
 	// new store, group and website pointers. If nil, panics.
 	backend *factory
 	// defaultStore someone must be always the default guy. Handled via atomic
@@ -91,7 +90,7 @@ type Service struct {
 func newService() *Service {
 	return &Service{
 		SingleStoreModeEnabled: true,
-		defaultStoreID:         -1,
+		defaultStoreID:         -1, // means not set, because 0 can be admin store.
 		cacheWebsite:           make(map[int64]Website),
 		cacheGroup:             make(map[int64]Group),
 		cacheStore:             make(map[int64]Store),

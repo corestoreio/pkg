@@ -158,6 +158,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermDefault,
+							Default:   0,
 						},
 					),
 				},
