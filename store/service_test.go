@@ -449,6 +449,37 @@ func TestService_StoreIDbyCode(t *testing.T) {
 	}
 }
 
+func TestService_AllowedStores(t *testing.T) {
+	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
+	tests := []struct {
+		srv          *store.Service
+		runMode      scope.Hash
+		wantStoreIDs []int64
+		wantErrBhf   errors.BehaviourFunc
+	}{
+		{eurSrv, 0, []int64{1, 2}, nil},
+		{eurSrv, scope.DefaultHash, []int64{1, 2}, nil},
+		{eurSrv, scope.Website.ToHash(0), []int64{0}, nil},
+		{eurSrv, scope.Website.ToHash(1), []int64{1, 4, 2}, nil},
+		{eurSrv, scope.Website.ToHash(2), []int64{5, 6}, nil},
+		{eurSrv, scope.Website.ToHash(3), nil, nil},
+		{eurSrv, scope.Absent.ToHash(0), []int64{1, 2}, nil},
+		{eurSrv, scope.Group.ToHash(2), []int64{4}, nil},
+		{eurSrv, scope.Group.ToHash(99), nil, nil},
+		{eurSrv, scope.Store.ToHash(0), []int64{0, 5, 1, 4, 2, 6}, nil},
+	}
+	for i, test := range tests {
+		haveStores, haveErr := test.srv.AllowedStores(test.runMode)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "(%d) %+v", i, haveErr)
+			assert.Exactly(t, test.wantStoreIDs, haveStores.IDs(), "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "(%d) %+v", i, haveErr)
+		assert.Exactly(t, test.wantStoreIDs, haveStores.IDs(), "Index %d", i)
+	}
+}
+
 func TestService_HasSingleStore(t *testing.T) {
 	s := store.MustNewService(cfgmock.NewService(),
 		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),

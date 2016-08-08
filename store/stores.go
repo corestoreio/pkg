@@ -37,10 +37,19 @@ func (ss *StoreSlice) Less(i, j int) bool {
 
 // Filter returns a new slice filtered by predicate f
 func (ss StoreSlice) Filter(f func(Store) bool) StoreSlice {
-	var stores StoreSlice
+	var i int
+	// pre-calculate the size because append is slow.
 	for _, v := range ss {
 		if f(v) {
-			stores = append(stores, v)
+			i++
+		}
+	}
+	stores := make(StoreSlice, i)
+	i = 0
+	for _, s := range ss {
+		if f(s) {
+			stores[i] = s
+			i++
 		}
 	}
 	return stores
@@ -95,15 +104,28 @@ func (ss StoreSlice) Codes() []string {
 	return c
 }
 
+func (ss StoreSlice) activeCount() (i int) {
+	for _, st := range ss {
+		if st.Data.IsActive {
+			i++
+		}
+	}
+	return
+}
+
 // ActiveCodes returns all active store codes
 func (ss StoreSlice) ActiveCodes() []string {
 	if len(ss) == 0 {
 		return nil
 	}
-	var c = make([]string, 0, len(ss))
+
+	i := ss.activeCount()
+	c := make([]string, i)
+	i = 0
 	for _, st := range ss {
 		if st.Data.IsActive {
-			c = append(c, st.Code())
+			c[i] = st.Code()
+			i++
 		}
 	}
 	return c
@@ -126,10 +148,13 @@ func (ss StoreSlice) ActiveIDs() []int64 {
 	if len(ss) == 0 {
 		return nil
 	}
-	var ids = make([]int64, 0, len(ss))
+	i := ss.activeCount()
+
+	ids := make([]int64, i)
+	i = 0
 	for _, st := range ss {
 		if st.Data.IsActive {
-			ids = append(ids, st.Data.StoreID)
+			ids[i] = st.Data.StoreID
 		}
 	}
 	return ids

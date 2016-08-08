@@ -217,7 +217,7 @@ func (s *Service) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed
 
 // DefaultStoreID returns the default active store ID depending on the run mode.
 // Error behaviour is mostly of type NotValid.
-func (s *Service) DefaultStoreID(runMode scope.Hash) (storeId, websiteID int64, _ error) {
+func (s *Service) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, _ error) {
 	scp, id := runMode.Unpack()
 	switch scp {
 	case scope.Store:
@@ -320,22 +320,59 @@ func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, 
 	return 0, 0, errors.NewNotFoundf("[store] Code %q not found for runMode %s", storeCode, runMode)
 }
 
+// AllowedStores creates a new slice containing all active stores depending on
+// the current runMode. The returned slice and its pointers are owned by the
+// callee.
+func (s *Service) AllowedStores(runMode scope.Hash) (StoreSlice, error) {
+	scp, scpID := runMode.Unpack()
+
+	switch scp {
+	case scope.Store:
+		return s.stores.Filter(func(st Store) bool {
+			return st.IsActive()
+		}), nil
+
+	case scope.Group:
+		return s.stores.Filter(func(st Store) bool {
+			return st.IsActive() && st.GroupID() == scpID
+		}), nil
+
+	case scope.Website:
+		return s.stores.Filter(func(st Store) bool {
+			return st.IsActive() && st.WebsiteID() == scpID
+		}), nil
+
+	default:
+		w, err := s.websites.Default()
+		if err != nil {
+			return nil, errors.Wrapf(err, "[store] AllowedStores.Website.Default: %s", runMode)
+		}
+		g, err := w.DefaultGroup()
+		if err != nil {
+			return nil, errors.Wrapf(err, "[store] AllowedStores.DefaultGroup: %s", runMode)
+		}
+		return s.stores.Filter(func(st Store) bool {
+			return st.IsActive() && st.WebsiteID() == w.ID() && st.GroupID() == g.ID()
+		}), nil
+	}
+}
+
 // HasSingleStore checks if we only have one store view besides the admin store
 // view. Mostly used in models to the set store id and in blocks to not display
 // the e.g. store switch. Global flag.
-func (sm *Service) HasSingleStore() bool {
-	sm.mu.RLock()
-	has, ok := sm.cacheSingleStore[scope.DefaultHash]
-	sm.mu.RUnlock()
+func (s *Service) HasSingleStore() bool {
+	s.mu.RLock()
+	has, ok := s.cacheSingleStore[scope.DefaultHash]
+	s.mu.RUnlock()
 	if ok {
 		return has
 	}
 
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	has = sm.SingleStoreModeEnabled && sm.stores.Len() < 3
-	sm.cacheSingleStore[scope.DefaultHash] = has
+	has = s.SingleStoreModeEnabled && s.stores.Len() < 3
+	s.cacheSingleStore[scope.DefaultHash] = has
 
 	return has
 }
@@ -344,28 +381,28 @@ func (sm *Service) HasSingleStore() bool {
 // configuration and there are less than three Stores. This flag only shows that
 // admin does not want to show certain UI components at backend (like store
 // switchers etc). Store scope specific flag.
-func (sm *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
+func (s *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
 
 	key := scope.NewHash(cfg.Scope())
-	sm.mu.RLock()
-	has, ok := sm.cacheSingleStore[key]
-	sm.mu.RUnlock()
+	s.mu.RLock()
+	has, ok := s.cacheSingleStore[key]
+	s.mu.RUnlock()
 	if ok {
 		return has, nil
 	}
 
 	var b = true
-	if sm.BackendSingleStore.IsSet() {
+	if s.BackendSingleStore.IsSet() {
 		var err error
-		b, _, err = sm.BackendSingleStore.Get(cfg)
+		b, _, err = s.BackendSingleStore.Get(cfg)
 		if err != nil {
 			return false, errors.Wrap(err, "[store] Service.IsSingleStoreMode")
 		}
 	}
-	has = sm.HasSingleStore() && b
-	sm.mu.Lock()
-	sm.cacheSingleStore[key] = has
-	sm.mu.Unlock()
+	has = s.HasSingleStore() && b
+	s.mu.Lock()
+	s.cacheSingleStore[key] = has
+	s.mu.Unlock()
 	return has, nil
 }
 

@@ -32,10 +32,10 @@ func CodeIsValid(c string) error {
 		return errors.NewNotValidf(errStoreCodeInvalid, c)
 	}
 	c1 := c[0]
-	if false == ((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
+	if !((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
 		return errors.NewNotValidf(errStoreCodeInvalid, c)
 	}
-	if false == util.StrIsAlNum(c) {
+	if !util.StrIsAlNum(c) {
 		return errors.NewNotValidf(errStoreCodeInvalid, c)
 	}
 	return nil

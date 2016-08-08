@@ -52,6 +52,8 @@ func (ws WebsiteSlice) Filter(f func(Website) bool) WebsiteSlice {
 	return nws
 }
 
+// Each iterates over the slice applying predicate f without modifying the
+// current item.
 func (ws WebsiteSlice) Each(f func(Website)) WebsiteSlice {
 	for _, w := range ws {
 		f(w)

@@ -136,3 +136,28 @@ func TestStoreSlice_Sort(t *testing.T) {
 	ss.Sort()
 	assert.Exactly(t, []int64{2, 1, 3}, ss.IDs())
 }
+
+var benchmarkStoreSlice_Filter store.StoreSlice
+
+func BenchmarkStoreSlice_Filter(b *testing.B) {
+	const count = 1000
+	cfg := cfgmock.NewService()
+	stores := make(store.StoreSlice, count)
+	for i := 0; i < count; i++ {
+		stores[i] = store.MustNewStore(cfg,
+			&store.TableStore{StoreID: int64(i), Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 1, IsActive: (i % 2) == 0},
+			nil, nil)
+	}
+	f := func(s store.Store) bool {
+		return s.IsActive()
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkStoreSlice_Filter = stores.Filter(f)
+	}
+	if have, want := len(benchmarkStoreSlice_Filter), count/2; have != want {
+		b.Errorf("Have: %v Want: %v", have, want)
+	}
+
+}
