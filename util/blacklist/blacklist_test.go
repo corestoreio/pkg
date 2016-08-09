@@ -15,20 +15,16 @@
 package blacklist_test
 
 import (
+	"hash/fnv"
 	"testing"
 	"time"
 
+	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/stretchr/testify/assert"
 )
 
-type blacklister interface {
-	Set(token []byte, expires time.Duration) error
-	Has(token []byte) bool
-}
-
-var _ blacklister = (*blacklist.FreeCache)(nil)
-var _ blacklister = (*blacklist.Map)(nil)
+var _ jwt.Blacklister = (*blacklist.InMemory)(nil)
 
 func appendTo(b1 []byte, s string) []byte {
 	bNew := make([]byte, len(b1)+len([]byte(s)))
@@ -40,17 +36,17 @@ func appendTo(b1 []byte, s string) []byte {
 func TestBlackLists(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		bl    blacklister
+		bl    jwt.Blacklister
 		token []byte
 	}{
 		{
-			blacklist.NewMap(),
+			blacklist.NewInMemory(fnv.New64a()),
 			[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
 		},
-		{
-			blacklist.NewFreeCache(0),
-			[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
-		},
+		//{
+		//	blacklist.NewFreeCache(0),
+		//	[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
+		//},
 	}
 	for i, test := range tests {
 		assert.NoError(t, test.bl.Set(test.token, time.Second*1), "Index %d", i)
