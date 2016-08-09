@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/minio/blake2b-simd"
 	"github.com/pierrec/xxHash/xxHash64"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,6 +65,19 @@ func BenchmarkTank_SumHex_SHA256(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		if have, want := hp.SumHex(data), dataSHA256; have != want {
 			b.Errorf("Have: %v Want: %v", have, want)
+		}
+	}
+}
+
+func BenchmarkTank_SumHex_Blake2b256(b *testing.B) {
+	const dataBlake2b256 = "00fad91702b9d9cfce8f6d3a7e2134283aa370b453e033ed6442dfef2a5c8089"
+
+	hp := hashpool.New(blake2b.New256)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if have, want := hp.SumHex(data), dataBlake2b256; have != want {
+			b.Fatalf("Have: %v Want: %v", have, want)
 		}
 	}
 }

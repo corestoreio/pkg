@@ -1,6 +1,7 @@
-BenchmarkTank_SumHex_SHA256-4   	 1000000	      1135 ns/op	     128 B/op	       2 allocs/op
-BenchmarkTank_Hash64/FNV64a-4   	10000000	       224 ns/op	       0 B/op	       0 allocs/op
-BenchmarkTank_Hash64/xxHash-4   	10000000	       155 ns/op	       0 B/op	       0 allocs/op
-BenchmarkTank_Hash64/crc64-4    	10000000	       173 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTank_SumHex_SHA256-4       	 1000000	      1150 ns/op	     128 B/op	       2 allocs/op
+BenchmarkTank_SumHex_Blake2b256-4   	 2000000	       820 ns/op	     128 B/op	       2 allocs/op
+BenchmarkTank_Hash64/FNV64a-4       	10000000	       224 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTank_Hash64/xxHash-4       	10000000	       158 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTank_Hash64/crc64-4        	10000000	       172 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/util/hashpool	7.246s
+ok  	github.com/corestoreio/csfw/util/hashpool	9.744s
