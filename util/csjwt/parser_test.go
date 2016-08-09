@@ -407,7 +407,7 @@ func benchmarkMethodVerify(b *testing.B, method csjwt.Signer, signingString []by
 
 func BenchmarkParseFromRequest_HS256(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS256!`))
-	hmacFast, err := csjwt.NewHMACFast256(key)
+	hmacFast, err := csjwt.NewSigningMethodHS256Fast(key)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -425,7 +425,7 @@ func BenchmarkParseFromRequest_HS256(b *testing.B) {
 }
 func BenchmarkParseFromRequest_HS384(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS384!`))
-	hmacFast, err := csjwt.NewHMACFast384(key)
+	hmacFast, err := csjwt.NewSigningMethodHS384Fast(key)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -443,7 +443,7 @@ func BenchmarkParseFromRequest_HS384(b *testing.B) {
 }
 func BenchmarkParseFromRequest_HS512(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
-	hmacFast, err := csjwt.NewHMACFast512(key)
+	hmacFast, err := csjwt.NewSigningMethodHS512Fast(key)
 	if err != nil {
 		b.Fatal(err)
 	}

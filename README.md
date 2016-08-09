@@ -137,11 +137,11 @@ from the geniuses listed below:
 | Jad Dittmar | [finance](https://github.com/Confunctionist/finance) aka. [money](http://github.com/corestoreio/csfw/tree/master/storage/money) | Copyright (c) 2011 |
 | Wenbin Xiao | [sqlparser](https://github.com/xwb1989/sqlparser) | Copyright 2015 BSD Style |
 | Google Inc | [youtube/vitess\sqlparser](https://github.com/youtube/vitess) | Copyright 2012 BSD Style |
-| Julien Schmidt | [ctxrouter](https://github.com/corestoreio/csfw/tree/master/net/ctxrouter) aka. [httprouter](https://github.com/julienschmidt/httprouter) | Copyright (c) 2013 MIT |
 | Olivier Poitrey| [ctxmw.WithAccessLog](https://github.com/corestoreio/csfw/tree/master/net/ctxmw) & CORS | Copyright (c) 2014-2015  MIT License |
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/csfw/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
 | Uber Technologies, Inc. | [log](https://github.com/corestoreio/csfw/tree/master/log) | Copyright (c) 2016 MIT License |
 | 2013 The Go Authors | [singleflight](https://github.com/corestoreio/csfw/tree/master/sync/singleflight) | Copyright (c) 2013 BSD Style |
+| Minio Cloud Storage, (C) 2016 Minio, Inc. | [blake2b-simd](https://github.com/minio/blake2b-simd) | Apache License, Version 2.0 |
 
 ## Licensing
 

@@ -23,15 +23,15 @@ import (
 	"github.com/corestoreio/csfw/util/hashpool"
 )
 
-// SigningMethodHMACFast implements the HMAC-SHA family of pre-warmed signing
+// SigningMethodHSFast implements the HMAC-SHA family of pre-warmed signing
 // methods. Less allocations, bytes and a little bit faster but maybe the
 // underlying mutex can become the bottleneck.
-type SigningMethodHMACFast struct {
+type SigningMethodHSFast struct {
 	Name string
 	ht   hashpool.Tank
 }
 
-func newHMACFast(a string, h crypto.Hash, key Key) (Signer, error) {
+func newHSFast(a string, h crypto.Hash, key Key) (Signer, error) {
 	if key.Error != nil {
 		return nil, errors.Wrap(key.Error, "[csjwt] newHMACFast.key")
 	}
@@ -42,7 +42,7 @@ func newHMACFast(a string, h crypto.Hash, key Key) (Signer, error) {
 	if !h.Available() {
 		return nil, errors.NewNotImplementedf(errHmacHashUnavailable)
 	}
-	return &SigningMethodHMACFast{
+	return &SigningMethodHSFast{
 		Name: a,
 		ht: hashpool.New(func() hash.Hash {
 			return hmac.New(h.New, key.hmacPassword)
@@ -50,31 +50,31 @@ func newHMACFast(a string, h crypto.Hash, key Key) (Signer, error) {
 	}, nil
 }
 
-// NewHMACFast256 creates a new HMAC-SHA hash with a preset password and
-// does not register it globally.
-func NewHMACFast256(key Key) (Signer, error) {
-	return newHMACFast(HS256, crypto.SHA256, key)
+// NewSigningMethodHS256Fast creates a new HMAC-SHA hash with a preset password
+// and does not register it globally. It uses internally a sync.Pool hashes.
+func NewSigningMethodHS256Fast(key Key) (Signer, error) {
+	return newHSFast(HS256, crypto.SHA256, key)
 }
 
-// NewHMACFast384 creates a new HMAC-SHA hash with a preset password and
-// does not register it globally.
-func NewHMACFast384(key Key) (Signer, error) {
-	return newHMACFast(HS384, crypto.SHA384, key)
+// NewSigningMethodHS384Fast creates a new HMAC-SHA hash with a preset password
+// and does not register it globally. It uses internally a sync.Pool hashes.
+func NewSigningMethodHS384Fast(key Key) (Signer, error) {
+	return newHSFast(HS384, crypto.SHA384, key)
 }
 
-// NewHMACFast512 creates a new HMAC-SHA hash with a preset password and
-// does not register it globally.
-func NewHMACFast512(key Key) (Signer, error) {
-	return newHMACFast(HS512, crypto.SHA512, key)
+// NewSigningMethodHS512Fast creates a new HMAC-SHA hash with a preset password
+// and does not register it globally. It uses internally a sync.Pool hashes.
+func NewSigningMethodHS512Fast(key Key) (Signer, error) {
+	return newHSFast(HS512, crypto.SHA512, key)
 }
 
-func (m *SigningMethodHMACFast) Alg() string {
+func (m *SigningMethodHSFast) Alg() string {
 	return m.Name
 }
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
 // Error behaviour: NotImplemented, WriteFailed, NotValid
-func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) error {
+func (m *SigningMethodHSFast) Verify(signingString, signature []byte, _ Key) error {
 
 	// Decode signature, for comparison
 	sig, err := DecodeSegment(signature)
@@ -102,7 +102,7 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 
 // Sign implements the Sign method from SigningMethod interface.
 // Error behaviour: WriteFailed
-func (m *SigningMethodHMACFast) Sign(signingString []byte, _ Key) ([]byte, error) {
+func (m *SigningMethodHSFast) Sign(signingString []byte, _ Key) ([]byte, error) {
 
 	hasher := m.ht.Get()
 	defer m.ht.Put(hasher)

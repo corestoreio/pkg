@@ -14,7 +14,7 @@ var _ csjwt.Signer = (*csjwt.SigningMethodECDSA)(nil)
 var _ csjwt.Signer = (*csjwt.SigningMethodRSA)(nil)
 var _ csjwt.Signer = (*csjwt.SigningMethodRSAPSS)(nil)
 var _ csjwt.Signer = (*csjwt.SigningMethodHMAC)(nil)
-var _ csjwt.Signer = (*csjwt.SigningMethodHMACFast)(nil)
+var _ csjwt.Signer = (*csjwt.SigningMethodHSFast)(nil)
 
 func init() {
 	_ = csjwt.NewSigningMethodES256()

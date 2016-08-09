@@ -16,11 +16,12 @@ package csjwt_test
 
 import (
 	"bytes"
+	"io/ioutil"
 	"testing"
 
-	"io/ioutil"
-
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 var hmacFastTestData []struct {
@@ -41,17 +42,26 @@ func init() {
 		panic(err)
 	}
 
-	hf256, err := csjwt.NewHMACFast256(csjwt.WithPassword(hmacTestKey))
+	hf256, err := csjwt.NewSigningMethodHS256Fast(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		panic(err)
 	}
 
-	hf384, err := csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
+	hf384, err := csjwt.NewSigningMethodHS384Fast(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		panic(err)
 	}
 
-	hf512, err := csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
+	hf512, err := csjwt.NewSigningMethodHS512Fast(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+
+	blk256, err := csjwt.NewSigningMethodBlake2b256(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+	blk512, err := csjwt.NewSigningMethodBlake2b512(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		panic(err)
 	}
@@ -91,6 +101,20 @@ func init() {
 			map[string]interface{}{"iss": "joe", "exp": 1300819380, "http://example.com/is_root": true},
 			false,
 		},
+		{
+			"web sample blake2 256",
+			[]byte("eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.p_126D070LelL7jHk-r05gvmTLONX0Om7SVg7YufDtY"),
+			blk256,
+			map[string]interface{}{"iss": "joe", "exp": 1300819380, "http://example.com/is_root": true},
+			true,
+		},
+		{
+			"web sample blake2 512",
+			[]byte("eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.-v4WwuyNg0fEt5sjAbANpY8I_Gk-kgp0CCIz-TBGcyKYd3P2hI9lo2rLh_uKhrZVhDWyGjPCBikzxeHnDu4WAw"),
+			blk512,
+			map[string]interface{}{"iss": "joe", "exp": 1300819380, "http://example.com/is_root": true},
+			true,
+		},
 	}
 
 }
@@ -104,8 +128,11 @@ func TestHMACVerifyFast(t *testing.T) {
 		}
 
 		err = data.method.Verify(signing, signature, csjwt.Key{})
+		if err != nil && !errors.IsNotValid(err) {
+			t.Errorf("[%v] Expecting a not valid error behaviour : %+v", data.name, err)
+		}
 		if data.valid && err != nil {
-			t.Errorf("[%v] Method %s Error while verifying key: %v", data.name, data.method, err)
+			t.Errorf("[%v] Method %s Error while verifying key: %+v", data.name, data.method, err)
 		}
 		if !data.valid && err == nil {
 			t.Errorf("[%v] Invalid key passed validation", data.name)
@@ -131,4 +158,28 @@ func TestHMACSignFast(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestNewBlake2b256(t *testing.T) {
+	s, err := csjwt.NewSigningMethodBlake2b256(csjwt.Key{
+		Error: errors.NewAlreadyClosedf("Registration"),
+	})
+	assert.Nil(t, s)
+	assert.True(t, errors.IsAlreadyClosed(err))
+
+	s, err = csjwt.NewSigningMethodBlake2b256(csjwt.Key{})
+	assert.Nil(t, s)
+	assert.True(t, errors.IsEmpty(err))
+}
+
+func TestNewBlake2b512(t *testing.T) {
+	s, err := csjwt.NewSigningMethodBlake2b512(csjwt.Key{
+		Error: errors.NewAlreadyClosedf("Registration"),
+	})
+	assert.Nil(t, s)
+	assert.True(t, errors.IsAlreadyClosed(err))
+
+	s, err = csjwt.NewSigningMethodBlake2b512(csjwt.Key{})
+	assert.Nil(t, s)
+	assert.True(t, errors.IsEmpty(err))
 }

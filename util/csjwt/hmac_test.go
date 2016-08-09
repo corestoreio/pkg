@@ -1,3 +1,17 @@
+// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package csjwt_test
 
 import (
@@ -101,7 +115,7 @@ func BenchmarkHS512Signing(b *testing.B) {
 }
 
 func BenchmarkHS256SigningFast(b *testing.B) {
-	hf, err := csjwt.NewHMACFast256(csjwt.WithPassword(hmacTestKey))
+	hf, err := csjwt.NewSigningMethodHS256Fast(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -109,7 +123,7 @@ func BenchmarkHS256SigningFast(b *testing.B) {
 }
 
 func BenchmarkHS384SigningFast(b *testing.B) {
-	hf, err := csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
+	hf, err := csjwt.NewSigningMethodHS384Fast(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -117,7 +131,21 @@ func BenchmarkHS384SigningFast(b *testing.B) {
 }
 
 func BenchmarkHS512SigningFast(b *testing.B) {
-	hf, err := csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
+	hf, err := csjwt.NewSigningMethodHS512Fast(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkSigning(b, hf, csjwt.Key{})
+}
+func BenchmarkBlake2b256SigningFast(b *testing.B) {
+	hf, err := csjwt.NewSigningMethodBlake2b256(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkSigning(b, hf, csjwt.Key{})
+}
+func BenchmarkBlake2b512SigningFast(b *testing.B) {
+	hf, err := csjwt.NewSigningMethodBlake2b512(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -151,7 +179,7 @@ func BenchmarkHS256VerifyFast(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	hf, err := csjwt.NewHMACFast256(csjwt.WithPassword(hmacTestKey))
+	hf, err := csjwt.NewSigningMethodHS256Fast(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -162,7 +190,7 @@ func BenchmarkHS384VerifyFast(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	hf, err := csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
+	hf, err := csjwt.NewSigningMethodHS384Fast(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -173,7 +201,29 @@ func BenchmarkHS512VerifyFast(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	hf, err := csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
+	hf, err := csjwt.NewSigningMethodHS512Fast(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
+}
+func BenchmarkBlake2b256VerifyFast(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacFastTestData[4].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	hf, err := csjwt.NewSigningMethodBlake2b256(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
+}
+func BenchmarkBlake2b512VerifyFast(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacFastTestData[5].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	hf, err := csjwt.NewSigningMethodBlake2b512(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		b.Fatal(err)
 	}

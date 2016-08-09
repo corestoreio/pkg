@@ -32,26 +32,29 @@ type Signer interface {
 
 // All available algorithms which are supported by this package.
 const (
-	ES256 = `ES256`
-	ES384 = `ES384`
-	ES512 = `ES512`
-	HS256 = `HS256`
-	HS384 = `HS384`
-	HS512 = `HS512`
-	PS256 = `PS256`
-	PS384 = `PS384`
-	PS512 = `PS512`
-	RS256 = `RS256`
-	RS384 = `RS384`
-	RS512 = `RS512`
-	ES    = `ES`
-	HS    = `HS`
-	PS    = `PS`
-	RS    = `RS`
+	ES256      = `ES256`
+	ES384      = `ES384`
+	ES512      = `ES512`
+	HS256      = `HS256`
+	HS384      = `HS384`
+	HS512      = `HS512`
+	PS256      = `PS256`
+	PS384      = `PS384`
+	PS512      = `PS512`
+	RS256      = `RS256`
+	RS384      = `RS384`
+	RS512      = `RS512`
+	ES         = `ES`
+	HS         = `HS`
+	PS         = `PS`
+	RS         = `RS`
+	Blake2b256 = `blk2b256`
+	Blake2b512 = `blk2b512`
 )
 
-// SigningMethodFactory creates a new signing method by an algorithm.
-// Returns an error for an unknown signing method.
+// SigningMethodFactory creates a new signing method by an algorithm. Supported
+// algorithms are: ES, HS, PS and RS, all within 256-512 and they do not need a
+// symmetric key. Returns an error for an unknown signing method.
 func SigningMethodFactory(alg string) (s Signer, err error) {
 	switch alg {
 
