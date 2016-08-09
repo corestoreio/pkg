@@ -13,4 +13,6 @@
 // limitations under the License.
 
 // Package hashpool implements a pool reusable hash.Hash types.
+//
+// Fast hash: github.com/minio/blake2b-simd
 package hashpool

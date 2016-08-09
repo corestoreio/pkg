@@ -16,11 +16,14 @@ package hashpool_test
 
 import (
 	"crypto/sha256"
+	"hash"
+	"hash/crc64"
 	"hash/fnv"
 	"sync"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/pierrec/xxHash/xxHash64"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,15 +50,6 @@ func TestNew64(t *testing.T) {
 	wg.Wait()
 }
 
-func TestNew32(t *testing.T) {
-	p := hashpool.New32(fnv.New32)
-	fh := fnv.New32()
-	fh.Write(data)
-	want := fh.Sum(nil)
-	have := p.Sum(data, nil)
-	assert.Exactly(t, want, have)
-}
-
 func TestTank_SumHex(t *testing.T) {
 	hp := hashpool.New(sha256.New)
 	if have, want := hp.SumHex(data), dataSHA256; have != want {
@@ -63,7 +57,6 @@ func TestTank_SumHex(t *testing.T) {
 	}
 }
 
-// BenchmarkTank_SumHex_SHA256-4   	10000000	      1117 ns/op	     128 B/op	       2 allocs/op
 func BenchmarkTank_SumHex_SHA256(b *testing.B) {
 	hp := hashpool.New(sha256.New)
 	b.ReportAllocs()
@@ -73,4 +66,27 @@ func BenchmarkTank_SumHex_SHA256(b *testing.B) {
 			b.Errorf("Have: %v Want: %v", have, want)
 		}
 	}
+}
+
+func benchmarkTank_Hash64(wantHash uint64, h func() hash.Hash64) func(b *testing.B) {
+	return func(b *testing.B) {
+		hp := hashpool.New64(h)
+		b.ReportAllocs()
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			h := hp.Get()
+			_, _ = h.Write(data)
+			if have, want := h.Sum64(), wantHash; have != want {
+				b.Errorf("Have: %v Want: %v", have, want)
+			}
+			hp.Put(h)
+		}
+	}
+}
+
+func BenchmarkTank_Hash64(b *testing.B) {
+	b.Run("FNV64a", benchmarkTank_Hash64(207718596844850661, fnv.New64a))
+	b.Run("xxHash", benchmarkTank_Hash64(11301805909362518010, func() hash.Hash64 { return xxHash64.New(uint64(201608090723)) }))
+	b.Run("crc64", benchmarkTank_Hash64(3866349411325606150, func() hash.Hash64 { return crc64.New(crc64.MakeTable(crc64.ISO)) }))
+
 }

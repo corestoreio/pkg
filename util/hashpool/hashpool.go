@@ -22,6 +22,16 @@ import (
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
+// Hash64Mock allows to use a hash.Hash as an argument to the Hash64 Tank.
+type Hash64Mock struct {
+	hash.Hash
+}
+
+// Sum64 returns always zero.
+func (d Hash64Mock) Sum64() uint64 {
+	return 0
+}
+
 // Tank implements a sync.Pool for hash.Hash
 type Tank struct {
 	p *sync.Pool
@@ -30,8 +40,8 @@ type Tank struct {
 }
 
 // Get returns type safe a hash.
-func (t Tank) Get() hash.Hash {
-	return t.p.Get().(hash.Hash)
+func (t Tank) Get() hash.Hash64 {
+	return t.p.Get().(hash.Hash64)
 }
 
 // Sum calculates the hash of data and appends the current hash to appendTo and
@@ -62,19 +72,19 @@ func (t Tank) SumHex(data []byte) string {
 
 // Put empties the hash and returns it back to the pool.
 //
-//		hp := New(func() hash.Hash { return fnv.New64() })
+//		hp := New(fnv.New64)
 //		hsh := hp.Get()
 //		defer hp.Put(hsh)
 //		// your code
 //		return hsh.Sum([]byte{})
 //
-func (t Tank) Put(h hash.Hash) {
+func (t Tank) Put(h hash.Hash64) {
 	h.Reset()
 	t.p.Put(h)
 }
 
-// New instantiates a new hash pool with a custom pre-allocated hash.Hash.
-func New(h func() hash.Hash) Tank {
+// New64 instantiates a new hash pool with a custom pre-allocated hash.Hash64.
+func New64(h func() hash.Hash64) Tank {
 	return Tank{
 		p: &sync.Pool{
 			New: func() interface{} {
@@ -86,12 +96,15 @@ func New(h func() hash.Hash) Tank {
 	}
 }
 
-// New32 instantiates a new hash pool with a custom pre-allocated hash.Hash32.
-func New32(h func() hash.Hash32) Tank {
-	return New(func() hash.Hash { return h() })
-}
-
-// New64 instantiates a new hash pool with a custom pre-allocated hash.Hash64.
-func New64(h func() hash.Hash64) Tank {
-	return New(func() hash.Hash { return h() })
+// New instantiates a new hash pool with a custom pre-allocated hash.Hash.
+func New(h func() hash.Hash) Tank {
+	return Tank{
+		p: &sync.Pool{
+			New: func() interface{} {
+				nh := h()
+				nh.Reset()
+				return Hash64Mock{Hash: nh}
+			},
+		},
+	}
 }
