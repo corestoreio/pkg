@@ -106,7 +106,7 @@ func (ss StoreSlice) Codes() []string {
 
 func (ss StoreSlice) activeCount() (i int) {
 	for _, st := range ss {
-		if st.Data.IsActive {
+		if st.Data != nil && st.Data.IsActive {
 			i++
 		}
 	}
@@ -123,7 +123,7 @@ func (ss StoreSlice) ActiveCodes() []string {
 	c := make([]string, i)
 	i = 0
 	for _, st := range ss {
-		if st.Data.IsActive {
+		if st.Data != nil && st.Data.IsActive {
 			c[i] = st.Code()
 			i++
 		}
@@ -153,8 +153,9 @@ func (ss StoreSlice) ActiveIDs() []int64 {
 	ids := make([]int64, i)
 	i = 0
 	for _, st := range ss {
-		if st.Data.IsActive {
+		if st.Data != nil && st.Data.IsActive {
 			ids[i] = st.Data.StoreID
+			i++
 		}
 	}
 	return ids
