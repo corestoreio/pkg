@@ -35,7 +35,7 @@ func BenchmarkWithRunMode(b *testing.B) {
 				Log:     log.BlackHole{}, // disabled debug and info logging
 				RunMode: scope.RunMode{Mode: runMode},
 			})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				haveStoreID, haveWebsiteID, haveOK := scope.FromContext(r.Context())
+				haveWebsiteID, haveStoreID, haveOK := scope.FromContext(r.Context())
 				if !haveOK {
 					b.Fatal("Missing scope context for store and website")
 				}

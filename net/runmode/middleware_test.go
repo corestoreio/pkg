@@ -68,7 +68,7 @@ func (s testStoreService) StoreIDbyCode(runMode scope.Hash, storeCode string) (i
 func finalHandler(t *testing.T, wantRunMode scope.Hash, wantStoreID, wantWebsiteID int64, wantStoreCtx bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		haveStoreID, haveWebsiteID, haveOK := scope.FromContext(r.Context())
+		haveWebsiteID, haveStoreID, haveOK := scope.FromContext(r.Context())
 		assert.Exactly(t, wantStoreCtx, haveOK)
 		assert.Exactly(t, wantStoreID, haveStoreID)
 		assert.Exactly(t, wantWebsiteID, haveWebsiteID)
@@ -309,7 +309,7 @@ func TestWithRunMode_StoreService(t *testing.T) {
 		test.options.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
 		rmmw := runmode.WithRunMode(srv, test.options)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			haveStoreID, haveWebsiteID, haveOK := scope.FromContext(r.Context())
+			haveWebsiteID, haveStoreID, haveOK := scope.FromContext(r.Context())
 			assert.Exactly(t, test.wantCtx, haveOK, "Context; Index %d", i)
 			assert.Exactly(t, test.wantStoreID, haveStoreID, "Store; Index %d", i)
 			assert.Exactly(t, test.wantWebsiteID, haveWebsiteID, "Website; Index %d", i)

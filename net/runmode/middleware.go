@@ -184,7 +184,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				}
 			}
 
-			r = r.WithContext(scope.WithContext(r.Context(), storeID, websiteID))
+			r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
 
 			// which store IDs are allowed depending on our runMode? Check if the storeID is
 			// within the allowed store IDs.
