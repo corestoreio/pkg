@@ -102,7 +102,7 @@ type Options struct {
 	scope.RunMode
 	// StoreCodeProcessor extracts the store code from an HTTP requests.
 	// Optional. Defaults to type ProcessStoreCodeCookie.
-	StoreCodeProcessor
+	store.CodeProcessor
 	// DisableStoreCodeProcessor set to true and set StoreCodeProcessor to nil
 	// to disable store code handling
 	DisableStoreCodeProcessor bool
@@ -128,7 +128,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 	if errH == nil {
 		errH = mw.ErrorWithStatusCode(http.StatusInternalServerError)
 	}
-	procCode := o.StoreCodeProcessor
+	procCode := o.CodeProcessor
 	if procCode == nil {
 		procCode = nullCodeProcessor{}
 		if !o.DisableStoreCodeProcessor {

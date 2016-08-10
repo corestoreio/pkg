@@ -111,7 +111,7 @@ func TestWithRunMode(t *testing.T) {
 	}{
 		// test cases: DefaultRunMode
 		{ // request with cookie store UK. store valid; don't set a cookie
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
 			testStoreService{
 				isAllowed: true, allowedCode: "uk", allowedErr: nil,
 				defaultStoreID: 999, defaultWebsiteID: 111, defaultStoreIDErr: nil,
@@ -121,27 +121,27 @@ func TestWithRunMode(t *testing.T) {
 			888, 222, true,
 		},
 		{ // request with store cookie UK. should delete cookie and trigger error because store not allowed
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
 			testStoreService{
 				isAllowed: false, allowedCode: "", allowedErr: nil,
 				defaultStoreID: 1, defaultWebsiteID: 1, defaultStoreIDErr: nil,
 				idByCodeStore: 999, idByCodeWebsite: 888, idByCodeErr: nil},
 			runmode.Options{ErrorHandler: withRunModeErrH(t, errors.IsUnauthorized, true)},
-			scope.DefaultRunMode, runmode.FieldName + `=; Path=/`, http.StatusServiceUnavailable,
+			scope.DefaultRunMode, store.CodeFieldName + `=; Path=/`, http.StatusServiceUnavailable,
 			0, 0, false,
 		},
 		{ // request with store cookie UK. should delete cookie (because store == DefaultStoreID) and store allowed
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
 			testStoreService{
 				isAllowed: true, allowedCode: "uk", allowedErr: nil,
 				defaultStoreID: 135, defaultWebsiteID: 136, defaultStoreIDErr: nil,
 				idByCodeStore: 135, idByCodeWebsite: 136, idByCodeErr: nil},
 			runmode.Options{ErrorHandler: withRunModeErrH(t, errors.IsUnauthorized, false)},
-			scope.DefaultRunMode, runmode.FieldName + `=; Path=/`, http.StatusAccepted,
+			scope.DefaultRunMode, store.CodeFieldName + `=; Path=/`, http.StatusAccepted,
 			135, 136, true,
 		},
 		{ // request with store cookie UK; fails because DefaultStoreID returns an error
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
 			testStoreService{
 				isAllowed: false, allowedCode: "", allowedErr: nil,
 				defaultStoreID: 0, defaultWebsiteID: 0, defaultStoreIDErr: errors.NewNotImplementedf("Upsss!"),
@@ -151,7 +151,7 @@ func TestWithRunMode(t *testing.T) {
 			0, 0, false,
 		},
 		{ // request with store GET param UK; fails because StoreIDbyCode returns an error
-			getReq("GET", fmt.Sprintf("http://cs.io?x=%%20y&%s=uk", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=%%20y&%s=uk", store.CodeURLFieldName), nil),
 			testStoreService{
 				isAllowed: true, allowedCode: "uk", allowedErr: nil,
 				defaultStoreID: 1, defaultWebsiteID: 1, defaultStoreIDErr: nil,
@@ -161,7 +161,7 @@ func TestWithRunMode(t *testing.T) {
 			0, 0, false,
 		},
 		{ // request with store GET param U K; ignores invalid store, and sets no cookie
-			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=u%%20k", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=u%%20k", store.CodeURLFieldName), nil),
 			testStoreService{
 				isAllowed: true, allowedCode: "gb", allowedErr: nil,
 				defaultStoreID: 165, defaultWebsiteID: 166, defaultStoreIDErr: nil,
@@ -171,13 +171,13 @@ func TestWithRunMode(t *testing.T) {
 			165, 166, true,
 		},
 		{ // request with store GET param UK and sets cookie with new code gb
-			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=uk", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=uk", store.CodeURLFieldName), nil),
 			testStoreService{
 				isAllowed: true, allowedCode: "gb", allowedErr: nil,
 				defaultStoreID: 175, defaultWebsiteID: 176, defaultStoreIDErr: nil,
 				idByCodeStore: 177, idByCodeWebsite: 178, idByCodeErr: nil},
 			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false)},
-			scope.DefaultRunMode, runmode.FieldName + `=gb; Path=/`, http.StatusAccepted,
+			scope.DefaultRunMode, store.CodeFieldName + `=gb; Path=/`, http.StatusAccepted,
 			177, 178, true,
 		},
 		{ // request; fails because IsAllowedStoreID returns an error
@@ -193,7 +193,7 @@ func TestWithRunMode(t *testing.T) {
 
 		// website runmode
 		{ // request with store cookie cn ...
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "cn"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "cn"}),
 			testStoreService{
 				isAllowed: true, allowedCode: "cn", allowedErr: nil,
 				defaultStoreID: 0, defaultWebsiteID: 0, defaultStoreIDErr: nil,
@@ -237,17 +237,17 @@ func TestWithRunMode_StoreService(t *testing.T) {
 			2, 1, true, http.StatusAccepted, // at
 		},
 		{
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "de"}),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
 			1, 1, true, http.StatusAccepted, // de
 		},
 		{
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
 			4, 1, true, http.StatusAccepted, // uk
 		},
 		{
-			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", store.CodeURLFieldName), nil),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
 			2, 1, true, http.StatusAccepted, // ch, but inactive and then fall back to AT
 		},
@@ -258,49 +258,49 @@ func TestWithRunMode_StoreService(t *testing.T) {
 			5, 2, true, http.StatusAccepted, // au
 		},
 		{
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "nz"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "nz"}),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
 			6, 2, true, http.StatusAccepted, // nz
 		},
 		{
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "de"}),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
 			5, 2, true, http.StatusAccepted, // au
 		},
 
 		{
-			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=", store.CodeURLFieldName), nil),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
 			1, 1, true, http.StatusAccepted, // de
 		},
 		{
-			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=at", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=at", store.CodeURLFieldName), nil),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
 			2, 1, true, http.StatusAccepted, // at
 		},
 		{
-			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=nz", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=nz", store.CodeURLFieldName), nil),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
 			6, 2, true, http.StatusAccepted, // nz
 		},
 		{
-			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", runmode.URLFieldName), nil),
+			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", store.CodeURLFieldName), nil),
 			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
 			1, 1, true, http.StatusAccepted, // de
 		},
 
 		{
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "dXe"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "dXe"}),
 			runmode.Options{},
 			2, 1, true, http.StatusAccepted, // at
 		},
 		{
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "de"}),
 			runmode.Options{},
 			1, 1, true, http.StatusAccepted, // at
 		},
 		{
-			getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "nz"}),
+			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "nz"}),
 			runmode.Options{},
 			2, 1, true, http.StatusAccepted, // at, switch to nz not allowed
 		},

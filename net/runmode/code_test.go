@@ -22,10 +22,11 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/runmode"
+	"github.com/corestoreio/csfw/store"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ runmode.StoreCodeProcessor = (*runmode.ProcessStoreCodeCookie)(nil)
+var _ store.CodeProcessor = (*runmode.ProcessStoreCodeCookie)(nil)
 
 const defaultCookieContent = `mage-translation-storage=%7B%7D; mage-translation-file-version=%7B%7D; mage-cache-storage=%7B%7D; mage-cache-storage-section-invalidation=%7B%7D; mage-cache-sessid=true; PHPSESSID=ogb786ncug3gunsnoevjem7n32; form_key=6DnQ2Xiy2oMpp7FB`
 
@@ -64,11 +65,11 @@ func TestProcessStoreCode_FromRequest(t *testing.T) {
 		wantCode string
 	}{
 		{
-			getCookieRequest(&http.Cookie{Name: runmode.FieldName, Value: "dede"}),
+			getCookieRequest(&http.Cookie{Name: store.CodeFieldName, Value: "dede"}),
 			"dede",
 		},
 		{
-			getCookieRequest(&http.Cookie{Name: runmode.FieldName, Value: "ded'e"}),
+			getCookieRequest(&http.Cookie{Name: store.CodeFieldName, Value: "ded'e"}),
 			"",
 		},
 		{
@@ -77,11 +78,11 @@ func TestProcessStoreCode_FromRequest(t *testing.T) {
 		},
 
 		{
-			getGETRequest(runmode.URLFieldName, "dede"),
+			getGETRequest(store.CodeURLFieldName, "dede"),
 			"dede",
 		},
 		{
-			getGETRequest(runmode.URLFieldName, "ded¢e"),
+			getGETRequest(store.CodeURLFieldName, "ded¢e"),
 			"",
 		},
 		{
@@ -90,7 +91,7 @@ func TestProcessStoreCode_FromRequest(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		c := &runmode.ProcessStoreCodeCookie{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+		c := &runmode.ProcessStoreCodeCookie{URLFieldName: store.CodeURLFieldName, FieldName: store.CodeFieldName}
 		code := c.FromRequest(0, test.req)
 		assert.Exactly(t, test.wantCode, code, "Index %d", i)
 	}
@@ -101,13 +102,13 @@ var benchmarkProcessStoreCode_FromRequest_Cookie string
 //BenchmarkProcessStoreCode_FromRequest_Cookie/Found-4         	  500000	      3047 ns/op	     296 B/op	       3 allocs/op
 //BenchmarkProcessStoreCode_FromRequest_Cookie/NotFound-4      	10000000	       110 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
-	c := &runmode.ProcessStoreCodeCookie{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+	c := &runmode.ProcessStoreCodeCookie{URLFieldName: store.CodeURLFieldName, FieldName: store.CodeFieldName}
 
 	b.Run("Found", func(b *testing.B) {
 
 		req := httptest.NewRequest("GET", "https://corestoreio.io?a=b", nil)
 		req.Header.Set("Cookie", defaultCookieContent)
-		req.AddCookie(&http.Cookie{Name: runmode.FieldName, Value: "dede"})
+		req.AddCookie(&http.Cookie{Name: store.CodeFieldName, Value: "dede"})
 
 		b.ResetTimer()
 		b.ReportAllocs()
@@ -140,9 +141,9 @@ func BenchmarkProcessStoreCode_FromRequest_Cookie(b *testing.B) {
 func TestProcessStoreCode_ProcessDenied(t *testing.T) {
 	req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
 	req.Header.Set("Cookie", defaultCookieContent)
-	req.AddCookie(&http.Cookie{Name: runmode.FieldName, Value: "chfr"})
+	req.AddCookie(&http.Cookie{Name: store.CodeFieldName, Value: "chfr"})
 	rec := httptest.NewRecorder()
-	c := &runmode.ProcessStoreCodeCookie{URLFieldName: runmode.URLFieldName, FieldName: runmode.FieldName}
+	c := &runmode.ProcessStoreCodeCookie{URLFieldName: store.CodeURLFieldName, FieldName: store.CodeFieldName}
 	c.CookieExpiresDelete = time.Unix(1470022673, 0) // just a random unix time
 	c.ProcessDenied(0, 0, 0, rec, req)
 	assert.Exactly(t, `store=; Path=/; Domain=corestoreio.io; Expires=Mon, 01 Aug 2016 03:37:53 GMT; HttpOnly; Secure`, rec.Header().Get("Set-Cookie"))
@@ -159,7 +160,7 @@ func TestProcessStoreCode_ProcessAllowed(t *testing.T) {
 	t.Run("Delete", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "https://corestoreio.io?g=h&i=j", nil)
 		req.Header.Set("Cookie", defaultCookieContent)
-		req.AddCookie(&http.Cookie{Name: runmode.FieldName, Value: "chfr"})
+		req.AddCookie(&http.Cookie{Name: store.CodeFieldName, Value: "chfr"})
 		rec := httptest.NewRecorder()
 
 		// write a delete cookie, because we have a cookie with a store code

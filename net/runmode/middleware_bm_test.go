@@ -16,14 +16,16 @@ package runmode_test
 
 import (
 	"fmt"
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/net/runmode"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/net/runmode"
+	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 )
 
 func BenchmarkWithRunMode(b *testing.B) {
@@ -78,17 +80,17 @@ func BenchmarkWithRunMode(b *testing.B) {
 		scope.NewHash(scope.Website, 2), 5, 2)) // 5 = au; 2 = oz
 
 	b.Run("Store DE Cookie", runner(
-		getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "de"}),
+		getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "de"}),
 		scope.NewHash(scope.Website, 1), 1, 1)) // 2 = at; 1 = euro
 	b.Run("Store DE GET", runner(
-		getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=de", runmode.URLFieldName), nil),
+		getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=de", store.CodeURLFieldName), nil),
 		scope.NewHash(scope.Website, 1), 1, 1)) // 2 = at; 1 = euro
 
 	b.Run("Store UK Cookie", runner(
-		getReq("GET", "http://cs.io", &http.Cookie{Name: runmode.FieldName, Value: "uk"}),
+		getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
 		scope.NewHash(scope.Website, 1), 4, 1)) // 4 = uk; 1 = euro
 	b.Run("Store UK GET", runner(
-		getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=uk", runmode.URLFieldName), nil),
+		getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=uk", store.CodeURLFieldName), nil),
 		scope.NewHash(scope.Website, 1), 4, 1)) // 4 = uk; 1 = euro
 
 }

@@ -25,46 +25,17 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// StoreCodeProcessor gets used in the middleware WithRunMode() to extract a
-// store code from a Request and modify the response; for example setting
-// cookies to persists the selected store.
-type StoreCodeProcessor interface {
-	// FromRequest returns the valid non-empty store code. Returns an empty
-	// store code on all other cases.
-	FromRequest(runMode scope.Hash, req *http.Request) (code string)
-	// ProcessDenied gets called in the middleware WithRunMode whenever a store
-	// ID isn't allowed to proceed. The variable newStoreID reflects the denied
-	// store ID. The ResponseWriter and Request variables can be used for
-	// additional information writing and extracting. The error Handler  will
-	// always be called.
-	ProcessDenied(runMode scope.Hash, oldStoreID, newStoreID int64, w http.ResponseWriter, r *http.Request)
-	// ProcessAllowed enables to adjust the ResponseWriter based on the new
-	// store ID. The variable newStoreID contains the new ID, which can also be
-	// 0. The code is guaranteed to be not empty, a valid store code, and always
-	// points to an existing active store. The ResponseWriter and Request
-	// variables can be used for additional information writing and extracting.
-	// The next Handler in the chain will after this function be called.
-	ProcessAllowed(runMode scope.Hash, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request)
-}
-
-// FieldName use in Cookies and JSON Web Tokens (JWT) to identify an active
-// store besides from the default loaded store. This is the default value.
-const FieldName = `store`
-
-// URLFieldName name of the GET parameter to set a new store in a current
-// website/group context.  This is the default value.
-const URLFieldName = `___store`
-
 // ProcessStoreCodeCookie can extract the store code from a cookie within an
 // HTTP Request. Handles cookies to permanently set the store code under
 // different conditions. This store code is then responsible for changing the
 // runMode.
 type ProcessStoreCodeCookie struct {
-	// FieldName optional custom name, defaults to constant FieldName. Cannot be
-	// changed after the first call to FromRequest().
+	// FieldName optional custom name, defaults to constant store.CodeFieldName.
+	// Cannot be changed after the first call to FromRequest().
 	FieldName string
-	// URLFieldName optional custom name, defaults to constant URLFieldName. Cannot
-	// be changed after the first call to FromRequest().
+	// URLFieldName optional custom name, defaults to constant
+	// store.CodeURLFieldName. Cannot be changed after the first call to
+	// FromRequest().
 	URLFieldName string
 
 	// CookieTemplate optional pre-configured cookie to set the store
@@ -83,7 +54,7 @@ type ProcessStoreCodeCookie struct {
 
 func (e *ProcessStoreCodeCookie) keyURLFN() (string, string) {
 	if e.URLFieldName == "" {
-		e.URLFieldName = URLFieldName
+		e.URLFieldName = store.CodeURLFieldName
 	}
 	if e.keyURLFieldName == "" {
 		e.keyURLFieldName = e.URLFieldName + "="
@@ -95,7 +66,7 @@ func (e *ProcessStoreCodeCookie) keyURLFN() (string, string) {
 // store code. If no code can be found in the query string, this function falls
 // back to the cookie name defined in field FieldName. Valid has three values: 0
 // not valid, 10 valid and code found in GET query string, 20 valid and code
-// found in cookie. Implements interface StoreCodeExtracter.
+// found in cookie. Implements interface store.CodeProcessor.
 func (e *ProcessStoreCodeCookie) FromRequest(_ scope.Hash, req *http.Request) string {
 	fn, fnK := e.keyURLFN()
 	if strings.Contains(req.URL.RawQuery, fnK) {
@@ -109,7 +80,7 @@ func (e *ProcessStoreCodeCookie) FromRequest(_ scope.Hash, req *http.Request) st
 
 func (e *ProcessStoreCodeCookie) keyFN() (string, string) {
 	if e.FieldName == "" {
-		e.FieldName = FieldName
+		e.FieldName = store.CodeFieldName
 	}
 	if e.keyFieldName == "" {
 		e.keyFieldName = e.FieldName + "="
@@ -146,7 +117,7 @@ func (a *ProcessStoreCodeCookie) newCookie(r *http.Request) *http.Cookie {
 		isSecure = true
 	}
 	return &http.Cookie{
-		Name:     FieldName,
+		Name:     store.CodeFieldName,
 		Path:     "/", // we can sit behind a proxy, so path must be configurable
 		Domain:   d,
 		Secure:   isSecure,
@@ -179,6 +150,7 @@ func (a *ProcessStoreCodeCookie) deleteStoreCookie(w http.ResponseWriter, r *htt
 }
 
 // ProcessDenied deletes the store code cookie, if a store cookie can be found.
+// Implements interface store.CodeProcessor.
 func (a *ProcessStoreCodeCookie) ProcessDenied(_ scope.Hash, _, _ int64, w http.ResponseWriter, r *http.Request) {
 	// if store code found in cookie and not valid anymore, delete the cookie.
 	if c := a.fromCookie(r); c != "" {
@@ -187,7 +159,8 @@ func (a *ProcessStoreCodeCookie) ProcessDenied(_ scope.Hash, _, _ int64, w http.
 }
 
 // ProcessAllowed deletes the store code cookie if found and stores are equal or
-// sets a store code cookie if the stores differ.
+// sets a store code cookie if the stores differ. Implements interface
+// store.CodeProcessor.
 func (a *ProcessStoreCodeCookie) ProcessAllowed(_ scope.Hash, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request) {
 	c := a.fromCookie(r)
 
@@ -211,4 +184,4 @@ func (nc nullCodeProcessor) ProcessDenied(_ scope.Hash, _, _ int64, _ http.Respo
 func (nc nullCodeProcessor) ProcessAllowed(_ scope.Hash, _, _ int64, _ string, _ http.ResponseWriter, _ *http.Request) {
 }
 
-var _ StoreCodeProcessor = (*nullCodeProcessor)(nil)
+var _ store.CodeProcessor = (*nullCodeProcessor)(nil)
