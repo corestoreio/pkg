@@ -36,8 +36,8 @@ func TestFromContext(t *testing.T) {
 		{1, -1, false},
 	}
 	for i, test := range tests {
-		ctx := scope.WithContext(context.TODO(), test.stID, test.wID)
-		haveStoreID, haveWebsiteID, haveOK := scope.FromContext(ctx)
+		ctx := scope.WithContext(context.TODO(), test.wID, test.stID)
+		haveWebsiteID, haveStoreID, haveOK := scope.FromContext(ctx)
 		if have, want := haveOK, test.want; have != want {
 			t.Errorf("(%d) Have: %v Want: %v", i, have, want)
 		}
@@ -48,7 +48,7 @@ func TestFromContext(t *testing.T) {
 			t.Errorf("Parent Have: %v Want: %v", have, want)
 		}
 	}
-	st, w, ok := scope.FromContext(context.Background())
+	w, st, ok := scope.FromContext(context.Background())
 	assert.Exactly(t, int64(0), st)
 	assert.Exactly(t, int64(0), w)
 	assert.False(t, ok)
