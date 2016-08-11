@@ -24,7 +24,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
@@ -33,7 +32,7 @@ import (
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
 type service struct {
-	// Log used for debugging. Defaults to black hole. Panics if nil.
+	// Log used for debugging. Defaults to black hole.
 	Log log.Logger
 
 	// ErrorHandler gets called whenever a programmer makes an error. Most two
@@ -41,6 +40,10 @@ type service struct {
 	// is not valid. The default handler prints the error to the client and
 	// returns http.StatusServiceUnavailable
 	mw.ErrorHandler
+
+	// rootConfig optional backend configuration. Gets only used while running
+	// HTTP related middlewares.
+	rootConfig config.Getter
 
 	// useWebsite internal flag used in configFromContext(w,r) to tell the
 	// currenct handler if the scoped configuration is store or website based.
@@ -120,8 +123,8 @@ func (s *Service) flushCache() error {
 	return nil
 }
 
-// DebugCache uses Sprintf to write an ordered list into a writer. Only usable
-// for debugging.
+// DebugCache uses Sprintf to write an ordered list (by scope.Hash) into a
+// writer. Only usable for debugging.
 func (s *Service) DebugCache(w io.Writer) error {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
@@ -144,18 +147,19 @@ func (s *Service) DebugCache(w io.Writer) error {
 // configFromContext from a requests context the store gets extracted and the
 // store or website configuration will be used to figured out the scoped
 // configuration. All errors get logged. On error calls the ErrorHandler.
+// It panics if rootConfig if nil.
 func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scpCfg ScopedConfig) {
 	// extract the store out of the context and if not found a programmer made a
 	// mistake.
-	requestedStore, err := store.FromContextRequestedStore(r.Context())
-	if err != nil {
-		s.ErrorHandler(errors.Wrap(err, "[scopedservice] FromContextRequestedStore")).ServeHTTP(w, r)
+	websiteID, storeID, scopeOK := scope.FromContext(r.Context())
+	if !scopeOK {
+		s.ErrorHandler(errors.NewNotFoundf("[scopedservice] scope.FromContext not found")).ServeHTTP(w, r)
 		return
 	}
 
-	cfg := requestedStore.Config
+	cfg := s.rootConfig.NewScoped(websiteID, storeID)
 	if s.useWebsite {
-		cfg = requestedStore.Website.Config
+		cfg = s.rootConfig.NewScoped(websiteID, 0)
 	}
 	scpCfg = s.configByScopedGetter(cfg)
 	if err := scpCfg.IsValid(); err != nil {
@@ -165,7 +169,7 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 			s.Log.Debug("scopedservice.Service.configFromContext.configByScopedGetter.Error",
 				log.Err(err),
 				log.Stringer("scope", scpCfg.ScopeHash),
-				log.Marshal("requestedStore", requestedStore),
+				log.Int64("website_id", websiteID), log.Int64("store_id", storeID),
 				log.HTTPRequest("request", r),
 			)
 		}
@@ -254,7 +258,7 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 // redundant configurations and enables us to change one scope configuration
 // with an impact on all other scopes which depend on the parent scope. A zero
 // `parent` triggers no further lookups. This function does not load any
-// configuration from the backend.
+// configuration (config.Getter related) from the backend.
 func (s *Service) ConfigByScopeHash(current scope.Hash, parent scope.Hash) (scpCfg ScopedConfig) {
 	// current can be store or website scope
 	// parent can be website or default scope. If 0 then no fall back

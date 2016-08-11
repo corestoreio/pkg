@@ -21,11 +21,31 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestWithConfigGetter_Panic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			assert.NotNil(t, r)
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	_ = WithConfigGetter(nil)
+}
+
+func TestWithConfigGetter(t *testing.T) {
+	cfg := cfgmock.NewService()
+
+	src, err := newService(WithConfigGetter(cfg))
+	assert.NoError(t, err)
+	assert.NotNil(t, src.rootConfig)
+}
 
 func TestWithErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
