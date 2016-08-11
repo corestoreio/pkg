@@ -24,7 +24,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
@@ -33,7 +32,7 @@ import (
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
 type service struct {
-	// Log used for debugging. Defaults to black hole. Panics if nil.
+	// Log used for debugging. Defaults to black hole.
 	Log log.Logger
 
 	// ErrorHandler gets called whenever a programmer makes an error. Most two
@@ -41,6 +40,10 @@ type service struct {
 	// is not valid. The default handler prints the error to the client and
 	// returns http.StatusServiceUnavailable
 	mw.ErrorHandler
+
+	// rootConfig optional backend configuration. Gets only used while running
+	// HTTP related middlewares.
+	rootConfig config.Getter
 
 	// useWebsite internal flag used in configFromContext(w,r) to tell the
 	// currenct handler if the scoped configuration is store or website based.
@@ -120,8 +123,8 @@ func (s *Service) flushCache() error {
 	return nil
 }
 
-// DebugCache uses Sprintf to write an ordered list into a writer. Only usable
-// for debugging.
+// DebugCache uses Sprintf to write an ordered list (by scope.Hash) into a
+// writer. Only usable for debugging.
 func (s *Service) DebugCache(w io.Writer) error {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
@@ -144,18 +147,19 @@ func (s *Service) DebugCache(w io.Writer) error {
 // configFromContext from a requests context the store gets extracted and the
 // store or website configuration will be used to figured out the scoped
 // configuration. All errors get logged. On error calls the ErrorHandler.
+// It panics if rootConfig if nil.
 func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scpCfg ScopedConfig) {
 	// extract the store out of the context and if not found a programmer made a
 	// mistake.
-	requestedStore, err := store.FromContextRequestedStore(r.Context())
-	if err != nil {
-		s.ErrorHandler(errors.Wrap(err, "[jwt] FromContextRequestedStore")).ServeHTTP(w, r)
+	websiteID, storeID, scopeOK := scope.FromContext(r.Context())
+	if !scopeOK {
+		s.ErrorHandler(errors.NewNotFoundf("[jwt] scope.FromContext not found")).ServeHTTP(w, r)
 		return
 	}
 
-	cfg := requestedStore.Config
+	cfg := s.rootConfig.NewScoped(websiteID, storeID)
 	if s.useWebsite {
-		cfg = requestedStore.Website.Config
+		cfg = s.rootConfig.NewScoped(websiteID, 0)
 	}
 	scpCfg = s.configByScopedGetter(cfg)
 	if err := scpCfg.IsValid(); err != nil {
@@ -165,7 +169,7 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 			s.Log.Debug("jwt.Service.configFromContext.configByScopedGetter.Error",
 				log.Err(err),
 				log.Stringer("scope", scpCfg.ScopeHash),
-				log.Marshal("requestedStore", requestedStore),
+				log.Int64("website_id", websiteID), log.Int64("store_id", storeID),
 				log.HTTPRequest("request", r),
 			)
 		}
@@ -182,8 +186,8 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 // guaranteed atomic single loading for each scope.
 func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
-	current := scope.NewHash(scpGet.Scope())   // can be store or website or default
-	fallback := scope.NewHash(scpGet.Parent()) // can be website or default
+	current := scope.NewHash(scpGet.Scope()) // can be store or website or default
+	parent := scope.NewHash(scpGet.Parent()) // can be website or default
 
 	// 99.9999 % of the hits; 2nd argument must be zero because we must first
 	// test if a direct entry can be found; if not we must apply either the
@@ -193,7 +197,7 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 		if s.Log.IsDebug() {
 			s.Log.Debug("jwt.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
-				log.Stringer("requested_fallback_scope", scope.Hash(0)),
+				log.Stringer("requested_parent_scope", scope.Hash(0)),
 				log.Stringer("responded_scope", sCfg.ScopeHash),
 			)
 		}
@@ -208,11 +212,11 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 			if err := s.Options(s.optionFactory(scpGet)...); err != nil {
 				return newScopedConfigError(errors.Wrap(err, "[jwt] Options applied by OptionFactoryFunc")), nil
 			}
-			sCfg := s.ConfigByScopeHash(current, fallback)
+			sCfg := s.ConfigByScopeHash(current, parent)
 			if s.Log.IsDebug() {
 				s.Log.Debug("jwt.Service.ConfigByScopedGetter.Inflight.Do",
 					log.Stringer("requested_scope", current),
-					log.Stringer("requested_fallback_scope", fallback),
+					log.Stringer("requested_parent_scope", parent),
 					log.Stringer("responded_scope", sCfg.ScopeHash),
 					log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 				)
@@ -232,13 +236,13 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 		return sCfg
 	}
 
-	sCfg := s.ConfigByScopeHash(current, fallback)
+	sCfg := s.ConfigByScopeHash(current, parent)
 	// under very high load: 20 users within 10 MicroSeconds this might get executed
 	// 1-3 times. more thinking needed.
 	if s.Log.IsDebug() {
-		s.Log.Debug("jwt.Service.ConfigByScopedGetter.Fallback",
+		s.Log.Debug("jwt.Service.ConfigByScopedGetter.Parent",
 			log.Stringer("requested_scope", current),
-			log.Stringer("requested_fallback_scope", fallback),
+			log.Stringer("requested_parent_scope", parent),
 			log.Stringer("responded_scope", sCfg.ScopeHash),
 			log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 		)
@@ -248,16 +252,16 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
 // ConfigByScopeHash returns the correct configuration for a scope and may fall
 // back to the next higher scope: store -> website -> default. If `current` hash
-// is Store, then the `fallback` can only be Website or Default. If an entry for
+// is Store, then the `parent` can only be Website or Default. If an entry for
 // a scope cannot be found the next higher scope gets looked up and the pointer
 // of the next higher scope gets assigned to the current scope. This prevents
 // redundant configurations and enables us to change one scope configuration
 // with an impact on all other scopes which depend on the parent scope. A zero
-// `fallback` triggers no further lookups. This function does not load any
-// configuration from the backend.
-func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (scpCfg ScopedConfig) {
+// `parent` triggers no further lookups. This function does not load any
+// configuration (config.Getter related) from the backend.
+func (s *Service) ConfigByScopeHash(current scope.Hash, parent scope.Hash) (scpCfg ScopedConfig) {
 	// current can be store or website scope
-	// fallback can be website or default scope. If 0 then no fall back
+	// parent can be website or default scope. If 0 then no fall back
 
 	// pointer must get dereferenced in a lock to avoid race conditions while
 	// reading in middleware the config values because we might execute the
@@ -274,7 +278,7 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (sc
 	if ok {
 		return scpCfg
 	}
-	if fallback == 0 {
+	if parent == 0 {
 		return newScopedConfigError(errConfigNotFound)
 	}
 
@@ -282,10 +286,10 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (sc
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
 
-	// if the current scope cannot be found, fall back to fallback scope and
+	// if the current scope cannot be found, fall back to parent scope and
 	// apply the maybe found configuration to the current scope configuration.
-	if !ok && fallback.Scope() == scope.Website {
-		pScpCfg, ok = s.scopeCache[fallback]
+	if !ok && parent.Scope() == scope.Website {
+		pScpCfg, ok = s.scopeCache[parent]
 		if ok && pScpCfg != nil {
 			scpCfg = *pScpCfg
 		}
@@ -295,7 +299,7 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, fallback scope.Hash) (sc
 		}
 	}
 
-	// if the current and fallback scope cannot be found, fall back to default
+	// if the current and parent scope cannot be found, fall back to default
 	// scope and apply the maybe found configuration to the current scope
 	// configuration.
 	if !ok {

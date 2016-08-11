@@ -77,9 +77,21 @@ func WithErrorHandler(scp scope.Scope, id int64, eh mw.ErrorHandler) Option {
 	}
 }
 
+// WithConfigGetter sets the root configuration service. While using any HTTP
+// related functions or middlewares you must set the config.Getter.
+func WithConfigGetter(cg config.Getter) Option {
+	_ = cg.NewScoped(0, 0) // let it panic as early as possible if cg is nil
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.rootConfig = cg
+		return nil
+	}
+}
+
 // WithOptionFactory applies a function which lazily loads the options from a
-// slow backend depending on the incoming scope within a request. For example
-// applies the backend configuration to the service.
+// slow backend (config.Getter) depending on the incoming scope within a
+// request. For example applies the backend configuration to the service.
 //
 // Once this option function has been set all other manually set option
 // functions, which accept a scope and a scope ID as an argument, will NOT be
@@ -96,6 +108,8 @@ func WithErrorHandler(scp scope.Scope, id int64, eh mw.ErrorHandler) Option {
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 		s.optionInflight = new(singleflight.Group)
 		s.optionFactory = f
 		return nil
