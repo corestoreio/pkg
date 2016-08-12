@@ -20,8 +20,9 @@ GORUN=GO15VENDOREXPERIMENT=1 go run -v
 
 DBTESTS = ./codegen ./config/... ./directory/... ./eav/... ./store/... ./storage/...
 
-NONDBTESTS = ./util/... ./net/... ./locale/... ./i18n/... \
-./config/... ./store/scope \
+# ./net/...
+NONDBTESTS = ./util/... ./locale/... ./i18n/... \
+./config/... ./store/... \
 ./vendor/golang.org/x/text/...
 
 test: testnodb test1 test2
