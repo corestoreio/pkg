@@ -144,10 +144,20 @@ func (s *Service) DebugCache(w io.Writer) error {
 	return nil
 }
 
-// configFromContext from a requests context the store gets extracted and the
-// store or website configuration will be used to figured out the scoped
-// configuration. All errors get logged. On error calls the ErrorHandler.
-// It panics if rootConfig if nil.
+// configFromScope creates a new scoped configuration depending on the
+// useWebsite flag.
+func (s *Service) configFromScope(websiteID, storeID int64) ScopedConfig {
+	cfg := s.rootConfig.NewScoped(websiteID, storeID)
+	if s.useWebsite {
+		cfg = s.rootConfig.NewScoped(websiteID, 0)
+	}
+	return s.configByScopedGetter(cfg)
+}
+
+// configFromContext extracts the scope (websiteID and storeID) from a requests
+// context. The scoped configuration gets initialized and returned. If an error
+// occurs the ErrorHandler gets called and the ScopedConfig is invalid. All
+// errors get logged.  It panics if rootConfig if nil.
 func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scpCfg ScopedConfig) {
 	// extract the store out of the context and if not found a programmer made a
 	// mistake.
@@ -157,11 +167,7 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 		return
 	}
 
-	cfg := s.rootConfig.NewScoped(websiteID, storeID)
-	if s.useWebsite {
-		cfg = s.rootConfig.NewScoped(websiteID, 0)
-	}
-	scpCfg = s.configByScopedGetter(cfg)
+	scpCfg = s.configFromScope(websiteID, storeID)
 	if err := scpCfg.IsValid(); err != nil {
 		// the scoped configuration is invalid and hence a programmer or package user
 		// made a mistake.
