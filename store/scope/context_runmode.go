@@ -32,16 +32,16 @@ const DefaultRunMode Hash = 0
 // lives in storenet.AppRunMode.WithRunMode() middleware.
 type RunMode struct {
 	Mode Hash
-	// ModeFunc if not nil you can create your own function to set a run mode.
-	ModeFunc func(http.ResponseWriter, *http.Request) Hash
+	// ModeFunc if not nil you can create your own function to return a run mode.
+	ModeFunc func(*http.Request) Hash
 }
 
 // CalculateMode calls the user defined Mode field or ModeFunction. On an
 // invalid mode it falls back to the default run mode, which is a zero Hash.
-func (rm RunMode) CalculateMode(w http.ResponseWriter, r *http.Request) Hash {
+func (rm RunMode) CalculateMode(r *http.Request) Hash {
 	h := rm.Mode
 	if rm.ModeFunc != nil {
-		h = rm.ModeFunc(w, r)
+		h = rm.ModeFunc(r)
 	}
 	if s := h.Scope(); s < Website || s > Store {
 		// fall back to default because only Website, Group and Store are allowed.

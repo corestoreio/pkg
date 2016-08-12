@@ -28,7 +28,7 @@ func TestRunMode(t *testing.T) {
 
 	tests := []struct {
 		mode     scope.Hash
-		modeFunc func(http.ResponseWriter, *http.Request) scope.Hash
+		modeFunc func(*http.Request) scope.Hash
 		want     scope.Hash
 	}{
 		{scope.NewHash(scope.Website, 2), nil, scope.NewHash(scope.Website, 2)},
@@ -36,10 +36,10 @@ func TestRunMode(t *testing.T) {
 		{scope.NewHash(scope.Group, 4), nil, scope.NewHash(scope.Group, 4)},
 		{scope.NewHash(scope.Store, 0), nil, scope.NewHash(scope.Store, 0)},
 		{scope.NewHash(scope.Default, 0), nil, 0},
-		{0, func(_ http.ResponseWriter, _ *http.Request) scope.Hash {
+		{0, func(_ *http.Request) scope.Hash {
 			return scope.NewHash(scope.Website, 2)
 		}, scope.NewHash(scope.Website, 2)},
-		{scope.DefaultHash, func(_ http.ResponseWriter, _ *http.Request) scope.Hash {
+		{scope.DefaultHash, func(_ *http.Request) scope.Hash {
 			return scope.NewHash(scope.Website, 2)
 		}, scope.NewHash(scope.Website, 2)},
 	}
@@ -49,7 +49,7 @@ func TestRunMode(t *testing.T) {
 		haveMode := scope.RunMode{
 			Mode:     test.mode,
 			ModeFunc: test.modeFunc,
-		}.CalculateMode(nil, req)
+		}.CalculateMode(req)
 
 		ctx := scope.WithContextRunMode(req.Context(), haveMode)
 

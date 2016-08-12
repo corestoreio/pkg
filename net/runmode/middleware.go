@@ -139,7 +139,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			// set run mode
-			runMode := o.CalculateMode(w, r)
+			runMode := o.CalculateMode(r)
 			r = r.WithContext(scope.WithContextRunMode(r.Context(), runMode))
 
 			// find the default store ID for the runMode
