@@ -14,10 +14,10 @@
 
 package locale
 
-import "github.com/corestoreio/csfw/util"
+import "github.com/corestoreio/csfw/util/slices"
 
 // AllowedLocales lists all allowed default locales. You may modify this variable.
-var AllowedLocales = util.StringSlice{
+var AllowedLocales = slices.String{
 	"af_ZA",      /*Afrikaans (South Africa)*/
 	"ar_DZ",      /*Arabic (Algeria)*/
 	"ar_EG",      /*Arabic (Egypt)*/
@@ -104,7 +104,7 @@ var AllowedLocales = util.StringSlice{
 }
 
 // AllowedCurrencies lists all allowed currencies. You may modify this variable.
-var AllowedCurrencies = util.StringSlice{
+var AllowedCurrencies = slices.String{
 	"AFN", /*Afghani*/
 	"ALL", /*Albanian Lek*/
 	"AZN", /*Azerbaijanian Manat*/
