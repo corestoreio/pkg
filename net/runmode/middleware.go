@@ -175,14 +175,14 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 			newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
 			if err != nil && !errors.IsNotFound(err) {
 				if lg.IsDebug() {
-					lg.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
+					lg.Debug("runmode.WithRunMode.StoreIDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				errH(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
+				errH(errors.Wrap(err, "[store] WithRunMode.StoreIDbyCode")).ServeHTTP(w, r)
 				return
 			}
-			oldStoreID := storeID
+			previousStoreID := storeID
 			if err == nil {
 				storeID = newStoreID
 				websiteID = newWebsiteID
@@ -196,11 +196,11 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 			isStoreAllowed, storeCode, err := sf.IsAllowedStoreID(runMode, storeID)
 			if err != nil {
 				if lg.IsDebug() {
-					lg.Debug("runmode.WithRunMode.AllowedStoreIDs.Error", log.Err(err),
+					lg.Debug("runmode.WithRunMode.IsAllowedStoreID.Error", log.Err(err),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				errH(errors.Wrap(err, "[store] WithRunMode.AllowedStoreIDs")).ServeHTTP(w, r)
+				errH(errors.Wrap(err, "[store] WithRunMode.IsAllowedStoreID")).ServeHTTP(w, r)
 				return
 			}
 
@@ -208,21 +208,19 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 			if !isStoreAllowed {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.StoreNotAllowed",
-						log.Bool("is_store_allowed", isStoreAllowed), log.String("store_code", storeCode),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.String("store_code", storeCode), log.Int64("previous_store_id", previousStoreID), log.Int64("store_id", storeID),
+						log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				procCode.ProcessDenied(runMode, oldStoreID, storeID, w, r)
+				procCode.ProcessDenied(runMode, previousStoreID, storeID, w, r)
 				errH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, storeID)).ServeHTTP(w, r)
 				return
 			}
 
-			procCode.ProcessAllowed(runMode, oldStoreID, storeID, storeCode, w, r)
+			procCode.ProcessAllowed(runMode, previousStoreID, storeID, storeCode, w, r)
 
 			if lg.IsDebug() {
 				lg.Debug("runmode.WithRunMode.NextHandler.WithCode",
-					log.Bool("is_store_allowed", isStoreAllowed), log.String("store_code", storeCode),
-					log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+					log.String("store_code", storeCode), log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
