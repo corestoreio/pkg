@@ -144,7 +144,6 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 
 			// find the default store ID for the runMode
 			storeID, websiteID, err := sf.DefaultStoreID(runMode)
-			oldStoreID := storeID
 			if err != nil {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.DefaultStoreID.Error", log.Err(err),
@@ -154,40 +153,46 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				errH(errors.Wrap(err, "[store] WithRunMode.DefaultStoreID")).ServeHTTP(w, r)
 				return
 			}
-			if lg.IsDebug() {
-				lg.Debug("runmode.WithRunMode.DefaultStoreID", log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
-			}
 
 			// extracts the code from GET and/or Cookie or custom implementation and get the
 			// new store and website ID.
-			if reqCode := procCode.FromRequest(runMode, r); reqCode != "" {
-				// convert the code string into its internal ID depending on the scope.
-				newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
-				if err != nil && !errors.IsNotFound(err) {
-					if lg.IsDebug() {
-						lg.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
-							log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-							log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
-					}
-					errH(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
-					return
-				}
-				if err == nil {
-					storeID = newStoreID
-					websiteID = newWebsiteID
-				}
+			reqCode := procCode.FromRequest(runMode, r)
+			if reqCode == "" {
+				// nothing to be done, no code in request, so proceed with the next handler.
+				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
+				procCode.ProcessAllowed(runMode, storeID, storeID, "", w, r)
 				if lg.IsDebug() {
-					lg.Debug("runmode.WithRunMode.CodeFromRequest", log.Err(err), log.String("http_store_code", reqCode),
+					lg.Debug("runmode.WithRunMode.NextHandler.WithoutCode",
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// we have a new store code and must validate it.
+			// convert the code string into its internal ID depending on the scope.
+			newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
+			if err != nil && !errors.IsNotFound(err) {
+				if lg.IsDebug() {
+					lg.Debug("runmode.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+				}
+				errH(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
+				return
+			}
+			oldStoreID := storeID
+			if err == nil {
+				storeID = newStoreID
+				websiteID = newWebsiteID
 			}
 
 			r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
 
-			// which store IDs are allowed depending on our runMode? Check if the storeID is
-			// within the allowed store IDs.
+			// is the storeID allowed depending on the runMode? also retrieve
+			// the new store code because the StoreCodeProcess type may add
+			// something to the Response.
 			isStoreAllowed, storeCode, err := sf.IsAllowedStoreID(runMode, storeID)
 			if err != nil {
 				if lg.IsDebug() {
@@ -212,11 +217,10 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				return
 			}
 
-			// if runMode is allowed to change, update the runMode Hash and then put it into the context
 			procCode.ProcessAllowed(runMode, oldStoreID, storeID, storeCode, w, r)
 
 			if lg.IsDebug() {
-				lg.Debug("runmode.WithRunMode.NextHandler",
+				lg.Debug("runmode.WithRunMode.NextHandler.WithCode",
 					log.Bool("is_store_allowed", isStoreAllowed), log.String("store_code", storeCode),
 					log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))

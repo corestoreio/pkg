@@ -180,8 +180,8 @@ func TestWithRunMode(t *testing.T) {
 			scope.DefaultRunMode, store.CodeFieldName + `=gb; Path=/`, http.StatusAccepted,
 			177, 178, true,
 		},
-		{ // request; fails because IsAllowedStoreID returns an error
-			getReq("GET", "http://cs.io", nil),
+		{ // request with store GET param FR; fails because IsAllowedStoreID returns an error
+			getReq("GET", fmt.Sprintf("http://cs.io?e=f&%s=fr", store.CodeURLFieldName), nil),
 			testStoreService{
 				isAllowed: false, allowedCode: "", allowedErr: errors.NewAlreadyClosedf("Not in the mood"),
 				defaultStoreID: 1, defaultWebsiteID: 1, defaultStoreIDErr: nil,
@@ -192,7 +192,7 @@ func TestWithRunMode(t *testing.T) {
 		},
 
 		// website runmode
-		{ // request with store cookie cn ...
+		{ // request with store cookie cn does nothing
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "cn"}),
 			testStoreService{
 				isAllowed: true, allowedCode: "cn", allowedErr: nil,
