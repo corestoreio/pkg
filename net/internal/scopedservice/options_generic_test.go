@@ -57,6 +57,14 @@ func TestWithErrorHandler(t *testing.T) {
 	cstesting.EqualPointers(t, s.ErrorHandler, defaultErrorHandler)
 }
 
+func TestWithServiceErrorHandler(t *testing.T) {
+	var eh = func(error) http.Handler { return nil }
+	s, err := newService(WithServiceErrorHandler(eh))
+	assert.NoError(t, err)
+	cstesting.EqualPointers(t, s.ErrorHandler, eh)
+	assert.Nil(t, s.ErrorHandler(errors.New("Error handler returns nil")))
+}
+
 func TestOptionsError(t *testing.T) {
 	opts := OptionsError(errors.NewAlreadyClosedf("Something has already been closed."))
 	s, err := New(opts...)

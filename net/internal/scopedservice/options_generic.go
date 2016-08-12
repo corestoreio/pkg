@@ -77,6 +77,17 @@ func WithErrorHandler(scp scope.Scope, id int64, eh mw.ErrorHandler) Option {
 	}
 }
 
+// WithServiceErrorHandler sets the error handler on the Service object.
+// Convenient helper function.
+func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.ErrorHandler = eh
+		return nil
+	}
+}
+
 // WithConfigGetter sets the root configuration service. While using any HTTP
 // related functions or middlewares you must set the config.Getter.
 func WithConfigGetter(cg config.Getter) Option {
