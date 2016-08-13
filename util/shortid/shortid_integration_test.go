@@ -13,6 +13,7 @@ import (
 )
 
 func TestShortid_Generate_oneIdPerYear_over34Years_uniqueOf9Symbols(t *testing.T) {
+	t.Parallel()
 	now := time.Now()
 	sid := shortid.MustNew(0, shortid.DefaultABC, 155000)
 	for years := 0; years < 38; years++ {
@@ -30,7 +31,7 @@ func TestShortid_Generate_oneIdPerYear_over34Years_uniqueOf9Symbols(t *testing.T
 }
 
 func TestShortid_Generate_approx3MilIdsWith5MinStep_over33Years_unique9_11Symbols(t *testing.T) {
-	// t.Skip("do not run for unit testing")
+	t.Parallel()
 
 	sid := shortid.MustNew(0, shortid.DefaultABC, 155000)
 	ids := make(map[string]struct{}, 3800000)
@@ -64,7 +65,7 @@ func TestShortid_Generate_approx3MilIdsWith5MinStep_over33Years_unique9_11Symbol
 }
 
 func TestShortid_Generate_500kValuesEach_at6Timepoints_unique9_11Symbols(t *testing.T) {
-	// t.Skip("do not run for unit testing")
+	t.Parallel()
 
 	n := 500000
 	m := 6
@@ -98,6 +99,8 @@ func TestShortid_Generate_500kValuesEach_at6Timepoints_unique9_11Symbols(t *test
 }
 
 func TestShortid_Generate_500kValues_concurrently(t *testing.T) {
+	t.Parallel()
+
 	sid := shortid.MustNew(0, shortid.DefaultABC, 155000)
 	ids := make(map[string]struct{}, 900000)
 	var mx sync.Mutex
