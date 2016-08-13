@@ -23,12 +23,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFromContext(t *testing.T) {
+func TestFromContext_Token(t *testing.T) {
 
 	ctx := withContext(context.Background(), csjwt.Token{})
 	assert.NotNil(t, ctx)
 
 	haveToken, ok := FromContext(ctx)
+	assert.NotNil(t, haveToken)
+	assert.False(t, haveToken.Valid)
+	assert.True(t, ok)
+}
+
+func TestFromContext_NoToken(t *testing.T) {
+	haveToken, ok := FromContext(context.Background())
 	assert.NotNil(t, haveToken)
 	assert.False(t, haveToken.Valid)
 	assert.False(t, ok)

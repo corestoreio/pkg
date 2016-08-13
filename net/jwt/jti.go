@@ -14,11 +14,16 @@
 
 package jwt
 
-import "github.com/pborman/uuid"
+import "github.com/corestoreio/csfw/util/shortid"
+
+// JTI represents the interface to generate a new UUID aka JWT ID
+type IDGenerator interface {
+	NewID() (string, error)
+}
 
 // jti type to generate a JTI for a token, a unique ID
 type jti struct{}
 
-func (j jti) Get() string {
-	return uuid.New()
+func (j jti) NewID() (string, error) {
+	return shortid.Generate()
 }

@@ -262,7 +262,7 @@ func TestServiceWithBackend_Middleware_Valid_Request(t *testing.T) {
 	jwts := jwt.MustNew(
 		jwt.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb), cfgSrv),
-		jwt.WithStoreService(storeSrv),
+		jwt.WithStoreFinder(storeSrv),
 	)
 
 	// our token will be crafted to contain the DE store so the JWT middleware

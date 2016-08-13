@@ -12,42 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package jwt
+package jwt_test
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInternalOptionWithErrorHandler(t *testing.T) {
-
-	jwts := MustNew()
-
-	wsErrH := mw.ErrorWithStatusCode(http.StatusAccepted)
-
-	if err := jwts.Options(WithErrorHandler(scope.Website, 22, wsErrH)); err != nil {
-		t.Fatal(err)
-	}
-
-	assert.Nil(t, jwts.defaultScopeCache.ErrorHandler)
-	cstesting.EqualPointers(t, wsErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].ErrorHandler)
-
-	if err := jwts.Options(WithErrorHandler(scope.Default, 0, wsErrH)); err != nil {
-		t.Fatal(err)
-	}
-	cstesting.EqualPointers(t, wsErrH, jwts.defaultScopeCache.ErrorHandler)
-}
-
 func TestInternalOptionNoLeakage(t *testing.T) {
 
-	sc := ScopedConfig{
+	sc := jwt.ScopedConfig{
 		Key: csjwt.WithPasswordRandom(),
 	}
 	assert.Contains(t, fmt.Sprintf("%v", sc), `csjwt.Key{/*redacted*/}`)

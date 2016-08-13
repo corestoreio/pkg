@@ -77,7 +77,6 @@ func TestOptionWithTemplateToken(t *testing.T) {
 func TestOptionWithTokenID(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithTokenID(scope.Website, 22, true),
 		jwt.WithKey(scope.Website, 22, csjwt.WithPasswordRandom()),
 	)
 	require.NoError(t, err)
@@ -88,13 +87,12 @@ func TestOptionWithTokenID(t *testing.T) {
 
 	id, err := theToken.Claims.Get(jwtclaim.KeyID)
 	require.NoError(t, err)
-	assert.Len(t, id, uuidLen)
+	assert.NotEmpty(t, id)
 }
 
 func TestOptionScopedDefaultExpire(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithTokenID(scope.Website, 33, true),
 		jwt.WithKey(scope.Website, 33, csjwt.WithPasswordRandom()),
 	)
 	require.NoError(t, err)

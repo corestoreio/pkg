@@ -21,13 +21,14 @@ import (
 // Blacklister a backend storage to handle blocked tokens. Default black hole
 // storage. Must be thread safe.
 type Blacklister interface {
-	// Set adds a token to the blacklist and may perform a purge operation. Set
-	// should be called when you log out a user. Set must make sure to copy away the
-	// token bytes or hash them.
-	Set(token []byte, expires time.Duration) error
-	// Has checks if a token has been stored in the blacklist and may delete the
-	// token if expiration time is up.
-	Has(token []byte) bool
+	// Set adds the token ID (The jti (JWT ID) claim provides a unique
+	// identifier for the JWT) to the blacklist and may perform a purge
+	// operation. Set should be called when you log out a user. Set must make
+	// sure to copy away the bytes or hash them.
+	Set(id []byte, expires time.Duration) error
+	// Has checks if an ID (jti) has been stored in the blacklist and may delete
+	// the ID if the expiration time is up.
+	Has(id []byte) bool
 }
 
 // nullBL is the black hole black list

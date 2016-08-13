@@ -28,8 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const uuidLen = 36
-
 func TestServiceMustNewServicePanic(t *testing.T) {
 
 	defer func() {
@@ -50,7 +48,9 @@ func TestServiceNewDefaultBlacklist(t *testing.T) {
 	key := []byte("test")
 	assert.Nil(t, jwts.Blacklist.Set(key, time.Hour))
 	assert.False(t, jwts.Blacklist.Has(key))
-	assert.Len(t, jwts.JTI.Get(), uuidLen)
+	jti, err := jwts.JTI.NewID()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, jti)
 }
 
 func TestServiceNewDefault(t *testing.T) {
@@ -142,14 +142,19 @@ func TestServiceLogout(t *testing.T) {
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.NewStore())
 	assert.NoError(t, err)
 
+	jti, err := theToken.Claims.Get(jwtclaim.KeyID)
+	assert.NoError(t, err)
+
 	tk, err := jwts.Parse(theToken.Raw)
 	assert.NoError(t, err)
 	assert.NotNil(t, tk)
+	assert.True(t, tk.Valid, "Token not valid")
+	assert.NotEmpty(t, tk.Raw, "Token empty")
 
 	assert.Nil(t, jwts.Logout(csjwt.Token{}))
 	assert.Nil(t, jwts.Logout(tk))
 	assert.Equal(t, int(time.Hour.Seconds()), 1+int(tbl.exp.Seconds()))
-	assert.Equal(t, string(theToken.Raw), string(tbl.theToken))
+	assert.Equal(t, jti, string(tbl.theToken))
 }
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {

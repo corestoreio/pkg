@@ -17,8 +17,7 @@ package jwt
 import (
 	"time"
 
-	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
@@ -42,23 +41,6 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 func WithBlacklist(bl Blacklister) Option {
 	return func(s *Service) error {
 		s.Blacklist = bl
-		return nil
-	}
-}
-
-// WithLogger sets a new global logger. Convenience helper function.
-func WithLogger(l log.Logger) Option {
-	return func(s *Service) error {
-		s.Log = l
-		return nil
-	}
-}
-
-// WithStoreService apply a store service aka. requested store to the middleware
-// to allow a store change if requested via token. Convenience helper function.
-func WithStoreService(sr store.Requester) Option {
-	return func(s *Service) error {
-		s.StoreService = sr
 		return nil
 	}
 }
@@ -142,24 +124,6 @@ func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
 	}
 }
 
-// WithTokenID enables JTI (JSON Web Token ID) for a specific scope
-func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
-	h := scope.NewHash(scp, id)
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.EnableJTI = enable
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
 // WithKey sets the key for the default signing method of 256 bits.
 // You can also provide your own signing method by using additionally
 // the function WithSigningMethod(), which must be called after this function :-/.
@@ -191,7 +155,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		case csjwt.ES:
 			sc.SigningMethod = csjwt.NewSigningMethodES256()
 		case csjwt.HS:
-			sc.SigningMethod, err = csjwt.NewHMACFast256(key)
+			sc.SigningMethod, err = csjwt.NewSigningMethodHS256Fast(key)
 			if err != nil {
 				return errors.Wrap(err, "[jwt] HMAC Fast 256 error")
 			}
@@ -222,6 +186,45 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.Disabled = isDisabled
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
+// WithStoreCodeFieldName sets the name of the key in the token claims section
+// to extract the store code.
+func WithStoreCodeFieldName(scp scope.Scope, id int64, name string) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.StoreCodeFieldName = name
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
+// WithUnauthorizedHandler adds a custom handler when a token cannot authorized to call the next handler in the chain.
+// The default unauthorized handler prints the error to the user and
+// returns a http.StatusUnauthorized.
+func WithUnauthorizedHandler(scp scope.Scope, id int64, uh mw.ErrorHandler) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.UnauthorizedHandler = uh
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package jwt provides a middleware for JSON web token authentication and store
-// initialization.
+// Package jwt provides a middleware for JSON web token authentication and
+// runMode initialization.
 //
 // Further reading: https://float-middle.com/json-web-tokens-jwt-vs-sessions/
 // and http://cryto.net/~joepie91/blog/2016/06/13/stop-using-jwt-for-sessions/

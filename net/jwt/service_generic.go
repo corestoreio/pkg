@@ -15,9 +15,9 @@
 package jwt
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"sort"
 	"sync"
 
@@ -144,37 +144,33 @@ func (s *Service) DebugCache(w io.Writer) error {
 	return nil
 }
 
-// configFromContext from a requests context the store gets extracted and the
-// store or website configuration will be used to figured out the scoped
-// configuration. All errors get logged. On error calls the ErrorHandler.
-// It panics if rootConfig if nil.
-func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scpCfg ScopedConfig) {
-	// extract the store out of the context and if not found a programmer made a
-	// mistake.
-	websiteID, storeID, scopeOK := scope.FromContext(r.Context())
-	if !scopeOK {
-		s.ErrorHandler(errors.NewNotFoundf("[jwt] scope.FromContext not found")).ServeHTTP(w, r)
-		return
-	}
-
+// configFromScope creates a new scoped configuration depending on the
+// useWebsite flag. Errors get not logged.
+func (s *Service) configFromScope(websiteID, storeID int64) ScopedConfig {
 	cfg := s.rootConfig.NewScoped(websiteID, storeID)
 	if s.useWebsite {
 		cfg = s.rootConfig.NewScoped(websiteID, 0)
 	}
-	scpCfg = s.configByScopedGetter(cfg)
+	return s.configByScopedGetter(cfg)
+}
+
+// configFromContext extracts the scope (websiteID and storeID) from a  context.
+// The scoped configuration gets initialized by configFromScope() and returned.
+// It panics if rootConfig if nil. Errors get not logged.
+func (s *Service) configFromContext(ctx context.Context) (scpCfg ScopedConfig) {
+	// extract the scope out of the context and if not found a programmer made a
+	// mistake.
+	websiteID, storeID, scopeOK := scope.FromContext(ctx)
+	if !scopeOK {
+		scpCfg.lastErr = errors.NewNotFoundf("[jwt] configFromContext: scope.FromContext not found")
+		return
+	}
+
+	scpCfg = s.configFromScope(websiteID, storeID)
 	if err := scpCfg.IsValid(); err != nil {
 		// the scoped configuration is invalid and hence a programmer or package user
 		// made a mistake.
-		if s.Log.IsDebug() {
-			s.Log.Debug("jwt.Service.configFromContext.configByScopedGetter.Error",
-				log.Err(err),
-				log.Stringer("scope", scpCfg.ScopeHash),
-				log.Int64("website_id", websiteID), log.Int64("store_id", storeID),
-				log.HTTPRequest("request", r),
-			)
-		}
-		s.ErrorHandler(errors.Wrap(err, "[jwt] ConfigByScopedGetter")).ServeHTTP(w, r)
-		return
+		scpCfg.lastErr = errors.Wrap(err, "[jwt] Service.configFromContext.configFromScope") // rewrite error
 	}
 	return
 }

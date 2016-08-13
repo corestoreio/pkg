@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
@@ -46,17 +47,23 @@ type ScopedConfig struct {
 	// For Verification add Options for setting custom Unmarshaler, HTTP FORM
 	// input name and cookie name.
 	Verifier *csjwt.Verification
-	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
-	EnableJTI bool
 	// KeyFunc will receive the parsed token and should return the key for
 	// validating.
 	KeyFunc csjwt.Keyfunc
 	// templateTokenFunc to a create a new template token when parsing a byte
 	// token slice into the template token. Default value nil.
 	templateTokenFunc func() csjwt.Token
+
+	// UnauthorizedHandler gets called for invalid tokens. Returns the code
+	// http.StatusUnauthorized
+	UnauthorizedHandler mw.ErrorHandler
+
+	// StoreCodeFieldName optional custom key name used to lookup the claims section
+	// to find the store code, defaults to constant store.CodeFieldName.
+	StoreCodeFieldName string
 }
 
-// TODO(cs) maybe we can replace csjwt.Token with our own interface definition but seems complex.
+var defaultUnauthorizedHandler = mw.ErrorWithStatusCode(http.StatusUnauthorized)
 
 // IsValid check if the scoped configuration is valid when:
 //		- Key
@@ -120,7 +127,7 @@ func (sc *ScopedConfig) initKeyFunc() {
 
 func newScopedConfig() *ScopedConfig {
 	key := csjwt.WithPasswordRandom()
-	hs256, err := csjwt.NewHMACFast256(key)
+	hs256, err := csjwt.NewSigningMethodHS256Fast(key)
 	if err != nil {
 		se := newScopedConfigError(errors.Wrap(err, "[jwt] defaultScopedConfig.NewHMACFast256"))
 		return &se
@@ -132,7 +139,7 @@ func newScopedConfig() *ScopedConfig {
 		Key:                 key,
 		SigningMethod:       hs256,
 		Verifier:            csjwt.NewVerification(hs256),
-		EnableJTI:           false,
+		UnauthorizedHandler: defaultUnauthorizedHandler,
 	}
 	sc.initKeyFunc()
 	return sc

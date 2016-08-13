@@ -14,6 +14,8 @@
 
 package jwt
 
+import "github.com/corestoreio/csfw/util/errors"
+
 const (
 	errServiceUnsupportedScope         = "[jwt] Service does not support this: %s. Only default or website scope are allowed."
 	errTokenParseNotValidOrBlackListed = "[jwt] Token not valid or black listed"
@@ -27,4 +29,8 @@ const (
 	errTokenBlacklisted = "[jwt] Token has been black listed"
 
 	errStoreNotFound = "[jwt] Store not found in token claim"
+)
+
+var (
+	errBlacklistEmptyKID = errors.NewEmptyf("[jwt] Cannot add token to blacklist because JTI / key ID is empty.")
 )
