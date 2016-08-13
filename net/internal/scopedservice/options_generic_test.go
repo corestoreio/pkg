@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
@@ -105,4 +106,14 @@ func TestNewScopedConfigGeneric(t *testing.T) {
 	scg.ErrorHandler(errors.New("A programmer made a mistake")).ServeHTTP(rec, nil)
 	assert.Exactly(t, http.StatusServiceUnavailable, rec.Code)
 	assert.Contains(t, rec.Body.String(), "A programmer made a mistake")
+}
+
+func TestWithDebugLog(t *testing.T) {
+	logBuf := new(log.MutexBuffer)
+	srv, err := newService(WithDebugLog(logBuf))
+	assert.NoError(t, err, "%+v", err)
+
+	scpCfg := srv.configByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
+	assert.NoError(t, scpCfg.IsValid(), "%+v", scpCfg.IsValid())
+	assert.Contains(t, logBuf.String(), `scopedservice.Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Default) ID(0)" requested_parent_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Default) ID(0)"`)
 }

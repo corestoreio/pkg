@@ -55,7 +55,7 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	s := MustNew(
 		withValue(scope.Default, 0, "Default=0"),
 		withValue(scope.Website, 1, "Website=1"),
-		withDebugLogger(logBuf),
+		WithDebugLog(logBuf),
 	)
 
 	if err := s.Options(withValue(scope.Store, 2, "Store=1")); err != nil {

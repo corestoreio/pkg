@@ -14,12 +14,7 @@
 
 package scopedservice
 
-import (
-	"io"
-
-	"github.com/corestoreio/csfw/log/logw"
-	"github.com/corestoreio/csfw/store/scope"
-)
+import "github.com/corestoreio/csfw/store/scope"
 
 // Service DO NOT USE
 type Service struct {
@@ -37,7 +32,8 @@ type ScopedConfig struct {
 	value string
 }
 
-// IsValid do not use
+// IsValid returns nil if the scoped configuration os valid otherwise a detailed
+// error.
 func (sc *ScopedConfig) IsValid() error {
 	if sc.lastErr != nil {
 		return sc.lastErr
@@ -71,16 +67,6 @@ func withValue(scp scope.Scope, id int64, val string) Option {
 		sc.value = val
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
-// withDebugLogger w must be thread safe
-func withDebugLogger(w io.Writer) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		s.Log = logw.NewLog(logw.WithWriter(w), logw.WithLevel(logw.LevelDebug))
 		return nil
 	}
 }

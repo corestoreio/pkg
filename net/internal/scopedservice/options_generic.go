@@ -15,9 +15,11 @@
 package scopedservice
 
 import (
+	"io"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
@@ -96,6 +98,17 @@ func WithConfigGetter(cg config.Getter) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		s.rootConfig = cg
+		return nil
+	}
+}
+
+// WithDebugLog creates a new standard library based logger with debug mode
+// enabled. The passed writer must be thread safe.
+func WithDebugLog(w io.Writer) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.Log = logw.NewLog(logw.WithWriter(w), logw.WithLevel(logw.LevelDebug))
 		return nil
 	}
 }

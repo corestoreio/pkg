@@ -15,9 +15,9 @@
 package scopedservice
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"sort"
 	"sync"
 
@@ -145,7 +145,7 @@ func (s *Service) DebugCache(w io.Writer) error {
 }
 
 // configFromScope creates a new scoped configuration depending on the
-// useWebsite flag.
+// useWebsite flag. Errors get not logged.
 func (s *Service) configFromScope(websiteID, storeID int64) ScopedConfig {
 	cfg := s.rootConfig.NewScoped(websiteID, storeID)
 	if s.useWebsite {
@@ -154,16 +154,15 @@ func (s *Service) configFromScope(websiteID, storeID int64) ScopedConfig {
 	return s.configByScopedGetter(cfg)
 }
 
-// configFromContext extracts the scope (websiteID and storeID) from a requests
-// context. The scoped configuration gets initialized and returned. If an error
-// occurs the ErrorHandler gets called and the ScopedConfig is invalid. All
-// errors get logged.  It panics if rootConfig if nil.
-func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scpCfg ScopedConfig) {
-	// extract the store out of the context and if not found a programmer made a
+// configFromContext extracts the scope (websiteID and storeID) from a  context.
+// The scoped configuration gets initialized by configFromScope() and returned.
+// It panics if rootConfig if nil. Errors get not logged.
+func (s *Service) configFromContext(ctx context.Context) (scpCfg ScopedConfig) {
+	// extract the scope out of the context and if not found a programmer made a
 	// mistake.
-	websiteID, storeID, scopeOK := scope.FromContext(r.Context())
+	websiteID, storeID, scopeOK := scope.FromContext(ctx)
 	if !scopeOK {
-		s.ErrorHandler(errors.NewNotFoundf("[scopedservice] scope.FromContext not found")).ServeHTTP(w, r)
+		scpCfg.lastErr = errors.NewNotFoundf("[scopedservice] configFromContext: scope.FromContext not found")
 		return
 	}
 
@@ -171,16 +170,7 @@ func (s *Service) configFromContext(w http.ResponseWriter, r *http.Request) (scp
 	if err := scpCfg.IsValid(); err != nil {
 		// the scoped configuration is invalid and hence a programmer or package user
 		// made a mistake.
-		if s.Log.IsDebug() {
-			s.Log.Debug("scopedservice.Service.configFromContext.configByScopedGetter.Error",
-				log.Err(err),
-				log.Stringer("scope", scpCfg.ScopeHash),
-				log.Int64("website_id", websiteID), log.Int64("store_id", storeID),
-				log.HTTPRequest("request", r),
-			)
-		}
-		s.ErrorHandler(errors.Wrap(err, "[scopedservice] ConfigByScopedGetter")).ServeHTTP(w, r)
-		return
+		scpCfg.lastErr = errors.Wrap(err, "[scopedservice] Service.configFromContext.configFromScope") // rewrite error
 	}
 	return
 }
