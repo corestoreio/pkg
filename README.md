@@ -129,19 +129,19 @@ from the geniuses listed below:
 
 | Name | Package | License |
 | -------|----------|-------|
-| Steve Francia | [conv](http://github.com/corestoreio/csfw/tree/master/utils/conv) | MIT Copyright (c) 2014 |
-| Steve Francia | [bufferpool](http://github.com/corestoreio/csfw/tree/master/utils/bufferpool) | [Simple Public License, V2.0](http://opensource.org/licenses/Simple-2.0) |
+| Steve Francia | [util/conv](http://github.com/corestoreio/csfw/tree/master/utils/conv) | MIT Copyright (c) 2014 |
 | Jonathan Novak, Tyler Smith, Michal Bohuslávek | [dbr](http://github.com/corestoreio/csfw/tree/master/storage/dbr) | The MIT License (MIT) 2014 |
 | Martin Angers and Contributors. | [ctxthrottled](http://github.com/corestoreio/csfw/tree/master/net/ctxthrottled) | The MIT License (MIT) 2014 |
-| Dave Cheney <dave AT cheney.net> | [errors](https://github.com/pkg/errors) | The MIT License (MIT) 2015 |
+| Dave Cheney <dave AT cheney.net> | [util/errors](https://github.com/pkg/errors) | The MIT License (MIT) 2015 |
 | Jad Dittmar | [finance](https://github.com/Confunctionist/finance) aka. [money](http://github.com/corestoreio/csfw/tree/master/storage/money) | Copyright (c) 2011 |
-| Wenbin Xiao | [sqlparser](https://github.com/xwb1989/sqlparser) | Copyright 2015 BSD Style |
+| Wenbin Xiao | [util/sqlparser](https://github.com/xwb1989/sqlparser) | Copyright 2015 BSD Style |
 | Google Inc | [youtube/vitess\sqlparser](https://github.com/youtube/vitess) | Copyright 2012 BSD Style |
 | Olivier Poitrey| [ctxmw.WithAccessLog](https://github.com/corestoreio/csfw/tree/master/net/ctxmw) & CORS | Copyright (c) 2014-2015  MIT License |
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/csfw/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
 | Uber Technologies, Inc. | [log](https://github.com/corestoreio/csfw/tree/master/log) | Copyright (c) 2016 MIT License |
 | 2013 The Go Authors | [singleflight](https://github.com/corestoreio/csfw/tree/master/sync/singleflight) | Copyright (c) 2013 BSD Style |
 | Minio Cloud Storage, (C) 2016 Minio, Inc. | [blake2b-simd](https://github.com/minio/blake2b-simd) | Apache License, Version 2.0 |
+| Ventu.io, Oleg Sklyar, contributors. | [util/shortid](http://github.com/corestoreio/csfw/tree/master/utils/shortid) | MIT License Copyright (c) 2016, |
 
 ## Licensing
 
