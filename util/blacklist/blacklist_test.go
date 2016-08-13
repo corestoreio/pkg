@@ -15,13 +15,14 @@
 package blacklist_test
 
 import (
+	"github.com/corestoreio/csfw/net/jwt"
+	"github.com/corestoreio/csfw/util/blacklist"
+	"github.com/pierrec/xxHash/xxHash64"
+	"github.com/stretchr/testify/assert"
+	"hash"
 	"hash/fnv"
 	"testing"
 	"time"
-
-	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/util/blacklist"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ jwt.Blacklister = (*blacklist.InMemory)(nil)
@@ -34,29 +35,25 @@ func appendTo(b1 []byte, s string) []byte {
 }
 
 func TestBlackLists(t *testing.T) {
-	t.Parallel()
+
 	tests := []struct {
-		bl    jwt.Blacklister
-		token []byte
+		bl jwt.Blacklister
 	}{
-		{
-			blacklist.NewInMemory(fnv.New64a()),
-			[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
-		},
-		//{
-		//	blacklist.NewFreeCache(0),
-		//	[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
-		//},
+		{blacklist.NewInMemory(fnv.New64a)},
+		{blacklist.NewInMemory(func() hash.Hash64 { return xxHash64.New(33) })},
 	}
 	for i, test := range tests {
-		assert.NoError(t, test.bl.Set(test.token, time.Second*1), "Index %d", i)
-		assert.NoError(t, test.bl.Set(appendTo(test.token, "2"), time.Second*2), "Index %d", i)
-		assert.True(t, test.bl.Has(test.token), "Index %d", i)
+
+		id := []byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9`)
+
+		assert.NoError(t, test.bl.Set(id, time.Second*1), "Index %d", i)
+		assert.NoError(t, test.bl.Set(appendTo(id, "2"), time.Second*2), "Index %d", i)
+		assert.True(t, test.bl.Has(id), "Index %d", i)
 		time.Sleep(time.Second * 3)
-		assert.NoError(t, test.bl.Set(appendTo(test.token, "3"), time.Second*2), "Index %d", i)
-		assert.False(t, test.bl.Has(test.token), "Index %d", i)
-		assert.False(t, test.bl.Has(appendTo(test.token, "2")), "Index %d", i)
-		assert.False(t, test.bl.Has(test.token), "Index %d", i)
-		assert.True(t, test.bl.Has(appendTo(test.token, "3")), "Index %d", i)
+		assert.NoError(t, test.bl.Set(appendTo(id, "3"), time.Second*2), "Index %d", i)
+		assert.False(t, test.bl.Has(id), "Index %d", i)
+		assert.False(t, test.bl.Has(appendTo(id, "2")), "Index %d", i)
+		assert.False(t, test.bl.Has(id), "Index %d", i)
+		assert.True(t, test.bl.Has(appendTo(id, "3")), "Index %d", i)
 	}
 }

@@ -22,46 +22,44 @@ import (
 	"github.com/corestoreio/csfw/util/hashpool"
 )
 
-// InMemory creates an in-memory map which holds as a key the
-// tokens and as value the token expiration duration. Once a Set() operation
-// will be called the tokens list get purged. Don't use this feature in
-// production as the underlying mutex will become a bottleneck with higher
-// throughput, but still faster as a connection to Redis ;-). The map type
-// has been optimized for less GC and can hold millions of entries.
+// InMemory creates an in-memory map which holds as a key the ID and as value an
+// expiration duration. Once a Set() operation will be called the ID list get
+// purged. The map type has been optimized for less GC and can hold millions of
+// entries.
 type InMemory struct {
 	hp hashpool.Tank
 	mu sync.RWMutex
-	// tokens contains a ma consisting only of integers which skips scanning a map
-	// by the GC.
-	tokens map[uint64]int64 // int64 unix timestamp
+	// keys contains a map consisting only of integers which skips scanning a
+	// map by the GC.
+	keys map[uint64]int64 // int64 unix timestamp
 }
 
 // NewInMemory creates a new blacklist map using the Hash for key generation.
 // Please choose a Hash function with less collisions.
 func NewInMemory(hf func() hash.Hash64) *InMemory {
 	return &InMemory{
-		hp:     hashpool.New64(hf),
-		tokens: make(map[uint64]int64),
+		hp:   hashpool.New64(hf),
+		keys: make(map[uint64]int64),
 	}
 }
 
 // hash generates a hash value of a byte slice.
-func (bl *InMemory) hash(token []byte) uint64 {
+func (bl *InMemory) hash(id []byte) uint64 {
 	hf := bl.hp.Get()
-	_, _ = hf.Write(token)
+	_, _ = hf.Write(id)
 	s := hf.Sum64()
 	bl.hp.Put(hf)
 	return s
 
 }
 
-// Has checks if a token has been stored in the blacklist and may
-// delete the token if expiration time is up.
-func (bl *InMemory) Has(token []byte) bool {
+// Has checks if an ID has been stored in the blacklist and may delete the ID if
+// expiration time is up.
+func (bl *InMemory) Has(id []byte) bool {
 
 	bl.mu.RLock()
-	h := bl.hash(token)
-	ts, ok := bl.tokens[h]
+	h := bl.hash(id)
+	ts, ok := bl.keys[h]
 	bl.mu.RUnlock()
 
 	if !ok {
@@ -71,35 +69,35 @@ func (bl *InMemory) Has(token []byte) bool {
 
 	if false == isValid {
 		bl.mu.Lock()
-		delete(bl.tokens, h)
+		delete(bl.keys, h)
 		bl.mu.Unlock()
 	}
 	return isValid
 }
 
-// Set adds a token to the blacklist and may perform a
-// purge operation. Set should be called when you log out a user.
-// Set must make sure to copy away the token bytes or hash them.
-func (bl *InMemory) Set(token []byte, expires time.Duration) error {
-	h := bl.hash(token)
+// Set adds an ID to the blacklist and may perform a purge operation. Set should
+// be called when you log out a user. Set must make sure to copy away the bytes
+// or hash them.
+func (bl *InMemory) Set(id []byte, expires time.Duration) error {
+	h := bl.hash(id)
 
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
 
 	now := time.Now().Unix()
-	for k, v := range bl.tokens {
-		if now > v {
-			delete(bl.tokens, k)
+	for k, v := range bl.keys {
+		if now > v { // todo call purge operation not that often ...
+			delete(bl.keys, k)
 		}
 	}
-	bl.tokens[h] = time.Now().Add(expires).Unix()
+	bl.keys[h] = time.Now().Add(expires).Unix()
 	return nil
 }
 
 // Len returns the number of entries in the blacklist
 func (bl *InMemory) Len() int {
 	bl.mu.RLock()
-	l := len(bl.tokens)
+	l := len(bl.keys)
 	bl.mu.RUnlock()
 	return l
 }
