@@ -27,10 +27,8 @@ const (
 	// ErrTokenBlacklisted returned by the middleware if the token can be found
 	// within the black list.
 	errTokenBlacklisted = "[jwt] Token has been black listed"
-
-	errStoreNotFound = "[jwt] Store not found in token claim"
 )
 
 var (
-	errBlacklistEmptyKID = errors.NewEmptyf("[jwt] Cannot add token to blacklist because JTI / key ID is empty.")
+	errEmptyKID = errors.NewEmptyf("[jwt] JTI / key ID is empty.")
 )

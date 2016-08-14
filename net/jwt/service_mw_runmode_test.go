@@ -19,45 +19,43 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"hash/fnv"
 )
 
-func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte) {
-	jm, err := jwt.New(opts...)
+func testAuth_WithRunMode(t *testing.T, opts ...jwt.Option) (http.Handler, []byte) {
+	cfg := cfgmock.NewService()
+	jm, err := jwt.New(append(opts, jwt.WithConfigGetter(cfg))...)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
 	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
-		"xfoo": "bar",
-		"zfoo": 4711,
+		"xfoo": "baz",
+		"zfoo": 4712,
 	})
 	assert.NoError(t, err)
 
 	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	authHandler := jm.WithToken(final)
+	srv := storemock.NewEurozzyService(cfg)
+
+	authHandler := jm.WithRunMode(scope.RunMode{}, srv)(final)
 	return authHandler, theToken.Raw
 }
 
-//func finalInitStoreHandler(t *testing.T, idx int, wantStoreCode string) http.HandlerFunc {
-//	return func(w http.ResponseWriter, r *http.Request) {
-//		haveReqStore, err := scope.FromContext(r.Context())
-//		if err != nil {
-//			t.Fatalf("%+v", err)
-//		}
-//		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode(), "Index %d", idx)
-//	}
-//}
-
-func TestService_WithToken_NoStoreProvider(t *testing.T) {
-
-	authHandler, _ := testAuth_WithToken(t,
+func TestService_WithRunMode_NoToken(t *testing.T) {
+	authHandler, _ := testAuth_WithRunMode(t,
 		jwt.WithErrorHandler(scope.Default, 0,
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,48 +64,82 @@ func TestService_WithToken_NoStoreProvider(t *testing.T) {
 			}),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusNotImplemented)
 				tk, ok := jwt.FromContext(r.Context())
 				assert.False(t, tk.Valid)
 				assert.False(t, ok)
+				w.WriteHeader(http.StatusUnauthorized)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				assert.True(t, errors.IsNotFound(err), "%+v", err)
 			})
 		}),
 	)
 
-	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
-	assert.NoError(t, err)
+	req := httptest.NewRequest("GET", "http://auth.xyz", nil)
 	w := httptest.NewRecorder()
 	authHandler.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotImplemented, w.Code)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), http.StatusText(http.StatusUnauthorized)+"\n")
+}
+
+func TestService_WithRunMode_Disabled(t *testing.T) {
+	authHandler, _ := testAuth_WithRunMode(t,
+		jwt.WithDisable(scope.Website, 1, true), // 1 == euro website
+		jwt.WithErrorHandler(scope.Website, 1,
+			func(err error) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					panic("Should not get called")
+				})
+			}),
+		jwt.WithServiceErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic("Should not get called")
+			})
+		}),
+	)
+
+	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
+	w := httptest.NewRecorder()
+	authHandler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Empty(t, w.Body.String())
 }
 
-//func TestService_WithInitTokenAndStore_NoToken(t *testing.T) {
-//
-//	cr := cfgmock.NewService()
-//	srv := storemock.NewEurozzyService(
-//		scope.MustSetByCode(scope.Website, "euro"),
-//		store.WithStorageConfig(cr),
-//	)
-//	dsv, err := srv.Store()
-//	ctx := store.WithContextRequestedStore(context.Background(), dsv, err)
-//	authHandler, _ := testAuth(t, jwt.WithErrorHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		tk, err := jwt.FromContext(r.Context())
-//		assert.False(t, tk.Valid)
-//		assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
-//		w.WriteHeader(http.StatusUnauthorized)
-//		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-//	})))
-//
-//	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
-//	assert.NoError(t, err)
-//	w := httptest.NewRecorder()
-//	authHandler.ServeHTTP(w, req.WithContext(ctx))
-//	assert.Equal(t, http.StatusUnauthorized, w.Code)
-//	assert.Equal(t, http.StatusText(http.StatusUnauthorized)+"\n", w.Body.String())
-//}
-//
+func TestService_WithRunMode_SingleUsage(t *testing.T) {
+	authHandler, token := testAuth_WithRunMode(t,
+		jwt.WithDisable(scope.Website, 1, false),
+		jwt.WithSingleTokenUsage(scope.Website, 1, true),
+		jwt.WithErrorHandler(scope.Website, 1,
+			func(err error) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					panic("Should not get called")
+				})
+			}),
+		jwt.WithServiceErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic("Should not get called")
+			})
+		}),
+		// default is a null blacklist so we must set one
+		jwt.WithBlacklist(blacklist.NewInMemory(fnv.New64a)),
+	)
+
+	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
+	req = req.WithContext(scope.WithContext(req.Context(), 1, 0))
+	jwt.SetHeaderAuthorization(req, token)
+
+	// 1st request ok
+	w := httptest.NewRecorder()
+	authHandler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Empty(t, w.Body.String())
+
+	// 2nd request unauthorized
+	w = httptest.NewRecorder()
+	authHandler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), http.StatusText(http.StatusUnauthorized)+"\n")
+}
+
 //func TestService_WithInitTokenAndStore_HTTPErrorHandler(t *testing.T) {
 //
 //	srv := storemock.NewEurozzyService(

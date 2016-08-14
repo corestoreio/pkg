@@ -18,7 +18,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -122,20 +121,17 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (c
 	return tk, errors.Wrap(err, "[jwt] NewToken.SignedString")
 }
 
-// Logout adds a token securely to a blacklist with the expiration duration. If the JTI or token ID
-// is empty or missing, an error gets returned of behaviour Empty.
+// Logout adds a token securely to a blacklist with the expiration duration. If
+// the JTI or token ID is empty or missing, an error gets returned of behaviour
+// Empty.
 func (s *Service) Logout(token csjwt.Token) error {
 	if len(token.Raw) == 0 || !token.Valid {
 		return nil
 	}
 
-	rawkid, err := token.Claims.Get(claimKeyID)
+	kid, err := extractJTI(token)
 	if err != nil {
-		return errors.Wrapf(errBlacklistEmptyKID, "[jwt] Service.Logout token.Claims.Get.KID: %s", err)
-	}
-	kid := conv.ToByte(rawkid)
-	if len(kid) == 0 {
-		return errors.Wrap(errBlacklistEmptyKID, "[jwt] Service.Logout KID len")
+		return errors.Wrap(err, "[jwt] Service.Logout extractJTI")
 	}
 
 	return errors.Wrap(s.Blacklist.Set(kid, token.Claims.Expires()), "[jwt] Service.Logout.Blacklist.Set")

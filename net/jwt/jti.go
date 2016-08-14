@@ -14,7 +14,12 @@
 
 package jwt
 
-import "github.com/corestoreio/csfw/util/shortid"
+import (
+	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/shortid"
+)
 
 // JTI represents the interface to generate a new UUID aka JWT ID
 type IDGenerator interface {
@@ -26,4 +31,20 @@ type jti struct{}
 
 func (j jti) NewID() (string, error) {
 	return shortid.Generate()
+}
+
+// extractJTI returns the token ID
+func extractJTI(token csjwt.Token) ([]byte, error) {
+	rawkid, err := token.Claims.Get(claimKeyID)
+	if err != nil {
+		return nil, errors.Wrapf(errEmptyKID, "[jwt] extractJTI token.Claims.Get.KID: %s", err)
+	}
+	kid, err := conv.ToByteE(rawkid)
+	if err != nil {
+		return nil, errors.Wrap(errEmptyKID, "[jwt] tokenJTI conv.ToByteE")
+	}
+	if len(kid) == 0 {
+		return nil, errors.Wrap(errEmptyKID, "[jwt] extractJTI KID len")
+	}
+	return kid, nil
 }

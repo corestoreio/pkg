@@ -20,4 +20,6 @@
 //
 // https://news.ycombinator.com/item?id=11929267 => For people using JWT as a
 // substitute for stateful sessions, how do you handle renewal (or revocation)?
+//
+// http://cryto.net/~joepie91/blog/2016/06/19/stop-using-jwt-for-sessions-part-2-why-your-solution-doesnt-work/
 package jwt

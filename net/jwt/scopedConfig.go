@@ -61,6 +61,11 @@ type ScopedConfig struct {
 	// StoreCodeFieldName optional custom key name used to lookup the claims section
 	// to find the store code, defaults to constant store.CodeFieldName.
 	StoreCodeFieldName string
+
+	// SingleTokenUsage if set to true for each request a token can be only used
+	// once. The JTI (JSON Token Identifier) gets added to the blacklist until it
+	// expires.
+	SingleTokenUsage bool
 }
 
 var defaultUnauthorizedHandler = mw.ErrorWithStatusCode(http.StatusUnauthorized)
@@ -97,10 +102,27 @@ func (sc ScopedConfig) TemplateToken() (tk csjwt.Token) {
 
 // ParseFromRequest parses a request to find a token in either the header, a
 // cookie or an HTML form.
-func (sc ScopedConfig) ParseFromRequest(r *http.Request) (csjwt.Token, error) {
+func (sc ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
-	err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r)
-	return dst, errors.Wrap(err, "[jwt] ScopedConfig.Verifier.ParseFromRequest")
+
+	if err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r); err != nil {
+		return dst, errors.Wrap(err, "[jwt] ScopedConfig.Verifier.ParseFromRequest")
+	}
+
+	kid, err := extractJTI(dst)
+	if err != nil {
+		return dst, errors.Wrap(err, "[jwt] ScopedConfig.ParseFromRequest.extractJTI")
+	}
+
+	if bl.Has(kid) {
+		return dst, errors.NewNotValidf(errTokenBlacklisted)
+	}
+	if sc.SingleTokenUsage {
+		if err := bl.Set(kid, dst.Claims.Expires()); err != nil {
+			return dst, errors.Wrap(err, "[jwt] ScopedConfig.ParseFromRequest.Blacklist.Set")
+		}
+	}
+	return dst, nil
 }
 
 // Parse parses a raw token.

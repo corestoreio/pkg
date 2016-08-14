@@ -32,61 +32,11 @@ func SetHeaderAuthorization(req *http.Request, token []byte) {
 	req.Header.Set("Authorization", "Bearer "+string(token))
 }
 
-// WithToken parses and validates a token depending on the scope. A check to the
-// blacklist will be performed. The token gets added to the context for further
-// processing for the next middlewares. This function depends on the runMode and
-// its scope which must exists in the requests context. WithToken() does not
-// change the scope of the previously initialized runMode and its scope.
-func (s *Service) WithToken(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		scpCfg := s.configFromContext(r.Context())
-		if err := scpCfg.IsValid(); err != nil {
-			if s.Log.IsDebug() {
-				s.Log.Debug("jwt.Service.WithToken.configFromContext", log.Err(err), log.HTTPRequest("request", r))
-			}
-			s.ErrorHandler(errors.Wrap(err, "jwt.Service.WithToken.configFromContext")).ServeHTTP(w, r)
-			return
-		}
-		if scpCfg.Disabled {
-			if s.Log.IsDebug() {
-				s.Log.Debug("jwt.Service.WithToken.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
-			}
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		token, err := scpCfg.ParseFromRequest(r)
-		if err != nil {
-			if s.Log.IsDebug() {
-				s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
-			}
-			// todo what should be done when the token has expired?
-			scpCfg.UnauthorizedHandler(errors.Wrap(err, "[jwt] ParseFromRequest")).ServeHTTP(w, r)
-			return
-		}
-		if s.Blacklist.Has(token.Raw) {
-			err = errors.NewNotValidf(errTokenBlacklisted)
-			if s.Log.IsDebug() {
-				s.Log.Debug("jwt.Service.WithToken.Blacklist.Has", log.Err(err), log.Marshal("token", token), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
-			}
-			// consider your ErrorHandler before leaking sensitive information.
-			scpCfg.UnauthorizedHandler(err).ServeHTTP(w, r)
-			return
-		}
-
-		// add token to the context
-		ctx := withContext(r.Context(), token)
-
-		// continue without changing the scope
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 // WithRunMode sets the initial runMode, loads the token configuration, parses
 // and validates a token and if the token contains a new store code it changes
 // the scope for the context.
 //
-// RunMode optional custom runMode otherwise falls back to scope.DefaultRunMode
+// RunMode custom runMode otherwise falls back to scope.DefaultRunMode
 // which selects the default website with its default store. To use the admin
 // area enable scope.Store and ID 0.
 //
@@ -131,24 +81,13 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 				return
 			}
 
-			// extract token from request and validate, if invalid call scoped error handler
-			token, err := defaultScpCfg.ParseFromRequest(r)
+			token, err := defaultScpCfg.ParseFromRequest(s.Blacklist, r)
 			if err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("jwt.Service.WithRunMode.ParseFromRequest", log.Err(err), log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg), log.HTTPRequest("request", r))
 				}
-				defaultScpCfg.UnauthorizedHandler(errors.Wrap(err, "[jwt] ParseFromRequest")).ServeHTTP(w, r)
-				return
-			}
-			if s.Blacklist.Has(token.Raw) {
-				err = errors.NewNotValidf(errTokenBlacklisted)
-				if s.Log.IsDebug() {
-					s.Log.Debug("jwt.Service.WithRunMode.Blacklist.Has", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
-				}
-				// consider your ErrorHandler before leaking sensitive information.
-				defaultScpCfg.UnauthorizedHandler(err).ServeHTTP(w, r)
+				// todo what should be done when the token has expired?
+				defaultScpCfg.UnauthorizedHandler(errors.Wrap(err, "[jwt] WithToken.ParseFromRequest")).ServeHTTP(w, r)
 				return
 			}
 
@@ -184,7 +123,7 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 				websiteID = newWebsiteID
 			}
 
-			r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
+			r = r.WithContext(scope.WithContext(ctx, websiteID, storeID))
 
 			// check if the new store ID is allowed
 			isStoreAllowed, _, err := sf.IsAllowedStoreID(runMode, storeID)

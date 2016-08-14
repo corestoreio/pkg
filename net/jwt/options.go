@@ -230,3 +230,23 @@ func WithUnauthorizedHandler(scp scope.Scope, id int64, uh mw.ErrorHandler) Opti
 		return nil
 	}
 }
+
+// WithSingleTokenUsage if set to true for each request a token can be only used
+// once. The JTI (JSON Token Identifier) gets added to the blacklist until it
+// expires.
+func WithSingleTokenUsage(scp scope.Scope, id int64, enable bool) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.SingleTokenUsage = enable
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
