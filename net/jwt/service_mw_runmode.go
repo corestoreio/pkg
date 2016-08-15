@@ -54,6 +54,7 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 			// find the default store ID for the runMode
 			storeID, websiteID, err := sf.DefaultStoreID(runMode)
 			if err != nil {
+				s.Log.Info("jwt.Service.WithRunMode.DefaultStoreID.Error", log.Err(err))
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.DefaultStoreID.Error", log.Err(err),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
@@ -65,6 +66,7 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 			// load default scoped configuration and call next handler if disabled
 			defaultScpCfg := s.configFromScope(websiteID, storeID) // scope of the DefaultStore selected by the run mode.
 			if err := defaultScpCfg.IsValid(); err != nil {
+				s.Log.Info("jwt.Service.WithRunMode.ConfigFromScope.Error", log.Err(err))
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.ConfigFromScope.Error", log.Err(err),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
@@ -72,45 +74,47 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 				s.ErrorHandler(errors.Wrap(err, "[jwt] ConfigByScopedGetter")).ServeHTTP(w, r)
 				return
 			}
+
 			if defaultScpCfg.Disabled {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.Disabled", log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
+				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			token, err := defaultScpCfg.ParseFromRequest(s.Blacklist, r)
+			ctx := withContext(r.Context(), token)
 			if err != nil {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg), log.HTTPRequest("request", r))
 				}
 				// todo what should be done when the token has expired?
+				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
 				defaultScpCfg.UnauthorizedHandler(errors.Wrap(err, "[jwt] WithToken.ParseFromRequest")).ServeHTTP(w, r)
 				return
 			}
-
-			// add token to the context
-			ctx := withContext(r.Context(), token)
 
 			// extracts the store code from the token.
 			reqCode := codeFromToken(token, defaultScpCfg.StoreCodeFieldName)
 			if reqCode == "" {
 				// no code found in token so call next handler and add the scope to the context
-				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.NextHandler.WithoutCode", log.Marshal("token", token),
 						log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
-				next.ServeHTTP(w, r.WithContext(ctx))
+				r = r.WithContext(scope.WithContext(ctx, websiteID, storeID))
+				next.ServeHTTP(w, r)
 				return
 			}
 
 			// convert the code string into its internal ID depending on the scope.
 			newStoreID, newWebsiteID, err := sf.StoreIDbyCode(runMode, reqCode)
 			if err != nil && !errors.IsNotFound(err) {
+				s.Log.Info("jwt.Service.WithRunMode.IDbyCode.Error", log.Err(err))
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
@@ -128,6 +132,7 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 			// check if the new store ID is allowed
 			isStoreAllowed, _, err := sf.IsAllowedStoreID(runMode, storeID)
 			if err != nil {
+				s.Log.Info("jwt.Service.WithRunMode.IsAllowedStoreID.Error", log.Err(err))
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.IsAllowedStoreID.Error", log.Err(err),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
@@ -148,13 +153,12 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 				defaultScpCfg.UnauthorizedHandler(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, storeID)).ServeHTTP(w, r)
 				return
 			}
-
 			if s.Log.IsDebug() {
 				s.Log.Debug("jwt.Service.WithRunMode.NextHandler.WithCode",
 					log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 			}
-			next.ServeHTTP(w, r.WithContext(ctx))
+			next.ServeHTTP(w, r)
 		})
 	}
 }
