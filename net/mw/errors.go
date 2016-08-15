@@ -34,9 +34,9 @@ func ErrorWithStatusCode(code int) ErrorHandler {
 	}
 }
 
-// MustError implements the ErrorHandler type and panics always. Interesting for
+// ErrorWithPanic implements the ErrorHandler type and panics always. Interesting for
 // testing. This function may leak sensitive information.
-func MustError(err error) http.Handler {
+func ErrorWithPanic(err error) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		panic(fmt.Sprintf(`This handler should not get called!

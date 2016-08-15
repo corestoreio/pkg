@@ -33,7 +33,7 @@ func TestErrorWithCode(t *testing.T) {
 	assert.Contains(t, rec.Body.String(), http.StatusText(http.StatusTeapot))
 }
 
-func TestMustError(t *testing.T) {
+func TestErrorWithPanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			if s, ok := r.(string); ok {
@@ -46,6 +46,6 @@ func TestMustError(t *testing.T) {
 		}
 	}()
 	rec := httptest.NewRecorder()
-	mw.MustError(errors.New("Oh dude, this handler should not be called, but it did.")).ServeHTTP(rec, nil)
+	mw.ErrorWithPanic(errors.New("Oh dude, this handler should not be called, but it did.")).ServeHTTP(rec, nil)
 	assert.Exactly(t, http.StatusInternalServerError, rec.Code)
 }
