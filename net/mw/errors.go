@@ -25,11 +25,24 @@ type ErrorHandler func(error) http.Handler
 
 // ErrorWithStatusCode wraps an HTTP Status Code into an ErrorHandler. The
 // status text message gets printed first followed by the verbose error string.
-// This may leak sensitive information.
+// This function may leak sensitive information.
 func ErrorWithStatusCode(code int) ErrorHandler {
 	return func(err error) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			http.Error(w, fmt.Sprintf("%s\n\n%+v", http.StatusText(code), err), code)
 		})
 	}
+}
+
+// MustError implements the ErrorHandler type and panics always. Interesting for
+// testing. This function may leak sensitive information.
+func MustError(err error) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		panic(fmt.Sprintf(`This handler should not get called!
+============================================================
+%+v
+============================================================
+`, err))
+	})
 }

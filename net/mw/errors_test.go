@@ -32,3 +32,20 @@ func TestErrorWithCode(t *testing.T) {
 	assert.Contains(t, rec.Body.String(), `Hello Error World`)
 	assert.Contains(t, rec.Body.String(), http.StatusText(http.StatusTeapot))
 }
+
+func TestMustError(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			if s, ok := r.(string); ok {
+				assert.Contains(t, s, `Oh dude, this handler should not be called, but it did.`)
+			} else {
+				t.Fatalf("recover should contain a string: %#v", r)
+			}
+		} else {
+			t.Fatal("Expected a panic")
+		}
+	}()
+	rec := httptest.NewRecorder()
+	mw.MustError(errors.New("Oh dude, this handler should not be called, but it did.")).ServeHTTP(rec, nil)
+	assert.Exactly(t, http.StatusInternalServerError, rec.Code)
+}
