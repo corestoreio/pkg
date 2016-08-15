@@ -15,16 +15,17 @@
 package jwt
 
 import (
+	"hash/fnv"
+	"net/http/httptest"
+	"testing"
+	"time"
+
 	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/shortid"
 	"github.com/stretchr/testify/assert"
-	"hash/fnv"
-	"net/http/httptest"
-	"testing"
-	"time"
 )
 
 func TestScopedConfig_ParseFromRequest_Valid(t *testing.T) {

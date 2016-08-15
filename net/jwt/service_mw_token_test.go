@@ -19,6 +19,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"hash/fnv"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/jwt"
@@ -27,7 +29,6 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"hash/fnv"
 )
 
 func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte) {
