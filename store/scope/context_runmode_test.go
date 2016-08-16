@@ -28,7 +28,7 @@ func TestRunMode(t *testing.T) {
 
 	tests := []struct {
 		mode     scope.Hash
-		modeFunc func(*http.Request) scope.Hash
+		modeFunc scope.RunModeFunc
 		want     scope.Hash
 	}{
 		{scope.NewHash(scope.Website, 2), nil, scope.NewHash(scope.Website, 2)},
@@ -47,8 +47,8 @@ func TestRunMode(t *testing.T) {
 		req := httptest.NewRequest("GET", "http://corestore.io", nil)
 
 		haveMode := scope.RunMode{
-			Mode:     test.mode,
-			ModeFunc: test.modeFunc,
+			Mode:        test.mode,
+			RunModeFunc: test.modeFunc,
 		}.CalculateMode(req)
 
 		ctx := scope.WithContextRunMode(req.Context(), haveMode)

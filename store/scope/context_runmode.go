@@ -27,21 +27,26 @@ type ctxRunModeKey struct{}
 // store.
 const DefaultRunMode Hash = 0
 
+// RunModeFunc custom function to initialize the runMode based on parameters in
+// the http.Request. RunModeFunc must be embedded in the type RunMode.
+type RunModeFunc func(*http.Request) Hash
+
 // RunMode core type to initialize the run mode of the current request. Allows
 // you to create a multi-site / multi-tenant setup. An implementation of this
 // lives in storenet.AppRunMode.WithRunMode() middleware.
 type RunMode struct {
 	Mode Hash
-	// ModeFunc if not nil you can create your own function to return a run mode.
-	ModeFunc func(*http.Request) Hash
+	// RunModeFunc if not nil you can create your own function to return a run mode.
+	RunModeFunc
 }
 
-// CalculateMode calls the user defined Mode field or ModeFunction. On an
-// invalid mode it falls back to the default run mode, which is a zero Hash.
+// CalculateMode calls the user defined Mode field or RunModeFunc. On an invalid
+// mode (< Website scope or > Store scope) it falls back to the default run
+// mode, which is a zero Hash.
 func (rm RunMode) CalculateMode(r *http.Request) Hash {
 	h := rm.Mode
-	if rm.ModeFunc != nil {
-		h = rm.ModeFunc(r)
+	if rm.RunModeFunc != nil {
+		h = rm.RunModeFunc(r)
 	}
 	if s := h.Scope(); s < Website || s > Store {
 		// fall back to default because only Website, Group and Store are allowed.
