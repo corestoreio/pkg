@@ -15,10 +15,13 @@
 package jwt_test
 
 import (
+	"fmt"
 	"hash/fnv"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
@@ -27,7 +30,9 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/blacklist"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -205,7 +210,7 @@ func TestService_WithRunMode_DefaultStoreID_Error(t *testing.T) {
 }
 
 func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
-	var calledServiceErrorHandler bool
+	var calledErrorHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithConfigGetter(cfg),
@@ -213,7 +218,7 @@ func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusAlreadyReported)
 				assert.True(t, errors.IsNotImplemented(err))
-				calledServiceErrorHandler = true
+				calledErrorHandler = true
 			})
 		}),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
@@ -241,11 +246,11 @@ func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
 	authHandler.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusAlreadyReported, w.Code)
 	assert.Empty(t, w.Body.String())
-	assert.True(t, calledServiceErrorHandler)
+	assert.True(t, calledErrorHandler)
 }
 
 func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
-	var calledServiceErrorHandler bool
+	var calledErrorHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithConfigGetter(cfg),
@@ -253,7 +258,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusAlreadyReported)
 				assert.True(t, errors.IsTemporary(err))
-				calledServiceErrorHandler = true
+				calledErrorHandler = true
 			})
 		}),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
@@ -281,7 +286,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 	authHandler.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusAlreadyReported, w.Code)
 	assert.Empty(t, w.Body.String())
-	assert.True(t, calledServiceErrorHandler)
+	assert.True(t, calledErrorHandler)
 }
 
 func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
@@ -342,7 +347,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 }
 
 func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
-	var calledUnauthorizedHandler bool
+	var calledFinalHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithConfigGetter(cfg),
@@ -366,7 +371,7 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 		assert.Exactly(t, int64(380), sID, "scope.FromContext store")
 
 		w.WriteHeader(http.StatusTeapot)
-		calledUnauthorizedHandler = true
+		calledFinalHandler = true
 	})
 
 	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
@@ -395,74 +400,126 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 	authHandler.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusTeapot, w.Code)
 	assert.Empty(t, w.Body.String())
-	assert.True(t, calledUnauthorizedHandler)
+	assert.True(t, calledFinalHandler)
 
 }
 
-// TestService_WithRunMode_Disabled
-// 1. a request with a valid token
-// should do nothing and just call the next handler in the chain because the
-// token service has been disabled therefore no validation and checking takes
-// place.
-// 2. valid request with website oz must be passed through with an
-// invalid token because JWT disabled
+// TestService_WithRunMode_DifferentScopes
+// all requests with a valid token
+// 1. runmode default, so website euro and default store to AT. just call the
+// next handler in the chain because the token is valid and scope is euro/at.
+// 2. runmode website OZ default store AU valid request with store NZ and must
+// change scope to NZ
 func TestService_WithRunMode_DifferentScopes(t *testing.T) {
-	t.Skip("todo")
-	var calledUnauthorizedHandler bool
+
+	key := csjwt.WithPasswordRandom()
+	hs256, err := csjwt.NewSigningMethodHS256Fast(key)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	hs512, err := csjwt.NewSigningMethodHS512Fast(key)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	var calledFinalHandler = new(int32)
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithConfigGetter(cfg),
-		jwt.WithErrorHandler(scope.Website, 359, mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
-		jwt.WithUnauthorizedHandler(scope.Website, 359, mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.Website, 1, mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.Website, 2, mw.ErrorWithPanic),
+		jwt.WithUnauthorizedHandler(scope.Website, 1, mw.ErrorWithPanic),
+		jwt.WithUnauthorizedHandler(scope.Website, 2, mw.ErrorWithPanic),
+		jwt.WithStoreCodeFieldName(scope.Website, 1, "euro_store"),
+		jwt.WithStoreCodeFieldName(scope.Website, 2, "oz_store"),
+		jwt.WithSigningMethod(scope.Website, 1, hs256),
+		jwt.WithSigningMethod(scope.Website, 2, hs512),
 	)
 	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
 	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wID, sID, hasScope := scope.FromContext(r.Context())
+		assert.True(t, hasScope)
+
 		tk, ok := jwt.FromContext(r.Context())
 		assert.True(t, tk.Valid)
 		assert.True(t, ok)
 
-		rm := scope.FromContextRunMode(r.Context())
-		assert.Exactly(t, scope.DefaultRunMode, rm, "FromContextRunMode")
-
-		wID, sID, ok := scope.FromContext(r.Context())
-		assert.True(t, ok)
-		assert.Exactly(t, int64(379), wID, "scope.FromContext website")
-		assert.Exactly(t, int64(380), sID, "scope.FromContext store")
+		switch rm := scope.FromContextRunMode(r.Context()); rm {
+		case scope.NewHash(scope.Website, 1):
+			assert.Exactly(t, int64(1), wID, "scope.FromContext website EURO")
+			assert.Exactly(t, int64(2), sID, "scope.FromContext store AT")
+			assert.Len(t, tk.Raw, 203, "Host %q", r.Host)
+		case scope.NewHash(scope.Website, 2):
+			assert.Exactly(t, int64(2), wID, "scope.FromContext website OZ")
+			assert.Exactly(t, int64(6), sID, "scope.FromContext store NZ")
+			assert.Len(t, tk.Raw, 246, "Host %q", r.Host)
+		default:
+			panic(fmt.Sprintf("Invalid runMode: %s", rm))
+		}
 
 		w.WriteHeader(http.StatusTeapot)
-		calledUnauthorizedHandler = true
+		atomic.AddInt32(calledFinalHandler, 1)
 	})
 
-	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
-		WebsiteIDDefault: 359,
-		StoreIDDefault:   360,
+	srv := storemock.NewEurozzyService(cfg)
+	authHandler := jm.WithRunMode(scope.RunMode{
+		RunModeFunc: func(r *http.Request) scope.Hash {
+			switch r.Host {
+			case "scope-euro.xyz":
+				return scope.NewHash(scope.Website, 1)
+			case "scope-oz.co.nz":
+				return scope.NewHash(scope.Website, 2)
+			default:
+				panic(fmt.Sprintf("Unkown host: %q", r.Host))
+			}
+			return 0
+		},
+	}, srv)(final)
 
-		IDByCodeWebsiteID: 379,
-		IDByCodeStoreID:   380,
+	{
+		euroClaim := jwtclaim.Map{
+			"euro_store": "", // we dont want to change the store
+		}
 
-		Allowed:     true, // important
-		AllowedCode: "uninteresting",
-	})(final)
+		euroToken, err := jm.NewToken(scope.Website, 1, euroClaim)
+		assert.NoError(t, err)
+		if len(euroToken.Raw) == 0 {
+			t.Fatalf("Euro Token empty: %#v", euroToken)
+		}
 
-	claimStore := jwtclaim.NewStore()
-	claimStore.Store = "'80s FTW"
-	theToken, err := jm.NewToken(scope.Website, 359, claimStore)
-	assert.NoError(t, err)
-	if len(theToken.Raw) == 0 {
-		t.Fatalf("Token empty: %#v", theToken)
+		req := httptest.NewRequest("GET", "http://scope-euro.xyz", nil)
+		jwt.SetHeaderAuthorization(req, euroToken.Raw)
+		hpu := cstesting.NewHTTPParallelUsers(3, 5, 100, time.Millisecond)
+		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
+			assert.Equal(t, http.StatusTeapot, rec.Code)
+			assert.Empty(t, rec.Body.String())
+		}
+		hpu.ServeHTTP(req, authHandler)
 	}
 
-	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
-	jwt.SetHeaderAuthorization(req, theToken.Raw)
+	{
+		ozClaim := jwtclaim.Map{
+			"oz_store": "nz", // switch to store NZ
+		}
 
-	w := httptest.NewRecorder()
-	authHandler.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusTeapot, w.Code)
-	assert.Empty(t, w.Body.String())
-	assert.True(t, calledUnauthorizedHandler)
+		ozToken, err := jm.NewToken(scope.Website, 2, ozClaim)
+		assert.NoError(t, err)
+		if len(ozToken.Raw) == 0 {
+			t.Fatalf("OZ Token empty: %#v", ozToken)
+		}
+		req := httptest.NewRequest("GET", "http://scope-oz.co.nz", nil)
+		jwt.SetHeaderAuthorization(req, ozToken.Raw)
+		hpu := cstesting.NewHTTPParallelUsers(3, 5, 100, time.Millisecond)
+		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
+			assert.Equal(t, http.StatusTeapot, rec.Code)
+			assert.Empty(t, rec.Body.String())
+		}
+		hpu.ServeHTTP(req, authHandler)
+	}
 
+	assert.Exactly(t, int32(30), *calledFinalHandler, "calledFinalHandler 2*(3*5)")
 }
 
 // todo add test for form with input field: access_token
