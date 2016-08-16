@@ -56,6 +56,9 @@ depgraph:
 	# http://talks.golang.org/2015/tricks.slide#51
 	find . -type d -not -iwholename '*.git*' -exec sh -c "godepgraph -horizontal {} | dot -Tsvg -o {}/godepgraph.svg" \;
 
+cover:
+    gocov test ./... | gocov report > test_coverage.txt
+
 magento1:
 	@echo "Installing Magento 1 TODO"
 
