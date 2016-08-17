@@ -57,10 +57,9 @@ func TestObscure(t *testing.T) {
 	b := cfgmodel.NewObscure(
 		cfgPath,
 		cfgmodel.WithCSVComma(''), // trick it
+		cfgmodel.WithEncryptor(rot13{}),
 		cfgmodel.WithScopeStore(),
 	)
-	b.Encryptor = rot13{}
-
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
 	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(

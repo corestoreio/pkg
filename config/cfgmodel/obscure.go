@@ -44,18 +44,47 @@ func (ne NoopEncryptor) Decrypt(s []byte) ([]byte, error) {
 	return s, ne.DecErr
 }
 
+// WithEncryptor sets the functions for reading and writing encrypted data
+// to the configuration service.
+func WithEncryptor(e Encryptor) Option {
+	return func(b *optionBox) error {
+		if b.Obscure == nil {
+			return nil
+		}
+		b.Obscure.Encryptor = e
+		return nil
+	}
+}
+
 // Obscure backend model for handling sensible values
 type Obscure struct {
 	Byte
 	Encryptor
 }
 
-// NewObscure creates a new Obscure type.  It will panic while calling later
-// Get()/Write() when the Encryptor has not been set.
+// NewObscure creates a new Obscure with validation checks when writing values.
 func NewObscure(path string, opts ...Option) Obscure {
-	return Obscure{
-		Byte: NewByte(path, opts...),
+	ret := Obscure{
+		Byte: NewByte(path),
 	}
+	(&ret).Option(opts...)
+	return ret
+}
+
+// Option sets the options and returns the last set previous option
+func (p *Obscure) Option(opts ...Option) error {
+	ob := &optionBox{
+		baseValue: &p.baseValue,
+		Obscure:   p,
+	}
+	for _, o := range opts {
+		if err := o(ob); err != nil {
+			return errors.Wrap(err, "[cfgmodel] Obscure.Option")
+		}
+	}
+	p = ob.Obscure
+	p.baseValue = *ob.baseValue
+	return nil
 }
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is

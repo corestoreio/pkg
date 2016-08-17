@@ -30,6 +30,7 @@ import (
 // functions applied to many different types within this package.
 type optionBox struct {
 	*baseValue
+	*Obscure
 	*StringCSV
 	*CSV
 	*IntCSV
