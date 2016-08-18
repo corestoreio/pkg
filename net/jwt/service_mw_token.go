@@ -28,10 +28,11 @@ import (
 // change the scope of the previously initialized runMode and its scope.
 func (s *Service) WithToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		scpCfg := s.configFromContext(r.Context())
+		scpCfg := s.configByContext(r.Context())
 		if err := scpCfg.IsValid(); err != nil {
+			s.Log.Info("jwt.Service.WithToken.configByContext.Error", log.Err(err))
 			if s.Log.IsDebug() {
-				s.Log.Debug("jwt.Service.WithToken.configFromContext", log.Err(err), log.HTTPRequest("request", r))
+				s.Log.Debug("jwt.Service.WithToken.configByContext", log.Err(err), log.HTTPRequest("request", r))
 			}
 			s.ErrorHandler(errors.Wrap(err, "jwt.Service.WithToken.configFromContext")).ServeHTTP(w, r)
 			return
@@ -46,6 +47,7 @@ func (s *Service) WithToken(next http.Handler) http.Handler {
 
 		token, err := scpCfg.ParseFromRequest(s.Blacklist, r)
 		if err != nil {
+			s.Log.Info("jwt.Service.WithToken.ParseFromRequest.Error", log.Err(err))
 			if s.Log.IsDebug() {
 				s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}

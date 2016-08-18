@@ -15,7 +15,6 @@
 package jwt
 
 import (
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
@@ -72,10 +71,6 @@ func New(opts ...Option) (*Service, error) {
 		return nil, err
 	}
 	return s, nil
-}
-
-func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
-	return s.configByScopedGetter(scpGet)
 }
 
 // NewToken creates a new signed JSON web token based on the predefined scoped

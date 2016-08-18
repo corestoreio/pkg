@@ -39,7 +39,7 @@ import (
 
 func testAuth_WithRunMode(t *testing.T, finalHandler http.Handler, opts ...jwt.Option) (http.Handler, []byte) {
 	cfg := cfgmock.NewService()
-	jm := jwt.MustNew(append(opts, jwt.WithConfigGetter(cfg))...)
+	jm := jwt.MustNew(append(opts, jwt.WithRootConfig(cfg))...)
 	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
 	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
@@ -181,7 +181,7 @@ func TestService_WithRunMode_DefaultStoreID_Error(t *testing.T) {
 	var calledServiceErrorHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
-		jwt.WithConfigGetter(cfg),
+		jwt.WithRootConfig(cfg),
 		jwt.WithErrorHandler(scope.Default, 0, mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -213,7 +213,7 @@ func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
 	var calledErrorHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
-		jwt.WithConfigGetter(cfg),
+		jwt.WithRootConfig(cfg),
 		jwt.WithErrorHandler(scope.Website, 778, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusAlreadyReported)
@@ -253,7 +253,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 	var calledErrorHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
-		jwt.WithConfigGetter(cfg),
+		jwt.WithRootConfig(cfg),
 		jwt.WithErrorHandler(scope.Website, 778, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusAlreadyReported)
@@ -293,7 +293,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 	var calledUnauthorizedHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
-		jwt.WithConfigGetter(cfg),
+		jwt.WithRootConfig(cfg),
 		jwt.WithErrorHandler(scope.Website, 889, mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
 		jwt.WithUnauthorizedHandler(scope.Website, 889, func(err error) http.Handler {
@@ -350,7 +350,7 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 	var calledFinalHandler bool
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
-		jwt.WithConfigGetter(cfg),
+		jwt.WithRootConfig(cfg),
 		jwt.WithErrorHandler(scope.Website, 359, mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
 		jwt.WithUnauthorizedHandler(scope.Website, 359, mw.ErrorWithPanic),
@@ -425,7 +425,7 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 	var calledFinalHandler = new(int32)
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
-		jwt.WithConfigGetter(cfg),
+		jwt.WithRootConfig(cfg),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
 		jwt.WithErrorHandler(scope.Website, 1, mw.ErrorWithPanic),
 		jwt.WithErrorHandler(scope.Website, 2, mw.ErrorWithPanic),
@@ -450,11 +450,11 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 		case scope.NewHash(scope.Website, 1):
 			assert.Exactly(t, int64(1), wID, "scope.FromContext website EURO")
 			assert.Exactly(t, int64(2), sID, "scope.FromContext store AT")
-			assert.Len(t, tk.Raw, 203, "Host %q", r.Host)
+			assert.True(t, len(tk.Raw) > 200, "Host %q", r.Host)
 		case scope.NewHash(scope.Website, 2):
 			assert.Exactly(t, int64(2), wID, "scope.FromContext website OZ")
 			assert.Exactly(t, int64(6), sID, "scope.FromContext store NZ")
-			assert.Len(t, tk.Raw, 246, "Host %q", r.Host)
+			assert.True(t, len(tk.Raw) > 240, "Host %q", r.Host)
 		default:
 			panic(fmt.Sprintf("Invalid runMode: %s", rm))
 		}

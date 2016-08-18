@@ -90,9 +90,9 @@ func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
 	}
 }
 
-// WithConfigGetter sets the root configuration service. While using any HTTP
+// WithRootConfig sets the root configuration service. While using any HTTP
 // related functions or middlewares you must set the config.Getter.
-func WithConfigGetter(cg config.Getter) Option {
+func WithRootConfig(cg config.Getter) Option {
 	_ = cg.NewScoped(0, 0) // let it panic as early as possible if cg is nil
 	return func(s *Service) error {
 		s.rwmu.Lock()
@@ -140,7 +140,8 @@ func WithOptionFactory(f OptionFactoryFunc) Option {
 	}
 }
 
-// NewOptionFactories creates a new struct and inits the internal map.
+// NewOptionFactories creates a new struct and initializes the internal map for
+// the registration of different option factories.
 func NewOptionFactories() *OptionFactories {
 	return &OptionFactories{
 		register: make(map[string]OptionFactoryFunc),

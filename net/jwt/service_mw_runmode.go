@@ -64,7 +64,7 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 			}
 
 			// load default scoped configuration and call next handler if disabled
-			defaultScpCfg := s.configFromScope(websiteID, storeID) // scope of the DefaultStore selected by the run mode.
+			defaultScpCfg := s.ConfigByScope(websiteID, storeID) // scope of the DefaultStore selected by the run mode.
 			if err := defaultScpCfg.IsValid(); err != nil {
 				s.Log.Info("jwt.Service.WithRunMode.ConfigFromScope.Error", log.Err(err))
 				if s.Log.IsDebug() {

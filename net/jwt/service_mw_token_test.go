@@ -33,7 +33,7 @@ import (
 
 func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte) {
 	cfg := cfgmock.NewService()
-	jm, err := jwt.New(append(opts, jwt.WithConfigGetter(cfg))...)
+	jm, err := jwt.New(append(opts, jwt.WithRootConfig(cfg))...)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
