@@ -113,7 +113,7 @@ func TestWithDebugLog(t *testing.T) {
 	srv, err := newService(WithDebugLog(logBuf))
 	assert.NoError(t, err, "%+v", err)
 
-	scpCfg := srv.configByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
+	scpCfg := srv.ConfigByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
 	assert.NoError(t, scpCfg.IsValid(), "%+v", scpCfg.IsValid())
 	assert.Contains(t, logBuf.String(), `scopedservice.Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Default) ID(0)" requested_parent_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Default) ID(0)"`)
 }

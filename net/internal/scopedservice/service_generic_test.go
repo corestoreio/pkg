@@ -79,7 +79,7 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 		}
 		for i, test := range tests {
 
-			cfg := s.configByScopedGetter(test.cfg)
+			cfg := s.ConfigByScopedGetter(test.cfg)
 
 			if have, want := cfg.value, test.want; have != want {
 				t.Errorf("(%d) Have: %q Want: %q (%s)", i, have, want, cfg.ScopeHash)

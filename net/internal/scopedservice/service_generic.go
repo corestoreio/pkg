@@ -45,7 +45,7 @@ type service struct {
 	// HTTP related middlewares.
 	rootConfig config.Getter
 
-	// useWebsite internal flag used in configFromContext(w,r) to tell the
+	// useWebsite internal flag used in configByContext(w,r) to tell the
 	// currenct handler if the scoped configuration is store or website based.
 	useWebsite bool
 
@@ -144,33 +144,36 @@ func (s *Service) DebugCache(w io.Writer) error {
 	return nil
 }
 
-// configFromScope creates a new scoped configuration depending on the
-// useWebsite flag. Errors get not logged.
-func (s *Service) configFromScope(websiteID, storeID int64) ScopedConfig {
+// ConfigByScope creates a new scoped configuration depending on the
+// Service.useWebsite flag. If useWebsite==true the scoped configuration
+// contains only the website->default scope despite setting a store scope. If an
+// OptionFactory is set the configuration gets loaded from the backend. A nil
+// root config causes a panic.
+func (s *Service) ConfigByScope(websiteID, storeID int64) ScopedConfig {
 	cfg := s.rootConfig.NewScoped(websiteID, storeID)
 	if s.useWebsite {
 		cfg = s.rootConfig.NewScoped(websiteID, 0)
 	}
-	return s.configByScopedGetter(cfg)
+	return s.ConfigByScopedGetter(cfg)
 }
 
-// configFromContext extracts the scope (websiteID and storeID) from a  context.
+// configByContext extracts the scope (websiteID and storeID) from a  context.
 // The scoped configuration gets initialized by configFromScope() and returned.
 // It panics if rootConfig if nil. Errors get not logged.
-func (s *Service) configFromContext(ctx context.Context) (scpCfg ScopedConfig) {
+func (s *Service) configByContext(ctx context.Context) (scpCfg ScopedConfig) {
 	// extract the scope out of the context and if not found a programmer made a
 	// mistake.
 	websiteID, storeID, scopeOK := scope.FromContext(ctx)
 	if !scopeOK {
-		scpCfg.lastErr = errors.NewNotFoundf("[scopedservice] configFromContext: scope.FromContext not found")
+		scpCfg.lastErr = errors.NewNotFoundf("[scopedservice] configByContext: scope.FromContext not found")
 		return
 	}
 
-	scpCfg = s.configFromScope(websiteID, storeID)
+	scpCfg = s.ConfigByScope(websiteID, storeID)
 	if err := scpCfg.IsValid(); err != nil {
 		// the scoped configuration is invalid and hence a programmer or package user
 		// made a mistake.
-		scpCfg.lastErr = errors.Wrap(err, "[scopedservice] Service.configFromContext.configFromScope") // rewrite error
+		scpCfg.lastErr = errors.Wrap(err, "[scopedservice] Service.configByContext.configFromScope") // rewrite error
 	}
 	return
 }
@@ -180,7 +183,7 @@ func (s *Service) configFromContext(ctx context.Context) (scpCfg ScopedConfig) {
 // option WithOptionFactory() the configuration will be pulled out only one time
 // from the backend configuration service. The field optionInflight handles the
 // guaranteed atomic single loading for each scope.
-func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
+func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
 	current := scope.NewHash(scpGet.Scope()) // can be store or website or default
 	parent := scope.NewHash(scpGet.Parent()) // can be website or default
@@ -248,13 +251,14 @@ func (s *Service) configByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
 // ConfigByScopeHash returns the correct configuration for a scope and may fall
 // back to the next higher scope: store -> website -> default. If `current` hash
-// is Store, then the `parent` can only be Website or Default. If an entry for
-// a scope cannot be found the next higher scope gets looked up and the pointer
-// of the next higher scope gets assigned to the current scope. This prevents
+// is Store, then the `parent` can only be Website or Default. If an entry for a
+// scope cannot be found the next higher scope gets looked up and the pointer of
+// the next higher scope gets assigned to the current scope. This prevents
 // redundant configurations and enables us to change one scope configuration
 // with an impact on all other scopes which depend on the parent scope. A zero
 // `parent` triggers no further lookups. This function does not load any
-// configuration (config.Getter related) from the backend.
+// configuration (config.Getter related) from the backend and accesses the
+// internal map of the Service directly.
 func (s *Service) ConfigByScopeHash(current scope.Hash, parent scope.Hash) (scpCfg ScopedConfig) {
 	// current can be store or website scope
 	// parent can be website or default scope. If 0 then no fall back
