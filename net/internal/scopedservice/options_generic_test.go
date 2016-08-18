@@ -37,13 +37,13 @@ func TestWithConfigGetter_Panic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = WithConfigGetter(nil)
+	_ = WithRootConfig(nil)
 }
 
 func TestWithConfigGetter(t *testing.T) {
 	cfg := cfgmock.NewService()
 
-	src, err := newService(WithConfigGetter(cfg))
+	src, err := newService(WithRootConfig(cfg))
 	assert.NoError(t, err)
 	assert.NotNil(t, src.rootConfig)
 }
