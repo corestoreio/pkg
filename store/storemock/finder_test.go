@@ -22,18 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFind_IsAllowedStoreID(t *testing.T) {
-	f := storemock.Find{
-		Allowed:      true,
-		AllowedCode:  "a",
-		AllowedError: errors.NewFatalf("Upps.."),
-	}
-	isA, ac, err := f.IsAllowedStoreID(0, 0)
-	assert.True(t, isA)
-	assert.Exactly(t, "a", ac)
-	assert.True(t, errors.IsFatal(err))
-}
-
 func TestFind_DefaultStoreID(t *testing.T) {
 	f := storemock.Find{
 		StoreIDDefault:   -1,

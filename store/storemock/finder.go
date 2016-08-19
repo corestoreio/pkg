@@ -23,28 +23,21 @@ var _ store.Finder = (*Find)(nil)
 
 // Find implements interface store.Finder for mocking in tests.
 type Find struct {
-	// Next three get returned by function IsAllowedStoreID()
-	Allowed      bool
-	AllowedCode  string
-	AllowedError error
-
 	// Next three get returned by function DefaultStoreID()
 	StoreIDDefault   int64
 	WebsiteIDDefault int64
 	StoreIDError     error
 
-	// Next three get returned by function StoreIDbyCode()
+	// Next three gets returned by function StoreIDbyCode()
 	IDByCodeStoreID   int64
 	IDByCodeWebsiteID int64
 	IDByCodeError     error
 }
 
-func (s Find) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, storeCode string, err error) {
-	return s.Allowed, s.AllowedCode, s.AllowedError
-}
 func (s Find) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error) {
 	return s.StoreIDDefault, s.WebsiteIDDefault, s.StoreIDError
 }
+
 func (s Find) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error) {
 	return s.IDByCodeStoreID, s.IDByCodeWebsiteID, s.IDByCodeError
 }

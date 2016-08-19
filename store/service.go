@@ -36,15 +36,12 @@ type Finder interface {
 	// DefaultStoreID returns the default active store ID and its website ID
 	// depending on the run mode. Error behaviour is mostly of type NotValid.
 	DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error)
-	// IsAllowedStoreID checks if the store ID is allowed within the runMode.
-	// Returns true on success and the appropriate store code which is
-	// guaranteed to be not empty.
-	IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, storeCode string, err error)
 	// StoreIDbyCode returns, depending on the runMode, for a storeCode its
-	// internal active store ID and its website ID. A not-supported error
-	// behaviour gets returned if an invalid scope has been provided. A
-	// not-found error behaviour gets returned if the code cannot be found. If
-	// the runMode equals to scope.DefaultHash, the returned ID is always 0.
+	// active store ID and its website ID. An empty runMode hash falls back to
+	// select the default website with its default group and the slice of
+	// default stores. A not-found error behaviour gets returned if the code
+	// cannot be found. If the runMode equals to scope.DefaultHash, the returned
+	// ID is always 0 and error is nil.
 	StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error)
 }
 
@@ -170,8 +167,10 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 	return nil
 }
 
-// IsAllowedStoreID checks if the storeID is allowed for the current runMode. Returns
-// additionally the Stores code.
+// IsAllowedStoreID checks if the store ID is allowed within the runMode.
+// Returns true on success. An error may occur when the default website and
+// store can't be selected. An empty scope.Hash checks the default website with
+// its default group and its default stores.
 func (s *Service) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, storeCode string, _ error) {
 	scp, scpID := runMode.Unpack()
 
@@ -269,13 +268,13 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, 
 	return st.ID(), st.WebsiteID(), nil
 }
 
-// StoreIDbyCode returns for a storeCode its internal active ID depending on the
-// runMode. A not-supported error behaviour gets returned if an invalid scope
-// has been provided. A not-found error behaviour gets returned if the code
-// cannot be found. This function does not consider if a store or website is
-// active or not. The runMode equals to scope.DefaultHash, the returned ID is
-// always 0. Implements interface CodeToIDMapper.
-func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, _ error) {
+// StoreIDbyCode returns, depending on the runMode, for a storeCode its
+// active store ID and its website ID. An empty runMode hash falls back to
+// select the default website with its default group and the slice of
+// default stores. A not-found error behaviour gets returned if the code
+// cannot be found. If the runMode equals to scope.DefaultHash, the returned
+// ID is always 0 and error is nil. Implements interface Finder.
+func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error) {
 	if storeCode == "" {
 		sID, wID, err := s.DefaultStoreID(0)
 		return sID, wID, errors.Wrap(err, "[store] IDbyCode.DefaultStoreID")
