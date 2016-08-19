@@ -17,7 +17,7 @@ package backendjwt_test
 import "github.com/corestoreio/csfw/net/jwt/backendjwt"
 
 // backend overall backend models for all tests
-var backend *backendjwt.Backend
+var backend *backendjwt.Configuration
 
 // this would belong into the test suit setup
 func init() {

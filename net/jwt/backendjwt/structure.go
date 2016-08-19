@@ -71,10 +71,10 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   jwt.DefaultSkew.String(),
 						},
 						element.Field{
-							// Path: net/jwt/enable_jti
-							ID:        cfgpath.NewRoute("enable_jti"),
-							Label:     text.Chars(`Enable Token ID`),
-							Comment:   text.Chars(`Generates a unique token ID`),
+							// Path: net/jwt/single_usage
+							ID:        cfgpath.NewRoute("single_usage"),
+							Label:     text.Chars(`Enable single token usage`),
+							Comment:   text.Chars(`If set to true for each request a token can only be used once. The JTI (JSON Token Identifier) gets added to the blacklist until it expires.`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -94,11 +94,22 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						element.Field{
 							// Path: net/jwt/hmac_password
 							ID:        cfgpath.NewRoute("hmac_password"),
-							Label:     text.Chars(`HMAC Token Password`),
+							Label:     text.Chars(`Global HMAC Token Password`),
 							Type:      element.TypeObscure,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
+						},
+						element.Field{
+							// Path: net/jwt/hmac_password_per_user
+							ID:        cfgpath.NewRoute("hmac_password_per_user"),
+							Label:     text.Chars(`Enable per user HMAC token password`),
+							Comment:   text.Chars(`A random HMAC password will be generated for each user who logs in`),
+							Type:      element.TypeSelect,
+							SortOrder: 45,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   0,
 						},
 						element.Field{
 							// Path: net/jwt/rsa_key

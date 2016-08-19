@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/jwt/backendjwt"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,15 +27,17 @@ import (
 func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
 	ccModel := backendjwt.NewConfigSigningMethod("a/x/c")
 	cr := cfgmock.NewService()
-	sm, err := ccModel.Get(cr.NewScoped(1, 1))
+	sm, h, err := ccModel.Get(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
+	assert.Exactly(t, scope.Hash(0), h)
 }
 
 func TestNewConfigSigningMethodGetPathError(t *testing.T) {
 	ccModel := backendjwt.NewConfigSigningMethod("a//c")
 	cr := cfgmock.NewService()
-	sm, err := ccModel.Get(cr.NewScoped(0, 0))
+	sm, h, err := ccModel.Get(cr.NewScoped(0, 0))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
+	assert.Exactly(t, scope.Hash(0), h)
 }

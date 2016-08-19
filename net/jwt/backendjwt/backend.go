@@ -18,13 +18,13 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/net/jwt"
 )
 
-// Backend just exported for the sake of documentation. See fields for more
-// information. The PkgBackend handles the reading and writing of configuration
-// values within this package.
-type Backend struct {
-	cfgmodel.PkgBackend
+// Configuration just exported for the sake of documentation. See fields for
+// more information.
+type Configuration struct {
+	*jwt.OptionFactories
 
 	// NetJwtDisabled if set to true disables the JWT validation.
 	// Path: net/jwt/disabled
@@ -43,14 +43,20 @@ type Backend struct {
 	// Path: net/jwt/expiration
 	NetJwtExpiration cfgmodel.Duration
 
-	// NetJwtEnableJTI if enabled a new token ID will be generated.
-	// Path: net/jwt/enable_jti
-	NetJwtEnableJTI cfgmodel.Bool
+	// NetJwtSingleTokenUsage if enabled a token can only be used once per request.
+	// Path: net/jwt/single_usage
+	NetJwtSingleTokenUsage cfgmodel.Bool
 
 	// NetJwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
 	// Path: net/jwt/hmac_password
 	NetJwtHmacPassword cfgmodel.Obscure
+
+	// NetJwtHmacPasswordPerUser if enable each logged in user will have their own
+	// randomly generated password.
+	// TODO(cs) think and implement. we also may need a map to map a user to his/her password and a 2nd field in config which defines the claim key for the username.
+	// Path: net/jwt/hmac_password_per_user
+	NetJwtHmacPasswordPerUser cfgmodel.Bool
 
 	// NetJwtRSAKey handles the RSA private key. Will panic if you
 	// do not set the cfgmodel.Encryptor
@@ -74,32 +80,26 @@ type Backend struct {
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
-// variable to the appropriate entries. The function Load() will be executed to
-// apply the SectionSlice to all models. See Load() for more details.
-func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	return (&Backend{}).Load(cfgStruct, opts...)
-}
-
-// Load creates the configuration models for each PkgBackend field. Internal
-// mutex will protect the fields during loading. The argument SectionSlice will
-// be applied to all models. Obscure types needs the cfgmodel.Encryptor to be
-// set.
-func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	pp.Lock()
-	defer pp.Unlock()
+// variable to the appropriate entries in the storage. The argument SectionSlice
+// and opts will be applied to all models.
+func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration {
+	be := &Configuration{
+		OptionFactories: jwt.NewOptionFactories(),
+	}
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	pp.NetJwtDisabled = cfgmodel.NewBool(`net/jwt/disabled`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
-	pp.NetJwtSigningMethod = NewConfigSigningMethod(`net/jwt/signing_method`, opts...)
-	pp.NetJwtExpiration = cfgmodel.NewDuration(`net/jwt/expiration`, opts...)
-	pp.NetJwtSkew = cfgmodel.NewDuration(`net/jwt/skew`, opts...)
-	pp.NetJwtEnableJTI = cfgmodel.NewBool(`net/jwt/enable_jti`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
-	pp.NetJwtHmacPassword = cfgmodel.NewObscure(`net/jwt/hmac_password`, opts...)
-	pp.NetJwtRSAKey = cfgmodel.NewObscure(`net/jwt/rsa_key`, opts...)
-	pp.NetJwtRSAKeyPassword = cfgmodel.NewObscure(`net/jwt/rsa_key_password`, opts...)
-	pp.NetJwtECDSAKey = cfgmodel.NewObscure(`net/jwt/ecdsa_key`, opts...)
-	pp.NetJwtECDSAKeyPassword = cfgmodel.NewObscure(`net/jwt/ecdsa_key_password`, opts...)
+	be.NetJwtDisabled = cfgmodel.NewBool(`net/jwt/disabled`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.NetJwtSigningMethod = NewConfigSigningMethod(`net/jwt/signing_method`, opts...)
+	be.NetJwtExpiration = cfgmodel.NewDuration(`net/jwt/expiration`, opts...)
+	be.NetJwtSkew = cfgmodel.NewDuration(`net/jwt/skew`, opts...)
+	be.NetJwtSingleTokenUsage = cfgmodel.NewBool(`net/jwt/single_usage`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.NetJwtHmacPassword = cfgmodel.NewObscure(`net/jwt/hmac_password`, opts...)
+	be.NetJwtHmacPasswordPerUser = cfgmodel.NewBool(`net/jwt/hmac_password_per_user`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.NetJwtRSAKey = cfgmodel.NewObscure(`net/jwt/rsa_key`, opts...)
+	be.NetJwtRSAKeyPassword = cfgmodel.NewObscure(`net/jwt/rsa_key_password`, opts...)
+	be.NetJwtECDSAKey = cfgmodel.NewObscure(`net/jwt/ecdsa_key`, opts...)
+	be.NetJwtECDSAKeyPassword = cfgmodel.NewObscure(`net/jwt/ecdsa_key_password`, opts...)
 
-	return pp
+	return be
 }
