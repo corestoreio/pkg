@@ -117,8 +117,8 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// flushCache scopedservice cache flusher
-func (s *Service) flushCache() error {
+// ClearCache clears the internal map storing all scoped configurations
+func (s *Service) ClearCache() error {
 	s.scopeCache = make(map[scope.Hash]*ScopedConfig)
 	return nil
 }

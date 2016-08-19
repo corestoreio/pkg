@@ -107,3 +107,16 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	assert.Contains(t, buf.String(), `Scope(Store) ID(777) => `)
 	assert.Contains(t, buf.String(), `Scope(Store) ID(999) => `)
 }
+
+func TestService_ClearCache(t *testing.T) {
+	srv := MustNew(withValue(scope.Website, 33, "Gopher"), WithRootConfig(cfgmock.NewService()))
+	cfg := srv.ConfigByScope(33, 44)
+	assert.NoError(t, cfg.IsValid(), "%+v", cfg.IsValid())
+	assert.Exactly(t, cfg.value, "Gopher")
+
+	assert.NoError(t, srv.ClearCache())
+
+	cfg = srv.ConfigByScopeHash(scope.Website.ToHash(33), 0)
+	assert.True(t, errors.IsNotFound(cfg.IsValid()), "%+v", cfg.IsValid())
+	assert.Exactly(t, cfg.value, "")
+}
