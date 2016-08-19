@@ -94,6 +94,10 @@ type Options struct {
 	// ErrorHandler optional custom error handler. Defaults to sending an HTTP
 	// status code 500 and exposing the real error including full paths.
 	mw.ErrorHandler
+	// UnauthorizedHandler gets called when a requested store code cannot be
+	// authorized to continue. Defaults to sending an HTTP status code
+	// StatusUnauthorized and exposing the real error including full paths.
+	UnauthorizedHandler mw.ErrorHandler
 	// Log can be nil, defaults to black hole.
 	Log log.Logger
 	// RunMode optional custom runMode otherwise falls back to
@@ -127,6 +131,10 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 	errH := o.ErrorHandler
 	if errH == nil {
 		errH = mw.ErrorWithStatusCode(http.StatusInternalServerError)
+	}
+	unAuthH := o.UnauthorizedHandler
+	if unAuthH == nil {
+		unAuthH = mw.ErrorWithStatusCode(http.StatusUnauthorized)
 	}
 	procCode := o.CodeProcessor
 	if procCode == nil {
@@ -182,45 +190,30 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				errH(errors.Wrap(err, "[store] WithRunMode.StoreIDbyCode")).ServeHTTP(w, r)
 				return
 			}
-			previousStoreID := storeID
-			if err == nil {
-				storeID = newStoreID
-				websiteID = newWebsiteID
+			if err != nil {
+				// requested store not allowed aka not found, so unauthorized
+				if lg.IsDebug() {
+					lg.Debug("runmode.WithRunMode.StoreNotAllowed",
+						log.String("store_code", reqCode), log.Int64("store_id", storeID), log.Int64("new_store_id", newStoreID),
+						log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+				}
+				procCode.ProcessDenied(runMode, storeID, newStoreID, w, r)
+				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
+				unAuthH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, storeID)).ServeHTTP(w, r)
+				return
 			}
+
+			previousStoreID := storeID
+			storeID = newStoreID
+			websiteID = newWebsiteID
 
 			r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
 
-			// is the storeID allowed depending on the runMode? also retrieve
-			// the new store code because the StoreCodeProcess type may add
-			// something to the Response.
-			isStoreAllowed, storeCode, err := sf.IsAllowedStoreID(runMode, storeID)
-			if err != nil {
-				if lg.IsDebug() {
-					lg.Debug("runmode.WithRunMode.IsAllowedStoreID.Error", log.Err(err),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
-				}
-				errH(errors.Wrap(err, "[store] WithRunMode.IsAllowedStoreID")).ServeHTTP(w, r)
-				return
-			}
-
-			// not found, not active, whatever, we cannot proceed.
-			if !isStoreAllowed {
-				if lg.IsDebug() {
-					lg.Debug("runmode.WithRunMode.StoreNotAllowed",
-						log.String("store_code", storeCode), log.Int64("previous_store_id", previousStoreID), log.Int64("store_id", storeID),
-						log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
-				}
-				procCode.ProcessDenied(runMode, previousStoreID, storeID, w, r)
-				errH(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, storeID)).ServeHTTP(w, r)
-				return
-			}
-
-			procCode.ProcessAllowed(runMode, previousStoreID, storeID, storeCode, w, r)
+			procCode.ProcessAllowed(runMode, previousStoreID, storeID, reqCode, w, r)
 
 			if lg.IsDebug() {
 				lg.Debug("runmode.WithRunMode.NextHandler.WithCode",
-					log.String("store_code", storeCode), log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
+					log.String("store_code", reqCode), log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
 					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
