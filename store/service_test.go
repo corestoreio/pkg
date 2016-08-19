@@ -423,6 +423,7 @@ func TestService_StoreIDbyCode(t *testing.T) {
 	}{
 		{eurSrv, 0, "", 2, 1, nil},
 		{eurSrv, scope.DefaultHash, "x", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.DefaultHash, "uk", 0, 0, errors.IsNotFound},
 		{eurSrv, scope.Website.ToHash(0), "admin", 0, 0, nil},
 		{eurSrv, scope.Website.ToHash(1), "de", 1, 1, nil},
 		{eurSrv, scope.Website.ToHash(2), "nz", 6, 2, nil},
