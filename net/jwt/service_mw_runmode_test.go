@@ -55,7 +55,7 @@ func testAuth_WithRunMode(t *testing.T, finalHandler http.Handler, opts ...jwt.O
 	}
 	srv := storemock.NewEurozzyService(cfg)
 
-	authHandler := jm.WithRunMode(scope.RunMode{}, srv)(finalHandler)
+	authHandler := jm.WithRunMode(scope.DefaultRunMode, srv)(finalHandler)
 	return authHandler, theToken.Raw
 }
 
@@ -197,7 +197,7 @@ func TestService_WithRunMode_DefaultStoreID_Error(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
+	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
 		StoreIDError: errors.NewNotImplementedf("Sorry Dude"),
 	})(final)
 
@@ -229,7 +229,7 @@ func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
+	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
 		WebsiteIDDefault: 778,
 		IDByCodeError:    errors.NewNotImplementedf("Sorry Dude"),
 	})(final)
@@ -269,7 +269,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
+	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
 		WebsiteIDDefault: 778,
 		IDByCodeError:    errors.NewTemporaryf("Sorry Dude"),
 	})(final)
@@ -319,7 +319,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
+	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
 		WebsiteIDDefault: 889,
 		StoreIDDefault:   890,
 
@@ -372,7 +372,7 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 		calledFinalHandler = true
 	})
 
-	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
+	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
 		WebsiteIDDefault: 359,
 		StoreIDDefault:   360,
 
@@ -459,8 +459,8 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 	})
 
 	srv := storemock.NewEurozzyService(cfg)
-	authHandler := jm.WithRunMode(scope.RunMode{
-		RunModeFunc: func(r *http.Request) scope.Hash {
+	authHandler := jm.WithRunMode(
+		scope.RunModeFunc(func(r *http.Request) scope.Hash {
 			switch r.Host {
 			case "scope-euro.xyz":
 				return scope.NewHash(scope.Website, 1)
@@ -470,8 +470,7 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 				panic(fmt.Sprintf("Unkown host: %q", r.Host))
 			}
 			return 0
-		},
-	}, srv)(final)
+		}), srv)(final)
 
 	{
 		euroClaim := jwtclaim.Map{

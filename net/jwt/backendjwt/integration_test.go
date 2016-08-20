@@ -297,7 +297,7 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 	hpu.ServeHTTP(
 		req,
 		jwts.WithRunMode(
-			scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}, // use euro wesite with default store AT.
+			scope.NewHash(scope.Website, 1), // use euro wesite with default store AT.
 			storemock.NewEurozzyService(cfgSrv),
 		)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tk, ok := jwt.FromContext(r.Context())

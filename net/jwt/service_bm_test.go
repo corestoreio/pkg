@@ -145,9 +145,8 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	}
 
 	storeSrv := storemock.NewEurozzyService(cfg)
-	jwtHandler := jwts.WithRunMode(scope.RunMode{
-		Mode: scope.Website.ToHash(1), // every store with website ID 1
-	}, storeSrv)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	jwtHandler := jwts.WithRunMode(scope.Website.ToHash(1), // every store with website ID 1
+		storeSrv)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		_, ok := jwt.FromContext(ctx)
 		if !ok {
