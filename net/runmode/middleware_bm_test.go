@@ -34,8 +34,8 @@ func BenchmarkWithRunMode(b *testing.B) {
 	var runner = func(req *http.Request, runMode scope.Hash, wantStoreID, wantWebsiteID int64) func(b *testing.B) {
 		return func(b *testing.B) {
 			rmmw := runmode.WithRunMode(srv, runmode.Options{
-				Log:     log.BlackHole{}, // disabled debug and info logging
-				RunMode: scope.RunMode{Mode: runMode},
+				Log:               log.BlackHole{}, // disabled debug and info logging
+				RunModeCalculater: runMode,
 			})(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				haveWebsiteID, haveStoreID, haveOK := scope.FromContext(r.Context())
 				if !haveOK {

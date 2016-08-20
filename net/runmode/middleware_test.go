@@ -163,7 +163,7 @@ func TestWithRunMode(t *testing.T) {
 			storemock.Find{
 				StoreIDDefault: 0, WebsiteIDDefault: 0, StoreIDError: nil,
 				IDByCodeStoreID: 44, IDByCodeWebsiteID: 33, IDByCodeError: nil},
-			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false), RunMode: scope.RunMode{Mode: scope.Website.ToHash(2)}},
+			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false), RunModeCalculater: scope.Website.ToHash(2)},
 			scope.Website.ToHash(2), ``, http.StatusAccepted,
 			44, 33, true,
 		},
@@ -198,59 +198,59 @@ func TestWithRunMode_StoreService(t *testing.T) {
 	}{
 		{
 			getReq("GET", "http://cs.io", nil),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Website, 1)},
 			2, 1, true, http.StatusAccepted, // at
 		},
 		{
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "de"}),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Website, 1)},
 			1, 1, true, http.StatusAccepted, // de
 		},
 		{
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Website, 1)},
 			4, 1, true, http.StatusAccepted, // uk
 		},
 		{
 			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", store.CodeURLFieldName), nil),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Website, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Website, 1)},
 			2, 1, true, http.StatusUnauthorized, // ch, but inactive
 		},
 
 		{
 			getReq("GET", "http://cs.io", nil),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Group, 3)},
 			5, 2, true, http.StatusAccepted, // au
 		},
 		{
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "nz"}),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Group, 3)},
 			6, 2, true, http.StatusAccepted, // nz
 		},
 		{
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "de"}),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Group, 3)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Group, 3)},
 			5, 2, true, http.StatusUnauthorized, // requesting store DE but not allowed
 		},
 
 		{
 			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=", store.CodeURLFieldName), nil),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Store, 1)},
 			1, 1, true, http.StatusAccepted, // de
 		},
 		{
 			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=at", store.CodeURLFieldName), nil),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Store, 1)},
 			2, 1, true, http.StatusAccepted, // at
 		},
 		{
 			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=nz", store.CodeURLFieldName), nil),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Store, 1)},
 			6, 2, true, http.StatusAccepted, // nz
 		},
 		{
 			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=ch", store.CodeURLFieldName), nil),
-			runmode.Options{RunMode: scope.RunMode{Mode: scope.NewHash(scope.Store, 1)}},
+			runmode.Options{RunModeCalculater: scope.NewHash(scope.Store, 1)},
 			1, 1, true, http.StatusUnauthorized, // ch not active
 		},
 
