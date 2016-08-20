@@ -16,7 +16,7 @@ package csjwt
 
 // Error variables predefined
 const (
-	errSignatureInvalid         = `[csjwt] signature is invalid: %s`
+	errSignatureInvalid         = "[csjwt] signature is invalid: %s\nToken: %#v\n"
 	errTokenNotInRequest        = `[csjwt] token not present in request`
 	errTokenMalformed           = `[csjwt] token is malformed: %s`
 	errTokenUnverifiable        = `[csjwt] token is unverifiable: %s`

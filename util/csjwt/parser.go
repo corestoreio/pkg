@@ -112,7 +112,7 @@ func (vf *Verification) Parse(dst *Token, rawToken []byte, keyFunc Keyfunc) erro
 	// Perform validation
 	dst.Signature = dst.Raw[pos[1]+1:]
 	if err := method.Verify(dst.Raw[:pos[1]], dst.Signature, key); err != nil {
-		return errors.NewNotValidf(errSignatureInvalid, err)
+		return errors.NewNotValidf(errSignatureInvalid, err, dst)
 	}
 
 	dst.Valid = true
