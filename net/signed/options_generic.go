@@ -15,9 +15,11 @@
 package signed
 
 import (
+	"io"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
@@ -77,9 +79,43 @@ func WithErrorHandler(scp scope.Scope, id int64, eh mw.ErrorHandler) Option {
 	}
 }
 
+// WithServiceErrorHandler sets the error handler on the Service object.
+// Convenient helper function.
+func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.ErrorHandler = eh
+		return nil
+	}
+}
+
+// WithRootConfig sets the root configuration service. While using any HTTP
+// related functions or middlewares you must set the config.Getter.
+func WithRootConfig(cg config.Getter) Option {
+	_ = cg.NewScoped(0, 0) // let it panic as early as possible if cg is nil
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.rootConfig = cg
+		return nil
+	}
+}
+
+// WithDebugLog creates a new standard library based logger with debug mode
+// enabled. The passed writer must be thread safe.
+func WithDebugLog(w io.Writer) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.Log = logw.NewLog(logw.WithWriter(w), logw.WithLevel(logw.LevelDebug))
+		return nil
+	}
+}
+
 // WithOptionFactory applies a function which lazily loads the options from a
-// slow backend depending on the incoming scope within a request. For example
-// applies the backend configuration to the service.
+// slow backend (config.Getter) depending on the incoming scope within a
+// request. For example applies the backend configuration to the service.
 //
 // Once this option function has been set all other manually set option
 // functions, which accept a scope and a scope ID as an argument, will NOT be
@@ -96,13 +132,16 @@ func WithErrorHandler(scp scope.Scope, id int64, eh mw.ErrorHandler) Option {
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
 		s.optionInflight = new(singleflight.Group)
 		s.optionFactory = f
 		return nil
 	}
 }
 
-// NewOptionFactories creates a new struct and inits the internal map.
+// NewOptionFactories creates a new struct and initializes the internal map for
+// the registration of different option factories.
 func NewOptionFactories() *OptionFactories {
 	return &OptionFactories{
 		register: make(map[string]OptionFactoryFunc),

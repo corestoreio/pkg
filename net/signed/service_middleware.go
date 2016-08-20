@@ -35,7 +35,7 @@ import (
 // before deflate.
 func WithResponseSignature(h func() hash.Hash) mw.Middleware {
 
-	var hp = hashpool.New(h)
+	var hp = hashpool.New64(h)
 	var bp = bufferpool.New(h().Size())
 
 	return func(h http.Handler) http.Handler {
@@ -71,7 +71,7 @@ func WithResponseSignature(h func() hash.Hash) mw.Middleware {
 
 func WithRequestSignatureValidation(h func() hash.Hash) mw.Middleware {
 
-	var hp = hashpool.New(h)
+	var hp = hashpool.New64(h)
 	var bp = bufferpool.New(h().Size())
 
 	return func(h http.Handler) http.Handler {
