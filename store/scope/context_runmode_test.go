@@ -24,32 +24,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ scope.RunModeCalculater = (*scope.RunModeFunc)(nil)
+
+func TestRunModeFunc_CalculateRunMode(t *testing.T) {
+	h := scope.NewHash(scope.Website, 33)
+	rmf := scope.RunModeFunc(func(_ *http.Request) scope.Hash {
+		return h
+	})
+	assert.Exactly(t, h, rmf.CalculateRunMode(nil))
+}
+
 func TestRunMode(t *testing.T) {
 
 	tests := []struct {
-		mode     scope.Hash
-		modeFunc scope.RunModeFunc
-		want     scope.Hash
+		mode scope.RunModeCalculater
+		want scope.Hash
 	}{
-		{scope.NewHash(scope.Website, 2), nil, scope.NewHash(scope.Website, 2)},
-		{scope.NewHash(scope.Store, 3), nil, scope.NewHash(scope.Store, 3)},
-		{scope.NewHash(scope.Group, 4), nil, scope.NewHash(scope.Group, 4)},
-		{scope.NewHash(scope.Store, 0), nil, scope.NewHash(scope.Store, 0)},
-		{scope.NewHash(scope.Default, 0), nil, 0},
-		{0, func(_ *http.Request) scope.Hash {
-			return scope.NewHash(scope.Website, 2)
-		}, scope.NewHash(scope.Website, 2)},
-		{scope.DefaultHash, func(_ *http.Request) scope.Hash {
-			return scope.NewHash(scope.Website, 2)
-		}, scope.NewHash(scope.Website, 2)},
+		{scope.NewHash(scope.Website, 2), scope.NewHash(scope.Website, 2)},
+		{scope.NewHash(scope.Store, 3), scope.NewHash(scope.Store, 3)},
+		{scope.NewHash(scope.Group, 4), scope.NewHash(scope.Group, 4)},
+		{scope.NewHash(scope.Store, 0), scope.NewHash(scope.Store, 0)},
+		{scope.NewHash(scope.Default, 0), 0},
 	}
 	for i, test := range tests {
 		req := httptest.NewRequest("GET", "http://corestore.io", nil)
 
-		haveMode := scope.RunMode{
-			Mode:        test.mode,
-			RunModeFunc: test.modeFunc,
-		}.CalculateMode(req)
+		haveMode := test.mode.CalculateRunMode(nil)
 
 		ctx := scope.WithContextRunMode(req.Context(), haveMode)
 

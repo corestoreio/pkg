@@ -26,8 +26,9 @@ import (
 )
 
 var (
-	_ fmt.Stringer   = (*scope.Hash)(nil)
-	_ fmt.GoStringer = (*scope.Hash)(nil)
+	_ fmt.Stringer            = (*scope.Hash)(nil)
+	_ fmt.GoStringer          = (*scope.Hash)(nil)
+	_ scope.RunModeCalculater = (*scope.Hash)(nil)
 )
 
 var benchmarkHashString string

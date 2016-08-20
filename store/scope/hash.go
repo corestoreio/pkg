@@ -15,6 +15,7 @@
 package scope
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -132,6 +133,17 @@ func (h Hash) ValidParent(parent Hash) bool {
 	return (p == Default && pID == 0 && c == Default && cID == 0) ||
 		(p == Default && pID == 0 && c == Website && cID >= 0) ||
 		(p == Website && pID >= 0 && c == Store && cID >= 0)
+}
+
+// CalculateRunMode transforms the Hash into a runMode. On an invalid Hash (the
+// scope is < Website or scope > Store) it falls back to the default run mode,
+// which is a zero Hash. Implements interface RunModeCalculater.
+func (h Hash) CalculateRunMode(_ *http.Request) Hash {
+	if s := h.Scope(); s < Website || s > Store {
+		// fall back to default because only Website, Group and Store are allowed.
+		h = DefaultRunMode
+	}
+	return h
 }
 
 // HashMaxSegments maximum supported segments or also known as shards. This

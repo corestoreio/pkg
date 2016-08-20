@@ -19,40 +19,30 @@ import (
 	"net/http"
 )
 
-type ctxRunModeKey struct{}
-
 // DefaultRunMode defines the default run mode if the programmer hasn't applied
 // the field Mode or the function RunMode.WithContext() to specify a specific
 // run mode. It indicates the fall back to the default website and its default
 // store.
 const DefaultRunMode Hash = 0
 
-// RunModeFunc custom function to initialize the runMode based on parameters in
-// the http.Request. RunModeFunc must be embedded in the type RunMode.
-type RunModeFunc func(*http.Request) Hash
-
-// RunMode core type to initialize the run mode of the current request. Allows
-// you to create a multi-site / multi-tenant setup. An implementation of this
-// lives in storenet.AppRunMode.WithRunMode() middleware.
-type RunMode struct {
-	Mode Hash
-	// RunModeFunc if not nil you can create your own function to return a run mode.
-	RunModeFunc
+// RunModeCalculater core type to initialize the run mode of the current
+// request. Allows you to create a multi-site / multi-tenant setup. An
+// implementation of this lives in net.runmode.WithRunMode() middleware.
+//
+// Your custom function allows to initialize the runMode based on parameters in
+// the http.Request.
+type RunModeCalculater interface {
+	CalculateRunMode(*http.Request) Hash
 }
 
-// CalculateMode calls the user defined Mode field or RunModeFunc. On an invalid
-// mode (< Website scope or > Store scope) it falls back to the default run
-// mode, which is a zero Hash.
-func (rm RunMode) CalculateMode(r *http.Request) Hash {
-	h := rm.Mode
-	if rm.RunModeFunc != nil {
-		h = rm.RunModeFunc(r)
-	}
-	if s := h.Scope(); s < Website || s > Store {
-		// fall back to default because only Website, Group and Store are allowed.
-		h = DefaultRunMode
-	}
-	return h
+// RunModeFunc type is an adapter to allow the use of ordinary functions as
+// RunModeCalculater. If f is a function with the appropriate signature,
+// RunModeFunc(f) is a Handler that calls f.
+type RunModeFunc func(*http.Request) Hash
+
+// CalculateRunMode calls f(r).
+func (f RunModeFunc) CalculateRunMode(r *http.Request) Hash {
+	return f(r)
 }
 
 // WithContextRunMode sets the main run mode for the current request. It panics
@@ -77,3 +67,5 @@ func FromContextRunMode(ctx context.Context) Hash {
 	}
 	return h
 }
+
+type ctxRunModeKey struct{}
