@@ -38,7 +38,7 @@ func TestEqualPointers(t *testing.T) {
 	if have, want := cstesting.EqualPointers(me, p1, p2), false; have != want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
-	assert.Regexp(t, "Expecting equal pointers\nWant: 0xc[0-9]+\nHave: 0xc[0-9]+", me.data)
+	assert.Regexp(t, "Expecting equal pointers\nWant: 0x[0-9a-f]+\nHave: 0x[0-9a-f]+", me.data)
 }
 
 func TestContainsCount(t *testing.T) {
