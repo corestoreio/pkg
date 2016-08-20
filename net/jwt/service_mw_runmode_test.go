@@ -271,7 +271,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 
 	authHandler := jm.WithRunMode(scope.RunMode{}, storemock.Find{
 		WebsiteIDDefault: 778,
-		AllowedError:     errors.NewTemporaryf("Sorry Dude"),
+		IDByCodeError:    errors.NewTemporaryf("Sorry Dude"),
 	})(final)
 
 	claimStore := jwtclaim.NewStore()
@@ -300,8 +300,8 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				wID, sID, ok := scope.FromContext(r.Context())
 				assert.True(t, ok)
-				assert.Exactly(t, int64(901), wID, "scope.FromContext website")
-				assert.Exactly(t, int64(902), sID, "scope.FromContext store")
+				assert.Exactly(t, int64(889), wID, "scope.FromContext website")
+				assert.Exactly(t, int64(890), sID, "scope.FromContext store")
 
 				tk, ok := jwt.FromContext(r.Context())
 				assert.True(t, tk.Valid)
@@ -323,11 +323,9 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 		WebsiteIDDefault: 889,
 		StoreIDDefault:   890,
 
-		IDByCodeWebsiteID: 901,
-		IDByCodeStoreID:   902,
-
-		Allowed:     false, // important
-		AllowedCode: "uninteresting",
+		IDByCodeWebsiteID: 0,
+		IDByCodeStoreID:   0,
+		IDByCodeError:     errors.NewNotFoundf("Store code not found"),
 	})(final)
 
 	claimStore := jwtclaim.NewStore()
@@ -380,9 +378,6 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 
 		IDByCodeWebsiteID: 379,
 		IDByCodeStoreID:   380,
-
-		Allowed:     true, // important
-		AllowedCode: "uninteresting",
 	})(final)
 
 	claimStore := jwtclaim.NewStore()
