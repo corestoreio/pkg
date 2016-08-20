@@ -127,7 +127,10 @@ func (s *Service) WithRunMode(rm scope.RunMode, sf store.Finder) mw.Middleware {
 						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
 				r = r.WithContext(scope.WithContext(ctx, websiteID, storeID))
-				defaultScpCfg.UnauthorizedHandler(errors.NewUnauthorizedf("[store] RunMode %s with requested Store ID %d cannot be authorized", runMode, storeID)).ServeHTTP(w, r)
+				defaultScpCfg.UnauthorizedHandler(errors.NewUnauthorizedf(
+					"[store] RunMode %s with requested StoreCode %q cannot be authorized. Current WebsiteID %d StoreID %d",
+					runMode, reqCode, websiteID, storeID),
+				).ServeHTTP(w, r)
 				return
 			}
 
