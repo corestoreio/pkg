@@ -37,7 +37,7 @@ func (w wildcard) match(s string) bool {
 
 // convert converts a list of string using the passed converter function
 func convert(s []string, c converter) []string {
-	out := []string{}
+	out := make([]string, 0, len(s))
 	for _, i := range s {
 		out = append(out, c(i))
 	}

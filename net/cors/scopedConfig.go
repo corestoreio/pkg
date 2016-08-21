@@ -47,72 +47,42 @@ import (
 // configuration has been bound to.
 type ScopedConfig struct {
 	scopedConfigGeneric
-
-	// allowedOrigins normalized list of plain allowed origins
-	allowedOrigins []string
-	// List of allowed origins containing wildcards
-	allowedWOrigins []wildcard
-
-	// Normalized list of allowed headers
-	allowedHeaders []string
-	// Normalized list of allowed methods
-	allowedMethods []string
-	// Normalized list of exposed headers
-	exposedHeaders []string
-
-	// maxAge in seconds will be added to the header, if set.
-	maxAge string
-
-	// allowOriginFunc is a custom function to validate the origin. It take the origin
-	// as argument and returns true if allowed or false otherwise. If this option is
-	// set, the content of AllowedOrigins is ignored.
-	allowOriginFunc func(origin string) bool
-
-	// Set to true when allowed origins contains a "*"
-	allowedOriginsAll bool
-
-	// Set to true when allowed headers contains a "*"
-	allowedHeadersAll bool
-
-	// allowCredentials indicates whether the request can include user credentials like
-	// cookies, HTTP authentication or client side SSL certificates.
-	allowCredentials bool
-
-	// optionsPassthrough instructs preflight to let other potential next handlers to
-	// process the OPTIONS method. Turn this on if your application handles OPTIONS.
-	optionsPassthrough bool
-
 	log log.Logger
+
+	// Settings general CORS settings
+	Settings
 }
 
 // IsValid a configuration for a scope is only then valid when
 //	- ScopeHash set
 //	- min 1x allowedMethods set
 //	- Logger not nil
-func (sc ScopedConfig) IsValid() error {
+func (sc *ScopedConfig) IsValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
 	}
-	if sc.ScopeHash > 0 && len(sc.allowedMethods) > 0 && sc.log != nil {
+	if sc.ScopeHash > 0 && len(sc.AllowedMethods) > 0 && sc.log != nil {
 		return nil
 	}
-	return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.allowedMethods, sc.log == nil)
+	return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.AllowedMethods, sc.log == nil)
 }
 
 // newScopedConfig creates a new object with the minimum needed configuration.
 func newScopedConfig() *ScopedConfig {
 	return &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
-		// Default is spec's "simple" methods
-		allowedMethods: []string{"GET", "POST"},
-		// Use sensible defaults
-		allowedHeaders: []string{"Origin", "Accept", "Content-Type"},
-		log:            log.BlackHole{}, // disabled info and debug logging
+		log:                 log.BlackHole{}, // disabled info and debug logging
+		Settings: Settings{
+			// Default is spec's "simple" methods
+			AllowedMethods: []string{"GET", "POST"},
+			// Use sensible defaults
+			AllowedHeaders: []string{"Origin", "Accept", "Content-Type"},
+		},
 	}
 }
 
 // handlePreflight handles pre-flight CORS requests
-func (sc ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
+func (sc *ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	sc.log = log.BlackHole{}
 
 	headers := w.Header()
@@ -139,7 +109,7 @@ func (sc ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	}
 	if false == sc.isOriginAllowed(origin) {
 		if sc.log.IsDebug() {
-			sc.log.Debug("cors.handlePreflight.aborted.notAllowed.origin", log.String("method", r.Method), log.String("origin", origin), log.Strings("allowedOrigins", sc.allowedOrigins...))
+			sc.log.Debug("cors.handlePreflight.aborted.notAllowed.origin", log.String("method", r.Method), log.String("origin", origin), log.Strings("allowedOrigins", sc.AllowedOrigins...))
 		}
 		return
 	}
@@ -168,11 +138,11 @@ func (sc ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 		// from Access-Control-Request-Headers can be enough
 		headers.Set("Access-Control-Allow-Headers", strings.Join(reqHeaders, ", "))
 	}
-	if sc.allowCredentials {
+	if sc.AllowCredentials {
 		headers.Set("Access-Control-Allow-Credentials", "true")
 	}
-	if sc.maxAge != "" {
-		headers.Set("Access-Control-Max-Age", sc.maxAge)
+	if sc.MaxAge != "" {
+		headers.Set("Access-Control-Max-Age", sc.MaxAge)
 	}
 	if sc.log.IsDebug() {
 		sc.log.Debug("cors.handlePreflight.response.headers", log.String("method", r.Method), log.Object("headers", headers))
@@ -180,7 +150,7 @@ func (sc ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
-func (sc ScopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
+func (sc *ScopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
@@ -216,10 +186,10 @@ func (sc ScopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	headers.Set("Access-Control-Allow-Origin", origin)
-	if len(sc.exposedHeaders) > 0 {
-		headers.Set("Access-Control-Expose-Headers", strings.Join(sc.exposedHeaders, ", "))
+	if len(sc.ExposedHeaders) > 0 {
+		headers.Set("Access-Control-Expose-Headers", strings.Join(sc.ExposedHeaders, ", "))
 	}
-	if sc.allowCredentials {
+	if sc.AllowCredentials {
 		headers.Set("Access-Control-Allow-Credentials", "true")
 	}
 	if sc.log.IsDebug() {
@@ -229,15 +199,15 @@ func (sc ScopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reques
 
 // isOriginAllowed checks if a given origin is allowed to perform cross-domain requests
 // on the endpoint
-func (sc ScopedConfig) isOriginAllowed(origin string) bool {
-	if sc.allowOriginFunc != nil {
-		return sc.allowOriginFunc(origin)
+func (sc *ScopedConfig) isOriginAllowed(origin string) bool {
+	if sc.AllowOriginFunc != nil {
+		return sc.AllowOriginFunc(origin)
 	}
-	if sc.allowedOriginsAll {
+	if sc.AllowedOriginsAll {
 		return true
 	}
 	origin = strings.ToLower(origin)
-	for _, o := range sc.allowedOrigins {
+	for _, o := range sc.AllowedOrigins {
 		if o == origin {
 			return true
 		}
@@ -252,8 +222,8 @@ func (sc ScopedConfig) isOriginAllowed(origin string) bool {
 
 // isMethodAllowed checks if a given method can be used as part of a cross-domain request
 // on the endpoing
-func (sc ScopedConfig) isMethodAllowed(method string) bool {
-	if len(sc.allowedMethods) == 0 {
+func (sc *ScopedConfig) isMethodAllowed(method string) bool {
+	if len(sc.AllowedMethods) == 0 {
 		// If no method allowed, always return false, even for preflight request
 		return false
 	}
@@ -262,7 +232,7 @@ func (sc ScopedConfig) isMethodAllowed(method string) bool {
 		// Always allow preflight requests
 		return true
 	}
-	for _, m := range sc.allowedMethods {
+	for _, m := range sc.AllowedMethods {
 		if m == method {
 			return true
 		}
@@ -272,14 +242,14 @@ func (sc ScopedConfig) isMethodAllowed(method string) bool {
 
 // areHeadersAllowed checks if a given list of headers are allowed to used within
 // a cross-domain request.
-func (sc ScopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
-	if sc.allowedHeadersAll || len(requestedHeaders) == 0 {
+func (sc *ScopedConfig) areHeadersAllowed(requestedHeaders []string) bool {
+	if sc.AllowedHeadersAll || len(requestedHeaders) == 0 {
 		return true
 	}
 	for _, header := range requestedHeaders {
 		header = http.CanonicalHeaderKey(header)
 		found := false
-		for _, h := range sc.allowedHeaders {
+		for _, h := range sc.AllowedHeaders {
 			if h == header {
 				found = true
 			}

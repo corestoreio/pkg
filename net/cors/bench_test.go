@@ -32,9 +32,6 @@ func testHandler(fa interface {
 	Fatalf(format string, args ...interface{})
 }) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := cors.FromContext(r.Context()); err != nil {
-			fa.Fatalf("%+v", err)
-		}
 		_, _ = w.Write([]byte("bar"))
 	}
 }
@@ -73,7 +70,7 @@ func BenchmarkDefault(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler(b))
+	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -86,11 +83,13 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("GET")
 	req.Header.Add("Origin", "somedomain.com")
-	c, err := cors.New(cors.WithAllowedOrigins(scope.Default, 0, "somedomain.com"))
+	c, err := cors.New(cors.WithSettings(scope.Default, 0, cors.Settings{
+		AllowedOrigins: []string{"somedomain.com"},
+	}))
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler(b))
+	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -107,7 +106,7 @@ func BenchmarkPreflight(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler(b))
+	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -125,7 +124,7 @@ func BenchmarkPreflightHeader(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	handler := c.WithCORS()(testHandler(b))
+	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
 	b.ResetTimer()

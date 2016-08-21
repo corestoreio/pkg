@@ -21,7 +21,6 @@
 package internal
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -35,11 +34,7 @@ import (
 const testHandlerBodyData = `foobar`
 
 func testHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := cors.FromContext(r.Context()); err != nil {
-			panic(fmt.Sprintf("%+v", err))
-
-		}
+	return func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(testHandlerBodyData))
 	}
 }
@@ -68,7 +63,7 @@ func TestNoConfig(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestMatchAllOrigin(t *testing.T, s *cors.Service, req *http.Request) {
@@ -87,7 +82,7 @@ func TestMatchAllOrigin(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestAllowedOrigin(t *testing.T, s *cors.Service, req *http.Request) {
@@ -106,7 +101,7 @@ func TestAllowedOrigin(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestWildcardOrigin(t *testing.T, s *cors.Service, req *http.Request) {
@@ -125,7 +120,7 @@ func TestWildcardOrigin(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestDisallowedOrigin(t *testing.T, s *cors.Service, req *http.Request) {
@@ -144,7 +139,7 @@ func TestDisallowedOrigin(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestDisallowedWildcardOrigin(t *testing.T, s *cors.Service, req *http.Request) {
@@ -163,21 +158,21 @@ func TestDisallowedWildcardOrigin(t *testing.T, s *cors.Service, req *http.Reque
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestAllowedOriginFunc(t *testing.T, s *cors.Service, req *http.Request) {
 
 	req.Header.Set("Origin", "http://foobar.com")
 	res := httptest.NewRecorder()
-	s.WithCORS()(testHandler()).ServeHTTP(res, req)
+	s.WithCORS(testHandler()).ServeHTTP(res, req)
 	assertHeaders(t, res.Header(), map[string]string{
 		"Access-Control-Allow-Origin": "http://foobar.com",
 	})
 
 	res = httptest.NewRecorder()
 	req.Header.Set("Origin", "http://barfoo.com")
-	s.WithCORS()(testHandler()).ServeHTTP(res, req)
+	s.WithCORS(testHandler()).ServeHTTP(res, req)
 	assertHeaders(t, res.Header(), map[string]string{
 		"Access-Control-Allow-Origin": "",
 	})
@@ -206,7 +201,7 @@ func TestAllowedMethodNoPassthrough(t *testing.T, s *cors.Service, req *http.Req
 			t.Errorf("Have: %v Want: %v", have, want)
 		}
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestAllowedMethodPassthrough(t *testing.T, s *cors.Service, req *http.Request) {
@@ -229,7 +224,7 @@ func TestAllowedMethodPassthrough(t *testing.T, s *cors.Service, req *http.Reque
 			t.Errorf("Have: %v Want: %v", have, want)
 		}
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestDisallowedMethod(t *testing.T, s *cors.Service, req *http.Request) {
@@ -249,7 +244,7 @@ func TestDisallowedMethod(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestAllowedHeader(t *testing.T, s *cors.Service, req *http.Request) {
@@ -270,7 +265,7 @@ func TestAllowedHeader(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestAllowedWildcardHeader(t *testing.T, s *cors.Service, req *http.Request) {
@@ -291,7 +286,7 @@ func TestAllowedWildcardHeader(t *testing.T, s *cors.Service, req *http.Request)
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestDisallowedHeader(t *testing.T, s *cors.Service, req *http.Request) {
@@ -312,7 +307,7 @@ func TestDisallowedHeader(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestOriginHeader(t *testing.T, s *cors.Service, req *http.Request) {
@@ -333,7 +328,7 @@ func TestOriginHeader(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestExposedHeader(t *testing.T, s *cors.Service, req *http.Request) {
@@ -352,7 +347,7 @@ func TestExposedHeader(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "X-Header-1, X-Header-2",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestAllowedCredentials(t *testing.T, s *cors.Service, req *http.Request) {
@@ -372,7 +367,7 @@ func TestAllowedCredentials(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
 
 func TestMaxAge(t *testing.T, s *cors.Service, req *http.Request) {
@@ -392,5 +387,5 @@ func TestMaxAge(t *testing.T, s *cors.Service, req *http.Request) {
 			"Access-Control-Expose-Headers":    "",
 		})
 	}
-	hpu.ServeHTTP(req, s.WithCORS()(testHandler()))
+	hpu.ServeHTTP(req, s.WithCORS(testHandler()))
 }
