@@ -32,7 +32,8 @@ type Settings struct {
 	// implies a small performance penality. Only one wildcard can be used per
 	// origin. Default value is ["*"]. Normalized list of plain allowed origins.
 	AllowedOrigins []string
-	// allowedWOrigins a list of allowed origins containing wildcards
+	// allowedWOrigins a list of allowed origins containing wildcards. Used in
+	// ScopedConfig.isOriginAllowed()
 	allowedWOrigins []wildcard
 	// AllowedHeaders normalized list of allowed headers the client is allowed
 	// to use with cross-domain requests. If the special "*" value is present in
@@ -43,8 +44,8 @@ type Settings struct {
 	// with cross-domain requests. Default value is simple methods (GET and
 	// POST)
 	AllowedMethods []string
-	// ExposedHeaders indicates which headers are safe to expose to the
-	// API of a CORS API specification. Normalized list of exposed headers.
+	// ExposedHeaders indicates which headers are safe to expose to the API of a
+	// CORS API specification. Normalized list of exposed headers.
 	ExposedHeaders []string
 
 	// MaxAge in seconds will be added to the header, if set. Indicates how long
@@ -62,18 +63,19 @@ type Settings struct {
 	// AllowedHeadersAll set to true when allowed headers contains a "*"
 	AllowedHeadersAll bool
 
-	// AllowCredentials indicates whether the request can include user credentials like
-	// cookies, HTTP authentication or client side SSL certificates.
+	// AllowCredentials indicates whether the request can include user
+	// credentials like cookies, HTTP authentication or client side SSL
+	// certificates.
 	AllowCredentials bool
 
-	// OptionsPassthrough instructs preflight to let other potential next handlers to
-	// process the OPTIONS method. Turn this on if your application handles OPTIONS.
+	// OptionsPassthrough instructs preflight to let other potential next
+	// handlers to process the OPTIONS method. Turn this on if your application
+	// handles OPTIONS.
 	OptionsPassthrough bool
 }
 
-// WithDefaultConfig applies the default CORS configuration settings based for
-// a specific scope. This function overwrites any previous set options.
-//
+// WithDefaultConfig applies the default CORS configuration settings based for a
+// specific scope. This function overwrites any previous set options.
 // Default values are:
 //		- Allowed Methods: GET, POST
 //		- Allowed Headers: Origin, Accept, Content-Type
@@ -81,6 +83,8 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return withDefaultConfig(scp, id)
 }
 
+// WithSettings applies the Settings struct to a specific scope. Internal
+// functions will optimize the internal structure of the Settings struct.
 func WithSettings(scp scope.Scope, id int64, stng Settings) Option {
 	h := scope.NewHash(scp, id)
 	exposedHeaders := convert(stng.ExposedHeaders, http.CanonicalHeaderKey)

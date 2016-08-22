@@ -108,7 +108,7 @@ func (sc *ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) 
 		}
 		return
 	}
-	if false == sc.isOriginAllowed(origin) {
+	if !sc.isOriginAllowed(origin) {
 		if sc.log.IsDebug() {
 			sc.log.Debug("cors.handlePreflight.aborted.notAllowed.origin", log.String("method", r.Method), log.String("origin", origin), log.Strings("allowedOrigins", sc.AllowedOrigins...))
 		}
@@ -116,14 +116,14 @@ func (sc *ScopedConfig) handlePreflight(w http.ResponseWriter, r *http.Request) 
 	}
 
 	reqMethod := r.Header.Get("Access-Control-Request-Method")
-	if false == sc.isMethodAllowed(reqMethod) {
+	if !sc.isMethodAllowed(reqMethod) {
 		if sc.log.IsDebug() {
 			sc.log.Debug("cors.handlePreflight.aborted.notAllowed.reqMethod", log.String("method", r.Method), log.String("reqMethod", reqMethod))
 		}
 		return
 	}
 	reqHeaders := parseHeaderList(r.Header.Get("Access-Control-Request-Headers"))
-	if false == sc.areHeadersAllowed(reqHeaders) {
+	if !sc.areHeadersAllowed(reqHeaders) {
 		if sc.log.IsDebug() {
 			sc.log.Debug("cors.handlePreflight.aborted.notAllowed.reqHeaders", log.String("method", r.Method), log.Strings("reqHeaders", reqHeaders...))
 		}
