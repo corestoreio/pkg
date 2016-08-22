@@ -15,29 +15,73 @@
 package storemock
 
 import (
+	"sync/atomic"
+
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 var _ store.Finder = (*Find)(nil)
 
-// Find implements interface store.Finder for mocking in tests.
+// Find implements interface store.Finder for mocking in tests. Thread safe.
 type Find struct {
-	// Next three get returned by function DefaultStoreID()
-	StoreIDDefault   int64
-	WebsiteIDDefault int64
-	StoreIDError     error
+	DefaultStoreIDFn      func(runMode scope.Hash) (storeID, websiteID int64, err error)
+	defaultStoreIDInvoked int32
 
-	// Next three gets returned by function StoreIDbyCode()
-	IDByCodeStoreID   int64
-	IDByCodeWebsiteID int64
-	IDByCodeError     error
+	StoreIDbyCodeFn      func(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error)
+	storeIDbyCodeInvoked int32
 }
 
-func (s Find) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error) {
-	return s.StoreIDDefault, s.WebsiteIDDefault, s.StoreIDError
+// NewFindDefaultStoreID creates a new closure for the function DefaultStoreID.
+// The last variadic argument allows to append the other NewFind*() function.
+func NewDefaultStoreID(storeID, websiteID int64, err error, fs ...*Find) *Find {
+	f := func(runMode scope.Hash, storeCode string) (int64, int64, error) {
+		return 0, 0, nil
+	}
+	if len(fs) == 1 && fs[0] != nil {
+		f = fs[0].StoreIDbyCodeFn
+	}
+	return &Find{
+		DefaultStoreIDFn: func(runMode scope.Hash) (int64, int64, error) {
+			return storeID, websiteID, err
+		},
+		StoreIDbyCodeFn: f,
+	}
 }
 
-func (s Find) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error) {
-	return s.IDByCodeStoreID, s.IDByCodeWebsiteID, s.IDByCodeError
+// NewStoreIDbyCode creates a new closure for the function StoreIDbyCode.
+// The last variadic argument allows to append the other NewFind*() function.
+func NewStoreIDbyCode(storeID, websiteID int64, err error, fs ...*Find) *Find {
+	f := func(runMode scope.Hash) (int64, int64, error) {
+		return 0, 0, nil
+	}
+	if len(fs) == 1 && fs[0] != nil {
+		f = fs[0].DefaultStoreIDFn
+	}
+	return &Find{
+		DefaultStoreIDFn: f,
+		StoreIDbyCodeFn: func(runMode scope.Hash, storeCode string) (int64, int64, error) {
+			return storeID, websiteID, err
+		},
+	}
+}
+
+func (s *Find) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error) {
+	atomic.AddInt32(&s.defaultStoreIDInvoked, 1)
+	return s.DefaultStoreIDFn(runMode)
+}
+
+// DefaultStoreIDInvoked returns the number of DefaultStoreID() call invocations.
+func (s *Find) DefaultStoreIDInvoked() int {
+	return int(atomic.LoadInt32(&s.defaultStoreIDInvoked))
+}
+
+func (s *Find) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error) {
+	atomic.AddInt32(&s.storeIDbyCodeInvoked, 1)
+	return s.StoreIDbyCodeFn(runMode, storeCode)
+}
+
+// StoreIDbyCodeInvoked returns the number of StoreIDbyCode() call invocations.
+func (s *Find) StoreIDbyCodeInvoked() int {
+	return int(atomic.LoadInt32(&s.storeIDbyCodeInvoked))
 }

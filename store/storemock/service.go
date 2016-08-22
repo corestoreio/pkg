@@ -21,8 +21,8 @@ import (
 )
 
 // NewEurozzyService creates a fully initialized store.Service with 3 websites,
-// 4 groups and 7 stores used for testing. Panics on error.
-// Website 1 contains Europe and website 2 contains Australia/New Zealand.
+// 4 groups and 7 stores used for testing. Panics on error. Website 1 contains
+// Europe and website 2 contains Australia/New Zealand.
 func NewEurozzyService(cfg config.Getter, opts ...store.Option) *store.Service {
 	// Yes weird naming, but feel free to provide a better name 8-)
 

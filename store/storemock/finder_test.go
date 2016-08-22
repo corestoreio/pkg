@@ -22,26 +22,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFind_DefaultStoreID(t *testing.T) {
-	f := storemock.Find{
-		StoreIDDefault:   -1,
-		WebsiteIDDefault: -2,
-		StoreIDError:     errors.NewFatalf("Upps.."),
+func TestFind(t *testing.T) {
+	tests := []struct {
+		f *storemock.Find
+	}{
+		{
+			storemock.NewDefaultStoreID(-1, -2, errors.NewFatalf("Whooops2"),
+				storemock.NewStoreIDbyCode(-3, -4, errors.NewFatalf("Whooops1")),
+			),
+		},
+		{
+			storemock.NewStoreIDbyCode(-3, -4, errors.NewFatalf("Whooops1"),
+				storemock.NewDefaultStoreID(-1, -2, errors.NewFatalf("Whooops2")),
+			),
+		},
 	}
-	sID, wID, err := f.DefaultStoreID(0)
-	assert.Exactly(t, int64(-1), sID)
-	assert.Exactly(t, int64(-2), wID)
-	assert.True(t, errors.IsFatal(err))
-}
+	for _, test := range tests {
+		sID, wID, err := test.f.DefaultStoreID(0)
+		assert.Exactly(t, int64(-1), sID)
+		assert.Exactly(t, int64(-2), wID)
+		assert.True(t, errors.IsFatal(err))
+		assert.Exactly(t, 1, test.f.DefaultStoreIDInvoked())
 
-func TestFind_StoreIDbyCode(t *testing.T) {
-	f := storemock.Find{
-		IDByCodeStoreID:   -1,
-		IDByCodeWebsiteID: -2,
-		IDByCodeError:     errors.NewFatalf("Upps.."),
+		sID, wID, err = test.f.StoreIDbyCode(0, "x")
+		assert.Exactly(t, int64(-3), sID)
+		assert.Exactly(t, int64(-4), wID)
+		assert.True(t, errors.IsFatal(err))
+		assert.Exactly(t, 1, test.f.StoreIDbyCodeInvoked())
 	}
-	sID, wID, err := f.StoreIDbyCode(0, "x")
-	assert.Exactly(t, int64(-1), sID)
-	assert.Exactly(t, int64(-2), wID)
-	assert.True(t, errors.IsFatal(err))
 }

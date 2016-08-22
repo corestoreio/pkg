@@ -86,72 +86,56 @@ func TestWithRunMode(t *testing.T) {
 		// test cases: DefaultRunMode
 		{ // request with cookie store UK. store valid; don't set a cookie
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
-			storemock.Find{
-				StoreIDDefault: 999, WebsiteIDDefault: 111, StoreIDError: nil,
-				IDByCodeStoreID: 888, IDByCodeWebsiteID: 222, IDByCodeError: nil},
+			storemock.NewDefaultStoreID(999, 111, nil, storemock.NewStoreIDbyCode(888, 222, nil)),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false)},
 			scope.DefaultRunMode, "", http.StatusAccepted,
 			888, 222, true,
 		},
 		{ // request with store cookie UK. should delete cookie and trigger error because store not allowed
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
-			storemock.Find{
-				StoreIDDefault: 1, WebsiteIDDefault: 1, StoreIDError: nil,
-				IDByCodeStoreID: 0, IDByCodeWebsiteID: 0, IDByCodeError: errors.NewNotFoundf("UK not found")},
+			storemock.NewDefaultStoreID(1, 1, nil, storemock.NewStoreIDbyCode(0, 0, errors.NewNotFoundf("UK not found"))),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, errors.IsUnauthorized, true)},
 			scope.DefaultRunMode, store.CodeFieldName + `=; Path=/`, http.StatusUnauthorized,
 			0, 0, false,
 		},
 		{ // request with store cookie UK. should delete cookie (because store == DefaultStoreID) and store allowed
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
-			storemock.Find{
-				StoreIDDefault: 135, WebsiteIDDefault: 136, StoreIDError: nil,
-				IDByCodeStoreID: 135, IDByCodeWebsiteID: 136, IDByCodeError: nil},
+			storemock.NewDefaultStoreID(135, 136, nil, storemock.NewStoreIDbyCode(135, 136, nil)),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, errors.IsUnauthorized, false)},
 			scope.DefaultRunMode, store.CodeFieldName + `=; Path=/`, http.StatusAccepted,
 			135, 136, true,
 		},
 		{ // request with store cookie UK; fails because DefaultStoreID returns an error
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "uk"}),
-			storemock.Find{
-				StoreIDDefault: 0, WebsiteIDDefault: 0, StoreIDError: errors.NewNotImplementedf("Upsss!"),
-				IDByCodeStoreID: 0, IDByCodeWebsiteID: 0, IDByCodeError: nil},
+			storemock.NewDefaultStoreID(0, 0, errors.NewNotImplementedf("Upsss!")),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, errors.IsNotImplemented, false)},
 			scope.DefaultRunMode, ``, http.StatusServiceUnavailable,
 			0, 0, false,
 		},
 		{ // request with store GET param UK; fails because StoreIDbyCode returns an error
 			getReq("GET", fmt.Sprintf("http://cs.io?x=%%20y&%s=uk", store.CodeURLFieldName), nil),
-			storemock.Find{
-				StoreIDDefault: 1, WebsiteIDDefault: 1, StoreIDError: nil,
-				IDByCodeStoreID: 0, IDByCodeWebsiteID: 1, IDByCodeError: errors.NewFatalf("No idea what's fatal ...")},
+			storemock.NewDefaultStoreID(1, 1, nil, storemock.NewStoreIDbyCode(0, 1, errors.NewFatalf("No idea what's fatal ..."))),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, errors.IsFatal, false)},
 			scope.DefaultRunMode, ``, http.StatusServiceUnavailable,
 			0, 0, false,
 		},
 		{ // request with store GET param U K; ignores invalid store, and sets no cookie
 			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=u%%20k", store.CodeURLFieldName), nil),
-			storemock.Find{
-				StoreIDDefault: 165, WebsiteIDDefault: 166, StoreIDError: nil,
-				IDByCodeStoreID: 0, IDByCodeWebsiteID: 0, IDByCodeError: nil},
+			storemock.NewDefaultStoreID(165, 166, nil),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false)},
 			scope.DefaultRunMode, "", http.StatusAccepted,
 			165, 166, true,
 		},
 		{ // request with store GET param UK and sets cookie with code uk, because store code was provided via GET
 			getReq("GET", fmt.Sprintf("http://cs.io?x=y&%s=uk", store.CodeURLFieldName), nil),
-			storemock.Find{
-				StoreIDDefault: 175, WebsiteIDDefault: 176, StoreIDError: nil,
-				IDByCodeStoreID: 177, IDByCodeWebsiteID: 178, IDByCodeError: nil},
+			storemock.NewDefaultStoreID(175, 176, nil, storemock.NewStoreIDbyCode(177, 178, nil)),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false)},
 			scope.DefaultRunMode, store.CodeFieldName + `=uk; Path=/`, http.StatusAccepted,
 			177, 178, true,
 		},
 		{ // request with store GET param FR; fails because IsAllowedStoreID returns an error
 			getReq("GET", fmt.Sprintf("http://cs.io?e=f&%s=fr", store.CodeURLFieldName), nil),
-			storemock.Find{
-				StoreIDDefault: 1, WebsiteIDDefault: 1, StoreIDError: nil,
-				IDByCodeStoreID: 0, IDByCodeWebsiteID: 0, IDByCodeError: errors.NewAlreadyClosedf("Not in the mood")},
+			storemock.NewDefaultStoreID(1, 1, nil, storemock.NewStoreIDbyCode(0, 0, errors.NewAlreadyClosedf("Not in the mood"))),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, errors.IsAlreadyClosed, false)},
 			scope.DefaultRunMode, ``, http.StatusServiceUnavailable,
 			0, 0, false,
@@ -160,9 +144,7 @@ func TestWithRunMode(t *testing.T) {
 		// website runmode
 		{ // request with store cookie cn does nothing
 			getReq("GET", "http://cs.io", &http.Cookie{Name: store.CodeFieldName, Value: "cn"}),
-			storemock.Find{
-				StoreIDDefault: 0, WebsiteIDDefault: 0, StoreIDError: nil,
-				IDByCodeStoreID: 44, IDByCodeWebsiteID: 33, IDByCodeError: nil},
+			storemock.NewDefaultStoreID(0, 0, nil, storemock.NewStoreIDbyCode(44, 33, nil)),
 			runmode.Options{ErrorHandler: withRunModeErrH(t, nil, false), RunModeCalculater: scope.Website.ToHash(2)},
 			scope.Website.ToHash(2), ``, http.StatusAccepted,
 			44, 33, true,

@@ -197,16 +197,16 @@ func TestService_WithRunMode_DefaultStoreID_Error(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
-		StoreIDError: errors.NewNotImplementedf("Sorry Dude"),
-	})(final)
+	authHandler := jm.WithRunMode(scope.DefaultRunMode,
+		storemock.NewDefaultStoreID(0, 0, errors.NewNotImplementedf("Sorry Dude")),
+	)(final)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
 	w := httptest.NewRecorder()
 	authHandler.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusAlreadyReported, w.Code)
 	assert.Empty(t, w.Body.String())
-	assert.True(t, calledServiceErrorHandler)
+	assert.True(t, calledServiceErrorHandler, "calledServiceErrorHandler")
 }
 
 func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
@@ -229,10 +229,9 @@ func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
-		WebsiteIDDefault: 778,
-		IDByCodeError:    errors.NewNotImplementedf("Sorry Dude"),
-	})(final)
+	authHandler := jm.WithRunMode(scope.DefaultRunMode,
+		storemock.NewDefaultStoreID(0, 778, nil, storemock.NewStoreIDbyCode(0, 0, errors.NewNotImplementedf("Sorry Dude"))),
+	)(final)
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
@@ -269,10 +268,9 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
-		WebsiteIDDefault: 778,
-		IDByCodeError:    errors.NewTemporaryf("Sorry Dude"),
-	})(final)
+	authHandler := jm.WithRunMode(scope.DefaultRunMode,
+		storemock.NewDefaultStoreID(0, 778, nil, storemock.NewStoreIDbyCode(0, 0, errors.NewTemporaryf("Sorry Dude"))),
+	)(final)
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
@@ -319,14 +317,9 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 		panic("Should not get called")
 	})
 
-	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
-		WebsiteIDDefault: 889,
-		StoreIDDefault:   890,
-
-		IDByCodeWebsiteID: 0,
-		IDByCodeStoreID:   0,
-		IDByCodeError:     errors.NewNotFoundf("Store code not found"),
-	})(final)
+	authHandler := jm.WithRunMode(scope.DefaultRunMode,
+		storemock.NewDefaultStoreID(890, 889, nil, storemock.NewStoreIDbyCode(0, 0, errors.NewNotFoundf("Store code not found"))),
+	)(final)
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
@@ -372,13 +365,9 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 		calledFinalHandler = true
 	})
 
-	authHandler := jm.WithRunMode(scope.DefaultRunMode, storemock.Find{
-		WebsiteIDDefault: 359,
-		StoreIDDefault:   360,
-
-		IDByCodeWebsiteID: 379,
-		IDByCodeStoreID:   380,
-	})(final)
+	authHandler := jm.WithRunMode(scope.DefaultRunMode,
+		storemock.NewDefaultStoreID(360, 359, nil, storemock.NewStoreIDbyCode(380, 379, nil)),
+	)(final)
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
