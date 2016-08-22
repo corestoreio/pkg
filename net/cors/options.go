@@ -103,17 +103,28 @@ func WithSettings(scp scope.Scope, id int64, stng Settings) Option {
 		// case-sensitive matching. As it may error prone, we chose to ignore
 		// the spec here.
 		sc.AllowedOriginsAll = allowedOriginsAll
-		sc.AllowedOrigins = allowedOrigins
-		sc.allowedWOrigins = allowedWOrigins
+		if len(allowedOrigins) > 0 {
+			sc.AllowedOrigins = allowedOrigins
+		}
+		if len(allowedWOrigins) > 0 {
+			sc.allowedWOrigins = allowedWOrigins
+		}
 
 		sc.AllowOriginFunc = stng.AllowOriginFunc
-		sc.AllowedMethods = am
+
+		if len(am) > 0 {
+			sc.AllowedMethods = am
+		}
 
 		sc.AllowedHeadersAll = allowedHeadersAll
-		sc.AllowedHeaders = allowedHeaders
+		if len(allowedHeaders) > 0 {
+			sc.AllowedHeaders = allowedHeaders
+		}
 
 		sc.AllowCredentials = stng.AllowCredentials
-		sc.MaxAge = stng.MaxAge
+		if stng.MaxAge != "" {
+			sc.MaxAge = stng.MaxAge
+		}
 		sc.OptionsPassthrough = stng.OptionsPassthrough
 
 		sc.ScopeHash = h

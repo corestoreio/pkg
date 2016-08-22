@@ -61,7 +61,8 @@ func (sc *ScopedConfig) IsValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
 	}
-	if sc.ScopeHash > 0 && len(sc.AllowedMethods) > 0 && sc.log != nil {
+	// AML = allowed method length: Max 7, also useful for testing ;-)
+	if aml := len(sc.AllowedMethods); sc.ScopeHash > 0 && aml > 0 && aml <= 7 && sc.log != nil {
 		return nil
 	}
 	return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.AllowedMethods, sc.log == nil)

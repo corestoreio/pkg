@@ -21,14 +21,16 @@
 package cors_test
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"regexp"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/cors"
 	corstest "github.com/corestoreio/csfw/net/cors/internal"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
@@ -97,8 +99,8 @@ func TestService_Options_Scope_Website(t *testing.T) {
 
 	var newSrv = func(opts ...cors.Option) *cors.Service {
 		s := cors.MustNew(
-			cors.WithLogger(log.BlackHole{}),
 			cors.WithRootConfig(cfgmock.NewService()),
+			cors.WithServiceErrorHandler(mw.ErrorWithPanic),
 		)
 		if err := s.Options(opts...); err != nil {
 			t.Fatal(err)
@@ -203,16 +205,24 @@ func TestService_Options_Scope_Website(t *testing.T) {
 	}
 }
 
-func TestMatchAllOrigin(t *testing.T) {
+func getBaseCorsService(opts ...cors.Option) *cors.Service {
 	s := cors.MustNew(
-		cors.WithSettings(scope.Default, 0, cors.Settings{AllowedOrigins: []string{"*"}}),
+		cors.WithRootConfig(cfgmock.NewService()),
 	)
+	if err := s.Options(opts...); err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+	return s
+}
+
+func TestMatchAllOrigin(t *testing.T) {
+	s := getBaseCorsService(cors.WithSettings(scope.Default, 0, cors.Settings{AllowedOrigins: []string{"*"}}))
 	req := reqWithStore("GET")
 	corstest.TestMatchAllOrigin(t, s, req)
 }
 
 func TestAllowedOrigin(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}),
 	)
 	req := reqWithStore("GET")
@@ -220,7 +230,7 @@ func TestAllowedOrigin(t *testing.T) {
 }
 
 func TestWildcardOrigin(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}),
 	)
 	req := reqWithStore("GET")
@@ -228,7 +238,7 @@ func TestWildcardOrigin(t *testing.T) {
 }
 
 func TestDisallowedOrigin(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}),
 	)
 	req := reqWithStore("GET")
@@ -236,7 +246,7 @@ func TestDisallowedOrigin(t *testing.T) {
 }
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}),
 	)
 	req := reqWithStore("GET")
@@ -245,7 +255,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 
 func TestAllowedOriginFunc(t *testing.T) {
 	r, _ := regexp.Compile("^http://foo")
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{AllowOriginFunc: func(o string) bool {
 			return r.MatchString(o)
 		}}),
@@ -255,7 +265,7 @@ func TestAllowedOriginFunc(t *testing.T) {
 }
 
 func TestAllowedMethod(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedMethods: []string{"PUT", "DELETE"},
@@ -266,7 +276,7 @@ func TestAllowedMethod(t *testing.T) {
 }
 
 func TestAllowedMethodPassthrough(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins:     []string{"http://foobar.com"},
 			AllowedMethods:     []string{"PUT", "DELETE"},
@@ -278,7 +288,7 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 }
 
 func TestDisallowedMethod(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedMethods: []string{"PUT", "DELETE"},
@@ -289,7 +299,7 @@ func TestDisallowedMethod(t *testing.T) {
 }
 
 func TestAllowedHeader(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedHeaders: []string{"X-Header-1", "x-header-2"},
@@ -300,7 +310,7 @@ func TestAllowedHeader(t *testing.T) {
 }
 
 func TestAllowedWildcardHeader(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedHeaders: []string{"*"},
@@ -311,7 +321,7 @@ func TestAllowedWildcardHeader(t *testing.T) {
 }
 
 func TestDisallowedHeader(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedHeaders: []string{"X-Header-1", "x-header-2"},
@@ -322,7 +332,7 @@ func TestDisallowedHeader(t *testing.T) {
 }
 
 func TestOriginHeader(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 		}),
@@ -332,7 +342,7 @@ func TestOriginHeader(t *testing.T) {
 }
 
 func TestExposedHeader(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			ExposedHeaders: []string{"X-Header-1", "x-header-2"},
@@ -343,37 +353,37 @@ func TestExposedHeader(t *testing.T) {
 }
 
 func TestExposedHeader_MultiScope(t *testing.T) {
-	t.Skip("TODO")
-	//s := cors.MustNew(
-	//	cors.WithSettings(scope.Default, 0, cors.Settings{
-	//		AllowedOrigins: []string{"http://foobar.com"},
-	//		ExposedHeaders: []string{"X-Header-1", "x-header-2"},
-	//	}),
-	//	cors.WithSettings(scope.Website, 1, cors.Settings{
-	//		AllowCredentials: false,
-	//	}),
-	//)
-	//
-	//reqDefault, _ := http.NewRequest("GET", "http://corestore.io/reqDefault", nil)
-	//reqDefault = reqDefault.WithContext(
-	//	store.WithContextRequestedStore(reqDefault.Context(), storemock.MustNewStoreAU(cfgmock.NewService())),
-	//)
-	//corstest.TestExposedHeader(t, s, reqDefault)
-	//
-	//eur := storemock.NewEurozzyService(scope.Option{Website: scope.MockID(1)}, store.WithStorageConfig(cfgmock.NewService()))
-	//atStore, atErr := eur.Store(scope.MockID(2)) // ID = 2 store Austria
-	//reqWebsite, _ := http.NewRequest("OPTIONS", "http://corestore.io/reqWebsite", nil)
-	//reqWebsite = reqWebsite.WithContext(
-	//	store.WithContextRequestedStore(reqWebsite.Context(), atStore, atErr),
-	//)
-	//if err := s.Options(cors.WithAllowCredentials(scope.Website, 1, true)); err != nil {
-	//	t.Errorf("%+v", err)
-	//}
-	//corstest.TestAllowedCredentials(t, s, reqWebsite)
+	s := getBaseCorsService(
+		cors.WithSettings(scope.Default, 0, cors.Settings{
+			AllowedOrigins: []string{"http://foobar.com"},
+			ExposedHeaders: []string{"X-Header-1", "x-header-2"},
+		}),
+		cors.WithSettings(scope.Website, 1, cors.Settings{
+			AllowCredentials: false,
+		}),
+	)
+
+	reqDefault := httptest.NewRequest("GET", "http://corestore.io/reqDefault", nil)
+	reqDefault = reqDefault.WithContext(
+		scope.WithContext(reqDefault.Context(), 144, 244), // falls back to default scope
+	)
+	corstest.TestExposedHeader(t, s, reqDefault)
+
+	// 2nd test
+	reqWebsite, _ := http.NewRequest("OPTIONS", "http://corestore.io/reqWebsite", nil)
+	reqWebsite = reqWebsite.WithContext(
+		scope.WithContext(reqDefault.Context(), 1, 2), // website EURO and store AT
+	)
+	if err := s.Options(cors.WithSettings(scope.Website, 1, cors.Settings{
+		AllowCredentials: true,
+	})); err != nil {
+		t.Errorf("%+v", err)
+	}
+	corstest.TestAllowedCredentials(t, s, reqWebsite)
 }
 
 func TestAllowedCredentials(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins:   []string{"http://foobar.com"},
 			AllowCredentials: true,
@@ -384,7 +394,7 @@ func TestAllowedCredentials(t *testing.T) {
 }
 
 func TestMaxAge(t *testing.T) {
-	s := cors.MustNew(
+	s := getBaseCorsService(
 		cors.WithSettings(scope.Default, 0, cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			MaxAge:         "30", // seconds
@@ -394,33 +404,43 @@ func TestMaxAge(t *testing.T) {
 	corstest.TestMaxAge(t, s, req)
 }
 
-func TestWithCORS_Error_StoreManager(t *testing.T) {
-	t.Skip("TODO")
-	//s := cors.MustNew()
-	//
-	//finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	//	err := cors.FromContext(r.Context())
-	//	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-	//})
-	//
-	//countryHandler := s.WithCORS(finalHandler)
-	//rec := httptest.NewRecorder()
-	//req, err := http.NewRequest("GET", "http://corestore.io", nil)
-	//assert.NoError(t, err)
-	//countryHandler.ServeHTTP(rec, req)
+func TestWithCORS_Error_Missing_ScopeContext(t *testing.T) {
+	var serviceErrorHandlerCalled bool
+	s := getBaseCorsService(
+		cors.WithServiceErrorHandler(func(err error) http.Handler {
+			assert.True(t, errors.IsNotFound(err), "%+v", err)
+			serviceErrorHandlerCalled = true
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+			})
+		}),
+	)
+
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("Should be called")
+	})
+
+	countryHandler := s.WithCORS(finalHandler)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "http://corestore.io", nil)
+	countryHandler.ServeHTTP(rec, req)
+	assert.Exactly(t, http.StatusTeapot, rec.Code)
+	assert.Empty(t, rec.Body.String())
+	assert.True(t, serviceErrorHandlerCalled, "serviceErrorHandlerCalled")
 }
 
 func TestWithCORS_Error_InvalidConfig(t *testing.T) {
-	t.Skip("TODO")
-	//s := cors.MustNew(cors.WithAllowedMethods(scope.Default, 0))
-	//
-	//finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	//	err := cors.FromContext(r.Context())
-	//	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
-	//})
-	//
-	//countryHandler := s.WithCORS(finalHandler)
-	//rec := httptest.NewRecorder()
-	//req := reqWithStore("GET")
-	//countryHandler.ServeHTTP(rec, req)
+	s := getBaseCorsService(cors.WithSettings(scope.Default, 0, cors.Settings{
+		AllowedMethods: []string{"a", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b"},
+	}))
+
+	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("Should not get called")
+	})
+
+	countryHandler := s.WithCORS(finalHandler)
+	rec := httptest.NewRecorder()
+	req := reqWithStore("GET")
+	countryHandler.ServeHTTP(rec, req)
+	assert.Exactly(t, http.StatusServiceUnavailable, rec.Code)
 }
