@@ -66,10 +66,8 @@ func BenchmarkDefault(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("GET")
 	req.Header.Add("Origin", "somedomain.com")
-	c, err := cors.New()
-	if err != nil {
-		b.Fatal(err)
-	}
+	c := getBaseCorsService()
+
 	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
@@ -83,12 +81,10 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("GET")
 	req.Header.Add("Origin", "somedomain.com")
-	c, err := cors.New(cors.WithSettings(scope.Default, 0, cors.Settings{
+	c := getBaseCorsService(cors.WithSettings(scope.Default, 0, cors.Settings{
 		AllowedOrigins: []string{"somedomain.com"},
 	}))
-	if err != nil {
-		b.Fatal(err)
-	}
+
 	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
@@ -102,10 +98,8 @@ func BenchmarkPreflight(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("OPTIONS")
 	req.Header.Add("Access-Control-Request-Method", "GET")
-	c, err := cors.New()
-	if err != nil {
-		b.Fatal(err)
-	}
+
+	c := getBaseCorsService()
 	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
@@ -120,10 +114,7 @@ func BenchmarkPreflightHeader(b *testing.B) {
 	req := reqWithStore("OPTIONS")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "Accept")
-	c, err := cors.New()
-	if err != nil {
-		b.Fatal(err)
-	}
+	c := getBaseCorsService()
 	handler := c.WithCORS(testHandler(b))
 
 	b.ReportAllocs()
