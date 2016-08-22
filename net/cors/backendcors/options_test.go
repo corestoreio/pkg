@@ -17,6 +17,7 @@ package backendcors_test
 import (
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -26,9 +27,8 @@ import (
 	"github.com/corestoreio/csfw/net/cors"
 	"github.com/corestoreio/csfw/net/cors/backendcors"
 	corstest "github.com/corestoreio/csfw/net/cors/internal"
-	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,98 +37,92 @@ type fataler interface {
 	Fatal(args ...interface{})
 }
 
-func reqWithStore(method string, cfgOpt ...cfgmock.OptionFunc) *http.Request {
-	req, err := http.NewRequest(method, "http://corestore.io/foo", nil)
-	if err != nil {
-		panic(err)
-	}
-
+func reqWithStore(method string) *http.Request {
+	req := httptest.NewRequest(method, "https://corestore.io/catalog/product/id/33454", nil)
 	return req.WithContext(
-		store.WithContextRequestedStore(req.Context(), storemock.MustNewStoreAU(cfgmock.NewService(cfgOpt...))),
+		scope.WithContext(req.Context(), 2, 5), // website 2 = OZ; store = 5 AU
 	)
 }
 
-func newCorsService() *cors.Service {
+func newCorsService(pv cfgmock.PathValue) *cors.Service {
 	return cors.MustNew(
+		cors.WithRootConfig(cfgmock.NewService(cfgmock.WithPV(pv))),
 		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+		cors.WithServiceErrorHandler(mw.ErrorWithPanic),
 	)
 }
 
 func TestNoConfig(t *testing.T) {
-	s := newCorsService()
+	s := newCorsService(nil)
 	req := reqWithStore("GET")
 	corstest.TestNoConfig(t, s, req)
 }
 
 func TestMatchAllOrigin(t *testing.T) {
 	var logBuf = new(log.MutexBuffer)
-	s := newCorsService()
-	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
-	// STAR is the default value in the element structure
-	}))
+	s := newCorsService(nil) // STAR is the default value in the element structure
+	req := reqWithStore("GET")
 
 	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelFatal)))); err != nil {
 		t.Fatal(err)
 	}
-
 	corstest.TestMatchAllOrigin(t, s, req)
 	//println("\n", logBuf.String())
-
 }
 
 func TestAllowedOrigin(t *testing.T) {
-	s := newCorsService()
-	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-	}))
+	})
+	req := reqWithStore("GET")
 	corstest.TestAllowedOrigin(t, s, req)
 }
 
 func TestWildcardOrigin(t *testing.T) {
-	s := newCorsService()
-	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
-	}))
+	})
+	req := reqWithStore("GET")
 	corstest.TestWildcardOrigin(t, s, req)
 }
 
 func TestDisallowedOrigin(t *testing.T) {
-	s := newCorsService()
-	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-	}))
+	})
+	req := reqWithStore("GET")
 	corstest.TestDisallowedOrigin(t, s, req)
 }
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
-	s := newCorsService()
-	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
-	}))
+	})
+	req := reqWithStore("GET")
 	corstest.TestDisallowedWildcardOrigin(t, s, req)
 }
 
 func TestAllowedOriginFunc(t *testing.T) {
-	s := newCorsService()
-	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
-	}))
+	})
+	req := reqWithStore("GET")
 	corstest.TestAllowedOriginFunc(t, s, req)
 }
 
 func TestAllowedMethodNoPassthrough(t *testing.T) {
 	var logBuf = new(log.MutexBuffer)
 
-	s := newCorsService()
+	s := newCorsService(cfgmock.PathValue{
+		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
+		// backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): false, <== this is the default value
+	})
 	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug)))); err != nil {
 		t.Fatal(err)
 	}
 
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
-		// backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): false, <== this is the default value
-	}))
+	req := reqWithStore("OPTIONS")
 	req.Body = ioutil.NopCloser(strings.NewReader("Body of TestAllowedMethod_No_Passthrough"))
 	corstest.TestAllowedMethodNoPassthrough(t, s, req)
 
@@ -143,89 +137,84 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 }
 
 func TestAllowedMethodPassthrough(t *testing.T) {
-	s := newCorsService()
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2):     "http://foobar.com",
 		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2):     "PUT\nDELETE",
 		backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): true,
-	}))
+	})
+	req := reqWithStore("OPTIONS")
 	req.Body = ioutil.NopCloser(strings.NewReader("Body of TestAllowedMethod_Passthrough"))
 	corstest.TestAllowedMethodPassthrough(t, s, req)
 }
 
 func TestDisallowedMethod(t *testing.T) {
-	s := newCorsService()
-
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
-	}))
+	})
+
+	req := reqWithStore("OPTIONS")
 
 	corstest.TestDisallowedMethod(t, s, req)
 }
 
 func TestAllowedHeader(t *testing.T) {
-	s := newCorsService()
-
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 		backend.NetCorsAllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
-	}))
+	})
+
+	req := reqWithStore("OPTIONS")
 
 	corstest.TestAllowedHeader(t, s, req)
 }
 
 func TestAllowedWildcardHeader(t *testing.T) {
-	s := newCorsService()
-
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 		backend.NetCorsAllowedHeaders.MustFQ(scope.Website, 2): "*",
-	}))
+	})
 
+	req := reqWithStore("OPTIONS")
 	corstest.TestAllowedWildcardHeader(t, s, req)
 }
 
 func TestDisallowedHeader(t *testing.T) {
-	s := newCorsService()
-
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 		backend.NetCorsAllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
-	}))
+	})
 
+	req := reqWithStore("OPTIONS")
 	corstest.TestDisallowedHeader(t, s, req)
 }
 
 func TestExposedHeader(t *testing.T) {
-	s := newCorsService()
-
-	req := reqWithStore("GET", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 		backend.NetCorsExposedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
-	}))
+	})
 
+	req := reqWithStore("GET")
 	corstest.TestExposedHeader(t, s, req)
 }
 
 func TestAllowedCredentials(t *testing.T) {
-	s := newCorsService()
-
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2):   "http://foobar.com",
 		backend.NetCorsAllowCredentials.MustFQ(scope.Website, 2): true,
-	}))
+	})
 
+	req := reqWithStore("OPTIONS")
 	corstest.TestAllowedCredentials(t, s, req)
 }
 func TestMaxAge(t *testing.T) {
-	s := newCorsService()
-
-	req := reqWithStore("OPTIONS", cfgmock.WithPV(cfgmock.PathValue{
+	s := newCorsService(cfgmock.PathValue{
 		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsMaxAge.MustFQ(scope.Website, 2):         "30s",
-	}))
+		backend.NetCorsMaxAge.MustFQ(scope.Website, 2):         "30",
+	})
 
+	req := reqWithStore("OPTIONS")
 	corstest.TestMaxAge(t, s, req)
 }
 

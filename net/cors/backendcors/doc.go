@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package backendcors defines the backend configuration options and element slices.
+// Package backendcors defines the backend configuration options and element
+// slices.
 package backendcors

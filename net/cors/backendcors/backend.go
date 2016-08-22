@@ -82,7 +82,7 @@ type Backend struct {
 	// request can be cached.
 	//
 	// Path: net/cors/max_age
-	NetCorsMaxAge cfgmodel.Duration
+	NetCorsMaxAge cfgmodel.Str
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
@@ -106,6 +106,6 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	be.NetCorsAllowedHeaders = cfgmodel.NewStringCSV(`net/cors/allowed_headers`, optsCSV...)
 	be.NetCorsAllowCredentials = cfgmodel.NewBool(`net/cors/allow_credentials`, optsYN...)
 	be.NetCorsOptionsPassthrough = cfgmodel.NewBool(`net/cors/options_passthrough`, optsYN...)
-	be.NetCorsMaxAge = cfgmodel.NewDuration(`net/cors/max_age`, opts...)
+	be.NetCorsMaxAge = cfgmodel.NewStr(`net/cors/max_age`, opts...)
 	return be
 }
