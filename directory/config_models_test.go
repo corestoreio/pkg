@@ -33,11 +33,9 @@ func TestNewConfigCurrencyGetDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cr := cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			cobPath.Bind(scope.Default, 0).String(): "CHF",
-		}),
-	)
+	cr := cfgmock.NewService(cfgmock.PathValue{
+		cobPath.Bind(scope.Default, 0).String(): "CHF",
+	})
 
 	cur, err := backend.CurrencyOptionsBase.GetDefault(cr)
 	assert.NoError(t, err)
@@ -79,15 +77,13 @@ func TestNewConfigCurrencyGetEmpty(t *testing.T) {
 	// this test shows a discouraged use of the NewConfigCurrency() model.
 	ccModel := directory.NewConfigCurrency(backend.CurrencyOptionsBase.String())
 
-	cr := cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			// default scope is enforced because NewConfigCurrency() has been created
-			// with the ConfigStructure slice and so we're missing the *element.Field
-			// with the special configuration
-			cobPath.Bind(scope.Website, 1).String(): "CHF",
-			cobPath.Bind(scope.Store, 1).String():   "EUR",
-		}),
-	)
+	cr := cfgmock.NewService(cfgmock.PathValue{
+		// default scope is enforced because NewConfigCurrency() has been created
+		// with the ConfigStructure slice and so we're missing the *element.Field
+		// with the special configuration
+		cobPath.Bind(scope.Website, 1).String(): "CHF",
+		cobPath.Bind(scope.Store, 1).String():   "EUR",
+	})
 
 	cur, err := ccModel.Get(cr.NewScoped(1, 1))
 	assert.EqualError(t, err, `Empty currency for path: "currency/options/base", scope: "Store", scopeID: 1`)
@@ -102,12 +98,10 @@ func TestNewConfigCurrencyGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cr := cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			cobPath.Bind(scope.Website, 1).String(): "EUR",
-			cobPath.Bind(scope.Website, 2).String(): "WIR", // Special Swiss currency
-		}),
-	)
+	cr := cfgmock.NewService(cfgmock.PathValue{
+		cobPath.Bind(scope.Website, 1).String(): "EUR",
+		cobPath.Bind(scope.Website, 2).String(): "WIR", // Special Swiss currency
+	})
 
 	// scope of CurrencyOptionsBase set to website, so no store config values are possible
 	cur, err := backend.CurrencyOptionsBase.Get(cr.NewScoped(1, 1))

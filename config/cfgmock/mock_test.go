@@ -52,11 +52,9 @@ func TestNewMockGetterAllTypes(t *testing.T) {
 	p := cfgpath.MustNewByParts("aa/bb/cc")
 
 	for iFaceIDX, wantVal := range types {
-		mg := cfgmock.NewService(cfgmock.WithPV(
-			cfgmock.PathValue{
-				p.String(): wantVal,
-			},
-		))
+		mg := cfgmock.NewService(cfgmock.PathValue{
+			p.String(): wantVal,
+		})
 
 		var haveVal interface{}
 		var haveErr error

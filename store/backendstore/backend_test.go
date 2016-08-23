@@ -53,7 +53,7 @@ func (mis mockIntToStr) IntToStr(_ config.Scoped, id int) (string, error) {
 }
 
 func TestConfiguration_AddressData(t *testing.T) {
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	sg := cfgmock.NewService(cfgmock.PathValue{
 		backend.GeneralStoreInformationName.MustFQ(scope.Website, 3):              `CoreStore SA`,
 		backend.GeneralStoreInformationPhone.MustFQ(scope.Website, 3):             `32608`,
 		backend.GeneralStoreInformationHours.MustFQ(scope.Website, 3):             `11am-7pm`,
@@ -64,7 +64,7 @@ func TestConfiguration_AddressData(t *testing.T) {
 		backend.GeneralStoreInformationStreetLine1.MustFQ(scope.Website, 3):       `Market Str 134`,
 		backend.GeneralStoreInformationStreetLine2.MustFQ(scope.Website, 3):       `Booth 987`,
 		backend.GeneralStoreInformationMerchantVatNumber.MustFQ(scope.Website, 3): `DE12345678`,
-	})).NewScoped(3, 4)
+	}).NewScoped(3, 4)
 
 	backend.GeneralStoreInformationCountryID.MapIntResolver = mockIntToStr{}
 	backend.GeneralStoreInformationRegionID.MapIntResolver = mockIntToStr{}
@@ -76,7 +76,7 @@ func TestConfiguration_AddressData(t *testing.T) {
 }
 
 func TestConfiguration_AddressData_Country_Error(t *testing.T) {
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{})).NewScoped(3, 4)
+	sg := cfgmock.NewService(cfgmock.PathValue{}).NewScoped(3, 4)
 
 	backend.GeneralStoreInformationCountryID.MapIntResolver = mockIntToStr{
 		error: errors.NewNotSupportedf("Some countries are not supported"),
@@ -89,7 +89,7 @@ func TestConfiguration_AddressData_Country_Error(t *testing.T) {
 }
 
 func TestConfiguration_AddressData_Region_Error(t *testing.T) {
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{})).NewScoped(3, 4)
+	sg := cfgmock.NewService(cfgmock.PathValue{}).NewScoped(3, 4)
 
 	backend.GeneralStoreInformationRegionID.MapIntResolver = mockIntToStr{
 		error: errors.NewUnauthorizedf("Some countries are not supported"),

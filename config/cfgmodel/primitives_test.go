@@ -227,8 +227,8 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, true}, // because default value in packageConfiguration is "true"
 		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultHash, true}, // because default value in packageConfiguration is "true"
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): 0})).NewScoped(3, 0), scope.NewHash(scope.Website, 3), false},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): 0})).NewScoped(3, 5), scope.NewHash(scope.Website, 3), false},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 0}).NewScoped(3, 0), scope.NewHash(scope.Website, 3), false},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 0}).NewScoped(3, 5), scope.NewHash(scope.Website, 3), false},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -253,8 +253,8 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, false},
 		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultHash, false},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): 1})).NewScoped(4, 0), scope.DefaultHash, false}, // not allowed because DefaultID scope because there has not been set a *element.Field!
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 1})).NewScoped(4, 0), scope.DefaultHash, true},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 1}).NewScoped(4, 0), scope.DefaultHash, false}, // not allowed because DefaultID scope because there has not been set a *element.Field!
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 1}).NewScoped(4, 0), scope.DefaultHash, true},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -270,11 +270,12 @@ func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 	b := cfgmodel.NewBool("web/cors/allow_credentials")
 
-	gb, h, haveErr := b.Get(cfgmock.NewService(
-		cfgmock.WithBool(func(path string) (bool, error) {
+	sm := cfgmock.Service{
+		BoolFn: func(path string) (bool, error) {
 			return false, errors.NewFatalf("Unexpected error")
-		}),
-	).NewScoped(1, 1))
+		},
+	}
+	gb, h, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
@@ -320,18 +321,18 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, defaultWebCorsByte}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultHash, defaultWebCorsByte}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")})).NewScoped(0, 0), scope.DefaultHash, []byte("X-Gopher")},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")})).NewScoped(3, 5), scope.DefaultHash, []byte("X-Gopher")},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")}).NewScoped(0, 0), scope.DefaultHash, []byte("X-Gopher")},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")}).NewScoped(3, 5), scope.DefaultHash, []byte("X-Gopher")},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                       []byte("X-Gopher262"),
 			wantPath.Bind(scope.Store, 44).String(): []byte("X-Gopher44"), // because Field.Scopes has PermWebsite
-		})).NewScoped(3, 44), scope.DefaultHash, []byte("X-Gopher262")},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		}).NewScoped(3, 44), scope.DefaultHash, []byte("X-Gopher262")},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                         []byte("X-Gopher"),
 			wantPath.Bind(scope.Website, 33).String(): []byte("X-Gopher33"),
 			wantPath.Bind(scope.Website, 43).String(): []byte("X-GopherW43"),
 			wantPath.Bind(scope.Store, 44).String():   []byte("X-Gopher44"),
-		})).NewScoped(33, 43), scope.NewHash(scope.Website, 33), []byte("X-Gopher33")},
+		}).NewScoped(33, 43), scope.NewHash(scope.Website, 33), []byte("X-Gopher33")},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -357,7 +358,7 @@ func TestByteGetWithoutCfgStruct(t *testing.T) {
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, nil},
 		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultHash, nil},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): []byte(`Hello Dud€`)})).NewScoped(0, 0), scope.DefaultHash, []byte(`Hello Dud€`)},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte(`Hello Dud€`)}).NewScoped(0, 0), scope.DefaultHash, []byte(`Hello Dud€`)},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -374,11 +375,13 @@ func TestByteGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	b := cfgmodel.NewByte("web/cors/byte")
 	assert.Empty(t, b.Options())
 
-	gb, h, haveErr := b.Get(cfgmock.NewService(
-		cfgmock.WithByte(func(path string) ([]byte, error) {
+	sm := cfgmock.Service{
+		ByteFn: func(path string) ([]byte, error) {
 			return nil, errors.NewFatalf("Unexpected error")
-		}),
-	).NewScoped(1, 1))
+		},
+	}
+
+	gb, h, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
@@ -420,18 +423,18 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultHash, "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): "X-Gopher"})).NewScoped(0, 0), scope.DefaultHash, "X-Gopher"},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): "X-Gopher"})).NewScoped(3, 5), scope.DefaultHash, "X-Gopher"},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), scope.DefaultHash, "X-Gopher"},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(3, 5), scope.DefaultHash, "X-Gopher"},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                       "X-Gopher262",
 			wantPath.Bind(scope.Store, 44).String(): "X-Gopher44", // because Field.Scopes has PermWebsite
-		})).NewScoped(3, 44), scope.DefaultHash, "X-Gopher262"},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		}).NewScoped(3, 44), scope.DefaultHash, "X-Gopher262"},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                         "X-Gopher",
 			wantPath.Bind(scope.Website, 33).String(): "X-Gopher33",
 			wantPath.Bind(scope.Website, 43).String(): "X-GopherW43",
 			wantPath.Bind(scope.Store, 44).String():   "X-Gopher44",
-		})).NewScoped(33, 43), scope.NewHash(scope.Website, 33), "X-Gopher33"},
+		}).NewScoped(33, 43), scope.NewHash(scope.Website, 33), "X-Gopher33"},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -457,7 +460,7 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, ""},
 		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultHash, ""},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): "X-Gopher"})).NewScoped(0, 0), scope.DefaultHash, "X-Gopher"},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), scope.DefaultHash, "X-Gopher"},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -474,11 +477,12 @@ func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	b := cfgmodel.NewStr("web/cors/exposed_headers")
 	assert.Empty(t, b.Options())
 
-	gb, h, haveErr := b.Get(cfgmock.NewService(
-		cfgmock.WithString(func(path string) (string, error) {
+	sm := cfgmock.Service{
+		StringFn: func(path string) (string, error) {
 			return "", errors.NewFatalf("Unexpected error")
-		}),
-	).NewScoped(1, 1))
+		},
+	}
+	gb, h, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
@@ -521,17 +525,17 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, 2015}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultHash, 2015}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultHash, 2015}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016})).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016})).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016}).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016}).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                       3017,
 			wantPath.Bind(scope.Store, 11).String(): 2016, // because Field.Scopes set to PermWebsite
-		})).NewScoped(10, 11), scope.DefaultHash, 3017},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		}).NewScoped(10, 11), scope.DefaultHash, 3017},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                         3017,
 			wantPath.Bind(scope.Website, 10).String(): 4018,
 			wantPath.Bind(scope.Store, 11).String():   2016, // because Field.Scopes set to PermWebsite
-		})).NewScoped(10, 11), scope.NewHash(scope.Website, 10), 4018},
+		}).NewScoped(10, 11), scope.NewHash(scope.Website, 10), 4018},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -556,8 +560,8 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 		want     int
 	}{
 		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016})).NewScoped(10, 0), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 2019})).NewScoped(10, 0), scope.DefaultHash, 2019},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016}).NewScoped(10, 0), scope.DefaultHash, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 2019}).NewScoped(10, 0), scope.DefaultHash, 2019},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -573,11 +577,12 @@ func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 	b := cfgmodel.NewInt("web/cors/int")
 
-	gb, h, haveErr := b.Get(cfgmock.NewService(
-		cfgmock.WithInt(func(path string) (int, error) {
+	sm := cfgmock.Service{
+		IntFn: func(path string) (int, error) {
 			return 0, errors.NewFatalf("Unexpected error")
-		}),
-	).NewScoped(1, 1))
+		},
+	}
+	gb, h, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
@@ -621,17 +626,17 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, 2015.1000001}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultHash, 2015.1000001}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultHash, 2015.1000001}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001})).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016.1000001},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001})).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016.1000001},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001}).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001}).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                       2017.1000001,
 			wantPath.Bind(scope.Store, 11).String(): 2016.1000021,
-		})).NewScoped(10, 11), scope.NewHash(scope.Website, 10), 2017.1000001},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		}).NewScoped(10, 11), scope.NewHash(scope.Website, 10), 2017.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                         2017.1000001,
 			wantPath.Bind(scope.Website, 13).String(): 2018.2000001,
 			wantPath.Bind(scope.Store, 11).String():   2016.1000021,
-		})).NewScoped(13, 11), scope.NewHash(scope.Website, 13), 2018.2000001},
+		}).NewScoped(13, 11), scope.NewHash(scope.Website, 13), 2018.2000001},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -656,8 +661,8 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 		want     float64
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001})).NewScoped(10, 0), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 2016.1000001})).NewScoped(10, 0), scope.DefaultHash, 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultHash, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultHash, 2016.1000001},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -673,12 +678,12 @@ func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 	b := cfgmodel.NewFloat64("web/cors/float64")
 
-	gb, h, haveErr := b.Get(cfgmock.NewService(
-
-		cfgmock.WithFloat64(func(path string) (float64, error) {
+	sm := cfgmock.Service{
+		Float64Fn: func(path string) (float64, error) {
 			return 0, errors.NewFatalf("Unexpected error")
-		}),
-	).NewScoped(1, 1))
+		},
+	}
+	gb, h, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())

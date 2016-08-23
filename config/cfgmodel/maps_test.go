@@ -43,9 +43,9 @@ func TestNewMapIntStr(t *testing.T) {
 	m := cfgmodel.NewMapIntStr(`general/store_information/region_id`, cfgmodel.WithScopeStore())
 	m.MapIntResolver = mockMapIS{}
 
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	sg := cfgmock.NewService(cfgmock.PathValue{
 		m.MustFQ(scope.Store, 5): 33,
-	})).NewScoped(2, 5)
+	}).NewScoped(2, 5)
 
 	val, scp, err := m.Get(sg)
 	assert.NoError(t, err, "%+v", err)

@@ -243,11 +243,11 @@ func getWebsiteBaseCurrency(priceScope int, curGlobal, curWebsite string) (*stor
 			},
 		),
 		store.SetWebsiteConfig(
-			cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+			cfgmock.NewService(cfgmock.PathValue{
 				catconfig.Backend.CatalogPriceScope.FQPathInt64(scope.StrDefault, 0):    priceScope,
 				directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrDefault, 0):  curGlobal,
 				directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrWebsites, 1): curWebsite,
-			})),
+			}),
 		),
 	)
 }

@@ -109,11 +109,9 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
-	sg = cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			wantPath.String(): "X-CoreStore-TOKEN",
-		}),
-	).NewScoped(wantWebsiteID, 0)
+	sg = cfgmock.NewService(cfgmock.PathValue{
+		wantPath.String(): "X-CoreStore-TOKEN",
+	}).NewScoped(wantWebsiteID, 0)
 
 	customStr, h, err := p1.Get(sg)
 	assert.NoError(t, err)

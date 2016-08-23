@@ -82,9 +82,9 @@ func Benchmark_SingleStrGetWebsite(b *testing.B) {
 	var wantHash = scope.NewHash(scope.Website, 2)
 	p1 := cfgmodel.NewStr("web/cors/exposed_headers", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	sg := cfgmock.NewService(cfgmock.PathValue{
 		p1.MustFQ(scope.Website, 2): want,
-	})).NewScoped(2, 4)
+	}).NewScoped(2, 4)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -143,9 +143,9 @@ func Benchmark_SingleFloat64GetStore(b *testing.B) {
 		b.Fatalf("%+v", p1.LastError)
 	}
 
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	sg := cfgmock.NewService(cfgmock.PathValue{
 		p1.MustFQ(scope.Store, 4): want,
-	})).NewScoped(2, 4)
+	}).NewScoped(2, 4)
 
 	b.ReportAllocs()
 	b.ResetTimer()

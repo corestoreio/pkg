@@ -42,7 +42,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	}
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
-	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSigningMethod.MustFQ(scope.Default, 0): "ES384",
 		pb.NetJwtSigningMethod.MustFQ(scope.Website, 1): "HS512",
 
@@ -60,7 +60,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 
 		pb.NetJwtHmacPassword.MustFQ(scope.Default, 0): "pw1",
 		pb.NetJwtHmacPassword.MustFQ(scope.Website, 1): "pw2",
-	}))
+	})
 
 	jwts := jwt.MustNew(
 		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
@@ -98,14 +98,14 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	}
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
-	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSigningMethod.MustFQ(scope.Default, 0):    "HS384",
 		pb.NetJwtSingleTokenUsage.MustFQ(scope.Default, 0): 0, // disabled
 		pb.NetJwtDisabled.MustFQ(scope.Default, 0):         1, // disabled active
 		pb.NetJwtExpiration.MustFQ(scope.Default, 0):       "2m",
 		pb.NetJwtSkew.MustFQ(scope.Default, 0):             "3m",
 		pb.NetJwtHmacPassword.MustFQ(scope.Default, 0):     "pw1",
-	}))
+	})
 
 	jwts := jwt.MustNew(
 		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
@@ -150,9 +150,9 @@ func TestServiceWithBackend_MissingSectionSlice(t *testing.T) {
 	pb := backendjwt.New(nil)
 	jwts := jwt.MustNew(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
 
-	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSigningMethod.MustFQ(scope.Default, 0): "HS4711",
-	}))
+	})
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotFound(sc.IsValid()), "Error: %+v", sc.IsValid())
@@ -162,9 +162,9 @@ func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
 
 	jwts, pb := getJwts()
 
-	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSigningMethod.MustFQ(scope.Default, 0): "HS4711",
-	}))
+	})
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotImplemented(sc.IsValid()), "Error: %+v", sc.IsValid())
@@ -174,9 +174,9 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 
 	jwts, pb := getJwts()
 
-	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtExpiration.MustFQ(scope.Default, 0): "Fail",
-	}))
+	})
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	err := sc.IsValid()
@@ -187,9 +187,9 @@ func TestServiceWithBackend_InvalidSkew(t *testing.T) {
 
 	jwts, pb := getJwts()
 
-	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSkew.MustFQ(scope.Default, 0): "Fail171",
-	}))
+	})
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	err := sc.IsValid()
@@ -200,9 +200,9 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 
 	jwts, pb := getJwts()
 
-	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSingleTokenUsage.MustFQ(scope.Default, 0): []byte(`1`),
-	}))
+	})
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	err := sc.IsValid()
@@ -213,11 +213,11 @@ func TestServiceWithBackend_RSAFail(t *testing.T) {
 
 	jwts, pb := getJwts(cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
-	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSigningMethod.MustFQ(scope.Default, 0):  "RS256",
 		pb.NetJwtRSAKey.MustFQ(scope.Default, 0):         []byte(`1`),
 		pb.NetJwtRSAKeyPassword.MustFQ(scope.Default, 0): nil,
-	}))
+	})
 
 	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 0))
 	err := sc.IsValid()
@@ -240,14 +240,14 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 
 	// create a configuration for websiteID 1. this configuration resides usually in
 	// the MySQL core_config_data table.
-	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		pb.NetJwtSigningMethod.MustFQ(scope.Website, 1):    "HS512",
 		pb.NetJwtSingleTokenUsage.MustFQ(scope.Website, 1): 1, // enabled
 		pb.NetJwtDisabled.MustFQ(scope.Website, 1):         0, // JWT parsing enabled
 		pb.NetJwtExpiration.MustFQ(scope.Website, 1):       "5m1s",
 		pb.NetJwtSkew.MustFQ(scope.Website, 1):             "6m1s",
 		pb.NetJwtHmacPassword.MustFQ(scope.Website, 1):     "pw2",
-	}))
+	})
 
 	logBuf := new(bytes.Buffer)
 	jwts := jwt.MustNew(

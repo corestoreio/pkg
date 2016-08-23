@@ -41,21 +41,15 @@ func TestURLGet(t *testing.T) {
 		wantVal    interface{}
 	}{
 		{cfgmock.NewService().NewScoped(0, 1), nil, scope.DefaultHash, `http://john%20doe@corestore.io/?q=go+language#foo&bar`},
-		{cfgmock.NewService(
-			cfgmock.WithPV(cfgmock.PathValue{
-				wantPath.String(): "http://cs.io",
-			}),
-		).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), "http://cs.io"},
-		{cfgmock.NewService(
-			cfgmock.WithPV(cfgmock.PathValue{
-				wantPath.String(): "http://192.168.0.%31/",
-			}),
-		).NewScoped(0, 1), errors.IsFatal, scope.NewHash(scope.Store, 1), nil},
-		{cfgmock.NewService(
-			cfgmock.WithPV(cfgmock.PathValue{
-				wantPath.String(): "",
-			}),
-		).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), nil},
+		{cfgmock.NewService(cfgmock.PathValue{
+			wantPath.String(): "http://cs.io",
+		}).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), "http://cs.io"},
+		{cfgmock.NewService(cfgmock.PathValue{
+			wantPath.String(): "http://192.168.0.%31/",
+		}).NewScoped(0, 1), errors.IsFatal, scope.NewHash(scope.Store, 1), nil},
+		{cfgmock.NewService(cfgmock.PathValue{
+			wantPath.String(): "",
+		}).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), nil},
 	}
 	for i, test := range tests {
 		anURL, haveH, haveErr := b.Get(test.scpcfg)
@@ -109,11 +103,9 @@ func TestBaseURLGet(t *testing.T) {
 	assert.Exactly(t, "{{base_url}}", sg)
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
-	sg, h, err = b.Get(cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			wantPath.String(): "http://cs.io",
-		}),
-	).NewScoped(0, 1))
+	sg, h, err = b.Get(cfgmock.NewService(cfgmock.PathValue{
+		wantPath.String(): "http://cs.io",
+	}).NewScoped(0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}

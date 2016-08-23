@@ -522,9 +522,9 @@ func TestService_IsSingleStoreMode(t *testing.T) {
 
 	// no stores and backend set but configured with false
 	s.ClearCache()
-	sCfg = cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	sCfg = cfgmock.NewService(cfgmock.PathValue{
 		cfgpath.MustNewByParts(xPath).BindStore(2).String(): 0,
-	})).NewScoped(1, 2)
+	}).NewScoped(1, 2)
 	s.BackendSingleStore = cfgmodel.NewBool(xPath, cfgmodel.WithScopeStore())
 	b, err = s.IsSingleStoreMode(sCfg)
 	assert.NoError(t, err, "%+v", err)

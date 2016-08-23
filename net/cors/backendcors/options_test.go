@@ -46,7 +46,7 @@ func reqWithStore(method string) *http.Request {
 
 func newCorsService(pv cfgmock.PathValue) *cors.Service {
 	return cors.MustNew(
-		cors.WithRootConfig(cfgmock.NewService(cfgmock.WithPV(pv))),
+		cors.WithRootConfig(cfgmock.NewService(pv)),
 		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
 		cors.WithServiceErrorHandler(mw.ErrorWithPanic),
 	)
@@ -238,9 +238,9 @@ func TestBackend_Path_Errors(t *testing.T) {
 	for i, test := range tests {
 
 		scpFnc := backendcors.PrepareOptions(backend)
-		cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			test.toPath(scope.Website, 2): test.val,
-		}))
+		})
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
 		_, err := cors.New(scpFnc(cfgScp)...)

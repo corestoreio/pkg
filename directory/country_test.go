@@ -36,11 +36,9 @@ func TestPathCountryAllowedCustom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cr := cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			gcaPath.Bind(scope.Store, 1).String(): "DE,AU,CH,AT",
-		}),
-	)
+	cr := cfgmock.NewService(cfgmock.PathValue{
+		gcaPath.Bind(scope.Store, 1).String(): "DE,AU,CH,AT",
+	})
 
 	haveCountries, err := backend.GeneralCountryAllow.Get(cr.NewScoped(1, 1))
 	if err != nil {
@@ -54,9 +52,7 @@ func TestPathCountryAllowedCustom(t *testing.T) {
 func TestPathGeneralCountryAllowDefault(t *testing.T) {
 	t.Parallel()
 
-	cr := cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{}),
-	)
+	cr := cfgmock.NewService(cfgmock.PathValue{})
 
 	haveCountries, err := backend.GeneralCountryAllow.Get(cr.NewScoped(1, 1))
 	if err != nil {

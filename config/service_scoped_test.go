@@ -120,9 +120,9 @@ func TestScopedServicePath(t *testing.T) {
 	for vi, wantVal := range vals {
 		for _, test := range tests {
 
-			cg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+			cg := cfgmock.NewService(cfgmock.PathValue{
 				test.fqpath: wantVal,
-			}))
+			})
 
 			sg := cg.NewScoped(test.websiteID, test.storeID)
 
@@ -184,9 +184,9 @@ func BenchmarkScopedServiceStringDefault(b *testing.B) {
 func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 	route := cfgpath.NewRoute("aa/bb/cc")
 	want := strings.Repeat("Gopher", 100)
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	sg := cfgmock.NewService(cfgmock.PathValue{
 		cfgpath.MustNew(route).String(): want,
-	})).NewScoped(websiteID, storeID)
+	}).NewScoped(websiteID, storeID)
 
 	runtime.GC()
 	b.ResetTimer()
@@ -211,11 +211,11 @@ func TestScopedServicePermission(t *testing.T) {
 
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 
-	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	sg := cfgmock.NewService(cfgmock.PathValue{
 		basePath.Bind(scope.Default, 0).String(): "a",
 		basePath.BindWebsite(1).String():         "b",
 		basePath.BindStore(1).String():           "c",
-	})).NewScoped(1, 1)
+	}).NewScoped(1, 1)
 
 	tests := []struct {
 		s        scope.Scope

@@ -63,10 +63,9 @@ func TestObscure(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
 	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
+		cfgmock.PathValue{
 			wantPath: wantCiphered,
-		}),
-	).NewScoped(34, 4))
+		}).NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}

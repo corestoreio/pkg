@@ -58,11 +58,9 @@ func TestStringCSVGet(t *testing.T) {
 		// todo add errors
 	}
 	for i, test := range tests {
-		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
-			cfgmock.WithPV(cfgmock.PathValue{
-				wantPath: test.have,
-			}),
-		).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
+		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+			wantPath: test.have,
+		}).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
@@ -112,11 +110,9 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			wantPath: `20152016`,
-		}),
-	).NewScoped(34, 4))
+	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		wantPath: `20152016`,
+	}).NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
@@ -163,11 +159,9 @@ func TestIntCSV(t *testing.T) {
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
-		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
-			cfgmock.WithPV(cfgmock.PathValue{
-				wantPath: test.have,
-			}),
-		).NewScoped(0, 4))
+		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+			wantPath: test.have,
+		}).NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
@@ -223,11 +217,9 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Website, 34).String()
 
-	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			wantPath: `2015|2016|`,
-		}),
-	).NewScoped(34, 4))
+	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		wantPath: `2015|2016|`,
+	}).NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
@@ -265,11 +257,9 @@ func TestCSVGet(t *testing.T) {
 		{"Content-Type|X-CS\nApplication", nil, errors.IsNotValid},
 	}
 	for i, test := range tests {
-		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
-			cfgmock.WithPV(cfgmock.PathValue{
-				wantPath: test.have,
-			}),
-		).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
+		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+			wantPath: test.have,
+		}).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		assert.Exactly(t, scope.DefaultHash.String(), haveH.String(), "Index %d", i)
