@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
@@ -60,15 +61,21 @@ func (w *Write) Write(p cfgpath.Path, v interface{}) error {
 // appropriate methods of interface config.Getter. Field DB has precedence over
 // the applied functions.
 type Service struct {
-	DB              storage.Storager
-	ByteFn          func(path string) ([]byte, error)
-	StringFn        func(path string) (string, error)
-	BoolFn          func(path string) (bool, error)
-	Float64Fn       func(path string) (float64, error)
-	IntFn           func(path string) (int, error)
-	TimeFn          func(path string) (time.Time, error)
-	SubscriptionID  int
-	SubscriptionErr error
+	DB               storage.Storager
+	ByteFn           func(path string) ([]byte, error)
+	byteFnInvokes    int32
+	StringFn         func(path string) (string, error)
+	stringFnInvokes  int32
+	BoolFn           func(path string) (bool, error)
+	boolFnInvokes    int32
+	Float64Fn        func(path string) (float64, error)
+	float64FnInvokes int32
+	IntFn            func(path string) (int, error)
+	intFnInvokes     int32
+	TimeFn           func(path string) (time.Time, error)
+	timeFnInvokes    int32
+	SubscriptionID   int
+	SubscriptionErr  error
 }
 
 // PathValue is a required type for an option function. PV = path => value. This
@@ -162,10 +169,16 @@ func (mr *Service) Byte(p cfgpath.Path) ([]byte, error) {
 	case mr.hasVal(p):
 		return conv.ToByteE(mr.getVal(p))
 	case mr.ByteFn != nil:
+		atomic.AddInt32(&mr.byteFnInvokes, 1)
 		return mr.ByteFn(p.String())
 	default:
 		return nil, keyNotFound{}
 	}
+}
+
+// ByteFnInvokes returns the number of Byte() invocations.
+func (mr *Service) ByteFnInvokes() int {
+	return int(atomic.LoadInt32(&mr.byteFnInvokes))
 }
 
 // String returns a string value
@@ -174,10 +187,16 @@ func (mr *Service) String(p cfgpath.Path) (string, error) {
 	case mr.hasVal(p):
 		return conv.ToStringE(mr.getVal(p))
 	case mr.StringFn != nil:
+		atomic.AddInt32(&mr.stringFnInvokes, 1)
 		return mr.StringFn(p.String())
 	default:
 		return "", keyNotFound{}
 	}
+}
+
+// StringFnInvokes returns the number of String() invocations.
+func (mr *Service) StringFnInvokes() int {
+	return int(atomic.LoadInt32(&mr.stringFnInvokes))
 }
 
 // Bool returns a bool value
@@ -186,10 +205,16 @@ func (mr *Service) Bool(p cfgpath.Path) (bool, error) {
 	case mr.hasVal(p):
 		return conv.ToBoolE(mr.getVal(p))
 	case mr.BoolFn != nil:
+		atomic.AddInt32(&mr.boolFnInvokes, 1)
 		return mr.BoolFn(p.String())
 	default:
 		return false, keyNotFound{}
 	}
+}
+
+// BoolFnInvokes returns the number of Bool() invocations.
+func (mr *Service) BoolFnInvokes() int {
+	return int(atomic.LoadInt32(&mr.boolFnInvokes))
 }
 
 // Float64 returns a float64 value
@@ -198,10 +223,16 @@ func (mr *Service) Float64(p cfgpath.Path) (float64, error) {
 	case mr.hasVal(p):
 		return conv.ToFloat64E(mr.getVal(p))
 	case mr.Float64Fn != nil:
+		atomic.AddInt32(&mr.float64FnInvokes, 1)
 		return mr.Float64Fn(p.String())
 	default:
 		return 0.0, keyNotFound{}
 	}
+}
+
+// Float64FnInvokes returns the number of Float64() invocations.
+func (mr *Service) Float64FnInvokes() int {
+	return int(atomic.LoadInt32(&mr.float64FnInvokes))
 }
 
 // Int returns an integer value
@@ -210,10 +241,16 @@ func (mr *Service) Int(p cfgpath.Path) (int, error) {
 	case mr.hasVal(p):
 		return conv.ToIntE(mr.getVal(p))
 	case mr.IntFn != nil:
+		atomic.AddInt32(&mr.intFnInvokes, 1)
 		return mr.IntFn(p.String())
 	default:
 		return 0, keyNotFound{}
 	}
+}
+
+// IntFnInvokes returns the number of Int() invocations.
+func (mr *Service) IntFnInvokes() int {
+	return int(atomic.LoadInt32(&mr.intFnInvokes))
 }
 
 // Time returns a time value
@@ -222,10 +259,16 @@ func (mr *Service) Time(p cfgpath.Path) (time.Time, error) {
 	case mr.hasVal(p):
 		return conv.ToTimeE(mr.getVal(p))
 	case mr.TimeFn != nil:
+		atomic.AddInt32(&mr.timeFnInvokes, 1)
 		return mr.TimeFn(p.String())
 	default:
 		return time.Time{}, keyNotFound{}
 	}
+}
+
+// TimeFnInvokes returns the number of Time() invocations.
+func (mr *Service) TimeFnInvokes() int {
+	return int(atomic.LoadInt32(&mr.timeFnInvokes))
 }
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr

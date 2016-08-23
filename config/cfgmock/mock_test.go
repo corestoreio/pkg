@@ -15,11 +15,11 @@
 package cfgmock_test
 
 import (
+	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
-
-	"fmt"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
@@ -46,7 +46,54 @@ func TestPathValueGoStringer(t *testing.T) {
 	assert.Exactly(t, want, pv.GoString())
 }
 
-func TestNewMockGetterAllTypes(t *testing.T) {
+func TestService_FnInvokes(t *testing.T) {
+	s := cfgmock.Service{
+		ByteFn: func(path string) ([]byte, error) {
+			return nil, nil
+		},
+		StringFn: func(path string) (string, error) {
+			return "", nil
+		},
+		BoolFn: func(path string) (bool, error) {
+			return false, nil
+		},
+		Float64Fn: func(path string) (float64, error) {
+			return 0, nil
+		},
+		IntFn: func(path string) (int, error) {
+			return 0, nil
+		},
+		TimeFn: func(path string) (time.Time, error) {
+			return time.Time{}, nil
+		},
+	}
+
+	const iterations = 10
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		// food for the race detector
+		go func(wg *sync.WaitGroup) {
+			defer wg.Done()
+			_, _ = s.Byte(cfgpath.MustNewByParts("test/service/invokes"))
+			_, _ = s.String(cfgpath.MustNewByParts("test/service/invokes"))
+			_, _ = s.Bool(cfgpath.MustNewByParts("test/service/invokes"))
+			_, _ = s.Float64(cfgpath.MustNewByParts("test/service/invokes"))
+			_, _ = s.Int(cfgpath.MustNewByParts("test/service/invokes"))
+			_, _ = s.Time(cfgpath.MustNewByParts("test/service/invokes"))
+		}(&wg)
+	}
+	wg.Wait()
+
+	assert.Exactly(t, iterations, s.ByteFnInvokes())
+	assert.Exactly(t, iterations, s.StringFnInvokes())
+	assert.Exactly(t, iterations, s.BoolFnInvokes())
+	assert.Exactly(t, iterations, s.Float64FnInvokes())
+	assert.Exactly(t, iterations, s.IntFnInvokes())
+	assert.Exactly(t, iterations, s.TimeFnInvokes())
+}
+
+func TestNewServiceAllTypes(t *testing.T) {
 
 	types := []interface{}{"a", int(3141), float64(2.7182) * 3.141, true, time.Now(), []byte(`H∑llo goph€r`)}
 	p := cfgpath.MustNewByParts("aa/bb/cc")
