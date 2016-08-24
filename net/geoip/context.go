@@ -16,9 +16,6 @@ package geoip
 
 import (
 	"context"
-	"net/http"
-
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 // keyctxCountry type is unexported to prevent collisions with context keys
@@ -27,35 +24,19 @@ type keyctxCountry struct{}
 
 // ctxCountryWrapper to prevent too much calls to runtime.convT2*
 type ctxCountryWrapper struct {
-	c   *Country
-	err error
+	*Country
 }
 
 // WithContextCountry creates a new context with geoip.Country attached.
 func withContextCountry(ctx context.Context, c *Country) context.Context {
-	return context.WithValue(ctx, keyctxCountry{}, ctxCountryWrapper{c: c})
-}
-
-// wrapContextError creates a new context with an error attached.
-func wrapContextError(r *http.Request, c *Country, err error) *http.Request {
-	return r.WithContext(context.WithValue(
-		r.Context(),
-		keyctxCountry{},
-		ctxCountryWrapper{c: c, err: err},
-	))
+	return context.WithValue(ctx, keyctxCountry{}, ctxCountryWrapper{Country: c})
 }
 
 // FromContextCountry returns the geoip.Country in ctx if it exists or an error.
 // The error has been previously set by WithContextError. An error can be for
 // the first request, with a new IP address to fill the cache, of behaviour
 // NotValid but all subsequent requests are of behaviour NotFound.
-func FromContextCountry(ctx context.Context) (*Country, error) {
+func FromContextCountry(ctx context.Context) (*Country, bool) {
 	wrp, ok := ctx.Value(keyctxCountry{}).(ctxCountryWrapper)
-	if !ok {
-		return nil, errors.NewNotFoundf(errContextCountryNotFound)
-	}
-	if wrp.err != nil {
-		return nil, wrp.err
-	}
-	return wrp.c, nil
+	return wrp.Country, ok
 }

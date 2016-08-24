@@ -14,27 +14,8 @@
 
 package geoip
 
-import (
-	"context"
-	"testing"
+import "github.com/corestoreio/csfw/util/errors"
 
-	"net/http/httptest"
+// Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-	"github.com/corestoreio/csfw/util/errors"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestContextWithError(t *testing.T) {
-	var wantErr = errors.New("Contiki Context")
-	req := httptest.NewRequest("GET", "http://localhost", nil)
-
-	assert.NotNil(t, req)
-
-	cntry, err := FromContextCountry(req.Context())
-	assert.Nil(t, cntry)
-	assert.EqualError(t, err, wantErr.Error())
-
-	cntry, err = FromContextCountry(context.TODO())
-	assert.Nil(t, cntry)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-}
+var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)

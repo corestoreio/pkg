@@ -133,7 +133,7 @@ func fetch(hc *http.Client, userID, licenseKey string, ipAddress net.IP) (*Count
 		// https://medium.com/@cep21/go-client-library-best-practices-83d877d604ca#.4tut4svib
 		const maxCopySize = 2 << 10
 		io.CopyN(ioutil.Discard, resp.Body, maxCopySize)
-		resp.Close()
+		resp.Body.Close()
 	}()
 
 	// handle errors that may occur

@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/request"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -29,7 +28,7 @@ import (
 // country. It only needs the functional options WithGeoIP*().
 func (s *Service) CountryByIP(r *http.Request) (*Country, error) {
 
-	ip := request.RealIP(r, request.IPForwardedTrust)
+	ip := request.RealIP(r, request.IPForwardedTrust) // todo make IPForwardedTrust configurable
 	if ip == nil {
 		nf := errors.NewNotFoundf(errCannotGetRemoteAddr)
 		if s.Log.IsDebug() {
@@ -67,9 +66,9 @@ func (s *Service) newContextCountryByIP(r *http.Request) (context.Context, *Coun
 func (s *Service) WithCountryByIP() mw.Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx, c, err := s.newContextCountryByIP(r)
+			ctx, _, err := s.newContextCountryByIP(r)
 			if err != nil {
-				h.ServeHTTP(w, wrapContextError(r, c, errors.Wrap(err, "[geoip] newContextCountryByIP")))
+				s.ErrorHandler(errors.Wrap(err, "[geoip] newContextCountryByIP")).ServeHTTP(w, r)
 			} else {
 				h.ServeHTTP(w, r.WithContext(ctx))
 			}
@@ -84,52 +83,49 @@ func (s *Service) WithCountryByIP() mw.Middleware {
 // alternative handler to e.g. show a different page or perform a redirect. Use
 // FromContextCountry() to extract the country or an error. Tis middleware
 // allows geo blocking.
-func (s *Service) WithIsCountryAllowedByIP() mw.Middleware {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			requestedStore, err := store.FromContextRequestedStore(r.Context())
-			if err != nil {
-				err = errors.Wrap(err, "[geoip] FromContextProvider")
-				h.ServeHTTP(w, wrapContextError(r, nil, err))
-				return
-			}
-
-			// requestedStore.Config contains the scope for store and then
-			// website or finally can fall back to default scope.
-			scpCfg := s.configByScopedGetter(requestedStore.Config)
-			if err := scpCfg.isValid(); err != nil {
-				if s.Log.IsDebug() {
-					s.Log.Debug("Service.WithIsCountryAllowedByIP.configByScopedGetter.Error", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.HTTPRequest("request", r))
-				}
-				err = errors.Wrap(err, "[geoip] ConfigByScopedGetter")
-				h.ServeHTTP(w, wrapContextError(r, nil, err))
-				return
-			}
-
-			ctx, c, err := s.newContextCountryByIP(r)
-			if err != nil {
-				err = errors.Wrap(err, "[geoip] newContextCountryByIP")
-				h.ServeHTTP(w, wrapContextError(r, c, err))
-				return
-			}
-
-			if err := scpCfg.checkAllow(requestedStore, c); err != nil {
-				// access denied
-				if s.Log.IsDebug() {
-					s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", log.Err(err), log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.allowedCountries...))
-				}
-				scpCfg.alternativeHandler.ServeHTTP(w, wrapContextError(r, c, errors.Wrap(err, "[geoip] WithIsCountryAllowedByIP.CheckAllow")))
-				return
-			}
-
-			// access granted
+		scpCfg := s.configByContext(r.Context())
+		if err := scpCfg.IsValid(); err != nil {
+			s.Log.Info("geoip.Service.WithIsCountryAllowedByIP.configByContext.Error", log.Err(err))
 			if s.Log.IsDebug() {
-				s.Log.Debug("Service.WithIsCountryAllowedByIP.checkAllow.true", log.Stringer("scope", scpCfg.scopeHash), log.Marshal("requestedStore", requestedStore), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.allowedCountries...))
+				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.configByContext", log.Err(err), log.HTTPRequest("request", r))
 			}
-			h.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
+			s.ErrorHandler(errors.Wrap(err, "geoip.Service.WithIsCountryAllowedByIP.configFromContext")).ServeHTTP(w, r)
+			return
+		}
+		if scpCfg.Disabled {
+			if s.Log.IsDebug() {
+				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+			}
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ctx, c, err := s.newContextCountryByIP(r)
+		if err != nil {
+			err = errors.Wrap(err, "[geoip] newContextCountryByIP")
+			scpCfg.ErrorHandler(err).ServeHTTP(w, r)
+			return
+		}
+
+		if err := scpCfg.checkAllow(scpCfg.ScopeHash, c); err != nil {
+			// access denied
+			if s.Log.IsDebug() {
+				s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", log.Err(err), log.Stringer("scope", scpCfg.ScopeHash), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.AllowedCountries...))
+			}
+			err = errors.Wrap(err, "[geoip] WithIsCountryAllowedByIP.CheckAllow")
+			scpCfg.AlternativeHandler(err).ServeHTTP(w, r)
+			return
+		}
+
+		// access granted
+		if s.Log.IsDebug() {
+			s.Log.Debug("Service.WithIsCountryAllowedByIP.checkAllow.true", log.Stringer("scope", scpCfg.ScopeHash), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.AllowedCountries...))
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 // WithInitStoreByCountryIP initializes a store scope via the IP address which

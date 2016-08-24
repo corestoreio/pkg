@@ -14,13 +14,9 @@
 
 package geoip
 
-import "github.com/corestoreio/csfw/util/errors"
-
 const (
 	errCannotGetRemoteAddr    = `[geoip] Cannot get request.RemoteAddr`
 	errContextCountryNotFound = `[geoip] Cannot extract type Country nor an error from the context`
 	errScopedConfigNotValid   = `[geoip] ScopedConfig %s is invalid. IsNil(IsAllowedFunc=%t), IsNil(alternativeHandler=%t)`
 	errUnAuthorizedCountry    = `[geoip] Country %q not found in the list of allowed countries: %v`
 )
-
-var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)
