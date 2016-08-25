@@ -16,7 +16,6 @@ package geoip
 
 import (
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )

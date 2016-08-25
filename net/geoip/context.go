@@ -38,5 +38,8 @@ func withContextCountry(ctx context.Context, c *Country) context.Context {
 // NotValid but all subsequent requests are of behaviour NotFound.
 func FromContextCountry(ctx context.Context) (*Country, bool) {
 	wrp, ok := ctx.Value(keyctxCountry{}).(ctxCountryWrapper)
+	if !ok {
+		return nil, ok // return an explicit nil and not a nil pointer
+	}
 	return wrp.Country, ok
 }

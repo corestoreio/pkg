@@ -24,7 +24,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/log/logw"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
@@ -128,7 +127,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		scpCfg := s.getConfigByScopeID(scope.DefaultHash, true)
+		scpCfg := s.ConfigByScopeHash(scope.DefaultHash, 0)
 		if err := scpCfg.IsValid(); err != nil {
 			t.Fatal(err)
 		}
@@ -137,13 +136,13 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		haveErr := scpCfg.checkAllow(nil, c)
+		haveErr := scpCfg.checkAllow(0, c)
 		assert.True(t, errors.IsUnauthorized(haveErr), "Error: %s", haveErr)
 	})
 
 	t.Run("Scope_Store", func(t *testing.T) {
-		if err := s.Options(WithCheckAllow(scope.Store, 331122, func(s *store.Store, c *Country, allowedCountries []string) error {
-			assert.Nil(t, s)
+		if err := s.Options(WithCheckAllow(scope.Store, 331122, func(s scope.Hash, c *Country, allowedCountries []string) error {
+			assert.Exactly(t, scope.Hash(0), s, "scope.Hash")
 			assert.Exactly(t, "FI", c.Country.IsoCode)
 			assert.Exactly(t, []string{"ABC"}, allowedCountries)
 			return errors.NewNotImplementedf("You're not allowed")
@@ -151,7 +150,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		scpCfg := s.getConfigByScopeID(scope.NewHash(scope.Store, 331122), true)
+		scpCfg := s.ConfigByScopeHash(scope.NewHash(scope.Store, 331122), 0)
 		if err := scpCfg.IsValid(); err != nil {
 			t.Fatal(err)
 		}
@@ -160,7 +159,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		haveErr := scpCfg.checkAllow(nil, c)
+		haveErr := scpCfg.checkAllow(0, c)
 		assert.True(t, errors.IsNotImplemented(haveErr), "Error: %s", haveErr)
 	})
 }

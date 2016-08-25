@@ -12,27 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip
+package geoip_test
 
 import (
-	"context"
-	"testing"
-
-	"net/http/httptest"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/csfw/net/geoip"
+	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
-func TestContextWithError(t *testing.T) {
+type storeFinderMock struct{}
 
-	req := httptest.NewRequest("GET", "http://localhost", nil)
-
-	assert.NotNil(t, req)
-
-	cntry, ok := FromContextCountry(req.Context())
-	assert.False(t, ok, "Should have not country context")
-
-	cntry, ok = FromContextCountry(context.TODO())
-	assert.Nil(t, cntry)
-	assert.False(t, ok)
+func (storeFinderMock) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error) {
+	return
 }
+
+func (storeFinderMock) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error) {
+	return
+}
+
+// verify that the interface stays the same across packages.
+var _ geoip.StoreFinder = (*storeFinderMock)(nil)
+var _ store.Finder = (*storeFinderMock)(nil)
