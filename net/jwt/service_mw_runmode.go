@@ -19,7 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/csjwt"
@@ -42,7 +41,7 @@ func SetHeaderAuthorization(req *http.Request, token []byte) {
 //
 // Finder selects the new store ID and website ID based on the store code. It
 // changes the scope in the context.
-func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf store.Finder) mw.Middleware {
+func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Middleware {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -151,7 +150,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf store.Finder) mw.Mi
 
 func codeFromToken(token csjwt.Token, storeCodeFieldName string) string {
 	// extracts the store code from the token.
-	key := store.CodeFieldName
+	key := StoreCodeFieldName
 	if storeCodeFieldName != "" {
 		key = storeCodeFieldName
 	}

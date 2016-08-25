@@ -12,6 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip
+package jwt_test
 
-// todo create compatible type for interface net/runmode.StoreCodeProcessor
+import (
+	"github.com/corestoreio/csfw/net/jwt"
+	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
+)
+
+type storeFinderMock struct{}
+
+func (storeFinderMock) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error) {
+	return
+}
+
+func (storeFinderMock) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error) {
+	return
+}
+
+var _ jwt.StoreFinder = (*storeFinderMock)(nil)
+var _ store.Finder = (*storeFinderMock)(nil)
