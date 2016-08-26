@@ -16,9 +16,11 @@ package scope
 
 import (
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // MaxStoreID maximum allowed ID from package store. Doesn't matter whether we
@@ -187,3 +189,58 @@ func (h Hashes) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 // Less is part of sort.Interface.
 func (h Hashes) Less(i, j int) bool { return h[i] < h[j] }
+
+// Lowest finds from hashes the common lowest scope. All scopes must have within
+// their scope the same ID otherwise an error will be returned. This functions
+// gets mainly used in backend* packages if several configuration paths must be
+// applied to one functional option. Eg. config path A has scope Website(1) but
+// config path B has scope Store(2) and config path C has scope Website(1) so
+// the common valid hash resolves to Store(2). If there would be a config path
+// with scope Store(3) then a NotValid error gets returned.
+func (h Hashes) Lowest() (Hash, error) {
+	sort.Stable(h)
+	var pick = DefaultHash
+	wIDs, gIDs, sIDs := float64(0), float64(0), float64(0)
+	wC, gC, sC := float64(0), float64(0), float64(0)
+	for _, v := range h {
+
+		if v.Scope() > pick.Scope() {
+			pick = v
+		}
+
+		switch v.Scope() {
+		case Website:
+			wC++
+			wIDs += float64(v.ID())
+		case Group:
+			gC++
+			gIDs += float64(v.ID())
+		case Store:
+			sC++
+			sIDs += float64(v.ID())
+		}
+	}
+
+	switch pick.Scope() {
+	case Website:
+		if float64(pick.ID()) != wIDs/wC {
+			return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+		}
+	case Group:
+		if float64(pick.ID()) != gIDs/gC {
+			return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+		}
+	case Store:
+		if float64(pick.ID()) != sIDs/sC {
+			return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+		}
+	case Default, Absent:
+		// do nothing
+	default:
+		// todo implement scope independent solution ...
+		return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+
+	}
+
+	return pick, nil
+}

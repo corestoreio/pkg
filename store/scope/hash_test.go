@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -331,5 +332,37 @@ func TestHash_ValidParent(t *testing.T) {
 		if have, want := test.c.ValidParent(test.p), test.want; have != want {
 			t.Errorf("(%d) Have: %v Want: %v", i, have, want)
 		}
+	}
+}
+
+func TestHashes_Lowest(t *testing.T) {
+	tests := []struct {
+		scope.Hashes
+		wantHash   scope.Hash
+		wantErrBhf errors.BehaviourFunc
+	}{
+		{scope.Hashes{scope.Store.ToHash(1)}, scope.Store.ToHash(1), nil},
+		{scope.Hashes{scope.Store.ToHash(1), scope.Store.ToHash(2)}, 0, errors.IsNotValid},
+		{scope.Hashes{scope.Website.ToHash(1), scope.Store.ToHash(2)}, scope.Store.ToHash(2), nil},
+		{scope.Hashes{scope.Website.ToHash(1), scope.Store.ToHash(2), scope.Store.ToHash(2)}, scope.Store.ToHash(2), nil},
+		{scope.Hashes{scope.Website.ToHash(667), scope.Store.ToHash(889), scope.Website.ToHash(667), scope.Store.ToHash(889)}, scope.Store.ToHash(889), nil},
+		{scope.Hashes{scope.Store.ToHash(2), scope.Website.ToHash(345), scope.Website.ToHash(346), scope.Store.ToHash(2)}, scope.Store.ToHash(2), nil},
+		{scope.Hashes{scope.Store.ToHash(333), scope.Website.ToHash(345), scope.Website.ToHash(345), scope.Store.ToHash(333)}, scope.Store.ToHash(333), nil},
+		{scope.Hashes{scope.Store.ToHash(3), scope.DefaultHash, scope.Store.ToHash(3)}, scope.Store.ToHash(3), nil},
+		{scope.Hashes{scope.Website.ToHash(3), scope.DefaultHash, scope.Website.ToHash(3)}, scope.Website.ToHash(3), nil},
+		{scope.Hashes{scope.DefaultHash}, scope.DefaultHash, nil},
+		{scope.Hashes{0, 1, 2}, scope.DefaultHash, nil},
+		{nil, scope.DefaultHash, nil},
+		{scope.Hashes{scope.NewHash(55, 1), scope.NewHash(55, 2), scope.NewHash(56, 3)}, 0, errors.IsNotValid},
+		{scope.Hashes{scope.NewHash(55, 1), scope.NewHash(55, 2), scope.NewHash(55, 0)}, 0, errors.IsNotValid},
+	}
+	for i, test := range tests {
+		haveHash, haveErr := test.Hashes.Lowest()
+		assert.Exactly(t, test.wantHash, haveHash, "Index %d", i)
+		if test.wantErrBhf != nil {
+			assert.True(t, test.wantErrBhf(haveErr), "(IDX %d) %+v", i, haveErr)
+			continue
+		}
+		assert.NoError(t, haveErr, "(IDX %d) %+v", i, haveErr)
 	}
 }
