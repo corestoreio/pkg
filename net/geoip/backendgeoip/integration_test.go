@@ -21,7 +21,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -29,15 +28,15 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
-	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"strings"
+	"sync/atomic"
 )
 
 func init() {
@@ -66,16 +65,11 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 			}
 		},
 		func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-				cty, err := geoip.FromContextCountry(r.Context())
-				assert.Nil(t, cty)
-				if notValid := errors.IsNotValid(err); notValid {
-					assert.Contains(t, err.Error(), `OUT_OF_QUERIES`)
-				} else {
-					assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
-				}
+			return http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+				panic("Should not get called")
 			})
 		},
+		http.StatusServiceUnavailable,
 	))
 
 	t.Run("Error_JSON", testBackend_WithGeoIP2Webservice_Redis(
@@ -87,17 +81,13 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 		},
 		func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-				cty, err := geoip.FromContextCountry(r.Context())
-				assert.Nil(t, cty)
-				if notValid := errors.IsNotValid(err); notValid {
-					assert.Contains(t, err.Error(), ` unexpected EOF`)
-				} else {
-					assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
-				}
+				panic("Should not get called")
 			})
 		},
+		http.StatusServiceUnavailable,
 	))
 
+	var calledSuccessHandler int32
 	t.Run("Success", testBackend_WithGeoIP2Webservice_Redis(
 		func() *http.Client {
 			return &http.Client{
@@ -106,19 +96,21 @@ func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
 		},
 		func(t *testing.T) http.Handler {
 			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-				cty, err := geoip.FromContextCountry(r.Context())
-				if err != nil {
-					t.Fatalf("%+v", err)
-				}
+				cty, ok := geoip.FromContextCountry(r.Context())
+				assert.True(t, ok)
 				assert.Exactly(t, "DE", cty.Country.IsoCode)
+				atomic.AddInt32(&calledSuccessHandler, 1)
 			})
 		},
+		http.StatusOK,
 	))
+	assert.Exactly(t, int32(80), atomic.LoadInt32(&calledSuccessHandler), "calledSuccessHandler")
 }
 
 func testBackend_WithGeoIP2Webservice_Redis(
 	hcf func() *http.Client,
 	finalHandler func(t *testing.T) http.Handler,
+	wantCode int,
 ) func(*testing.T) {
 
 	return func(t *testing.T) {
@@ -140,13 +132,13 @@ func testBackend_WithGeoIP2Webservice_Redis(
 		be.WebServiceClient = hcf()
 		scpFnc := backendgeoip.PrepareOptions(be)
 
-		cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			// @see structure.go for the limitation to scope.Default
 			mustToPath(t, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):   `TestUserID`,
 			mustToPath(t, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0):  `TestLicense`,
 			mustToPath(t, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0):  `21s`,
 			mustToPath(t, backend.NetGeoipMaxmindWebserviceRedisURL.ToPath, scope.Default, 0): redConURL,
-		}))
+		})
 		cfgScp := cfgSrv.NewScoped(1, 2) // Website ID 2 == euro / Store ID == 2 Austria ==> here doesn't matter
 
 		geoSrv := geoip.MustNew()
@@ -161,21 +153,25 @@ func testBackend_WithGeoIP2Webservice_Redis(
 			t.Fatalf("%+v", err)
 		}
 		// food for the race detector
-		cstesting.NewHTTPParallelUsers(8, 10, 500, time.Millisecond).ServeHTTP(req, geoSrv.WithCountryByIP()(finalHandler(t)))
+		hpu := cstesting.NewHTTPParallelUsers(8, 10, 500, time.Millisecond) // 8,10
+		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
+			assert.Exactly(t, wantCode, rec.Code)
+		}
+		hpu.ServeHTTP(req, geoSrv.WithCountryByIP(finalHandler(t)))
 	}
 }
 
 func TestBackend_WithAlternativeRedirect(t *testing.T) {
 
-	t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
 		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
 		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
 		mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
-	}))))
+	})))
 
-	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
 		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1):  307,
@@ -183,12 +179,12 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 		mustToPath(t, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):  "LiesschenMueller",
 		mustToPath(t, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
 		mustToPath(t, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
-	}))))
+	})))
 }
 
 func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 	return func(t *testing.T) {
-		var logBuf log.MutexBuffer
+		logBuf := new(log.MutexBuffer)
 
 		cfgStruct, err := backendgeoip.NewConfigStructure()
 		if err != nil {
@@ -200,8 +196,11 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 		}
 		scpFnc := backendgeoip.PrepareOptions(be)
 		geoSrv := geoip.MustNew(
-			geoip.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
+			geoip.WithRootConfig(cfgSrv),
+			geoip.WithDebugLog(logBuf),
 			geoip.WithOptionFactory(scpFnc),
+			geoip.WithServiceErrorHandler(mw.ErrorWithPanic),
+			geoip.WithErrorHandler(scope.Default, 0, mw.ErrorWithPanic),
 		)
 
 		// if you try to set the allowed countries with this option, they get
@@ -212,23 +211,12 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 
 		// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
 		req := func() *http.Request {
-			o, err := scope.SetByCode(scope.Website, "euro")
-			if err != nil {
-				t.Fatal(err)
-			}
-			storeSrv := storemock.NewEurozzyService(o)
-			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			req := httptest.NewRequest("GET", "http://corestore.io", nil)
 			req.RemoteAddr = "2a02:d180::"
-			atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
-			if err != nil {
-				t.Fatalf("%+v", err)
-			}
-			atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
-
-			return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
+			return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // Website ID 1 == euro / Store ID == 2 Austria
 		}()
 
-		hpu := cstesting.NewHTTPParallelUsers(8, 12, 600, time.Millisecond)
+		hpu := cstesting.NewHTTPParallelUsers(8, 12, 600, time.Millisecond) // 8, 12
 		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
 			assert.Exactly(t, `https://byebye.de.io`, rec.Header().Get("Location"))
 			assert.Exactly(t, 307, rec.Code)
@@ -236,26 +224,20 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 
 		// Food for the race detector
 		hpu.ServeHTTP(req,
-			geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				c, err := geoip.FromContextCountry(r.Context())
-				assert.Nil(t, c)
-				if err != nil {
-					println("\nBefore Panicing\n", logBuf.String(), "\n==== P A N I C====\n")
-					panic(fmt.Sprintf("%+v", err))
-				}
+			geoSrv.WithIsCountryAllowedByIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not be called")
 			})),
 		)
 
 		// Min 20 calls IsValid
 		// Exactly one call to optionInflight.Do
-		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.IsValid`), 20; have < want {
+		if have, want := strings.Count(logBuf.String(), `geoip.WithIsCountryAllowedByIP.checkAllow.false`), 90; have < want {
 			t.Errorf("ConfigByScopedGetter.IsValid: Have: %d < Want: %d", have, want)
 		}
-		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.optionInflight.Do`), 1; have != want {
+		if have, want := strings.Count(logBuf.String(), `geoip.Service.ConfigByScopedGetter.Inflight.Do`), 1; have != want {
 			t.Errorf("ConfigByScopedGetter.optionInflight.Do: Have: %d Want: %d", have, want)
 		}
-		// println("\n", logBuf.String(), "\n")
+		//	println("\n", logBuf.String(), "\n")
 	}
 }
 
@@ -278,13 +260,22 @@ func TestBackend_Path_Errors(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		scpFnc := backendgeoip.Default()
-		cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		cStruct, err := backendgeoip.NewConfigStructure()
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+		be := backendgeoip.New(cStruct)
+		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			mustToPath(t, test.toPath, scope.Default, 0): test.val,
-		}))
-		cfgScp := cfgSrv.NewScoped(2, 0)
+		})
 
-		_, err := geoip.New(scpFnc(cfgScp)...)
+		gs := geoip.MustNew(
+			geoip.WithRootConfig(cfgSrv),
+			geoip.WithOptionFactory(backendgeoip.PrepareOptions(be)),
+		)
+		assert.NoError(t, gs.ClearCache())
+		scpdCfg := gs.ConfigByScope(0, 0)
+		err = scpdCfg.IsValid()
 		assert.True(t, test.errBhf(err), "Index %d Error: %s", i, err)
 	}
 }

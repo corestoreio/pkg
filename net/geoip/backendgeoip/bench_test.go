@@ -23,23 +23,21 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
 
 func BenchmarkWithAlternativeRedirect(b *testing.B) {
-	cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(b, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
 		mustToPath(b, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
 		mustToPath(b, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
 		mustToPath(b, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
-	}))
+	})
 	b.Run("LocalFile_NoCache", benchmarkWithAlternativeRedirect(cfgSrv))
 
-	cfgSrv = cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+	cfgSrv = cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		mustToPath(b, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
 		mustToPath(b, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1):  307,
@@ -47,7 +45,7 @@ func BenchmarkWithAlternativeRedirect(b *testing.B) {
 		mustToPath(b, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):  "LiesschenMueller",
 		mustToPath(b, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
 		mustToPath(b, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
-	}))
+	})
 	// to fix the speed here ... BigCache_Gob must be optimized
 	b.Run("Webservice_BigCache_Gob", benchmarkWithAlternativeRedirect(cfgSrv))
 }
@@ -67,21 +65,10 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 
 		// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
 		req := func() *http.Request {
-			o, err := scope.SetByCode(scope.Website, "euro")
-			if err != nil {
-				b.Fatal(err)
-			}
-			storeSrv := storemock.NewEurozzyService(o)
-			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
+			req := httptest.NewRequest("GET", "http://corestore.io", nil)
 			req.Header.Set("X-Cluster-Client-Ip", "2a02:d180::")
-
-			atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
-			if err != nil {
-				b.Fatalf("%+v", err)
-			}
-			atSt.Config = cfgSrv.NewScoped(1, 2) // Website ID 1 == euro / Store ID == 2 Austria
-
-			return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
+			// Website ID 1 == euro / Store ID == 2 Austria
+			return req.WithContext(scope.WithContext(req.Context(), 1, 2))
 		}()
 
 		b.ReportAllocs()
@@ -89,14 +76,14 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				rec := httptest.NewRecorder()
-				geoSrv.WithIsCountryAllowedByIP()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				geoSrv.WithIsCountryAllowedByIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-					c, err := geoip.FromContextCountry(r.Context())
+					c, ok := geoip.FromContextCountry(r.Context())
 					if c != nil {
 						b.Fatalf("Country must be nil, but is %#v", c)
 					}
-					if err != nil {
-						b.Fatalf("%+v", err)
+					if !ok {
+						b.Fatal("Failed to find a country pointer in the context")
 					}
 
 					panic("Should not be called")

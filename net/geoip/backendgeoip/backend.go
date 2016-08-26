@@ -20,13 +20,13 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/net/geoip"
 )
 
-// Backend just exported for the sake of documentation. See fields for more
-// information. The PkgBackend handles the reading and writing of configuration
-// values within this package.
-type Backend struct {
-	cfgmodel.PkgBackend
+// Configuration just exported for the sake of documentation. See fields for more
+// information.
+type Configuration struct {
+	*geoip.OptionFactories
 
 	// NetGeoipAllowedCountries list of countries which are currently allowed.
 	// Separated via comma, e.g.: DE,CH,AT,AU,NZ,
@@ -80,34 +80,31 @@ type Backend struct {
 // New initializes the backend configuration models containing the cfgpath.Route
 // variable to the appropriate entries. The function Load() will be executed to
 // apply the SectionSlice to all models. See Load() for more details.
-func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	return (&Backend{}).Load(cfgStruct, opts...)
+func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration {
+	be := &Configuration{
+		OptionFactories: geoip.NewOptionFactories(),
+	}
+
+	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	optsRedir := append([]cfgmodel.Option{}, opts...)
+	optsRedir = append(optsRedir, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(redirects))
+
+	be.NetGeoipAllowedCountries = cfgmodel.NewStringCSV(`net/geoip/allowed_countries`, opts...)
+	be.NetGeoipAlternativeRedirect = cfgmodel.NewURL(`net/geoip/alternative_redirect`, opts...)
+	be.NetGeoipAlternativeRedirectCode = cfgmodel.NewInt(`net/geoip/alternative_redirect_code`, optsRedir...)
+
+	be.NetGeoipMaxmindLocalFile = cfgmodel.NewStr(`net/geoip_maxmind/local_file`, opts...)
+	be.NetGeoipMaxmindWebserviceUserID = cfgmodel.NewStr(`net/geoip_maxmind/webservice_userid`, opts...)
+	be.NetGeoipMaxmindWebserviceLicense = cfgmodel.NewStr(`net/geoip_maxmind/webservice_license`, opts...)
+	be.NetGeoipMaxmindWebserviceTimeout = cfgmodel.NewDuration(`net/geoip_maxmind/webservice_timeout`, opts...)
+	be.NetGeoipMaxmindWebserviceRedisURL = cfgmodel.NewURL(`net/geoip_maxmind/webservice_redisurl`, opts...)
+
+	return be
 }
 
 // Load creates the configuration models for each PkgBackend field. Internal
 // mutex will protect the fields during loading. The argument SectionSlice will
 // be applied to all models.
-func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	pp.Lock()
-	defer pp.Unlock()
-
-	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-
-	optsRedir := append([]cfgmodel.Option{}, opts...)
-	optsRedir = append(optsRedir, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(redirects))
-
-	pp.NetGeoipAllowedCountries = cfgmodel.NewStringCSV(`net/geoip/allowed_countries`, opts...)
-	pp.NetGeoipAlternativeRedirect = cfgmodel.NewURL(`net/geoip/alternative_redirect`, opts...)
-	pp.NetGeoipAlternativeRedirectCode = cfgmodel.NewInt(`net/geoip/alternative_redirect_code`, optsRedir...)
-
-	pp.NetGeoipMaxmindLocalFile = cfgmodel.NewStr(`net/geoip_maxmind/local_file`, opts...)
-	pp.NetGeoipMaxmindWebserviceUserID = cfgmodel.NewStr(`net/geoip_maxmind/webservice_userid`, opts...)
-	pp.NetGeoipMaxmindWebserviceLicense = cfgmodel.NewStr(`net/geoip_maxmind/webservice_license`, opts...)
-	pp.NetGeoipMaxmindWebserviceTimeout = cfgmodel.NewDuration(`net/geoip_maxmind/webservice_timeout`, opts...)
-	pp.NetGeoipMaxmindWebserviceRedisURL = cfgmodel.NewURL(`net/geoip_maxmind/webservice_redisurl`, opts...)
-
-	return pp
-}
 
 var redirects = source.NewByInt(
 	source.Ints{

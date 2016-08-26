@@ -17,7 +17,7 @@ package backendgeoip_test
 import "github.com/corestoreio/csfw/net/geoip/backendgeoip"
 
 // backend overall backend models for all tests
-var backend *backendgeoip.Backend
+var backend *backendgeoip.Configuration
 
 // this would belong into the test suit setup
 func init() {
