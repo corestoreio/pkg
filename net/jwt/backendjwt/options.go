@@ -72,48 +72,58 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSigningMethod.Get"))
 		}
-		scp, scpID = h.Unpack()
 
+		// in case we later support store scope the hashes variable protects use
+		// from applying the incorrect scope to a functional option.
+		var hashes = make(scope.Hashes, 0, 5)
 		var key csjwt.Key
+		hashes = append(hashes, h)
 
 		switch signingMethod.Alg() {
 		case csjwt.RS256, csjwt.RS384, csjwt.RS512:
-
-			rsaKey, _, err := be.NetJwtRSAKey.Get(sg)
+			rsaKey, h1, err := be.NetJwtRSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKey.Get"))
 			}
-			rsaPW, _, err := be.NetJwtRSAKeyPassword.Get(sg)
+			rsaPW, h2, err := be.NetJwtRSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKeyPassword.Get"))
 			}
 			key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
-
+			hashes = append(hashes, h1, h2)
 		case csjwt.ES256, csjwt.ES384, csjwt.ES512:
 
-			ecdsaKey, _, err := be.NetJwtECDSAKey.Get(sg)
+			ecdsaKey, h1, err := be.NetJwtECDSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKey.Get"))
 			}
-			ecdsaPW, _, err := be.NetJwtECDSAKeyPassword.Get(sg)
+			ecdsaPW, h2, err := be.NetJwtECDSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKeyPassword.Get"))
 			}
 			key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
-
+			hashes = append(hashes, h1, h2)
 		case csjwt.HS256, csjwt.HS384, csjwt.HS512:
 
-			password, _, err := be.NetJwtHmacPassword.Get(sg)
+			password, h1, err := be.NetJwtHmacPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtHmacPassword.Get"))
 			}
 			key = csjwt.WithPassword(password)
-
+			hashes = append(hashes, h1)
 		default:
 			return jwt.OptionsError(errors.Errorf("[jwt] Unknown signing method: %q", signingMethod.Alg()))
 		}
 
-		// WithSigningMethod must be added at the end of the slice to overwrite default signing methods
+		// figure out the common lowest scope to apply.
+		newH, err := hashes.Lowest()
+		if err != nil {
+			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] Hashes.Lowest"))
+		}
+		scp, scpID = newH.Unpack()
+
+		// WithSigningMethod must be added at the end of the slice to overwrite
+		// default signing methods
 		opts[i] = jwt.WithKey(scp, scpID, key)
 		i++
 		opts[i] = jwt.WithSigningMethod(scp, scpID, signingMethod)
