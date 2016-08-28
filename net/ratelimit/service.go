@@ -32,8 +32,3 @@ type Service struct {
 func New(opts ...Option) (*Service, error) {
 	return newService(opts...)
 }
-
-// FlushCache clears the internal cache
-func (s *Service) FlushCache() error {
-	return s.flushCache()
-}

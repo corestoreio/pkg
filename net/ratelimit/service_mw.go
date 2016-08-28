@@ -20,7 +20,6 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
@@ -31,43 +30,48 @@ import (
 // X-RateLimit-Remaining, X-RateLimit-Reset and Retry-After headers will be
 // written to the response based on the values in the RateLimitResult. The next
 // handler may check an error with FromContextRateLimit().
-func (s *Service) WithRateLimit() mw.Middleware {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (s *Service) WithRateLimit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			scpCfg := s.configFromContext(w, r)
-			if scpCfg.IsValid() != nil {
-				// every error gets previously logged in the configFromContext() function.
-				return
-			}
-			if scpCfg.Disabled {
-				h.ServeHTTP(w, r)
-				return
-			}
-
-			isLimited, rlResult, err := scpCfg.requestRateLimit(r)
+		scpCfg := s.configByContext(r.Context())
+		if err := scpCfg.IsValid(); err != nil {
+			s.Log.Info("ratelimit.Service.WithRateLimit.configByContext.Error", log.Err(err))
 			if s.Log.IsDebug() {
-				s.Log.Debug("ratelimit.Service.WithRateLimit.requestRateLimit",
-					log.Err(err),
-					log.Bool("is_limited", isLimited),
-					log.Object("rate_limit_result", rlResult),
-					log.Stringer("requested_scope", scpCfg.ScopeHash),
-					log.HTTPRequest("request", r),
-				)
+				s.Log.Debug("ratelimit.Service.WithRateLimit.configByContext", log.Err(err), log.HTTPRequest("request", r))
 			}
-			if err != nil {
-				scpCfg.ErrorHandler(errors.Wrap(err, "[ratelimit] scpCfg.RateLimit")).ServeHTTP(w, r)
-				return
-			}
-
-			setRateLimitHeaders(w, rlResult)
-			next := scpCfg.DeniedHandler
-			if !isLimited {
-				next = h
+			s.ErrorHandler(errors.Wrap(err, "ratelimit.Service.WithRateLimit.configFromContext")).ServeHTTP(w, r)
+			return
+		}
+		if scpCfg.Disabled {
+			if s.Log.IsDebug() {
+				s.Log.Debug("ratelimit.Service.WithRateLimit.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
-		})
-	}
+			return
+		}
+
+		isLimited, rlResult, err := scpCfg.requestRateLimit(r)
+		if s.Log.IsDebug() {
+			s.Log.Debug("ratelimit.Service.WithRateLimit.requestRateLimit",
+				log.Err(err),
+				log.Bool("is_limited", isLimited),
+				log.Object("rate_limit_result", rlResult),
+				log.Stringer("requested_scope", scpCfg.ScopeHash),
+				log.HTTPRequest("request", r),
+			)
+		}
+		if err != nil {
+			scpCfg.ErrorHandler(errors.Wrap(err, "[ratelimit] scpCfg.RateLimit")).ServeHTTP(w, r)
+			return
+		}
+
+		setRateLimitHeaders(w, rlResult)
+
+		if isLimited {
+			next = scpCfg.DeniedHandler
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func setRateLimitHeaders(w http.ResponseWriter, rlr throttled.RateLimitResult) {

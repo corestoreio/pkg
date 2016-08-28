@@ -26,9 +26,7 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/ratelimit"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
@@ -97,6 +95,7 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 	var runTest = func(logBuf *log.MutexBuffer, scp scope.Scope, id int64) func(t *testing.T) {
 		return func(t *testing.T) {
 			srv, err := ratelimit.New(
+				ratelimit.WithRootConfig(cfgmock.NewService()),
 				ratelimit.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
 				//ratelimit.WithLogger(logw.NewLog(logw.WithWriter(ioutil.Discard), logw.WithLevel(logw.LevelDebug))),
 				ratelimit.WithVaryBy(scp, id, pathGetter{}),
@@ -117,7 +116,7 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 				})
 			}
 
-			handler := srv.WithRateLimit()(finalHandler(t))
+			handler := srv.WithRateLimit(finalHandler(t))
 
 			runHTTPTestCases(t, handler, []httpTestCase{
 				{"ok", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "2", "X-Ratelimit-Reset": "60"}},
@@ -153,6 +152,7 @@ func TestService_WithDeniedHandler(t *testing.T) {
 	var ac = new(int32)
 
 	srv, err := ratelimit.New(
+		ratelimit.WithRootConfig(cfgmock.NewService()),
 		ratelimit.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(500)
@@ -175,7 +175,7 @@ func TestService_WithDeniedHandler(t *testing.T) {
 		})
 	}
 
-	handler := srv.WithRateLimit()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := srv.WithRateLimit(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		panic("Should not get called this next handler")
 	}))
@@ -211,7 +211,7 @@ func TestService_RequestedStore_NotFound(t *testing.T) {
 	}
 
 	req := httptest.NewRequest("GET", "/", nil)
-	srv.WithRateLimit()(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	srv.WithRateLimit(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		panic("Should not get called!")
 	})).ServeHTTP(nil, req)
 }
@@ -227,7 +227,7 @@ func TestService_ScopedConfig_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	if err := srv.FlushCache(); err != nil {
+	if err := srv.ClearCache(); err != nil {
 		t.Fatalf("%+v", err)
 	}
 	srv.ErrorHandler = func(err error) http.Handler {
@@ -240,16 +240,10 @@ func TestService_ScopedConfig_NotFound(t *testing.T) {
 		})
 	}
 
-	storeSrv := storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro"))
-	req, _ := http.NewRequest("GET", "https://corestore.io", nil)
-	st, err := storeSrv.Store(scope.MockID(1)) // German Store
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.ID())
-	req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+	req := httptest.NewRequest("GET", "https://corestore.io", nil)
+	req = req.WithContext(scope.WithContext(req.Context(), 1, 1)) // website=euro store=german
 
-	srv.WithRateLimit()(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
+	srv.WithRateLimit(http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
 		panic("Should not get called!")
 	})).ServeHTTP(nil, req)
 }
@@ -257,6 +251,7 @@ func TestService_ScopedConfig_NotFound(t *testing.T) {
 func TestService_WithDisabled(t *testing.T) {
 
 	srv, err := ratelimit.New(
+		ratelimit.WithRootConfig(cfgmock.NewService()),
 		ratelimit.WithVaryBy(scope.Default, 0, pathGetter{}),
 		ratelimit.WithRateLimiter(scope.Default, 0, stubLimiter{}),
 		ratelimit.WithDisable(scope.Default, 0, true),
@@ -265,7 +260,7 @@ func TestService_WithDisabled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := srv.WithRateLimit()(finalHandler(t))
+	handler := srv.WithRateLimit(finalHandler(t))
 	runHTTPTestCases(t, handler, []httpTestCase{
 		{"panic", 200, map[string]string{}},
 	})
@@ -279,15 +274,9 @@ const (
 func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 	for i, c := range cs {
 
-		storeSrv := storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro"))
-		req, _ := http.NewRequest("GET", c.path, nil)
+		req := httptest.NewRequest("GET", "/"+c.path, nil)
 		req.Header.Set("X-Forwarded-For", "2a02:d200::")
-		st, err := storeSrv.Store(scope.MockID(1)) // German Store
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		st.Config = cfgmock.NewService().NewScoped(st.WebsiteID(), st.ID())
-		req = req.WithContext(store.WithContextRequestedStore(req.Context(), st))
+		req = req.WithContext(scope.WithContext(req.Context(), 1, 1))
 
 		hpu := cstesting.NewHTTPParallelUsers(runHTTPTestCasesUsers, runHTTPTestCasesLoops, 200, time.Millisecond)
 		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
