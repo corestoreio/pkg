@@ -28,9 +28,7 @@ import (
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/net/ratelimit/backendratelimit"
 	"github.com/corestoreio/csfw/net/ratelimit/memstore"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
@@ -57,7 +55,7 @@ func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateL
 type pathGetter struct{}
 
 func (pathGetter) Key(r *http.Request) string {
-	return r.URL.Path
+	return strings.TrimLeft(r.URL.Path, "/")
 }
 
 var _ ratelimit.VaryByer = (*pathGetter)(nil)
@@ -157,6 +155,7 @@ func testBackendConfiguration(
 	const httpLoops = 3
 
 	var baseOpts = []ratelimit.Option{
+		ratelimit.WithRootConfig(cfgmock.NewService(pv)),
 		ratelimit.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
 		ratelimit.WithOptionFactory(backendratelimit.PrepareOptions(backend)),
 	}
@@ -171,27 +170,16 @@ func testBackendConfiguration(
 	}
 
 	req := func() *http.Request {
-		o, err := scope.SetByCode(scope.Website, "euro")
-		if err != nil {
-			t.Fatal(err)
-		}
-		storeSrv := storemock.NewEurozzyService(o, store.WithStorageConfig(
-			cfgmock.NewService(cfgmock.WithPV(pv)),
-		))
 		req, _ := http.NewRequest("GET", httpRequestURL, nil)
 		req.RemoteAddr = "2a02:d180::"
-		atSt, err := storeSrv.Store(scope.MockID(2)) // Austria Store
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		return req.WithContext(store.WithContextRequestedStore(req.Context(), atSt))
+		return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // website=euro store=at
 	}()
 
 	hpu := cstesting.NewHTTPParallelUsers(httpUsers, httpLoops, 600, time.Millisecond)
 	hpu.AssertResponse = assertResponse
 
 	// Food for the race detector
-	hpu.ServeHTTP(req, srv.WithRateLimit()(nextH))
+	hpu.ServeHTTP(req, srv.WithRateLimit(nextH))
 
 	if testLogger {
 		// Min 20 calls IsValid
@@ -219,9 +207,9 @@ func TestBackend_Path_Errors(t *testing.T) {
 	for i, test := range tests {
 
 		scpFnc := backendratelimit.PrepareOptions(backend)
-		cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			test.toPath(scope.Website, 2): test.val,
-		}))
+		})
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
 		_, err := ratelimit.New(scpFnc(cfgScp)...)
