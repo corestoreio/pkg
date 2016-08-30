@@ -83,9 +83,9 @@ func TestBackend_Path_Errors(t *testing.T) {
 			t.Errorf("Have: %v Want: %v", have, want)
 		}
 
-		cfgSrv := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			test.toPath(scope.Website, 2): test.val,
-		}))
+		})
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
 		_, err := ratelimit.New(scpFnc(cfgScp)...)
