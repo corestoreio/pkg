@@ -12,11 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package signed (TODO) provides a middleware to sign responses and adds the signature
+// Package signed provides a middleware to sign responses and adds the signature
 // to the header or trailer.
 //
-// With the use of HTTPS this package might not be needed, except theoretically
-// MITM attacks ...
+// With the use of HTTPS between two parties this package might not be needed.
+// If you consider to use a 3rd participant then this package can help you. For
+// example the 3rd participant is a mobile app. This app requests a product and
+// a dynamic unique calculated price from the backend. The backend sends the
+// product and its price to the mobile app. The app displays the information to
+// the user. The user might add the product with that price to the cart by
+// sending the product and the price back to the backend. The app uses the
+// initial request which the app has received it from the backend. The mobile
+// app now simply forwards the unchanged first request back to the backend. The
+// backend can verify the request body by recalculating the hash found in the
+// header or trailer.
+//
 //
 // https://tools.ietf.org/html/draft-cavage-http-signatures-00
 // https://tools.ietf.org/html/draft-burke-content-signature-00
