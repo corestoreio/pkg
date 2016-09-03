@@ -12,17 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go run ../internal/scopedservice/main_copy.go "$GOPACKAGE"
-
 package signed
 
-// Service creates a middleware that facilitates using a Limiter to limit HTTP
-// requests.
-type Service struct {
-	service
-}
-
-// New creates a new signing middleware.
-func New(opts ...Option) (*Service, error) {
-	return newService(opts...)
-}
+const (
+	errScopedConfigNotValid = `[signed] ScopedConfig %s is invalid. IsNil(Signature=%t) Signature Error: %s`
+)
