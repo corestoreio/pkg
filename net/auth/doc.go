@@ -12,8 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package auth (TODO) provides authentication middleware.
+// Package auth provides authentication middleware.
 //
 // Successful authenticated clients may also retrieve a JSON web token.
-// Authentication via basic auth, IP based, LDAP, SAML ...
+// Authentication via basic auth, ACL access control list (for different
+// routes), IP based, LDAP, SAML ...
+// It can set a  github.com/gorilla/securecookie
+//
+// ScopedConfig can have an Unauthorized ErrorHandler and next Handler
+// When set, all requests with the OPTIONS method will use authentication
+// Default: false
+// EnableAuthOnOptions bool,
+//
+// Provide an interface to be used with with multiple authentication sources,
+// either social like Google, Facebook, Microsoft Account, LinkedIn, GitHub,
+// Twitter, Box, Salesforce, amont others, or enterprise identity systems like
+// Windows Azure AD, Google Apps, Active Directory, ADFS or any SAML Identity
+// Provider.
 package auth
