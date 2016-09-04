@@ -28,6 +28,6 @@
 // header or trailer.
 //
 //
-// https://tools.ietf.org/html/draft-cavage-http-signatures-00
+// https://tools.ietf.org/html/draft-thomson-http-content-signature-00
 // https://tools.ietf.org/html/draft-burke-content-signature-00
 package signed

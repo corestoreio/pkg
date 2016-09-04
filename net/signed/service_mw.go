@@ -15,16 +15,11 @@
 package signed
 
 import (
-	"encoding/hex"
-	"hash"
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/net"
-	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/zenazn/goji/web/mutil"
 )
 
@@ -54,32 +49,36 @@ func (s *Service) WithResponseSignature(next http.Handler) http.Handler {
 			return
 		}
 
-		buf := bufferpool.Get()
 		alg := scpCfg.hashPool.Get()
+		defer scpCfg.hashPool.Put(alg)
 
-		lw := mutil.WrapWriter(w)
-		lw.Tee(alg)
+		if scpCfg.InTrailer {
+			buf := bufferpool.Get()
 
-		// use an option to set as header and write into buffer
-		// or set as trailer.
-		lw.Header().Set(net.Trailer, net.ContentSignature)
-		next.ServeHTTP(lw, r)
+			lw := mutil.WrapWriter(w)
+			lw.Tee(alg) // write also to alg
 
-		tmp := alg.Sum(buf.Bytes())
-		buf.Reset()
-		_, _ = buf.Write(tmp)
+			lw.Header().Set("Trailer", scpCfg.HeaderName)
 
-		sig := Signature{
-			KeyID:     "test",
-			Algorithm: "rot13",
-			Signature: buf.Bytes(),
+			next.ServeHTTP(lw, r)
+
+			tmp := alg.Sum(buf.Bytes()) // append to buffer
+			buf.Reset()
+			_, _ = buf.Write(tmp)
+
+			sig := Signature{
+				EncodeFn:  scpCfg.EncodeFn,
+				KeyID:     "test",
+				Algorithm: scpCfg.AlgorithmName,
+			}
+			sig.Write(w, buf.Bytes())
+
+			bufferpool.Put(buf)
 		}
-		sig.Write(w, hex.EncodeToString)
 
-		scpCfg.hashPool.Put(alg)
-		bufferpool.Put(buf)
 	})
 }
+
 func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scpCfg := s.configByContext(r.Context())
@@ -98,30 +97,7 @@ func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler
 			next.ServeHTTP(w, r)
 			return
 		}
-
-		buf := bufferpool.Get()
-		alg := scpCfg.hashPool.Get()
-
-		lw := mutil.WrapWriter(w)
-		lw.Tee(alg)
-
-		// use an option to set as header and write into buffer
-		// or set as trailer.
-		lw.Header().Set(net.Trailer, net.ContentSignature)
-		next.ServeHTTP(lw, r)
-
-		tmp := alg.Sum(buf.Bytes())
-		buf.Reset()
-		_, _ = buf.Write(tmp)
-
-		sig := Signature{
-			KeyID:     "test",
-			Algorithm: "rot13",
-			Signature: buf.Bytes(),
-		}
-		sig.Write(w, hex.EncodeToString)
-
-		hp.Put(alg)
-		bp.Put(buf)
+		// check if encoded form ... or body is www form ... or raw ... then verify
+		panic("todo implement it")
 	})
 }

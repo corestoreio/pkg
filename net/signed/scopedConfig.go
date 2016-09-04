@@ -27,14 +27,23 @@ type ScopedConfig struct {
 
 	// start of package specific config values
 
-	// Disabled set to true to disable rate limiting
+	// Disabled set to true to disable content signing.
 	Disabled bool
+	// InTrailer set to true and the signature will be added to the HTTP Trailer.
+	InTrailer bool
 
+	KeyID string
+	// HeaderName defines the HTTP header field name, e.g. Content-HMAC
+	HeaderName    string
+	AlgorithmName string
+	EncodeFn
+	DecodeFn
 	hashPool hashpool.Tank
 }
 
 // newScopedConfig creates a new object with the minimum needed configuration.
 func newScopedConfig() *ScopedConfig {
+
 	return &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
 	}
@@ -42,7 +51,7 @@ func newScopedConfig() *ScopedConfig {
 
 // IsValid a configuration for a scope is only then valid when several fields
 // are not empty: RateLimiter, DeniedHandler and VaryByer.
-func (sc ScopedConfig) IsValid() error {
+func (sc *ScopedConfig) IsValid() error {
 	if sc.lastErr != nil {
 		return errors.Wrap(sc.lastErr, "[signed] scopedConfig.isValid has an lastErr")
 	}
