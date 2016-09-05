@@ -89,8 +89,6 @@ func (r Route) GoString() string {
 	return fmt.Sprintf("cfgpath.Route{Chars:[]byte(`%s`)}", r)
 }
 
-const rSeparator = rune(Separator)
-
 // Validate checks if the route contains valid runes and is not empty.
 // Error behaviour: Empty and NotValid.
 func (r Route) Validate() error {
@@ -106,7 +104,6 @@ func (r Route) Validate() error {
 		return errors.NewNotValidf(errRouteInvalidBytesTpl, r.String())
 	}
 
-	var sepCount int
 	i := 0
 	for i < len(r.Chars) {
 		var ru rune
@@ -117,22 +114,9 @@ func (r Route) Validate() error {
 			dr, _ := utf8.DecodeRune(r.Chars[i:])
 			return errors.NewNotValidf("[cfgpath]: Invalid character %q in Route %q", string(dr), r)
 		}
-		ok := false
-		// TODO(cs) maybe remove the check for [A-Za-z0-9] and allow all characters
-		switch {
-		case '0' <= ru && ru <= '9':
-			ok = true
-		case 'a' <= ru && ru <= 'z':
-			ok = true
-		case 'A' <= ru && ru <= 'Z':
-			ok = true
-		case ru == '_':
-			ok = true
-		case ru == rSeparator:
-			sepCount++
-			ok = true
-		}
-		if !ok {
+
+		// TODO(cs) think about if it's worth to extend the allowed characters
+		if !isToken(ru) {
 			return errors.NewNotValidf("[cfgpath]: Invalid character %q in Route %q", string(ru), r)
 		}
 	}
