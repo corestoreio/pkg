@@ -16,6 +16,7 @@ package signed
 
 import (
 	"bytes"
+	"encoding/hex"
 	"net/http"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -24,23 +25,29 @@ import (
 
 const signatureDefaultSeparator = ','
 
-// Signature represents an HTTP Header or Trailer entry.
+// Signature represents an HTTP Header or Trailer entry with the default header
+// key Content-Signature.
 type Signature struct {
-	EncodeFn
-	DecodeFn
 	// KeyID field is an opaque string that the server/client can use to look up
 	// the component they need to validate the signature. It could be an SSH key
 	// fingerprint, an LDAP DN, etc. REQUIRED.
 	KeyID string
-	// Algorithm parameter is used if the client and server agree on a
-	// non-standard digital signature algorithm.  The full list of supported
-	// signature mechanisms is listed below. REQUIRED.
-	Algorithm string
 
 	// Separator defines the field separator and defaults to colon.
 	Separator rune
-	// HeaderKey optional field name, defaults to constant ContentSignature
-	HeaderKey string
+
+	HMAC
+}
+
+// NewSignature creates a new header signature object with default hex
+// encoding/decoding to write and parse the Content-Signature field.
+func NewSignature(keyID, algorithm string) *Signature {
+	return &Signature{
+		KeyID: keyID,
+		HMAC: HMAC{
+			Algorithm: algorithm,
+		},
+	}
 }
 
 // Write writes the content signature header using an
@@ -63,21 +70,26 @@ func (s *Signature) Write(w http.ResponseWriter, signature []byte) {
 	if s.HeaderKey != "" {
 		k = s.HeaderKey
 	}
+	encFn := s.EncodeFn
+	if encFn == nil {
+		encFn = hex.EncodeToString
+	}
 	buf := bufferpool.Get()
 	buf.WriteString(`keyId="` + s.KeyID + `"`)
 	buf.WriteRune(s.Separator)
 	buf.WriteString(`algorithm="` + s.Algorithm + `"`)
 	buf.WriteRune(s.Separator)
 	buf.WriteString(`signature="`)
-	buf.WriteString(s.EncodeFn(signature))
+	buf.WriteString(encFn(signature))
 	buf.WriteRune('"')
 	w.Header().Set(k, buf.String())
 	bufferpool.Put(buf)
 }
 
-// Parse parses the header or trailer Content-Signature into the struct.
-// Returns an error notFound, notValid behaviour or nil on success.
-func (s *Signature) Parse(r *http.Request) (signature []byte, err error) {
+// Parse looks up the header or trailer for the HeaderKey Content-Signature in an
+// HTTP request and extracts the raw decoded signature. Errors can have the
+// behaviour: NotFound or NotValid.
+func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 	if s.Separator == 0 {
 		s.Separator = signatureDefaultSeparator
 	}
@@ -120,7 +132,7 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, err error) {
 
 	// check min length
 	switch {
-	case fields[0].Len() < 8: // keyId="" but empty keyId allowed
+	case fields[0].Len() <= 8: // keyId="" but empty keyId allowed
 		return nil, errors.NewNotValidf("[signed] Invalid length for keyId %q in header: %q", fields[0].String(), headerVal)
 	case fields[1].Len() <= 12: // algorithm=""
 		return nil, errors.NewNotValidf("[signed] Invalid length for algorithm %q in header: %q", fields[1].String(), headerVal)
@@ -128,16 +140,24 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, err error) {
 		return nil, errors.NewNotValidf("[signed] Invalid length for signature %q in header: %q", fields[2].String(), headerVal)
 	}
 
-	// keyID not yet used ...
+	// check for valid keyID
+	if haveKeyID := fields[0].String()[7 : fields[0].Len()-1]; s.KeyID != haveKeyID || s.KeyID == "" {
+		return nil, errors.NewNotValidf("[signed] KeyID %q does not match required %q in header: %q", haveKeyID, s.KeyID, headerVal)
+	}
 
 	// check for valid algorithm
 	if haveAlg := fields[1].String()[11 : fields[1].Len()-1]; s.Algorithm != haveAlg || s.Algorithm == "" {
 		return nil, errors.NewNotValidf("[signed] Algorithm %q does not match required %q in header: %q", haveAlg, s.Algorithm, headerVal)
 	}
 
+	decFn := s.DecodeFn
+	if decFn == nil {
+		decFn = hex.DecodeString
+	}
 	rawSig := fields[2].String()[11 : fields[2].Len()-1]
-	dec, err := s.DecodeFn(rawSig)
+	dec, err := decFn(rawSig)
 	if err != nil {
+		// micro optimization: skip argument building
 		return nil, errors.Wrapf(err, "[signed] failed to decode: %q in header %q", rawSig, headerVal)
 	}
 	return dec, nil

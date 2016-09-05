@@ -15,7 +15,6 @@
 package signed_test
 
 import (
-	"encoding/hex"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,16 +31,31 @@ var _ signed.HTTPParser = (*signed.Signature)(nil)
 func TestSignature_Write(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	sig := signed.Signature{
-		EncodeFn:  hex.EncodeToString,
-		KeyID:     "myKeyID",
-		Algorithm: "hmac-sha1",
-	}
+	sig := signed.NewSignature("myKeyID", "hmac-sha1")
 	sig.Write(w, []byte(`Hello Gophers`))
 
 	const wantSig = `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`
 	if have, want := w.Header().Get(net.ContentSignature), wantSig; have != want {
 		t.Errorf("Have: %v Want: %v", have, want)
+	}
+}
+
+// 3000000	       568 ns/op	     160 B/op	       4 allocs/op
+func BenchmarkSignature_Write(b *testing.B) {
+	const wantSig = `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`
+
+	sig := signed.NewSignature("myKeyID", "hmac-sha1")
+	sig.HeaderKey = "Content-S1gnatur3"
+
+	w := httptest.NewRecorder()
+	s := []byte(`Hello Gophers`)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		sig.Write(w, s)
+	}
+	if have, want := w.Header().Get("Content-S1gnatur3"), wantSig; have != want {
+		b.Errorf("Have: %v Want: %v", have, want)
 	}
 }
 
@@ -62,7 +76,7 @@ func TestSignature_Parse(t *testing.T) {
 		{
 			newReqHeader(`keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`),
 			"hmac-sha1",
-			"",
+			"myKeyID",
 			"hmac-sha1",
 			[]byte(`Hello Gophers`),
 			nil,
@@ -70,7 +84,7 @@ func TestSignature_Parse(t *testing.T) {
 		{
 			newReqHeader(`   keyId="myKeyID"	,  algorithm="hmac-sha1"	,		signature="48656c6c6f20476f7068657273"	`),
 			"hmac-sha1",
-			"",
+			"myKeyID",
 			"hmac-sha1",
 			[]byte(`Hello Gophers`),
 			nil,
@@ -78,7 +92,7 @@ func TestSignature_Parse(t *testing.T) {
 		{
 			newReqHeader(`   k3y1d="myKeyID"	,  alg0r1thm="hmac-sha1"	,		s1gnatur3="48656c6c6f20476f7068657273"	`),
 			"hmac-sha1",
-			"",
+			"myKeyID",
 			"hmac-sha1",
 			[]byte(`Hello Gophers`),
 			nil,
@@ -88,8 +102,8 @@ func TestSignature_Parse(t *testing.T) {
 			"hmac-sha1",
 			"",
 			"hmac-sha1",
-			[]byte(`Hello Gophers`),
 			nil,
+			errors.IsNotValid,
 		},
 		{
 			newReqHeader(`keyId="",algorithm="none",signature="48656c6c6f20476f7068657273"`),
@@ -148,6 +162,14 @@ func TestSignature_Parse(t *testing.T) {
 			errors.IsNotValid,
 		},
 		{
+			newReqHeader(`k="",a="",s=""`),
+			"hmac-sha1",
+			"",
+			"",
+			nil,
+			errors.IsNotValid,
+		},
+		{
 			newReqHeader(`keyId="",algorithm="asdasd",`),
 			"hmac-sha1",
 			"",
@@ -165,10 +187,7 @@ func TestSignature_Parse(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		sig := &signed.Signature{
-			Algorithm: test.haveAlgorithm,
-			DecodeFn:  hex.DecodeString,
-		}
+		sig := signed.NewSignature(test.wantKeyID, test.haveAlgorithm)
 		haveSig, haveErr := sig.Parse(test.req)
 		if test.wantErrBhf != nil {
 			assert.Nil(t, haveSig, "Index %d", i)
@@ -182,16 +201,18 @@ func TestSignature_Parse(t *testing.T) {
 	}
 }
 
-// 1000000	      2087 ns/op	     448 B/op	       4 allocs/op
+// 1000000	      1798 ns/op	     464 B/op	       5 allocs/op
 func BenchmarkSignature_Parse(b *testing.B) {
 
 	req := httptest.NewRequest("GET", "http://corestore.io", nil)
 	req.Header.Set("Content-S1gnatur3", `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`)
 
 	sig := &signed.Signature{
-		Algorithm: "hmac-sha1",
-		HeaderKey: "Content-S1gnatur3",
-		DecodeFn:  hex.DecodeString,
+		KeyID: "myKeyID",
+		HMAC: signed.HMAC{
+			Algorithm: "hmac-sha1",
+			HeaderKey: "Content-S1gnatur3",
+		},
 	}
 
 	b.ResetTimer()
