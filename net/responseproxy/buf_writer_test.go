@@ -16,25 +16,25 @@ package responseproxy_test
 
 import (
 	"bytes"
-	"fmt"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/corestoreio/csfw/net/responseproxy"
 	"github.com/stretchr/testify/assert"
+	"io"
 )
 
-func TestWrapTee(t *testing.T) {
-
-	tw := responseproxy.WrapTee(httptest.NewRecorder())
+func TestWrapBuffered(t *testing.T) {
+	wOrg := httptest.NewRecorder()
 	buf := new(bytes.Buffer)
-	tw.Tee(buf)
-
-	data := []byte(`“It can be very dangerous to see things from somebody else's point of view without the proper training.” - Douglas Adams`)
-	n, err := tw.Write(data)
-	assert.Exactly(t, len(data), n)
-	assert.Exactly(t, len(data), tw.BytesWritten())
+	wb := responseproxy.WrapBuffered(buf, wOrg)
+	data := []byte(`Commander Data encrypts the computer with a fractal algorithm to protect it from the Borgs.`)
+	n, err := wb.Write(data)
 	assert.NoError(t, err)
-	assert.Exactly(t, string(data), buf.String())
-	assert.Contains(t, fmt.Sprintf("%#v", tw), `responseproxy.flushWriter`) // poor mans type testing ;-)
+	assert.Exactly(t, len(data), n)
+	assert.Exactly(t, 0, wOrg.Body.Len())
+	assert.Exactly(t, len(data), buf.Len())
+
+	io.Copy(wb.Unwrap(), buf)
+	assert.Exactly(t, len(data), wOrg.Body.Len())
 }
