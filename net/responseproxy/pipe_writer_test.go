@@ -24,17 +24,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWrapBuffered(t *testing.T) {
+func TestWrapPipe(t *testing.T) {
 	wOrg := httptest.NewRecorder()
-	buf := new(bytes.Buffer)
-	wb := responseproxy.WrapBuffered(buf, wOrg)
 	data := []byte(`Commander Data encrypts the computer with a fractal algorithm to protect it from the Borgs.`)
-	n, err := wb.Write(data)
+
+	buf := new(bytes.Buffer)
+	pw := responseproxy.WrapPiped(buf, wOrg)
+
+	n, err := pw.Write(data)
 	assert.NoError(t, err)
 	assert.Exactly(t, len(data), n)
 	assert.Exactly(t, 0, wOrg.Body.Len())
 	assert.Exactly(t, len(data), buf.Len())
 
-	io.Copy(wb.Unwrap(), buf)
+	io.Copy(pw.Unwrap(), buf)
 	assert.Exactly(t, len(data), wOrg.Body.Len())
 }
