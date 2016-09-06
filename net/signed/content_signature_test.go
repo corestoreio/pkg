@@ -45,7 +45,7 @@ func BenchmarkSignature_Write(b *testing.B) {
 	const wantSig = `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`
 
 	sig := signed.NewSignature("myKeyID", "hmac-sha1")
-	sig.HeaderKey = "Content-S1gnatur3"
+	sig.HeaderName = "Content-S1gnatur3"
 
 	w := httptest.NewRecorder()
 	s := []byte(`Hello Gophers`)
@@ -210,8 +210,8 @@ func BenchmarkSignature_Parse(b *testing.B) {
 	sig := &signed.Signature{
 		KeyID: "myKeyID",
 		HMAC: signed.HMAC{
-			Algorithm: "hmac-sha1",
-			HeaderKey: "Content-S1gnatur3",
+			Algorithm:  "hmac-sha1",
+			HeaderName: "Content-S1gnatur3",
 		},
 	}
 

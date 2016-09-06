@@ -32,11 +32,13 @@ type (
 
 // HTTPEncoder writes a signature to the HTTP header.
 type HTTPWriter interface {
+	HeaderKey() string
 	Write(w http.ResponseWriter, signature []byte)
 }
 
 // HTTPDecoder reads from a response the necessary data to find the signature
 // and returns the signatures byte slice for further validation.
 type HTTPParser interface {
+	HeaderKey() string
 	Parse(r *http.Request) (signature []byte, err error)
 }

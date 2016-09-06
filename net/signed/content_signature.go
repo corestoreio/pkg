@@ -50,6 +50,14 @@ func NewSignature(keyID, algorithm string) *Signature {
 	}
 }
 
+// HeaderKey returns the name of the header key
+func (s *Signature) HeaderKey() string {
+	if s.HeaderName != "" {
+		return s.HeaderName
+	}
+	return ContentSignature
+}
+
 // Write writes the content signature header using an
 // encoder, which can be hex or base64.
 //
@@ -66,10 +74,7 @@ func (s *Signature) Write(w http.ResponseWriter, signature []byte) {
 	if s.Separator == 0 {
 		s.Separator = signatureDefaultSeparator
 	}
-	k := ContentSignature
-	if s.HeaderKey != "" {
-		k = s.HeaderKey
-	}
+
 	encFn := s.EncodeFn
 	if encFn == nil {
 		encFn = hex.EncodeToString
@@ -82,7 +87,7 @@ func (s *Signature) Write(w http.ResponseWriter, signature []byte) {
 	buf.WriteString(`signature="`)
 	buf.WriteString(encFn(signature))
 	buf.WriteRune('"')
-	w.Header().Set(k, buf.String())
+	w.Header().Set(s.HeaderKey(), buf.String())
 	bufferpool.Put(buf)
 }
 
@@ -93,10 +98,7 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 	if s.Separator == 0 {
 		s.Separator = signatureDefaultSeparator
 	}
-	k := ContentSignature
-	if s.HeaderKey != "" {
-		k = s.HeaderKey
-	}
+	k := s.HeaderKey()
 	headerVal := r.Header.Get(k)
 	if headerVal == "" {
 		headerVal = r.Trailer.Get(k)

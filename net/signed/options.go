@@ -15,10 +15,14 @@
 package signed
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"hash"
 
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/minio/blake2b-simd"
 )
 
 // WithDefaultConfig applies the default signed configuration settings based
@@ -33,11 +37,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return withDefaultConfig(scp, id)
 }
 
-// WithVaryBy allows to set a custom key producer. VaryByer is called for each
-// request to generate a key for the limiter. If it is nil, the middleware
-// panics. The default VaryByer returns an empty string so that all requests
-// uses the same key. VaryByer must be thread safe.
-func WithHash64(scp scope.Scope, id int64, hf func() hash.Hash64) Option {
+func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
 		s.rwmu.Lock()
@@ -47,14 +47,55 @@ func WithHash64(scp scope.Scope, id int64, hf func() hash.Hash64) Option {
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.hashPool = hashpool.New64(hf)
+		sc.hashPool = hashpool.New(func() hash.Hash {
+			return hmac.New(hh, key)
+		})
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
 	}
 }
 
-// WithDisable allows to disable a rate limit or enable it if set to false.
+func WithHeaderHandler(scp scope.Scope, id int64, w HTTPWriter, p HTTPParser) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.HTTPWriter = w
+		sc.HTTPParser = p
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
+func WithContentHMAC_SHA256(scp scope.Scope, id int64, key []byte) Option {
+	return func(s *Service) error {
+		if err := WithHash(scp, id, sha256.New, key)(s); err != nil {
+			return errors.Wrap(err, "[signed] WithContentHMAC_SHA256.WithHash")
+		}
+		sig := NewHMAC("sha256")
+		return WithHeaderHandler(scp, id, sig, sig)(s)
+	}
+}
+
+func WithContentHMAC_Blake2b256(scp scope.Scope, id int64, key []byte) Option {
+	return func(s *Service) error {
+
+		if err := WithHash(scp, id, blake2b.New256, key)(s); err != nil {
+			return errors.Wrap(err, "[signed] WithContentHMAC_Blake2b256.WithHash")
+		}
+		sig := NewHMAC("blk2b256")
+		return WithHeaderHandler(scp, id, sig, sig)(s)
+	}
+}
+
+// WithDisable allows to disable a signing of the HTTP body or validation.
 func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {

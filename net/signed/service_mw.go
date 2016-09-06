@@ -18,18 +18,9 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/zenazn/goji/web/mutil"
 )
 
-// todo: refactor to use Service type and backendsigned package
-
-// WithCompressor is a middleware applies the GZIP or deflate algorithm on
-// the bytes writer. GZIP or deflate usage depends on the HTTP Accept
-// Encoding header. Flush(), Hijack() and CloseNotify() interfaces will be
-// preserved. No header set, no compression takes place. GZIP has priority
-// before deflate.
 func (s *Service) WithResponseSignature(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scpCfg := s.configByContext(r.Context())
@@ -49,33 +40,16 @@ func (s *Service) WithResponseSignature(next http.Handler) http.Handler {
 			return
 		}
 
-		alg := scpCfg.hashPool.Get()
-		defer scpCfg.hashPool.Put(alg)
-
 		if scpCfg.InTrailer {
-			buf := bufferpool.Get()
-
-			lw := mutil.WrapWriter(w)
-			lw.Tee(alg) // write also to alg
-
-			lw.Header().Set("Trailer", scpCfg.HeaderName)
-
-			next.ServeHTTP(lw, r)
-
-			tmp := alg.Sum(buf.Bytes()) // append to buffer
-			buf.Reset()
-			_, _ = buf.Write(tmp)
-
-			sig := Signature{
-				EncodeFn:  scpCfg.EncodeFn,
-				KeyID:     "test",
-				Algorithm: scpCfg.AlgorithmName,
-			}
-			sig.Write(w, buf.Bytes())
-
-			bufferpool.Put(buf)
+			// direct output to the client and the signature will be inserted
+			// after the body has been written. ideal for streaming but not all
+			// clients can process a trailer.
+			scpCfg.writeTrailer(next, w, r)
+			return
 		}
-
+		// the write to w gets buffered and we calculate the checksum of the
+		// buffer and then flush the buffer to the client.
+		scpCfg.writeBuffered(next, w, r)
 	})
 }
 

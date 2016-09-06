@@ -144,8 +144,8 @@ func BenchmarkHMAC_Parse(b *testing.B) {
 	req.Header.Set("Content-S1gnatur3", `sha1 48656c6c6f20476f7068657273`)
 
 	sig := signed.HMAC{
-		Algorithm: "sha1",
-		HeaderKey: "Content-S1gnatur3",
+		Algorithm:  "sha1",
+		HeaderName: "Content-S1gnatur3",
 	}
 
 	b.ResetTimer()

@@ -32,7 +32,7 @@ type HMAC struct {
 	Algorithm string
 	// HeaderKey (optional) a field name in the HTTP header, defaults to
 	// Content-HMAC.
-	HeaderKey string
+	HeaderName string
 	// EncodeFn (optional) defines the byte to string encoding function.
 	// Defaults to hex.EncodeString.
 	EncodeFn
@@ -49,53 +49,54 @@ func NewHMAC(algorithm string) *HMAC {
 	}
 }
 
+// HeaderKey returns the name of the header key
+func (h *HMAC) HeaderKey() string {
+	if h.HeaderName != "" {
+		return h.HeaderName
+	}
+	return ContentHMAC
+}
+
 // Writes writes the signature into the response.
 // Content-HMAC: <hash mechanism> <encoded binary HMAC>
 // Content-HMAC: sha1 f1wOnLLwcTexwCSRCNXEAKPDm+U=
-func (h HMAC) Write(w http.ResponseWriter, signature []byte) {
-	k := ContentHMAC
-	if h.HeaderKey != "" {
-		k = h.HeaderKey
-	}
+func (h *HMAC) Write(w http.ResponseWriter, signature []byte) {
 	encFn := h.EncodeFn
 	if encFn == nil {
 		encFn = hex.EncodeToString
 	}
-	w.Header().Set(k, h.Algorithm+" "+encFn(signature))
+	w.Header().Set(h.HeaderKey(), h.Algorithm+" "+encFn(signature))
 }
 
 // Parse looks up the header or trailer for the HeaderKey Content-HMAC in an
 // HTTP request and extracts the raw decoded signature. Errors can have the
 // behaviour: NotFound or NotValid.
-func (h HMAC) Parse(r *http.Request) (signature []byte, _ error) {
-	k := ContentHMAC
-	if h.HeaderKey != "" {
-		k = h.HeaderKey
+func (h *HMAC) Parse(r *http.Request) (signature []byte, _ error) {
+	hk := h.HeaderKey()
+	hv := r.Header.Get(hk)
+	if hv == "" {
+		hv = r.Trailer.Get(hk)
 	}
-	headerVal := r.Header.Get(k)
-	if headerVal == "" {
-		headerVal = r.Trailer.Get(k)
-	}
-	if headerVal == "" {
+	if hv == "" {
 		return nil, errors.NewNotFoundf("[signed] Signature not found or empty")
 	}
 
-	firstWS := strings.IndexByte(headerVal, ' ') // first white space after algorithm name
-	if headerVal == "" || firstWS != len(h.Algorithm) {
-		return nil, errors.NewNotValidf("[signed] Signature %q not valid in header %q", headerVal, k)
+	firstWS := strings.IndexByte(hv, ' ') // first white space after algorithm name
+	if hv == "" || firstWS != len(h.Algorithm) {
+		return nil, errors.NewNotValidf("[signed] Signature %q not valid in header %q", hv, hk)
 	}
-	if h.Algorithm == "" || h.Algorithm != headerVal[:firstWS] {
-		return nil, errors.NewNotValidf("[signed] Unknown algorithm %q in Header %q with signature %q", headerVal[:firstWS], k, headerVal)
+	if h.Algorithm == "" || h.Algorithm != hv[:firstWS] {
+		return nil, errors.NewNotValidf("[signed] Unknown algorithm %q in Header %q with signature %q", hv[:firstWS], hk, hv)
 	}
 
 	decFn := h.DecodeFn
 	if decFn == nil {
 		decFn = hex.DecodeString
 	}
-	dec, err := decFn(headerVal[firstWS+1:])
+	dec, err := decFn(hv[firstWS+1:])
 	if err != nil {
 		// micro optimization: skip argument building
-		return nil, errors.NewNotValidf("[signed] HMAC failed to decode: %q in header %q. Error: %s", headerVal[firstWS+1:], headerVal, err)
+		return nil, errors.NewNotValidf("[signed] HMAC failed to decode: %q in header %q. Error: %s", hv[firstWS+1:], hv, err)
 	}
 	return dec, nil
 }
