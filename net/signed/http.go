@@ -18,7 +18,7 @@ import "net/http"
 
 const (
 	ContentSignature = "Content-Signature"
-	ContentHMAC      = "Content-HMAC"
+	ContentHMAC      = "Content-Hmac"
 )
 
 type (

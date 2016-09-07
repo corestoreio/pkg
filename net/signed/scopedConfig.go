@@ -68,9 +68,9 @@ func (sc *ScopedConfig) IsValid() error {
 	return nil
 }
 
-// direct output to the client and the signature will be inserted
-// after the body has been written. ideal for streaming but not all
-// clients can process a trailer.
+// direct output to the client and the signature will be inserted after the body
+// has been written. ideal for streaming but not all clients can process a
+// trailer.
 func (sc *ScopedConfig) writeTrailer(next http.Handler, w http.ResponseWriter, r *http.Request) {
 	h := sc.hashPool.Get()
 	defer sc.hashPool.Put(h)
@@ -90,29 +90,28 @@ func (sc *ScopedConfig) writeTrailer(next http.Handler, w http.ResponseWriter, r
 	bufferpool.Put(buf)
 }
 
-// the write to w gets buffered and we calculate the checksum of the
-// buffer and then flush the buffer to the client.
-// todo(CyS) should be a pipedWriter instead of bufferedWritter.
+// the write to w gets buffered and we calculate the checksum of the buffer and
+// then flush the buffer to the client.
 func (sc *ScopedConfig) writeBuffered(next http.Handler, w http.ResponseWriter, r *http.Request) {
 	h := sc.hashPool.Get()
 	defer sc.hashPool.Put(h)
 
 	wBuf := bufferpool.Get()
 	hashBuf := bufferpool.Get()
+	defer bufferpool.Put(hashBuf)
+	defer bufferpool.Put(wBuf)
 
 	next.ServeHTTP(responseproxy.WrapBuffered(wBuf, w), r)
 
 	// calculate the hash based on the buffered response body
-	_, _ = h.Write(wBuf.Bytes())
-	tmp := h.Sum(hashBuf.Bytes()) // append to buffer
-	hashBuf.Reset()
-	_, _ = hashBuf.Write(tmp)
 
-	sc.HTTPWriter.Write(w, hashBuf.Bytes())
+	if _, err := h.Write(wBuf.Bytes()); err != nil {
+		sc.ErrorHandler(errors.Wrap(err, "[signed] ScopedConfig.writeBuffered failed to io.Copy")).ServeHTTP(w, r)
+		return
+	}
+
+	sc.HTTPWriter.Write(w, h.Sum(hashBuf.Bytes()))
 	if _, err := io.Copy(w, wBuf); err != nil {
 		sc.ErrorHandler(errors.Wrap(err, "[signed] ScopedConfig.writeBuffered failed to io.Copy")).ServeHTTP(w, r)
 	}
-
-	bufferpool.Put(hashBuf)
-	bufferpool.Put(wBuf)
 }

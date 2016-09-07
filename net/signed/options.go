@@ -74,6 +74,7 @@ func WithHeaderHandler(scp scope.Scope, id int64, w HTTPWriter, p HTTPParser) Op
 	}
 }
 
+// WithContentHMAC_SHA256 applies the SHA256 hash with your symmetric key.
 func WithContentHMAC_SHA256(scp scope.Scope, id int64, key []byte) Option {
 	return func(s *Service) error {
 		if err := WithHash(scp, id, sha256.New, key)(s); err != nil {
@@ -86,7 +87,6 @@ func WithContentHMAC_SHA256(scp scope.Scope, id int64, key []byte) Option {
 
 func WithContentHMAC_Blake2b256(scp scope.Scope, id int64, key []byte) Option {
 	return func(s *Service) error {
-
 		if err := WithHash(scp, id, blake2b.New256, key)(s); err != nil {
 			return errors.Wrap(err, "[signed] WithContentHMAC_Blake2b256.WithHash")
 		}
@@ -107,6 +107,26 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.Disabled = isDisabled
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
+// WithTrailer allows to write the hash sum into the trailer. The middleware switches
+// to stream based hash calculation which results in faster processing instead of writing
+// into a buffer. Make sure that your client can process HTTP trailers.
+func WithTrailer(scp scope.Scope, id int64, inTrailer bool) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.InTrailer = inTrailer
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
