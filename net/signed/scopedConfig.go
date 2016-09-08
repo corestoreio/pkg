@@ -18,6 +18,8 @@ import (
 	"io"
 	"net/http"
 
+	"crypto/hmac"
+
 	"github.com/corestoreio/csfw/net/responseproxy"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
@@ -114,4 +116,44 @@ func (sc *ScopedConfig) writeBuffered(next http.Handler, w http.ResponseWriter, 
 	if _, err := io.Copy(w, wBuf); err != nil {
 		sc.ErrorHandler(errors.Wrap(err, "[signed] ScopedConfig.writeBuffered failed to io.Copy")).ServeHTTP(w, r)
 	}
+}
+
+func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
+
+	signature, err := sc.HTTPParser.Parse(r)
+	if err != nil {
+		return errors.Wrap(err, "[signed] ValidateBody HTTPParser.Parse")
+	}
+
+	switch r.Method {
+	case "GET", "POST", "PUT":
+	default:
+		return errors.NewNotValidf("[signed] ValidateBody HTTP Method not allowed %q", r.Method)
+	}
+
+	buf := make([]byte, 1024)
+	h := sc.hashPool.Get()
+	defer sc.hashPool.Put(h)
+	defer r.Body.Close() // what happens to any unread bytes of the body?
+
+	for {
+		n, err := r.Body.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return errors.Wrap(err, "[signed] ValidateBody HTTP.Body.Read")
+		}
+		if _, err := h.Write(buf[:n]); err != nil {
+			return errors.Wrap(err, "[signed] ValidateBody Hash.Write")
+		}
+	}
+	hashBuf := bufferpool.Get()
+	defer bufferpool.Put(hashBuf)
+
+	if hs := h.Sum(hashBuf.Bytes()); !hmac.Equal(signature, hs) {
+		return errors.NewNotValidf("[signed] ValidateBody. Signatures do not match. Have: %q Want: %q", signature, hs)
+	}
+
+	return nil
 }

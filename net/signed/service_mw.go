@@ -71,7 +71,12 @@ func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler
 			next.ServeHTTP(w, r)
 			return
 		}
-		// check if encoded form ... or body is www form ... or raw ... then verify
-		panic("todo implement it")
+
+		if err := scpCfg.ValidateBody(r); err != nil {
+			scpCfg.ErrorHandler(err).ServeHTTP(w, r)
+			return
+		}
+		// signature valid
+		next.ServeHTTP(w, r)
 	})
 }

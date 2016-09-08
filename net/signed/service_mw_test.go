@@ -21,7 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/signed"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -205,6 +207,59 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 	hpu.ServeHTTP(r, handler)
 
 	if have, want := *nextHandlerCalled, int32(25); have != want {
+		t.Errorf("NextHandler call failed: Have: %d Want: %d", have, want)
+	}
+}
+
+func TestService_WithRequestSignatureValidation(t *testing.T) {
+
+	var finalHandlerCalled = new(int32)
+	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
+
+	srv := signed.MustNew(
+		signed.WithContentHMAC_SHA256(scope.Website, 1, key),
+		signed.WithRootConfig(cfgmock.NewService()),
+		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
+			})
+		}),
+		signed.WithErrorHandler(scope.Website, 1, func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
+			})
+		}),
+		signed.WithServiceErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
+			})
+		}),
+	)
+
+	handler := mw.Chain(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+		t.Logf("Valid Header: => %q", r.Header.Get(signed.ContentHMAC))
+		atomic.AddInt32(finalHandlerCalled, 1)
+	}), srv.WithResponseSignature)
+
+	r := httptest.NewRequest("/", "https://corestore.io", nil)
+	r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
+
+	// get signature
+
+	// then validate
+	//srv.WithRequestSignatureValidation
+
+	hpu := cstesting.NewHTTPParallelUsers(1, 1, 100, time.Millisecond)
+	hpu.AssertResponse = func(w *httptest.ResponseRecorder) {
+		t.Logf("Header: %#v", w.HeaderMap)
+		//assert.Exactly(t, `sha256 41d1c5095693f329b0be01535af4069e6ecae899ede244eaf39c6f4f616307a6`, w.Header().Get(signed.ContentHMAC))
+		assert.Exactly(t, http.StatusAccepted, w.Code)
+		//assert.Exactly(t, string(testData), w.Body.String())
+	}
+	hpu.ServeHTTP(r, handler)
+
+	if have, want := *finalHandlerCalled, int32(1); have != want {
 		t.Errorf("NextHandler call failed: Have: %d Want: %d", have, want)
 	}
 }
