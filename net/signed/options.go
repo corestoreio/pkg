@@ -113,6 +113,25 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 	}
 }
 
+// WithAllowedMethods sets the allowed HTTP methods which can transport a
+// signature hash.
+func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.AllowedMethods = methods
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
 // WithTrailer allows to write the hash sum into the trailer. The middleware switches
 // to stream based hash calculation which results in faster processing instead of writing
 // into a buffer. Make sure that your client can process HTTP trailers.

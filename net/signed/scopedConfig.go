@@ -47,6 +47,9 @@ type ScopedConfig struct {
 	HTTPParser
 
 	hashPool hashpool.Tank
+
+	// AllowedMethods list of allowed HTTP methods. Must be upper case.
+	AllowedMethods []string
 }
 
 // newScopedConfig creates a new object with the minimum needed configuration.
@@ -54,6 +57,7 @@ func newScopedConfig() *ScopedConfig {
 
 	return &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
+		AllowedMethods:      []string{"POST", "PUT", "PATCH"},
 	}
 }
 
@@ -125,10 +129,14 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 		return errors.Wrap(err, "[signed] ValidateBody HTTPParser.Parse")
 	}
 
-	switch r.Method {
-	case "GET", "POST", "PUT":
-	default:
-		return errors.NewNotValidf("[signed] ValidateBody HTTP Method not allowed %q", r.Method)
+	ok := false
+	for _, m := range sc.AllowedMethods {
+		if r.Method == m {
+			ok = true
+		}
+	}
+	if !ok {
+		return errors.NewNotValidf("[signed] ValidateBody HTTP Method %q not allowed in list: %q", r.Method, sc.AllowedMethods)
 	}
 
 	buf := make([]byte, 1024)
