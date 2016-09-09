@@ -80,12 +80,9 @@ func (hpu HTTPParallelUsers) sleepPerServeHTTP(userID int) time.Duration {
 	return time.Duration(d)
 }
 
-// ServeHTTP starts the testing and all requests r gets called with http.Handler
-// h.
-func (hpu HTTPParallelUsers) ServeHTTP(r *http.Request, h http.Handler) {
-	// should be refactored but for now quite ok
-	// 10 threads, 20 seconds ramp-up - start with 1 user, each 2 seconds 1 user added
-	startDelay := hpu.RampUpPeriod / hpu.Users
+// serve runs the benchmark. r or rf can be nil, but not both.
+func (hpu HTTPParallelUsers) serve(rf func() *http.Request, h http.Handler) {
+
 	var user = func(wg *sync.WaitGroup, userID int) {
 		for i := 1; i <= hpu.Loops; i++ {
 			sl := hpu.sleepPerServeHTTP(userID)
@@ -94,7 +91,8 @@ func (hpu HTTPParallelUsers) ServeHTTP(r *http.Request, h http.Handler) {
 			w.Header().Set(HeaderUserID, strconv.Itoa(userID))
 			w.Header().Set(HeaderLoopID, strconv.Itoa(i))
 			w.Header().Set(HeaderSleep, sl.String())
-			h.ServeHTTP(w, r)
+
+			h.ServeHTTP(w, rf())
 			if hpu.AssertResponse != nil {
 				hpu.AssertResponse(w)
 			}
@@ -106,7 +104,7 @@ func (hpu HTTPParallelUsers) ServeHTTP(r *http.Request, h http.Handler) {
 
 	var wg sync.WaitGroup
 	wg.Add(hpu.Users)
-
+	var startDelay = hpu.RampUpPeriod / hpu.Users
 	var delay = new(int32)
 	for j := 1; j <= hpu.Users; j++ {
 		go func(userID int) {
@@ -121,4 +119,24 @@ func (hpu HTTPParallelUsers) ServeHTTP(r *http.Request, h http.Handler) {
 		}(j)
 	}
 	wg.Wait()
+}
+
+// ServeHTTP starts the testing and the request gets called with http.Handler.
+// You might run into a race condition when trying to add a request body (an
+// io.ReadCloser), because multiple reads and writes into the buffer. Use the
+// function ServeHTTPNewRequest() if you need for each call to http.Handler a
+// new request object.
+func (hpu HTTPParallelUsers) ServeHTTP(r *http.Request, h http.Handler) {
+	// should be refactored but for now quite ok
+	// 10 threads, 20 seconds ramp-up - start with 1 user, each 2 seconds 1 user added
+	hpu.serve(func() *http.Request {
+		return r
+	}, h)
+}
+
+// ServeHTTPNewRequest same as ServeHTTP() but creates for each iteration a new
+// fresh request which will be passed to http.Handler. Does not trigger a race
+// condition.
+func (hpu HTTPParallelUsers) ServeHTTPNewRequest(rf func() *http.Request, h http.Handler) {
+	hpu.serve(rf, h)
 }

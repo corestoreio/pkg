@@ -15,8 +15,12 @@
 package cstesting_test
 
 import (
+	"encoding/hex"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -80,6 +84,63 @@ func TestHTTPParallelUsers_Long(t *testing.T) {
 		//	rec.Header().Get(cstesting.HeaderLoopID),
 		//	rec.Header().Get(cstesting.HeaderSleep),
 		//)
+		atomic.AddInt32(reqCount, 1)
+	}))
+
+	//t.Logf("Users %d Loops %d, RampUp %d", users, loops, rampUpPeriod)
+
+	if have, want := *reqCount, int32(users*loops); have != want {
+		t.Errorf("Request count mismatch! Have: %v Want: %v", have, want)
+	}
+
+	if have, want := int(time.Since(startTime).Seconds()), rampUpPeriod; have != want {
+		t.Errorf("Test Running Time is weird! Have: %v Want: %v", have, want)
+	}
+}
+
+func TestHTTPParallelUsers_ServeHTTPNewRequest(t *testing.T) {
+	startTime := time.Now()
+	const (
+		users        = 4
+		loops        = 10
+		rampUpPeriod = 2
+	)
+	tg := cstesting.NewHTTPParallelUsers(users, loops, rampUpPeriod, time.Second)
+
+	tg.AssertResponse = func(rec *httptest.ResponseRecorder) {
+		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderUserID))
+		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderLoopID))
+		assert.NotEmpty(t, rec.Header().Get(cstesting.HeaderSleep))
+	}
+
+	var reqCount = new(int32)
+	// if you now use ServeHTTP() the below HanderFunc code will trigger a race condition
+	tg.ServeHTTPNewRequest(func() *http.Request {
+		return httptest.NewRequest("POST", "http://corestore.io", strings.NewReader(`#golang proverb: A little copying is better than a little dependency.`))
+	}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// read the body of the post request
+		buf := make([]byte, 16)
+		defer func() {
+			if err := r.Body.Close(); err != nil {
+				panic(err)
+			}
+		}()
+		for {
+			n, err := r.Body.Read(buf)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				t.Fatalf("%+v", err)
+			}
+			buf = buf[:n]
+			if s := hex.EncodeToString(buf); len(s) < 4 {
+				// just do at least something ...
+				// t.Fatal won't work here to effectively terminate the test-goroutine.
+				panic(fmt.Sprintf("HEX too short: %q with buf %q", s, buf))
+			}
+		}
+
 		atomic.AddInt32(reqCount, 1)
 	}))
 
