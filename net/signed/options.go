@@ -37,6 +37,8 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return withDefaultConfig(scp, id)
 }
 
+// WithHash sets the hashing algorithm to create a new hash and verify an
+// incoming hash. Please use only cryptographically secure hash algorithms.
 func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
@@ -56,6 +58,9 @@ func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option
 	}
 }
 
+// WithHeaderHandler sets the writer and the parser. The writer knows how to
+// write the hash value into the HTTP header. The parser knows how and where to
+// extract the hash value from the header or even the trailer.
 func WithHeaderHandler(scp scope.Scope, id int64, w HTTPWriter, p HTTPParser) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
@@ -85,6 +90,9 @@ func WithContentHMAC_SHA256(scp scope.Scope, id int64, key []byte) Option {
 	}
 }
 
+// WithContentHMAC_Blake2b256 applies the very fast Blake2 hashing algorithm.
+// The current package has been optimized with ASM with for x64 systems, hence
+// Blake2 is faster than SHA.
 func WithContentHMAC_Blake2b256(scp scope.Scope, id int64, key []byte) Option {
 	return func(s *Service) error {
 		if err := WithHash(scp, id, blake2b.New256, key)(s); err != nil {

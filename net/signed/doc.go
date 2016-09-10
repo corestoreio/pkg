@@ -27,6 +27,7 @@
 // backend can verify the request body by recalculating the hash found in the
 // header or trailer.
 //
+// TODO(CyS) create a flowchart to demonstrate the usage.
 //
 // https://tools.ietf.org/html/draft-thomson-http-content-signature-00
 // https://tools.ietf.org/html/draft-burke-content-signature-00

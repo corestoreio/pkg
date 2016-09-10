@@ -21,6 +21,10 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
+// WithResponseSignature hashes the data written to http.ResponseWriter and adds
+// the hash to the HTTP header. For large data sets use the option InTrailer to
+// provide stream based hashing but the hash gets written into the HTTP trailer.
+// Not all clients can read the HTTP trailer.
 func (s *Service) WithResponseSignature(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scpCfg := s.configByContext(r.Context())
@@ -53,6 +57,10 @@ func (s *Service) WithResponseSignature(next http.Handler) http.Handler {
 	})
 }
 
+// WithRequestSignatureValidation extracts from the header or trailer the hash
+// value and hashes the body of the incoming request and compares those two
+// hashes. On success the next handler will be called otherwise the scope based
+// error handler.
 func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scpCfg := s.configByContext(r.Context())

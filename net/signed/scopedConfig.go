@@ -15,10 +15,9 @@
 package signed
 
 import (
+	"crypto/hmac"
 	"io"
 	"net/http"
-
-	"crypto/hmac"
 
 	"github.com/corestoreio/csfw/net/responseproxy"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -122,9 +121,12 @@ func (sc *ScopedConfig) writeBuffered(next http.Handler, w http.ResponseWriter, 
 	}
 }
 
+// ValidateBody uses the HTTPParser to extract the hash signature. It then
+// hashes the body and compares the hash of the body with the hash value found
+// in the HTTP header. Hash comparison via constant time.
 func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 
-	signature, err := sc.HTTPParser.Parse(r)
+	reqSignature, err := sc.HTTPParser.Parse(r)
 	if err != nil {
 		return errors.Wrap(err, "[signed] ValidateBody HTTPParser.Parse")
 	}
@@ -139,12 +141,14 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 		return errors.NewNotValidf("[signed] ValidateBody HTTP Method %q not allowed in list: %q", r.Method, sc.AllowedMethods)
 	}
 
-	buf := make([]byte, 1024)
+	buf := make([]byte, 4096)
 	h := sc.hashPool.Get()
 	defer sc.hashPool.Put(h)
 	defer r.Body.Close() // what happens to any unread bytes of the body?
 
 	for {
+		// bug or feature? what if the next handler also reads the body? does io.Reader
+		// allows multiple reads?
 		n, err := r.Body.Read(buf)
 		if err == io.EOF {
 			break
@@ -159,8 +163,8 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 	hashBuf := bufferpool.Get()
 	defer bufferpool.Put(hashBuf)
 
-	if hs := h.Sum(hashBuf.Bytes()); !hmac.Equal(signature, hs) {
-		return errors.NewNotValidf("[signed] ValidateBody. Signatures do not match. Have: %q Want: %q", signature, hs)
+	if hs := h.Sum(hashBuf.Bytes()); !hmac.Equal(reqSignature, hs) {
+		return errors.NewNotValidf("[signed] ValidateBody. Signatures do not match. Have: %q Want: %q", reqSignature, hs)
 	}
 
 	return nil
