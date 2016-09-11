@@ -19,7 +19,7 @@ import (
 )
 
 // backend overall backend models for all tests
-var backend *backendratelimit.Backend
+var backend *backendratelimit.Configuration
 
 // this would belong into the test suit setup
 func init() {

@@ -79,7 +79,7 @@ func TestBackend_WithDisable(t *testing.T) {
 
 	testBackendConfiguration(t, "panic",
 		cfgmock.PathValue{
-			backend.RateLimitDisabled.MustFQ(scope.Website, 1): 1,
+			backend.Disabled.MustFQ(scope.Website, 1): 1,
 		},
 		func(rec *httptest.ResponseRecorder) {
 			assert.Exactly(t, http.StatusTeapot, rec.Code)
@@ -103,12 +103,12 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 	testBackendConfiguration(t,
 		"http://corestore.io",
 		cfgmock.PathValue{
-			backend.RateLimitGCRAName.MustFQ(scope.Website, 1):                 "memstore",
-			backend.RateLimitDisabled.MustFQ(scope.Website, 1):                 0,
-			backend.RateLimitStorageGcraMaxMemoryKeys.MustFQ(scope.Website, 1): 50,
-			backend.RateLimitBurst.MustFQ(scope.Website, 1):                    3,
-			backend.RateLimitRequests.MustFQ(scope.Website, 1):                 1,
-			backend.RateLimitDuration.MustFQ(scope.Website, 1):                 "i",
+			backend.GCRAName.MustFQ(scope.Website, 1):                 "memstore",
+			backend.Disabled.MustFQ(scope.Website, 1):                 0,
+			backend.StorageGcraMaxMemoryKeys.MustFQ(scope.Website, 1): 50,
+			backend.Burst.MustFQ(scope.Website, 1):                    3,
+			backend.Requests.MustFQ(scope.Website, 1):                 1,
+			backend.Duration.MustFQ(scope.Website, 1):                 "i",
 		},
 		func(rec *httptest.ResponseRecorder) {
 			//t.Logf("Code %d Remain:%s Limit:%s Reset:%s",
@@ -201,8 +201,8 @@ func TestBackend_Path_Errors(t *testing.T) {
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.RateLimitDisabled.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitGCRAName.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.Disabled.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.GCRAName.MustFQ, struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 

@@ -23,24 +23,23 @@ import (
 // PrepareOptions creates a closure around the type Backend. The closure will be
 // used during a scoped request to figure out the configuration depending on the
 // incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Backend) ratelimit.OptionFactoryFunc {
+func PrepareOptions(be *Configuration) ratelimit.OptionFactoryFunc {
 	return func(sg config.Scoped) []ratelimit.Option {
 
 		opts := make([]ratelimit.Option, 0, 10)
 
-		disabled, scpHash, err := be.RateLimitDisabled.Get(sg)
+		disabled, scpHash, err := be.Disabled.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] RateLimitDisabled.Get"))
-		} else {
-			scp, scpID := scpHash.Unpack()
-			opts = append(opts, ratelimit.WithDisable(scp, scpID, disabled))
 		}
+		scp, scpID := scpHash.Unpack()
+		opts = append(opts, ratelimit.WithDisable(scp, scpID, disabled))
 
 		if disabled {
 			return opts
 		}
 
-		name, _, err := be.RateLimitGCRAName.Get(sg)
+		name, _, err := be.GCRAName.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] RateLimitGCRAName.Get"))
 		}

@@ -20,51 +20,51 @@ import (
 	"github.com/corestoreio/csfw/net/ratelimit"
 )
 
-// Backend just exported for the sake of documentation. See fields for more
+// Configuration just exported for the sake of documentation. See fields for more
 // information. Please call the New() function for creating a new Backend
 // object. Only the New() function will set the paths to the fields.
-type Backend struct {
+type Configuration struct {
 	*ratelimit.OptionFactories
 
-	// RateLimitDisabled set to true to disable the rate limiting.
+	// Disabled set to true to disable the rate limiting.
 	//
 	// Path: net/ratelimit/disabled
-	RateLimitDisabled cfgmodel.Bool
+	Disabled cfgmodel.Bool
 
-	// RateLimitBurst defines the number of requests that will be allowed to
+	// Burst defines the number of requests that will be allowed to
 	// exceed the rate in a single burst and must be greater than or equal to
 	// zero.
 	//
 	// Path: net/ratelimit/burst
-	RateLimitBurst cfgmodel.Int
+	Burst cfgmodel.Int
 
-	// RateLimitRequests number of requests allowed per time period
+	// Requests number of requests allowed per time period
 	//
 	// Path: net/ratelimit/requests
-	RateLimitRequests cfgmodel.Int
+	Requests cfgmodel.Int
 
-	// RateLimitDuration per second (s), minute (i), hour (h), day (d)
+	// Duration per second (s), minute (i), hour (h), day (d)
 	//
 	// Path: net/ratelimit/duration
-	RateLimitDuration cfgmodel.Str
+	Duration cfgmodel.Str
 
-	// RateLimitGCRAName sets the name which GCRA can be used. The GCRA must be
+	// GCRAName sets the name which GCRA can be used. The GCRA must be
 	// registered prior to calling the middleware handler. The name is usually
 	// the package name. For example net/ratelimit/memstore or
 	// net/ratelimit/redigostore. Leaving this configuration value empty or
 	// setting a not registered name causes the middleware handler to panic.
 	//
 	// Path: net/ratelimit_storage/gcra_name
-	RateLimitGCRAName cfgmodel.Str
+	GCRAName cfgmodel.Str
 
-	// RateLimitStorageGcraMaxMemoryKeys If maxKeys > 0 (enabled), the number of
+	// StorageGcraMaxMemoryKeys If maxKeys > 0 (enabled), the number of
 	// different keys is restricted to the specified amount. In this case, it
 	// uses an LRU algorithm to evict older keys to make room for newer ones.
 	//
 	// Path: net/ratelimit_storage/enable_gcra_memory
-	RateLimitStorageGcraMaxMemoryKeys cfgmodel.Int
+	StorageGcraMaxMemoryKeys cfgmodel.Int
 
-	// RateLimitStorageGCRARedis a valid Redis URL enables Redis as GCRA key
+	// StorageGCRARedis a valid Redis URL enables Redis as GCRA key
 	// storage. URLs should follow the draft IANA specification for the scheme
 	// (https://www.iana.org/assignments/uri-schemes/prov/redis).
 	//
@@ -76,31 +76,31 @@ type Backend struct {
 	// 		redis://empty:myPassword@clusterName.xxxxxx.0001.usw2.cache.amazonaws.com:6379/0
 	//
 	// Path: net/ratelimit_storage/enable_gcra_redis
-	RateLimitStorageGCRARedis cfgmodel.Str
+	StorageGCRARedis cfgmodel.Str
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
 // variable to the appropriate entries in the storage. The argument SectionSlice
 // and opts will be applied to all models.
-func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	be := &Backend{
+func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration {
+	be := &Configuration{
 		OptionFactories: ratelimit.NewOptionFactories(),
 	}
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	be.RateLimitDisabled = cfgmodel.NewBool(`net/ratelimit/disabled`, opts...)
-	be.RateLimitBurst = cfgmodel.NewInt(`net/ratelimit/burst`, opts...)
-	be.RateLimitRequests = cfgmodel.NewInt(`net/ratelimit/requests`, opts...)
-	be.RateLimitDuration = cfgmodel.NewStr(`net/ratelimit/duration`, append(opts, cfgmodel.WithSourceByString(
+	be.Disabled = cfgmodel.NewBool(`net/ratelimit/disabled`, opts...)
+	be.Burst = cfgmodel.NewInt(`net/ratelimit/burst`, opts...)
+	be.Requests = cfgmodel.NewInt(`net/ratelimit/requests`, opts...)
+	be.Duration = cfgmodel.NewStr(`net/ratelimit/duration`, append(opts, cfgmodel.WithSourceByString(
 		"s", "Second",
 		"i", "Minute",
 		"h", "Hour",
 		"d", "Day",
 	))...)
-	be.RateLimitGCRAName = cfgmodel.NewStr(`net/ratelimit_storage/gcra_name`, opts...)
-	be.RateLimitStorageGcraMaxMemoryKeys = cfgmodel.NewInt(`net/ratelimit_storage/enable_gcra_memory`, opts...)
-	be.RateLimitStorageGCRARedis = cfgmodel.NewStr(`net/ratelimit_storage/enable_gcra_redis`, opts...)
+	be.GCRAName = cfgmodel.NewStr(`net/ratelimit_storage/gcra_name`, opts...)
+	be.StorageGcraMaxMemoryKeys = cfgmodel.NewInt(`net/ratelimit_storage/enable_gcra_memory`, opts...)
+	be.StorageGCRARedis = cfgmodel.NewStr(`net/ratelimit_storage/enable_gcra_redis`, opts...)
 
 	return be
 }
