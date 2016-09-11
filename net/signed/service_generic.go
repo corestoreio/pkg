@@ -178,7 +178,7 @@ func (s *Service) configByContext(ctx context.Context) (scpCfg ScopedConfig) {
 	return
 }
 
-// configByScopedGetter returns the internal configuration depending on the
+// ConfigByScopedGetter returns the internal configuration depending on the
 // ScopedGetter. Mainly used within the middleware.  If you have applied the
 // option WithOptionFactory() the configuration will be pulled out only one time
 // from the backend configuration service. The field optionInflight handles the

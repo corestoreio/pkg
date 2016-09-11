@@ -16,27 +16,27 @@ package signed
 
 import "net/http"
 
+// Content* constants are used as HTTP header key names.
 const (
 	ContentSignature = "Content-Signature"
 	ContentHMAC      = "Content-Hmac"
 )
 
-type (
-	// EncodeFn encodes a raw signature byte slice to a string. Useful types are
-	// hex.EncodeToString or base64.StdEncoding.EncodeToString.
-	EncodeFn func(src []byte) string
-	// DecodeFn decodes a raw signature from the header to a byte slice. Useful
-	// types are hex.DecodeString or base64.StdEncoding.DecodeString.
-	DecodeFn func(s string) ([]byte, error)
-)
+// EncodeFn encodes a raw signature byte slice to a string. Useful types are
+// hex.EncodeToString or base64.StdEncoding.EncodeToString.
+type EncodeFn func(src []byte) string
 
-// HTTPEncoder writes a signature to the HTTP header.
+// DecodeFn decodes a raw signature from the header to a byte slice. Useful
+// types are hex.DecodeString or base64.StdEncoding.DecodeString.
+type DecodeFn func(s string) ([]byte, error)
+
+// HTTPWriter writes a signature to the HTTP header.
 type HTTPWriter interface {
 	HeaderKey() string
 	Write(w http.ResponseWriter, signature []byte)
 }
 
-// HTTPDecoder reads from a response the necessary data to find the signature
+// HTTPParser reads from a response the necessary data to find the signature
 // and returns the signatures byte slice for further validation.
 type HTTPParser interface {
 	HeaderKey() string

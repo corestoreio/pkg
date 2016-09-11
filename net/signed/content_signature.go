@@ -80,13 +80,13 @@ func (s *Signature) Write(w http.ResponseWriter, signature []byte) {
 		encFn = hex.EncodeToString
 	}
 	buf := bufferpool.Get()
-	buf.WriteString(`keyId="` + s.KeyID + `"`)
-	buf.WriteRune(s.Separator)
-	buf.WriteString(`algorithm="` + s.Algorithm + `"`)
-	buf.WriteRune(s.Separator)
-	buf.WriteString(`signature="`)
-	buf.WriteString(encFn(signature))
-	buf.WriteRune('"')
+	_, _ = buf.WriteString(`keyId="` + s.KeyID + `"`)
+	_, _ = buf.WriteRune(s.Separator)
+	_, _ = buf.WriteString(`algorithm="` + s.Algorithm + `"`)
+	_, _ = buf.WriteRune(s.Separator)
+	_, _ = buf.WriteString(`signature="`)
+	_, _ = buf.WriteString(encFn(signature))
+	_, _ = buf.WriteRune('"')
 	w.Header().Set(s.HeaderKey(), buf.String())
 	bufferpool.Put(buf)
 }
@@ -119,7 +119,7 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 		if idx > 2 { // too many separators
 			return nil, errors.NewNotValidf("[signed] Invalid signature header: %q", headerVal)
 		}
-		fields[idx].WriteRune(r)
+		_, _ = fields[idx].WriteRune(r)
 	}
 	if idx < 2 { // too less separators
 		return nil, errors.NewNotValidf("[signed] Invalid signature header: %q", headerVal)

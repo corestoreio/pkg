@@ -79,8 +79,8 @@ func WithHeaderHandler(scp scope.Scope, id int64, w HTTPWriter, p HTTPParser) Op
 	}
 }
 
-// WithContentHMAC_SHA256 applies the SHA256 hash with your symmetric key.
-func WithContentHMAC_SHA256(scp scope.Scope, id int64, key []byte) Option {
+// WithContentHMACSHA256 applies the SHA256 hash with your symmetric key.
+func WithContentHMACSHA256(scp scope.Scope, id int64, key []byte) Option {
 	return func(s *Service) error {
 		if err := WithHash(scp, id, sha256.New, key)(s); err != nil {
 			return errors.Wrap(err, "[signed] WithContentHMAC_SHA256.WithHash")
@@ -90,10 +90,10 @@ func WithContentHMAC_SHA256(scp scope.Scope, id int64, key []byte) Option {
 	}
 }
 
-// WithContentHMAC_Blake2b256 applies the very fast Blake2 hashing algorithm.
+// WithContentHMACBlake2b256 applies the very fast Blake2 hashing algorithm.
 // The current package has been optimized with ASM with for x64 systems, hence
 // Blake2 is faster than SHA.
-func WithContentHMAC_Blake2b256(scp scope.Scope, id int64, key []byte) Option {
+func WithContentHMACBlake2b256(scp scope.Scope, id int64, key []byte) Option {
 	return func(s *Service) error {
 		if err := WithHash(scp, id, blake2b.New256, key)(s); err != nil {
 			return errors.Wrap(err, "[signed] WithContentHMAC_Blake2b256.WithHash")

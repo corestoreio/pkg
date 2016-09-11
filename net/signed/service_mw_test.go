@@ -34,8 +34,6 @@ import (
 
 var testData = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
 
-const dataSHA256 = `keyId="test",algorithm="rot13",signature="cc7b14f207d3896a74ba4e4e965d49e6098af2191058edb9e9247caf0db8cd7b"`
-
 func TestService_WithResponseSignature_MissingContext(t *testing.T) {
 
 	var serviceErrorHandlerCalled = new(int32)
@@ -120,7 +118,7 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 	key := []byte(`My guinea p1g runs acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
-		signed.WithContentHMAC_SHA256(scope.Website, 1, key),
+		signed.WithContentHMACSHA256(scope.Website, 1, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -168,7 +166,7 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithTrailer(scope.Store, 2, true),
-		signed.WithContentHMAC_Blake2b256(scope.Store, 2, key),
+		signed.WithContentHMACBlake2b256(scope.Store, 2, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +215,7 @@ func TestService_WithRequestSignatureValidation_Full_Roundtrip(t *testing.T) {
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
-		signed.WithContentHMAC_SHA256(scope.Website, 1, key),
+		signed.WithContentHMACSHA256(scope.Website, 1, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -299,7 +297,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		defer atomic.StoreInt32(finalHandlerCalled, 0)
 
 		srv := signed.MustNew(
-			signed.WithContentHMAC_SHA256(scope.Website, 1, key),
+			signed.WithContentHMACSHA256(scope.Website, 1, key),
 			signed.WithRootConfig(cfgmock.NewService()),
 			signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
