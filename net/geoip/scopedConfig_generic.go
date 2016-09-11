@@ -35,6 +35,8 @@ type scopedConfigGeneric struct {
 	// ScopeHash defines the scope to which this configuration is bound to.
 	ScopeHash scope.Hash
 
+	// todo think about adding config.Scoped
+
 	// ErrorHandler gets called whenever a programmer makes an error. The
 	// default handler prints the error to the client and returns
 	// http.StatusServiceUnavailable
