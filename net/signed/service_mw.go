@@ -29,16 +29,18 @@ func (s *Service) WithResponseSignature(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scpCfg := s.configByContext(r.Context())
 		if err := scpCfg.IsValid(); err != nil {
-			s.Log.Info("signed.Service.WithRateLimit.configByContext.Error", log.Err(err))
-			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithRateLimit.configByContext", log.Err(err), log.HTTPRequest("request", r))
+			if s.Log.IsInfo() {
+				s.Log.Info("signed.Service.WithResponseSignature.configByContext", log.Err(err))
 			}
-			s.ErrorHandler(errors.Wrap(err, "signed.Service.WithRateLimit.configFromContext")).ServeHTTP(w, r)
+			if s.Log.IsDebug() {
+				s.Log.Debug("signed.Service.WithResponseSignature.configByContext", log.Err(err), log.HTTPRequest("request", r))
+			}
+			s.ErrorHandler(errors.Wrap(err, "signed.Service.WithResponseSignature.configFromContext")).ServeHTTP(w, r)
 			return
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithRateLimit.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("signed.Service.WithResponseSignature.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return
@@ -65,22 +67,30 @@ func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		scpCfg := s.configByContext(r.Context())
 		if err := scpCfg.IsValid(); err != nil {
-			s.Log.Info("signed.Service.WithRateLimit.configByContext.Error", log.Err(err))
-			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithRateLimit.configByContext", log.Err(err), log.HTTPRequest("request", r))
+			if s.Log.IsInfo() {
+				s.Log.Info("signed.Service.WithRequestSignatureValidation.configByContext", log.Err(err))
 			}
-			s.ErrorHandler(errors.Wrap(err, "signed.Service.WithRateLimit.configFromContext")).ServeHTTP(w, r)
+			if s.Log.IsDebug() {
+				s.Log.Debug("signed.Service.WithRequestSignatureValidation.configByContext", log.Err(err), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+			}
+			s.ErrorHandler(errors.Wrap(err, "signed.Service.WithRequestSignatureValidation.configFromContext")).ServeHTTP(w, r)
 			return
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithRateLimit.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("signed.Service.WithRequestSignatureValidation.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		if err := scpCfg.ValidateBody(r); err != nil {
+			if s.Log.IsInfo() {
+				s.Log.Info("signed.Service.WithRequestSignatureValidation.ValidateBody", log.Err(err))
+			}
+			if s.Log.IsDebug() {
+				s.Log.Debug("signed.Service.WithRequestSignatureValidation.ValidateBody", log.Err(err), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+			}
 			scpCfg.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}

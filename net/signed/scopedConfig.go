@@ -138,7 +138,7 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 		}
 	}
 	if !ok {
-		return errors.NewNotValidf("[signed] ValidateBody HTTP Method %q not allowed in list: %q", r.Method, sc.AllowedMethods)
+		return errors.NewNotValidf(errScopedConfigMethodNotAllowed, r.Method, sc.AllowedMethods)
 	}
 
 	buf := make([]byte, 4096)
@@ -164,7 +164,7 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 	defer bufferpool.Put(hashBuf)
 
 	if hs := h.Sum(hashBuf.Bytes()); !hmac.Equal(reqSignature, hs) {
-		return errors.NewNotValidf("[signed] ValidateBody. Signatures do not match. Have: %q Want: %q", reqSignature, hs)
+		return errors.NewNotValidf(errScopedConfigSignatureNoMatch, reqSignature, hs)
 	}
 
 	return nil

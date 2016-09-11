@@ -104,7 +104,7 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 		headerVal = r.Trailer.Get(k)
 	}
 	if headerVal == "" {
-		return nil, errors.NewNotFoundf("[signed] Signature not found or empty")
+		return nil, errors.NewNotFoundf(errSignatureParseNotFound)
 	}
 
 	// keyId="hmac-key-1",algorithm="hmac-sha1",signature="Hex|Base64(HMAC-SHA1(signing string))"
@@ -117,12 +117,12 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 			continue
 		}
 		if idx > 2 { // too many separators
-			return nil, errors.NewNotValidf("[signed] Invalid signature header: %q", headerVal)
+			return nil, errors.NewNotValidf(errSignatureParseInvalidHeader, headerVal)
 		}
 		_, _ = fields[idx].WriteRune(r)
 	}
 	if idx < 2 { // too less separators
-		return nil, errors.NewNotValidf("[signed] Invalid signature header: %q", headerVal)
+		return nil, errors.NewNotValidf(errSignatureParseInvalidHeader, headerVal)
 	}
 
 	// trim first and last white spaces
@@ -144,12 +144,12 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 
 	// check for valid keyID
 	if haveKeyID := fields[0].String()[7 : fields[0].Len()-1]; s.KeyID != haveKeyID || s.KeyID == "" {
-		return nil, errors.NewNotValidf("[signed] KeyID %q does not match required %q in header: %q", haveKeyID, s.KeyID, headerVal)
+		return nil, errors.NewNotValidf(errSignatureParseInvalidKeyID, haveKeyID, s.KeyID, headerVal)
 	}
 
 	// check for valid algorithm
 	if haveAlg := fields[1].String()[11 : fields[1].Len()-1]; s.Algorithm != haveAlg || s.Algorithm == "" {
-		return nil, errors.NewNotValidf("[signed] Algorithm %q does not match required %q in header: %q", haveAlg, s.Algorithm, headerVal)
+		return nil, errors.NewNotValidf(errSignatureParseInvalidAlg, haveAlg, s.Algorithm, headerVal)
 	}
 
 	decFn := s.DecodeFn

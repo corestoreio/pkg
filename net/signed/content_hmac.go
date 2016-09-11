@@ -78,15 +78,15 @@ func (h *HMAC) Parse(r *http.Request) (signature []byte, _ error) {
 		hv = r.Trailer.Get(hk)
 	}
 	if hv == "" {
-		return nil, errors.NewNotFoundf("[signed] Signature not found or empty")
+		return nil, errors.NewNotFoundf(errHMACParseNotFound)
 	}
 
 	firstWS := strings.IndexByte(hv, ' ') // first white space after algorithm name
 	if hv == "" || firstWS != len(h.Algorithm) {
-		return nil, errors.NewNotValidf("[signed] Signature %q not valid in header %q", hv, hk)
+		return nil, errors.NewNotValidf(errHMACParseNotValid, hv, hk)
 	}
 	if h.Algorithm == "" || h.Algorithm != hv[:firstWS] {
-		return nil, errors.NewNotValidf("[signed] Unknown algorithm %q in Header %q with signature %q", hv[:firstWS], hk, hv)
+		return nil, errors.NewNotValidf(errHMACParseInvalidAlg, hv[:firstWS], hk, hv)
 	}
 
 	decFn := h.DecodeFn

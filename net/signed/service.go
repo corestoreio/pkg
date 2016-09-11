@@ -22,7 +22,7 @@ type Service struct {
 	service
 }
 
-// New creates a new signing middleware.
+// New creates a new signing middleware for signature creation and validation.
 func New(opts ...Option) (*Service, error) {
 	return newService(opts...)
 }
