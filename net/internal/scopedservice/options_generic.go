@@ -177,8 +177,8 @@ func (be *OptionFactories) Names() []string {
 	i := 0
 	for n := range be.register {
 		names[i] = n
+		i++
 	}
-	i++
 	return names
 }
 
