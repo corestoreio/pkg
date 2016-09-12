@@ -78,13 +78,17 @@ func (s *Signature) Write(w http.ResponseWriter, signature []byte) {
 		encFn = hex.EncodeToString
 	}
 	buf := bufferpool.Get()
-	_, _ = buf.WriteString(`keyId="` + s.KeyID + `"`)
+	_, _ = buf.Write(prefixKeyID)
+	_, _ = buf.WriteString(s.KeyID)
+	_, _ = buf.Write(suffixQuote)
 	_, _ = buf.WriteRune(s.Separator)
-	_, _ = buf.WriteString(`algorithm="` + s.Algorithm + `"`)
+	_, _ = buf.Write(prefixAlgorithm)
+	_, _ = buf.WriteString(s.Algorithm)
+	_, _ = buf.Write(suffixQuote)
 	_, _ = buf.WriteRune(s.Separator)
-	_, _ = buf.WriteString(`signature="`)
+	_, _ = buf.Write(prefixSignature)
 	_, _ = buf.WriteString(encFn(signature))
-	_, _ = buf.WriteRune('"')
+	_, _ = buf.Write(suffixQuote)
 	w.Header().Set(s.HeaderKey(), buf.String())
 	bufferpool.Put(buf)
 }
@@ -130,14 +134,14 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 		_, _ = fields[i].Write(bytes.TrimSpace(tmp))
 	}
 
-	// check min length
+	// check prefix and suffix
 	switch {
-	case fields[0].Len() <= 8: // keyId="" but empty keyId allowed
-		return nil, errors.NewNotValidf("[signed] Invalid length for keyId %q in header: %q", fields[0].String(), headerVal)
-	case fields[1].Len() <= 12: // algorithm=""
-		return nil, errors.NewNotValidf("[signed] Invalid length for algorithm %q in header: %q", fields[1].String(), headerVal)
-	case fields[2].Len() <= 12: // signature=""
-		return nil, errors.NewNotValidf("[signed] Invalid length for signature %q in header: %q", fields[2].String(), headerVal)
+	case !bytes.HasPrefix(fields[0].Bytes(), prefixKeyID) || !bytes.HasSuffix(fields[0].Bytes(), suffixQuote): // keyId="..."
+		return nil, errors.NewNotValidf("[signed] keyId %q missing suffix %q or prefix %q in header: %q", fields[0].Bytes(), prefixKeyID, suffixQuote, headerVal)
+	case !bytes.HasPrefix(fields[1].Bytes(), prefixAlgorithm) || !bytes.HasSuffix(fields[1].Bytes(), suffixQuote): // algorithm="..."
+		return nil, errors.NewNotValidf("[signed] algorithm %q missing suffix %q or prefix %q in header: %q", fields[1].Bytes(), prefixAlgorithm, suffixQuote, headerVal)
+	case !bytes.HasPrefix(fields[2].Bytes(), prefixSignature) || !bytes.HasSuffix(fields[2].Bytes(), suffixQuote): // signature="..."
+		return nil, errors.NewNotValidf("[signed] signature %q missing suffix %q or prefix %q in header: %q", fields[2].Bytes(), prefixSignature, suffixQuote, headerVal)
 	}
 
 	// check for valid keyID
@@ -162,3 +166,10 @@ func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
 	}
 	return dec, nil
 }
+
+var (
+	prefixKeyID     = []byte(`keyId="`)
+	prefixAlgorithm = []byte(`algorithm="`)
+	prefixSignature = []byte(`signature="`)
+	suffixQuote     = []byte(`"`)
+)

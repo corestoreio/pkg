@@ -72,7 +72,7 @@ func TestSignature_Parse(t *testing.T) {
 		wantSignature []byte
 		wantErrBhf    errors.BehaviourFunc
 	}{
-		{
+		0: {
 			newReqHeader(`keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`),
 			"hmac-sha1",
 			"myKeyID",
@@ -80,7 +80,7 @@ func TestSignature_Parse(t *testing.T) {
 			[]byte(`Hello Gophers`),
 			nil,
 		},
-		{
+		1: {
 			newReqHeader(`   keyId="myKeyID"	,  algorithm="hmac-sha1"	,		signature="48656c6c6f20476f7068657273"	`),
 			"hmac-sha1",
 			"myKeyID",
@@ -88,15 +88,39 @@ func TestSignature_Parse(t *testing.T) {
 			[]byte(`Hello Gophers`),
 			nil,
 		},
-		{
+		2: {
 			newReqHeader(`   k3y1d="myKeyID"	,  alg0r1thm="hmac-sha1"	,		s1gnatur3="48656c6c6f20476f7068657273"	`),
 			"hmac-sha1",
 			"myKeyID",
 			"hmac-sha1",
-			[]byte(`Hello Gophers`),
 			nil,
+			errors.IsNotValid,
 		},
-		{
+		3: { // algorithm key too short
+			newReqHeader(`   keyId="myKeyID"	,  alg0r1thm="hmac-sha1"	,		s1gnar3="48656c6c6f20476f7068657273"	`),
+			"hmac-sha1",
+			"myKeyID",
+			"hmac-sha1",
+			nil,
+			errors.IsNotValid,
+		},
+		4: { // signature key too short
+			newReqHeader(`   keyId="myKeyID"	,  algorithm="hmac-sha1"	,		s1gnar3="48656c6c6f20476f7068657273"	`),
+			"hmac-sha1",
+			"myKeyID",
+			"hmac-sha1",
+			nil,
+			errors.IsNotValid,
+		},
+		5: { // algorithm key too short
+			newReqHeader(`   keyId="myKeyID"	,  alg0r1m="hmac-sha1"	,		s1gnatur3="48656c6c6f20476f7068657273"	`),
+			"hmac-sha1",
+			"myKeyID",
+			"hmac-sha1",
+			nil,
+			errors.IsNotValid,
+		},
+		6: {
 			newReqHeader(`keyId="",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`),
 			"hmac-sha1",
 			"",
@@ -104,7 +128,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		7: {
 			newReqHeader(`keyId="",algorithm="none",signature="48656c6c6f20476f7068657273"`),
 			"hmac-sha1",
 			"",
@@ -112,7 +136,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		8: {
 			newReqHeader(``),
 			"hmac-sha1",
 			"",
@@ -120,7 +144,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotFound,
 		},
-		{
+		9: {
 			newReqHeader(`keyId="",algorithm="",signature="48656c6c6f20476f7068657273"`),
 			"hmac-sha1",
 			"",
@@ -128,7 +152,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		10: {
 			newReqHeader(`keyId=,algorithm="",signature="48656c6c6f20476f7068657273"`),
 			"hmac-sha1",
 			"",
@@ -136,7 +160,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		11: {
 			newReqHeader(`keyId="",algorithm="asdasd",signature=""`),
 			"hmac-sha1",
 			"",
@@ -144,7 +168,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		12: {
 			newReqHeader(`keyId="",algori,thm="asdasd",signature=""`),
 			"hmac-sha1",
 			"",
@@ -152,7 +176,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		13: {
 			newReqHeader(`keyId="",algorithm="asdasd",signature="asdas,dsad"`),
 			"hmac-sha1",
 			"",
@@ -160,7 +184,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		14: {
 			newReqHeader(`k="",a="",s=""`),
 			"hmac-sha1",
 			"",
@@ -168,7 +192,7 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		15: {
 			newReqHeader(`keyId="",algorithm="asdasd",`),
 			"hmac-sha1",
 			"",
@@ -176,11 +200,19 @@ func TestSignature_Parse(t *testing.T) {
 			nil,
 			errors.IsNotValid,
 		},
-		{
+		16: {
 			newReqHeader(`signature="asdasd",`),
 			"hmac-sha1",
 			"",
 			"",
+			nil,
+			errors.IsNotValid,
+		},
+		17: {
+			newReqHeader(`keyId="myKeyID",algorithm="",signature="48656c6c6f20476f7068657273"`),
+			"hmac-sha1",
+			"myKeyID",
+			"hmac-sha1",
 			nil,
 			errors.IsNotValid,
 		},
