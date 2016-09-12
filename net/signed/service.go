@@ -16,8 +16,8 @@
 
 package signed
 
-// Service creates a middleware that facilitates using a Limiter to limit HTTP
-// requests.
+// Service creates a middleware that facilitates using a hash function to sign a
+// HTTP body and validate the HTTP body of a request.
 type Service struct {
 	service
 }

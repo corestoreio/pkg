@@ -26,8 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ signed.HTTPWriter = (*signed.HMAC)(nil)
-var _ signed.HTTPParser = (*signed.HMAC)(nil)
+var _ signed.HeaderParseWriter = (*signed.HMAC)(nil)
 
 func TestHMAC_Write(t *testing.T) {
 

@@ -25,8 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ signed.HTTPWriter = (*signed.Signature)(nil)
-var _ signed.HTTPParser = (*signed.Signature)(nil)
+var _ signed.HeaderParseWriter = (*signed.Signature)(nil)
 
 func TestSignature_Write(t *testing.T) {
 

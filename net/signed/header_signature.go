@@ -32,10 +32,8 @@ type Signature struct {
 	// the component they need to validate the signature. It could be an SSH key
 	// fingerprint, an LDAP DN, etc. REQUIRED.
 	KeyID string
-
 	// Separator defines the field separator and defaults to colon.
 	Separator rune
-
 	HMAC
 }
 

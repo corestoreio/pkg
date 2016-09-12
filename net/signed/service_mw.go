@@ -94,7 +94,7 @@ func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler
 			scpCfg.ErrorHandler(err).ServeHTTP(w, r)
 			return
 		}
-		// signature valid
+		// signature validated and trusted
 		next.ServeHTTP(w, r)
 	})
 }

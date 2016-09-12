@@ -30,15 +30,13 @@ type EncodeFn func(src []byte) string
 // types are hex.DecodeString or base64.StdEncoding.DecodeString.
 type DecodeFn func(s string) ([]byte, error)
 
-// HTTPWriter writes a signature to the HTTP header.
-type HTTPWriter interface {
+// HeaderParseWriter knows how to read and write the HTTP header in regards to
+// the hash.
+type HeaderParseWriter interface {
 	HeaderKey() string
+	// Write writes a signature to the HTTP response header.
 	Write(w http.ResponseWriter, signature []byte)
-}
-
-// HTTPParser reads from a response the necessary data to find the signature
-// and returns the signatures byte slice for further validation.
-type HTTPParser interface {
-	HeaderKey() string
+	// Parse parses from a request the necessary data to find the signature hash
+	// and returns the raw signatures byte slice for further validation.
 	Parse(r *http.Request) (signature []byte, err error)
 }

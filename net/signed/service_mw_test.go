@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"io/ioutil"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/signed"
@@ -42,7 +44,7 @@ func TestService_WithResponseSignature_MissingContext(t *testing.T) {
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
@@ -82,12 +84,12 @@ func TestService_WithResponseSignature_Disabled(t *testing.T) {
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 	)
@@ -122,17 +124,17 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 		signed.WithErrorHandler(scope.Website, 1, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 	)
@@ -170,17 +172,17 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 		signed.WithErrorHandler(scope.Store, 2, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
 	)
@@ -277,6 +279,14 @@ func TestService_WithRequestSignatureValidation_Full_Roundtrip(t *testing.T) {
 			assert.Exactly(t, `sha256 7dace9827fd7aa3c83eee3776a81d03653ba1e272c98809f0752d9ded4561419`, rq.Header.Get(signed.ContentHMAC))
 			w.WriteHeader(http.StatusPartialContent)
 			w.Write([]byte(`OK!`))
+
+			// read body twice (1. time in the middleware and 2nd time here) to check for
+			// the copied io.ReadCloser in the r.Body.
+			body, err := ioutil.ReadAll(rq.Body)
+			if err != nil {
+				t.Fatalf("failed to read the request body: %s", err)
+			}
+			assert.Exactly(t, string(testData), string(body))
 			atomic.AddInt32(finalHandlerCalled, 1)
 		}),
 		srv.WithRequestSignatureValidation,

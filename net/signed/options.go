@@ -18,6 +18,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"hash"
+	"time"
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
@@ -61,7 +62,7 @@ func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option
 // WithHeaderHandler sets the writer and the parser. The writer knows how to
 // write the hash value into the HTTP header. The parser knows how and where to
 // extract the hash value from the header or even the trailer.
-func WithHeaderHandler(scp scope.Scope, id int64, w HTTPWriter, p HTTPParser) Option {
+func WithHeaderHandler(scp scope.Scope, id int64, pw HeaderParseWriter) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
 		s.rwmu.Lock()
@@ -71,8 +72,7 @@ func WithHeaderHandler(scp scope.Scope, id int64, w HTTPWriter, p HTTPParser) Op
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.HTTPWriter = w
-		sc.HTTPParser = p
+		sc.HeaderParseWriter = pw
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
@@ -86,7 +86,7 @@ func WithContentHMACSHA256(scp scope.Scope, id int64, key []byte) Option {
 			return errors.Wrap(err, "[signed] WithContentHMAC_SHA256.WithHash")
 		}
 		sig := NewHMAC("sha256")
-		return WithHeaderHandler(scp, id, sig, sig)(s)
+		return WithHeaderHandler(scp, id, sig)(s)
 	}
 }
 
@@ -99,7 +99,7 @@ func WithContentHMACBlake2b256(scp scope.Scope, id int64, key []byte) Option {
 			return errors.Wrap(err, "[signed] WithContentHMAC_Blake2b256.WithHash")
 		}
 		sig := NewHMAC("blk2b256")
-		return WithHeaderHandler(scp, id, sig, sig)(s)
+		return WithHeaderHandler(scp, id, sig)(s)
 	}
 }
 
@@ -154,6 +154,29 @@ func WithTrailer(scp scope.Scope, id int64, inTrailer bool) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.InTrailer = inTrailer
+		sc.ScopeHash = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
+// WithTransparentHashing allows to write the hashes into the Cacher with a
+// time-to-live. Responses will not get a header key attached and requests won't
+// get inspected for a header key which might contain the hash value.
+func WithTransparentHashing(scp scope.Scope, id int64, c Cacher, ttl time.Duration) Option {
+	h := scope.NewHash(scp, id)
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.TransparentCacher = c
+		sc.HeaderParseWriter = MakeTransparent(c, ttl)
+		sc.TransparentTTL = ttl
+		sc.InTrailer = true // enable streaming hash calculation
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil

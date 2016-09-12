@@ -15,9 +15,10 @@
 package signed
 
 const (
-	errScopedConfigNotValid         = `[signed] ScopedConfig %s is invalid. IsNil(Signature=%t) Signature Error: %s`
+	errScopedConfigNotValid         = `[signed] ScopedConfig %s is invalid. IsNil(HeaderParseWriter=%t) AllowedMethods: %v`
 	errScopedConfigMethodNotAllowed = `[signed] ValidateBody HTTP Method %q not allowed in list: %q`
 	errScopedConfigSignatureNoMatch = `[signed] ValidateBody. Signatures do not match. Have: %q Want: %q`
+	errScopedConfigCacheNotFound    = `[signed] ValidateBody. Signature %q not found in cache`
 	errSignatureParseNotFound       = `[signed] Signature not found or empty`
 	errSignatureParseInvalidHeader  = `[signed] Invalid signature header: %q`
 	errSignatureParseInvalidKeyID   = `[signed] KeyID %q does not match required %q in header: %q`
