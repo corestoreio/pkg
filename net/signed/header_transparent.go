@@ -36,14 +36,14 @@ type Transparent struct {
 	TTL time.Duration
 	// Cacher stores hashes for a limited time. Can be nil. Must be set when
 	// applying the functional option WithTransparentHashing().
-	Cacher
+	cache Cacher
 }
 
 // MakeTransparent creates a new hash writer. Parse is a noop.
 func MakeTransparent(c Cacher, ttl time.Duration) Transparent {
 	return Transparent{
-		TTL:    ttl,
-		Cacher: c,
+		TTL:   ttl,
+		cache: c,
 	}
 }
 
@@ -52,7 +52,7 @@ func (t Transparent) HeaderKey() string { return "" }
 
 // Write sets the signature into the cache with the TTL.
 func (t Transparent) Write(_ http.ResponseWriter, signature []byte) {
-	t.Cacher.Set(signature, t.TTL)
+	t.cache.Set(signature, t.TTL)
 }
 
 // Parse returns always nil,nil.

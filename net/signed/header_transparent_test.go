@@ -32,13 +32,24 @@ func (cm cacherMock) Has(hash []byte) bool               { return cm.HasFn(hash)
 
 func TestMakeTransparent(t *testing.T) {
 
+	haveHash := []byte(`I'm your testing hash value`)
+	haveTTL := time.Millisecond * 333
+
 	cm := cacherMock{
-		SetFn: func(hash []byte, ttl time.Duration) {},
+		SetFn: func(hash []byte, ttl time.Duration) {
+			assert.Exactly(t, haveHash, hash)
+			assert.Exactly(t, haveTTL, ttl)
+		},
 		HasFn: func(hash []byte) bool {
+			assert.Exactly(t, haveHash, hash)
 			return false
 		},
 	}
 
-	tp := signed.MakeTransparent(cm, time.Millisecond*500)
+	tp := signed.MakeTransparent(cm, haveTTL)
 	assert.Empty(t, tp.HeaderKey())
+	tp.Write(nil, haveHash)
+	b, err := tp.Parse(nil)
+	assert.Nil(t, b)
+	assert.NoError(t, err)
 }
