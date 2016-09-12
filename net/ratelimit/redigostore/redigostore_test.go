@@ -70,12 +70,12 @@ func TestBackend_Path_Errors(t *testing.T) {
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.RateLimitBurst.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitRequests.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitDuration.MustFQ, "[a-z+", errors.IsFatal},
-		{backend.RateLimitDuration.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitStorageGCRARedis.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.RateLimitStorageGCRARedis.MustFQ, "", errors.IsEmpty},
+		{backend.Burst.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.Requests.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.Duration.MustFQ, "[a-z+", errors.IsFatal},
+		{backend.Duration.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.StorageGCRARedis.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.StorageGCRARedis.MustFQ, "", errors.IsEmpty},
 	}
 	for i, test := range tests {
 

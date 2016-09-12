@@ -28,18 +28,18 @@ const OptionName = `redigostore`
 // NewOptionFactory creates a new option factory function for the memstore in the
 // backend package to be used for automatic scope based configuration
 // initialization. Configuration values are read from argument `be`.
-func NewOptionFactory(be *backendratelimit.Backend) (string, ratelimit.OptionFactoryFunc) {
+func NewOptionFactory(be *backendratelimit.Configuration) (string, ratelimit.OptionFactoryFunc) {
 	return OptionName, func(sg config.Scoped) []ratelimit.Option {
 
-		burst, _, err := be.RateLimitBurst.Get(sg)
+		burst, _, err := be.Burst.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitBurst.Get"))
 		}
-		req, _, err := be.RateLimitRequests.Get(sg)
+		req, _, err := be.Requests.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitRequests.Get"))
 		}
-		durRaw, _, err := be.RateLimitDuration.Get(sg)
+		durRaw, _, err := be.Duration.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitDuration.Get"))
 		}
@@ -50,7 +50,7 @@ func NewOptionFactory(be *backendratelimit.Backend) (string, ratelimit.OptionFac
 
 		dur := rune(durRaw[0])
 
-		redisURL, scpHash, err := be.RateLimitStorageGCRARedis.Get(sg)
+		redisURL, scpHash, err := be.StorageGCRARedis.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitStorageGcraRedis.Get"))
 		}
