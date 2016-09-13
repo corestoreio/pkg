@@ -17,13 +17,12 @@ package signed_test
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"io/ioutil"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/mw"
@@ -41,6 +40,7 @@ func TestService_WithResponseSignature_MissingContext(t *testing.T) {
 	var serviceErrorHandlerCalled = new(int32)
 
 	srv := signed.MustNew(
+		signed.WithDebugLog(ioutil.Discard),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -80,6 +80,7 @@ func TestService_WithResponseSignature_Disabled(t *testing.T) {
 	var nextHandlerCalled = new(int32)
 
 	srv := signed.MustNew(
+		signed.WithDebugLog(ioutil.Discard),
 		signed.WithDisable(scope.Store, 2, true),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
@@ -120,6 +121,8 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 	key := []byte(`My guinea p1g runs acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
+		signed.WithTrailer(scope.Website, 1, false),
+		signed.WithDebugLog(ioutil.Discard),
 		signed.WithContentHMACSHA256(scope.Website, 1, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
@@ -150,6 +153,7 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 
 	hpu := cstesting.NewHTTPParallelUsers(5, 5, 100, time.Millisecond)
 	hpu.AssertResponse = func(w *httptest.ResponseRecorder) {
+		assert.Empty(t, w.Header().Get("Trailer"), `Should contain a trailer => w.Header().Get("Trailer")`)
 		assert.Exactly(t, `sha256 41d1c5095693f329b0be01535af4069e6ecae899ede244eaf39c6f4f616307a6`, w.Header().Get(signed.ContentHMAC))
 		assert.Exactly(t, http.StatusTeapot, w.Code)
 		assert.Exactly(t, string(testData), w.Body.String())
@@ -167,6 +171,7 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 	key := []byte(`My gu1n34 p1g run5 acro55 my k3yb0ard`)
 
 	srv := signed.MustNew(
+		signed.WithDebugLog(ioutil.Discard),
 		signed.WithTrailer(scope.Store, 2, true),
 		signed.WithContentHMACBlake2b256(scope.Store, 2, key),
 		signed.WithRootConfig(cfgmock.NewService()),
@@ -217,6 +222,7 @@ func TestService_WithRequestSignatureValidation_Full_Roundtrip(t *testing.T) {
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
+		signed.WithDebugLog(ioutil.Discard),
 		signed.WithContentHMACSHA256(scope.Website, 1, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
@@ -307,6 +313,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		defer atomic.StoreInt32(finalHandlerCalled, 0)
 
 		srv := signed.MustNew(
+			signed.WithDebugLog(ioutil.Discard),
 			signed.WithContentHMACSHA256(scope.Website, 1, key),
 			signed.WithRootConfig(cfgmock.NewService()),
 			signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
@@ -425,6 +432,31 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			return r
 		}(),
 		signed.WithDisable(scope.Website, 1, true),
+		signed.WithErrorHandler(scope.Website, 1, func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
+			})
+		}),
+	))
+
+	t.Run("Config not valid", tester(
+		func() *http.Request {
+			r := httptest.NewRequest("PUT", "https://corestore.io/checkout/cart/add", bytes.NewReader(testData))
+			r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
+			r.Header.Set(signed.ContentHMAC, hmacHeaderValue)
+			return r
+		}(),
+		signed.WithDisable(scope.Website, 1, false),
+		signed.WithAllowedMethods(scope.Website, 1), // empty list of allowed methods triggers an error
+		signed.WithServiceErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusLoopDetected)
+				assert.Error(t, err)
+				assert.True(t, errors.IsNotValid(err), "%+v", err)
+				assert.Contains(t, err.Error(), `ScopedConfig Scope(Website) ID(1) is invalid. IsNil(HeaderParseWriter=false) AllowedMethods: []`)
+				atomic.AddInt32(finalHandlerCalled, 1)
+			})
+		}),
 		signed.WithErrorHandler(scope.Website, 1, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
