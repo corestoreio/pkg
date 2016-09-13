@@ -21,5 +21,7 @@ Manages locale information for a store instance.
 
 @todo namespace Magento\Framework\Locale
 @todo https://github.com/iafan/Plurr for pluralization
+@todo better => https://github.com/go-playground/universal-translator
+@todo better => https://github.com/go-playground/locales
 */
 package locale
