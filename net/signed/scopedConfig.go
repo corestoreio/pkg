@@ -174,6 +174,7 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 	if !sc.isMethodAllowed(r.Method) {
 		return errors.NewNotValidf(errScopedConfigMethodNotAllowed, r.Method, sc.AllowedMethods)
 	}
+	println("hashSum", sc.TransparentCacher)
 
 	hashSum, err := sc.calculateHash(r)
 	if err != nil {

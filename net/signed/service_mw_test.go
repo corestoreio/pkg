@@ -27,6 +27,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/signed"
+	"github.com/corestoreio/csfw/net/signed/signedblake2"
+	"github.com/corestoreio/csfw/net/signed/signedsha"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
@@ -123,7 +125,7 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 	srv := signed.MustNew(
 		signed.WithTrailer(scope.Website, 1, false),
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithContentHMACSHA256(scope.Website, 1, key),
+		signedsha.WithContentHMAC256(scope.Website, 1, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +175,7 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
 		signed.WithTrailer(scope.Store, 2, true),
-		signed.WithContentHMACBlake2b256(scope.Store, 2, key),
+		signedblake2.WithContentHMAC256(scope.Store, 2, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +219,7 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 	}
 }
 
-func TestService_WithRequestSignatureValidation_Full_Roundtrip(t *testing.T) {
+func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
 
@@ -257,7 +259,93 @@ func TestService_WithRequestSignatureValidation_Full_Roundtrip(t *testing.T) {
 	).ServeHTTP(initResp, initReq)
 
 	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.ContentHMAC) == "" {
-		t.Fatalf("Status %d\nHeader %v\nBody: %s", initResp.Code, initResp.HeaderMap, initResp.Body)
+		t.Fatalf("Fatal: Status %d\nHeader %v\nBody: %s", initResp.Code, initResp.HeaderMap, initResp.Body)
+	}
+	if have, want := *finalHandlerCalled, int32(1); have != want {
+		t.Errorf("WithResponseSignature NextHandler call failed: Have: %d Want: %d", have, want)
+	}
+	atomic.StoreInt32(finalHandlerCalled, 0) // reset internal counter
+
+	// keep this at 1,1 because hpu.ServeHTTP reuses the request for all calls to ServeHTTP,
+	// but instead hpu.ServeHTTP must create for each request a new one.
+	hpu := cstesting.NewHTTPParallelUsers(5, 5, 100, time.Millisecond)
+	hpu.AssertResponse = func(w *httptest.ResponseRecorder) {
+		assert.Exactly(t, http.StatusPartialContent, w.Code)
+		assert.Exactly(t, `OK!`, w.Body.String())
+	}
+	hpu.ServeHTTPNewRequest(func() *http.Request {
+		// create a new request. the idea is that this request comes from an
+		// untrusted 3rd party service. we send the previous received body back to
+		// the microservice. variable w refers to the previous made request to fetch
+		// the data.
+		r2 := httptest.NewRequest("POST", "https://corestore.io/checkout/cart/add", bytes.NewReader(initResp.Body.Bytes())) // reader to avoid races
+		r2 = r2.WithContext(scope.WithContext(r2.Context(), 1, 2))
+		r2.Header.Set(signed.ContentHMAC, initResp.Header().Get(signed.ContentHMAC))
+		return r2
+	}, mw.Chain(
+		http.HandlerFunc(func(w http.ResponseWriter, rq *http.Request) {
+			assert.Exactly(t, `sha256 7dace9827fd7aa3c83eee3776a81d03653ba1e272c98809f0752d9ded4561419`, rq.Header.Get(signed.ContentHMAC))
+			w.WriteHeader(http.StatusPartialContent)
+			w.Write([]byte(`OK!`))
+
+			// read body twice (1. time in the middleware and 2nd time here) to check for
+			// the copied io.ReadCloser in the r.Body.
+			body, err := ioutil.ReadAll(rq.Body)
+			if err != nil {
+				t.Fatalf("failed to read the request body: %s", err)
+			}
+			assert.Exactly(t, string(testData), string(body))
+			atomic.AddInt32(finalHandlerCalled, 1)
+		}),
+		srv.WithRequestSignatureValidation,
+	))
+
+	if have, want := *finalHandlerCalled, int32(25); have != want {
+		t.Errorf("NextHandler call failed: Have: %d Want: %d", have, want)
+	}
+}
+
+func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
+
+	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
+
+	srv := signed.MustNew(
+		signed.WithDebugLog(ioutil.Discard),
+		signed.WithTransparentSHA256(scope.Website, 1, key),
+		signed.WithRootConfig(cfgmock.NewService()),
+		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
+			})
+		}),
+		signed.WithErrorHandler(scope.Website, 1, func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
+			})
+		}),
+		signed.WithServiceErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic(fmt.Sprintf("Should not get called\n%+v", err))
+			})
+		}),
+	)
+
+	var finalHandlerCalled = new(int32)
+	initReq := httptest.NewRequest("GET", "https://corestore.io/product/id/3456", nil)
+	initReq = initReq.WithContext(scope.WithContext(initReq.Context(), 1, 2))
+	initResp := httptest.NewRecorder()
+	// mw.Chain to be used to validate the correct API signature of WithResponseSignature function
+	mw.Chain(
+		http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusAccepted)
+			w.Write(testData)
+			atomic.AddInt32(finalHandlerCalled, 1)
+		}),
+		srv.WithResponseSignature,
+	).ServeHTTP(initResp, initReq)
+
+	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.ContentHMAC) == "" {
+		t.Fatalf("Fatal: Status %d\nHeader %v\nBody: %s", initResp.Code, initResp.HeaderMap, initResp.Body)
 	}
 	if have, want := *finalHandlerCalled, int32(1); have != want {
 		t.Errorf("WithResponseSignature NextHandler call failed: Have: %d Want: %d", have, want)

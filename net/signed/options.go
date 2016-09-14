@@ -16,14 +16,11 @@ package signed
 
 import (
 	"crypto/hmac"
-	"crypto/sha256"
 	"hash"
 	"time"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/hashpool"
-	"github.com/minio/blake2b-simd"
 )
 
 // WithDefaultConfig applies the default signed configuration settings based
@@ -76,30 +73,6 @@ func WithHeaderHandler(scp scope.Scope, id int64, pw HeaderParseWriter) Option {
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
-	}
-}
-
-// WithContentHMACSHA256 applies the SHA256 hash with your symmetric key.
-func WithContentHMACSHA256(scp scope.Scope, id int64, key []byte) Option {
-	return func(s *Service) error {
-		if err := WithHash(scp, id, sha256.New, key)(s); err != nil {
-			return errors.Wrap(err, "[signed] WithContentHMAC_SHA256.WithHash")
-		}
-		sig := NewHMAC("sha256")
-		return WithHeaderHandler(scp, id, sig)(s)
-	}
-}
-
-// WithContentHMACBlake2b256 applies the very fast Blake2 hashing algorithm.
-// The current package has been optimized with ASM with for x64 systems, hence
-// Blake2 is faster than SHA.
-func WithContentHMACBlake2b256(scp scope.Scope, id int64, key []byte) Option {
-	return func(s *Service) error {
-		if err := WithHash(scp, id, blake2b.New256, key)(s); err != nil {
-			return errors.Wrap(err, "[signed] WithContentHMAC_Blake2b256.WithHash")
-		}
-		sig := NewHMAC("blk2b256")
-		return WithHeaderHandler(scp, id, sig)(s)
 	}
 }
 
@@ -160,10 +133,10 @@ func WithTrailer(scp scope.Scope, id int64, inTrailer bool) Option {
 	}
 }
 
-// WithTransparentHashing allows to write the hashes into the Cacher with a
+// WithTransparent allows to write the hashes into the Cacher with a
 // time-to-live. Responses will not get a header key attached and requests won't
 // get inspected for a header key which might contain the hash value.
-func WithTransparentHashing(scp scope.Scope, id int64, c Cacher, ttl time.Duration) Option {
+func WithTransparent(scp scope.Scope, id int64, c Cacher, ttl time.Duration) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
 		s.rwmu.Lock()
