@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blacklist_test
+package containable_test
 
 import (
 	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/util/blacklist"
-	"github.com/pierrec/xxHash/xxHash64"
+	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/stretchr/testify/assert"
-	"hash"
-	"hash/fnv"
+	"strconv"
 	"testing"
 	"time"
 )
 
-var _ jwt.Blacklister = (*blacklist.InMemory)(nil)
+var _ containable.Container = (*containable.InMemory)(nil)
+var _ containable.Container = (*containable.Mock)(nil)
 
 func appendTo(b1 []byte, s string) []byte {
 	bNew := make([]byte, len(b1)+len([]byte(s)))
@@ -34,16 +33,15 @@ func appendTo(b1 []byte, s string) []byte {
 	return bNew
 }
 
-func TestBlackLists(t *testing.T) {
-
+func TestNewInMemory(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		bl jwt.Blacklister
 	}{
-		{blacklist.NewInMemory(fnv.New64a)},
-		{blacklist.NewInMemory(func() hash.Hash64 { return xxHash64.New(33) })},
+		{containable.NewInMemory()},
+		{containable.NewInMemory()},
 	}
 	for i, test := range tests {
-
 		id := []byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9`)
 
 		assert.NoError(t, test.bl.Set(id, time.Second*1), "Index %d", i)
@@ -56,4 +54,17 @@ func TestBlackLists(t *testing.T) {
 		assert.False(t, test.bl.Has(id), "Index %d", i)
 		assert.True(t, test.bl.Has(appendTo(id, "3")), "Index %d", i)
 	}
+}
+
+func TestNewInMemory_Purge(t *testing.T) {
+	t.Parallel()
+	m := containable.NewInMemory()
+	for i := 0; i < 6; i++ {
+		id := []byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9`)
+		id = strconv.AppendInt(id, int64(i), 10)
+		assert.NoError(t, m.Set(id, time.Second))
+		time.Sleep(time.Second) // bit lame this test but so far ok, can be refactored one day.
+	}
+	assert.Exactly(t, 3, m.Len())
+
 }

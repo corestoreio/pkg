@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package blacklist defines types which can add byte slices with expiration
-// time to a list and can check if those byte slices exists.
+// Package containable implements a container using key value pairs with an
+// expiration.
 //
 // External packages should define the interface of function which they may need
-// to implement a black list.
-package blacklist
+// to implement a dictionary or aka. black list.
+package containable

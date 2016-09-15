@@ -12,54 +12,63 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package blacklist
+package containable
 
 import (
-	"hash"
 	"sync"
 	"time"
 
-	"github.com/corestoreio/csfw/util/hashpool"
+	"sync/atomic"
 )
+
+// Container allows to check if a value, identified by a key, has been previously
+// seen. Must be thread safe.
+type Container interface {
+	// Set adds the ID to the container and may perform a purge operation. Set
+	// must make sure to copy away the bytes or hash them.
+	Set(id []byte, expires time.Duration) error
+	// Has checks if an ID has been stored in the container and may delete the
+	// ID if the expiration time is up.
+	Has(id []byte) bool
+}
+
+// Mock implements interface Container and allows mocking it in tests.
+type Mock struct {
+	SetFn func(hash []byte, ttl time.Duration) error
+	HasFn func(hash []byte) bool
+}
+
+func (cm Mock) Set(hash []byte, ttl time.Duration) error { return cm.SetFn(hash, ttl) }
+func (cm Mock) Has(hash []byte) bool                     { return cm.HasFn(hash) }
 
 // InMemory creates an in-memory map which holds as a key the ID and as value an
 // expiration duration. Once a Set() operation will be called the ID list get
 // purged. The map type has been optimized for less GC and can hold millions of
 // entries.
 type InMemory struct {
-	hp hashpool.Tank
 	mu sync.RWMutex
 	// keys contains a map consisting only of integers which skips scanning a
 	// map by the GC.
-	keys map[uint64]int64 // int64 unix timestamp
+	keys map[string]int64 // int64 unix timestamp
+	// Map access for map[string([]byte)] has been optmized in ~Go 1.6
+	shouldPurge uint32 // internal counter
 }
 
-// NewInMemory creates a new blacklist map using the Hash for key generation.
-// Please choose a Hash function with less collisions.
-func NewInMemory(hf func() hash.Hash64) *InMemory {
+const purgeEveryNTimes uint32 = 5
+
+// NewInMemory creates a new in memory map.
+func NewInMemory() *InMemory {
 	return &InMemory{
-		hp:   hashpool.New64(hf),
-		keys: make(map[uint64]int64),
+		keys: make(map[string]int64),
 	}
 }
 
-// hash generates a hash value of a byte slice.
-func (bl *InMemory) hash(id []byte) uint64 {
-	hf := bl.hp.Get()
-	_, _ = hf.Write(id)
-	s := hf.Sum64()
-	bl.hp.Put(hf)
-	return s
-
-}
-
-// Has checks if an ID has been stored in the blacklist and may delete the ID if
+// Has checks if an ID has been stored in the map and may delete the ID if
 // expiration time is up.
 func (bl *InMemory) Has(id []byte) bool {
 
 	bl.mu.RLock()
-	h := bl.hash(id)
-	ts, ok := bl.keys[h]
+	ts, ok := bl.keys[string(id)]
 	bl.mu.RUnlock()
 
 	if !ok {
@@ -69,28 +78,28 @@ func (bl *InMemory) Has(id []byte) bool {
 
 	if false == isValid {
 		bl.mu.Lock()
-		delete(bl.keys, h)
+		delete(bl.keys, string(id))
 		bl.mu.Unlock()
 	}
 	return isValid
 }
 
-// Set adds an ID to the blacklist and may perform a purge operation. Set should
-// be called when you log out a user. Set must make sure to copy away the bytes
-// or hash them.
+// Set adds an ID to the map and may perform a purge operation every fifth
+// access time.
 func (bl *InMemory) Set(id []byte, expires time.Duration) error {
-	h := bl.hash(id)
-
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
 
-	now := time.Now().Unix()
-	for k, v := range bl.keys {
-		if now > v { // todo call purge operation not that often ...
-			delete(bl.keys, k)
+	if atomic.AddUint32(&bl.shouldPurge, 1)%purgeEveryNTimes == 0 {
+		now := time.Now().Unix()
+		for k, v := range bl.keys {
+			if now > v {
+				delete(bl.keys, k)
+			}
 		}
 	}
-	bl.keys[h] = time.Now().Add(expires).Unix()
+
+	bl.keys[string(id)] = time.Now().Add(expires).Unix()
 	return nil
 }
 
