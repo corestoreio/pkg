@@ -19,4 +19,6 @@
 // standard library http API. You can choose nearly any router you like.
 //
 // context Package: https://twitter.com/peterbourgon/status/752022730812317696
+//
+// Sessions: https://github.com/alexedwards/scs
 package net

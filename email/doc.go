@@ -56,5 +56,10 @@ be send to a custom logger.
 @todo Instead of sending the emails to a logger, we can use a web interface like
 mailcatcher.me to read the emails.
 
+TODO: Think about using a queue for sending emails either an external one or the following
+package github.com/albrow/jobs. Think about an abstracted interface for sending email
+Job queque for e.g. sending emails … but we cannot require it as an dependency only for testing
+https://github.com/albrow/jobs
+
 */
 package email
