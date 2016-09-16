@@ -15,12 +15,15 @@
 package containable_test
 
 import (
-	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/storage/containable"
-	"github.com/stretchr/testify/assert"
+	"bytes"
+	"crypto/sha256"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/corestoreio/csfw/net/jwt"
+	"github.com/corestoreio/csfw/storage/containable"
+	"github.com/stretchr/testify/assert"
 )
 
 var _ containable.Container = (*containable.InMemory)(nil)
@@ -66,5 +69,16 @@ func TestNewInMemory_Purge(t *testing.T) {
 		time.Sleep(time.Second) // bit lame this test but so far ok, can be refactored one day.
 	}
 	assert.Exactly(t, 3, m.Len())
+}
 
+func TestInMemory_Debug(t *testing.T) {
+	m := containable.NewInMemory()
+	for i := 0; i < 5; i++ {
+		id := []byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9`)
+		hashed := sha256.Sum256(strconv.AppendInt(id, int64(i), 10))
+		assert.NoError(t, m.Set(hashed[:], time.Second*time.Duration(i)))
+	}
+	buf := new(bytes.Buffer)
+	m.Debug(buf)
+	assert.Contains(t, buf.String(), `9addefe77982f9641233b4e5f59f3cc07111f96c753e3faf5d7c338116197050 => 20`)
 }

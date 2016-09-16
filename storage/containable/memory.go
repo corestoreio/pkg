@@ -15,10 +15,14 @@
 package containable
 
 import (
+	"fmt"
+	"io"
+	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
-	"sync/atomic"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Container allows to check if a value, identified by a key, has been previously
@@ -50,7 +54,7 @@ type InMemory struct {
 	// keys contains a map consisting only of integers which skips scanning a
 	// map by the GC.
 	keys map[string]int64 // int64 unix timestamp
-	// Map access for map[string([]byte)] has been optmized in ~Go 1.6
+	// Map access for map[string([]byte)] has been optimized in ~Go 1.6
 	shouldPurge uint32 // internal counter
 }
 
@@ -76,7 +80,7 @@ func (bl *InMemory) Has(id []byte) bool {
 	}
 	isValid := time.Now().Unix() < ts
 
-	if false == isValid {
+	if !isValid {
 		bl.mu.Lock()
 		delete(bl.keys, string(id))
 		bl.mu.Unlock()
@@ -110,3 +114,38 @@ func (bl *InMemory) Len() int {
 	bl.mu.RUnlock()
 	return l
 }
+
+// Debug creates human friendly output, sorted by expiration time. The keys are
+// hex encoded. Format looks like:
+// 	3609b11a19eb64832448c9ad17fb58504ea1db2fe6904e80c51ae3af835357e1 => 2016-09-16 08:00:22 +0200 CEST
+//	ec4dd62d14ef93dd31694ebae5814e1a87c4d7aa963b3ed88f996375b9204d8c => 2016-09-16 08:00:23 +0200 CEST
+func (bl *InMemory) Debug(w io.Writer) error {
+	bl.mu.RLock()
+	defer bl.mu.RUnlock()
+	kvs := make(kvPairs, len(bl.keys))
+	i := 0
+	for k, exp := range bl.keys {
+		kvs[i] = kvPair{
+			k: k,
+			v: exp,
+		}
+		i++
+	}
+	sort.Stable(kvs)
+	for _, kv := range kvs {
+		if _, err := fmt.Fprintf(w, "%x => %s\n", kv.k, time.Unix(kv.v, 0)); err != nil {
+			return errors.Wrapf(err, "[containble] %s => %d", kv.k, kv.v)
+		}
+	}
+	return nil
+}
+
+type kvPairs []kvPair
+type kvPair struct {
+	k string
+	v int64
+}
+
+func (p kvPairs) Len() int           { return len(p) }
+func (p kvPairs) Less(i, j int) bool { return p[i].v < p[j].v }
+func (p kvPairs) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
