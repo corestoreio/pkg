@@ -23,9 +23,9 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// HMAC writes a simple Content-HMAC header. It can additionally parse a request
+// ContentHMAC writes a simple Content-HMAC header. It can additionally parse a request
 // and return the raw signature.
-type HMAC struct {
+type ContentHMAC struct {
 	// Algorithm parameter is used if the client and server agree on a
 	// non-standard digital signature algorithm.  The full list of supported
 	// signature mechanisms is listed below. REQUIRED.
@@ -41,26 +41,26 @@ type HMAC struct {
 	DecodeFn
 }
 
-// NewHMAC creates a new header HMAC object with default hex encoding/decoding
+// NewContentHMAC creates a new header HMAC object with default hex encoding/decoding
 // to write and parse the Content-HMAC field.
-func NewHMAC(algorithm string) *HMAC {
-	return &HMAC{
+func NewContentHMAC(algorithm string) *ContentHMAC {
+	return &ContentHMAC{
 		Algorithm: algorithm,
 	}
 }
 
 // HeaderKey returns the name of the header key
-func (h *HMAC) HeaderKey() string {
+func (h *ContentHMAC) HeaderKey() string {
 	if h.HeaderName != "" {
 		return h.HeaderName
 	}
-	return ContentHMAC
+	return HeaderContentHMAC
 }
 
 // Writes writes the signature into the response.
 // Content-HMAC: <hash mechanism> <encoded binary HMAC>
 // Content-HMAC: sha1 f1wOnLLwcTexwCSRCNXEAKPDm+U=
-func (h *HMAC) Write(w http.ResponseWriter, signature []byte) {
+func (h *ContentHMAC) Write(w http.ResponseWriter, signature []byte) {
 	encFn := h.EncodeFn
 	if encFn == nil {
 		encFn = hex.EncodeToString
@@ -71,7 +71,7 @@ func (h *HMAC) Write(w http.ResponseWriter, signature []byte) {
 // Parse looks up the header or trailer for the HeaderKey Content-HMAC in an
 // HTTP request and extracts the raw decoded signature. Errors can have the
 // behaviour: NotFound or NotValid.
-func (h *HMAC) Parse(r *http.Request) (signature []byte, _ error) {
+func (h *ContentHMAC) Parse(r *http.Request) (signature []byte, _ error) {
 	hk := h.HeaderKey()
 	hv := r.Header.Get(hk)
 	if hv == "" {

@@ -25,12 +25,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ signed.HeaderParseWriter = (*signed.Signature)(nil)
+var _ signed.HeaderParseWriter = (*signed.ContentSignature)(nil)
 
 func TestSignature_Write(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	sig := signed.NewSignature("myKeyID", "hmac-sha1")
+	sig := signed.NewContentSignature("myKeyID", "hmac-sha1")
 	sig.Write(w, []byte(`Hello Gophers`))
 
 	const wantSig = `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`
@@ -43,7 +43,7 @@ func TestSignature_Write(t *testing.T) {
 func BenchmarkSignature_Write(b *testing.B) {
 	const wantSig = `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`
 
-	sig := signed.NewSignature("myKeyID", "hmac-sha1")
+	sig := signed.NewContentSignature("myKeyID", "hmac-sha1")
 	sig.HeaderName = "Content-S1gnatur3"
 
 	w := httptest.NewRecorder()
@@ -218,7 +218,7 @@ func TestSignature_Parse(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		sig := signed.NewSignature(test.wantKeyID, test.haveAlgorithm)
+		sig := signed.NewContentSignature(test.wantKeyID, test.haveAlgorithm)
 		haveSig, haveErr := sig.Parse(test.req)
 		if test.wantErrBhf != nil {
 			assert.Nil(t, haveSig, "Index %d", i)
@@ -238,9 +238,9 @@ func BenchmarkSignature_Parse(b *testing.B) {
 	req := httptest.NewRequest("GET", "http://corestore.io", nil)
 	req.Header.Set("Content-S1gnatur3", `keyId="myKeyID",algorithm="hmac-sha1",signature="48656c6c6f20476f7068657273"`)
 
-	sig := &signed.Signature{
+	sig := &signed.ContentSignature{
 		KeyID: "myKeyID",
-		HMAC: signed.HMAC{
+		ContentHMAC: signed.ContentHMAC{
 			Algorithm:  "hmac-sha1",
 			HeaderName: "Content-S1gnatur3",
 		},

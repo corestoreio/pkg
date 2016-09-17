@@ -26,18 +26,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ signed.HeaderParseWriter = (*signed.HMAC)(nil)
+var _ signed.HeaderParseWriter = (*signed.ContentHMAC)(nil)
 
 func TestHMAC_Write(t *testing.T) {
 
 	w := httptest.NewRecorder()
-	sig := signed.HMAC{
+	sig := signed.ContentHMAC{
 		Algorithm: "sha512",
 	}
 	sig.Write(w, []byte(`Hello Gophers`))
 
 	const wantSig = `sha512 48656c6c6f20476f7068657273`
-	if have, want := w.Header().Get(signed.ContentHMAC), wantSig; have != want {
+	if have, want := w.Header().Get(signed.HeaderContentHMAC), wantSig; have != want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
 }
@@ -46,7 +46,7 @@ func TestHMAC_Write(t *testing.T) {
 func BenchmarkHMAC_Write(b *testing.B) {
 	const wantSig = `sha512 48656c6c6f20476f7068657273`
 	w := httptest.NewRecorder()
-	sig := signed.HMAC{
+	sig := signed.ContentHMAC{
 		Algorithm: "sha512",
 	}
 	s := []byte(`Hello Gophers`)
@@ -55,7 +55,7 @@ func BenchmarkHMAC_Write(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		sig.Write(w, s)
 	}
-	if have, want := w.Header().Get(signed.ContentHMAC), wantSig; have != want {
+	if have, want := w.Header().Get(signed.HeaderContentHMAC), wantSig; have != want {
 		b.Errorf("Have: %v Want: %v", have, want)
 	}
 }
@@ -63,7 +63,7 @@ func BenchmarkHMAC_Write(b *testing.B) {
 func TestHMAC_Parse(t *testing.T) {
 	var newReqHeader = func(value string) *http.Request {
 		req := httptest.NewRequest("GET", "http://corestore.io", nil)
-		req.Header.Set(signed.ContentHMAC, value)
+		req.Header.Set(signed.HeaderContentHMAC, value)
 		return req
 	}
 	tests := []struct {
@@ -81,9 +81,9 @@ func TestHMAC_Parse(t *testing.T) {
 		{
 			func() *http.Request {
 				req := httptest.NewRequest("GET", "http://corestore.io", strings.NewReader("Hello\nWorld"))
-				req.Header.Set("Trailer", signed.ContentHMAC)
+				req.Header.Set("Trailer", signed.HeaderContentHMAC)
 				req.Trailer = http.Header{}
-				req.Trailer.Set(signed.ContentHMAC, "sha1 48656c6c6f20476f7068657273")
+				req.Trailer.Set(signed.HeaderContentHMAC, "sha1 48656c6c6f20476f7068657273")
 				return req
 			}(),
 			"sha1",
@@ -122,7 +122,7 @@ func TestHMAC_Parse(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		hm := signed.NewHMAC(test.wantAlgorithm)
+		hm := signed.NewContentHMAC(test.wantAlgorithm)
 		haveSig, haveErr := hm.Parse(test.req)
 		if test.wantErrBhf != nil {
 			assert.Nil(t, haveSig, "Index %d", i)
@@ -142,7 +142,7 @@ func BenchmarkHMAC_Parse(b *testing.B) {
 	req := httptest.NewRequest("GET", "http://corestore.io", nil)
 	req.Header.Set("Content-S1gnatur3", `sha1 48656c6c6f20476f7068657273`)
 
-	sig := signed.HMAC{
+	sig := signed.ContentHMAC{
 		Algorithm:  "sha1",
 		HeaderName: "Content-S1gnatur3",
 	}

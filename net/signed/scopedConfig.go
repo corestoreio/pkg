@@ -66,7 +66,7 @@ func newScopedConfig() *ScopedConfig {
 	sc := &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
 		InTrailer:           true,
-		HeaderParseWriter:   NewHMAC("sha256"),
+		HeaderParseWriter:   NewContentHMAC("sha256"),
 		AllowedMethods:      []string{"POST", "PUT", "PATCH"},
 	}
 	key := make([]byte, 64) // 64 character password
@@ -147,10 +147,10 @@ func (sc *ScopedConfig) writeBuffered(next http.Handler, w http.ResponseWriter, 
 	}
 }
 
-// calculateHash calculates the hash sum from the request body. The full body
+// CalculateHash calculates the hash sum from the request body. The full body
 // gets read into a buffer. This buffer gets assigned to the r.Body to make a
 // read possible for the next consumer.
-func (sc *ScopedConfig) calculateHash(r *http.Request) ([]byte, error) {
+func (sc *ScopedConfig) CalculateHash(r *http.Request) ([]byte, error) {
 
 	h := sc.hashPool.Get()
 	defer sc.hashPool.Put(h)
@@ -197,7 +197,7 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 		return errors.NewNotValidf(errScopedConfigMethodNotAllowed, r.Method, sc.AllowedMethods)
 	}
 
-	hashSum, err := sc.calculateHash(r)
+	hashSum, err := sc.CalculateHash(r)
 	if err != nil {
 		return errors.Wrap(err, "[signed] ScopedConfig.ValidateBody.calculateHash")
 	}

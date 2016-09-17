@@ -157,7 +157,7 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 	hpu := cstesting.NewHTTPParallelUsers(5, 5, 100, time.Millisecond)
 	hpu.AssertResponse = func(w *httptest.ResponseRecorder) {
 		assert.Empty(t, w.Header().Get("Trailer"), `Should contain a trailer => w.Header().Get("Trailer")`)
-		assert.Exactly(t, `sha256 41d1c5095693f329b0be01535af4069e6ecae899ede244eaf39c6f4f616307a6`, w.Header().Get(signed.ContentHMAC))
+		assert.Exactly(t, `sha256 41d1c5095693f329b0be01535af4069e6ecae899ede244eaf39c6f4f616307a6`, w.Header().Get(signed.HeaderContentHMAC))
 		assert.Exactly(t, http.StatusTeapot, w.Code)
 		assert.Exactly(t, string(testData), w.Body.String())
 	}
@@ -207,10 +207,10 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 	hpu := cstesting.NewHTTPParallelUsers(5, 5, 100, time.Millisecond)
 	hpu.AssertResponse = func(w *httptest.ResponseRecorder) {
 		// ResponseRecorder cannot write the HTTP Trailer ...
-		assert.Exactly(t, `blk2b256 5fa2a2c12bb66c830b84bb8b13e7ff0af0c6aa39236e3cf256c1e0eab16b4b05`, w.Header().Get(signed.ContentHMAC))
+		assert.Exactly(t, `blk2b256 5fa2a2c12bb66c830b84bb8b13e7ff0af0c6aa39236e3cf256c1e0eab16b4b05`, w.Header().Get(signed.HeaderContentHMAC))
 		assert.Exactly(t, http.StatusTeapot, w.Code)
 		assert.Exactly(t, string(testData), w.Body.String())
-		assert.Exactly(t, signed.ContentHMAC, w.Header().Get("Trailer"))
+		assert.Exactly(t, signed.HeaderContentHMAC, w.Header().Get("Trailer"))
 		//t.Logf("%#v", w.HeaderMap)
 	}
 	hpu.ServeHTTP(r, handler)
@@ -259,7 +259,7 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 		srv.WithResponseSignature,
 	).ServeHTTP(initResp, initReq)
 
-	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.ContentHMAC) == "" {
+	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.HeaderContentHMAC) == "" {
 		t.Fatalf("Fatal: Status %d\nHeader %v\nBody: %s", initResp.Code, initResp.HeaderMap, initResp.Body)
 	}
 	if have, want := *finalHandlerCalled, int32(1); have != want {
@@ -281,11 +281,11 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 		// the data.
 		r2 := httptest.NewRequest("POST", "https://corestore.io/checkout/cart/add", bytes.NewReader(initResp.Body.Bytes())) // reader to avoid races
 		r2 = r2.WithContext(scope.WithContext(r2.Context(), 1, 2))
-		r2.Header.Set(signed.ContentHMAC, initResp.Header().Get(signed.ContentHMAC))
+		r2.Header.Set(signed.HeaderContentHMAC, initResp.Header().Get(signed.HeaderContentHMAC))
 		return r2
 	}, mw.Chain(
 		http.HandlerFunc(func(w http.ResponseWriter, rq *http.Request) {
-			assert.Exactly(t, `sha256 7dace9827fd7aa3c83eee3776a81d03653ba1e272c98809f0752d9ded4561419`, rq.Header.Get(signed.ContentHMAC))
+			assert.Exactly(t, `sha256 7dace9827fd7aa3c83eee3776a81d03653ba1e272c98809f0752d9ded4561419`, rq.Header.Get(signed.HeaderContentHMAC))
 			w.WriteHeader(http.StatusPartialContent)
 			w.Write([]byte(`OK!`))
 
@@ -348,7 +348,7 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 		srv.WithResponseSignature,
 	).ServeHTTP(initResp, initReq)
 
-	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.ContentHMAC) != "" {
+	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.HeaderContentHMAC) != "" {
 		t.Fatalf("Fatal: Status %d\nHeader %v\nBody: %s", initResp.Code, initResp.HeaderMap, initResp.Body)
 	}
 	if have, want := *finalHandlerCalled, int32(1); have != want {
@@ -370,11 +370,11 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 		// the data.
 		r2 := httptest.NewRequest("POST", "https://corestore.io/checkout/cart/add", bytes.NewReader(initResp.Body.Bytes())) // reader to avoid races
 		r2 = r2.WithContext(scope.WithContext(r2.Context(), 1, 2))
-		r2.Header.Set(signed.ContentHMAC, initResp.Header().Get(signed.ContentHMAC))
+		r2.Header.Set(signed.HeaderContentHMAC, initResp.Header().Get(signed.HeaderContentHMAC))
 		return r2
 	}, mw.Chain(
 		http.HandlerFunc(func(w http.ResponseWriter, rq *http.Request) {
-			assert.Empty(t, rq.Header.Get(signed.ContentHMAC))
+			assert.Empty(t, rq.Header.Get(signed.HeaderContentHMAC))
 			w.WriteHeader(http.StatusPartialContent)
 			w.Write([]byte(`OK!`))
 
@@ -434,7 +434,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			rec := httptest.NewRecorder()
 			mw.Chain(
 				http.HandlerFunc(func(w http.ResponseWriter, rq *http.Request) {
-					assert.Exactly(t, hmacHeaderValue, rq.Header.Get(signed.ContentHMAC))
+					assert.Exactly(t, hmacHeaderValue, rq.Header.Get(signed.HeaderContentHMAC))
 					w.WriteHeader(http.StatusPartialContent)
 					w.Write([]byte(`OK!`))
 					atomic.AddInt32(finalHandlerCalled, 1)
@@ -458,7 +458,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		func() *http.Request {
 			r := httptest.NewRequest("POST", "https://corestore.io/checkout/cart/add", bytes.NewReader(testData))
 			r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
-			r.Header.Set(signed.ContentHMAC, hmacHeaderValue)
+			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
 	))
@@ -483,7 +483,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		func() *http.Request {
 			r := httptest.NewRequest("POST", "https://corestore.io/checkout/cart/add", nil)
 			r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
-			r.Header.Set(signed.ContentHMAC, hmacHeaderValue)
+			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
 		signed.WithAllowedMethods(scope.Website, 1, "PUT", "PATCH"),
@@ -502,7 +502,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		func() *http.Request {
 			r := httptest.NewRequest("PUT", "https://corestore.io/checkout/cart/add", readerError{})
 			r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
-			r.Header.Set(signed.ContentHMAC, hmacHeaderValue)
+			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
 		signed.WithErrorHandler(scope.Website, 1, func(err error) http.Handler {
@@ -520,7 +520,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		func() *http.Request {
 			r := httptest.NewRequest("PUT", "https://corestore.io/checkout/cart/add", bytes.NewReader(testData))
 			r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
-			r.Header.Set(signed.ContentHMAC, hmacHeaderValue)
+			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
 		signed.WithDisable(scope.Website, 1, true),
@@ -535,7 +535,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 		func() *http.Request {
 			r := httptest.NewRequest("PUT", "https://corestore.io/checkout/cart/add", bytes.NewReader(testData))
 			r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
-			r.Header.Set(signed.ContentHMAC, hmacHeaderValue)
+			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
 		signed.WithDisable(scope.Website, 1, false),

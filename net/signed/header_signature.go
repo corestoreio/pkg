@@ -25,35 +25,35 @@ import (
 
 const signatureDefaultSeparator = ','
 
-// Signature represents an HTTP Header or Trailer entry with the default header
+// ContentSignature represents an HTTP Header or Trailer entry with the default header
 // key Content-Signature.
-type Signature struct {
+type ContentSignature struct {
 	// KeyID field is an opaque string that the server/client can use to look up
 	// the component they need to validate the signature. It could be an SSH key
 	// fingerprint, an LDAP DN, etc. REQUIRED.
 	KeyID string
 	// Separator defines the field separator and defaults to colon.
 	Separator rune
-	HMAC
+	ContentHMAC
 }
 
-// NewSignature creates a new header signature object with default hex
+// NewContentSignature creates a new header signature object with default hex
 // encoding/decoding to write and parse the Content-Signature field.
-func NewSignature(keyID, algorithm string) *Signature {
-	return &Signature{
+func NewContentSignature(keyID, algorithm string) *ContentSignature {
+	return &ContentSignature{
 		KeyID: keyID,
-		HMAC: HMAC{
+		ContentHMAC: ContentHMAC{
 			Algorithm: algorithm,
 		},
 	}
 }
 
 // HeaderKey returns the name of the header key
-func (s *Signature) HeaderKey() string {
+func (s *ContentSignature) HeaderKey() string {
 	if s.HeaderName != "" {
 		return s.HeaderName
 	}
-	return ContentSignature
+	return HeaderContentSignature
 }
 
 // Write writes the content signature header using an
@@ -68,7 +68,7 @@ func (s *Signature) HeaderKey() string {
 //
 // 	Content-Signature: keyId="rsa-key-1",algorithm="rsa-sha256",signature="Hex|Base64(RSA-SHA256(signing string))"
 // 	Content-Signature: keyId="hmac-key-1",algorithm="hmac-sha1",signature="Hex|Base64(HMAC-SHA1(signing string))"
-func (s *Signature) Write(w http.ResponseWriter, signature []byte) {
+func (s *ContentSignature) Write(w http.ResponseWriter, signature []byte) {
 	if s.Separator == 0 {
 		s.Separator = signatureDefaultSeparator
 	}
@@ -96,7 +96,7 @@ func (s *Signature) Write(w http.ResponseWriter, signature []byte) {
 // Parse looks up the header or trailer for the HeaderKey Content-Signature in an
 // HTTP request and extracts the raw decoded signature. Errors can have the
 // behaviour: NotFound or NotValid.
-func (s *Signature) Parse(r *http.Request) (signature []byte, _ error) {
+func (s *ContentSignature) Parse(r *http.Request) (signature []byte, _ error) {
 	if s.Separator == 0 {
 		s.Separator = signatureDefaultSeparator
 	}

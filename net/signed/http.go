@@ -18,8 +18,8 @@ import "net/http"
 
 // Content* constants are used as HTTP header key names.
 const (
-	ContentSignature = "Content-Signature"
-	ContentHMAC      = "Content-Hmac"
+	HeaderContentSignature = "Content-Signature"
+	HeaderContentHMAC      = "Content-Hmac"
 )
 
 // EncodeFn encodes a raw signature byte slice to a string. Useful types are
