@@ -16,6 +16,7 @@ package signedsha
 
 import (
 	"crypto/sha256"
+	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
@@ -25,7 +26,7 @@ import (
 )
 
 // OptionName identifies this package within the register of the
-// backendsigned.Backend type.
+// backendsigned.Configuration type.
 const OptionName = `sha`
 
 // WithContentHMACSHA256 applies the SHA256 hash with your symmetric key.
@@ -49,21 +50,22 @@ func WithContentSignature256(scp scope.Scope, id int64, keyID string, key []byte
 	}
 }
 
-// WithContentHMACSHA256 applies the SHA256 hash with your symmetric key.
-func WithTransparent256(scp scope.Scope, id int64, key []byte) signed.Option {
+// WithTransparent256 applies the SHA256 hash with your symmetric key. Minimum
+// TTL must be one second.
+func WithTransparent256(scp scope.Scope, id int64, key []byte, c signed.Cacher, ttl time.Duration) signed.Option {
 	return func(s *signed.Service) error {
-		// incorrect code
 		if err := signed.WithHash(scp, id, sha256.New, key)(s); err != nil {
 			return errors.Wrap(err, "[signed] WithContentHMAC_SHA256.WithHash")
 		}
-		sig := signed.NewHMAC("sha256")
-		return signed.WithHeaderHandler(scp, id, sig)(s)
+		return signed.WithTransparent(scp, id, c, ttl)(s)
 	}
 }
 
-// NewOptionFactory creates a new option factory function for the signedsha in the
-// backend package to be used for automatic scope based configuration
-// initialization. Configuration values are read from argument `be`.
+// NewOptionFactory creates a new option factory function for the signedsha in
+// the package backendsigned to be used for automatic scope based configuration
+// initialization. Configuration values are read from each argument. To avoid
+// dependency on package backendsigned.Configuration type we simple require the
+// needed configuration models.
 func NewOptionFactory(key cfgmodel.Obscure, alg cfgmodel.Str, header cfgmodel.Str) (string, signed.OptionFactoryFunc) {
 	return OptionName, func(sg config.Scoped) []signed.Option {
 

@@ -15,22 +15,20 @@
 package signed
 
 import (
-	"crypto/hmac"
 	"hash"
 	"time"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/hashpool"
 )
 
 // WithDefaultConfig applies the default signed configuration settings based
 // for a specific scope. This function overwrites any previous set options.
 //
-// Default values are:
-//		- Denied Handler: http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-//		- VaryByer: returns an empty key
+// Default settings: InTrailer activated, Content-HMAC header with sha256,
+// allowed HTTP methods set to POST, PUT, PATCH and password for the HMAC SHA
+// 256 from a cryptographically random source with a length of 64 bytes.
 // Example:
-//		s := MustNewService(WithDefaultConfig(scope.Store,1), WithVaryBy(scope.Store, 1, myVB))
+//		s := MustNewService(WithDefaultConfig(scope.Store,1), WithOtherSettings(scope.Store, 1, ...))
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return withDefaultConfig(scp, id)
 }
@@ -47,9 +45,7 @@ func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.hashPool = hashpool.New(func() hash.Hash {
-			return hmac.New(hh, key)
-		})
+		sc.hashPoolInit(hh, key)
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil

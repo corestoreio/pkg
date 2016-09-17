@@ -26,7 +26,7 @@ import (
 // body matches the cache. The Cacher implementation itself must handle the ttl
 // and the constant time comparison.
 type Cacher interface {
-	Set(hash []byte, ttl time.Duration)
+	Set(hash []byte, ttl time.Duration) error
 	Has(hash []byte) bool
 }
 
@@ -52,7 +52,7 @@ func (t Transparent) HeaderKey() string { return "" }
 
 // Write sets the signature into the cache with the TTL.
 func (t Transparent) Write(_ http.ResponseWriter, signature []byte) {
-	t.cache.Set(signature, t.TTL)
+	_ = t.cache.Set(signature, t.TTL)
 }
 
 // Parse returns always nil,nil.

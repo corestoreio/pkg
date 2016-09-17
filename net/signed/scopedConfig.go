@@ -17,6 +17,9 @@ package signed
 import (
 	"bytes"
 	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"hash"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -55,12 +58,31 @@ type ScopedConfig struct {
 }
 
 // newScopedConfig creates a new object with the minimum needed configuration.
+// Acts also as WithDefaultConfig()
+// Default settings: InTrailer activated, Content-HMAC header with sha256,
+// allowed HTTP methods set to POST, PUT, PATCH and password for the HMAC SHA
+// 256 from a cryptographically random source with a length of 64 bytes.
 func newScopedConfig() *ScopedConfig {
-	return &ScopedConfig{
+	sc := &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
 		InTrailer:           true,
+		HeaderParseWriter:   NewHMAC("sha256"),
 		AllowedMethods:      []string{"POST", "PUT", "PATCH"},
 	}
+	key := make([]byte, 64) // 64 character password
+	if _, err := rand.Read(key); err != nil {
+		sc.lastErr = errors.Wrap(err, "[signed] newScopedConfig: Failed to cread from crypto/rand.Read")
+		// don't init hashpool and let app panic
+	} else {
+		sc.hashPoolInit(sha256.New, key)
+	}
+	return sc
+}
+
+func (sc *ScopedConfig) hashPoolInit(hh func() hash.Hash, key []byte) {
+	sc.hashPool = hashpool.New(func() hash.Hash {
+		return hmac.New(hh, key)
+	})
 }
 
 // IsValid a configuration for a scope is only then valid when several fields
@@ -174,7 +196,6 @@ func (sc *ScopedConfig) ValidateBody(r *http.Request) error {
 	if !sc.isMethodAllowed(r.Method) {
 		return errors.NewNotValidf(errScopedConfigMethodNotAllowed, r.Method, sc.AllowedMethods)
 	}
-	println("hashSum", sc.TransparentCacher)
 
 	hashSum, err := sc.calculateHash(r)
 	if err != nil {

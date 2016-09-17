@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package signedsha allows to use the SHA hashes in the backendsigned and signed package
-// as functional options.
+// Package signedsha allows to use the SHA hashes in the backendsigned and
+// signed package as functional options. Hence tests will also be there
+// executed.
 package signedsha

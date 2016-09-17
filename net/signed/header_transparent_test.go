@@ -19,26 +19,23 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/signed"
+	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/stretchr/testify/assert"
 )
 
-type cacherMock struct {
-	SetFn func(hash []byte, ttl time.Duration)
-	HasFn func(hash []byte) bool
-}
-
-func (cm cacherMock) Set(hash []byte, ttl time.Duration) { cm.SetFn(hash, ttl) }
-func (cm cacherMock) Has(hash []byte) bool               { return cm.HasFn(hash) }
+var _ signed.Cacher = (*containable.InMemory)(nil)
+var _ signed.Cacher = (*containable.Mock)(nil)
 
 func TestMakeTransparent(t *testing.T) {
 
 	haveHash := []byte(`I'm your testing hash value`)
 	haveTTL := time.Millisecond * 333
 
-	cm := cacherMock{
-		SetFn: func(hash []byte, ttl time.Duration) {
+	cm := containable.Mock{
+		SetFn: func(hash []byte, ttl time.Duration) error {
 			assert.Exactly(t, haveHash, hash)
 			assert.Exactly(t, haveTTL, ttl)
+			return nil
 		},
 		HasFn: func(hash []byte) bool {
 			assert.Exactly(t, haveHash, hash)

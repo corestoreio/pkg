@@ -29,6 +29,7 @@ import (
 	"github.com/corestoreio/csfw/net/signed"
 	"github.com/corestoreio/csfw/net/signed/signedblake2"
 	"github.com/corestoreio/csfw/net/signed/signedsha"
+	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
@@ -225,7 +226,7 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithContentHMACSHA256(scope.Website, 1, key),
+		signedsha.WithContentHMAC256(scope.Website, 1, key),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -309,9 +310,11 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 
 	key := []byte(`My guinea p1g run5 acro55 my keyb0ard`)
 
+	cache := containable.NewInMemory()
+
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithTransparentSHA256(scope.Website, 1, key),
+		signedsha.WithTransparent256(scope.Website, 1, key, cache, time.Second*2),
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -330,6 +333,7 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 		}),
 	)
 
+	// Generate a signature
 	var finalHandlerCalled = new(int32)
 	initReq := httptest.NewRequest("GET", "https://corestore.io/product/id/3456", nil)
 	initReq = initReq.WithContext(scope.WithContext(initReq.Context(), 1, 2))
@@ -344,7 +348,7 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 		srv.WithResponseSignature,
 	).ServeHTTP(initResp, initReq)
 
-	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.ContentHMAC) == "" {
+	if initResp.Code != http.StatusAccepted || initResp.Header().Get(signed.ContentHMAC) != "" {
 		t.Fatalf("Fatal: Status %d\nHeader %v\nBody: %s", initResp.Code, initResp.HeaderMap, initResp.Body)
 	}
 	if have, want := *finalHandlerCalled, int32(1); have != want {
@@ -370,7 +374,7 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 		return r2
 	}, mw.Chain(
 		http.HandlerFunc(func(w http.ResponseWriter, rq *http.Request) {
-			assert.Exactly(t, `sha256 7dace9827fd7aa3c83eee3776a81d03653ba1e272c98809f0752d9ded4561419`, rq.Header.Get(signed.ContentHMAC))
+			assert.Empty(t, rq.Header.Get(signed.ContentHMAC))
 			w.WriteHeader(http.StatusPartialContent)
 			w.Write([]byte(`OK!`))
 
@@ -402,7 +406,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 
 		srv := signed.MustNew(
 			signed.WithDebugLog(ioutil.Discard),
-			signed.WithContentHMACSHA256(scope.Website, 1, key),
+			signedsha.WithContentHMAC256(scope.Website, 1, key),
 			signed.WithRootConfig(cfgmock.NewService()),
 			signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

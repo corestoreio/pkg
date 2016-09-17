@@ -23,6 +23,10 @@ type Service struct {
 }
 
 // New creates a new signing middleware for signature creation and validation.
+// The scope.Default and any other scopes have these default settings: InTrailer
+// activated, Content-HMAC header with sha256, allowed HTTP methods set to POST,
+// PUT, PATCH and password for the HMAC SHA 256 from a cryptographically random
+// source with a length of 64 bytes.
 func New(opts ...Option) (*Service, error) {
 	return newService(opts...)
 }
