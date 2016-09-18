@@ -15,6 +15,7 @@
 package hashpool
 
 import (
+	"crypto/subtle"
 	"encoding/hex"
 	"hash"
 	"sync"
@@ -68,6 +69,17 @@ func (t Tank) SumHex(data []byte) string {
 	buf.Reset()
 	_, _ = buf.Write(tmpBuf)
 	return hex.EncodeToString(buf.Bytes())
+}
+
+// Equal hashes data and compares it with MAC for equality without leaking
+// timing information.
+func (t Tank) Equal(data []byte, mac []byte) bool {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	// We don't have to be constant time if the lengths of the MACs are
+	// different as that suggests that a completely different hash function
+	// was used.
+	return subtle.ConstantTimeCompare(t.Sum(data, buf.Bytes()), mac) == 1
 }
 
 // Put empties the hash and returns it back to the pool.

@@ -22,6 +22,8 @@ import (
 	"sync"
 	"testing"
 
+	"encoding/hex"
+
 	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/minio/blake2b-simd"
 	"github.com/pierrec/xxHash/xxHash64"
@@ -49,6 +51,13 @@ func TestNew64(t *testing.T) {
 		}(&wg)
 	}
 	wg.Wait()
+}
+
+func TestTank_Equal(t *testing.T) {
+	hp := hashpool.New(sha256.New)
+	mac, err := hex.DecodeString(dataSHA256)
+	assert.NoError(t, err)
+	assert.True(t, hp.Equal(data, mac))
 }
 
 func TestTank_SumHex(t *testing.T) {
