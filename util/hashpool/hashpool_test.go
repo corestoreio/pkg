@@ -15,18 +15,21 @@
 package hashpool_test
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"github.com/corestoreio/csfw/util/hashpool"
-	"github.com/dchest/siphash"
-	"github.com/minio/blake2b-simd"
-	"github.com/pierrec/xxHash/xxHash64"
-	"github.com/stretchr/testify/assert"
 	"hash"
 	"hash/crc64"
 	"hash/fnv"
 	"sync"
 	"testing"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/dchest/siphash"
+	"github.com/minio/blake2b-simd"
+	"github.com/pierrec/xxHash/xxHash64"
+	"github.com/stretchr/testify/assert"
 )
 
 var data = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
@@ -57,6 +60,30 @@ func TestTank_Equal(t *testing.T) {
 	mac, err := hex.DecodeString(dataSHA256)
 	assert.NoError(t, err)
 	assert.True(t, hp.Equal(data, mac))
+}
+
+func TestTank_EqualReader(t *testing.T) {
+	hp := hashpool.New(sha256.New)
+	mac, err := hex.DecodeString(dataSHA256)
+	assert.NoError(t, err)
+	isEqual, err := hp.EqualReader(bytes.NewReader(data), mac)
+	assert.NoError(t, err)
+	assert.True(t, isEqual)
+}
+
+func TestTank_EqualReader_Error(t *testing.T) {
+	hp := hashpool.New(sha256.New)
+	mac, err := hex.DecodeString(dataSHA256)
+	assert.NoError(t, err)
+	isEqual, err := hp.EqualReader(readerError{}, mac)
+	assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	assert.False(t, isEqual)
+}
+
+type readerError struct{}
+
+func (readerError) Read(p []byte) (int, error) {
+	return 0, errors.NewAlreadyClosedf("Reader already closed")
 }
 
 func TestTank_SumHex(t *testing.T) {

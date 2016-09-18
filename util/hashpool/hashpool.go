@@ -18,9 +18,11 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"hash"
+	"io"
 	"sync"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Hash64Mock allows to use a hash.Hash as an argument to the Hash64 Tank.
@@ -80,6 +82,37 @@ func (t Tank) Equal(data []byte, mac []byte) bool {
 	// different as that suggests that a completely different hash function
 	// was used.
 	return subtle.ConstantTimeCompare(t.Sum(data, buf.Bytes()), mac) == 1
+}
+
+// EqualReader hashes io.Reader and compares it with MAC for equality without
+// leaking timing information. The internal buffer to read into data from
+// io.Reader can be adjusted via field BufferSize.
+func (t Tank) EqualReader(r io.Reader, mac []byte) (bool, error) {
+	h := t.Get()
+	defer t.Put(h)
+
+	bs := 4096
+	if t.BufferSize > 0 {
+		bs = t.BufferSize
+	}
+	buf := make([]byte, bs)
+	for {
+		n, err := r.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return false, errors.Wrap(err, "[hashpool] r.Read")
+		}
+		if _, err := h.Write(buf[:n]); err != nil {
+			return false, errors.Wrap(err, "[hashpool] Hash.Write")
+		}
+	}
+
+	// We don't have to be constant time if the lengths of the MACs are
+	// different as that suggests that a completely different hash function
+	// was used.
+	return subtle.ConstantTimeCompare(h.Sum(buf[:0]), mac) == 1, nil
 }
 
 // Put empties the hash and returns it back to the pool.
