@@ -60,6 +60,12 @@ type Configuration struct {
 	//
 	// Path: net/signed/http_header_type
 	HTTPHeaderType cfgmodel.Str
+
+	// KeyID name or ID of the key which is used in the HMAC algorithm. Only usable when
+	// HTTPHeaderType has been set to "signature"
+	//
+	// Path: net/signed/key_id
+	KeyID cfgmodel.Str
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
@@ -80,6 +86,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 		"PATCH", "PATCH",
 		"DELETE", "DELETE",
 	))...)
+	be.Key = cfgmodel.NewObscure(`net/signed/key`, opts...)
 	be.Algorithm = cfgmodel.NewStr(`net/signed/algorithm`, append(opts, cfgmodel.WithSourceByString(
 		"sha256", "SHA 256",
 		"sha512", "SHA 512",
@@ -90,6 +97,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 		"hmac", "Content-HMAC",
 		"signature", "Content-Signature",
 	))...)
+	be.KeyID = cfgmodel.NewStr(`net/signed/key_id`, opts...)
 
 	return be
 }

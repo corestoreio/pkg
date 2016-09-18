@@ -15,6 +15,7 @@
 package backendsigned_test
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/signed/backendsigned"
 )
 
@@ -28,4 +29,6 @@ func init() {
 		panic(err)
 	}
 	backend = backendsigned.New(cfgStruct)
+
+	backend.Key.Encryptor = cfgmodel.NoopEncryptor{}
 }

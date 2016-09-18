@@ -25,6 +25,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestBackend_Path_Errors(t *testing.T) {
+	tests := []struct {
+		toPath func(s scope.Scope, scopeID int64) string
+		val    interface{}
+		errBhf errors.BehaviourFunc
+	}{
+		0: {backend.Disabled.MustFQ, struct{}{}, errors.IsNotValid},
+		1: {backend.InTrailer.MustFQ, struct{}{}, errors.IsNotValid},
+		2: {backend.AllowedMethods.MustFQ, struct{}{}, errors.IsNotValid},
+		3: {backend.Key.MustFQ, struct{}{}, errors.IsNotValid},
+		4: {backend.Algorithm.MustFQ, struct{}{}, errors.IsNotValid},
+		5: {backend.HTTPHeaderType.MustFQ, struct{}{}, errors.IsNotValid},
+		6: {backend.KeyID.MustFQ, struct{}{}, errors.IsNotValid},
+	}
+	for i, test := range tests {
+
+		scpFnc := backendsigned.PrepareOptions(backend)
+		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
+			test.toPath(scope.Website, 2): test.val,
+		})
+		cfgScp := cfgSrv.NewScoped(2, 0)
+
+		_, err := signed.New(scpFnc(cfgScp)...)
+		assert.True(t, test.errBhf(err), "Index %d Error: %+v", i, err)
+	}
+}
+
 //func TestBackend_GCRA_Not_Registered(t *testing.T) {
 //	testBackendConfiguration(t, "panic",
 //		cfgmock.PathValue{},
@@ -158,28 +185,3 @@ import (
 //		// println("\n", logBuf.String(), "\n")
 //	}
 //}
-
-func TestBackend_Path_Errors(t *testing.T) {
-
-	tests := []struct {
-		toPath func(s scope.Scope, scopeID int64) string
-		val    interface{}
-		errBhf errors.BehaviourFunc
-	}{
-		{backend.Disabled.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.InTrailer.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.AllowedMethods.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.Key.MustFQ, struct{}{}, errors.IsNotValid},
-	}
-	for i, test := range tests {
-
-		scpFnc := backendsigned.PrepareOptions(backend)
-		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			test.toPath(scope.Website, 2): test.val,
-		})
-		cfgScp := cfgSrv.NewScoped(2, 0)
-
-		_, err := signed.New(scpFnc(cfgScp)...)
-		assert.True(t, test.errBhf(err), "Index %d Error: %+v", i, err)
-	}
-}

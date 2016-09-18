@@ -25,18 +25,21 @@ import (
 // incoming scope. An option array will be returned by the closure.
 func PrepareOptions(be *Configuration) signed.OptionFactoryFunc {
 	return func(sg config.Scoped) []signed.Option {
-
-		opts := make([]signed.Option, 0, 10)
+		var (
+			opts [5]signed.Option
+			i    int // used as index in opts
+		)
 
 		disabled, scpHash, err := be.Disabled.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Disabled.Get"))
 		}
 		scp, scpID := scpHash.Unpack()
-		opts = append(opts, signed.WithDisable(scp, scpID, disabled))
+		opts[i] = signed.WithDisable(scp, scpID, disabled)
+		i++
 
 		if disabled {
-			return opts
+			return opts[:]
 		}
 
 		inTrailer, scpHash, err := be.InTrailer.Get(sg)
@@ -44,15 +47,52 @@ func PrepareOptions(be *Configuration) signed.OptionFactoryFunc {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] InTrailer.Get"))
 		}
 		scp, scpID = scpHash.Unpack()
-		opts = append(opts, signed.WithTrailer(scp, scpID, inTrailer))
+		opts[i] = signed.WithTrailer(scp, scpID, inTrailer)
+		i++
 
-		// name contains the configured signed calculation/storage engine. in this case either
-		// memstore or redigostore. Of course you can plugin your own engine.
-		//off, err := be.Lookup(name) // off = OptionFactoryFunc
-		//if err != nil {
-		//	return signed.OptionsError(errors.Wrap(err, "[backendsigned] Backend.Lookup"))
-		//}
-		//return append(opts, off(sg)...)
-		return opts
+		methods, scpHash, err := be.AllowedMethods.Get(sg)
+		if err != nil {
+			return signed.OptionsError(errors.Wrap(err, "[backendsigned] AllowedMethods.Get"))
+		}
+		scp, scpID = scpHash.Unpack()
+		opts[i] = signed.WithAllowedMethods(scp, scpID, methods...)
+		i++
+
+		key, _, err := be.Key.Get(sg)
+		if err != nil {
+			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Key.Obscure.Get"))
+		}
+		alg, scpHash, err := be.Algorithm.Get(sg)
+		if err != nil {
+			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Algorithm.Str.Get"))
+		}
+		scp, scpID = scpHash.Unpack()
+		opts[i] = signed.WithHash(scp, scpID, alg, key)
+		i++
+
+		keyID, _, err := be.KeyID.Get(sg)
+		if err != nil {
+			return signed.OptionsError(errors.Wrap(err, "[backendsigned] KeyID.Str.Get"))
+		}
+		header, scpHash, err := be.HTTPHeaderType.Get(sg)
+		if err != nil {
+			return signed.OptionsError(errors.Wrap(err, "[backendsigned] HTTPHeaderType.Str.Get"))
+		}
+		scp, scpID = scpHash.Unpack()
+		var hpw signed.HeaderParseWriter
+		switch header {
+		// case "transparent":
+		// todo: transparent must be implemented via a new package using also the signed.OptionFactoryFunc; same like ratelimit
+		case "hmac":
+			hpw = signed.NewContentHMAC(alg)
+		case "signature":
+			hpw = signed.NewContentSignature(keyID, alg)
+		default:
+			return signed.OptionsError(errors.NewNotImplementedf("[backendsigned] HTTPHeaderType %q not implemented", header))
+		}
+		opts[i] = signed.WithHeaderHandler(scp, scpID, hpw)
+		i++
+
+		return opts[:]
 	}
 }

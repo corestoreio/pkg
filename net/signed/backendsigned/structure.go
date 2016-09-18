@@ -87,7 +87,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// Path: net/signed/algorithm
 							ID:        cfgpath.NewRoute("algorithm"),
 							Label:     text.Chars(`Algorithm`),
-							Comment:   text.Chars(`Currently supported algorithms`),
+							Comment:   text.Chars(`Currently supported algorithms: sha256, sha512`),
 							Type:      element.TypeSelect,
 							SortOrder: iter(),
 							Visible:   element.VisibleYes,
@@ -104,6 +104,16 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermStore,
 							Default:   `hmac`,
+						},
+						element.Field{
+							// Path: net/signed/key_id
+							ID:        cfgpath.NewRoute("key_id"),
+							Label:     text.Chars(`Key ID`),
+							Comment:   text.Chars(`KeyID name or ID of the key which is used in the HMAC algorithm. Only usable when HTTPHeaderType has been set to "signature"`),
+							Type:      element.TypeText,
+							SortOrder: iter(),
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},
