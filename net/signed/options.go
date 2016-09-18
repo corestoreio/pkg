@@ -15,7 +15,6 @@
 package signed
 
 import (
-	"hash"
 	"time"
 
 	"github.com/corestoreio/csfw/store/scope"
@@ -35,7 +34,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 
 // WithHash sets the hashing algorithm to create a new hash and verify an
 // incoming hash. Please use only cryptographically secure hash algorithms.
-func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option {
+func WithHash(scp scope.Scope, id int64, name string, key []byte) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {
 		s.rwmu.Lock()
@@ -45,7 +44,7 @@ func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.hashPoolInit(hh, key)
+		sc.hashPoolInit(name, key)
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
 		return nil
@@ -54,7 +53,8 @@ func WithHash(scp scope.Scope, id int64, hh func() hash.Hash, key []byte) Option
 
 // WithHeaderHandler sets the writer and the parser. The writer knows how to
 // write the hash value into the HTTP header. The parser knows how and where to
-// extract the hash value from the header or even the trailer.
+// extract the hash value from the header or even the trailer. Compatible types
+// in this package are ContentHMAC, ContentSignature and Transparent.
 func WithHeaderHandler(scp scope.Scope, id int64, pw HeaderParseWriter) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) error {

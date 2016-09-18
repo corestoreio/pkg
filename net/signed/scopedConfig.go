@@ -18,8 +18,6 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha256"
-	"hash"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -30,6 +28,13 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/hashpool"
 )
+
+// DefaultHashName identifies the default hash when creating a new scoped
+// configuration. You must register this name before using this package via:
+//		hashpool.Register(`sha256`, sha256.New)
+// If you would like to use different hashes you must registered them also in
+// the hashpool package.
+const DefaultHashName = `sha256`
 
 // ScopedConfig scoped based configuration and should not be embedded into your
 // own types. Call ScopedConfig.ScopeHash to know to which scope this
@@ -66,7 +71,7 @@ func newScopedConfig() *ScopedConfig {
 	sc := &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
 		InTrailer:           true,
-		HeaderParseWriter:   NewContentHMAC("sha256"),
+		HeaderParseWriter:   NewContentHMAC(DefaultHashName),
 		AllowedMethods:      []string{"POST", "PUT", "PATCH"},
 	}
 	key := make([]byte, 64) // 64 character password
@@ -74,15 +79,14 @@ func newScopedConfig() *ScopedConfig {
 		sc.lastErr = errors.Wrap(err, "[signed] newScopedConfig: Failed to cread from crypto/rand.Read")
 		// don't init hashpool and let app panic
 	} else {
-		sc.hashPoolInit(sha256.New, key)
+		sc.hashPoolInit(DefaultHashName, key)
 	}
 	return sc
 }
 
-func (sc *ScopedConfig) hashPoolInit(hh func() hash.Hash, key []byte) {
-	sc.hashPool = hashpool.New(func() hash.Hash {
-		return hmac.New(hh, key)
-	})
+func (sc *ScopedConfig) hashPoolInit(name string, key []byte) {
+	sc.hashPool, sc.lastErr = hashpool.FromRegistryHMAC(name, key)
+	sc.lastErr = errors.Wrapf(sc.lastErr, "[signed] The hash %q has not yet been registered via hashpool.Register() function.", name)
 }
 
 // IsValid a configuration for a scope is only then valid when several fields

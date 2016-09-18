@@ -16,6 +16,7 @@ package signed_test
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,16 +28,36 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/signed"
-	"github.com/corestoreio/csfw/net/signed/signedblake2"
-	"github.com/corestoreio/csfw/net/signed/signedsha"
 	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/minio/blake2b-simd"
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	if err := hashpool.Register("sha256", sha256.New); err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+	if err := hashpool.Register("blk2b256", blake2b.New256); err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+}
+
 var testData = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
+
+func TestService_UnregisteredHash(t *testing.T) {
+	srv := signed.MustNew(
+		signed.WithRootConfig(cfgmock.NewService()),
+		signed.WithHash(scope.Store, 333, "rot13", nil),
+	)
+	scpCfg := srv.ConfigByScope(0, 333)
+	err := scpCfg.IsValid()
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.Contains(t, err.Error(), `"rot13"`)
+}
 
 func TestService_WithResponseSignature_MissingContext(t *testing.T) {
 
@@ -126,7 +147,8 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 	srv := signed.MustNew(
 		signed.WithTrailer(scope.Website, 1, false),
 		signed.WithDebugLog(ioutil.Discard),
-		signedsha.WithContentHMAC256(scope.Website, 1, key),
+		signed.WithHeaderHandler(scope.Website, 1, signed.NewContentHMAC("sha256")),
+		signed.WithHash(scope.Website, 1, "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +198,8 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
 		signed.WithTrailer(scope.Store, 2, true),
-		signedblake2.WithContentHMAC256(scope.Store, 2, key),
+		signed.WithHeaderHandler(scope.Store, 2, signed.NewContentHMAC("blk2b256")),
+		signed.WithHash(scope.Store, 2, "blk2b256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -226,7 +249,8 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signedsha.WithContentHMAC256(scope.Website, 1, key),
+		signed.WithHeaderHandler(scope.Website, 1, signed.NewContentHMAC("sha256")),
+		signed.WithHash(scope.Website, 1, "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -314,7 +338,8 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signedsha.WithTransparent256(scope.Website, 1, key, cache, time.Second*2),
+		signed.WithTransparent(scope.Website, 1, cache, time.Second*2),
+		signed.WithHash(scope.Website, 1, "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
 		signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -406,7 +431,8 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 
 		srv := signed.MustNew(
 			signed.WithDebugLog(ioutil.Discard),
-			signedsha.WithContentHMAC256(scope.Website, 1, key),
+			signed.WithHeaderHandler(scope.Website, 1, signed.NewContentHMAC("sha256")),
+			signed.WithHash(scope.Website, 1, "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 			signed.WithRootConfig(cfgmock.NewService()),
 			signed.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
