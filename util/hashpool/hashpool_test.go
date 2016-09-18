@@ -16,18 +16,17 @@ package hashpool_test
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
+	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/dchest/siphash"
+	"github.com/minio/blake2b-simd"
+	"github.com/pierrec/xxHash/xxHash64"
+	"github.com/stretchr/testify/assert"
 	"hash"
 	"hash/crc64"
 	"hash/fnv"
 	"sync"
 	"testing"
-
-	"encoding/hex"
-
-	"github.com/corestoreio/csfw/util/hashpool"
-	"github.com/minio/blake2b-simd"
-	"github.com/pierrec/xxHash/xxHash64"
-	"github.com/stretchr/testify/assert"
 )
 
 var data = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
@@ -111,5 +110,5 @@ func BenchmarkTank_Hash64(b *testing.B) {
 	b.Run("FNV64a", benchmarkTank_Hash64(207718596844850661, fnv.New64a))
 	b.Run("xxHash", benchmarkTank_Hash64(11301805909362518010, func() hash.Hash64 { return xxHash64.New(uint64(201608090723)) }))
 	b.Run("crc64", benchmarkTank_Hash64(3866349411325606150, func() hash.Hash64 { return crc64.New(crc64.MakeTable(crc64.ISO)) }))
-
+	b.Run("siphash", benchmarkTank_Hash64(18240385100576365171, func() hash.Hash64 { return siphash.New(data) }))
 }
