@@ -17,7 +17,6 @@
 package cors
 
 import (
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -42,12 +41,20 @@ func New(opts ...Option) (*Service, error) {
 	if s != nil {
 		s.useWebsite = true
 		s.optionAfterApply = func() error {
-			if err := withLoggerInit(log.BlackHole{})(s); err != nil {
-				return errors.Wrap(err, "[cors] withLoggerInit")
+			s.rwmu.Lock()
+			defer s.rwmu.Unlock()
+
+			// propagate the logger to all scopes.
+			if s.Log != nil {
+				for _, sc := range s.scopeCache {
+					if sc.log == nil {
+						sc.log = s.Log
+					}
+				}
 			}
 
-			s.rwmu.RLock()
-			defer s.rwmu.RUnlock()
+			// validate that the applied functional options can only be set for
+			// scope website. scope store makes no sense.
 			for h := range s.scopeCache {
 				if scp, _ := h.Unpack(); scp > scope.Website {
 					return errors.NewNotSupportedf(errServiceUnsupportedScope, h)

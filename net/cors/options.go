@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
@@ -79,14 +78,13 @@ type Settings struct {
 // Default values are:
 //		- Allowed Methods: GET, POST
 //		- Allowed Headers: Origin, Accept, Content-Type
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	return withDefaultConfig(scp, id)
+func WithDefaultConfig(h scope.Hash) Option {
+	return withDefaultConfig(h)
 }
 
 // WithSettings applies the Settings struct to a specific scope. Internal
 // functions will optimize the internal structure of the Settings struct.
-func WithSettings(scp scope.Scope, id int64, stng Settings) Option {
-	h := scope.NewHash(scp, id)
+func WithSettings(h scope.Hash, stng Settings) Option {
 	exposedHeaders := convert(stng.ExposedHeaders, http.CanonicalHeaderKey)
 	allowedOriginsAll, allowedOrigins, allowedWOrigins := convertAllowedOrigins(stng.AllowedOrigins...)
 	am := convert(stng.AllowedMethods, strings.ToUpper)
@@ -176,38 +174,4 @@ func convertAllowedHeaders(headers ...string) (allowedHeadersAll bool, allowedHe
 		}
 	}
 	return
-}
-
-// WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes. Mainly used for debugging.
-func WithLogger(l log.Logger) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		s.Log = l
-		for _, sc := range s.scopeCache {
-			sc.log = l
-		}
-		return nil
-	}
-}
-
-// withLoggerInit only sets the logger during init process and avoids
-// overwriting existing settings.
-func withLoggerInit(l log.Logger) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		if s.Log == nil {
-			s.Log = l
-		}
-		for _, sc := range s.scopeCache {
-			if sc.log == nil {
-				sc.log = l
-			}
-		}
-		return nil
-	}
 }
