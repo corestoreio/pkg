@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
@@ -46,8 +47,7 @@ func OptionsError(err error) []Option {
 }
 
 // withDefaultConfig triggers the default settings
-func withDefaultConfig(scp scope.Scope, id int64) Option {
-	h := scope.NewHash(scp, id)
+func withDefaultConfig(h scope.Hash) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -62,8 +62,7 @@ func withDefaultConfig(scp scope.Scope, id int64) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(scp scope.Scope, id int64, eh mw.ErrorHandler) Option {
-	h := scope.NewHash(scp, id)
+func WithErrorHandler(h scope.Hash, eh mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -109,6 +108,16 @@ func WithDebugLog(w io.Writer) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		s.Log = logw.NewLog(logw.WithWriter(w), logw.WithLevel(logw.LevelDebug))
+		return nil
+	}
+}
+
+// WithLogger convenient helper function to apply a logger to the Service type.
+func WithLogger(l log.Logger) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+		s.Log = l
 		return nil
 	}
 }

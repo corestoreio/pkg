@@ -39,13 +39,12 @@ type IsAllowedFunc func(s scope.Hash, c *Country, allowedCountries []string) err
 //		- Alternative Handler: variable DefaultAlternativeHandler
 //		- Logger black hole
 //		- Check allow: If allowed countries are empty, all countries are allowed
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	return withDefaultConfig(scp, id)
+func WithDefaultConfig(h scope.Hash) Option {
+	return withDefaultConfig(h)
 }
 
 // WithDisable disables the whole GeoIP lookup for a scope.
-func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
-	h := scope.NewHash(scp, id)
+func WithDisable(h scope.Hash, isDisabled bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -64,8 +63,7 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 // WithAlternativeHandler sets for a scope the alternative handler
 // if an IP address has been access denied.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAlternativeHandler(scp scope.Scope, id int64, altHndlr mw.ErrorHandler) Option {
-	h := scope.NewHash(scp, id)
+func WithAlternativeHandler(h scope.Hash, altHndlr mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -84,8 +82,8 @@ func WithAlternativeHandler(scp scope.Scope, id int64, altHndlr mw.ErrorHandler)
 // WithAlternativeRedirect sets for a scope the error handler
 // on a Service if an IP address has been access denied.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAlternativeRedirect(scp scope.Scope, id int64, urlStr string, code int) Option {
-	return WithAlternativeHandler(scp, id, func(_ error) http.Handler {
+func WithAlternativeRedirect(h scope.Hash, urlStr string, code int) Option {
+	return WithAlternativeHandler(h, func(_ error) http.Handler {
 		return http.RedirectHandler(urlStr, code)
 	})
 }
@@ -94,8 +92,7 @@ func WithAlternativeRedirect(scp scope.Scope, id int64, urlStr string, code int)
 // address should access to granted, or the next middleware handler in the chain
 // gets called.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
-	h := scope.NewHash(scp, id)
+func WithCheckAllow(h scope.Hash, f IsAllowedFunc) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -113,8 +110,7 @@ func WithCheckAllow(scp scope.Scope, id int64, f IsAllowedFunc) Option {
 
 // WithAllowedCountryCodes sets a list of ISO countries to be validated against.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...string) Option {
-	h := scope.NewHash(scp, id)
+func WithAllowedCountryCodes(h scope.Hash, isoCountryCodes ...string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -126,15 +122,6 @@ func WithAllowedCountryCodes(scp scope.Scope, id int64, isoCountryCodes ...strin
 		sc.AllowedCountries = isoCountryCodes
 		sc.ScopeHash = h
 		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
-// WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes. Mainly used for debugging.
-func WithLogger(l log.Logger) Option {
-	return func(s *Service) error {
-		s.Log = l
 		return nil
 	}
 }

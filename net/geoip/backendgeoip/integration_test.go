@@ -21,6 +21,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -35,8 +37,6 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"sync/atomic"
 )
 
 func init() {
@@ -200,7 +200,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			geoip.WithDebugLog(logBuf),
 			geoip.WithOptionFactory(scpFnc),
 			geoip.WithServiceErrorHandler(mw.ErrorWithPanic),
-			geoip.WithErrorHandler(scope.Default, 0, mw.ErrorWithPanic),
+			geoip.WithErrorHandler(scope.DefaultHash, mw.ErrorWithPanic),
 		)
 
 		// if you try to set the allowed countries with this option, they get

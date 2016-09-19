@@ -26,6 +26,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
+// todo: remove tcbigcache and tcredis and move them into its own repo to use the geoip.OptionFactoryFunc
+
 func init() {
 	gob.Register(geoip.Country{})
 }
@@ -36,18 +38,15 @@ func init() {
 func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 	return func(sg config.Scoped) []geoip.Option {
 		var (
-			opts  [6]geoip.Option
-			i     int // used as index in opts
-			scp   scope.Scope
-			scpID int64
+			opts [6]geoip.Option
+			i    int // used as index in opts
 		)
 
 		acc, h, err := be.NetGeoipAllowedCountries.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAllowedCountries.Get"))
 		}
-		scp, scpID = h.Unpack()
-		opts[i] = geoip.WithAllowedCountryCodes(scp, scpID, acc...)
+		opts[i] = geoip.WithAllowedCountryCodes(h, acc...)
 		i++
 
 		// REDIRECT TO ALTERNATIVE URL
@@ -64,8 +63,7 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 			if err != nil {
 				return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] scope.Hashes.Lowest"))
 			}
-			scp, scpID = h.Unpack()
-			opts[i] = geoip.WithAlternativeRedirect(scp, scpID, ar.String(), arc)
+			opts[i] = geoip.WithAlternativeRedirect(h, ar.String(), arc)
 		}
 		i++
 
