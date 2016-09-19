@@ -34,7 +34,7 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 			scpID int64
 		)
 
-		off, h, err := be.NetJwtDisabled.Get(sg)
+		off, h, err := be.Disabled.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtDisabled.Get"))
 		}
@@ -42,7 +42,7 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 		opts[i] = jwt.WithDisable(scp, scpID, off)
 		i++
 
-		exp, h, err := be.NetJwtExpiration.Get(sg)
+		exp, h, err := be.Expiration.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtExpiration.Get"))
 		}
@@ -50,7 +50,7 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 		opts[i] = jwt.WithExpiration(scp, scpID, exp)
 		i++
 
-		skew, h, err := be.NetJwtSkew.Get(sg)
+		skew, h, err := be.Skew.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSkew.Get"))
 		}
@@ -58,7 +58,7 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 		opts[i] = jwt.WithSkew(scp, scpID, skew)
 		i++
 
-		isSU, h, err := be.NetJwtSingleTokenUsage.Get(sg)
+		isSU, h, err := be.SingleTokenUsage.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSingleUsage.Get"))
 		}
@@ -68,7 +68,7 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 
 		// todo: avoid the next code and use OptionFactories to apply a signing method. Example in ratelimit package.
 
-		signingMethod, h, err := be.NetJwtSigningMethod.Get(sg)
+		signingMethod, h, err := be.SigningMethod.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSigningMethod.Get"))
 		}
@@ -81,11 +81,11 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 
 		switch signingMethod.Alg() {
 		case csjwt.RS256, csjwt.RS384, csjwt.RS512:
-			rsaKey, h1, err := be.NetJwtRSAKey.Get(sg)
+			rsaKey, h1, err := be.RSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKey.Get"))
 			}
-			rsaPW, h2, err := be.NetJwtRSAKeyPassword.Get(sg)
+			rsaPW, h2, err := be.RSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKeyPassword.Get"))
 			}
@@ -93,11 +93,11 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 			hashes = append(hashes, h1, h2)
 		case csjwt.ES256, csjwt.ES384, csjwt.ES512:
 
-			ecdsaKey, h1, err := be.NetJwtECDSAKey.Get(sg)
+			ecdsaKey, h1, err := be.ECDSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKey.Get"))
 			}
-			ecdsaPW, h2, err := be.NetJwtECDSAKeyPassword.Get(sg)
+			ecdsaPW, h2, err := be.ECDSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKeyPassword.Get"))
 			}
@@ -105,7 +105,7 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 			hashes = append(hashes, h1, h2)
 		case csjwt.HS256, csjwt.HS384, csjwt.HS512:
 
-			password, h1, err := be.NetJwtHmacPassword.Get(sg)
+			password, h1, err := be.HmacPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtHmacPassword.Get"))
 			}
