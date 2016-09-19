@@ -1,0 +1,3 @@
+BenchmarkWithRequestID-4   	 5000000	       388 ns/op	      56 B/op	       3 allocs/op
+PASS
+ok  	github.com/corestoreio/csfw/net/request	2.332s

@@ -18,7 +18,6 @@ import "github.com/corestoreio/csfw/log"
 
 type optionBox struct {
 	log                   log.Logger
-	genRID                RequestIDGenerator
 	methodOverrideFormKey string
 }
 
@@ -27,8 +26,7 @@ type Option func(ob *optionBox)
 
 func newOptionBox(opts ...Option) *optionBox {
 	ob := &optionBox{
-		log:                   log.BlackHole{}, // disabled info and debug logging
-		genRID:                &requestIDService{},
+		log: log.BlackHole{}, // disabled info and debug logging
 		methodOverrideFormKey: MethodOverrideFormKey,
 	}
 	for _, o := range opts {
@@ -43,13 +41,6 @@ func newOptionBox(opts ...Option) *optionBox {
 func SetLogger(l log.Logger) Option {
 	return func(ob *optionBox) {
 		ob.log = l
-	}
-}
-
-// SetRequestIDGenerator sets a custom request ID generator
-func SetRequestIDGenerator(g RequestIDGenerator) Option {
-	return func(ob *optionBox) {
-		ob.genRID = g
 	}
 }
 
