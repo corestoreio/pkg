@@ -38,7 +38,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		// setting: NetCorsExposedHeaders
 
 		// EXPOSED HEADERS
-		eh, scp, err := be.NetCorsExposedHeaders.Get(sg)
+		eh, scp, err := be.ExposedHeaders.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsExposedHeaders.Get"))
 		}
@@ -46,7 +46,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		scpHashes = append(scpHashes, scp)
 
 		// ALLOWED ORIGINS
-		ao, scp, err := be.NetCorsAllowedOrigins.Get(sg)
+		ao, scp, err := be.AllowedOrigins.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedOrigins.Get"))
 		}
@@ -54,7 +54,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		scpHashes = append(scpHashes, scp)
 
 		// ALLOW ORIGIN REGEX
-		aor, scp, err := be.NetCorsAllowOriginRegex.Get(sg)
+		aor, scp, err := be.AllowOriginRegex.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedOriginRegex.Get"))
 		}
@@ -70,7 +70,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		}
 
 		// ALLOWED METHODS
-		am, scp, err := be.NetCorsAllowedMethods.Get(sg)
+		am, scp, err := be.AllowedMethods.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedMethods.Get"))
 		}
@@ -78,7 +78,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		scpHashes = append(scpHashes, scp)
 
 		// ALLOWED HEADERS
-		ah, scp, err := be.NetCorsAllowedHeaders.Get(sg)
+		ah, scp, err := be.AllowedHeaders.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedHeaders.Get"))
 		}
@@ -86,7 +86,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		scpHashes = append(scpHashes, scp)
 
 		// ALLOW CREDENTIALS
-		ac, scp, err := be.NetCorsAllowCredentials.Get(sg)
+		ac, scp, err := be.AllowCredentials.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowCredentials.Get"))
 		}
@@ -94,7 +94,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		scpHashes = append(scpHashes, scp)
 
 		// OPTIONS PASSTHROUGH
-		op, scp, err := be.NetCorsOptionsPassthrough.Get(sg)
+		op, scp, err := be.OptionsPassthrough.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsOptionsPassthrough.Get"))
 		}
@@ -102,7 +102,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		scpHashes = append(scpHashes, scp)
 
 		// MAX AGE
-		ma, scp, err := be.NetCorsMaxAge.Get(sg)
+		ma, scp, err := be.MaxAge.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsMaxAge.Get"))
 		}

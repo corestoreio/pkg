@@ -27,13 +27,13 @@ import (
 type Backend struct {
 	*cors.OptionFactories
 
-	// NetCorsExposedHeaders indicates which headers are safe to expose to the
+	// ExposedHeaders indicates which headers are safe to expose to the
 	// API of a CORS API specification. Separate via line break (\n).
 	//
 	// Path: net/cors/exposed_headers
-	NetCorsExposedHeaders cfgmodel.StringCSV
+	ExposedHeaders cfgmodel.StringCSV
 
-	// NetCorsAllowedOrigins is a list of origins a cross-domain request can be
+	// AllowedOrigins is a list of origins a cross-domain request can be
 	// executed from. If the special "*" value is present in the list, all
 	// origins will be allowed. An origin may contain a wildcard (*) to replace
 	// 0 or more characters (i.e.: http://*.domain.com). Usage of wildcards
@@ -41,48 +41,48 @@ type Backend struct {
 	// origin. Default value is ["*"] Separate via line break (\n).
 	//
 	// Path: net/cors/allowed_origins
-	NetCorsAllowedOrigins cfgmodel.StringCSV
+	AllowedOrigins cfgmodel.StringCSV
 
-	// NetCorsAllowOriginRegex same as NetCorsAllowedOrigins but uses a regex to
+	// AllowOriginRegex same as AllowedOrigins but uses a regex to
 	// check for the domains.
 	//
 	// Path: net/cors/allow_origin_regex
-	NetCorsAllowOriginRegex cfgmodel.Str
+	AllowOriginRegex cfgmodel.Str
 
-	// NetCorsAllowedMethods a list of methods the client is allowed to use with
+	// AllowedMethods a list of methods the client is allowed to use with
 	// cross-domain requests. Default value is simple methods (GET and POST)
 	// Separate via line break (\n).
 	//
 	// Path: net/cors/allowed_methods
-	NetCorsAllowedMethods cfgmodel.StringCSV
+	AllowedMethods cfgmodel.StringCSV
 
-	// NetCorsAllowedHeaders A list of non simple headers the client is allowed
+	// AllowedHeaders A list of non simple headers the client is allowed
 	// to use with cross-domain requests. If the special "*" value is present in
 	// the list, all headers will be allowed. Default value is [] but "Origin"
 	// is always appended to the list. Separate via line break (\n).
 	//
 	// Path: net/cors/allowed_headers
-	NetCorsAllowedHeaders cfgmodel.StringCSV
+	AllowedHeaders cfgmodel.StringCSV
 
-	// NetCorsAllowCredentials Indicates whether the request can include user
+	// AllowCredentials Indicates whether the request can include user
 	// credentials like cookies, HTTP authentication or client side SSL
 	// certificates.
 	//
 	// Path: net/cors/allow_credentials
-	NetCorsAllowCredentials cfgmodel.Bool
+	AllowCredentials cfgmodel.Bool
 
-	// NetCorsOptionsPassthrough instructs preflight to let other potential next
+	// OptionsPassthrough instructs preflight to let other potential next
 	// handlers to process the OPTIONS method. Turn this on if your application
 	// handles OPTIONS.
 	//
 	// Path: net/cors/options_passthrough
-	NetCorsOptionsPassthrough cfgmodel.Bool
+	OptionsPassthrough cfgmodel.Bool
 
-	// NetCorsMaxAge Indicates how long (in seconds) the results of a preflight
+	// MaxAge Indicates how long (in seconds) the results of a preflight
 	// request can be cached.
 	//
 	// Path: net/cors/max_age
-	NetCorsMaxAge cfgmodel.Str
+	MaxAge cfgmodel.Str
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
@@ -99,13 +99,13 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
 	optsYN := append([]cfgmodel.Option{}, opts...)
 	optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
 
-	be.NetCorsExposedHeaders = cfgmodel.NewStringCSV(`net/cors/exposed_headers`, optsCSV...)
-	be.NetCorsAllowedOrigins = cfgmodel.NewStringCSV(`net/cors/allowed_origins`, optsCSV...)
-	be.NetCorsAllowOriginRegex = cfgmodel.NewStr(`net/cors/allow_origin_regex`, opts...)
-	be.NetCorsAllowedMethods = cfgmodel.NewStringCSV(`net/cors/allowed_methods`, optsCSV...)
-	be.NetCorsAllowedHeaders = cfgmodel.NewStringCSV(`net/cors/allowed_headers`, optsCSV...)
-	be.NetCorsAllowCredentials = cfgmodel.NewBool(`net/cors/allow_credentials`, optsYN...)
-	be.NetCorsOptionsPassthrough = cfgmodel.NewBool(`net/cors/options_passthrough`, optsYN...)
-	be.NetCorsMaxAge = cfgmodel.NewStr(`net/cors/max_age`, opts...)
+	be.ExposedHeaders = cfgmodel.NewStringCSV(`net/cors/exposed_headers`, optsCSV...)
+	be.AllowedOrigins = cfgmodel.NewStringCSV(`net/cors/allowed_origins`, optsCSV...)
+	be.AllowOriginRegex = cfgmodel.NewStr(`net/cors/allow_origin_regex`, opts...)
+	be.AllowedMethods = cfgmodel.NewStringCSV(`net/cors/allowed_methods`, optsCSV...)
+	be.AllowedHeaders = cfgmodel.NewStringCSV(`net/cors/allowed_headers`, optsCSV...)
+	be.AllowCredentials = cfgmodel.NewBool(`net/cors/allow_credentials`, optsYN...)
+	be.OptionsPassthrough = cfgmodel.NewBool(`net/cors/options_passthrough`, optsYN...)
+	be.MaxAge = cfgmodel.NewStr(`net/cors/max_age`, opts...)
 	return be
 }

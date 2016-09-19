@@ -72,7 +72,7 @@ func TestMatchAllOrigin(t *testing.T) {
 
 func TestAllowedOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestAllowedOrigin(t, s, req)
@@ -80,7 +80,7 @@ func TestAllowedOrigin(t *testing.T) {
 
 func TestWildcardOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestWildcardOrigin(t, s, req)
@@ -88,7 +88,7 @@ func TestWildcardOrigin(t *testing.T) {
 
 func TestDisallowedOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestDisallowedOrigin(t, s, req)
@@ -96,7 +96,7 @@ func TestDisallowedOrigin(t *testing.T) {
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestDisallowedWildcardOrigin(t, s, req)
@@ -104,7 +104,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 
 func TestAllowedOriginFunc(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
+		backend.AllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
 	})
 	req := reqWithStore("GET")
 	corstest.TestAllowedOriginFunc(t, s, req)
@@ -114,8 +114,8 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 	var logBuf = new(log.MutexBuffer)
 
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
 		// backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): false, <== this is the default value
 	})
 	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug)))); err != nil {
@@ -138,9 +138,9 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 
 func TestAllowedMethodPassthrough(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2):     "http://foobar.com",
-		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2):     "PUT\nDELETE",
-		backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): true,
+		backend.AllowedOrigins.MustFQ(scope.Website, 2):     "http://foobar.com",
+		backend.AllowedMethods.MustFQ(scope.Website, 2):     "PUT\nDELETE",
+		backend.OptionsPassthrough.MustFQ(scope.Website, 2): true,
 	})
 	req := reqWithStore("OPTIONS")
 	req.Body = ioutil.NopCloser(strings.NewReader("Body of TestAllowedMethod_Passthrough"))
@@ -149,8 +149,8 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 
 func TestDisallowedMethod(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsAllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -160,8 +160,8 @@ func TestDisallowedMethod(t *testing.T) {
 
 func TestAllowedHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsAllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -171,8 +171,8 @@ func TestAllowedHeader(t *testing.T) {
 
 func TestAllowedWildcardHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsAllowedHeaders.MustFQ(scope.Website, 2): "*",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedHeaders.MustFQ(scope.Website, 2): "*",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -181,8 +181,8 @@ func TestAllowedWildcardHeader(t *testing.T) {
 
 func TestDisallowedHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsAllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -191,8 +191,8 @@ func TestDisallowedHeader(t *testing.T) {
 
 func TestExposedHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsExposedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.ExposedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
 	})
 
 	req := reqWithStore("GET")
@@ -201,8 +201,8 @@ func TestExposedHeader(t *testing.T) {
 
 func TestAllowedCredentials(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2):   "http://foobar.com",
-		backend.NetCorsAllowCredentials.MustFQ(scope.Website, 2): true,
+		backend.AllowedOrigins.MustFQ(scope.Website, 2):   "http://foobar.com",
+		backend.AllowCredentials.MustFQ(scope.Website, 2): true,
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -210,8 +210,8 @@ func TestAllowedCredentials(t *testing.T) {
 }
 func TestMaxAge(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.NetCorsMaxAge.MustFQ(scope.Website, 2):         "30",
+		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.MaxAge.MustFQ(scope.Website, 2):         "30",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -225,15 +225,15 @@ func TestBackend_Path_Errors(t *testing.T) {
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.NetCorsExposedHeaders.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.NetCorsAllowedOrigins.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.NetCorsAllowOriginRegex.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.NetCorsAllowOriginRegex.MustFQ, "[a-z+", errors.IsFatal},
-		{backend.NetCorsAllowedMethods.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.NetCorsAllowedHeaders.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.NetCorsAllowCredentials.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.NetCorsOptionsPassthrough.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.NetCorsMaxAge.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.ExposedHeaders.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.AllowedOrigins.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.AllowOriginRegex.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.AllowOriginRegex.MustFQ, "[a-z+", errors.IsFatal},
+		{backend.AllowedMethods.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.AllowedHeaders.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.AllowCredentials.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.OptionsPassthrough.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.MaxAge.MustFQ, struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 

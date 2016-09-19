@@ -54,7 +54,7 @@ func (r FakeResponse) Write(b []byte) (n int, err error) {
 func BenchmarkExposedHeader_WebsiteScope_AllowOriginRegex(b *testing.B) {
 
 	s := newCorsService(cfgmock.PathValue{
-		backend.NetCorsAllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
+		backend.AllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
 	})
 	req := reqWithStore("GET")
 	req.Header.Set("Origin", "http://foobar.com")
