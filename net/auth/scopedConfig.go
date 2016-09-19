@@ -27,13 +27,12 @@ type Authenticator interface {
 	Authenticate(h scope.Hash, r *http.Request) error
 }
 
-// scopedConfig private internal scoped based configuration
-type scopedConfig struct {
+// ScopedConfig private internal scoped based configuration
+type ScopedConfig struct {
+	scopedConfigGeneric
 
-	// scopeHash defines the scope bound to the configuration is.
-	scopeHash scope.Hash
-	log       log.Logger
-	enable    bool
+	log      log.Logger
+	disabled bool
 	// if nil fall back to default scope
 	Authenticator
 	loginHandler  http.Handler // e.g. basic auth browser popup
@@ -42,13 +41,13 @@ type scopedConfig struct {
 
 // IsValid a configuration for a scope is only then valid when the Key has been
 // supplied, a non-nil signing method and a non-nil Verifier.
-func (sc scopedConfig) IsValid() bool {
-	return sc.scopeHash > 0 && sc.Authenticator != nil && sc.enable
+func (sc ScopedConfig) IsValid() bool {
+	return sc.ScopeHash > 0 && sc.Authenticator != nil && sc.disabled
 }
 
-func defaultScopedConfig() (scopedConfig, error) {
-	return scopedConfig{
-		scopeHash: scope.DefaultHash,
+func defaultScopedConfig() (ScopedConfig, error) {
+	return ScopedConfig{
+		ScopeHash: scope.DefaultHash,
 		log:       log.BlackHole{}, // disabled info and debug logging
 	}, nil
 }

@@ -15,27 +15,16 @@
 package auth
 
 import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-// Option defines a function argument for the Cors type to apply options.
-type Option func(*Service) error
-
-// ScopedOptionFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during a
-// request.
-type ScopedOptionFunc func(config.Scoped) []Option
 
 // WithDefaultConfig applies the default configuration settings based for
 // a specific scope. This function overwrites any previous set options.
 //
 // Default values are:
 //		- ?
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	h := scope.NewHash(scp, id)
+func WithDefaultConfig(h scope.Hash) Option {
 	return func(s *Service) error {
 		var err error
 		if h == scope.DefaultHash {
@@ -52,8 +41,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 }
 
 // WithIsActive enables or disables the authentication for a specific scope.
-func WithIsActive(scp scope.Scope, id int64, active bool) Option {
-	h := scope.NewHash(scp, id)
+func WithIsActive(h scope.Hash, active bool) Option {
 	return func(s *Service) error {
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.enable = active
@@ -73,39 +61,6 @@ func WithIsActive(scp scope.Scope, id int64, active bool) Option {
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
-		return nil
-	}
-}
-
-// WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes. Mainly used for debugging.
-func WithLogger(l log.Logger) Option {
-	return func(s *Service) error {
-		s.defaultScopeCache.log = l
-		return nil
-	}
-}
-
-// WithOptionFactory applies a function which lazily loads the option depending
-// on the incoming scope within a request. For example applies the backend
-// configuration to the service.
-//
-// Once this option function has been set all other manually set option
-// functions, which accept a scope and a scope ID as an argument, will be
-// overwritten by the new values retrieved from the configuration service.
-//
-//	cfgStruct, err := backendauth.NewConfigStructure()
-//	if err != nil {
-//		panic(err)
-//	}
-//	pb := backendauth.New(cfgStruct)
-//
-//	cors := auth.MustNewService(
-//		auth.WithOptionFactory(backendauth.PrepareOptions(pb)),
-//	)
-func WithOptionFactory(f ScopedOptionFunc) Option {
-	return func(s *Service) error {
-		s.scpOptionFnc = f
 		return nil
 	}
 }

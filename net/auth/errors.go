@@ -17,5 +17,3 @@ package auth
 import "github.com/corestoreio/csfw/util/errors"
 
 const errScopedConfigNotValid = `[mwauth] ScopedConfig %s invalid`
-
-var errConfigNotFound = errors.NewNotFoundf(`[mwauth] ScopedConfig not available`)

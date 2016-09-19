@@ -82,7 +82,7 @@ func newService(opts ...Option) (*Service, error) {
 			scopeCache:   make(map[scope.Hash]*ScopedConfig),
 		},
 	}
-	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
+	if err := s.Options(WithDefaultConfig(scope.DefaultHash)); err != nil {
 		return nil, errors.Wrap(err, "[auth] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
