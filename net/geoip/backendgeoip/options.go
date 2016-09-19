@@ -42,7 +42,7 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 			i    int // used as index in opts
 		)
 
-		acc, h, err := be.NetGeoipAllowedCountries.Get(sg)
+		acc, h, err := be.AllowedCountries.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAllowedCountries.Get"))
 		}
@@ -50,11 +50,11 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 		i++
 
 		// REDIRECT TO ALTERNATIVE URL
-		ar, h1, err := be.NetGeoipAlternativeRedirect.Get(sg)
+		ar, h1, err := be.AlternativeRedirect.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAlternativeRedirect.Get"))
 		}
-		arc, h2, err := be.NetGeoipAlternativeRedirectCode.Get(sg)
+		arc, h2, err := be.AlternativeRedirectCode.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAlternativeRedirectCode.Get"))
 		}
@@ -68,7 +68,7 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 		i++
 
 		// LOCAL MAXMIND FILE
-		mmlf, _, err := be.NetGeoipMaxmindLocalFile.Get(sg)
+		mmlf, _, err := be.MaxmindLocalFile.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindLocalFile.Get"))
 		}
@@ -80,19 +80,19 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 		}
 
 		// MAXMIND WEB SERVICE
-		user, _, err := be.NetGeoipMaxmindWebserviceUserID.Get(sg)
+		user, _, err := be.MaxmindWebserviceUserID.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceUserID.Get"))
 		}
-		license, _, err := be.NetGeoipMaxmindWebserviceLicense.Get(sg)
+		license, _, err := be.MaxmindWebserviceLicense.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceLicense.Get"))
 		}
-		timeout, _, err := be.NetGeoipMaxmindWebserviceTimeout.Get(sg)
+		timeout, _, err := be.MaxmindWebserviceTimeout.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceTimeout.Get"))
 		}
-		redisURL, _, err := be.NetGeoipMaxmindWebserviceRedisURL.Get(sg)
+		redisURL, _, err := be.MaxmindWebserviceRedisURL.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceRedisURL.Get"))
 		}

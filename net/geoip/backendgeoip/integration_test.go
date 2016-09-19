@@ -134,10 +134,10 @@ func testBackend_WithGeoIP2Webservice_Redis(
 
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			// @see structure.go for the limitation to scope.Default
-			mustToPath(t, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):   `TestUserID`,
-			mustToPath(t, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0):  `TestLicense`,
-			mustToPath(t, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0):  `21s`,
-			mustToPath(t, backend.NetGeoipMaxmindWebserviceRedisURL.ToPath, scope.Default, 0): redConURL,
+			mustToPath(t, backend.MaxmindWebserviceUserID.ToPath, scope.Default, 0):   `TestUserID`,
+			mustToPath(t, backend.MaxmindWebserviceLicense.ToPath, scope.Default, 0):  `TestLicense`,
+			mustToPath(t, backend.MaxmindWebserviceTimeout.ToPath, scope.Default, 0):  `21s`,
+			mustToPath(t, backend.MaxmindWebserviceRedisURL.ToPath, scope.Default, 0): redConURL,
 		})
 		cfgScp := cfgSrv.NewScoped(1, 2) // Website ID 2 == euro / Store ID == 2 Austria ==> here doesn't matter
 
@@ -165,20 +165,20 @@ func TestBackend_WithAlternativeRedirect(t *testing.T) {
 
 	t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
-		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
-		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1): 307,
-		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
-		mustToPath(t, backend.NetGeoipMaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
+		mustToPath(t, backend.AlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
+		mustToPath(t, backend.AlternativeRedirectCode.ToPath, scope.Website, 1): 307,
+		mustToPath(t, backend.AllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
+		mustToPath(t, backend.MaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	})))
 
 	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
-		mustToPath(t, backend.NetGeoipAlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
-		mustToPath(t, backend.NetGeoipAlternativeRedirectCode.ToPath, scope.Website, 1):  307,
-		mustToPath(t, backend.NetGeoipAllowedCountries.ToPath, scope.Store, 2):           "AT,CH",
-		mustToPath(t, backend.NetGeoipMaxmindWebserviceUserID.ToPath, scope.Default, 0):  "LiesschenMueller",
-		mustToPath(t, backend.NetGeoipMaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
-		mustToPath(t, backend.NetGeoipMaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
+		mustToPath(t, backend.AlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
+		mustToPath(t, backend.AlternativeRedirectCode.ToPath, scope.Website, 1):  307,
+		mustToPath(t, backend.AllowedCountries.ToPath, scope.Store, 2):           "AT,CH",
+		mustToPath(t, backend.MaxmindWebserviceUserID.ToPath, scope.Default, 0):  "LiesschenMueller",
+		mustToPath(t, backend.MaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
+		mustToPath(t, backend.MaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
 	})))
 }
 
@@ -248,15 +248,15 @@ func TestBackend_Path_Errors(t *testing.T) {
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.NetGeoipAllowedCountries.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetGeoipAlternativeRedirect.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetGeoipAlternativeRedirectCode.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetGeoipMaxmindLocalFile.ToPath, "fileNotFound.txt", errors.IsNotFound},
-		{backend.NetGeoipMaxmindLocalFile.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetGeoipMaxmindWebserviceUserID.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetGeoipMaxmindWebserviceLicense.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetGeoipMaxmindWebserviceTimeout.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.NetGeoipMaxmindWebserviceRedisURL.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.AllowedCountries.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.AlternativeRedirect.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.AlternativeRedirectCode.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.MaxmindLocalFile.ToPath, "fileNotFound.txt", errors.IsNotFound},
+		{backend.MaxmindLocalFile.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceUserID.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceLicense.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceTimeout.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceRedisURL.ToPath, struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 

@@ -28,52 +28,52 @@ import (
 type Configuration struct {
 	*geoip.OptionFactories
 
-	// NetGeoipAllowedCountries list of countries which are currently allowed.
+	// AllowedCountries list of countries which are currently allowed.
 	// Separated via comma, e.g.: DE,CH,AT,AU,NZ,
 	//
 	// Path: net/geoip/allowed_countries
-	NetGeoipAllowedCountries cfgmodel.StringCSV
+	AllowedCountries cfgmodel.StringCSV
 
-	// NetGeoipAlternativeRedirect redirects the client to this URL if their
+	// AlternativeRedirect redirects the client to this URL if their
 	// country hasn't been granted access to the next middleware handler.
 	//
 	// Path: net/geoip/alternative_redirect
-	NetGeoipAlternativeRedirect cfgmodel.URL
+	AlternativeRedirect cfgmodel.URL
 
-	// NetGeoipAlternativeRedirectCode HTTP redirect code.
+	// AlternativeRedirectCode HTTP redirect code.
 	//
 	// Path: net/geoip/alternative_redirect_code
-	NetGeoipAlternativeRedirectCode cfgmodel.Int
+	AlternativeRedirectCode cfgmodel.Int
 
-	// NetGeoipMaxmindLocalFile path to a file name stored on the server.
+	// MaxmindLocalFile path to a file name stored on the server.
 	//
 	// Path: net/geoip_maxmind/local_file
-	NetGeoipMaxmindLocalFile cfgmodel.Str
+	MaxmindLocalFile cfgmodel.Str
 
-	// NetGeoipMaxmindWebserviceUserID user id
+	// MaxmindWebserviceUserID user id
 	//
 	// Path: net/geoip_maxmind/webservice_userid
-	NetGeoipMaxmindWebserviceUserID cfgmodel.Str
+	MaxmindWebserviceUserID cfgmodel.Str
 
-	// NetGeoipMaxmindWebserviceLicense license name
+	// MaxmindWebserviceLicense license name
 	//
 	// Path: net/geoip_maxmind/webservice_license
-	NetGeoipMaxmindWebserviceLicense cfgmodel.Str
+	MaxmindWebserviceLicense cfgmodel.Str
 
-	// NetGeoipMaxmindWebserviceTimeout HTTP request time out
+	// MaxmindWebserviceTimeout HTTP request time out
 	//
 	// Path: net/geoip_maxmind/webservice_timeout
-	NetGeoipMaxmindWebserviceTimeout cfgmodel.Duration
+	MaxmindWebserviceTimeout cfgmodel.Duration
 
-	// NetGeoipMaxmindWebserviceRedisURL an URL to the Redis server
+	// MaxmindWebserviceRedisURL an URL to the Redis server
 	//
 	// Path: net/geoip_maxmind/webservice_redisurl
-	NetGeoipMaxmindWebserviceRedisURL cfgmodel.URL
+	MaxmindWebserviceRedisURL cfgmodel.URL
 
 	// WebServiceClient allows you to use a custom client when making requests
 	// to the MaxMind webservice. This client will be used in PrepareOptions().
 	// If nil a fallback to the default client happens. The timeout gets set by
-	// configuration path NetGeoipMaxmindWebserviceTimeout.
+	// configuration path MaxmindWebserviceTimeout.
 	WebServiceClient *http.Client
 }
 
@@ -89,15 +89,15 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 	optsRedir := append([]cfgmodel.Option{}, opts...)
 	optsRedir = append(optsRedir, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(redirects))
 
-	be.NetGeoipAllowedCountries = cfgmodel.NewStringCSV(`net/geoip/allowed_countries`, opts...)
-	be.NetGeoipAlternativeRedirect = cfgmodel.NewURL(`net/geoip/alternative_redirect`, opts...)
-	be.NetGeoipAlternativeRedirectCode = cfgmodel.NewInt(`net/geoip/alternative_redirect_code`, optsRedir...)
+	be.AllowedCountries = cfgmodel.NewStringCSV(`net/geoip/allowed_countries`, opts...)
+	be.AlternativeRedirect = cfgmodel.NewURL(`net/geoip/alternative_redirect`, opts...)
+	be.AlternativeRedirectCode = cfgmodel.NewInt(`net/geoip/alternative_redirect_code`, optsRedir...)
 
-	be.NetGeoipMaxmindLocalFile = cfgmodel.NewStr(`net/geoip_maxmind/local_file`, opts...)
-	be.NetGeoipMaxmindWebserviceUserID = cfgmodel.NewStr(`net/geoip_maxmind/webservice_userid`, opts...)
-	be.NetGeoipMaxmindWebserviceLicense = cfgmodel.NewStr(`net/geoip_maxmind/webservice_license`, opts...)
-	be.NetGeoipMaxmindWebserviceTimeout = cfgmodel.NewDuration(`net/geoip_maxmind/webservice_timeout`, opts...)
-	be.NetGeoipMaxmindWebserviceRedisURL = cfgmodel.NewURL(`net/geoip_maxmind/webservice_redisurl`, opts...)
+	be.MaxmindLocalFile = cfgmodel.NewStr(`net/geoip_maxmind/local_file`, opts...)
+	be.MaxmindWebserviceUserID = cfgmodel.NewStr(`net/geoip_maxmind/webservice_userid`, opts...)
+	be.MaxmindWebserviceLicense = cfgmodel.NewStr(`net/geoip_maxmind/webservice_license`, opts...)
+	be.MaxmindWebserviceTimeout = cfgmodel.NewDuration(`net/geoip_maxmind/webservice_timeout`, opts...)
+	be.MaxmindWebserviceRedisURL = cfgmodel.NewURL(`net/geoip_maxmind/webservice_redisurl`, opts...)
 
 	return be
 }
