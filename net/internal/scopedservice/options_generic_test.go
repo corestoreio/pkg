@@ -50,7 +50,7 @@ func TestWithConfigGetter(t *testing.T) {
 
 func TestWithErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
-	s, err := newService(WithErrorHandler(scope.Store, 44, eh))
+	s, err := newService(WithErrorHandler(scope.Store.ToHash(44), eh))
 	assert.NoError(t, err)
 	cfg := s.ConfigByScopeHash(scope.NewHash(scope.Store, 44), 0)
 	assert.NotNil(t, cfg.ErrorHandler)
@@ -77,8 +77,8 @@ func TestOptionFactories(t *testing.T) {
 
 	var off OptionFactoryFunc = func(config.Scoped) []Option {
 		return []Option{
-			withValue(scope.Store, 1, "a value for the store 1 scope"),
-			withValue(scope.Website, 2, "a value for the website 2 scope"),
+			withValue(scope.Store.ToHash(1), "a value for the store 1 scope"),
+			withValue(scope.Website.ToHash(2), "a value for the website 2 scope"),
 		}
 	}
 

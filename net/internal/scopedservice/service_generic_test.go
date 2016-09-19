@@ -53,12 +53,12 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	logBuf := new(log.MutexBuffer)
 
 	s := MustNew(
-		withValue(scope.Default, 0, "Default=0"),
-		withValue(scope.Website, 1, "Website=1"),
+		withValue(scope.Default.ToHash(0), "Default=0"),
+		withValue(scope.Website.ToHash(1), "Website=1"),
 		WithDebugLog(logBuf),
 	)
 
-	if err := s.Options(withValue(scope.Store, 2, "Store=1")); err != nil {
+	if err := s.Options(withValue(scope.Store.ToHash(2), "Store=1")); err != nil {
 		t.Errorf("%+v", err)
 	}
 
@@ -109,7 +109,7 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 }
 
 func TestService_ClearCache(t *testing.T) {
-	srv := MustNew(withValue(scope.Website, 33, "Gopher"), WithRootConfig(cfgmock.NewService()))
+	srv := MustNew(withValue(scope.Website.ToHash(33), "Gopher"), WithRootConfig(cfgmock.NewService()))
 	cfg := srv.ConfigByScope(33, 44)
 	assert.NoError(t, cfg.IsValid(), "%+v", cfg.IsValid())
 	assert.Exactly(t, cfg.value, "Gopher")

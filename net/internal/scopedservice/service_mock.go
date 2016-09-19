@@ -48,15 +48,14 @@ func newScopedConfig() *ScopedConfig {
 }
 
 // WithDefaultConfig DO NOT USE
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
+func WithDefaultConfig(h scope.Hash) Option {
 	return func(s *Service) error {
-		return withDefaultConfig(scp, id)(s)
+		return withDefaultConfig(h)(s)
 	}
 }
 
-func withValue(scp scope.Scope, id int64, val string) Option {
+func withValue(h scope.Hash, val string) Option {
 	return func(s *Service) error {
-		h := scope.NewHash(scp, id)
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 

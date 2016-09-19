@@ -29,8 +29,8 @@ var defaultErrorHandler = mw.ErrorWithStatusCode(http.StatusServiceUnavailable)
 // embedding into scopedConfig type. This type and its parent type ScopedConfig
 // should be embedded.
 type scopedConfigGeneric struct {
-	// lastErr used during selecting the config from the scopeCache map and infligh
-	// package.
+	// lastErr used during selecting the config from the scopeCache map and
+	// inflight package.
 	lastErr error
 	// ScopeHash defines the scope to which this configuration is bound to.
 	ScopeHash scope.Hash
