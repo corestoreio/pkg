@@ -14,8 +14,8 @@
 
 package element
 
-// Visible* defines yes/no/null values if a configuration field should be visible.
-// If null then the field is a candidate for merging.
+// Visible* defines yes/no/null values if a configuration field should be
+// visible. If null then the field is a candidate for merging.
 const (
 	VisibleAbsent Visible = iota // must start from 0
 	VisibleYes
@@ -24,7 +24,8 @@ const (
 
 // Visible because GoLang bool cannot be nil 8-) and also in love to
 // https://github.com/magento/magento2/blob/0.74.0-beta9/app/code/Magento/Catalog/Model/Product/Attribute/Source/Status.php#L14
-// Main reason is to detect a change when merging section, group and field slices
+// Main reason is to detect a change when merging section, group and field
+// slices.
 type Visible uint8
 
 // MarshalJSON implements marshaling into a human readable string. @todo UnMarshal

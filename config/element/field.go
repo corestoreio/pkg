@@ -24,12 +24,12 @@ import (
 )
 
 // FieldSlice contains a set of Fields. Has several method receivers attached.
-//  Thread safe for reading but not for modifying.
+// Thread safe for reading but not for modifying.
 type FieldSlice []Field
 
-// Field contains the final path element of a configuration. Includes several options.
-//  Thread safe for reading but not for modifying.
-// @see magento2/app/code/Magento/Config/etc/system_file.xsd
+// Field contains the final path element of a configuration. Includes several
+// options. Thread safe for reading but not for modifying. @see
+// magento2/app/code/Magento/Config/etc/system_file.xsd
 type Field struct {
 	// ID unique ID and NOT merged with others. 3rd and final part of the path.
 	ID cfgpath.Route
@@ -45,7 +45,8 @@ type Field struct {
 	// Tooltip used for frontend and can contain HTML
 	Tooltip text.Chars `json:",omitempty"`
 	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-	// Scopes can contain multiple Scope but no more than Default, Website and Store.
+	// Scopes can contain multiple Scope but no more than Default, Website and
+	// Store.
 	Scopes scope.Perm `json:",omitempty"`
 	// SortOrder in ascending order
 	SortOrder int `json:",omitempty"`
@@ -65,11 +66,10 @@ func NewFieldSlice(fs ...Field) FieldSlice {
 	return FieldSlice(fs)
 }
 
-// Find returns a Field pointer or ErrFieldNotFound.
-// Route must be a single part. E.g. if you have path "a/b/c" route would be in
-// this case "c". For comparison the field Sum32 of a route will be used.
-// 2nd argument int contains the slice index of the field.
-// Error behaviour: NotFound
+// Find returns a Field pointer or ErrFieldNotFound. Route must be a single
+// part. E.g. if you have path "a/b/c" route would be in this case "c". For
+// comparison the field Sum32 of a route will be used. 2nd argument int contains
+// the slice index of the field. Error behaviour: NotFound
 func (fs FieldSlice) Find(id cfgpath.Route) (Field, int, error) {
 	for i, f := range fs {
 		if f.ID.Sum32 > 0 && f.ID.Sum32 == id.Sum32 {
@@ -85,8 +85,9 @@ func (fs *FieldSlice) Append(f ...Field) *FieldSlice {
 	return fs
 }
 
-// Merge copies the data from a Field into this slice. Appends if ID is not found
-// in this slice otherwise overrides struct fields if not empty. Not thread safe.
+// Merge copies the data from a Field into this slice. Appends if ID is not
+// found in this slice otherwise overrides struct fields if not empty. Not
+// thread safe.
 func (fs *FieldSlice) Merge(fields ...Field) error {
 	for _, f := range fields {
 		if err := (*fs).merge(f); err != nil {
@@ -128,10 +129,9 @@ func (fs FieldSlice) Less(i, j int) bool {
 	return fs[i].SortOrder < fs[j].SortOrder
 }
 
-// Update applies the data from the new Field to the old field
-// and returns the updated Field. Only non-empty values will
-// be copied and byte slices gets cloned. The returned Field
-// allows modifications.
+// Update applies the data from the new Field to the old field and returns the
+// updated Field. Only non-empty values will be copied and byte slices gets
+// cloned. The returned Field allows modifications.
 func (f Field) Update(new Field) Field {
 	if new.Type != nil {
 		f.Type = new.Type
@@ -161,9 +161,8 @@ func (f Field) Update(new Field) Field {
 	return f
 }
 
-// Route returns the merged route of either
-// Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
-// Owner of the returned cfgpath.Route is *Field.
+// Route returns the merged route of either Section.ID + Group.ID + Field.ID OR
+// Field.ConfgPath if set. Owner of the returned cfgpath.Route is *Field.
 func (f Field) Route(preRoutes ...cfgpath.Route) (cfgpath.Route, error) {
 	var p cfgpath.Path
 	var err error
@@ -178,8 +177,8 @@ func (f Field) Route(preRoutes ...cfgpath.Route) (cfgpath.Route, error) {
 	return p.Route, nil
 }
 
-// RouteHash returns the 64-bit FNV-1a hash of either
-// Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
+// RouteHash returns the 64-bit FNV-1a hash of either Section.ID + Group.ID +
+// Field.ID OR Field.ConfgPath if set.
 func (f Field) RouteHash(preRoutes ...cfgpath.Route) (uint64, error) {
 	var r cfgpath.Route
 

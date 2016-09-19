@@ -54,10 +54,9 @@ func NewGroupSlice(gs ...Group) GroupSlice {
 	return GroupSlice(gs)
 }
 
-// Find returns a Group pointer or ErrGroupNotFound.
-// Route must be a single part. E.g. if you have path "a/b/c" route would be in
-// this case "b". For comparison the field Sum32 of a route will be used.
-// Error behaviour: NotFound
+// Find returns a Group pointer or ErrGroupNotFound. Route must be a single
+// part. E.g. if you have path "a/b/c" route would be in this case "b". For
+// comparison the field Sum32 of a route will be used. Error behaviour: NotFound
 func (gs GroupSlice) Find(id cfgpath.Route) (Group, int, error) {
 	for i, g := range gs {
 		if g.ID.Sum32 > 0 && g.ID.Sum32 == id.Sum32 {
@@ -67,8 +66,9 @@ func (gs GroupSlice) Find(id cfgpath.Route) (Group, int, error) {
 	return Group{}, 0, errors.NewNotFoundf("[element] Group %q", id)
 }
 
-// Merge copies the data from a groups into this slice. Appends if ID is not found
-// in this slice otherwise overrides struct fields if not empty. Not thread safe.
+// Merge copies the data from a groups into this slice. Appends if ID is not
+// found in this slice otherwise overrides struct fields if not empty. Not
+// thread safe.
 func (gs *GroupSlice) Merge(groups ...Group) error {
 	for _, g := range groups {
 		if err := gs.merge(g); err != nil {

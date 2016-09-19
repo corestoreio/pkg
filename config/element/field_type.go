@@ -38,14 +38,16 @@ type (
 	// FieldType used in constants to define the frontend and input type
 	FieldType uint8
 
-	// FieldTyper defines which front end type a configuration value is and generates the HTML for it
+	// FieldTyper defines which front end type a configuration value is and
+	// generates the HTML for it.
 	FieldTyper interface {
 		Type() FieldType
 		ToHTML() []byte // @see \Magento\Framework\Data\Form\Element\AbstractElement
 	}
 )
 
-// Type returns the current field type and satisfies the interface of Field.Type
+// Type returns the current field type and satisfies the interface of
+// Field.Type.
 func (i FieldType) Type() FieldType {
 	return i
 }

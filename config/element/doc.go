@@ -52,17 +52,20 @@
 //    |        +--------+
 //    |
 //    http://asciiflow.com/
-// The three elements Section, Group and Field represents front-end configuration
-// fields and more important default values and their permissions. A permission
-// is of type scope.Perm and defines which of elements in which scope can be shown.
+// The three elements Section, Group and Field represents front-end
+// configuration fields and more important default values and their permissions.
+// A permission is of type scope.Perm and defines which of elements in which
+// scope can be shown.
 //
-// Those three elements represents the tree in function NewConfigStructure() which
-// can be found in any package.
+// Those three elements represents the tree in function NewConfigStructure()
+// which can be found in any package.
 //
-// Unclear: Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
-// You should submit all default values (interface config.Sectioner) to the config.Service.ApplyDefaults()
+// Unclear: Your app which includes the csfw must merge all
+// "PackageConfiguration"s into a single slice. You should submit all default
+// values (interface config.Sectioner) to the config.Service.ApplyDefaults()
 // function.
 //
-// The JSON encoding of the three elements Section, Group and Field are intended to use
-// on the backend REST API and for debugging and testing. Only used in non performance critical parts.
+// The JSON encoding of the three elements Section, Group and Field are intended
+// to use on the backend REST API and for debugging and testing. Only used in
+// non performance critical parts.
 package element

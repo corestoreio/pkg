@@ -16,11 +16,11 @@ package element
 
 // Sectioner at the moment only for testing
 type Sectioner interface {
-	// Defaults generates the default configuration from all fields.
-	// Key is the path and value the value.
+	// Defaults generates the default configuration from all fields. Key is the
+	// path and value the value.
 	Defaults() (DefaultMap, error)
 }
 
-// DefaultMap contains the default aka global configuration of a package.
-// string is the fully qualified configuration path of scope default.
+// DefaultMap contains the default aka global configuration of a package. string
+// is the fully qualified configuration path of scope default.
 type DefaultMap map[string]interface{}

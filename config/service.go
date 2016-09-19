@@ -18,27 +18,25 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
-// of the placeholder in exchange with the current value.
+// LeftDelim and RightDelim are used withing the core_config_data.value field to
+// allow the replacement of the placeholder in exchange with the current value.
 const (
 	LeftDelim  = "{{"
 	RightDelim = "}}"
 )
 
-// Getter implements how to receive thread-safe a configuration value from
-// a cfgpath.Path.
-// Providing a cfgpath.Path argument does not make any assumptions if the
-// scope of the cfgpath.Path is allowed to retrieve the value.
-// The NewScoped() function binds a cfgpath.Route to a scope.Scope and
-// gives you the possibility to fallback the hierarchy levels.
-// These functions are also available in the ScopedGetter interface.
+// Getter implements how to receive thread-safe a configuration value from a
+// cfgpath.Path. Providing a cfgpath.Path argument does not make any assumptions
+// if the scope of the cfgpath.Path is allowed to retrieve the value. The
+// NewScoped() function binds a cfgpath.Route to a scope.Scope and gives you the
+// possibility to fallback the hierarchy levels. These functions are also
+// available in the ScopedGetter interface.
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
 	Byte(cfgpath.Path) ([]byte, error)
@@ -50,14 +48,15 @@ type Getter interface {
 	// maybe add compare and swap function
 }
 
-// GetterPubSuber implements a configuration Getter and a Subscriber for
-// Publish and Subscribe pattern.
+// GetterPubSuber implements a configuration Getter and a Subscriber for Publish
+// and Subscribe pattern.
 type GetterPubSuber interface {
 	Getter
 	Subscriber
 }
 
-// Writer thread safe storing of configuration values under different paths and scopes.
+// Writer thread safe storing of configuration values under different paths and
+// scopes.
 type Writer interface {
 	// Write writes a configuration entry and may return an error
 	Write(p cfgpath.Path, value interface{}) error
@@ -65,8 +64,8 @@ type Writer interface {
 
 // Service main configuration provider. Please use the NewService() function
 type Service struct {
-	// Storage is the underlying data holding provider. Only access it
-	// if you know exactly what you are doing.
+	// Storage is the underlying data holding provider. Only access it if you
+	// know exactly what you are doing.
 	Storage storage.Storager
 
 	// internal service to provide async pub/sub features while reading/writing
@@ -82,9 +81,9 @@ type Service struct {
 	Log log.Logger
 }
 
-// NewService creates the main new configuration for all scopes: default, website
-// and store. Default Storage is a simple map[string]interface{}. A new go routine
-// will be startet for the publish and subscribe feature.
+// NewService creates the main new configuration for all scopes: default,
+// website and store. Default Storage is a simple map[string]interface{}. A new
+// go routine will be startet for the publish and subscribe feature.
 func NewService(opts ...Option) (*Service, error) {
 	l := log.BlackHole{} // disabled debug and info logging.
 	s := &Service{
@@ -138,31 +137,6 @@ func (s *Service) Options(opts ...Option) error {
 // NewScoped creates a new scope base configuration reader
 func (s *Service) NewScoped(websiteID, storeID int64) Scoped {
 	return NewScoped(s, websiteID, storeID)
-}
-
-// ApplyDefaults reads slice Sectioner and applies the keys and values to the
-// default configuration. Overwrites existing values. TODO maybe use a flag to
-// prevent overwriting
-func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
-	def, err := ss.Defaults()
-	if err != nil {
-		return 0, errors.Wrap(err, "[config] Defaults")
-	}
-	for k, v := range def {
-		if s.Log.IsDebug() {
-			s.Log.Debug("config.Service.ApplyDefaults", log.Object(k, v))
-		}
-		var p cfgpath.Path
-		p, err = cfgpath.NewByParts(k) // default path!
-		if err != nil {
-			return
-		}
-		if err = s.Write(p, v); err != nil {
-			return 0, errors.Wrap(err, "[config] Storage.Set")
-		}
-		count++
-	}
-	return
 }
 
 // Write puts a value back into the Service. Example usage:
@@ -254,8 +228,8 @@ func (s *Service) Int(p cfgpath.Path) (int, error) {
 	return conv.ToIntE(vs)
 }
 
-// Time returns a date and time object from the Service. Example usage see String.
-// Time() is able to parse available time formats as defined in
+// Time returns a date and time object from the Service. Example usage see
+// String. Time() is able to parse available time formats as defined in
 // github.com/corestoreio/csfw/util/conv.StringToDate()
 func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 	vs, err := s.get(p)
@@ -265,9 +239,9 @@ func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 	return conv.ToTimeE(vs)
 }
 
-// IsSet checks if a key is in the configuration. Returns false on error.
-// Errors will be logged in Debug mode. Does not check if the value can be asserted
-// to the desired type.
+// IsSet checks if a key is in the configuration. Returns false on error. Errors
+// will be logged in Debug mode. Does not check if the value can be asserted to
+// the desired type.
 func (s *Service) IsSet(p cfgpath.Path) bool {
 	v, err := s.Storage.Get(p)
 	if err != nil {

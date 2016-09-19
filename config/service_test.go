@@ -27,63 +27,11 @@ import (
 )
 
 var (
-	_ config.Getter     = (*config.Service)(nil)
-	_ config.Writer     = (*config.Service)(nil)
-	_ config.Subscriber = (*config.Service)(nil)
+	_ config.Getter               = (*config.Service)(nil)
+	_ config.Writer               = (*config.Service)(nil)
+	_ config.Subscriber           = (*config.Service)(nil)
+	_ element.ConfigurationWriter = (*config.Service)(nil)
 )
-
-func TestService_ApplyDefaults(t *testing.T) {
-
-	pkgCfg := element.MustNewConfiguration(
-		element.Section{
-			ID: cfgpath.NewRoute("contact"),
-			Groups: element.NewGroupSlice(
-				element.Group{
-					ID: cfgpath.NewRoute("contact"),
-					Fields: element.NewFieldSlice(
-						element.Field{
-							// Path: `contact/contact/enabled`,
-							ID:      cfgpath.NewRoute("enabled"),
-							Default: true,
-						},
-					),
-				},
-				element.Group{
-					ID: cfgpath.NewRoute("email"),
-					Fields: element.NewFieldSlice(
-						element.Field{
-							// Path: `contact/email/recipient_email`,
-							ID:      cfgpath.NewRoute("recipient_email"),
-							Default: `hello@example.com`,
-						},
-						element.Field{
-							// Path: `contact/email/sender_email_identity`,
-							ID:      cfgpath.NewRoute("sender_email_identity"),
-							Default: 2.7182818284590452353602874713527,
-						},
-						element.Field{
-							// Path: `contact/email/email_template`,
-							ID:      cfgpath.NewRoute("email_template"),
-							Default: 4711,
-						},
-					),
-				},
-			),
-		},
-	)
-	s := config.MustNewService()
-	if _, err := s.ApplyDefaults(pkgCfg); err != nil {
-		t.Fatal(err)
-	}
-	cer, _, err := pkgCfg.FindField(cfgpath.NewRoute("contact", "email", "recipient_email"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	email, err := s.String(cfgpath.MustNewByParts("contact/email/recipient_email")) // default scope
-	assert.NoError(t, err)
-	assert.Exactly(t, cer.Default.(string), email)
-	assert.NoError(t, s.Close())
-}
 
 func TestNewServiceStandard(t *testing.T) {
 

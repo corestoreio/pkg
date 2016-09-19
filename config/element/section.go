@@ -25,9 +25,9 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// SectionSlice contains a set of Sections. Some nifty helper functions
-// exists. Thread safe for reading. A section slice can be used in many
-// goroutines. It must remain lock-free.
+// SectionSlice contains a set of Sections. Some nifty helper functions exists.
+// Thread safe for reading. A section slice can be used in many goroutines. It
+// must remain lock-free.
 type SectionSlice []Section
 
 // Section defines the layout for the configuration section which contains
@@ -50,8 +50,8 @@ func NewSectionSlice(s ...Section) SectionSlice {
 	return SectionSlice(s)
 }
 
-// NewConfiguration creates a new validated SectionSlice with a three level configuration.
-// Panics if a path is redundant.
+// NewConfiguration creates a new validated SectionSlice with a three level
+// configuration.
 func NewConfiguration(sections ...Section) (SectionSlice, error) {
 	ss := NewSectionSlice(sections...)
 	if err := ss.Validate(); err != nil {
@@ -69,9 +69,10 @@ func MustNewConfiguration(sections ...Section) SectionSlice {
 	return s
 }
 
-// NewConfigurationMerge creates a new validated SectionSlice with a three level configuration.
-// Before validation, slices are all merged together. Panics if a path is redundant.
-// Only use this function if your package elementuration really has duplicated entries.
+// NewConfigurationMerge creates a new validated SectionSlice with a three level
+// configuration. Before validation, slices are all merged together. Panics if a
+// path is redundant. Only use this function if your package elementuration
+// really has duplicated entries.
 func NewConfigurationMerge(sections ...Section) (SectionSlice, error) {
 	var ss SectionSlice
 	if err := ss.Merge(sections...); err != nil {
@@ -145,8 +146,9 @@ func (ss *SectionSlice) Merge(sections ...Section) error {
 	return nil
 }
 
-// Merge copies the data from a Section into this slice. Appends if ID is not found
-// in this slice otherwise overrides struct fields if not empty. Not thread safe.
+// Merge copies the data from a Section into this slice. Appends if ID is not
+// found in this slice otherwise overrides struct fields if not empty. Not
+// thread safe.
 func (ss *SectionSlice) merge(s Section) error {
 	cs, idx, err := (*ss).Find(s.ID) // cs current section
 	if err != nil {
@@ -175,12 +177,11 @@ func (ss *SectionSlice) merge(s Section) error {
 	return nil
 }
 
-// Find returns a Section pointer or ErrSectionNotFound.
-// Route must be a single part. E.g. if you have path "a/b/c" route would be in
-// this case "a". For comparison the field Sum32 of a route will be used.
-// 2nd return parameter contains the position of the Section within the
-// SectionSlice.
-// Error behaviour: NotFound
+// Find returns a Section pointer or ErrSectionNotFound. Route must be a single
+// part. E.g. if you have path "a/b/c" route would be in this case "a". For
+// comparison the field Sum32 of a route will be used. 2nd return parameter
+// contains the position of the Section within the SectionSlice. Error
+// behaviour: NotFound
 func (ss SectionSlice) Find(id cfgpath.Route) (Section, int, error) {
 	for i, s := range ss {
 		if s.ID.Sum32 > 0 && s.ID.Sum32 == id.Sum32 {
@@ -190,11 +191,9 @@ func (ss SectionSlice) Find(id cfgpath.Route) (Section, int, error) {
 	return Section{}, 0, errors.NewNotFoundf("[element] Section %q", id)
 }
 
-// FindGroup searches for a group using the first two path segments.
-// Route must have the format a/b/c.
-// 2nd return parameter contains the position of the Group within the
-// GgroupSlice of a Section.
-// Error behaviour: NotFound
+// FindGroup searches for a group using the first two path segments. Route must
+// have the format a/b/c. 2nd return parameter contains the position of the
+// Group within the GgroupSlice of a Section. Error behaviour: NotFound
 func (ss SectionSlice) FindGroup(r cfgpath.Route) (Group, int, error) {
 
 	spl, err := r.Split()
@@ -208,9 +207,8 @@ func (ss SectionSlice) FindGroup(r cfgpath.Route) (Group, int, error) {
 	return cs.Groups.Find(spl[1]) // annotation missing !?
 }
 
-// FindField searches for a field using all three path segments.
-// Route must have the format a/b/c.
-// Error behaviour: NotFound, NotValid
+// FindField searches for a field using all three path segments. Route must have
+// the format a/b/c. Error behaviour: NotFound, NotValid
 func (ss SectionSlice) FindField(r cfgpath.Route) (Field, int, error) {
 	spl, err := r.Split()
 	if err != nil {
@@ -228,9 +226,8 @@ func (ss SectionSlice) FindField(r cfgpath.Route) (Field, int, error) {
 }
 
 // UpdateField searches for a field using all three path segments and updates
-// the found field with the new field data.
-// Not thread safe!
-// Error behaviour: NotFound, NotValid
+// the found field with the new field data. Not thread safe! Error behaviour:
+// NotFound, NotValid
 func (ss SectionSlice) UpdateField(r cfgpath.Route, new Field) error {
 	spl, err := r.Split()
 	if err != nil {
@@ -260,9 +257,9 @@ func (ss *SectionSlice) Append(s ...Section) *SectionSlice {
 	return ss
 }
 
-// AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
-// more path parts gets ignored. Not thread safe.
-// Error behaviour: NotFound, NotValid
+// AppendFields adds 0..n *Fields. Path must have at least two path parts like
+// a/b more path parts gets ignored. Not thread safe. Error behaviour: NotFound,
+// NotValid
 func (ss *SectionSlice) AppendFields(r cfgpath.Route, fs ...Field) error {
 	spl, err := r.Split()
 	if err != nil {
@@ -291,8 +288,8 @@ func (ss SectionSlice) ToJSON() string {
 	return buf.String()
 }
 
-// Validate checks for duplicated configuration paths in all three hierarchy levels.
-// Error behaviour: NotValid
+// Validate checks for duplicated configuration paths in all three hierarchy
+// levels. Error behaviour: NotValid
 func (ss SectionSlice) Validate() error {
 	if len(ss) == 0 {
 		return errors.NewNotValidf("[element] SectionSlice length is zero")
@@ -354,4 +351,37 @@ func (ss SectionSlice) Swap(i, j int) {
 
 func (ss SectionSlice) Less(i, j int) bool {
 	return ss[i].SortOrder < ss[j].SortOrder
+}
+
+// ConfigurationWriter thread safe storing of configuration values under
+// different paths and scopes. This interface has been copied from config.Writer
+// to avoid bloated imports. Due to testing both interfaces will be kept in
+// sync.
+type ConfigurationWriter interface {
+	// Write writes a configuration entry and may return an error
+	Write(p cfgpath.Path, value interface{}) error
+}
+
+// ApplyDefaults reads slice Sectioner and applies the keys and values to the
+// default configuration writer. Overwrites existing values.
+// TODO maybe use a flag to prevent overwriting
+func (ss SectionSlice) ApplyDefaults(s ConfigurationWriter) (count int, err error) {
+	def, err := ss.Defaults()
+	if err != nil {
+		return 0, errors.Wrap(err, "[element] SectionSlice.ApplyDefaults.Defaults")
+	}
+	for k, v := range def {
+		var p cfgpath.Path
+		p, err = cfgpath.NewByParts(k) // default path!
+		if err != nil {
+			err = errors.Wrap(err, "[element] SectionSlice.ApplyDefaults.cfgpath.NewByParts")
+			return
+		}
+		if err = s.Write(p, v); err != nil {
+			err = errors.Wrap(err, "[element] SectionSlice.ApplyDefaults.Storage.Set")
+			return
+		}
+		count++
+	}
+	return
 }
