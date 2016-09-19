@@ -266,7 +266,7 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 		stClaim := jwtclaim.NewStore()
 		stClaim.Store = "de"
 		stClaim.UserID = "hans_wurst"
-		newToken, err := jwts.NewToken(scope.Website, 1, stClaim)
+		newToken, err := jwts.NewToken(scope.Website.ToHash(1), stClaim)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}

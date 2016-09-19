@@ -15,12 +15,11 @@
 package jwt
 
 import (
-	"hash/fnv"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/util/blacklist"
+	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
@@ -29,7 +28,7 @@ import (
 )
 
 func TestScopedConfig_ParseFromRequest_Valid(t *testing.T) {
-	bl := blacklist.NewInMemory(fnv.New64a)
+	bl := containable.NewInMemory()
 	sc := newScopedConfig()
 	kid := shortid.MustGenerate()
 	tk := csjwt.NewToken(jwtclaim.Map{"jti": kid})
@@ -77,7 +76,7 @@ func TestScopedConfig_ParseFromRequest_Invalid_JTI(t *testing.T) {
 }
 
 func TestScopedConfig_ParseFromRequest_In_Blacklist(t *testing.T) {
-	bl := blacklist.NewInMemory(fnv.New64a)
+	bl := containable.NewInMemory()
 	sc := newScopedConfig()
 	kid := shortid.MustGenerate()
 	assert.NoError(t, bl.Set([]byte(kid), time.Hour))
@@ -132,7 +131,7 @@ func TestScopedConfig_ParseFromRequest_SingleTokenUsage_BL_Set_Error(t *testing.
 // todo investigate allocs
 // 200000	      9072 ns/op	    1529 B/op	      32 allocs/op
 func BenchmarkScopedConfig_ParseFromRequest_HS256Fast_FNV64a(b *testing.B) {
-	bl := blacklist.NewInMemory(fnv.New64a)
+	bl := containable.NewInMemory()
 
 	for i := 0; i < 10000; i++ {
 		kid := []byte(shortid.MustGenerate())

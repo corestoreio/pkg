@@ -38,7 +38,7 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = jwt.MustNew(jwt.WithKey(scope.Default, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
+	_ = jwt.MustNew(jwt.WithKey(scope.DefaultHash, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
 }
 
 func TestServiceNewDefaultBlacklist(t *testing.T) {
@@ -60,7 +60,7 @@ func TestServiceNewDefault(t *testing.T) {
 	testClaims := &jwtclaim.Standard{
 		Subject: "gopher",
 	}
-	theToken, err := jwts.NewToken(scope.Default, 0, testClaims)
+	theToken, err := jwts.NewToken(scope.DefaultHash, testClaims)
 	assert.NoError(t, err)
 	assert.Empty(t, testClaims.ID)
 	assert.NotEmpty(t, theToken.Raw)
@@ -82,7 +82,7 @@ func TestServiceNewDefault(t *testing.T) {
 
 func TestServiceNewDefaultRSAError(t *testing.T) {
 
-	jmRSA, err := jwt.New(jwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
+	jmRSA, err := jwt.New(jwt.WithKey(scope.DefaultHash, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
@@ -102,7 +102,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	}
 
 	keyRand := csjwt.WithPasswordRandom()
-	jwts := jwt.MustNew(jwt.WithKey(scope.Default, 0, keyRand))
+	jwts := jwt.MustNew(jwt.WithKey(scope.DefaultHash, keyRand))
 
 	tk := csjwt.NewToken(jwtclaim.Map{
 		"exp": time.Now().Add(time.Hour).Unix(),
@@ -139,7 +139,7 @@ func TestServiceLogout(t *testing.T) {
 		jwt.WithBlacklist(tbl),
 	)
 
-	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.NewStore())
+	theToken, err := jwts.NewToken(scope.DefaultHash, jwtclaim.NewStore())
 	assert.NoError(t, err)
 
 	jti, err := theToken.Claims.Get(jwtclaim.KeyID)
@@ -159,7 +159,7 @@ func TestServiceLogout(t *testing.T) {
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
 
-	jwts, err := jwt.New(jwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
+	jwts, err := jwt.New(jwt.WithKey(scope.Store.ToHash(33), csjwt.WithPasswordRandom()))
 	assert.Nil(t, jwts)
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 }
@@ -167,14 +167,14 @@ func TestServiceIncorrectConfigurationScope(t *testing.T) {
 func TestService_NewToken_Merge_Maps(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
+		jwt.WithKey(scope.Website.ToHash(3), csjwt.WithPasswordRandom()),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// NewToken has an underlying map as a claimer
-	theToken, err := jwts.NewToken(scope.Website, 3, jwtclaim.Map{
+	theToken, err := jwts.NewToken(scope.Website.ToHash(3), jwtclaim.Map{
 		"xk1": 2.718281,
 	})
 	if err != nil {
@@ -191,8 +191,8 @@ func TestService_NewToken_Merge_Maps(t *testing.T) {
 func TestService_NewToken_Merge_Structs(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
+		jwt.WithKey(scope.Website.ToHash(4), csjwt.WithPasswordRandom()),
+		jwt.WithTemplateToken(scope.Website.ToHash(4), func() csjwt.Token {
 			s := jwtclaim.NewStore()
 			s.Store = "de"
 			return csjwt.NewToken(s)
@@ -203,7 +203,7 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 	}
 
 	// NewToken has an underlying jwtclaim.NewStore as a claimer
-	theToken, err := jwts.NewToken(scope.Website, 4, jwtclaim.Map{
+	theToken, err := jwts.NewToken(scope.Website.ToHash(4), jwtclaim.Map{
 		jwtclaim.KeyUserID: "0815",
 	})
 	if err != nil {
@@ -233,8 +233,8 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 func TestService_NewToken_Merge_Fail(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
+		jwt.WithKey(scope.Website.ToHash(4), csjwt.WithPasswordRandom()),
+		jwt.WithTemplateToken(scope.Website.ToHash(4), func() csjwt.Token {
 			return csjwt.NewToken(&jwtclaim.Standard{})
 		}),
 	)
@@ -243,7 +243,7 @@ func TestService_NewToken_Merge_Fail(t *testing.T) {
 	}
 
 	// NewToken has an underlying jwtclaim.NewStore as a claimer
-	theToken, err := jwts.NewToken(scope.Website, 4, jwtclaim.Map{
+	theToken, err := jwts.NewToken(scope.Website.ToHash(4), jwtclaim.Map{
 		jwtclaim.KeyUserID: "0815",
 	})
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)

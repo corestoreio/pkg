@@ -32,8 +32,8 @@ import (
 //		- Signing Method HMAC SHA 256 (fast version from pkg csjwt)
 //		- HTTP error handler returns http.StatusUnauthorized
 //		- JTI disabled
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	return withDefaultConfig(scp, id)
+func WithDefaultConfig(h scope.Hash) Option {
+	return withDefaultConfig(h)
 }
 
 // WithBlacklist sets a new global black list service. Convenience helper
@@ -49,8 +49,7 @@ func WithBlacklist(bl Blacklister) Option {
 // when parsing a token in a request. Function f will generate a new base token
 // for each request. This allows you to choose using a slow map as a claim or a
 // fast struct based claim. Same goes with the header.
-func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
-	h := scope.NewHash(scp, id)
+func WithTemplateToken(h scope.Hash, f func() csjwt.Token) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -68,8 +67,7 @@ func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 
 // WithSigningMethod this option function lets you overwrite the default 256 bit
 // signing method for a specific scope. Used incorrectly token decryption can fail.
-func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
-	h := scope.NewHash(scp, id)
+func WithSigningMethod(h scope.Hash, sm csjwt.Signer) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -88,8 +86,7 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 }
 
 // WithExpiration sets expiration duration depending on the scope
-func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
-	h := scope.NewHash(scp, id)
+func WithExpiration(h scope.Hash, d time.Duration) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -107,8 +104,7 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 
 // WithSkew sets the duration of time skew we allow between signer and verifier.
 // Must be a positive value.
-func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
-	h := scope.NewHash(scp, id)
+func WithSkew(h scope.Hash, d time.Duration) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -127,8 +123,7 @@ func WithSkew(scp scope.Scope, id int64, d time.Duration) Option {
 // WithKey sets the key for the default signing method of 256 bits.
 // You can also provide your own signing method by using additionally
 // the function WithSigningMethod(), which must be called after this function :-/.
-func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
-	h := scope.NewHash(scp, id)
+func WithKey(h scope.Hash, key csjwt.Key) Option {
 	if key.Error != nil {
 		return func(s *Service) error {
 			return errors.Wrap(key.Error, "[jwt] Key Error")
@@ -175,8 +170,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 }
 
 // WithDisable disables the whole JWT processing for a scope.
-func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
-	h := scope.NewHash(scp, id)
+func WithDisable(h scope.Hash, isDisabled bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -194,8 +188,7 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 
 // WithStoreCodeFieldName sets the name of the key in the token claims section
 // to extract the store code.
-func WithStoreCodeFieldName(scp scope.Scope, id int64, name string) Option {
-	h := scope.NewHash(scp, id)
+func WithStoreCodeFieldName(h scope.Hash, name string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -214,8 +207,7 @@ func WithStoreCodeFieldName(scp scope.Scope, id int64, name string) Option {
 // WithUnauthorizedHandler adds a custom handler when a token cannot authorized to call the next handler in the chain.
 // The default unauthorized handler prints the error to the user and
 // returns a http.StatusUnauthorized.
-func WithUnauthorizedHandler(scp scope.Scope, id int64, uh mw.ErrorHandler) Option {
-	h := scope.NewHash(scp, id)
+func WithUnauthorizedHandler(h scope.Hash, uh mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -234,8 +226,7 @@ func WithUnauthorizedHandler(scp scope.Scope, id int64, uh mw.ErrorHandler) Opti
 // WithSingleTokenUsage if set to true for each request a token can be only used
 // once. The JTI (JSON Token Identifier) gets added to the blacklist until it
 // expires.
-func WithSingleTokenUsage(scp scope.Scope, id int64, enable bool) Option {
-	h := scope.NewHash(scp, id)
+func WithSingleTokenUsage(h scope.Hash, enable bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()

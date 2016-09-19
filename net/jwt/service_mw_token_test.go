@@ -19,13 +19,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"hash/fnv"
-
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/jwt"
+	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +37,7 @@ func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte)
 	}
 	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
-	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
+	theToken, err := jm.NewToken(scope.DefaultHash, jwtclaim.Map{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -55,7 +53,7 @@ func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte)
 func TestService_WithToken_EmptyScope(t *testing.T) {
 
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithErrorHandler(scope.Default, 0,
+		jwt.WithErrorHandler(scope.DefaultHash,
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -81,7 +79,7 @@ func TestService_WithToken_EmptyScope(t *testing.T) {
 
 func TestService_WithToken_MissingToken(t *testing.T) {
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithErrorHandler(scope.Website, 1,
+		jwt.WithErrorHandler(scope.Website.ToHash(1),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -104,8 +102,8 @@ func TestService_WithToken_MissingToken(t *testing.T) {
 
 func TestService_WithToken_Disabled(t *testing.T) {
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website, 44, true),
-		jwt.WithErrorHandler(scope.Website, 1,
+		jwt.WithDisable(scope.Website.ToHash(44), true),
+		jwt.WithErrorHandler(scope.Website.ToHash(1),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -128,8 +126,8 @@ func TestService_WithToken_Disabled(t *testing.T) {
 
 func TestService_WithToken_Success(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website, 55, false),
-		jwt.WithErrorHandler(scope.Website, 55,
+		jwt.WithDisable(scope.Website.ToHash(55), false),
+		jwt.WithErrorHandler(scope.Website.ToHash(55),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -154,9 +152,9 @@ func TestService_WithToken_Success(t *testing.T) {
 
 func TestService_WithToken_SingleUsage(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website, 66, false),
-		jwt.WithSingleTokenUsage(scope.Website, 66, true),
-		jwt.WithErrorHandler(scope.Website, 66,
+		jwt.WithDisable(scope.Website.ToHash(66), false),
+		jwt.WithSingleTokenUsage(scope.Website.ToHash(66), true),
+		jwt.WithErrorHandler(scope.Website.ToHash(66),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -168,7 +166,7 @@ func TestService_WithToken_SingleUsage(t *testing.T) {
 			})
 		}),
 		// default is a null blacklist so we must set one
-		jwt.WithBlacklist(blacklist.NewInMemory(fnv.New64a)),
+		jwt.WithBlacklist(containable.NewInMemory()),
 	)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)

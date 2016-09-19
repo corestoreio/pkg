@@ -16,7 +16,6 @@ package jwt_test
 
 import (
 	"fmt"
-	"hash/fnv"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -27,9 +26,9 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -42,7 +41,7 @@ func testAuth_WithRunMode(t *testing.T, finalHandler http.Handler, opts ...jwt.O
 	jm := jwt.MustNew(append(opts, jwt.WithRootConfig(cfg))...)
 	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
-	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
+	theToken, err := jm.NewToken(scope.DefaultHash, jwtclaim.Map{
 		"xfoo": "baz",
 		"zfoo": 4712,
 	})
@@ -64,7 +63,7 @@ func TestService_WithRunMode_NoToken(t *testing.T) {
 	//  request calls default unauthorized handler
 
 	authHandler, _ := testAuth_WithRunMode(t, nil,
-		jwt.WithErrorHandler(scope.Default, 0, mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.DefaultHash, mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
 	)
 
@@ -81,9 +80,9 @@ func TestService_WithRunMode_Custom_UnauthorizedHandler(t *testing.T) {
 
 	var calledUnauthorizedHandler bool
 	authHandler, _ := testAuth_WithRunMode(t, nil,
-		jwt.WithErrorHandler(scope.Default, 0, mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.DefaultHash, mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
-		jwt.WithUnauthorizedHandler(scope.Website, 1, func(err error) http.Handler {
+		jwt.WithUnauthorizedHandler(scope.Website.ToHash(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				tk, ok := jwt.FromContext(r.Context())
 				assert.False(t, tk.Valid)
@@ -112,9 +111,9 @@ func TestService_WithRunMode_Custom_UnauthorizedHandler(t *testing.T) {
 
 func TestService_WithRunMode_Invalid_ScopedConfiguration(t *testing.T) {
 	authHandler, _ := testAuth_WithRunMode(t, nil,
-		jwt.WithErrorHandler(scope.Website, 1, mw.ErrorWithPanic),
-		jwt.WithErrorHandler(scope.Default, 0, mw.ErrorWithPanic),
-		jwt.WithSigningMethod(scope.Website, 1, nil),
+		jwt.WithErrorHandler(scope.Website.ToHash(1), mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.DefaultHash, mw.ErrorWithPanic),
+		jwt.WithSigningMethod(scope.Website.ToHash(1), nil),
 	)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
@@ -133,8 +132,8 @@ func TestService_WithRunMode_Disabled(t *testing.T) {
 			assert.Exactly(t, int64(1), wID, "scope.FromContext website")
 			assert.Exactly(t, int64(2), sID, "scope.FromContext store")
 		}),
-		jwt.WithDisable(scope.Website, 1, true), // 1 == euro website
-		jwt.WithErrorHandler(scope.Website, 1, mw.ErrorWithPanic),
+		jwt.WithDisable(scope.Website.ToHash(1), true), // 1 == euro website
+		jwt.WithErrorHandler(scope.Website.ToHash(1), mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
 	)
 
@@ -154,11 +153,11 @@ func TestService_WithRunMode_SingleUsage(t *testing.T) {
 			assert.Exactly(t, int64(1), wID, "scope.FromContext website")
 			assert.Exactly(t, int64(2), sID, "scope.FromContext store")
 		}),
-		jwt.WithSingleTokenUsage(scope.Website, 1, true),
-		jwt.WithErrorHandler(scope.Website, 1, mw.ErrorWithPanic),
+		jwt.WithSingleTokenUsage(scope.Website.ToHash(1), true),
+		jwt.WithErrorHandler(scope.Website.ToHash(1), mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
 		// default is a null blacklist so we must set one
-		jwt.WithBlacklist(blacklist.NewInMemory(fnv.New64a)),
+		jwt.WithBlacklist(containable.NewInMemory()),
 	)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
@@ -182,7 +181,7 @@ func TestService_WithRunMode_DefaultStoreID_Error(t *testing.T) {
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
-		jwt.WithErrorHandler(scope.Default, 0, mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.DefaultHash, mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusAlreadyReported)
@@ -214,7 +213,7 @@ func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
-		jwt.WithErrorHandler(scope.Website, 778, func(err error) http.Handler {
+		jwt.WithErrorHandler(scope.Website.ToHash(778), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusAlreadyReported)
 				assert.True(t, errors.IsNotImplemented(err))
@@ -235,7 +234,7 @@ func TestService_WithRunMode_StoreIDbyCode_Error(t *testing.T) {
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
-	theToken, err := jm.NewToken(scope.Website, 778, claimStore)
+	theToken, err := jm.NewToken(scope.Website.ToHash(778), claimStore)
 	assert.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
@@ -253,7 +252,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
-		jwt.WithErrorHandler(scope.Website, 778, func(err error) http.Handler {
+		jwt.WithErrorHandler(scope.Website.ToHash(778), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusAlreadyReported)
 				assert.True(t, errors.IsTemporary(err))
@@ -274,7 +273,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Error(t *testing.T) {
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
-	theToken, err := jm.NewToken(scope.Website, 778, claimStore)
+	theToken, err := jm.NewToken(scope.Website.ToHash(778), claimStore)
 	assert.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
@@ -292,9 +291,9 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
-		jwt.WithErrorHandler(scope.Website, 889, mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.Website.ToHash(889), mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
-		jwt.WithUnauthorizedHandler(scope.Website, 889, func(err error) http.Handler {
+		jwt.WithUnauthorizedHandler(scope.Website.ToHash(889), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				wID, sID, ok := scope.FromContext(r.Context())
 				assert.True(t, ok)
@@ -323,7 +322,7 @@ func TestService_WithRunMode_IsAllowedStoreID_Not(t *testing.T) {
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
-	theToken, err := jm.NewToken(scope.Website, 889, claimStore)
+	theToken, err := jm.NewToken(scope.Website.ToHash(889), claimStore)
 	assert.NoError(t, err)
 
 	req := httptest.NewRequest("GET", "http://auth2.xyz", nil)
@@ -342,9 +341,9 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 	cfg := cfgmock.NewService()
 	jm := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
-		jwt.WithErrorHandler(scope.Website, 359, mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.Website.ToHash(359), mw.ErrorWithPanic),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
-		jwt.WithUnauthorizedHandler(scope.Website, 359, mw.ErrorWithPanic),
+		jwt.WithUnauthorizedHandler(scope.Website.ToHash(359), mw.ErrorWithPanic),
 	)
 	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
@@ -371,7 +370,7 @@ func TestService_WithRunMode_AllowedToChangeStore(t *testing.T) {
 
 	claimStore := jwtclaim.NewStore()
 	claimStore.Store = "'80s FTW"
-	theToken, err := jm.NewToken(scope.Website, 359, claimStore)
+	theToken, err := jm.NewToken(scope.Website.ToHash(359), claimStore)
 	assert.NoError(t, err)
 	if len(theToken.Raw) == 0 {
 		t.Fatalf("Token empty: %#v", theToken)
@@ -411,14 +410,14 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 	jm := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
-		jwt.WithErrorHandler(scope.Website, 1, mw.ErrorWithPanic),
-		jwt.WithErrorHandler(scope.Website, 2, mw.ErrorWithPanic),
-		jwt.WithUnauthorizedHandler(scope.Website, 1, mw.ErrorWithPanic),
-		jwt.WithUnauthorizedHandler(scope.Website, 2, mw.ErrorWithPanic),
-		jwt.WithStoreCodeFieldName(scope.Website, 1, "euro_store"),
-		jwt.WithStoreCodeFieldName(scope.Website, 2, "oz_store"),
-		jwt.WithSigningMethod(scope.Website, 1, hs256),
-		jwt.WithSigningMethod(scope.Website, 2, hs512),
+		jwt.WithErrorHandler(scope.Website.ToHash(1), mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.Website.ToHash(2), mw.ErrorWithPanic),
+		jwt.WithUnauthorizedHandler(scope.Website.ToHash(1), mw.ErrorWithPanic),
+		jwt.WithUnauthorizedHandler(scope.Website.ToHash(2), mw.ErrorWithPanic),
+		jwt.WithStoreCodeFieldName(scope.Website.ToHash(1), "euro_store"),
+		jwt.WithStoreCodeFieldName(scope.Website.ToHash(2), "oz_store"),
+		jwt.WithSigningMethod(scope.Website.ToHash(1), hs256),
+		jwt.WithSigningMethod(scope.Website.ToHash(2), hs512),
 	)
 	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
@@ -455,10 +454,8 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 				return scope.NewHash(scope.Website, 1)
 			case "scope-oz.co.nz":
 				return scope.NewHash(scope.Website, 2)
-			default:
-				panic(fmt.Sprintf("Unkown host: %q", r.Host))
 			}
-			return 0
+			panic(fmt.Sprintf("Unkown host: %q", r.Host))
 		}), srv)(final)
 
 	{
@@ -466,7 +463,7 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 			"euro_store": "", // we dont want to change the store
 		}
 
-		euroToken, err := jm.NewToken(scope.Website, 1, euroClaim)
+		euroToken, err := jm.NewToken(scope.Website.ToHash(1), euroClaim)
 		assert.NoError(t, err)
 		if len(euroToken.Raw) == 0 {
 			t.Fatalf("Euro Token empty: %#v", euroToken)
@@ -487,7 +484,7 @@ func TestService_WithRunMode_DifferentScopes(t *testing.T) {
 			"oz_store": "nz", // switch to store NZ
 		}
 
-		ozToken, err := jm.NewToken(scope.Website, 2, ozClaim)
+		ozToken, err := jm.NewToken(scope.Website.ToHash(2), ozClaim)
 		assert.NoError(t, err)
 		if len(ozToken.Raw) == 0 {
 			t.Fatalf("OZ Token empty: %#v", ozToken)

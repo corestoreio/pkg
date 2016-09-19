@@ -15,7 +15,6 @@
 package jwt_test
 
 import (
-	"hash/fnv"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -25,9 +24,9 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/jwt"
+	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 )
@@ -42,7 +41,7 @@ func bmWithToken(b *testing.B, opts ...jwt.Option) {
 		"xfoo": "bar",
 		"zfoo": 4711,
 	}
-	token, err := jwts.NewToken(scope.Default, 0, cl)
+	token, err := jwts.NewToken(scope.Default.ToHash(0), cl)
 	if err != nil {
 		b.Error(err)
 	}
@@ -73,18 +72,18 @@ func bmWithToken(b *testing.B, opts ...jwt.Option) {
 	b.RunParallel(bf)
 }
 
-var keyBenchmarkHMACPW = jwt.WithKey(scope.Default, 0, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
+var keyBenchmarkHMACPW = jwt.WithKey(scope.DefaultHash, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
 
 // 200000	      8474 ns/op	    2698 B/op	      63 allocs/op <= Go 1.7
 func BenchmarkWithToken_HMAC_InMemoryBL(b *testing.B) {
-	bl := blacklist.NewInMemory(fnv.New64a)
+	bl := containable.NewInMemory()
 	bmWithToken(b, keyBenchmarkHMACPW, jwt.WithBlacklist(bl))
 	// b.Logf("Blacklist Items %d", bl.Len())
 }
 
 // 30000	     55376 ns/op	    9180 B/op	      92 allocs/op <= Go 1.7
 func BenchmarkWithToken_RSAGenerator_2048(b *testing.B) {
-	bmWithToken(b, jwt.WithKey(scope.Default, 0, csjwt.WithRSAGenerated()))
+	bmWithToken(b, jwt.WithKey(scope.DefaultHash, csjwt.WithRSAGenerated()))
 }
 
 func getRequestWithToken(b *testing.B, token []byte) *http.Request {
@@ -105,10 +104,10 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	cfg := cfgmock.NewService()
 	jwts := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
-		jwt.WithExpiration(scope.Default, 0, time.Second*15),
-		jwt.WithExpiration(scope.Website, 1, time.Second*25),
-		jwt.WithKey(scope.Website, 1, csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website, 1, func() csjwt.Token {
+		jwt.WithExpiration(scope.DefaultHash, time.Second*15),
+		jwt.WithExpiration(scope.Website.ToHash(1), time.Second*25),
+		jwt.WithKey(scope.Website.ToHash(1), csjwt.WithPasswordRandom()),
+		jwt.WithTemplateToken(scope.Website.ToHash(1), func() csjwt.Token {
 			return csjwt.Token{
 				Header: csjwt.NewHead(),
 				Claims: jwtclaim.NewStore(),
@@ -117,12 +116,12 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	)
 
 	// below two lines comment out enables the null black list
-	jwts.Blacklist = blacklist.NewInMemory(fnv.New64a)
+	jwts.Blacklist = containable.NewInMemory()
 
 	var generateToken = func(storeCode string) []byte {
 		s := jwtclaim.NewStore()
 		s.Store = storeCode
-		token, err := jwts.NewToken(scope.Website, 1, s)
+		token, err := jwts.NewToken(scope.Website.ToHash(1), s)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -138,7 +137,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 		tokens[i] = generateToken(storeCodes[rand.Intn(len(storeCodes))])
 
 		// just add garbage to the blacklist
-		tbl := generateToken(strconv.FormatInt(int64(i), 10))
+		tbl := generateToken(strconv.Itoa(i))
 		if err := jwts.Blacklist.Set(tbl, time.Millisecond*time.Microsecond*time.Duration(i)); err != nil {
 			b.Fatalf("%+v", err)
 		}

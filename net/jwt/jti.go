@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/util/shortid"
 )
 
-// JTI represents the interface to generate a new UUID aka JWT ID
+// IDGenerator represents the interface to generate a new UUID aka JWT ID.
 type IDGenerator interface {
 	NewID() (string, error)
 }

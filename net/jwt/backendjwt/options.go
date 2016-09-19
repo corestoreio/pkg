@@ -28,42 +28,36 @@ import (
 func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 	return func(sg config.Scoped) []jwt.Option {
 		var (
-			opts  [6]jwt.Option
-			i     int // used as index in opts
-			scp   scope.Scope
-			scpID int64
+			opts [6]jwt.Option
+			i    int // used as index in opts
 		)
 
 		off, h, err := be.Disabled.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtDisabled.Get"))
 		}
-		scp, scpID = h.Unpack()
-		opts[i] = jwt.WithDisable(scp, scpID, off)
+		opts[i] = jwt.WithDisable(h, off)
 		i++
 
 		exp, h, err := be.Expiration.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtExpiration.Get"))
 		}
-		scp, scpID = h.Unpack()
-		opts[i] = jwt.WithExpiration(scp, scpID, exp)
+		opts[i] = jwt.WithExpiration(h, exp)
 		i++
 
 		skew, h, err := be.Skew.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSkew.Get"))
 		}
-		scp, scpID = h.Unpack()
-		opts[i] = jwt.WithSkew(scp, scpID, skew)
+		opts[i] = jwt.WithSkew(h, skew)
 		i++
 
 		isSU, h, err := be.SingleTokenUsage.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSingleUsage.Get"))
 		}
-		scp, scpID = h.Unpack()
-		opts[i] = jwt.WithSingleTokenUsage(scp, scpID, isSU)
+		opts[i] = jwt.WithSingleTokenUsage(h, isSU)
 		i++
 
 		// todo: avoid the next code and use OptionFactories to apply a signing method. Example in ratelimit package.
@@ -120,13 +114,12 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] Hashes.Lowest"))
 		}
-		scp, scpID = newH.Unpack()
 
 		// WithSigningMethod must be added at the end of the slice to overwrite
 		// default signing methods
-		opts[i] = jwt.WithKey(scp, scpID, key)
+		opts[i] = jwt.WithKey(newH, key)
 		i++
-		opts[i] = jwt.WithSigningMethod(scp, scpID, signingMethod)
+		opts[i] = jwt.WithSigningMethod(newH, signingMethod)
 		return opts[:]
 	}
 }
