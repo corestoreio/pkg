@@ -28,14 +28,13 @@ import (
 // 256 from a cryptographically random source with a length of 64 bytes.
 // Example:
 //		s := MustNewService(WithDefaultConfig(scope.Store,1), WithOtherSettings(scope.Store, 1, ...))
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	return withDefaultConfig(scp, id)
+func WithDefaultConfig(h scope.Hash) Option {
+	return withDefaultConfig(h)
 }
 
 // WithHash sets the hashing algorithm to create a new hash and verify an
 // incoming hash. Please use only cryptographically secure hash algorithms.
-func WithHash(scp scope.Scope, id int64, name string, key []byte) Option {
-	h := scope.NewHash(scp, id)
+func WithHash(h scope.Hash, name string, key []byte) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -55,8 +54,7 @@ func WithHash(scp scope.Scope, id int64, name string, key []byte) Option {
 // write the hash value into the HTTP header. The parser knows how and where to
 // extract the hash value from the header or even the trailer. Compatible types
 // in this package are ContentHMAC, ContentSignature and Transparent.
-func WithHeaderHandler(scp scope.Scope, id int64, pw HeaderParseWriter) Option {
-	h := scope.NewHash(scp, id)
+func WithHeaderHandler(h scope.Hash, pw HeaderParseWriter) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -73,8 +71,7 @@ func WithHeaderHandler(scp scope.Scope, id int64, pw HeaderParseWriter) Option {
 }
 
 // WithDisable allows to disable a signing of the HTTP body or validation.
-func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
-	h := scope.NewHash(scp, id)
+func WithDisable(h scope.Hash, isDisabled bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -92,8 +89,7 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 
 // WithAllowedMethods sets the allowed HTTP methods which can transport a
 // signature hash.
-func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
-	h := scope.NewHash(scp, id)
+func WithAllowedMethods(h scope.Hash, methods ...string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -112,8 +108,7 @@ func WithAllowedMethods(scp scope.Scope, id int64, methods ...string) Option {
 // WithTrailer allows to write the hash sum into the trailer. The middleware switches
 // to stream based hash calculation which results in faster processing instead of writing
 // into a buffer. Make sure that your client can process HTTP trailers.
-func WithTrailer(scp scope.Scope, id int64, inTrailer bool) Option {
-	h := scope.NewHash(scp, id)
+func WithTrailer(h scope.Hash, inTrailer bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -132,8 +127,7 @@ func WithTrailer(scp scope.Scope, id int64, inTrailer bool) Option {
 // WithTransparent allows to write the hashes into the Cacher with a
 // time-to-live. Responses will not get a header key attached and requests won't
 // get inspected for a header key which might contain the hash value.
-func WithTransparent(scp scope.Scope, id int64, c Cacher, ttl time.Duration) Option {
-	h := scope.NewHash(scp, id)
+func WithTransparent(h scope.Hash, c Cacher, ttl time.Duration) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()

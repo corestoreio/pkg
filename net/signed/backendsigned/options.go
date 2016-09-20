@@ -34,28 +34,24 @@ func PrepareOptions(be *Configuration) signed.OptionFactoryFunc {
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Disabled.Get"))
 		}
-		scp, scpID := scpHash.Unpack()
-		opts[i] = signed.WithDisable(scp, scpID, disabled)
+		opts[i] = signed.WithDisable(scpHash, disabled)
 		i++
-
 		if disabled {
-			return opts[:]
+			return opts[:i]
 		}
 
 		inTrailer, scpHash, err := be.InTrailer.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] InTrailer.Get"))
 		}
-		scp, scpID = scpHash.Unpack()
-		opts[i] = signed.WithTrailer(scp, scpID, inTrailer)
+		opts[i] = signed.WithTrailer(scpHash, inTrailer)
 		i++
 
 		methods, scpHash, err := be.AllowedMethods.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] AllowedMethods.Get"))
 		}
-		scp, scpID = scpHash.Unpack()
-		opts[i] = signed.WithAllowedMethods(scp, scpID, methods...)
+		opts[i] = signed.WithAllowedMethods(scpHash, methods...)
 		i++
 
 		key, _, err := be.Key.Get(sg)
@@ -66,8 +62,7 @@ func PrepareOptions(be *Configuration) signed.OptionFactoryFunc {
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Algorithm.Str.Get"))
 		}
-		scp, scpID = scpHash.Unpack()
-		opts[i] = signed.WithHash(scp, scpID, alg, key)
+		opts[i] = signed.WithHash(scpHash, alg, key)
 		i++
 
 		keyID, _, err := be.KeyID.Get(sg)
@@ -78,7 +73,7 @@ func PrepareOptions(be *Configuration) signed.OptionFactoryFunc {
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] HTTPHeaderType.Str.Get"))
 		}
-		scp, scpID = scpHash.Unpack()
+
 		var hpw signed.HeaderParseWriter
 		switch header {
 		// case "transparent":
@@ -90,7 +85,7 @@ func PrepareOptions(be *Configuration) signed.OptionFactoryFunc {
 		default:
 			return signed.OptionsError(errors.NewNotImplementedf("[backendsigned] HTTPHeaderType %q not implemented", header))
 		}
-		opts[i] = signed.WithHeaderHandler(scp, scpID, hpw)
+		opts[i] = signed.WithHeaderHandler(scpHash, hpw)
 		i++
 
 		return opts[:]
