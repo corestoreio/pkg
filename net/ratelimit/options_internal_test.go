@@ -57,7 +57,7 @@ func TestCalculateRate(t *testing.T) {
 
 func TestWithDefaultConfig(t *testing.T) {
 
-	s := MustNew(WithDefaultConfig(scope.Store, 33))
+	s := MustNew(WithDefaultConfig(scope.Store.ToHash(33)))
 	s33 := scope.NewHash(scope.Store, 33)
 	want33 := newScopedConfig()
 	want33.ScopeHash = s33
@@ -74,17 +74,17 @@ func TestWithVaryBy(t *testing.T) {
 
 	t.Run("Ok", func(t *testing.T) {
 		s := MustNew(
-			WithDefaultConfig(scope.Store, 33),
-			WithVaryBy(scope.Store, 33, vb),
-			WithVaryBy(scope.Default, 0, vb),
+			WithDefaultConfig(scope.Store.ToHash(33)),
+			WithVaryBy(scope.Store.ToHash(33), vb),
+			WithVaryBy(scope.Default.ToHash(0), vb),
 		)
 		assert.Exactly(t, vb, s.scopeCache[s33].VaryByer)
 		assert.Exactly(t, vb, s.scopeCache[scope.DefaultHash].VaryByer)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
-			WithVaryBy(scope.Store, 33, vb),
-			WithDefaultConfig(scope.Store, 33),
+			WithVaryBy(scope.Store.ToHash(33), vb),
+			WithDefaultConfig(scope.Store.ToHash(33)),
 		)
 		// WithDefaultConfig overwrites the previously set VaryBy
 		assert.Exactly(t, emptyVaryBy{}, s.scopeCache[s33].VaryByer)
@@ -97,17 +97,17 @@ func TestWithRateLimiter(t *testing.T) {
 
 	t.Run("Ok", func(t *testing.T) {
 		s := MustNew(
-			WithDefaultConfig(scope.Website, 2),
-			WithRateLimiter(scope.Website, 2, rsl),
-			WithRateLimiter(scope.Default, 0, rsl),
+			WithDefaultConfig(scope.Website.ToHash(2)),
+			WithRateLimiter(scope.Website.ToHash(2), rsl),
+			WithRateLimiter(scope.Default.ToHash(0), rsl),
 		)
 		assert.Exactly(t, rsl, s.scopeCache[w2].RateLimiter)
 		assert.Exactly(t, rsl, s.scopeCache[scope.DefaultHash].RateLimiter)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
-			WithRateLimiter(scope.Website, 2, rsl),
-			WithDefaultConfig(scope.Website, 2),
+			WithRateLimiter(scope.Website.ToHash(2), rsl),
+			WithDefaultConfig(scope.Website.ToHash(2)),
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
@@ -124,17 +124,17 @@ func TestWithDeniedHandler(t *testing.T) {
 
 	t.Run("Ok", func(t *testing.T) {
 		s := MustNew(
-			WithDefaultConfig(scope.Website, 2),
-			WithDeniedHandler(scope.Website, 2, dh),
-			WithDeniedHandler(scope.Default, 0, dh),
+			WithDefaultConfig(scope.Website.ToHash(2)),
+			WithDeniedHandler(scope.Website.ToHash(2), dh),
+			WithDeniedHandler(scope.Default.ToHash(0), dh),
 		)
 		cstesting.EqualPointers(t, dh, s.scopeCache[w2].DeniedHandler)
 		cstesting.EqualPointers(t, dh, s.scopeCache[scope.DefaultHash].DeniedHandler)
 	})
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
-			WithDeniedHandler(scope.Website, 2, dh),
-			WithDefaultConfig(scope.Website, 2),
+			WithDeniedHandler(scope.Website.ToHash(2), dh),
+			WithDefaultConfig(scope.Website.ToHash(2)),
 		)
 		// WithDefaultConfig overwrites the previously set RateLimiter
 		cstesting.EqualPointers(t, defaultDeniedHandler, s.scopeCache[w2].DeniedHandler)
@@ -144,7 +144,7 @@ func TestWithDeniedHandler(t *testing.T) {
 }
 
 func TestWithGCRAStore(t *testing.T) {
-	w2 := scope.NewHash(scope.Website, 2)
+	w2 := scope.Website.ToHash(2)
 
 	memStore, err := memstore.New(40)
 	if err != nil {
@@ -152,16 +152,16 @@ func TestWithGCRAStore(t *testing.T) {
 	}
 
 	t.Run("CalcError", func(t *testing.T) {
-		s, err := New(WithGCRAStore(scope.Website, 2, nil, 's', 33, -1))
+		s, err := New(WithGCRAStore(scope.Website.ToHash(2), nil, 's', 33, -1))
 		assert.Nil(t, s)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 		s := MustNew(
-			WithDefaultConfig(scope.Website, 2),
-			WithGCRAStore(scope.Website, 2, memStore, 's', 100, 10),
-			WithGCRAStore(scope.Default, 0, memStore, 'h', 100, 10),
+			WithDefaultConfig(scope.Website.ToHash(2)),
+			WithGCRAStore(scope.Website.ToHash(2), memStore, 's', 100, 10),
+			WithGCRAStore(scope.Default.ToHash(0), memStore, 'h', 100, 10),
 		)
 		assert.NotNil(t, s.scopeCache[w2].RateLimiter)
 		assert.NotNil(t, s.scopeCache[scope.DefaultHash].RateLimiter)
@@ -169,8 +169,8 @@ func TestWithGCRAStore(t *testing.T) {
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := MustNew(
-			WithGCRAStore(scope.Website, 2, memStore, 's', 100, 10),
-			WithDefaultConfig(scope.Website, 2),
+			WithGCRAStore(scope.Website.ToHash(2), memStore, 's', 100, 10),
+			WithDefaultConfig(scope.Website.ToHash(2)),
 		)
 		assert.Nil(t, s.scopeCache[w2].RateLimiter)
 		err := s.ConfigByScopeHash(w2, 0).IsValid()

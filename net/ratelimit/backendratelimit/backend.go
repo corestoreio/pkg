@@ -57,12 +57,12 @@ type Configuration struct {
 	// Path: net/ratelimit_storage/gcra_name
 	GCRAName cfgmodel.Str
 
-	// StorageGcraMaxMemoryKeys If maxKeys > 0 (enabled), the number of
+	// StorageGCRAMaxMemoryKeys If maxKeys > 0 (enabled), the number of
 	// different keys is restricted to the specified amount. In this case, it
 	// uses an LRU algorithm to evict older keys to make room for newer ones.
 	//
 	// Path: net/ratelimit_storage/enable_gcra_memory
-	StorageGcraMaxMemoryKeys cfgmodel.Int
+	StorageGCRAMaxMemoryKeys cfgmodel.Int
 
 	// StorageGCRARedis a valid Redis URL enables Redis as GCRA key
 	// storage. URLs should follow the draft IANA specification for the scheme
@@ -99,7 +99,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 		"d", "Day",
 	))...)
 	be.GCRAName = cfgmodel.NewStr(`net/ratelimit_storage/gcra_name`, opts...)
-	be.StorageGcraMaxMemoryKeys = cfgmodel.NewInt(`net/ratelimit_storage/enable_gcra_memory`, opts...)
+	be.StorageGCRAMaxMemoryKeys = cfgmodel.NewInt(`net/ratelimit_storage/enable_gcra_memory`, opts...)
 	be.StorageGCRARedis = cfgmodel.NewStr(`net/ratelimit_storage/enable_gcra_redis`, opts...)
 
 	return be

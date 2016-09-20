@@ -70,8 +70,8 @@ func TestBackend_GCRA_Not_Registered(t *testing.T) {
 			panic("Should not get called")
 		}),
 		false, // do not test logger
-		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
-		ratelimit.WithRateLimiter(scope.Website, 1, stubLimiter{}),
+		ratelimit.WithVaryBy(scope.Website.ToHash(1), pathGetter{}),
+		ratelimit.WithRateLimiter(scope.Website.ToHash(1), stubLimiter{}),
 	)
 }
 
@@ -88,8 +88,8 @@ func TestBackend_WithDisable(t *testing.T) {
 			w.WriteHeader(http.StatusTeapot)
 		}),
 		true, // do test logger
-		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
-		ratelimit.WithRateLimiter(scope.Website, 1, stubLimiter{}),
+		ratelimit.WithVaryBy(scope.Website.ToHash(1), pathGetter{}),
+		ratelimit.WithRateLimiter(scope.Website.ToHash(1), stubLimiter{}),
 	)
 }
 
@@ -97,7 +97,7 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 	var countDenied = new(int32)
 	var countAllowed = new(int32)
 
-	backend.Register(memstore.NewOptionFactory(backend))
+	backend.Register(memstore.NewOptionFactory(backend.Burst, backend.Requests, backend.Duration, backend.StorageGCRAMaxMemoryKeys))
 	defer backend.Deregister(memstore.OptionName)
 
 	testBackendConfiguration(t,
@@ -105,7 +105,7 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 		cfgmock.PathValue{
 			backend.GCRAName.MustFQ(scope.Website, 1):                 "memstore",
 			backend.Disabled.MustFQ(scope.Website, 1):                 0,
-			backend.StorageGcraMaxMemoryKeys.MustFQ(scope.Website, 1): 50,
+			backend.StorageGCRAMaxMemoryKeys.MustFQ(scope.Website, 1): 50,
 			backend.Burst.MustFQ(scope.Website, 1):                    3,
 			backend.Requests.MustFQ(scope.Website, 1):                 1,
 			backend.Duration.MustFQ(scope.Website, 1):                 "i",
@@ -126,8 +126,8 @@ func TestBackend_WithGCRAMemStore(t *testing.T) {
 			atomic.AddInt32(countAllowed, 1)
 		}),
 		true, // do test logger
-		ratelimit.WithVaryBy(scope.Website, 1, pathGetter{}),
-		ratelimit.WithDeniedHandler(scope.Website, 1, http.HandlerFunc(func(w http.ResponseWriter, rec *http.Request) {
+		ratelimit.WithVaryBy(scope.Website.ToHash(1), pathGetter{}),
+		ratelimit.WithDeniedHandler(scope.Website.ToHash(1), http.HandlerFunc(func(w http.ResponseWriter, rec *http.Request) {
 			atomic.AddInt32(countDenied, 1)
 			http.Error(w, "custom limit exceeded", http.StatusConflict)
 		})),

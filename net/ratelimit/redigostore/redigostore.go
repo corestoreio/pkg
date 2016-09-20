@@ -17,6 +17,8 @@ package redigostore
 import (
 	"time"
 
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/net/url"
@@ -25,6 +27,48 @@ import (
 	"github.com/garyburd/redigo/redis"
 	throttledRedis "gopkg.in/throttled/throttled.v2/store/redigostore"
 )
+
+// OptionName identifies this package within the register of the
+// backendratelimit.Backend type.
+const OptionName = `redigostore`
+
+// NewOptionFactory creates a new option factory function for the memstore in the
+// backend package to be used for automatic scope based configuration
+// initialization. Configuration values are read from argument `be`.
+func NewOptionFactory(burst, requests cfgmodel.Int, duration cfgmodel.Str, redisURL cfgmodel.Str) (string, ratelimit.OptionFactoryFunc) {
+	return OptionName, func(sg config.Scoped) []ratelimit.Option {
+
+		burst, _, err := burst.Get(sg)
+		if err != nil {
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitBurst.Get"))
+		}
+		req, _, err := requests.Get(sg)
+		if err != nil {
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitRequests.Get"))
+		}
+		durRaw, _, err := duration.Get(sg)
+		if err != nil {
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitDuration.Get"))
+		}
+
+		if len(durRaw) != 1 {
+			return ratelimit.OptionsError(errors.NewFatalf("[redigostore] RateLimitDuration invalid character count: %q. Should be one character long.", durRaw))
+		}
+
+		dur := rune(durRaw[0])
+
+		redisURL, scpHash, err := redisURL.Get(sg)
+		if err != nil {
+			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitStorageGcraRedis.Get"))
+		}
+		if redisURL != "" {
+			return []ratelimit.Option{
+				WithGCRA(scpHash, redisURL, dur, req, burst),
+			}
+		}
+		return ratelimit.OptionsError(errors.NewEmptyf("[redigostore] Redis not active because RateLimitStorageGCRARedis is not set."))
+	}
+}
 
 // WithGCRA creates a new Redis-based store, using the provided pool to get
 // its connections. The keys will have the specified keyPrefix, which
@@ -45,8 +89,7 @@ import (
 //
 // GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
 // This function implements a debug log.
-func WithGCRA(scp scope.Scope, id int64, redisRawURL string, duration rune, requests, burst int) ratelimit.Option {
-	h := scope.NewHash(scp, id)
+func WithGCRA(h scope.Hash, redisRawURL string, duration rune, requests, burst int) ratelimit.Option {
 
 	address, password, db, err := url.ParseRedis(redisRawURL)
 	if err != nil {
@@ -76,8 +119,7 @@ func WithGCRA(scp scope.Scope, id int64, redisRawURL string, duration rune, requ
 		}
 		if s.Log.IsDebug() {
 			s.Log.Debug("ratelimit.redigostore.WithGCRA",
-				log.Stringer("scope", scp),
-				log.Int64("scope_id", id),
+				log.Stringer("scope", h),
 				log.String("redis_raw_url", redisRawURL),
 				log.String("key_prefix", keyPrefix),
 				log.String("duration", string(duration)),
@@ -85,6 +127,6 @@ func WithGCRA(scp scope.Scope, id int64, redisRawURL string, duration rune, requ
 				log.Int("burst", burst),
 			)
 		}
-		return ratelimit.WithGCRAStore(scp, id, rs, duration, requests, burst)(s)
+		return ratelimit.WithGCRAStore(h, rs, duration, requests, burst)(s)
 	}
 }

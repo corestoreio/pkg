@@ -30,16 +30,16 @@ func TestWithGCRAMemStore(t *testing.T) {
 	s4 := scope.NewHash(scope.Store, 4)
 
 	t.Run("CalcErrorRate", func(t *testing.T) {
-		s, err := ratelimit.New(memstore.WithGCRA(scope.Store, 4, 3333, 's', 100, -1))
+		s, err := ratelimit.New(memstore.WithGCRA(scope.Store.ToHash(4), 3333, 's', 100, -1))
 		assert.Nil(t, s)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			ratelimit.WithDefaultConfig(scope.Store, 4),
-			memstore.WithGCRA(scope.Store, 4, 3333, 's', 100, 10),
-			memstore.WithGCRA(scope.Default, -1, 2222, 's', 100, 20),
+			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
+			memstore.WithGCRA(scope.Store.ToHash(4), 3333, 's', 100, 10),
+			memstore.WithGCRA(scope.DefaultHash, 2222, 's', 100, 20),
 		)
 		assert.NotNil(t, s.ConfigByScopeHash(s4, 0).RateLimiter, "Scope Website")
 		assert.NotNil(t, s.ConfigByScopeHash(scope.DefaultHash, 0).RateLimiter, "Scope Default")
@@ -47,8 +47,8 @@ func TestWithGCRAMemStore(t *testing.T) {
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			memstore.WithGCRA(scope.Store, 4, 1111, 's', 100, 10),
-			ratelimit.WithDefaultConfig(scope.Store, 4),
+			memstore.WithGCRA(scope.Store.ToHash(4), 1111, 's', 100, 10),
+			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
 		)
 		assert.Nil(t, s.ConfigByScopeHash(s4, 0).RateLimiter)
 		err := s.ConfigByScopeHash(s4, 0).IsValid()
@@ -73,12 +73,12 @@ func TestBackend_Path_Errors(t *testing.T) {
 		{backend.Requests.MustFQ, struct{}{}, errors.IsNotValid},
 		{backend.Duration.MustFQ, "[a-z+", errors.IsFatal},
 		{backend.Duration.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.StorageGcraMaxMemoryKeys.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.StorageGcraMaxMemoryKeys.MustFQ, 0, errors.IsEmpty},
+		{backend.StorageGCRAMaxMemoryKeys.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.StorageGCRAMaxMemoryKeys.MustFQ, 0, errors.IsEmpty},
 	}
 	for i, test := range tests {
 
-		name, scpFnc := memstore.NewOptionFactory(backend)
+		name, scpFnc := memstore.NewOptionFactory(backend.Burst, backend.Requests, backend.Duration, backend.StorageGCRAMaxMemoryKeys)
 		if have, want := name, memstore.OptionName; have != want {
 			t.Errorf("Have: %v Want: %v", have, want)
 		}

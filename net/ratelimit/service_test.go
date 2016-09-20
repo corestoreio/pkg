@@ -72,7 +72,7 @@ func TestMustNew_Panic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = ratelimit.MustNew(ratelimit.WithGCRAStore(scope.Default, 0, nil, 'h', 2, -1))
+	_ = ratelimit.MustNew(ratelimit.WithGCRAStore(scope.DefaultHash, nil, 'h', 2, -1))
 }
 
 type httpTestCase struct {
@@ -94,7 +94,7 @@ var finalHandler = func(t *testing.T) http.Handler {
 // we must fall back to the websiteID(1) to fetch there the configuration.
 func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 
-	var runTest = func(logBuf io.Writer, scp scope.Scope, id int64) func(t *testing.T) {
+	var runTest = func(logBuf io.Writer, h scope.Hash) func(t *testing.T) {
 		return func(t *testing.T) {
 			errH := mw.ErrorHandler(func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -106,9 +106,9 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 				ratelimit.WithRootConfig(cfgmock.NewService()),
 				ratelimit.WithDebugLog(logBuf),
 				//ratelimit.WithLogger(logw.NewLog(logw.WithWriter(ioutil.Discard), logw.WithLevel(logw.LevelDebug))),
-				ratelimit.WithVaryBy(scp, id, pathGetter{}),
-				ratelimit.WithRateLimiter(scp, id, stubLimiter{}),
-				ratelimit.WithErrorHandler(scp, id, errH),
+				ratelimit.WithVaryBy(h, pathGetter{}),
+				ratelimit.WithRateLimiter(h, stubLimiter{}),
+				ratelimit.WithErrorHandler(h, errH),
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -128,26 +128,26 @@ func TestService_WithRateLimit_StoreFallbackToWebsite(t *testing.T) {
 				{"limit", 429, map[string]string{"Retry-After": "60"}},
 			})
 
-			scpCfg := srv.ConfigByScopeHash(scope.NewHash(scp, id), 0)
-			assert.Exactly(t, scope.NewHash(scp, id), scpCfg.ScopeHash, "ScopeHash")
+			scpCfg := srv.ConfigByScopeHash(h, 0)
+			assert.Exactly(t, h, scpCfg.ScopeHash, "ScopeHash")
 			cstesting.EqualPointers(t, errH, scpCfg.ErrorHandler)
 		}
 	}
 
 	logBuf0 := new(log.MutexBuffer)
-	t.Run("Scope Store Fallback to Default", runTest(logBuf0, scope.Default, 0))
+	t.Run("Scope Store Fallback to Default", runTest(logBuf0, scope.DefaultHash))
 	//t.Log("FallBack", logBuf0)
 	//cstesting.ContainsCount(t, logBuf0.String(), `Service.ConfigByScopedGetter.Fallback`, 1)
 	logBuf0.Reset()
 
-	t.Run("Scope Store Fallback to Website", runTest(logBuf0, scope.Website, 1))
+	t.Run("Scope Store Fallback to Website", runTest(logBuf0, scope.Website.ToHash(1)))
 	////t.Log("FallBack", logBuf1)
 	//
 	//var logCheck1 = `Service.ConfigByScopedGetter.Fallback requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Website) ID(1)" responded_scope: "Scope(Website) ID(1)`
 	//cstesting.ContainsCount(t, logBuf1.String(), logCheck1, 1)
 	//
 	//logBuf2 := new(log.MutexBuffer)
-	t.Run("Scope Store No Fallback", runTest(logBuf0, scope.Store, 1))
+	t.Run("Scope Store No Fallback", runTest(logBuf0, scope.Store.ToHash(1)))
 	////t.Log("FallBackNope", logBuf2)
 	//
 	//var logCheck2 = `Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Store) ID(1)" requested_fallback_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Store) ID(1)"`
@@ -161,15 +161,15 @@ func TestService_WithDeniedHandler(t *testing.T) {
 
 	srv, err := ratelimit.New(
 		ratelimit.WithRootConfig(cfgmock.NewService()),
-		ratelimit.WithErrorHandler(scope.Default, 0, func(err error) http.Handler {
+		ratelimit.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(500)
 				// panic(fmt.Sprintf("Should not get called. Error Handler\n\n%+v", err))
 			})
 		}),
-		ratelimit.WithVaryBy(scope.Default, 0, pathGetter{}),
-		ratelimit.WithRateLimiter(scope.Default, 0, stubLimiter{}),
-		ratelimit.WithDeniedHandler(scope.Default, 0, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		ratelimit.WithVaryBy(scope.DefaultHash, pathGetter{}),
+		ratelimit.WithRateLimiter(scope.DefaultHash, stubLimiter{}),
+		ratelimit.WithDeniedHandler(scope.DefaultHash, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			atomic.AddInt32(deniedHandlerCalled, 1)
 			http.Error(w, "custom limit exceeded", 400)
 		})),
@@ -197,7 +197,7 @@ func TestService_WithDeniedHandler(t *testing.T) {
 }
 
 func TestService_RequestedStore_NotFound(t *testing.T) {
-	srv, err := ratelimit.New(ratelimit.WithErrorHandler(scope.Default, 0,
+	srv, err := ratelimit.New(ratelimit.WithErrorHandler(scope.DefaultHash,
 		func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called. Scoped Error Handler\n\n%+v", err))
@@ -226,7 +226,7 @@ func TestService_RequestedStore_NotFound(t *testing.T) {
 func TestService_ScopedConfig_NotFound(t *testing.T) {
 	srv, err := ratelimit.New(
 		ratelimit.WithRootConfig(cfgmock.NewService()),
-		ratelimit.WithErrorHandler(scope.Default, 0,
+		ratelimit.WithErrorHandler(scope.DefaultHash,
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic(fmt.Sprintf("Should not get called. Scoped Error Handler\n\n%+v", err))
@@ -261,9 +261,9 @@ func TestService_WithDisabled(t *testing.T) {
 
 	srv, err := ratelimit.New(
 		ratelimit.WithRootConfig(cfgmock.NewService()),
-		ratelimit.WithVaryBy(scope.Default, 0, pathGetter{}),
-		ratelimit.WithRateLimiter(scope.Default, 0, stubLimiter{}),
-		ratelimit.WithDisable(scope.Default, 0, true),
+		ratelimit.WithVaryBy(scope.DefaultHash, pathGetter{}),
+		ratelimit.WithRateLimiter(scope.DefaultHash, stubLimiter{}),
+		ratelimit.WithDisable(scope.DefaultHash, true),
 	)
 	if err != nil {
 		t.Fatal(err)

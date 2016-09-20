@@ -30,16 +30,16 @@ func TestWithGCRARedis(t *testing.T) {
 	s4 := scope.NewHash(scope.Store, 4)
 
 	t.Run("CalcErrorRedis", func(t *testing.T) {
-		s, err := ratelimit.New(redigostore.WithGCRA(scope.Store, 4, "redis://localhost/", 's', 100, 10))
+		s, err := ratelimit.New(redigostore.WithGCRA(scope.Store.ToHash(4), "redis://localhost/", 's', 100, 10))
 		assert.Nil(t, s)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			ratelimit.WithDefaultConfig(scope.Store, 4),
-			redigostore.WithGCRA(scope.Store, 4, "redis://localhost/1", 's', 100, 10),
-			redigostore.WithGCRA(scope.Default, 0, "redis://localhost/2", 's', 100, 10),
+			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
+			redigostore.WithGCRA(scope.Store.ToHash(4), "redis://localhost/1", 's', 100, 10),
+			redigostore.WithGCRA(scope.DefaultHash, "redis://localhost/2", 's', 100, 10),
 		)
 		assert.NotNil(t, s.ConfigByScopeHash(s4, 0).RateLimiter, "Scope Website")
 		assert.NotNil(t, s.ConfigByScopeHash(scope.DefaultHash, 0).RateLimiter, "Scope Default")
@@ -47,8 +47,8 @@ func TestWithGCRARedis(t *testing.T) {
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			redigostore.WithGCRA(scope.Store, 4, "redis://localhost/1", 's', 100, 10),
-			ratelimit.WithDefaultConfig(scope.Store, 4),
+			redigostore.WithGCRA(scope.Store.ToHash(4), "redis://localhost/1", 's', 100, 10),
+			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
 		)
 		assert.Nil(t, s.ConfigByScopeHash(s4, 0).RateLimiter)
 		err := s.ConfigByScopeHash(s4, 0).IsValid()
@@ -79,7 +79,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		name, scpFnc := redigostore.NewOptionFactory(backend)
+		name, scpFnc := redigostore.NewOptionFactory(backend.Burst, backend.Requests, backend.Duration, backend.StorageGCRARedis)
 		if have, want := name, redigostore.OptionName; have != want {
 			t.Errorf("Have: %v Want: %v", have, want)
 		}

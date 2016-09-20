@@ -17,7 +17,6 @@ package ratelimit
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/throttled/throttled.v2"
@@ -31,16 +30,15 @@ import (
 //		- VaryByer: returns an empty key
 // Example:
 //		s := MustNewService(WithDefaultConfig(scope.Store,1), WithVaryBy(scope.Store, 1, myVB))
-func WithDefaultConfig(scp scope.Scope, id int64) Option {
-	return withDefaultConfig(scp, id)
+func WithDefaultConfig(h scope.Hash) Option {
+	return withDefaultConfig(h)
 }
 
 // WithVaryBy allows to set a custom key producer. VaryByer is called for each
 // request to generate a key for the limiter. If it is nil, the middleware
 // panics. The default VaryByer returns an empty string so that all requests
 // uses the same key. VaryByer must be thread safe.
-func WithVaryBy(scp scope.Scope, id int64, vb VaryByer) Option {
-	h := scope.NewHash(scp, id)
+func WithVaryBy(h scope.Hash, vb VaryByer) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -58,8 +56,7 @@ func WithVaryBy(scp scope.Scope, id int64, vb VaryByer) Option {
 
 // WithRateLimiter creates a rate limiter for a specific scope with its ID.
 // The rate limiter is already warmed up.
-func WithRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option {
-	h := scope.NewHash(scp, id)
+func WithRateLimiter(h scope.Hash, rl throttled.RateLimiter) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -78,8 +75,7 @@ func WithRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option
 // WithDeniedHandler sets a custom denied handler for a specific scope. The
 // default denied handler returns a simple:
 //		http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
-	h := scope.NewHash(scp, id)
+func WithDeniedHandler(h scope.Hash, next http.Handler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -96,8 +92,7 @@ func WithDeniedHandler(scp scope.Scope, id int64, next http.Handler) Option {
 }
 
 // WithDisable allows to disable a rate limit or enable it if set to false.
-func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
-	h := scope.NewHash(scp, id)
+func WithDisable(h scope.Hash, isDisabled bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -113,19 +108,10 @@ func WithDisable(scp scope.Scope, id int64, isDisabled bool) Option {
 	}
 }
 
-// WithLogger applies a logger to the default scope which gets inherited to
-// subsequent scopes. Mainly used for debugging. Convenience helper function.
-func WithLogger(l log.Logger) Option {
-	return func(s *Service) error {
-		s.Log = l
-		return nil
-	}
-}
-
 // WithGCRAStore creates a new GCRA rate limiter with a custom storage backend.
 // Duration: (s second,i minute,h hour,d day)
 // GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
-func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duration rune, requests, burst int) Option {
+func WithGCRAStore(h scope.Hash, store throttled.GCRAStore, duration rune, requests, burst int) Option {
 	return func(s *Service) error {
 
 		cr, err := calculateRate(duration, requests)
@@ -142,7 +128,7 @@ func WithGCRAStore(scp scope.Scope, id int64, store throttled.GCRAStore, duratio
 		if err != nil {
 			return errors.NewNotValidf("[ratelimit] throttled.NewGCRARateLimiter: %s", err)
 		}
-		return WithRateLimiter(scp, id, rl)(s)
+		return WithRateLimiter(h, rl)(s)
 	}
 }
 

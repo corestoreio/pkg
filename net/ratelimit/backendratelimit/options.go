@@ -26,14 +26,13 @@ import (
 func PrepareOptions(be *Configuration) ratelimit.OptionFactoryFunc {
 	return func(sg config.Scoped) []ratelimit.Option {
 
-		opts := make([]ratelimit.Option, 0, 10)
+		opts := make([]ratelimit.Option, 0, 3)
 
 		disabled, scpHash, err := be.Disabled.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] RateLimitDisabled.Get"))
 		}
-		scp, scpID := scpHash.Unpack()
-		opts = append(opts, ratelimit.WithDisable(scp, scpID, disabled))
+		opts = append(opts, ratelimit.WithDisable(scpHash, disabled))
 
 		if disabled {
 			return opts
