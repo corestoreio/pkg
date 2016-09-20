@@ -132,7 +132,7 @@ func TestPathNew(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveP, haveErr := cfgpath.New(test.route)
-		haveP = haveP.Bind(test.s, test.id)
+		haveP = haveP.Bind(test.s.ToHash(test.id))
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d", i)
 			continue
@@ -163,7 +163,7 @@ func TestFQ(t *testing.T) {
 	}
 	for i, test := range tests {
 		p, pErr := cfgpath.New(test.route)
-		p = p.Bind(test.scp, test.id)
+		p = p.Bind(test.scp.ToHash(test.id))
 		have, haveErr := p.FQ()
 		if test.wantErrBhf != nil {
 			assert.Empty(t, have.Chars, "Index %d", i)
@@ -193,12 +193,12 @@ func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 			t.Fatal("Did not expect a panic")
 		}
 	}()
-	_ = cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).Bind(249, 345)
+	_ = cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).Bind(345)
 }
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
 
-	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).Bind(scope.Default, 345).String())
+	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).Bind(345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -384,7 +384,7 @@ func TestPathRouteIsValid(t *testing.T) {
 
 func TestPathHashWebsite(t *testing.T) {
 
-	p := cfgpath.MustNewByParts("general/single_store_mode/enabled").Bind(scope.Website, 33)
+	p := cfgpath.MustNewByParts("general/single_store_mode/enabled").BindWebsite(33)
 	hv, err := p.Hash(-1)
 	if err != nil {
 		t.Fatal(err)
@@ -487,7 +487,7 @@ func TestPathCloneRareUseCase(t *testing.T) {
 
 	rs := "aa/bb/cc"
 	pOrg := cfgpath.MustNewByParts(rs)
-	pOrg = pOrg.Bind(scope.Store, 3141)
+	pOrg = pOrg.BindStore(3141)
 
 	largerBuff := make(text.Chars, 100, 100)
 	pOrg.Chars = largerBuff[:copy(largerBuff, rs)]
@@ -525,7 +525,7 @@ func TestPathCloneAppend(t *testing.T) {
 
 	rs := "aa/bb/cc"
 	pOrg := cfgpath.MustNewByParts(rs)
-	pOrg = pOrg.Bind(scope.Store, 3141)
+	pOrg = pOrg.BindStore(3141)
 
 	pAssigned := pOrg
 	assert.Exactly(t, pOrg, pAssigned)

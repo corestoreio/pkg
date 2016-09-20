@@ -1,17 +1,17 @@
-BenchmarkPathSlice_Sort-4   	 1000000	      1468 ns/op	     320 B/op	       8 allocs/op
-BenchmarkNewByParts-4       	 5000000	       343 ns/op	      48 B/op	       1 allocs/op
-BenchmarkPathFQ-4           	 3000000	       480 ns/op	     112 B/op	       1 allocs/op
-BenchmarkPathHashFull-4     	 3000000	       441 ns/op	       0 B/op	       0 allocs/op
-BenchmarkPathHashLevel2-4   	 2000000	       620 ns/op	       0 B/op	       0 allocs/op
-BenchmarkSplitFQ-4          	10000000	       208 ns/op	      32 B/op	       1 allocs/op
-BenchmarkRouteAppend-4      	 5000000	       294 ns/op	      56 B/op	       2 allocs/op
-BenchmarkRouteLevel_One-4   	20000000	        72.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_Two-4   	20000000	        84.2 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_All-4   	20000000	        57.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathSlice_Sort-4   	 1000000	      1417 ns/op	     320 B/op	       8 allocs/op
+BenchmarkNewByParts-4       	 5000000	       331 ns/op	      48 B/op	       1 allocs/op
+BenchmarkPathFQ-4           	 3000000	       445 ns/op	     112 B/op	       1 allocs/op
+BenchmarkPathHashFull-4     	 3000000	       443 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPathHashLevel2-4   	 2000000	       614 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSplitFQ-4          	10000000	       196 ns/op	      32 B/op	       1 allocs/op
+BenchmarkRouteAppend-4      	 5000000	       297 ns/op	      56 B/op	       2 allocs/op
+BenchmarkRouteLevel_One-4   	20000000	        71.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteLevel_Two-4   	20000000	        82.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteLevel_All-4   	30000000	        53.8 ns/op	       0 B/op	       0 allocs/op
 BenchmarkRouteHash-4        	10000000	       164 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteHash32-4      	50000000	        38.6 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRoutePart-4        	20000000	        92.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteValidate-4    	30000000	        52.5 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteSplit-4       	20000000	        90.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteHash32-4      	30000000	        39.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRoutePart-4        	20000000	        92.9 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteValidate-4    	30000000	        50.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteSplit-4       	20000000	        94.7 ns/op	       0 B/op	       0 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/config/cfgpath	26.921s
+ok  	github.com/corestoreio/csfw/config/cfgpath	26.323s

@@ -41,5 +41,5 @@ func (ps PathSlice) Less(i, j int) bool {
 }
 func (ps PathSlice) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }
 
-// Sort is a convenience method.
+// Sort is a convenience method to sort stable.
 func (ps PathSlice) Sort() { sort.Stable(ps) }

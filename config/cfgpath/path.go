@@ -96,21 +96,21 @@ func MustNewByParts(parts ...string) Path {
 }
 
 // Bind binds a path to a new scope with its scope ID. Group Scope is not
-// supported and falls back to default.
-func (p Path) Bind(s scope.Scope, id int64) Path {
-	p.ScopeHash = scope.NewHash(s, id)
+// supported and falls back to default. Fluent API design.
+func (p Path) Bind(h scope.Hash) Path {
+	p.ScopeHash = h
 	return p
 }
 
 // BindWebsite binds a path to a website scope and its ID. Convenience helper
-// function.
+// function. Fluent API design.
 func (p Path) BindWebsite(id int64) Path {
 	p.ScopeHash = scope.NewHash(scope.Website, id)
 	return p
 }
 
 // BindStore binds a path to a store scope and its ID. Convenience helper
-// function.
+// function. Fluent API design.
 func (p Path) BindStore(id int64) Path {
 	p.ScopeHash = scope.NewHash(scope.Store, id)
 	return p
