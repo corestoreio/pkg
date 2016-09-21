@@ -37,7 +37,7 @@ func Benchmark_ParallelStrGetDefault(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			var err error
-			var h scope.Hash
+			var h scope.TypeID
 			benchmarkStr, h, err = p1.Get(sg)
 			if err != nil {
 				b.Error(err)
@@ -45,8 +45,8 @@ func Benchmark_ParallelStrGetDefault(b *testing.B) {
 			if benchmarkStr != want {
 				b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
 			}
-			if h != scope.DefaultHash {
-				b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
+			if h != scope.DefaultTypeID {
+				b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultTypeID)
 			}
 		}
 	})
@@ -63,7 +63,7 @@ func Benchmark_SingleStrGetDefault(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		var h scope.Hash
+		var h scope.TypeID
 		benchmarkStr, h, err = p1.Get(sg)
 		if err != nil {
 			b.Error(err)
@@ -71,15 +71,15 @@ func Benchmark_SingleStrGetDefault(b *testing.B) {
 		if benchmarkStr != want {
 			b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
 		}
-		if h != scope.DefaultHash {
-			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
+		if h != scope.DefaultTypeID {
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultTypeID)
 		}
 	}
 }
 
 func Benchmark_SingleStrGetWebsite(b *testing.B) {
 	const want = `Content-Application`
-	var wantHash = scope.NewHash(scope.Website, 2)
+	var wantHash = scope.MakeTypeID(scope.Website, 2)
 	p1 := cfgmodel.NewStr("web/cors/exposed_headers", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	sg := cfgmock.NewService(cfgmock.PathValue{
@@ -91,7 +91,7 @@ func Benchmark_SingleStrGetWebsite(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		var h scope.Hash
+		var h scope.TypeID
 		benchmarkStr, h, err = p1.Get(sg)
 		if err != nil {
 			b.Error(err)
@@ -100,7 +100,7 @@ func Benchmark_SingleStrGetWebsite(b *testing.B) {
 			b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
 		}
 		if h != wantHash {
-			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultTypeID)
 		}
 	}
 }
@@ -119,7 +119,7 @@ func Benchmark_SingleByteGetDefault(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		var h scope.Hash
+		var h scope.TypeID
 		benchmarkByte, h, err = p1.Get(sg)
 		if err != nil {
 			b.Error(err)
@@ -127,8 +127,8 @@ func Benchmark_SingleByteGetDefault(b *testing.B) {
 		if bytes.Compare(benchmarkByte, want) != 0 {
 			b.Errorf("Have: %s\nWant: %s\n", string(benchmarkByte), string(want))
 		}
-		if h != scope.DefaultHash {
-			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
+		if h != scope.DefaultTypeID {
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultTypeID)
 		}
 	}
 }
@@ -137,7 +137,7 @@ var benchmark_SingleFloat64GetStore float64
 
 func Benchmark_SingleFloat64GetStore(b *testing.B) {
 	const want float64 = 3.14159
-	var wantHash = scope.NewHash(scope.Store, 4)
+	var wantHash = scope.MakeTypeID(scope.Store, 4)
 	p1 := cfgmodel.NewFloat64("web/cors/float64_store", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	if p1.LastError != nil {
 		b.Fatalf("%+v", p1.LastError)
@@ -152,7 +152,7 @@ func Benchmark_SingleFloat64GetStore(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var err error
-		var h scope.Hash
+		var h scope.TypeID
 		benchmark_SingleFloat64GetStore, h, err = p1.Get(sg)
 		if err != nil {
 			b.Error(err)
@@ -161,7 +161,7 @@ func Benchmark_SingleFloat64GetStore(b *testing.B) {
 			b.Errorf("Have: %s\nWant: %s\n", benchmarkStr, want)
 		}
 		if h != wantHash {
-			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultHash)
+			b.Errorf("Have: %s\nWant: %s\n", h, scope.DefaultTypeID)
 		}
 	}
 }

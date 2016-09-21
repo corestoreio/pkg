@@ -70,10 +70,10 @@ func TestObscure(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, wantPlain, haveSL)
-	assert.Exactly(t, scope.DefaultHash.String(), haveH.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String())
 
 	mw := new(cfgmock.Write)
-	b.Write(mw, wantPlain, scope.Store.ToHash(12))
+	b.Write(mw, wantPlain, scope.Store.Pack(12))
 	assert.Exactly(t, wantCiphered, mw.ArgValue)
 	assert.Exactly(t, "stores/12/aa/bb/cc", mw.ArgPath)
 }

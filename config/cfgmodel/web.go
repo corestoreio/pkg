@@ -39,7 +39,7 @@ func NewURL(path string, opts ...Option) URL {
 }
 
 // Get returns an URL. If the underlying value is empty returns nil,nil.
-func (p URL) Get(sg config.Scoped) (*url.URL, scope.Hash, error) {
+func (p URL) Get(sg config.Scoped) (*url.URL, scope.TypeID, error) {
 	rawurl, h, err := p.Str.Get(sg)
 	if err != nil {
 		return nil, h, errors.Wrap(err, "[cfgmodel] URL.Str.Get")
@@ -56,7 +56,7 @@ func (p URL) Get(sg config.Scoped) (*url.URL, scope.Hash, error) {
 
 // Write writes a new URL and validates it before saving. If v is nil, an empty value
 // will be written.
-func (p URL) Write(w config.Writer, v *url.URL, h scope.Hash) error {
+func (p URL) Write(w config.Writer, v *url.URL, h scope.TypeID) error {
 	var val string
 	if v != nil {
 		val = v.String()
@@ -73,12 +73,12 @@ func NewBaseURL(path string, opts ...Option) BaseURL {
 }
 
 // Get returns a base URL
-func (p BaseURL) Get(sg config.Scoped) (string, scope.Hash, error) {
+func (p BaseURL) Get(sg config.Scoped) (string, scope.TypeID, error) {
 	return p.Str.Get(sg)
 }
 
 // Write writes a new base URL and validates it before saving. @TODO
-func (p BaseURL) Write(w config.Writer, v string, h scope.Hash) error {
+func (p BaseURL) Write(w config.Writer, v string, h scope.TypeID) error {
 	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
 	return p.Str.Write(w, v, h)
 }

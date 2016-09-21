@@ -34,7 +34,7 @@ type mockMapIS struct {
 
 func (m mockMapIS) IntToStr(sg config.Scoped, i int) (string, error) {
 	if m.string == "" {
-		return fmt.Sprintf("Parent: %s => Current: %s => Value: %d", scope.NewHash(sg.Parent()), scope.NewHash(sg.Scope()), i), m.error
+		return fmt.Sprintf("Parent: %s => Current: %s => Value: %d", scope.MakeTypeID(sg.Parent()), scope.MakeTypeID(sg.Scope()), i), m.error
 	}
 	return m.string, m.error
 }
@@ -49,6 +49,6 @@ func TestNewMapIntStr(t *testing.T) {
 
 	val, scp, err := m.Get(sg)
 	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, scope.NewHash(scope.Store, 5), scp)
-	assert.Exactly(t, `Parent: Scope(Website) ID(2) => Current: Scope(Store) ID(5) => Value: 33`, val)
+	assert.Exactly(t, scope.MakeTypeID(scope.Store, 5), scp)
+	assert.Exactly(t, `Parent: Type(Website) ID(2) => Current: Type(Store) ID(5) => Value: 33`, val)
 }

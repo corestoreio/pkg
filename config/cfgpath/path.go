@@ -42,8 +42,8 @@ var bSeparator = []byte(sSeparator)
 // Path represents a configuration path bound to a scope.
 type Path struct {
 	Route
-	// ScopeHash a path is bound to this Scope and ScopeID
-	ScopeHash scope.Hash
+	// ScopeID a path is bound to this Scope and its ID
+	ScopeID scope.TypeID
 	// RouteLevelValid allows to bypass validation of separators in a Route
 	// in cases where only a partial Route has been provided.
 	RouteLevelValid bool
@@ -54,7 +54,7 @@ type Path struct {
 // New creates a new validated Path. Scope is assigned to Default.
 func New(rs ...Route) (Path, error) {
 	p := Path{
-		ScopeHash: scope.DefaultHash,
+		ScopeID: scope.DefaultTypeID,
 	}
 	if len(rs) == 1 {
 		p.Route = rs[0]
@@ -97,22 +97,22 @@ func MustNewByParts(parts ...string) Path {
 
 // Bind binds a path to a new scope with its scope ID. Group Scope is not
 // supported and falls back to default. Fluent API design.
-func (p Path) Bind(h scope.Hash) Path {
-	p.ScopeHash = h
+func (p Path) Bind(s scope.TypeID) Path {
+	p.ScopeID = s
 	return p
 }
 
 // BindWebsite binds a path to a website scope and its ID. Convenience helper
 // function. Fluent API design.
 func (p Path) BindWebsite(id int64) Path {
-	p.ScopeHash = scope.NewHash(scope.Website, id)
+	p.ScopeID = scope.MakeTypeID(scope.Website, id)
 	return p
 }
 
 // BindStore binds a path to a store scope and its ID. Convenience helper
 // function. Fluent API design.
 func (p Path) BindStore(id int64) Path {
-	p.ScopeHash = scope.NewHash(scope.Store, id)
+	p.ScopeID = scope.MakeTypeID(scope.Store, id)
 	return p
 }
 
@@ -139,7 +139,7 @@ func (p Path) String() string {
 
 // GoString returns the internal representation of Path
 func (p Path) GoString() string {
-	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.NewRoute(`%s`), ScopeHash: %d }", p.Route, p.ScopeHash)
+	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.NewRoute(`%s`), ScopeHash: %d }", p.Route, p.ScopeID)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
@@ -206,7 +206,7 @@ func (p Path) fq(buf *bytes.Buffer) error {
 		return err
 	}
 
-	scp, id := p.ScopeHash.Unpack()
+	scp, id := p.ScopeID.Unpack()
 	if scp != scope.Website && scp != scope.Store {
 		scp = scope.Default
 		id = 0
@@ -279,8 +279,8 @@ func SplitFQ(fqPath string) (Path, error) {
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 
 	return Path{
-		Route:     NewRoute(fqPath[fi+1:]),
-		ScopeHash: scope.NewHash(scope.FromString(scopeStr), scopeID),
+		Route:   NewRoute(fqPath[fi+1:]),
+		ScopeID: scope.MakeTypeID(scope.FromString(scopeStr), scopeID),
 	}, errors.NewNotValid(err, "[cfgpath] ParseInt")
 }
 

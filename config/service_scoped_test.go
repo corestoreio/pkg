@@ -56,7 +56,7 @@ func TestScopedServiceScope(t *testing.T) {
 
 	tests := []struct {
 		websiteID, storeID int64
-		wantScope          scope.Scope
+		wantScope          scope.Type
 		wantID             int64
 	}{
 		{0, 0, scope.Default, 0},
@@ -79,34 +79,34 @@ func TestScopedServicePath(t *testing.T) {
 		desc               string
 		fqpath             string
 		route              cfgpath.Route
-		perm               scope.Scope
+		perm               scope.Type
 		websiteID, storeID int64
 		wantErrBhf         errors.BehaviourFunc
-		wantHash           scope.Hash
+		wantHash           scope.TypeID
 	}{
 		{
 			"Default ScopedGetter should return default scope",
-			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Absent, 0, 0, nil, scope.DefaultHash,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Absent, 0, 0, nil, scope.DefaultTypeID,
 		},
 		{
 			"Website ID 1 ScopedGetter should fall back to default scope",
-			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 1, 0, nil, scope.DefaultHash,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 1, 0, nil, scope.DefaultTypeID,
 		},
 		{
 			"Website ID 10 ScopedGetter should fall back to website 10 scope",
-			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 10, 0, nil, scope.NewHash(scope.Website, 10),
+			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 10, 0, nil, scope.MakeTypeID(scope.Website, 10),
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should fall back to website 10 scope",
-			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.NewHash(scope.Website, 10),
+			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.MakeTypeID(scope.Website, 10),
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should return Store 22 scope",
-			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.NewHash(scope.Store, 22),
+			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.MakeTypeID(scope.Store, 22),
 		},
 		{
 			"Website ID 10 + Store 42 ScopedGetter should return nothing",
-			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 42, errors.IsNotFound, scope.DefaultHash,
+			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 42, errors.IsNotFound, scope.DefaultTypeID,
 		},
 		{
 			"Path consists of only two elements which is incorrect",
@@ -128,7 +128,7 @@ func TestScopedServicePath(t *testing.T) {
 
 			var haveVal interface{}
 			var haveErr error
-			var haveHash scope.Hash
+			var haveHash scope.TypeID
 			switch wantVal.(type) {
 			case []byte:
 				haveVal, haveHash, haveErr = sg.Byte(test.route, test.perm)
@@ -150,7 +150,7 @@ func TestScopedServicePath(t *testing.T) {
 	}
 }
 
-func testScopedService(t *testing.T, want, have interface{}, wantHash, haveHash scope.Hash, desc string, wantErrBhf errors.BehaviourFunc, err error) {
+func testScopedService(t *testing.T, want, have interface{}, wantHash, haveHash scope.TypeID, desc string, wantErrBhf errors.BehaviourFunc, err error) {
 	assert.Exactly(t, wantHash.String(), haveHash.String(), desc)
 	if wantErrBhf != nil {
 		assert.Empty(t, have, desc)
@@ -193,7 +193,7 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
-		var h scope.Hash
+		var h scope.TypeID
 		benchmarkScopedServiceString, h, err = sg.String(route)
 		if err != nil {
 			b.Error(err)
@@ -201,8 +201,8 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 		if benchmarkScopedServiceString != want {
 			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceString)
 		}
-		if h != scope.DefaultHash {
-			b.Errorf("Want %s Have %s", scope.DefaultHash, h)
+		if h != scope.DefaultTypeID {
+			b.Errorf("Want %s Have %s", scope.DefaultTypeID, h)
 		}
 	}
 }
@@ -212,21 +212,21 @@ func TestScopedServicePermission(t *testing.T) {
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 
 	sg := cfgmock.NewService(cfgmock.PathValue{
-		basePath.Bind(scope.DefaultHash).String(): "a",
-		basePath.BindWebsite(1).String():          "b",
-		basePath.BindStore(1).String():            "c",
+		basePath.Bind(scope.DefaultTypeID).String(): "a",
+		basePath.BindWebsite(1).String():            "b",
+		basePath.BindStore(1).String():              "c",
 	}).NewScoped(1, 1)
 
 	tests := []struct {
-		s        scope.Scope
+		s        scope.Type
 		want     string
-		wantHash scope.Hash
+		wantHash scope.TypeID
 	}{
-		{scope.Default, "a", scope.DefaultHash},
-		{scope.Website, "b", scope.NewHash(scope.Website, 1)},
-		{scope.Group, "a", scope.DefaultHash},
-		{scope.Store, "c", scope.NewHash(scope.Store, 1)},
-		{scope.Absent, "c", scope.NewHash(scope.Store, 1)}, // because ScopedGetter bound to store scope
+		{scope.Default, "a", scope.DefaultTypeID},
+		{scope.Website, "b", scope.MakeTypeID(scope.Website, 1)},
+		{scope.Group, "a", scope.DefaultTypeID},
+		{scope.Store, "c", scope.MakeTypeID(scope.Store, 1)},
+		{scope.Absent, "c", scope.MakeTypeID(scope.Store, 1)}, // because ScopedGetter bound to store scope
 	}
 	for i, test := range tests {
 		have, haveH, err := sg.String(basePath.Route, test.s)
@@ -237,20 +237,20 @@ func TestScopedServicePermission(t *testing.T) {
 		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
 	}
 
-	var ss = []scope.Scope{}
+	var ss = []scope.Type{}
 	ss = nil
 	have, haveH, err := sg.String(basePath.Route, ss...)
 	assert.NoError(t, err)
 	assert.Exactly(t, "c", have) // because ScopedGetter bound to store scope
-	assert.Exactly(t, scope.NewHash(scope.Store, 1).String(), haveH.String())
+	assert.Exactly(t, scope.MakeTypeID(scope.Store, 1).String(), haveH.String())
 }
 
 func TestScopedService_Parent(t *testing.T) {
 	tests := []struct {
 		sg               config.Scoped
-		wantCurrentScope scope.Scope
+		wantCurrentScope scope.Type
 		wantCurrentId    int64
-		wantParentScope  scope.Scope
+		wantParentScope  scope.Type
 		wantParentID     int64
 	}{
 		{config.NewScoped(nil, 33, 1), scope.Store, 1, scope.Website, 33},

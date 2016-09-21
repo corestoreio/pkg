@@ -43,7 +43,7 @@ func NewMapIntStr(path string, opts ...Option) MapIntStr {
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is
 // nil.
-func (p MapIntStr) Get(sg config.Scoped) (string, scope.Hash, error) {
+func (p MapIntStr) Get(sg config.Scoped) (string, scope.TypeID, error) {
 	i, h, err := p.Int.Get(sg)
 	if err != nil {
 		return "", h, errors.Wrap(err, "[cfgmodel] MapIntStr.Byte.Get")

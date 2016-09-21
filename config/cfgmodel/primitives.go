@@ -34,7 +34,7 @@ func NewBool(path string, opts ...Option) Bool {
 // Get returns a bool value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (b Bool) Get(sg config.Scoped) (bool, scope.Hash, error) {
+func (b Bool) Get(sg config.Scoped) (bool, scope.TypeID, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if b.LastError != nil {
@@ -66,7 +66,7 @@ func (b Bool) Get(sg config.Scoped) (bool, scope.Hash, error) {
 }
 
 // Write writes a bool value without validating it against the source.Slice.
-func (b Bool) Write(w config.Writer, v bool, h scope.Hash) error {
+func (b Bool) Write(w config.Writer, v bool, h scope.TypeID) error {
 	return b.baseValue.Write(w, v, h)
 }
 
@@ -83,7 +83,7 @@ func NewByte(path string, opts ...Option) Byte {
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
 // The slice is owned by this function. You must copy it away for
 // further modifications.
-func (bt Byte) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
+func (bt Byte) Get(sg config.Scoped) ([]byte, scope.TypeID, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if bt.LastError != nil {
@@ -115,7 +115,7 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
 }
 
 // Write writes a byte slice without validating it against the source.Slice.
-func (str Byte) Write(w config.Writer, v []byte, h scope.Hash) error {
+func (str Byte) Write(w config.Writer, v []byte, h scope.TypeID) error {
 	return str.baseValue.Write(w, v, h)
 }
 
@@ -132,7 +132,7 @@ func NewStr(path string, opts ...Option) Str {
 // Get returns a string value from ScopedGetter, if empty the
 // *element.Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
-func (str Str) Get(sg config.Scoped) (string, scope.Hash, error) {
+func (str Str) Get(sg config.Scoped) (string, scope.TypeID, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if str.LastError != nil {
@@ -164,7 +164,7 @@ func (str Str) Get(sg config.Scoped) (string, scope.Hash, error) {
 }
 
 // Write writes a string value without validating it against the source.Slice.
-func (str Str) Write(w config.Writer, v string, h scope.Hash) error {
+func (str Str) Write(w config.Writer, v string, h scope.TypeID) error {
 	return str.baseValue.Write(w, v, h)
 }
 
@@ -179,7 +179,7 @@ func NewInt(path string, opts ...Option) Int {
 // Get returns an int value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (i Int) Get(sg config.Scoped) (int, scope.Hash, error) {
+func (i Int) Get(sg config.Scoped) (int, scope.TypeID, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if i.LastError != nil {
@@ -211,7 +211,7 @@ func (i Int) Get(sg config.Scoped) (int, scope.Hash, error) {
 }
 
 // Write writes an int value without validating it against the source.Slice.
-func (i Int) Write(w config.Writer, v int, h scope.Hash) error {
+func (i Int) Write(w config.Writer, v int, h scope.TypeID) error {
 	return i.baseValue.Write(w, v, h)
 }
 
@@ -226,7 +226,7 @@ func NewFloat64(path string, opts ...Option) Float64 {
 // Get returns a float64 value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (f Float64) Get(sg config.Scoped) (float64, scope.Hash, error) {
+func (f Float64) Get(sg config.Scoped) (float64, scope.TypeID, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if f.LastError != nil {
@@ -260,6 +260,6 @@ func (f Float64) Get(sg config.Scoped) (float64, scope.Hash, error) {
 }
 
 // Write writes a float64 value without validating it against the source.Slice.
-func (f Float64) Write(w config.Writer, v float64, h scope.Hash) error {
+func (f Float64) Write(w config.Writer, v float64, h scope.TypeID) error {
 	return f.baseValue.Write(w, v, h)
 }

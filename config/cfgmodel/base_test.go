@@ -97,7 +97,7 @@ func TestBaseValueString(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).BindWebsite(wantWebsiteID)
 
 	mw := new(cfgmock.Write)
-	err := p1.Write(mw, "314159", scope.Website.ToHash(wantWebsiteID))
+	err := p1.Write(mw, "314159", scope.Website.Pack(wantWebsiteID))
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 
@@ -107,7 +107,7 @@ func TestBaseValueString(t *testing.T) {
 	defaultStr, h, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
-	assert.Exactly(t, scope.DefaultHash.String(), h.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	sg = cfgmock.NewService(cfgmock.PathValue{
 		wantPath.String(): "X-CoreStore-TOKEN",
@@ -116,7 +116,7 @@ func TestBaseValueString(t *testing.T) {
 	customStr, h, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
-	assert.Exactly(t, scope.NewHash(scope.Website, wantWebsiteID).String(), h.String())
+	assert.Exactly(t, scope.MakeTypeID(scope.Website, wantWebsiteID).String(), h.String())
 
 	// now change a default value in the packageConfiguration and see it reflects to p1.
 	// but this is not the way to go. You can directly change the field in p1
@@ -133,7 +133,7 @@ func TestBaseValueString(t *testing.T) {
 	ws, h, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
-	assert.Exactly(t, scope.DefaultHash.String(), h.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 }
 
 func TestBaseValue_InScope(t *testing.T) {
@@ -174,7 +174,7 @@ func TestBaseValue_InScope(t *testing.T) {
 			ID:     cfgpath.NewRoute(`c`),
 			Scopes: test.p,
 		}))
-		haveErr := p1.InScope(scope.NewHash(test.sg.Scope()))
+		haveErr := p1.InScope(scope.MakeTypeID(test.sg.Scope()))
 
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
@@ -186,23 +186,23 @@ func TestBaseValue_InScope(t *testing.T) {
 
 func TestBaseValue_InScope_Perm(t *testing.T) {
 	bv := newBaseValue("x/y/z", WithScopeStore())
-	assert.NoError(t, bv.inScope(scope.Store.ToHash(0)))
-	assert.NoError(t, bv.inScope(scope.Website.ToHash(0)))
+	assert.NoError(t, bv.inScope(scope.Store.Pack(0)))
+	assert.NoError(t, bv.inScope(scope.Website.Pack(0)))
 
 	bv = newBaseValue("x/y/z", WithScopeWebsite())
-	assert.Error(t, bv.inScope(scope.Store.ToHash(0)))
-	assert.NoError(t, bv.inScope(scope.Website.ToHash(0)))
+	assert.Error(t, bv.inScope(scope.Store.Pack(0)))
+	assert.NoError(t, bv.inScope(scope.Website.Pack(0)))
 
 	bv = newBaseValue("x/y/z")
-	assert.Error(t, bv.inScope(scope.Store.ToHash(0)))
-	assert.Error(t, bv.inScope(scope.Website.ToHash(0)))
+	assert.Error(t, bv.inScope(scope.Store.Pack(0)))
+	assert.Error(t, bv.inScope(scope.Website.Pack(0)))
 }
 
 func TestBaseValue_FQ(t *testing.T) {
 
 	const pth = "aa/bb/cc"
 	p := newBaseValue(pth, WithScopeStore())
-	fq, err := p.FQ(scope.Store.ToHash(4))
+	fq, err := p.FQ(scope.Store.Pack(4))
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, cfgpath.MustNewByParts(pth).BindStore(4).String(), fq)
 }
@@ -218,17 +218,17 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 	}()
 	const pth = "a/b/c"
 	p := newBaseValue(pth, WithScopeStore())
-	fq := p.MustFQ(scope.Website.ToHash(4))
+	fq := p.MustFQ(scope.Website.Pack(4))
 	assert.Empty(t, fq)
 }
 
 func TestBaseValueToPath(t *testing.T) {
-	t.Run("Valid Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Website.ToHash(23), nil))
-	t.Run("Invalid Route", testBaseValueToPath(cfgpath.NewRoute("a/bb/cc"), scope.Website.ToHash(23), errors.IsNotValid))
-	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Store.ToHash(22), errors.IsUnauthorized))
+	t.Run("Valid Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Website.Pack(23), nil))
+	t.Run("Invalid Route", testBaseValueToPath(cfgpath.NewRoute("a/bb/cc"), scope.Website.Pack(23), errors.IsNotValid))
+	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Store.Pack(22), errors.IsUnauthorized))
 }
 
-func testBaseValueToPath(route cfgpath.Route, h scope.Hash, wantErrBhf errors.BehaviourFunc) func(*testing.T) {
+func testBaseValueToPath(route cfgpath.Route, h scope.TypeID, wantErrBhf errors.BehaviourFunc) func(*testing.T) {
 	return func(t *testing.T) {
 		bv := newBaseValue(route.String())
 

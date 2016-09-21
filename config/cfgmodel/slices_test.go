@@ -43,18 +43,18 @@ func TestStringCSVGet(t *testing.T) {
 	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
-	assert.Exactly(t, scope.DefaultHash.String(), h.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	tests := []struct {
 		have     string
 		want     []string
-		wantHash scope.Hash
+		wantHash scope.TypeID
 		wantErr  error
 	}{
-		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, scope.DefaultHash, nil},
-		{"", nil, scope.DefaultHash, nil},
-		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, scope.DefaultHash, nil},
-		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, scope.DefaultHash, nil},
+		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, scope.DefaultTypeID, nil},
+		{"", nil, scope.DefaultTypeID, nil},
+		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, scope.DefaultTypeID, nil},
+		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, scope.DefaultTypeID, nil},
 		// todo add errors
 	}
 	for i, test := range tests {
@@ -87,10 +87,10 @@ func TestStringCSVWrite(t *testing.T) {
 	mw := &cfgmock.Write{}
 	b.Source.Merge(source.MustNewByString("a", "a", "b", "b", "c", "c"))
 
-	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultHash))
+	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultTypeID))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
-	err := b.Write(mw, []string{"abc"}, scope.DefaultHash)
+	err := b.Write(mw, []string{"abc"}, scope.DefaultTypeID)
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
@@ -117,7 +117,7 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []string{"2015", "2016"}, haveSL)
-	assert.Exactly(t, scope.DefaultHash.String(), haveH.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String())
 }
 
 func TestIntCSV(t *testing.T) {
@@ -140,7 +140,7 @@ func TestIntCSV(t *testing.T) {
 	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 4))
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
-	assert.Exactly(t, scope.DefaultHash.String(), h.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
 
@@ -148,14 +148,14 @@ func TestIntCSV(t *testing.T) {
 		lenient  bool
 		have     string
 		want     []int
-		wantHash scope.Hash
+		wantHash scope.TypeID
 		wantBhf  errors.BehaviourFunc
 	}{
-		{false, "3015,3016", []int{3015, 3016}, scope.NewHash(scope.Store, 4), nil},
-		{false, "2015,2017", []int{2015, 2017}, scope.NewHash(scope.Store, 4), nil},
-		{false, "", nil, scope.NewHash(scope.Store, 4), nil},
-		{false, "2015,,20x17", []int{2015}, scope.NewHash(scope.Store, 4), errors.IsNotValid},
-		{true, "2015,,2017", []int{2015, 2017}, scope.NewHash(scope.Store, 4), nil},
+		{false, "3015,3016", []int{3015, 3016}, scope.MakeTypeID(scope.Store, 4), nil},
+		{false, "2015,2017", []int{2015, 2017}, scope.MakeTypeID(scope.Store, 4), nil},
+		{false, "", nil, scope.MakeTypeID(scope.Store, 4), nil},
+		{false, "2015,,20x17", []int{2015}, scope.MakeTypeID(scope.Store, 4), errors.IsNotValid},
+		{true, "2015,,2017", []int{2015, 2017}, scope.MakeTypeID(scope.Store, 4), nil},
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
@@ -193,10 +193,10 @@ func TestIntCSVWrite(t *testing.T) {
 	b.Source.Merge(source.NewByInt(source.Ints{
 		{2018, "Year 2018"},
 	}))
-	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store.ToHash(4)))
+	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store.Pack(4)))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))
-	err := b.Write(mw, []int{2019}, scope.Store.ToHash(4))
+	err := b.Write(mw, []int{2019}, scope.Store.Pack(4))
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
@@ -224,7 +224,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []int{2015, 2016}, haveSL)
-	assert.Exactly(t, scope.NewHash(scope.Website, 34).String(), haveH.String())
+	assert.Exactly(t, scope.MakeTypeID(scope.Website, 34).String(), haveH.String())
 }
 
 func TestCSVGet(t *testing.T) {
@@ -243,7 +243,7 @@ func TestCSVGet(t *testing.T) {
 	assert.Exactly(t,
 		[][]string{{"0", "\"Did you mean...\" Suggestions", "\"meinten Sie...?\""}, {"1", "Accuracy for Suggestions", "Genauigkeit der Vorschläge"}, {"2", "After switching please reindex the<br /><em>Catalog Search Index</em>.", "Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."}, {"3", "CATALOG", "KATALOG"}},
 		sl) // default values from variable configStructure
-	assert.Exactly(t, scope.DefaultHash.String(), h.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	tests := []struct {
 		have       string
@@ -262,7 +262,7 @@ func TestCSVGet(t *testing.T) {
 		}).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, scope.DefaultHash.String(), haveH.String(), "Index %d", i)
+		assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
 			continue
@@ -283,7 +283,7 @@ func TestCSVWrite(t *testing.T) {
 
 	mw := &cfgmock.Write{}
 
-	assert.NoError(t, b.Write(mw, [][]string{{"a", "b", "c"}, {"d", "e", "f"}}, scope.DefaultHash))
+	assert.NoError(t, b.Write(mw, [][]string{{"a", "b", "c"}, {"d", "e", "f"}}, scope.DefaultTypeID))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "a!b!c\nd!e!f\n", mw.ArgValue.(string))
 }

@@ -63,7 +63,7 @@ func TestPathSlice_Sort(t *testing.T) {
 		cfgpath.MustNewByParts("aa/bb/cc"),
 	}
 	ps.Sort()
-	want := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), ScopeHash: scope.DefaultHash}, cfgpath.Path{Route: cfgpath.NewRoute(`bb/cc/dd`), ScopeHash: scope.DefaultHash}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), ScopeHash: scope.DefaultHash}}
+	want := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), Scope: scope.DefaultTypeID}, cfgpath.Path{Route: cfgpath.NewRoute(`bb/cc/dd`), Scope: scope.DefaultTypeID}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), Scope: scope.DefaultTypeID}}
 	assert.Exactly(t, want, ps)
 }
 

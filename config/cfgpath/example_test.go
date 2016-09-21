@@ -32,7 +32,7 @@ func Example() {
 	// alternative way
 	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStore(3).String())
 	// Group is not supported and falls back to default
-	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").Bind(scope.Group.ToHash(4)).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").Bind(scope.Group.Pack(4)).String())
 
 	p, err := cfgpath.NewByParts("system", "smtp", "host")
 	if err != nil {

@@ -118,7 +118,7 @@ func TestPathNew(t *testing.T) {
 
 	tests := []struct {
 		route      cfgpath.Route
-		s          scope.Scope
+		s          scope.Type
 		id         int64
 		wantFQ     cfgpath.Route
 		wantErrBhf errors.BehaviourFunc
@@ -132,7 +132,7 @@ func TestPathNew(t *testing.T) {
 	}
 	for i, test := range tests {
 		haveP, haveErr := cfgpath.New(test.route)
-		haveP = haveP.Bind(test.s.ToHash(test.id))
+		haveP = haveP.Bind(test.s.Pack(test.id))
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d", i)
 			continue
@@ -146,7 +146,7 @@ func TestPathNew(t *testing.T) {
 func TestFQ(t *testing.T) {
 
 	tests := []struct {
-		scp        scope.Scope
+		scp        scope.Type
 		id         int64
 		route      cfgpath.Route
 		want       string
@@ -163,7 +163,7 @@ func TestFQ(t *testing.T) {
 	}
 	for i, test := range tests {
 		p, pErr := cfgpath.New(test.route)
-		p = p.Bind(test.scp.ToHash(test.id))
+		p = p.Bind(test.scp.Pack(test.id))
 		have, haveErr := p.FQ()
 		if test.wantErrBhf != nil {
 			assert.Empty(t, have.Chars, "Index %d", i)
@@ -295,8 +295,8 @@ func TestSplitFQ(t *testing.T) {
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
 		}
-		assert.Exactly(t, test.wantScope, havePath.ScopeHash.Scope().StrScope(), "Index %d", i)
-		assert.Exactly(t, test.wantScopeID, havePath.ScopeHash.ID(), "Index %d", i)
+		assert.Exactly(t, test.wantScope, havePath.ScopeID.Type().StrType(), "Index %d", i)
+		assert.Exactly(t, test.wantScopeID, havePath.ScopeID.ID(), "Index %d", i)
 		l, _ := havePath.Level(-1)
 		assert.Exactly(t, test.wantPath, l.String(), "Index %d", i)
 	}
@@ -323,7 +323,7 @@ func BenchmarkSplitFQ(b *testing.B) {
 func TestPathIsValid(t *testing.T) {
 
 	tests := []struct {
-		s          scope.Scope
+		s          scope.Type
 		id         int64
 		have       cfgpath.Route
 		wantErrBhf errors.BehaviourFunc
@@ -344,8 +344,8 @@ func TestPathIsValid(t *testing.T) {
 	}
 	for i, test := range tests {
 		p := cfgpath.Path{
-			ScopeHash: scope.NewHash(test.s, test.id),
-			Route:     test.have,
+			ScopeID: scope.MakeTypeID(test.s, test.id),
+			Route:   test.have,
 		}
 		haveErr := p.IsValid()
 		if test.wantErrBhf != nil {
@@ -369,13 +369,13 @@ func TestPathValidateNaughtyStrings(t *testing.T) {
 func TestPathRouteIsValid(t *testing.T) {
 
 	p := cfgpath.Path{
-		ScopeHash: scope.NewHash(scope.Store, 2),
-		Route:     cfgpath.NewRoute(`general/store_information`),
+		ScopeID: scope.MakeTypeID(scope.Store, 2),
+		Route:   cfgpath.NewRoute(`general/store_information`),
 	}
 	assert.True(t, errors.IsNotValid(p.IsValid()))
 
 	p = cfgpath.Path{
-		ScopeHash:       scope.NewHash(scope.Store, 2),
+		ScopeID:         scope.MakeTypeID(scope.Store, 2),
 		Route:           cfgpath.NewRoute(`general/store_information`),
 		RouteLevelValid: true,
 	}
@@ -495,12 +495,12 @@ func TestPathCloneRareUseCase(t *testing.T) {
 	pAssigned := pOrg
 	pCloned := pOrg.Clone()
 
-	assert.Exactly(t, pOrg.ScopeHash.Scope(), pCloned.ScopeHash.Scope())
-	assert.Exactly(t, pOrg.ScopeHash.ID(), pCloned.ScopeHash.ID())
+	assert.Exactly(t, pOrg.ScopeID.Type(), pCloned.ScopeID.Type())
+	assert.Exactly(t, pOrg.ScopeID.ID(), pCloned.ScopeID.ID())
 	assert.Exactly(t, pOrg.Route, pCloned.Route)
 
-	assert.Exactly(t, pOrg.ScopeHash.Scope(), pAssigned.ScopeHash.Scope())
-	assert.Exactly(t, pOrg.ScopeHash.ID(), pAssigned.ScopeHash.ID())
+	assert.Exactly(t, pOrg.ScopeID.Type(), pAssigned.ScopeID.Type())
+	assert.Exactly(t, pOrg.ScopeID.ID(), pAssigned.ScopeID.ID())
 	assert.Exactly(t, pOrg.Route, pAssigned.Route)
 
 	// we're not using Path.Append because it creates internally a new byte slice
@@ -536,11 +536,11 @@ func TestPathCloneAppend(t *testing.T) {
 func TestPath_BindStore(t *testing.T) {
 	p := cfgpath.MustNewByParts(`aa/bb/cc`)
 	p = p.BindStore(33)
-	assert.Exactly(t, scope.NewHash(scope.Store, 33), p.ScopeHash)
+	assert.Exactly(t, scope.MakeTypeID(scope.Store, 33), p.ScopeID)
 }
 
 func TestPath_BindWebsite(t *testing.T) {
 	p := cfgpath.MustNewByParts(`aa/bb/cc`)
 	p = p.BindWebsite(44)
-	assert.Exactly(t, scope.NewHash(scope.Website, 44), p.ScopeHash)
+	assert.Exactly(t, scope.MakeTypeID(scope.Website, 44), p.ScopeID)
 }

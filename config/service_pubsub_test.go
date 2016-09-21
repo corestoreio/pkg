@@ -66,7 +66,7 @@ func TestPubSubBubbling(t *testing.T) {
 		t: t,
 		f: func(p cfgpath.Path) error {
 			assert.Exactly(t, testPath.BindWebsite(123).String(), p.String(), "In closure Exactly")
-			scp, id := p.ScopeHash.Unpack()
+			scp, id := p.ScopeID.Unpack()
 			if scp == scope.Default {
 				assert.Equal(t, int64(0), id)
 			} else {
@@ -143,7 +143,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 		t: t,
 		f: func(p cfgpath.Path) error {
 			assert.Equal(t, `xx/yy/zz`, p.Route.String())
-			assert.Exactly(t, int64(987), p.ScopeHash.ID())
+			assert.Exactly(t, int64(987), p.ScopeID.ID())
 			panic("One: Don't panic!")
 		},
 	})
@@ -154,7 +154,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 		t: t,
 		f: func(p cfgpath.Path) error {
 			assert.Equal(t, "xx/yy/zz", p.Route.String())
-			assert.Exactly(t, int64(987), p.ScopeHash.ID())
+			assert.Exactly(t, int64(987), p.ScopeID.ID())
 			panic("Two: Don't panic!")
 		},
 	})
@@ -165,7 +165,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 		t: t,
 		f: func(p cfgpath.Path) error {
 			assert.Equal(t, "xx/yy/zz", p.Route.String())
-			assert.Exactly(t, int64(987), p.ScopeHash.ID())
+			assert.Exactly(t, int64(987), p.ScopeID.ID())
 			panic("Three: Don't panic!")
 		},
 	})

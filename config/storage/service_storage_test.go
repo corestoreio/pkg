@@ -52,7 +52,7 @@ func TestSimpleStorage(t *testing.T) {
 	assert.NoError(t, err)
 	keys.Sort()
 
-	wantKeys := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), ScopeHash: scope.DefaultHash}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), ScopeHash: scope.NewHash(scope.Store, 2)}}
+	wantKeys := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), Scope: scope.DefaultTypeID}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), Scope: scope.MakeTypeID(scope.Store, 2)}}
 	assert.Exactly(t, wantKeys, keys)
 
 	p3 := cfgpath.MustNewByParts("rr/ss/tt").BindStore(1)

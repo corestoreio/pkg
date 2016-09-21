@@ -37,19 +37,19 @@ func TestURLGet(t *testing.T) {
 	tests := []struct {
 		scpcfg     config.Scoped
 		wantErrBhf errors.BehaviourFunc
-		wantHash   scope.Hash
+		wantHash   scope.TypeID
 		wantVal    interface{}
 	}{
-		{cfgmock.NewService().NewScoped(0, 1), nil, scope.DefaultHash, `http://john%20doe@corestore.io/?q=go+language#foo&bar`},
+		{cfgmock.NewService().NewScoped(0, 1), nil, scope.DefaultTypeID, `http://john%20doe@corestore.io/?q=go+language#foo&bar`},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String(): "http://cs.io",
-		}).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), "http://cs.io"},
+		}).NewScoped(0, 1), nil, scope.MakeTypeID(scope.Store, 1), "http://cs.io"},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String(): "http://192.168.0.%31/",
-		}).NewScoped(0, 1), errors.IsFatal, scope.NewHash(scope.Store, 1), nil},
+		}).NewScoped(0, 1), errors.IsFatal, scope.MakeTypeID(scope.Store, 1), nil},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String(): "",
-		}).NewScoped(0, 1), nil, scope.NewHash(scope.Store, 1), nil},
+		}).NewScoped(0, 1), nil, scope.MakeTypeID(scope.Store, 1), nil},
 	}
 	for i, test := range tests {
 		anURL, haveH, haveErr := b.Get(test.scpcfg)
@@ -80,11 +80,11 @@ func TestURLWrite(t *testing.T) {
 	}
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, data, scope.Store.ToHash(1)))
+	assert.NoError(t, b.Write(mw, data, scope.Store.Pack(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, `http://john%20doe@corestore.io/?q=go+language#foo&bar`, mw.ArgValue.(string))
 
-	assert.NoError(t, b.Write(mw, nil, scope.Store.ToHash(1)))
+	assert.NoError(t, b.Write(mw, nil, scope.Store.Pack(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, ``, mw.ArgValue.(string))
 }
@@ -101,7 +101,7 @@ func TestBaseURLGet(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "{{base_url}}", sg)
-	assert.Exactly(t, scope.DefaultHash.String(), h.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	sg, h, err = b.Get(cfgmock.NewService(cfgmock.PathValue{
 		wantPath.String(): "http://cs.io",
@@ -110,7 +110,7 @@ func TestBaseURLGet(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "http://cs.io", sg)
-	assert.Exactly(t, scope.NewHash(scope.Store, 1).String(), h.String())
+	assert.Exactly(t, scope.MakeTypeID(scope.Store, 1).String(), h.String())
 }
 
 func TestBaseURLWrite(t *testing.T) {
@@ -120,7 +120,7 @@ func TestBaseURLWrite(t *testing.T) {
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, "dude", scope.Store.ToHash(1)))
+	assert.NoError(t, b.Write(mw, "dude", scope.Store.Pack(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }

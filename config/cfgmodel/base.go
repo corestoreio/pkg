@@ -178,7 +178,7 @@ func (bv baseValue) initScope() (p scope.Perm) {
 // Write writes a value v to the config.Writer without checking if the value has
 // changed. Checks if the Scope matches as defined in the non-nil
 // ConfigStructure. Error behaviour: Unauthorized
-func (bv baseValue) Write(w config.Writer, v interface{}, h scope.Hash) error {
+func (bv baseValue) Write(w config.Writer, v interface{}, h scope.TypeID) error {
 	pp, err := bv.ToPath(h)
 	if err != nil {
 		return errors.Wrap(err, "[cfgmodel] baseValue.ToPath")
@@ -198,7 +198,7 @@ func (bv baseValue) String() string {
 // If you need a string returned, consider calling FQ(Scope,scopeID) or
 // MustFQ(Scope,scopeID). FQ = fully qualified path. The returned route in the
 // path is owned by the callee.
-func (bv baseValue) ToPath(h scope.Hash) (cfgpath.Path, error) {
+func (bv baseValue) ToPath(h scope.TypeID) (cfgpath.Path, error) {
 
 	if err := bv.inScope(h); err != nil {
 		return cfgpath.Path{}, errors.Wrap(err, "[cfgmodel] ToPath")
@@ -208,7 +208,7 @@ func (bv baseValue) ToPath(h scope.Hash) (cfgpath.Path, error) {
 	if err != nil {
 		return cfgpath.Path{}, errors.Wrapf(err, "[cfgmodel] cfgpath.New: %q %s", bv.route, h)
 	}
-	p.ScopeHash = h
+	p.ScopeID = h
 	return p, nil
 }
 
@@ -219,11 +219,11 @@ func (bv baseValue) Route() cfgpath.Route {
 
 // InScope checks if a field from a path is allowed for current scope. Returns
 // nil on success. Error behaviour: Unauthorized
-func (bv baseValue) InScope(h scope.Hash) error {
+func (bv baseValue) InScope(h scope.TypeID) error {
 	return bv.inScope(h)
 }
 
-func (bv baseValue) inScope(h scope.Hash) (err error) {
+func (bv baseValue) inScope(h scope.TypeID) (err error) {
 	s, _ := h.Unpack()
 	if bv.HasField() {
 		if !bv.Field.Scopes.Has(s) {
@@ -250,13 +250,13 @@ func (bv baseValue) Options() source.Slice {
 // FQ generates a fully qualified configuration path. Example:
 // general/country/allow would transform with StrScope scope.StrStores and
 // storeID e.g. 4 into: stores/4/general/country/allow
-func (bv baseValue) FQ(h scope.Hash) (string, error) {
+func (bv baseValue) FQ(h scope.TypeID) (string, error) {
 	p, err := bv.ToPath(h)
 	return p.String(), errors.Wrap(err, "[cfgmodel] ToPath")
 }
 
 // MustFQ same as FQ but panics on error. Please use only for testing.
-func (bv baseValue) MustFQ(h scope.Hash) string {
+func (bv baseValue) MustFQ(h scope.TypeID) string {
 	p, err := bv.ToPath(h)
 	if err != nil {
 		panic(err)
@@ -267,7 +267,7 @@ func (bv baseValue) MustFQ(h scope.Hash) string {
 // MustFQ same as FQ but for scope website and panics on error. Please use only
 // for testing.
 func (bv baseValue) MustFQWebsite(id int64) string {
-	p, err := bv.ToPath(scope.Website.ToHash(id))
+	p, err := bv.ToPath(scope.Website.Pack(id))
 	if err != nil {
 		panic(err)
 	}
@@ -277,7 +277,7 @@ func (bv baseValue) MustFQWebsite(id int64) string {
 // MustFQStore same as FQ but for scope store and panics on error. Please use
 // only for testing.
 func (bv baseValue) MustFQStore(id int64) string {
-	p, err := bv.ToPath(scope.Store.ToHash(id))
+	p, err := bv.ToPath(scope.Store.Pack(id))
 	if err != nil {
 		panic(err)
 	}

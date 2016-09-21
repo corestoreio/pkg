@@ -142,8 +142,8 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 		return errors.Wrapf(err, "[ccd] Set.key.Level. SQL: %q Key: %q", dbs.Write.SQL, key)
 	}
 
-	scp, id := key.ScopeHash.Unpack()
-	result, err := stmt.Exec(scp.StrScope(), id, pathLeveled, valStr, valStr)
+	scp, id := key.ScopeID.Unpack()
+	result, err := stmt.Exec(scp.StrType(), id, pathLeveled, valStr, valStr)
 	if err != nil {
 		return errors.Wrapf(err, "[ccd] Set.stmt.Exec. SQL: %q KeyID: %d Scope: %q Path: %q Value: %q", dbs.Write.SQL, id, scp, pathLeveled, valStr)
 	}
@@ -186,8 +186,8 @@ func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 	}
 
 	var data dbr.NullString
-	scp, id := key.ScopeHash.Unpack()
-	err = stmt.QueryRow(scp.StrScope(), id, pl).Scan(&data)
+	scp, id := key.ScopeID.Unpack()
+	err = stmt.QueryRow(scp.StrType(), id, pl).Scan(&data)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[ccd] Get.QueryRow. SQL: %q Key: %q PathLevel: %q", dbs.Read.SQL, key, pl)
 	}
@@ -233,7 +233,7 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 			if err != nil {
 				return ret, errors.Wrapf(err, "[ccd] AllKeys.rows.cfgpath.NewByParts. SQL: %q: Path: %q", dbs.All.SQL, sqlPath.String)
 			}
-			ret = append(ret, p.Bind(scope.FromString(sqlScope.String).ToHash(sqlScopeID.Int64)))
+			ret = append(ret, p.Bind(scope.FromString(sqlScope.String).Pack(sqlScopeID.Int64)))
 		}
 		sqlScope.String = ""
 		sqlScope.Valid = false

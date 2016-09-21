@@ -126,9 +126,9 @@ func ExampleScopedGetter() {
 	fmt.Printf("Route IsNotFound %t\n", errors.IsNotFound(err))
 
 	// Output:
-	// Scope Value for Store ID 2: 141421  |  Scope(Store) ID(2)
-	// Scope Value for Website ID 1: 271828  |  Scope(Website) ID(1)
-	// Scope Value for Default: 314159  |  Scope(Default) ID(0)
+	// Scope Value for Store ID 2: 141421  |  Type(Store) ID(2)
+	// Scope Value for Website ID 1: 271828  |  Type(Website) ID(1)
+	// Scope Value for Default: 314159  |  Type(Default) ID(0)
 	// Scope4: srvString Error: [config] Storage.Int.get: [storage] Key not found
 	// Route IsNotFound true
 }

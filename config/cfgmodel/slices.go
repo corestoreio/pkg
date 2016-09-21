@@ -87,7 +87,7 @@ func (str *StringCSV) Option(opts ...Option) error {
 // Get returns a string slice. Splits the stored string by comma. Can return
 // nil,nil. Empty values will be discarded. Returns a slice containing unique
 // entries. No validation will be made.
-func (str StringCSV) Get(sg config.Scoped) ([]string, scope.Hash, error) {
+func (str StringCSV) Get(sg config.Scoped) ([]string, scope.TypeID, error) {
 	s, h, err := str.Str.Get(sg)
 	if err != nil {
 		return nil, h, errors.Wrap(err, "[cfgmodel] Str.Get")
@@ -101,7 +101,7 @@ func (str StringCSV) Get(sg config.Scoped) ([]string, scope.Hash, error) {
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
 // string slice for correct values if set in source.Slice.
-func (str StringCSV) Write(w config.Writer, sl []string, h scope.Hash) error {
+func (str StringCSV) Write(w config.Writer, sl []string, h scope.TypeID) error {
 	for _, v := range sl {
 		if err := str.ValidateString(v); err != nil {
 			return err
@@ -152,7 +152,7 @@ func (ic *IntCSV) Option(opts ...Option) error {
 // Get returns an int slice. Int string gets splited by comma. Can return
 // nil,nil. If multiple values cannot be casted to int then the last known error
 // gets returned.
-func (ic IntCSV) Get(sg config.Scoped) ([]int, scope.Hash, error) {
+func (ic IntCSV) Get(sg config.Scoped) ([]int, scope.TypeID, error) {
 	s, h, err := ic.Str.Get(sg)
 	if err != nil {
 		return nil, h, errors.Wrap(err, "[cfgmodel] Str.Get")
@@ -181,7 +181,7 @@ func (ic IntCSV) Get(sg config.Scoped) ([]int, scope.Hash, error) {
 }
 
 // Write writes int values as a CSV string
-func (ic IntCSV) Write(w config.Writer, sl []int, h scope.Hash) error {
+func (ic IntCSV) Write(w config.Writer, sl []int, h scope.TypeID) error {
 
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
@@ -248,7 +248,7 @@ func (c *CSV) Option(opts ...Option) error {
 
 // Get returns a string slice. Splits the stored string by comma and new lines
 // by \r and/or \n. Can return nil,nil. Error behaviour: NotValid
-func (c CSV) Get(sg config.Scoped) ([][]string, scope.Hash, error) {
+func (c CSV) Get(sg config.Scoped) ([][]string, scope.TypeID, error) {
 	s, h, err := c.Str.Get(sg)
 	if err != nil {
 		return nil, h, errors.Wrap(err, "[cfgmodel] Str.Get")
@@ -268,7 +268,7 @@ func (c CSV) Get(sg config.Scoped) ([][]string, scope.Hash, error) {
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
 // string slice for correct values if set in source.Slice.
-func (c CSV) Write(w config.Writer, csv [][]string, h scope.Hash) error {
+func (c CSV) Write(w config.Writer, csv [][]string, h scope.TypeID) error {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
