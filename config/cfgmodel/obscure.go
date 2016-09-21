@@ -99,10 +99,10 @@ func (p Obscure) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
 }
 
 // Write writes a raw value encrypted. Panics if Encryptor interface is nil.
-func (p Obscure) Write(w config.Writer, v []byte, s scope.Scope, scopeID int64) (err error) {
+func (p Obscure) Write(w config.Writer, v []byte, h scope.Hash) (err error) {
 	v, err = p.Encrypt(v)
 	if err != nil {
 		return err
 	}
-	return p.Byte.Write(w, v, s, scopeID)
+	return p.Byte.Write(w, v, h)
 }

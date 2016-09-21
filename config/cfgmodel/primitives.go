@@ -66,8 +66,8 @@ func (b Bool) Get(sg config.Scoped) (bool, scope.Hash, error) {
 }
 
 // Write writes a bool value without validating it against the source.Slice.
-func (b Bool) Write(w config.Writer, v bool, s scope.Scope, scopeID int64) error {
-	return b.baseValue.Write(w, v, s, scopeID)
+func (b Bool) Write(w config.Writer, v bool, h scope.Hash) error {
+	return b.baseValue.Write(w, v, h)
 }
 
 // Byte represents a path in config.Getter which handles byte slices.
@@ -115,8 +115,8 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, scope.Hash, error) {
 }
 
 // Write writes a byte slice without validating it against the source.Slice.
-func (str Byte) Write(w config.Writer, v []byte, s scope.Scope, scopeID int64) error {
-	return str.baseValue.Write(w, v, s, scopeID)
+func (str Byte) Write(w config.Writer, v []byte, h scope.Hash) error {
+	return str.baseValue.Write(w, v, h)
 }
 
 // Str represents a path in config.Getter which handles string values.
@@ -164,8 +164,8 @@ func (str Str) Get(sg config.Scoped) (string, scope.Hash, error) {
 }
 
 // Write writes a string value without validating it against the source.Slice.
-func (str Str) Write(w config.Writer, v string, s scope.Scope, scopeID int64) error {
-	return str.baseValue.Write(w, v, s, scopeID)
+func (str Str) Write(w config.Writer, v string, h scope.Hash) error {
+	return str.baseValue.Write(w, v, h)
 }
 
 // Int represents a path in config.Getter which handles int values.
@@ -211,8 +211,8 @@ func (i Int) Get(sg config.Scoped) (int, scope.Hash, error) {
 }
 
 // Write writes an int value without validating it against the source.Slice.
-func (i Int) Write(w config.Writer, v int, s scope.Scope, scopeID int64) error {
-	return i.baseValue.Write(w, v, s, scopeID)
+func (i Int) Write(w config.Writer, v int, h scope.Hash) error {
+	return i.baseValue.Write(w, v, h)
 }
 
 // Float64 represents a path in config.Getter which handles float64 values.
@@ -260,6 +260,6 @@ func (f Float64) Get(sg config.Scoped) (float64, scope.Hash, error) {
 }
 
 // Write writes a float64 value without validating it against the source.Slice.
-func (f Float64) Write(w config.Writer, v float64, s scope.Scope, scopeID int64) error {
-	return f.baseValue.Write(w, v, s, scopeID)
+func (f Float64) Write(w config.Writer, v float64, h scope.Hash) error {
+	return f.baseValue.Write(w, v, h)
 }

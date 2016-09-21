@@ -24,7 +24,7 @@
 // The Get() function signature may vary between the packages.
 //
 // The signature of the setter function states in most cases:
-// 		Write(w config.Writer, v interface{}, s scope.Scope, id int64) error
+// 		Write(w config.Writer, v interface{}, h scope.Hash) error
 // The Write() function signature differs within the types to mainly force the
 // type safety. In other packages the Write() signature can be totally
 // different.

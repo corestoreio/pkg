@@ -83,7 +83,7 @@ func Benchmark_SingleStrGetWebsite(b *testing.B) {
 	p1 := cfgmodel.NewStr("web/cors/exposed_headers", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	sg := cfgmock.NewService(cfgmock.PathValue{
-		p1.MustFQ(scope.Website, 2): want,
+		p1.MustFQWebsite(2): want,
 	}).NewScoped(2, 4)
 
 	b.ReportAllocs()
@@ -144,7 +144,7 @@ func Benchmark_SingleFloat64GetStore(b *testing.B) {
 	}
 
 	sg := cfgmock.NewService(cfgmock.PathValue{
-		p1.MustFQ(scope.Store, 4): want,
+		p1.MustFQStore(4): want,
 	}).NewScoped(2, 4)
 
 	b.ReportAllocs()

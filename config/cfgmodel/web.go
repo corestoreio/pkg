@@ -56,12 +56,12 @@ func (p URL) Get(sg config.Scoped) (*url.URL, scope.Hash, error) {
 
 // Write writes a new URL and validates it before saving. If v is nil, an empty value
 // will be written.
-func (p URL) Write(w config.Writer, v *url.URL, s scope.Scope, scopeID int64) error {
+func (p URL) Write(w config.Writer, v *url.URL, h scope.Hash) error {
 	var val string
 	if v != nil {
 		val = v.String()
 	}
-	return p.Str.Write(w, val, s, scopeID)
+	return p.Str.Write(w, val, h)
 }
 
 // BaseURL represents a path in config.Getter handles BaseURLs and internal validation
@@ -78,7 +78,7 @@ func (p BaseURL) Get(sg config.Scoped) (string, scope.Hash, error) {
 }
 
 // Write writes a new base URL and validates it before saving. @TODO
-func (p BaseURL) Write(w config.Writer, v string, s scope.Scope, scopeID int64) error {
+func (p BaseURL) Write(w config.Writer, v string, h scope.Hash) error {
 	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
-	return p.Str.Write(w, v, s, scopeID)
+	return p.Str.Write(w, v, h)
 }

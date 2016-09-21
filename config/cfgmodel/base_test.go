@@ -97,7 +97,7 @@ func TestBaseValueString(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).BindWebsite(wantWebsiteID)
 
 	mw := new(cfgmock.Write)
-	err := p1.Write(mw, "314159", scope.Website, wantWebsiteID)
+	err := p1.Write(mw, "314159", scope.Website.ToHash(wantWebsiteID))
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 
@@ -174,7 +174,7 @@ func TestBaseValue_InScope(t *testing.T) {
 			ID:     cfgpath.NewRoute(`c`),
 			Scopes: test.p,
 		}))
-		haveErr := p1.InScope(test.sg)
+		haveErr := p1.InScope(scope.NewHash(test.sg.Scope()))
 
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)
@@ -186,29 +186,28 @@ func TestBaseValue_InScope(t *testing.T) {
 
 func TestBaseValue_InScope_Perm(t *testing.T) {
 	bv := newBaseValue("x/y/z", WithScopeStore())
-	assert.NoError(t, bv.inScope(scope.Store, 0))
-	assert.NoError(t, bv.inScope(scope.Website, 0))
+	assert.NoError(t, bv.inScope(scope.Store.ToHash(0)))
+	assert.NoError(t, bv.inScope(scope.Website.ToHash(0)))
 
 	bv = newBaseValue("x/y/z", WithScopeWebsite())
-	assert.Error(t, bv.inScope(scope.Store, 0))
-	assert.NoError(t, bv.inScope(scope.Website, 0))
+	assert.Error(t, bv.inScope(scope.Store.ToHash(0)))
+	assert.NoError(t, bv.inScope(scope.Website.ToHash(0)))
 
 	bv = newBaseValue("x/y/z")
-	assert.Error(t, bv.inScope(scope.Store, 0))
-	assert.Error(t, bv.inScope(scope.Website, 0))
+	assert.Error(t, bv.inScope(scope.Store.ToHash(0)))
+	assert.Error(t, bv.inScope(scope.Website.ToHash(0)))
 }
 
 func TestBaseValue_FQ(t *testing.T) {
 
 	const pth = "aa/bb/cc"
 	p := newBaseValue(pth, WithScopeStore())
-	fq, err := p.FQ(scope.Store, 4)
+	fq, err := p.FQ(scope.Store.ToHash(4))
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, cfgpath.MustNewByParts(pth).BindStore(4).String(), fq)
 }
 
 func TestBaseValueMustFQPanic(t *testing.T) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -219,17 +218,17 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 	}()
 	const pth = "a/b/c"
 	p := newBaseValue(pth, WithScopeStore())
-	fq := p.MustFQ(scope.Website, 4)
+	fq := p.MustFQ(scope.Website.ToHash(4))
 	assert.Empty(t, fq)
 }
 
 func TestBaseValueToPath(t *testing.T) {
-	t.Run("Valid Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Website, 23, nil))
-	t.Run("Invalid Route", testBaseValueToPath(cfgpath.NewRoute("a/bb/cc"), scope.Website, 23, errors.IsNotValid))
-	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Store, 22, errors.IsUnauthorized))
+	t.Run("Valid Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Website.ToHash(23), nil))
+	t.Run("Invalid Route", testBaseValueToPath(cfgpath.NewRoute("a/bb/cc"), scope.Website.ToHash(23), errors.IsNotValid))
+	t.Run("Unauthorized Route", testBaseValueToPath(cfgpath.NewRoute("aa/bb/cc"), scope.Store.ToHash(22), errors.IsUnauthorized))
 }
 
-func testBaseValueToPath(route cfgpath.Route, s scope.Scope, sid int64, wantErrBhf errors.BehaviourFunc) func(*testing.T) {
+func testBaseValueToPath(route cfgpath.Route, h scope.Hash, wantErrBhf errors.BehaviourFunc) func(*testing.T) {
 	return func(t *testing.T) {
 		bv := newBaseValue(route.String())
 
@@ -238,13 +237,13 @@ func testBaseValueToPath(route cfgpath.Route, s scope.Scope, sid int64, wantErrB
 			Scopes: scope.PermWebsite, // only scope default and website are allowed
 		}
 
-		havePath, haveErr := bv.ToPath(s, sid)
+		havePath, haveErr := bv.ToPath(h)
 		if wantErrBhf != nil {
 			// t.Log(haveErr)
 			assert.True(t, wantErrBhf(haveErr), "Error: %s", haveErr)
 			return
 		}
-		wantPath := cfgpath.MustNew(route).Bind(s, sid)
+		wantPath := cfgpath.MustNew(route).Bind(h)
 		assert.Exactly(t, wantPath, havePath)
 	}
 }
@@ -267,4 +266,34 @@ func TestBaseValue_IsSet(t *testing.T) {
 
 	r = baseValue{}
 	assert.False(t, r.IsSet())
+}
+
+func TestBaseValue_MustFQWebsite_Panic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := r.(error)
+			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	const pth = "a/b/c"
+	p := newBaseValue(pth, WithScopeStore())
+	fq := p.MustFQWebsite(4)
+	assert.Empty(t, fq)
+}
+
+func TestBaseValue_MustFQStore_Panic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := r.(error)
+			assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	const pth = "a/b/c"
+	p := newBaseValue(pth, WithScopeStore())
+	fq := p.MustFQStore(5)
+	assert.Empty(t, fq)
 }

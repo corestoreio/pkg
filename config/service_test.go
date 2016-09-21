@@ -97,8 +97,8 @@ func TestService_Types(t *testing.T) {
 	}{
 		{basePath, nil},
 		{cfgpath.Path{}, errors.IsNotValid},
-		{basePath.Bind(scope.Website, 10), nil},
-		{basePath.Bind(scope.Store, 22), nil},
+		{basePath.BindWebsite(10), nil},
+		{basePath.BindStore(22), nil},
 	}
 
 	// vals stores all possible types for which we have functions in config.Service

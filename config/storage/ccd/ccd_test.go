@@ -56,12 +56,12 @@ func TestDBStorageOneStmt(t *testing.T) {
 		wantNil   bool
 		wantValue string
 	}{
-		{cfgpath.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.Store, 1), "http://corestore.io", false, "http://corestore.io"},
-		{cfgpath.MustNewByParts("testDBStorage/log/active").Bind(scope.Store, 2), 1, false, "1"},
-		{cfgpath.MustNewByParts("testDBStorage/log/clean").Bind(scope.Store, 99999), 19.999, false, "19.999"},
-		{cfgpath.MustNewByParts("testDBStorage/log/clean").Bind(scope.Store, 99999), 29.999, false, "29.999"},
-		{cfgpath.MustNewByParts("testDBStorage/catalog/purge").Bind(scope.Default, 1), true, false, "true"},
-		{cfgpath.MustNewByParts("testDBStorage/catalog/clean").Bind(scope.Default, 1), 0, false, "0"},
+		{cfgpath.MustNewByParts("testDBStorage/secure/base_url").BindStore(1), "http://corestore.io", false, "http://corestore.io"},
+		{cfgpath.MustNewByParts("testDBStorage/log/active").BindStore(2), 1, false, "1"},
+		{cfgpath.MustNewByParts("testDBStorage/log/clean").BindStore(99999), 19.999, false, "19.999"},
+		{cfgpath.MustNewByParts("testDBStorage/log/clean").BindStore(99999), 29.999, false, "29.999"},
+		{cfgpath.MustNewByParts("testDBStorage/catalog/purge").Bind(scope.DefaultHash), true, false, "true"},
+		{cfgpath.MustNewByParts("testDBStorage/catalog/clean").Bind(scope.DefaultHash), 0, false, "0"},
 	}
 
 	prepIns := dbMock.ExpectPrepare("INSERT INTO `[^`]+` \\(.+\\) VALUES \\(\\?,\\?,\\?,\\?\\) ON DUPLICATE KEY UPDATE `value`=\\?")
@@ -126,12 +126,12 @@ var dbStorageMultiTests = []struct {
 	value     interface{}
 	wantValue string
 }{
-	{cfgpath.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.Website, 10), "http://corestore.io", "http://corestore.io"},
-	{cfgpath.MustNewByParts("testDBStorage/log/active").Bind(scope.Website, 10), 1, "1"},
-	{cfgpath.MustNewByParts("testDBStorage/log/clean").Bind(scope.Website, 20), 19.999, "19.999"},
-	{cfgpath.MustNewByParts("testDBStorage/product/shipping").Bind(scope.Website, 20), 29.999, "29.999"},
+	{cfgpath.MustNewByParts("testDBStorage/secure/base_url").BindWebsite(10), "http://corestore.io", "http://corestore.io"},
+	{cfgpath.MustNewByParts("testDBStorage/log/active").BindWebsite(10), 1, "1"},
+	{cfgpath.MustNewByParts("testDBStorage/log/clean").BindWebsite(20), 19.999, "19.999"},
+	{cfgpath.MustNewByParts("testDBStorage/product/shipping").BindWebsite(20), 29.999, "29.999"},
 	{cfgpath.MustNewByParts("testDBStorage/checkout/multishipping"), false, "false"},
-	{cfgpath.MustNewByParts("testDBStorage/shipping/rate").Bind(scope.Store, 321), 3.14159, "3.14159"},
+	{cfgpath.MustNewByParts("testDBStorage/shipping/rate").BindStore(321), 3.14159, "3.14159"},
 }
 
 func TestDBStorageMultipleStmt_Set(t *testing.T) {

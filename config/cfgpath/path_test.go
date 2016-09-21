@@ -532,3 +532,15 @@ func TestPathCloneAppend(t *testing.T) {
 	assert.NoError(t, pOrg.Append(cfgpath.NewRoute("dd")))
 	assert.NotEqual(t, pOrg, pAssigned)
 }
+
+func TestPath_BindStore(t *testing.T) {
+	p := cfgpath.MustNewByParts(`aa/bb/cc`)
+	p = p.BindStore(33)
+	assert.Exactly(t, scope.NewHash(scope.Store, 33), p.ScopeHash)
+}
+
+func TestPath_BindWebsite(t *testing.T) {
+	p := cfgpath.MustNewByParts(`aa/bb/cc`)
+	p = p.BindWebsite(44)
+	assert.Exactly(t, scope.NewHash(scope.Website, 44), p.ScopeHash)
+}

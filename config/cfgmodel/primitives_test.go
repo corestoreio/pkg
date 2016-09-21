@@ -215,7 +215,7 @@ var configStructure = element.MustNewConfiguration(
 func TestBoolGetWithCfgStruct(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).Bind(scope.Website, 3)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(3)
 	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(source.YesNo))
 
 	assert.Exactly(t, source.YesNo, b.Options())
@@ -243,7 +243,7 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 func TestBoolGetWithoutCfgStruct(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).Bind(scope.Website, 4)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(4)
 	b := cfgmodel.NewBool(pathWebCorsCred)
 
 	tests := []struct {
@@ -254,7 +254,7 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, false},
 		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultHash, false},
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): 1}).NewScoped(4, 0), scope.DefaultHash, false}, // not allowed because DefaultID scope because there has not been set a *element.Field!
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 1}).NewScoped(4, 0), scope.DefaultHash, true},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultHash).String(): 1}).NewScoped(4, 0), scope.DefaultHash, true},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -295,13 +295,13 @@ func TestBoolIgnoreNilDefaultValues(t *testing.T) {
 func TestBoolWrite(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).Bind(scope.Website, 3)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(3)
 	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(source.YesNo))
 
 	mw := &cfgmock.Write{}
-	err := b.Write(mw, true, scope.Store, 3)
+	err := b.Write(mw, true, scope.Store.ToHash(3))
 	assert.True(t, errors.IsUnauthorized(err), "Error: %s", err)
-	assert.NoError(t, b.Write(mw, true, scope.Website, 3))
+	assert.NoError(t, b.Write(mw, true, scope.Website.ToHash(3)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, true, mw.ArgValue.(bool))
 }
@@ -324,14 +324,14 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")}).NewScoped(0, 0), scope.DefaultHash, []byte("X-Gopher")},
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")}).NewScoped(3, 5), scope.DefaultHash, []byte("X-Gopher")},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                       []byte("X-Gopher262"),
-			wantPath.Bind(scope.Store, 44).String(): []byte("X-Gopher44"), // because Field.Scopes has PermWebsite
+			wantPath.String():               []byte("X-Gopher262"),
+			wantPath.BindStore(44).String(): []byte("X-Gopher44"), // because Field.Scopes has PermWebsite
 		}).NewScoped(3, 44), scope.DefaultHash, []byte("X-Gopher262")},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                         []byte("X-Gopher"),
-			wantPath.Bind(scope.Website, 33).String(): []byte("X-Gopher33"),
-			wantPath.Bind(scope.Website, 43).String(): []byte("X-GopherW43"),
-			wantPath.Bind(scope.Store, 44).String():   []byte("X-Gopher44"),
+			wantPath.String():                 []byte("X-Gopher"),
+			wantPath.BindWebsite(33).String(): []byte("X-Gopher33"),
+			wantPath.BindWebsite(43).String(): []byte("X-GopherW43"),
+			wantPath.BindStore(44).String():   []byte("X-Gopher44"),
 		}).NewScoped(33, 43), scope.NewHash(scope.Website, 33), []byte("X-Gopher33")},
 	}
 	for i, test := range tests {
@@ -404,7 +404,7 @@ func TestByteWrite(t *testing.T) {
 	b := cfgmodel.NewByte(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, []byte("dude"), scope.Default, 0))
+	assert.NoError(t, b.Write(mw, []byte("dude"), scope.DefaultHash))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, []byte("dude"), mw.ArgValue.([]byte))
 }
@@ -426,14 +426,14 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), scope.DefaultHash, "X-Gopher"},
 		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(3, 5), scope.DefaultHash, "X-Gopher"},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                       "X-Gopher262",
-			wantPath.Bind(scope.Store, 44).String(): "X-Gopher44", // because Field.Scopes has PermWebsite
+			wantPath.String():               "X-Gopher262",
+			wantPath.BindStore(44).String(): "X-Gopher44", // because Field.Scopes has PermWebsite
 		}).NewScoped(3, 44), scope.DefaultHash, "X-Gopher262"},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                         "X-Gopher",
-			wantPath.Bind(scope.Website, 33).String(): "X-Gopher33",
-			wantPath.Bind(scope.Website, 43).String(): "X-GopherW43",
-			wantPath.Bind(scope.Store, 44).String():   "X-Gopher44",
+			wantPath.String():                 "X-Gopher",
+			wantPath.BindWebsite(33).String(): "X-Gopher33",
+			wantPath.BindWebsite(43).String(): "X-GopherW43",
+			wantPath.BindStore(44).String():   "X-Gopher44",
 		}).NewScoped(33, 43), scope.NewHash(scope.Website, 33), "X-Gopher33"},
 	}
 	for i, test := range tests {
@@ -505,7 +505,7 @@ func TestStrWrite(t *testing.T) {
 	b := cfgmodel.NewStr(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, "dude", scope.Default, 0))
+	assert.NoError(t, b.Write(mw, "dude", scope.DefaultHash))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }
@@ -525,16 +525,16 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, 2015}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultHash, 2015}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultHash, 2015}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016}).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016}).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                       3017,
-			wantPath.Bind(scope.Store, 11).String(): 2016, // because Field.Scopes set to PermWebsite
+			wantPath.String():               3017,
+			wantPath.BindStore(11).String(): 2016, // because Field.Scopes set to PermWebsite
 		}).NewScoped(10, 11), scope.DefaultHash, 3017},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                         3017,
-			wantPath.Bind(scope.Website, 10).String(): 4018,
-			wantPath.Bind(scope.Store, 11).String():   2016, // because Field.Scopes set to PermWebsite
+			wantPath.String():                 3017,
+			wantPath.BindWebsite(10).String(): 4018,
+			wantPath.BindStore(11).String():   2016, // because Field.Scopes set to PermWebsite
 		}).NewScoped(10, 11), scope.NewHash(scope.Website, 10), 4018},
 	}
 	for i, test := range tests {
@@ -560,8 +560,8 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 		want     int
 	}{
 		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016}).NewScoped(10, 0), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 2019}).NewScoped(10, 0), scope.DefaultHash, 2019},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), scope.DefaultHash, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultHash).String(): 2019}).NewScoped(10, 0), scope.DefaultHash, 2019},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -602,11 +602,11 @@ func TestIntIgnoreNilDefaultValues(t *testing.T) {
 func TestIntWrite(t *testing.T) {
 
 	const pathWebCorsInt = "web/cors/int"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsInt).Bind(scope.Website, 10)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsInt).BindWebsite(10)
 	b := cfgmodel.NewInt(pathWebCorsInt, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, 27182, scope.Website, 10))
+	assert.NoError(t, b.Write(mw, 27182, scope.Website.ToHash(10)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, 27182, mw.ArgValue.(int))
 }
@@ -617,7 +617,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.Website, 10)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
 	tests := []struct {
 		sg       config.Scoped
 		wantHash scope.Hash
@@ -626,16 +626,16 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, 2015.1000001}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultHash, 2015.1000001}, // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultHash, 2015.1000001}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001}).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016.1000001},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001}).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), scope.NewHash(scope.Website, 10), 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 1), scope.NewHash(scope.Website, 10), 2016.1000001},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                       2017.1000001,
-			wantPath.Bind(scope.Store, 11).String(): 2016.1000021,
+			wantPath.String():               2017.1000001,
+			wantPath.BindStore(11).String(): 2016.1000021,
 		}).NewScoped(10, 11), scope.NewHash(scope.Website, 10), 2017.1000001},
 		{cfgmock.NewService(cfgmock.PathValue{
-			wantPath.String():                         2017.1000001,
-			wantPath.Bind(scope.Website, 13).String(): 2018.2000001,
-			wantPath.Bind(scope.Store, 11).String():   2016.1000021,
+			wantPath.String():                 2017.1000001,
+			wantPath.BindWebsite(13).String(): 2018.2000001,
+			wantPath.BindStore(11).String():   2016.1000021,
 		}).NewScoped(13, 11), scope.NewHash(scope.Website, 13), 2018.2000001},
 	}
 	for i, test := range tests {
@@ -654,15 +654,15 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 	b := cfgmodel.NewFloat64(pathWebCorsF64) // no *element.Field has been set. So Default Scope will be enforced
 	assert.Empty(t, b.Options())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.Website, 10)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
 	tests := []struct {
 		sg       config.Scoped
 		wantHash scope.Hash
 		want     float64
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Website, 10).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultHash, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.Default, 0).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultHash, 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultHash, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultHash).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultHash, 2016.1000001},
 	}
 	for i, test := range tests {
 		gb, h, err := b.Get(test.sg)
@@ -703,11 +703,11 @@ func TestFloat64IgnoreNilDefaultValues(t *testing.T) {
 func TestFloat64Write(t *testing.T) {
 
 	const pathWebCorsF64 = "web/cors/float64"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.Website, 10)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
 	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, 1.123456789, scope.Website, 10))
+	assert.NoError(t, b.Write(mw, 1.123456789, scope.Website.ToHash(10)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, 1.12345678900000, mw.ArgValue.(float64))
 }

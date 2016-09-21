@@ -212,9 +212,9 @@ func TestScopedServicePermission(t *testing.T) {
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 
 	sg := cfgmock.NewService(cfgmock.PathValue{
-		basePath.Bind(scope.Default, 0).String(): "a",
-		basePath.BindWebsite(1).String():         "b",
-		basePath.BindStore(1).String():           "c",
+		basePath.Bind(scope.DefaultHash).String(): "a",
+		basePath.BindWebsite(1).String():          "b",
+		basePath.BindStore(1).String():            "c",
 	}).NewScoped(1, 1)
 
 	tests := []struct {

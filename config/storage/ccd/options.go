@@ -58,7 +58,7 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.Option {
 					return errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q", cd.Path)
 				}
 
-				if err = s.Write(p.Bind(scope.FromString(cd.Scope), cd.ScopeID), cd.Value.String); err != nil {
+				if err = s.Write(p.Bind(scope.FromString(cd.Scope).ToHash(cd.ScopeID)), cd.Value.String); err != nil {
 					return errors.Wrapf(err, "[ccd] cfgpath.NewByParts Path %q Scope: %q ID: %d Value: %q", cd.Path, cd.Scope, cd.ScopeID, cd.Value.String)
 				}
 				writtenRows++

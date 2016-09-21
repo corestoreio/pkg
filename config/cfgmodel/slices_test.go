@@ -87,10 +87,10 @@ func TestStringCSVWrite(t *testing.T) {
 	mw := &cfgmock.Write{}
 	b.Source.Merge(source.MustNewByString("a", "a", "b", "b", "c", "c"))
 
-	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.Default, 0))
+	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultHash))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
-	err := b.Write(mw, []string{"abc"}, scope.Default, 0)
+	err := b.Write(mw, []string{"abc"}, scope.DefaultHash)
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
@@ -142,7 +142,7 @@ func TestIntCSV(t *testing.T) {
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
 	assert.Exactly(t, scope.DefaultHash.String(), h.String())
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Store, 4).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
 
 	tests := []struct {
 		lenient  bool
@@ -187,16 +187,16 @@ func TestIntCSVWrite(t *testing.T) {
 			{2017, "Year 2017"},
 		}),
 	)
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Store, 4).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
 
 	mw := &cfgmock.Write{}
 	b.Source.Merge(source.NewByInt(source.Ints{
 		{2018, "Year 2018"},
 	}))
-	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store, 4))
+	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store.ToHash(4)))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))
-	err := b.Write(mw, []int{2019}, scope.Store, 4)
+	err := b.Write(mw, []int{2019}, scope.Store.ToHash(4))
 	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
 }
 
@@ -215,7 +215,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 		}),
 		cfgmodel.WithCSVComma('|'),
 	)
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Website, 34).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindWebsite(34).String()
 
 	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
 		wantPath: `2015|2016|`,
@@ -283,7 +283,7 @@ func TestCSVWrite(t *testing.T) {
 
 	mw := &cfgmock.Write{}
 
-	assert.NoError(t, b.Write(mw, [][]string{{"a", "b", "c"}, {"d", "e", "f"}}, scope.Default, 0))
+	assert.NoError(t, b.Write(mw, [][]string{{"a", "b", "c"}, {"d", "e", "f"}}, scope.DefaultHash))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "a!b!c\nd!e!f\n", mw.ArgValue.(string))
 }

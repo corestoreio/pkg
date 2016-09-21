@@ -30,7 +30,7 @@ import (
 func TestURLGet(t *testing.T) {
 
 	const pathWebURL = "web/unsecure/url"
-	wantPath := cfgpath.MustNewByParts(pathWebURL).Bind(scope.Store, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebURL).BindStore(1)
 	b := cfgmodel.NewURL(pathWebURL, cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
@@ -71,7 +71,7 @@ func TestURLGet(t *testing.T) {
 
 func TestURLWrite(t *testing.T) {
 	const pathWebURL = "web/unsecure/url"
-	wantPath := cfgpath.MustNewByParts(pathWebURL).Bind(scope.Store, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebURL).BindStore(1)
 	b := cfgmodel.NewURL(pathWebURL, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	data, err := url.Parse(`http://john%20doe@corestore.io/?q=go+language#foo&bar`)
@@ -80,18 +80,18 @@ func TestURLWrite(t *testing.T) {
 	}
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, data, scope.Store, 1))
+	assert.NoError(t, b.Write(mw, data, scope.Store.ToHash(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, `http://john%20doe@corestore.io/?q=go+language#foo&bar`, mw.ArgValue.(string))
 
-	assert.NoError(t, b.Write(mw, nil, scope.Store, 1))
+	assert.NoError(t, b.Write(mw, nil, scope.Store.ToHash(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, ``, mw.ArgValue.(string))
 }
 
 func TestBaseURLGet(t *testing.T) {
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.Store, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).BindStore(1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	assert.Empty(t, b.Options())
@@ -116,11 +116,11 @@ func TestBaseURLGet(t *testing.T) {
 func TestBaseURLWrite(t *testing.T) {
 
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.Store, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).BindStore(1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, "dude", scope.Store, 1))
+	assert.NoError(t, b.Write(mw, "dude", scope.Store.ToHash(1)))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }

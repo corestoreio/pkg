@@ -233,7 +233,7 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 			if err != nil {
 				return ret, errors.Wrapf(err, "[ccd] AllKeys.rows.cfgpath.NewByParts. SQL: %q: Path: %q", dbs.All.SQL, sqlPath.String)
 			}
-			ret = append(ret, p.Bind(scope.FromString(sqlScope.String), sqlScopeID.Int64))
+			ret = append(ret, p.Bind(scope.FromString(sqlScope.String).ToHash(sqlScopeID.Int64)))
 		}
 		sqlScope.String = ""
 		sqlScope.Valid = false

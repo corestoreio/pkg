@@ -65,8 +65,8 @@ func (t Time) Get(sg config.Scoped) (time.Time, scope.Hash, error) {
 }
 
 // Write writes a time value without validating it against the source.Slice.
-func (t Time) Write(w config.Writer, v time.Time, s scope.Scope, scopeID int64) error {
-	return t.baseValue.Write(w, v, s, scopeID)
+func (t Time) Write(w config.Writer, v time.Time, h scope.Hash) error {
+	return t.baseValue.Write(w, v, h)
 }
 
 // Duration represents a path in config.Getter which handles duration values.
@@ -116,6 +116,6 @@ func (t Duration) Get(sg config.Scoped) (time.Duration, scope.Hash, error) {
 }
 
 // Write writes a duration value without validating it against the source.Slice.
-func (t Duration) Write(w config.Writer, v time.Duration, s scope.Scope, scopeID int64) error {
-	return t.Str.Write(w, v.String(), s, scopeID)
+func (t Duration) Write(w config.Writer, v time.Duration, h scope.Hash) error {
+	return t.Str.Write(w, v.String(), h)
 }

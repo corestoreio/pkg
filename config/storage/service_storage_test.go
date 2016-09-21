@@ -37,7 +37,7 @@ func TestSimpleStorage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, 19.99, f.(float64))
 
-	p2 := cfgpath.MustNewByParts("xx/yy/zz").Bind(scope.Store, 2)
+	p2 := cfgpath.MustNewByParts("xx/yy/zz").BindStore(2)
 
 	assert.NoError(t, sp.Set(p2, 4711))
 	i, err := sp.Get(p2)
@@ -55,7 +55,7 @@ func TestSimpleStorage(t *testing.T) {
 	wantKeys := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), ScopeHash: scope.DefaultHash}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), ScopeHash: scope.NewHash(scope.Store, 2)}}
 	assert.Exactly(t, wantKeys, keys)
 
-	p3 := cfgpath.MustNewByParts("rr/ss/tt").Bind(scope.Store, 1)
+	p3 := cfgpath.MustNewByParts("rr/ss/tt").BindStore(1)
 	ni, err = sp.Get(p3)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 	assert.Nil(t, ni)

@@ -44,7 +44,7 @@ func TestNewMapIntStr(t *testing.T) {
 	m.MapIntResolver = mockMapIS{}
 
 	sg := cfgmock.NewService(cfgmock.PathValue{
-		m.MustFQ(scope.Store, 5): 33,
+		m.MustFQStore(5): 33,
 	}).NewScoped(2, 5)
 
 	val, scp, err := m.Get(sg)

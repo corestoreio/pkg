@@ -101,13 +101,13 @@ func (str StringCSV) Get(sg config.Scoped) ([]string, scope.Hash, error) {
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
 // string slice for correct values if set in source.Slice.
-func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, scopeID int64) error {
+func (str StringCSV) Write(w config.Writer, sl []string, h scope.Hash) error {
 	for _, v := range sl {
 		if err := str.ValidateString(v); err != nil {
 			return err
 		}
 	}
-	return str.baseValue.Write(w, strings.Join(sl, string(str.Comma)), s, scopeID)
+	return str.baseValue.Write(w, strings.Join(sl, string(str.Comma)), h)
 }
 
 // IntCSV represents a path in config.Getter which will be saved as a CSV string
@@ -181,7 +181,7 @@ func (ic IntCSV) Get(sg config.Scoped) ([]int, scope.Hash, error) {
 }
 
 // Write writes int values as a CSV string
-func (ic IntCSV) Write(w config.Writer, sl []int, s scope.Scope, scopeID int64) error {
+func (ic IntCSV) Write(w config.Writer, sl []int, h scope.Hash) error {
 
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
@@ -201,7 +201,7 @@ func (ic IntCSV) Write(w config.Writer, sl []int, s scope.Scope, scopeID int64) 
 			}
 		}
 	}
-	return ic.baseValue.Write(w, val.String(), s, scopeID)
+	return ic.baseValue.Write(w, val.String(), h)
 }
 
 // CSV represents a path in config.Getter which will be saved as a CSV multi
@@ -268,7 +268,7 @@ func (c CSV) Get(sg config.Scoped) ([][]string, scope.Hash, error) {
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
 // string slice for correct values if set in source.Slice.
-func (c CSV) Write(w config.Writer, csv [][]string, s scope.Scope, scopeID int64) error {
+func (c CSV) Write(w config.Writer, csv [][]string, h scope.Hash) error {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
@@ -278,5 +278,5 @@ func (c CSV) Write(w config.Writer, csv [][]string, s scope.Scope, scopeID int64
 		return errors.NewNotValidf("[cfgmodel] CSV.NewWriter.WriteAll: %v", err)
 	}
 
-	return c.baseValue.Write(w, buf.String(), s, scopeID)
+	return c.baseValue.Write(w, buf.String(), h)
 }
