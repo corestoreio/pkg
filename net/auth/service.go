@@ -34,7 +34,7 @@ type Service struct {
 // New creates a new Cors handler with the provided options.
 func New(opts ...Option) (*Service, error) {
 	s := &Service{
-		scopeCache: make(map[scope.Hash]ScopedConfig),
+		scopeCache: make(map[scope.TypeID]ScopedConfig),
 	}
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
 		return nil, errors.Wrap(err, "[mwauth] Options WithDefaultConfig")

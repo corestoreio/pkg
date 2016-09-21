@@ -29,4 +29,7 @@
 // Twitter, Box, Salesforce, amont others, or enterprise identity systems like
 // Windows Azure AD, Google Apps, Active Directory, ADFS or any SAML Identity
 // Provider.
+//
+// TODO: github.com/go-authboss/authboss
+// TODO: https://github.com/namsral/multipass for caddy and JWT
 package auth

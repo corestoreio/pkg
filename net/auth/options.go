@@ -24,10 +24,10 @@ import (
 //
 // Default values are:
 //		- ?
-func WithDefaultConfig(h scope.Hash) Option {
+func WithDefaultConfig(h scope.TypeID) Option {
 	return func(s *Service) error {
 		var err error
-		if h == scope.DefaultHash {
+		if h == scope.DefaultTypeID {
 			s.defaultScopeCache, err = defaultScopedConfig()
 			return errors.Wrap(err, "[mwauth] Default Scope with Default Config")
 		}
@@ -41,9 +41,9 @@ func WithDefaultConfig(h scope.Hash) Option {
 }
 
 // WithIsActive enables or disables the authentication for a specific scope.
-func WithIsActive(h scope.Hash, active bool) Option {
+func WithIsActive(h scope.TypeID, active bool) Option {
 	return func(s *Service) error {
-		if h == scope.DefaultHash {
+		if h == scope.DefaultTypeID {
 			s.defaultScopeCache.enable = active
 			return nil
 		}

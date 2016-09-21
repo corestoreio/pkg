@@ -24,7 +24,7 @@ import (
 type Authenticator interface {
 	// Authenticate authenticates a request and returns nil on success.
 	// You must use subtle.ConstantTimeCompare()
-	Authenticate(h scope.Hash, r *http.Request) error
+	Authenticate(h scope.TypeID, r *http.Request) error
 }
 
 // ScopedConfig private internal scoped based configuration
@@ -47,7 +47,7 @@ func (sc ScopedConfig) IsValid() bool {
 
 func defaultScopedConfig() (ScopedConfig, error) {
 	return ScopedConfig{
-		ScopeHash: scope.DefaultHash,
+		ScopeHash: scope.DefaultTypeID,
 		log:       log.BlackHole{}, // disabled info and debug logging
 	}, nil
 }

@@ -71,7 +71,7 @@ type service struct {
 
 	// scopeCache internal cache of the configurations. scoped.Hash relates to
 	// the default,website or store ID.
-	scopeCache map[scope.Hash]*ScopedConfig
+	scopeCache map[scope.TypeID]*ScopedConfig
 }
 
 func newService(opts ...Option) (*Service, error) {
@@ -79,10 +79,10 @@ func newService(opts ...Option) (*Service, error) {
 		service: service{
 			Log:          log.BlackHole{},
 			ErrorHandler: defaultErrorHandler,
-			scopeCache:   make(map[scope.Hash]*ScopedConfig),
+			scopeCache:   make(map[scope.TypeID]*ScopedConfig),
 		},
 	}
-	if err := s.Options(WithDefaultConfig(scope.DefaultHash)); err != nil {
+	if err := s.Options(WithDefaultConfig(scope.DefaultTypeID)); err != nil {
 		return nil, errors.Wrap(err, "[auth] Options WithDefaultConfig")
 	}
 	if err := s.Options(opts...); err != nil {
@@ -119,7 +119,7 @@ func (s *Service) Options(opts ...Option) error {
 
 // ClearCache clears the internal map storing all scoped configurations
 func (s *Service) ClearCache() error {
-	s.scopeCache = make(map[scope.Hash]*ScopedConfig)
+	s.scopeCache = make(map[scope.TypeID]*ScopedConfig)
 	return nil
 }
 
@@ -128,7 +128,7 @@ func (s *Service) ClearCache() error {
 func (s *Service) DebugCache(w io.Writer) error {
 	s.rwmu.RLock()
 	defer s.rwmu.RUnlock()
-	srtScope := make(scope.Hashes, len(s.scopeCache))
+	srtScope := make(scope.TypeIDs, len(s.scopeCache))
 	var i int
 	for scp := range s.scopeCache {
 		srtScope[i] = scp
@@ -185,8 +185,8 @@ func (s *Service) configByContext(ctx context.Context) (scpCfg ScopedConfig) {
 // guaranteed atomic single loading for each scope.
 func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 
-	current := scope.NewHash(scpGet.Scope()) // can be store or website or default
-	parent := scope.NewHash(scpGet.Parent()) // can be website or default
+	current := scope.MakeTypeID(scpGet.Scope()) // can be store or website or default
+	parent := scope.MakeTypeID(scpGet.Parent()) // can be website or default
 
 	// 99.9999 % of the hits; 2nd argument must be zero because we must first
 	// test if a direct entry can be found; if not we must apply either the
@@ -196,7 +196,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 		if s.Log.IsDebug() {
 			s.Log.Debug("auth.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
-				log.Stringer("requested_parent_scope", scope.Hash(0)),
+				log.Stringer("requested_parent_scope", scope.TypeID(0)),
 				log.Stringer("responded_scope", sCfg.ScopeHash),
 			)
 		}
@@ -259,7 +259,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 // `parent` triggers no further lookups. This function does not load any
 // configuration (config.Getter related) from the backend and accesses the
 // internal map of the Service directly.
-func (s *Service) ConfigByScopeHash(current scope.Hash, parent scope.Hash) (scpCfg ScopedConfig) {
+func (s *Service) ConfigByScopeHash(current scope.TypeID, parent scope.TypeID) (scpCfg ScopedConfig) {
 	// current can be store or website scope
 	// parent can be website or default scope. If 0 then no fall back
 
@@ -288,7 +288,7 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, parent scope.Hash) (scpC
 
 	// if the current scope cannot be found, fall back to parent scope and
 	// apply the maybe found configuration to the current scope configuration.
-	if !ok && parent.Scope() == scope.Website {
+	if !ok && parent.Type() == scope.Website {
 		pScpCfg, ok = s.scopeCache[parent]
 		if ok && pScpCfg != nil {
 			scpCfg = *pScpCfg
@@ -303,7 +303,7 @@ func (s *Service) ConfigByScopeHash(current scope.Hash, parent scope.Hash) (scpC
 	// scope and apply the maybe found configuration to the current scope
 	// configuration.
 	if !ok {
-		pScpCfg, ok = s.scopeCache[scope.DefaultHash]
+		pScpCfg, ok = s.scopeCache[scope.DefaultTypeID]
 		if ok && pScpCfg != nil {
 			scpCfg = *pScpCfg
 		}

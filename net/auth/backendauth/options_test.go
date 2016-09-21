@@ -31,7 +31,7 @@ type fataler interface {
 	Fatal(args ...interface{})
 }
 
-func mustToPath(fa fataler, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
+func mustToPath(fa fataler, f func(s scope.Type, scopeID int64) (cfgpath.Path, error), s scope.Type, scopeID int64) string {
 	p, err := f(s, scopeID)
 	if err != nil {
 		fa.Fatal(errors.PrintLoc(err))
