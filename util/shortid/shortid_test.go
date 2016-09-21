@@ -4,9 +4,10 @@
 package shortid_test
 
 import (
-	"github.com/ventu-io/go-shortid"
 	"testing"
 	"time"
+
+	"github.com/ventu-io/go-shortid"
 )
 
 func Test_onGetDefault_defaultInstance(t *testing.T) {
