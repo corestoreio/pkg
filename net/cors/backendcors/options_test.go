@@ -72,7 +72,7 @@ func TestMatchAllOrigin(t *testing.T) {
 
 func TestAllowedOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestAllowedOrigin(t, s, req)
@@ -80,7 +80,7 @@ func TestAllowedOrigin(t *testing.T) {
 
 func TestWildcardOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://*.bar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestWildcardOrigin(t, s, req)
@@ -88,7 +88,7 @@ func TestWildcardOrigin(t *testing.T) {
 
 func TestDisallowedOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestDisallowedOrigin(t, s, req)
@@ -96,7 +96,7 @@ func TestDisallowedOrigin(t *testing.T) {
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://*.bar.com",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://*.bar.com",
 	})
 	req := reqWithStore("GET")
 	corstest.TestDisallowedWildcardOrigin(t, s, req)
@@ -104,7 +104,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 
 func TestAllowedOriginFunc(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
+		backend.AllowOriginRegex.MustFQWebsite(2): "^http://foo",
 	})
 	req := reqWithStore("GET")
 	corstest.TestAllowedOriginFunc(t, s, req)
@@ -114,9 +114,9 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 	var logBuf = new(log.MutexBuffer)
 
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.AllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
-		// backend.NetCorsOptionsPassthrough.MustFQ(scope.Website, 2): false, <== this is the default value
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
+		backend.AllowedMethods.MustFQWebsite(2): "PUT\nDELETE",
+		// backend.NetCorsOptionsPassthrough.MustFQWebsite(2): false, <== this is the default value
 	})
 	if err := s.Options(cors.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug)))); err != nil {
 		t.Fatal(err)
@@ -138,9 +138,9 @@ func TestAllowedMethodNoPassthrough(t *testing.T) {
 
 func TestAllowedMethodPassthrough(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2):     "http://foobar.com",
-		backend.AllowedMethods.MustFQ(scope.Website, 2):     "PUT\nDELETE",
-		backend.OptionsPassthrough.MustFQ(scope.Website, 2): true,
+		backend.AllowedOrigins.MustFQWebsite(2):     "http://foobar.com",
+		backend.AllowedMethods.MustFQWebsite(2):     "PUT\nDELETE",
+		backend.OptionsPassthrough.MustFQWebsite(2): true,
 	})
 	req := reqWithStore("OPTIONS")
 	req.Body = ioutil.NopCloser(strings.NewReader("Body of TestAllowedMethod_Passthrough"))
@@ -149,8 +149,8 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 
 func TestDisallowedMethod(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.AllowedMethods.MustFQ(scope.Website, 2): "PUT\nDELETE",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
+		backend.AllowedMethods.MustFQWebsite(2): "PUT\nDELETE",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -160,8 +160,8 @@ func TestDisallowedMethod(t *testing.T) {
 
 func TestAllowedHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.AllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
+		backend.AllowedHeaders.MustFQWebsite(2): "X-Header-1\nx-header-2",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -171,8 +171,8 @@ func TestAllowedHeader(t *testing.T) {
 
 func TestAllowedWildcardHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.AllowedHeaders.MustFQ(scope.Website, 2): "*",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
+		backend.AllowedHeaders.MustFQWebsite(2): "*",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -181,8 +181,8 @@ func TestAllowedWildcardHeader(t *testing.T) {
 
 func TestDisallowedHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.AllowedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
+		backend.AllowedHeaders.MustFQWebsite(2): "X-Header-1\nx-header-2",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -191,8 +191,8 @@ func TestDisallowedHeader(t *testing.T) {
 
 func TestExposedHeader(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.ExposedHeaders.MustFQ(scope.Website, 2): "X-Header-1\nx-header-2",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
+		backend.ExposedHeaders.MustFQWebsite(2): "X-Header-1\nx-header-2",
 	})
 
 	req := reqWithStore("GET")
@@ -201,8 +201,8 @@ func TestExposedHeader(t *testing.T) {
 
 func TestAllowedCredentials(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2):   "http://foobar.com",
-		backend.AllowCredentials.MustFQ(scope.Website, 2): true,
+		backend.AllowedOrigins.MustFQWebsite(2):   "http://foobar.com",
+		backend.AllowCredentials.MustFQWebsite(2): true,
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -210,8 +210,8 @@ func TestAllowedCredentials(t *testing.T) {
 }
 func TestMaxAge(t *testing.T) {
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowedOrigins.MustFQ(scope.Website, 2): "http://foobar.com",
-		backend.MaxAge.MustFQ(scope.Website, 2):         "30",
+		backend.AllowedOrigins.MustFQWebsite(2): "http://foobar.com",
+		backend.MaxAge.MustFQWebsite(2):         "30",
 	})
 
 	req := reqWithStore("OPTIONS")
@@ -221,25 +221,25 @@ func TestMaxAge(t *testing.T) {
 func TestBackend_Path_Errors(t *testing.T) {
 
 	tests := []struct {
-		toPath func(s scope.Scope, scopeID int64) string
+		toPath func(int64) string
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.ExposedHeaders.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.AllowedOrigins.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.AllowOriginRegex.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.AllowOriginRegex.MustFQ, "[a-z+", errors.IsFatal},
-		{backend.AllowedMethods.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.AllowedHeaders.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.AllowCredentials.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.OptionsPassthrough.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.MaxAge.MustFQ, struct{}{}, errors.IsNotValid},
+		{backend.ExposedHeaders.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		{backend.AllowedOrigins.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		{backend.AllowOriginRegex.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		{backend.AllowOriginRegex.MustFQWebsite, "[a-z+", errors.IsFatal},
+		{backend.AllowedMethods.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		{backend.AllowedHeaders.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		{backend.AllowCredentials.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		{backend.OptionsPassthrough.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		{backend.MaxAge.MustFQWebsite, struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 
 		scpFnc := backendcors.PrepareOptions(backend)
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			test.toPath(scope.Website, 2): test.val,
+			test.toPath(2): test.val,
 		})
 		cfgScp := cfgSrv.NewScoped(2, 0)
 

@@ -78,13 +78,13 @@ type Settings struct {
 // Default values are:
 //		- Allowed Methods: GET, POST
 //		- Allowed Headers: Origin, Accept, Content-Type
-func WithDefaultConfig(h scope.Hash) Option {
+func WithDefaultConfig(h scope.TypeID) Option {
 	return withDefaultConfig(h)
 }
 
 // WithSettings applies the Settings struct to a specific scope. Internal
 // functions will optimize the internal structure of the Settings struct.
-func WithSettings(h scope.Hash, stng Settings) Option {
+func WithSettings(h scope.TypeID, stng Settings) Option {
 	exposedHeaders := convert(stng.ExposedHeaders, http.CanonicalHeaderKey)
 	allowedOriginsAll, allowedOrigins, allowedWOrigins := convertAllowedOrigins(stng.AllowedOrigins...)
 	am := convert(stng.AllowedMethods, strings.ToUpper)

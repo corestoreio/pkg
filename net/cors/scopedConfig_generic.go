@@ -33,7 +33,7 @@ type scopedConfigGeneric struct {
 	// inflight package.
 	lastErr error
 	// ScopeHash defines the scope to which this configuration is bound to.
-	ScopeHash scope.Hash
+	ScopeHash scope.TypeID
 
 	// todo think about adding config.Scoped
 
@@ -57,7 +57,7 @@ func newScopedConfigError(err error) ScopedConfig {
 // This function must be embedded in the targeted package newScopedConfig().
 func newScopedConfigGeneric() scopedConfigGeneric {
 	return scopedConfigGeneric{
-		ScopeHash:    scope.DefaultHash,
+		ScopeHash:    scope.DefaultTypeID,
 		ErrorHandler: defaultErrorHandler,
 	}
 }
@@ -67,7 +67,7 @@ func newScopedConfigGeneric() scopedConfigGeneric {
 // functional option because it expects that it runs within an acquired lock
 // because of the map.
 func optionInheritDefault(s *Service) *ScopedConfig {
-	if sc, ok := s.scopeCache[scope.DefaultHash]; ok && sc != nil {
+	if sc, ok := s.scopeCache[scope.DefaultTypeID]; ok && sc != nil {
 		shallowCopy := new(ScopedConfig)
 		*shallowCopy = *sc
 		return shallowCopy

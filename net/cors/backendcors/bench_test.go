@@ -25,7 +25,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/store/scope"
 )
 
 func testHandler(fa interface {
@@ -54,7 +53,7 @@ func (r FakeResponse) Write(b []byte) (n int, err error) {
 func BenchmarkExposedHeader_WebsiteScope_AllowOriginRegex(b *testing.B) {
 
 	s := newCorsService(cfgmock.PathValue{
-		backend.AllowOriginRegex.MustFQ(scope.Website, 2): "^http://foo",
+		backend.AllowOriginRegex.MustFQWebsite(2): "^http://foo",
 	})
 	req := reqWithStore("GET")
 	req.Header.Set("Origin", "http://foobar.com")

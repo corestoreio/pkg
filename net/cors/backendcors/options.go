@@ -31,7 +31,7 @@ func PrepareOptions(be *Backend) cors.OptionFactoryFunc {
 		var (
 			opts      [1]cors.Option
 			settings  cors.Settings
-			scpHashes = make(scope.Hashes, 0, 8)
+			scpHashes = make(scope.TypeIDs, 0, 8)
 		)
 
 		// For now the scope for all options depends on the scope of the

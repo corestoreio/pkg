@@ -47,7 +47,7 @@ func OptionsError(err error) []Option {
 }
 
 // withDefaultConfig triggers the default settings
-func withDefaultConfig(h scope.Hash) Option {
+func withDefaultConfig(h scope.TypeID) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -62,7 +62,7 @@ func withDefaultConfig(h scope.Hash) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(h scope.Hash, eh mw.ErrorHandler) Option {
+func WithErrorHandler(h scope.TypeID, eh mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
