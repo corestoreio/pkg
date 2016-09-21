@@ -59,27 +59,27 @@ func TestMustNewStoreAU_Config(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "WebsiteScopeString", haveS)
-	assert.Exactly(t, scope.NewHash(scope.Website, 2), scp)
+	assert.Exactly(t, scope.MakeTypeID(scope.Website, 2), scp)
 
 	haveS, scp, err = aust.Website.Config.String(configPath.Route, scope.Default)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
-	assert.Exactly(t, scope.DefaultHash, scp)
+	assert.Exactly(t, scope.DefaultTypeID, scp)
 
 	haveS, scp, err = aust.Config.String(configPath.Route)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "StoreScopeString", haveS)
-	assert.Exactly(t, scope.NewHash(scope.Store, 5), scp)
+	assert.Exactly(t, scope.MakeTypeID(scope.Store, 5), scp)
 
 	haveS, scp, err = aust.Config.String(configPath.Route, scope.Default)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
-	assert.Exactly(t, scope.DefaultHash, scp)
+	assert.Exactly(t, scope.DefaultTypeID, scp)
 
 }

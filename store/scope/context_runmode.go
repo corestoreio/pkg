@@ -23,7 +23,7 @@ import (
 // the field Mode or the function RunMode.WithContext() to specify a specific
 // run mode. It indicates the fall back to the default website and its default
 // store.
-const DefaultRunMode Hash = 0
+const DefaultRunMode TypeID = 0
 
 // RunModeCalculater core type to initialize the run mode of the current
 // request. Allows you to create a multi-site / multi-tenant setup. An
@@ -32,16 +32,16 @@ const DefaultRunMode Hash = 0
 // Your custom function allows to initialize the runMode based on parameters in
 // the http.Request.
 type RunModeCalculater interface {
-	CalculateRunMode(*http.Request) Hash
+	CalculateRunMode(*http.Request) TypeID
 }
 
 // RunModeFunc type is an adapter to allow the use of ordinary functions as
 // RunModeCalculater. If f is a function with the appropriate signature,
 // RunModeFunc(f) is a Handler that calls f.
-type RunModeFunc func(*http.Request) Hash
+type RunModeFunc func(*http.Request) TypeID
 
 // CalculateRunMode calls f(r).
-func (f RunModeFunc) CalculateRunMode(r *http.Request) Hash {
+func (f RunModeFunc) CalculateRunMode(r *http.Request) TypeID {
 	return f(r)
 }
 
@@ -49,8 +49,8 @@ func (f RunModeFunc) CalculateRunMode(r *http.Request) Hash {
 // when called multiple times for the current context. This function is used in
 // net/runmode together with function RunMode.CalculateMode(r, w).
 // Use case for the runMode: Cache Keys and app initialization.
-func WithContextRunMode(ctx context.Context, runMode Hash) context.Context {
-	if _, ok := ctx.Value(ctxRunModeKey{}).(Hash); ok {
+func WithContextRunMode(ctx context.Context, runMode TypeID) context.Context {
+	if _, ok := ctx.Value(ctxRunModeKey{}).(TypeID); ok {
 		panic("[scope] You are not allowed to set the runMode more than once for the current context.")
 	}
 	return context.WithValue(ctx, ctxRunModeKey{}, runMode)
@@ -60,8 +60,8 @@ func WithContextRunMode(ctx context.Context, runMode Hash) context.Context {
 // be found in the context the returned Hash has a default value. This default
 // value indicates the fall back to the default website and its default store.
 // Use case for the runMode: Cache Keys and app initialization.
-func FromContextRunMode(ctx context.Context) Hash {
-	h, ok := ctx.Value(ctxRunModeKey{}).(Hash)
+func FromContextRunMode(ctx context.Context) TypeID {
+	h, ok := ctx.Value(ctxRunModeKey{}).(TypeID)
 	if !ok {
 		return DefaultRunMode // indicates a fall back to a default store of the default website
 	}

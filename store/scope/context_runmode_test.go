@@ -27,8 +27,8 @@ import (
 var _ scope.RunModeCalculater = (*scope.RunModeFunc)(nil)
 
 func TestRunModeFunc_CalculateRunMode(t *testing.T) {
-	h := scope.NewHash(scope.Website, 33)
-	rmf := scope.RunModeFunc(func(_ *http.Request) scope.Hash {
+	h := scope.MakeTypeID(scope.Website, 33)
+	rmf := scope.RunModeFunc(func(_ *http.Request) scope.TypeID {
 		return h
 	})
 	assert.Exactly(t, h, rmf.CalculateRunMode(nil))
@@ -38,13 +38,13 @@ func TestRunMode(t *testing.T) {
 
 	tests := []struct {
 		mode scope.RunModeCalculater
-		want scope.Hash
+		want scope.TypeID
 	}{
-		{scope.NewHash(scope.Website, 2), scope.NewHash(scope.Website, 2)},
-		{scope.NewHash(scope.Store, 3), scope.NewHash(scope.Store, 3)},
-		{scope.NewHash(scope.Group, 4), scope.NewHash(scope.Group, 4)},
-		{scope.NewHash(scope.Store, 0), scope.NewHash(scope.Store, 0)},
-		{scope.NewHash(scope.Default, 0), 0},
+		{scope.MakeTypeID(scope.Website, 2), scope.MakeTypeID(scope.Website, 2)},
+		{scope.MakeTypeID(scope.Store, 3), scope.MakeTypeID(scope.Store, 3)},
+		{scope.MakeTypeID(scope.Group, 4), scope.MakeTypeID(scope.Group, 4)},
+		{scope.MakeTypeID(scope.Store, 0), scope.MakeTypeID(scope.Store, 0)},
+		{scope.MakeTypeID(scope.Default, 0), 0},
 	}
 	for i, test := range tests {
 		req := httptest.NewRequest("GET", "http://corestore.io", nil)
@@ -56,7 +56,7 @@ func TestRunMode(t *testing.T) {
 		assert.Exactly(t, test.want, haveMode, "Index %d", i)
 		assert.Exactly(t, test.want, scope.FromContextRunMode(ctx), "Index %d", i)
 	}
-	assert.Exactly(t, scope.Hash(0), scope.FromContextRunMode(context.Background()))
+	assert.Exactly(t, scope.TypeID(0), scope.FromContextRunMode(context.Background()))
 }
 
 func TestWithContextRunMode(t *testing.T) {
@@ -69,6 +69,6 @@ func TestWithContextRunMode(t *testing.T) {
 	}()
 
 	ctx := context.Background()
-	ctx = scope.WithContextRunMode(ctx, scope.DefaultHash)
-	_ = scope.WithContextRunMode(ctx, scope.DefaultHash)
+	ctx = scope.WithContextRunMode(ctx, scope.DefaultTypeID)
+	_ = scope.WithContextRunMode(ctx, scope.DefaultTypeID)
 }

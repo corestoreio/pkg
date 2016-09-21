@@ -30,7 +30,7 @@ var benchmarkStoreService = storemock.NewEurozzyService(cfgmock.NewService())
 
 func Benchmark_Service_IsAllowedStoreID(b *testing.B) {
 
-	var runner = func(runMode scope.Hash, storeID int64) func(pb *testing.PB) {
+	var runner = func(runMode scope.TypeID, storeID int64) func(pb *testing.PB) {
 		return func(pb *testing.PB) {
 			var isA bool
 			var stC string
@@ -52,25 +52,25 @@ func Benchmark_Service_IsAllowedStoreID(b *testing.B) {
 
 	b.Run("Store", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Store, 1), 6))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Store, 1), 6))
 	})
 	b.Run("Group", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Group, 1), 2))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Group, 1), 2))
 	})
 	b.Run("Website", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Website, 1), 2))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Website, 1), 2))
 	})
 	b.Run("Default", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.DefaultHash, 2)) // at store
+		b.RunParallel(runner(scope.DefaultTypeID, 2)) // at store
 	})
 }
 
 func Benchmark_Service_DefaultStoreID(b *testing.B) {
 
-	var runner = func(runMode scope.Hash) func(pb *testing.PB) {
+	var runner = func(runMode scope.TypeID) func(pb *testing.PB) {
 		return func(pb *testing.PB) {
 			var bmss int64
 			for pb.Next() {
@@ -88,25 +88,25 @@ func Benchmark_Service_DefaultStoreID(b *testing.B) {
 
 	b.Run("Store", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Store, 1)))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Store, 1)))
 	})
 	b.Run("Group", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Group, 2)))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Group, 2)))
 	})
 	b.Run("Website", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Website, 1)))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Website, 1)))
 	})
 	b.Run("Default", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.DefaultHash))
+		b.RunParallel(runner(scope.DefaultTypeID))
 	})
 }
 
 func Benchmark_Service_StoreIDbyCode(b *testing.B) {
 
-	var runner = func(runMode scope.Hash, storeCode string) func(pb *testing.PB) {
+	var runner = func(runMode scope.TypeID, storeCode string) func(pb *testing.PB) {
 		return func(pb *testing.PB) {
 			var bmss int64
 			for pb.Next() {
@@ -124,15 +124,15 @@ func Benchmark_Service_StoreIDbyCode(b *testing.B) {
 
 	b.Run("Store", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Store, 1), "nz"))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Store, 1), "nz"))
 	})
 	b.Run("Group", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Group, 2), "uk"))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Group, 2), "uk"))
 	})
 	b.Run("Website", func(b *testing.B) {
 		b.ReportAllocs()
-		b.RunParallel(runner(scope.NewHash(scope.Website, 1), "at"))
+		b.RunParallel(runner(scope.MakeTypeID(scope.Website, 1), "at"))
 	})
 }
 

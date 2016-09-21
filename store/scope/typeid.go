@@ -23,30 +23,31 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// MaxID maximum allowed ID from package store. Doesn't matter whether we have a
+// MaxID maximum allowed ID which can be packed into a TypeID. The ID relates to
+// an auto_increment column in the database. Doesn't matter whether we have a
 // website, group or store scope. int24 (8388607) size at the moment.
 const MaxID int64 = 1<<23 - 1
 
-// DefaultHash default Hash value for Default Scope and ID 0. Avoids typing
+// DefaultTypeID default Hash value for Default Scope and ID 0. Avoids typing
 // 		scope.NewHash(DefaultID,0)
-const DefaultHash Hash = Hash(Default)<<24 | 0
+const DefaultTypeID TypeID = TypeID(Default)<<24 | 0
 
 // Hash defines a merged Scope with its ID. The first 8 bit represents the
-// scope: Default, Website, Group or Store. The last 24 bit represents the
+// Type: Default, Website, Group or Store. The last 24 bit represents the
 // assigned ID. This ID relates to the database table in M2 to `website`,
 // `store` or `store_group` and for M1 to `core_website`, `core_store` and
 // `core_store_group`. The maximum ID which can be used is defined in constant
 // MaxID.
-type Hash uint32
+type TypeID uint32
 
 // If we have need for more store IDs then we can change the underlying types here.
 
 // String human readable output
-func (h Hash) String() string {
-	scp, id := h.Unpack()
+func (t TypeID) String() string {
+	scp, id := t.Unpack()
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	_, _ = buf.WriteString("Scope(")
+	_, _ = buf.WriteString("Type(")
 	_, _ = buf.WriteString(scp.String())
 	_, _ = buf.WriteString(") ID(")
 	nb := strconv.AppendInt(buf.Bytes(), id, 10)
@@ -57,11 +58,11 @@ func (h Hash) String() string {
 }
 
 // GoString compilable representation of a hash.
-func (h Hash) GoString() string {
-	scp, id := h.Unpack()
+func (t TypeID) GoString() string {
+	scp, id := t.Unpack()
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	_, _ = buf.WriteString("scope.NewHash(scope.")
+	_, _ = buf.WriteString("scope.MakeTypeID(scope.")
 	_, _ = buf.WriteString(scp.String())
 	_, _ = buf.WriteString(", ")
 	nb := strconv.AppendInt(buf.Bytes(), id, 10)
@@ -72,21 +73,21 @@ func (h Hash) GoString() string {
 }
 
 // ToUint64 converts the hash
-func (h Hash) ToUint64() uint64 {
-	return uint64(h)
+func (t TypeID) ToUint64() uint64 {
+	return uint64(t)
 }
 
 // Unpack extracts a Scope and its ID from a hash. Returned ID can be -1 when
 // the Hash contains invalid data. An ID of -1 is considered an error.
-func (h Hash) Unpack() (s Scope, id int64) {
+func (t TypeID) Unpack() (s Type, id int64) {
 
-	prospectS := h >> 24
+	prospectS := t >> 24
 	if prospectS > maxUint8 || prospectS < 0 {
 		return Absent, -1
 	}
-	s = Scope(prospectS)
+	s = Type(prospectS)
 
-	h64 := int64(h)
+	h64 := int64(t)
 	prospectID := h64 ^ (h64>>24)<<24
 	if prospectID > MaxID || prospectID < 0 {
 		return Absent, -1
@@ -96,11 +97,11 @@ func (h Hash) Unpack() (s Scope, id int64) {
 	return
 }
 
-// EqualScope compares the scope of two hashes and returns true if their scope
-// matches. This functions checks overflows, would then return false. Two hashes
-// with an Absent scope are never equal.
-func (h Hash) EqualScope(other Hash) bool {
-	hScope := h >> 24
+// EqualTypes compares the type of two TypeIDs and returns true if their type
+// matches. This functions checks overflows, would then return false. Two
+// TypeIDs with an Absent type are never equal.
+func (t TypeID) EqualTypes(other TypeID) bool {
+	hScope := t >> 24
 	if hScope > maxUint8 || hScope <= 0 {
 		return false
 	}
@@ -111,19 +112,19 @@ func (h Hash) EqualScope(other Hash) bool {
 	return hScope == oScope
 }
 
-// Scope returns the underlying assigned scope.
-func (h Hash) Scope() Scope {
-	hScope := h >> 24
+// Type returns the underlying assigned type.
+func (t TypeID) Type() Type {
+	hScope := t >> 24
 	if hScope > maxUint8 || hScope < 0 {
 		return Absent
 	}
-	return Scope(hScope)
+	return Type(hScope)
 }
 
-// ID returns the underlying assigned ID. If the ID overflows the MaxStoreID or
+// ID returns the underlying assigned ID. If the ID overflows the MaxID or
 // is smaller than zero then it returns -1.
-func (h Hash) ID() int64 {
-	h64 := int64(h)
+func (t TypeID) ID() int64 {
+	h64 := int64(t)
 	prospectID := h64 ^ (h64>>24)<<24
 	if prospectID > MaxID || prospectID < 0 {
 		return -1
@@ -131,32 +132,32 @@ func (h Hash) ID() int64 {
 	return prospectID
 }
 
-// ValidParent validates if the parent scope is within the hierarchical chain:
+// ValidParent validates if the parent Type is within the hierarchical chain:
 // default -> website -> store.
-func (h Hash) ValidParent(parent Hash) bool {
+func (t TypeID) ValidParent(parent TypeID) bool {
 	p, pID := parent.Unpack()
-	c, cID := h.Unpack()
+	c, cID := t.Unpack()
 	return (p == Default && pID == 0 && c == Default && cID == 0) ||
 		(p == Default && pID == 0 && c == Website && cID >= 0) ||
 		(p == Website && pID >= 0 && c == Store && cID >= 0)
 }
 
 // CalculateRunMode transforms the Hash into a runMode. On an invalid Hash (the
-// scope is < Website or scope > Store) it falls back to the default run mode,
+// Type is < Website or Type > Store) it falls back to the default run mode,
 // which is a zero Hash. Implements interface RunModeCalculater.
-func (h Hash) CalculateRunMode(_ *http.Request) Hash {
-	if s := h.Scope(); s < Website || s > Store {
+func (t TypeID) CalculateRunMode(_ *http.Request) TypeID {
+	if s := t.Type(); s < Website || s > Store {
 		// fall back to default because only Website, Group and Store are allowed.
-		h = DefaultRunMode
+		t = DefaultRunMode
 	}
-	return h
+	return t
 }
 
-// HashMaxSegments maximum supported segments or also known as shards. This
+// TypeIDMaxSegments maximum supported segments or also known as shards. This
 // constant can be used to create the segmented array in other packages.
-const HashMaxSegments uint16 = 256
+const TypeIDMaxSegments uint16 = 256
 
-const hashBitAnd Hash = Hash(HashMaxSegments) - 1
+const hashBitAnd TypeID = TypeID(TypeIDMaxSegments) - 1
 
 // Segment generates an 0 < ID <= 255 from a hash. Only used within an array
 // index to optimize map[] usage in high concurrent situations. Also known as
@@ -165,54 +166,54 @@ const hashBitAnd Hash = Hash(HashMaxSegments) - 1
 // shard for it is chosen at first by the function Segment(). After that the
 // cache lock is acquired and a write to the cache takes place. Reads are
 // analogue.
-func (h Hash) Segment() uint8 {
+func (h TypeID) Segment() uint8 {
 	return uint8(h & hashBitAnd)
 }
 
-// NewHash creates a new merged value. An error is equal to returning 0. An
-// error occurs when id is greater than MaxStoreID or smaller 0. An errors
-// occurs when the Scope is Default and id anything else than 0.
-func NewHash(s Scope, id int64) Hash {
+// MakeTypeID creates a new merged value of a Type and its ID. An error is equal
+// to returning 0. An error occurs when id is greater than MaxStoreID or smaller
+// 0. An errors occurs when the Scope is Default and ID anything else than 0.
+func MakeTypeID(s Type, id int64) TypeID {
 	if id > MaxID || (s > Default && id < 0) {
 		return 0
 	}
 	if s < Website {
 		id = 0
 	}
-	return Hash(s)<<24 | Hash(id)
+	return TypeID(s)<<24 | TypeID(id)
 }
 
-// Hashes collection of multiple Hash values.
-type Hashes []Hash
+// TypeIDs collection of multiple TypeID values.
+type TypeIDs []TypeID
 
 // Len is part of sort.Interface.
-func (h Hashes) Len() int { return len(h) }
+func (t TypeIDs) Len() int { return len(t) }
 
 // Swap is part of sort.Interface.
-func (h Hashes) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (t TypeIDs) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 
 // Less is part of sort.Interface.
-func (h Hashes) Less(i, j int) bool { return h[i] < h[j] }
+func (t TypeIDs) Less(i, j int) bool { return t[i] < t[j] }
 
-// Lowest finds from hashes the common lowest scope. All scopes must have within
-// their scope the same ID otherwise an error will be returned. This functions
+// Lowest finds from hashes the common lowest Type. All Types must have within
+// their Type the same ID otherwise an error will be returned. This functions
 // gets mainly used in backend* packages if several configuration paths must be
-// applied to one functional option. Eg. config path A has scope Website(1) but
-// config path B has scope Store(2) and config path C has scope Website(1) so
+// applied to one functional option. Eg. config path A has Type Website(1) but
+// config path B has Type Store(2) and config path C has Type Website(1) so
 // the common valid hash resolves to Store(2). If there would be a config path
-// with scope Store(3) then a NotValid error gets returned.
-func (h Hashes) Lowest() (Hash, error) {
-	sort.Stable(h)
-	var pick = DefaultHash
+// with Type Store(3) then a NotValid error gets returned.
+func (t TypeIDs) Lowest() (TypeID, error) {
+	sort.Stable(t)
+	var pick = DefaultTypeID
 	wIDs, gIDs, sIDs := float64(0), float64(0), float64(0)
 	wC, gC, sC := float64(0), float64(0), float64(0)
-	for _, v := range h {
+	for _, v := range t {
 
-		if v.Scope() > pick.Scope() {
+		if v.Type() > pick.Type() {
 			pick = v
 		}
 
-		switch v.Scope() {
+		switch v.Type() {
 		case Website:
 			wC++
 			wIDs += float64(v.ID())
@@ -225,7 +226,7 @@ func (h Hashes) Lowest() (Hash, error) {
 		}
 	}
 
-	switch pick.Scope() {
+	switch pick.Type() {
 	case Website:
 		if float64(pick.ID()) != wIDs/wC {
 			return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)

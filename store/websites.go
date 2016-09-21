@@ -116,9 +116,9 @@ func (ws WebsiteSlice) Default() (Website, error) {
 
 // Tree represents a hierarchical structure of all available scopes.
 type Tree struct {
-	Scope  scope.Scope `json:"scope",xml:"scope"`
-	ID     int64       `json:"id",xml:"id"`
-	Scopes []Tree      `json:"scopes,omitempty",xml:"scopes,omitempty"`
+	Scope  scope.Type `json:"scope",xml:"scope"`
+	ID     int64      `json:"id",xml:"id"`
+	Scopes []Tree     `json:"scopes,omitempty",xml:"scopes,omitempty"`
 }
 
 // Tree returns the hierarchical overview of the scopes: default -> website

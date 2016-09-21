@@ -298,40 +298,40 @@ func TestService_IsAllowedStoreID(t *testing.T) {
 	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
 	tests := []struct {
 		srv           *store.Service
-		runMode       scope.Hash
+		runMode       scope.TypeID
 		storeID       int64
 		wantIsAllowed bool
 		wantCode      string
 		wantErrBhf    errors.BehaviourFunc
 	}{
-		{eurSrv, 0, 1, true, "de", nil},                                  // fall back to default website -> default group -> default store
-		{eurSrv, 0, 2, true, "at", nil},                                  // fall back to default website -> default group -> default store
-		{eurSrv, 0, 5, false, "", nil},                                   // fall back to default website -> default group -> default store Australia not allowed
-		{eurSrv, 0, 0, false, "", nil},                                   // fall back to default website -> default group -> default store admin not allowed
-		{eurSrv, scope.NewHash(scope.Website, 0), 0, true, "admin", nil}, // admin scope or single website scope
-		{eurSrv, scope.NewHash(scope.Website, 0), 2, false, "", nil},     // admin scope or single website scope
-		{eurSrv, scope.NewHash(scope.Website, 1), 1, true, "de", nil},    // euro scope, not included ch, because not active, and UK, different group
-		{eurSrv, scope.NewHash(scope.Website, 1), 2, true, "at", nil},    // euro scope, not included ch, because not active, and UK, different group
-		{eurSrv, scope.NewHash(scope.Website, 1), 3, false, "", nil},     // euro scope, not included ch
-		{eurSrv, scope.NewHash(scope.Website, 1), 4, true, "uk", nil},    // euro scope, uk allowed
-		{eurSrv, scope.NewHash(scope.Website, 2), 5, true, "au", nil},    // oz scope
-		{eurSrv, scope.NewHash(scope.Website, 2), 6, true, "nz", nil},    // oz scope
-		{eurSrv, scope.NewHash(scope.Website, 2), 1, false, "", nil},     // oz scope
-		{eurSrv, scope.NewHash(scope.Website, 9999), 1, false, "", nil},
-		{eurSrv, scope.NewHash(scope.Website, 1), 9999, false, "", nil},
-		{eurSrv, scope.NewHash(scope.Group, 0), 0, true, "admin", nil}, // admin scope
-		{eurSrv, scope.NewHash(scope.Group, 1), 1, true, "de", nil},    // dach scope
-		{eurSrv, scope.NewHash(scope.Group, 1), 2, true, "at", nil},    // dach scope
-		{eurSrv, scope.NewHash(scope.Group, 2), 4, true, "uk", nil},    // uk scope
-		{eurSrv, scope.NewHash(scope.Group, 2), 5, false, "", nil},     // uk scope
-		{eurSrv, scope.NewHash(scope.Group, 9999), 4, false, "", nil},  // uk scope
-		{eurSrv, scope.NewHash(scope.Store, 0), 5, true, "au", nil},
-		{eurSrv, scope.NewHash(scope.Store, 0), 1, true, "de", nil},
-		{eurSrv, scope.NewHash(scope.Store, 0), 3, false, "", nil},
-		{eurSrv, scope.NewHash(scope.Store, 1), 4, true, "uk", nil},
-		{eurSrv, scope.NewHash(scope.Store, 9999), 4, true, "uk", nil},
-		{eurSrv, scope.NewHash(124, 1), 4, false, "", nil},
-		{eurSrv, scope.NewHash(124, 0), 4, false, "", nil},
+		{eurSrv, 0, 1, true, "de", nil},                                     // fall back to default website -> default group -> default store
+		{eurSrv, 0, 2, true, "at", nil},                                     // fall back to default website -> default group -> default store
+		{eurSrv, 0, 5, false, "", nil},                                      // fall back to default website -> default group -> default store Australia not allowed
+		{eurSrv, 0, 0, false, "", nil},                                      // fall back to default website -> default group -> default store admin not allowed
+		{eurSrv, scope.MakeTypeID(scope.Website, 0), 0, true, "admin", nil}, // admin scope or single website scope
+		{eurSrv, scope.MakeTypeID(scope.Website, 0), 2, false, "", nil},     // admin scope or single website scope
+		{eurSrv, scope.MakeTypeID(scope.Website, 1), 1, true, "de", nil},    // euro scope, not included ch, because not active, and UK, different group
+		{eurSrv, scope.MakeTypeID(scope.Website, 1), 2, true, "at", nil},    // euro scope, not included ch, because not active, and UK, different group
+		{eurSrv, scope.MakeTypeID(scope.Website, 1), 3, false, "", nil},     // euro scope, not included ch
+		{eurSrv, scope.MakeTypeID(scope.Website, 1), 4, true, "uk", nil},    // euro scope, uk allowed
+		{eurSrv, scope.MakeTypeID(scope.Website, 2), 5, true, "au", nil},    // oz scope
+		{eurSrv, scope.MakeTypeID(scope.Website, 2), 6, true, "nz", nil},    // oz scope
+		{eurSrv, scope.MakeTypeID(scope.Website, 2), 1, false, "", nil},     // oz scope
+		{eurSrv, scope.MakeTypeID(scope.Website, 9999), 1, false, "", nil},
+		{eurSrv, scope.MakeTypeID(scope.Website, 1), 9999, false, "", nil},
+		{eurSrv, scope.MakeTypeID(scope.Group, 0), 0, true, "admin", nil}, // admin scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 1), 1, true, "de", nil},    // dach scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 1), 2, true, "at", nil},    // dach scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 2), 4, true, "uk", nil},    // uk scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 2), 5, false, "", nil},     // uk scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 9999), 4, false, "", nil},  // uk scope
+		{eurSrv, scope.MakeTypeID(scope.Store, 0), 5, true, "au", nil},
+		{eurSrv, scope.MakeTypeID(scope.Store, 0), 1, true, "de", nil},
+		{eurSrv, scope.MakeTypeID(scope.Store, 0), 3, false, "", nil},
+		{eurSrv, scope.MakeTypeID(scope.Store, 1), 4, true, "uk", nil},
+		{eurSrv, scope.MakeTypeID(scope.Store, 9999), 4, true, "uk", nil},
+		{eurSrv, scope.MakeTypeID(124, 1), 4, false, "", nil},
+		{eurSrv, scope.MakeTypeID(124, 0), 4, false, "", nil},
 		{store.MustNewService(cfgmock.NewService(),
 			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
@@ -356,41 +356,41 @@ func TestService_DefaultStoreID(t *testing.T) {
 	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
 	tests := []struct {
 		srv           *store.Service
-		runMode       scope.Hash
+		runMode       scope.TypeID
 		wantStoreID   int64
 		wantWebsiteID int64
 		wantErrBhf    errors.BehaviourFunc
 	}{
-		{eurSrv, 0, 2, 1, nil},                               // fall back to default website -> default group -> default store
-		{eurSrv, scope.NewHash(scope.Website, 0), 0, 0, nil}, // admin scope
-		{eurSrv, scope.NewHash(scope.Website, 1), 2, 1, nil}, // euro scope, not included ch, because not active, and UK, different group
-		{eurSrv, scope.NewHash(scope.Website, 2), 5, 2, nil}, // oz scope
-		{eurSrv, scope.NewHash(scope.Website, 9999), 0, 0, errors.IsNotFound},
+		{eurSrv, 0, 2, 1, nil},                                  // fall back to default website -> default group -> default store
+		{eurSrv, scope.MakeTypeID(scope.Website, 0), 0, 0, nil}, // admin scope
+		{eurSrv, scope.MakeTypeID(scope.Website, 1), 2, 1, nil}, // euro scope, not included ch, because not active, and UK, different group
+		{eurSrv, scope.MakeTypeID(scope.Website, 2), 5, 2, nil}, // oz scope
+		{eurSrv, scope.MakeTypeID(scope.Website, 9999), 0, 0, errors.IsNotFound},
 		{store.MustNewService(cfgmock.NewService(), // default store not active
 			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
 			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
-		), scope.NewHash(scope.Website, 1), 0, 0, errors.IsNotValid},
+		), scope.MakeTypeID(scope.Website, 1), 0, 0, errors.IsNotValid},
 
-		{eurSrv, scope.NewHash(scope.Group, 0), 0, 0, nil}, // admin scope
-		{eurSrv, scope.NewHash(scope.Group, 1), 2, 1, nil}, // dach scope
-		{eurSrv, scope.NewHash(scope.Group, 2), 4, 1, nil}, // uk scope
-		{eurSrv, scope.NewHash(scope.Group, 3), 5, 2, nil}, // au scope
-		{eurSrv, scope.NewHash(scope.Group, 9999), 0, 0, errors.IsNotFound},
+		{eurSrv, scope.MakeTypeID(scope.Group, 0), 0, 0, nil}, // admin scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 1), 2, 1, nil}, // dach scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 2), 4, 1, nil}, // uk scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 3), 5, 2, nil}, // au scope
+		{eurSrv, scope.MakeTypeID(scope.Group, 9999), 0, 0, errors.IsNotFound},
 		{store.MustNewService(cfgmock.NewService(), // default store not active
 			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
 			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
-		), scope.NewHash(scope.Group, 1), 0, 0, errors.IsNotValid},
+		), scope.MakeTypeID(scope.Group, 1), 0, 0, errors.IsNotValid},
 		{store.MustNewService(cfgmock.NewService(), // default store not found
 			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
-		), scope.NewHash(scope.Group, 1), 0, 0, errors.IsNotFound},
+		), scope.MakeTypeID(scope.Group, 1), 0, 0, errors.IsNotFound},
 
-		{eurSrv, scope.NewHash(scope.Store, 0), 0, 0, nil},
-		{eurSrv, scope.NewHash(scope.Store, 1), 1, 1, nil},
-		{eurSrv, scope.NewHash(scope.Store, 9999), 0, 0, errors.IsNotFound},
-		{eurSrv, scope.NewHash(scope.Store, 3), 0, 0, errors.IsNotValid}, // ch store is not active
+		{eurSrv, scope.MakeTypeID(scope.Store, 0), 0, 0, nil},
+		{eurSrv, scope.MakeTypeID(scope.Store, 1), 1, 1, nil},
+		{eurSrv, scope.MakeTypeID(scope.Store, 9999), 0, 0, errors.IsNotFound},
+		{eurSrv, scope.MakeTypeID(scope.Store, 3), 0, 0, errors.IsNotValid}, // ch store is not active
 
 		{store.MustNewService(cfgmock.NewService(),
 			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
@@ -415,26 +415,26 @@ func TestService_StoreIDbyCode(t *testing.T) {
 	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
 	tests := []struct {
 		srv           *store.Service
-		runMode       scope.Hash
+		runMode       scope.TypeID
 		code          string
 		wantStoreID   int64
 		wantWebsiteID int64
 		wantErrBhf    errors.BehaviourFunc
 	}{
 		{eurSrv, 0, "", 2, 1, nil},
-		{eurSrv, scope.DefaultHash, "x", 0, 0, errors.IsNotFound},
-		{eurSrv, scope.DefaultHash, "uk", 0, 0, errors.IsNotFound},
-		{eurSrv, scope.Website.ToHash(0), "admin", 0, 0, nil},
-		{eurSrv, scope.Website.ToHash(1), "de", 1, 1, nil},
-		{eurSrv, scope.Website.ToHash(2), "nz", 6, 2, nil},
-		{eurSrv, scope.Website.ToHash(3), "uk", 0, 0, errors.IsNotFound},
-		{eurSrv, scope.Absent.ToHash(0), "uk", 0, 0, errors.IsNotFound},
-		{eurSrv, scope.Absent.ToHash(0), "at", 2, 1, nil},
-		{eurSrv, scope.Group.ToHash(2), "uk", 4, 1, nil},
-		{eurSrv, scope.Group.ToHash(99), "uk", 0, 0, errors.IsNotFound},
-		{eurSrv, scope.Store.ToHash(0), "admin", 0, 0, nil},
-		{eurSrv, scope.Store.ToHash(0), "au", 5, 2, nil},
-		{eurSrv, scope.Store.ToHash(0), "xx", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.DefaultTypeID, "x", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.DefaultTypeID, "uk", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.Website.Pack(0), "admin", 0, 0, nil},
+		{eurSrv, scope.Website.Pack(1), "de", 1, 1, nil},
+		{eurSrv, scope.Website.Pack(2), "nz", 6, 2, nil},
+		{eurSrv, scope.Website.Pack(3), "uk", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.Absent.Pack(0), "uk", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.Absent.Pack(0), "at", 2, 1, nil},
+		{eurSrv, scope.Group.Pack(2), "uk", 4, 1, nil},
+		{eurSrv, scope.Group.Pack(99), "uk", 0, 0, errors.IsNotFound},
+		{eurSrv, scope.Store.Pack(0), "admin", 0, 0, nil},
+		{eurSrv, scope.Store.Pack(0), "au", 5, 2, nil},
+		{eurSrv, scope.Store.Pack(0), "xx", 0, 0, errors.IsNotFound},
 	}
 	for i, test := range tests {
 		haveStoreID, haveWebsiteID, haveErr := test.srv.StoreIDbyCode(test.runMode, test.code)
@@ -454,20 +454,20 @@ func TestService_AllowedStores(t *testing.T) {
 	eurSrv := storemock.NewEurozzyService(cfgmock.NewService())
 	tests := []struct {
 		srv          *store.Service
-		runMode      scope.Hash
+		runMode      scope.TypeID
 		wantStoreIDs []int64
 		wantErrBhf   errors.BehaviourFunc
 	}{
 		{eurSrv, 0, []int64{1, 2}, nil},
-		{eurSrv, scope.DefaultHash, []int64{1, 2}, nil},
-		{eurSrv, scope.Website.ToHash(0), []int64{0}, nil},
-		{eurSrv, scope.Website.ToHash(1), []int64{1, 4, 2}, nil},
-		{eurSrv, scope.Website.ToHash(2), []int64{5, 6}, nil},
-		{eurSrv, scope.Website.ToHash(3), nil, nil},
-		{eurSrv, scope.Absent.ToHash(0), []int64{1, 2}, nil},
-		{eurSrv, scope.Group.ToHash(2), []int64{4}, nil},
-		{eurSrv, scope.Group.ToHash(99), nil, nil},
-		{eurSrv, scope.Store.ToHash(0), []int64{0, 5, 1, 4, 2, 6}, nil},
+		{eurSrv, scope.DefaultTypeID, []int64{1, 2}, nil},
+		{eurSrv, scope.Website.Pack(0), []int64{0}, nil},
+		{eurSrv, scope.Website.Pack(1), []int64{1, 4, 2}, nil},
+		{eurSrv, scope.Website.Pack(2), []int64{5, 6}, nil},
+		{eurSrv, scope.Website.Pack(3), nil, nil},
+		{eurSrv, scope.Absent.Pack(0), []int64{1, 2}, nil},
+		{eurSrv, scope.Group.Pack(2), []int64{4}, nil},
+		{eurSrv, scope.Group.Pack(99), nil, nil},
+		{eurSrv, scope.Store.Pack(0), []int64{0, 5, 1, 4, 2, 6}, nil},
 	}
 	for i, test := range tests {
 		haveStores, haveErr := test.srv.AllowedStores(test.runMode)

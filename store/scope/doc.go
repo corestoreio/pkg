@@ -31,5 +31,6 @@
 //     |            |  Stores   +------+
 //     +            +-----------+
 //     http://asciiflow.com
-// A group scope does not make sense here.
+// A group scope does not make sense here but is supported by other Go types in
+// this package.
 package scope

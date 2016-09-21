@@ -19,7 +19,8 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Perm is a bit set and used for permissions. Uint16 should be big enough.
+// Perm is a bit set and used for permissions depending on the scope.Type.
+// Uint16 should be big enough.
 type Perm uint16
 
 // PermStore convenient helper contains all scope permission levels. The
@@ -47,7 +48,7 @@ func (bits Perm) All() Perm {
 }
 
 // Set takes a variadic amount of Group to set them to Bits
-func (bits Perm) Set(scopes ...Scope) Perm {
+func (bits Perm) Set(scopes ...Type) Perm {
 	for _, i := range scopes {
 		bits |= (1 << i) // (1 << power = 2^power)
 	}
@@ -57,7 +58,7 @@ func (bits Perm) Set(scopes ...Scope) Perm {
 // Top returns the highest stored scope within a Perm. A Perm can consists of 3
 // scopes: 1. Default -> 2. Website -> 3. Store Highest scope for a Perm with
 // all scopes is: Store.
-func (bits Perm) Top() Scope {
+func (bits Perm) Top() Type {
 	switch {
 	case bits.Has(Store):
 		return Store
@@ -69,7 +70,7 @@ func (bits Perm) Top() Scope {
 
 // Has checks if a give scope exists within a Perm. Only the first argument is
 // supported. Providing no argument assumes the scope.DefaultID.
-func (bits Perm) Has(s ...Scope) bool {
+func (bits Perm) Has(s ...Type) bool {
 	scp := Default
 	if len(s) > 0 {
 		scp = s[0]
@@ -79,11 +80,11 @@ func (bits Perm) Has(s ...Scope) bool {
 
 // Human readable representation of the permissions
 func (bits Perm) Human() []string {
-	var ret = make([]string, 0, maxScope)
-	for i := uint(0); i < uint(maxScope); i++ {
+	var ret = make([]string, 0, maxType)
+	for i := uint(0); i < uint(maxType); i++ {
 		bit := ((bits & (1 << i)) != 0)
 		if bit {
-			ret = append(ret, (Scope(i).String()))
+			ret = append(ret, (Type(i).String()))
 		}
 	}
 	return ret
@@ -94,9 +95,9 @@ func (bits Perm) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	for i := uint(0); i < uint(maxScope); i++ {
+	for i := uint(0); i < uint(maxType); i++ {
 		if (bits & (1 << i)) != 0 {
-			_, _ = buf.WriteString(Scope(i).String())
+			_, _ = buf.WriteString(Type(i).String())
 			_ = buf.WriteByte(',')
 		}
 	}

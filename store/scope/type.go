@@ -21,29 +21,24 @@ import (
 
 const maxUint8 = 1<<8 - 1
 
-// Scope used in constants where default is the lowest and store the highest.
-// Func String() attached. Part of type Perm.
-type Scope uint8
+// Type defines the hierarchy of the overall CoreStore library. The hierarchy
+// chain travels from Default->Website->Group->Store. The type relates to the
+// database tables `core_website`, `core_store_group` and `core_store` OR
+// `website`, `store_group` and `store` depending on the database schema (M1 or
+// M2) you are using. Type is a part of type Perm.
+type Type uint8
 
 // Those constants define the overall scopes. The hierarchical order is always:
 // 		Absent -> Default -> Website -> Group -> Store
 // These internal IDs may change without notice.
 const (
-	Absent Scope = iota // must start with 0
+	Absent Type = iota // must start with 0
 	Default
 	Website
 	Group
 	Store
-	maxScope
+	maxType
 )
-
-// Scoper specifies how to return the scope to which an ID belongs to. ID is one
-// of a website, group or store ID as defined in their database tables. As long
-// as we do not have returned a Default scope the ID (int64) must always be
-// greater zero.
-type Scoper interface {
-	Scope() (Scope, int64)
-}
 
 var (
 	jsonDefault = []byte(`"Default"`)
@@ -56,27 +51,27 @@ var (
 	sbStore   = []byte(`Store`)
 )
 
-const _ScopeName = "AbsentDefaultWebsiteGroupStore"
+const _TypeName = "AbsentDefaultWebsiteGroupStore"
 
-var _ScopeIndex = [...]uint8{0, 6, 13, 20, 25, 30}
+var _TypeIndex = [...]uint8{0, 6, 13, 20, 25, 30}
 
-// String human readable name of Group. For Marshaling see Perm
-func (s Scope) String() string {
-	if s+1 >= Scope(len(_ScopeIndex)) {
-		return fmt.Sprintf("Scope(%d)", s)
+// String human readable name of a Type. For Marshaling see Perm.
+func (s Type) String() string {
+	if s+1 >= Type(len(_TypeIndex)) {
+		return fmt.Sprintf("Type(%d)", s)
 	}
-	return _ScopeName[_ScopeIndex[s]:_ScopeIndex[s+1]]
+	return _TypeName[_TypeIndex[s]:_TypeIndex[s+1]]
 }
 
-// StrScope converts the underlying scope ID to one of the three available scope
-// strings in database table core_config_data.
-func (s Scope) StrScope() string {
-	return FromScope(s).String()
+// StrType converts the underlying Type to one of the three available type
+// strings from the database table `core_config_data`.
+func (s Type) StrType() string {
+	return FromType(s).String()
 }
 
 // MarshalJSON implements the Marshaler interface. The returned byte slice is
 // owned by the callee. You must copy it for further use.
-func (s Scope) MarshalJSON() ([]byte, error) {
+func (s Type) MarshalJSON() ([]byte, error) {
 	var ret []byte
 	switch s {
 	case Website:
@@ -92,14 +87,14 @@ func (s Scope) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements the Unmarshaler interface
-func (s *Scope) UnmarshalJSON(b []byte) error {
+func (s *Type) UnmarshalJSON(b []byte) error {
 	*s = FromBytes(b)
 	return nil
 }
 
-// StrBytes returns the StrScope as byte slice from a Scope. The returned byte
+// StrBytes returns the TypeStr as byte slice from a Type. The returned byte
 // slice is owned by the callee. You must copy it for further use.
-func (s Scope) StrBytes() []byte {
+func (s Type) StrBytes() []byte {
 	switch s {
 	case Website:
 		return bWebsites
@@ -109,14 +104,15 @@ func (s Scope) StrBytes() []byte {
 	return bDefault
 }
 
-// ToHash calls NewHash for your convenience.
-func (s Scope) ToHash(id int64) Hash {
-	return NewHash(s, id)
+// Pack calls MakeTypeID for your convenience. It packs the id into a new value
+// containing the Type and its ID ;-).
+func (s Type) Pack(id int64) TypeID {
+	return MakeTypeID(s, id)
 }
 
-// StrScope represents a string scope from table core_config_data column scope
+// TypeStr represents a string Type from table `core_config_data` column scope
 // with special functions attached, mainly for path generation
-type StrScope string
+type TypeStr string
 
 const (
 	strDefault  = "default"
@@ -135,18 +131,18 @@ var (
 // default as parent and stores as child. StrStores defines the store scope
 // which has default and websites as parent.
 const (
-	StrDefault  StrScope = strDefault
-	StrWebsites StrScope = strWebsites
-	StrStores   StrScope = strStores
+	StrDefault  TypeStr = strDefault
+	StrWebsites TypeStr = strWebsites
+	StrStores   TypeStr = strStores
 )
 
 // String returns the scope as string
-func (s StrScope) String() string {
+func (s TypeStr) String() string {
 	return string(s)
 }
 
-// Scope returns the underlying scope
-func (s StrScope) Scope() Scope {
+// Type returns the underlying type.
+func (s TypeStr) Type() Type {
 	switch s {
 	case StrWebsites:
 		return Website
@@ -156,10 +152,10 @@ func (s StrScope) Scope() Scope {
 	return Default
 }
 
-// FromString returns the scope ID from a string: default, websites or stores.
-// Opposite of FromScope
-func FromString(s string) Scope {
-	switch StrScope(s) {
+// FromString returns the Type from a string: default, websites or stores.
+// Opposite of FromType.
+func FromString(s string) Type {
+	switch TypeStr(s) {
 	case StrWebsites:
 		return Website
 	case StrStores:
@@ -168,9 +164,9 @@ func FromString(s string) Scope {
 	return Default
 }
 
-// FromScope returns the string representation for a scope ID. Opposite of
+// FromType returns the string representation for a Type. Opposite of
 // FromString.
-func FromScope(scopeID Scope) StrScope {
+func FromType(scopeID Type) TypeStr {
 	switch scopeID {
 	case Website:
 		return StrWebsites
@@ -190,9 +186,9 @@ func Valid(s string) bool {
 	return false
 }
 
-// FromBytes returns the scope ID from a byte slice. Supported values are
+// FromBytes returns the Type from a byte slice. Supported values are
 // default, websites, stores, Default, Website, Group and store. Case sensitive.
-func FromBytes(b []byte) Scope {
+func FromBytes(b []byte) Type {
 	switch {
 	case bytes.Equal(bWebsites, b):
 		return Website
@@ -216,7 +212,7 @@ func FromBytes(b []byte) Scope {
 	return Default
 }
 
-// ValidBytes checks if b is a valid byte Scope of either StrDefault,
+// ValidBytes checks if b is a valid byte Type of either StrDefault,
 // StrWebsites or StrStores. Case-sensitive.
 func ValidBytes(b []byte) bool {
 	return bytes.Equal(bDefault, b) || bytes.Equal(bWebsites, b) || bytes.Equal(bStores, b)
@@ -224,7 +220,7 @@ func ValidBytes(b []byte) bool {
 
 // ValidParent validates if the parent scope is within the hierarchical chain:
 // default -> website -> store.
-func ValidParent(current Scope, parent Scope) bool {
+func ValidParent(current Type, parent Type) bool {
 	return (parent == Default && current == Default) ||
 		(parent == Default && current == Website) ||
 		(parent == Website && current == Store)

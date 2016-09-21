@@ -21,13 +21,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ json.Marshaler = (*Scope)(nil)
-var _ json.Unmarshaler = (*Scope)(nil)
+var _ json.Marshaler = (*Type)(nil)
+var _ json.Unmarshaler = (*Type)(nil)
 
-func TestScopeBits(t *testing.T) {
+func TestTypeBits(t *testing.T) {
 
 	const (
-		scope1 Scope = iota + 1
+		scope1 Type = iota + 1
 		scope2
 		scope3
 		scope4
@@ -35,15 +35,15 @@ func TestScopeBits(t *testing.T) {
 	)
 
 	tests := []struct {
-		have    []Scope
-		want    Scope
-		notWant Scope
+		have    []Type
+		want    Type
+		notWant Type
 		human   []string
 		string
 	}{
-		{[]Scope{scope1, scope2}, scope2, scope3, []string{"Default", "Website"}, "Default,Website"},
-		{[]Scope{scope3, scope4}, scope3, scope2, []string{"Group", "Store"}, "Group,Store"},
-		{[]Scope{scope4, scope5}, scope4, scope2, []string{"Store"}, "Store"},
+		{[]Type{scope1, scope2}, scope2, scope3, []string{"Default", "Website"}, "Default,Website"},
+		{[]Type{scope3, scope4}, scope3, scope2, []string{"Group", "Store"}, "Group,Store"},
+		{[]Type{scope4, scope5}, scope4, scope2, []string{"Store"}, "Store"},
 	}
 
 	for _, test := range tests {
@@ -63,7 +63,7 @@ func TestFromString(t *testing.T) {
 
 	tests := []struct {
 		have string
-		want Scope
+		want Type
 	}{
 		{"asdasd", Default},
 		{strDefault, Default},
@@ -75,11 +75,11 @@ func TestFromString(t *testing.T) {
 	}
 }
 
-func TestFromScope(t *testing.T) {
+func TestFromType(t *testing.T) {
 
 	tests := []struct {
-		have Scope
-		want StrScope
+		have Type
+		want TypeStr
 	}{
 		{Default, StrDefault},
 		{Absent, StrDefault},
@@ -88,20 +88,20 @@ func TestFromScope(t *testing.T) {
 		{Store, StrStores},
 	}
 	for _, test := range tests {
-		assert.Exactly(t, test.want, FromScope(test.have))
-		assert.Exactly(t, test.want.String(), test.have.StrScope())
+		assert.Exactly(t, test.want, FromType(test.have))
+		assert.Exactly(t, test.want.String(), test.have.StrType())
 	}
 }
 
-func TestStrScope(t *testing.T) {
+func TestStrType(t *testing.T) {
 
 	assert.Equal(t, strDefault, StrDefault.String())
 	assert.Equal(t, strWebsites, StrWebsites.String())
 	assert.Equal(t, strStores, StrStores.String())
 
-	assert.Exactly(t, Default, StrDefault.Scope())
-	assert.Exactly(t, Website, StrWebsites.Scope())
-	assert.Exactly(t, Store, StrStores.Scope())
+	assert.Exactly(t, Default, StrDefault.Type())
+	assert.Exactly(t, Website, StrWebsites.Type())
+	assert.Exactly(t, Store, StrStores.Type())
 }
 
 func TestValid(t *testing.T) {
@@ -125,7 +125,7 @@ func TestValid(t *testing.T) {
 func TestFromBytes(t *testing.T) {
 	tests := []struct {
 		have []byte
-		want Scope
+		want Type
 	}{
 		{[]byte("asdasd"), Default},
 		{[]byte(strDefault), Default},
@@ -154,9 +154,9 @@ func TestValidBytes(t *testing.T) {
 	}
 }
 
-func TestStrScopeBytes(t *testing.T) {
+func TestStrTypeBytes(t *testing.T) {
 	tests := []struct {
-		id Scope
+		id Type
 	}{
 		{Default},
 		{Website},
@@ -164,14 +164,14 @@ func TestStrScopeBytes(t *testing.T) {
 		{44},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.id.StrScope(), string(test.id.StrBytes()), "Index %d", i)
+		assert.Exactly(t, test.id.StrType(), string(test.id.StrBytes()), "Index %d", i)
 	}
 }
 
 func TestValidParent(t *testing.T) {
 	tests := []struct {
-		c    Scope
-		p    Scope
+		c    Type
+		p    Type
 		want bool
 	}{
 		{Default, Default, true},
@@ -189,9 +189,9 @@ func TestValidParent(t *testing.T) {
 	}
 }
 
-func TestScope_MarshalJSON(t *testing.T) {
+func TestType_MarshalJSON(t *testing.T) {
 	tests := []struct {
-		s    Scope
+		s    Type
 		want []byte
 	}{
 		{Default, jsonDefault},
@@ -210,10 +210,10 @@ func TestScope_MarshalJSON(t *testing.T) {
 	}
 }
 
-func TestScope_UnmarshalJSON(t *testing.T) {
+func TestType_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		raw  []byte
-		want Scope
+		want Type
 	}{
 		{jsonDefault, Default},
 		{jsonWebsite, Website},
@@ -222,7 +222,7 @@ func TestScope_UnmarshalJSON(t *testing.T) {
 		{[]byte("Evi'l\x00"), Default},
 	}
 	for i, test := range tests {
-		var have Scope
+		var have Type
 		if err := have.UnmarshalJSON(test.raw); err != nil {
 			t.Fatal(i, err)
 		}
@@ -230,11 +230,11 @@ func TestScope_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestScope_JSON(t *testing.T) {
+func TestType_JSON(t *testing.T) {
 
 	type x struct {
 		Str string `json:"str"`
-		Scp Scope  `json:"myScope"`
+		Scp Type   `json:"myType"`
 		ID  int64  `json:"id"`
 	}
 
@@ -255,17 +255,17 @@ func TestScope_JSON(t *testing.T) {
 	assert.Exactly(t, xt, xt2)
 }
 
-func TestScope_ToHash(t *testing.T) {
+func TestType_Pack(t *testing.T) {
 	tests := []struct {
-		s    Scope
+		s    Type
 		id   int64
-		want Hash
+		want TypeID
 	}{
-		{Website, 1, NewHash(Website, 1)},
-		{Store, 4, NewHash(Store, 4)},
+		{Website, 1, MakeTypeID(Website, 1)},
+		{Store, 4, MakeTypeID(Store, 4)},
 		{0, 0, 0},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, test.s.ToHash(test.id), "Index %d", i)
+		assert.Exactly(t, test.want, test.s.Pack(test.id), "Index %d", i)
 	}
 }

@@ -35,14 +35,14 @@ import (
 type Finder interface {
 	// DefaultStoreID returns the default active store ID and its website ID
 	// depending on the run mode. Error behaviour is mostly of type NotValid.
-	DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error)
+	DefaultStoreID(runMode scope.TypeID) (storeID, websiteID int64, err error)
 	// StoreIDbyCode returns, depending on the runMode, for a storeCode its
 	// active store ID and its website ID. An empty runMode hash falls back to
 	// select the default website with its default group and the slice of
 	// default stores. A not-found error behaviour gets returned if the code
-	// cannot be found. If the runMode equals to scope.DefaultHash, the returned
+	// cannot be found. If the runMode equals to scope.DefaultTypeID, the returned
 	// ID is always 0 and error is nil.
-	StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error)
+	StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID int64, err error)
 }
 
 // Service represents type which handles the underlying storage and takes care
@@ -81,7 +81,7 @@ type Service struct {
 	cacheWebsite     map[int64]Website
 	cacheGroup       map[int64]Group
 	cacheStore       map[int64]Store
-	cacheSingleStore map[scope.Hash]bool
+	cacheSingleStore map[scope.TypeID]bool
 }
 
 func newService() *Service {
@@ -91,7 +91,7 @@ func newService() *Service {
 		cacheWebsite:           make(map[int64]Website),
 		cacheGroup:             make(map[int64]Group),
 		cacheStore:             make(map[int64]Store),
-		cacheSingleStore:       make(map[scope.Hash]bool),
+		cacheSingleStore:       make(map[scope.TypeID]bool),
 	}
 }
 
@@ -171,7 +171,7 @@ func (s *Service) loadFromOptions(cfg config.Getter, opts ...Option) error {
 // Returns true on success. An error may occur when the default website and
 // store can't be selected. An empty scope.Hash checks the default website with
 // its default group and its default stores.
-func (s *Service) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed bool, storeCode string, _ error) {
+func (s *Service) IsAllowedStoreID(runMode scope.TypeID, storeID int64) (isAllowed bool, storeCode string, _ error) {
 	scp, scpID := runMode.Unpack()
 
 	switch scp {
@@ -216,7 +216,7 @@ func (s *Service) IsAllowedStoreID(runMode scope.Hash, storeID int64) (isAllowed
 
 // DefaultStoreID returns the default active store ID depending on the run mode.
 // Error behaviour is mostly of type NotValid.
-func (s *Service) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, _ error) {
+func (s *Service) DefaultStoreID(runMode scope.TypeID) (storeID, websiteID int64, _ error) {
 	scp, id := runMode.Unpack()
 	switch scp {
 	case scope.Store:
@@ -272,9 +272,9 @@ func (s *Service) DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, 
 // active store ID and its website ID. An empty runMode hash falls back to
 // select the default website with its default group and the slice of
 // default stores. A not-found error behaviour gets returned if the code
-// cannot be found. If the runMode equals to scope.DefaultHash, the returned
+// cannot be found. If the runMode equals to scope.DefaultTypeID, the returned
 // ID is always 0 and error is nil. Implements interface Finder.
-func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error) {
+func (s *Service) StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID int64, err error) {
 	if storeCode == "" {
 		sID, wID, err := s.DefaultStoreID(0)
 		return sID, wID, errors.Wrap(err, "[store] IDbyCode.DefaultStoreID")
@@ -282,7 +282,7 @@ func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	// todo maybe add map cache
-	switch runMode.Scope() {
+	switch runMode.Type() {
 	case scope.Store:
 		for _, st := range s.stores {
 			if st.IsActive() && st.Code() == storeCode {
@@ -322,7 +322,7 @@ func (s *Service) StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, 
 // AllowedStores creates a new slice containing all active stores depending on
 // the current runMode. The returned slice and its pointers are owned by the
 // callee.
-func (s *Service) AllowedStores(runMode scope.Hash) (StoreSlice, error) {
+func (s *Service) AllowedStores(runMode scope.TypeID) (StoreSlice, error) {
 	scp, scpID := runMode.Unpack()
 
 	switch scp {
@@ -361,7 +361,7 @@ func (s *Service) AllowedStores(runMode scope.Hash) (StoreSlice, error) {
 // the e.g. store switch. Global flag.
 func (s *Service) HasSingleStore() bool {
 	s.mu.RLock()
-	has, ok := s.cacheSingleStore[scope.DefaultHash]
+	has, ok := s.cacheSingleStore[scope.DefaultTypeID]
 	s.mu.RUnlock()
 	if ok {
 		return has
@@ -371,7 +371,7 @@ func (s *Service) HasSingleStore() bool {
 	defer s.mu.Unlock()
 
 	has = s.SingleStoreModeEnabled && s.stores.Len() < 3
-	s.cacheSingleStore[scope.DefaultHash] = has
+	s.cacheSingleStore[scope.DefaultTypeID] = has
 
 	return has
 }
@@ -382,7 +382,7 @@ func (s *Service) HasSingleStore() bool {
 // switchers etc). Store scope specific flag.
 func (s *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
 
-	key := scope.NewHash(cfg.Scope())
+	key := scope.MakeTypeID(cfg.Scope())
 	s.mu.RLock()
 	has, ok := s.cacheSingleStore[key]
 	s.mu.RUnlock()
@@ -518,7 +518,7 @@ func (s *Service) ClearCache() {
 			delete(s.cacheStore, k)
 		}
 	}
-	s.cacheSingleStore = make(map[scope.Hash]bool)
+	s.cacheSingleStore = make(map[scope.TypeID]bool)
 	s.defaultStoreID = -1
 	s.websites = nil
 	s.groups = nil

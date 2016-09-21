@@ -37,20 +37,20 @@ const CodeURLFieldName = `___store`
 type CodeProcessor interface {
 	// FromRequest returns the valid non-empty store code. Returns an empty
 	// store code on all other cases.
-	FromRequest(runMode scope.Hash, req *http.Request) (code string)
+	FromRequest(runMode scope.TypeID, req *http.Request) (code string)
 	// ProcessDenied gets called in the middleware WithRunMode whenever a store
 	// ID isn't allowed to proceed. The variable newStoreID reflects the denied
 	// store ID. The ResponseWriter and Request variables can be used for
 	// additional information writing and extracting. The error Handler  will
 	// always be called.
-	ProcessDenied(runMode scope.Hash, oldStoreID, newStoreID int64, w http.ResponseWriter, r *http.Request)
+	ProcessDenied(runMode scope.TypeID, oldStoreID, newStoreID int64, w http.ResponseWriter, r *http.Request)
 	// ProcessAllowed enables to adjust the ResponseWriter based on the new
 	// store ID. The variable newStoreID contains the new ID, which can also be
 	// 0. The code is guaranteed to be not empty, a valid store code, and always
 	// points to an existing active store. The ResponseWriter and Request
 	// variables can be used for additional information writing and extracting.
 	// The next Handler in the chain will after this function be called.
-	ProcessAllowed(runMode scope.Hash, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request)
+	ProcessAllowed(runMode scope.TypeID, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request)
 }
 
 // CodeMaxLen defines the overall maximum length a store code can have.
