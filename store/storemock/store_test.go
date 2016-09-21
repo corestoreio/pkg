@@ -49,9 +49,9 @@ func TestMustNewStoreAU_Config(t *testing.T) {
 	var configPath = cfgpath.MustNewByParts("aa/bb/cc")
 
 	aust := storemock.MustNewStoreAU(cfgmock.NewService(cfgmock.PathValue{
-		configPath.Bind(scope.Default, 0).String(): "DefaultScopeString",
-		configPath.Bind(scope.Website, 2).String(): "WebsiteScopeString",
-		configPath.Bind(scope.Store, 5).String():   "StoreScopeString",
+		configPath.String():                "DefaultScopeString",
+		configPath.BindWebsite(2).String(): "WebsiteScopeString",
+		configPath.BindStore(5).String():   "StoreScopeString",
 	}))
 
 	haveS, scp, err := aust.Website.Config.String(configPath.Route)

@@ -20,7 +20,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store/backendstore"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -54,16 +53,16 @@ func (mis mockIntToStr) IntToStr(_ config.Scoped, id int) (string, error) {
 
 func TestConfiguration_AddressData(t *testing.T) {
 	sg := cfgmock.NewService(cfgmock.PathValue{
-		backend.GeneralStoreInformationName.MustFQ(scope.Website, 3):              `CoreStore SA`,
-		backend.GeneralStoreInformationPhone.MustFQ(scope.Website, 3):             `32608`,
-		backend.GeneralStoreInformationHours.MustFQ(scope.Website, 3):             `11am-7pm`,
-		backend.GeneralStoreInformationCountryID.MustFQ(scope.Website, 3):         144,
-		backend.GeneralStoreInformationRegionID.MustFQ(scope.Website, 3):          5,
-		backend.GeneralStoreInformationPostcode.MustFQ(scope.Website, 3):          `10100`,
-		backend.GeneralStoreInformationCity.MustFQ(scope.Website, 3):              `Shopville`,
-		backend.GeneralStoreInformationStreetLine1.MustFQ(scope.Website, 3):       `Market Str 134`,
-		backend.GeneralStoreInformationStreetLine2.MustFQ(scope.Website, 3):       `Booth 987`,
-		backend.GeneralStoreInformationMerchantVatNumber.MustFQ(scope.Website, 3): `DE12345678`,
+		backend.GeneralStoreInformationName.MustFQWebsite(3):              `CoreStore SA`,
+		backend.GeneralStoreInformationPhone.MustFQWebsite(3):             `32608`,
+		backend.GeneralStoreInformationHours.MustFQWebsite(3):             `11am-7pm`,
+		backend.GeneralStoreInformationCountryID.MustFQWebsite(3):         144,
+		backend.GeneralStoreInformationRegionID.MustFQWebsite(3):          5,
+		backend.GeneralStoreInformationPostcode.MustFQWebsite(3):          `10100`,
+		backend.GeneralStoreInformationCity.MustFQWebsite(3):              `Shopville`,
+		backend.GeneralStoreInformationStreetLine1.MustFQWebsite(3):       `Market Str 134`,
+		backend.GeneralStoreInformationStreetLine2.MustFQWebsite(3):       `Booth 987`,
+		backend.GeneralStoreInformationMerchantVatNumber.MustFQWebsite(3): `DE12345678`,
 	}).NewScoped(3, 4)
 
 	backend.GeneralStoreInformationCountryID.MapIntResolver = mockIntToStr{}
