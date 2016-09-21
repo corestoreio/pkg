@@ -32,7 +32,7 @@ const MaxID int64 = 1<<23 - 1
 // 		scope.NewHash(DefaultID,0)
 const DefaultTypeID TypeID = TypeID(Default)<<24 | 0
 
-// Hash defines a merged Scope with its ID. The first 8 bit represents the
+// TypeID defines a merged Scope with its ID. The first 8 bit represents the
 // Type: Default, Website, Group or Store. The last 24 bit represents the
 // assigned ID. This ID relates to the database table in M2 to `website`,
 // `store` or `store_group` and for M1 to `core_website`, `core_store` and
@@ -159,15 +159,15 @@ const TypeIDMaxSegments uint16 = 256
 
 const hashBitAnd TypeID = TypeID(TypeIDMaxSegments) - 1
 
-// Segment generates an 0 < ID <= 255 from a hash. Only used within an array
+// Segment generates an 0 < ID <= 255 from a TypeID. Only used within an array
 // index to optimize map[] usage in high concurrent situations. Also known as
 // shard. An array of N shards is created, each shard contains its own instance
 // of the cache with a lock. When an item with unique key needs to be cached a
 // shard for it is chosen at first by the function Segment(). After that the
 // cache lock is acquired and a write to the cache takes place. Reads are
 // analogue.
-func (h TypeID) Segment() uint8 {
-	return uint8(h & hashBitAnd)
+func (t TypeID) Segment() uint8 {
+	return uint8(t & hashBitAnd)
 }
 
 // MakeTypeID creates a new merged value of a Type and its ID. An error is equal

@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package scope defines the configuration of scopes default, website and store.
+// Package scope defines the configuration of scopes default, website, group and
+// store.
+//
+// Outside package scope we refer to type scope.Type as simple just scope and
+// scope.TypeID as ScopeID.
 //
 // The fall back explained from bottom to top:
 //     + +-----------+
@@ -31,6 +35,7 @@
 //     |            |  Stores   +------+
 //     +            +-----------+
 //     http://asciiflow.com
-// A group scope does not make sense here but is supported by other Go types in
-// this package.
+//
+// A group scope does not make sense in the above schema but is supported by
+// other Go types in this package.
 package scope

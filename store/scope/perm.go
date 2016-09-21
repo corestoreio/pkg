@@ -68,8 +68,8 @@ func (bits Perm) Top() Type {
 	return Default
 }
 
-// Has checks if a give scope exists within a Perm. Only the first argument is
-// supported. Providing no argument assumes the scope.DefaultID.
+// Has checks if a give scope.Type exists within a Perm. Only the first argument
+// is supported. Providing no argument assumes the scope.DefaultID.
 func (bits Perm) Has(s ...Type) bool {
 	scp := Default
 	if len(s) > 0 {

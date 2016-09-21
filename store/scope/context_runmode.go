@@ -19,10 +19,8 @@ import (
 	"net/http"
 )
 
-// DefaultRunMode defines the default run mode if the programmer hasn't applied
-// the field Mode or the function RunMode.WithContext() to specify a specific
-// run mode. It indicates the fall back to the default website and its default
-// store.
+// DefaultRunMode defines the default run mode which is zero. It indicates the
+// fall back to the default website and its default store.
 const DefaultRunMode TypeID = 0
 
 // RunModeCalculater core type to initialize the run mode of the current
@@ -56,10 +54,11 @@ func WithContextRunMode(ctx context.Context, runMode TypeID) context.Context {
 	return context.WithValue(ctx, ctxRunModeKey{}, runMode)
 }
 
-// FromContextRunMode returns the run mode Hash from a context. If no entry can
-// be found in the context the returned Hash has a default value. This default
-// value indicates the fall back to the default website and its default store.
-// Use case for the runMode: Cache Keys and app initialization.
+// FromContextRunMode returns the run mode scope.TypeID from a context. If no
+// entry can be found in the context the returned TypeID has a default value
+// (0). This default value indicates the fall back to the default website and
+// its default store. Use case for the runMode: Cache Keys and app
+// initialization.
 func FromContextRunMode(ctx context.Context) TypeID {
 	h, ok := ctx.Value(ctxRunModeKey{}).(TypeID)
 	if !ok {
