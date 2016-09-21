@@ -105,6 +105,18 @@ Sample value selection option (for heap profiles):
 $ go tool pprof -alloc_objects packageName.test mem.out
 ```
 
+### Bound Check Elimination
+
+[http://klauspost-talks.appspot.com/2016/go17-compiler.slide](http://klauspost-talks.appspot.com/2016/go17-compiler.slide)
+
+```
+$ go build -gcflags="-d=ssa/check_bce/debug=1" bounds.go
+or
+$ go test -gcflags="-d=ssa/check_bce/debug=1" .
+```
+
+Success - Check bounds outside the loop. 
+
 #### Other development helpers
 
 - [go get github.com/maruel/panicparse/cmd/pp](https://github.com/maruel/panicparse)
