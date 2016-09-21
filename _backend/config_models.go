@@ -45,7 +45,7 @@ func NewConfigRedirectToBase(path string, opts ...cfgmodel.Option) ConfigRedirec
 }
 
 // Write writes an int value and checks if the int value is within the allowed Options.
-func (p ConfigRedirectToBase) Write(w config.Writer, v int, s scope.Scope, id int64) error {
+func (p ConfigRedirectToBase) Write(w config.Writer, v int, s scope.Type, id int64) error {
 
 	if err := p.ValidateInt(v); err != nil {
 		return err

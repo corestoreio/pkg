@@ -76,7 +76,7 @@ func (s *Service) Option(opts ...ServiceOption) *Service {
 	return s
 }
 
-func (s *Service) Send(sc scope.Scope, id int64, m *gomail.Message) error {
+func (s *Service) Send(sc scope.Type, id int64, m *gomail.Message) error {
 
 	return nil
 }
@@ -91,7 +91,7 @@ func (s *Service) SubscribeToConfigChanges(sub config.Subscriber) (subscriptionI
 // config.Service. MessageConfig will be added via SubscribeToConfigChanges to the
 // config.Subscriber.
 // IF a configuration change
-func (s *Service) MessageConfig(path string, sc scope.Scope, id int64) error {
+func (s *Service) MessageConfig(path string, sc scope.Type, id int64) error {
 	switch path {
 	case PathSmtpHost, PathSmtpPort, PathSmtpUsername:
 		// start and stop the daemon for the corresponding scope group and id

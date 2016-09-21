@@ -68,7 +68,7 @@ func (cc ConfigCurrency) Get(sg config.Scoped) (cur Currency, err error) {
 }
 
 // Writes a currency to the configuration storage.
-func (cc ConfigCurrency) Write(w config.Writer, v Currency, s scope.Scope, id int64) error {
+func (cc ConfigCurrency) Write(w config.Writer, v Currency, s scope.Type, id int64) error {
 	cur := v.String()
 
 	if err := cc.ValidateString(cur); err != nil {
