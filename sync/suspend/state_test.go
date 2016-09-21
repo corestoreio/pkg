@@ -30,16 +30,16 @@ import (
 
 const hashCount = 10
 
-func generateHashes() (hashes [hashCount + 1]scope.Hash) {
+func generateHashes() (hashes [hashCount + 1]scope.TypeID) {
 	const scopeCount = 2
-	scopes := [scopeCount]scope.Scope{
+	scopes := [scopeCount]scope.Type{
 		scope.Website, scope.Store,
 	}
 	for i := 0; i < hashCount; i++ {
 		s := scopes[i%2]
-		hashes[i] = scope.NewHash(s, int64(i))
+		hashes[i] = scope.MakeTypeID(s, int64(i))
 	}
-	hashes[hashCount] = scope.DefaultHash
+	hashes[hashCount] = scope.DefaultTypeID
 	return hashes
 }
 
@@ -48,10 +48,10 @@ func TestHashState_Initialized(t *testing.T) {
 	if hs.Initialized() {
 		t.Error("Should not be initialized")
 	}
-	if err := hs.Done(scope.DefaultHash.ToUint64()); !errors.IsFatal(err) {
+	if err := hs.Done(scope.DefaultTypeID.ToUint64()); !errors.IsFatal(err) {
 		t.Errorf("Expecting a Fatal error: %s", err)
 	}
-	if hs.ShouldWait(scope.DefaultHash.ToUint64()) {
+	if hs.ShouldWait(scope.DefaultTypeID.ToUint64()) {
 		t.Error("Should not be running")
 	}
 
@@ -59,7 +59,7 @@ func TestHashState_Initialized(t *testing.T) {
 	if !hs.Initialized() {
 		t.Error("Should be initialized")
 	}
-	if err := hs.Done(scope.DefaultHash.ToUint64()); !errors.IsFatal(err) {
+	if err := hs.Done(scope.DefaultTypeID.ToUint64()); !errors.IsFatal(err) {
 		t.Errorf("Expecting a Fatal error: %s", err)
 	}
 }
@@ -67,7 +67,7 @@ func TestHashState_Initialized(t *testing.T) {
 func TestHashState_CanRun(t *testing.T) {
 	var hs suspend.State
 
-	if hs.ShouldStart(scope.DefaultHash.ToUint64()) {
+	if hs.ShouldStart(scope.DefaultTypeID.ToUint64()) {
 		t.Fatal("Should not return true because not yet initialized")
 	}
 	hs = suspend.NewState()
@@ -114,7 +114,7 @@ func TestHashState_CanRun(t *testing.T) {
 
 func TestHashState_ShouldWait(t *testing.T) {
 	var hs suspend.State
-	if hs.ShouldStart(scope.DefaultHash.ToUint64()) {
+	if hs.ShouldStart(scope.DefaultTypeID.ToUint64()) {
 		t.Fatal("Should not return true because not yet initialized")
 	}
 
@@ -140,7 +140,7 @@ func TestHashState_ShouldWait(t *testing.T) {
 					atomic.AddUint32(countRun, 1)
 					time.Sleep(time.Millisecond) // simulate race detector ;-)
 					if err := hs.Done(h.ToUint64()); err != nil {
-						t.Fatal(errors.PrintLoc(err))
+						t.Fatalf("%+v", err)
 					}
 				case hs.ShouldWait(h.ToUint64()): // this case is normally not needed
 					atomic.AddUint32(countWaiter, 1)
@@ -201,7 +201,7 @@ func TestHashStateBytes_ShouldWait(t *testing.T) {
 					atomic.AddUint32(countRun, 1)
 					time.Sleep(time.Millisecond) // simulate race detector ;-)
 					if err := hs.DoneBytes(key); err != nil {
-						t.Fatal(errors.PrintLoc(err))
+						t.Fatalf("%+v", err)
 					}
 				case hs.ShouldWaitBytes(key): // this case is normally not needed
 					atomic.AddUint32(countWaiter, 1)
