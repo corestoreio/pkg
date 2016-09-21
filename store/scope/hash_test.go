@@ -56,9 +56,9 @@ func TestNewHash(t *testing.T) {
 		{scope.Store, 1, scope.Store, 1},
 		{scope.Group, 4, scope.Group, 4},
 		{scope.Group, -4, scope.Absent, 0},
-		{scope.Website, scope.MaxStoreID, scope.Website, scope.MaxStoreID},
-		{scope.Website, -scope.MaxStoreID, scope.Absent, 0},
-		{scope.Website, scope.MaxStoreID + 1, scope.Absent, 0},
+		{scope.Website, scope.MaxID, scope.Website, scope.MaxID},
+		{scope.Website, -scope.MaxID, scope.Absent, 0},
+		{scope.Website, scope.MaxID + 1, scope.Absent, 0},
 	}
 	for i, test := range tests {
 		haveScp, haveID := scope.NewHash(test.scp, test.id).Unpack()
@@ -123,11 +123,11 @@ func TestHashSegment(t *testing.T) {
 		{scope.NewHash(scope.Store, 255), 255},
 		{scope.NewHash(scope.Store, 256), 0},
 		{scope.NewHash(scope.Store, 257), 1},
-		{scope.NewHash(scope.Store, scope.MaxStoreID-1), 254},
-		{scope.NewHash(scope.Store, scope.MaxStoreID), 255},
-		{scope.NewHash(scope.Store, scope.MaxStoreID+1), 0},
-		{scope.NewHash(scope.Store, scope.MaxStoreID+2), 0},
-		{scope.NewHash(scope.Store, -scope.MaxStoreID), 0},
+		{scope.NewHash(scope.Store, scope.MaxID-1), 254},
+		{scope.NewHash(scope.Store, scope.MaxID), 255},
+		{scope.NewHash(scope.Store, scope.MaxID+1), 0},
+		{scope.NewHash(scope.Store, scope.MaxID+2), 0},
+		{scope.NewHash(scope.Store, -scope.MaxID), 0},
 		{scope.NewHash(scope.Scope(7), 1), 1},
 	}
 	for i, test := range tests {
@@ -152,7 +152,7 @@ func TestFromHashError(t *testing.T) {
 
 func TestHashValid(t *testing.T) {
 
-	t.Logf("[Info] Max Store ID: %d", scope.MaxStoreID)
+	t.Logf("[Info] Max Store ID: %d", scope.MaxID)
 
 	if testing.Short() {
 		t.Skip("Skipping in short mode")
@@ -165,7 +165,7 @@ func TestHashValid(t *testing.T) {
 		wg.Add(1)
 		go func(theScp scope.Scope) {
 			defer wg.Done()
-			for id := int64(0); id < scope.MaxStoreID; id++ {
+			for id := int64(0); id < scope.MaxID; id++ {
 				haveHash := scope.NewHash(theScp, id)
 
 				haveScp, haveID := haveHash.Unpack()
@@ -206,9 +206,9 @@ func TestHash_EqualScope(t *testing.T) {
 		{scope.DefaultHash, 0, false},
 		{scope.DefaultHash, scope.DefaultHash, true},
 		{scope.NewHash(scope.Absent, 1), scope.NewHash(scope.Absent, 1), false},
-		{scope.NewHash(scope.Store, scope.MaxStoreID), scope.NewHash(scope.Store, scope.MaxStoreID), true},
-		{scope.NewHash(scope.Store, scope.MaxStoreID), scope.NewHash(scope.Store, scope.MaxStoreID+1), false},
-		{scope.NewHash(scope.Store, scope.MaxStoreID+1), scope.NewHash(scope.Store, scope.MaxStoreID), false},
+		{scope.NewHash(scope.Store, scope.MaxID), scope.NewHash(scope.Store, scope.MaxID), true},
+		{scope.NewHash(scope.Store, scope.MaxID), scope.NewHash(scope.Store, scope.MaxID+1), false},
+		{scope.NewHash(scope.Store, scope.MaxID+1), scope.NewHash(scope.Store, scope.MaxID), false},
 		{scope.NewHash(scope.Website, -1), scope.NewHash(scope.Website, 1), false},
 	}
 	for i, test := range tests {
@@ -243,9 +243,9 @@ func TestHash_ID(t *testing.T) {
 		{0, 0},
 		{scope.DefaultHash, 0},
 		{scope.NewHash(scope.Website, 33), 33},
-		{scope.NewHash(scope.Website, scope.MaxStoreID), scope.MaxStoreID},
-		{scope.NewHash(scope.Website, scope.MaxStoreID+1), 0},
-		{scope.Hash(scope.Store)<<24 | scope.Hash(scope.MaxStoreID+1), -1},
+		{scope.NewHash(scope.Website, scope.MaxID), scope.MaxID},
+		{scope.NewHash(scope.Website, scope.MaxID+1), 0},
+		{scope.Hash(scope.Store)<<24 | scope.Hash(scope.MaxID+1), -1},
 	}
 	for i, test := range tests {
 		if have, want := test.h.ID(), test.id; have != want {

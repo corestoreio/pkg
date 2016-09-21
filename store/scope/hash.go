@@ -23,16 +23,20 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// MaxStoreID maximum allowed ID from package store. Doesn't matter whether we
-// have a website, group or store ID. int24 (8388607) size at the moment.
-const MaxStoreID int64 = 1<<23 - 1
+// MaxID maximum allowed ID from package store. Doesn't matter whether we have a
+// website, group or store scope. int24 (8388607) size at the moment.
+const MaxID int64 = 1<<23 - 1
 
 // DefaultHash default Hash value for Default Scope and ID 0. Avoids typing
 // 		scope.NewHash(DefaultID,0)
 const DefaultHash Hash = Hash(Default)<<24 | 0
 
-// Hash defines a merged Scope with its ID. The ID can either be from a website,
-// group or store.
+// Hash defines a merged Scope with its ID. The first 8 bit represents the
+// scope: Default, Website, Group or Store. The last 24 bit represents the
+// assigned ID. This ID relates to the database table in M2 to `website`,
+// `store` or `store_group` and for M1 to `core_website`, `core_store` and
+// `core_store_group`. The maximum ID which can be used is defined in constant
+// MaxID.
 type Hash uint32
 
 // If we have need for more store IDs then we can change the underlying types here.
@@ -84,7 +88,7 @@ func (h Hash) Unpack() (s Scope, id int64) {
 
 	h64 := int64(h)
 	prospectID := h64 ^ (h64>>24)<<24
-	if prospectID > MaxStoreID || prospectID < 0 {
+	if prospectID > MaxID || prospectID < 0 {
 		return Absent, -1
 	}
 
@@ -121,7 +125,7 @@ func (h Hash) Scope() Scope {
 func (h Hash) ID() int64 {
 	h64 := int64(h)
 	prospectID := h64 ^ (h64>>24)<<24
-	if prospectID > MaxStoreID || prospectID < 0 {
+	if prospectID > MaxID || prospectID < 0 {
 		return -1
 	}
 	return prospectID
@@ -169,7 +173,7 @@ func (h Hash) Segment() uint8 {
 // error occurs when id is greater than MaxStoreID or smaller 0. An errors
 // occurs when the Scope is Default and id anything else than 0.
 func NewHash(s Scope, id int64) Hash {
-	if id > MaxStoreID || (s > Default && id < 0) {
+	if id > MaxID || (s > Default && id < 0) {
 		return 0
 	}
 	if s < Website {
