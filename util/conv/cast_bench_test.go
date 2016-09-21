@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 )
 
@@ -54,7 +53,7 @@ func BenchmarkToString_Int(b *testing.B) {
 	benchmarkToStringF(b, val)
 }
 func BenchmarkToString_CfgPathPath(b *testing.B) {
-	val := cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Store, 33)
+	val := cfgpath.MustNewByParts("aa/bb/cc").BindStore(33)
 	benchmarkToStringF(b, val)
 }
 func BenchmarkToString_Error(b *testing.B) {

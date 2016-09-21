@@ -14,7 +14,6 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -99,7 +98,7 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, ToString(nil), "")
 	assert.Equal(t, ToString(true), "true")
 	assert.Equal(t, ToString(false), "false")
-	assert.Equal(t, ToString(cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Store, 33)), "stores/33/aa/bb/cc")
+	assert.Equal(t, ToString(cfgpath.MustNewByParts("aa/bb/cc").BindStore(33)), "stores/33/aa/bb/cc")
 }
 
 func TestToByte(t *testing.T) {
@@ -117,7 +116,7 @@ func TestToByte(t *testing.T) {
 	assert.Equal(t, ToByte(nil), []byte(nil))
 	assert.Equal(t, ToByte(true), []byte("true"))
 	assert.Equal(t, ToByte(false), []byte("false"))
-	assert.Equal(t, ToByte(cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Store, 33)), []byte("stores/33/aa/bb/cc"))
+	assert.Equal(t, ToByte(cfgpath.MustNewByParts("aa/bb/cc").BindStore(33)), []byte("stores/33/aa/bb/cc"))
 
 	b, err := ToByteE(uint8(1))
 	assert.Nil(t, b)
