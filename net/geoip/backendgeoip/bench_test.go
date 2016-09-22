@@ -30,21 +30,21 @@ import (
 func BenchmarkWithAlternativeRedirect(b *testing.B) {
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
-		mustToPath(b, backend.AlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
-		mustToPath(b, backend.AlternativeRedirectCode.ToPath, scope.Website, 1): 307,
-		mustToPath(b, backend.AllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
-		mustToPath(b, backend.MaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
+		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
+		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
+		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
+		backend.MaxmindLocalFile.MustFQ():                filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	})
 	b.Run("LocalFile_NoCache", benchmarkWithAlternativeRedirect(cfgSrv))
 
 	cfgSrv = cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
-		mustToPath(b, backend.AlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
-		mustToPath(b, backend.AlternativeRedirectCode.ToPath, scope.Website, 1):  307,
-		mustToPath(b, backend.AllowedCountries.ToPath, scope.Store, 2):           "AT,CH",
-		mustToPath(b, backend.MaxmindWebserviceUserID.ToPath, scope.Default, 0):  "LiesschenMueller",
-		mustToPath(b, backend.MaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
-		mustToPath(b, backend.MaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
+		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
+		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
+		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
+		backend.MaxmindWebserviceUserID.MustFQ():         "LiesschenMueller",
+		backend.MaxmindWebserviceLicense.MustFQ():        "8x4",
+		backend.MaxmindWebserviceTimeout.MustFQ():        "3s",
 	})
 	// to fix the speed here ... BigCache_Gob must be optimized
 	b.Run("Webservice_BigCache_Gob", benchmarkWithAlternativeRedirect(cfgSrv))

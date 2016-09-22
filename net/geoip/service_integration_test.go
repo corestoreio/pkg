@@ -57,7 +57,7 @@ func TestService_WithCountryByIP_Error_GeoReader(t *testing.T) {
 	var calledWithServiceErrorHandler bool
 	if err := s.Options(
 		geoip.WithGeoIP(geoReaderMock{}),
-		geoip.WithErrorHandler(scope.Default.ToHash(0), func(_ error) http.Handler {
+		geoip.WithErrorHandler(scope.Default.Pack(0), func(_ error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
 			})
@@ -195,8 +195,8 @@ func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 
 	var calledErrorHandler int32
 	if err := s.Options(
-		geoip.WithAlternativeHandler(scope.Store.ToHash(2), altHndlr), // for test case 2
-		geoip.WithAllowedCountryCodes(scope.Store.ToHash(2), "DE", "CH", "FI"),
+		geoip.WithAlternativeHandler(scope.Store.Pack(2), altHndlr), // for test case 2
+		geoip.WithAllowedCountryCodes(scope.Store.Pack(2), "DE", "CH", "FI"),
 		geoip.WithServiceErrorHandler(func(err error) http.Handler {
 			assert.Error(t, err, "%+v", err)
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -204,7 +204,7 @@ func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 				atomic.AddInt32(&calledErrorHandler, 1)
 			})
 		}),
-		geoip.WithErrorHandler(scope.Store.ToHash(2), func(err error) http.Handler {
+		geoip.WithErrorHandler(scope.Store.Pack(2), func(err error) http.Handler {
 			assert.Error(t, err, "%+v", err)
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusHTTPVersionNotSupported)

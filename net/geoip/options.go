@@ -30,7 +30,7 @@ import (
 // allowed to process the request. The StringSlice contains a list of ISO
 // country names fetched from the config.ScopedGetter. Return nil to indicate
 // that the request can continue.
-type IsAllowedFunc func(s scope.Hash, c *Country, allowedCountries []string) error
+type IsAllowedFunc func(s scope.TypeID, c *Country, allowedCountries []string) error
 
 // WithDefaultConfig applies the default GeoIP configuration settings based for
 // a specific scope. This function overwrites any previous set options.
@@ -39,12 +39,12 @@ type IsAllowedFunc func(s scope.Hash, c *Country, allowedCountries []string) err
 //		- Alternative Handler: variable DefaultAlternativeHandler
 //		- Logger black hole
 //		- Check allow: If allowed countries are empty, all countries are allowed
-func WithDefaultConfig(h scope.Hash) Option {
+func WithDefaultConfig(h scope.TypeID) Option {
 	return withDefaultConfig(h)
 }
 
 // WithDisable disables the whole GeoIP lookup for a scope.
-func WithDisable(h scope.Hash, isDisabled bool) Option {
+func WithDisable(h scope.TypeID, isDisabled bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -63,7 +63,7 @@ func WithDisable(h scope.Hash, isDisabled bool) Option {
 // WithAlternativeHandler sets for a scope the alternative handler
 // if an IP address has been access denied.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAlternativeHandler(h scope.Hash, altHndlr mw.ErrorHandler) Option {
+func WithAlternativeHandler(h scope.TypeID, altHndlr mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -82,7 +82,7 @@ func WithAlternativeHandler(h scope.Hash, altHndlr mw.ErrorHandler) Option {
 // WithAlternativeRedirect sets for a scope the error handler
 // on a Service if an IP address has been access denied.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAlternativeRedirect(h scope.Hash, urlStr string, code int) Option {
+func WithAlternativeRedirect(h scope.TypeID, urlStr string, code int) Option {
 	return WithAlternativeHandler(h, func(_ error) http.Handler {
 		return http.RedirectHandler(urlStr, code)
 	})
@@ -92,7 +92,7 @@ func WithAlternativeRedirect(h scope.Hash, urlStr string, code int) Option {
 // address should access to granted, or the next middleware handler in the chain
 // gets called.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithCheckAllow(h scope.Hash, f IsAllowedFunc) Option {
+func WithCheckAllow(h scope.TypeID, f IsAllowedFunc) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -110,7 +110,7 @@ func WithCheckAllow(h scope.Hash, f IsAllowedFunc) Option {
 
 // WithAllowedCountryCodes sets a list of ISO countries to be validated against.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAllowedCountryCodes(h scope.Hash, isoCountryCodes ...string) Option {
+func WithAllowedCountryCodes(h scope.TypeID, isoCountryCodes ...string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()

@@ -123,11 +123,11 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 
 	t.Run("Scope_Default", func(t *testing.T) {
 
-		if err := s.Options(WithAllowedCountryCodes(scope.DefaultHash, "US")); err != nil {
+		if err := s.Options(WithAllowedCountryCodes(scope.DefaultTypeID, "US")); err != nil {
 			t.Fatal(err)
 		}
 
-		scpCfg := s.ConfigByScopeHash(scope.DefaultHash, 0)
+		scpCfg := s.ConfigByScopeHash(scope.DefaultTypeID, 0)
 		if err := scpCfg.IsValid(); err != nil {
 			t.Fatal(err)
 		}
@@ -141,16 +141,16 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 	})
 
 	t.Run("Scope_Store", func(t *testing.T) {
-		if err := s.Options(WithCheckAllow(scope.Store.ToHash(331122), func(s scope.Hash, c *Country, allowedCountries []string) error {
-			assert.Exactly(t, scope.Hash(0), s, "scope.Hash")
+		if err := s.Options(WithCheckAllow(scope.Store.Pack(331122), func(s scope.TypeID, c *Country, allowedCountries []string) error {
+			assert.Exactly(t, scope.TypeID(0), s, "scope.Hash")
 			assert.Exactly(t, "FI", c.Country.IsoCode)
 			assert.Exactly(t, []string{"ABC"}, allowedCountries)
 			return errors.NewNotImplementedf("You're not allowed")
-		}), WithAllowedCountryCodes(scope.Store.ToHash(331122), "ABC")); err != nil {
+		}), WithAllowedCountryCodes(scope.Store.Pack(331122), "ABC")); err != nil {
 			t.Fatal(err)
 		}
 
-		scpCfg := s.ConfigByScopeHash(scope.Store.ToHash(331122), 0)
+		scpCfg := s.ConfigByScopeHash(scope.Store.Pack(331122), 0)
 		if err := scpCfg.IsValid(); err != nil {
 			t.Fatal(err)
 		}

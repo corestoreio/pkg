@@ -28,7 +28,6 @@ import (
 
 	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
@@ -45,17 +44,22 @@ func init() {
 	rand.Seed(seed)
 }
 
-func mustToPath(t interface {
-	Fatalf(string, ...interface{})
-}, f func(s scope.Scope, scopeID int64) (cfgpath.Path, error), s scope.Scope, scopeID int64) string {
-	p, err := f(s, scopeID)
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	return p.String()
+func TestConfiguration_HierarchicalConfig(t *testing.T) {
+
+	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		backend.AllowedCountries.MustFQWebsite(1):  `AU,NZ`,
+		backend.AlternativeRedirect.MustFQStore(3): `https://signin.corestore.io`,
+	}).NewScoped(1, 3)
+
+	srv := geoip.MustNew(
+		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
+	)
+	scpCfg := srv.ConfigByScopedGetter(scpCfgSrv)
+
+	assert.Exactly(t, []string{`AU`, `NZ`}, scpCfg.AllowedCountries)
 }
 
-func TestBackend_WithGeoIP2Webservice_Redis(t *testing.T) {
+func TestConfiguration_WithGeoIP2Webservice_Redis(t *testing.T) {
 
 	t.Run("Error_API", testBackend_WithGeoIP2Webservice_Redis(
 		func() *http.Client {
@@ -134,10 +138,10 @@ func testBackend_WithGeoIP2Webservice_Redis(
 
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			// @see structure.go for the limitation to scope.Default
-			mustToPath(t, backend.MaxmindWebserviceUserID.ToPath, scope.Default, 0):   `TestUserID`,
-			mustToPath(t, backend.MaxmindWebserviceLicense.ToPath, scope.Default, 0):  `TestLicense`,
-			mustToPath(t, backend.MaxmindWebserviceTimeout.ToPath, scope.Default, 0):  `21s`,
-			mustToPath(t, backend.MaxmindWebserviceRedisURL.ToPath, scope.Default, 0): redConURL,
+			backend.MaxmindWebserviceUserID.MustFQ():   `TestUserID`,
+			backend.MaxmindWebserviceLicense.MustFQ():  `TestLicense`,
+			backend.MaxmindWebserviceTimeout.MustFQ():  `21s`,
+			backend.MaxmindWebserviceRedisURL.MustFQ(): redConURL,
 		})
 		cfgScp := cfgSrv.NewScoped(1, 2) // Website ID 2 == euro / Store ID == 2 Austria ==> here doesn't matter
 
@@ -161,24 +165,24 @@ func testBackend_WithGeoIP2Webservice_Redis(
 	}
 }
 
-func TestBackend_WithAlternativeRedirect(t *testing.T) {
+func TestConfiguration_WithAlternativeRedirect(t *testing.T) {
 
 	t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
-		mustToPath(t, backend.AlternativeRedirect.ToPath, scope.Store, 2):       `https://byebye.de.io`,
-		mustToPath(t, backend.AlternativeRedirectCode.ToPath, scope.Website, 1): 307,
-		mustToPath(t, backend.AllowedCountries.ToPath, scope.Store, 2):          "AT,CH",
-		mustToPath(t, backend.MaxmindLocalFile.ToPath, scope.Default, 0):        filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
+		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
+		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
+		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
+		backend.MaxmindLocalFile.MustFQ():                filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	})))
 
 	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
-		mustToPath(t, backend.AlternativeRedirect.ToPath, scope.Store, 2):        `https://byebye.de.io`,
-		mustToPath(t, backend.AlternativeRedirectCode.ToPath, scope.Website, 1):  307,
-		mustToPath(t, backend.AllowedCountries.ToPath, scope.Store, 2):           "AT,CH",
-		mustToPath(t, backend.MaxmindWebserviceUserID.ToPath, scope.Default, 0):  "LiesschenMueller",
-		mustToPath(t, backend.MaxmindWebserviceLicense.ToPath, scope.Default, 0): "8x4",
-		mustToPath(t, backend.MaxmindWebserviceTimeout.ToPath, scope.Default, 0): "3s",
+		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
+		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
+		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
+		backend.MaxmindWebserviceUserID.MustFQ():         "LiesschenMueller",
+		backend.MaxmindWebserviceLicense.MustFQ():        "8x4",
+		backend.MaxmindWebserviceTimeout.MustFQ():        "3s",
 	})))
 }
 
@@ -200,7 +204,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			geoip.WithDebugLog(logBuf),
 			geoip.WithOptionFactory(scpFnc),
 			geoip.WithServiceErrorHandler(mw.ErrorWithPanic),
-			geoip.WithErrorHandler(scope.DefaultHash, mw.ErrorWithPanic),
+			geoip.WithErrorHandler(scope.DefaultTypeID, mw.ErrorWithPanic),
 		)
 
 		// if you try to set the allowed countries with this option, they get
@@ -241,22 +245,22 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 	}
 }
 
-func TestBackend_Path_Errors(t *testing.T) {
+func TestConfiguration_Path_Errors(t *testing.T) {
 
 	tests := []struct {
-		toPath func(s scope.Scope, scopeID int64) (cfgpath.Path, error)
+		toPath string
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.AllowedCountries.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.AlternativeRedirect.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.AlternativeRedirectCode.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.MaxmindLocalFile.ToPath, "fileNotFound.txt", errors.IsNotFound},
-		{backend.MaxmindLocalFile.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceUserID.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceLicense.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceTimeout.ToPath, struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceRedisURL.ToPath, struct{}{}, errors.IsNotValid},
+		{backend.AllowedCountries.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.AlternativeRedirect.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.AlternativeRedirectCode.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.MaxmindLocalFile.MustFQ(), "fileNotFound.txt", errors.IsNotFound},
+		{backend.MaxmindLocalFile.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceUserID.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceLicense.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceTimeout.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.MaxmindWebserviceRedisURL.MustFQ(), struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 
@@ -266,7 +270,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 		}
 		be := backendgeoip.New(cStruct)
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			mustToPath(t, test.toPath, scope.Default, 0): test.val,
+			test.toPath: test.val,
 		})
 
 		gs := geoip.MustNew(

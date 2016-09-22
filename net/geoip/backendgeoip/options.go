@@ -41,29 +41,26 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 			opts [6]geoip.Option
 			i    int // used as index in opts
 		)
+		typeID := scope.MakeTypeID(sg.Scope())
 
-		acc, h, err := be.AllowedCountries.Get(sg)
+		acc, _, err := be.AllowedCountries.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAllowedCountries.Get"))
 		}
-		opts[i] = geoip.WithAllowedCountryCodes(h, acc...)
+		opts[i] = geoip.WithAllowedCountryCodes(typeID, acc...)
 		i++
 
 		// REDIRECT TO ALTERNATIVE URL
-		ar, h1, err := be.AlternativeRedirect.Get(sg)
+		ar, _, err := be.AlternativeRedirect.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAlternativeRedirect.Get"))
 		}
-		arc, h2, err := be.AlternativeRedirectCode.Get(sg)
+		arc, _, err := be.AlternativeRedirectCode.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAlternativeRedirectCode.Get"))
 		}
 		if arc > 0 && ar != nil {
-			h, err := scope.Hashes{h1, h2}.Lowest()
-			if err != nil {
-				return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] scope.Hashes.Lowest"))
-			}
-			opts[i] = geoip.WithAlternativeRedirect(h, ar.String(), arc)
+			opts[i] = geoip.WithAlternativeRedirect(typeID, ar.String(), arc)
 		}
 		i++
 

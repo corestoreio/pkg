@@ -43,7 +43,7 @@ type ScopedConfig struct {
 func newScopedConfig() *ScopedConfig {
 	sc := &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
-		IsAllowedFunc: func(_ scope.Hash, c *Country, allowedCountries []string) error {
+		IsAllowedFunc: func(_ scope.TypeID, c *Country, allowedCountries []string) error {
 			for _, ac := range allowedCountries {
 				if ac == c.Country.IsoCode { // case sensitive matching
 					return nil
@@ -70,7 +70,7 @@ func (sc *ScopedConfig) IsValid() error {
 	return nil
 }
 
-func (sc *ScopedConfig) checkAllow(s scope.Hash, c *Country) error {
+func (sc *ScopedConfig) checkAllow(s scope.TypeID, c *Country) error {
 	if len(sc.AllowedCountries) == 0 {
 		return nil
 	}
