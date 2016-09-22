@@ -193,22 +193,26 @@ func (bv baseValue) String() string {
 
 // ToPath creates a new cfgpath.Path bound to a scope. If the argument scope
 // does not match the defined scope in the Field, the error behaviour
-// Unauthorized gets returned.
+// Unauthorized gets returned. If no argument has been provided it falls back to
+// the default scope with ID 0.
 //
-// If you need a string returned, consider calling FQ(Scope,scopeID) or
-// MustFQ(Scope,scopeID). FQ = fully qualified path. The returned route in the
+// If you need a string returned, consider calling FQ() or
+// MustFQ*(). FQ = fully qualified path. The returned route in the
 // path is owned by the callee.
-func (bv baseValue) ToPath(h scope.TypeID) (cfgpath.Path, error) {
-
-	if err := bv.inScope(h); err != nil {
+func (bv baseValue) ToPath(h ...scope.TypeID) (cfgpath.Path, error) {
+	t := scope.DefaultTypeID
+	if len(h) == 1 {
+		t = h[0]
+	}
+	if err := bv.inScope(t); err != nil {
 		return cfgpath.Path{}, errors.Wrap(err, "[cfgmodel] ToPath")
 	}
 
 	p, err := cfgpath.New(bv.route)
 	if err != nil {
-		return cfgpath.Path{}, errors.Wrapf(err, "[cfgmodel] cfgpath.New: %q %s", bv.route, h)
+		return cfgpath.Path{}, errors.Wrapf(err, "[cfgmodel] cfgpath.New: %q %s", bv.route, t)
 	}
-	p.ScopeID = h
+	p.ScopeID = t
 	return p, nil
 }
 
@@ -249,15 +253,17 @@ func (bv baseValue) Options() source.Slice {
 
 // FQ generates a fully qualified configuration path. Example:
 // general/country/allow would transform with StrScope scope.StrStores and
-// storeID e.g. 4 into: stores/4/general/country/allow
-func (bv baseValue) FQ(h scope.TypeID) (string, error) {
-	p, err := bv.ToPath(h)
+// storeID e.g. 4 into: stores/4/general/country/allow If no argument has been
+// provided it falls back to the default scope with ID 0.
+func (bv baseValue) FQ(h ...scope.TypeID) (string, error) {
+	p, err := bv.ToPath(h...)
 	return p.String(), errors.Wrap(err, "[cfgmodel] ToPath")
 }
 
-// MustFQ same as FQ but panics on error. Please use only for testing.
-func (bv baseValue) MustFQ(h scope.TypeID) string {
-	p, err := bv.ToPath(h)
+// MustFQ same as FQ but panics on error. Please use only for testing. If no
+// argument has been provided it falls back to the default scope with ID 0.
+func (bv baseValue) MustFQ(h ...scope.TypeID) string {
+	p, err := bv.ToPath(h...)
 	if err != nil {
 		panic(err)
 	}

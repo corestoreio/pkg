@@ -297,3 +297,17 @@ func TestBaseValue_MustFQStore_Panic(t *testing.T) {
 	fq := p.MustFQStore(5)
 	assert.Empty(t, fq)
 }
+
+func TestBaseValue_MustFQWebsite(t *testing.T) {
+	const pth = "aa/bb/cc"
+	p := newBaseValue(pth, WithScopeStore())
+	fq := p.MustFQWebsite(4)
+	assert.Exactly(t, `websites/4/aa/bb/cc`, fq)
+}
+
+func TestBaseValue_MustFQStore(t *testing.T) {
+	const pth = "aa/bb/cc"
+	p := newBaseValue(pth, WithScopeStore())
+	fq := p.MustFQStore(5)
+	assert.Exactly(t, `stores/5/aa/bb/cc`, fq)
+}
