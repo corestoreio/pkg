@@ -94,7 +94,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return
@@ -107,10 +107,10 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 			return
 		}
 
-		if err := scpCfg.checkAllow(scpCfg.ScopeHash, c); err != nil {
+		if err := scpCfg.checkAllow(scpCfg.ScopeID, c); err != nil {
 			// access denied
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", log.Err(err), log.Stringer("scope", scpCfg.ScopeHash), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.AllowedCountries...))
+				s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.AllowedCountries...))
 			}
 			err = errors.Wrap(err, "[geoip] WithIsCountryAllowedByIP.CheckAllow")
 			scpCfg.AlternativeHandler(err).ServeHTTP(w, r)
@@ -119,7 +119,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 
 		// access granted
 		if s.Log.IsDebug() {
-			s.Log.Debug("Service.WithIsCountryAllowedByIP.checkAllow.true", log.Stringer("scope", scpCfg.ScopeHash), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.AllowedCountries...))
+			s.Log.Debug("Service.WithIsCountryAllowedByIP.checkAllow.true", log.Stringer("scope", scpCfg.ScopeID), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.AllowedCountries...))
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -163,7 +163,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 //
 //			if defaultScpCfg.Disabled {
 //				if s.Log.IsDebug() {
-//					s.Log.Debug("jwt.Service.WithRunMode.Disabled", log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
+//					s.Log.Debug("jwt.Service.WithRunMode.Disabled", log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg),
 //						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 //				}
 //				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
@@ -175,7 +175,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 //			ctx := withContext(r.Context(), token)
 //			if err != nil {
 //				if s.Log.IsDebug() {
-//					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg), log.HTTPRequest("request", r))
+//					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg), log.HTTPRequest("request", r))
 //				}
 //				// todo what should be done when the token has expired?
 //				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
@@ -189,7 +189,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 //				// no code found in token so call next handler and add the scope to the context
 //				if s.Log.IsDebug() {
 //					s.Log.Debug("jwt.Service.WithRunMode.NextHandler.WithoutCode", log.Marshal("token", token),
-//						log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
+//						log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg),
 //						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 //				}
 //				r = r.WithContext(scope.WithContext(ctx, websiteID, storeID))

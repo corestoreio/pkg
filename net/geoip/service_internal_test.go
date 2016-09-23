@@ -127,7 +127,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		scpCfg := s.ConfigByScopeHash(scope.DefaultTypeID, 0)
+		scpCfg := s.ConfigByScopeID(scope.DefaultTypeID, 0)
 		if err := scpCfg.IsValid(); err != nil {
 			t.Fatal(err)
 		}
@@ -150,7 +150,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		scpCfg := s.ConfigByScopeHash(scope.Store.Pack(331122), 0)
+		scpCfg := s.ConfigByScopeID(scope.Store.Pack(331122), 0)
 		if err := scpCfg.IsValid(); err != nil {
 			t.Fatal(err)
 		}

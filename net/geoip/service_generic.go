@@ -55,22 +55,21 @@ type service struct {
 	// WithOptionFactory()
 	optionFactory OptionFactoryFunc
 
-	// optionInflight checks on a per scope.Hash basis if the configuration
+	// optionInflight checks on a per scope.TypeID basis if the configuration
 	// loading process takes place. Stops the execution of other Goroutines (aka
-	// incoming requests) with the same scope.Hash until the configuration has
+	// incoming requests) with the same scope.TypeID until the configuration has
 	// been fully loaded and applied for that specific scope. This function gets
 	// set via WithOptionFactory()
 	optionInflight *singleflight.Group
 
 	// optionAfterApply allows to set a custom function which runs every time
-	// after the options has been applied. Gets only executed if not nil.
+	// after the options have been applied. Gets only executed if not nil.
 	optionAfterApply func() error
 
 	// rwmu protects all fields below
 	rwmu sync.RWMutex
 
-	// scopeCache internal cache of the configurations. scoped.Hash relates to
-	// the default,website or store ID.
+	// scopeCache internal cache for configurations.
 	scopeCache map[scope.TypeID]*ScopedConfig
 }
 
@@ -123,7 +122,7 @@ func (s *Service) ClearCache() error {
 	return nil
 }
 
-// DebugCache uses Sprintf to write an ordered list (by scope.Hash) into a
+// DebugCache uses Sprintf to write an ordered list (by scope.TypeID) into a
 // writer. Only usable for debugging.
 func (s *Service) DebugCache(w io.Writer) error {
 	s.rwmu.RLock()
@@ -192,12 +191,12 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 	// test if a direct entry can be found; if not we must apply either the
 	// optionFactory function or do a fall back to the website scope and/or
 	// default scope.
-	if sCfg := s.ConfigByScopeHash(current, 0); sCfg.IsValid() == nil {
+	if sCfg := s.ConfigByScopeID(current, 0); sCfg.IsValid() == nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug("geoip.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
 				log.Stringer("requested_parent_scope", scope.TypeID(0)),
-				log.Stringer("responded_scope", sCfg.ScopeHash),
+				log.Stringer("responded_scope", sCfg.ScopeID),
 			)
 		}
 		return sCfg
@@ -211,12 +210,12 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 			if err := s.Options(s.optionFactory(scpGet)...); err != nil {
 				return newScopedConfigError(errors.Wrap(err, "[geoip] Options applied by OptionFactoryFunc")), nil
 			}
-			sCfg := s.ConfigByScopeHash(current, parent)
+			sCfg := s.ConfigByScopeID(current, parent)
 			if s.Log.IsDebug() {
 				s.Log.Debug("geoip.Service.ConfigByScopedGetter.Inflight.Do",
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_parent_scope", parent),
-					log.Stringer("responded_scope", sCfg.ScopeHash),
+					log.Stringer("responded_scope", sCfg.ScopeID),
 					log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 				)
 			}
@@ -235,31 +234,31 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 		return sCfg
 	}
 
-	sCfg := s.ConfigByScopeHash(current, parent)
+	sCfg := s.ConfigByScopeID(current, parent)
 	// under very high load: 20 users within 10 MicroSeconds this might get executed
 	// 1-3 times. more thinking needed.
 	if s.Log.IsDebug() {
 		s.Log.Debug("geoip.Service.ConfigByScopedGetter.Parent",
 			log.Stringer("requested_scope", current),
 			log.Stringer("requested_parent_scope", parent),
-			log.Stringer("responded_scope", sCfg.ScopeHash),
+			log.Stringer("responded_scope", sCfg.ScopeID),
 			log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
 		)
 	}
 	return sCfg
 }
 
-// ConfigByScopeHash returns the correct configuration for a scope and may fall
-// back to the next higher scope: store -> website -> default. If `current` hash
-// is Store, then the `parent` can only be Website or Default. If an entry for a
-// scope cannot be found the next higher scope gets looked up and the pointer of
-// the next higher scope gets assigned to the current scope. This prevents
-// redundant configurations and enables us to change one scope configuration
-// with an impact on all other scopes which depend on the parent scope. A zero
-// `parent` triggers no further lookups. This function does not load any
-// configuration (config.Getter related) from the backend and accesses the
-// internal map of the Service directly.
-func (s *Service) ConfigByScopeHash(current scope.TypeID, parent scope.TypeID) (scpCfg ScopedConfig) {
+// ConfigByScopeID returns the correct configuration for a scope and may fall
+// back to the next higher scope: store -> website -> default. If `current`
+// TypeID is Store, then the `parent` can only be Website or Default. If an
+// entry for a scope cannot be found the next higher scope gets looked up and
+// the pointer of the next higher scope gets assigned to the current scope. This
+// prevents redundant configurations and enables us to change one scope
+// configuration with an impact on all other scopes which depend on the parent
+// scope. A zero `parent` triggers no further look ups. This function does not
+// load any configuration (config.Getter related) from the backend and accesses
+// the internal map of the Service directly.
+func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (scpCfg ScopedConfig) {
 	// current can be store or website scope
 	// parent can be website or default scope. If 0 then no fall back
 

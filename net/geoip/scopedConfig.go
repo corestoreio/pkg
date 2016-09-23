@@ -63,9 +63,9 @@ func (sc *ScopedConfig) IsValid() error {
 		return errors.Wrap(sc.lastErr, "[geoip] scopedConfig.isValid as an lastErr")
 	}
 
-	if sc.ScopeHash == 0 || sc.IsAllowedFunc == nil ||
+	if sc.ScopeID == 0 || sc.IsAllowedFunc == nil ||
 		sc.AlternativeHandler == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.IsAllowedFunc == nil, sc.AlternativeHandler == nil)
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.IsAllowedFunc == nil, sc.AlternativeHandler == nil)
 	}
 	return nil
 }

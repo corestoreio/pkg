@@ -30,7 +30,7 @@ import (
 // allowed to process the request. The StringSlice contains a list of ISO
 // country names fetched from the config.ScopedGetter. Return nil to indicate
 // that the request can continue.
-type IsAllowedFunc func(s scope.TypeID, c *Country, allowedCountries []string) error
+type IsAllowedFunc func(id scope.TypeID, c *Country, allowedCountries []string) error
 
 // WithDefaultConfig applies the default GeoIP configuration settings based for
 // a specific scope. This function overwrites any previous set options.
@@ -39,42 +39,25 @@ type IsAllowedFunc func(s scope.TypeID, c *Country, allowedCountries []string) e
 //		- Alternative Handler: variable DefaultAlternativeHandler
 //		- Logger black hole
 //		- Check allow: If allowed countries are empty, all countries are allowed
-func WithDefaultConfig(h scope.TypeID) Option {
-	return withDefaultConfig(h)
-}
-
-// WithDisable disables the whole GeoIP lookup for a scope.
-func WithDisable(h scope.TypeID, isDisabled bool) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.Disabled = isDisabled
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
-	}
+func WithDefaultConfig(id scope.TypeID) Option {
+	return withDefaultConfig(id)
 }
 
 // WithAlternativeHandler sets for a scope the alternative handler
 // if an IP address has been access denied.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAlternativeHandler(h scope.TypeID, altHndlr mw.ErrorHandler) Option {
+func WithAlternativeHandler(id scope.TypeID, altHndlr mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.AlternativeHandler = altHndlr
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -82,8 +65,8 @@ func WithAlternativeHandler(h scope.TypeID, altHndlr mw.ErrorHandler) Option {
 // WithAlternativeRedirect sets for a scope the error handler
 // on a Service if an IP address has been access denied.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAlternativeRedirect(h scope.TypeID, urlStr string, code int) Option {
-	return WithAlternativeHandler(h, func(_ error) http.Handler {
+func WithAlternativeRedirect(id scope.TypeID, urlStr string, code int) Option {
+	return WithAlternativeHandler(id, func(_ error) http.Handler {
 		return http.RedirectHandler(urlStr, code)
 	})
 }
@@ -92,36 +75,36 @@ func WithAlternativeRedirect(h scope.TypeID, urlStr string, code int) Option {
 // address should access to granted, or the next middleware handler in the chain
 // gets called.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithCheckAllow(h scope.TypeID, f IsAllowedFunc) Option {
+func WithCheckAllow(id scope.TypeID, f IsAllowedFunc) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.IsAllowedFunc = f
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
 
 // WithAllowedCountryCodes sets a list of ISO countries to be validated against.
 // Only to be used with function WithIsCountryAllowedByIP()
-func WithAllowedCountryCodes(h scope.TypeID, isoCountryCodes ...string) Option {
+func WithAllowedCountryCodes(id scope.TypeID, isoCountryCodes ...string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.AllowedCountries = isoCountryCodes
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
