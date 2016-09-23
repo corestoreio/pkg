@@ -84,7 +84,7 @@ func WithDefaultConfig(h scope.TypeID) Option {
 
 // WithSettings applies the Settings struct to a specific scope. Internal
 // functions will optimize the internal structure of the Settings struct.
-func WithSettings(h scope.TypeID, stng Settings) Option {
+func WithSettings(id scope.TypeID, stng Settings) Option {
 	exposedHeaders := convert(stng.ExposedHeaders, http.CanonicalHeaderKey)
 	allowedOriginsAll, allowedOrigins, allowedWOrigins := convertAllowedOrigins(stng.AllowedOrigins...)
 	am := convert(stng.AllowedMethods, strings.ToUpper)
@@ -95,7 +95,7 @@ func WithSettings(h scope.TypeID, stng Settings) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
@@ -129,8 +129,8 @@ func WithSettings(h scope.TypeID, stng Settings) Option {
 		}
 		sc.OptionsPassthrough = stng.OptionsPassthrough
 
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }

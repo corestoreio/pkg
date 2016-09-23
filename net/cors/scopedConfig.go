@@ -43,7 +43,7 @@ import (
 )
 
 // ScopedConfig scoped based configuration and should not be embedded into your
-// own types. Call ScopedConfig.ScopeHash to know to which scope this
+// own types. Call ScopedConfig.ScopeID to know to which scope this
 // configuration has been bound to.
 type ScopedConfig struct {
 	scopedConfigGeneric
@@ -54,18 +54,18 @@ type ScopedConfig struct {
 }
 
 // IsValid a configuration for a scope is only then valid when
-//	- ScopeHash set
+//	- ScopeID set
 //	- min 1x allowedMethods set
 //	- Logger not nil
 func (sc *ScopedConfig) IsValid() error {
-	if sc.lastErr != nil {
-		return errors.Wrap(sc.lastErr, "[cors] scopedConfig.isValid as an lastErr")
+	if err := sc.isValid(); err != nil {
+		return errors.Wrap(err, "[cors] scopedConfig.isValid as an lastErr")
 	}
 	// AML = allowed method length: Max 7, also useful for testing ;-)
-	if aml := len(sc.AllowedMethods); sc.ScopeHash > 0 && aml > 0 && aml <= 7 && sc.log != nil {
+	if aml := len(sc.AllowedMethods); sc.ScopeID > 0 && aml > 0 && aml <= 7 && sc.log != nil {
 		return nil
 	}
-	return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.AllowedMethods, sc.log == nil)
+	return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.AllowedMethods, sc.log == nil)
 }
 
 // newScopedConfig creates a new object with the minimum needed configuration.

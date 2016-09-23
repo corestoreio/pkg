@@ -33,6 +33,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestConfiguration_HierarchicalConfig(t *testing.T) {
+
+	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		backend.AllowedOrigins.MustFQWebsite(3): "x.com\ny.com",
+		backend.AllowedMethods.MustFQ():         "PUT\nDEL\nCUT",
+	}).NewScoped(3, 0)
+
+	srv := cors.MustNew(
+		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+	)
+	scpCfg := srv.ConfigByScopedGetter(scpCfgSrv)
+	if err := scpCfg.IsValid(); err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Exactly(t, []string{`x.com`, `y.com`}, scpCfg.AllowedOrigins)
+	assert.Exactly(t, []string{"PUT", "DEL", "CUT"}, scpCfg.AllowedMethods)
+}
+
 type fataler interface {
 	Fatal(args ...interface{})
 }

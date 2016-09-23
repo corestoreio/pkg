@@ -21,10 +21,10 @@ import (
 	"github.com/corestoreio/csfw/net/cors"
 )
 
-// Backend just exported for the sake of documentation. See fields for more
-// information. Please call the New() function for creating a new Backend
+// Configuration just exported for the sake of documentation. See fields for
+// more information. Please call the New() function for creating a new Backend
 // object. Only the New() function will set the paths to the fields.
-type Backend struct {
+type Configuration struct {
 	*cors.OptionFactories
 
 	// ExposedHeaders indicates which headers are safe to expose to the
@@ -88,8 +88,8 @@ type Backend struct {
 // New initializes the backend configuration models containing the cfgpath.Route
 // variable to the appropriate entries in the storage. The argument SectionSlice
 // and opts will be applied to all models.
-func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	be := &Backend{
+func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration {
+	be := &Configuration{
 		OptionFactories: cors.NewOptionFactories(),
 	}
 

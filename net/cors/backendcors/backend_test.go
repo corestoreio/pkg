@@ -17,7 +17,7 @@ package backendcors_test
 import "github.com/corestoreio/csfw/net/cors/backendcors"
 
 // backend overall backend models for all tests
-var backend *backendcors.Backend
+var backend *backendcors.Configuration
 
 // this would belong into the test suit setup
 func init() {
