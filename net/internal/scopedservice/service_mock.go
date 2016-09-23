@@ -48,13 +48,13 @@ func newScopedConfig() *ScopedConfig {
 }
 
 // WithDefaultConfig DO NOT USE
-func WithDefaultConfig(h scope.Hash) Option {
+func WithDefaultConfig(h scope.TypeID) Option {
 	return func(s *Service) error {
 		return withDefaultConfig(h)(s)
 	}
 }
 
-func withValue(h scope.Hash, val string) Option {
+func withValue(h scope.TypeID, val string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -64,7 +64,7 @@ func withValue(h scope.Hash, val string) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.value = val
-		sc.ScopeHash = h
+		sc.ScopeID = h
 		s.scopeCache[h] = sc
 		return nil
 	}

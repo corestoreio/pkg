@@ -53,12 +53,12 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	logBuf := new(log.MutexBuffer)
 
 	s := MustNew(
-		withValue(scope.Default.ToHash(0), "Default=0"),
-		withValue(scope.Website.ToHash(1), "Website=1"),
+		withValue(scope.Default.Pack(0), "Default=0"),
+		withValue(scope.Website.Pack(1), "Website=1"),
 		WithDebugLog(logBuf),
 	)
 
-	if err := s.Options(withValue(scope.Store.ToHash(2), "Store=1")); err != nil {
+	if err := s.Options(withValue(scope.Store.Pack(2), "Store=1")); err != nil {
 		t.Errorf("%+v", err)
 	}
 
@@ -82,41 +82,41 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 			cfg := s.ConfigByScopedGetter(test.cfg)
 
 			if have, want := cfg.value, test.want; have != want {
-				t.Errorf("(%d) Have: %q Want: %q (%s)", i, have, want, cfg.ScopeHash)
+				t.Errorf("(%d) Have: %q Want: %q (%s)", i, have, want, cfg.ScopeID)
 			}
 		}
 	}))
 
-	var comparePointers = func(h1, h2 scope.Hash) {
+	var comparePointers = func(h1, h2 scope.TypeID) {
 		if have, want := reflect.ValueOf(s.scopeCache[h1]).Pointer(), reflect.ValueOf(s.scopeCache[h2]).Pointer(); have != want {
 			t.Errorf("H1 Pointer: %d H2 Pointer: %d | %s => %s", have, want, h1, h2)
 		}
 	}
 	// the second argument must have the pointer of the first argument to avoid
 	// configuration duplication.
-	comparePointers(scope.DefaultHash, scope.NewHash(scope.Store, 777))
-	comparePointers(scope.NewHash(scope.Website, 1), scope.NewHash(scope.Store, 999))
+	comparePointers(scope.DefaultTypeID, scope.MakeTypeID(scope.Store, 777))
+	comparePointers(scope.MakeTypeID(scope.Website, 1), scope.MakeTypeID(scope.Store, 999))
 
 	buf := &bytes.Buffer{}
 	if err := s.DebugCache(buf); err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Contains(t, buf.String(), `Scope(Default) ID(0) => `)
-	assert.Contains(t, buf.String(), `Scope(Website) ID(1) => `)
-	assert.Contains(t, buf.String(), `Scope(Store) ID(2) => `)
-	assert.Contains(t, buf.String(), `Scope(Store) ID(777) => `)
-	assert.Contains(t, buf.String(), `Scope(Store) ID(999) => `)
+	assert.Contains(t, buf.String(), `Type(Default) ID(0) => `)
+	assert.Contains(t, buf.String(), `Type(Website) ID(1) => `)
+	assert.Contains(t, buf.String(), `Type(Store) ID(2) => `)
+	assert.Contains(t, buf.String(), `Type(Store) ID(777) => `)
+	assert.Contains(t, buf.String(), `Type(Store) ID(999) => `)
 }
 
 func TestService_ClearCache(t *testing.T) {
-	srv := MustNew(withValue(scope.Website.ToHash(33), "Gopher"), WithRootConfig(cfgmock.NewService()))
+	srv := MustNew(withValue(scope.Website.Pack(33), "Gopher"), WithRootConfig(cfgmock.NewService()))
 	cfg := srv.ConfigByScope(33, 44)
 	assert.NoError(t, cfg.IsValid(), "%+v", cfg.IsValid())
 	assert.Exactly(t, cfg.value, "Gopher")
 
 	assert.NoError(t, srv.ClearCache())
 
-	cfg = srv.ConfigByScopeHash(scope.Website.ToHash(33), 0)
+	cfg = srv.ConfigByScopeID(scope.Website.Pack(33), 0)
 	assert.True(t, errors.IsNotFound(cfg.IsValid()), "%+v", cfg.IsValid())
 	assert.Exactly(t, cfg.value, "")
 }

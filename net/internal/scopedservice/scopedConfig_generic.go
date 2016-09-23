@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -32,15 +33,20 @@ type scopedConfigGeneric struct {
 	// lastErr used during selecting the config from the scopeCache map and
 	// inflight package.
 	lastErr error
-	// ScopeHash defines the scope to which this configuration is bound to.
-	ScopeHash scope.Hash
-
-	// todo think about adding config.Scoped
-
+	// incomplete besides IsValid() this field can mark a configuration as
+	// complete or incomplete. The incomplete behaviour comes in handy when you
+	// load part of the configuration from the OptionFactory function and other
+	// parts like http handlers from the Go source code.
+	incomplete bool
+	// ScopeID defines the scope to which this configuration is bound to.
+	ScopeID scope.TypeID
+	// Disabled set to true to disable the Service for this scope.
+	Disabled bool
 	// ErrorHandler gets called whenever a programmer makes an error. The
 	// default handler prints the error to the client and returns
 	// http.StatusServiceUnavailable
 	mw.ErrorHandler
+	// TODO(CyS) think about adding config.Scoped
 }
 
 // newScopedConfigError easy helper to create an error
@@ -57,7 +63,7 @@ func newScopedConfigError(err error) ScopedConfig {
 // This function must be embedded in the targeted package newScopedConfig().
 func newScopedConfigGeneric() scopedConfigGeneric {
 	return scopedConfigGeneric{
-		ScopeHash:    scope.DefaultHash,
+		ScopeID:      scope.DefaultTypeID,
 		ErrorHandler: defaultErrorHandler,
 	}
 }
@@ -67,10 +73,24 @@ func newScopedConfigGeneric() scopedConfigGeneric {
 // functional option because it expects that it runs within an acquired lock
 // because of the map.
 func optionInheritDefault(s *Service) *ScopedConfig {
-	if sc, ok := s.scopeCache[scope.DefaultHash]; ok && sc != nil {
+	if sc, ok := s.scopeCache[scope.DefaultTypeID]; ok && sc != nil {
 		shallowCopy := new(ScopedConfig)
 		*shallowCopy = *sc
 		return shallowCopy
 	}
 	return newScopedConfig()
+}
+
+// isValid internal pre-check for the public IsValid() function
+func (sc *ScopedConfig) isValid() (err error) {
+	switch {
+	case sc.lastErr != nil:
+		err = errors.Wrap(sc.lastErr, "[scopedservice] ScopedConfig.isValid has an lastErr")
+	case sc.ScopeID == 0:
+		err = errors.NewNotValidf(errConfigScopeIDNotSet)
+	case sc.incomplete:
+		// this entry triggers the loading of the OptionFactoriesFunc
+		err = errors.NewNotValidf(errConfigMarkedAsIncomplete)
+	}
+	return err
 }

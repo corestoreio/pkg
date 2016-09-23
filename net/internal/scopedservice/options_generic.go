@@ -47,12 +47,12 @@ func OptionsError(err error) []Option {
 }
 
 // withDefaultConfig triggers the default settings
-func withDefaultConfig(h scope.Hash) Option {
+func withDefaultConfig(h scope.TypeID) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		sc := optionInheritDefault(s)
-		sc.ScopeHash = h
+		sc.ScopeID = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -62,7 +62,7 @@ func withDefaultConfig(h scope.Hash) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(h scope.Hash, eh mw.ErrorHandler) Option {
+func WithErrorHandler(h scope.TypeID, eh mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
@@ -72,7 +72,7 @@ func WithErrorHandler(h scope.Hash, eh mw.ErrorHandler) Option {
 			sc = optionInheritDefault(s)
 		}
 		sc.ErrorHandler = eh
-		sc.ScopeHash = h
+		sc.ScopeID = h
 		s.scopeCache[h] = sc
 		return nil
 	}
@@ -89,8 +89,9 @@ func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
 	}
 }
 
-// WithRootConfig sets the root configuration service. While using any HTTP
-// related functions or middlewares you must set the config.Getter.
+// WithRootConfig sets the root configuration service to retrieve the scoped
+// base configuration. If you set the option WithOptionFactory() then the option
+// WithRootConfig() does not need to be set as it won't get used.
 func WithRootConfig(cg config.Getter) Option {
 	_ = cg.NewScoped(0, 0) // let it panic as early as possible if cg is nil
 	return func(s *Service) error {
@@ -118,6 +119,44 @@ func WithLogger(l log.Logger) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		s.Log = l
+		return nil
+	}
+}
+
+// WithDisable disables the whole GeoIP lookup for a scope.
+func WithDisable(h scope.TypeID, isDisabled bool) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.Disabled = isDisabled
+		sc.ScopeID = h
+		s.scopeCache[h] = sc
+		return nil
+	}
+}
+
+// WithIncomplete marks a configuration for a scope as incomplete so that the
+// scopeCache retriever functions know that they can trigger the
+// OptionFactoryFunc. Useful in the case where parts of the configurations are
+// coming from backend storages and other parts like http handler have been set
+// via code.
+func WithIncomplete(h scope.TypeID) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[h]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.incomplete = true
+		sc.ScopeID = h
+		s.scopeCache[h] = sc
 		return nil
 	}
 }

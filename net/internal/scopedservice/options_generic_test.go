@@ -50,9 +50,9 @@ func TestWithConfigGetter(t *testing.T) {
 
 func TestWithErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
-	s, err := newService(WithErrorHandler(scope.Store.ToHash(44), eh))
+	s, err := newService(WithErrorHandler(scope.Store.Pack(44), eh))
 	assert.NoError(t, err)
-	cfg := s.ConfigByScopeHash(scope.NewHash(scope.Store, 44), 0)
+	cfg := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
 	assert.NotNil(t, cfg.ErrorHandler)
 	cstesting.EqualPointers(t, eh, cfg.ErrorHandler)
 	cstesting.EqualPointers(t, s.ErrorHandler, defaultErrorHandler)
@@ -77,8 +77,8 @@ func TestOptionFactories(t *testing.T) {
 
 	var off OptionFactoryFunc = func(config.Scoped) []Option {
 		return []Option{
-			withValue(scope.Store.ToHash(1), "a value for the store 1 scope"),
-			withValue(scope.Website.ToHash(2), "a value for the website 2 scope"),
+			withValue(scope.Store.Pack(1), "a value for the store 1 scope"),
+			withValue(scope.Website.Pack(2), "a value for the website 2 scope"),
 		}
 	}
 
@@ -98,7 +98,7 @@ func TestOptionFactories(t *testing.T) {
 func TestNewScopedConfigGeneric(t *testing.T) {
 
 	scg := newScopedConfigGeneric()
-	assert.Exactly(t, scope.DefaultHash, scg.ScopeHash)
+	assert.Exactly(t, scope.DefaultTypeID, scg.ScopeID)
 	assert.Nil(t, scg.lastErr)
 	assert.NotNil(t, scg.ErrorHandler)
 
@@ -115,5 +115,17 @@ func TestWithDebugLog(t *testing.T) {
 
 	scpCfg := srv.ConfigByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
 	assert.NoError(t, scpCfg.IsValid(), "%+v", scpCfg.IsValid())
-	assert.Contains(t, logBuf.String(), `scopedservice.Service.ConfigByScopedGetter.IsValid requested_scope: "Scope(Default) ID(0)" requested_parent_scope: "Scope(Absent) ID(0)" responded_scope: "Scope(Default) ID(0)"`)
+	assert.Contains(t, logBuf.String(), `scopedservice.Service.ConfigByScopedGetter.IsValid requested_scope: "Type(Default) ID(0)" requested_parent_scope: "Type(Absent) ID(0)" responded_scope: "Type(Default) ID(0)"`)
+}
+
+func TestWithLogger(t *testing.T) {
+	t.Skip("TODO")
+}
+
+func TestWithDisable(t *testing.T) {
+	t.Skip("TODO")
+}
+
+func TestWithIncomplete(t *testing.T) {
+	t.Skip("TODO")
 }
