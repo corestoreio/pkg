@@ -119,13 +119,33 @@ func TestWithDebugLog(t *testing.T) {
 }
 
 func TestWithLogger(t *testing.T) {
-	t.Skip("TODO")
+	nl := log.BlackHole{}
+	srv := MustNew(WithLogger(nl))
+	assert.Exactly(t, nl, srv.Log)
 }
 
 func TestWithDisable(t *testing.T) {
-	t.Skip("TODO")
+	srv := MustNew(
+		WithRootConfig(cfgmock.NewService()),
+		WithDisable(scope.Website.Pack(2), true),
+		WithDisable(scope.Store.Pack(3), true),
+	)
+	scpCfg := srv.ConfigByScope(2, 0)
+	assert.NoError(t, scpCfg.IsValid())
+	assert.True(t, scpCfg.Disabled)
+
+	scpCfg = srv.ConfigByScope(22, 3)
+	assert.NoError(t, scpCfg.IsValid())
+	assert.True(t, scpCfg.Disabled)
 }
 
 func TestWithIncomplete(t *testing.T) {
-	t.Skip("TODO")
+	srv := MustNew(
+		WithRootConfig(cfgmock.NewService()),
+		WithIncomplete(scope.Store.Pack(4)),
+	)
+
+	scpCfg := srv.ConfigByScope(22, 4)
+	err := scpCfg.IsValid()
+	assert.True(t, errors.IsTemporary(err), "%+v", err)
 }

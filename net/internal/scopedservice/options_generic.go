@@ -47,13 +47,13 @@ func OptionsError(err error) []Option {
 }
 
 // withDefaultConfig triggers the default settings
-func withDefaultConfig(h scope.TypeID) Option {
+func withDefaultConfig(id scope.TypeID) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		sc := optionInheritDefault(s)
-		sc.ScopeID = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -62,18 +62,18 @@ func withDefaultConfig(h scope.TypeID) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(h scope.TypeID, eh mw.ErrorHandler) Option {
+func WithErrorHandler(id scope.TypeID, eh mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.ErrorHandler = eh
-		sc.ScopeID = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -123,40 +123,40 @@ func WithLogger(l log.Logger) Option {
 	}
 }
 
-// WithDisable disables the whole GeoIP lookup for a scope.
-func WithDisable(h scope.TypeID, isDisabled bool) Option {
+// WithDisable disables the current service and calls the next HTTP handler.
+func WithDisable(id scope.TypeID, isDisabled bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.Disabled = isDisabled
-		sc.ScopeID = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
 
 // WithIncomplete marks a configuration for a scope as incomplete so that the
-// scopeCache retriever functions know that they can trigger the
+// scopeCache retriever functions know that it can trigger the
 // OptionFactoryFunc. Useful in the case where parts of the configurations are
 // coming from backend storages and other parts like http handler have been set
 // via code.
-func WithIncomplete(h scope.TypeID) Option {
+func WithIncomplete(id scope.TypeID) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.incomplete = true
-		sc.ScopeID = h
-		s.scopeCache[h] = sc
+		sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsIncomplete, sc)
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }

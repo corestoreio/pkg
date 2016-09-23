@@ -33,11 +33,6 @@ type scopedConfigGeneric struct {
 	// lastErr used during selecting the config from the scopeCache map and
 	// inflight package.
 	lastErr error
-	// incomplete besides IsValid() this field can mark a configuration as
-	// complete or incomplete. The incomplete behaviour comes in handy when you
-	// load part of the configuration from the OptionFactory function and other
-	// parts like http handlers from the Go source code.
-	incomplete bool
 	// ScopeID defines the scope to which this configuration is bound to.
 	ScopeID scope.TypeID
 	// Disabled set to true to disable the Service for this scope.
@@ -88,9 +83,6 @@ func (sc *ScopedConfig) isValid() (err error) {
 		err = errors.Wrap(sc.lastErr, "[scopedservice] ScopedConfig.isValid has an lastErr")
 	case sc.ScopeID == 0:
 		err = errors.NewNotValidf(errConfigScopeIDNotSet)
-	case sc.incomplete:
-		// this entry triggers the loading of the OptionFactoriesFunc
-		err = errors.NewNotValidf(errConfigMarkedAsIncomplete)
 	}
 	return err
 }
