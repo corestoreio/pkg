@@ -140,27 +140,6 @@ func WithDisable(id scope.TypeID, isDisabled bool) Option {
 	}
 }
 
-// WithIncomplete marks a configuration for a scope as incomplete so that the
-// scopeCache retriever functions know that it can trigger the
-// OptionFactoryFunc. Useful in the case where parts of the configurations are
-// coming from backend storages and other parts like http handler have been set
-// via code.
-func WithIncomplete(id scope.TypeID) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsIncomplete, sc)
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
-	}
-}
-
 // WithOptionFactory applies a function which lazily loads the options from a
 // slow backend (config.Getter) depending on the incoming scope within a
 // request. For example applies the backend configuration to the service.

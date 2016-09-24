@@ -138,14 +138,3 @@ func TestWithDisable(t *testing.T) {
 	assert.NoError(t, scpCfg.IsValid())
 	assert.True(t, scpCfg.Disabled)
 }
-
-func TestWithIncomplete(t *testing.T) {
-	srv := MustNew(
-		WithRootConfig(cfgmock.NewService()),
-		WithIncomplete(scope.Store.Pack(4)),
-	)
-
-	scpCfg := srv.ConfigByScope(22, 4)
-	err := scpCfg.IsValid()
-	assert.True(t, errors.IsTemporary(err), "%+v", err)
-}

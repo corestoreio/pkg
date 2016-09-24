@@ -21,4 +21,3 @@ import "github.com/corestoreio/csfw/util/errors"
 var errConfigNotFound = errors.NewNotFoundf(`[scopedservice] ScopedConfig not available`)
 
 const errConfigScopeIDNotSet = `[scopedservice] ScopeID not set`
-const errConfigMarkedAsIncomplete = `[scopedservice] Scoped configuration %s marked as incomplete.`
