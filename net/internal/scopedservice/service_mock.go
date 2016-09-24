@@ -32,13 +32,10 @@ type ScopedConfig struct {
 	value string
 }
 
-// IsValid returns nil if the scoped configuration os valid otherwise a detailed
+// isValid returns nil if the scoped configuration os valid otherwise a detailed
 // error.
-func (sc *ScopedConfig) IsValid() error {
-	if sc.lastErr != nil {
-		return sc.lastErr
-	}
-	return nil
+func (sc *ScopedConfig) isValid() error {
+	return sc.isValidPreCheck()
 }
 
 func newScopedConfig() *ScopedConfig {

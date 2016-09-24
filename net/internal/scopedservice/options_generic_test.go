@@ -114,7 +114,7 @@ func TestWithDebugLog(t *testing.T) {
 	assert.NoError(t, err, "%+v", err)
 
 	scpCfg := srv.ConfigByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
-	assert.NoError(t, scpCfg.IsValid(), "%+v", scpCfg.IsValid())
+	assert.NoError(t, scpCfg.isValid(), "%+v", scpCfg.isValid())
 	assert.Contains(t, logBuf.String(), `scopedservice.Service.ConfigByScopedGetter.IsValid requested_scope: "Type(Default) ID(0)" requested_parent_scope: "Type(Absent) ID(0)" responded_scope: "Type(Default) ID(0)"`)
 }
 
@@ -131,10 +131,25 @@ func TestWithDisable(t *testing.T) {
 		WithDisable(scope.Store.Pack(3), true),
 	)
 	scpCfg := srv.ConfigByScope(2, 0)
-	assert.NoError(t, scpCfg.IsValid())
+	assert.NoError(t, scpCfg.isValid())
 	assert.True(t, scpCfg.Disabled)
 
 	scpCfg = srv.ConfigByScope(22, 3)
-	assert.NoError(t, scpCfg.IsValid())
+	assert.NoError(t, scpCfg.isValid())
 	assert.True(t, scpCfg.Disabled)
+}
+
+func TestWithTriggerOptionFactories(t *testing.T) {
+	srv := MustNew(
+		WithRootConfig(cfgmock.NewService()),
+		WithTriggerOptionFactories(scope.Store.Pack(4), true),
+	)
+	scpCfg := srv.ConfigByScope(22, 4)
+	err := scpCfg.isValid()
+	assert.True(t, errors.IsTemporary(err), "%+v", err)
+
+	assert.NoError(t, srv.Options(WithTriggerOptionFactories(scope.Store.Pack(4), false)))
+	scpCfg = srv.ConfigByScope(22, 4)
+	err = scpCfg.isValid()
+	assert.NoError(t, err, "%+v")
 }

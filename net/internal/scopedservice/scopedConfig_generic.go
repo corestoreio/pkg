@@ -76,8 +76,8 @@ func optionInheritDefault(s *Service) *ScopedConfig {
 	return newScopedConfig()
 }
 
-// isValid internal pre-check for the public IsValid() function
-func (sc *ScopedConfig) isValid() (err error) {
+// isValidPreCheck internal pre-check for the public IsValid() function
+func (sc *ScopedConfig) isValidPreCheck() (err error) {
 	switch {
 	case sc.lastErr != nil:
 		err = errors.Wrap(sc.lastErr, "[scopedservice] ScopedConfig.isValid has an lastErr")

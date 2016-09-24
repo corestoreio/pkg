@@ -116,7 +116,9 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// ClearCache clears the internal map storing all scoped configurations
+// ClearCache clears the internal map storing all scoped configurations. You
+// must reapply all functional options.
+// TODO(CyS) all previously applied options will be automatically reapplied.
 func (s *Service) ClearCache() error {
 	s.scopeCache = make(map[scope.TypeID]*ScopedConfig)
 	return nil
@@ -169,7 +171,7 @@ func (s *Service) configByContext(ctx context.Context) (scpCfg ScopedConfig) {
 	}
 
 	scpCfg = s.ConfigByScope(websiteID, storeID)
-	if err := scpCfg.IsValid(); err != nil {
+	if err := scpCfg.isValid(); err != nil {
 		// the scoped configuration is invalid and hence a programmer or package user
 		// made a mistake.
 		scpCfg.lastErr = errors.Wrap(err, "[scopedservice] Service.configByContext.configFromScope") // rewrite error
@@ -191,7 +193,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 	// test if a direct entry can be found; if not we must apply either the
 	// optionFactory function or do a fall back to the website scope and/or
 	// default scope.
-	if sCfg := s.ConfigByScopeID(current, 0); sCfg.IsValid() == nil {
+	if sCfg := s.ConfigByScopeID(current, 0); sCfg.isValid() == nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
@@ -216,7 +218,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_parent_scope", parent),
 					log.Stringer("responded_scope", sCfg.ScopeID),
-					log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
+					log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
 				)
 			}
 			return sCfg, nil
@@ -242,7 +244,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 			log.Stringer("requested_scope", current),
 			log.Stringer("requested_parent_scope", parent),
 			log.Stringer("responded_scope", sCfg.ScopeID),
-			log.ErrWithKey("responded_scope_valid", sCfg.IsValid()),
+			log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
 		)
 	}
 	return sCfg

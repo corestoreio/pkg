@@ -111,12 +111,12 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 func TestService_ClearCache(t *testing.T) {
 	srv := MustNew(withValue(scope.Website.Pack(33), "Gopher"), WithRootConfig(cfgmock.NewService()))
 	cfg := srv.ConfigByScope(33, 44)
-	assert.NoError(t, cfg.IsValid(), "%+v", cfg.IsValid())
+	assert.NoError(t, cfg.isValid(), "%+v", cfg.isValid())
 	assert.Exactly(t, cfg.value, "Gopher")
 
 	assert.NoError(t, srv.ClearCache())
 
 	cfg = srv.ConfigByScopeID(scope.Website.Pack(33), 0)
-	assert.True(t, errors.IsNotFound(cfg.IsValid()), "%+v", cfg.IsValid())
+	assert.True(t, errors.IsNotFound(cfg.isValid()), "%+v", cfg.isValid())
 	assert.Exactly(t, cfg.value, "")
 }
