@@ -382,7 +382,7 @@ func (s *Service) HasSingleStore() bool {
 // switchers etc). Store scope specific flag.
 func (s *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
 
-	key := scope.MakeTypeID(cfg.Scope())
+	key := cfg.ScopeID()
 	s.mu.RLock()
 	has, ok := s.cacheSingleStore[key]
 	s.mu.RUnlock()
