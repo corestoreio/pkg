@@ -27,13 +27,39 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/net/jwt/backendjwt"
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestConfiguration_HierarchicalConfig(t *testing.T) {
+
+	// allow all scopes for testing
+	//backend.Skew.Field.Scopes = scope.PermStoreReverse
+
+	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		backend.SingleTokenUsage.MustFQ():     `1`,
+		backend.Expiration.MustFQWebsite(3):   `66s`,
+		backend.Skew.MustFQ():                 `33s`,
+		backend.HmacPassword.MustFQWebsite(3): `This is a secure encrypted password.`,
+	}).NewScoped(3, 0)
+
+	srv := jwt.MustNew(
+		jwt.WithOptionFactory(backendjwt.PrepareOptions(backend)),
+	)
+	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.True(t, scpCfg.SingleTokenUsage)
+	assert.Exactly(t, time.Second*33, scpCfg.Skew)
+	assert.Exactly(t, time.Second*66, scpCfg.Expire)
+}
 
 func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	cfgStruct, err := backendjwt.NewConfigStructure()
@@ -43,47 +69,45 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-		pb.SigningMethod.MustFQ(scope.Default, 0): "ES384",
-		pb.SigningMethod.MustFQ(scope.Website, 1): "HS512",
+		pb.SigningMethod.MustFQ():         "ES384",
+		pb.SigningMethod.MustFQWebsite(1): "HS512",
 
-		pb.SingleTokenUsage.MustFQ(scope.Default, 0): 0, // disabled
-		pb.SingleTokenUsage.MustFQ(scope.Website, 1): 1, // enabled
+		pb.SingleTokenUsage.MustFQ():         0, // disabled
+		pb.SingleTokenUsage.MustFQWebsite(1): 1, // enabled
 
-		pb.Disabled.MustFQ(scope.Default, 0): 0, // disable: disabled 8-)
-		pb.Disabled.MustFQ(scope.Website, 1): 1, // disable: enabled 8-)
+		//pb.Disabled.MustFQ():         0, // disable: disabled 8-)
+		//pb.Disabled.MustFQWebsite(1): 1, // disable: enabled 8-)
 
-		pb.Expiration.MustFQ(scope.Default, 0): "2m",
-		pb.Expiration.MustFQ(scope.Website, 1): "5m1s",
+		pb.Expiration.MustFQ():         "2m",
+		pb.Expiration.MustFQWebsite(1): "5m1s",
 
-		pb.Skew.MustFQ(scope.Default, 0): "4m",
-		pb.Skew.MustFQ(scope.Website, 1): "6m1s",
+		pb.Skew.MustFQ():         "4m",
+		pb.Skew.MustFQWebsite(1): "6m1s",
 
-		pb.HmacPassword.MustFQ(scope.Default, 0): "pw1",
-		pb.HmacPassword.MustFQ(scope.Website, 1): "pw2",
+		pb.HmacPassword.MustFQ():         "pw1",
+		pb.HmacPassword.MustFQWebsite(1): "pw2",
 	})
 
-	jwts := jwt.MustNew(
-		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
-	)
+	jwts := jwt.MustNew(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
 
 	sg := cfgSrv.NewScoped(1, 0) // only website scope supported
 
-	scNew := jwts.ConfigByScopedGetter(sg)
-	if err := scNew.IsValid(); err != nil {
+	scNew, err := jwts.ConfigByScopedGetter(sg)
+	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
-	assert.True(t, scNew.SingleTokenUsage)
-	assert.True(t, scNew.Disabled)
-	assert.Exactly(t, "5m1s", scNew.Expire.String())
-	assert.Exactly(t, "6m1s", scNew.Skew.String())
-	assert.Exactly(t, "HS512", scNew.SigningMethod.Alg())
+	assert.True(t, scNew.SingleTokenUsage, "SingleTokenUsage")
+	assert.False(t, scNew.Disabled, "Disabled")
+	assert.Exactly(t, "5m1s", scNew.Expire.String(), "Expire")
+	assert.Exactly(t, "6m1s", scNew.Skew.String(), "Skew")
+	assert.Exactly(t, "HS512", scNew.SigningMethod.Alg(), "SigningMethod")
 	assert.False(t, scNew.Key.IsEmpty())
 	assert.NotNil(t, scNew.ErrorHandler)
 
 	// test if cache returns the same scopedConfig
-	scCached := jwts.ConfigByScopedGetter(sg)
-	if err := scCached.IsValid(); err != nil {
+	scCached, err := jwts.ConfigByScopedGetter(sg)
+	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	// reflect.DeepEqual returns here false because scCached was copied.
@@ -99,12 +123,11 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-		pb.SigningMethod.MustFQ(scope.Default, 0):    "HS384",
-		pb.SingleTokenUsage.MustFQ(scope.Default, 0): 0, // disabled
-		pb.Disabled.MustFQ(scope.Default, 0):         1, // disabled active
-		pb.Expiration.MustFQ(scope.Default, 0):       "2m",
-		pb.Skew.MustFQ(scope.Default, 0):             "3m",
-		pb.HmacPassword.MustFQ(scope.Default, 0):     "pw1",
+		pb.SigningMethod.MustFQ():    "HS384",
+		pb.SingleTokenUsage.MustFQ(): 0, // disabled
+		pb.Expiration.MustFQ():       "2m",
+		pb.Skew.MustFQ():             "3m",
+		pb.HmacPassword.MustFQ():     "pw1",
 	})
 
 	jwts := jwt.MustNew(
@@ -113,21 +136,21 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 	sg := cfgSrv.NewScoped(1, 0) // 1 = website euro and 0 no store ID provided like in the middleware
 
-	scNew := jwts.ConfigByScopedGetter(sg)
-	if err := scNew.IsValid(); err != nil {
+	scNew, err := jwts.ConfigByScopedGetter(sg)
+	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
 	assert.False(t, scNew.SingleTokenUsage)
-	assert.True(t, scNew.Disabled)
+	assert.False(t, scNew.Disabled)
 	assert.Exactly(t, "2m0s", scNew.Expire.String())
 	assert.Exactly(t, "3m0s", scNew.Skew.String())
 	assert.Exactly(t, "HS384", scNew.SigningMethod.Alg())
 	assert.False(t, scNew.Key.IsEmpty())
 
 	// test if cache returns the same scopedConfig
-	scCached := jwts.ConfigByScopedGetter(sg)
-	if err := scCached.IsValid(); err != nil {
+	scCached, err := jwts.ConfigByScopedGetter(sg)
+	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	// reflect.DeepEqual returns here false because scCached was copied.
@@ -151,11 +174,11 @@ func TestServiceWithBackend_MissingSectionSlice(t *testing.T) {
 	jwts := jwt.MustNew(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.SigningMethod.MustFQ(scope.Default, 0): "HS4711",
+		pb.SigningMethod.MustFQ(): "HS4711",
 	})
 
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.True(t, errors.IsNotFound(sc.IsValid()), "Error: %+v", sc.IsValid())
+	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
+	assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
 }
 
 func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
@@ -163,11 +186,11 @@ func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.SigningMethod.MustFQ(scope.Default, 0): "HS4711",
+		pb.SigningMethod.MustFQ(): "HS4711",
 	})
 
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.True(t, errors.IsNotImplemented(sc.IsValid()), "Error: %+v", sc.IsValid())
+	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
+	assert.True(t, errors.IsNotImplemented(err), "Error: %+v", err)
 }
 
 func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
@@ -175,11 +198,10 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.Expiration.MustFQ(scope.Default, 0): "Fail",
+		pb.Expiration.MustFQ(): "Fail",
 	})
 
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	err := sc.IsValid()
+	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 }
 
@@ -188,11 +210,10 @@ func TestServiceWithBackend_InvalidSkew(t *testing.T) {
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.Skew.MustFQ(scope.Default, 0): "Fail171",
+		pb.Skew.MustFQ(): "Fail171",
 	})
 
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	err := sc.IsValid()
+	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 }
 
@@ -201,11 +222,10 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.SingleTokenUsage.MustFQ(scope.Default, 0): []byte(`1`),
+		pb.SingleTokenUsage.MustFQ(): []byte(`1`),
 	})
 
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
-	err := sc.IsValid()
+	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 }
 
@@ -214,13 +234,12 @@ func TestServiceWithBackend_RSAFail(t *testing.T) {
 	jwts, pb := getJwts(cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.SigningMethod.MustFQ(scope.Default, 0):  "RS256",
-		pb.RSAKey.MustFQ(scope.Default, 0):         []byte(`1`),
-		pb.RSAKeyPassword.MustFQ(scope.Default, 0): nil,
+		pb.SigningMethod.MustFQ():  "RS256",
+		pb.RSAKey.MustFQ():         []byte(`1`),
+		pb.RSAKeyPassword.MustFQ(): nil,
 	})
 
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(1, 0))
-	err := sc.IsValid()
+	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 0))
 	assert.True(t, errors.IsNotSupported(err))
 }
 
@@ -241,12 +260,12 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 	// create a configuration for websiteID 1. this configuration resides usually in
 	// the MySQL core_config_data table.
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-		pb.SigningMethod.MustFQ(scope.Website, 1):    "HS512",
-		pb.SingleTokenUsage.MustFQ(scope.Website, 1): 1, // enabled
-		pb.Disabled.MustFQ(scope.Website, 1):         0, // JWT parsing enabled
-		pb.Expiration.MustFQ(scope.Website, 1):       "5m1s",
-		pb.Skew.MustFQ(scope.Website, 1):             "6m1s",
-		pb.HmacPassword.MustFQ(scope.Website, 1):     "pw2",
+		pb.SigningMethod.MustFQWebsite(1):    "HS512",
+		pb.SingleTokenUsage.MustFQWebsite(1): 1, // enabled
+		pb.Disabled.MustFQWebsite(1):         0, // JWT parsing enabled
+		pb.Expiration.MustFQWebsite(1):       "5m1s",
+		pb.Skew.MustFQWebsite(1):             "6m1s",
+		pb.HmacPassword.MustFQWebsite(1):     "pw2",
 	})
 
 	logBuf := new(bytes.Buffer)
@@ -254,19 +273,28 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 		jwt.WithRootConfig(cfgSrv),
 		jwt.WithDebugLog(logBuf),
 		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
+		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
+		jwt.WithErrorHandler(scope.Website.Pack(1), mw.ErrorWithPanic),
+		jwt.WithTriggerOptionFactories(scope.Website.Pack(1), true), // because we load more from the OptionFactories
 	)
 
 	// our token will be crafted to contain the DE store so the JWT middleware
 	// must change the store to Germany, the store code with wich we've started
 	// was Austria AT.
 
-	_ = jwts.ConfigByScope(1, 0) // init config, triggers first Log entry: jwt.Service.ConfigByScopedGetter.Inflight.Do
+	xcfg, err := jwts.ConfigByScope(1, 0) // init config, triggers first Log entry: jwt.Service.ConfigByScopedGetter.Inflight.Do
+	if err != nil && !errors.IsTemporary(err) {
+		t.Fatalf("Expecting temporary error because config marked as partially loaded: %+v\n", err)
+	}
+	if xcfg.SigningMethod.Alg() != csjwt.HS512 {
+		t.Fatalf("Expecting SigningMethod to be Have: %q Want %q Scope %s", xcfg.SigningMethod.Alg(), csjwt.HS512, xcfg.ScopeID)
+	}
 
 	rawToken := func() []byte {
 		stClaim := jwtclaim.NewStore()
 		stClaim.Store = "de"
 		stClaim.UserID = "hans_wurst"
-		newToken, err := jwts.NewToken(scope.Website.ToHash(1), stClaim)
+		newToken, err := jwts.NewToken(scope.Website.Pack(1), stClaim)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -291,13 +319,13 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 	hpu := cstesting.NewHTTPParallelUsers(4, 10, 100, time.Microsecond)
 	hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
 		if have, want := rec.Code, 200; have != want {
-			t.Errorf("Response Code wrong. Have: %v Want: %v", have, want)
+			t.Errorf("Response Code wrong. Have: %v Want: %v\n\n%s", have, want, rec.Body)
 		}
 	}
 	hpu.ServeHTTP(
 		req,
 		jwts.WithRunMode(
-			scope.NewHash(scope.Website, 1), // use euro wesite with default store AT.
+			scope.MakeTypeID(scope.Website, 1), // use euro website with default store AT.
 			storemock.NewEurozzyService(cfgSrv),
 		)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tk, ok := jwt.FromContext(r.Context())

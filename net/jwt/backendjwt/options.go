@@ -28,98 +28,92 @@ import (
 func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 	return func(sg config.Scoped) []jwt.Option {
 		var (
-			opts [6]jwt.Option
+			opts [7]jwt.Option
 			i    int // used as index in opts
 		)
+		scopeID := scope.MakeTypeID(sg.Scope())
 
-		off, h, err := be.Disabled.Get(sg)
+		off, _, err := be.Disabled.Get(sg)
+		// todo ignore NotFound errors because value might can come from the functional options.
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtDisabled.Get"))
 		}
-		opts[i] = jwt.WithDisable(h, off)
+		opts[i] = jwt.WithDisable(scopeID, off)
 		i++
+		if off {
+			return opts[:i]
+		}
 
-		exp, h, err := be.Expiration.Get(sg)
+		exp, _, err := be.Expiration.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtExpiration.Get"))
 		}
-		opts[i] = jwt.WithExpiration(h, exp)
+		opts[i] = jwt.WithExpiration(scopeID, exp)
 		i++
 
-		skew, h, err := be.Skew.Get(sg)
+		skew, _, err := be.Skew.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSkew.Get"))
 		}
-		opts[i] = jwt.WithSkew(h, skew)
+		opts[i] = jwt.WithSkew(scopeID, skew)
 		i++
 
-		isSU, h, err := be.SingleTokenUsage.Get(sg)
+		isSU, _, err := be.SingleTokenUsage.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSingleUsage.Get"))
 		}
-		opts[i] = jwt.WithSingleTokenUsage(h, isSU)
+		opts[i] = jwt.WithSingleTokenUsage(scopeID, isSU)
 		i++
 
 		// todo: avoid the next code and use OptionFactories to apply a signing method. Example in ratelimit package.
 
-		signingMethod, h, err := be.SigningMethod.Get(sg)
+		signingMethod, _, err := be.SigningMethod.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSigningMethod.Get"))
 		}
 
-		// in case we later support store scope the hashes variable protects use
-		// from applying the incorrect scope to a functional option.
-		var hashes = make(scope.Hashes, 0, 5)
 		var key csjwt.Key
-		hashes = append(hashes, h)
 
 		switch signingMethod.Alg() {
 		case csjwt.RS256, csjwt.RS384, csjwt.RS512:
-			rsaKey, h1, err := be.RSAKey.Get(sg)
+			rsaKey, _, err := be.RSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKey.Get"))
 			}
-			rsaPW, h2, err := be.RSAKeyPassword.Get(sg)
+			rsaPW, _, err := be.RSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKeyPassword.Get"))
 			}
 			key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
-			hashes = append(hashes, h1, h2)
 		case csjwt.ES256, csjwt.ES384, csjwt.ES512:
 
-			ecdsaKey, h1, err := be.ECDSAKey.Get(sg)
+			ecdsaKey, _, err := be.ECDSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKey.Get"))
 			}
-			ecdsaPW, h2, err := be.ECDSAKeyPassword.Get(sg)
+			ecdsaPW, _, err := be.ECDSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKeyPassword.Get"))
 			}
 			key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
-			hashes = append(hashes, h1, h2)
 		case csjwt.HS256, csjwt.HS384, csjwt.HS512:
 
-			password, h1, err := be.HmacPassword.Get(sg)
+			password, _, err := be.HmacPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtHmacPassword.Get"))
 			}
 			key = csjwt.WithPassword(password)
-			hashes = append(hashes, h1)
 		default:
 			return jwt.OptionsError(errors.Errorf("[jwt] Unknown signing method: %q", signingMethod.Alg()))
 		}
 
-		// figure out the common lowest scope to apply.
-		newH, err := hashes.Lowest()
-		if err != nil {
-			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] Hashes.Lowest"))
-		}
-
 		// WithSigningMethod must be added at the end of the slice to overwrite
 		// default signing methods
-		opts[i] = jwt.WithKey(newH, key)
+		opts[i] = jwt.WithKey(scopeID, key)
 		i++
-		opts[i] = jwt.WithSigningMethod(newH, signingMethod)
+		opts[i] = jwt.WithSigningMethod(scopeID, signingMethod)
+		i++
+		opts[i] = jwt.WithTriggerOptionFactories(scopeID, false) // remove error and we've loaded everything
 		return opts[:]
 	}
 }

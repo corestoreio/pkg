@@ -30,7 +30,7 @@ func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
 	sm, h, err := ccModel.Get(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
-	assert.Exactly(t, scope.Hash(0), h)
+	assert.Exactly(t, scope.TypeID(0), h)
 }
 
 func TestNewConfigSigningMethodGetPathError(t *testing.T) {
@@ -39,5 +39,5 @@ func TestNewConfigSigningMethodGetPathError(t *testing.T) {
 	sm, h, err := ccModel.Get(cr.NewScoped(0, 0))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
-	assert.Exactly(t, scope.Hash(0), h)
+	assert.Exactly(t, scope.TypeID(0), h)
 }

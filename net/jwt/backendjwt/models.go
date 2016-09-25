@@ -54,7 +54,7 @@ func NewConfigSigningMethod(path string, opts ...cfgmodel.Option) ConfigSigningM
 
 // Get returns a signing method definied for a scope.
 // Error behaviour: NotImplemented
-func (cc ConfigSigningMethod) Get(sg config.Scoped) (sm csjwt.Signer, h scope.Hash, err error) {
+func (cc ConfigSigningMethod) Get(sg config.Scoped) (sm csjwt.Signer, h scope.TypeID, err error) {
 	raw, h, err := cc.Str.Get(sg)
 	if err != nil {
 		err = errors.Wrap(err, "[backendjwt] Str.Get")
