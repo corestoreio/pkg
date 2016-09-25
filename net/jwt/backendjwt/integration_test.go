@@ -316,7 +316,10 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 
 	// food for the race detector
 	// the very first request triggers the 2nd log entry: jwt.Service.ConfigByScopedGetter.Inflight.Do
-	hpu := cstesting.NewHTTPParallelUsers(4, 10, 100, time.Microsecond)
+	hpu := cstesting.NewHTTPParallelUsers(4, 10, 100, time.Millisecond)
+	// setting it to time.Microsecond above causes loading of the wrong config under high load for the initial
+	// cache filling.
+	// test with $ go test -race -run=TestServiceWithBackend_WithRunMode_Valid_Request -count=10 .
 	hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
 		if have, want := rec.Code, 200; have != want {
 			t.Errorf("Response Code wrong. Have: %v Want: %v\n\n%s", have, want, rec.Body)

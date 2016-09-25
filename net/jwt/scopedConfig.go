@@ -84,7 +84,7 @@ func (sc *ScopedConfig) isValid() error {
 
 // TemplateToken returns the template token. Default Claim is a map. You can
 // provide your own by setting the template token function. WithTemplateToken()
-func (sc *ScopedConfig) TemplateToken() (tk csjwt.Token) {
+func (sc ScopedConfig) TemplateToken() (tk csjwt.Token) {
 	if sc.templateTokenFunc != nil {
 		tk = sc.templateTokenFunc()
 	} else {
@@ -98,7 +98,7 @@ func (sc *ScopedConfig) TemplateToken() (tk csjwt.Token) {
 
 // ParseFromRequest parses a request to find a token in either the header, a
 // cookie or an HTML form.
-func (sc *ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.Token, error) {
+func (sc ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
 
 	if err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r); err != nil {
@@ -122,7 +122,7 @@ func (sc *ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt
 }
 
 // Parse parses a raw token.
-func (sc *ScopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
+func (sc ScopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
 	err := sc.Verifier.Parse(&dst, rawToken, sc.KeyFunc)
 	return dst, errors.Wrap(err, "[jwt] ScopedConfig.Verifier.Parse")
@@ -131,15 +131,22 @@ func (sc *ScopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
 // initKeyFunc generates a closure for a specific scope to compare if the
 // algorithm in the token matches with the current algorithm.
 func (sc *ScopedConfig) initKeyFunc() {
+	// copy the data from sc pointer to avoid race conditions under high load
+	// test in package backendjwt: $ go test -race -run=TestServiceWithBackend_WithRunMode_Valid_Request -count=8 .
+	var alg string
+	if sc.SigningMethod != nil {
+		alg = sc.SigningMethod.Alg()
+	}
+	key := sc.Key
+	keyErr := sc.Key.Error
 	sc.KeyFunc = func(t *csjwt.Token) (csjwt.Key, error) {
-
-		if have, want := t.Alg(), sc.SigningMethod.Alg(); have != want {
+		if have, want := t.Alg(), alg; have != want {
 			return csjwt.Key{}, errors.NewNotImplementedf(errUnknownSigningMethod, have, want)
 		}
-		if sc.Key.Error != nil {
+		if keyErr != nil {
 			return csjwt.Key{}, errors.Wrap(sc.Key.Error, "[jwt] ScopedConfig.initKeyFunc.Key.Error")
 		}
-		return sc.Key, nil
+		return key, nil
 	}
 }
 
