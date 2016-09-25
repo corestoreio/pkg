@@ -41,7 +41,7 @@ func bmWithToken(b *testing.B, opts ...jwt.Option) {
 		"xfoo": "bar",
 		"zfoo": 4711,
 	}
-	token, err := jwts.NewToken(scope.Default.ToHash(0), cl)
+	token, err := jwts.NewToken(scope.Default.Pack(0), cl)
 	if err != nil {
 		b.Error(err)
 	}
@@ -72,7 +72,7 @@ func bmWithToken(b *testing.B, opts ...jwt.Option) {
 	b.RunParallel(bf)
 }
 
-var keyBenchmarkHMACPW = jwt.WithKey(scope.DefaultHash, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
+var keyBenchmarkHMACPW = jwt.WithKey(scope.DefaultTypeID, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
 
 // 200000	      8474 ns/op	    2698 B/op	      63 allocs/op <= Go 1.7
 func BenchmarkWithToken_HMAC_InMemoryBL(b *testing.B) {
@@ -83,7 +83,7 @@ func BenchmarkWithToken_HMAC_InMemoryBL(b *testing.B) {
 
 // 30000	     55376 ns/op	    9180 B/op	      92 allocs/op <= Go 1.7
 func BenchmarkWithToken_RSAGenerator_2048(b *testing.B) {
-	bmWithToken(b, jwt.WithKey(scope.DefaultHash, csjwt.WithRSAGenerated()))
+	bmWithToken(b, jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAGenerated()))
 }
 
 func getRequestWithToken(b *testing.B, token []byte) *http.Request {
@@ -104,10 +104,10 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	cfg := cfgmock.NewService()
 	jwts := jwt.MustNew(
 		jwt.WithRootConfig(cfg),
-		jwt.WithExpiration(scope.DefaultHash, time.Second*15),
-		jwt.WithExpiration(scope.Website.ToHash(1), time.Second*25),
-		jwt.WithKey(scope.Website.ToHash(1), csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website.ToHash(1), func() csjwt.Token {
+		jwt.WithExpiration(scope.DefaultTypeID, time.Second*15),
+		jwt.WithExpiration(scope.Website.Pack(1), time.Second*25),
+		jwt.WithKey(scope.Website.Pack(1), csjwt.WithPasswordRandom()),
+		jwt.WithTemplateToken(scope.Website.Pack(1), func() csjwt.Token {
 			return csjwt.Token{
 				Header: csjwt.NewHead(),
 				Claims: jwtclaim.NewStore(),
@@ -121,7 +121,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	var generateToken = func(storeCode string) []byte {
 		s := jwtclaim.NewStore()
 		s.Store = storeCode
-		token, err := jwts.NewToken(scope.Website.ToHash(1), s)
+		token, err := jwts.NewToken(scope.Website.Pack(1), s)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -144,7 +144,7 @@ func BenchmarkWithRunMode_MultiTokenAndScope(b *testing.B) {
 	}
 
 	storeSrv := storemock.NewEurozzyService(cfg)
-	jwtHandler := jwts.WithRunMode(scope.Website.ToHash(1), // every store with website ID 1
+	jwtHandler := jwts.WithRunMode(scope.Website.Pack(1), // every store with website ID 1
 		storeSrv)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		_, ok := jwt.FromContext(ctx)

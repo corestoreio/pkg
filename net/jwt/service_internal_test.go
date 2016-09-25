@@ -28,11 +28,10 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 
 	jwts := MustNew()
 	// a hack for testing to remove the default setting or make it invalid
-	jwts.scopeCache[scope.DefaultHash] = &ScopedConfig{}
+	jwts.scopeCache[scope.DefaultTypeID] = &ScopedConfig{}
 
 	cr := cfgmock.NewService()
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
-	err := sc.IsValid()
+	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Exactly(t, ScopedConfig{}, sc)
 }
@@ -42,10 +41,10 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 	jwts := MustNew()
 
 	cr := cfgmock.NewService()
-	sc := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
-	assert.NoError(t, sc.IsValid())
+	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
+	assert.NoError(t, err, "%+v", err)
 	dsc := newScopedConfig()
-	if err := dsc.IsValid(); err != nil {
+	if err := dsc.isValid(); err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, csjwt.HS256, sc.SigningMethod.Alg())
@@ -53,7 +52,7 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 
 	assert.NotNil(t, dsc.ErrorHandler)
 	assert.NotNil(t, sc.ErrorHandler)
-	assert.NotNil(t, jwts.scopeCache[scope.DefaultHash].ErrorHandler)
+	assert.NotNil(t, jwts.scopeCache[scope.DefaultTypeID].ErrorHandler)
 	assert.Exactly(t, DefaultExpire, dsc.Expire)
 	assert.False(t, dsc.Key.IsEmpty())
 	assert.False(t, sc.Key.IsEmpty())

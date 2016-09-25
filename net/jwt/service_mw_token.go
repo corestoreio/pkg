@@ -28,8 +28,8 @@ import (
 // change the scope of the previously initialized runMode and its scope.
 func (s *Service) WithToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		scpCfg := s.configByContext(r.Context())
-		if err := scpCfg.IsValid(); err != nil {
+		scpCfg, err := s.configByContext(r.Context())
+		if err != nil {
 			s.Log.Info("jwt.Service.WithToken.configByContext.Error", log.Err(err))
 			if s.Log.IsDebug() {
 				s.Log.Debug("jwt.Service.WithToken.configByContext", log.Err(err), log.HTTPRequest("request", r))
@@ -39,7 +39,7 @@ func (s *Service) WithToken(next http.Handler) http.Handler {
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("jwt.Service.WithToken.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("jwt.Service.WithToken.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return
@@ -49,7 +49,7 @@ func (s *Service) WithToken(next http.Handler) http.Handler {
 		if err != nil {
 			s.Log.Info("jwt.Service.WithToken.ParseFromRequest.Error", log.Err(err))
 			if s.Log.IsDebug() {
-				s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}
 			// todo what should be done when the token has expired?
 			scpCfg.UnauthorizedHandler(errors.Wrap(err, "[jwt] WithToken.ParseFromRequest")).ServeHTTP(w, r)

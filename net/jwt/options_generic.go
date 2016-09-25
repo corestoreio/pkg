@@ -47,13 +47,13 @@ func OptionsError(err error) []Option {
 }
 
 // withDefaultConfig triggers the default settings
-func withDefaultConfig(h scope.Hash) Option {
+func withDefaultConfig(id scope.TypeID) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		sc := optionInheritDefault(s)
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -62,18 +62,61 @@ func withDefaultConfig(h scope.Hash) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(h scope.Hash, eh mw.ErrorHandler) Option {
+func WithErrorHandler(id scope.TypeID, eh mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.ErrorHandler = eh
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
+		return nil
+	}
+}
+
+// WithDisable disables the current service and calls the next HTTP handler.
+func WithDisable(id scope.TypeID, isDisabled bool) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[id]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.Disabled = isDisabled
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
+		return nil
+	}
+}
+
+// WithTriggerOptionFactories if set to true marks a configuration for a scope
+// as partially applied with functional options set via source code. The
+// internal service knows that it must trigger additionally the
+// OptionFactoryFunc to load configuration from a backend. Useful in the case
+// where parts of the configurations are coming from backend storages and other
+// parts like http handler have been set via code. This function should only be
+// applied in case you work with WithOptionFactory().
+func WithTriggerOptionFactories(id scope.TypeID, partially bool) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[id]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.lastErr = nil
+		if partially {
+			sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsPartiallyLoaded, id)
+		}
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -89,8 +132,9 @@ func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
 	}
 }
 
-// WithRootConfig sets the root configuration service. While using any HTTP
-// related functions or middlewares you must set the config.Getter.
+// WithRootConfig sets the root configuration service to retrieve the scoped
+// base configuration. If you set the option WithOptionFactory() then the option
+// WithRootConfig() does not need to be set as it won't get used.
 func WithRootConfig(cg config.Getter) Option {
 	_ = cg.NewScoped(0, 0) // let it panic as early as possible if cg is nil
 	return func(s *Service) error {

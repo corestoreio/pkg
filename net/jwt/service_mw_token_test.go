@@ -37,7 +37,7 @@ func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte)
 	}
 	jm.Log = log.BlackHole{EnableDebug: true, EnableInfo: true}
 
-	theToken, err := jm.NewToken(scope.DefaultHash, jwtclaim.Map{
+	theToken, err := jm.NewToken(scope.DefaultTypeID, jwtclaim.Map{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -53,7 +53,7 @@ func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte)
 func TestService_WithToken_EmptyScope(t *testing.T) {
 
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithErrorHandler(scope.DefaultHash,
+		jwt.WithErrorHandler(scope.DefaultTypeID,
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -79,7 +79,7 @@ func TestService_WithToken_EmptyScope(t *testing.T) {
 
 func TestService_WithToken_MissingToken(t *testing.T) {
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithErrorHandler(scope.Website.ToHash(1),
+		jwt.WithErrorHandler(scope.Website.Pack(1),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -102,8 +102,8 @@ func TestService_WithToken_MissingToken(t *testing.T) {
 
 func TestService_WithToken_Disabled(t *testing.T) {
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website.ToHash(44), true),
-		jwt.WithErrorHandler(scope.Website.ToHash(1),
+		jwt.WithDisable(scope.Website.Pack(44), true),
+		jwt.WithErrorHandler(scope.Website.Pack(1),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -126,8 +126,8 @@ func TestService_WithToken_Disabled(t *testing.T) {
 
 func TestService_WithToken_Success(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website.ToHash(55), false),
-		jwt.WithErrorHandler(scope.Website.ToHash(55),
+		jwt.WithDisable(scope.Website.Pack(55), false),
+		jwt.WithErrorHandler(scope.Website.Pack(55),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")
@@ -152,9 +152,9 @@ func TestService_WithToken_Success(t *testing.T) {
 
 func TestService_WithToken_SingleUsage(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website.ToHash(66), false),
-		jwt.WithSingleTokenUsage(scope.Website.ToHash(66), true),
-		jwt.WithErrorHandler(scope.Website.ToHash(66),
+		jwt.WithDisable(scope.Website.Pack(66), false),
+		jwt.WithSingleTokenUsage(scope.Website.Pack(66), true),
+		jwt.WithErrorHandler(scope.Website.Pack(66),
 			func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic("Should not get called")

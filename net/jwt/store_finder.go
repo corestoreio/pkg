@@ -25,12 +25,12 @@ const StoreCodeFieldName = `store`
 type StoreFinder interface {
 	// DefaultStoreID returns the default active store ID and its website ID
 	// depending on the run mode. Error behaviour is mostly of type NotValid.
-	DefaultStoreID(runMode scope.Hash) (storeID, websiteID int64, err error)
+	DefaultStoreID(runMode scope.TypeID) (storeID, websiteID int64, err error)
 	// StoreIDbyCode returns, depending on the runMode, for a storeCode its
 	// active store ID and its website ID. An empty runMode hash falls back to
 	// select the default website with its default group and the slice of
 	// default stores. A not-found error behaviour gets returned if the code
-	// cannot be found. If the runMode equals to scope.DefaultHash, the returned
+	// cannot be found. If the runMode equals to scope.DefaultTypeID, the returned
 	// ID is always 0 and error is nil.
-	StoreIDbyCode(runMode scope.Hash, storeCode string) (storeID, websiteID int64, err error)
+	StoreIDbyCode(runMode scope.TypeID, storeCode string) (storeID, websiteID int64, err error)
 }

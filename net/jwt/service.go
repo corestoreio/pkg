@@ -49,6 +49,7 @@ func New(opts ...Option) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
+	s.useWebsite = true
 	s.optionAfterApply = func() error {
 		s.rwmu.RLock()
 		defer s.rwmu.RUnlock()
@@ -80,12 +81,12 @@ func New(opts ...Option) (*Service, error) {
 // ExpiresAt, IssuedAt and ID are already set and cannot be overwritten, but you
 // can access them. It panics if the provided template token has a nil Header or
 // Claimer field.
-func (s *Service) NewToken(h scope.Hash, claim ...csjwt.Claimer) (csjwt.Token, error) {
+func (s *Service) NewToken(h scope.TypeID, claim ...csjwt.Claimer) (csjwt.Token, error) {
 	var empty csjwt.Token
 	now := csjwt.TimeFunc()
 
-	sc := s.ConfigByScopeHash(h, 0)
-	if err := sc.IsValid(); err != nil {
+	sc, err := s.ConfigByScopeID(h, 0)
+	if err != nil {
 		return empty, errors.Wrap(err, "[jwt] NewToken.ConfigByScopeID")
 	}
 
@@ -135,17 +136,17 @@ func (s *Service) Logout(token csjwt.Token) error {
 // Parse parses a token string with the DefaultID scope and returns the
 // valid token or an error.
 func (s *Service) Parse(rawToken []byte) (csjwt.Token, error) {
-	return s.ParseScoped(scope.DefaultHash, rawToken)
+	return s.ParseScoped(scope.DefaultTypeID, rawToken)
 }
 
 // ParseScoped parses a token based on the applied scope and the scope ID.
 // Different configurations are passed to the token parsing function. The black
 // list will be checked for containing entries.
-func (s *Service) ParseScoped(h scope.Hash, rawToken []byte) (csjwt.Token, error) {
+func (s *Service) ParseScoped(h scope.TypeID, rawToken []byte) (csjwt.Token, error) {
 	var empty csjwt.Token
 
-	sc := s.ConfigByScopeHash(h, 0)
-	if err := sc.IsValid(); err != nil {
+	sc, err := s.ConfigByScopeID(h, 0)
+	if err != nil {
 		return empty, errors.Wrap(err, "[jwt] ParseScoped.ConfigByScopeID")
 	}
 

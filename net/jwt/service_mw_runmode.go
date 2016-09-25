@@ -62,8 +62,8 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			}
 
 			// load default scoped configuration and call next handler if disabled
-			defaultScpCfg := s.ConfigByScope(websiteID, storeID) // scope of the DefaultStore selected by the run mode.
-			if err := defaultScpCfg.IsValid(); err != nil {
+			defaultScpCfg, err := s.ConfigByScope(websiteID, storeID) // scope of the DefaultStore selected by the run mode.
+			if err != nil {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.ConfigFromScope.Error", log.Err(err),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
@@ -74,7 +74,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 
 			if defaultScpCfg.Disabled {
 				if s.Log.IsDebug() {
-					s.Log.Debug("jwt.Service.WithRunMode.Disabled", log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
+					s.Log.Debug("jwt.Service.WithRunMode.Disabled", log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
 				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
@@ -86,7 +86,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			ctx := withContext(r.Context(), token)
 			if err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg), log.HTTPRequest("request", r))
+					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg), log.HTTPRequest("request", r))
 				}
 				// todo what should be done when the token has expired?
 				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
@@ -100,7 +100,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 				// no code found in token so call next handler and add the scope to the context
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.NextHandler.WithoutCode", log.Marshal("token", token),
-						log.Stringer("scope", defaultScpCfg.ScopeHash), log.Object("scpCfg", defaultScpCfg),
+						log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
 				}
 				r = r.WithContext(scope.WithContext(ctx, websiteID, storeID))

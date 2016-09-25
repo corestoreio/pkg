@@ -27,9 +27,6 @@ import (
 // ScopedConfig contains the configuration for a scope
 type ScopedConfig struct {
 	scopedConfigGeneric
-
-	// Disabled if true disables JWT completely
-	Disabled bool
 	// Key contains the HMAC, RSA or ECDSA sensitive data. The csjwt.Key must
 	// not be embedded into this struct because otherwise when printing or
 	// logging the sensitive data from csjwt.Key gets leaked into loggers or
@@ -75,20 +72,19 @@ var defaultUnauthorizedHandler = mw.ErrorWithStatusCode(http.StatusUnauthorized)
 //		- SigningMethod
 //		- Verifier
 // has been set and no other previous error has occurred.
-func (sc *ScopedConfig) IsValid() error {
-	if sc.lastErr != nil {
-		return errors.Wrap(sc.lastErr, "[jwt] ScopedConfig.isValid as an lastErr")
+func (sc *ScopedConfig) isValid() error {
+	if err := sc.isValidPreCheck(); err != nil {
+		return errors.Wrap(err, "[jwt] ScopedConfig.isValid as an lastErr")
 	}
-
-	if sc.ScopeHash == 0 || sc.Key.IsEmpty() || sc.SigningMethod == nil || sc.Verifier == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash)
+	if sc.ScopeID == 0 || sc.Key.IsEmpty() || sc.SigningMethod == nil || sc.Verifier == nil {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID)
 	}
 	return nil
 }
 
 // TemplateToken returns the template token. Default Claim is a map. You can
 // provide your own by setting the template token function. WithTemplateToken()
-func (sc ScopedConfig) TemplateToken() (tk csjwt.Token) {
+func (sc *ScopedConfig) TemplateToken() (tk csjwt.Token) {
 	if sc.templateTokenFunc != nil {
 		tk = sc.templateTokenFunc()
 	} else {
@@ -102,7 +98,7 @@ func (sc ScopedConfig) TemplateToken() (tk csjwt.Token) {
 
 // ParseFromRequest parses a request to find a token in either the header, a
 // cookie or an HTML form.
-func (sc ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.Token, error) {
+func (sc *ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
 
 	if err := sc.Verifier.ParseFromRequest(&dst, sc.KeyFunc, r); err != nil {
@@ -126,7 +122,7 @@ func (sc ScopedConfig) ParseFromRequest(bl Blacklister, r *http.Request) (csjwt.
 }
 
 // Parse parses a raw token.
-func (sc ScopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
+func (sc *ScopedConfig) Parse(rawToken []byte) (csjwt.Token, error) {
 	dst := sc.TemplateToken()
 	err := sc.Verifier.Parse(&dst, rawToken, sc.KeyFunc)
 	return dst, errors.Wrap(err, "[jwt] ScopedConfig.Verifier.Parse")
@@ -151,8 +147,11 @@ func newScopedConfig() *ScopedConfig {
 	key := csjwt.WithPasswordRandom()
 	hs256, err := csjwt.NewSigningMethodHS256Fast(key)
 	if err != nil {
-		se := newScopedConfigError(errors.Wrap(err, "[jwt] defaultScopedConfig.NewHMACFast256"))
-		return &se
+		return &ScopedConfig{
+			scopedConfigGeneric: scopedConfigGeneric{
+				lastErr: errors.Wrap(err, "[jwt] defaultScopedConfig.NewHMACFast256"),
+			},
+		}
 	}
 	sc := &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),

@@ -32,8 +32,8 @@ import (
 //		- Signing Method HMAC SHA 256 (fast version from pkg csjwt)
 //		- HTTP error handler returns http.StatusUnauthorized
 //		- JTI disabled
-func WithDefaultConfig(h scope.Hash) Option {
-	return withDefaultConfig(h)
+func WithDefaultConfig(id scope.TypeID) Option {
+	return withDefaultConfig(id)
 }
 
 // WithBlacklist sets a new global black list service. Convenience helper
@@ -49,73 +49,73 @@ func WithBlacklist(bl Blacklister) Option {
 // when parsing a token in a request. Function f will generate a new base token
 // for each request. This allows you to choose using a slow map as a claim or a
 // fast struct based claim. Same goes with the header.
-func WithTemplateToken(h scope.Hash, f func() csjwt.Token) Option {
+func WithTemplateToken(id scope.TypeID, f func() csjwt.Token) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.templateTokenFunc = f
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
 
 // WithSigningMethod this option function lets you overwrite the default 256 bit
 // signing method for a specific scope. Used incorrectly token decryption can fail.
-func WithSigningMethod(h scope.Hash, sm csjwt.Signer) Option {
+func WithSigningMethod(id scope.TypeID, sm csjwt.Signer) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.SigningMethod = sm
 		sc.Verifier = csjwt.NewVerification(sm)
 		sc.initKeyFunc()
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
 
 // WithExpiration sets expiration duration depending on the scope
-func WithExpiration(h scope.Hash, d time.Duration) Option {
+func WithExpiration(id scope.TypeID, d time.Duration) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.Expire = d
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
 
 // WithSkew sets the duration of time skew we allow between signer and verifier.
 // Must be a positive value.
-func WithSkew(h scope.Hash, d time.Duration) Option {
+func WithSkew(id scope.TypeID, d time.Duration) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.Skew = d
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -123,7 +123,7 @@ func WithSkew(h scope.Hash, d time.Duration) Option {
 // WithKey sets the key for the default signing method of 256 bits.
 // You can also provide your own signing method by using additionally
 // the function WithSigningMethod(), which must be called after this function :-/.
-func WithKey(h scope.Hash, key csjwt.Key) Option {
+func WithKey(id scope.TypeID, key csjwt.Key) Option {
 	if key.Error != nil {
 		return func(s *Service) error {
 			return errors.Wrap(key.Error, "[jwt] Key Error")
@@ -138,11 +138,11 @@ func WithKey(h scope.Hash, key csjwt.Key) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.ScopeHash = h
+		sc.ScopeID = id
 
 		// if you are not satisfied with the bit size of 256 you can change it
 		// by using WithSigningMethod
@@ -164,42 +164,25 @@ func WithKey(h scope.Hash, key csjwt.Key) Option {
 		sc.Verifier = csjwt.NewVerification(sc.SigningMethod)
 		sc.initKeyFunc()
 
-		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
-// WithDisable disables the whole JWT processing for a scope.
-func WithDisable(h scope.Hash, isDisabled bool) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.Disabled = isDisabled
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
 
 // WithStoreCodeFieldName sets the name of the key in the token claims section
 // to extract the store code.
-func WithStoreCodeFieldName(h scope.Hash, name string) Option {
+func WithStoreCodeFieldName(id scope.TypeID, name string) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.StoreCodeFieldName = name
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -207,18 +190,18 @@ func WithStoreCodeFieldName(h scope.Hash, name string) Option {
 // WithUnauthorizedHandler adds a custom handler when a token cannot authorized to call the next handler in the chain.
 // The default unauthorized handler prints the error to the user and
 // returns a http.StatusUnauthorized.
-func WithUnauthorizedHandler(h scope.Hash, uh mw.ErrorHandler) Option {
+func WithUnauthorizedHandler(id scope.TypeID, uh mw.ErrorHandler) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.UnauthorizedHandler = uh
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }
@@ -226,18 +209,18 @@ func WithUnauthorizedHandler(h scope.Hash, uh mw.ErrorHandler) Option {
 // WithSingleTokenUsage if set to true for each request a token can be only used
 // once. The JTI (JSON Token Identifier) gets added to the blacklist until it
 // expires.
-func WithSingleTokenUsage(h scope.Hash, enable bool) Option {
+func WithSingleTokenUsage(id scope.TypeID, enable bool) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 
-		sc := s.scopeCache[h]
+		sc := s.scopeCache[id]
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
 		sc.SingleTokenUsage = enable
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
 		return nil
 	}
 }

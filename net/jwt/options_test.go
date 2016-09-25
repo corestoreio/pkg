@@ -33,7 +33,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 
 	jwts, err := jwt.New(
 		// jwt.WithKey(scope.Website.ToHash(3), csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website.ToHash(3), func() csjwt.Token {
+		jwt.WithTemplateToken(scope.Website.Pack(3), func() csjwt.Token {
 			sClaim := jwtclaim.NewStore()
 			sClaim.Store = "potato"
 
@@ -48,24 +48,24 @@ func TestOptionWithTemplateToken(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	tkDefault, err := jwts.NewToken(scope.DefaultHash, jwtclaim.Map{
+	tkDefault, err := jwts.NewToken(scope.DefaultTypeID, jwtclaim.Map{
 		"lang": "ch_DE",
 	})
 	require.NoError(t, err, "%+v", err)
 
-	tkWebsite, err := jwts.NewToken(scope.Website.ToHash(3), &jwtclaim.Standard{
+	tkWebsite, err := jwts.NewToken(scope.Website.Pack(3), &jwtclaim.Standard{
 		Audience: "Gophers",
 	})
 	require.NoError(t, err)
 
-	tkDefaultParsed, err := jwts.ParseScoped(scope.DefaultHash, tkDefault.Raw)
+	tkDefaultParsed, err := jwts.ParseScoped(scope.DefaultTypeID, tkDefault.Raw)
 	require.NoError(t, err)
 	// t.Logf("tkMissing: %#v\n", tkDefaultParsed)
 	lng, err := tkDefaultParsed.Claims.Get("lang")
 	require.NoError(t, err)
 	assert.Exactly(t, "ch_DE", conv.ToString(lng))
 
-	tkWebsiteParsed, err := jwts.ParseScoped(scope.Website.ToHash(3), tkWebsite.Raw)
+	tkWebsiteParsed, err := jwts.ParseScoped(scope.Website.Pack(3), tkWebsite.Raw)
 	require.NoError(t, err)
 	// t.Logf("tkFull: %#v\n", tkWebsiteParsed)
 	claimStore, err := tkWebsiteParsed.Claims.Get(jwtclaim.KeyStore)
@@ -77,11 +77,11 @@ func TestOptionWithTemplateToken(t *testing.T) {
 func TestOptionWithTokenID(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.ToHash(22), csjwt.WithPasswordRandom()),
+		jwt.WithKey(scope.Website.Pack(22), csjwt.WithPasswordRandom()),
 	)
 	require.NoError(t, err)
 
-	theToken, err := jwts.NewToken(scope.Website.ToHash(22))
+	theToken, err := jwts.NewToken(scope.Website.Pack(22))
 	require.NoError(t, err)
 	assert.NotEmpty(t, theToken.Raw)
 
@@ -93,12 +93,12 @@ func TestOptionWithTokenID(t *testing.T) {
 func TestOptionScopedDefaultExpire(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.ToHash(33), csjwt.WithPasswordRandom()),
+		jwt.WithKey(scope.Website.Pack(33), csjwt.WithPasswordRandom()),
 	)
 	require.NoError(t, err)
 
 	now := time.Now()
-	theToken, err := jwts.NewToken(scope.Website.ToHash(33)) // must be a pointer the cl or Get() returns nil
+	theToken, err := jwts.NewToken(scope.Website.Pack(33)) // must be a pointer the cl or Get() returns nil
 	require.NoError(t, err)
 
 	assert.NotEmpty(t, theToken.Raw)
@@ -114,16 +114,16 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 
 func TestWithMaxSkew_Valid(t *testing.T) {
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.ToHash(44), csjwt.WithPasswordRandom()),
-		jwt.WithSkew(scope.Website.ToHash(44), time.Second*5),
-		jwt.WithExpiration(scope.Website.ToHash(44), -time.Second*3),
+		jwt.WithKey(scope.Website.Pack(44), csjwt.WithPasswordRandom()),
+		jwt.WithSkew(scope.Website.Pack(44), time.Second*5),
+		jwt.WithExpiration(scope.Website.Pack(44), -time.Second*3),
 	)
 	require.NoError(t, err)
 
-	newTK, err := jwts.NewToken(scope.Website.ToHash(44), jwtclaim.Map{"key1": "value1"})
+	newTK, err := jwts.NewToken(scope.Website.Pack(44), jwtclaim.Map{"key1": "value1"})
 	assert.NoError(t, err)
 
-	parsedTK, err := jwts.ParseScoped(scope.Website.ToHash(44), newTK.Raw)
+	parsedTK, err := jwts.ParseScoped(scope.Website.Pack(44), newTK.Raw)
 	assert.NoError(t, err)
 	assert.True(t, parsedTK.Valid, "Token must be valid")
 
@@ -134,13 +134,13 @@ func TestWithMaxSkew_Valid(t *testing.T) {
 
 func TestWithMaxSkew_NotValid(t *testing.T) {
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.DefaultHash, csjwt.WithPasswordRandom()),
-		jwt.WithSkew(scope.DefaultHash, time.Second*1),
-		jwt.WithExpiration(scope.DefaultHash, -time.Second*3),
+		jwt.WithKey(scope.DefaultTypeID, csjwt.WithPasswordRandom()),
+		jwt.WithSkew(scope.DefaultTypeID, time.Second*1),
+		jwt.WithExpiration(scope.DefaultTypeID, -time.Second*3),
 	)
 	require.NoError(t, err)
 
-	newTK, err := jwts.NewToken(scope.DefaultHash, jwtclaim.Map{"key1": "value1"})
+	newTK, err := jwts.NewToken(scope.DefaultTypeID, jwtclaim.Map{"key1": "value1"})
 	assert.NoError(t, err)
 
 	parsedTK, err := jwts.Parse(newTK.Raw)
@@ -152,7 +152,7 @@ func TestWithMaxSkew_NotValid(t *testing.T) {
 func TestOptionWithRSAReaderFail(t *testing.T) {
 
 	jm, err := jwt.New(
-		jwt.WithKey(scope.DefaultHash, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
+		jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
 	)
 	assert.Nil(t, jm)
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
@@ -160,9 +160,9 @@ func TestOptionWithRSAReaderFail(t *testing.T) {
 
 var (
 	rsaPrivateKeyFileName        = filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa")
-	keyRsaPrivateNoPassword      = jwt.WithKey(scope.DefaultHash, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
-	keyRsaPrivateWrongPassword   = jwt.WithKey(scope.DefaultHash, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
-	keyRsaPrivateCorrectPassword = jwt.WithKey(scope.DefaultHash, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
+	keyRsaPrivateNoPassword      = jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
+	keyRsaPrivateWrongPassword   = jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
+	keyRsaPrivateCorrectPassword = jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
 )
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
@@ -180,7 +180,7 @@ func testRsaOption(t *testing.T, opt jwt.Option) {
 	jwts, err := jwt.New(opt)
 	require.NoError(t, err)
 
-	theToken, err := jwts.NewToken(scope.DefaultHash, jwtclaim.Map{})
+	theToken, err := jwts.NewToken(scope.DefaultTypeID, jwtclaim.Map{})
 	require.NoError(t, err)
 	assert.NotEmpty(t, theToken.Raw)
 
@@ -197,5 +197,5 @@ func TestOptionWithRSAFromFilePassword(t *testing.T) {
 
 func TestOptionWithRSAFromFileNoPassword(t *testing.T) {
 
-	testRsaOption(t, jwt.WithKey(scope.DefaultHash, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
+	testRsaOption(t, jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
 }
