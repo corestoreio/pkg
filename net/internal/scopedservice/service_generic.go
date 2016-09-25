@@ -150,7 +150,7 @@ func (s *Service) DebugCache(w io.Writer) error {
 // contains only the website->default scope despite setting a store scope. If an
 // OptionFactory is set the configuration gets loaded from the backend. A nil
 // root config causes a panic.
-func (s *Service) ConfigByScope(websiteID, storeID int64) ScopedConfig {
+func (s *Service) ConfigByScope(websiteID, storeID int64) (ScopedConfig, error) {
 	cfg := s.rootConfig.NewScoped(websiteID, storeID)
 	if s.useWebsite {
 		cfg = s.rootConfig.NewScoped(websiteID, 0)
@@ -161,22 +161,21 @@ func (s *Service) ConfigByScope(websiteID, storeID int64) ScopedConfig {
 // configByContext extracts the scope (websiteID and storeID) from a  context.
 // The scoped configuration gets initialized by configFromScope() and returned.
 // It panics if rootConfig if nil. Errors get not logged.
-func (s *Service) configByContext(ctx context.Context) (scpCfg ScopedConfig) {
+func (s *Service) configByContext(ctx context.Context) (ScopedConfig, error) {
 	// extract the scope out of the context and if not found a programmer made a
 	// mistake.
 	websiteID, storeID, scopeOK := scope.FromContext(ctx)
 	if !scopeOK {
-		scpCfg.lastErr = errors.NewNotFoundf("[scopedservice] configByContext: scope.FromContext not found")
-		return
+		return ScopedConfig{}, errors.NewNotFoundf("[scopedservice] configByContext: scope.FromContext not found")
 	}
 
-	scpCfg = s.ConfigByScope(websiteID, storeID)
-	if err := scpCfg.isValid(); err != nil {
+	scpCfg, err := s.ConfigByScope(websiteID, storeID)
+	if err != nil {
 		// the scoped configuration is invalid and hence a programmer or package user
 		// made a mistake.
-		scpCfg.lastErr = errors.Wrap(err, "[scopedservice] Service.configByContext.configFromScope") // rewrite error
+		return ScopedConfig{}, errors.Wrap(err, "[scopedservice] Service.configByContext.configFromScope") // rewrite error
 	}
-	return
+	return scpCfg, nil
 }
 
 // ConfigByScopedGetter returns the internal configuration depending on the
@@ -184,7 +183,7 @@ func (s *Service) configByContext(ctx context.Context) (scpCfg ScopedConfig) {
 // option WithOptionFactory() the configuration will be pulled out only one time
 // from the backend configuration service. The field optionInflight handles the
 // guaranteed atomic single loading for each scope.
-func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
+func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, error) {
 
 	current := scope.MakeTypeID(scpGet.Scope()) // can be store or website or default
 	parent := scope.MakeTypeID(scpGet.Parent()) // can be website or default
@@ -193,7 +192,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 	// test if a direct entry can be found; if not we must apply either the
 	// optionFactory function or do a fall back to the website scope and/or
 	// default scope.
-	if sCfg := s.ConfigByScopeID(current, 0); sCfg.isValid() == nil {
+	if sCfg, err := s.ConfigByScopeID(current, 0); err == nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.IsValid",
 				log.Stringer("requested_scope", current),
@@ -201,7 +200,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 				log.Stringer("responded_scope", sCfg.ScopeID),
 			)
 		}
-		return sCfg
+		return sCfg, nil
 	}
 
 	// load the configuration from the slow backend. optionInflight guarantees
@@ -210,33 +209,33 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 	if s.optionFactory != nil {
 		res, ok := <-s.optionInflight.DoChan(current.String(), func() (interface{}, error) {
 			if err := s.Options(s.optionFactory(scpGet)...); err != nil {
-				return newScopedConfigError(errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")), nil
+				return ScopedConfig{}, errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")
 			}
-			sCfg := s.ConfigByScopeID(current, parent)
+			sCfg, err := s.ConfigByScopeID(current, parent)
 			if s.Log.IsDebug() {
 				s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Inflight.Do",
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_parent_scope", parent),
 					log.Stringer("responded_scope", sCfg.ScopeID),
-					log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
+					log.ErrWithKey("responded_scope_valid", err),
 				)
 			}
-			return sCfg, nil
+			return sCfg, errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")
 		})
 		if !ok { // unlikely to happen but you'll never know. how to test that?
-			return newScopedConfigError(errors.NewFatalf("[scopedservice] Inflight.DoChan returned a closed/unreadable channel"))
+			return ScopedConfig{}, errors.NewFatalf("[scopedservice] Inflight.DoChan returned a closed/unreadable channel")
 		}
 		if res.Err != nil {
-			return newScopedConfigError(errors.Wrap(res.Err, "[scopedservice] Inflight.DoChan.Error"))
+			return ScopedConfig{}, errors.Wrap(res.Err, "[scopedservice] Inflight.DoChan.Error")
 		}
 		sCfg, ok := res.Val.(ScopedConfig)
 		if !ok {
-			sCfg = newScopedConfigError(errors.NewFatalf("[scopedservice] Inflight.DoChan res.Val cannot be type asserted to scopedConfig"))
+			return ScopedConfig{}, errors.NewFatalf("[scopedservice] Inflight.DoChan res.Val cannot be type asserted to scopedConfig")
 		}
-		return sCfg
+		return sCfg, nil
 	}
 
-	sCfg := s.ConfigByScopeID(current, parent)
+	sCfg, err := s.ConfigByScopeID(current, parent)
 	// under very high load: 20 users within 10 MicroSeconds this might get executed
 	// 1-3 times. more thinking needed.
 	if s.Log.IsDebug() {
@@ -244,10 +243,10 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 			log.Stringer("requested_scope", current),
 			log.Stringer("requested_parent_scope", parent),
 			log.Stringer("responded_scope", sCfg.ScopeID),
-			log.ErrWithKey("responded_scope_valid", sCfg.isValid()),
+			log.ErrWithKey("responded_scope_valid", err),
 		)
 	}
-	return sCfg
+	return sCfg, errors.Wrap(err, "[scopedservice] Options applied and finaly validation")
 }
 
 // ConfigByScopeID returns the correct configuration for a scope and may fall
@@ -260,7 +259,7 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) ScopedConfig {
 // scope. A zero `parent` triggers no further look ups. This function does not
 // load any configuration (config.Getter related) from the backend and accesses
 // the internal map of the Service directly.
-func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (scpCfg ScopedConfig) {
+func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (scpCfg ScopedConfig, _ error) {
 	// current can be store or website scope
 	// parent can be website or default scope. If 0 then no fall back
 
@@ -277,10 +276,10 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 	}
 	s.rwmu.RUnlock()
 	if ok {
-		return scpCfg
+		return scpCfg, errors.Wrap(scpCfg.isValid(), "[scopedservice] Validated directly found")
 	}
 	if parent == 0 {
-		return newScopedConfigError(errConfigNotFound)
+		return scpCfg, errConfigNotFound
 	}
 
 	// slow path: now lock everything until the fall back has been found.
@@ -296,7 +295,7 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 		}
 		if ok && pScpCfg != nil {
 			s.scopeCache[current] = pScpCfg
-			return scpCfg
+			return scpCfg, errors.Wrap(scpCfg.isValid(), "[scopedservice] Validated Parent found and applied")
 		}
 	}
 
@@ -312,5 +311,5 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 			s.scopeCache[current] = pScpCfg
 		}
 	}
-	return scpCfg
+	return scpCfg, errors.Wrap(scpCfg.isValid(), "[scopedservice] Validated Default found")
 }

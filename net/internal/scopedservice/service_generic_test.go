@@ -79,7 +79,10 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 		}
 		for i, test := range tests {
 
-			cfg := s.ConfigByScopedGetter(test.cfg)
+			cfg, err := s.ConfigByScopedGetter(test.cfg)
+			if err != nil {
+				t.Fatalf("%+v", err) // maybe ignore this error
+			}
 
 			if have, want := cfg.value, test.want; have != want {
 				t.Errorf("(%d) Have: %q Want: %q (%s)", i, have, want, cfg.ScopeID)
@@ -110,13 +113,13 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 
 func TestService_ClearCache(t *testing.T) {
 	srv := MustNew(withValue(scope.Website.Pack(33), "Gopher"), WithRootConfig(cfgmock.NewService()))
-	cfg := srv.ConfigByScope(33, 44)
-	assert.NoError(t, cfg.isValid(), "%+v", cfg.isValid())
+	cfg, err := srv.ConfigByScope(33, 44)
+	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, cfg.value, "Gopher")
 
 	assert.NoError(t, srv.ClearCache())
 
-	cfg = srv.ConfigByScopeID(scope.Website.Pack(33), 0)
-	assert.True(t, errors.IsNotFound(cfg.isValid()), "%+v", cfg.isValid())
+	cfg, err = srv.ConfigByScopeID(scope.Website.Pack(33), 0)
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
 	assert.Exactly(t, cfg.value, "")
 }

@@ -44,15 +44,6 @@ type scopedConfigGeneric struct {
 	// TODO(CyS) think about adding config.Scoped
 }
 
-// newScopedConfigError easy helper to create an error
-func newScopedConfigError(err error) ScopedConfig {
-	return ScopedConfig{
-		scopedConfigGeneric: scopedConfigGeneric{
-			lastErr: err,
-		},
-	}
-}
-
 // newScopedConfigGeneric creates a new non-pointer generic config with a
 // default scope and an error handler which returns status service unavailable.
 // This function must be embedded in the targeted package newScopedConfig().

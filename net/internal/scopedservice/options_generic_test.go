@@ -51,8 +51,9 @@ func TestWithConfigGetter(t *testing.T) {
 func TestWithErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
 	s, err := newService(WithErrorHandler(scope.Store.Pack(44), eh))
-	assert.NoError(t, err)
-	cfg := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
+	assert.NoError(t, err, "%+v", err)
+	cfg, err := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
+	assert.NoError(t, err, "%+v", err)
 	assert.NotNil(t, cfg.ErrorHandler)
 	cstesting.EqualPointers(t, eh, cfg.ErrorHandler)
 	cstesting.EqualPointers(t, s.ErrorHandler, defaultErrorHandler)
@@ -113,8 +114,8 @@ func TestWithDebugLog(t *testing.T) {
 	srv, err := newService(WithDebugLog(logBuf))
 	assert.NoError(t, err, "%+v", err)
 
-	scpCfg := srv.ConfigByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
-	assert.NoError(t, scpCfg.isValid(), "%+v", scpCfg.isValid())
+	_, err = srv.ConfigByScopedGetter(cfgmock.NewService().NewScoped(0, 0))
+	assert.NoError(t, err, "%+v", err)
 	assert.Contains(t, logBuf.String(), `scopedservice.Service.ConfigByScopedGetter.IsValid requested_scope: "Type(Default) ID(0)" requested_parent_scope: "Type(Absent) ID(0)" responded_scope: "Type(Default) ID(0)"`)
 }
 
@@ -130,12 +131,12 @@ func TestWithDisable(t *testing.T) {
 		WithDisable(scope.Website.Pack(2), true),
 		WithDisable(scope.Store.Pack(3), true),
 	)
-	scpCfg := srv.ConfigByScope(2, 0)
-	assert.NoError(t, scpCfg.isValid())
+	scpCfg, err := srv.ConfigByScope(2, 0)
+	assert.NoError(t, err, "%+v", err)
 	assert.True(t, scpCfg.Disabled)
 
-	scpCfg = srv.ConfigByScope(22, 3)
-	assert.NoError(t, scpCfg.isValid())
+	scpCfg, err = srv.ConfigByScope(22, 3)
+	assert.NoError(t, err, "%+v", err)
 	assert.True(t, scpCfg.Disabled)
 }
 
@@ -144,12 +145,10 @@ func TestWithTriggerOptionFactories(t *testing.T) {
 		WithRootConfig(cfgmock.NewService()),
 		WithTriggerOptionFactories(scope.Store.Pack(4), true),
 	)
-	scpCfg := srv.ConfigByScope(22, 4)
-	err := scpCfg.isValid()
+	_, err := srv.ConfigByScope(22, 4)
 	assert.True(t, errors.IsTemporary(err), "%+v", err)
 
 	assert.NoError(t, srv.Options(WithTriggerOptionFactories(scope.Store.Pack(4), false)))
-	scpCfg = srv.ConfigByScope(22, 4)
-	err = scpCfg.isValid()
+	_, err = srv.ConfigByScope(22, 4)
 	assert.NoError(t, err, "%+v")
 }
