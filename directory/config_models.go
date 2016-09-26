@@ -59,7 +59,7 @@ func (cc ConfigCurrency) Get(sg config.Scoped) (cur Currency, err error) {
 		return
 	}
 	if raw == "" {
-		scp, scpID := sg.Scope()
+		scp, scpID := sg.ScopeID()
 		err = errors.Errorf("Empty currency for path: %q, scope: %q, scopeID: %d", cc.String(), scp, scpID)
 		return
 	}
