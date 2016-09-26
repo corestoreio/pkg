@@ -393,7 +393,7 @@ func (s *Service) IsSingleStoreMode(cfg config.Scoped) (bool, error) {
 	var b = true
 	if s.BackendSingleStore.IsSet() {
 		var err error
-		b, _, err = s.BackendSingleStore.Get(cfg)
+		b, err = s.BackendSingleStore.Get(cfg)
 		if err != nil {
 			return false, errors.Wrap(err, "[store] Service.IsSingleStoreMode")
 		}
