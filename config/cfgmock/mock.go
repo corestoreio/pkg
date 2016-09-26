@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
@@ -76,14 +77,33 @@ func (iv Invocations) PathCount() int {
 	return len(iv)
 }
 
-// Paths returns all paths
+// Paths returns all paths in sorted ascending order.
 func (iv Invocations) Paths() []string {
 	p := make([]string, len(iv))
 	i := 0
 	for k := range iv {
 		p[i] = k
+		i++
 	}
+	sort.Strings(p)
 	return p
+}
+
+// TypeIDs extracts all scope.TypeID from all paths in sorted ascending order.
+// The returned length of scope.TypeIDs is equal to PathCount().
+func (iv Invocations) TypeIDs() scope.TypeIDs {
+	ids := make(scope.TypeIDs, len(iv))
+	i := 0
+	for k := range iv {
+		p, err := cfgpath.SplitFQ(k)
+		if err != nil {
+			panic(fmt.Sprintf("[cfgmock] Path: %q with error: %+v", k, err))
+		}
+		ids[i] = p.ScopeID
+		i++
+	}
+	sort.Sort(ids)
+	return ids
 }
 
 // Service used for testing. Contains functions which will be called in the

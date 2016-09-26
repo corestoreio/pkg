@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -112,6 +113,16 @@ func TestService_FnInvokes(t *testing.T) {
 	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.IntInvokes().Paths())
 	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.TimeInvokes().Paths())
 	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.DurationInvokes().Paths())
+}
+
+func TestInvocations_TypeIDs(t *testing.T) {
+	iv := cfgmock.Invocations{"websites/5/web/cors/allow_credentials": 1, "default/0/web/cors/allow_credentials": 1}
+	assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(5)}, iv.TypeIDs())
+}
+
+func TestInvocations_Paths(t *testing.T) {
+	iv := cfgmock.Invocations{"websites/5/web/cors/allow_credentials": 1, "default/0/web/cors/allow_credentials": 1}
+	assert.Exactly(t, []string{"default/0/web/cors/allow_credentials", "websites/5/web/cors/allow_credentials"}, iv.Paths())
 }
 
 func TestNewServiceAllTypes(t *testing.T) {
