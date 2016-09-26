@@ -61,21 +61,23 @@ func (w *Write) Write(p cfgpath.Path, v interface{}) error {
 // appropriate methods of interface config.Getter. Field DB has precedence over
 // the applied functions.
 type Service struct {
-	DB               storage.Storager
-	ByteFn           func(path string) ([]byte, error)
-	byteFnInvokes    int32
-	StringFn         func(path string) (string, error)
-	stringFnInvokes  int32
-	BoolFn           func(path string) (bool, error)
-	boolFnInvokes    int32
-	Float64Fn        func(path string) (float64, error)
-	float64FnInvokes int32
-	IntFn            func(path string) (int, error)
-	intFnInvokes     int32
-	TimeFn           func(path string) (time.Time, error)
-	timeFnInvokes    int32
-	SubscriptionID   int
-	SubscriptionErr  error
+	DB                storage.Storager
+	ByteFn            func(path string) ([]byte, error)
+	byteFnInvokes     int32
+	StringFn          func(path string) (string, error)
+	stringFnInvokes   int32
+	BoolFn            func(path string) (bool, error)
+	boolFnInvokes     int32
+	Float64Fn         func(path string) (float64, error)
+	float64FnInvokes  int32
+	IntFn             func(path string) (int, error)
+	intFnInvokes      int32
+	TimeFn            func(path string) (time.Time, error)
+	timeFnInvokes     int32
+	DurationFn        func(path string) (time.Duration, error)
+	durationFnInvokes int32
+	SubscriptionID    int
+	SubscriptionErr   error
 }
 
 // PathValue is a required type for an option function. PV = path => value. This
@@ -269,6 +271,24 @@ func (mr *Service) Time(p cfgpath.Path) (time.Time, error) {
 // TimeFnInvokes returns the number of Time() invocations.
 func (mr *Service) TimeFnInvokes() int {
 	return int(atomic.LoadInt32(&mr.timeFnInvokes))
+}
+
+// Duration returns a duration value or a NotFound error.
+func (mr *Service) Duration(p cfgpath.Path) (time.Duration, error) {
+	switch {
+	case mr.hasVal(p):
+		return conv.ToDurationE(mr.getVal(p))
+	case mr.TimeFn != nil:
+		atomic.AddInt32(&mr.durationFnInvokes, 1)
+		return mr.DurationFn(p.String())
+	default:
+		return 0, keyNotFound{}
+	}
+}
+
+// DurationFnInvokes returns the number of Duration() invocations.
+func (mr *Service) DurationFnInvokes() int {
+	return int(atomic.LoadInt32(&mr.durationFnInvokes))
 }
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr

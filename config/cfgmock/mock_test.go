@@ -66,6 +66,9 @@ func TestService_FnInvokes(t *testing.T) {
 		TimeFn: func(path string) (time.Time, error) {
 			return time.Time{}, nil
 		},
+		DurationFn: func(path string) (time.Duration, error) {
+			return 0, nil
+		},
 	}
 
 	const iterations = 10
@@ -81,6 +84,7 @@ func TestService_FnInvokes(t *testing.T) {
 			_, _ = s.Float64(cfgpath.MustNewByParts("test/service/invokes"))
 			_, _ = s.Int(cfgpath.MustNewByParts("test/service/invokes"))
 			_, _ = s.Time(cfgpath.MustNewByParts("test/service/invokes"))
+			_, _ = s.Duration(cfgpath.MustNewByParts("test/service/invokes"))
 		}(&wg)
 	}
 	wg.Wait()
@@ -91,11 +95,12 @@ func TestService_FnInvokes(t *testing.T) {
 	assert.Exactly(t, iterations, s.Float64FnInvokes())
 	assert.Exactly(t, iterations, s.IntFnInvokes())
 	assert.Exactly(t, iterations, s.TimeFnInvokes())
+	assert.Exactly(t, iterations, s.DurationFnInvokes())
 }
 
 func TestNewServiceAllTypes(t *testing.T) {
 
-	types := []interface{}{"a", int(3141), float64(2.7182) * 3.141, true, time.Now(), []byte(`H∑llo goph€r`)}
+	types := []interface{}{time.Hour, "a", int(3141), float64(2.7182) * 3.141, true, time.Now(), []byte(`H∑llo goph€r`)}
 	p := cfgpath.MustNewByParts("aa/bb/cc")
 
 	for iFaceIDX, wantVal := range types {
@@ -118,6 +123,8 @@ func TestNewServiceAllTypes(t *testing.T) {
 			haveVal, haveErr = mg.Int(p)
 		case time.Time:
 			haveVal, haveErr = mg.Time(p)
+		case time.Duration:
+			haveVal, haveErr = mg.Duration(p)
 		default:
 			t.Fatalf("Unsupported type: %#v in Index Value %d", wantVal, iFaceIDX)
 		}
@@ -125,7 +132,7 @@ func TestNewServiceAllTypes(t *testing.T) {
 		if haveErr != nil {
 			t.Fatal(haveErr)
 		}
-		if false == reflect.DeepEqual(wantVal, haveVal) {
+		if !reflect.DeepEqual(wantVal, haveVal) {
 			t.Fatalf("Want %v Have %v", wantVal, haveVal)
 		}
 	}
