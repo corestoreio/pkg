@@ -104,19 +104,17 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, "314159", mw.ArgValue.(string))
 
 	sg := cfgmock.NewService().NewScoped(wantWebsiteID, 0)
-	defaultStr, h, err := p1.Get(sg)
+	defaultStr, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	sg = cfgmock.NewService(cfgmock.PathValue{
 		wantPath.String(): "X-CoreStore-TOKEN",
 	}).NewScoped(wantWebsiteID, 0)
 
-	customStr, h, err := p1.Get(sg)
+	customStr, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
-	assert.Exactly(t, scope.MakeTypeID(scope.Website, wantWebsiteID).String(), h.String())
 
 	// now change a default value in the packageConfiguration and see it reflects to p1.
 	// but this is not the way to go. You can directly change the field in p1
@@ -130,10 +128,9 @@ func TestBaseValueString(t *testing.T) {
 	// update p1 to apply the change field data
 	p1.Option(WithFieldFromSectionSlice(configStructure))
 
-	ws, h, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
+	ws, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 }
 
 func TestBaseValue_InScope(t *testing.T) {
@@ -174,7 +171,7 @@ func TestBaseValue_InScope(t *testing.T) {
 			ID:     cfgpath.NewRoute(`c`),
 			Scopes: test.p,
 		}))
-		haveErr := p1.InScope(scope.MakeTypeID(test.sg.Scope()))
+		haveErr := p1.InScope(test.sg.ScopeID())
 
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d => %s", i, haveErr)

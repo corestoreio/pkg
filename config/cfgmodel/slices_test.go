@@ -40,10 +40,10 @@ func TestStringCSVGet(t *testing.T) {
 	)
 	assert.NotEmpty(t, b.Options())
 
-	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	tests := []struct {
 		have     string
@@ -58,12 +58,12 @@ func TestStringCSVGet(t *testing.T) {
 		// todo add errors
 	}
 	for i, test := range tests {
-		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
 		}).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
+		//assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
@@ -110,14 +110,14 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+	haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
 		wantPath: `20152016`,
 	}).NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []string{"2015", "2016"}, haveSL)
-	assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String())
 }
 
 func TestIntCSV(t *testing.T) {
@@ -137,10 +137,10 @@ func TestIntCSV(t *testing.T) {
 	assert.Len(t, b.Options(), 4)
 	assert.Exactly(t, pathWebCorsIntSlice, b.String())
 	// default values:
-	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 4))
+	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 4))
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
 
@@ -159,12 +159,12 @@ func TestIntCSV(t *testing.T) {
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
-		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
 		}).NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
+		//assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
 		if test.wantBhf != nil {
 			assert.True(t, test.wantBhf(haveErr), "Index %d => %+v", i, haveErr)
 			continue
@@ -217,14 +217,14 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindWebsite(34).String()
 
-	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+	haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
 		wantPath: `2015|2016|`,
 	}).NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []int{2015, 2016}, haveSL)
-	assert.Exactly(t, scope.MakeTypeID(scope.Website, 34).String(), haveH.String())
+	//assert.Exactly(t, scope.MakeTypeID(scope.Website, 34).String(), haveH.String())
 }
 
 func TestCSVGet(t *testing.T) {
@@ -238,12 +238,12 @@ func TestCSVGet(t *testing.T) {
 	)
 	assert.Empty(t, b.Options())
 
-	sl, h, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	require.NoError(t, err, "%+v", err)
 	assert.Exactly(t,
 		[][]string{{"0", "\"Did you mean...\" Suggestions", "\"meinten Sie...?\""}, {"1", "Accuracy for Suggestions", "Genauigkeit der Vorschläge"}, {"2", "After switching please reindex the<br /><em>Catalog Search Index</em>.", "Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."}, {"3", "CATALOG", "KATALOG"}},
 		sl) // default values from variable configStructure
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	tests := []struct {
 		have       string
@@ -257,12 +257,12 @@ func TestCSVGet(t *testing.T) {
 		{"Content-Type|X-CS\nApplication", nil, errors.IsNotValid},
 	}
 	for i, test := range tests {
-		haveSL, haveH, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
 		}).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String(), "Index %d", i)
+		//assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
 			continue

@@ -62,7 +62,7 @@ func TestObscure(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveH, haveErr := b.Get(cfgmock.NewService(
+	haveSL, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.PathValue{
 			wantPath: wantCiphered,
 		}).NewScoped(34, 4))
@@ -70,7 +70,6 @@ func TestObscure(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, wantPlain, haveSL)
-	assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String())
 
 	mw := new(cfgmock.Write)
 	b.Write(mw, wantPlain, scope.Store.Pack(12))

@@ -16,7 +16,6 @@ package cfgmodel
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -43,11 +42,11 @@ func NewMapIntStr(path string, opts ...Option) MapIntStr {
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is
 // nil.
-func (p MapIntStr) Get(sg config.Scoped) (string, scope.TypeID, error) {
-	i, h, err := p.Int.Get(sg)
+func (p MapIntStr) Get(sg config.Scoped) (string, error) {
+	i, err := p.Int.Get(sg)
 	if err != nil {
-		return "", h, errors.Wrap(err, "[cfgmodel] MapIntStr.Byte.Get")
+		return "", errors.Wrap(err, "[cfgmodel] MapIntStr.Byte.Get")
 	}
 	s, err := p.IntToStr(sg, i)
-	return s, h, errors.Wrap(err, "[cfgmodel] MapIntStr.Get.Decrypt")
+	return s, errors.Wrap(err, "[cfgmodel] MapIntStr.Get.Decrypt")
 }

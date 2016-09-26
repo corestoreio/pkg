@@ -39,19 +39,19 @@ func NewURL(path string, opts ...Option) URL {
 }
 
 // Get returns an URL. If the underlying value is empty returns nil,nil.
-func (p URL) Get(sg config.Scoped) (*url.URL, scope.TypeID, error) {
-	rawurl, h, err := p.Str.Get(sg)
+func (p URL) Get(sg config.Scoped) (*url.URL, error) {
+	rawurl, err := p.Str.Get(sg)
 	if err != nil {
-		return nil, h, errors.Wrap(err, "[cfgmodel] URL.Str.Get")
+		return nil, errors.Wrap(err, "[cfgmodel] URL.Str.Get")
 	}
 	if rawurl == "" {
-		return nil, h, nil
+		return nil, nil
 	}
 	u, err := url.Parse(rawurl)
 	if err != nil {
-		return nil, h, errors.NewFatalf("[cfgmodel] URL.Parse: %v", err)
+		return nil, errors.NewFatalf("[cfgmodel] URL.Parse: %v", err)
 	}
-	return u, h, nil
+	return u, nil
 }
 
 // Write writes a new URL and validates it before saving. If v is nil, an empty value
@@ -73,7 +73,7 @@ func NewBaseURL(path string, opts ...Option) BaseURL {
 }
 
 // Get returns a base URL
-func (p BaseURL) Get(sg config.Scoped) (string, scope.TypeID, error) {
+func (p BaseURL) Get(sg config.Scoped) (string, error) {
 	return p.Str.Get(sg)
 }
 

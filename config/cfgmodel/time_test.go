@@ -61,12 +61,12 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), scope.MakeTypeID(scope.Store, 11), defaultTime.Add(time.Second * 6)},
 	}
 	for i, test := range tests {
-		gb, h, err := tm.Get(test.sg)
+		gb, err := tm.Get(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
 	}
 }
 
@@ -93,12 +93,12 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), scope.DefaultTypeID, defaultTime.Add(time.Second * 5)},
 	}
 	for i, test := range tests {
-		gb, h, err := b.Get(test.sg)
+		gb, err := b.Get(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
 	}
 }
 
@@ -112,21 +112,21 @@ func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return time.Time{}, errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, h, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 }
 
 func TestTimeIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithField(&element.Field{}))
-	gb, h, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, time.Time{}, gb)
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 }
 
 func TestTimeWrite(t *testing.T) {
@@ -179,12 +179,12 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), scope.MakeTypeID(scope.Store, 11), defaultDuration * (time.Second * 6)},
 	}
 	for i, test := range tests {
-		gb, h, err := tm.Get(test.sg)
+		gb, err := tm.Get(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
 	}
 }
 
@@ -211,12 +211,12 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 		}).NewScoped(10, 11), scope.DefaultTypeID, defaultDuration * (time.Second * 5)},
 	}
 	for i, test := range tests {
-		gb, h, err := b.Get(test.sg)
+		gb, err := b.Get(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
 	}
 }
 
@@ -230,21 +230,21 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 			return "", errors.NewFatalf("Unexpected error")
 		},
 	}
-	gb, h, haveErr := b.Get(sm.NewScoped(1, 1))
+	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Exactly(t, time.Duration(0), gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 }
 
 func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithField(nil))
-	gb, h, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, time.Duration(0), gb)
-	assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 }
 
 func TestDurationWrite(t *testing.T) {

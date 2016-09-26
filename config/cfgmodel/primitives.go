@@ -34,11 +34,11 @@ func NewBool(path string, opts ...Option) Bool {
 // Get returns a bool value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (b Bool) Get(sg config.Scoped) (bool, scope.TypeID, error) {
+func (b Bool) Get(sg config.Scoped) (bool, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if b.LastError != nil {
-		return false, 0, errors.Wrap(b.LastError, "[cfgmodel] Bool.Get.LastError")
+		return false, errors.Wrap(b.LastError, "[cfgmodel] Bool.Get.LastError")
 	}
 
 	var v bool
@@ -48,11 +48,11 @@ func (b Bool) Get(sg config.Scoped) (bool, scope.TypeID, error) {
 		var err error
 		v, err = conv.ToBoolE(b.Field.Default)
 		if err != nil {
-			return false, 0, errors.NewNotValidf("[cfgmodel] ToBoolE: %v", err)
+			return false, errors.NewNotValidf("[cfgmodel] ToBoolE: %v", err)
 		}
 	}
 
-	val, h, err := sg.Bool(b.route, scp)
+	val, err := sg.Bool(b.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
@@ -62,7 +62,7 @@ func (b Bool) Get(sg config.Scoped) (bool, scope.TypeID, error) {
 		// use default value v because sg found nothing
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
-	return v, h, err
+	return v, err
 }
 
 // Write writes a bool value without validating it against the source.Slice.
@@ -83,11 +83,11 @@ func NewByte(path string, opts ...Option) Byte {
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
 // The slice is owned by this function. You must copy it away for
 // further modifications.
-func (bt Byte) Get(sg config.Scoped) ([]byte, scope.TypeID, error) {
+func (bt Byte) Get(sg config.Scoped) ([]byte, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if bt.LastError != nil {
-		return nil, 0, errors.Wrap(bt.LastError, "[cfgmodel] Byte.Get.LastError")
+		return nil, errors.Wrap(bt.LastError, "[cfgmodel] Byte.Get.LastError")
 	}
 
 	var v []byte
@@ -97,11 +97,11 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, scope.TypeID, error) {
 		var err error
 		v, err = conv.ToByteE(bt.Field.Default)
 		if err != nil {
-			return nil, 0, errors.NewNotValidf("[cfgmodel] ToByteE: %v", err)
+			return nil, errors.NewNotValidf("[cfgmodel] ToByteE: %v", err)
 		}
 	}
 
-	val, h, err := sg.Byte(bt.route, scp)
+	val, err := sg.Byte(bt.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
@@ -111,7 +111,7 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, scope.TypeID, error) {
 		// use default value v because sg found nothing
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
-	return v, h, err
+	return v, err
 }
 
 // Write writes a byte slice without validating it against the source.Slice.
@@ -132,11 +132,11 @@ func NewStr(path string, opts ...Option) Str {
 // Get returns a string value from ScopedGetter, if empty the
 // *element.Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *element.Field.Scopes is empty.
-func (str Str) Get(sg config.Scoped) (string, scope.TypeID, error) {
+func (str Str) Get(sg config.Scoped) (string, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if str.LastError != nil {
-		return "", 0, errors.Wrap(str.LastError, "[cfgmodel] Str.Get.LastError")
+		return "", errors.Wrap(str.LastError, "[cfgmodel] Str.Get.LastError")
 	}
 
 	var v string
@@ -146,11 +146,11 @@ func (str Str) Get(sg config.Scoped) (string, scope.TypeID, error) {
 		var err error
 		v, err = conv.ToStringE(str.Field.Default)
 		if err != nil {
-			return "", 0, errors.NewNotValidf("[cfgmodel] ToStringE: %v", err)
+			return "", errors.NewNotValidf("[cfgmodel] ToStringE: %v", err)
 		}
 	}
 
-	val, h, err := sg.String(str.route, scp)
+	val, err := sg.String(str.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
@@ -160,7 +160,7 @@ func (str Str) Get(sg config.Scoped) (string, scope.TypeID, error) {
 		// use default value v because sg found nothing
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
-	return v, h, err
+	return v, err
 }
 
 // Write writes a string value without validating it against the source.Slice.
@@ -179,11 +179,11 @@ func NewInt(path string, opts ...Option) Int {
 // Get returns an int value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (i Int) Get(sg config.Scoped) (int, scope.TypeID, error) {
+func (i Int) Get(sg config.Scoped) (int, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if i.LastError != nil {
-		return 0, 0, errors.Wrap(i.LastError, "[cfgmodel] Int.Get.LastError")
+		return 0, errors.Wrap(i.LastError, "[cfgmodel] Int.Get.LastError")
 	}
 
 	var v int
@@ -193,11 +193,11 @@ func (i Int) Get(sg config.Scoped) (int, scope.TypeID, error) {
 		var err error
 		v, err = conv.ToIntE(i.Field.Default)
 		if err != nil {
-			return 0, 0, errors.NewNotValidf("[cfgmodel] ToIntE: %v", err)
+			return 0, errors.NewNotValidf("[cfgmodel] ToIntE: %v", err)
 		}
 	}
 
-	val, h, err := sg.Int(i.route, scp)
+	val, err := sg.Int(i.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
@@ -207,7 +207,7 @@ func (i Int) Get(sg config.Scoped) (int, scope.TypeID, error) {
 		// use default value v because sg found nothing
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
-	return v, h, err
+	return v, err
 }
 
 // Write writes an int value without validating it against the source.Slice.
@@ -226,11 +226,11 @@ func NewFloat64(path string, opts ...Option) Float64 {
 // Get returns a float64 value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
-func (f Float64) Get(sg config.Scoped) (float64, scope.TypeID, error) {
+func (f Float64) Get(sg config.Scoped) (float64, error) {
 	// This code must be kept in sync with other Get() functions
 
 	if f.LastError != nil {
-		return 0, 0, errors.Wrap(f.LastError, "[cfgmodel] Float64.Get.LastError")
+		return 0, errors.Wrap(f.LastError, "[cfgmodel] Float64.Get.LastError")
 	}
 
 	var v float64
@@ -241,12 +241,12 @@ func (f Float64) Get(sg config.Scoped) (float64, scope.TypeID, error) {
 			var err error
 			v, err = conv.ToFloat64E(d)
 			if err != nil {
-				return 0, 0, errors.NewNotValidf("[cfgmodel] ToFloat64E: %v", err)
+				return 0, errors.NewNotValidf("[cfgmodel] ToFloat64E: %v", err)
 			}
 		}
 	}
 
-	val, h, err := sg.Float64(f.route, scp)
+	val, err := sg.Float64(f.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
 		v = val
@@ -256,7 +256,7 @@ func (f Float64) Get(sg config.Scoped) (float64, scope.TypeID, error) {
 		// use default value v because sg found nothing
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset error
 	}
-	return v, h, err
+	return v, err
 }
 
 // Write writes a float64 value without validating it against the source.Slice.

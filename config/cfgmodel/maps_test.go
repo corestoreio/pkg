@@ -34,7 +34,7 @@ type mockMapIS struct {
 
 func (m mockMapIS) IntToStr(sg config.Scoped, i int) (string, error) {
 	if m.string == "" {
-		return fmt.Sprintf("Parent: %s => Current: %s => Value: %d", scope.MakeTypeID(sg.Parent()), scope.MakeTypeID(sg.Scope()), i), m.error
+		return fmt.Sprintf("Parent: %s => Current: %s => Value: %d", sg.ParentID(), sg.ScopeID(), i), m.error
 	}
 	return m.string, m.error
 }
@@ -43,12 +43,12 @@ func TestNewMapIntStr(t *testing.T) {
 	m := cfgmodel.NewMapIntStr(`general/store_information/region_id`, cfgmodel.WithScopeStore())
 	m.MapIntResolver = mockMapIS{}
 
-	sg := cfgmock.NewService(cfgmock.PathValue{
+	s := cfgmock.NewService(cfgmock.PathValue{
 		m.MustFQStore(5): 33,
-	}).NewScoped(2, 5)
+	})
 
-	val, scp, err := m.Get(sg)
+	val, err := m.Get(s.NewScoped(2, 5))
 	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, scope.MakeTypeID(scope.Store, 5), scp)
+	assert.Exactly(t, scope.TypeIDs{scope.Store.Pack(5)}, s.IntInvokes().TypeIDs())
 	assert.Exactly(t, `Parent: Type(Website) ID(2) => Current: Type(Store) ID(5) => Value: 33`, val)
 }

@@ -87,16 +87,16 @@ func (str *StringCSV) Option(opts ...Option) error {
 // Get returns a string slice. Splits the stored string by comma. Can return
 // nil,nil. Empty values will be discarded. Returns a slice containing unique
 // entries. No validation will be made.
-func (str StringCSV) Get(sg config.Scoped) ([]string, scope.TypeID, error) {
-	s, h, err := str.Str.Get(sg)
+func (str StringCSV) Get(sg config.Scoped) ([]string, error) {
+	s, err := str.Str.Get(sg)
 	if err != nil {
-		return nil, h, errors.Wrap(err, "[cfgmodel] Str.Get")
+		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
 	if s == "" {
-		return nil, h, nil
+		return nil, nil
 	}
 	var ret slices.String = strings.Split(s, string(str.Comma))
-	return ret.Unique(), h, nil
+	return ret.Unique(), nil
 }
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
@@ -152,13 +152,13 @@ func (ic *IntCSV) Option(opts ...Option) error {
 // Get returns an int slice. Int string gets splited by comma. Can return
 // nil,nil. If multiple values cannot be casted to int then the last known error
 // gets returned.
-func (ic IntCSV) Get(sg config.Scoped) ([]int, scope.TypeID, error) {
-	s, h, err := ic.Str.Get(sg)
+func (ic IntCSV) Get(sg config.Scoped) ([]int, error) {
+	s, err := ic.Str.Get(sg)
 	if err != nil {
-		return nil, h, errors.Wrap(err, "[cfgmodel] Str.Get")
+		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
 	if s == "" {
-		return nil, h, nil
+		return nil, nil
 	}
 
 	csv := strings.Split(s, string(ic.Separator))
@@ -170,14 +170,14 @@ func (ic IntCSV) Get(sg config.Scoped) ([]int, scope.TypeID, error) {
 		if line != "" {
 			v, err := strconv.Atoi(line)
 			if err != nil && false == ic.Lenient {
-				return ret, h, errors.NewNotValidf(errIntCSVFailedToConvertToInt, line, err)
+				return ret, errors.NewNotValidf(errIntCSVFailedToConvertToInt, line, err)
 			}
 			if err == nil {
 				ret = append(ret, v)
 			}
 		}
 	}
-	return ret, h, nil
+	return ret, nil
 }
 
 // Write writes int values as a CSV string
@@ -248,22 +248,22 @@ func (c *CSV) Option(opts ...Option) error {
 
 // Get returns a string slice. Splits the stored string by comma and new lines
 // by \r and/or \n. Can return nil,nil. Error behaviour: NotValid
-func (c CSV) Get(sg config.Scoped) ([][]string, scope.TypeID, error) {
-	s, h, err := c.Str.Get(sg)
+func (c CSV) Get(sg config.Scoped) ([][]string, error) {
+	s, err := c.Str.Get(sg)
 	if err != nil {
-		return nil, h, errors.Wrap(err, "[cfgmodel] Str.Get")
+		return nil, errors.Wrap(err, "[cfgmodel] Str.Get")
 	}
 	if s == "" {
-		return nil, h, nil
+		return nil, nil
 	}
 	r := c.NewReader(bytes.NewBufferString(s))
 	r.Comma = c.Comma
 	r.Comment = c.Comment // not possible to set currently the comment
 	res, err := r.ReadAll()
 	if err != nil {
-		return nil, h, errors.NewNotValidf("[cfgmodel] CSV.NewReader.ReadAll: %v", err)
+		return nil, errors.NewNotValidf("[cfgmodel] CSV.NewReader.ReadAll: %v", err)
 	}
-	return res, h, nil
+	return res, nil
 }
 
 // Write writes a slice with its scope and ID to the writer. Validates the input
