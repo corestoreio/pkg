@@ -302,6 +302,20 @@ func TestSplitFQ(t *testing.T) {
 	}
 }
 
+func TestSplitFQ2(t *testing.T) {
+	p, err := cfgpath.SplitFQ("websites/5/web/cors/allow_credentials")
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Exactly(t, scope.Website.Pack(5), p.ScopeID)
+
+	p, err = cfgpath.SplitFQ("default/0/web/cors/allow_credentials")
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Exactly(t, scope.DefaultTypeID, p.ScopeID)
+}
+
 var benchmarkReverseFQPath cfgpath.Path
 
 // BenchmarkSplitFQ-4  	10000000	       199 ns/op	      32 B/op	       1 allocs/op
