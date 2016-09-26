@@ -22,18 +22,19 @@ import (
 )
 
 // Storager is the underlying data storage for holding the keys and its values.
-// Implementations can be spf13/viper or MySQL backed. Default Storager
-// is a simple mutex protected map[string]interface{}.
-// ProTip: If you use MySQL as Storager don't execute function
-// ApplyCoreConfigData()
-// The config.Writer calls the config.Storager functions and config.Storager
-// must make sure of the correct type conversions to the supported type of the
-// underlying storage engine.
+// Implementations can be spf13/viper or MySQL backed. Default Storager is a
+// simple mutex protected map[string]interface{}. ProTip: If you use MySQL as
+// Storager don't execute function ApplyCoreConfigData() The config.Writer calls
+// the config.Storager functions and config.Storager must make sure of the
+// correct type conversions to the supported type of the underlying storage
+// engine.
 type Storager interface {
 	// Set sets a key with a value and returns on success nil or ErrKeyOverwritten,
 	// on failure any other error
 	Set(key cfgpath.Path, value interface{}) error
-	// Get may return a NotFound error behaviour.
+	// Get returns the raw value on success or may return a NotFound error
+	// behaviour if an entry cannot be found or does not exists. Any other error
+	// can also occur.
 	Get(key cfgpath.Path) (interface{}, error)
 	// AllKeys returns the fully qualified keys
 	AllKeys() (cfgpath.PathSlice, error)
