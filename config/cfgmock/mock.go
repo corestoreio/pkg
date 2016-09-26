@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
@@ -57,27 +57,57 @@ func (w *Write) Write(p cfgpath.Path, v interface{}) error {
 	return w.WriteError
 }
 
+// Invocations represents a list containing the fully qualified configuration
+// path and number of invocations. This type has attached some helper functions.
+type Invocations map[string]int
+
+// Sum returns the total calls for the current method receiver type. E.g. All
+// calls to String() with different or same paths.
+func (iv Invocations) Sum() int {
+	s := 0
+	for _, v := range iv {
+		s += v
+	}
+	return s
+}
+
+// PathCount returns the number of different paths.
+func (iv Invocations) PathCount() int {
+	return len(iv)
+}
+
+// Paths returns all paths
+func (iv Invocations) Paths() []string {
+	p := make([]string, len(iv))
+	i := 0
+	for k := range iv {
+		p[i] = k
+	}
+	return p
+}
+
 // Service used for testing. Contains functions which will be called in the
 // appropriate methods of interface config.Getter. Field DB has precedence over
 // the applied functions.
 type Service struct {
-	DB                storage.Storager
-	ByteFn            func(path string) ([]byte, error)
-	byteFnInvokes     int32
-	StringFn          func(path string) (string, error)
-	stringFnInvokes   int32
-	BoolFn            func(path string) (bool, error)
-	boolFnInvokes     int32
-	Float64Fn         func(path string) (float64, error)
-	float64FnInvokes  int32
-	IntFn             func(path string) (int, error)
-	intFnInvokes      int32
-	TimeFn            func(path string) (time.Time, error)
-	timeFnInvokes     int32
-	DurationFn        func(path string) (time.Duration, error)
-	durationFnInvokes int32
-	SubscriptionID    int
-	SubscriptionErr   error
+	DB               storage.Storager
+	mu               sync.Mutex
+	ByteFn           func(path string) ([]byte, error)
+	byteInvokes      Invocations // contains path and count of how many times the typed function has been called
+	StringFn         func(path string) (string, error)
+	stringInvokes    Invocations
+	BoolFn           func(path string) (bool, error)
+	boolInvokes      Invocations
+	Float64Fn        func(path string) (float64, error)
+	float64Invokes   Invocations
+	IntFn            func(path string) (int, error)
+	intInvokes       Invocations
+	TimeFn           func(path string) (time.Time, error)
+	timeInvokes      Invocations
+	DurationFn       func(path string) (time.Duration, error)
+	durationInvokes  Invocations
+	SubscribeFn      func(cfgpath.Route, config.MessageReceiver) (subscriptionID int, err error)
+	SubscribeInvokes int32
 }
 
 // PathValue is a required type for an option function. PV = path => value. This
@@ -140,23 +170,23 @@ func NewService(pvs ...PathValue) *Service {
 }
 
 // UpdateValues adds or overwrites the internal path => value map.
-func (mr *Service) UpdateValues(pathValues PathValue) {
-	pathValues.set(mr.DB)
+func (s *Service) UpdateValues(pv PathValue) {
+	pv.set(s.DB)
 }
 
-func (mr *Service) hasVal(p cfgpath.Path) bool {
-	if mr.DB == nil {
+func (s *Service) hasVal(p cfgpath.Path) bool {
+	if s.DB == nil {
 		return false
 	}
-	v, err := mr.DB.Get(p)
+	v, err := s.DB.Get(p)
 	if err != nil && !errors.IsNotFound(err) {
 		println("Mock.Service.hasVal error:", err.Error(), "path", p.String())
 	}
 	return v != nil && err == nil
 }
 
-func (mr *Service) getVal(p cfgpath.Path) interface{} {
-	v, err := mr.DB.Get(p)
+func (s *Service) getVal(p cfgpath.Path) interface{} {
+	v, err := s.DB.Get(p)
 	if err != nil && !errors.IsNotFound(err) {
 		println("Mock.Service.getVal error:", err.Error(), "path", p.String())
 		return nil
@@ -166,141 +196,191 @@ func (mr *Service) getVal(p cfgpath.Path) interface{} {
 }
 
 // Byte returns a byte slice value
-func (mr *Service) Byte(p cfgpath.Path) ([]byte, error) {
+func (s *Service) Byte(p cfgpath.Path) ([]byte, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.byteInvokes == nil {
+		s.byteInvokes = make(Invocations)
+	}
+	ps := p.String()
+	s.byteInvokes[ps]++
+
 	switch {
-	case mr.hasVal(p):
-		return conv.ToByteE(mr.getVal(p))
-	case mr.ByteFn != nil:
-		atomic.AddInt32(&mr.byteFnInvokes, 1)
-		return mr.ByteFn(p.String())
+	case s.hasVal(p):
+		return conv.ToByteE(s.getVal(p))
+	case s.ByteFn != nil:
+		return s.ByteFn(ps)
 	default:
 		return nil, keyNotFound{}
 	}
 }
 
-// ByteFnInvokes returns the number of Byte() invocations.
-func (mr *Service) ByteFnInvokes() int {
-	return int(atomic.LoadInt32(&mr.byteFnInvokes))
+// ByteInvokes returns the number of Byte() invocations.
+func (s *Service) ByteInvokes() Invocations {
+	return s.byteInvokes
 }
 
 // String returns a string value
-func (mr *Service) String(p cfgpath.Path) (string, error) {
+func (s *Service) String(p cfgpath.Path) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.stringInvokes == nil {
+		s.stringInvokes = make(Invocations)
+	}
+	ps := p.String()
+	s.stringInvokes[ps]++
+
 	switch {
-	case mr.hasVal(p):
-		return conv.ToStringE(mr.getVal(p))
-	case mr.StringFn != nil:
-		atomic.AddInt32(&mr.stringFnInvokes, 1)
-		return mr.StringFn(p.String())
+	case s.hasVal(p):
+		return conv.ToStringE(s.getVal(p))
+	case s.StringFn != nil:
+		return s.StringFn(p.String())
 	default:
 		return "", keyNotFound{}
 	}
 }
 
-// StringFnInvokes returns the number of String() invocations.
-func (mr *Service) StringFnInvokes() int {
-	return int(atomic.LoadInt32(&mr.stringFnInvokes))
+// StringInvokes returns the number of String() invocations.
+func (s *Service) StringInvokes() Invocations {
+	return s.stringInvokes
 }
 
 // Bool returns a bool value
-func (mr *Service) Bool(p cfgpath.Path) (bool, error) {
+func (s *Service) Bool(p cfgpath.Path) (bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.boolInvokes == nil {
+		s.boolInvokes = make(Invocations)
+	}
+	ps := p.String()
+	s.boolInvokes[ps]++
+
 	switch {
-	case mr.hasVal(p):
-		return conv.ToBoolE(mr.getVal(p))
-	case mr.BoolFn != nil:
-		atomic.AddInt32(&mr.boolFnInvokes, 1)
-		return mr.BoolFn(p.String())
+	case s.hasVal(p):
+		return conv.ToBoolE(s.getVal(p))
+	case s.BoolFn != nil:
+		return s.BoolFn(p.String())
 	default:
 		return false, keyNotFound{}
 	}
 }
 
-// BoolFnInvokes returns the number of Bool() invocations.
-func (mr *Service) BoolFnInvokes() int {
-	return int(atomic.LoadInt32(&mr.boolFnInvokes))
+// BoolInvokes returns the number of Bool() invocations.
+func (s *Service) BoolInvokes() Invocations {
+	return s.boolInvokes
 }
 
 // Float64 returns a float64 value
-func (mr *Service) Float64(p cfgpath.Path) (float64, error) {
+func (s *Service) Float64(p cfgpath.Path) (float64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.float64Invokes == nil {
+		s.float64Invokes = make(Invocations)
+	}
+	ps := p.String()
+	s.float64Invokes[ps]++
+
 	switch {
-	case mr.hasVal(p):
-		return conv.ToFloat64E(mr.getVal(p))
-	case mr.Float64Fn != nil:
-		atomic.AddInt32(&mr.float64FnInvokes, 1)
-		return mr.Float64Fn(p.String())
+	case s.hasVal(p):
+		return conv.ToFloat64E(s.getVal(p))
+	case s.Float64Fn != nil:
+		return s.Float64Fn(p.String())
 	default:
 		return 0.0, keyNotFound{}
 	}
 }
 
-// Float64FnInvokes returns the number of Float64() invocations.
-func (mr *Service) Float64FnInvokes() int {
-	return int(atomic.LoadInt32(&mr.float64FnInvokes))
+// Float64Invokes returns the number of Float64() invocations.
+func (s *Service) Float64Invokes() Invocations {
+	return s.float64Invokes
 }
 
 // Int returns an integer value
-func (mr *Service) Int(p cfgpath.Path) (int, error) {
+func (s *Service) Int(p cfgpath.Path) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.intInvokes == nil {
+		s.intInvokes = make(Invocations)
+	}
+	ps := p.String()
+	s.intInvokes[ps]++
+
 	switch {
-	case mr.hasVal(p):
-		return conv.ToIntE(mr.getVal(p))
-	case mr.IntFn != nil:
-		atomic.AddInt32(&mr.intFnInvokes, 1)
-		return mr.IntFn(p.String())
+	case s.hasVal(p):
+		return conv.ToIntE(s.getVal(p))
+	case s.IntFn != nil:
+		return s.IntFn(p.String())
 	default:
 		return 0, keyNotFound{}
 	}
 }
 
-// IntFnInvokes returns the number of Int() invocations.
-func (mr *Service) IntFnInvokes() int {
-	return int(atomic.LoadInt32(&mr.intFnInvokes))
+// IntInvokes returns the number of Int() invocations.
+func (s *Service) IntInvokes() Invocations {
+	return s.intInvokes
 }
 
 // Time returns a time value
-func (mr *Service) Time(p cfgpath.Path) (time.Time, error) {
+func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.timeInvokes == nil {
+		s.timeInvokes = make(Invocations)
+	}
+	ps := p.String()
+	s.timeInvokes[ps]++
+
 	switch {
-	case mr.hasVal(p):
-		return conv.ToTimeE(mr.getVal(p))
-	case mr.TimeFn != nil:
-		atomic.AddInt32(&mr.timeFnInvokes, 1)
-		return mr.TimeFn(p.String())
+	case s.hasVal(p):
+		return conv.ToTimeE(s.getVal(p))
+	case s.TimeFn != nil:
+		return s.TimeFn(p.String())
 	default:
 		return time.Time{}, keyNotFound{}
 	}
 }
 
-// TimeFnInvokes returns the number of Time() invocations.
-func (mr *Service) TimeFnInvokes() int {
-	return int(atomic.LoadInt32(&mr.timeFnInvokes))
+// TimeInvokes returns the number of Time() invocations.
+func (s *Service) TimeInvokes() Invocations {
+	return s.timeInvokes
 }
 
 // Duration returns a duration value or a NotFound error.
-func (mr *Service) Duration(p cfgpath.Path) (time.Duration, error) {
+func (s *Service) Duration(p cfgpath.Path) (time.Duration, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.durationInvokes == nil {
+		s.durationInvokes = make(Invocations)
+	}
+	ps := p.String()
+	s.durationInvokes[ps]++
+
 	switch {
-	case mr.hasVal(p):
-		return conv.ToDurationE(mr.getVal(p))
-	case mr.TimeFn != nil:
-		atomic.AddInt32(&mr.durationFnInvokes, 1)
-		return mr.DurationFn(p.String())
+	case s.hasVal(p):
+		return conv.ToDurationE(s.getVal(p))
+	case s.TimeFn != nil:
+		return s.DurationFn(p.String())
 	default:
 		return 0, keyNotFound{}
 	}
 }
 
-// DurationFnInvokes returns the number of Duration() invocations.
-func (mr *Service) DurationFnInvokes() int {
-	return int(atomic.LoadInt32(&mr.durationFnInvokes))
+// DurationInvokes returns the number of Duration() invocations.
+func (s *Service) DurationInvokes() Invocations {
+	return s.durationInvokes
 }
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (mr *Service) Subscribe(_ cfgpath.Route, s config.MessageReceiver) (subscriptionID int, err error) {
-	return mr.SubscriptionID, mr.SubscriptionErr
+func (s *Service) Subscribe(p cfgpath.Route, mr config.MessageReceiver) (subscriptionID int, err error) {
+	s.SubscribeInvokes++
+	return s.SubscribeFn(p, mr)
 }
 
 // NewScoped creates a new config.ScopedReader which uses the underlying
 // mocked paths and values.
-func (mr *Service) NewScoped(websiteID, storeID int64) config.Scoped {
-	return config.NewScoped(mr, websiteID, storeID)
+func (s *Service) NewScoped(websiteID, storeID int64) config.Scoped {
+	return config.NewScoped(s, websiteID, storeID)
 }
 
 // From html/template/content.go

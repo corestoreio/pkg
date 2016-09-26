@@ -89,13 +89,29 @@ func TestService_FnInvokes(t *testing.T) {
 	}
 	wg.Wait()
 
-	assert.Exactly(t, iterations, s.ByteFnInvokes())
-	assert.Exactly(t, iterations, s.StringFnInvokes())
-	assert.Exactly(t, iterations, s.BoolFnInvokes())
-	assert.Exactly(t, iterations, s.Float64FnInvokes())
-	assert.Exactly(t, iterations, s.IntFnInvokes())
-	assert.Exactly(t, iterations, s.TimeFnInvokes())
-	assert.Exactly(t, iterations, s.DurationFnInvokes())
+	assert.Exactly(t, iterations, s.ByteInvokes().Sum())
+	assert.Exactly(t, iterations, s.StringInvokes().Sum())
+	assert.Exactly(t, iterations, s.BoolInvokes().Sum())
+	assert.Exactly(t, iterations, s.Float64Invokes().Sum())
+	assert.Exactly(t, iterations, s.IntInvokes().Sum())
+	assert.Exactly(t, iterations, s.TimeInvokes().Sum())
+	assert.Exactly(t, iterations, s.DurationInvokes().Sum())
+
+	assert.Exactly(t, 1, s.ByteInvokes().PathCount())
+	assert.Exactly(t, 1, s.StringInvokes().PathCount())
+	assert.Exactly(t, 1, s.BoolInvokes().PathCount())
+	assert.Exactly(t, 1, s.Float64Invokes().PathCount())
+	assert.Exactly(t, 1, s.IntInvokes().PathCount())
+	assert.Exactly(t, 1, s.TimeInvokes().PathCount())
+	assert.Exactly(t, 1, s.DurationInvokes().PathCount())
+
+	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.ByteInvokes().Paths())
+	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.StringInvokes().Paths())
+	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.BoolInvokes().Paths())
+	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.Float64Invokes().Paths())
+	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.IntInvokes().Paths())
+	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.TimeInvokes().Paths())
+	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.DurationInvokes().Paths())
 }
 
 func TestNewServiceAllTypes(t *testing.T) {
