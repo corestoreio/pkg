@@ -273,7 +273,7 @@ func (s *Service) String(p cfgpath.Path) (string, error) {
 	case s.hasVal(p):
 		return conv.ToStringE(s.getVal(p))
 	case s.StringFn != nil:
-		return s.StringFn(p.String())
+		return s.StringFn(ps)
 	default:
 		return "", keyNotFound{}
 	}
@@ -298,7 +298,7 @@ func (s *Service) Bool(p cfgpath.Path) (bool, error) {
 	case s.hasVal(p):
 		return conv.ToBoolE(s.getVal(p))
 	case s.BoolFn != nil:
-		return s.BoolFn(p.String())
+		return s.BoolFn(ps)
 	default:
 		return false, keyNotFound{}
 	}
@@ -323,7 +323,7 @@ func (s *Service) Float64(p cfgpath.Path) (float64, error) {
 	case s.hasVal(p):
 		return conv.ToFloat64E(s.getVal(p))
 	case s.Float64Fn != nil:
-		return s.Float64Fn(p.String())
+		return s.Float64Fn(ps)
 	default:
 		return 0.0, keyNotFound{}
 	}
@@ -348,7 +348,7 @@ func (s *Service) Int(p cfgpath.Path) (int, error) {
 	case s.hasVal(p):
 		return conv.ToIntE(s.getVal(p))
 	case s.IntFn != nil:
-		return s.IntFn(p.String())
+		return s.IntFn(ps)
 	default:
 		return 0, keyNotFound{}
 	}
@@ -373,7 +373,7 @@ func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 	case s.hasVal(p):
 		return conv.ToTimeE(s.getVal(p))
 	case s.TimeFn != nil:
-		return s.TimeFn(p.String())
+		return s.TimeFn(ps)
 	default:
 		return time.Time{}, keyNotFound{}
 	}
@@ -398,7 +398,7 @@ func (s *Service) Duration(p cfgpath.Path) (time.Duration, error) {
 	case s.hasVal(p):
 		return conv.ToDurationE(s.getVal(p))
 	case s.TimeFn != nil:
-		return s.DurationFn(p.String())
+		return s.DurationFn(ps)
 	default:
 		return 0, keyNotFound{}
 	}
