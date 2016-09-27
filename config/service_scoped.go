@@ -50,7 +50,8 @@ import (
 // websiteID and empty storeID are triggering the default scope.
 //
 // You can use the function NewScoped() to create a new object but not
-// mandatory. Returned error has mostly the behaviour of not found.
+// mandatory. Returned error has mostly the behaviour of NotFound. Debug logging
+// can be implemented in the config.Getter.
 type Scoped struct {
 	// Root holds the main functions for retrieving values by paths from the
 	// storage.
@@ -59,8 +60,8 @@ type Scoped struct {
 	StoreID   int64
 }
 
-// NewScopedService instantiates a ScopedGetter implementation.  Getter specifies the
-// root Getter which does not know about any scope.
+// NewScopedService instantiates a ScopedGetter implementation.  Getter
+// specifies the root Getter which does not know about any scope.
 func NewScoped(r Getter, websiteID, storeID int64) Scoped {
 	return Scoped{
 		Root:      r,
@@ -76,28 +77,29 @@ func (ss Scoped) IsValid() bool {
 		(ss.WebsiteID > 0 && ss.StoreID > 0))
 }
 
-// Parent tells you the parent underlying scope and its ID. Store falls back to
-// website and website falls back to default.
-func (ss Scoped) Parent() (scope.Type, int64) {
+// ParentID tells you the parent underlying scope and its ID. Store falls back
+// to website and website falls back to default.
+func (ss Scoped) ParentID() scope.TypeID {
 	if ss.StoreID > 0 {
-		return scope.Website, ss.WebsiteID
+		return scope.Website.Pack(ss.WebsiteID)
 	}
-	return scope.Default, 0
+	return scope.DefaultTypeID
 }
 
-// Scope tells you the current underlying scope and its ID.
-func (ss Scoped) Scope() (scope.Type, int64) {
+// ScopeID tells you the current underlying scope and its ID to which this
+// configuration has been bound to.
+func (ss Scoped) ScopeID() scope.TypeID {
 	if ss.StoreID > 0 {
-		return scope.Store, ss.StoreID
+		return scope.Store.Pack(ss.StoreID)
 	}
 	if ss.WebsiteID > 0 {
-		return scope.Website, ss.WebsiteID
+		return scope.Website.Pack(ss.WebsiteID)
 	}
-	return scope.Default, 0
+	return scope.DefaultTypeID
 }
 
 func (ss Scoped) isAllowedStore(s ...scope.Type) bool {
-	scp, _ := ss.Scope()
+	scp := ss.ScopeID().Type()
 	if len(s) > 0 && s[0] > scope.Absent {
 		scp = s[0]
 	}
@@ -105,7 +107,7 @@ func (ss Scoped) isAllowedStore(s ...scope.Type) bool {
 }
 
 func (ss Scoped) isAllowedWebsite(s ...scope.Type) bool {
-	scp, _ := ss.Scope()
+	scp := ss.ScopeID().Type()
 	if len(s) > 0 && s[0] > scope.Absent {
 		scp = s[0]
 	}
@@ -114,11 +116,11 @@ func (ss Scoped) isAllowedWebsite(s ...scope.Type) bool {
 
 // Byte traverses through the scopes store->website->default to find
 // a matching byte slice value.
-func (ss Scoped) Byte(r cfgpath.Route, s ...scope.Type) ([]byte, scope.TypeID, error) {
+func (ss Scoped) Byte(r cfgpath.Route, s ...scope.Type) ([]byte, error) {
 	// fallback to next parent scope if value does not exists
 	p, err := cfgpath.New(r)
 	if err != nil {
-		return nil, 0, errors.Wrapf(err, "[config] Byte. Route %q", r)
+		return nil, errors.Wrapf(err, "[config] Byte. Route %q", r)
 	}
 
 	if ss.isAllowedStore(s...) {
@@ -126,7 +128,7 @@ func (ss Scoped) Byte(r cfgpath.Route, s ...scope.Type) ([]byte, scope.TypeID, e
 		v, err := ss.Root.Byte(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	}
 	if ss.isAllowedWebsite(s...) {
@@ -134,21 +136,20 @@ func (ss Scoped) Byte(r cfgpath.Route, s ...scope.Type) ([]byte, scope.TypeID, e
 		v, err := ss.Root.Byte(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	}
 	p.ScopeID = scope.DefaultTypeID
-	v, err := ss.Root.Byte(p)
-	return v, scope.DefaultTypeID, err
+	return ss.Root.Byte(p)
 }
 
 // String traverses through the scopes store->website->default to find
 // a matching string value.
-func (ss Scoped) String(r cfgpath.Route, s ...scope.Type) (string, scope.TypeID, error) {
+func (ss Scoped) String(r cfgpath.Route, s ...scope.Type) (string, error) {
 	// fallback to next parent scope if value does not exists
 	p, err := cfgpath.New(r)
 	if err != nil {
-		return "", 0, errors.Wrapf(err, "[config] String. Route %q", r)
+		return "", errors.Wrapf(err, "[config] String. Route %q", r)
 	}
 
 	if ss.isAllowedStore(s...) {
@@ -156,7 +157,7 @@ func (ss Scoped) String(r cfgpath.Route, s ...scope.Type) (string, scope.TypeID,
 		v, err := ss.Root.String(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	}
 
@@ -165,21 +166,20 @@ func (ss Scoped) String(r cfgpath.Route, s ...scope.Type) (string, scope.TypeID,
 		v, err := ss.Root.String(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	}
 	p.ScopeID = scope.DefaultTypeID
-	v, err := ss.Root.String(p)
-	return v, scope.DefaultTypeID, err
+	return ss.Root.String(p)
 }
 
 // Bool traverses through the scopes store->website->default to find
 // a matching bool value.
-func (ss Scoped) Bool(r cfgpath.Route, s ...scope.Type) (bool, scope.TypeID, error) {
+func (ss Scoped) Bool(r cfgpath.Route, s ...scope.Type) (bool, error) {
 	// fallback to next parent scope if value does not exists
 	p, err := cfgpath.New(r)
 	if err != nil {
-		return false, 0, errors.Wrapf(err, "[config] Bool. Route %q", r)
+		return false, errors.Wrapf(err, "[config] Bool. Route %q", r)
 	}
 
 	if ss.isAllowedStore(s...) {
@@ -187,7 +187,7 @@ func (ss Scoped) Bool(r cfgpath.Route, s ...scope.Type) (bool, scope.TypeID, err
 		v, err := ss.Root.Bool(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in store scope go to website scope
 
@@ -196,21 +196,20 @@ func (ss Scoped) Bool(r cfgpath.Route, s ...scope.Type) (bool, scope.TypeID, err
 		v, err := ss.Root.Bool(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in website scope go to default scope
 	p.ScopeID = scope.DefaultTypeID
-	v, err := ss.Root.Bool(p)
-	return v, scope.DefaultTypeID, err
+	return ss.Root.Bool(p)
 }
 
 // Float64 traverses through the scopes store->website->default to find
 // a matching float64 value.
-func (ss Scoped) Float64(r cfgpath.Route, s ...scope.Type) (float64, scope.TypeID, error) {
+func (ss Scoped) Float64(r cfgpath.Route, s ...scope.Type) (float64, error) {
 	// fallback to next parent scope if value does not exists
 	p, err := cfgpath.New(r)
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "[config] Float64. Route %q", r)
+		return 0, errors.Wrapf(err, "[config] Float64. Route %q", r)
 	}
 
 	if ss.isAllowedStore(s...) {
@@ -218,7 +217,7 @@ func (ss Scoped) Float64(r cfgpath.Route, s ...scope.Type) (float64, scope.TypeI
 		v, err := ss.Root.Float64(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in store scope go to website scope
 
@@ -227,21 +226,20 @@ func (ss Scoped) Float64(r cfgpath.Route, s ...scope.Type) (float64, scope.TypeI
 		v, err := ss.Root.Float64(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in website scope go to default scope
 	p.ScopeID = scope.DefaultTypeID
-	v, err := ss.Root.Float64(p)
-	return v, scope.DefaultTypeID, err
+	return ss.Root.Float64(p)
 }
 
 // Int traverses through the scopes store->website->default to find
 // a matching int value.
-func (ss Scoped) Int(r cfgpath.Route, s ...scope.Type) (int, scope.TypeID, error) {
+func (ss Scoped) Int(r cfgpath.Route, s ...scope.Type) (int, error) {
 	// fallback to next parent scope if value does not exists
 	p, err := cfgpath.New(r)
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "[config] Int. Route %q", r)
+		return 0, errors.Wrapf(err, "[config] Int. Route %q", r)
 	}
 
 	if ss.isAllowedStore(s...) {
@@ -249,7 +247,7 @@ func (ss Scoped) Int(r cfgpath.Route, s ...scope.Type) (int, scope.TypeID, error
 		v, err := ss.Root.Int(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in store scope go to website scope
 
@@ -258,21 +256,20 @@ func (ss Scoped) Int(r cfgpath.Route, s ...scope.Type) (int, scope.TypeID, error
 		v, err := ss.Root.Int(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in website scope go to default scope
 	p.ScopeID = scope.DefaultTypeID
-	v, err := ss.Root.Int(p)
-	return v, scope.DefaultTypeID, err
+	return ss.Root.Int(p)
 }
 
 // Time traverses through the scopes store->website->default to find
 // a matching time.Time value.
-func (ss Scoped) Time(r cfgpath.Route, s ...scope.Type) (time.Time, scope.TypeID, error) {
+func (ss Scoped) Time(r cfgpath.Route, s ...scope.Type) (time.Time, error) {
 	// fallback to next parent scope if value does not exists
 	p, err := cfgpath.New(r)
 	if err != nil {
-		return time.Time{}, 0, errors.Wrapf(err, "[config] Time. Route %q", r)
+		return time.Time{}, errors.Wrapf(err, "[config] Time. Route %q", r)
 	}
 
 	if ss.isAllowedStore(s...) {
@@ -280,7 +277,7 @@ func (ss Scoped) Time(r cfgpath.Route, s ...scope.Type) (time.Time, scope.TypeID
 		v, err := ss.Root.Time(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in store scope go to website scope
 
@@ -289,10 +286,39 @@ func (ss Scoped) Time(r cfgpath.Route, s ...scope.Type) (time.Time, scope.TypeID
 		v, err := ss.Root.Time(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, p.ScopeID, err
+			return v, err
 		}
 	} // if not found in website scope go to default scope
 	p.ScopeID = scope.DefaultTypeID
-	v, err := ss.Root.Time(p)
-	return v, scope.DefaultTypeID, err
+	return ss.Root.Time(p)
+}
+
+// Duration traverses through the scopes store->website->default to find
+// a matching time.Duration value.
+func (ss Scoped) Duration(r cfgpath.Route, s ...scope.Type) (time.Duration, error) {
+	// fallback to next parent scope if value does not exists
+	p, err := cfgpath.New(r)
+	if err != nil {
+		return 0, errors.Wrapf(err, "[config] Time. Route %q", r)
+	}
+
+	if ss.isAllowedStore(s...) {
+		p = p.BindStore(ss.StoreID)
+		v, err := ss.Root.Duration(p)
+		if !errors.IsNotFound(err) || err == nil {
+			// value found or err is not a NotFound error
+			return v, err
+		}
+	} // if not found in store scope go to website scope
+
+	if ss.isAllowedWebsite(s...) {
+		p = p.BindWebsite(ss.WebsiteID)
+		v, err := ss.Root.Duration(p)
+		if !errors.IsNotFound(err) || err == nil {
+			// value found or err is not a NotFound error
+			return v, err
+		}
+	} // if not found in website scope go to default scope
+	p.ScopeID = scope.DefaultTypeID
+	return ss.Root.Duration(p)
 }

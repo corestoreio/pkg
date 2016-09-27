@@ -14,7 +14,10 @@
 
 package config
 
-import "github.com/corestoreio/csfw/log"
+import (
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/util/errors"
+)
 
 // Option applies options to the NewService function. Used mainly by external
 // packages for providing different storage engines.
@@ -30,6 +33,22 @@ func WithLogger(l log.Logger) Option {
 		if s.pubSub != nil {
 			s.pubSub.log = l
 		}
+		return nil
+	}
+}
+
+// WithPubSub starts the internal publish and subscribe service as a goroutine.
+func WithPubSub() Option {
+	return func(s *Service) error {
+		if s.pubSub != nil && !s.pubSub.closed {
+			return errors.NewAlreadyExistsf("[config] PubSub Service already exists and is running.")
+		}
+
+		s.pubSub = newPubSub(s.Log)
+
+		// todo: remove this go ... and the programmer must call it. like Serve() function in http.
+		go s.publish() // yes we know how to quit this goroutine.
+
 		return nil
 	}
 }

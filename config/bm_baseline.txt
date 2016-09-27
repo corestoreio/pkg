@@ -1,5 +1,5 @@
-BenchmarkScopedServiceStringStore-4     	 1000000	      2544 ns/op	       0 B/op	       0 allocs/op
-BenchmarkScopedServiceStringWebsite-4   	 1000000	      1907 ns/op	       0 B/op	       0 allocs/op
-BenchmarkScopedServiceStringDefault-4   	 1000000	      1242 ns/op	       0 B/op	       0 allocs/op
+BenchmarkScopedServiceStringStore-4     	  500000	      3898 ns/op	      96 B/op	       3 allocs/op
+BenchmarkScopedServiceStringWebsite-4   	  500000	      2774 ns/op	      64 B/op	       2 allocs/op
+BenchmarkScopedServiceStringDefault-4   	 1000000	      1619 ns/op	      32 B/op	       1 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/config	5.772s
+ok  	github.com/corestoreio/csfw/config	5.060s

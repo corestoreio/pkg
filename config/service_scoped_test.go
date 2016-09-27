@@ -66,7 +66,7 @@ func TestScopedServiceScope(t *testing.T) {
 	}
 	for i, test := range tests {
 		sg := cfgmock.NewService().NewScoped(test.websiteID, test.storeID)
-		haveScope, haveID := sg.Scope()
+		haveScope, haveID := sg.ScopeID().Unpack()
 		assert.Exactly(t, test.wantScope, haveScope, "Index %d", i)
 		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
 	}
@@ -82,43 +82,43 @@ func TestScopedServicePath(t *testing.T) {
 		perm               scope.Type
 		websiteID, storeID int64
 		wantErrBhf         errors.BehaviourFunc
-		wantHash           scope.TypeID
+		wantTypeIDs        scope.TypeIDs
 	}{
 		{
 			"Default ScopedGetter should return default scope",
-			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Absent, 0, 0, nil, scope.DefaultTypeID,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Absent, 0, 0, nil, scope.TypeIDs{scope.DefaultTypeID},
 		},
 		{
 			"Website ID 1 ScopedGetter should fall back to default scope",
-			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 1, 0, nil, scope.DefaultTypeID,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 1, 0, nil, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)},
 		},
 		{
 			"Website ID 10 ScopedGetter should fall back to website 10 scope",
-			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 10, 0, nil, scope.MakeTypeID(scope.Website, 10),
+			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 10, 0, nil, scope.TypeIDs{scope.Website.Pack(10)},
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should fall back to website 10 scope",
-			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.MakeTypeID(scope.Website, 10),
+			basePath.BindWebsite(10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.TypeIDs{scope.Website.Pack(10), scope.Store.Pack(22)},
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should return Store 22 scope",
-			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.MakeTypeID(scope.Store, 22),
+			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil, scope.TypeIDs{scope.Store.Pack(22)},
 		},
 		{
 			"Website ID 10 + Store 42 ScopedGetter should return nothing",
-			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 42, errors.IsNotFound, scope.DefaultTypeID,
+			basePath.BindStore(22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 42, errors.IsNotFound, scope.TypeIDs{scope.DefaultTypeID},
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			basePath.String(), cfgpath.NewRoute("aa", "bb"), scope.Store, 0, 0, errors.IsNotValid, 0,
+			basePath.String(), cfgpath.NewRoute("aa", "bb"), scope.Store, 0, 0, errors.IsNotValid, nil,
 		},
 	}
 
 	// vals stores all possible types for which we have functions in config.ScopedGetter
-	vals := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now(), []byte(`Hellö Dear Goph€rs`)}
+	vals := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now(), []byte(`Hellö Dear Goph€rs`), time.Hour}
 
 	for vi, wantVal := range vals {
-		for _, test := range tests {
+		for xi, test := range tests {
 
 			cg := cfgmock.NewService(cfgmock.PathValue{
 				test.fqpath: wantVal,
@@ -128,37 +128,42 @@ func TestScopedServicePath(t *testing.T) {
 
 			var haveVal interface{}
 			var haveErr error
-			var haveHash scope.TypeID
 			switch wantVal.(type) {
 			case []byte:
-				haveVal, haveHash, haveErr = sg.Byte(test.route, test.perm)
+				haveVal, haveErr = sg.Byte(test.route, test.perm)
 			case string:
-				haveVal, haveHash, haveErr = sg.String(test.route, test.perm)
+				haveVal, haveErr = sg.String(test.route, test.perm)
 			case bool:
-				haveVal, haveHash, haveErr = sg.Bool(test.route, test.perm)
+				haveVal, haveErr = sg.Bool(test.route, test.perm)
 			case float64:
-				haveVal, haveHash, haveErr = sg.Float64(test.route, test.perm)
+				haveVal, haveErr = sg.Float64(test.route, test.perm)
 			case int:
-				haveVal, haveHash, haveErr = sg.Int(test.route, test.perm)
+				haveVal, haveErr = sg.Int(test.route, test.perm)
 			case time.Time:
-				haveVal, haveHash, haveErr = sg.Time(test.route, test.perm)
+				haveVal, haveErr = sg.Time(test.route, test.perm)
+			case time.Duration:
+				haveVal, haveErr = sg.Duration(test.route, test.perm)
 			default:
 				t.Fatalf("Unsupported type: %#v in vals index %d", wantVal, vi)
 			}
-			testScopedService(t, wantVal, haveVal, test.wantHash, haveHash, test.desc, test.wantErrBhf, haveErr)
+
+			if test.wantErrBhf != nil {
+				if d, ok := haveVal.(time.Duration); ok {
+					// oh that is so crap because time.Duration cannot be detected for zero value
+					assert.Empty(t, int64(d), "Index %d/%d => %v", vi, xi, wantVal)
+				} else {
+					assert.Empty(t, haveVal, "Index %d/%d => %v", vi, xi, wantVal)
+				}
+
+				assert.True(t, test.wantErrBhf(haveErr), "Error: %s => %s", haveErr, test.desc)
+				continue
+			}
+			assert.NoError(t, haveErr, "Error: %+v\n\n%s", haveErr, test.desc)
+			assert.Exactly(t, wantVal, haveVal, test.desc)
+
+			assert.Exactly(t, test.wantTypeIDs, cg.AllInvocations().TypeIDs(), "Index %d/%d", vi, xi)
 		}
 	}
-}
-
-func testScopedService(t *testing.T, want, have interface{}, wantHash, haveHash scope.TypeID, desc string, wantErrBhf errors.BehaviourFunc, err error) {
-	assert.Exactly(t, wantHash.String(), haveHash.String(), desc)
-	if wantErrBhf != nil {
-		assert.Empty(t, have, desc)
-		assert.True(t, wantErrBhf(err), "Error: %s => %s", err, desc)
-		return
-	}
-	assert.NoError(t, err, "Error: %+v\n\n%s", err, desc)
-	assert.Exactly(t, want, have, desc)
 }
 
 var benchmarkScopedServiceString string
@@ -193,16 +198,12 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
-		var h scope.TypeID
-		benchmarkScopedServiceString, h, err = sg.String(route)
+		benchmarkScopedServiceString, err = sg.String(route)
 		if err != nil {
 			b.Error(err)
 		}
 		if benchmarkScopedServiceString != want {
 			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceString)
-		}
-		if h != scope.DefaultTypeID {
-			b.Errorf("Want %s Have %s", scope.DefaultTypeID, h)
 		}
 	}
 }
@@ -211,38 +212,38 @@ func TestScopedServicePermission(t *testing.T) {
 
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 
-	sg := cfgmock.NewService(cfgmock.PathValue{
+	sm := cfgmock.NewService(cfgmock.PathValue{
 		basePath.Bind(scope.DefaultTypeID).String(): "a",
 		basePath.BindWebsite(1).String():            "b",
 		basePath.BindStore(1).String():              "c",
-	}).NewScoped(1, 1)
+	})
 
 	tests := []struct {
-		s        scope.Type
-		want     string
-		wantHash scope.TypeID
+		s       scope.Type
+		want    string
+		wantIDs scope.TypeIDs
 	}{
-		{scope.Default, "a", scope.DefaultTypeID},
-		{scope.Website, "b", scope.MakeTypeID(scope.Website, 1)},
-		{scope.Group, "a", scope.DefaultTypeID},
-		{scope.Store, "c", scope.MakeTypeID(scope.Store, 1)},
-		{scope.Absent, "c", scope.MakeTypeID(scope.Store, 1)}, // because ScopedGetter bound to store scope
+		{scope.Default, "a", scope.TypeIDs{scope.DefaultTypeID}},
+		{scope.Website, "b", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}},
+		{scope.Group, "a", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}},
+		{scope.Store, "c", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1), scope.Store.Pack(1)}},
+		{scope.Absent, "c", scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1), scope.Store.Pack(1)}}, // because ScopedGetter bound to store scope
 	}
 	for i, test := range tests {
-		have, haveH, err := sg.String(basePath.Route, test.s)
+		have, err := sm.NewScoped(1, 1).String(basePath.Route, test.s)
 		if err != nil {
 			t.Fatal("Index", i, "Error", err)
 		}
 		assert.Exactly(t, test.want, have, "Index %d", i)
-		assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, sm.StringInvokes().TypeIDs(), "Index %d", i)
 	}
 
 	var ss = []scope.Type{}
 	ss = nil
-	have, haveH, err := sg.String(basePath.Route, ss...)
+	have, err := sm.NewScoped(1, 1).String(basePath.Route, ss...)
 	assert.NoError(t, err)
 	assert.Exactly(t, "c", have) // because ScopedGetter bound to store scope
-	assert.Exactly(t, scope.MakeTypeID(scope.Store, 1).String(), haveH.String())
+	assert.Exactly(t, []string{"default/0/aa/bb/cc", "stores/1/aa/bb/cc", "websites/1/aa/bb/cc"}, sm.StringInvokes().Paths())
 }
 
 func TestScopedService_Parent(t *testing.T) {
@@ -258,7 +259,7 @@ func TestScopedService_Parent(t *testing.T) {
 		{config.NewScoped(nil, 0, 0), scope.Default, 0, scope.Default, 0},
 	}
 	for _, test := range tests {
-		haveScp, haveID := test.sg.Parent()
+		haveScp, haveID := test.sg.ParentID().Unpack()
 		if have, want := haveScp, test.wantParentScope; have != want {
 			t.Errorf("ParentScope: Have: %v Want: %v", have, want)
 		}
@@ -266,7 +267,7 @@ func TestScopedService_Parent(t *testing.T) {
 			t.Errorf("ParentScopeID: Have: %v Want: %v", have, want)
 		}
 
-		haveScp, haveID = test.sg.Scope()
+		haveScp, haveID = test.sg.ScopeID().Unpack()
 		if have, want := haveScp, test.wantCurrentScope; have != want {
 			t.Errorf("Scope: Have: %v Want: %v", have, want)
 		}

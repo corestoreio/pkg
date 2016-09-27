@@ -45,6 +45,7 @@ type Getter interface {
 	Float64(cfgpath.Path) (float64, error)
 	Int(cfgpath.Path) (int, error)
 	Time(cfgpath.Path) (time.Time, error)
+	Duration(cfgpath.Path) (time.Duration, error)
 	// maybe add compare and swap function
 }
 
@@ -85,21 +86,22 @@ type Service struct {
 // website and store. Default Storage is a simple map[string]interface{}. A new
 // go routine will be startet for the publish and subscribe feature.
 func NewService(opts ...Option) (*Service, error) {
-	l := log.BlackHole{} // disabled debug and info logging.
 	s := &Service{
-		pubSub:  newPubSub(l),
-		Storage: storage.NewKV(),
-		Log:     l,
+		Log: log.BlackHole{}, // disabled debug and info logging.
 	}
 
-	// todo: remove this go ... and the programmer must call it. like Serve() function in http.
-	go s.publish() // yes we know how to quit this goroutine.
-
 	if err := s.Options(opts...); err != nil {
-		if err2 := s.Close(); err2 != nil { // terminate publisher go routine and prevent leaking
-			return nil, errors.Wrap(err2, "[config] Service.Option.Close")
+		if s.pubSub != nil {
+			if err2 := s.Close(); err2 != nil {
+				// terminate publisher go routine and prevent leaking
+				return nil, errors.Wrap(err2, "[config] Service.Option.Close")
+			}
 		}
 		return nil, errors.Wrap(err, "[config] Service.Option")
+	}
+
+	if s.Storage == nil {
+		s.Storage = storage.NewKV()
 	}
 
 	p := cfgpath.MustNewByParts(PathCSBaseURL)
@@ -159,7 +161,9 @@ func (s *Service) Write(p cfgpath.Path, v interface{}) error {
 	if err := s.Storage.Set(p, v); err != nil {
 		return errors.Wrap(err, "[config] sStorage.Set")
 	}
-	s.sendMsg(p)
+	if s.pubSub != nil {
+		s.sendMsg(p)
+	}
 	return nil
 }
 
@@ -237,6 +241,15 @@ func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 		return time.Time{}, errors.Wrap(err, "[config] Storage.Time.get")
 	}
 	return conv.ToTimeE(vs)
+}
+
+// Duration returns a duration from the Service. Example usage see String.
+func (s *Service) Duration(p cfgpath.Path) (time.Duration, error) {
+	vs, err := s.get(p)
+	if err != nil {
+		return 0, errors.Wrap(err, "[config] Storage.Duration.get")
+	}
+	return conv.ToDurationE(vs)
 }
 
 // IsSet checks if a key is in the configuration. Returns false on error. Errors

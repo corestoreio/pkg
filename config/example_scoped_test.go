@@ -95,40 +95,40 @@ func ExampleScopedGetter() {
 	// already to the appropriate scopes.
 
 	// Scope1 use store config and hence store value
-	val, h, err := atStore.Config.Int(pathInt.Route)
+	val, err := atStore.Config.Int(pathInt.Route)
 	if err != nil {
-		fmt.Printf("srvString1 %s Error: %+v", h, err)
+		fmt.Printf("srvString1 Error: %+v", err)
 		return
 	}
-	fmt.Println("Scope Value for Store ID 2:", val, " | ", h.String())
+	fmt.Println("Scope Value for Store ID 2:", val)
 
 	// Scope2 use website config and hence website value
-	val, h, err = atStore.Website.Config.Int(pathInt.Route)
+	val, err = atStore.Website.Config.Int(pathInt.Route)
 	if err != nil {
 		fmt.Printf("srvString2 Error: %+v", err)
 		return
 	}
-	fmt.Println("Scope Value for Website ID 1:", val, " | ", h.String())
+	fmt.Println("Scope Value for Website ID 1:", val)
 
 	// Scope3 force default value
-	val, h, err = atStore.Config.Int(pathInt.Route, scope.Default)
+	val, err = atStore.Config.Int(pathInt.Route, scope.Default)
 	if err != nil {
 		fmt.Printf("srvString3 Error: %+v", err)
 		return
 	}
-	fmt.Println("Scope Value for Default:", val, " | ", h.String())
+	fmt.Println("Scope Value for Default:", val)
 
 	// Scope4 route not found
-	_, _, err = atStore.Config.Int(cfgpath.MustNewByParts("xx/yy/zz").Route)
+	_, err = atStore.Config.Int(cfgpath.MustNewByParts("xx/yy/zz").Route)
 	if err != nil {
 		fmt.Printf("Scope4: srvString Error: %s\n", err)
 	}
 	fmt.Printf("Route IsNotFound %t\n", errors.IsNotFound(err))
 
 	// Output:
-	// Scope Value for Store ID 2: 141421  |  Type(Store) ID(2)
-	// Scope Value for Website ID 1: 271828  |  Type(Website) ID(1)
-	// Scope Value for Default: 314159  |  Type(Default) ID(0)
+	// Scope Value for Store ID 2: 141421
+	// Scope Value for Website ID 1: 271828
+	// Scope Value for Default: 314159
 	// Scope4: srvString Error: [config] Storage.Int.get: [storage] Key not found
 	// Route IsNotFound true
 }
