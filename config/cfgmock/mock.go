@@ -189,6 +189,25 @@ func NewService(pvs ...PathValue) *Service {
 	return mr
 }
 
+// AllInvocations returns all called paths and increases the counter for
+// duplicated paths.
+func (s *Service) AllInvocations() Invocations {
+	ret := make(Invocations)
+	add := func(iv Invocations) {
+		for k, v := range iv {
+			ret[k] += v
+		}
+	}
+	add(s.byteInvokes)
+	add(s.stringInvokes)
+	add(s.boolInvokes)
+	add(s.float64Invokes)
+	add(s.intInvokes)
+	add(s.timeInvokes)
+	add(s.durationInvokes)
+	return ret
+}
+
 // UpdateValues adds or overwrites the internal path => value map.
 func (s *Service) UpdateValues(pv PathValue) {
 	pv.set(s.DB)

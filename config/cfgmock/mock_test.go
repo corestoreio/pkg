@@ -113,6 +113,9 @@ func TestService_FnInvokes(t *testing.T) {
 	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.IntInvokes().Paths())
 	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.TimeInvokes().Paths())
 	assert.Exactly(t, []string{`default/0/test/service/invokes`}, s.DurationInvokes().Paths())
+
+	assert.Exactly(t, 70, s.AllInvocations().Sum())
+	assert.Exactly(t, 1, s.AllInvocations().PathCount())
 }
 
 func TestInvocations_TypeIDs(t *testing.T) {
@@ -162,6 +165,9 @@ func TestNewServiceAllTypes(t *testing.T) {
 		if !reflect.DeepEqual(wantVal, haveVal) {
 			t.Fatalf("Want %v Have %v", wantVal, haveVal)
 		}
+		assert.Exactly(t, 1, mg.AllInvocations().Sum())
+		assert.Exactly(t, 1, mg.AllInvocations().PathCount())
+		assert.Exactly(t, []string{`default/0/aa/bb/cc`}, mg.AllInvocations().Paths())
 	}
 
 }
