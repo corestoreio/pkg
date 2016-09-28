@@ -320,9 +320,9 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsByte)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeIDs
-		want     []byte
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    []byte
 	}{
 		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, defaultWebCorsByte},                                            // because default value in packageConfiguration
 		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(5)}, defaultWebCorsByte}, // because default value in packageConfiguration
@@ -345,7 +345,7 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantHash, test.sg.Root.(*cfgmock.Service).ByteInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).ByteInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -357,13 +357,13 @@ func TestByteGetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     []byte
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    []byte
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, nil},
-		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultTypeID, nil},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte(`Hello Dud€`)}).NewScoped(0, 0), scope.DefaultTypeID, []byte(`Hello Dud€`)},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, nil},
+		{cfgmock.NewService().NewScoped(5, 4), typeIDsDefault, nil},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): []byte(`Hello Dud€`)}).NewScoped(0, 0), typeIDsDefault, []byte(`Hello Dud€`)},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -371,7 +371,7 @@ func TestByteGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).ByteInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -389,18 +389,19 @@ func TestByteGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.ByteInvokes().TypeIDs())
 }
 
 func TestByteIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewByte("web/cors/byte", cfgmodel.WithField(&element.Field{}))
-	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sm := cfgmock.NewService()
+	gb, err := b.Get(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, []byte(nil), gb)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.ByteInvokes().TypeIDs())
 }
 func TestByteWrite(t *testing.T) {
 
@@ -422,24 +423,24 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     string
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    string
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultTypeID, "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), scope.DefaultTypeID, "X-Gopher"},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(3, 5), scope.DefaultTypeID, "X-Gopher"},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, "Content-Type,X-CoreStore-ID"},                                            // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(5, 4), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(5)}, "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), typeIDsDefault, "X-Gopher"},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(3, 5), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(3)}, "X-Gopher"},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               "X-Gopher262",
 			wantPath.BindStore(44).String(): "X-Gopher44", // because Field.Scopes has PermWebsite
-		}).NewScoped(3, 44), scope.DefaultTypeID, "X-Gopher262"},
+		}).NewScoped(3, 44), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(3)}, "X-Gopher262"},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                 "X-Gopher",
 			wantPath.BindWebsite(33).String(): "X-Gopher33",
 			wantPath.BindWebsite(43).String(): "X-GopherW43",
 			wantPath.BindStore(44).String():   "X-Gopher44",
-		}).NewScoped(33, 43), scope.MakeTypeID(scope.Website, 33), "X-Gopher33"},
+		}).NewScoped(33, 43), scope.TypeIDs{scope.Website.Pack(33)}, "X-Gopher33"},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -447,7 +448,7 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).StringInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -459,13 +460,13 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     string
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    string
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, ""},
-		{cfgmock.NewService().NewScoped(5, 4), scope.DefaultTypeID, ""},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), scope.DefaultTypeID, "X-Gopher"},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, ""},
+		{cfgmock.NewService().NewScoped(5, 4), typeIDsDefault, ""},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): "X-Gopher"}).NewScoped(0, 0), typeIDsDefault, "X-Gopher"},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -473,7 +474,7 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).StringInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -490,18 +491,19 @@ func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
 }
 
 func TestStrIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewStr("web/cors/str", cfgmodel.WithField(nil))
-	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sm := cfgmock.NewService()
+	gb, err := b.Get(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "", gb)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
 }
 func TestStrWrite(t *testing.T) {
 
@@ -523,24 +525,24 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     int
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    int
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, 2015}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultTypeID, 2015}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultTypeID, 2015}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), scope.MakeTypeID(scope.Website, 10), 2016},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 1), scope.MakeTypeID(scope.Website, 10), 2016},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, 2015},                                            // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 1), typeIDsDefault, 2015},                                            // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(2, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(2)}, 2015}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), scope.TypeIDs{scope.Website.Pack(10)}, 2016},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 1), scope.TypeIDs{scope.Website.Pack(10)}, 2016},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               3017,
 			wantPath.BindStore(11).String(): 2016, // because Field.Scopes set to PermWebsite
-		}).NewScoped(10, 11), scope.DefaultTypeID, 3017},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(10)}, 3017},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                 3017,
 			wantPath.BindWebsite(10).String(): 4018,
 			wantPath.BindStore(11).String():   2016, // because Field.Scopes set to PermWebsite
-		}).NewScoped(10, 11), scope.MakeTypeID(scope.Website, 10), 4018},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.Website.Pack(10)}, 4018},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -548,7 +550,7 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).IntInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -560,13 +562,13 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     int
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    int
 	}{
-		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultTypeID, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), scope.DefaultTypeID, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): 2019}).NewScoped(10, 0), scope.DefaultTypeID, 2019},
+		{cfgmock.NewService().NewScoped(1, 1), typeIDsDefault, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016}).NewScoped(10, 0), typeIDsDefault, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): 2019}).NewScoped(10, 0), typeIDsDefault, 2019},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -574,7 +576,7 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).IntInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -590,18 +592,19 @@ func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.IntInvokes().TypeIDs())
 }
 
 func TestIntIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewInt("web/cors/int", cfgmodel.WithField(&element.Field{}))
-	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sm := cfgmock.NewService()
+	gb, err := b.Get(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, int(0), gb)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.IntInvokes().TypeIDs())
 }
 
 func TestIntWrite(t *testing.T) {
@@ -624,24 +627,24 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     float64
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    float64
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, 2015.1000001}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultTypeID, 2015.1000001}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultTypeID, 2015.1000001}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), scope.MakeTypeID(scope.Website, 10), 2016.1000001},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 1), scope.MakeTypeID(scope.Website, 10), 2016.1000001},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, 2015.1000001},                                            // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 1), typeIDsDefault, 2015.1000001},                                            // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(1, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, 2015.1000001}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), scope.TypeIDs{scope.Website.Pack(10)}, 2016.1000001},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 1), scope.TypeIDs{scope.Website.Pack(10)}, 2016.1000001},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               2017.1000001,
 			wantPath.BindStore(11).String(): 2016.1000021,
-		}).NewScoped(10, 11), scope.MakeTypeID(scope.Website, 10), 2017.1000001},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.Website.Pack(10)}, 2017.1000001},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():                 2017.1000001,
 			wantPath.BindWebsite(13).String(): 2018.2000001,
 			wantPath.BindStore(11).String():   2016.1000021,
-		}).NewScoped(13, 11), scope.MakeTypeID(scope.Website, 13), 2018.2000001},
+		}).NewScoped(13, 11), scope.TypeIDs{scope.Website.Pack(13)}, 2018.2000001},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -649,7 +652,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).Float64Invokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -661,13 +664,13 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).BindWebsite(10)
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     float64
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    float64
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultTypeID, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): 2016.1000001}).NewScoped(10, 0), scope.DefaultTypeID, 2016.1000001},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): 2016.1000001}).NewScoped(10, 0), typeIDsDefault, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): 2016.1000001}).NewScoped(10, 0), typeIDsDefault, 2016.1000001},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -675,7 +678,7 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).Float64Invokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -691,18 +694,19 @@ func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.Float64Invokes().TypeIDs())
 }
 
 func TestFloat64IgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithField(&element.Field{}))
-	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sm := cfgmock.NewService()
+	gb, err := b.Get(sm.NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, float64(0), gb)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.Float64Invokes().TypeIDs())
 }
 
 func TestFloat64Write(t *testing.T) {

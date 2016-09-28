@@ -70,11 +70,11 @@ func (t Time) Write(w config.Writer, v time.Time, h scope.TypeID) error {
 }
 
 // Duration represents a path in config.Getter which handles duration values.
-type Duration struct{ Str }
+type Duration struct{ baseValue }
 
 // NewDuration creates a new Duration cfgmodel with a given path.
 func NewDuration(path string, opts ...Option) Duration {
-	return Duration{Str: NewStr(path, opts...)}
+	return Duration{baseValue: newBaseValue(path, opts...)}
 }
 
 // Get returns a duration value from ScopedGetter, if empty the
@@ -101,12 +101,10 @@ func (t Duration) Get(sg config.Scoped) (time.Duration, error) {
 		}
 	}
 
-	val, err := sg.String(t.route, scp)
+	val, err := sg.Duration(t.route, scp)
 	switch {
 	case err == nil: // we found the value in the config service
-		if v, err = conv.ToDurationE(val); err != nil {
-			err = errors.NewNotValidf("[cfgmodel] ToDurationE: %v", err)
-		}
+		v = val
 	case !errors.IsNotFound(err):
 		err = errors.Wrapf(err, "[cfgmodel] Route %q", t.route)
 	default:
@@ -117,5 +115,5 @@ func (t Duration) Get(sg config.Scoped) (time.Duration, error) {
 
 // Write writes a duration value without validating it against the source.Slice.
 func (t Duration) Write(w config.Writer, v time.Duration, h scope.TypeID) error {
-	return t.Str.Write(w, v.String(), h)
+	return t.baseValue.Write(w, v.String(), h)
 }

@@ -46,19 +46,19 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).BindWebsite(10)
 	defaultTime := mustParseTime("2012-08-23 09:20:13")
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     time.Time
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    time.Time
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, defaultTime}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultTypeID, defaultTime}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultTypeID, defaultTime}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultTime.Add(time.Second * 2)}).NewScoped(10, 0), scope.MakeTypeID(scope.Website, 10), defaultTime.Add(time.Second * 2)},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultTime.Add(time.Second * 3)}).NewScoped(10, 1), scope.MakeTypeID(scope.Website, 10), defaultTime.Add(time.Second * 3)},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, defaultTime},                                                                 // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Store.Pack(1)}, defaultTime},                        // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(1, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1), scope.Store.Pack(1)}, defaultTime}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultTime.Add(time.Second * 2)}).NewScoped(10, 0), scope.TypeIDs{scope.Website.Pack(10)}, defaultTime.Add(time.Second * 2)},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultTime.Add(time.Second * 3)}).NewScoped(10, 1), scope.TypeIDs{scope.Website.Pack(10), scope.Store.Pack(1)}, defaultTime.Add(time.Second * 3)},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               defaultTime.Add(time.Second * 5),
 			wantPath.BindStore(11).String(): defaultTime.Add(time.Second * 6),
-		}).NewScoped(10, 11), scope.MakeTypeID(scope.Store, 11), defaultTime.Add(time.Second * 6)},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.Store.Pack(11)}, defaultTime.Add(time.Second * 6)},
 	}
 	for i, test := range tests {
 		gb, err := tm.Get(test.sg)
@@ -66,7 +66,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).TimeInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -79,18 +79,18 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).BindWebsite(10)
 	defaultTime := mustParseTime("2012-08-23 09:20:13")
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     time.Time
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    time.Time
 	}{
-		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultTypeID, time.Time{}}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 2)}).NewScoped(10, 0), scope.DefaultTypeID, time.Time{}},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 3)}).NewScoped(10, 1), scope.DefaultTypeID, time.Time{}},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): defaultTime.Add(time.Second * 3)}).NewScoped(0, 0), scope.DefaultTypeID, defaultTime.Add(time.Second * 3)},
+		{cfgmock.NewService().NewScoped(1, 1), typeIDsDefault, time.Time{}}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 2)}).NewScoped(10, 0), typeIDsDefault, time.Time{}},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 3)}).NewScoped(10, 1), typeIDsDefault, time.Time{}},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): defaultTime.Add(time.Second * 3)}).NewScoped(0, 0), typeIDsDefault, defaultTime.Add(time.Second * 3)},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.Bind(scope.DefaultTypeID).String(): defaultTime.Add(time.Second * 5),
 			wantPath.BindStore(11).String():             defaultTime.Add(time.Second * 6),
-		}).NewScoped(10, 11), scope.DefaultTypeID, defaultTime.Add(time.Second * 5)},
+		}).NewScoped(10, 11), typeIDsDefault, defaultTime.Add(time.Second * 5)},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -98,7 +98,7 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).TimeInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -115,18 +115,19 @@ func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.TimeInvokes().TypeIDs())
 }
 
 func TestTimeIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithField(&element.Field{}))
-	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
+	sm := cfgmock.NewService()
+	gb, err := b.Get(sm.NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, time.Time{}, gb)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.TimeInvokes().TypeIDs())
 }
 
 func TestTimeWrite(t *testing.T) {
@@ -164,19 +165,19 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 	defaultDuration := mustParseDuration("1h45m") // default as in the configStructure slice
 
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     time.Duration
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    time.Duration
 	}{
-		{cfgmock.NewService().NewScoped(0, 0), scope.DefaultTypeID, defaultDuration}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(0, 1), scope.DefaultTypeID, defaultDuration}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultTypeID, defaultDuration}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultDuration * (time.Second * 2)}).NewScoped(10, 0), scope.MakeTypeID(scope.Website, 10), defaultDuration * (time.Second * 2)},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultDuration * (time.Second * 3)}).NewScoped(10, 1), scope.MakeTypeID(scope.Website, 10), defaultDuration * (time.Second * 3)},
+		{cfgmock.NewService().NewScoped(0, 0), typeIDsDefault, defaultDuration},                                                                 // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(0, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Store.Pack(1)}, defaultDuration},                        // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(1, 1), scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1), scope.Store.Pack(1)}, defaultDuration}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultDuration * (time.Second * 2)}).NewScoped(10, 0), scope.TypeIDs{scope.Website.Pack(10)}, defaultDuration * (time.Second * 2)},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.BindWebsite(10).String(): defaultDuration * (time.Second * 3)}).NewScoped(10, 1), scope.TypeIDs{scope.Website.Pack(10), scope.Store.Pack(1)}, defaultDuration * (time.Second * 3)},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.String():               defaultDuration * (time.Second * 5),
 			wantPath.BindStore(11).String(): defaultDuration * (time.Second * 6),
-		}).NewScoped(10, 11), scope.MakeTypeID(scope.Store, 11), defaultDuration * (time.Second * 6)},
+		}).NewScoped(10, 11), scope.TypeIDs{scope.Store.Pack(11)}, defaultDuration * (time.Second * 6)},
 	}
 	for i, test := range tests {
 		gb, err := tm.Get(test.sg)
@@ -184,7 +185,8 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).DurationInvokes().TypeIDs(), "Index %d", i)
+
 	}
 }
 
@@ -197,18 +199,18 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsDuration).BindWebsite(10)
 	defaultDuration := mustParseDuration("2h44m")
 	tests := []struct {
-		sg       config.Scoped
-		wantHash scope.TypeID
-		want     time.Duration
+		sg      config.Scoped
+		wantIDs scope.TypeIDs
+		want    time.Duration
 	}{
-		{cfgmock.NewService().NewScoped(1, 1), scope.DefaultTypeID, 0}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultDuration * (time.Second * 2)}).NewScoped(10, 0), scope.DefaultTypeID, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultDuration * (time.Second * 3)}).NewScoped(10, 1), scope.DefaultTypeID, 0},
-		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): defaultDuration * (time.Second * 3)}).NewScoped(0, 0), scope.DefaultTypeID, defaultDuration * (time.Second * 3)},
+		{cfgmock.NewService().NewScoped(1, 1), typeIDsDefault, 0}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultDuration * (time.Second * 2)}).NewScoped(10, 0), typeIDsDefault, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.String(): defaultDuration * (time.Second * 3)}).NewScoped(10, 1), typeIDsDefault, 0},
+		{cfgmock.NewService(cfgmock.PathValue{wantPath.Bind(scope.DefaultTypeID).String(): defaultDuration * (time.Second * 3)}).NewScoped(0, 0), typeIDsDefault, defaultDuration * (time.Second * 3)},
 		{cfgmock.NewService(cfgmock.PathValue{
 			wantPath.Bind(scope.DefaultTypeID).String(): defaultDuration * (time.Second * 5),
 			wantPath.BindStore(11).String():             defaultDuration * (time.Second * 6),
-		}).NewScoped(10, 11), scope.DefaultTypeID, defaultDuration * (time.Second * 5)},
+		}).NewScoped(10, 11), typeIDsDefault, defaultDuration * (time.Second * 5)},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -216,7 +218,7 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), h.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).DurationInvokes().TypeIDs(), "Index %d", i)
 	}
 }
 
@@ -226,25 +228,26 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	assert.Empty(t, b.Options())
 
 	sm := cfgmock.Service{
-		StringFn: func(path string) (string, error) {
-			return "", errors.NewFatalf("Unexpected error")
+		DurationFn: func(path string) (time.Duration, error) {
+			return 0, errors.NewFatalf("Unexpected error")
 		},
 	}
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Exactly(t, time.Duration(0), gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.DurationInvokes().TypeIDs())
 }
 
 func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 
 	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithField(nil))
-	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
+	sm := cfgmock.NewService()
+	gb, err := b.Get(sm.NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, time.Duration(0), gb)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, scope.DefaultTypeID.String(), sm.DurationInvokes().TypeIDs())
 }
 
 func TestDurationWrite(t *testing.T) {

@@ -40,30 +40,32 @@ func TestStringCSVGet(t *testing.T) {
 	)
 	assert.NotEmpty(t, b.Options())
 
-	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	sm := cfgmock.NewService()
+	sl, err := b.Get(sm.NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
 
 	tests := []struct {
-		have     string
-		want     []string
-		wantHash scope.TypeID
-		wantErr  error
+		have    string
+		want    []string
+		wantIDs scope.TypeIDs
+		wantErr error
 	}{
-		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, scope.DefaultTypeID, nil},
-		{"", nil, scope.DefaultTypeID, nil},
-		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, scope.DefaultTypeID, nil},
-		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, scope.DefaultTypeID, nil},
+		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
+		{"", nil, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
+		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
+		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, nil},
 		// todo add errors
 	}
 	for i, test := range tests {
-		haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		sm := cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
-		}).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
+		})
+		haveSL, haveErr := b.Get(sm.NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, sm.StringInvokes().TypeIDs(), "Index %d", i)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
@@ -110,14 +112,15 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+	sm := cfgmock.NewService(cfgmock.PathValue{
 		wantPath: `20152016`,
-	}).NewScoped(34, 4))
+	})
+	haveSL, haveErr := b.Get(sm.NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []string{"2015", "2016"}, haveSL)
-	//assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
 }
 
 func TestIntCSV(t *testing.T) {
@@ -145,26 +148,27 @@ func TestIntCSV(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
 
 	tests := []struct {
-		lenient  bool
-		have     string
-		want     []int
-		wantHash scope.TypeID
-		wantBhf  errors.BehaviourFunc
+		lenient bool
+		have    string
+		want    []int
+		wantIDs scope.TypeIDs
+		wantBhf errors.BehaviourFunc
 	}{
-		{false, "3015,3016", []int{3015, 3016}, scope.MakeTypeID(scope.Store, 4), nil},
-		{false, "2015,2017", []int{2015, 2017}, scope.MakeTypeID(scope.Store, 4), nil},
-		{false, "", nil, scope.MakeTypeID(scope.Store, 4), nil},
-		{false, "2015,,20x17", []int{2015}, scope.MakeTypeID(scope.Store, 4), errors.IsNotValid},
-		{true, "2015,,2017", []int{2015, 2017}, scope.MakeTypeID(scope.Store, 4), nil},
+		{false, "3015,3016", []int{3015, 3016}, scope.TypeIDs{scope.Store.Pack(4)}, nil},
+		{false, "2015,2017", []int{2015, 2017}, scope.TypeIDs{scope.Store.Pack(4)}, nil},
+		{false, "", nil, scope.TypeIDs{scope.Store.Pack(4)}, nil},
+		{false, "2015,,20x17", []int{2015}, scope.TypeIDs{scope.Store.Pack(4)}, errors.IsNotValid},
+		{true, "2015,,2017", []int{2015, 2017}, scope.TypeIDs{scope.Store.Pack(4)}, nil},
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
-		haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		sm := cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
-		}).NewScoped(0, 4))
+		})
+		haveSL, haveErr := b.Get(sm.NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		//assert.Exactly(t, test.wantHash.String(), haveH.String(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, sm.StringInvokes().TypeIDs(), "Index %d", i)
 		if test.wantBhf != nil {
 			assert.True(t, test.wantBhf(haveErr), "Index %d => %+v", i, haveErr)
 			continue
@@ -217,14 +221,15 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindWebsite(34).String()
 
-	haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+	sm := cfgmock.NewService(cfgmock.PathValue{
 		wantPath: `2015|2016|`,
-	}).NewScoped(34, 4))
+	})
+	haveSL, haveErr := b.Get(sm.NewScoped(34, 4))
 	if haveErr != nil {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []int{2015, 2016}, haveSL)
-	//assert.Exactly(t, scope.MakeTypeID(scope.Website, 34).String(), haveH.String())
+	assert.Exactly(t, scope.TypeIDs{scope.Website.Pack(34), scope.Store.Pack(4)}, sm.StringInvokes().TypeIDs())
 }
 
 func TestCSVGet(t *testing.T) {
