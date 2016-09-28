@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,6 +49,48 @@ func TestPathValueGoStringer(t *testing.T) {
 }
 
 func TestService_FnInvokes(t *testing.T) {
+	called := 0
+	s := cfgmock.Service{
+		ByteFn: func(path string) ([]byte, error) {
+			called++
+			return nil, nil
+		},
+		StringFn: func(path string) (string, error) {
+			called++
+			return "", nil
+		},
+		BoolFn: func(path string) (bool, error) {
+			called++
+			return false, nil
+		},
+		Float64Fn: func(path string) (float64, error) {
+			called++
+			return 0, nil
+		},
+		IntFn: func(path string) (int, error) {
+			called++
+			return 0, nil
+		},
+		TimeFn: func(path string) (time.Time, error) {
+			called++
+			return time.Time{}, nil
+		},
+		DurationFn: func(path string) (time.Duration, error) {
+			called++
+			return 0, nil
+		},
+	}
+	_, _ = s.Byte(cfgpath.MustNewByParts("test/service/invokes"))
+	_, _ = s.String(cfgpath.MustNewByParts("test/service/invokes"))
+	_, _ = s.Bool(cfgpath.MustNewByParts("test/service/invokes"))
+	_, _ = s.Float64(cfgpath.MustNewByParts("test/service/invokes"))
+	_, _ = s.Int(cfgpath.MustNewByParts("test/service/invokes"))
+	_, _ = s.Time(cfgpath.MustNewByParts("test/service/invokes"))
+	_, _ = s.Duration(cfgpath.MustNewByParts("test/service/invokes"))
+	assert.Exactly(t, 7, called)
+}
+
+func TestService_FnInvokes_Map(t *testing.T) {
 	s := cfgmock.Service{
 		ByteFn: func(path string) ([]byte, error) {
 			return nil, nil
@@ -169,5 +212,40 @@ func TestNewServiceAllTypes(t *testing.T) {
 		assert.Exactly(t, 1, mg.AllInvocations().PathCount())
 		assert.Exactly(t, []string{`default/0/aa/bb/cc`}, mg.AllInvocations().Paths())
 	}
+}
 
+func TestNewServiceAllTypes_NotFound(t *testing.T) {
+
+	types := []interface{}{time.Hour, "a", int(3141), float64(2.7182) * 3.141, true, time.Now(), []byte(`H∑llo goph€r`)}
+	p := cfgpath.MustNewByParts("xx/yy/zz")
+
+	for iFaceIDX, wantVal := range types {
+		mg := cfgmock.NewService()
+
+		var haveErr error
+		switch wantVal.(type) {
+		case []byte:
+			_, haveErr = mg.Byte(p)
+		case string:
+			_, haveErr = mg.String(p)
+		case bool:
+			_, haveErr = mg.Bool(p)
+		case float64:
+			_, haveErr = mg.Float64(p)
+		case int:
+			_, haveErr = mg.Int(p)
+		case time.Time:
+			_, haveErr = mg.Time(p)
+		case time.Duration:
+			_, haveErr = mg.Duration(p)
+		default:
+			t.Fatalf("Unsupported type: %#v in Index Value %d", wantVal, iFaceIDX)
+		}
+
+		assert.True(t, errors.IsNotFound(haveErr), "%+v", haveErr)
+
+		assert.Exactly(t, 1, mg.AllInvocations().Sum())
+		assert.Exactly(t, 1, mg.AllInvocations().PathCount())
+		assert.Exactly(t, []string{`default/0/xx/yy/zz`}, mg.AllInvocations().Paths())
+	}
 }

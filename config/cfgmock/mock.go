@@ -397,7 +397,7 @@ func (s *Service) Duration(p cfgpath.Path) (time.Duration, error) {
 	switch {
 	case s.hasVal(p):
 		return conv.ToDurationE(s.getVal(p))
-	case s.TimeFn != nil:
+	case s.DurationFn != nil:
 		return s.DurationFn(ps)
 	default:
 		return 0, keyNotFound{}
