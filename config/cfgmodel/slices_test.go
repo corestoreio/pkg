@@ -248,7 +248,6 @@ func TestCSVGet(t *testing.T) {
 	assert.Exactly(t,
 		[][]string{{"0", "\"Did you mean...\" Suggestions", "\"meinten Sie...?\""}, {"1", "Accuracy for Suggestions", "Genauigkeit der Vorschläge"}, {"2", "After switching please reindex the<br /><em>Catalog Search Index</em>.", "Nach dem Umschalten reindexieren Sie bitte den <br /><em>Katalog Suchindex</em>."}, {"3", "CATALOG", "KATALOG"}},
 		sl) // default values from variable configStructure
-	//assert.Exactly(t, scope.DefaultTypeID.String(), h.String())
 
 	tests := []struct {
 		have       string
@@ -262,12 +261,13 @@ func TestCSVGet(t *testing.T) {
 		{"Content-Type|X-CS\nApplication", nil, errors.IsNotValid},
 	}
 	for i, test := range tests {
-		haveSL, haveErr := b.Get(cfgmock.NewService(cfgmock.PathValue{
+		sm := cfgmock.NewService(cfgmock.PathValue{
 			wantPath: test.have,
-		}).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
+		})
+		haveSL, haveErr := b.Get(sm.NewScoped(1, 2)) // because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		//assert.Exactly(t, scope.DefaultTypeID.String(), haveH.String(), "Index %d", i)
+		assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, sm.StringInvokes().TypeIDs(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
 			continue

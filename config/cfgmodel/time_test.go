@@ -247,7 +247,7 @@ func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, time.Duration(0), gb)
-	assert.Exactly(t, scope.DefaultTypeID.String(), sm.DurationInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.DurationInvokes().TypeIDs())
 }
 
 func TestDurationWrite(t *testing.T) {
