@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage_test
+package config_test
 
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ storage.Storager = storage.NewKV()
+var _ config.Storager = config.NewInMemoryStore()
 
 func TestSimpleStorage(t *testing.T) {
 
-	sp := storage.NewKV()
+	sp := config.NewInMemoryStore()
 
 	p1 := cfgpath.MustNewByParts("aa/bb/cc")
 

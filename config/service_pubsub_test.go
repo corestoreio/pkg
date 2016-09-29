@@ -57,7 +57,7 @@ func TestPubSubBubbling(t *testing.T) {
 
 	testPath := cfgpath.MustNewByParts("aa/bb/cc")
 
-	s := config.MustNewService(config.WithPubSub())
+	s := config.MustNewService(config.NewInMemoryStore(), config.WithPubSub())
 
 	_, err := s.Subscribe(cfgpath.Route{}, nil)
 	assert.True(t, errors.IsEmpty(err), "Error: %s", err)
@@ -95,7 +95,7 @@ func TestPubSubBubbling(t *testing.T) {
 func TestPubSubPanicSimple(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
 	testPath := cfgpath.NewRoute("xx/yy/zz")
 
 	subID, err := s.Subscribe(testPath, &testSubscriber{
@@ -114,7 +114,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 func TestPubSubPanicError(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
 
 	testPath := cfgpath.NewRoute("aa/bb/cc")
 
@@ -137,7 +137,7 @@ func TestPubSubPanicError(t *testing.T) {
 func TestPubSubPanicMultiple(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
 
 	subID, err := s.Subscribe(cfgpath.NewRoute("xx"), &testSubscriber{
 		t: t,
@@ -183,7 +183,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 func TestPubSubUnsubscribe(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.WithLogger(logger), config.WithPubSub())
+	s := config.MustNewService(config.NewInMemoryStore(), config.WithLogger(logger), config.WithPubSub())
 
 	var pErr = errors.New("WTF? Panic!")
 	subID, err := s.Subscribe(cfgpath.NewRoute("xx/yy/zz"), &testSubscriber{
@@ -210,7 +210,7 @@ type levelCalls struct {
 func TestPubSubEvict(t *testing.T) {
 
 	debugBuf, logger := initLogger()
-	s := config.MustNewService(config.WithPubSub(), config.WithLogger(logger))
+	s := config.MustNewService(config.NewInMemoryStore(), config.WithPubSub(), config.WithLogger(logger))
 
 	levelCall := new(levelCalls)
 

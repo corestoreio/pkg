@@ -28,7 +28,7 @@ import (
 // Config Service, the Default storage engine with build-in in-memory map. The
 // config.NewService or config.MustNewService gets only instantiated once during
 // app start up.
-var configService = config.MustNewService( /*options*/ )
+var configService = config.MustNewService(config.NewInMemoryStore() /*options*/)
 
 // The store.MustNewService gets only instantiated once during app start up.
 var storeSrv = store.MustNewService(
@@ -129,6 +129,6 @@ func ExampleScopedGetter() {
 	// Scope Value for Store ID 2: 141421
 	// Scope Value for Website ID 1: 271828
 	// Scope Value for Default: 314159
-	// Scope4: srvString Error: [config] Storage.Int.get: [storage] Key not found
+	// Scope4: srvString Error: [config] Storage.Int.get: [config] KVMap Unknown Key "default/0/xx/yy/zz"
 	// Route IsNotFound true
 }

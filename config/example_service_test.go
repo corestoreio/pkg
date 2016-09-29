@@ -27,7 +27,7 @@ var pathString = cfgpath.MustNewByParts("scope/test/string") // panics on incorr
 
 // Default storage engine with build-in in-memory map.
 // the NewService gets only instantiated once during app start up.
-var configSrv = config.MustNewService( /*options*/ )
+var configSrv = config.MustNewService(config.NewInMemoryStore() /*options*/)
 
 func ExampleService() {
 
@@ -94,7 +94,7 @@ func ExampleService() {
 	// Scope1: DefaultGopher
 	// Scope2: WebsiteGopher
 	// Scope3: StoreGopher
-	// Scope4a: srvString Error: [config] Storage.String.get: [storage] Key not found
-	// Scope4b: srvString Error: [config] Storage.String.get: [storage] Key not found
+	// Scope4a: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key "stores/3/scope/test/string"
+	// Scope4b: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key "stores/3/scope/test/string"
 	// Scope4: Is KeyNotFound true
 }

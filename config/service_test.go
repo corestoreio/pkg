@@ -34,7 +34,7 @@ var (
 
 func TestNewServiceStandard(t *testing.T) {
 
-	srv := config.MustNewService(nil)
+	srv := config.MustNewService(config.NewInMemoryStore())
 	assert.NotNil(t, srv)
 	url, err := srv.String(cfgpath.MustNewByParts(config.PathCSBaseURL))
 	assert.NoError(t, err)
@@ -47,7 +47,7 @@ func TestWithDBStorage(t *testing.T) {
 
 func TestNotKeyNotFoundError(t *testing.T) {
 
-	srv := config.MustNewService(nil)
+	srv := config.MustNewService(config.NewInMemoryStore())
 	assert.NotNil(t, srv)
 
 	scopedSrv := srv.NewScoped(1, 1)
@@ -66,7 +66,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 
 func TestService_NewScoped(t *testing.T) {
 
-	srv := config.MustNewService(nil)
+	srv := config.MustNewService(config.NewInMemoryStore())
 	assert.NotNil(t, srv)
 
 	scopedSrv := srv.NewScoped(1, 1)
@@ -79,7 +79,7 @@ func TestService_NewScoped(t *testing.T) {
 
 func TestService_Write(t *testing.T) {
 
-	srv := config.MustNewService()
+	srv := config.MustNewService(config.NewInMemoryStore())
 	assert.NotNil(t, srv)
 
 	p1 := cfgpath.Path{}
@@ -113,7 +113,7 @@ func TestService_Types(t *testing.T) {
 
 func testServiceTypes(t *testing.T, p cfgpath.Path, writeVal, wantVal interface{}, iFaceIDX, testIDX int, wantErrBhf errors.BehaviourFunc) {
 
-	srv := config.MustNewService()
+	srv := config.MustNewService(config.NewInMemoryStore())
 
 	if writeErr := srv.Write(p, writeVal); wantErrBhf != nil {
 		assert.True(t, wantErrBhf(writeErr), "Index Value %d Index Test %d => %s", iFaceIDX, testIDX, writeErr)

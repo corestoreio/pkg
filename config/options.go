@@ -47,7 +47,7 @@ func WithPubSub() Option {
 		s.pubSub = newPubSub(s.Log)
 
 		// todo: remove this go ... and the programmer must call it. like Serve() function in http.
-		go s.publish() // yes we know how to quit this goroutine.
+		go s.publish() // yes we know how to quit this goroutine, just call Service.Close()
 
 		return nil
 	}

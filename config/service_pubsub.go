@@ -69,8 +69,11 @@ type pubSub struct {
 // Close closes the internal channel for the pubsub Goroutine. Prevents a leaking
 // Goroutine.
 func (s *pubSub) Close() error {
+	if s == nil {
+		return nil
+	}
 	if s.closed {
-		return errors.NewAlreadyClosedf("")
+		return errors.NewAlreadyClosedf("[config] PubSub Service already closed")
 	}
 	defer func() { close(s.closeErr) }() // last close(s.closeErr) does not work and panics
 	s.closed = true

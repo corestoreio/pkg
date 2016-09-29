@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package config
 
 import (
 	"sync"
@@ -21,44 +21,19 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Storager is the underlying data storage for holding the keys and its values.
-// Implementations can be spf13/viper or MySQL backed. Default Storager is a
-// simple mutex protected map[string]interface{}. ProTip: If you use MySQL as
-// Storager don't execute function ApplyCoreConfigData() The config.Writer calls
-// the config.Storager functions and config.Storager must make sure of the
-// correct type conversions to the supported type of the underlying storage
-// engine.
-type Storager interface {
-	// Set sets a key with a value and returns on success nil or ErrKeyOverwritten,
-	// on failure any other error
-	Set(key cfgpath.Path, value interface{}) error
-	// Get returns the raw value on success or may return a NotFound error
-	// behaviour if an entry cannot be found or does not exists. Any other error
-	// can also occur.
-	Get(key cfgpath.Path) (interface{}, error)
-	// AllKeys returns the fully qualified keys
-	AllKeys() (cfgpath.PathSlice, error)
-}
-
-// NotFound error type which defines that a specific key cannot be found.
-type NotFound struct{}
-
-func (NotFound) Error() string  { return "[storage] Key not found" }
-func (NotFound) NotFound() bool { return true } // @see errors.IsNotFound
-
 type keyVal struct {
 	k cfgpath.Path
 	v interface{}
 }
 
 type kvmap struct {
-	sync.Mutex
+	sync.RWMutex
 	kv map[uint32]keyVal // todo: create benchmark to check if worth switching to pointers
 }
 
-// NewKV creates a new simple key value storage using a map[string]interface{}
-// without any persistence or sync to MySQL core_confing_data table
-func NewKV() *kvmap {
+// NewInMemoryStore creates a new simple key value storage using a map[string]interface{}.
+// Mainly used for testing.
+func NewInMemoryStore() Storager {
 	return &kvmap{
 		kv: make(map[uint32]keyVal),
 	}
@@ -66,43 +41,42 @@ func NewKV() *kvmap {
 
 // Set implements Storager interface
 func (sp *kvmap) Set(key cfgpath.Path, value interface{}) error {
-	sp.Lock()
-	defer sp.Unlock()
-
 	h32, err := key.Hash(-1)
 	if err != nil {
 		return errors.Wrap(err, "[storage] key.Hash")
 	}
+	sp.Lock()
 	sp.kv[h32] = keyVal{key, value}
+	sp.Unlock()
 	return nil
 }
 
 // Get implements Storager interface.
 // Error behaviour: NotFound.
 func (sp *kvmap) Get(key cfgpath.Path) (interface{}, error) {
-	sp.Lock()
-	defer sp.Unlock()
-
 	h32, err := key.Hash(-1)
 	if err != nil {
 		return nil, errors.Wrap(err, "[storage] key.Hash")
 	}
-	if data, ok := sp.kv[h32]; ok {
+	sp.RLock()
+	data, ok := sp.kv[h32]
+	sp.RUnlock()
+	if ok {
 		return data.v, nil
 	}
-	return nil, NotFound{}
+	return nil, errors.NewNotFoundf("[config] KVMap Unknown Key %q", key)
 }
 
 // AllKeys implements Storager interface
 func (sp *kvmap) AllKeys() (cfgpath.PathSlice, error) {
-	sp.Lock()
-	defer sp.Unlock()
+	sp.RLock()
 
-	var ret = make(cfgpath.PathSlice, len(sp.kv), len(sp.kv))
+	var ret = make(cfgpath.PathSlice, len(sp.kv))
 	i := 0
 	for _, kv := range sp.kv {
 		ret[i] = kv.k
 		i++
 	}
+	sp.RUnlock()
 	return ret, nil
 }

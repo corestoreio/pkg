@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
@@ -63,11 +62,29 @@ type Writer interface {
 	Write(p cfgpath.Path, value interface{}) error
 }
 
+// Storager is the underlying data storage for holding the keys and its values.
+// Implementations can be spf13/viper or MySQL backed. Default Storager is a
+// simple mutex protected map[string]interface{}. ProTip: If you use MySQL as
+// Storager don't execute function ApplyCoreConfigData() The config.Writer calls
+// the config.Storager functions and Storager must make sure of the correct type
+// conversions to the supported type of the underlying storage engine.
+type Storager interface {
+	// Set sets a key with a value and returns on success nil or
+	// ErrKeyOverwritten, on failure any other error
+	Set(key cfgpath.Path, value interface{}) error
+	// Get returns the raw value on success or may return a NotFound error
+	// behaviour if an entry cannot be found or does not exists. Any other error
+	// can also occur.
+	Get(key cfgpath.Path) (interface{}, error)
+	// AllKeys returns the fully qualified keys
+	AllKeys() (cfgpath.PathSlice, error)
+}
+
 // Service main configuration provider. Please use the NewService() function
 type Service struct {
-	// Storage is the underlying data holding provider. Only access it if you
+	// backend is the underlying data holding provider. Only access it if you
 	// know exactly what you are doing.
-	Storage storage.Storager
+	backend Storager
 
 	// internal service to provide async pub/sub features while reading/writing
 	// config values.
@@ -85,9 +102,10 @@ type Service struct {
 // NewService creates the main new configuration for all scopes: default,
 // website and store. Default Storage is a simple map[string]interface{}. A new
 // go routine will be startet for the publish and subscribe feature.
-func NewService(opts ...Option) (*Service, error) {
+func NewService(backend Storager, opts ...Option) (*Service, error) {
 	s := &Service{
-		Log: log.BlackHole{}, // disabled debug and info logging.
+		backend: backend,
+		Log:     log.BlackHole{}, // disabled debug and info logging.
 	}
 
 	if err := s.Options(opts...); err != nil {
@@ -100,12 +118,8 @@ func NewService(opts ...Option) (*Service, error) {
 		return nil, errors.Wrap(err, "[config] Service.Option")
 	}
 
-	if s.Storage == nil {
-		s.Storage = storage.NewKV()
-	}
-
 	p := cfgpath.MustNewByParts(PathCSBaseURL)
-	if err := s.Storage.Set(p, CSBaseURL); err != nil {
+	if err := s.backend.Set(p, CSBaseURL); err != nil {
 		if err2 := s.Close(); err2 != nil { // terminate publisher go routine and prevent leaking
 			return nil, errors.Wrap(err2, "[config] Service.Storage.Close")
 		}
@@ -116,8 +130,8 @@ func NewService(opts ...Option) (*Service, error) {
 
 // MustNewService same as NewService but panics on error. Use only in testing
 // or during boot process.
-func MustNewService(opts ...Option) *Service {
-	s, err := NewService(opts...)
+func MustNewService(backend Storager, opts ...Option) *Service {
+	s, err := NewService(backend, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -158,7 +172,7 @@ func (s *Service) Write(p cfgpath.Path, v interface{}) error {
 		s.Log.Debug("config.Service.Write", log.Stringer("path", p), log.Object("val", v))
 	}
 
-	if err := s.Storage.Set(p, v); err != nil {
+	if err := s.backend.Set(p, v); err != nil {
 		return errors.Wrap(err, "[config] sStorage.Set")
 	}
 	if s.pubSub != nil {
@@ -172,7 +186,7 @@ func (s *Service) get(p cfgpath.Path) (interface{}, error) {
 	if s.Log.IsDebug() {
 		s.Log.Debug("config.Service.get", log.Stringer("path", p))
 	}
-	return s.Storage.Get(p)
+	return s.backend.Get(p)
 }
 
 // String returns a string from the Service. Example usage:
@@ -256,7 +270,7 @@ func (s *Service) Duration(p cfgpath.Path) (time.Duration, error) {
 // will be logged in Debug mode. Does not check if the value can be asserted to
 // the desired type.
 func (s *Service) IsSet(p cfgpath.Path) bool {
-	v, err := s.Storage.Get(p)
+	v, err := s.backend.Get(p)
 	if err != nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug("config.Service.IsSet.Storage.Get", log.Err(err), log.Stringer("path", p))
