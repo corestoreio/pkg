@@ -48,38 +48,38 @@ func TestMustNewStoreAU_ConfigNonNil(t *testing.T) {
 func TestMustNewStoreAU_Config(t *testing.T) {
 	var configPath = cfgpath.MustNewByParts("aa/bb/cc")
 
-	aust := storemock.MustNewStoreAU(cfgmock.NewService(cfgmock.PathValue{
+	sm := cfgmock.NewService(cfgmock.PathValue{
 		configPath.String():                "DefaultScopeString",
 		configPath.BindWebsite(2).String(): "WebsiteScopeString",
 		configPath.BindStore(5).String():   "StoreScopeString",
-	}))
+	})
+	aust := storemock.MustNewStoreAU(sm)
 
-	haveS, scp, err := aust.Website.Config.String(configPath.Route)
+	haveS, err := aust.Website.Config.String(configPath.Route)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "WebsiteScopeString", haveS)
-	assert.Exactly(t, scope.MakeTypeID(scope.Website, 2), scp)
 
-	haveS, scp, err = aust.Website.Config.String(configPath.Route, scope.Default)
+	haveS, err = aust.Website.Config.String(configPath.Route, scope.Default)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
-	assert.Exactly(t, scope.DefaultTypeID, scp)
 
-	haveS, scp, err = aust.Config.String(configPath.Route)
+	haveS, err = aust.Config.String(configPath.Route)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "StoreScopeString", haveS)
-	assert.Exactly(t, scope.MakeTypeID(scope.Store, 5), scp)
 
-	haveS, scp, err = aust.Config.String(configPath.Route, scope.Default)
+	haveS, err = aust.Config.String(configPath.Route, scope.Default)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "DefaultScopeString", haveS)
-	assert.Exactly(t, scope.DefaultTypeID, scp)
+
+	assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(2), scope.Store.Pack(5)}, sm.AllInvocations().TypeIDs())
+	assert.Exactly(t, 3, sm.AllInvocations().PathCount())
 
 }
