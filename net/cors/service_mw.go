@@ -26,8 +26,8 @@ import (
 func (s *Service) WithCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		scpCfg := s.configByContext(r.Context())
-		if err := scpCfg.IsValid(); err != nil {
+		scpCfg, err := s.configByContext(r.Context())
+		if err != nil {
 			s.Log.Info("cors.Service.WithCORS.configByContext.Error", log.Err(err))
 			if s.Log.IsDebug() {
 				s.Log.Debug("cors.Service.WithCORS.configByContext", log.Err(err), log.HTTPRequest("request", r))

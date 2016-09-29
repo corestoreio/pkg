@@ -19,7 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/cors"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -31,28 +30,23 @@ func PrepareOptions(be *Configuration) cors.OptionFactoryFunc {
 		var (
 			opts     [1]cors.Option
 			settings cors.Settings
+			err      error
 		)
-		scopeID := scope.MakeTypeID(sg.Scope())
-
-		// For now the scope for all options depends on the scope of the
-		// setting: NetCorsExposedHeaders
 
 		// EXPOSED HEADERS
-		eh, _, err := be.ExposedHeaders.Get(sg)
+		settings.ExposedHeaders, err = be.ExposedHeaders.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsExposedHeaders.Get"))
 		}
-		settings.ExposedHeaders = eh
 
 		// ALLOWED ORIGINS
-		ao, _, err := be.AllowedOrigins.Get(sg)
+		settings.AllowedOrigins, err = be.AllowedOrigins.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedOrigins.Get"))
 		}
-		settings.AllowedOrigins = ao
 
 		// ALLOW ORIGIN REGEX
-		aor, _, err := be.AllowOriginRegex.Get(sg)
+		aor, err := be.AllowOriginRegex.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedOriginRegex.Get"))
 		}
@@ -67,41 +61,36 @@ func PrepareOptions(be *Configuration) cors.OptionFactoryFunc {
 		}
 
 		// ALLOWED METHODS
-		am, _, err := be.AllowedMethods.Get(sg)
+		settings.AllowedMethods, err = be.AllowedMethods.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedMethods.Get"))
 		}
-		settings.AllowedMethods = am
 
 		// ALLOWED HEADERS
-		ah, _, err := be.AllowedHeaders.Get(sg)
+		settings.AllowedHeaders, err = be.AllowedHeaders.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowedHeaders.Get"))
 		}
-		settings.AllowedHeaders = ah
 
 		// ALLOW CREDENTIALS
-		ac, _, err := be.AllowCredentials.Get(sg)
+		settings.AllowCredentials, err = be.AllowCredentials.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsAllowCredentials.Get"))
 		}
-		settings.AllowCredentials = ac
 
 		// OPTIONS PASSTHROUGH
-		op, _, err := be.OptionsPassthrough.Get(sg)
+		settings.OptionsPassthrough, err = be.OptionsPassthrough.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsOptionsPassthrough.Get"))
 		}
-		settings.OptionsPassthrough = op
 
 		// MAX AGE
-		ma, _, err := be.MaxAge.Get(sg)
+		settings.MaxAge, err = be.MaxAge.Get(sg)
 		if err != nil {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsMaxAge.Get"))
 		}
-		settings.MaxAge = ma
 
-		opts[0] = cors.WithSettings(scopeID, settings)
+		opts[0] = cors.WithSettings(sg.ScopeID(), settings)
 		return opts[:]
 	}
 }

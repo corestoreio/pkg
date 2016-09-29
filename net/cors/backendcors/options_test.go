@@ -43,8 +43,8 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 	srv := cors.MustNew(
 		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
 	)
-	scpCfg := srv.ConfigByScopedGetter(scpCfgSrv)
-	if err := scpCfg.IsValid(); err != nil {
+	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
+	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, []string{`x.com`, `y.com`}, scpCfg.AllowedOrigins)

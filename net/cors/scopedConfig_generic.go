@@ -44,15 +44,6 @@ type scopedConfigGeneric struct {
 	// TODO(CyS) think about adding config.Scoped
 }
 
-// newScopedConfigError easy helper to create an error
-func newScopedConfigError(err error) ScopedConfig {
-	return ScopedConfig{
-		scopedConfigGeneric: scopedConfigGeneric{
-			lastErr: err,
-		},
-	}
-}
-
 // newScopedConfigGeneric creates a new non-pointer generic config with a
 // default scope and an error handler which returns status service unavailable.
 // This function must be embedded in the targeted package newScopedConfig().
@@ -76,8 +67,8 @@ func optionInheritDefault(s *Service) *ScopedConfig {
 	return newScopedConfig()
 }
 
-// isValid internal pre-check for the public IsValid() function
-func (sc *ScopedConfig) isValid() (err error) {
+// isValidPreCheck internal pre-check for the public IsValid() function
+func (sc *ScopedConfig) isValidPreCheck() (err error) {
 	switch {
 	case sc.lastErr != nil:
 		err = errors.Wrap(sc.lastErr, "[cors] ScopedConfig.isValid has an lastErr")

@@ -53,12 +53,12 @@ type ScopedConfig struct {
 	Settings
 }
 
-// IsValid a configuration for a scope is only then valid when
+// isValid a configuration for a scope is only then valid when
 //	- ScopeID set
 //	- min 1x allowedMethods set
 //	- Logger not nil
-func (sc *ScopedConfig) IsValid() error {
-	if err := sc.isValid(); err != nil {
+func (sc *ScopedConfig) isValid() error {
+	if err := sc.isValidPreCheck(); err != nil {
 		return errors.Wrap(err, "[cors] scopedConfig.isValid as an lastErr")
 	}
 	// AML = allowed method length: Max 7, also useful for testing ;-)
@@ -176,10 +176,11 @@ func (sc *ScopedConfig) handleActualRequest(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Note that spec does define a way to specifically disallow a simple method like GET or
-	// POST. Access-Control-Allow-Methods is only used for pre-flight requests and the
-	// spec doesn't instruct to check the allowed methods for simple cross-origin requests.
-	// We think it's a nice feature to be able to have control on those methods though.
+	// Note that spec does define a way to specifically disallow a simple method
+	// like GET or POST. Access-Control-Allow-Methods is only used for
+	// pre-flight requests and the spec doesn't instruct to check the allowed
+	// methods for simple cross-origin requests. We think it's a nice feature to
+	// be able to have control on those methods though.
 	if !sc.isMethodAllowed(r.Method) {
 		if sc.log.IsDebug() {
 			sc.log.Debug("cors.handleActualRequest.aborted.notAllowed.method", log.String("method", r.Method))

@@ -78,6 +78,49 @@ func WithErrorHandler(id scope.TypeID, eh mw.ErrorHandler) Option {
 	}
 }
 
+// WithDisable disables the current service and calls the next HTTP handler.
+func WithDisable(id scope.TypeID, isDisabled bool) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[id]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.Disabled = isDisabled
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
+		return nil
+	}
+}
+
+// WithTriggerOptionFactories if set to true marks a configuration for a scope
+// as partially applied with functional options set via source code. The
+// internal service knows that it must trigger additionally the
+// OptionFactoryFunc to load configuration from a backend. Useful in the case
+// where parts of the configurations are coming from backend storages and other
+// parts like http handler have been set via code. This function should only be
+// applied in case you work with WithOptionFactory().
+func WithTriggerOptionFactories(id scope.TypeID, partially bool) Option {
+	return func(s *Service) error {
+		s.rwmu.Lock()
+		defer s.rwmu.Unlock()
+
+		sc := s.scopeCache[id]
+		if sc == nil {
+			sc = optionInheritDefault(s)
+		}
+		sc.lastErr = nil
+		if partially {
+			sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsPartiallyLoaded, id)
+		}
+		sc.ScopeID = id
+		s.scopeCache[id] = sc
+		return nil
+	}
+}
+
 // WithServiceErrorHandler sets the error handler on the Service object.
 // Convenient helper function.
 func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
@@ -119,44 +162,6 @@ func WithLogger(l log.Logger) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		s.Log = l
-		return nil
-	}
-}
-
-// WithDisable disables the current service and calls the next HTTP handler.
-func WithDisable(id scope.TypeID, isDisabled bool) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.Disabled = isDisabled
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
-	}
-}
-
-// WithIncomplete marks a configuration for a scope as incomplete so that the
-// scopeCache retriever functions know that it can trigger the
-// OptionFactoryFunc. Useful in the case where parts of the configurations are
-// coming from backend storages and other parts like http handler have been set
-// via code.
-func WithIncomplete(id scope.TypeID) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsIncomplete, sc)
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
 		return nil
 	}
 }
