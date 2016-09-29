@@ -23,7 +23,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/conv"
@@ -110,7 +109,7 @@ func (iv Invocations) TypeIDs() scope.TypeIDs {
 // appropriate methods of interface config.Getter. Field DB has precedence over
 // the applied functions.
 type Service struct {
-	DB               storage.Storager
+	Storage          config.Storager
 	mu               sync.Mutex
 	ByteFn           func(path string) ([]byte, error)
 	byteInvokes      Invocations // contains path and count of how many times the typed function has been called
@@ -134,7 +133,7 @@ type Service struct {
 // map[string]interface{} is protected by a mutex.
 type PathValue map[string]interface{}
 
-func (pv PathValue) set(db storage.Storager) {
+func (pv PathValue) set(db config.Storager) {
 	for fq, v := range pv {
 		p, err := cfgpath.SplitFQ(fq)
 		if err != nil {
@@ -179,11 +178,11 @@ func (pv PathValue) GoString() string {
 // simple in memory key/value storage.
 func NewService(pvs ...PathValue) *Service {
 	mr := &Service{
-		DB: storage.NewKV(),
+		Storage: config.NewInMemoryStore(),
 	}
 	if len(pvs) > 0 {
 		for _, pv := range pvs {
-			pv.set(mr.DB)
+			pv.set(mr.Storage)
 		}
 	}
 	return mr
@@ -212,14 +211,14 @@ func (s *Service) AllInvocations() Invocations {
 
 // UpdateValues adds or overwrites the internal path => value map.
 func (s *Service) UpdateValues(pv PathValue) {
-	pv.set(s.DB)
+	pv.set(s.Storage)
 }
 
 func (s *Service) hasVal(p cfgpath.Path) bool {
-	if s.DB == nil {
+	if s.Storage == nil {
 		return false
 	}
-	v, err := s.DB.Get(p)
+	v, err := s.Storage.Get(p)
 	if err != nil && !errors.IsNotFound(err) {
 		println("Mock.Service.hasVal error:", err.Error(), "path", p.String())
 	}
@@ -227,7 +226,7 @@ func (s *Service) hasVal(p cfgpath.Path) bool {
 }
 
 func (s *Service) getVal(p cfgpath.Path) interface{} {
-	v, err := s.DB.Get(p)
+	v, err := s.Storage.Get(p)
 	if err != nil && !errors.IsNotFound(err) {
 		println("Mock.Service.getVal error:", err.Error(), "path", p.String())
 		return nil

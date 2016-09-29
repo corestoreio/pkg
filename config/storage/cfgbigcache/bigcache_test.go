@@ -18,15 +18,15 @@ import (
 	"testing"
 
 	"github.com/allegro/bigcache"
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/config/storage/cfgbigcache"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ storage.Storager = (*cfgbigcache.Storage)(nil)
+var _ config.Storager = (*cfgbigcache.Storage)(nil)
 
 func TestCacheGet(t *testing.T) {
 

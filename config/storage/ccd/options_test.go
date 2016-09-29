@@ -63,7 +63,9 @@ func Test_WithCoreConfigData(t *testing.T) {
 		cstesting.MustMockRows(cstesting.WithFile("testdata", "core_config_data.csv")),
 	)
 
+	im := config.NewInMemoryStore()
 	s := config.MustNewService(
+		im,
 		ccd.WithCoreConfigData(sess),
 	)
 	defer func() { assert.NoError(t, s.Close()) }()
@@ -74,7 +76,7 @@ func Test_WithCoreConfigData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, "SSL_OFFLOADED", h)
 
-	allKeys, err := s.Storage.AllKeys()
+	allKeys, err := im.AllKeys()
 	assert.NoError(t, err)
 	//for i, ak := range allKeys {
 	//	t.Log(i, ak.String())

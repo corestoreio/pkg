@@ -27,10 +27,12 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+// TableCollection handles all tables and its columns. init() in generated Go
+// file will set the value.
 var TableCollection csdb.TableManager
 
-// DBStorage connects the MySQL DB with the config.Service type.
+// DBStorage connects the MySQL DB with the config.Service type. Implements
+// interface config.Storager.
 type DBStorage struct {
 	log log.Logger
 	// All is a SQL statement for the all keys query
@@ -42,9 +44,11 @@ type DBStorage struct {
 }
 
 // NewDBStorage creates a new pointer with resurrecting prepared SQL statements.
-// Default logger for the three underlying ResurrectStmt type sports to black hole.
+// Default logger for the three underlying ResurrectStmt type sports to black
+// hole.
 //
-// All has an idle time of 15s. Read an idle time of 10s. Write an idle time of 30s.
+// All has an idle time of 15s. Read an idle time of 10s. Write an idle time of
+// 30s. Implements interface config.Storager.
 func NewDBStorage(p csdb.Preparer) (*DBStorage, error) {
 	// todo: instead of logging the error we may write it into an
 	// error channel and the gopher who calls NewDBStorage is responsible
@@ -77,7 +81,8 @@ func NewDBStorage(p csdb.Preparer) (*DBStorage, error) {
 	return dbs, nil
 }
 
-// MustNewDBStorage same as NewDBStorage but panics on error
+// MustNewDBStorage same as NewDBStorage but panics on error. Implements
+// interface config.Storager.
 func MustNewDBStorage(p csdb.Preparer) *DBStorage {
 	s, err := NewDBStorage(p)
 	if err != nil {
@@ -121,9 +126,9 @@ func (dbs *DBStorage) Stop() error {
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
 func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
-	// update lastUsed at the end because there might be the slight chance
-	// that a statement gets closed despite we're waiting for the result
-	// from the server.
+	// update lastUsed at the end because there might be the slight chance that
+	// a statement gets closed despite we're waiting for the result from the
+	// server.
 	dbs.Write.StartStmtUse()
 	defer dbs.Write.StopStmtUse()
 
@@ -166,12 +171,11 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 
 // Get returns a value from the database by its key. It is guaranteed that the
 // type in the empty interface is a string. It returns nil on error but errors
-// get logged as info message.
-// Error behaviour: NotFound
+// get logged as info message. Error behaviour: NotFound
 func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
-	// update lastUsed at the end because there might be the slight chance
-	// that a statement gets closed despite we're waiting for the result
-	// from the server.
+	// update lastUsed at the end because there might be the slight chance that
+	// a statement gets closed despite we're waiting for the result from the
+	// server.
 	dbs.Read.StartStmtUse()
 	defer dbs.Read.StopStmtUse()
 

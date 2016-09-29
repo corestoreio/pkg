@@ -24,20 +24,10 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// WithDBStorage applies the MySQL storage to a new Service. It
-// starts the idle checker of the DBStorage type.
-func WithDBStorage(p csdb.Preparer) config.Option {
-	return func(s *config.Service) error {
-		s.Storage = MustNewDBStorage(p).Start()
-		return nil
-	}
-}
-
-// WithCoreConfigData reads the table core_config_data into the Service and overrides
-// existing values. If the column `value` is NULL entry will be ignored.
-// Stops on errors.
+// WithCoreConfigData reads the table core_config_data into the Service and
+// overrides existing values. If the column `value` is NULL entry will be
+// ignored. Stops on errors.
 func WithCoreConfigData(dbrSess dbr.SessionRunner) config.Option {
-
 	return func(s *config.Service) error {
 
 		var ccd TableCoreConfigDataSlice

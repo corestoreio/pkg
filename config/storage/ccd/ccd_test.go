@@ -21,15 +21,15 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/config/storage/ccd"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ storage.Storager = (*ccd.DBStorage)(nil)
+var _ config.Storager = (*ccd.DBStorage)(nil)
 
 func TestDBStorageOneStmt(t *testing.T) {
 	t.Parallel()

@@ -155,7 +155,7 @@ func TestService_ApplyDefaults(t *testing.T) {
 			),
 		},
 	)
-	s := config.MustNewService()
+	s := config.MustNewService(config.NewInMemoryStore())
 	if _, err := pkgCfg.ApplyDefaults(s); err != nil {
 		t.Fatal(err)
 	}
