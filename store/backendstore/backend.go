@@ -19,6 +19,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -103,6 +104,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 // StoreInformation defines the address data for a merchant. Might be usable in
 // e.g. text/template or html/template.
 type StoreInformation struct {
+	scope.TypeID
 	Name        string
 	Phone       string
 	Hours       string
@@ -119,48 +121,49 @@ type StoreInformation struct {
 // on the scope. Might be usable in e.g. text/template or html/template. Does
 // not yet cache internally per scope the data.
 func (c *Configuration) StoreInformation(sg config.Scoped) (*StoreInformation, error) {
-	name, _, err := c.GeneralStoreInformationName.Get(sg)
+	name, err := c.GeneralStoreInformationName.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationName")
 	}
-	phone, _, err := c.GeneralStoreInformationPhone.Get(sg)
+	phone, err := c.GeneralStoreInformationPhone.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationPhone")
 	}
-	hours, _, err := c.GeneralStoreInformationHours.Get(sg)
+	hours, err := c.GeneralStoreInformationHours.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationHours")
 	}
-	country, _, err := c.GeneralStoreInformationCountryID.Get(sg)
+	country, err := c.GeneralStoreInformationCountryID.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationCountryID")
 	}
-	region, _, err := c.GeneralStoreInformationRegionID.Get(sg)
+	region, err := c.GeneralStoreInformationRegionID.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationRegionID")
 	}
-	postCode, _, err := c.GeneralStoreInformationPostcode.Get(sg)
+	postCode, err := c.GeneralStoreInformationPostcode.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationPostcode")
 	}
-	city, _, err := c.GeneralStoreInformationCity.Get(sg)
+	city, err := c.GeneralStoreInformationCity.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationCity")
 	}
-	sl1, _, err := c.GeneralStoreInformationStreetLine1.Get(sg)
+	sl1, err := c.GeneralStoreInformationStreetLine1.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationStreetLine1")
 	}
-	sl2, _, err := c.GeneralStoreInformationStreetLine2.Get(sg)
+	sl2, err := c.GeneralStoreInformationStreetLine2.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationStreetLine2")
 	}
-	vat, _, err := c.GeneralStoreInformationMerchantVatNumber.Get(sg)
+	vat, err := c.GeneralStoreInformationMerchantVatNumber.Get(sg)
 	if err != nil {
 		return nil, errors.Wrap(err, "[backendstore] GeneralStoreInformationMerchantVatNumber")
 	}
 
 	return &StoreInformation{
+		TypeID:      sg.ScopeID(),
 		Name:        name,
 		Phone:       phone,
 		Hours:       hours,
