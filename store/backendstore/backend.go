@@ -104,7 +104,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 // StoreInformation defines the address data for a merchant. Might be usable in
 // e.g. text/template or html/template.
 type StoreInformation struct {
-	scope.TypeID
+	ScopeID     scope.TypeID
 	Name        string
 	Phone       string
 	Hours       string
@@ -163,7 +163,7 @@ func (c *Configuration) StoreInformation(sg config.Scoped) (*StoreInformation, e
 	}
 
 	return &StoreInformation{
-		TypeID:      sg.ScopeID(),
+		ScopeID:     sg.ScopeID(),
 		Name:        name,
 		Phone:       phone,
 		Hours:       hours,
