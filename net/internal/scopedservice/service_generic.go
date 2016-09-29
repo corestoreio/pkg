@@ -185,8 +185,8 @@ func (s *Service) configByContext(ctx context.Context) (ScopedConfig, error) {
 // guaranteed atomic single loading for each scope.
 func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, error) {
 
-	current := scope.MakeTypeID(scpGet.Scope()) // can be store or website or default
-	parent := scope.MakeTypeID(scpGet.Parent()) // can be website or default
+	parent := scpGet.ParentID() // can be website or default
+	current := scpGet.ScopeID() // can be store or website or default
 
 	// 99.9999 % of the hits; 2nd argument must be zero because we must first
 	// test if a direct entry can be found; if not we must apply either the
