@@ -22,7 +22,6 @@ import (
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
 	"github.com/corestoreio/csfw/storage/transcache/tcredis"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -41,31 +40,30 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 			opts [6]geoip.Option
 			i    int // used as index in opts
 		)
-		typeID := scope.MakeTypeID(sg.Scope())
 
-		acc, _, err := be.AllowedCountries.Get(sg)
+		acc, err := be.AllowedCountries.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAllowedCountries.Get"))
 		}
-		opts[i] = geoip.WithAllowedCountryCodes(typeID, acc...)
+		opts[i] = geoip.WithAllowedCountryCodes(sg.ScopeID(), acc...)
 		i++
 
 		// REDIRECT TO ALTERNATIVE URL
-		ar, _, err := be.AlternativeRedirect.Get(sg)
+		arURL, err := be.AlternativeRedirect.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAlternativeRedirect.Get"))
 		}
-		arc, _, err := be.AlternativeRedirectCode.Get(sg)
+		arCode, err := be.AlternativeRedirectCode.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAlternativeRedirectCode.Get"))
 		}
-		if arc > 0 && ar != nil {
-			opts[i] = geoip.WithAlternativeRedirect(typeID, ar.String(), arc)
+		if arCode > 0 && arURL != nil {
+			opts[i] = geoip.WithAlternativeRedirect(sg.ScopeID(), arURL.String(), arCode)
 		}
 		i++
 
 		// LOCAL MAXMIND FILE
-		mmlf, _, err := be.MaxmindLocalFile.Get(sg)
+		mmlf, err := be.MaxmindLocalFile.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindLocalFile.Get"))
 		}
@@ -77,19 +75,19 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 		}
 
 		// MAXMIND WEB SERVICE
-		user, _, err := be.MaxmindWebserviceUserID.Get(sg)
+		user, err := be.MaxmindWebserviceUserID.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceUserID.Get"))
 		}
-		license, _, err := be.MaxmindWebserviceLicense.Get(sg)
+		license, err := be.MaxmindWebserviceLicense.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceLicense.Get"))
 		}
-		timeout, _, err := be.MaxmindWebserviceTimeout.Get(sg)
+		timeout, err := be.MaxmindWebserviceTimeout.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceTimeout.Get"))
 		}
-		redisURL, _, err := be.MaxmindWebserviceRedisURL.Get(sg)
+		redisURL, err := be.MaxmindWebserviceRedisURL.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceRedisURL.Get"))
 		}

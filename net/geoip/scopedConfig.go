@@ -20,7 +20,9 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// scopedConfig private internal scoped based configuration
+// ScopedConfig scoped based configuration and should not be embedded into your
+// own types. Call ScopedConfig.ScopeID to know to which scope this
+// configuration has been bound to.
 type ScopedConfig struct {
 	scopedConfigGeneric
 
@@ -56,21 +58,23 @@ func newScopedConfig() *ScopedConfig {
 	return sc
 }
 
-// IsValid a configuration for a scope is only then valid when the Key has been
+// isValid a configuration for a scope is only then valid when the Key has been
 // supplied, a non-nil signing method and a non-nil Verifier.
-func (sc *ScopedConfig) IsValid() error {
-	if sc.lastErr != nil {
-		return errors.Wrap(sc.lastErr, "[geoip] scopedConfig.isValid as an lastErr")
+func (sc *ScopedConfig) isValid() error {
+	if err := sc.isValidPreCheck(); err != nil {
+		return errors.Wrap(err, "[cors] scopedConfig.isValid as an lastErr")
 	}
 
-	if sc.ScopeID == 0 || sc.IsAllowedFunc == nil ||
-		sc.AlternativeHandler == nil {
+	if sc.IsAllowedFunc == nil || sc.AlternativeHandler == nil {
 		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.IsAllowedFunc == nil, sc.AlternativeHandler == nil)
 	}
 	return nil
 }
 
 func (sc *ScopedConfig) checkAllow(s scope.TypeID, c *Country) error {
+	// think about: either if no country has been set and allow to proceed or be
+	// more strict and proceeding is not allowed except sea and air territories
+	// ;-).
 	if len(sc.AllowedCountries) == 0 {
 		return nil
 	}

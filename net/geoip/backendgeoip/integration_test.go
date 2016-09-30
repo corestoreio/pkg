@@ -54,7 +54,8 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 	srv := geoip.MustNew(
 		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
 	)
-	scpCfg := srv.ConfigByScopedGetter(scpCfgSrv)
+	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
+	assert.NoError(t, err, "%+v", err)
 
 	assert.Exactly(t, []string{`AU`, `NZ`}, scpCfg.AllowedCountries)
 }
@@ -278,8 +279,7 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 			geoip.WithOptionFactory(backendgeoip.PrepareOptions(be)),
 		)
 		assert.NoError(t, gs.ClearCache())
-		scpdCfg := gs.ConfigByScope(0, 0)
-		err = scpdCfg.IsValid()
+		_, err = gs.ConfigByScope(0, 0)
 		assert.True(t, test.errBhf(err), "Index %d Error: %s", i, err)
 	}
 }

@@ -83,9 +83,8 @@ func (s *Service) WithCountryByIP(next http.Handler) http.Handler {
 func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		scpCfg := s.configByContext(r.Context())
-		if err := scpCfg.IsValid(); err != nil {
-			s.Log.Info("geoip.Service.WithIsCountryAllowedByIP.configByContext.Error", log.Err(err))
+		scpCfg, err := s.configByContext(r.Context())
+		if err != nil {
 			if s.Log.IsDebug() {
 				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.configByContext", log.Err(err), log.HTTPRequest("request", r))
 			}

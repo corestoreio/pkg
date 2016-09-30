@@ -31,6 +31,7 @@ func TestContextWithError(t *testing.T) {
 
 	cntry, ok := FromContextCountry(req.Context())
 	assert.False(t, ok, "Should have not country context")
+	assert.Nil(t, cntry)
 
 	cntry, ok = FromContextCountry(context.TODO())
 	assert.Nil(t, cntry)

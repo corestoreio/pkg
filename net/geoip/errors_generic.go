@@ -21,4 +21,4 @@ import "github.com/corestoreio/csfw/util/errors"
 var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)
 
 const errConfigScopeIDNotSet = `[geoip] ScopeID not set`
-const errConfigMarkedAsIncomplete = `[geoip] Scoped configuration %s marked as incomplete.`
+const errConfigMarkedAsPartiallyLoaded = `[geoip] Scoped configuration %s marked as partially loaded.`
