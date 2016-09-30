@@ -192,6 +192,7 @@ func NewService(pvs ...PathValue) *Service {
 // duplicated paths.
 func (s *Service) AllInvocations() Invocations {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	ret := make(Invocations)
 	add := func(iv Invocations) {
 		for k, v := range iv {
@@ -205,7 +206,6 @@ func (s *Service) AllInvocations() Invocations {
 	add(s.intInvokes)
 	add(s.timeInvokes)
 	add(s.durationInvokes)
-	s.mu.Unlock()
 	return ret
 }
 
