@@ -36,7 +36,7 @@ type ScopedConfig struct {
 	AllowedCountries []string
 	// IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
 	// allowed to process the request.
-	IsAllowedFunc // func(s scope.Hash, c *Country, allowedCountries []string) error
+	isAllowedFn IsAllowedFunc // func(s scope.Hash, c *Country, allowedCountries []string) error
 
 	// AlternativeHandler if ip/country is denied we call this handler.
 	AlternativeHandler mw.ErrorHandler
@@ -45,7 +45,7 @@ type ScopedConfig struct {
 func newScopedConfig() *ScopedConfig {
 	sc := &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(),
-		IsAllowedFunc: func(_ scope.TypeID, c *Country, allowedCountries []string) error {
+		isAllowedFn: func(_ scope.TypeID, c *Country, allowedCountries []string) error {
 			for _, ac := range allowedCountries {
 				if ac == c.Country.IsoCode { // case sensitive matching
 					return nil
@@ -65,18 +65,20 @@ func (sc *ScopedConfig) isValid() error {
 		return errors.Wrap(err, "[cors] scopedConfig.isValid as an lastErr")
 	}
 
-	if sc.IsAllowedFunc == nil || sc.AlternativeHandler == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.IsAllowedFunc == nil, sc.AlternativeHandler == nil)
+	if sc.isAllowedFn == nil || sc.AlternativeHandler == nil {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.isAllowedFn == nil, sc.AlternativeHandler == nil)
 	}
 	return nil
 }
 
-func (sc *ScopedConfig) checkAllow(s scope.TypeID, c *Country) error {
+// IsAllowed checks if the country is allowed. An empty AllowedCountries fields
+// allows all countries.
+func (sc *ScopedConfig) IsAllowed(c *Country) error {
 	// think about: either if no country has been set and allow to proceed or be
 	// more strict and proceeding is not allowed except sea and air territories
 	// ;-).
 	if len(sc.AllowedCountries) == 0 {
 		return nil
 	}
-	return sc.IsAllowedFunc(s, c, sc.AllowedCountries)
+	return sc.isAllowedFn(sc.ScopeID, c, sc.AllowedCountries)
 }

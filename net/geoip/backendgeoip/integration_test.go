@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
+	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
 	"github.com/corestoreio/csfw/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
@@ -78,7 +79,6 @@ func TestConfiguration_WithAlternativeRedirect(t *testing.T) {
 		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
 		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
 		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
-		backend.MaxmindLocalFile.MustFQ():                filePathGeoIP,
 	})))
 
 	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
@@ -111,7 +111,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			be.MaxmindWebserviceTimeout,
 			be.MaxmindWebserviceRedisURL,
 		))
-		be.Register(backendgeoip.NewOptionFactoryGeoSourceFile(be.MaxmindLocalFile))
+		be.Register(maxmindfile.NewOptionFactory(be.MaxmindLocalFile))
 
 		scpFnc := backendgeoip.PrepareOptions(be)
 		geoSrv := geoip.MustNew(
@@ -195,7 +195,7 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 }
 
 func TestNewOptionFactoryGeoSourceFile_Invalid_ConfigValue(t *testing.T) {
-	name, off := backendgeoip.NewOptionFactoryGeoSourceFile(backend.MaxmindLocalFile)
+	name, off := maxmindfile.NewOptionFactory(backend.MaxmindLocalFile)
 	assert.Exactly(t, `file`, name)
 
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
@@ -212,7 +212,7 @@ func TestNewOptionFactoryGeoSourceFile_Invalid_ConfigValue(t *testing.T) {
 }
 
 func TestNewOptionFactoryGeoSourceFile_Empty_ConfigValue(t *testing.T) {
-	name, off := backendgeoip.NewOptionFactoryGeoSourceFile(backend.MaxmindLocalFile)
+	name, off := maxmindfile.NewOptionFactory(backend.MaxmindLocalFile)
 	assert.Exactly(t, `file`, name)
 
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{

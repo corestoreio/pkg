@@ -12,220 +12,164 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package maxmindwebservice_test
+package maxmindwebservice
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net"
 	"net/http"
-	"net/http/httptest"
-	"sync/atomic"
+	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis"
-	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/geoip"
-	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
-	"github.com/corestoreio/csfw/net/geoip/maxmindwebservice"
+	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var backend *backendgeoip.Configuration
+var _ geoip.Finder = (*mmws)(nil)
 
-func init() {
+var responseJSONPath = filepath.Join("../", "testdata", "response.json")
 
-	cfgStruct, err := backendgeoip.NewConfigStructure()
+func TestMmws_Country_Failure_Response(t *testing.T) {
+
+	ws := newMMWS(transcache.NewMock(), "gopher", "passw0rd", http.DefaultClient)
+	trip := cstesting.NewHTTPTrip(400, `{"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
+	ws.client.Transport = trip
+	c, err := ws.FindCountry(net.ParseIP("123.123.123.123"))
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+	assert.Nil(t, c)
+
+	trip.RequestsMatchAll(t, func(r *http.Request) bool {
+		u, p, ok := r.BasicAuth()
+		assert.True(t, ok)
+		assert.Exactly(t, "gopher", u)
+		assert.Exactly(t, "passw0rd", p)
+		return true
+	})
+}
+
+func TestMmws_Country_Failure_JSON(t *testing.T) {
+
+	ws := newMMWS(transcache.NewMock(), "a", "b", http.DefaultClient)
+	trip := cstesting.NewHTTPTrip(200, `"error":"Invalid user_id or license_key provided","code":"AUTHORIZATION_INVALID"}`, nil)
+	ws.client.Transport = trip
+	c, err := ws.FindCountry(net.ParseIP("123.123.123.123"))
+	assert.Nil(t, c)
+	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+}
+
+func TestMmws_Country_Cache_GetError(t *testing.T) {
+	tcmock := transcache.NewMock()
+	tcmock.GetErr = errors.NewAlreadyClosedf("cache already closed ;-)")
+
+	ws := newMMWS(tcmock, "a", "b", http.DefaultClient)
+	trip := cstesting.NewHTTPTripFromFile(200, responseJSONPath)
+	ws.client.Transport = trip
+	c, err := ws.FindCountry(net.ParseIP("123.123.123.123"))
+	assert.Nil(t, c)
+	assert.True(t, errors.IsAlreadyClosed(err), "Error: %+v", err)
+}
+
+func TestMmws_Country_Cache_SetError(t *testing.T) {
+	tcmock := transcache.NewMock()
+	tcmock.SetErr = errors.NewAlreadyClosedf("cache already closed ;-(")
+
+	ws := newMMWS(tcmock, "a", "b", http.DefaultClient)
+	trip := cstesting.NewHTTPTripFromFile(200, responseJSONPath)
+	ws.client.Transport = trip
+	c, err := ws.FindCountry(net.ParseIP("123.123.123.123"))
+	assert.Nil(t, c)
+	assert.True(t, errors.IsAlreadyClosed(err), "Error: %+v", err)
+}
+
+func TestMmws_Country_Success(t *testing.T) {
+	td, err := ioutil.ReadFile(responseJSONPath)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	backend = backendgeoip.New(cfgStruct)
-}
 
-func TestConfiguration_WithGeoIP2Webservice_Redis(t *testing.T) {
+	tcmock := transcache.NewMock()
+	ws := newMMWS(tcmock, "gopher", "passw0rd", http.DefaultClient)
+	trip := cstesting.NewHTTPTrip(200, string(td), nil)
+	ws.client.Transport = trip
 
-	t.Run("Error_API", testBackend_WithGeoIP2Webservice_Redis(
-		func() *http.Client {
-			// http://dev.maxmind.com/geoip/geoip2/web-services/#Errors
-			return &http.Client{
-				Transport: cstesting.NewHTTPTrip(402, `{"error":"The license key you have provided is out of queries.","code":"OUT_OF_QUERIES"}`, nil),
-			}
-		},
-		func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-				panic("Should not get called")
-			})
-		},
-		http.StatusServiceUnavailable,
-	))
+	const iterations = 100
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup, i int) {
+			defer wg.Done()
 
-	t.Run("Error_JSON", testBackend_WithGeoIP2Webservice_Redis(
-		func() *http.Client {
-			// http://dev.maxmind.com/geoip/geoip2/web-services/#Errors
-			return &http.Client{
-				Transport: cstesting.NewHTTPTrip(200, `{"error":"The license ... wow this JSON isn't valid.`, nil),
-			}
-		},
-		func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
-			})
-		},
-		http.StatusServiceUnavailable,
-	))
-
-	var calledSuccessHandler int32
-	t.Run("Success", testBackend_WithGeoIP2Webservice_Redis(
-		func() *http.Client {
-			return &http.Client{
-				Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "es": "Europa", "fr": "Europe", "ja": "ヨーロッパ", "pt-BR": "Europa", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "registered_country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "traits": { "autonomous_system_number": 1239, "autonomous_system_organization": "Linkem IR WiMax Network", "domain": "example.com", "is_anonymous_proxy": true, "is_satellite_provider": true, "isp": "Linkem spa", "ip_address": "1.2.3.4", "organization": "Linkem IR WiMax Network", "user_type": "traveler" }, "maxmind": { "queries_remaining": 54321 } }`, nil),
-			}
-		},
-		func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-				cty, ok := geoip.FromContextCountry(r.Context())
-				assert.True(t, ok)
-				assert.Exactly(t, "DE", cty.Country.IsoCode)
-				atomic.AddInt32(&calledSuccessHandler, 1)
-			})
-		},
-		http.StatusOK,
-	))
-	assert.Exactly(t, int32(80), atomic.LoadInt32(&calledSuccessHandler), "calledSuccessHandler")
-}
-
-func testBackend_WithGeoIP2Webservice_Redis(
-	hcf func() *http.Client,
-	finalHandler func(t *testing.T) http.Handler,
-	wantCode int,
-) func(*testing.T) {
-
-	return func(t *testing.T) {
-		rd := miniredis.NewMiniRedis()
-		if err := rd.Start(); err != nil {
-			t.Fatal(err)
-		}
-		defer rd.Close()
-		redConURL := fmt.Sprintf("redis://%s/3", rd.Addr())
-
-		// test if we get the correct country and if the country has
-		// been successfully stored in redis and can be retrieved.
-
-		//be.WebServiceClient = hcf()
-		backend.Register(maxmindwebservice.NewOptionFactory(
-			hcf(),
-			backend.MaxmindWebserviceUserID,
-			backend.MaxmindWebserviceLicense,
-			backend.MaxmindWebserviceTimeout,
-			backend.MaxmindWebserviceRedisURL,
-		))
-
-		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			// @see structure.go for the limitation to scope.Default
-			backend.DataSource.MustFQ():                maxmindwebservice.OptionName,
-			backend.MaxmindWebserviceUserID.MustFQ():   `TestUserID`,
-			backend.MaxmindWebserviceLicense.MustFQ():  `TestLicense`,
-			backend.MaxmindWebserviceTimeout.MustFQ():  `21s`,
-			backend.MaxmindWebserviceRedisURL.MustFQ(): redConURL,
-		})
-		cfgScp := cfgSrv.NewScoped(1, 2) // Website ID 2 == euro / Store ID == 2 Austria ==> here doesn't matter
-
-		geoSrv := geoip.MustNew()
-
-		req := func() *http.Request {
-			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
-			req.Header.Set("X-Cluster-Client-Ip", "2a02:d180::") // Germany
-			return req
-		}()
-
-		scpFnc := backendgeoip.PrepareOptions(backend)
-		if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
-			t.Fatalf("%+v", err)
-		}
-		// food for the race detector
-		hpu := cstesting.NewHTTPParallelUsers(8, 10, 500, time.Millisecond) // 8,10
-		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
-			assert.Exactly(t, wantCode, rec.Code)
-		}
-		hpu.ServeHTTP(req, geoSrv.WithCountryByIP(finalHandler(t)))
+			time.Sleep(time.Microsecond * time.Duration(100*i))
+			c, err := ws.FindCountry(net.ParseIP(fmt.Sprintf("123.123.123.%d", i%4)))
+			assert.NotNil(t, c)
+			assert.NoError(t, err)
+			assert.Exactly(t, "US", c.Country.IsoCode)
+		}(&wg, i)
 	}
-}
+	wg.Wait()
 
-func TestConfiguration_Path_Errors(t *testing.T) {
-
-	backend.Register(maxmindwebservice.NewOptionFactory(
-		&http.Client{},
-		backend.MaxmindWebserviceUserID,
-		backend.MaxmindWebserviceLicense,
-		backend.MaxmindWebserviceTimeout,
-		backend.MaxmindWebserviceRedisURL,
-	))
-
-	tests := []struct {
-		toPath string
-		val    interface{}
-		errBhf errors.BehaviourFunc
-	}{
-		{backend.MaxmindWebserviceUserID.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceLicense.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceTimeout.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceRedisURL.MustFQ(), struct{}{}, errors.IsNotValid},
+	assert.Exactly(t, 4, tcmock.SetCount(), "SetCount")   // 4 because modulus 4
+	if have, want := tcmock.GetCount(), 50; have < want { // at least 50 should hit the cache and the rest waits and gets a copied result from inflight
+		t.Errorf("Have: %d < Want: %d", have, want)
 	}
-	for i, test := range tests {
 
-		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			backend.DataSource.MustFQ(): maxmindwebservice.OptionName,
-			test.toPath:                 test.val,
-		})
-
-		gs := geoip.MustNew(
-			geoip.WithRootConfig(cfgSrv),
-			geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
-		)
-		assert.NoError(t, gs.ClearCache())
-		_, err := gs.ConfigByScope(0, 0)
-		assert.True(t, test.errBhf(err), "Index %d Error: %+v", i, err)
-	}
-}
-
-func TestNewOptionFactory_Invalid_ConfigValue(t *testing.T) {
-
-	backend.Register(maxmindwebservice.NewOptionFactory(
-		&http.Client{},
-		backend.MaxmindWebserviceUserID,
-		backend.MaxmindWebserviceLicense,
-		backend.MaxmindWebserviceTimeout,
-		backend.MaxmindWebserviceRedisURL,
-	))
-
-	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-		backend.DataSource.MustFQ(): maxmindwebservice.OptionName,
+	trip.RequestsMatchAll(t, func(r *http.Request) bool {
+		u, p, ok := r.BasicAuth()
+		assert.True(t, ok)
+		assert.Exactly(t, "gopher", u)
+		assert.Exactly(t, "passw0rd", p)
+		return true
 	})
 
-	gs := geoip.MustNew(
-		geoip.WithRootConfig(cfgSrv),
-		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
-	)
-	//assert.NoError(t, gs.ClearCache())
-	_, err := gs.ConfigByScope(1, 0)
-	assert.True(t, errors.IsNotValid(err), " Error: %+v", err)
-	assert.Contains(t, err.Error(), `Incomplete WebService configuration: User: "" License "" Ti`)
 }
 
-//func TestNewOptionFactoryGeoSourceFile_Empty_ConfigValue(t *testing.T) {
-//	name, off := backendgeoip.NewOptionFactoryGeoSourceFile(backend.MaxmindLocalFile)
-//	assert.Exactly(t, `file`, name)
-//
-//	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-//		backend.MaxmindLocalFile.MustFQ(): "",
-//	})
-//
-//	gs := geoip.MustNew(
-//		geoip.WithRootConfig(cfgSrv),
-//		geoip.WithOptionFactory(off),
-//	)
-//	assert.NoError(t, gs.ClearCache())
-//	_, err := gs.ConfigByScope(0, 0)
-//	assert.True(t, errors.IsEmpty(err), " Error: %+v", err)
-//}
+var maxMindWebServiceClient string
+
+// BenchmarkMaxMindWebServiceClient/Serial-4         	   50000	     25525 ns/op	    5612 B/op	     108 allocs/op
+// BenchmarkMaxMindWebServiceClient/Parallel-4       	  100000	     18447 ns/op	    5652 B/op	     108 allocs/op
+func BenchmarkMaxMindWebServiceClient(b *testing.B) {
+
+	// transcache.NewMock has gob encoding
+
+	wsc := newMMWS(transcache.NewMock(), "gopher", "passw0rd", &http.Client{
+		Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
+	})
+
+	var checkCountry = func(b *testing.B, ip net.IP) {
+		ret, err := wsc.FindCountry(ip)
+		if err != nil {
+			b.Fatal(err)
+		}
+		var want string
+		if maxMindWebServiceClient, want = ret.Country.IsoCode, "DE"; maxMindWebServiceClient != want {
+			b.Fatalf("Have: %v Want: %v", maxMindWebServiceClient, want)
+		}
+	}
+	ip := net.ParseIP("123.123.123.123")
+
+	checkCountry(b, ip)
+
+	b.Run("Serial", func(b *testing.B) {
+		b.ResetTimer()
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			checkCountry(b, ip)
+		}
+	})
+
+	b.Run("Parallel", func(b *testing.B) {
+		b.ResetTimer()
+		b.ReportAllocs()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				checkCountry(b, ip)
+			}
+		})
+	})
+}

@@ -36,7 +36,7 @@ func (s *Service) CountryByIP(r *http.Request) (*Country, error) {
 		return nil, nf
 	}
 
-	c, err := s.geoIP.Country(ip)
+	c, err := s.Finder.FindCountry(ip)
 	if err != nil {
 		if s.Log.IsDebug() {
 			s.Log.Debug(
@@ -106,7 +106,7 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 			return
 		}
 
-		if err := scpCfg.checkAllow(scpCfg.ScopeID, c); err != nil {
+		if err := scpCfg.IsAllowed(c); err != nil {
 			// access denied
 			if s.Log.IsDebug() {
 				s.Log.Debug("geoip.WithIsCountryAllowedByIP.checkAllow.false", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.String("countryISO", c.Country.IsoCode), log.Strings("allowedCountries", scpCfg.AllowedCountries...))

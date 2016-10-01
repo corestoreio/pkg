@@ -28,35 +28,45 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/geoip"
+	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func mustGetTestService(opts ...geoip.Option) *geoip.Service {
+var _ io.Closer = (*geoip.Service)(nil)
+
+func mustGetTestService(opts ...geoip.Option) (*geoip.Service, func()) {
 	maxMindDB := filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")
-	return geoip.MustNew(append(opts, geoip.WithRootConfig(cfgmock.NewService()), geoip.WithGeoIP2File(maxMindDB))...)
+	s := geoip.MustNew(append(opts, geoip.WithRootConfig(cfgmock.NewService()), maxmindfile.WithCountryFinder(maxMindDB))...)
+	return s, func() {
+		if err := s.Close(); err != nil {
+			panic(fmt.Sprintf("%+v", err))
+		}
+	}
 }
 
-func deferClose(t *testing.T, c io.Closer) {
-	assert.NoError(t, c.Close())
-}
+var _ geoip.Finder = (*finderError)(nil)
 
-type geoReaderMock struct{}
+type finderError struct{}
 
-func (geoReaderMock) Country(ipAddress net.IP) (*geoip.Country, error) {
+func (finderError) FindCountry(ipAddress net.IP) (*geoip.Country, error) {
 	return nil, errors.NewNotImplementedf("Failed to read country from MMDB")
 }
-func (geoReaderMock) Close() error { return nil }
+func (finderError) Close() error { return nil }
 
 func TestService_WithCountryByIP_Error_GeoReader(t *testing.T) {
 	s := geoip.MustNew()
-	defer deferClose(t, s)
+	defer func() {
+		if err := s.Close(); err != nil {
+			panic(fmt.Sprintf("%+v", err))
+		}
+	}()
 
 	var calledWithServiceErrorHandler bool
 	if err := s.Options(
-		geoip.WithGeoIP(geoReaderMock{}),
+		geoip.WithCountryFinder(finderError{}),
 		geoip.WithErrorHandler(scope.Default.Pack(0), func(_ error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
@@ -87,8 +97,8 @@ func TestService_WithCountryByIP_Error_GeoReader(t *testing.T) {
 }
 
 func TestService_WithCountryByIP_OK(t *testing.T) {
-	s := mustGetTestService()
-	defer deferClose(t, s)
+	s, closeFn := mustGetTestService()
+	defer closeFn()
 
 	var calledWithCountryByIP bool
 	countryHandler := s.WithCountryByIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -110,8 +120,8 @@ func TestService_WithCountryByIP_OK(t *testing.T) {
 }
 
 func TestService_WithIsCountryAllowedByIP_Missing_Scope(t *testing.T) {
-	s := mustGetTestService()
-	defer deferClose(t, s)
+	s, closeFn := mustGetTestService()
+	defer closeFn()
 
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("Should not get called")
@@ -125,14 +135,14 @@ func TestService_WithIsCountryAllowedByIP_Missing_Scope(t *testing.T) {
 }
 
 func TestService_WithCountryByIP_IncorrectIP(t *testing.T) {
-	s := mustGetTestService(geoip.WithServiceErrorHandler(func(err error) http.Handler {
+	s, closeFn := mustGetTestService(geoip.WithServiceErrorHandler(func(err error) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusVariantAlsoNegotiates)
 			assert.True(t, errors.IsNotFound(err), "%+v", err)
 		})
 	}),
 	)
-	defer deferClose(t, s)
+	defer closeFn()
 
 	countryHandler := s.WithCountryByIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("Should not get called")
@@ -146,8 +156,8 @@ func TestService_WithCountryByIP_IncorrectIP(t *testing.T) {
 }
 
 func TestService_WithIsCountryAllowedByIP_ErrorWithContextCountryByIP(t *testing.T) {
-	s := mustGetTestService()
-	defer deferClose(t, s)
+	s, closeFn := mustGetTestService()
+	defer closeFn()
 
 	countryHandler := s.WithIsCountryAllowedByIP(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("Should not get called")
@@ -161,10 +171,10 @@ func TestService_WithIsCountryAllowedByIP_ErrorWithContextCountryByIP(t *testing
 
 func TestService_WithIsCountryAllowedByIP_MultiScopes(t *testing.T) {
 	var logBuf = new(log.MutexBuffer)
-	s := mustGetTestService(
+	s, closeFn := mustGetTestService(
 		geoip.WithDebugLog(logBuf),
 	)
-	defer deferClose(t, s)
+	defer closeFn()
 
 	var calledAltHndlr int32
 	var altHndlr = func(err error) http.Handler {

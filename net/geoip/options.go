@@ -16,14 +16,11 @@ package geoip
 
 import (
 	"net/http"
-	"os"
 	"sync/atomic"
-	"time"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 // IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
@@ -84,7 +81,7 @@ func WithCheckAllow(id scope.TypeID, f IsAllowedFunc) Option {
 		if sc == nil {
 			sc = optionInheritDefault(s)
 		}
-		sc.IsAllowedFunc = f
+		sc.isAllowedFn = f
 		sc.ScopeID = id
 		s.scopeCache[id] = sc
 		return nil
@@ -109,9 +106,9 @@ func WithAllowedCountryCodes(id scope.TypeID, isoCountryCodes ...string) Option 
 	}
 }
 
-// WithGeoIP applies a custom CountryRetriever. Sets the retriever atomically
+// WithCountryFinder applies a custom CountryRetriever. Sets the retriever atomically
 // and only once.
-func WithGeoIP(cr CountryRetriever) Option {
+func WithCountryFinder(cr Finder) Option {
 	return func(s *Service) error {
 		if s.isGeoIPLoaded() {
 			if s.Log.IsDebug() {
@@ -122,7 +119,7 @@ func WithGeoIP(cr CountryRetriever) Option {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
 		if s.geoIPLoaded == 0 {
-			s.geoIP = cr
+			s.Finder = cr
 			atomic.StoreUint32(&s.geoIPLoaded, 1)
 			if s.Log.IsDebug() {
 				s.Log.Debug("geoip.WithGeoIP.geoIPLoaded", log.Int("done", 0))
@@ -130,40 +127,4 @@ func WithGeoIP(cr CountryRetriever) Option {
 		}
 		return nil
 	}
-}
-
-// WithGeoIP2File creates a new GeoIP2.Reader. As long as there are no other
-// readers this is a mandatory argument. Error behaviour: NotFound, NotValid
-func WithGeoIP2File(filename string) Option {
-	return func(s *Service) error {
-		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			return errors.NewNotFoundf("[geoip] File %q not found", filename)
-		}
-
-		cr, err := newMMDBByFile(filename)
-		if err != nil {
-			return errors.NewNotValidf("[geoip] Maxmind Open %s with file %q", err, filename)
-		}
-		return WithGeoIP(cr)(s)
-	}
-}
-
-// WithGeoIP2Webservice uses for each incoming a request a lookup request to the
-// Maxmind Webservice http://dev.maxmind.com/geoip/geoip2/web-services/ and
-// caches the result in Transcacher. Hint: use package storage/transcache. If
-// the httpTimeout is lower 0 then the default 20s get applied.
-func WithGeoIP2Webservice(t TransCacher, userID, licenseKey string, httpTimeout time.Duration) Option {
-	if httpTimeout < 1 {
-		httpTimeout = time.Second * 20
-	}
-	return WithGeoIP2WebserviceHTTPClient(t, userID, licenseKey, &http.Client{Timeout: httpTimeout})
-}
-
-// WithGeoIP2WebserviceHTTPClient uses for each incoming a request a lookup
-// request to the Maxmind Webservice
-// http://dev.maxmind.com/geoip/geoip2/web-services/ and caches the result in
-// Transcacher. Hint: use package storage/transcache.
-func WithGeoIP2WebserviceHTTPClient(t TransCacher, userID, licenseKey string, hc *http.Client) Option {
-	return WithGeoIP(newMMWS(t, userID, licenseKey, hc))
-
 }

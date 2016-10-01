@@ -12,22 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip
+package maxmindfile
 
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net"
+	"path/filepath"
 	"testing"
 
+	"github.com/corestoreio/csfw/net/geoip"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
+var _ geoip.Finder = (*mmdb)(nil)
+
 func TestCountry_JSON(t *testing.T) {
-	td, err := ioutil.ReadFile("testdata/response.json")
+	td, err := ioutil.ReadFile(filepath.Join("../", "testdata", "response.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var c Country
+	var c geoip.Country
 	if err = json.Unmarshal(td, &c); err != nil {
 		t.Fatal(err)
 	}
@@ -37,4 +43,30 @@ func TestCountry_JSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, string(td), string(haveTD)+"\n")
+}
+
+func TestMmdb_Country(t *testing.T) {
+
+	r, err := newMMDBByFile(filepath.Join("../", "testdata", "GeoIP2-Country-Test.mmdb"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		// no linter we don't shadow here the err variable ...
+		if err := r.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	c, err := r.FindCountry(nil)
+	assert.Nil(t, c)
+	assert.True(t, errors.IsNotValid(err), "Error: %s", err)
+
+	ip, _, err := net.ParseCIDR("2a02:d200::/29") // IP range for Finland
+	if err != nil {
+		t.Fatal(err)
+	}
+	c, err = r.FindCountry(ip)
+	assert.NoError(t, err)
+	assert.Exactly(t, "FI", c.Country.IsoCode)
 }

@@ -12,32 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backendgeoip_test
-
-import (
-	"path/filepath"
-
-	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
-	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
-)
-
-// backend overall backend models for all tests
-var backend *backendgeoip.Configuration
-
-var filePathGeoIP string
-
-// this would belong into the test suit setup
-func init() {
-
-	filePathGeoIP = filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb")
-
-	cfgStruct, err := backendgeoip.NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	backend = backendgeoip.New(cfgStruct)
-
-	backend.Register(
-		maxmindfile.NewOptionFactory(backend.MaxmindLocalFile),
-	)
-}
+// Package maxmindfile provides an OptionFactoryFunc for the backendgeopip
+// package.
+//
+// https://www.maxmind.com/en/geoip2-services-and-databases
+package maxmindfile

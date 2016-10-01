@@ -19,13 +19,15 @@ import "sync/atomic"
 //go:generate go run ../internal/scopedservice/main_copy.go "$GOPACKAGE"
 
 // Service represents a service manager for GeoIP detection and restriction.
-// Please consider the law in your country if you would like to implement geo-blocking.
+// Please consider the law in your country if you would like to implement
+// geo-blocking.
 type Service struct {
 	service
 
-	// geoIP searches the country by an IP address. If nil panics during
-	// execution in the middleware.
-	geoIP CountryRetriever
+	// Finder finds a country by an IP address. If nil panics during execution
+	// in the middleware. This field gets protected by a mutex to allowing
+	// setting the field during requests.
+	Finder
 
 	// geoIPLoaded checks to only load the GeoIP CountryRetriever once because
 	// we may set that within a request. It's defined in the backend
@@ -49,7 +51,7 @@ func New(opts ...Option) (*Service, error) {
 // cache.
 func (s *Service) Close() error {
 	atomic.StoreUint32(&s.geoIPLoaded, 0)
-	return s.geoIP.Close()
+	return s.Finder.Close()
 }
 
 // isGeoIPLoaded checks if the geoip lookup interface has been set by an object.

@@ -14,12 +14,7 @@
 
 package geoip
 
-import (
-	"net"
-
-	"github.com/corestoreio/csfw/util/errors"
-	"github.com/oschwald/geoip2-golang"
-)
+import "net"
 
 // think about that ...
 //type CountryTrimmed struct {
@@ -34,6 +29,15 @@ import (
 //		QueriesRemaining int `json:"queries_remaining,omitempty"`
 //	} `json:"maxmind,omitempty"`
 //}
+
+// Finder finds a Country by an IP address. Supports IPv4 and IPv6 addresses. We
+// call this find because focusing on getting a single, exact match.
+type Finder interface {
+	// Country todo add context for cancelling
+	FindCountry(net.IP) (*Country, error)
+	// Close closes the underlying object
+	Close() error
+}
 
 // The Country structure corresponds to the data in the GeoIP2/GeoLite2
 // Country databases.
@@ -100,59 +104,4 @@ type Country struct {
 	MaxMind struct {
 		QueriesRemaining int `json:"queries_remaining,omitempty"`
 	} `json:"maxmind,omitempty"`
-}
-
-// CountryRetriever implements how to lookup the Country for an IP address.
-// Supports IPv4 and IPv6 addresses.
-type CountryRetriever interface {
-	// Country todo add context for cancelling
-	Country(net.IP) (*Country, error)
-	// Close may be called on shutdown of the overall app and terminates
-	// the underlying lookup service.
-	Close() error
-}
-
-// mmdb internal wrapper between geoip2 and our interface
-type mmdb struct {
-	r *geoip2.Reader
-}
-
-func newMMDBByFile(filename string) (*mmdb, error) {
-	r, err := geoip2.Open(filename)
-	return &mmdb{r}, errors.NewNotValid(err, "[geoip] Maxmind Open")
-}
-
-func (mm *mmdb) Country(ipAddress net.IP) (*Country, error) {
-	c, err := mm.r.Country(ipAddress)
-	if err != nil {
-		return nil, errors.NewNotValid(err, "[geoip] mmdb.Country")
-	}
-	c2 := &Country{
-		IP: ipAddress,
-	}
-	c2.Continent.Code = c.Continent.Code
-	c2.Continent.GeoNameID = c.Continent.GeoNameID
-	c2.Continent.Names = c.Continent.Names // ! a map those names, should maybe copied away
-
-	c2.Country.GeoNameID = c.Country.GeoNameID
-	c2.Country.IsoCode = c.Country.IsoCode
-	c2.Country.Names = c.Country.Names
-
-	c2.RegisteredCountry.GeoNameID = c.RegisteredCountry.GeoNameID
-	c2.RegisteredCountry.IsoCode = c.RegisteredCountry.IsoCode
-	c2.RegisteredCountry.Names = c.RegisteredCountry.Names
-
-	c2.RepresentedCountry.GeoNameID = c.RepresentedCountry.GeoNameID
-	c2.RepresentedCountry.IsoCode = c.RepresentedCountry.IsoCode
-	c2.RepresentedCountry.Names = c.RepresentedCountry.Names
-	c2.RepresentedCountry.Type = c.RepresentedCountry.Type
-
-	c2.Traits.IsAnonymousProxy = c.Traits.IsAnonymousProxy
-	c2.Traits.IsSatelliteProvider = c.Traits.IsSatelliteProvider
-
-	return c2, nil
-}
-
-func (mm *mmdb) Close() error {
-	return mm.r.Close()
 }

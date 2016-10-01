@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip
+package geoip_test
 
 import (
 	"bytes"
-	"io"
+	"fmt"
 	"net"
 	"net/http"
 	"path/filepath"
@@ -24,21 +24,13 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/log/logw"
+	"github.com/corestoreio/csfw/net/geoip"
+	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
+	"github.com/corestoreio/csfw/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
-
-var _ io.Closer = (*Service)(nil)
-
-func deferClose(t *testing.T, c io.Closer) {
-	assert.NoError(t, c.Close())
-}
-
-func mustGetTestService(opts ...Option) *Service {
-	maxMindDB := filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")
-	return MustNew(append(opts, WithGeoIP2File(maxMindDB))...)
-}
 
 func TestMustNew(t *testing.T) {
 	defer func() {
@@ -52,29 +44,33 @@ func TestMustNew(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	s := MustNew(WithGeoIP2File("not found"))
+	s := geoip.MustNew(maxmindfile.WithCountryFinder("not found"))
 	assert.Nil(t, s)
 }
 
 func TestNewServiceErrorWithoutOptions(t *testing.T) {
-	s, err := New()
+	s, err := geoip.New()
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
-	assert.Nil(t, s.geoIP)
+	assert.Nil(t, s.Finder)
 }
 
 func TestNewService_WithGeoIP2File_Atomic(t *testing.T) {
 	logBuf := &bytes.Buffer{}
-	s, err := New(
-		WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
-		WithGeoIP2File(filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")),
+	s, err := geoip.New(
+		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
+		maxmindfile.WithCountryFinder(filepath.Join("testdata", "GeoIP2-Country-Test.mmdb")),
 	)
-	defer deferClose(t, s)
+	defer func() {
+		if err := s.Close(); err != nil {
+			panic(fmt.Sprintf("%+v", err))
+		}
+	}()
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
-	assert.NotNil(t, s.geoIP)
+	assert.NotNil(t, s.Finder)
 	for i := 0; i < 3; i++ {
-		if err := s.Options(WithGeoIP2File(filepath.Join("testdata", "GeoIP2-Country-Test.mmdb"))); err != nil {
+		if err := s.Options(maxmindfile.WithCountryFinder(filepath.Join("testdata", "GeoIP2-Country-Test.mmdb"))); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -83,47 +79,52 @@ func TestNewService_WithGeoIP2File_Atomic(t *testing.T) {
 
 func TestNewService_WithGeoIP2Webservice_Atomic(t *testing.T) {
 	logBuf := &bytes.Buffer{}
-	s, err := New(
-		WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
-		WithGeoIP2Webservice(nil, "a", "b", 1),
+	s, err := geoip.New(
+		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
+		maxmindwebservice.WithCountryFinder(nil, "a", "b", 1),
 	)
-	defer deferClose(t, s)
+	defer func() {
+		if err := s.Close(); err != nil {
+			panic(fmt.Sprintf("%+v", err))
+		}
+	}()
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
-	assert.NotNil(t, s.geoIP)
+	assert.NotNil(t, s.Finder)
 	for i := 0; i < 3; i++ {
-		assert.NoError(t, s.Options(WithGeoIP2Webservice(nil, "d", "e", 1)))
+		assert.NoError(t, s.Options(maxmindwebservice.WithCountryFinder(nil, "d", "e", 1)))
 	}
 	assert.True(t, 3 == strings.Count(logBuf.String(), `WithGeoIP.geoIPDone done: 1`), logBuf.String())
 }
 
 func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
-	s, err := New(WithGeoIP2File("Walhalla/GeoIP2-Country-Test.mmdb"))
+	s, err := geoip.New(maxmindfile.WithCountryFinder("Walhalla/GeoIP2-Country-Test.mmdb"))
 	assert.Nil(t, s)
 	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
 }
 
 func TestNewServiceWithGeoIP2Reader(t *testing.T) {
-	s := mustGetTestService()
-	defer deferClose(t, s)
+	s, closeFn := mustGetTestService()
+	defer closeFn()
+
 	ip, _, err := net.ParseCIDR("2a02:d200::/29") // IP range for Finland
 
 	assert.NoError(t, err)
-	haveCty, err := s.geoIP.Country(ip)
+	haveCty, err := s.Finder.FindCountry(ip)
 	assert.NoError(t, err)
 	assert.Exactly(t, "FI", haveCty.Country.IsoCode)
 }
 
 func TestNewServiceWithCheckAllow(t *testing.T) {
-	s := mustGetTestService()
-	defer deferClose(t, s)
+	s, closeFn := mustGetTestService()
+	defer closeFn()
 
 	req, _ := http.NewRequest("GET", "http://corestore.io", nil)
 	req.Header.Set("Forwarded-For", "2a02:d200::") // IP Range Finland
 
 	t.Run("Scope_Default", func(t *testing.T) {
 
-		if err := s.Options(WithAllowedCountryCodes(scope.DefaultTypeID, "US")); err != nil {
+		if err := s.Options(geoip.WithAllowedCountryCodes(scope.DefaultTypeID, "US")); err != nil {
 			t.Fatal(err)
 		}
 
@@ -136,21 +137,28 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		haveErr := scpCfg.checkAllow(0, c)
+		haveErr := scpCfg.IsAllowed(c)
 		assert.True(t, errors.IsUnauthorized(haveErr), "Error: %s", haveErr)
 	})
 
 	t.Run("Scope_Store", func(t *testing.T) {
-		if err := s.Options(WithCheckAllow(scope.Store.Pack(331122), func(s scope.TypeID, c *Country, allowedCountries []string) error {
-			assert.Exactly(t, scope.TypeID(0), s, "scope.Hash")
+		var scopeID = scope.Store.Pack(331122)
+
+		isAllowed := func(s scope.TypeID, c *geoip.Country, allowedCountries []string) error {
+			assert.Exactly(t, scopeID, s, "Scope_Store @ scope.Hash")
 			assert.Exactly(t, "FI", c.Country.IsoCode)
 			assert.Exactly(t, []string{"ABC"}, allowedCountries)
 			return errors.NewNotImplementedf("You're not allowed")
-		}), WithAllowedCountryCodes(scope.Store.Pack(331122), "ABC")); err != nil {
-			t.Fatal(err)
 		}
 
-		scpCfg, err := s.ConfigByScopeID(scope.Store.Pack(331122), 0)
+		if err := s.Options(
+			geoip.WithCheckAllow(scopeID, isAllowed),
+			geoip.WithAllowedCountryCodes(scopeID, "ABC"),
+		); err != nil {
+			t.Fatalf("%+v", err)
+		}
+
+		scpCfg, err := s.ConfigByScopeID(scopeID, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -159,7 +167,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		haveErr := scpCfg.checkAllow(0, c)
+		haveErr := scpCfg.IsAllowed(c)
 		assert.True(t, errors.IsNotImplemented(haveErr), "Error: %s", haveErr)
 	})
 }

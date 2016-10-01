@@ -15,79 +15,158 @@
 package maxmindwebservice
 
 import (
-	"encoding/gob"
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net"
 	"net/http"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/geoip"
-	"github.com/corestoreio/csfw/storage/transcache"
-	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
-	"github.com/corestoreio/csfw/storage/transcache/tcredis"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// required by the transcache package
-func init() {
-	gob.Register(geoip.Country{})
+// TransCacher transcodes Go objects. It knows how to encode and cache any Go
+// object and knows how to retrieve from cache and decode into a new Go object.
+// Hint: use package storage/transcache.
+type TransCacher interface {
+	Set(key []byte, src interface{}) error
+	// Get must return an errors.NotFound if a key does not exists.
+	Get(key []byte, dst interface{}) error
 }
 
-// OptionName identifies this package within the register of the
-// backendgeoip.Configuration type.
-const OptionName = `webservice`
+// MaxMindWebserviceBaseURL defines the used base url. The IP address will be
+// added after the last slash.
+const MaxMindWebserviceBaseURL = "https://geoip.maxmind.com/geoip/v2.1/country/"
 
-// NewOptionFactory creates a new option factory function for the MaxMind web
-// service in the backend package to be used for automatic scope based
-// configuration initialization. Configuration values must be set from package
-// backendgeoip.Configuration.
-//
-// First argument http.Client allows you to use a custom client when making
-// requests to the MaxMind webservice. The timeout gets set by configuration
-// path MaxmindWebserviceTimeout.
-//
-// gob.Register(geoip.Country{}) has already been called.
-func NewOptionFactory(hc *http.Client, userID, license cfgmodel.Str, timeout cfgmodel.Duration, redisURL cfgmodel.URL) (string, geoip.OptionFactoryFunc) {
-	return OptionName, func(sg config.Scoped) []geoip.Option {
+// mmws resolves to MaxMind WebService
+type mmws struct {
+	inflight   *singleflight.Group
+	userID     string
+	licenseKey string
+	// client instantiated once and used for all queries to MaxMind.
+	client *http.Client
+	TransCacher
+}
 
-		vUserID, err := userID.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] MaxmindWebserviceUserID.Get"))
-		}
-		vLicense, err := license.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] MaxmindWebserviceLicense.Get"))
-		}
-		vTimeout, err := timeout.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] MaxmindWebserviceTimeout.Get"))
-		}
-		vRedisURL, err := redisURL.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] MaxmindWebserviceRedisURL.Get"))
-		}
-
-		var tco [2]transcache.Option
-		switch {
-		case vRedisURL != nil:
-			tco[0] = tcredis.WithURL(vRedisURL.String(), nil, true)
-		default:
-			tco[0] = tcbigcache.With()
-		}
-		tco[1] = transcache.WithPooledEncoder(transcache.GobCodec{}, geoip.Country{}) // prime gob with the Country struct
-
-		// for now only encoding/gob can be used, we might make it configurable
-		// to choose the encoder/decoder.
-		tc, err := transcache.NewProcessor(tco[:]...)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[maxmindwebservice] transcache.NewProcessor"))
-		}
-		if vUserID == "" || vLicense == "" || vTimeout < 1 {
-			return geoip.OptionsError(errors.NewNotValidf("[maxmindwebservice] Incomplete WebService configuration: User: %q License %q Timeout: %d (zero timeout not supported)", vUserID, vLicense, vTimeout))
-		}
-		hc.Timeout = vTimeout
-
-		return []geoip.Option{
-			geoip.WithGeoIP2WebserviceHTTPClient(tc, vUserID, vLicense, hc),
-		}
+func newMMWS(t TransCacher, userID, licenseKey string, hc *http.Client) *mmws {
+	mm := &mmws{
+		inflight:    new(singleflight.Group),
+		userID:      userID,
+		licenseKey:  licenseKey,
+		client:      hc,
+		TransCacher: t,
 	}
+
+	return mm
+}
+
+// Country queries the MaxMind Webserver for one IP address. Implements the
+// CountryRetriever interface. During concurrent requests with the same IP
+// address it avoids querying the MaxMind database twice. It is guaranteed one
+// request to MaxMind for an IP address. Those addresses gets cached in the
+// Transcache along with the retrieved country.
+func (mm *mmws) FindCountry(ipAddress net.IP) (*geoip.Country, error) {
+
+	var c = new(geoip.Country)
+	err := mm.TransCacher.Get(ipAddress, c)
+	if err != nil && !errors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Get")
+	}
+	if err == nil {
+		return c, nil
+	}
+
+	// runs the fetching of the HTTP result in another goroutine provided by DoChan()
+	chResult := mm.inflight.DoChan(ipAddress.String(), func() (interface{}, error) {
+		cntry, err := fetch(mm.client, mm.userID, mm.licenseKey, ipAddress)
+		if err != nil {
+			return nil, errors.Wrap(err, "[geoip] mmws.Country.Inflight.DoChan fetch() error")
+		}
+		if err := mm.TransCacher.Set(ipAddress, cntry); err != nil {
+			return nil, errors.Wrap(err, "[geoip] mmws.Country.TransCacher.Set")
+		}
+		return cntry, nil
+	})
+
+	res, ok := <-chResult
+	if !ok {
+		return nil, errors.NewFatalf("[geoip] mmws.Country.Inflight.DoChan returned a closed/unreadable channel")
+	}
+	if res.Err != nil {
+		return nil, errors.Wrap(res.Err, "[geoip] mmws.Country.Inflight.DoChan.Error")
+	}
+	if c, ok = res.Val.(*geoip.Country); ok {
+		return c, nil
+	}
+	return nil, errors.NewFatalf("[geoip] mmws.Country.InflightDoChan res.Val cannot be type asserted to *Country")
+}
+
+func (mm *mmws) Close() error {
+	return nil
+}
+
+//func (a *mmws) City(ipAddress net.IP) (internal.Response, error) {
+//	return a.fetch("https://geoip.maxmind.com/geoip/v2.1/city/", ipAddress)
+//}
+//
+//func (a *mmws) Insights(ipAddress net.IP) (internal.Response, error) {
+//	return a.fetch("https://geoip.maxmind.com/geoip/v2.1/insights/", ipAddress)
+//}
+
+func fetch(hc *http.Client, userID, licenseKey string, ipAddress net.IP) (*geoip.Country, error) {
+	var country = new(geoip.Country)
+	req, err := http.NewRequest("GET", MaxMindWebserviceBaseURL+ipAddress.String(), nil)
+	if err != nil {
+		return country, errors.Wrap(err, "[geoip] http.NewRequest")
+	}
+
+	// authorize the request
+	// http://dev.maxmind.com/geoip/geoip2/web-services/#Authorization
+	req.SetBasicAuth(userID, licenseKey)
+
+	resp, err := hc.Do(req) // execute the request
+	if err != nil {
+		return country, errors.Wrap(err, "[geoip] http.Client.Do")
+	}
+	defer func() {
+		// https://medium.com/@cep21/go-client-library-best-practices-83d877d604ca#.4tut4svib
+		const maxCopySize = 2 << 10
+		if _, err := io.CopyN(ioutil.Discard, resp.Body, maxCopySize); err != nil {
+			panic(err) // now what? Removing panic seems impossible but on the other hand it might never panic.
+		}
+		resp.Body.Close()
+	}()
+
+	// handle errors that may occur
+	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Headers
+	if resp.StatusCode >= 400 && resp.StatusCode < 600 {
+		var v WebserviceError
+		v.err = json.NewDecoder(resp.Body).Decode(&v)
+		return nil, errors.NewNotValidf("[geoip] mmws.fetch URL %q with Error: %s", MaxMindWebserviceBaseURL, v)
+	}
+
+	// parse the response body
+	// http://dev.maxmind.com/geoip/geoip2/web-services/#Response_Body
+
+	if err := json.NewDecoder(resp.Body).Decode(country); err != nil {
+		return nil, errors.NewNotValidf("[geoip] json.NewDecoder.Decode: %s", err)
+	}
+	country.IP = ipAddress
+	return country, nil
+}
+
+// WebserviceError used in the Maxmind Webservice functional option.
+type WebserviceError struct {
+	err  error
+	Code string `json:"code,omitempty"`
+	Err  string `json:"error,omitempty"`
+}
+
+func (e WebserviceError) Error() string {
+	if e.err != nil {
+		return e.err.Error()
+	}
+	return fmt.Sprintf("%s: %s", e.Code, e.Err)
 }

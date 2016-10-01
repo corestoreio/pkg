@@ -16,7 +16,6 @@ package backendgeoip
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -64,24 +63,5 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] Backend.Lookup"))
 		}
 		return append(opts[:], ofFnc(sg)...)
-	}
-}
-
-// NewOptionFactoryGeoSourceFile specifies the file on the server to retrieve
-// geo information. Alternatively you can choose the MaxMind web service via
-// package maxmindwebservice.NewOptionFactory().
-func NewOptionFactoryGeoSourceFile(maxmindLocalFile cfgmodel.Str) (string, geoip.OptionFactoryFunc) {
-	return "file", func(sg config.Scoped) []geoip.Option {
-		// LOCAL MAXMIND FILE
-		mmlf, err := maxmindLocalFile.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindLocalFile.Get"))
-		}
-		if mmlf != "" {
-			return []geoip.Option{
-				geoip.WithGeoIP2File(mmlf),
-			}
-		}
-		return geoip.OptionsError(errors.NewEmptyf("[backendgeoip] Geo source as file specified but path to file name not provided"))
 	}
 }
