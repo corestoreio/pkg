@@ -14,16 +14,29 @@
 
 package backendgeoip_test
 
-import "github.com/corestoreio/csfw/net/geoip/backendgeoip"
+import (
+	"path/filepath"
+
+	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
+)
 
 // backend overall backend models for all tests
 var backend *backendgeoip.Configuration
 
+var filePathGeoIP string
+
 // this would belong into the test suit setup
 func init() {
+
+	filePathGeoIP = filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb")
+
 	cfgStruct, err := backendgeoip.NewConfigStructure()
 	if err != nil {
 		panic(err)
 	}
 	backend = backendgeoip.New(cfgStruct)
+
+	backend.Register(
+		backendgeoip.NewOptionFactoryGeoSourceFile(backend.MaxmindLocalFile),
+	)
 }

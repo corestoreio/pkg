@@ -87,6 +87,18 @@ to IPv4 and IPv6. Uses the maxmind database from a file or the web service.`),
 					Fields: element.NewFieldSlice(
 
 						element.Field{
+							// Path: `net/geoip_maxmind/data_source`,
+							ID:    cfgpath.NewRoute(`data_source`),
+							Label: text.Chars(`Source geo location data`),
+							Comment: text.Chars(`Choose from which source you would like to load the MaxMind geo location data.
+Either from a "file" or from a "webservice".`),
+							Type:      element.TypeSelect,
+							SortOrder: 5,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermDefault,
+						},
+
+						element.Field{
 							// Path: `net/geoip_maxmind/local_file`,
 							ID:    cfgpath.NewRoute(`local_file`),
 							Label: text.Chars(`Local MaxMind database file`),

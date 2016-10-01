@@ -15,8 +15,6 @@
 package backendgeoip
 
 import (
-	"net/http"
-
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
@@ -45,6 +43,12 @@ type Configuration struct {
 	// Path: net/geoip/alternative_redirect_code
 	AlternativeRedirectCode cfgmodel.Int
 
+	// DataSource defines to either load the Geo location data from a MaxMind
+	// "file" or from the MaxMind "webservice".
+	//
+	// Path: net/geoip_maxmind/data_source
+	DataSource cfgmodel.Str
+
 	// MaxmindLocalFile path to a file name stored on the server.
 	//
 	// Path: net/geoip_maxmind/local_file
@@ -69,12 +73,6 @@ type Configuration struct {
 	//
 	// Path: net/geoip_maxmind/webservice_redisurl
 	MaxmindWebserviceRedisURL cfgmodel.URL
-
-	// WebServiceClient allows you to use a custom client when making requests
-	// to the MaxMind webservice. This client will be used in PrepareOptions().
-	// If nil a fallback to the default client happens. The timeout gets set by
-	// configuration path MaxmindWebserviceTimeout.
-	WebServiceClient *http.Client
 }
 
 // New initializes the backend configuration models containing the cfgpath.Route
@@ -93,6 +91,10 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 	be.AlternativeRedirect = cfgmodel.NewURL(`net/geoip/alternative_redirect`, opts...)
 	be.AlternativeRedirectCode = cfgmodel.NewInt(`net/geoip/alternative_redirect_code`, optsRedir...)
 
+	be.DataSource = cfgmodel.NewStr(`net/geoip_maxmind/data_source`, append(opts, cfgmodel.WithSourceByString(
+		"file", "File on this server",
+		"webservice", "Maxmind web service",
+	))...)
 	be.MaxmindLocalFile = cfgmodel.NewStr(`net/geoip_maxmind/local_file`, opts...)
 	be.MaxmindWebserviceUserID = cfgmodel.NewStr(`net/geoip_maxmind/webservice_userid`, opts...)
 	be.MaxmindWebserviceLicense = cfgmodel.NewStr(`net/geoip_maxmind/webservice_license`, opts...)

@@ -15,21 +15,11 @@
 package backendgeoip
 
 import (
-	"encoding/gob"
-
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/geoip"
-	"github.com/corestoreio/csfw/storage/transcache"
-	"github.com/corestoreio/csfw/storage/transcache/tcbigcache"
-	"github.com/corestoreio/csfw/storage/transcache/tcredis"
 	"github.com/corestoreio/csfw/util/errors"
 )
-
-// todo: remove tcbigcache and tcredis and move them into its own repo to use the geoip.OptionFactoryFunc
-
-func init() {
-	gob.Register(geoip.Country{})
-}
 
 // PrepareOptions creates a closure around the type Backend. The closure will be
 // used during a scoped request to figure out the configuration depending on the
@@ -62,62 +52,36 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 		}
 		i++
 
+		source, err := be.DataSource.Get(sg)
+		if err != nil {
+			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] DataSource.Get"))
+		}
+
+		// source contains the configured geo location data source either file
+		// or webservice.
+		ofFnc, err := be.Lookup(source) // off = OptionFactoryFunc
+		if err != nil {
+			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] Backend.Lookup"))
+		}
+		return append(opts[:], ofFnc(sg)...)
+	}
+}
+
+// NewOptionFactoryGeoSourceFile specifies the file on the server to retrieve
+// geo information. Alternatively you can choose the MaxMind web service via
+// package maxmindwebservice.NewOptionFactory().
+func NewOptionFactoryGeoSourceFile(maxmindLocalFile cfgmodel.Str) (string, geoip.OptionFactoryFunc) {
+	return "file", func(sg config.Scoped) []geoip.Option {
 		// LOCAL MAXMIND FILE
-		mmlf, err := be.MaxmindLocalFile.Get(sg)
+		mmlf, err := maxmindLocalFile.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindLocalFile.Get"))
 		}
 		if mmlf != "" {
-			opts[i] = geoip.WithGeoIP2File(mmlf)
-			i++
-			// we're done! skip the webservice part
-			return opts[:]
-		}
-
-		// MAXMIND WEB SERVICE
-		user, err := be.MaxmindWebserviceUserID.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceUserID.Get"))
-		}
-		license, err := be.MaxmindWebserviceLicense.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceLicense.Get"))
-		}
-		timeout, err := be.MaxmindWebserviceTimeout.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceTimeout.Get"))
-		}
-		redisURL, err := be.MaxmindWebserviceRedisURL.Get(sg)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindWebserviceRedisURL.Get"))
-		}
-
-		var opt [2]transcache.Option
-		switch {
-		case redisURL != nil:
-			opt[0] = tcredis.WithURL(redisURL.String(), nil, true)
-		default:
-			opt[0] = tcbigcache.With()
-		}
-		opt[1] = transcache.WithPooledEncoder(transcache.GobCodec{}, geoip.Country{}) // prime gob with the Country struct
-
-		// for now only encoding/gob can be used, we might make it configurable
-		// to choose the encoder/decoder.
-		tc, err := transcache.NewProcessor(opt[:]...)
-		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] transcache.NewProcessor"))
-		}
-
-		if user != "" && license != "" && timeout > 0 {
-			if be.WebServiceClient != nil {
-				be.WebServiceClient.Timeout = timeout
-				opts[i] = geoip.WithGeoIP2WebserviceHTTPClient(tc, user, license, be.WebServiceClient)
-			} else {
-				opts[i] = geoip.WithGeoIP2Webservice(tc, user, license, timeout)
+			return []geoip.Option{
+				geoip.WithGeoIP2File(mmlf),
 			}
-			i++
 		}
-
-		return opts[:]
+		return geoip.OptionsError(errors.NewEmptyf("[backendgeoip] Geo source as file specified but path to file name not provided"))
 	}
 }

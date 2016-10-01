@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
+	"github.com/corestoreio/csfw/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
@@ -57,11 +58,18 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 			b.Fatal(err)
 		}
 		be := backendgeoip.New(cfgStruct)
-		be.WebServiceClient = &http.Client{
-			Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
-		}
-		scpFnc := backendgeoip.PrepareOptions(be)
-		geoSrv := geoip.MustNew(geoip.WithOptionFactory(scpFnc))
+		be.Register(maxmindwebservice.NewOptionFactory(
+			&http.Client{
+				Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
+			},
+			be.MaxmindWebserviceUserID,
+			be.MaxmindWebserviceLicense,
+			be.MaxmindWebserviceTimeout,
+			be.MaxmindWebserviceRedisURL,
+		))
+		geoSrv := geoip.MustNew(
+			geoip.WithOptionFactory(backendgeoip.PrepareOptions(be)),
+		)
 
 		// Germany is not allowed and must be redirected to https://byebye.de.io with code 307
 		req := func() *http.Request {

@@ -15,22 +15,19 @@
 package backendgeoip_test
 
 import (
-	"fmt"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
+	"github.com/corestoreio/csfw/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -44,9 +41,21 @@ func init() {
 	rand.Seed(seed)
 }
 
+func TestConfiguration_UnregisteredOptionFactoryFunc(t *testing.T) {
+	scpCfgSrv := cfgmock.NewService().NewScoped(1, 3)
+
+	srv := geoip.MustNew(
+		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
+	)
+	_, err := srv.ConfigByScopedGetter(scpCfgSrv)
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
+}
+
 func TestConfiguration_HierarchicalConfig(t *testing.T) {
 
 	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		backend.DataSource.MustFQ():                `file`,
+		backend.MaxmindLocalFile.MustFQ():          filePathGeoIP,
 		backend.AllowedCountries.MustFQWebsite(1):  `AU,NZ`,
 		backend.AlternativeRedirect.MustFQStore(3): `https://signin.corestore.io`,
 	}).NewScoped(1, 3)
@@ -60,124 +69,21 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 	assert.Exactly(t, []string{`AU`, `NZ`}, scpCfg.AllowedCountries)
 }
 
-func TestConfiguration_WithGeoIP2Webservice_Redis(t *testing.T) {
-
-	t.Run("Error_API", testBackend_WithGeoIP2Webservice_Redis(
-		func() *http.Client {
-			// http://dev.maxmind.com/geoip/geoip2/web-services/#Errors
-			return &http.Client{
-				Transport: cstesting.NewHTTPTrip(402, `{"error":"The license key you have provided is out of queries.","code":"OUT_OF_QUERIES"}`, nil),
-			}
-		},
-		func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {
-				panic("Should not get called")
-			})
-		},
-		http.StatusServiceUnavailable,
-	))
-
-	t.Run("Error_JSON", testBackend_WithGeoIP2Webservice_Redis(
-		func() *http.Client {
-			// http://dev.maxmind.com/geoip/geoip2/web-services/#Errors
-			return &http.Client{
-				Transport: cstesting.NewHTTPTrip(200, `{"error":"The license ... wow this JSON isn't valid.`, nil),
-			}
-		},
-		func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-				panic("Should not get called")
-			})
-		},
-		http.StatusServiceUnavailable,
-	))
-
-	var calledSuccessHandler int32
-	t.Run("Success", testBackend_WithGeoIP2Webservice_Redis(
-		func() *http.Client {
-			return &http.Client{
-				Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "es": "Europa", "fr": "Europe", "ja": "ヨーロッパ", "pt-BR": "Europa", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "registered_country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "traits": { "autonomous_system_number": 1239, "autonomous_system_organization": "Linkem IR WiMax Network", "domain": "example.com", "is_anonymous_proxy": true, "is_satellite_provider": true, "isp": "Linkem spa", "ip_address": "1.2.3.4", "organization": "Linkem IR WiMax Network", "user_type": "traveler" }, "maxmind": { "queries_remaining": 54321 } }`, nil),
-			}
-		},
-		func(t *testing.T) http.Handler {
-			return http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-				cty, ok := geoip.FromContextCountry(r.Context())
-				assert.True(t, ok)
-				assert.Exactly(t, "DE", cty.Country.IsoCode)
-				atomic.AddInt32(&calledSuccessHandler, 1)
-			})
-		},
-		http.StatusOK,
-	))
-	assert.Exactly(t, int32(80), atomic.LoadInt32(&calledSuccessHandler), "calledSuccessHandler")
-}
-
-func testBackend_WithGeoIP2Webservice_Redis(
-	hcf func() *http.Client,
-	finalHandler func(t *testing.T) http.Handler,
-	wantCode int,
-) func(*testing.T) {
-
-	return func(t *testing.T) {
-		rd := miniredis.NewMiniRedis()
-		if err := rd.Start(); err != nil {
-			t.Fatal(err)
-		}
-		defer rd.Close()
-		redConURL := fmt.Sprintf("redis://%s/3", rd.Addr())
-
-		// test if we get the correct country and if the country has
-		// been successfully stored in redis and can be retrieved.
-
-		cfgStruct, err := backendgeoip.NewConfigStructure()
-		if err != nil {
-			t.Fatal(err)
-		}
-		be := backendgeoip.New(cfgStruct)
-		be.WebServiceClient = hcf()
-		scpFnc := backendgeoip.PrepareOptions(be)
-
-		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			// @see structure.go for the limitation to scope.Default
-			backend.MaxmindWebserviceUserID.MustFQ():   `TestUserID`,
-			backend.MaxmindWebserviceLicense.MustFQ():  `TestLicense`,
-			backend.MaxmindWebserviceTimeout.MustFQ():  `21s`,
-			backend.MaxmindWebserviceRedisURL.MustFQ(): redConURL,
-		})
-		cfgScp := cfgSrv.NewScoped(1, 2) // Website ID 2 == euro / Store ID == 2 Austria ==> here doesn't matter
-
-		geoSrv := geoip.MustNew()
-
-		req := func() *http.Request {
-			req, _ := http.NewRequest("GET", "http://corestore.io", nil)
-			req.Header.Set("X-Cluster-Client-Ip", "2a02:d180::") // Germany
-			return req
-		}()
-
-		if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
-			t.Fatalf("%+v", err)
-		}
-		// food for the race detector
-		hpu := cstesting.NewHTTPParallelUsers(8, 10, 500, time.Millisecond) // 8,10
-		hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
-			assert.Exactly(t, wantCode, rec.Code)
-		}
-		hpu.ServeHTTP(req, geoSrv.WithCountryByIP(finalHandler(t)))
-	}
-}
-
 func TestConfiguration_WithAlternativeRedirect(t *testing.T) {
 
 	t.Run("LocalFile", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
+		backend.DataSource.MustFQ():                      `file`,
+		backend.MaxmindLocalFile.MustFQ():                filePathGeoIP,
 		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
 		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
 		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
-		backend.MaxmindLocalFile.MustFQ():                filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
+		backend.MaxmindLocalFile.MustFQ():                filePathGeoIP,
 	})))
 
 	t.Run("WebService", backend_WithAlternativeRedirect(cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
+		backend.DataSource.MustFQ():                      `webservice`,
 		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
 		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
 		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
@@ -196,9 +102,17 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			t.Fatal(err)
 		}
 		be := backendgeoip.New(cfgStruct)
-		be.WebServiceClient = &http.Client{
-			Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
-		}
+		be.Register(maxmindwebservice.NewOptionFactory(
+			&http.Client{
+				Transport: cstesting.NewHTTPTrip(200, `{ "continent": { "code": "EU", "geoname_id": 6255148, "names": { "de": "Europa", "en": "Europe", "ru": "Европа", "zh-CN": "欧洲" } }, "country": { "geoname_id": 2921044, "iso_code": "DE", "names": { "de": "Deutschland", "en": "Germany", "es": "Alemania", "fr": "Allemagne", "ja": "ドイツ連邦共和国", "pt-BR": "Alemanha", "ru": "Германия", "zh-CN": "德国" } }, "maxmind": { "queries_remaining": 54321 } }`, nil),
+			},
+			be.MaxmindWebserviceUserID,
+			be.MaxmindWebserviceLicense,
+			be.MaxmindWebserviceTimeout,
+			be.MaxmindWebserviceRedisURL,
+		))
+		be.Register(backendgeoip.NewOptionFactoryGeoSourceFile(be.MaxmindLocalFile))
+
 		scpFnc := backendgeoip.PrepareOptions(be)
 		geoSrv := geoip.MustNew(
 			geoip.WithRootConfig(cfgSrv),
@@ -257,11 +171,7 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 		{backend.AlternativeRedirect.MustFQ(), struct{}{}, errors.IsNotValid},
 		{backend.AlternativeRedirectCode.MustFQ(), struct{}{}, errors.IsNotValid},
 		{backend.MaxmindLocalFile.MustFQ(), "fileNotFound.txt", errors.IsNotFound},
-		{backend.MaxmindLocalFile.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceUserID.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceLicense.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceTimeout.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceRedisURL.MustFQ(), struct{}{}, errors.IsNotValid},
+		{backend.DataSource.MustFQ(), struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 
@@ -282,4 +192,38 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 		_, err = gs.ConfigByScope(0, 0)
 		assert.True(t, test.errBhf(err), "Index %d Error: %s", i, err)
 	}
+}
+
+func TestNewOptionFactoryGeoSourceFile_Invalid_ConfigValue(t *testing.T) {
+	name, off := backendgeoip.NewOptionFactoryGeoSourceFile(backend.MaxmindLocalFile)
+	assert.Exactly(t, `file`, name)
+
+	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		backend.MaxmindLocalFile.MustFQ(): struct{}{},
+	})
+
+	gs := geoip.MustNew(
+		geoip.WithRootConfig(cfgSrv),
+		geoip.WithOptionFactory(off),
+	)
+	assert.NoError(t, gs.ClearCache())
+	_, err := gs.ConfigByScope(0, 0)
+	assert.True(t, errors.IsNotValid(err), " Error: %+v", err)
+}
+
+func TestNewOptionFactoryGeoSourceFile_Empty_ConfigValue(t *testing.T) {
+	name, off := backendgeoip.NewOptionFactoryGeoSourceFile(backend.MaxmindLocalFile)
+	assert.Exactly(t, `file`, name)
+
+	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		backend.MaxmindLocalFile.MustFQ(): "",
+	})
+
+	gs := geoip.MustNew(
+		geoip.WithRootConfig(cfgSrv),
+		geoip.WithOptionFactory(off),
+	)
+	assert.NoError(t, gs.ClearCache())
+	_, err := gs.ConfigByScope(0, 0)
+	assert.True(t, errors.IsEmpty(err), " Error: %+v", err)
 }
