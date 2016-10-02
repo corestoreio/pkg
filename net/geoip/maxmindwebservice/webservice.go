@@ -133,10 +133,10 @@ func fetch(hc *http.Client, userID, licenseKey string, ipAddress net.IP) (*geoip
 	defer func() {
 		// https://medium.com/@cep21/go-client-library-best-practices-83d877d604ca#.4tut4svib
 		const maxCopySize = 2 << 10
-		if _, err := io.CopyN(ioutil.Discard, resp.Body, maxCopySize); err != nil {
-			panic(err) // now what? Removing panic seems impossible but on the other hand it might never panic.
+		if _, err := io.CopyN(ioutil.Discard, resp.Body, maxCopySize); err != nil && err != io.EOF {
+			panic(fmt.Sprintf("[maxmindwebservice] ioCopyN failed with the ioutil.Discard writer: %s", err)) // now what? Removing panic seems impossible but on the other hand it might never panic.
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}()
 
 	// handle errors that may occur
