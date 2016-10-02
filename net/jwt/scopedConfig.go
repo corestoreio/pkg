@@ -76,7 +76,7 @@ func (sc *ScopedConfig) isValid() error {
 	if err := sc.isValidPreCheck(); err != nil {
 		return errors.Wrap(err, "[jwt] ScopedConfig.isValid as an lastErr")
 	}
-	if sc.ScopeID == 0 || sc.Key.IsEmpty() || sc.SigningMethod == nil || sc.Verifier == nil {
+	if sc.Key.IsEmpty() || sc.SigningMethod == nil || sc.Verifier == nil {
 		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID)
 	}
 	return nil
