@@ -64,7 +64,9 @@ func (sc *ScopedConfig) isValid() error {
 	if err := sc.isValidPreCheck(); err != nil {
 		return errors.Wrap(err, "[cors] scopedConfig.isValid as an lastErr")
 	}
-
+	if sc.Disabled {
+		return nil
+	}
 	if sc.isAllowedFn == nil || sc.AlternativeHandler == nil {
 		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.isAllowedFn == nil, sc.AlternativeHandler == nil)
 	}
