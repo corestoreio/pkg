@@ -239,7 +239,7 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
 		cfgMo := test.sg.Root.(*cfgmock.Service)
-		assert.Exactly(t, test.wantIDs, cfgMo.BoolInvokes().TypeIDs(), "IDX %d => %#v", i, cfgMo.BoolInvokes())
+		assert.Exactly(t, test.wantIDs, cfgMo.BoolInvokes().ScopeIDs(), "IDX %d => %#v", i, cfgMo.BoolInvokes())
 	}
 }
 
@@ -266,7 +266,7 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
 		cfgMo := test.sg.Root.(*cfgmock.Service)
-		assert.Exactly(t, test.wantIDs, cfgMo.BoolInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, cfgMo.BoolInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -282,7 +282,7 @@ func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, typeIDsDefault, sm.BoolInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.BoolInvokes().ScopeIDs())
 }
 
 func TestBoolIgnoreNilDefaultValues(t *testing.T) {
@@ -294,7 +294,7 @@ func TestBoolIgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, false, gb)
-	assert.Exactly(t, typeIDsDefault, sm.BoolInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.BoolInvokes().ScopeIDs())
 }
 
 func TestBoolWrite(t *testing.T) {
@@ -345,7 +345,7 @@ func TestByteGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).ByteInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).ByteInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -371,7 +371,7 @@ func TestByteGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).ByteInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).ByteInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -389,7 +389,7 @@ func TestByteGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, typeIDsDefault, sm.ByteInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.ByteInvokes().ScopeIDs())
 }
 
 func TestByteIgnoreNilDefaultValues(t *testing.T) {
@@ -401,7 +401,7 @@ func TestByteIgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, []byte(nil), gb)
-	assert.Exactly(t, typeIDsDefault, sm.ByteInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.ByteInvokes().ScopeIDs())
 }
 func TestByteWrite(t *testing.T) {
 
@@ -448,7 +448,7 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).StringInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).StringInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -474,7 +474,7 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).StringInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).StringInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -491,7 +491,7 @@ func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().ScopeIDs())
 }
 
 func TestStrIgnoreNilDefaultValues(t *testing.T) {
@@ -503,7 +503,7 @@ func TestStrIgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "", gb)
-	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().ScopeIDs())
 }
 func TestStrWrite(t *testing.T) {
 
@@ -550,7 +550,7 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).IntInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).IntInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -576,7 +576,7 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).IntInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).IntInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -592,7 +592,7 @@ func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, typeIDsDefault, sm.IntInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.IntInvokes().ScopeIDs())
 }
 
 func TestIntIgnoreNilDefaultValues(t *testing.T) {
@@ -604,7 +604,7 @@ func TestIntIgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, int(0), gb)
-	assert.Exactly(t, typeIDsDefault, sm.IntInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.IntInvokes().ScopeIDs())
 }
 
 func TestIntWrite(t *testing.T) {
@@ -652,7 +652,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).Float64Invokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).Float64Invokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -678,7 +678,7 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).Float64Invokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).Float64Invokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -694,7 +694,7 @@ func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, typeIDsDefault, sm.Float64Invokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.Float64Invokes().ScopeIDs())
 }
 
 func TestFloat64IgnoreNilDefaultValues(t *testing.T) {
@@ -706,7 +706,7 @@ func TestFloat64IgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, float64(0), gb)
-	assert.Exactly(t, typeIDsDefault, sm.Float64Invokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.Float64Invokes().ScopeIDs())
 }
 
 func TestFloat64Write(t *testing.T) {

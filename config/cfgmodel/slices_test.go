@@ -44,7 +44,7 @@ func TestStringCSVGet(t *testing.T) {
 	sl, err := b.Get(sm.NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
-	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().ScopeIDs())
 
 	tests := []struct {
 		have    string
@@ -65,7 +65,7 @@ func TestStringCSVGet(t *testing.T) {
 		haveSL, haveErr := b.Get(sm.NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, sm.StringInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, sm.StringInvokes().ScopeIDs(), "Index %d", i)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
@@ -120,7 +120,7 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []string{"2015", "2016"}, haveSL)
-	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.StringInvokes().ScopeIDs())
 }
 
 func TestIntCSV(t *testing.T) {
@@ -168,7 +168,7 @@ func TestIntCSV(t *testing.T) {
 		haveSL, haveErr := b.Get(sm.NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, sm.StringInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, sm.StringInvokes().ScopeIDs(), "Index %d", i)
 		if test.wantBhf != nil {
 			assert.True(t, test.wantBhf(haveErr), "Index %d => %+v", i, haveErr)
 			continue
@@ -229,7 +229,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 		t.Fatal(haveErr)
 	}
 	assert.Exactly(t, []int{2015, 2016}, haveSL)
-	assert.Exactly(t, scope.TypeIDs{scope.Website.Pack(34), scope.Store.Pack(4)}, sm.StringInvokes().TypeIDs())
+	assert.Exactly(t, scope.TypeIDs{scope.Website.Pack(34), scope.Store.Pack(4)}, sm.StringInvokes().ScopeIDs())
 }
 
 func TestCSVGet(t *testing.T) {
@@ -267,7 +267,7 @@ func TestCSVGet(t *testing.T) {
 		haveSL, haveErr := b.Get(sm.NewScoped(1, 2)) // because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
-		assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, sm.StringInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, scope.TypeIDs{scope.DefaultTypeID, scope.Website.Pack(1)}, sm.StringInvokes().ScopeIDs(), "Index %d", i)
 		if test.wantErrBhf != nil {
 			assert.True(t, test.wantErrBhf(haveErr), "Index %d Error: %s", i, haveErr)
 			continue

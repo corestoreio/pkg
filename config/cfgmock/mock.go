@@ -88,9 +88,9 @@ func (iv Invocations) Paths() []string {
 	return p
 }
 
-// TypeIDs extracts all scope.TypeID from all paths in sorted ascending order.
+// ScopeIDs extracts all scope.TypeID from all paths in sorted ascending order.
 // The returned length of scope.TypeIDs is equal to PathCount().
-func (iv Invocations) TypeIDs() scope.TypeIDs {
+func (iv Invocations) ScopeIDs() scope.TypeIDs {
 	ids := make(scope.TypeIDs, len(iv))
 	i := 0
 	for k := range iv {

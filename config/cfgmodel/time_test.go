@@ -66,7 +66,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).TimeInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).TimeInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -98,7 +98,7 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).TimeInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).TimeInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -115,7 +115,7 @@ func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, typeIDsDefault, sm.TimeInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.TimeInvokes().ScopeIDs())
 }
 
 func TestTimeIgnoreNilDefaultValues(t *testing.T) {
@@ -127,7 +127,7 @@ func TestTimeIgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, time.Time{}, gb)
-	assert.Exactly(t, typeIDsDefault, sm.TimeInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.TimeInvokes().ScopeIDs())
 }
 
 func TestTimeWrite(t *testing.T) {
@@ -185,7 +185,7 @@ func TestDurationGetWithCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).DurationInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).DurationInvokes().ScopeIDs(), "Index %d", i)
 
 	}
 }
@@ -218,7 +218,7 @@ func TestDurationGetWithoutCfgStruct(t *testing.T) {
 			t.Fatal("Index", i, err)
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).DurationInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, test.sg.Root.(*cfgmock.Service).DurationInvokes().ScopeIDs(), "Index %d", i)
 	}
 }
 
@@ -235,7 +235,7 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	gb, haveErr := b.Get(sm.NewScoped(1, 1))
 	assert.Exactly(t, time.Duration(0), gb)
 	assert.True(t, errors.IsFatal(haveErr), "Error: %s", haveErr)
-	assert.Exactly(t, typeIDsDefault, sm.DurationInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.DurationInvokes().ScopeIDs())
 }
 
 func TestDurationIgnoreNilDefaultValues(t *testing.T) {
@@ -247,7 +247,7 @@ func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, time.Duration(0), gb)
-	assert.Exactly(t, typeIDsDefault, sm.DurationInvokes().TypeIDs())
+	assert.Exactly(t, typeIDsDefault, sm.DurationInvokes().ScopeIDs())
 }
 
 func TestDurationWrite(t *testing.T) {

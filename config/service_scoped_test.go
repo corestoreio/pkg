@@ -161,7 +161,7 @@ func TestScopedServicePath(t *testing.T) {
 			assert.NoError(t, haveErr, "Error: %+v\n\n%s", haveErr, test.desc)
 			assert.Exactly(t, wantVal, haveVal, test.desc)
 
-			assert.Exactly(t, test.wantTypeIDs, cg.AllInvocations().TypeIDs(), "Index %d/%d", vi, xi)
+			assert.Exactly(t, test.wantTypeIDs, cg.AllInvocations().ScopeIDs(), "Index %d/%d", vi, xi)
 		}
 	}
 }
@@ -235,7 +235,7 @@ func TestScopedServicePermission(t *testing.T) {
 			t.Fatal("Index", i, "Error", err)
 		}
 		assert.Exactly(t, test.want, have, "Index %d", i)
-		assert.Exactly(t, test.wantIDs, sm.StringInvokes().TypeIDs(), "Index %d", i)
+		assert.Exactly(t, test.wantIDs, sm.StringInvokes().ScopeIDs(), "Index %d", i)
 	}
 
 	var ss = []scope.Type{}
