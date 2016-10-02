@@ -27,17 +27,17 @@ import (
 func TestNewConfigSigningMethodGetDefaultPathError(t *testing.T) {
 	ccModel := backendjwt.NewConfigSigningMethod("a/x/c")
 	cr := cfgmock.NewService()
-	sm, h, err := ccModel.Get(cr.NewScoped(1, 1))
+	sm, err := ccModel.Get(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
-	assert.Exactly(t, scope.TypeID(0), h)
+	assert.Exactly(t, scope.TypeIDs{}, cr.AllInvocations().TypeIDs())
 }
 
 func TestNewConfigSigningMethodGetPathError(t *testing.T) {
 	ccModel := backendjwt.NewConfigSigningMethod("a//c")
 	cr := cfgmock.NewService()
-	sm, h, err := ccModel.Get(cr.NewScoped(0, 0))
+	sm, err := ccModel.Get(cr.NewScoped(0, 0))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	assert.Nil(t, sm)
-	assert.Exactly(t, scope.TypeID(0), h)
+	assert.Exactly(t, scope.TypeIDs{}, cr.AllInvocations().TypeIDs())
 }

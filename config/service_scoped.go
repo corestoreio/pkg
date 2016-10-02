@@ -299,7 +299,7 @@ func (ss Scoped) Duration(r cfgpath.Route, s ...scope.Type) (time.Duration, erro
 	// fallback to next parent scope if value does not exists
 	p, err := cfgpath.New(r)
 	if err != nil {
-		return 0, errors.Wrapf(err, "[config] Time. Route %q", r)
+		return 0, errors.Wrapf(err, "[config] Duration. Route %q", r)
 	}
 
 	if ss.isAllowedStore(s...) {
@@ -307,7 +307,7 @@ func (ss Scoped) Duration(r cfgpath.Route, s ...scope.Type) (time.Duration, erro
 		v, err := ss.Root.Duration(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, err
+			return v, errors.Wrapf(err, "[config] Duration Scope Store. Path %q", p)
 		}
 	} // if not found in store scope go to website scope
 
@@ -316,9 +316,13 @@ func (ss Scoped) Duration(r cfgpath.Route, s ...scope.Type) (time.Duration, erro
 		v, err := ss.Root.Duration(p)
 		if !errors.IsNotFound(err) || err == nil {
 			// value found or err is not a NotFound error
-			return v, err
+			return v, errors.Wrapf(err, "[config] Duration Scope Website. Path %q", p)
 		}
 	} // if not found in website scope go to default scope
 	p.ScopeID = scope.DefaultTypeID
-	return ss.Root.Duration(p)
+	v, err := ss.Root.Duration(p)
+	if err != nil {
+		return 0, errors.Wrapf(err, "[config] Duration Scope Default. Path %q", p)
+	}
+	return v, nil
 }

@@ -198,11 +198,16 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.Expiration.MustFQ(): "Fail",
+		pb.Expiration.MustFQ():         struct{}{},
+		pb.Expiration.MustFQWebsite(3): "Failed to parse",
 	})
 
 	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))
 	assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
+
+	_, err = jwts.ConfigByScopedGetter(cr.NewScoped(3, 0))
+	assert.Error(t, err, "Error: %+v", err)
+	assert.Contains(t, err.Error(), `time: invalid duration Failed to parse`)
 }
 
 func TestServiceWithBackend_InvalidSkew(t *testing.T) {
@@ -210,7 +215,8 @@ func TestServiceWithBackend_InvalidSkew(t *testing.T) {
 	jwts, pb := getJwts()
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
-		pb.Skew.MustFQ(): "Fail171",
+		pb.Skew.MustFQ():         struct{}{},
+		pb.Skew.MustFQWebsite(3): "Failed to parse",
 	})
 
 	_, err := jwts.ConfigByScopedGetter(cr.NewScoped(1, 1))

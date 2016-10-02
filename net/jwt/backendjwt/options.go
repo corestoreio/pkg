@@ -17,7 +17,6 @@ package backendjwt
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/jwt"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -31,43 +30,41 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 			opts [7]jwt.Option
 			i    int // used as index in opts
 		)
-		scopeID := scope.MakeTypeID(sg.Scope())
 
-		off, _, err := be.Disabled.Get(sg)
-		// todo ignore NotFound errors because value might can come from the functional options.
+		off, err := be.Disabled.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtDisabled.Get"))
 		}
-		opts[i] = jwt.WithDisable(scopeID, off)
+		opts[i] = jwt.WithDisable(sg.ScopeID(), off)
 		i++
 		if off {
 			return opts[:i]
 		}
 
-		exp, _, err := be.Expiration.Get(sg)
+		exp, err := be.Expiration.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtExpiration.Get"))
 		}
-		opts[i] = jwt.WithExpiration(scopeID, exp)
+		opts[i] = jwt.WithExpiration(sg.ScopeID(), exp)
 		i++
 
-		skew, _, err := be.Skew.Get(sg)
+		skew, err := be.Skew.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSkew.Get"))
 		}
-		opts[i] = jwt.WithSkew(scopeID, skew)
+		opts[i] = jwt.WithSkew(sg.ScopeID(), skew)
 		i++
 
-		isSU, _, err := be.SingleTokenUsage.Get(sg)
+		isSU, err := be.SingleTokenUsage.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSingleUsage.Get"))
 		}
-		opts[i] = jwt.WithSingleTokenUsage(scopeID, isSU)
+		opts[i] = jwt.WithSingleTokenUsage(sg.ScopeID(), isSU)
 		i++
 
 		// todo: avoid the next code and use OptionFactories to apply a signing method. Example in ratelimit package.
 
-		signingMethod, _, err := be.SigningMethod.Get(sg)
+		signingMethod, err := be.SigningMethod.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSigningMethod.Get"))
 		}
@@ -76,29 +73,29 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 
 		switch signingMethod.Alg() {
 		case csjwt.RS256, csjwt.RS384, csjwt.RS512:
-			rsaKey, _, err := be.RSAKey.Get(sg)
+			rsaKey, err := be.RSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKey.Get"))
 			}
-			rsaPW, _, err := be.RSAKeyPassword.Get(sg)
+			rsaPW, err := be.RSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtRSAKeyPassword.Get"))
 			}
 			key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
 		case csjwt.ES256, csjwt.ES384, csjwt.ES512:
 
-			ecdsaKey, _, err := be.ECDSAKey.Get(sg)
+			ecdsaKey, err := be.ECDSAKey.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKey.Get"))
 			}
-			ecdsaPW, _, err := be.ECDSAKeyPassword.Get(sg)
+			ecdsaPW, err := be.ECDSAKeyPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtECDSAKeyPassword.Get"))
 			}
 			key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
 		case csjwt.HS256, csjwt.HS384, csjwt.HS512:
 
-			password, _, err := be.HmacPassword.Get(sg)
+			password, err := be.HmacPassword.Get(sg)
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtHmacPassword.Get"))
 			}
@@ -109,11 +106,11 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 
 		// WithSigningMethod must be added at the end of the slice to overwrite
 		// default signing methods
-		opts[i] = jwt.WithKey(scopeID, key)
+		opts[i] = jwt.WithKey(sg.ScopeID(), key)
 		i++
-		opts[i] = jwt.WithSigningMethod(scopeID, signingMethod)
+		opts[i] = jwt.WithSigningMethod(sg.ScopeID(), signingMethod)
 		i++
-		opts[i] = jwt.WithTriggerOptionFactories(scopeID, false) // remove error and we've loaded everything
+		opts[i] = jwt.WithTriggerOptionFactories(sg.ScopeID(), false) // remove error and we've loaded everything
 		return opts[:]
 	}
 }
