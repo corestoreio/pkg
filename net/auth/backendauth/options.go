@@ -28,7 +28,7 @@ func PrepareOptions(be *Backend) auth.ScopedOptionFunc {
 	return func(sg config.Scoped) []auth.Option {
 		var opts [8]auth.Option
 		var i int
-		scp, id := sg.Scope()
+		scp, id := sg.ScopeID()
 
 		// ENABLED
 		on, err := be.NetAuthEnable.Get(sg)

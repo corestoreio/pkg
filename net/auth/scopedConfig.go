@@ -31,8 +31,7 @@ type Authenticator interface {
 type ScopedConfig struct {
 	scopedConfigGeneric
 
-	log      log.Logger
-	disabled bool
+	log log.Logger
 	// if nil fall back to default scope
 	Authenticator
 	loginHandler  http.Handler // e.g. basic auth browser popup
@@ -42,6 +41,9 @@ type ScopedConfig struct {
 // IsValid a configuration for a scope is only then valid when the Key has been
 // supplied, a non-nil signing method and a non-nil Verifier.
 func (sc ScopedConfig) IsValid() bool {
+	if sc.Disabled {
+		return nil
+	}
 	return sc.ScopeHash > 0 && sc.Authenticator != nil && sc.disabled
 }
 

@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
@@ -32,24 +33,15 @@ type scopedConfigGeneric struct {
 	// lastErr used during selecting the config from the scopeCache map and
 	// inflight package.
 	lastErr error
-	// ScopeHash defines the scope to which this configuration is bound to.
-	ScopeHash scope.TypeID
-
-	// todo think about adding config.Scoped
-
+	// ScopeID defines the scope to which this configuration is bound to.
+	ScopeID scope.TypeID
+	// Disabled set to true to disable the Service for this scope.
+	Disabled bool
 	// ErrorHandler gets called whenever a programmer makes an error. The
 	// default handler prints the error to the client and returns
 	// http.StatusServiceUnavailable
 	mw.ErrorHandler
-}
-
-// newScopedConfigError easy helper to create an error
-func newScopedConfigError(err error) ScopedConfig {
-	return ScopedConfig{
-		scopedConfigGeneric: scopedConfigGeneric{
-			lastErr: err,
-		},
-	}
+	// TODO(CyS) think about adding config.Scoped
 }
 
 // newScopedConfigGeneric creates a new non-pointer generic config with a
@@ -57,7 +49,7 @@ func newScopedConfigError(err error) ScopedConfig {
 // This function must be embedded in the targeted package newScopedConfig().
 func newScopedConfigGeneric() scopedConfigGeneric {
 	return scopedConfigGeneric{
-		ScopeHash:    scope.DefaultTypeID,
+		ScopeID:      scope.DefaultTypeID,
 		ErrorHandler: defaultErrorHandler,
 	}
 }
@@ -73,4 +65,15 @@ func optionInheritDefault(s *Service) *ScopedConfig {
 		return shallowCopy
 	}
 	return newScopedConfig()
+}
+
+// isValidPreCheck internal pre-check for the public IsValid() function
+func (sc *ScopedConfig) isValidPreCheck() (err error) {
+	switch {
+	case sc.lastErr != nil:
+		err = errors.Wrap(sc.lastErr, "[auth] ScopedConfig.isValid has an lastErr")
+	case sc.ScopeID == 0:
+		err = errors.NewNotValidf(errConfigScopeIDNotSet)
+	}
+	return err
 }

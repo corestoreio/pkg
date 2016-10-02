@@ -32,4 +32,5 @@
 //
 // TODO: github.com/go-authboss/authboss
 // TODO: https://github.com/namsral/multipass for caddy and JWT
+// TODO: https://github.com/markbates/goth oauth login for all socials
 package auth

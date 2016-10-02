@@ -19,3 +19,6 @@ import "github.com/corestoreio/csfw/util/errors"
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
 var errConfigNotFound = errors.NewNotFoundf(`[auth] ScopedConfig not available`)
+
+const errConfigScopeIDNotSet = `[auth] ScopeID not set`
+const errConfigMarkedAsPartiallyLoaded = `[auth] Scoped configuration %s marked as partially loaded.`
