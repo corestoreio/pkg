@@ -186,6 +186,40 @@ func MakeTypeID(s Type, id int64) TypeID {
 // TypeIDs collection of multiple TypeID values.
 type TypeIDs []TypeID
 
+// TargetAndParents extracts from a given slice the first index (that is zero)
+// as target and removes the first index from the slice to return the parents.
+// target contains either the DefaultTypeID or the desired TypeID. Parents
+// contains at least the DefaultTypeID (appended at the end) and all other
+// parents. But only those parents which are really a parent in the hierarchical
+// order Default->Website->Group->Store. No sorting will be performed on the
+// parents. This function gets mainly used to perform hierarchical look ups with
+// the parents slice in the net packages to create a new scoped configuration
+// for the target TypeID.
+func (t TypeIDs) TargetAndParents() (target TypeID, parents TypeIDs) {
+	parents = make(TypeIDs, 0, len(t)+1) // +1 because DefaultTypeID gets appended
+	if len(t) == 0 {
+		target = DefaultTypeID
+	} else {
+		target = t[0]
+		t = t[1:]
+	}
+
+	// lookup the remaining parents if they contain the DefaultTypeID
+	containsDefault := false
+	for _, pID := range t {
+		if pID.Type() < target.Type() {
+			parents = append(parents, pID)
+		}
+		if pID == DefaultTypeID {
+			containsDefault = true
+		}
+	}
+	if !containsDefault {
+		parents = append(parents, DefaultTypeID)
+	}
+	return target, parents
+}
+
 // Len is part of sort.Interface.
 func (t TypeIDs) Len() int { return len(t) }
 
@@ -195,12 +229,12 @@ func (t TypeIDs) Swap(i, j int) { t[i], t[j] = t[j], t[i] }
 // Less is part of sort.Interface.
 func (t TypeIDs) Less(i, j int) bool { return t[i] < t[j] }
 
-// Lowest finds from hashes the common lowest Type. All Types must have within
+// Lowest finds from TypeIDs the common lowest Type. All Types must have within
 // their Type the same ID otherwise an error will be returned. This functions
 // gets mainly used in backend* packages if several configuration paths must be
 // applied to one functional option. Eg. config path A has Type Website(1) but
 // config path B has Type Store(2) and config path C has Type Website(1) so
-// the common valid hash resolves to Store(2). If there would be a config path
+// the common valid TypeID resolves to Store(2). If there would be a config path
 // with Type Store(3) then a NotValid error gets returned.
 func (t TypeIDs) Lowest() (TypeID, error) {
 	sort.Stable(t)
@@ -229,21 +263,21 @@ func (t TypeIDs) Lowest() (TypeID, error) {
 	switch pick.Type() {
 	case Website:
 		if float64(pick.ID()) != wIDs/wC {
-			return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+			return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Group:
 		if float64(pick.ID()) != gIDs/gC {
-			return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+			return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Store:
 		if float64(pick.ID()) != sIDs/sC {
-			return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+			return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
 		}
 	case Default, Absent:
 		// do nothing
 	default:
 		// todo implement scope independent solution ...
-		return 0, errors.NewNotValidf("[scope] Invalid hash: %s in slice.", pick)
+		return 0, errors.NewNotValidf("[scope] Invalid TypeID: %s in slice.", pick)
 
 	}
 

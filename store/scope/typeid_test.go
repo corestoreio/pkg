@@ -366,3 +366,24 @@ func TestTypeIDes_Lowest(t *testing.T) {
 		assert.NoError(t, haveErr, "(IDX %d) %+v", i, haveErr)
 	}
 }
+
+func TestTypeIDs_TargetAndParents(t *testing.T) {
+	tests := []struct {
+		scope.TypeIDs
+		wantTarget  scope.TypeID
+		wantParents scope.TypeIDs
+	}{
+		{scope.TypeIDs{scope.Store.Pack(1)}, scope.Store.Pack(1), scope.TypeIDs{scope.DefaultTypeID}},
+		{scope.TypeIDs{scope.Website.Pack(2), scope.Store.Pack(1)}, scope.Website.Pack(2), scope.TypeIDs{scope.DefaultTypeID}},
+		{scope.TypeIDs{scope.Store.Pack(1), scope.Website.Pack(2)}, scope.Store.Pack(1), scope.TypeIDs{scope.Website.Pack(2), scope.DefaultTypeID}},
+		{scope.TypeIDs{scope.Group.Pack(1), scope.Website.Pack(2)}, scope.Group.Pack(1), scope.TypeIDs{scope.Website.Pack(2), scope.DefaultTypeID}},
+		{scope.TypeIDs{scope.DefaultTypeID, scope.Group.Pack(1), scope.Website.Pack(2)}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
+		{nil, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
+		{scope.TypeIDs{scope.DefaultTypeID}, scope.DefaultTypeID, scope.TypeIDs{scope.DefaultTypeID}},
+	}
+	for i, test := range tests {
+		haveTarget, haveParents := test.TypeIDs.TargetAndParents()
+		assert.Exactly(t, test.wantTarget, haveTarget, "Index %d", i)
+		assert.Exactly(t, test.wantParents, haveParents, "Index %d", i)
+	}
+}
