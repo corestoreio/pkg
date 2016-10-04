@@ -387,3 +387,19 @@ func TestTypeIDs_TargetAndParents(t *testing.T) {
 		assert.Exactly(t, test.wantParents, haveParents, "Index %d", i)
 	}
 }
+
+func TestTypeIDs_String(t *testing.T) {
+	tests := []struct {
+		scope.TypeIDs
+		want string
+	}{
+		{scope.TypeIDs{scope.Store.Pack(1)}, "Type(Store) ID(1)"},
+		{scope.TypeIDs{scope.Website.Pack(2), scope.Store.Pack(1)}, "Type(Website) ID(2); Type(Store) ID(1)"},
+		{scope.TypeIDs{scope.DefaultTypeID, scope.Group.Pack(1), scope.Website.Pack(2)}, "Type(Default) ID(0); Type(Group) ID(1); Type(Website) ID(2)"},
+		{nil, ""},
+		{scope.TypeIDs{scope.DefaultTypeID}, "Type(Default) ID(0)"},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.TypeIDs.String(), "Index %d", i)
+	}
+}

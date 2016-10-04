@@ -283,3 +283,17 @@ func (t TypeIDs) Lowest() (TypeID, error) {
 
 	return pick, nil
 }
+
+// String returns a semi-colon separated list of n TypeID.
+func (t TypeIDs) String() string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	for i, id := range t {
+		_, _ = buf.WriteString(id.String())
+		if i < len(t)-1 {
+			_, _ = buf.WriteString("; ")
+		}
+	}
+	return buf.String()
+}
