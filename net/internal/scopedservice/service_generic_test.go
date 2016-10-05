@@ -16,13 +16,14 @@ package scopedservice
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
-	"fmt"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
@@ -140,14 +141,12 @@ func TestService_MultiScope_Fallback(t *testing.T) {
 		withString("Store=3", scope.Store.Pack(3)),                        // int must be 42
 	)
 
-	s.useWebsite = false
-
 	tests := []struct {
 		cfg  config.Scoped
 		want string
 	}{
 		// Default values
-		{cfgmock.NewService().NewScoped(0, 0), "Hello Default Gophers => 42 => Type(Default) ID(0) => Type(Absent) ID(0)"},
+		{cfgmock.NewService().NewScoped(0, 0), "Hello Default Gophers => 42 => Type(Default) ID(0) => Type(Default) ID(0)"},
 		// Store 99 does not exists so we get the pointer from Website 1
 		{cfgmock.NewService().NewScoped(1, 99), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
 		// Store 0 does not exists so we get the pointer from Website 1
@@ -160,20 +159,30 @@ func TestService_MultiScope_Fallback(t *testing.T) {
 		// store 777 + website 888 not found, fall back to Default
 		{cfgmock.NewService().NewScoped(888, 777), "Hello Default Gophers => 42 => Type(Default) ID(0) => Type(Default) ID(0)"},
 		// 130 value from Website 1
-		{cfgmock.NewService().NewScoped(1, 2), "Store=2 => 130 => Type(Store) ID(2) => Type(Absent) ID(0)"},
-		{cfgmock.NewService().NewScoped(1, 1), "Store=1 => 132 => Type(Store) ID(1) => Type(Absent) ID(0)"},
-		{cfgmock.NewService().NewScoped(1, 3), "Store=3 => 42 => Type(Store) ID(3) => Type(Absent) ID(0)"},
+		{cfgmock.NewService().NewScoped(1, 2), "Store=2 => 130 => Type(Store) ID(2) => Type(Website) ID(1)"},
+		{cfgmock.NewService().NewScoped(1, 1), "Store=1 => 132 => Type(Store) ID(1) => Type(Default) ID(0)"},
+		{cfgmock.NewService().NewScoped(1, 3), "Store=3 => 42 => Type(Store) ID(3) => Type(Default) ID(0)"},
 		//{cfgmock.NewService().NewScoped(334, 2), "Store=1"},
 	}
-	for i, test := range tests {
+	for j, test := range tests {
 
-		cfg, err := s.ConfigByScopedGetter(test.cfg)
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
+		// food for the race detector
+		const iterations = 10
+		var wg sync.WaitGroup
+		wg.Add(iterations)
+		for i := 0; i < iterations; i++ {
+			go func(wg *sync.WaitGroup) {
+				defer wg.Done()
+				cfg, err := s.ConfigByScopedGetter(test.cfg)
+				if err != nil {
+					t.Fatalf("%+v", err)
+				}
 
-		if have, want := fmt.Sprintf("%s => %d => %s => %s", cfg.string, cfg.int, cfg.ScopeID, cfg.ParentID), test.want; have != want {
-			t.Errorf("Index %d\nHave: %q\nWant: %q\n ScopeID: %s", i, have, want, cfg.ScopeID)
+				if have, want := fmt.Sprintf("%s => %d => %s => %s", cfg.string, cfg.int, cfg.ScopeID, cfg.ParentID), test.want; have != want {
+					t.Errorf("Index %d\nHave: %q\nWant: %q\n ScopeID: %s", j, have, want, cfg.ScopeID)
+				}
+			}(&wg)
 		}
+		wg.Wait()
 	}
 }

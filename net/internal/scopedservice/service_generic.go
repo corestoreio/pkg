@@ -328,19 +328,19 @@ func (s *Service) findScopedConfig(ids ...scope.TypeID) *ScopedConfig {
 		return sc
 	}
 
-	// todo: set parents
-
 	// parents contains now the next higher scopes. For example if we have as target
 	// scope Store then parents would contain Website and Default.
 	for _, id := range parents {
 		if sc, ok := s.scopeCache[id]; ok && sc != nil {
 			shallowCopy := new(ScopedConfig)
 			*shallowCopy = *sc
+			shallowCopy.ParentID = id
 			shallowCopy.ScopeID = target
 			return shallowCopy
 		}
 	}
-	return newScopedConfig(target)
+	// if parents[0] panics for being out of bounds then something is really wrong.
+	return newScopedConfig(target, parents[0])
 }
 
 // updateScopedConfig used in functional options to store a scoped configuration
