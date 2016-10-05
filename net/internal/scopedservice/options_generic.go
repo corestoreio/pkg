@@ -49,10 +49,17 @@ func withDefaultConfig(scopeIDs ...scope.TypeID) Option {
 	}
 }
 
-// WithErrorHandler adds a custom error handler. Gets called after the scope can
-// be extracted from the context.Context and the configuration has been found
-// and is valid. The default error handler prints the error to the user and
-// returns a http.StatusServiceUnavailable.
+// WithErrorHandler adds a custom error handler. Gets called in the http.Handler
+// after the scope can be extracted from the context.Context and the
+// configuration has been found and is valid. The default error handler prints
+// the error to the user and returns a http.StatusServiceUnavailable.
+//
+// The variadic "scopeIDs" argument define to which scope the value gets applied
+// and from which parent scope should be inherited. Setting no "scopeIDs" sets
+// the value to the default scope. Setting one scope.TypeID defines the primary
+// scope to which the value will be applied. Subsequent scope.TypeID are
+// defining the fall back parent scopes to inherit the default or previously
+// applied configuration from.
 func WithErrorHandler(eh mw.ErrorHandler, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
@@ -62,6 +69,13 @@ func WithErrorHandler(eh mw.ErrorHandler, scopeIDs ...scope.TypeID) Option {
 }
 
 // WithDisable disables the current service and calls the next HTTP handler.
+//
+// The variadic "scopeIDs" argument define to which scope the value gets applied
+// and from which parent scope should be inherited. Setting no "scopeIDs" sets
+// the value to the default scope. Setting one scope.TypeID defines the primary
+// scope to which the value will be applied. Subsequent scope.TypeID are
+// defining the fall back parent scopes to inherit the default or previously
+// applied configuration from.
 func WithDisable(isDisabled bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
@@ -77,6 +91,13 @@ func WithDisable(isDisabled bool, scopeIDs ...scope.TypeID) Option {
 // where parts of the configurations are coming from backend storages and other
 // parts like http handler have been set via code. This function should only be
 // applied in case you work with WithOptionFactory().
+//
+// The variadic "scopeIDs" argument define to which scope the value gets applied
+// and from which parent scope should be inherited. Setting no "scopeIDs" sets
+// the value to the default scope. Setting one scope.TypeID defines the primary
+// scope to which the value will be applied. Subsequent scope.TypeID are
+// defining the fall back parent scopes to inherit the default or previously
+// applied configuration from.
 func WithMarkPartiallyApplied(partially bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)

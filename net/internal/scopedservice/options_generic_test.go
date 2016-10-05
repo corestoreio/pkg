@@ -98,8 +98,9 @@ func TestOptionFactories(t *testing.T) {
 
 func TestNewScopedConfigGeneric(t *testing.T) {
 
-	scg := newScopedConfigGeneric()
-	assert.Exactly(t, scope.DefaultTypeID, scg.ScopeID)
+	scg := newScopedConfigGeneric(0, 0)
+	assert.Exactly(t, scope.TypeID(0), scg.ParentID)
+	assert.Exactly(t, scope.TypeID(0), scg.ScopeID)
 	assert.Nil(t, scg.lastErr)
 	assert.NotNil(t, scg.ErrorHandler)
 

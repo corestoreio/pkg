@@ -39,14 +39,11 @@ func (sc *ScopedConfig) isValid() error {
 	return sc.isValidPreCheck()
 }
 
-func newScopedConfig(id, parent scope.TypeID) *ScopedConfig {
+func newScopedConfig(target, parent scope.TypeID) *ScopedConfig {
 	return &ScopedConfig{
-		scopedConfigGeneric: scopedConfigGeneric{
-			ParentID: parent,
-			ScopeID:  id,
-		},
-		string: "Hello Default Gophers",
-		int:    42,
+		scopedConfigGeneric: newScopedConfigGeneric(target, parent),
+		string:              "Hello Default Gophers",
+		int:                 42,
 	}
 }
 

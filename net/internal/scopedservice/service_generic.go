@@ -318,18 +318,20 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 // scope.DefaultTypeID will always be appended to the end of the provided
 // arguments. This function acquires a lock. You must call its buddy function
 // updateScopedConfig() to close the lock.
-func (s *Service) findScopedConfig(ids ...scope.TypeID) *ScopedConfig {
-	s.rwmu.Lock()
+func (s *Service) findScopedConfig(scopeIDs ...scope.TypeID) *ScopedConfig {
+	s.rwmu.Lock() // Unlock() in updateScopedConfig()
 
-	target, parents := scope.TypeIDs(ids).TargetAndParents()
+	target, parents := scope.TypeIDs(scopeIDs).TargetAndParents()
 
 	sc := s.scopeCache[target]
 	if sc != nil {
 		return sc
 	}
 
-	// parents contains now the next higher scopes. For example if we have as target
-	// scope Store then parents would contain Website and Default.
+	// "parents" contains now the next higher scopes, at least minimum the
+	// DefaultTypeID. For example if we have as "target" scope Store then
+	// "parents" would contain Website and/or Default, depending on how many
+	// arguments have been applied in a functional option.
 	for _, id := range parents {
 		if sc, ok := s.scopeCache[id]; ok && sc != nil {
 			shallowCopy := new(ScopedConfig)

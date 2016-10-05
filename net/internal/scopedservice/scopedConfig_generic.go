@@ -31,7 +31,7 @@ var defaultErrorHandler = mw.ErrorWithStatusCode(http.StatusServiceUnavailable)
 // should be embedded.
 type scopedConfigGeneric struct {
 	// lastErr used during selecting the config from the scopeCache map and
-	// inflight package.
+	// singleflight package.
 	lastErr  error
 	ParentID scope.TypeID
 	// ScopeID defines the scope to which this configuration is bound to.
@@ -48,9 +48,10 @@ type scopedConfigGeneric struct {
 // newScopedConfigGeneric creates a new non-pointer generic config with a
 // default scope and an error handler which returns status service unavailable.
 // This function must be embedded in the targeted package newScopedConfig().
-func newScopedConfigGeneric() scopedConfigGeneric {
+func newScopedConfigGeneric(target, parent scope.TypeID) scopedConfigGeneric {
 	return scopedConfigGeneric{
-		ScopeID:      scope.DefaultTypeID,
+		ParentID:     parent,
+		ScopeID:      target,
 		ErrorHandler: defaultErrorHandler,
 	}
 }
