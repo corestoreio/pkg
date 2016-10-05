@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
@@ -53,12 +54,12 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 	logBuf := new(log.MutexBuffer)
 
 	s := MustNew(
-		withValue(scope.Default.Pack(0), "Default=0"),
-		withValue(scope.Website.Pack(1), "Website=1"),
+		withString("Default=0", scope.Default.Pack(0)),
+		withString("Website=1", scope.Website.Pack(1)),
 		WithDebugLog(logBuf),
 	)
 
-	if err := s.Options(withValue(scope.Store.Pack(2), "Store=1")); err != nil {
+	if err := s.Options(withString("Store=1", scope.Store.Pack(2))); err != nil {
 		t.Errorf("%+v", err)
 	}
 
@@ -81,10 +82,10 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 
 			cfg, err := s.ConfigByScopedGetter(test.cfg)
 			if err != nil {
-				t.Fatalf("%+v", err) // maybe ignore this error
+				t.Fatalf("%+v", err)
 			}
 
-			if have, want := cfg.value, test.want; have != want {
+			if have, want := cfg.string, test.want; have != want {
 				t.Errorf("(%d) Have: %q Want: %q (%s)", i, have, want, cfg.ScopeID)
 			}
 		}
@@ -112,14 +113,67 @@ func TestService_MultiScope_NoFallback(t *testing.T) {
 }
 
 func TestService_ClearCache(t *testing.T) {
-	srv := MustNew(withValue(scope.Website.Pack(33), "Gopher"), WithRootConfig(cfgmock.NewService()))
+	srv := MustNew(withString("Gopher", scope.Website.Pack(33)), WithRootConfig(cfgmock.NewService()))
 	cfg, err := srv.ConfigByScope(33, 44)
 	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, cfg.value, "Gopher")
+	assert.Exactly(t, cfg.string, "Gopher")
 
 	assert.NoError(t, srv.ClearCache())
 
 	cfg, err = srv.ConfigByScopeID(scope.Website.Pack(33), 0)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
-	assert.Exactly(t, cfg.value, "")
+	assert.Exactly(t, cfg.string, "")
+}
+
+func TestService_MultiScope_Fallback(t *testing.T) {
+	// see for default values: newScopedConfig()
+	s := MustNew(
+		withString("Website=1", scope.Website.Pack(1)),
+		withInt(130, scope.Website.Pack(1)),
+
+		withString("Website=2", scope.Website.Pack(2)), // int must be 42
+
+		withString("Store=1", scope.Store.Pack(1)),
+		withInt(132, scope.Store.Pack(1)),
+
+		withString("Store=2", scope.Store.Pack(2), scope.Website.Pack(1)), // int must be 130
+		withString("Store=3", scope.Store.Pack(3)),                        // int must be 42
+	)
+
+	s.useWebsite = false
+
+	tests := []struct {
+		cfg  config.Scoped
+		want string
+	}{
+		// Default values
+		{cfgmock.NewService().NewScoped(0, 0), "Hello Default Gophers => 42 => Type(Default) ID(0) => Type(Absent) ID(0)"},
+		// Store 99 does not exists so we get the pointer from Website 1
+		{cfgmock.NewService().NewScoped(1, 99), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
+		// Store 0 does not exists so we get the pointer from Website 1
+		{cfgmock.NewService().NewScoped(1, 0), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
+		// programmer made an error. Store 99 cannot have multiple parents (1
+		// and 2) and Store 99 already checked above and assigned to Website 1.
+		{cfgmock.NewService().NewScoped(2, 99), "Website=1 => 130 => Type(Website) ID(1) => Type(Website) ID(1)"},
+		// Store 98 does not exists and gets pointer to Website 2 assigned
+		{cfgmock.NewService().NewScoped(2, 98), "Website=2 => 42 => Type(Website) ID(2) => Type(Website) ID(2)"},
+		// store 777 + website 888 not found, fall back to Default
+		{cfgmock.NewService().NewScoped(888, 777), "Hello Default Gophers => 42 => Type(Default) ID(0) => Type(Default) ID(0)"},
+		// 130 value from Website 1
+		{cfgmock.NewService().NewScoped(1, 2), "Store=2 => 130 => Type(Store) ID(2) => Type(Absent) ID(0)"},
+		{cfgmock.NewService().NewScoped(1, 1), "Store=1 => 132 => Type(Store) ID(1) => Type(Absent) ID(0)"},
+		{cfgmock.NewService().NewScoped(1, 3), "Store=3 => 42 => Type(Store) ID(3) => Type(Absent) ID(0)"},
+		//{cfgmock.NewService().NewScoped(334, 2), "Store=1"},
+	}
+	for i, test := range tests {
+
+		cfg, err := s.ConfigByScopedGetter(test.cfg)
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+
+		if have, want := fmt.Sprintf("%s => %d => %s => %s", cfg.string, cfg.int, cfg.ScopeID, cfg.ParentID), test.want; have != want {
+			t.Errorf("Index %d\nHave: %q\nWant: %q\n ScopeID: %s", i, have, want, cfg.ScopeID)
+		}
+	}
 }

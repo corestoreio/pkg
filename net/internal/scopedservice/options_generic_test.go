@@ -45,12 +45,12 @@ func TestWithConfigGetter(t *testing.T) {
 
 	src, err := newService(WithRootConfig(cfg))
 	assert.NoError(t, err)
-	assert.NotNil(t, src.rootConfig)
+	assert.NotNil(t, src.RootConfig)
 }
 
 func TestWithErrorHandler(t *testing.T) {
 	var eh = func(error) http.Handler { return nil }
-	s, err := newService(WithErrorHandler(scope.Store.Pack(44), eh))
+	s, err := newService(WithErrorHandler(eh, scope.Store.Pack(44)))
 	assert.NoError(t, err, "%+v", err)
 	cfg, err := s.ConfigByScopeID(scope.MakeTypeID(scope.Store, 44), 0)
 	assert.NoError(t, err, "%+v", err)
@@ -78,8 +78,8 @@ func TestOptionFactories(t *testing.T) {
 
 	var off OptionFactoryFunc = func(config.Scoped) []Option {
 		return []Option{
-			withValue(scope.Store.Pack(1), "a value for the store 1 scope"),
-			withValue(scope.Website.Pack(2), "a value for the website 2 scope"),
+			withString("a value for the store 1 scope", scope.Store.Pack(1)),
+			withString("a value for the website 2 scope", scope.Website.Pack(2)),
 		}
 	}
 
@@ -128,8 +128,8 @@ func TestWithLogger(t *testing.T) {
 func TestWithDisable(t *testing.T) {
 	srv := MustNew(
 		WithRootConfig(cfgmock.NewService()),
-		WithDisable(scope.Website.Pack(2), true),
-		WithDisable(scope.Store.Pack(3), true),
+		WithDisable(true, scope.Website.Pack(2)),
+		WithDisable(true, scope.Store.Pack(3)),
 	)
 	scpCfg, err := srv.ConfigByScope(2, 0)
 	assert.NoError(t, err, "%+v", err)
@@ -143,12 +143,12 @@ func TestWithDisable(t *testing.T) {
 func TestWithTriggerOptionFactories(t *testing.T) {
 	srv := MustNew(
 		WithRootConfig(cfgmock.NewService()),
-		WithTriggerOptionFactories(scope.Store.Pack(4), true),
+		WithMarkPartiallyApplied(true, scope.Store.Pack(4)),
 	)
 	_, err := srv.ConfigByScope(22, 4)
 	assert.True(t, errors.IsTemporary(err), "%+v", err)
 
-	assert.NoError(t, srv.Options(WithTriggerOptionFactories(scope.Store.Pack(4), false)))
+	assert.NoError(t, srv.Options(WithMarkPartiallyApplied(false, scope.Store.Pack(4))))
 	_, err = srv.ConfigByScope(22, 4)
 	assert.NoError(t, err, "%+v")
 }

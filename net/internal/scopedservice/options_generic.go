@@ -33,11 +33,6 @@ import (
 // different settings.
 type Option func(*Service) error
 
-// OptionFactoryFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during a
-// request.
-type OptionFactoryFunc func(config.Scoped) []Option
-
 // OptionsError helper function to be used within the backend package or other
 // sub-packages whose functions may return an OptionFactoryFunc.
 func OptionsError(err error) []Option {
@@ -46,15 +41,11 @@ func OptionsError(err error) []Option {
 	}}
 }
 
-// withDefaultConfig triggers the default settings
-func withDefaultConfig(id scope.TypeID) Option {
+// withDefaultConfig triggers the default settings for a specific ScopeID.
+func withDefaultConfig(scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		sc := optionInheritDefault(s)
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		sc := s.findScopedConfig(scopeIDs...)
+		return s.updateScopedConfig(sc)
 	}
 }
 
@@ -62,62 +53,38 @@ func withDefaultConfig(id scope.TypeID) Option {
 // be extracted from the context.Context and the configuration has been found
 // and is valid. The default error handler prints the error to the user and
 // returns a http.StatusServiceUnavailable.
-func WithErrorHandler(id scope.TypeID, eh mw.ErrorHandler) Option {
+func WithErrorHandler(eh mw.ErrorHandler, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.ErrorHandler = eh
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithDisable disables the current service and calls the next HTTP handler.
-func WithDisable(id scope.TypeID, isDisabled bool) Option {
+func WithDisable(isDisabled bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.Disabled = isDisabled
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
-// WithTriggerOptionFactories if set to true marks a configuration for a scope
+// WithMarkPartiallyApplied if set to true marks a configuration for a scope
 // as partially applied with functional options set via source code. The
 // internal service knows that it must trigger additionally the
 // OptionFactoryFunc to load configuration from a backend. Useful in the case
 // where parts of the configurations are coming from backend storages and other
 // parts like http handler have been set via code. This function should only be
 // applied in case you work with WithOptionFactory().
-func WithTriggerOptionFactories(id scope.TypeID, partially bool) Option {
+func WithMarkPartiallyApplied(partially bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.lastErr = nil
 		if partially {
-			sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsPartiallyLoaded, id)
+			sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsPartiallyLoaded, sc.ScopeID)
 		}
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
@@ -140,7 +107,7 @@ func WithRootConfig(cg config.Getter) Option {
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
-		s.rootConfig = cg
+		s.RootConfig = cg
 		return nil
 	}
 }
@@ -166,6 +133,11 @@ func WithLogger(l log.Logger) Option {
 	}
 }
 
+// OptionFactoryFunc a closure around a scoped configuration to figure out which
+// options should be returned depending on the scope brought to you during a
+// request.
+type OptionFactoryFunc func(config.Scoped) []Option
+
 // WithOptionFactory applies a function which lazily loads the options from a
 // slow backend (config.Getter) depending on the incoming scope within a
 // request. For example applies the backend configuration to the service.
@@ -178,10 +150,10 @@ func WithLogger(l log.Logger) Option {
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := backendscopedservice.New(cfgStruct)
+//	be := backendscopedservice.New(cfgStruct)
 //
 //	srv := scopedservice.MustNewService(
-//		scopedservice.WithOptionFactory(backendscopedservice.PrepareOptions(pb)),
+//		scopedservice.WithOptionFactory(be.PrepareOptions()),
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
@@ -204,7 +176,7 @@ func NewOptionFactories() *OptionFactories {
 // OptionFactories allows to register multiple OptionFactoryFunc identified by
 // their names. Those OptionFactoryFuncs will be loaded in the backend package
 // depending on the configured name under a certain path. This type is embedded
-// in the backendscopedservice.Backend package.
+// in the backendscopedservice.Configuration type.
 type OptionFactories struct {
 	rwmu sync.RWMutex
 	// register where the key defines the name as specified in the
@@ -215,20 +187,20 @@ type OptionFactories struct {
 
 // Register adds another functional option factory to the internal register.
 // Overwrites existing entries.
-func (be *OptionFactories) Register(name string, factory OptionFactoryFunc) {
-	be.rwmu.Lock()
-	defer be.rwmu.Unlock()
-	be.register[name] = factory
+func (of *OptionFactories) Register(name string, factory OptionFactoryFunc) {
+	of.rwmu.Lock()
+	defer of.rwmu.Unlock()
+	of.register[name] = factory
 }
 
 // Names returns an unordered list of names of all registered functional option
 // factories.
-func (be *OptionFactories) Names() []string {
-	be.rwmu.RLock()
-	defer be.rwmu.RUnlock()
-	var names = make([]string, len(be.register))
+func (of *OptionFactories) Names() []string {
+	of.rwmu.RLock()
+	defer of.rwmu.RUnlock()
+	var names = make([]string, len(of.register))
 	i := 0
-	for n := range be.register {
+	for n := range of.register {
 		names[i] = n
 		i++
 	}
@@ -236,18 +208,18 @@ func (be *OptionFactories) Names() []string {
 }
 
 // Deregister removes a functional option factory from the internal register.
-func (be *OptionFactories) Deregister(name string) {
-	be.rwmu.Lock()
-	defer be.rwmu.Unlock()
-	delete(be.register, name)
+func (of *OptionFactories) Deregister(name string) {
+	of.rwmu.Lock()
+	defer of.rwmu.Unlock()
+	delete(of.register, name)
 }
 
 // Lookup returns a functional option factory identified by name or an error if
 // the entry doesn't exists. May return a NotFound error behaviour.
-func (be *OptionFactories) Lookup(name string) (OptionFactoryFunc, error) {
-	be.rwmu.RLock()
-	defer be.rwmu.RUnlock()
-	if off, ok := be.register[name]; ok { // off = OptionFactoryFunc ;-)
+func (of *OptionFactories) Lookup(name string) (OptionFactoryFunc, error) {
+	of.rwmu.RLock()
+	defer of.rwmu.RUnlock()
+	if off, ok := of.register[name]; ok { // off = OptionFactoryFunc ;-)
 		return off, nil
 	}
 	return nil, errors.NewNotFoundf("[scopedservice] Requested OptionFactoryFunc %q not registered.", name)

@@ -29,7 +29,8 @@ func New(opts ...Option) (*Service, error) {
 // ScopedConfig DO NOT USE
 type ScopedConfig struct {
 	scopedConfigGeneric
-	value string
+	string
+	int
 }
 
 // isValid returns nil if the scoped configuration os valid otherwise a detailed
@@ -38,9 +39,13 @@ func (sc *ScopedConfig) isValid() error {
 	return sc.isValidPreCheck()
 }
 
-func newScopedConfig() *ScopedConfig {
+func newScopedConfig(id scope.TypeID) *ScopedConfig {
 	return &ScopedConfig{
-		value: "Hello Default Gophers",
+		scopedConfigGeneric: scopedConfigGeneric{
+			ScopeID: id,
+		},
+		string: "Hello Default Gophers",
+		int:    42,
 	}
 }
 
@@ -51,18 +56,18 @@ func WithDefaultConfig(h scope.TypeID) Option {
 	}
 }
 
-func withValue(h scope.TypeID, val string) Option {
+func withString(val string, ids ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
+		sc := s.findScopedConfig(ids...)
+		sc.string = val
+		return s.updateScopedConfig(sc)
+	}
+}
 
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.value = val
-		sc.ScopeID = h
-		s.scopeCache[h] = sc
-		return nil
+func withInt(val int, ids ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(ids...)
+		sc.int = val
+		return s.updateScopedConfig(sc)
 	}
 }
