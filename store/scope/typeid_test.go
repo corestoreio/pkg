@@ -316,21 +316,24 @@ func TestTypeID_ValidParent(t *testing.T) {
 		p    scope.TypeID
 		want bool
 	}{
-		{scope.DefaultTypeID, scope.DefaultTypeID, true},
-		{scope.MakeTypeID(scope.Website, 1), scope.DefaultTypeID, true},
-		{scope.MakeTypeID(scope.Website, 0), scope.DefaultTypeID, true},
-		{scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, 1), true},
-		{scope.MakeTypeID(scope.Store, -1), scope.MakeTypeID(scope.Website, 1), false},
-		{scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, -1), false},
-		{scope.MakeTypeID(scope.Store, 0), scope.MakeTypeID(scope.Website, 0), true},
-		{scope.DefaultTypeID, scope.MakeTypeID(scope.Website, 1), false},
-		{0, 0, false},
-		{0, scope.DefaultTypeID, false},
-		{scope.DefaultTypeID, 0, false},
+		0:  {scope.DefaultTypeID, scope.DefaultTypeID, true},
+		1:  {scope.MakeTypeID(scope.Website, 1), scope.DefaultTypeID, true},
+		2:  {scope.MakeTypeID(scope.Website, 0), scope.DefaultTypeID, true},
+		3:  {scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, 1), true},
+		4:  {scope.MakeTypeID(scope.Store, -1), scope.MakeTypeID(scope.Website, 1), false},
+		5:  {scope.MakeTypeID(scope.Store, 1), scope.MakeTypeID(scope.Website, -1), true},
+		6:  {scope.MakeTypeID(scope.Store, 0), scope.MakeTypeID(scope.Website, 0), true},
+		7:  {scope.DefaultTypeID, scope.MakeTypeID(scope.Website, 1), false},
+		8:  {0, 0, true},
+		9:  {0, scope.DefaultTypeID, false},
+		10: {scope.DefaultTypeID, 0, true},
+		11: {scope.MakeTypeID(scope.Website, 0), scope.Store.Pack(0), false},
+		12: {scope.MakeTypeID(scope.Website, 1), scope.Store.Pack(2), false},
+		13: {scope.MakeTypeID(scope.Store, 1), scope.Type(5).Pack(2), false},
 	}
 	for i, test := range tests {
 		if have, want := test.c.ValidParent(test.p), test.want; have != want {
-			t.Errorf("(%d) Have: %v Want: %v", i, have, want)
+			t.Errorf("(%d) Have: %v Want: %v\nC: %d P: %d", i, have, want, test.c, test.p)
 		}
 	}
 }

@@ -121,8 +121,8 @@ func (t TypeID) Type() Type {
 	return Type(hScope)
 }
 
-// ID returns the underlying assigned ID. If the ID overflows the MaxID or
-// is smaller than zero then it returns -1.
+// ID returns the underlying assigned ID. If the ID overflows the MaxID or is
+// smaller than zero then it returns -1.
 func (t TypeID) ID() int64 {
 	h64 := int64(t)
 	prospectID := h64 ^ (h64>>24)<<24
@@ -133,11 +133,12 @@ func (t TypeID) ID() int64 {
 }
 
 // ValidParent validates if the parent Type is within the hierarchical chain:
-// default -> website -> store.
+// default -> website -> store. Returns also true when parent is zero.
 func (t TypeID) ValidParent(parent TypeID) bool {
 	p, pID := parent.Unpack()
 	c, cID := t.Unpack()
-	return (p == Default && pID == 0 && c == Default && cID == 0) ||
+	return (p == Absent && pID == 0) ||
+		(p == Default && pID == 0 && c == Default && cID == 0) ||
 		(p == Default && pID == 0 && c == Website && cID >= 0) ||
 		(p == Website && pID >= 0 && c == Store && cID >= 0)
 }
