@@ -274,7 +274,7 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 		return scpCfg, errors.Wrap(scpCfg.isValid(), "[scopedservice] Validated directly found")
 	}
 	if parent == 0 {
-		return scpCfg, errConfigNotFound
+		return scpCfg, errors.NewNotFoundf(errConfigNotFound, current)
 	}
 
 	// slow path: now lock everything until the fall back has been found.
@@ -308,6 +308,8 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 				return ScopedConfig{}, errors.Wrap(err, "[scopedservice] error in default configuration")
 			}
 			s.scopeCache[current] = pScpCfg // gets assigned a pointer so equal to default
+		} else {
+			return scpCfg, errors.NewNotFoundf(errConfigNotFound, scope.DefaultTypeID)
 		}
 	}
 	return scpCfg, nil
