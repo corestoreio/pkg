@@ -16,6 +16,9 @@ package scopedservice
 
 import "github.com/corestoreio/csfw/store/scope"
 
+const configDefaultString = "Hello Default Gophers"
+const configDefaultInt int = 42
+
 // Service DO NOT USE
 type Service struct {
 	service
@@ -42,8 +45,8 @@ func (sc *ScopedConfig) isValid() error {
 func newScopedConfig(target, parent scope.TypeID) *ScopedConfig {
 	return &ScopedConfig{
 		scopedConfigGeneric: newScopedConfigGeneric(target, parent),
-		string:              "Hello Default Gophers",
-		int:                 42,
+		string:              configDefaultString,
+		int:                 configDefaultInt,
 	}
 }
 

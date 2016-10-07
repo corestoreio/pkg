@@ -45,6 +45,8 @@ func OptionsError(err error) []Option {
 func withDefaultConfig(scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
+		target, parents := scope.TypeIDs(scopeIDs).TargetAndParents()
+		sc = newScopedConfig(target, parents[0])
 		return s.updateScopedConfig(sc)
 	}
 }

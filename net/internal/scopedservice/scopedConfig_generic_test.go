@@ -13,3 +13,16 @@
 // limitations under the License.
 
 package scopedservice
+
+import (
+	"testing"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewScopedConfigGeneric_ScopeID_Error(t *testing.T) {
+	sc := newScopedConfig(0, 0)
+	err := sc.isValidPreCheck()
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
+}

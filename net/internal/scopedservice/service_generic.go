@@ -207,10 +207,11 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, erro
 			sCfg, err := s.ConfigByScopeID(current, parent)
 			if s.Log.IsDebug() {
 				s.Log.Debug("scopedservice.Service.ConfigByScopedGetter.Inflight.Do",
+					log.ErrWithKey("responded_scope_valid", err),
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_parent_scope", parent),
 					log.Stringer("responded_scope", sCfg.ScopeID),
-					log.ErrWithKey("responded_scope_valid", err),
+					log.Stringer("responded_parent", sCfg.ParentID),
 				)
 			}
 			return sCfg, errors.Wrap(err, "[scopedservice] Options applied by OptionFactoryFunc")
@@ -257,6 +258,10 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, erro
 func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (scpCfg ScopedConfig, _ error) {
 	// "current" can be Store or Website scope and "parent" can be Website or
 	// Default scope. If "parent" equals 0 then no fall back.
+
+	if !current.ValidParent(parent) {
+		return scpCfg, errors.NewNotValidf("[scopedservice] The current scope %s has an invalid parent scope %s", current, parent)
+	}
 
 	// pointer must get dereferenced in a lock to avoid race conditions while
 	// reading in middleware the config values because we might execute the
