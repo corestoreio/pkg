@@ -98,6 +98,18 @@ func (ss Scoped) ScopeID() scope.TypeID {
 	return scope.DefaultTypeID
 }
 
+// ScopeIDs returns the hierarchical order of the scopes containing ScopeID() on
+// position 0 and ParentID on position one. Position 0 contains the lowest
+// scope: Store or Website where position >=1 contains the higher scope Website
+// or Default.
+func (ss Scoped) ScopeIDs() scope.TypeIDs {
+	var ids = [2]scope.TypeID{
+		ss.ScopeID(),
+		ss.ParentID(),
+	}
+	return ids[:]
+}
+
 func (ss Scoped) isAllowedStore(s ...scope.Type) bool {
 	scp := ss.ScopeID().Type()
 	if len(s) > 0 && s[0] > scope.Absent {

@@ -28,6 +28,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestScoped_ScopeIDs(t *testing.T) {
+	scp := config.Scoped{WebsiteID: 3, StoreID: 4}
+	assert.Exactly(t, scope.TypeIDs{scope.Store.Pack(4), scope.Website.Pack(3)}, scp.ScopeIDs())
+}
+
 func TestScoped_IsValid(t *testing.T) {
 	cfg := cfgmock.NewService()
 	tests := []struct {
