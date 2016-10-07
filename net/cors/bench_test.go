@@ -81,9 +81,9 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req := reqWithStore("GET")
 	req.Header.Add("Origin", "somedomain.com")
-	c := getBaseCorsService(cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+	c := getBaseCorsService(cors.WithSettings(cors.Settings{
 		AllowedOrigins: []string{"somedomain.com"},
-	}))
+	}, scope.DefaultTypeID))
 
 	handler := c.WithCORS(testHandler(b))
 

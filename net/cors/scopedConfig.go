@@ -39,6 +39,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -72,9 +73,9 @@ func (sc *ScopedConfig) isValid() error {
 }
 
 // newScopedConfig creates a new object with the minimum needed configuration.
-func newScopedConfig() *ScopedConfig {
+func newScopedConfig(target, parent scope.TypeID) *ScopedConfig {
 	return &ScopedConfig{
-		scopedConfigGeneric: newScopedConfigGeneric(),
+		scopedConfigGeneric: newScopedConfigGeneric(target, parent),
 		log:                 log.BlackHole{}, // disabled info and debug logging
 		Settings: Settings{
 			// Default is spec's "simple" methods

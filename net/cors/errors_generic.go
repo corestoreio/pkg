@@ -14,11 +14,8 @@
 
 package cors
 
-import "github.com/corestoreio/csfw/util/errors"
-
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-var errConfigNotFound = errors.NewNotFoundf(`[cors] ScopedConfig not available`)
-
+const errConfigNotFound = `[cors] ScopedConfig for %s not available`
 const errConfigScopeIDNotSet = `[cors] ScopeID not set`
 const errConfigMarkedAsPartiallyLoaded = `[cors] Scoped configuration %s marked as partially loaded.`

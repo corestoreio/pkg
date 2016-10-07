@@ -86,7 +86,7 @@ func TestMustNew_NoPanic(t *testing.T) {
 			t.Fatalf("Expecting NOT a Panic with error: %s", err)
 		}
 	}()
-	_ = cors.MustNew(cors.WithSettings(scope.Website.Pack(2), cors.Settings{}))
+	_ = cors.MustNew(cors.WithSettings(cors.Settings{}, scope.Website.Pack(2)))
 }
 
 func TestNoConfig(t *testing.T) {
@@ -114,86 +114,86 @@ func TestService_Options_Scope_Website(t *testing.T) {
 		tester func(t *testing.T, s *cors.Service, req *http.Request)
 	}{
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{AllowedOrigins: []string{"*"}})),
+			newSrv(cors.WithSettings(cors.Settings{AllowedOrigins: []string{"*"}}, scope.Website.Pack(2))),
 			reqWithStore("GET"),
 			corstest.TestMatchAllOrigin,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{AllowedOrigins: []string{"http://foobar.com"}})),
+			newSrv(cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}, scope.Website.Pack(2))),
 			reqWithStore("GET"),
 			corstest.TestAllowedOrigin,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}})),
+			newSrv(cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}, scope.Website.Pack(2))),
 			reqWithStore("GET"),
 			corstest.TestWildcardOrigin,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{AllowedOrigins: []string{"http://foobar.com"}})),
+			newSrv(cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}, scope.Website.Pack(2))),
 			reqWithStore("GET"),
 			corstest.TestDisallowedOrigin,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}})),
+			newSrv(cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}, scope.Website.Pack(2))),
 			reqWithStore("GET"),
 			corstest.TestDisallowedWildcardOrigin,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{
+			newSrv(cors.WithSettings(cors.Settings{
 				AllowOriginFunc: func(o string) bool {
 					r, _ := regexp.Compile("^http://foo") // don't do this on production systems! pre-compile before use!
 					return r.MatchString(o)
 				},
-			})),
+			}, scope.Website.Pack(2))),
 			reqWithStore("GET"),
 			corstest.TestAllowedOriginFunc,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{
+			newSrv(cors.WithSettings(cors.Settings{
 				AllowedOrigins: []string{"http://foobar.com"},
 				AllowedMethods: []string{"PUT", "DELETE"},
-			})),
+			}, scope.Website.Pack(2))),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedMethodNoPassthrough,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{
+			newSrv(cors.WithSettings(cors.Settings{
 				AllowedOrigins:     []string{"http://foobar.com"},
 				AllowedMethods:     []string{"PUT", "DELETE"},
 				OptionsPassthrough: true,
-			})),
+			}, scope.Website.Pack(2))),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedMethodPassthrough,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{
+			newSrv(cors.WithSettings(cors.Settings{
 				AllowedOrigins: []string{"http://foobar.com"},
 				AllowedHeaders: []string{"X-Header-1", "x-header-2"},
-			})),
+			}, scope.Website.Pack(2))),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedHeader,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{
+			newSrv(cors.WithSettings(cors.Settings{
 				AllowedOrigins: []string{"http://foobar.com"},
 				ExposedHeaders: []string{"X-Header-1", "x-header-2"},
-			})),
+			}, scope.Website.Pack(2))),
 			reqWithStore("GET"),
 			corstest.TestExposedHeader,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{
+			newSrv(cors.WithSettings(cors.Settings{
 				AllowedOrigins:   []string{"http://foobar.com"},
 				AllowCredentials: true,
-			})),
+			}, scope.Website.Pack(2))),
 			reqWithStore("OPTIONS"),
 			corstest.TestAllowedCredentials,
 		},
 		{
-			newSrv(cors.WithSettings(scope.Website.Pack(2), cors.Settings{
+			newSrv(cors.WithSettings(cors.Settings{
 				AllowedOrigins: []string{"http://foobar.com"},
 				MaxAge:         "30",
-			})),
+			}, scope.Website.Pack(2))),
 			reqWithStore("OPTIONS"),
 			corstest.TestMaxAge,
 		},
@@ -216,14 +216,14 @@ func getBaseCorsService(opts ...cors.Option) *cors.Service {
 }
 
 func TestMatchAllOrigin(t *testing.T) {
-	s := getBaseCorsService(cors.WithSettings(scope.DefaultTypeID, cors.Settings{AllowedOrigins: []string{"*"}}))
+	s := getBaseCorsService(cors.WithSettings(cors.Settings{AllowedOrigins: []string{"*"}}))
 	req := reqWithStore("GET")
 	corstest.TestMatchAllOrigin(t, s, req)
 }
 
 func TestAllowedOrigin(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}),
+		cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}),
 	)
 	req := reqWithStore("GET")
 	corstest.TestAllowedOrigin(t, s, req)
@@ -231,7 +231,7 @@ func TestAllowedOrigin(t *testing.T) {
 
 func TestWildcardOrigin(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}),
+		cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}),
 	)
 	req := reqWithStore("GET")
 	corstest.TestWildcardOrigin(t, s, req)
@@ -239,7 +239,7 @@ func TestWildcardOrigin(t *testing.T) {
 
 func TestDisallowedOrigin(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}),
+		cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://foobar.com"}}),
 	)
 	req := reqWithStore("GET")
 	corstest.TestDisallowedOrigin(t, s, req)
@@ -247,7 +247,7 @@ func TestDisallowedOrigin(t *testing.T) {
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}),
+		cors.WithSettings(cors.Settings{AllowedOrigins: []string{"http://*.bar.com"}}),
 	)
 	req := reqWithStore("GET")
 	corstest.TestDisallowedWildcardOrigin(t, s, req)
@@ -256,7 +256,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 func TestAllowedOriginFunc(t *testing.T) {
 	r, _ := regexp.Compile("^http://foo")
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{AllowOriginFunc: func(o string) bool {
+		cors.WithSettings(cors.Settings{AllowOriginFunc: func(o string) bool {
 			return r.MatchString(o)
 		}}),
 	)
@@ -266,7 +266,7 @@ func TestAllowedOriginFunc(t *testing.T) {
 
 func TestAllowedMethod(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedMethods: []string{"PUT", "DELETE"},
 		}),
@@ -277,7 +277,7 @@ func TestAllowedMethod(t *testing.T) {
 
 func TestAllowedMethodPassthrough(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins:     []string{"http://foobar.com"},
 			AllowedMethods:     []string{"PUT", "DELETE"},
 			OptionsPassthrough: true,
@@ -289,7 +289,7 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 
 func TestDisallowedMethod(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedMethods: []string{"PUT", "DELETE"},
 		}),
@@ -300,7 +300,7 @@ func TestDisallowedMethod(t *testing.T) {
 
 func TestAllowedHeader(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedHeaders: []string{"X-Header-1", "x-header-2"},
 		}),
@@ -311,7 +311,7 @@ func TestAllowedHeader(t *testing.T) {
 
 func TestAllowedWildcardHeader(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedHeaders: []string{"*"},
 		}),
@@ -322,7 +322,7 @@ func TestAllowedWildcardHeader(t *testing.T) {
 
 func TestDisallowedHeader(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			AllowedHeaders: []string{"X-Header-1", "x-header-2"},
 		}),
@@ -333,7 +333,7 @@ func TestDisallowedHeader(t *testing.T) {
 
 func TestOriginHeader(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 		}),
 	)
@@ -343,7 +343,7 @@ func TestOriginHeader(t *testing.T) {
 
 func TestExposedHeader(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			ExposedHeaders: []string{"X-Header-1", "x-header-2"},
 		}),
@@ -354,13 +354,13 @@ func TestExposedHeader(t *testing.T) {
 
 func TestExposedHeader_MultiScope(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			ExposedHeaders: []string{"X-Header-1", "x-header-2"},
 		}),
-		cors.WithSettings(scope.Website.Pack(1), cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowCredentials: false,
-		}),
+		}, scope.Website.Pack(1)),
 	)
 
 	reqDefault := httptest.NewRequest("GET", "http://corestore.io/reqDefault", nil)
@@ -374,9 +374,9 @@ func TestExposedHeader_MultiScope(t *testing.T) {
 	reqWebsite = reqWebsite.WithContext(
 		scope.WithContext(reqDefault.Context(), 1, 2), // website EURO and store AT
 	)
-	if err := s.Options(cors.WithSettings(scope.Website.Pack(1), cors.Settings{
+	if err := s.Options(cors.WithSettings(cors.Settings{
 		AllowCredentials: true,
-	})); err != nil {
+	}, scope.Website.Pack(1))); err != nil {
 		t.Errorf("%+v", err)
 	}
 	corstest.TestAllowedCredentials(t, s, reqWebsite)
@@ -384,7 +384,7 @@ func TestExposedHeader_MultiScope(t *testing.T) {
 
 func TestAllowedCredentials(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins:   []string{"http://foobar.com"},
 			AllowCredentials: true,
 		}),
@@ -395,7 +395,7 @@ func TestAllowedCredentials(t *testing.T) {
 
 func TestMaxAge(t *testing.T) {
 	s := getBaseCorsService(
-		cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+		cors.WithSettings(cors.Settings{
 			AllowedOrigins: []string{"http://foobar.com"},
 			MaxAge:         "30", // seconds
 		}),
@@ -430,7 +430,7 @@ func TestWithCORS_Error_Missing_ScopeContext(t *testing.T) {
 }
 
 func TestWithCORS_Error_InvalidConfig(t *testing.T) {
-	s := getBaseCorsService(cors.WithSettings(scope.DefaultTypeID, cors.Settings{
+	s := getBaseCorsService(cors.WithSettings(cors.Settings{
 		AllowedMethods: []string{"a", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b", "b"},
 	}))
 
