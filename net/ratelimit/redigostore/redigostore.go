@@ -38,15 +38,15 @@ const OptionName = `redigostore`
 func NewOptionFactory(burst, requests cfgmodel.Int, duration cfgmodel.Str, redisURL cfgmodel.Str) (string, ratelimit.OptionFactoryFunc) {
 	return OptionName, func(sg config.Scoped) []ratelimit.Option {
 
-		burst, _, err := burst.Get(sg)
+		burst, err := burst.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitBurst.Get"))
 		}
-		req, _, err := requests.Get(sg)
+		req, err := requests.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitRequests.Get"))
 		}
-		durRaw, _, err := duration.Get(sg)
+		durRaw, err := duration.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitDuration.Get"))
 		}
@@ -57,13 +57,13 @@ func NewOptionFactory(burst, requests cfgmodel.Int, duration cfgmodel.Str, redis
 
 		dur := rune(durRaw[0])
 
-		redisURL, scpHash, err := redisURL.Get(sg)
+		redisURL, err := redisURL.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[redigostore] RateLimitStorageGcraRedis.Get"))
 		}
 		if redisURL != "" {
 			return []ratelimit.Option{
-				WithGCRA(scpHash, redisURL, dur, req, burst),
+				WithGCRA(redisURL, dur, req, burst, sg.ScopeIDs()...),
 			}
 		}
 		return ratelimit.OptionsError(errors.NewEmptyf("[redigostore] Redis not active because RateLimitStorageGCRARedis is not set."))
@@ -89,7 +89,7 @@ func NewOptionFactory(burst, requests cfgmodel.Int, duration cfgmodel.Str, redis
 //
 // GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
 // This function implements a debug log.
-func WithGCRA(h scope.Hash, redisRawURL string, duration rune, requests, burst int) ratelimit.Option {
+func WithGCRA(redisRawURL string, duration rune, requests, burst int, scopeIDs ...scope.TypeID) ratelimit.Option {
 
 	address, password, db, err := url.ParseRedis(redisRawURL)
 	if err != nil {
@@ -111,7 +111,13 @@ func WithGCRA(h scope.Hash, redisRawURL string, duration rune, requests, burst i
 		},
 	}
 
-	var keyPrefix = "ratelimit_" + h.String()
+	scID := scope.DefaultTypeID
+	if len(scopeIDs) > 0 {
+		// the first item in the slice defines the applied scope.
+		scID = scopeIDs[0]
+	}
+
+	var keyPrefix = "ratelimit_" + scID.String()
 	return func(s *ratelimit.Service) error {
 		rs, err := throttledRedis.New(pool, keyPrefix, int(db))
 		if err != nil {
@@ -119,7 +125,7 @@ func WithGCRA(h scope.Hash, redisRawURL string, duration rune, requests, burst i
 		}
 		if s.Log.IsDebug() {
 			s.Log.Debug("ratelimit.redigostore.WithGCRA",
-				log.Stringer("scope", h),
+				log.Stringer("scope", scope.TypeIDs(scopeIDs)),
 				log.String("redis_raw_url", redisRawURL),
 				log.String("key_prefix", keyPrefix),
 				log.String("duration", string(duration)),
@@ -127,6 +133,6 @@ func WithGCRA(h scope.Hash, redisRawURL string, duration rune, requests, burst i
 				log.Int("burst", burst),
 			)
 		}
-		return ratelimit.WithGCRAStore(h, rs, duration, requests, burst)(s)
+		return ratelimit.WithGCRAStore(rs, duration, requests, burst, scopeIDs...)(s)
 	}
 }

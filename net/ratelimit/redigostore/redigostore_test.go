@@ -27,31 +27,37 @@ import (
 )
 
 func TestWithGCRARedis(t *testing.T) {
-	s4 := scope.NewHash(scope.Store, 4)
+	s4 := scope.MakeTypeID(scope.Store, 4)
 
 	t.Run("CalcErrorRedis", func(t *testing.T) {
-		s, err := ratelimit.New(redigostore.WithGCRA(scope.Store.ToHash(4), "redis://localhost/", 's', 100, 10))
+		s, err := ratelimit.New(redigostore.WithGCRA("redis://localhost/", 's', 100, 10, scope.Store.Pack(4)))
 		assert.Nil(t, s)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
-			redigostore.WithGCRA(scope.Store.ToHash(4), "redis://localhost/1", 's', 100, 10),
-			redigostore.WithGCRA(scope.DefaultHash, "redis://localhost/2", 's', 100, 10),
+			ratelimit.WithDefaultConfig(scope.Store.Pack(4)),
+			redigostore.WithGCRA("redis://localhost/1", 's', 100, 10, scope.Store.Pack(4)),
+			redigostore.WithGCRA("redis://localhost/2", 's', 100, 10, scope.DefaultTypeID),
 		)
-		assert.NotNil(t, s.ConfigByScopeHash(s4, 0).RateLimiter, "Scope Website")
-		assert.NotNil(t, s.ConfigByScopeHash(scope.DefaultHash, 0).RateLimiter, "Scope Default")
+		cfg, err := s.ConfigByScopeID(s4, 0)
+		assert.NoError(t, err, "%+v", err)
+		assert.NotNil(t, cfg.RateLimiter, "Scope Website")
+		cfg, err = s.ConfigByScopeID(scope.DefaultTypeID, 0)
+		assert.NoError(t, err, "%+v", err)
+		assert.NotNil(t, cfg.RateLimiter, "Scope Default")
 	})
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			redigostore.WithGCRA(scope.Store.ToHash(4), "redis://localhost/1", 's', 100, 10),
-			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
+			redigostore.WithGCRA("redis://localhost/1", 's', 100, 10, scope.Store.Pack(4)),
+			ratelimit.WithDefaultConfig(scope.Store.Pack(4)),
 		)
-		assert.Nil(t, s.ConfigByScopeHash(s4, 0).RateLimiter)
-		err := s.ConfigByScopeHash(s4, 0).IsValid()
+		cfg, err := s.ConfigByScopeID(s4, 0)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.Nil(t, cfg.RateLimiter)
+		_, err = s.ConfigByScopeID(s4, 0)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
@@ -66,16 +72,16 @@ func TestBackend_Path_Errors(t *testing.T) {
 	backend := backendratelimit.New(cfgStruct)
 
 	tests := []struct {
-		toPath func(s scope.Scope, scopeID int64) string
+		toPath string
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.Burst.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.Requests.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.Duration.MustFQ, "[a-z+", errors.IsFatal},
-		{backend.Duration.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.StorageGCRARedis.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.StorageGCRARedis.MustFQ, "", errors.IsEmpty},
+		{backend.Burst.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.Requests.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.Duration.MustFQWebsite(2), "[a-z+", errors.IsFatal},
+		{backend.Duration.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.StorageGCRARedis.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.StorageGCRARedis.MustFQWebsite(2), "", errors.IsEmpty},
 	}
 	for i, test := range tests {
 
@@ -85,7 +91,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 		}
 
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			test.toPath(scope.Website, 2): test.val,
+			test.toPath: test.val,
 		})
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
