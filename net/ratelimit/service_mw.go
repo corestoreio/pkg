@@ -32,10 +32,8 @@ import (
 // handler may check an error with FromContextRateLimit().
 func (s *Service) WithRateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		scpCfg := s.configByContext(r.Context())
-		if err := scpCfg.IsValid(); err != nil {
-			s.Log.Info("ratelimit.Service.WithRateLimit.configByContext.Error", log.Err(err))
+		scpCfg, err := s.configByContext(r.Context())
+		if err != nil {
 			if s.Log.IsDebug() {
 				s.Log.Debug("ratelimit.Service.WithRateLimit.configByContext", log.Err(err), log.HTTPRequest("request", r))
 			}
@@ -44,7 +42,7 @@ func (s *Service) WithRateLimit(next http.Handler) http.Handler {
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("ratelimit.Service.WithRateLimit.Disabled", log.Stringer("scope", scpCfg.ScopeHash), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("ratelimit.Service.WithRateLimit.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return
@@ -56,7 +54,7 @@ func (s *Service) WithRateLimit(next http.Handler) http.Handler {
 				log.Err(err),
 				log.Bool("is_limited", isLimited),
 				log.Object("rate_limit_result", rlResult),
-				log.Stringer("requested_scope", scpCfg.ScopeHash),
+				log.Stringer("requested_scope", scpCfg.ScopeID),
 				log.HTTPRequest("request", r),
 			)
 		}
@@ -68,7 +66,9 @@ func (s *Service) WithRateLimit(next http.Handler) http.Handler {
 		setRateLimitHeaders(w, rlResult)
 
 		if isLimited {
-			next = scpCfg.DeniedHandler
+			// prevents a race condition in tests when calling DeniedHandler this way.
+			scpCfg.DeniedHandler.ServeHTTP(w, r)
+			return
 		}
 		next.ServeHTTP(w, r)
 	})

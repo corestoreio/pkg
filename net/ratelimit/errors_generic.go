@@ -14,8 +14,8 @@
 
 package ratelimit
 
-import "github.com/corestoreio/csfw/util/errors"
-
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-var errConfigNotFound = errors.NewNotFoundf(`[ratelimit] ScopedConfig not available`)
+const errConfigNotFound = `[ratelimit] ScopedConfig for %s not available`
+const errConfigScopeIDNotSet = `[ratelimit] ScopeID not set`
+const errConfigMarkedAsPartiallyLoaded = `[ratelimit] Scoped configuration %s marked as partially loaded.`

@@ -17,6 +17,7 @@ package ratelimit
 import (
 	"net/http"
 
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
@@ -26,47 +27,44 @@ import (
 // configuration has been bound to.
 type ScopedConfig struct {
 	scopedConfigGeneric
-
-	// start of package specific config values
-
-	// Disabled set to true to disable rate limiting
-	Disabled bool
 	// DeniedHandler can be customized instead of showing a HTTP status 429
 	// error page once the HTTPRateLimit has been reached.
 	// It will be called if the request gets over the limit.
 	DeniedHandler http.Handler
-
 	// RateLimiter default not set. It gets set either through the developer
 	// calling WithRateLimiter() or via OptionFactoryFunc.
 	throttled.RateLimiter
-
 	// VaryByer is called for each request to generate a key for the limiter. If
 	// it is nil, the middleware panics. The default VaryByer returns an empty
 	// string so that all requests uses the same key.
 	VaryByer
 }
 
-var defaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+// DefaultDeniedHandler defines the service wide denied handler.
+var DefaultDeniedHandler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 })
 
 // newScopedConfig creates a new object with the minimum needed configuration.
-func newScopedConfig() *ScopedConfig {
+func newScopedConfig(current, parent scope.TypeID) *ScopedConfig {
 	return &ScopedConfig{
-		scopedConfigGeneric: newScopedConfigGeneric(),
-		DeniedHandler:       defaultDeniedHandler,
+		scopedConfigGeneric: newScopedConfigGeneric(current, parent),
+		DeniedHandler:       DefaultDeniedHandler,
 		VaryByer:            emptyVaryBy{},
 	}
 }
 
-// IsValid a configuration for a scope is only then valid when several fields
+// isValid a configuration for a scope is only then valid when several fields
 // are not empty: RateLimiter, DeniedHandler and VaryByer.
-func (sc ScopedConfig) IsValid() error {
-	if sc.lastErr != nil {
-		return errors.Wrap(sc.lastErr, "[ratelimit] scopedConfig.isValid has an lastErr")
+func (sc ScopedConfig) isValid() error {
+	if err := sc.isValidPreCheck(); err != nil {
+		return errors.Wrap(err, "[ratelimit] scopedConfig.isValid has an lastErr")
 	}
-	if sc.ScopeHash == 0 || sc.RateLimiter == nil || sc.DeniedHandler == nil || sc.VaryByer == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.DeniedHandler == nil, sc.RateLimiter == nil, sc.VaryByer == nil)
+	if sc.Disabled {
+		return nil
+	}
+	if sc.RateLimiter == nil || sc.DeniedHandler == nil || sc.VaryByer == nil {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.DeniedHandler == nil, sc.RateLimiter == nil, sc.VaryByer == nil)
 	}
 	return nil
 }

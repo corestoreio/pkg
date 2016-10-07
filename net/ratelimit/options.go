@@ -30,88 +30,47 @@ import (
 //		- VaryByer: returns an empty key
 // Example:
 //		s := MustNewService(WithDefaultConfig(scope.Store,1), WithVaryBy(scope.Store, 1, myVB))
-func WithDefaultConfig(h scope.Hash) Option {
-	return withDefaultConfig(h)
+func WithDefaultConfig(id scope.TypeID) Option {
+	return withDefaultConfig(id)
 }
 
 // WithVaryBy allows to set a custom key producer. VaryByer is called for each
 // request to generate a key for the limiter. If it is nil, the middleware
 // panics. The default VaryByer returns an empty string so that all requests
 // uses the same key. VaryByer must be thread safe.
-func WithVaryBy(h scope.Hash, vb VaryByer) Option {
+func WithVaryBy(vb VaryByer, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.VaryByer = vb
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithRateLimiter creates a rate limiter for a specific scope with its ID.
 // The rate limiter is already warmed up.
-func WithRateLimiter(h scope.Hash, rl throttled.RateLimiter) Option {
+func WithRateLimiter(rl throttled.RateLimiter, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.RateLimiter = rl
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithDeniedHandler sets a custom denied handler for a specific scope. The
 // default denied handler returns a simple:
 //		http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-func WithDeniedHandler(h scope.Hash, next http.Handler) Option {
+func WithDeniedHandler(next http.Handler, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.DeniedHandler = next
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
-// WithDisable allows to disable a rate limit or enable it if set to false.
-func WithDisable(h scope.Hash, isDisabled bool) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.Disabled = isDisabled
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithGCRAStore creates a new GCRA rate limiter with a custom storage backend.
 // Duration: (s second,i minute,h hour,d day)
 // GCRA => https://en.wikipedia.org/wiki/Generic_cell_rate_algorithm
-func WithGCRAStore(h scope.Hash, store throttled.GCRAStore, duration rune, requests, burst int) Option {
+func WithGCRAStore(store throttled.GCRAStore, duration rune, requests, burst int, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 
 		cr, err := calculateRate(duration, requests)
@@ -128,7 +87,7 @@ func WithGCRAStore(h scope.Hash, store throttled.GCRAStore, duration rune, reque
 		if err != nil {
 			return errors.NewNotValidf("[ratelimit] throttled.NewGCRARateLimiter: %s", err)
 		}
-		return WithRateLimiter(h, rl)(s)
+		return WithRateLimiter(rl, scopeIDs...)(s)
 	}
 }
 
