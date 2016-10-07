@@ -99,9 +99,8 @@ func (ss Scoped) ScopeID() scope.TypeID {
 }
 
 // ScopeIDs returns the hierarchical order of the scopes containing ScopeID() on
-// position 0 and ParentID on position one. Position 0 contains the lowest
-// scope: Store or Website where position >=1 contains the higher scope Website
-// or Default.
+// position zero and ParentID() on position one. This function guarantees that
+// the returned slice contains at least two entries.
 func (ss Scoped) ScopeIDs() scope.TypeIDs {
 	var ids = [2]scope.TypeID{
 		ss.ScopeID(),
