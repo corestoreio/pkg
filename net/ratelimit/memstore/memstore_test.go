@@ -27,31 +27,37 @@ import (
 )
 
 func TestWithGCRAMemStore(t *testing.T) {
-	s4 := scope.NewHash(scope.Store, 4)
+	s4 := scope.MakeTypeID(scope.Store, 4)
 
 	t.Run("CalcErrorRate", func(t *testing.T) {
-		s, err := ratelimit.New(memstore.WithGCRA(scope.Store.ToHash(4), 3333, 's', 100, -1))
+		s, err := ratelimit.New(memstore.WithGCRA(3333, 's', 100, -1, scope.Store.Pack(4)))
 		assert.Nil(t, s)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
-			memstore.WithGCRA(scope.Store.ToHash(4), 3333, 's', 100, 10),
-			memstore.WithGCRA(scope.DefaultHash, 2222, 's', 100, 20),
+			ratelimit.WithDefaultConfig(scope.Store.Pack(4)),
+			memstore.WithGCRA(3333, 's', 100, 10, scope.Store.Pack(4)),
+			memstore.WithGCRA(2222, 's', 100, 20, scope.DefaultTypeID),
 		)
-		assert.NotNil(t, s.ConfigByScopeHash(s4, 0).RateLimiter, "Scope Website")
-		assert.NotNil(t, s.ConfigByScopeHash(scope.DefaultHash, 0).RateLimiter, "Scope Default")
+		cfg, err := s.ConfigByScopeID(s4, 0)
+		assert.NoError(t, err, "%+v", err)
+		assert.NotNil(t, cfg.RateLimiter, "Scope Website")
+		cfg, err = s.ConfigByScopeID(scope.DefaultTypeID, 0)
+		assert.NoError(t, err, "%+v", err)
+		assert.NotNil(t, cfg.RateLimiter, "Scope Default")
 	})
 
 	t.Run("OverwrittenByWithDefaultConfig", func(t *testing.T) {
 		s := ratelimit.MustNew(
-			memstore.WithGCRA(scope.Store.ToHash(4), 1111, 's', 100, 10),
-			ratelimit.WithDefaultConfig(scope.Store.ToHash(4)),
+			memstore.WithGCRA(1111, 's', 100, 10, scope.Store.Pack(4)),
+			ratelimit.WithDefaultConfig(scope.Store.Pack(4)),
 		)
-		assert.Nil(t, s.ConfigByScopeHash(s4, 0).RateLimiter)
-		err := s.ConfigByScopeHash(s4, 0).IsValid()
+		cfg, err := s.ConfigByScopeID(s4, 0)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.Nil(t, cfg.RateLimiter)
+		_, err = s.ConfigByScopeID(s4, 0)
 		assert.True(t, errors.IsNotValid(err), "Error: %+v", err)
 	})
 }
@@ -65,16 +71,16 @@ func TestBackend_Path_Errors(t *testing.T) {
 	backend := backendratelimit.New(cfgStruct)
 
 	tests := []struct {
-		toPath func(s scope.Scope, scopeID int64) string
-		val    interface{}
-		errBhf errors.BehaviourFunc
+		cfgPath string
+		val     interface{}
+		errBhf  errors.BehaviourFunc
 	}{
-		{backend.Burst.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.Requests.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.Duration.MustFQ, "[a-z+", errors.IsFatal},
-		{backend.Duration.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.StorageGCRAMaxMemoryKeys.MustFQ, struct{}{}, errors.IsNotValid},
-		{backend.StorageGCRAMaxMemoryKeys.MustFQ, 0, errors.IsEmpty},
+		{backend.Burst.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.Requests.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.Duration.MustFQWebsite(2), "[a-z+", errors.IsFatal},
+		{backend.Duration.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.StorageGCRAMaxMemoryKeys.MustFQWebsite(2), struct{}{}, errors.IsNotValid},
+		{backend.StorageGCRAMaxMemoryKeys.MustFQWebsite(2), 0, errors.IsEmpty},
 	}
 	for i, test := range tests {
 
@@ -84,7 +90,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 		}
 
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			test.toPath(scope.Website, 2): test.val,
+			test.cfgPath: test.val,
 		})
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
