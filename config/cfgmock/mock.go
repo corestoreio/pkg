@@ -36,7 +36,7 @@ import (
 // of the sprintf ... which could be bypassed with a bufferpool ;-)
 type keyNotFound struct{}
 
-func (a keyNotFound) Error() string  { return "[cfgmock] Get() Path" }
+func (a keyNotFound) Error() string  { return "[cfgmock] Get() Path not found" }
 func (a keyNotFound) NotFound() bool { return true }
 
 // Write used for testing when writing configuration values.
