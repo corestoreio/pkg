@@ -28,7 +28,7 @@ import (
 func PrepareOptions(be *Configuration) cors.OptionFactoryFunc {
 	return func(sg config.Scoped) []cors.Option {
 		var (
-			opts     [1]cors.Option
+			opts     [2]cors.Option
 			settings cors.Settings
 			err      error
 		)
@@ -90,7 +90,10 @@ func PrepareOptions(be *Configuration) cors.OptionFactoryFunc {
 			return cors.OptionsError(errors.Wrap(err, "[backendcors] NetCorsMaxAge.Get"))
 		}
 
-		opts[0] = cors.WithSettings(sg.ScopeID(), settings)
+		// in case someone marks the config as partially applied now it's time to revert
+		// it.
+		opts[0] = cors.WithMarkPartiallyApplied(false, sg.ScopeIDs()...)
+		opts[1] = cors.WithSettings(settings, sg.ScopeIDs()...)
 		return opts[:]
 	}
 }

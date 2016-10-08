@@ -33,6 +33,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Tests partially loaded configuration and other settings will be applied from
+// the backend.
+func TestConfiguration_Partially_HierarchicalConfig(t *testing.T) {
+	exposedHeaders := []string{"X-Header-1", "X-Header-2"}
+
+	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		// Important backend.ExposedHeaders has not been set and is not
+		// available in the backend configuration.
+		backend.AllowedOrigins.MustFQWebsite(3): "x.com\ny.com",
+		backend.AllowedMethods.MustFQ():         "PUT\nDEL\nCUT",
+	}).NewScoped(3, 0)
+
+	srv := cors.MustNew(
+		cors.WithSettings(cors.Settings{
+			ExposedHeaders: exposedHeaders,
+		}, scope.Website.Pack(3)),
+		cors.WithMarkPartiallyApplied(true, scope.Website.Pack(3)),
+		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+	)
+	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
+	assert.NoError(t, err, "%+v", err)
+
+	assert.Exactly(t, []string{`x.com`, `y.com`}, scpCfg.AllowedOrigins)
+	assert.Exactly(t, []string{"PUT", "DEL", "CUT"}, scpCfg.AllowedMethods)
+	assert.Exactly(t, []string{}, scpCfg.ExposedHeaders)
+	// TODO: To make the next line possible and remove the above line for checking
+	// []string{} there needs some refactoring in cors.WithSettings() to only
+	// set values which are available in the backend configuration.
+	//assert.Exactly(t, exposedHeaders, scpCfg.ExposedHeaders)
+}
+
 func TestConfiguration_HierarchicalConfig(t *testing.T) {
 
 	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
