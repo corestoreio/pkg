@@ -30,12 +30,12 @@ const (
 	RightDelim = "}}"
 )
 
-// Getter implements how to receive thread-safe a configuration value from a
-// cfgpath.Path. Providing a cfgpath.Path argument does not make any assumptions
-// if the scope of the cfgpath.Path is allowed to retrieve the value. The
-// NewScoped() function binds a cfgpath.Route to a scope.Scope and gives you the
-// possibility to fallback the hierarchy levels. These functions are also
-// available in the ScopedGetter interface.
+// Getter implements how to receive thread-safe a configuration value from an
+// underlying backend service. The provided cfgpath.Path as an argument does not
+// make any assumptions if the scope of the cfgpath.Path is allowed to retrieve
+// the value. The NewScoped() function binds a cfgpath.Route to a scope.Scope
+// and gives you the possibility to fallback the hierarchy levels. If a value
+// cannot be found it must return an error of behaviour not NotFound.
 type Getter interface {
 	NewScoped(websiteID, storeID int64) Scoped
 	Byte(cfgpath.Path) ([]byte, error)
@@ -64,10 +64,10 @@ type Writer interface {
 
 // Storager is the underlying data storage for holding the keys and its values.
 // Implementations can be spf13/viper or MySQL backed. Default Storager is a
-// simple mutex protected map[string]interface{}. ProTip: If you use MySQL as
-// Storager don't execute function ApplyCoreConfigData() The config.Writer calls
-// the config.Storager functions and Storager must make sure of the correct type
-// conversions to the supported type of the underlying storage engine.
+// simple mutex protected map[string]interface{}. The config.Writer function
+// calls the config.Storager functions and Storager must make sure of the
+// correct type conversions to the supported type of the underlying storage
+// engine.
 type Storager interface {
 	// Set sets a key with a value and returns on success nil or
 	// ErrKeyOverwritten, on failure any other error
