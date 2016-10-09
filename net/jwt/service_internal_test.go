@@ -43,7 +43,7 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 	cr := cfgmock.NewService()
 	sc, err := jwts.ConfigByScopedGetter(cr.NewScoped(0, 0))
 	assert.NoError(t, err, "%+v", err)
-	dsc := newScopedConfig()
+	dsc := newScopedConfig(scope.DefaultTypeID, scope.DefaultTypeID)
 	if err := dsc.isValid(); err != nil {
 		t.Fatal(err)
 	}

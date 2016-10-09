@@ -33,7 +33,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 
 	jwts, err := jwt.New(
 		// jwt.WithKey(scope.Website.ToHash(3), csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website.Pack(3), func() csjwt.Token {
+		jwt.WithTemplateToken(func() csjwt.Token {
 			sClaim := jwtclaim.NewStore()
 			sClaim.Store = "potato"
 
@@ -44,7 +44,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 				Header: h, // header h has 6 struct fields
 				Claims: sClaim,
 			}
-		}),
+		}, scope.Website.Pack(3)),
 	)
 	require.NoError(t, err)
 
@@ -77,7 +77,7 @@ func TestOptionWithTemplateToken(t *testing.T) {
 func TestOptionWithTokenID(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.Pack(22), csjwt.WithPasswordRandom()),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(22)),
 	)
 	require.NoError(t, err)
 
@@ -93,7 +93,7 @@ func TestOptionWithTokenID(t *testing.T) {
 func TestOptionScopedDefaultExpire(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.Pack(33), csjwt.WithPasswordRandom()),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(33)),
 	)
 	require.NoError(t, err)
 
@@ -114,9 +114,9 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 
 func TestWithMaxSkew_Valid(t *testing.T) {
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.Pack(44), csjwt.WithPasswordRandom()),
-		jwt.WithSkew(scope.Website.Pack(44), time.Second*5),
-		jwt.WithExpiration(scope.Website.Pack(44), -time.Second*3),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(44)),
+		jwt.WithSkew(time.Second*5, scope.Website.Pack(44)),
+		jwt.WithExpiration(-time.Second*3, scope.Website.Pack(44)),
 	)
 	require.NoError(t, err)
 
@@ -134,9 +134,10 @@ func TestWithMaxSkew_Valid(t *testing.T) {
 
 func TestWithMaxSkew_NotValid(t *testing.T) {
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.DefaultTypeID, csjwt.WithPasswordRandom()),
-		jwt.WithSkew(scope.DefaultTypeID, time.Second*1),
-		jwt.WithExpiration(scope.DefaultTypeID, -time.Second*3),
+		// DefaultScopeID
+		jwt.WithKey(csjwt.WithPasswordRandom()),
+		jwt.WithSkew(time.Second*1),
+		jwt.WithExpiration(-time.Second*3),
 	)
 	require.NoError(t, err)
 
@@ -152,17 +153,18 @@ func TestWithMaxSkew_NotValid(t *testing.T) {
 func TestOptionWithRSAReaderFail(t *testing.T) {
 
 	jm, err := jwt.New(
-		jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
+		jwt.WithKey(csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))), // scope.DefaultTypeID
 	)
 	assert.Nil(t, jm)
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 }
 
 var (
-	rsaPrivateKeyFileName        = filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa")
-	keyRsaPrivateNoPassword      = jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
-	keyRsaPrivateWrongPassword   = jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
-	keyRsaPrivateCorrectPassword = jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
+	rsaPrivateKeyFileName = filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa")
+	// Next three configurations for the DefaultScopeID
+	keyRsaPrivateNoPassword      = jwt.WithKey(csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
+	keyRsaPrivateWrongPassword   = jwt.WithKey(csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
+	keyRsaPrivateCorrectPassword = jwt.WithKey(csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
 )
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
@@ -191,11 +193,9 @@ func testRsaOption(t *testing.T, opt jwt.Option) {
 }
 
 func TestOptionWithRSAFromFilePassword(t *testing.T) {
-
 	testRsaOption(t, keyRsaPrivateCorrectPassword)
 }
 
 func TestOptionWithRSAFromFileNoPassword(t *testing.T) {
-
-	testRsaOption(t, jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
+	testRsaOption(t, jwt.WithKey(csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
 }

@@ -38,7 +38,7 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = jwt.MustNew(jwt.WithKey(scope.DefaultTypeID, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
+	_ = jwt.MustNew(jwt.WithKey(csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
 }
 
 func TestServiceNewDefaultBlacklist(t *testing.T) {
@@ -82,7 +82,7 @@ func TestServiceNewDefault(t *testing.T) {
 
 func TestServiceNewDefaultRSAError(t *testing.T) {
 
-	jmRSA, err := jwt.New(jwt.WithKey(scope.DefaultTypeID, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
+	jmRSA, err := jwt.New(jwt.WithKey(csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
@@ -102,7 +102,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	}
 
 	keyRand := csjwt.WithPasswordRandom()
-	jwts := jwt.MustNew(jwt.WithKey(scope.DefaultTypeID, keyRand))
+	jwts := jwt.MustNew(jwt.WithKey(keyRand))
 
 	tk := csjwt.NewToken(jwtclaim.Map{
 		"exp": time.Now().Add(time.Hour).Unix(),
@@ -159,7 +159,7 @@ func TestServiceLogout(t *testing.T) {
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
 
-	jwts, err := jwt.New(jwt.WithKey(scope.Store.Pack(33), csjwt.WithPasswordRandom()))
+	jwts, err := jwt.New(jwt.WithKey(csjwt.WithPasswordRandom(), scope.Store.Pack(33)))
 	assert.Nil(t, jwts)
 	assert.True(t, errors.IsNotSupported(err), "Error: %+v", err)
 }
@@ -167,7 +167,7 @@ func TestServiceIncorrectConfigurationScope(t *testing.T) {
 func TestService_NewToken_Merge_Maps(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.Pack(3), csjwt.WithPasswordRandom()),
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(3)),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -191,12 +191,12 @@ func TestService_NewToken_Merge_Maps(t *testing.T) {
 func TestService_NewToken_Merge_Structs(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.Pack(4), csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website.Pack(4), func() csjwt.Token {
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(4)),
+		jwt.WithTemplateToken(func() csjwt.Token {
 			s := jwtclaim.NewStore()
 			s.Store = "de"
 			return csjwt.NewToken(s)
-		}),
+		}, scope.Website.Pack(4)),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -233,10 +233,10 @@ func TestService_NewToken_Merge_Structs(t *testing.T) {
 func TestService_NewToken_Merge_Fail(t *testing.T) {
 
 	jwts, err := jwt.New(
-		jwt.WithKey(scope.Website.Pack(4), csjwt.WithPasswordRandom()),
-		jwt.WithTemplateToken(scope.Website.Pack(4), func() csjwt.Token {
+		jwt.WithKey(csjwt.WithPasswordRandom(), scope.Website.Pack(4)),
+		jwt.WithTemplateToken(func() csjwt.Token {
 			return csjwt.NewToken(&jwtclaim.Standard{})
-		}),
+		}, scope.Website.Pack(4)),
 	)
 	if err != nil {
 		t.Fatalf("%+v", err)

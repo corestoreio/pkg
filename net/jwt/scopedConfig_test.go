@@ -29,7 +29,7 @@ import (
 
 func TestScopedConfig_ParseFromRequest_Valid(t *testing.T) {
 	bl := containable.NewInMemory()
-	sc := newScopedConfig()
+	sc := newScopedConfig(0, 0)
 	kid := shortid.MustGenerate()
 	tk := csjwt.NewToken(jwtclaim.Map{"jti": kid})
 	token, err := tk.SignedString(sc.SigningMethod, sc.Key)
@@ -45,7 +45,7 @@ func TestScopedConfig_ParseFromRequest_Valid(t *testing.T) {
 }
 
 func TestScopedConfig_ParseFromRequest_Invalid_Token(t *testing.T) {
-	sc := newScopedConfig()
+	sc := newScopedConfig(0, 0)
 	tk := csjwt.NewToken(jwtclaim.Map{})
 	_, err := tk.SignedString(sc.SigningMethod, sc.Key)
 	assert.NoError(t, err, "%+v", err)
@@ -61,7 +61,7 @@ func TestScopedConfig_ParseFromRequest_Invalid_Token(t *testing.T) {
 
 func TestScopedConfig_ParseFromRequest_Invalid_JTI(t *testing.T) {
 
-	sc := newScopedConfig()
+	sc := newScopedConfig(0, 0)
 	tk := csjwt.NewToken(jwtclaim.Map{})
 	token, err := tk.SignedString(sc.SigningMethod, sc.Key)
 	assert.NoError(t, err, "%+v", err)
@@ -77,7 +77,7 @@ func TestScopedConfig_ParseFromRequest_Invalid_JTI(t *testing.T) {
 
 func TestScopedConfig_ParseFromRequest_In_Blacklist(t *testing.T) {
 	bl := containable.NewInMemory()
-	sc := newScopedConfig()
+	sc := newScopedConfig(0, 0)
 	kid := shortid.MustGenerate()
 	assert.NoError(t, bl.Set([]byte(kid), time.Hour))
 	tk := csjwt.NewToken(jwtclaim.Map{"jti": kid})
@@ -109,7 +109,7 @@ var _ Blacklister = (*errBl)(nil)
 
 func TestScopedConfig_ParseFromRequest_SingleTokenUsage_BL_Set_Error(t *testing.T) {
 
-	sc := newScopedConfig()
+	sc := newScopedConfig(0, 0)
 	sc.SingleTokenUsage = true
 	kid := shortid.MustGenerate()
 
@@ -140,7 +140,7 @@ func BenchmarkScopedConfig_ParseFromRequest_HS256Fast_FNV64a(b *testing.B) {
 		}
 	}
 
-	sc := newScopedConfig()
+	sc := newScopedConfig(0, 0)
 	kid := shortid.MustGenerate()
 
 	tk := csjwt.NewToken(&jwtclaim.Standard{ID: kid, ExpiresAt: time.Now().Add(time.Hour).Unix()})

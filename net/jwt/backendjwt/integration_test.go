@@ -50,15 +50,15 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 	}).NewScoped(3, 0)
 
 	srv := jwt.MustNew(
-		jwt.WithOptionFactory(backendjwt.PrepareOptions(backend)),
+		jwt.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
 	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.True(t, scpCfg.SingleTokenUsage)
-	assert.Exactly(t, time.Second*33, scpCfg.Skew)
-	assert.Exactly(t, time.Second*66, scpCfg.Expire)
+	assert.Exactly(t, time.Second*33, scpCfg.Skew, "Skew")
+	assert.Exactly(t, time.Second*66, scpCfg.Expire, "Expire")
 }
 
 func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
@@ -88,7 +88,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 		pb.HmacPassword.MustFQWebsite(1): "pw2",
 	})
 
-	jwts := jwt.MustNew(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
+	jwts := jwt.MustNew(jwt.WithOptionFactory(pb.PrepareOptionFactory()))
 
 	sg := cfgSrv.NewScoped(1, 0) // only website scope supported
 
@@ -131,7 +131,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	})
 
 	jwts := jwt.MustNew(
-		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
+		jwt.WithOptionFactory(pb.PrepareOptionFactory()),
 	)
 
 	sg := cfgSrv.NewScoped(1, 0) // 1 = website euro and 0 no store ID provided like in the middleware
@@ -164,14 +164,14 @@ func getJwts(opts ...cfgmodel.Option) (jwts *jwt.Service, pb *backendjwt.Configu
 	}
 
 	pb = backendjwt.New(cfgStruct, opts...)
-	jwts = jwt.MustNew(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
+	jwts = jwt.MustNew(jwt.WithOptionFactory(pb.PrepareOptionFactory()))
 	return
 }
 
 func TestServiceWithBackend_MissingSectionSlice(t *testing.T) {
 
 	pb := backendjwt.New(nil)
-	jwts := jwt.MustNew(jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)))
+	jwts := jwt.MustNew(jwt.WithOptionFactory(pb.PrepareOptionFactory()))
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.SigningMethod.MustFQ(): "HS4711",
@@ -278,10 +278,10 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 	jwts := jwt.MustNew(
 		jwt.WithRootConfig(cfgSrv),
 		jwt.WithDebugLog(logBuf),
-		jwt.WithOptionFactory(backendjwt.PrepareOptions(pb)),
+		jwt.WithOptionFactory(pb.PrepareOptionFactory()),
 		jwt.WithServiceErrorHandler(mw.ErrorWithPanic),
-		jwt.WithErrorHandler(scope.Website.Pack(1), mw.ErrorWithPanic),
-		jwt.WithTriggerOptionFactories(scope.Website.Pack(1), true), // because we load more from the OptionFactories
+		jwt.WithErrorHandler(mw.ErrorWithPanic, scope.Website.Pack(1)),
+		jwt.WithMarkPartiallyApplied(true, scope.Website.Pack(1)), // because we load more from the OptionFactories
 	)
 
 	// our token will be crafted to contain the DE store so the JWT middleware

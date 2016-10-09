@@ -53,12 +53,11 @@ func testAuth_WithToken(t *testing.T, opts ...jwt.Option) (http.Handler, []byte)
 func TestService_WithToken_EmptyScope(t *testing.T) {
 
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithErrorHandler(scope.DefaultTypeID,
-			func(err error) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					panic("Should not get called")
-				})
-			}),
+		jwt.WithErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic("Should not get called")
+			})
+		}),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotImplemented)
@@ -79,12 +78,11 @@ func TestService_WithToken_EmptyScope(t *testing.T) {
 
 func TestService_WithToken_MissingToken(t *testing.T) {
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithErrorHandler(scope.Website.Pack(1),
-			func(err error) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					panic("Should not get called")
-				})
-			}),
+		jwt.WithErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic("Should not get called")
+			})
+		}, scope.Website.Pack(1)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
@@ -102,13 +100,12 @@ func TestService_WithToken_MissingToken(t *testing.T) {
 
 func TestService_WithToken_Disabled(t *testing.T) {
 	authHandler, _ := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website.Pack(44), true),
-		jwt.WithErrorHandler(scope.Website.Pack(1),
-			func(err error) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					panic("Should not get called")
-				})
-			}),
+		jwt.WithDisable(true, scope.Website.Pack(44)),
+		jwt.WithErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic("Should not get called")
+			})
+		}, scope.Website.Pack(1)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
@@ -126,13 +123,12 @@ func TestService_WithToken_Disabled(t *testing.T) {
 
 func TestService_WithToken_Success(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website.Pack(55), false),
-		jwt.WithErrorHandler(scope.Website.Pack(55),
-			func(err error) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					panic("Should not get called")
-				})
-			}),
+		jwt.WithDisable(false, scope.Website.Pack(55)),
+		jwt.WithErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic("Should not get called")
+			})
+		}, scope.Website.Pack(55)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")
@@ -152,14 +148,13 @@ func TestService_WithToken_Success(t *testing.T) {
 
 func TestService_WithToken_SingleUsage(t *testing.T) {
 	authHandler, token := testAuth_WithToken(t,
-		jwt.WithDisable(scope.Website.Pack(66), false),
-		jwt.WithSingleTokenUsage(scope.Website.Pack(66), true),
-		jwt.WithErrorHandler(scope.Website.Pack(66),
-			func(err error) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					panic("Should not get called")
-				})
-			}),
+		jwt.WithDisable(false, scope.Website.Pack(66)),
+		jwt.WithSingleTokenUsage(true, scope.Website.Pack(66)),
+		jwt.WithErrorHandler(func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				panic("Should not get called")
+			})
+		}, scope.Website.Pack(66)),
 		jwt.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic("Should not get called")

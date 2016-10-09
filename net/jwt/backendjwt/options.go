@@ -21,10 +21,11 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// PrepareOptions creates a closure around the type Backend. The closure will be
-// used during a scoped request to figure out the configuration depending on the
-// incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
+// PrepareOptionFactory creates a closure around the type Backend. The closure
+// will be used during a scoped request to figure out the configuration
+// depending on the incoming scope. An option array will be returned by the
+// closure.
+func (be *Configuration) PrepareOptionFactory() jwt.OptionFactoryFunc {
 	return func(sg config.Scoped) []jwt.Option {
 		var (
 			opts [7]jwt.Option
@@ -35,7 +36,7 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtDisabled.Get"))
 		}
-		opts[i] = jwt.WithDisable(sg.ScopeID(), off)
+		opts[i] = jwt.WithDisable(off, sg.ScopeIDs()...)
 		i++
 		if off {
 			return opts[:i]
@@ -45,21 +46,21 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtExpiration.Get"))
 		}
-		opts[i] = jwt.WithExpiration(sg.ScopeID(), exp)
+		opts[i] = jwt.WithExpiration(exp, sg.ScopeIDs()...)
 		i++
 
 		skew, err := be.Skew.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSkew.Get"))
 		}
-		opts[i] = jwt.WithSkew(sg.ScopeID(), skew)
+		opts[i] = jwt.WithSkew(skew, sg.ScopeIDs()...)
 		i++
 
 		isSU, err := be.SingleTokenUsage.Get(sg)
 		if err != nil {
 			return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtSingleUsage.Get"))
 		}
-		opts[i] = jwt.WithSingleTokenUsage(sg.ScopeID(), isSU)
+		opts[i] = jwt.WithSingleTokenUsage(isSU, sg.ScopeIDs()...)
 		i++
 
 		// todo: avoid the next code and use OptionFactories to apply a signing method. Example in ratelimit package.
@@ -106,11 +107,11 @@ func PrepareOptions(be *Configuration) jwt.OptionFactoryFunc {
 
 		// WithSigningMethod must be added at the end of the slice to overwrite
 		// default signing methods
-		opts[i] = jwt.WithKey(sg.ScopeID(), key)
+		opts[i] = jwt.WithKey(key, sg.ScopeIDs()...)
 		i++
-		opts[i] = jwt.WithSigningMethod(sg.ScopeID(), signingMethod)
+		opts[i] = jwt.WithSigningMethod(signingMethod, sg.ScopeIDs()...)
 		i++
-		opts[i] = jwt.WithTriggerOptionFactories(sg.ScopeID(), false) // remove error and we've loaded everything
+		opts[i] = jwt.WithMarkPartiallyApplied(false, sg.ScopeIDs()...) // remove error and we've loaded everything
 		return opts[:]
 	}
 }

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/errors"
@@ -50,15 +51,12 @@ type ScopedConfig struct {
 	// templateTokenFunc to a create a new template token when parsing a byte
 	// token slice into the template token. Default value nil.
 	templateTokenFunc func() csjwt.Token
-
 	// UnauthorizedHandler gets called for invalid tokens. Returns the code
 	// http.StatusUnauthorized
 	UnauthorizedHandler mw.ErrorHandler
-
 	// StoreCodeFieldName optional custom key name used to lookup the claims section
 	// to find the store code, defaults to constant store.CodeFieldName.
 	StoreCodeFieldName string
-
 	// SingleTokenUsage if set to true for each request a token can be only used
 	// once. The JTI (JSON Token Identifier) gets added to the blacklist until it
 	// expires.
@@ -153,18 +151,20 @@ func (sc *ScopedConfig) initKeyFunc() {
 	}
 }
 
-func newScopedConfig() *ScopedConfig {
+func newScopedConfig(target, parent scope.TypeID) *ScopedConfig {
 	key := csjwt.WithPasswordRandom()
 	hs256, err := csjwt.NewSigningMethodHS256Fast(key)
 	if err != nil {
 		return &ScopedConfig{
 			scopedConfigGeneric: scopedConfigGeneric{
-				lastErr: errors.Wrap(err, "[jwt] defaultScopedConfig.NewHMACFast256"),
+				ScopeID:  target,
+				ParentID: parent,
+				lastErr:  errors.Wrap(err, "[jwt] defaultScopedConfig.NewHMACFast256"),
 			},
 		}
 	}
 	sc := &ScopedConfig{
-		scopedConfigGeneric: newScopedConfigGeneric(),
+		scopedConfigGeneric: newScopedConfigGeneric(target, parent),
 		Expire:              DefaultExpire,
 		Skew:                DefaultSkew,
 		Key:                 key,

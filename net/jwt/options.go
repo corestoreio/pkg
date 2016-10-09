@@ -32,8 +32,8 @@ import (
 //		- Signing Method HMAC SHA 256 (fast version from pkg csjwt)
 //		- HTTP error handler returns http.StatusUnauthorized
 //		- JTI disabled
-func WithDefaultConfig(id scope.TypeID) Option {
-	return withDefaultConfig(id)
+func WithDefaultConfig(scopeIDs ...scope.TypeID) Option {
+	return withDefaultConfig(scopeIDs...)
 }
 
 // WithBlacklist sets a new global black list service. Convenience helper
@@ -49,81 +49,49 @@ func WithBlacklist(bl Blacklister) Option {
 // when parsing a token in a request. Function f will generate a new base token
 // for each request. This allows you to choose using a slow map as a claim or a
 // fast struct based claim. Same goes with the header.
-func WithTemplateToken(id scope.TypeID, f func() csjwt.Token) Option {
+func WithTemplateToken(f func() csjwt.Token, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.templateTokenFunc = f
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithSigningMethod this option function lets you overwrite the default 256 bit
 // signing method for a specific scope. Used incorrectly token decryption can fail.
-func WithSigningMethod(id scope.TypeID, sm csjwt.Signer) Option {
+func WithSigningMethod(sm csjwt.Signer, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.SigningMethod = sm
 		sc.Verifier = csjwt.NewVerification(sm)
 		sc.initKeyFunc()
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithExpiration sets expiration duration depending on the scope
-func WithExpiration(id scope.TypeID, d time.Duration) Option {
+func WithExpiration(d time.Duration, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.Expire = d
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithSkew sets the duration of time skew we allow between signer and verifier.
 // Must be a positive value.
-func WithSkew(id scope.TypeID, d time.Duration) Option {
+func WithSkew(d time.Duration, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.Skew = d
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithKey sets the key for the default signing method of 256 bits.
 // You can also provide your own signing method by using additionally
 // the function WithSigningMethod(), which must be called after this function :-/.
-func WithKey(id scope.TypeID, key csjwt.Key) Option {
+func WithKey(key csjwt.Key, scopeIDs ...scope.TypeID) Option {
 	if key.Error != nil {
 		return func(s *Service) error {
 			return errors.Wrap(key.Error, "[jwt] Key Error")
@@ -135,14 +103,7 @@ func WithKey(id scope.TypeID, key csjwt.Key) Option {
 		}
 	}
 	return func(s *Service) (err error) {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.ScopeID = id
+		sc := s.findScopedConfig(scopeIDs...)
 
 		// if you are not satisfied with the bit size of 256 you can change it
 		// by using WithSigningMethod
@@ -164,63 +125,38 @@ func WithKey(id scope.TypeID, key csjwt.Key) Option {
 		sc.Verifier = csjwt.NewVerification(sc.SigningMethod)
 		sc.initKeyFunc()
 
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithStoreCodeFieldName sets the name of the key in the token claims section
 // to extract the store code.
-func WithStoreCodeFieldName(id scope.TypeID, name string) Option {
+func WithStoreCodeFieldName(name string, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.StoreCodeFieldName = name
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithUnauthorizedHandler adds a custom handler when a token cannot authorized to call the next handler in the chain.
 // The default unauthorized handler prints the error to the user and
 // returns a http.StatusUnauthorized.
-func WithUnauthorizedHandler(id scope.TypeID, uh mw.ErrorHandler) Option {
+func WithUnauthorizedHandler(uh mw.ErrorHandler, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.UnauthorizedHandler = uh
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithSingleTokenUsage if set to true for each request a token can be only used
 // once. The JTI (JSON Token Identifier) gets added to the blacklist until it
 // expires.
-func WithSingleTokenUsage(id scope.TypeID, enable bool) Option {
+func WithSingleTokenUsage(enable bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[id]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.SingleTokenUsage = enable
-		sc.ScopeID = id
-		s.scopeCache[id] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }

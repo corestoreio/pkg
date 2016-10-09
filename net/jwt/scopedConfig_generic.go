@@ -31,8 +31,9 @@ var defaultErrorHandler = mw.ErrorWithStatusCode(http.StatusServiceUnavailable)
 // should be embedded.
 type scopedConfigGeneric struct {
 	// lastErr used during selecting the config from the scopeCache map and
-	// inflight package.
-	lastErr error
+	// singleflight package.
+	lastErr  error
+	ParentID scope.TypeID
 	// ScopeID defines the scope to which this configuration is bound to.
 	ScopeID scope.TypeID
 	// Disabled set to true to disable the Service for this scope.
@@ -47,24 +48,12 @@ type scopedConfigGeneric struct {
 // newScopedConfigGeneric creates a new non-pointer generic config with a
 // default scope and an error handler which returns status service unavailable.
 // This function must be embedded in the targeted package newScopedConfig().
-func newScopedConfigGeneric() scopedConfigGeneric {
+func newScopedConfigGeneric(target, parent scope.TypeID) scopedConfigGeneric {
 	return scopedConfigGeneric{
-		ScopeID:      scope.DefaultTypeID,
+		ParentID:     parent,
+		ScopeID:      target,
 		ErrorHandler: defaultErrorHandler,
 	}
-}
-
-// optionInheritDefault looks up if the default configuration exists and if not
-// creates a newScopedConfig(). This function can only be used within a
-// functional option because it expects that it runs within an acquired lock
-// because of the map.
-func optionInheritDefault(s *Service) *ScopedConfig {
-	if sc, ok := s.scopeCache[scope.DefaultTypeID]; ok && sc != nil {
-		shallowCopy := new(ScopedConfig)
-		*shallowCopy = *sc
-		return shallowCopy
-	}
-	return newScopedConfig()
 }
 
 // isValidPreCheck internal pre-check for the public IsValid() function
