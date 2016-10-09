@@ -202,17 +202,17 @@ func (t TypeIDs) TargetAndParents() (target TypeID, parents TypeIDs) {
 		target = DefaultTypeID
 	} else {
 		target = t[0]
-		t = t[1:]
+		t = t[1:] // don't change original t, hence no pointer to t
 	}
 
 	// lookup the remaining parents if they contain the DefaultTypeID
 	containsDefault := false
 	for _, pID := range t {
-		if pID.Type() < target.Type() {
+		if pID.Type() < target.Type() || (pID == DefaultTypeID && !containsDefault) {
 			parents = append(parents, pID)
-		}
-		if pID == DefaultTypeID {
-			containsDefault = true
+			if pID == DefaultTypeID {
+				containsDefault = true
+			}
 		}
 	}
 	if !containsDefault {
