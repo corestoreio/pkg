@@ -20,25 +20,23 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// PrepareOptions creates a closure around the type Backend. The closure will be
+// PrepareOptionFactory creates a closure around the type Backend. The closure will be
 // used during a scoped request to figure out the configuration depending on the
 // incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Configuration) ratelimit.OptionFactoryFunc {
+func (be *Configuration) PrepareOptionFactory() ratelimit.OptionFactoryFunc {
 	return func(sg config.Scoped) []ratelimit.Option {
+		var opts []ratelimit.Option
 
-		opts := make([]ratelimit.Option, 0, 3)
-
-		disabled, scpHash, err := be.Disabled.Get(sg)
+		disabled, err := be.Disabled.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] RateLimitDisabled.Get"))
 		}
-		opts = append(opts, ratelimit.WithDisable(scpHash, disabled))
-
+		opts = append(opts, ratelimit.WithDisable(disabled, sg.ScopeIDs()...))
 		if disabled {
 			return opts
 		}
 
-		name, _, err := be.GCRAName.Get(sg)
+		name, err := be.GCRAName.Get(sg)
 		if err != nil {
 			return ratelimit.OptionsError(errors.Wrap(err, "[backendratelimit] RateLimitGCRAName.Get"))
 		}
