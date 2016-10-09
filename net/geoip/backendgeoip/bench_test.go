@@ -23,32 +23,37 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
+	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
 	"github.com/corestoreio/csfw/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
 
 func BenchmarkWithAlternativeRedirect(b *testing.B) {
+
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
 		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
 		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
-		backend.MaxmindLocalFile.MustFQ():                filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
+		backend.DataSource.MustFQ():                      "webservice",
+		backend.MaxmindWebserviceUserID.MustFQ():         "LiesschenMueller",
+		backend.MaxmindWebserviceLicense.MustFQ():        "8x4",
+		backend.MaxmindWebserviceTimeout.MustFQ():        "3s",
 	})
-	b.Run("LocalFile_NoCache", benchmarkWithAlternativeRedirect(cfgSrv))
+	//to fix the speed here ... BigCache_Gob must be optimized
+	b.Run("Webservice_BigCache_Gob", benchmarkWithAlternativeRedirect(cfgSrv))
 
 	cfgSrv = cfgmock.NewService(cfgmock.PathValue{
 		// @see structure.go why scope.Store and scope.Website can be used.
 		backend.AlternativeRedirect.MustFQStore(2):       `https://byebye.de.io`,
 		backend.AlternativeRedirectCode.MustFQWebsite(1): 307,
 		backend.AllowedCountries.MustFQStore(2):          "AT,CH",
-		backend.MaxmindWebserviceUserID.MustFQ():         "LiesschenMueller",
-		backend.MaxmindWebserviceLicense.MustFQ():        "8x4",
-		backend.MaxmindWebserviceTimeout.MustFQ():        "3s",
+		backend.DataSource.MustFQ():                      "file",
+		backend.MaxmindLocalFile.MustFQ():                filepath.Join("..", "testdata", "GeoIP2-Country-Test.mmdb"),
 	})
-	// to fix the speed here ... BigCache_Gob must be optimized
-	b.Run("Webservice_BigCache_Gob", benchmarkWithAlternativeRedirect(cfgSrv))
+	b.Run("LocalFile_NoCache", benchmarkWithAlternativeRedirect(cfgSrv))
+
 }
 
 func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B) {
@@ -57,6 +62,7 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 		if err != nil {
 			b.Fatal(err)
 		}
+
 		be := backendgeoip.New(cfgStruct)
 		be.Register(maxmindwebservice.NewOptionFactory(
 			&http.Client{
@@ -67,7 +73,12 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 			be.MaxmindWebserviceTimeout,
 			be.MaxmindWebserviceRedisURL,
 		))
+		be.Register(maxmindfile.NewOptionFactory(
+			be.MaxmindLocalFile,
+		))
+
 		geoSrv := geoip.MustNew(
+			geoip.WithRootConfig(cfgSrv),
 			geoip.WithOptionFactory(be.PrepareOptionFactory()),
 		)
 
@@ -99,10 +110,10 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 				})).ServeHTTP(rec, req)
 
 				if have, want := rec.Header().Get("Location"), `https://byebye.de.io`; have != want {
-					b.Errorf("Have %q Want %q", have, want)
+					b.Errorf("HTTP Location: Have %q Want %q", have, want)
 				}
 				if have, want := rec.Code, 307; have != want {
-					b.Errorf("Have %q Want %q", have, want)
+					b.Errorf("HTTP Status Code: Have %d Want %d\n\n%s", have, want, rec.Body)
 				}
 			}
 		})

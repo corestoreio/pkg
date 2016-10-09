@@ -1,4 +1,22 @@
-BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4         	  200000	     12469 ns/op	    4628 B/op	     135 allocs/op
-BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4   	  200000	      8881 ns/op	    6787 B/op	     113 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  200000	      9939 ns/op	    7236 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     11310 ns/op	    8820 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10086 ns/op	    8822 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10026 ns/op	    8823 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10074 ns/op	    8823 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10080 ns/op	    8822 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10058 ns/op	    8821 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10193 ns/op	    8823 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10109 ns/op	    8822 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/Webservice_BigCache_Gob-4         	  100000	     10108 ns/op	    8821 B/op	     119 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     15260 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     14735 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     15063 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     14008 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     14070 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     15286 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     14773 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     14084 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     14432 ns/op	    5109 B/op	     143 allocs/op
+BenchmarkWithAlternativeRedirect/LocalFile_NoCache-4               	  100000	     15524 ns/op	    5109 B/op	     143 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/geoip/backendgeoip	4.871s
+ok  	github.com/corestoreio/csfw/net/geoip/backendgeoip	31.773s

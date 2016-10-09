@@ -56,12 +56,11 @@ func (be *Configuration) PrepareOptionFactory() geoip.OptionFactoryFunc {
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] DataSource.Get"))
 		}
-
 		// source contains the configured geo location data source either file
 		// or webservice.
 		ofFnc, err := be.Lookup(source) // off = OptionFactoryFunc
 		if err != nil {
-			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] Backend.Lookup"))
+			return geoip.OptionsError(errors.Wrapf(err, "[backendgeoip] Backend.Lookup. Allowed DataSources: %s", be.DataSource.Source.String()))
 		}
 		return append(opts[:], ofFnc(sg)...)
 	}

@@ -38,12 +38,16 @@ func WithCountryFinder(filename string) geoip.Option {
 	}
 }
 
+// OptionName identifies this package within the register of the
+// backendgeoip.Configuration type.
+const OptionName = `file`
+
 // NewOptionFactory specifies the file on the server to retrieve geo
 // information. Alternatively you can choose the MaxMind web service via package
 // maxmind.NewOptionFactoryWebservice(). This function will be triggered when
 // you choose in backendgeoip.Configuration.DataSource the value `file`.
 func NewOptionFactory(maxmindLocalFile cfgmodel.Str) (optionName string, _ geoip.OptionFactoryFunc) {
-	return "file", func(sg config.Scoped) []geoip.Option {
+	return OptionName, func(sg config.Scoped) []geoip.Option {
 		mmlf, err := maxmindLocalFile.Get(sg)
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipMaxmindLocalFile.Get"))
