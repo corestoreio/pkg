@@ -25,7 +25,6 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/cors"
-	"github.com/corestoreio/csfw/net/cors/backendcors"
 	corstest "github.com/corestoreio/csfw/net/cors/internal"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
@@ -50,7 +49,7 @@ func TestConfiguration_Partially_HierarchicalConfig(t *testing.T) {
 			ExposedHeaders: exposedHeaders,
 		}, scope.Website.Pack(3)),
 		cors.WithMarkPartiallyApplied(true, scope.Website.Pack(3)),
-		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+		cors.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
 	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
 	assert.NoError(t, err, "%+v", err)
@@ -72,7 +71,7 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 	}).NewScoped(3, 0)
 
 	srv := cors.MustNew(
-		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+		cors.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
 	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
 	if err != nil {
@@ -96,7 +95,7 @@ func reqWithStore(method string) *http.Request {
 func newCorsService(pv cfgmock.PathValue) *cors.Service {
 	return cors.MustNew(
 		cors.WithRootConfig(cfgmock.NewService(pv)),
-		cors.WithOptionFactory(backendcors.PrepareOptions(backend)),
+		cors.WithOptionFactory(backend.PrepareOptionFactory()),
 		cors.WithServiceErrorHandler(mw.ErrorWithPanic),
 	)
 }
@@ -286,7 +285,7 @@ func TestBackend_Path_Errors(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		scpFnc := backendcors.PrepareOptions(backend)
+		scpFnc := backend.PrepareOptionFactory()
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			test.toPath(2): test.val,
 		})
