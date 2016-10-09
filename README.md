@@ -117,10 +117,29 @@ $ go test -gcflags="-d=ssa/check_bce/debug=1" .
 
 Success - Check bounds outside the loop. 
 
+### Running Benchmark
+
+Assuming we have already an existing file called `bm_baseline.txt`.
+
+```
+$ go test -v -run=🤐 -bench=. -count=10 . > bm_baseline_new.txt
+```
+
+After running above command to generate the second benchmark statistics file
+we run:
+
+```
+$ benchstat bm_baseline.txt bm_baseline_new.txt
+```
+
+[https://godoc.org/rsc.io/benchstat](https://godoc.org/rsc.io/benchstat)
+
 #### Other development helpers
 
 - [go get github.com/maruel/panicparse/cmd/pp](https://github.com/maruel/panicparse)
 - [go get github.com/alecthomas/gometalinter](https://github.com/alecthomas/gometalinter)
+
+A preconfigured linter file `lint` has been included in this repoistory.
 
 ## TODO
 
