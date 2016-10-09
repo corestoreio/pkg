@@ -167,10 +167,10 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 		val    interface{}
 		errBhf errors.BehaviourFunc
 	}{
-		{backend.MaxmindWebserviceUserID.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceLicense.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceTimeout.MustFQ(), struct{}{}, errors.IsNotValid},
-		{backend.MaxmindWebserviceRedisURL.MustFQ(), struct{}{}, errors.IsNotValid},
+		0: {backend.MaxmindWebserviceUserID.MustFQ(), struct{}{}, errors.IsNotValid},
+		1: {backend.MaxmindWebserviceLicense.MustFQ(), struct{}{}, errors.IsNotValid},
+		2: {backend.MaxmindWebserviceTimeout.MustFQ(), struct{}{}, errors.IsNotValid},
+		3: {backend.MaxmindWebserviceRedisURL.MustFQ(), struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 
@@ -212,20 +212,3 @@ func TestNewOptionFactory_Invalid_ConfigValue(t *testing.T) {
 	assert.True(t, errors.IsNotValid(err), " Error: %+v", err)
 	assert.Contains(t, err.Error(), `Incomplete WebService configuration: User: "" License "" Ti`)
 }
-
-//func TestNewOptionFactoryGeoSourceFile_Empty_ConfigValue(t *testing.T) {
-//	name, off := backendgeoip.NewOptionFactoryGeoSourceFile(backend.MaxmindLocalFile)
-//	assert.Exactly(t, `file`, name)
-//
-//	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-//		backend.MaxmindLocalFile.MustFQ(): "",
-//	})
-//
-//	gs := geoip.MustNew(
-//		geoip.WithRootConfig(cfgSrv),
-//		geoip.WithOptionFactory(off),
-//	)
-//	assert.NoError(t, gs.ClearCache())
-//	_, err := gs.ConfigByScope(0, 0)
-//	assert.True(t, errors.IsEmpty(err), " Error: %+v", err)
-//}

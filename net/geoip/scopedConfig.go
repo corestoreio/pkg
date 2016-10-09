@@ -25,10 +25,6 @@ import (
 // configuration has been bound to.
 type ScopedConfig struct {
 	scopedConfigGeneric
-
-	// Disabled set to true to disable GeoIP Service for this scope.
-	Disabled bool
-
 	// AllowedCountries a slice which contains all allowed countries. An
 	// incoming request for a scope checks if the country for an IP is contained
 	// within this slice. Empty slice means that all countries are allowed. The
@@ -36,16 +32,15 @@ type ScopedConfig struct {
 	AllowedCountries []string
 	// IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
 	// allowed to process the request.
-	isAllowedFn IsAllowedFunc // func(s scope.Hash, c *Country, allowedCountries []string) error
-
+	IsAllowedFunc // func(s scope.Hash, c *Country, allowedCountries []string) error
 	// AlternativeHandler if ip/country is denied we call this handler.
 	AlternativeHandler mw.ErrorHandler
 }
 
-func newScopedConfig() *ScopedConfig {
+func newScopedConfig(target, parent scope.TypeID) *ScopedConfig {
 	sc := &ScopedConfig{
-		scopedConfigGeneric: newScopedConfigGeneric(),
-		isAllowedFn: func(_ scope.TypeID, c *Country, allowedCountries []string) error {
+		scopedConfigGeneric: newScopedConfigGeneric(target, parent),
+		IsAllowedFunc: func(_ scope.TypeID, c *Country, allowedCountries []string) error {
 			for _, ac := range allowedCountries {
 				if ac == c.Country.IsoCode { // case sensitive matching
 					return nil
@@ -67,8 +62,8 @@ func (sc *ScopedConfig) isValid() error {
 	if sc.Disabled {
 		return nil
 	}
-	if sc.isAllowedFn == nil || sc.AlternativeHandler == nil {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.isAllowedFn == nil, sc.AlternativeHandler == nil)
+	if sc.IsAllowedFunc == nil || sc.AlternativeHandler == nil {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.IsAllowedFunc == nil, sc.AlternativeHandler == nil)
 	}
 	return nil
 }
@@ -82,5 +77,5 @@ func (sc *ScopedConfig) IsAllowed(c *Country) error {
 	if len(sc.AllowedCountries) == 0 {
 		return nil
 	}
-	return sc.isAllowedFn(sc.ScopeID, c, sc.AllowedCountries)
+	return sc.IsAllowedFunc(sc.ScopeID, c, sc.AllowedCountries)
 }

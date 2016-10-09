@@ -80,7 +80,7 @@ func TestNewService_WithGeoIP2File_Atomic(t *testing.T) {
 func TestNewService_WithGeoIP2Webservice_Atomic(t *testing.T) {
 	logBuf := &bytes.Buffer{}
 	s, err := geoip.New(
-		geoip.WithLogger(logw.NewLog(logw.WithWriter(logBuf), logw.WithLevel(logw.LevelDebug))),
+		geoip.WithDebugLog(logBuf),
 		maxmindwebservice.WithCountryFinder(nil, "a", "b", 1),
 	)
 	defer func() {
@@ -124,7 +124,7 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 
 	t.Run("Scope_Default", func(t *testing.T) {
 
-		if err := s.Options(geoip.WithAllowedCountryCodes(scope.DefaultTypeID, "US")); err != nil {
+		if err := s.Options(geoip.WithAllowedCountryCodes([]string{"US"})); err != nil {
 			t.Fatal(err)
 		}
 
@@ -152,8 +152,8 @@ func TestNewServiceWithCheckAllow(t *testing.T) {
 		}
 
 		if err := s.Options(
-			geoip.WithCheckAllow(scopeID, isAllowed),
-			geoip.WithAllowedCountryCodes(scopeID, "ABC"),
+			geoip.WithCheckAllow(isAllowed, scopeID),
+			geoip.WithAllowedCountryCodes([]string{"ABC"}, scopeID),
 		); err != nil {
 			t.Fatalf("%+v", err)
 		}

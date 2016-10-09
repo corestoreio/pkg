@@ -119,7 +119,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 			geoip.WithDebugLog(logBuf),
 			geoip.WithOptionFactory(scpFnc),
 			geoip.WithServiceErrorHandler(mw.ErrorWithPanic),
-			geoip.WithErrorHandler(scope.DefaultTypeID, mw.ErrorWithPanic),
+			geoip.WithErrorHandler(mw.ErrorWithPanic), //  Default Scope ;-)
 		)
 
 		// if you try to set the allowed countries with this option, they get

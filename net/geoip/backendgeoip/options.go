@@ -34,7 +34,7 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 		if err != nil {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAllowedCountries.Get"))
 		}
-		opts[i] = geoip.WithAllowedCountryCodes(sg.ScopeID(), acc...)
+		opts[i] = geoip.WithAllowedCountryCodes(acc, sg.ScopeIDs()...)
 		i++
 
 		// REDIRECT TO ALTERNATIVE URL
@@ -47,7 +47,7 @@ func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
 			return geoip.OptionsError(errors.Wrap(err, "[backendgeoip] NetGeoipAlternativeRedirectCode.Get"))
 		}
 		if arCode > 0 && arURL != nil {
-			opts[i] = geoip.WithAlternativeRedirect(sg.ScopeID(), arURL.String(), arCode)
+			opts[i] = geoip.WithAlternativeRedirect(arURL.String(), arCode, sg.ScopeIDs()...)
 		}
 		i++
 

@@ -14,11 +14,8 @@
 
 package geoip
 
-import "github.com/corestoreio/csfw/util/errors"
-
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-var errConfigNotFound = errors.NewNotFoundf(`[geoip] ScopedConfig not available`)
-
+const errConfigNotFound = `[geoip] ScopedConfig for %s not available`
 const errConfigScopeIDNotSet = `[geoip] ScopeID not set`
 const errConfigMarkedAsPartiallyLoaded = `[geoip] Scoped configuration %s marked as partially loaded.`
