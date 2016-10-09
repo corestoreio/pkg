@@ -17,9 +17,8 @@ package runmode
 import (
 	"net"
 	"net/http"
-	"time"
-
 	"strings"
+	"time"
 
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -67,7 +66,7 @@ func (e *ProcessStoreCodeCookie) keyURLFN() (string, string) {
 // back to the cookie name defined in field FieldName. Valid has three values: 0
 // not valid, 10 valid and code found in GET query string, 20 valid and code
 // found in cookie. Implements interface store.CodeProcessor.
-func (e *ProcessStoreCodeCookie) FromRequest(_ scope.Hash, req *http.Request) string {
+func (e *ProcessStoreCodeCookie) FromRequest(_ scope.TypeID, req *http.Request) string {
 	fn, fnK := e.keyURLFN()
 	if strings.Contains(req.URL.RawQuery, fnK) {
 		code := req.URL.Query().Get(fn)
@@ -151,7 +150,7 @@ func (a *ProcessStoreCodeCookie) deleteStoreCookie(w http.ResponseWriter, r *htt
 
 // ProcessDenied deletes the store code cookie, if a store cookie can be found.
 // Implements interface store.CodeProcessor.
-func (a *ProcessStoreCodeCookie) ProcessDenied(_ scope.Hash, _, _ int64, w http.ResponseWriter, r *http.Request) {
+func (a *ProcessStoreCodeCookie) ProcessDenied(_ scope.TypeID, _, _ int64, w http.ResponseWriter, r *http.Request) {
 	// if store code found in cookie and not valid anymore, delete the cookie.
 	if c := a.fromCookie(r); c != "" {
 		a.deleteStoreCookie(w, r)
@@ -161,7 +160,7 @@ func (a *ProcessStoreCodeCookie) ProcessDenied(_ scope.Hash, _, _ int64, w http.
 // ProcessAllowed deletes the store code cookie if found and stores are equal or
 // sets a store code cookie if the stores differ. Implements interface
 // store.CodeProcessor.
-func (a *ProcessStoreCodeCookie) ProcessAllowed(_ scope.Hash, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request) {
+func (a *ProcessStoreCodeCookie) ProcessAllowed(_ scope.TypeID, oldStoreID, newStoreID int64, newStoreCode string, w http.ResponseWriter, r *http.Request) {
 	c := a.fromCookie(r)
 
 	if c != "" && oldStoreID == newStoreID {
@@ -178,10 +177,10 @@ func (a *ProcessStoreCodeCookie) ProcessAllowed(_ scope.Hash, oldStoreID, newSto
 
 type nullCodeProcessor struct{}
 
-func (nc nullCodeProcessor) FromRequest(_ scope.Hash, _ *http.Request) string { return "" }
-func (nc nullCodeProcessor) ProcessDenied(_ scope.Hash, _, _ int64, _ http.ResponseWriter, _ *http.Request) {
+func (nc nullCodeProcessor) FromRequest(_ scope.TypeID, _ *http.Request) string { return "" }
+func (nc nullCodeProcessor) ProcessDenied(_ scope.TypeID, _, _ int64, _ http.ResponseWriter, _ *http.Request) {
 }
-func (nc nullCodeProcessor) ProcessAllowed(_ scope.Hash, _, _ int64, _ string, _ http.ResponseWriter, _ *http.Request) {
+func (nc nullCodeProcessor) ProcessAllowed(_ scope.TypeID, _, _ int64, _ string, _ http.ResponseWriter, _ *http.Request) {
 }
 
 var _ store.CodeProcessor = (*nullCodeProcessor)(nil)
