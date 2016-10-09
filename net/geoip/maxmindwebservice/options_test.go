@@ -139,7 +139,7 @@ func testBackend_WithGeoIP2Webservice_Redis(
 			return req
 		}()
 
-		scpFnc := backendgeoip.PrepareOptions(backend)
+		scpFnc := backend.PrepareOptionFactory()
 		if err := geoSrv.Options(scpFnc(cfgScp)...); err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -181,7 +181,7 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 
 		gs := geoip.MustNew(
 			geoip.WithRootConfig(cfgSrv),
-			geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
+			geoip.WithOptionFactory(backend.PrepareOptionFactory()),
 		)
 		assert.NoError(t, gs.ClearCache())
 		_, err := gs.ConfigByScope(0, 0)
@@ -205,7 +205,7 @@ func TestNewOptionFactory_Invalid_ConfigValue(t *testing.T) {
 
 	gs := geoip.MustNew(
 		geoip.WithRootConfig(cfgSrv),
-		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
+		geoip.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
 	//assert.NoError(t, gs.ClearCache())
 	_, err := gs.ConfigByScope(1, 0)

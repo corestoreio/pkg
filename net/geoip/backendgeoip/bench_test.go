@@ -68,7 +68,7 @@ func benchmarkWithAlternativeRedirect(cfgSrv *cfgmock.Service) func(b *testing.B
 			be.MaxmindWebserviceRedisURL,
 		))
 		geoSrv := geoip.MustNew(
-			geoip.WithOptionFactory(backendgeoip.PrepareOptions(be)),
+			geoip.WithOptionFactory(be.PrepareOptionFactory()),
 		)
 
 		// Germany is not allowed and must be redirected to https://byebye.de.io with code 307

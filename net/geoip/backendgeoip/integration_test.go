@@ -46,7 +46,7 @@ func TestConfiguration_UnregisteredOptionFactoryFunc(t *testing.T) {
 	scpCfgSrv := cfgmock.NewService().NewScoped(1, 3)
 
 	srv := geoip.MustNew(
-		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
+		geoip.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
 	_, err := srv.ConfigByScopedGetter(scpCfgSrv)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
@@ -62,7 +62,7 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 	}).NewScoped(1, 3)
 
 	srv := geoip.MustNew(
-		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
+		geoip.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
 	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
 	assert.NoError(t, err, "%+v", err)
@@ -113,7 +113,7 @@ func backend_WithAlternativeRedirect(cfgSrv *cfgmock.Service) func(*testing.T) {
 		))
 		be.Register(maxmindfile.NewOptionFactory(be.MaxmindLocalFile))
 
-		scpFnc := backendgeoip.PrepareOptions(be)
+		scpFnc := be.PrepareOptionFactory()
 		geoSrv := geoip.MustNew(
 			geoip.WithRootConfig(cfgSrv),
 			geoip.WithDebugLog(logBuf),
@@ -186,7 +186,7 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 
 		gs := geoip.MustNew(
 			geoip.WithRootConfig(cfgSrv),
-			geoip.WithOptionFactory(backendgeoip.PrepareOptions(be)),
+			geoip.WithOptionFactory(be.PrepareOptionFactory()),
 		)
 		assert.NoError(t, gs.ClearCache())
 		_, err = gs.ConfigByScope(0, 0)

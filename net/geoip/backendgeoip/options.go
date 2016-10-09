@@ -20,10 +20,11 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// PrepareOptions creates a closure around the type Backend. The closure will be
-// used during a scoped request to figure out the configuration depending on the
-// incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Configuration) geoip.OptionFactoryFunc {
+// PrepareOptionFactory creates a closure around the type Backend. The closure
+// will be used during a scoped request to figure out the configuration
+// depending on the incoming scope. An option array will be returned by the
+// closure.
+func (be *Configuration) PrepareOptionFactory() geoip.OptionFactoryFunc {
 	return func(sg config.Scoped) []geoip.Option {
 		var (
 			opts [6]geoip.Option

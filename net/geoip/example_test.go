@@ -66,7 +66,7 @@ func ExampleService_WithIsCountryAllowedByIP() {
 	geoSrv := geoip.MustNew(
 		geoip.WithRootConfig(cfgSrv),
 		geoip.WithDebugLog(logBuf),
-		geoip.WithOptionFactory(backendgeoip.PrepareOptions(backend)),
+		geoip.WithOptionFactory(backend.PrepareOptionFactory()),
 		// Just for testing and in this example, we let the HTTP Handler panicking on any
 		// error. You should not do that in production apps.
 		geoip.WithServiceErrorHandler(mw.ErrorWithPanic),
