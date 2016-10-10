@@ -17,7 +17,6 @@ package backendsigned
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/signed"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -31,57 +30,47 @@ func (be *Configuration) PrepareOptionFactory() signed.OptionFactoryFunc {
 			opts [5]signed.Option
 			i    int // used as index in opts
 		)
-		h := scope.MakeTypeID(sg.ScopeID())
 
-		// i think there is a bug with the scpHash because scpHash returns that
-		// hash in which scope the value has been found. for example we have 2
-		// websites with each 2 stores. those 4 stores are configured for
-		// signing. so we have for each store scope in the scopeCache map an
-		// entry. if we now disable the signing for a website then it won't be
-		// disabled for the store scopes because it won't fall back to website
-		// as we have found an entry in the store scope in the ScopeCache map.
-		// hence the solution would be to use the hash value from sg.Scope()
-
-		disabled, _, err := be.Disabled.Get(sg)
+		disabled, err := be.Disabled.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Disabled.Get"))
 		}
-		opts[i] = signed.WithDisable(h, disabled)
+		opts[i] = signed.WithDisable(disabled, sg.ScopeIDs()...)
 		i++
 		if disabled {
 			return opts[:i]
 		}
 
-		inTrailer, _, err := be.InTrailer.Get(sg)
+		inTrailer, err := be.InTrailer.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] InTrailer.Get"))
 		}
-		opts[i] = signed.WithTrailer(h, inTrailer)
+		opts[i] = signed.WithTrailer(inTrailer, sg.ScopeIDs()...)
 		i++
 
-		methods, _, err := be.AllowedMethods.Get(sg)
+		methods, err := be.AllowedMethods.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] AllowedMethods.Get"))
 		}
-		opts[i] = signed.WithAllowedMethods(h, methods...)
+		opts[i] = signed.WithAllowedMethods(methods, sg.ScopeIDs()...)
 		i++
 
-		key, _, err := be.Key.Get(sg)
+		key, err := be.Key.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Key.Obscure.Get"))
 		}
-		alg, _, err := be.Algorithm.Get(sg)
+		alg, err := be.Algorithm.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] Algorithm.Str.Get"))
 		}
-		opts[i] = signed.WithHash(h, alg, key)
+		opts[i] = signed.WithHash(alg, key, sg.ScopeIDs()...)
 		i++
 
-		keyID, _, err := be.KeyID.Get(sg)
+		keyID, err := be.KeyID.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] KeyID.Str.Get"))
 		}
-		header, _, err := be.HTTPHeaderType.Get(sg)
+		header, err := be.HTTPHeaderType.Get(sg)
 		if err != nil {
 			return signed.OptionsError(errors.Wrap(err, "[backendsigned] HTTPHeaderType.Str.Get"))
 		}
@@ -97,7 +86,7 @@ func (be *Configuration) PrepareOptionFactory() signed.OptionFactoryFunc {
 		default:
 			return signed.OptionsError(errors.NewNotImplementedf("[backendsigned] HTTPHeaderType %q not implemented", header))
 		}
-		opts[i] = signed.WithHeaderHandler(h, hpw)
+		opts[i] = signed.WithHeaderHandler(hpw, sg.ScopeIDs()...)
 		i++
 
 		return opts[:]

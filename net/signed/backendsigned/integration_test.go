@@ -15,25 +15,28 @@
 package backendsigned_test
 
 import (
-	"testing"
-
 	"bytes"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"time"
-
+	"crypto/sha256"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/signed"
-	"github.com/corestoreio/csfw/net/signed/backendsigned"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
 )
 
 var testData = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
+
+func init() {
+	hashpool.Register("sha256", sha256.New)
+}
 
 func TestConfiguration_Path_Errors(t *testing.T) {
 	tests := []struct {
@@ -51,7 +54,7 @@ func TestConfiguration_Path_Errors(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		scpFnc := backendsigned.PrepareOptions(backend)
+		scpFnc := backend.PrepareOptionFactory()
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 			test.toPathW(2): test.val,
 		})
@@ -70,9 +73,12 @@ func TestConfiguration_HierarchicalConfig(t *testing.T) {
 	}).NewScoped(1, 3)
 
 	srv := signed.MustNew(
-		signed.WithOptionFactory(backendsigned.PrepareOptions(backend)),
+		signed.WithOptionFactory(backend.PrepareOptionFactory()),
 	)
-	scpCfg := srv.ConfigByScopedGetter(scpCfgSrv)
+	scpCfg, err := srv.ConfigByScopedGetter(scpCfgSrv)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
 
 	assert.Exactly(t, []string{`PATCH`, `DELETE`}, scpCfg.AllowedMethods)
 	assert.False(t, scpCfg.InTrailer)
@@ -158,7 +164,7 @@ func testBackendConfiguration(
 	var baseOpts = []signed.Option{
 		signed.WithRootConfig(cfgmock.NewService(pv)),
 		signed.WithDebugLog(logBuf),
-		signed.WithOptionFactory(backendsigned.PrepareOptions(backend)),
+		signed.WithOptionFactory(backend.PrepareOptionFactory()),
 	}
 
 	srv := signed.MustNew(append(baseOpts, opts...)...)
