@@ -17,33 +17,43 @@ package backendsigned_test
 import (
 	"testing"
 
+	"bytes"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"time"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/signed"
 	"github.com/corestoreio/csfw/net/signed/backendsigned"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBackend_Path_Errors(t *testing.T) {
+var testData = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
+
+func TestConfiguration_Path_Errors(t *testing.T) {
 	tests := []struct {
-		toPath func(s scope.Scope, scopeID int64) string
-		val    interface{}
-		errBhf errors.BehaviourFunc
+		toPathW func(scopeID int64) string
+		val     interface{}
+		errBhf  errors.BehaviourFunc
 	}{
-		0: {backend.Disabled.MustFQ, struct{}{}, errors.IsNotValid},
-		1: {backend.InTrailer.MustFQ, struct{}{}, errors.IsNotValid},
-		2: {backend.AllowedMethods.MustFQ, struct{}{}, errors.IsNotValid},
-		3: {backend.Key.MustFQ, struct{}{}, errors.IsNotValid},
-		4: {backend.Algorithm.MustFQ, struct{}{}, errors.IsNotValid},
-		5: {backend.HTTPHeaderType.MustFQ, struct{}{}, errors.IsNotValid},
-		6: {backend.KeyID.MustFQ, struct{}{}, errors.IsNotValid},
+		0: {backend.Disabled.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		1: {backend.InTrailer.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		2: {backend.AllowedMethods.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		3: {backend.Key.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		4: {backend.Algorithm.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		5: {backend.HTTPHeaderType.MustFQWebsite, struct{}{}, errors.IsNotValid},
+		6: {backend.KeyID.MustFQWebsite, struct{}{}, errors.IsNotValid},
 	}
 	for i, test := range tests {
 
 		scpFnc := backendsigned.PrepareOptions(backend)
 		cfgSrv := cfgmock.NewService(cfgmock.PathValue{
-			test.toPath(scope.Website, 2): test.val,
+			test.toPathW(2): test.val,
 		})
 		cfgScp := cfgSrv.NewScoped(2, 0)
 
@@ -52,7 +62,23 @@ func TestBackend_Path_Errors(t *testing.T) {
 	}
 }
 
-//func TestBackend_GCRA_Not_Registered(t *testing.T) {
+func TestConfiguration_HierarchicalConfig(t *testing.T) {
+
+	scpCfgSrv := cfgmock.NewService(cfgmock.PathValue{
+		backend.AllowedMethods.MustFQWebsite(1): `PATCH,DELETE`,
+		backend.InTrailer.MustFQStore(3):        0,
+	}).NewScoped(1, 3)
+
+	srv := signed.MustNew(
+		signed.WithOptionFactory(backendsigned.PrepareOptions(backend)),
+	)
+	scpCfg := srv.ConfigByScopedGetter(scpCfgSrv)
+
+	assert.Exactly(t, []string{`PATCH`, `DELETE`}, scpCfg.AllowedMethods)
+	assert.False(t, scpCfg.InTrailer)
+}
+
+//func TestConfiguration_GCRA_Not_Registered(t *testing.T) {
 //	testBackendConfiguration(t, "panic",
 //		cfgmock.PathValue{},
 //		func(rec *httptest.ResponseRecorder) {
@@ -67,25 +93,8 @@ func TestBackend_Path_Errors(t *testing.T) {
 //	)
 //}
 //
-//func TestBackend_WithDisable(t *testing.T) {
 //
-//	testBackendConfiguration(t, "panic",
-//		cfgmock.PathValue{
-//			backend.Disabled.MustFQ(scope.Website, 1): 1,
-//		},
-//		func(rec *httptest.ResponseRecorder) {
-//			assert.Exactly(t, http.StatusTeapot, rec.Code)
-//		},
-//		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//			w.WriteHeader(http.StatusTeapot)
-//		}),
-//		true, // do test logger
-//		signed.WithVaryBy(scope.Website, 1, pathGetter{}),
-//		signed.WithRateLimiter(scope.Website, 1, stubLimiter{}),
-//	)
-//}
-//
-//func TestBackend_WithGCRAMemStore(t *testing.T) {
+//func TestConfiguration_WithGCRAMemStore(t *testing.T) {
 //	var countDenied = new(int32)
 //	var countAllowed = new(int32)
 //
@@ -132,56 +141,56 @@ func TestBackend_Path_Errors(t *testing.T) {
 //		t.Errorf("Allowed Have: %v Want: %v", have, want)
 //	}
 //}
-//
-//func testBackendConfiguration(
-//	t *testing.T, httpRequestURL string,
-//	pv cfgmock.PathValue,
-//	assertResponse func(*httptest.ResponseRecorder),
-//	nextH http.Handler,
-//	testLogger bool,
-//	opts ...signed.Option,
-//) {
-//
-//	var logBuf log.MutexBuffer
-//	const httpUsers = 3
-//	const httpLoops = 3
-//
-//	var baseOpts = []signed.Option{
-//		signed.WithRootConfig(cfgmock.NewService(pv)),
-//		signed.WithLogger(logw.NewLog(logw.WithWriter(&logBuf), logw.WithLevel(logw.LevelDebug))),
-//		signed.WithOptionFactory(backendsigned.PrepareOptions(backend)),
-//	}
-//
-//	srv := signed.MustNew(append(baseOpts, opts...)...)
-//
-//	srv.ErrorHandler = func(err error) http.Handler {
-//		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//			w.WriteHeader(http.StatusTeapot)
-//			assert.True(t, errors.IsNotFound(err), "%+v", err)
-//		})
-//	}
-//
-//	req := func() *http.Request {
-//		req, _ := http.NewRequest("GET", httpRequestURL, nil)
-//		req.RemoteAddr = "2a02:d180::"
-//		return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // website=euro store=at
-//	}()
-//
-//	hpu := cstesting.NewHTTPParallelUsers(httpUsers, httpLoops, 600, time.Millisecond)
-//	hpu.AssertResponse = assertResponse
-//
-//	// Food for the race detector
-//	hpu.ServeHTTP(req, srv.WithRateLimit(nextH))
-//
-//	if testLogger {
-//		// Min 20 calls IsValid
-//		// Exactly one call to optionInflight.Do
-//		if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.IsValid`), (httpUsers*httpLoops)-1; have < want {
-//			t.Errorf("Service.ConfigByScopedGetter.IsValid: Have: %d < Want: %d", have, want)
-//		}
-//		if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.Inflight.Do`), 1; have != want {
-//			t.Errorf("Service.ConfigByScopedGetter.Inflight.Do: Have: %d Want: %d", have, want)
-//		}
-//		// println("\n", logBuf.String(), "\n")
-//	}
-//}
+
+func testBackendConfiguration(
+	t *testing.T, httpRequestURL string,
+	pv cfgmock.PathValue,
+	assertResponse func(*httptest.ResponseRecorder),
+	nextH http.Handler,
+	testLogger bool,
+	opts ...signed.Option,
+) {
+
+	logBuf := new(log.MutexBuffer)
+	const httpUsers = 1
+	const httpLoops = 1
+
+	var baseOpts = []signed.Option{
+		signed.WithRootConfig(cfgmock.NewService(pv)),
+		signed.WithDebugLog(logBuf),
+		signed.WithOptionFactory(backendsigned.PrepareOptions(backend)),
+	}
+
+	srv := signed.MustNew(append(baseOpts, opts...)...)
+
+	srv.ErrorHandler = func(err error) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusTeapot)
+			assert.True(t, errors.IsNotFound(err), "%+v", err)
+		})
+	}
+
+	req := func() *http.Request {
+		req, _ := http.NewRequest("GET", httpRequestURL, bytes.NewReader(testData))
+		req.RemoteAddr = "2a02:d180::"
+		return req.WithContext(scope.WithContext(req.Context(), 1, 2)) // website=euro store=at
+	}()
+
+	hpu := cstesting.NewHTTPParallelUsers(httpUsers, httpLoops, 600, time.Millisecond)
+	hpu.AssertResponse = assertResponse
+
+	// Food for the race detector
+	hpu.ServeHTTP(req, srv.WithResponseSignature(nextH))
+
+	if testLogger {
+		// Min 20 calls IsValid
+		// Exactly one call to optionInflight.Do
+		if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.IsValid`), (httpUsers*httpLoops)-1; have < want {
+			t.Errorf("Service.ConfigByScopedGetter.IsValid: Have: %d < Want: %d", have, want)
+		}
+		if have, want := strings.Count(logBuf.String(), `Service.ConfigByScopedGetter.Inflight.Do`), 1; have != want {
+			t.Errorf("Service.ConfigByScopedGetter.Inflight.Do: Have: %d Want: %d", have, want)
+		}
+		// println("\n", logBuf.String(), "\n")
+	}
+}

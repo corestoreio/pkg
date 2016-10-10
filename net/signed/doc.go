@@ -15,7 +15,8 @@
 // Package signed provides a middleware to sign responses and validate requests.
 //
 // The middlewares can add the signature to the HTTP header or to the HTTP
-// trailer.
+// trailer or stores them internally. Store the hashes internally allows a
+// transparent validation mechanism.
 //
 // With the use of HTTPS between two parties this package might not be needed.
 //

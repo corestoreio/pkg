@@ -28,25 +28,17 @@ import (
 // 256 from a cryptographically random source with a length of 64 bytes.
 // Example:
 //		s := MustNewService(WithDefaultConfig(scope.Store,1), WithOtherSettings(scope.Store, 1, ...))
-func WithDefaultConfig(h scope.Hash) Option {
+func WithDefaultConfig(h scope.TypeID) Option {
 	return withDefaultConfig(h)
 }
 
 // WithHash sets the hashing algorithm to create a new hash and verify an
 // incoming hash. Please use only cryptographically secure hash algorithms.
-func WithHash(h scope.Hash, name string, key []byte) Option {
+func WithHash(name string, key []byte, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.hashPoolInit(name, key)
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
@@ -54,94 +46,45 @@ func WithHash(h scope.Hash, name string, key []byte) Option {
 // write the hash value into the HTTP header. The parser knows how and where to
 // extract the hash value from the header or even the trailer. Compatible types
 // in this package are ContentHMAC, ContentSignature and Transparent.
-func WithHeaderHandler(h scope.Hash, pw HeaderParseWriter) Option {
+func WithHeaderHandler(pw HeaderParseWriter, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.HeaderParseWriter = pw
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
-	}
-}
-
-// WithDisable allows to disable a signing of the HTTP body or validation.
-func WithDisable(h scope.Hash, isDisabled bool) Option {
-	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
-		sc.Disabled = isDisabled
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithAllowedMethods sets the allowed HTTP methods which can transport a
 // signature hash.
-func WithAllowedMethods(h scope.Hash, methods ...string) Option {
+func WithAllowedMethods(methods []string, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.AllowedMethods = methods
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithTrailer allows to write the hash sum into the trailer. The middleware switches
 // to stream based hash calculation which results in faster processing instead of writing
 // into a buffer. Make sure that your client can process HTTP trailers.
-func WithTrailer(h scope.Hash, inTrailer bool) Option {
+func WithTrailer(inTrailer bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.InTrailer = inTrailer
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithTransparent allows to write the hashes into the Cacher with a
 // time-to-live. Responses will not get a header key attached and requests won't
 // get inspected for a header key which might contain the hash value.
-func WithTransparent(h scope.Hash, c Cacher, ttl time.Duration) Option {
+func WithTransparent(c Cacher, ttl time.Duration, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.TransparentCacher = c
 		sc.HeaderParseWriter = MakeTransparent(c, ttl)
 		sc.TransparentTTL = ttl
 		sc.InTrailer = true // enable streaming hash calculation
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
 	}
 }

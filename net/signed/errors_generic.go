@@ -14,8 +14,8 @@
 
 package signed
 
-import "github.com/corestoreio/csfw/util/errors"
-
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
-var errConfigNotFound = errors.NewNotFoundf(`[signed] ScopedConfig not available`)
+const errConfigNotFound = `[signed] ScopedConfig for %s not available`
+const errConfigScopeIDNotSet = `[signed] ScopeID not set`
+const errConfigMarkedAsPartiallyLoaded = `[signed] Scoped configuration %s marked as partially loaded.`

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/responseproxy"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/hashpool"
@@ -67,9 +68,9 @@ type ScopedConfig struct {
 // Default settings: InTrailer activated, Content-HMAC header with sha256,
 // allowed HTTP methods set to POST, PUT, PATCH and password for the HMAC SHA
 // 256 from a cryptographically random source with a length of 64 bytes.
-func newScopedConfig() *ScopedConfig {
+func newScopedConfig(target, parent scope.TypeID) *ScopedConfig {
 	sc := &ScopedConfig{
-		scopedConfigGeneric: newScopedConfigGeneric(),
+		scopedConfigGeneric: newScopedConfigGeneric(target, parent),
 		InTrailer:           true,
 		HeaderParseWriter:   NewContentHMAC(DefaultHashName),
 		AllowedMethods:      []string{"POST", "PUT", "PATCH"},
@@ -89,18 +90,18 @@ func (sc *ScopedConfig) hashPoolInit(name string, key []byte) {
 	sc.lastErr = errors.Wrapf(sc.lastErr, "[signed] The hash %q has not yet been registered via hashpool.Register() function.", name)
 }
 
-// IsValid a configuration for a scope is only then valid when several fields
+// isValid a configuration for a scope is only then valid when several fields
 // are not empty: HeaderParseWriter and AllowedMethods OR disabled for current
 // scope.
-func (sc *ScopedConfig) IsValid() error {
-	if sc.lastErr != nil {
-		return errors.Wrap(sc.lastErr, "[signed] scopedConfig.isValid has an lastErr")
+func (sc *ScopedConfig) isValid() error {
+	if err := sc.isValidPreCheck(); err != nil {
+		return errors.Wrap(err, "[signed] scopedConfig.isValid has an lastErr")
 	}
 	if sc.Disabled {
 		return nil
 	}
-	if sc.ScopeHash == 0 || sc.HeaderParseWriter == nil || len(sc.AllowedMethods) == 0 {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeHash, sc.HeaderParseWriter == nil, sc.AllowedMethods)
+	if sc.HeaderParseWriter == nil || len(sc.AllowedMethods) == 0 {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.HeaderParseWriter == nil, sc.AllowedMethods)
 	}
 	return nil
 }

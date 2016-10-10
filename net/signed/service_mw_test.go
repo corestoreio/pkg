@@ -51,10 +51,10 @@ var testData = []byte(`“The most important property of a program is whether it
 func TestService_UnregisteredHash(t *testing.T) {
 	srv := signed.MustNew(
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithHash(scope.Store.ToHash(333), "rot13", nil),
+		signed.WithHash(scope.Store.Pack(333), "rot13", nil),
 	)
 	scpCfg := srv.ConfigByScope(0, 333)
-	err := scpCfg.IsValid()
+	err := scpCfg.isValid()
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 	assert.Contains(t, err.Error(), `"rot13"`)
 }
@@ -66,7 +66,7 @@ func TestService_WithResponseSignature_MissingContext(t *testing.T) {
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
+		signed.WithErrorHandler(scope.DefaultTypeID, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
@@ -105,9 +105,9 @@ func TestService_WithResponseSignature_Disabled(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithDisable(scope.Store.ToHash(2), true),
+		signed.WithDisable(scope.Store.Pack(2), true),
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
+		signed.WithErrorHandler(scope.DefaultTypeID, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
@@ -145,17 +145,17 @@ func TestService_WithResponseSignature_Buffered(t *testing.T) {
 	key := []byte(`My guinea p1g runs acro55 my keyb0ard`)
 
 	srv := signed.MustNew(
-		signed.WithTrailer(scope.Website.ToHash(1), false),
+		signed.WithTrailer(scope.Website.Pack(1), false),
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithHeaderHandler(scope.Website.ToHash(1), signed.NewContentHMAC("sha256")),
-		signed.WithHash(scope.Website.ToHash(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithHeaderHandler(scope.Website.Pack(1), signed.NewContentHMAC("sha256")),
+		signed.WithHash(scope.Website.Pack(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
+		signed.WithErrorHandler(scope.DefaultTypeID, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
@@ -197,16 +197,16 @@ func TestService_WithResponseSignature_Trailer(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithTrailer(scope.Store.ToHash(2), true),
-		signed.WithHeaderHandler(scope.Store.ToHash(2), signed.NewContentHMAC("blk2b256")),
-		signed.WithHash(scope.Store.ToHash(2), "blk2b256", key), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithTrailer(scope.Store.Pack(2), true),
+		signed.WithHeaderHandler(scope.Store.Pack(2), signed.NewContentHMAC("blk2b256")),
+		signed.WithHash(scope.Store.Pack(2), "blk2b256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
+		signed.WithErrorHandler(scope.DefaultTypeID, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
-		signed.WithErrorHandler(scope.Store.ToHash(2), func(err error) http.Handler {
+		signed.WithErrorHandler(scope.Store.Pack(2), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
@@ -249,15 +249,15 @@ func TestService_Signature_Create_Validate_ContentHMAC(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithHeaderHandler(scope.Website.ToHash(1), signed.NewContentHMAC("sha256")),
-		signed.WithHash(scope.Website.ToHash(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithHeaderHandler(scope.Website.Pack(1), signed.NewContentHMAC("sha256")),
+		signed.WithHash(scope.Website.Pack(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
+		signed.WithErrorHandler(scope.DefaultTypeID, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
@@ -338,15 +338,15 @@ func TestService_Signature_Create_Validate_Transparent(t *testing.T) {
 
 	srv := signed.MustNew(
 		signed.WithDebugLog(ioutil.Discard),
-		signed.WithTransparent(scope.Website.ToHash(1), cache, time.Second*2),
-		signed.WithHash(scope.Website.ToHash(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
+		signed.WithTransparent(scope.Website.Pack(1), cache, time.Second*2),
+		signed.WithHash(scope.Website.Pack(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 		signed.WithRootConfig(cfgmock.NewService()),
-		signed.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
+		signed.WithErrorHandler(scope.DefaultTypeID, func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
 		}),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
@@ -431,15 +431,15 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 
 		srv := signed.MustNew(
 			signed.WithDebugLog(ioutil.Discard),
-			signed.WithHeaderHandler(scope.Website.ToHash(1), signed.NewContentHMAC("sha256")),
-			signed.WithHash(scope.Website.ToHash(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
+			signed.WithHeaderHandler(scope.Website.Pack(1), signed.NewContentHMAC("sha256")),
+			signed.WithHash(scope.Website.Pack(1), "sha256", key), // "sha256" registered via init() func with hashpool.Register()
 			signed.WithRootConfig(cfgmock.NewService()),
-			signed.WithErrorHandler(scope.DefaultHash, func(err error) http.Handler {
+			signed.WithErrorHandler(scope.DefaultTypeID, func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic(fmt.Sprintf("Should not get called\n%+v", err))
 				})
 			}),
-			signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+			signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					panic(fmt.Sprintf("Should not get called\n%+v", err))
 				})
@@ -495,7 +495,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r = r.WithContext(scope.WithContext(r.Context(), 1, 2))
 			return r
 		}(),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusLoopDetected)
 				assert.Error(t, err)
@@ -512,8 +512,8 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
-		signed.WithAllowedMethods(scope.Website.ToHash(1), "PUT", "PATCH"),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithAllowedMethods(scope.Website.Pack(1), "PUT", "PATCH"),
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusLoopDetected)
 				assert.Error(t, err)
@@ -531,7 +531,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusLoopDetected)
 				assert.Error(t, err)
@@ -549,8 +549,8 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
-		signed.WithDisable(scope.Website.ToHash(1), true),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithDisable(scope.Website.Pack(1), true),
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})
@@ -564,8 +564,8 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 			r.Header.Set(signed.HeaderContentHMAC, hmacHeaderValue)
 			return r
 		}(),
-		signed.WithDisable(scope.Website.ToHash(1), false),
-		signed.WithAllowedMethods(scope.Website.ToHash(1)), // empty list of allowed methods triggers an error
+		signed.WithDisable(scope.Website.Pack(1), false),
+		signed.WithAllowedMethods(scope.Website.Pack(1)), // empty list of allowed methods triggers an error
 		signed.WithServiceErrorHandler(func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusLoopDetected)
@@ -575,7 +575,7 @@ func TestService_WithRequestSignatureValidation(t *testing.T) {
 				atomic.AddInt32(finalHandlerCalled, 1)
 			})
 		}),
-		signed.WithErrorHandler(scope.Website.ToHash(1), func(err error) http.Handler {
+		signed.WithErrorHandler(scope.Website.Pack(1), func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				panic(fmt.Sprintf("Should not get called\n%+v", err))
 			})

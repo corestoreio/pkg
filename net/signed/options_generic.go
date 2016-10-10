@@ -33,11 +33,6 @@ import (
 // different settings.
 type Option func(*Service) error
 
-// OptionFactoryFunc a closure around a scoped configuration to figure out which
-// options should be returned depending on the scope brought to you during a
-// request.
-type OptionFactoryFunc func(config.Scoped) []Option
-
 // OptionsError helper function to be used within the backend package or other
 // sub-packages whose functions may return an OptionFactoryFunc.
 func OptionsError(err error) []Option {
@@ -46,35 +41,73 @@ func OptionsError(err error) []Option {
 	}}
 }
 
-// withDefaultConfig triggers the default settings
-func withDefaultConfig(h scope.Hash) Option {
+// withDefaultConfig triggers the default settings for a specific ScopeID.
+func withDefaultConfig(scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-		sc := optionInheritDefault(s)
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		sc := s.findScopedConfig(scopeIDs...)
+		target, parents := scope.TypeIDs(scopeIDs).TargetAndParents()
+		sc = newScopedConfig(target, parents[0])
+		return s.updateScopedConfig(sc)
 	}
 }
 
-// WithErrorHandler adds a custom error handler. Gets called after the scope can
-// be extracted from the context.Context and the configuration has been found
-// and is valid. The default error handler prints the error to the user and
-// returns a http.StatusServiceUnavailable.
-func WithErrorHandler(h scope.Hash, eh mw.ErrorHandler) Option {
+// WithErrorHandler adds a custom error handler. Gets called in the http.Handler
+// after the scope can be extracted from the context.Context and the
+// configuration has been found and is valid. The default error handler prints
+// the error to the user and returns a http.StatusServiceUnavailable.
+//
+// The variadic "scopeIDs" argument define to which scope the value gets applied
+// and from which parent scope should be inherited. Setting no "scopeIDs" sets
+// the value to the default scope. Setting one scope.TypeID defines the primary
+// scope to which the value will be applied. Subsequent scope.TypeID are
+// defining the fall back parent scopes to inherit the default or previously
+// applied configuration from.
+func WithErrorHandler(eh mw.ErrorHandler, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		s.rwmu.Lock()
-		defer s.rwmu.Unlock()
-
-		sc := s.scopeCache[h]
-		if sc == nil {
-			sc = optionInheritDefault(s)
-		}
+		sc := s.findScopedConfig(scopeIDs...)
 		sc.ErrorHandler = eh
-		sc.ScopeHash = h
-		s.scopeCache[h] = sc
-		return nil
+		return s.updateScopedConfig(sc)
+	}
+}
+
+// WithDisable disables the current service and calls the next HTTP handler.
+//
+// The variadic "scopeIDs" argument define to which scope the value gets applied
+// and from which parent scope should be inherited. Setting no "scopeIDs" sets
+// the value to the default scope. Setting one scope.TypeID defines the primary
+// scope to which the value will be applied. Subsequent scope.TypeID are
+// defining the fall back parent scopes to inherit the default or previously
+// applied configuration from.
+func WithDisable(isDisabled bool, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.Disabled = isDisabled
+		return s.updateScopedConfig(sc)
+	}
+}
+
+// WithMarkPartiallyApplied if set to true marks a configuration for a scope
+// as partially applied with functional options set via source code. The
+// internal service knows that it must trigger additionally the
+// OptionFactoryFunc to load configuration from a backend. Useful in the case
+// where parts of the configurations are coming from backend storages and other
+// parts like http handler have been set via code. This function should only be
+// applied in case you work with WithOptionFactory().
+//
+// The variadic "scopeIDs" argument define to which scope the value gets applied
+// and from which parent scope should be inherited. Setting no "scopeIDs" sets
+// the value to the default scope. Setting one scope.TypeID defines the primary
+// scope to which the value will be applied. Subsequent scope.TypeID are
+// defining the fall back parent scopes to inherit the default or previously
+// applied configuration from.
+func WithMarkPartiallyApplied(partially bool, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.lastErr = nil
+		if partially {
+			sc.lastErr = errors.NewTemporaryf(errConfigMarkedAsPartiallyLoaded, sc.ScopeID)
+		}
+		return s.updateScopedConfig(sc)
 	}
 }
 
@@ -89,14 +122,15 @@ func WithServiceErrorHandler(eh mw.ErrorHandler) Option {
 	}
 }
 
-// WithRootConfig sets the root configuration service. While using any HTTP
-// related functions or middlewares you must set the config.Getter.
+// WithRootConfig sets the root configuration service to retrieve the scoped
+// base configuration. If you set the option WithOptionFactory() then the option
+// WithRootConfig() does not need to be set as it won't get used.
 func WithRootConfig(cg config.Getter) Option {
 	_ = cg.NewScoped(0, 0) // let it panic as early as possible if cg is nil
 	return func(s *Service) error {
 		s.rwmu.Lock()
 		defer s.rwmu.Unlock()
-		s.rootConfig = cg
+		s.RootConfig = cg
 		return nil
 	}
 }
@@ -122,6 +156,11 @@ func WithLogger(l log.Logger) Option {
 	}
 }
 
+// OptionFactoryFunc a closure around a scoped configuration to figure out which
+// options should be returned depending on the scope brought to you during a
+// request.
+type OptionFactoryFunc func(config.Scoped) []Option
+
 // WithOptionFactory applies a function which lazily loads the options from a
 // slow backend (config.Getter) depending on the incoming scope within a
 // request. For example applies the backend configuration to the service.
@@ -134,10 +173,10 @@ func WithLogger(l log.Logger) Option {
 //	if err != nil {
 //		panic(err)
 //	}
-//	pb := backendsigned.New(cfgStruct)
+//	be := backendsigned.New(cfgStruct)
 //
 //	srv := signed.MustNewService(
-//		signed.WithOptionFactory(backendsigned.PrepareOptions(pb)),
+//		signed.WithOptionFactory(be.PrepareOptions()),
 //	)
 func WithOptionFactory(f OptionFactoryFunc) Option {
 	return func(s *Service) error {
@@ -160,7 +199,7 @@ func NewOptionFactories() *OptionFactories {
 // OptionFactories allows to register multiple OptionFactoryFunc identified by
 // their names. Those OptionFactoryFuncs will be loaded in the backend package
 // depending on the configured name under a certain path. This type is embedded
-// in the backendsigned.Backend package.
+// in the backendsigned.Configuration type.
 type OptionFactories struct {
 	rwmu sync.RWMutex
 	// register where the key defines the name as specified in the
@@ -171,20 +210,20 @@ type OptionFactories struct {
 
 // Register adds another functional option factory to the internal register.
 // Overwrites existing entries.
-func (be *OptionFactories) Register(name string, factory OptionFactoryFunc) {
-	be.rwmu.Lock()
-	defer be.rwmu.Unlock()
-	be.register[name] = factory
+func (of *OptionFactories) Register(name string, factory OptionFactoryFunc) {
+	of.rwmu.Lock()
+	defer of.rwmu.Unlock()
+	of.register[name] = factory
 }
 
 // Names returns an unordered list of names of all registered functional option
 // factories.
-func (be *OptionFactories) Names() []string {
-	be.rwmu.RLock()
-	defer be.rwmu.RUnlock()
-	var names = make([]string, len(be.register))
+func (of *OptionFactories) Names() []string {
+	of.rwmu.RLock()
+	defer of.rwmu.RUnlock()
+	var names = make([]string, len(of.register))
 	i := 0
-	for n := range be.register {
+	for n := range of.register {
 		names[i] = n
 		i++
 	}
@@ -192,18 +231,18 @@ func (be *OptionFactories) Names() []string {
 }
 
 // Deregister removes a functional option factory from the internal register.
-func (be *OptionFactories) Deregister(name string) {
-	be.rwmu.Lock()
-	defer be.rwmu.Unlock()
-	delete(be.register, name)
+func (of *OptionFactories) Deregister(name string) {
+	of.rwmu.Lock()
+	defer of.rwmu.Unlock()
+	delete(of.register, name)
 }
 
 // Lookup returns a functional option factory identified by name or an error if
 // the entry doesn't exists. May return a NotFound error behaviour.
-func (be *OptionFactories) Lookup(name string) (OptionFactoryFunc, error) {
-	be.rwmu.RLock()
-	defer be.rwmu.RUnlock()
-	if off, ok := be.register[name]; ok { // off = OptionFactoryFunc ;-)
+func (of *OptionFactories) Lookup(name string) (OptionFactoryFunc, error) {
+	of.rwmu.RLock()
+	defer of.rwmu.RUnlock()
+	if off, ok := of.register[name]; ok { // off = OptionFactoryFunc ;-)
 		return off, nil
 	}
 	return nil, errors.NewNotFoundf("[signed] Requested OptionFactoryFunc %q not registered.", name)
