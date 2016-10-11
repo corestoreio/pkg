@@ -43,7 +43,7 @@ func (s *Service) WithAuthentication(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if err := scpCfg.authenticate(r); err != nil {
+		if err := scpCfg.Authenticate(r); err != nil {
 			scpCfg.UnauthorizedHandler(errors.Wrap(err, "[auth] Authentication failed"))
 			return
 		}

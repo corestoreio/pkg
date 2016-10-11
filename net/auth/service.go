@@ -16,17 +16,17 @@
 
 package auth
 
-// Service describes
+// Service implements authentication middleware and scoped based authorization.
 type Service struct {
 	service
 }
 
-// New creates a new GeoIP service to be used as a middleware or standalone.
+// New creates a new authentication service to be used as a middleware or
+// standalone.
 func New(opts ...Option) (*Service, error) {
 	s, err := newService(opts...)
 	if err != nil {
 		return nil, err
 	}
-
 	return s, nil
 }

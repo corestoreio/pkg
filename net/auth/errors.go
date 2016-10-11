@@ -14,4 +14,4 @@
 
 package auth
 
-const errScopedConfigNotValid = `[mwauth] ScopedConfig %s invalid. Authenicator IsNil(%t)`
+const errScopedConfigNotValid = `[mwauth] ScopedConfig %s invalid. AuthCheckers Empty(%t). AuthProviders Empty(%t)`
