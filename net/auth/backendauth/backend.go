@@ -18,75 +18,66 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/net/auth"
 )
 
-// Backend just exported for the sake of documentation. See fields
+// Configuration just exported for the sake of documentation. See fields
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
-type Backend struct {
-	cfgmodel.PkgBackend
+type Configuration struct {
+	*auth.OptionFactories
 
-	// NetAuthEnable indicates whether authentication has been enabled or not.
-	//
-	// Path: net/auth/enable
-	NetAuthEnable cfgmodel.Bool
+	// Disabled indicates whether authentication has been enabled or not.
+	// Path: net/auth/disabled
+	Disabled cfgmodel.Bool
 
-	// NetAuthRequireTLS indicates whether we require TLS.
-	//
-	// Path: net/auth/require_tls
-	NetAuthRequireTLS cfgmodel.Bool
-
-	// NetAuthAllowedIP indicates which IPs are allowed.
+	// AllowedIP indicates which IPs are allowed.
 	// Separate via line break (\n).
 	//
 	// Path: net/auth/allowed_ips
-	NetAuthAllowedIPs cfgmodel.StringCSV
+	AllowedIPs cfgmodel.StringCSV
 
-	// NetAuthDeniedIPs indicates which IPs are denied.
+	// DeniedIPs indicates which IPs are denied.
 	// Separate via line break (\n).
 	//
 	// Path: net/auth/denied_ips
-	NetAuthDeniedIPs cfgmodel.StringCSV
+	DeniedIPs cfgmodel.StringCSV
 
-	// NetAuthAllowedIPRange indicates which IP ranges are denied.
+	// AllowedIPRange indicates which IP ranges are denied.
 	// Separate via line break (\n).
 	//
 	// Path: net/auth/denied_ips
-	NetAuthAllowedIPRange ConfigIPRange
+	AllowedIPRange ConfigIPRange
 
-	// NetAuthDeniedIPRange indicates which IP ranges are denied.
+	// DeniedIPRange indicates which IP ranges are denied.
 	// Separate via line break (\n).
 	//
 	// Path: net/auth/denied_ips
-	NetAuthDeniedIPRange ConfigIPRange
+	DeniedIPRange ConfigIPRange
 
 	// and so on
 	// range based allowances and denies
 }
 
-// New initializes the backend configuration models containing the
-// cfgpath.Route variable to the appropriate entries.
-// The function Load() will be executed to apply the SectionSlice
-// to all models. See Load() for more details.
-func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	return (&Backend{}).Load(cfgStruct, opts...)
-}
-
-// Load creates the configuration models for each PkgBackend field.
-// Internal mutex will protect the fields during loading.
-// The argument SectionSlice will be applied to all models.
-func (pp *Backend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Backend {
-	pp.Lock()
-	defer pp.Unlock()
+// New initializes the backend configuration models containing the cfgpath.Route
+// variable to the appropriate entries in the storage. The argument SectionSlice
+// and opts will be applied to all models.
+func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration {
+	be := &Configuration{
+		OptionFactories: auth.NewOptionFactories(),
+	}
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	optsCSV := append([]cfgmodel.Option{}, opts...)
-	optsCSV = append(optsCSV, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithCSVComma('\n'))
-	optsYN := append([]cfgmodel.Option{}, opts...)
-	optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
 
-	pp.NetAuthEnable = cfgmodel.NewBool(`net/auth/allow_credentials`, optsYN...)
-	pp.NetAuthAllowedIPs = cfgmodel.NewStringCSV(`net/auth/exposed_headers`, optsCSV...)
+	be.Disabled = cfgmodel.NewBool(`net/auth/disabled`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
 
-	return pp
+	//opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	//optsCSV := append([]cfgmodel.Option{}, opts...)
+	//optsCSV = append(optsCSV, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithCSVComma('\n'))
+	//optsYN := append([]cfgmodel.Option{}, opts...)
+	//optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
+	//
+	//pp.AllowedIPs = cfgmodel.NewStringCSV(`net/auth/exposed_headers`, optsCSV...)
+
+	return be
 }

@@ -15,52 +15,39 @@
 package auth
 
 import (
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 )
 
 // WithDefaultConfig applies the default configuration settings based for
-// a specific scope. This function overwrites any previous set options.
+// a specific scope.
 //
 // Default values are:
-//		- ?
-func WithDefaultConfig(h scope.TypeID) Option {
+//		- basic auth
+func WithDefaultConfig(scopeIDs ...scope.TypeID) Option {
+	return withDefaultConfig(scopeIDs...)
+}
+
+func WithUnauthorizedHandler(uah mw.ErrorHandler, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		var err error
-		if h == scope.DefaultTypeID {
-			s.defaultScopeCache, err = defaultScopedConfig()
-			return errors.Wrap(err, "[mwauth] Default Scope with Default Config")
-		}
-
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		s.scopeCache[h], err = defaultScopedConfig()
-		return errors.Wrapf(err, "[mwauth] Scope %s with Default Config", h)
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.UnauthorizedHandler = uah
+		return s.updateScopedConfig(sc)
 	}
 }
 
-// WithIsActive enables or disables the authentication for a specific scope.
-func WithIsActive(h scope.TypeID, active bool) Option {
+func WithSimpleBasicAuth(username, password, realm string, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
-		if h == scope.DefaultTypeID {
-			s.defaultScopeCache.enable = active
-			return nil
-		}
+		sc := s.findScopedConfig(scopeIDs...)
+		// sc.UnauthorizedHandler = uah
+		return s.updateScopedConfig(sc)
+	}
+}
 
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		// inherit default config
-		scNew := s.defaultScopeCache
-		scNew.enable = active
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.enable = scNew.enable
-			scNew = sc
-		}
-		scNew.scopeHash = h
-		s.scopeCache[h] = scNew
-		return nil
+func WithBasicAuth(authFunc func(username, password string) bool, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		// sc.UnauthorizedHandler = uah
+		return s.updateScopedConfig(sc)
 	}
 }

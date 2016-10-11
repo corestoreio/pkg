@@ -31,22 +31,22 @@ func NewConfigStructure() (element.SectionSlice, error) {
 			ID: cfgpath.NewRoute(`net`),
 			Groups: element.NewGroupSlice(
 				element.Group{
-					ID:      cfgpath.NewRoute(`auth`),
-					Label:   text.Chars(`Authentication (Basic, IP)`),
-					Comment: text.Chars(` `),
-
+					ID:        cfgpath.NewRoute(`auth`),
+					Label:     text.Chars(`Authentication`),
+					Comment:   text.Chars(`TODO`),
 					SortOrder: 160,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: `net/auth/enable`,
-							ID:        cfgpath.NewRoute(`eanble`),
-							Label:     text.Chars(`Is Active`),
-							Comment:   text.Chars(` `),
+							// Path: net/auth/disabled
+							ID:        cfgpath.NewRoute("disabled"),
+							Label:     text.Chars(`Authentication is disabled`),
+							Comment:   text.Chars(`Disables completely the authentication. Set to true/enable to activate the disabling.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scopes:    scope.PermStore,
+							Scopes:    scope.PermWebsite,
+							Default:   false,
 						},
 					),
 				},

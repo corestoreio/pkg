@@ -14,48 +14,6 @@
 
 package backendauth_test
 
-import (
-	"net/http"
-
-	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/net/auth"
-	"github.com/corestoreio/csfw/net/auth/backendauth"
-	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/util/errors"
-)
-
-type fataler interface {
-	Fatal(args ...interface{})
-}
-
-func mustToPath(fa fataler, f func(s scope.Type, scopeID int64) (cfgpath.Path, error), s scope.Type, scopeID int64) string {
-	p, err := f(s, scopeID)
-	if err != nil {
-		fa.Fatal(errors.PrintLoc(err))
-	}
-	return p.String()
-}
-
-func reqWithStore(method string, cfgOpt ...cfgmock.OptionFunc) *http.Request {
-	req, err := http.NewRequest(method, "http://corestore.io/foo", nil)
-	if err != nil {
-		panic(err)
-	}
-
-	return req.WithContext(
-		store.WithContextRequestedStore(req.Context(), storemock.MustNewStoreAU(cfgmock.NewService(cfgOpt...))),
-	)
-}
-
-func newService() *auth.Service {
-	return auth.MustNew(
-		auth.WithOptionFactory(backendauth.PrepareOptions(backend)),
-	)
-}
-
 //
 //func TestBackend_Path_Errors(t *testing.T) {
 //

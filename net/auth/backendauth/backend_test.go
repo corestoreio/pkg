@@ -17,7 +17,7 @@ package backendauth_test
 import "github.com/corestoreio/csfw/net/auth/backendauth"
 
 // backend overall backend models for all tests
-var backend *backendauth.Backend
+var backend *backendauth.Configuration
 
 // this would belong into the test suit setup
 func init() {

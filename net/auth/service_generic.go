@@ -32,45 +32,38 @@ import (
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.
 
 type service struct {
-	// Log used for debugging. Defaults to black hole.
-	Log log.Logger
-
-	// ErrorHandler gets called whenever a programmer makes an error. Most two
-	// cases are: cannot extract scope from the context and scoped configuration
-	// is not valid. The default handler prints the error to the client and
-	// returns http.StatusServiceUnavailable
-	mw.ErrorHandler
-
-	// rootConfig optional backend configuration. Gets only used while running
-	// HTTP related middlewares.
-	rootConfig config.Getter
-
 	// useWebsite internal flag used in configByContext(w,r) to tell the
 	// currenct handler if the scoped configuration is store or website based.
 	useWebsite bool
-
-	// optionFactory optional configuration closure, can be nil. It pulls out
-	// the configuration settings from a slow backend during a request and
-	// caches the settings in the internal map.  This function gets set via
-	// WithOptionFactory()
-	optionFactory OptionFactoryFunc
-
-	// optionInflight checks on a per scope.TypeID basis if the configuration
-	// loading process takes place. Stops the execution of other Goroutines (aka
-	// incoming requests) with the same scope.TypeID until the configuration has
-	// been fully loaded and applied for that specific scope. This function gets
-	// set via WithOptionFactory()
-	optionInflight *singleflight.Group
-
 	// optionAfterApply allows to set a custom function which runs every time
 	// after the options have been applied. Gets only executed if not nil.
 	optionAfterApply func() error
 
 	// rwmu protects all fields below
 	rwmu sync.RWMutex
-
 	// scopeCache internal cache for configurations.
 	scopeCache map[scope.TypeID]*ScopedConfig
+	// optionFactory optional configuration closure, can be nil. It pulls out
+	// the configuration settings from a slow backend during a request and
+	// caches the settings in the internal map.  This function gets set via
+	// WithOptionFactory()
+	optionFactory OptionFactoryFunc
+	// optionInflight checks on a per scope.TypeID basis if the configuration
+	// loading process takes place. Stops the execution of other Goroutines (aka
+	// incoming requests) with the same scope.TypeID until the configuration has
+	// been fully loaded and applied for that specific scope. This function gets
+	// set via WithOptionFactory()
+	optionInflight *singleflight.Group
+	// ErrorHandler gets called whenever a programmer makes an error. Most two
+	// cases are: cannot extract scope from the context and scoped configuration
+	// is not valid. The default handler prints the error to the client and
+	// returns http.StatusServiceUnavailable
+	mw.ErrorHandler
+	// Log used for debugging. Defaults to black hole.
+	Log log.Logger
+	// rootConfig optional backend configuration. Gets only used while running
+	// HTTP related middlewares.
+	RootConfig config.Getter
 }
 
 func newService(opts ...Option) (*Service, error) {
@@ -151,9 +144,9 @@ func (s *Service) DebugCache(w io.Writer) error {
 // OptionFactory is set the configuration gets loaded from the backend. A nil
 // root config causes a panic.
 func (s *Service) ConfigByScope(websiteID, storeID int64) (ScopedConfig, error) {
-	cfg := s.rootConfig.NewScoped(websiteID, storeID)
+	cfg := s.RootConfig.NewScoped(websiteID, storeID)
 	if s.useWebsite {
-		cfg = s.rootConfig.NewScoped(websiteID, 0)
+		cfg = s.RootConfig.NewScoped(websiteID, 0)
 	}
 	return s.ConfigByScopedGetter(cfg)
 }
@@ -214,10 +207,11 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, erro
 			sCfg, err := s.ConfigByScopeID(current, parent)
 			if s.Log.IsDebug() {
 				s.Log.Debug("auth.Service.ConfigByScopedGetter.Inflight.Do",
+					log.ErrWithKey("responded_scope_valid", err),
 					log.Stringer("requested_scope", current),
 					log.Stringer("requested_parent_scope", parent),
 					log.Stringer("responded_scope", sCfg.ScopeID),
-					log.ErrWithKey("responded_scope_valid", err),
+					log.Stringer("responded_parent", sCfg.ParentID),
 				)
 			}
 			return sCfg, errors.Wrap(err, "[auth] Options applied by OptionFactoryFunc")
@@ -259,9 +253,15 @@ func (s *Service) ConfigByScopedGetter(scpGet config.Scoped) (ScopedConfig, erro
 // scope. A zero `parent` triggers no further look ups. This function does not
 // load any configuration (config.Getter related) from the backend and accesses
 // the internal map of the Service directly.
+//
+// Important: a "current" scope cannot have multiple "parent" scopes.
 func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (scpCfg ScopedConfig, _ error) {
-	// current can be store or website scope
-	// parent can be website or default scope. If 0 then no fall back
+	// "current" can be Store or Website scope and "parent" can be Website or
+	// Default scope. If "parent" equals 0 then no fall back.
+
+	if !current.ValidParent(parent) {
+		return scpCfg, errors.NewNotValidf("[auth] The current scope %s has an invalid parent scope %s", current, parent)
+	}
 
 	// pointer must get dereferenced in a lock to avoid race conditions while
 	// reading in middleware the config values because we might execute the
@@ -279,23 +279,25 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 		return scpCfg, errors.Wrap(scpCfg.isValid(), "[auth] Validated directly found")
 	}
 	if parent == 0 {
-		return scpCfg, errConfigNotFound
+		return scpCfg, errors.NewNotFoundf(errConfigNotFound, current)
 	}
 
 	// slow path: now lock everything until the fall back has been found.
 	s.rwmu.Lock()
 	defer s.rwmu.Unlock()
 
-	// if the current scope cannot be found, fall back to parent scope and
-	// apply the maybe found configuration to the current scope configuration.
+	// if the current scope cannot be found, fall back to parent scope and apply
+	// the maybe found configuration to the current scope configuration.
 	if !ok && parent.Type() == scope.Website {
 		pScpCfg, ok = s.scopeCache[parent]
 		if ok && pScpCfg != nil {
+			pScpCfg.ParentID = parent
 			scpCfg = *pScpCfg
-		}
-		if ok && pScpCfg != nil {
-			s.scopeCache[current] = pScpCfg
-			return scpCfg, errors.Wrap(scpCfg.isValid(), "[auth] Validated Parent found and applied")
+			if err := scpCfg.isValid(); err != nil {
+				return ScopedConfig{}, errors.Wrap(err, "[auth] Error in Website scope configuration")
+			}
+			s.scopeCache[current] = pScpCfg // gets assigned a pointer so equal to parent
+			return scpCfg, nil
 		}
 	}
 
@@ -305,11 +307,58 @@ func (s *Service) ConfigByScopeID(current scope.TypeID, parent scope.TypeID) (sc
 	if !ok {
 		pScpCfg, ok = s.scopeCache[scope.DefaultTypeID]
 		if ok && pScpCfg != nil {
+			pScpCfg.ParentID = scope.DefaultTypeID
 			scpCfg = *pScpCfg
-		}
-		if ok && pScpCfg != nil {
-			s.scopeCache[current] = pScpCfg
+			if err := scpCfg.isValid(); err != nil {
+				return ScopedConfig{}, errors.Wrap(err, "[auth] error in default configuration")
+			}
+			s.scopeCache[current] = pScpCfg // gets assigned a pointer so equal to default
+		} else {
+			return scpCfg, errors.NewNotFoundf(errConfigNotFound, scope.DefaultTypeID)
 		}
 	}
-	return scpCfg, errors.Wrap(scpCfg.isValid(), "[auth] Validated Default found")
+	return scpCfg, nil
+}
+
+// findScopedConfig used in functional options to look up if a parent
+// configuration exists and if not creates a newScopedConfig(). The
+// scope.DefaultTypeID will always be appended to the end of the provided
+// arguments. This function acquires a lock. You must call its buddy function
+// updateScopedConfig() to close the lock.
+func (s *Service) findScopedConfig(scopeIDs ...scope.TypeID) *ScopedConfig {
+	s.rwmu.Lock() // Unlock() in updateScopedConfig()
+
+	target, parents := scope.TypeIDs(scopeIDs).TargetAndParents()
+
+	sc := s.scopeCache[target]
+	if sc != nil {
+		return sc
+	}
+
+	// "parents" contains now the next higher scopes, at least minimum the
+	// DefaultTypeID. For example if we have as "target" scope Store then
+	// "parents" would contain Website and/or Default, depending on how many
+	// arguments have been applied in a functional option.
+	for _, id := range parents {
+		if sc, ok := s.scopeCache[id]; ok && sc != nil {
+			shallowCopy := new(ScopedConfig)
+			*shallowCopy = *sc
+			shallowCopy.ParentID = id
+			shallowCopy.ScopeID = target
+			return shallowCopy
+		}
+	}
+	// if parents[0] panics for being out of bounds then something is really wrong.
+	return newScopedConfig(target, parents[0])
+}
+
+// updateScopedConfig used in functional options to store a scoped configuration
+// in the internal cache. This function gets called in a function option at the
+// end after applying the new configuration value. This function releases an
+// already acquired lock. You can call its buddy function findScopedConfig() to
+// acquire a lock.
+func (s *Service) updateScopedConfig(sc *ScopedConfig) error {
+	s.scopeCache[sc.ScopeID] = sc
+	s.rwmu.Unlock()
+	return nil
 }

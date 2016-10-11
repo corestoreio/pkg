@@ -14,6 +14,4 @@
 
 package auth
 
-import "github.com/corestoreio/csfw/util/errors"
-
-const errScopedConfigNotValid = `[mwauth] ScopedConfig %s invalid`
+const errScopedConfigNotValid = `[mwauth] ScopedConfig %s invalid. Authenicator IsNil(%t)`

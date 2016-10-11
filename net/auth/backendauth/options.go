@@ -20,25 +20,24 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// PrepareOptions creates a closure around the type Backend. The closure will
-// be used during a scoped request to figure out the configuration depending on
-// the incoming scope. An option array will be returned by the closure.
-func PrepareOptions(be *Backend) auth.ScopedOptionFunc {
-
+// PrepareOptionFactory creates a closure around the type Backend. The closure
+// will be used during a scoped request to figure out the configuration
+// depending on the incoming scope. An option array will be returned by the
+// closure.
+func (be *Configuration) PrepareOptionFactory() auth.OptionFactoryFunc {
 	return func(sg config.Scoped) []auth.Option {
 		var opts [8]auth.Option
 		var i int
-		scp, id := sg.ScopeID()
 
-		// ENABLED
-		on, err := be.NetAuthEnable.Get(sg)
+		off, err := be.Disabled.Get(sg)
 		if err != nil {
-			return optError(errors.Wrap(err, "[backendauth] NetAuthEnable.Get"))
+			return auth.OptionsError(errors.Wrap(err, "[backendauth] Disabled.Get"))
 		}
-		opts[i] = auth.WithIsActive(scp, id, on)
+		opts[i] = auth.WithDisable(off, sg.ScopeIDs()...)
 		i++
-
-		// and so on ...
+		if off {
+			return opts[:i]
+		}
 
 		return opts[:]
 	}

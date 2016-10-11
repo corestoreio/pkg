@@ -17,39 +17,63 @@ package auth
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/log"
+	"regexp"
+
+	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
+// Authenticator ...
 type Authenticator interface {
 	// Authenticate authenticates a request and returns nil on success.
 	// You must use subtle.ConstantTimeCompare()
-	Authenticate(h scope.TypeID, r *http.Request) error
+	Authenticate(scopeID scope.TypeID, r *http.Request) error
 }
 
-// ScopedConfig private internal scoped based configuration
+var defaultUnauthorizedHandler = mw.ErrorWithStatusCode(http.StatusUnauthorized)
+
+// ScopedConfig contains the configuration for a specific scope.
 type ScopedConfig struct {
 	scopedConfigGeneric
-
-	log log.Logger
-	// if nil fall back to default scope
 	Authenticator
-	loginHandler  http.Handler // e.g. basic auth browser popup
-	deniedHandler http.Handler
+	// Resources protects all mentioned routes. If empty protects everything.
+	Resources []string
+	// ResourcesWhiteList disables authentication for all mentioned routes.
+	ResourcesWhiteList []string
+	// ResourcesRegExp protects all mentioned routes matched by a regular
+	// expression. If empty protects everything.
+	ResourcesRegExp []*regexp.Regexp
+	// ResourcesRegExpWhiteList disables authentication all mentioned routes matched
+	// by a regular expression.
+	ResourcesRegExpWhiteList []*regexp.Regexp
+	UnauthorizedHandler      mw.ErrorHandler
 }
 
-// IsValid a configuration for a scope is only then valid when the Key has been
-// supplied, a non-nil signing method and a non-nil Verifier.
-func (sc ScopedConfig) IsValid() bool {
+// IsValid check if the scoped configuration is valid when:
+//		- Authenticator
+//		- UnauthorizedHandler
+// has been set and no other previous error has occurred.
+func (sc *ScopedConfig) isValid() error {
+	if err := sc.isValidPreCheck(); err != nil {
+		return errors.Wrap(err, "[auth] ScopedConfig.isValid as an lastErr")
+	}
 	if sc.Disabled {
 		return nil
 	}
-	return sc.ScopeHash > 0 && sc.Authenticator != nil && sc.disabled
+	if sc.Authenticator == nil {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, sc.Authenticator == nil)
+	}
+	return nil
 }
 
-func defaultScopedConfig() (ScopedConfig, error) {
-	return ScopedConfig{
-		ScopeHash: scope.DefaultTypeID,
-		log:       log.BlackHole{}, // disabled info and debug logging
-	}, nil
+func newScopedConfig(target, parent scope.TypeID) *ScopedConfig {
+	return &ScopedConfig{
+		scopedConfigGeneric: newScopedConfigGeneric(target, parent),
+		UnauthorizedHandler: defaultUnauthorizedHandler,
+	}
+}
+
+func (sc *ScopedConfig) authenticate(r *http.Request) error {
+	return nil
 }
