@@ -31,7 +31,9 @@ type AuthenticationTriggerFunc func(r *http.Request) bool
 // AuthenticationFunc checks if a request is allowed to proceed. It returns nil
 // on success. If you compare usernames and passwords make sure to use
 // subtle.ConstantTimeCompare(). If callNext returns true the next authenticator
-// gets called despite an occurred error, which gets dropped silently.
+// gets called despite an occurred error, which gets dropped silently. If all
+// AuthenticationFuncs return true to call the next, then the last function call
+// gets a force checked error.
 type AuthenticationFunc func(scopeID scope.TypeID, r *http.Request) (callNext bool, err error)
 
 var defaultUnauthorizedHandler = mw.ErrorWithStatusCode(http.StatusUnauthorized)
@@ -108,9 +110,19 @@ func (ap authProviders) Len() int           { return len(ap) }
 func (ap authProviders) Less(i, j int) bool { return ap[i].prio < ap[j].prio }
 func (ap authProviders) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
 
+// do iterates over the Authenticators and checks if it should call the next
+// Authenticator and drop silently the error. Even if the last Authenticator
+// forces to call the next non-existent Authenticator this function detects that
+// and checks the very last error.
 func (ap authProviders) do(scopeID scope.TypeID, r *http.Request) error {
+	nc := 1 // nc == next counter
 	for i, apf := range ap {
-		if err := apf.AuthenticationFunc(scopeID, r); err != nil {
+		next, err := apf.AuthenticationFunc(scopeID, r)
+		if next && nc < len(ap) {
+			nc++
+			continue
+		}
+		if err != nil {
 			return errors.Wrapf(err, "[auth] Authentication failed at index %d", i)
 		}
 	}

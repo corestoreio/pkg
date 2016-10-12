@@ -143,14 +143,19 @@ func WithResourceRegexpACLs(block, whitelist []string, scopeIDs ...scope.TypeID)
 	}
 }
 
+// prioIncrement only used for testing to trigger the sorting. This variable
+// should not trigger any race conditions.
+var prioIncrement = 1000
+
 // WithInvalidAuth authentication will always fails. Mainly used for testing ;-)
-func WithInvalidAuth(scopeIDs ...scope.TypeID) Option {
+func WithInvalidAuth(callNext bool, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
+		prioIncrement++
 		sc.authProviders = append(sc.authProviders, authProvider{
-			prio: 1000,
-			AuthenticationFunc: func(scopeID scope.TypeID, r *http.Request) error {
-				return errors.NewUnauthorizedf("[auth] Access denied in Scope %s for path %q", scopeID, r.URL.Path)
+			prio: prioIncrement,
+			AuthenticationFunc: func(scopeID scope.TypeID, r *http.Request) (bool, error) {
+				return callNext, errors.NewUnauthorizedf("[auth] Access denied in Scope %s for path %q", scopeID, r.URL.Path)
 			},
 		})
 		sc.authProviders.sort()
@@ -162,10 +167,11 @@ func WithInvalidAuth(scopeIDs ...scope.TypeID) Option {
 func WithValidAuth(scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
+		prioIncrement++
 		sc.authProviders = append(sc.authProviders, authProvider{
-			prio: 1001,
-			AuthenticationFunc: func(_ scope.TypeID, _ *http.Request) error {
-				return nil
+			prio: prioIncrement,
+			AuthenticationFunc: func(_ scope.TypeID, _ *http.Request) (bool, error) {
+				return false, nil
 			},
 		})
 		sc.authProviders.sort()
