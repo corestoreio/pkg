@@ -13,3 +13,29 @@
 // limitations under the License.
 
 package auth
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestBasicAuthValidator_UnknownHash(t *testing.T) {
+	af, err := basicAuthValidator("?", "", "")
+	assert.Nil(t, af)
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
+}
+
+func TestBasicAuthHandler(t *testing.T) {
+
+	errHndlr := basicAuthHandler("My'R\"ealm")
+	hndlr := errHndlr(nil)
+
+	w := httptest.NewRecorder()
+	hndlr.ServeHTTP(w, nil)
+	assert.Exactly(t, `Basic realm="My'R\"ea\uf8fflm"`, w.Header().Get(`WWW-Authenticate`))
+	assert.Exactly(t, http.StatusUnauthorized, w.Code)
+}

@@ -42,17 +42,17 @@ func basicAuth(baf BasicAuthFunc) AuthenticationFunc {
 	return func(scopeID scope.TypeID, r *http.Request) (callNext bool, err error) {
 		givenUser, givenPass, ok := r.BasicAuth()
 		if !ok {
-			return true, errors.Wrap(errInvalidData, "[auth] Basic Auth not found in request")
+			return true, errors.Wrapf(errInvalidData, "[auth] Basic Auth not found in request. Scope(%s)", scopeID)
 		}
 		if !baf(givenUser, givenPass) {
-			return true, errors.Wrap(errInvalidData, "[auth] Username or password incorrect")
+			return true, errors.Wrapf(errInvalidData, "[auth] Username or password incorrect. Scope(%s)", scopeID)
 		}
 		return true, nil
 	}
 }
 func basicAuthHandler(realm string) mw.ErrorHandler {
 	return func(_ error) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("WWW-Authenticate", fmt.Sprintf(`Basic realm=%q`, realm))
 			w.WriteHeader(http.StatusUnauthorized)
 		})

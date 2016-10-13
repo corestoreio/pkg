@@ -15,6 +15,8 @@
 package auth_test
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,9 +24,16 @@ import (
 	"github.com/corestoreio/csfw/net/auth"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	if err := hashpool.Register("sha256", sha256.New); err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+}
 
 func TestScopedConfig_Authenticate(t *testing.T) {
 	tests := []struct {
@@ -187,6 +196,53 @@ func TestScopedConfig_Authenticate(t *testing.T) {
 			httptest.NewRequest("GET", "http://corestore.io/catalog/category", nil),
 			nil,
 			nil,
+		},
+		{
+			"Basic Auth: Blocks all resources. Unauthorized",
+			[]auth.Option{auth.WithResourceACLs(nil, nil), auth.WithSimpleBasicAuth("user1", "pass2", "R3alm")},
+			httptest.NewRequest("GET", "http://corestore.io/catalog/category", nil),
+			nil,
+			errors.IsUnauthorized,
+		},
+		{
+			"Basic Auth: Blocks all resources. Authorized",
+			[]auth.Option{auth.WithResourceACLs(nil, nil), auth.WithSimpleBasicAuth("user1", "pass2", "R3alm")},
+			func() *http.Request {
+				r := httptest.NewRequest("GET", "http://corestore.io/catalog/category", nil)
+				r.SetBasicAuth("user1", "pass2")
+				return r
+			}(),
+			nil,
+			nil,
+		},
+		{
+			"Basic Auth: Blocks all resources. Authorization failed",
+			[]auth.Option{auth.WithResourceACLs(nil, nil), auth.WithSimpleBasicAuth("user1", "pass2", "R3alm")},
+			func() *http.Request {
+				r := httptest.NewRequest("GET", "http://corestore.io/catalog/category", nil)
+				r.SetBasicAuth("user2", "pass3")
+				return r
+			}(),
+			nil,
+			errors.IsUnauthorized,
+		},
+		{
+			"Basic Auth: Blocks all resources. Basic Failed but ValidAuth always succeeds",
+			[]auth.Option{auth.WithResourceACLs(nil, nil), auth.WithSimpleBasicAuth("user1", "pass2", "R3alm"), auth.WithValidAuth()},
+			httptest.NewRequest("GET", "http://corestore.io/catalog/category", nil),
+			nil,
+			nil,
+		},
+		{
+			"Basic Auth: Blocks all resources. Unauthorized and always fails",
+			[]auth.Option{auth.WithResourceACLs(nil, nil), auth.WithSimpleBasicAuth("user1", "pass2", "R3alm"), auth.WithInvalidAuth(true)},
+			func() *http.Request {
+				r := httptest.NewRequest("GET", "http://corestore.io/catalog/category", nil)
+				r.SetBasicAuth("user1", "uuups")
+				return r
+			}(),
+			nil,
+			errors.IsUnauthorized,
 		},
 	}
 	for i, test := range tests {
