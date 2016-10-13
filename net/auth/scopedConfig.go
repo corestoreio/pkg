@@ -46,7 +46,7 @@ type ScopedConfig struct {
 	// shouldDoAuthChecks a list of functions which checks if the authenticator
 	// should be triggered. the first function to return true triggers the
 	// authProvider.
-	shouldDoAuthChecks
+	authTriggers
 	// authProviders a list of functions which may return an error if authentication
 	// fails.
 	authProviders
@@ -64,8 +64,8 @@ func (sc *ScopedConfig) isValid() error {
 	if sc.Disabled {
 		return nil
 	}
-	if 0 == len(sc.authProviders) || 0 == len(sc.shouldDoAuthChecks) {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, len(sc.shouldDoAuthChecks) == 0, len(sc.authProviders) == 0)
+	if 0 == len(sc.authProviders) || 0 == len(sc.authTriggers) {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, len(sc.authTriggers) == 0, len(sc.authProviders) == 0)
 	}
 	return nil
 }
@@ -84,13 +84,12 @@ func (sc ScopedConfig) Authenticate(r *http.Request) error {
 	// sc must not be a pointer, the data we're copying is small and it avoids
 	// race conditions. we can change back to a pointer if tests and benchmarks
 	// says different things.
-	if len(sc.authProviders) == 0 || len(sc.shouldDoAuthChecks) == 0 {
-		return errors.NewNotImplementedf("[auth] Authentication checker or provider not available")
-	}
 	if sc.Disabled {
 		return nil
 	}
-	if !sc.shouldDoAuthChecks.triggerAuth(sc.combineTrigger, r) {
+	// an empty or nil authTriggers always returns true to trigger the
+	// authentication provider.
+	if !sc.authTriggers.do(sc.combineTrigger, r) {
 		return nil
 	}
 	if err := sc.authProviders.do(sc.ScopeID, r); err != nil {
@@ -115,6 +114,10 @@ func (ap authProviders) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
 // forces to call the next non-existent Authenticator this function detects that
 // and checks the very last error.
 func (ap authProviders) do(scopeID scope.TypeID, r *http.Request) error {
+	if len(ap) == 0 {
+		return errors.NewNotImplementedf("[auth] No authentication provider available")
+	}
+
 	nc := 1 // nc == next counter
 	for i, apf := range ap {
 		next, err := apf.AuthenticationFunc(scopeID, r)
@@ -129,18 +132,24 @@ func (ap authProviders) do(scopeID scope.TypeID, r *http.Request) error {
 	return nil
 }
 
-type shouldAuth struct {
+// authTrigger checks if the authentication should be triggered. Contains a
+// priority in which these trigger functions gets executed.
+type authTrigger struct {
 	prio int
 	AuthenticationTriggerFunc
 }
-type shouldDoAuthChecks []shouldAuth
 
-func (ap shouldDoAuthChecks) sort()              { sort.Stable(ap) }
-func (ap shouldDoAuthChecks) Len() int           { return len(ap) }
-func (ap shouldDoAuthChecks) Less(i, j int) bool { return ap[i].prio < ap[j].prio }
-func (ap shouldDoAuthChecks) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
+type authTriggers []authTrigger
 
-func (ap shouldDoAuthChecks) triggerAuth(combined bool, r *http.Request) bool {
+func (ap authTriggers) sort()              { sort.Stable(ap) }
+func (ap authTriggers) Len() int           { return len(ap) }
+func (ap authTriggers) Less(i, j int) bool { return ap[i].prio < ap[j].prio }
+func (ap authTriggers) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
+
+func (ap authTriggers) do(combined bool, r *http.Request) bool {
+	if len(ap) == 0 {
+		return true
+	}
 	var i int
 	for _, check := range ap {
 		ok := check.AuthenticationTriggerFunc(r)

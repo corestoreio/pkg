@@ -36,6 +36,7 @@ func init() {
 }
 
 func TestScopedConfig_Authenticate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		desc             string
 		opts             []auth.Option

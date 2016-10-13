@@ -44,6 +44,17 @@ func WithUnauthorizedHandler(uah mw.ErrorHandler, scopeIDs ...scope.TypeID) Opti
 	}
 }
 
+// WithUnauthorizedRedirect redirects if the authorization fails.
+func WithUnauthorizedRedirect(url string, code int, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.UnauthorizedHandler = func(_ error) http.Handler {
+			return http.RedirectHandler(url, code)
+		}
+		return s.updateScopedConfig(sc)
+	}
+}
+
 func matchPath(caseSensitivePath bool, r *http.Request, other string) bool {
 	if caseSensitivePath {
 		return strings.HasPrefix(r.URL.Path, other)
@@ -64,7 +75,7 @@ func WithResourceACLs(blacklist, whitelist []string, scopeIDs ...scope.TypeID) O
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
 		isCaseSensitive := sc.caseSensitivePath // copy the value to avoid races
-		sc.shouldDoAuthChecks = append(sc.shouldDoAuthChecks, shouldAuth{
+		sc.authTriggers = append(sc.authTriggers, authTrigger{
 			prio: -10,
 			AuthenticationTriggerFunc: func(r *http.Request) bool {
 				blocked := len(blacklist) == 0
@@ -83,7 +94,7 @@ func WithResourceACLs(blacklist, whitelist []string, scopeIDs ...scope.TypeID) O
 				return blocked
 			},
 		})
-		sc.shouldDoAuthChecks.sort()
+		sc.authTriggers.sort()
 		return s.updateScopedConfig(sc)
 	}
 }
@@ -121,7 +132,7 @@ func WithResourceRegexpACLs(block, whitelist []string, scopeIDs ...scope.TypeID)
 
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
-		sc.shouldDoAuthChecks = append(sc.shouldDoAuthChecks, shouldAuth{
+		sc.authTriggers = append(sc.authTriggers, authTrigger{
 			prio: -5,
 			AuthenticationTriggerFunc: func(r *http.Request) bool {
 				block := len(br) == 0
@@ -140,19 +151,48 @@ func WithResourceRegexpACLs(block, whitelist []string, scopeIDs ...scope.TypeID)
 				return block
 			},
 		})
-		sc.shouldDoAuthChecks.sort()
+		sc.authTriggers.sort()
+		return s.updateScopedConfig(sc)
+	}
+}
+
+// WithCombineTriggers setting to true forces all authentication triggers to
+// return true. Otherwise the first trigger which returns true, triggers the
+// authentication providers. Default value: false.
+func WithCombineTriggers(combine bool, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.combineTrigger = combine
+		return s.updateScopedConfig(sc)
+	}
+}
+
+// WithAuthenticationTrigger sets the authentication trigger function which
+// implements a condition to check if the list of authentication providers
+// should be called. Subsequent calls of this functional option will add more
+// AuthenticationTriggerFuncs to the internal list. If not trigger has been
+// applied the authentication providers will always be called.
+func WithAuthenticationTrigger(atf AuthenticationTriggerFunc, priority int, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.authTriggers = append(sc.authTriggers, authTrigger{
+			prio: priority,
+			AuthenticationTriggerFunc: atf,
+		})
 		return s.updateScopedConfig(sc)
 	}
 }
 
 // WithAuthenticationProvider sets the authentication provider function which
 // checks if a request should be considered valid to call the next handler.
-func WithAuthenticationProvider(ap AuthenticationFunc, priority int, scopeIDs ...scope.TypeID) Option {
+// Subsequent calls of this functions will add more AuthenticationFuncs to the
+// internal list.
+func WithAuthenticationProvider(af AuthenticationFunc, priority int, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
 		sc.authProviders = append(sc.authProviders, authProvider{
 			prio:               priority,
-			AuthenticationFunc: ap,
+			AuthenticationFunc: af,
 		})
 		return s.updateScopedConfig(sc)
 	}
@@ -160,7 +200,8 @@ func WithAuthenticationProvider(ap AuthenticationFunc, priority int, scopeIDs ..
 
 // WithSimpleBasicAuth sets a single username/password for a scope. Username and
 // password must be provided as "plain text" arguments. This basic auth handler
-// calls the next authentication provider if the authentication fails.
+// calls the next authentication provider if the authentication fails. Username
+// and password will be compared in constant time.
 func WithSimpleBasicAuth(username, password, realm string, scopeIDs ...scope.TypeID) Option {
 	ba256, err := basicAuthValidator("sha256", username, password)
 	if err != nil {
@@ -168,11 +209,10 @@ func WithSimpleBasicAuth(username, password, realm string, scopeIDs ...scope.Typ
 			return errors.Wrap(err, "[auth] WithSimpleBasicAuth basicAuthHashed")
 		}
 	}
-
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
 		sc.authProviders = append(sc.authProviders, authProvider{
-			prio:               1,
+			prio:               10,
 			AuthenticationFunc: basicAuth(ba256),
 		})
 		sc.UnauthorizedHandler = basicAuthHandler(realm)
@@ -180,10 +220,16 @@ func WithSimpleBasicAuth(username, password, realm string, scopeIDs ...scope.Typ
 	}
 }
 
-func WithBasicAuth(authFunc func(username, password string) bool, realm string, scopeIDs ...scope.TypeID) Option {
+// WithBasicAuth provides the basic authentication header but allows to set a
+// custom function to compare the input data of username and password.
+func WithBasicAuth(authFunc BasicAuthFunc, realm string, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
-		// sc.UnauthorizedHandler = uah
+		sc.authProviders = append(sc.authProviders, authProvider{
+			prio:               1,
+			AuthenticationFunc: basicAuth(authFunc),
+		})
+		sc.UnauthorizedHandler = basicAuthHandler(realm)
 		return s.updateScopedConfig(sc)
 	}
 }
