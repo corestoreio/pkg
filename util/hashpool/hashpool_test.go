@@ -80,6 +80,51 @@ func TestTank_EqualReader_Error(t *testing.T) {
 	assert.False(t, isEqual)
 }
 
+func TestTank_EqualPairs(t *testing.T) {
+	u1 := []byte(`username1`)
+	u2 := []byte(`username1`)
+	p1 := []byte(`password1`)
+	p2 := []byte(`password1`)
+
+	hp := hashpool.New(sha256.New)
+	tests := []struct {
+		pairs [][]byte
+		want  bool
+	}{
+		{[][]byte{data, data, data, data}, true},
+		{[][]byte{data, data, data}, false},
+		{[][]byte{data, data}, true},
+		{[][]byte{data}, false},
+		{[][]byte{nil}, false},
+		{[][]byte{nil, nil}, false},
+		{[][]byte{}, false},
+		{nil, false},
+		{[][]byte{u1, u2}, true},
+		{[][]byte{p1, p2}, true},
+		{[][]byte{u1, u2, p1, p2}, true},
+		{[][]byte{u2, u1, p1, p2}, true},
+		{[][]byte{u2, p1, p1, p2}, false},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, hp.EqualPairs(test.pairs...), "Index %d", i)
+	}
+}
+
+func BenchmarkTank_EqualPairs_SHA256_4args(b *testing.B) {
+	u1 := []byte(`username1`)
+	u2 := []byte(`username1`)
+	p1 := []byte(`password1`)
+	p2 := []byte(`password1`)
+	hp := hashpool.New(sha256.New)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if !hp.EqualPairs(u1, u2, p1, p2) {
+			b.Fatal("Expecting to be true")
+		}
+	}
+}
+
 type readerError struct{}
 
 func (readerError) Read(p []byte) (int, error) {

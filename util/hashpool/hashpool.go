@@ -84,6 +84,35 @@ func (t Tank) Equal(data []byte, mac []byte) bool {
 	return subtle.ConstantTimeCompare(t.Sum(data, buf.Bytes()), mac) == 1
 }
 
+// EqualPairs compares data pairs for equality via constant time. Returns true
+// only if all pairs are equal and one data item length is at least greater than
+// zero. Use case: Compare username and password from database with a username
+// and password from an outside input form.
+func (t Tank) EqualPairs(dataPairs ...[]byte) bool {
+	ldp := len(dataPairs)
+	if ldp == 0 || ldp%2 == 1 {
+		return false
+	}
+
+	buf1 := bufferpool.Get()
+	defer bufferpool.Put(buf1)
+	buf2 := bufferpool.Get()
+	defer bufferpool.Put(buf2)
+
+	eq := 0
+	for i := 0; i <= ldp/2; i = i + 2 {
+		if len(dataPairs[i]) == 0 {
+			return false
+		}
+		if subtle.ConstantTimeCompare(t.Sum(dataPairs[i], buf1.Bytes()), t.Sum(dataPairs[i+1], buf2.Bytes())) == 1 {
+			eq++
+		}
+		buf1.Reset()
+		buf2.Reset()
+	}
+	return eq == ldp/2
+}
+
 // EqualReader hashes io.Reader and compares it with MAC for equality without
 // leaking timing information. The internal buffer to read into data from
 // io.Reader can be adjusted via field BufferSize.
