@@ -34,6 +34,8 @@ func WithDefaultConfig(scopeIDs ...scope.TypeID) Option {
 	return withDefaultConfig(scopeIDs...)
 }
 
+// WithUnauthorizedHandler sets the handler which calls the interface to request
+// data from a user after the authentication failed.
 func WithUnauthorizedHandler(uah mw.ErrorHandler, scopeIDs ...scope.TypeID) Option {
 	return func(s *Service) error {
 		sc := s.findScopedConfig(scopeIDs...)
@@ -143,6 +145,49 @@ func WithResourceRegexpACLs(block, whitelist []string, scopeIDs ...scope.TypeID)
 	}
 }
 
+// WithAuthenticationProvider sets the authentication provider function which
+// checks if a request should be considered valid to call the next handler.
+func WithAuthenticationProvider(ap AuthenticationFunc, priority int, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.authProviders = append(sc.authProviders, authProvider{
+			prio:               priority,
+			AuthenticationFunc: ap,
+		})
+		return s.updateScopedConfig(sc)
+	}
+}
+
+// WithSimpleBasicAuth sets a single username/password for a scope. Username and
+// password must be provided as "plain text" arguments. This basic auth handler
+// calls the next authentication provider if the authentication fails.
+func WithSimpleBasicAuth(username, password, realm string, scopeIDs ...scope.TypeID) Option {
+	ba256, err := basicAuthValidator("sha256", username, password)
+	if err != nil {
+		return func(s *Service) error {
+			return errors.Wrap(err, "[auth] WithSimpleBasicAuth basicAuthHashed")
+		}
+	}
+
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		sc.authProviders = append(sc.authProviders, authProvider{
+			prio:               1,
+			AuthenticationFunc: basicAuth(ba256),
+		})
+		sc.UnauthorizedHandler = basicAuthHandler(realm)
+		return s.updateScopedConfig(sc)
+	}
+}
+
+func WithBasicAuth(authFunc func(username, password string) bool, realm string, scopeIDs ...scope.TypeID) Option {
+	return func(s *Service) error {
+		sc := s.findScopedConfig(scopeIDs...)
+		// sc.UnauthorizedHandler = uah
+		return s.updateScopedConfig(sc)
+	}
+}
+
 // prioIncrement only used for testing to trigger the sorting. This variable
 // should not trigger any race conditions.
 var prioIncrement = 1000
@@ -175,22 +220,6 @@ func WithValidAuth(scopeIDs ...scope.TypeID) Option {
 			},
 		})
 		sc.authProviders.sort()
-		return s.updateScopedConfig(sc)
-	}
-}
-
-func WithSimpleBasicAuth(username, password, realm string, scopeIDs ...scope.TypeID) Option {
-	return func(s *Service) error {
-		sc := s.findScopedConfig(scopeIDs...)
-		// sc.UnauthorizedHandler = uah
-		return s.updateScopedConfig(sc)
-	}
-}
-
-func WithBasicAuth(authFunc func(username, password string) bool, scopeIDs ...scope.TypeID) Option {
-	return func(s *Service) error {
-		sc := s.findScopedConfig(scopeIDs...)
-		// sc.UnauthorizedHandler = uah
 		return s.updateScopedConfig(sc)
 	}
 }

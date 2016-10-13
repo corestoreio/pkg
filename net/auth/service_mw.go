@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -44,19 +43,12 @@ func (s *Service) WithAuthentication(next http.Handler) http.Handler {
 			return
 		}
 		if err := scpCfg.Authenticate(r); err != nil {
+			if s.Log.IsDebug() {
+				s.Log.Debug("auth.Service.Authenticate.Failed", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+			}
 			scpCfg.UnauthorizedHandler(errors.Wrap(err, "[auth] Authentication failed"))
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-// WithCookieValidation validates a secure cookie which has been set by
-// the middleware WithAuthentication()
-func (s *Service) WithCookieValidation() mw.Middleware {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			panic("Paaaaannniiiiiccc TODO")
-		})
-	}
 }
