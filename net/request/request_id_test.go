@@ -26,6 +26,7 @@ import (
 var _ IDGenerator = (*idService)(nil)
 
 func TestDefaultRequestPrefix(t *testing.T) {
+	//t.Parallel()
 	s := idService{}
 	s.Init()
 	p := s.NewID(nil)
@@ -68,6 +69,7 @@ func (testGenerator) NewID(_ *http.Request) string {
 }
 
 func TestWithRequestIDCustom(t *testing.T) {
+	//t.Parallel()
 	testWithRequestID(t, testGenerator{})
 }
 

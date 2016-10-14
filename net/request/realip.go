@@ -32,7 +32,6 @@ type headers [7]string
 
 func (hs headers) findIP(r *http.Request) net.IP {
 	for _, h := range hs {
-
 		addresses := strings.Split(r.Header.Get(h), ",")
 		// march from right to left until we get a public address
 		// that will be the address right before our proxy.
@@ -67,11 +66,11 @@ const (
 	IPForwardedTrust
 )
 
-// RealIP extracts the remote address from a request and takes
-// care of different headers in which an IP address can be stored.
-// Checks if the IP in one of the header fields lies in net.PrivateIPRanges.
-// For the second argument opts please see the constants IPForwarded*.
-// Return value can be nil.
+// RealIP extracts the remote address from a request and takes care of different
+// headers in which an IP address can be stored. Checks if the IP in one of the
+// header fields lies in net.PrivateIPRanges. For the second argument opts
+// please see the constants IPForwarded*. Return value can be nil. A check for
+// the RealIP costs 8 allocs, for now.
 func RealIP(r *http.Request, opts int) net.IP {
 	// Courtesy https://husobee.github.io/golang/ip-address/2015/12/17/remote-ip-go.html
 
@@ -110,4 +109,28 @@ func filterIP(ip string) string {
 		}
 	}
 	return buf.String()
+}
+
+// InIPRange returns a function which can check if a requests real IP address is
+// available in the provided list of IP ranges. You must provide a from and a to
+// address. Passing imbalanced pairs returns a nil function pointer. The return
+// function fits nicely with the signature of the package type
+// auth.TriggerFunc. IPv4 or IPv6 doesn't matter.
+func InIPRange(fromTo ...string) func(*http.Request) bool {
+	ipr := csnet.MakeIPRanges(fromTo...)
+	return func(r *http.Request) bool {
+		return ipr.In(RealIP(r, IPForwardedTrust))
+	}
+}
+
+// NotInIPRange returns a function which can check if a requests real IP address
+// is NOT available in the provided list of IP ranges. You must provide a from
+// and a to address. Passing imbalanced pairs returns a nil function pointer.
+// The return function fits nicely with the signature of the package type
+// auth.TriggerFunc. IPv4 or IPv6 doesn't matter.
+func NotInIPRange(fromTo ...string) func(*http.Request) bool {
+	ipr := csnet.MakeIPRanges(fromTo...)
+	return func(r *http.Request) bool {
+		return !ipr.In(RealIP(r, IPForwardedTrust))
+	}
 }

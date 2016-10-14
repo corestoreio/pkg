@@ -1,3 +1,22 @@
-BenchmarkWithRequestID-4   	 5000000	       388 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       346 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       348 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       350 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       347 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       351 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       351 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       349 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       347 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       349 ns/op	      56 B/op	       3 allocs/op
+BenchmarkWithRequestID-4   	 5000000	       347 ns/op	      56 B/op	       3 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1744 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1777 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1717 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1738 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1743 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1739 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1748 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1746 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1719 ns/op	     136 B/op	       8 allocs/op
+BenchmarkInIPRange-4       	 1000000	      1754 ns/op	     136 B/op	       8 allocs/op
 PASS
-ok  	github.com/corestoreio/csfw/net/request	2.332s
+ok  	github.com/corestoreio/csfw/net/request	38.628s

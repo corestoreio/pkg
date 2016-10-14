@@ -19,12 +19,16 @@ import (
 	"net/http"
 	"testing"
 
+	"net/http/httptest"
+
+	csnet "github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/net/auth"
 	"github.com/corestoreio/csfw/net/request"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRealIP(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		r      *http.Request
 		opt    int
@@ -77,5 +81,55 @@ func TestGetRealIP(t *testing.T) {
 	for i, test := range tests {
 		haveIP := request.RealIP(test.r, test.opt)
 		assert.Exactly(t, test.wantIP, haveIP, "Index: %d Want %s Have %s", i, test.wantIP, haveIP)
+	}
+}
+
+// check if the returned function conforms with the auth package
+var _ auth.TriggerFunc = request.InIPRange("192.168.0.1", "192.168.0.100")
+var _ auth.TriggerFunc = request.NotInIPRange("192.168.0.1", "192.168.0.100")
+
+func TestInIPRange(t *testing.T) {
+	t.Parallel()
+	rf := request.InIPRange(
+		"10.0.0.0", "10.255.255.255",
+		"100.64.0.0", "100.127.255.255",
+	)
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "10.2.3.4"
+	assert.True(t, rf(r))
+	r.RemoteAddr = "192.168.0.1"
+	assert.False(t, rf(r))
+
+}
+
+func TestNotInIPRange(t *testing.T) {
+	t.Parallel()
+	rf := request.NotInIPRange(
+		"10.0.0.0", "10.255.255.255",
+		"100.64.0.0", "100.127.255.255",
+	)
+	r := httptest.NewRequest("GET", "/", nil)
+	r.RemoteAddr = "10.2.3.4"
+	assert.False(t, rf(r))
+	r.RemoteAddr = "192.168.0.1"
+	assert.True(t, rf(r))
+
+	rf = request.NotInIPRange()
+	assert.True(t, rf(r))
+}
+
+var benchmarkInIPRange bool
+
+func BenchmarkInIPRange(b *testing.B) {
+	rf := request.InIPRange("8.8.0.0", "8.8.255.255")
+	r := httptest.NewRequest("GET", "/", nil)
+	r.Header.Set(csnet.XRealIP, "8.8.8.8")
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkInIPRange = rf(r)
+	}
+	if !benchmarkInIPRange {
+		b.Fatalf("Expecting true but got %t", benchmarkInIPRange)
 	}
 }
