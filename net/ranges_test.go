@@ -19,13 +19,14 @@ import (
 	"testing"
 
 	csnet "github.com/corestoreio/csfw/net"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIPRanges_In(t *testing.T) {
 
 	irs := csnet.IPRanges{
-		csnet.NewIPRange("74.50.146.0", "74.50.146.4"),
-		csnet.NewIPRange("::ffff:183.0.2.128", "::ffff:183.0.2.250"),
+		csnet.MakeIPRange("74.50.146.0", "74.50.146.4"),
+		csnet.MakeIPRange("::ffff:183.0.2.128", "::ffff:183.0.2.250"),
 	}
 	if have, want := irs.InStr("74.50.146.2"), true; want != have {
 		t.Errorf("Have %t Want %t", have, want)
@@ -66,7 +67,7 @@ func TestIPRange_In(t *testing.T) {
 		{"unparseable", "183.0.2.250", "::ffff:183.0.2.130", false},
 	}
 	for _, test := range tests {
-		if have, want := csnet.NewIPRange(test.from, test.to).InStr(test.testIP), test.want; have != want {
+		if have, want := csnet.MakeIPRange(test.from, test.to).InStr(test.testIP), test.want; have != want {
 			t.Errorf("Assertion (have: %t want: %t) failed on range %s-%s with test %s", have, want, test.from, test.to, test.testIP)
 		}
 	}
@@ -93,7 +94,7 @@ var benchmarkIPRange bool
 
 // BenchmarkIPRangeV6-4   	10000000	       185 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkIPRangeV6(b *testing.B) {
-	ir := csnet.NewIPRange("2002:0db8:85a3:0000:0000:8a2e:0370:7334", "2002:0db8:85a3:0000:0000:8a2e:0370:8334")
+	ir := csnet.MakeIPRange("2002:0db8:85a3:0000:0000:8a2e:0370:7334", "2002:0db8:85a3:0000:0000:8a2e:0370:8334")
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -107,7 +108,7 @@ func BenchmarkIPRangeV6(b *testing.B) {
 
 // BenchmarkIPRangeV4-4   	20000000	       101 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkIPRangeV4(b *testing.B) {
-	ir := csnet.NewIPRange("74.50.146.0", "74.50.146.4")
+	ir := csnet.MakeIPRange("74.50.146.0", "74.50.146.4")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -116,4 +117,28 @@ func BenchmarkIPRangeV4(b *testing.B) {
 	if !benchmarkIPRange {
 		b.Fatal("benchmarkIPRange must be true")
 	}
+}
+
+func TestMakeIPRanges_Imbalanced(t *testing.T) {
+	if ipr := csnet.MakeIPRanges("Imbalanced"); ipr != nil {
+		t.Errorf("Should create a nil slice but got %#v", ipr)
+	}
+}
+
+func TestMakeIPRanges(t *testing.T) {
+	ipr := csnet.MakeIPRanges(
+		"10.0.0.0", "10.255.255.255",
+		"100.64.0.0", "100.127.255.255",
+		"172.16.0.0", "172.31.255.255",
+		"192.0.0.0", "192.0.0.255",
+		"192.168.0.0", "192.168.255.255",
+		"198.18.0.0", "198.19.255.255",
+	)
+	assert.Exactly(t, csnet.PrivateIPRanges, ipr)
+}
+
+func TestIPRanges_Strings(t *testing.T) {
+	assert.Exactly(t,
+		[]string{"10.0.0.0", "10.255.255.255", "100.64.0.0", "100.127.255.255", "172.16.0.0", "172.31.255.255", "192.0.0.0", "192.0.0.255", "192.168.0.0", "192.168.255.255", "198.18.0.0", "198.19.255.255"},
+		csnet.PrivateIPRanges.Strings())
 }

@@ -28,12 +28,28 @@ type IPRange struct {
 // IPRanges contains multiple IPRange entries. v4 or v6 doesn't matter.
 type IPRanges []IPRange
 
-// NewIPRange creates a new instance.
-func NewIPRange(from, to string) IPRange {
+// MakeIPRange creates a new instance.
+func MakeIPRange(from, to string) IPRange {
 	return IPRange{
 		from: gonet.ParseIP(from).To16(),
 		to:   gonet.ParseIP(to).To16(),
 	}
+}
+
+// MakeIPRanges creates a new instance. May return nil if imbalanced pairs are
+// provided. IPv4 or IPv6 doesn't matter.
+func MakeIPRanges(fromTo ...string) IPRanges {
+	lft := len(fromTo)
+	if lft%2 == 1 {
+		return nil
+	}
+	ipr := make(IPRanges, lft/2)
+	j := 0
+	for i := 0; i < lft; i = i + 2 {
+		ipr[j] = MakeIPRange(fromTo[i], fromTo[i+1])
+		j++
+	}
+	return ipr
 }
 
 // In checks if test IP lies within the range.
@@ -62,14 +78,29 @@ func (s IPRanges) InStr(ip string) bool {
 	return s.In(gonet.ParseIP(ip))
 }
 
+// Strings converts all IP addresses to a string slice.
+func (s IPRanges) Strings() []string {
+	ret := make([]string, len(s)*2)
+	i := 0
+	for _, ipr := range s {
+		ret[i] = ipr.from.String()
+		ret[i+1] = ipr.to.String()
+		i = i + 2
+	}
+	return ret
+}
+
+// IPRange or IPRanges: more functions like `Strings() []string` or `String()`
+// string or MarshalBinary or MarshalJSON can be added later.
+
 // PrivateIPRanges defines a list of private IP subnets.
 // Can be modified by yourself.
 var PrivateIPRanges = IPRanges{
-	NewIPRange("10.0.0.0", "10.255.255.255"),
-	NewIPRange("100.64.0.0", "100.127.255.255"),
-	NewIPRange("172.16.0.0", "172.31.255.255"),
-	NewIPRange("192.0.0.0", "192.0.0.255"),
-	NewIPRange("192.168.0.0", "192.168.255.255"),
-	NewIPRange("198.18.0.0", "198.19.255.255"),
+	MakeIPRange("10.0.0.0", "10.255.255.255"),
+	MakeIPRange("100.64.0.0", "100.127.255.255"),
+	MakeIPRange("172.16.0.0", "172.31.255.255"),
+	MakeIPRange("192.0.0.0", "192.0.0.255"),
+	MakeIPRange("192.168.0.0", "192.168.255.255"),
+	MakeIPRange("198.18.0.0", "198.19.255.255"),
 	// NewIPRange("fc00::/7", "fc00::/7"),
 }
