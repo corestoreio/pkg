@@ -12,72 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package request
+package request_test
 
 import (
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/csfw/net/request"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"regexp"
+	"time"
 )
 
-var _ IDGenerator = (*idService)(nil)
+var idGen = &request.ID{}
 
 func TestDefaultRequestPrefix(t *testing.T) {
-	//t.Parallel()
-	s := idService{}
-	s.Init()
-	p := s.NewID(nil)
-	assert.Exactly(t, "-1", p[len(p)-2:])
-	assert.Contains(t, p, "/")
-}
-
-func testWithRequestID(t *testing.T, gen IDGenerator) {
-	id := ID{}
-	if gen != nil {
-		id.IDGenerator = gen
-	}
-
+	t.Parallel()
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := w.Header().Get(RequestIDHeader)
-		assert.Exactly(t, "-2", id[len(id)-2:])
+		id := w.Header().Get(request.HeaderIDKeyName)
 		assert.Contains(t, id, "/")
 
-	}, id.With())
+	}, idGen.With())
 
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
-	if err != nil {
-		t.Fatal(err)
+	req := httptest.NewRequest("GET", "/", nil)
+
+	const regex = ".+/[A-Za-z0-9]+-[0-9]+"
+	matchr := regexp.MustCompile(regex)
+	hpu := cstesting.NewHTTPParallelUsers(5, 10, 500, time.Millisecond)
+	hpu.AssertResponse = func(rec *httptest.ResponseRecorder) {
+		id := rec.Header().Get(request.HeaderIDKeyName)
+		assert.True(t, matchr.MatchString(id), "ID %q does not match %q", id, regex)
 	}
-	finalCH.ServeHTTP(w, r)
+	hpu.ServeHTTP(req, finalCH)
+	assert.Exactly(t, 50, int(*idGen.Count))
 }
 
-func TestWithRequestIDDefault(t *testing.T) {
-	testWithRequestID(t, nil)
-}
-
-type testGenerator struct{}
-
-func (testGenerator) Init() {
-
-}
-func (testGenerator) NewID(_ *http.Request) string {
-	return "goph/er-2"
-}
-
-func TestWithRequestIDCustom(t *testing.T) {
-	//t.Parallel()
-	testWithRequestID(t, testGenerator{})
-}
-
-// BenchmarkWithRequestID-4	 3000000	       432 ns/op	      64 B/op	       3 allocs/op
 func BenchmarkWithRequestID(b *testing.B) {
-	id := ID{}
+	id := &request.ID{}
 	finalCH := mw.ChainFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := w.Header().Get(RequestIDHeader)
+		id := w.Header().Get(request.HeaderIDKeyName)
 		if id == "" {
 			b.Fatal("id is empty")
 		}

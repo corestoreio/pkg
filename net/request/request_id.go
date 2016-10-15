@@ -30,33 +30,26 @@ import (
 	"github.com/corestoreio/csfw/net/mw"
 )
 
-// RequestIDHeader defines the name of the header used to transmit the request ID.
-const RequestIDHeader = "X-Request-Id"
+// HeaderIDKeyName defines the name of the header used to transmit the request
+// ID.
+const HeaderIDKeyName = "X-Request-Id"
 
-// reqID is a global Counter used to create new request ids. This ID is not unique
-// across multiple micro services.
-var reqID = new(int64)
-
-// IDGenerator defines the functions needed to generate a request
-// prefix id.
-type IDGenerator interface {
-	// Init allows you to initialize a prefix which will be appended to
-	// the NewID() function. Init is only called once.
-	Init()
-	// NewID returns an atomic ID. This function gets executed for every
-	// request.
-	NewID(*http.Request) string
+// ID represents a middleware for request Id generation and adding the ID to the
+// header.
+type ID struct {
+	// HeaderIDKeyName identifies the key name in the request header. Can be
+	// empty and falls back to constant HeaderIDKeyName.
+	HeaderIDKeyName string
+	// Count defines the optional start value. If nil starts at zero. To access
+	// securely "Count" you must use the atomic package.
+	Count *uint64
+	// NewIDFunc generates a new ID. Can be nil.
+	NewIDFunc func(*http.Request) string
+	log.Logger
 }
 
-// idService default prefix generator. Creates a prefix once the middleware
-// is set up.
-type idService struct {
-	prefix string
-}
+func (iw *ID) newID() func(*http.Request) string {
 
-// Prefix returns a unique prefix string for the current (micro) service.
-// This id gets reset once you restart the service.
-func (rp *idService) Init() {
 	// algorithm taken from https://github.com/zenazn/goji/blob/master/web/middleware/request_id.go#L40-L52
 	hostname, err := os.Hostname()
 	if hostname == "" || err != nil {
@@ -71,50 +64,44 @@ func (rp *idService) Init() {
 		b64 = base64.StdEncoding.EncodeToString(buf[:])
 		b64 = strings.NewReplacer("+", "", "/", "").Replace(b64)
 	}
-	rp.prefix = fmt.Sprintf("%s/%s-", hostname, b64[0:10])
+	prefix := fmt.Sprintf("%s/%s-", hostname, b64[0:10])
+
+	return func(*http.Request) string {
+		return prefix + strconv.FormatUint(atomic.AddUint64(iw.Count, 1), 10)
+	}
 }
 
-// NewID returns a new ID unique for the current compilation.
-func (rp *idService) NewID(_ *http.Request) string {
-	return rp.prefix + strconv.FormatInt(atomic.AddInt64(reqID, 1), 10)
-}
-
-// ID represents a middleware for request Id generation.
-type ID struct {
-	IDGenerator
-	log.Logger
-}
-
-// With is a middleware that injects a request ID into the response header
-// of each request. Retrieve it using:
-// 		w.Header().Get(RequestIDHeader)
-// If the incoming request has a RequestIDHeader header then that value is used
+// With is a middleware that injects a request ID into the response header of
+// each request. Retrieve it using:
+// 		w.Header().Get(HeaderIDKeyName)
+// If the incoming request has a HeaderIDKeyName header then that value is used
 // otherwise a random value is generated. You can specify your own generator by
-// providing the RequestPrefixGenerator in an option. No options uses the
-// default request prefix generator.
-// Supported options are: SetLogger() and SetRequestIDGenerator()
-//
-// Package store/storenet provides also a request ID generator containing
-// the current requested store.
-func (iw ID) With() mw.Middleware {
+// providing the NewIDFunc in an option. No options uses the default request
+// prefix generator.
+func (iw *ID) With() mw.Middleware {
 	if iw.Logger == nil {
 		iw.Logger = log.BlackHole{}
 	}
-	if iw.IDGenerator == nil {
-		iw.IDGenerator = &idService{}
+	if iw.HeaderIDKeyName == "" {
+		iw.HeaderIDKeyName = HeaderIDKeyName
 	}
-	iw.Init()
+	if iw.NewIDFunc == nil {
+		iw.NewIDFunc = iw.newID()
+	}
+	if iw.Count == nil {
+		iw.Count = new(uint64)
+	}
 
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			id := r.Header.Get(RequestIDHeader)
+			id := r.Header.Get(iw.HeaderIDKeyName)
 			if id == "" {
-				id = iw.NewID(r)
+				id = iw.NewIDFunc(r)
 			}
 			if iw.IsDebug() {
 				iw.Debug("request.ID.With", log.String("id", id), log.HTTPRequest("request", r))
 			}
-			w.Header().Set(RequestIDHeader, id)
+			w.Header().Set(iw.HeaderIDKeyName, id)
 			h.ServeHTTP(w, r)
 		})
 	}
