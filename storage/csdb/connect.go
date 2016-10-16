@@ -15,11 +15,11 @@
 package csdb
 
 import (
+	"net/url"
 	"os"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 // EnvDSN is the name of the environment variable
@@ -36,6 +36,20 @@ func getDSN(env string, err error) (string, error) {
 // GetDSN returns the data source name from an environment variable or an error
 func GetDSN() (string, error) {
 	return getDSN(EnvDSN, errors.NewNotFoundf("Env var: %q not found", EnvDSN))
+}
+
+// GetParsedDSN checks the environment variable EnvDSN and if a DSN can be found
+// it gets parsed into an URL.
+func GetParsedDSN() (*url.URL, error) {
+	dsn, err := GetDSN()
+	if err != nil {
+		return nil, errors.Wrap(err, "[csdb] Cannot find DSN environment variable")
+	}
+	du, err := url.Parse(dsn)
+	if err != nil {
+		return nil, errors.Wrap(err, "[csdb] Cannot parse DSN into URL")
+	}
+	return du, nil
 }
 
 // Connect creates a new database connection from a DSN stored in an
