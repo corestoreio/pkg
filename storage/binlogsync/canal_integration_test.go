@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mybinlogsync_test
+package binlogsync_test
 
 import (
 	"testing"
-
 	"time"
 
+	"github.com/corestoreio/csfw/storage/binlogsync"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/mybinlogsync"
+	"github.com/siddontang/go-mysql/schema"
 )
 
 func TestIntegrationNewCanal(t *testing.T) {
@@ -28,7 +28,7 @@ func TestIntegrationNewCanal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get DSN from env %q with %+v", csdb.EnvDSN, err)
 	}
-	c, err := mybinlogsync.NewCanal(dsn)
+	c, err := binlogsync.NewCanal(dsn)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -38,7 +38,7 @@ func TestIntegrationNewCanal(t *testing.T) {
 	if err := c.Start(); err != nil {
 		t.Fatalf("%+v", err)
 	}
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 10)
 	c.Close()
 
 }
@@ -47,9 +47,13 @@ type catalogProductEvent struct {
 	t *testing.T
 }
 
-func (cpe *catalogProductEvent) Do(e *mybinlogsync.RowsEvent) error {
-	cpe.t.Logf("%s %s", e.Table.Schema, e.Table.Name)
-	cpe.t.Logf("%#v\n.\n", e.Rows)
+func (cpe *catalogProductEvent) Do(action string, table *schema.Table, rows [][]interface{}) error {
+
+	cpe.t.Logf("%s.%s", table.Schema, table.Name)
+	for _, r := range rows {
+		cpe.t.Logf("%#v", r)
+	}
+	cpe.t.Logf("\n")
 	return nil
 }
 func (cpe *catalogProductEvent) Complete() error {

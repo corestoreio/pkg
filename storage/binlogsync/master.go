@@ -1,4 +1,4 @@
-package mybinlogsync
+package binlogsync
 
 import (
 	"sync"
@@ -9,33 +9,34 @@ import (
 )
 
 type masterInfo struct {
-	Name     string
+	FileName string
 	Position uint32
 
-	l sync.Mutex
+	// mu protects the underlying storage engine to save the position and the filename.
+	mu sync.Mutex
 
 	lastSaveTime time.Time
 }
 
 func loadMasterInfo(exec mysql.Executer) (*masterInfo, error) {
-
+	// todo(CyS) refactor
 	res, err := exec.Execute("SHOW MASTER STATUS")
 	if err != nil {
-		return nil, errors.Wrap(err, "[mybinlogsync] Failed to execute SHOW MASTER STATUS")
+		return nil, errors.Wrap(err, "[binlogsync] Failed to execute SHOW MASTER STATUS")
 	}
 
 	name, err := res.GetString(0, 0)
 	if err != nil {
-		return nil, errors.Wrap(err, "[mybinlogsync] Failed to fetch first row with 1st column")
+		return nil, errors.Wrap(err, "[binlogsync] Failed to fetch first row with 1st column")
 	}
 
 	pos, err := res.GetUint(0, 1)
 	if err != nil {
-		return nil, errors.Wrap(err, "[mybinlogsync] Failed to fetch first row with 2nd column")
+		return nil, errors.Wrap(err, "[binlogsync] Failed to fetch first row with 2nd column")
 	}
 
 	m := &masterInfo{
-		Name:     name,
+		FileName: name,
 		Position: uint32(pos),
 	}
 	return m, nil
@@ -43,8 +44,8 @@ func loadMasterInfo(exec mysql.Executer) (*masterInfo, error) {
 
 // Save todo: implement saving
 func (m *masterInfo) Save(force bool) error {
-	m.l.Lock()
-	defer m.l.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	n := time.Now()
 	if !force && n.Sub(m.lastSaveTime) < time.Second {
@@ -67,18 +68,18 @@ func (m *masterInfo) Save(force bool) error {
 }
 
 func (m *masterInfo) Update(name string, pos uint32) {
-	m.l.Lock()
-	m.Name = name
+	m.mu.Lock()
+	m.FileName = name
 	m.Position = pos
-	m.l.Unlock()
+	m.mu.Unlock()
 }
 
 func (m *masterInfo) Pos() mysql.Position {
 	var pos mysql.Position
-	m.l.Lock()
-	pos.Name = m.Name
+	m.mu.Lock()
+	pos.Name = m.FileName
 	pos.Pos = m.Position
-	m.l.Unlock()
+	m.mu.Unlock()
 
 	return pos
 }
