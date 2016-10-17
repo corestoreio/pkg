@@ -21,16 +21,19 @@ import (
 )
 
 func TestError_Error(t *testing.T) {
+	t.Parallel()
 	const e1 Error = "e1"
 	assert.EqualError(t, e1, "e1")
 }
 
 func TestWrapf2(t *testing.T) {
+	t.Parallel()
 	var e = Wrapf(nil, "Error %d")
 	assert.Nil(t, e)
 }
 
 func TestErrorContainsAny(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		me   error
 		vf   []BehaviourFunc

@@ -28,6 +28,7 @@ const (
 	BehaviourAlreadyExists
 	BehaviourEmpty
 	BehaviourFatal
+	BehaviourInterrupted
 	BehaviourNotFound
 	BehaviourNotImplemented
 	BehaviourNotSupported
@@ -52,6 +53,8 @@ func HasBehaviour(err error) int {
 		ret = BehaviourFatal
 	case IsEmpty(err):
 		ret = BehaviourEmpty
+	case IsInterrupted(err):
+		ret = BehaviourInterrupted
 	case IsNotFound(err):
 		ret = BehaviourNotFound
 	case IsNotImplemented(err):
@@ -697,4 +700,50 @@ func IsTimeout(err error) bool {
 	// unwrap until we get the root cause which might also implement the
 	// behaviour.
 	return isTimeout(Cause(err))
+}
+
+type (
+	interrupted  struct{ wrapper }
+	interruptedf struct{ _error }
+)
+
+// NewInterrupted returns an error which wraps err and satisfies
+// IsInterrupted().
+func NewInterrupted(err error, msg string) error {
+	if err == nil {
+		return nil
+	}
+	return &interrupted{errWrapf(err, msg)}
+}
+
+// NewInterruptedf returns an formatted error that satisfies IsInterrupted().
+func NewInterruptedf(format string, args ...interface{}) error {
+	return &interruptedf{errNewf(format, args...)}
+}
+
+func isInterrupted(err error) (ok bool) {
+	type iFace interface {
+		Interrupted() bool
+	}
+	switch et := err.(type) {
+	case *interrupted:
+		ok = true
+	case *interruptedf:
+		ok = true
+	case iFace:
+		ok = et.Interrupted()
+	}
+	return
+}
+
+// IsInterrupted reports whether err was created with NewInterrupted() or
+// has a method receiver "Interrupted() bool".
+func IsInterrupted(err error) bool {
+	// check if direct hit that err implements the behaviour.
+	if isInterrupted(err) {
+		return true
+	}
+	// unwrap until we get the root cause which might also implement the
+	// behaviour.
+	return isInterrupted(Cause(err))
 }

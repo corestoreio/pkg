@@ -60,11 +60,15 @@ func (nf testBehave) Temporary() bool {
 func (nf testBehave) Timeout() bool {
 	return nf.ret
 }
+func (nf testBehave) Interrupted() bool {
+	return nf.ret
+}
 func (nf testBehave) Error() string {
 	return ""
 }
 
 func TestBehaviourPlain(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		err  error
 		is   BehaviourFunc
@@ -583,6 +587,47 @@ func TestBehaviourPlain(t *testing.T) {
 			is:   IsTimeout,
 			want: true,
 		},
+		{
+			err:  testBehave{true},
+			is:   IsInterrupted,
+			want: true,
+		}, {
+			err:  errors.New("Error1"),
+			is:   IsInterrupted,
+			want: false,
+		}, {
+			err:  NewInterrupted(nil, "Error2"),
+			is:   IsInterrupted,
+			want: false,
+		}, {
+			err:  NewInterrupted(Error("Error2a"), "Error2"),
+			is:   IsInterrupted,
+			want: true,
+		}, {
+			err:  NewInterruptedf("Err508"),
+			is:   IsInterrupted,
+			want: true,
+		}, {
+			err:  Wrap(NewInterruptedf("Err512"), "Wrap512"),
+			is:   IsInterrupted,
+			want: true,
+		}, {
+			err:  NewNotImplemented(Wrap(NewInterruptedf("Err564"), "Wrap564"), "ni562"),
+			is:   IsInterrupted,
+			want: true,
+		}, {
+			err:  nil,
+			is:   IsInterrupted,
+			want: false,
+		}, {
+			err:  testBehave{},
+			is:   IsInterrupted,
+			want: false,
+		}, {
+			err:  testBehave{true},
+			is:   IsInterrupted,
+			want: true,
+		},
 	}
 	for i, test := range tests {
 		if want, have := test.want, test.is(test.err); want != have {
@@ -592,6 +637,7 @@ func TestBehaviourPlain(t *testing.T) {
 }
 
 func TestErrWrapf(t *testing.T) {
+	t.Parallel()
 	const e Error = "Error1"
 	if haveEB, want := errWrapf(e, "Hello World %#v"), "Hello World %#v"; haveEB.msg != want {
 		t.Errorf("have %q want %q", haveEB.msg, want)
@@ -602,6 +648,7 @@ func TestErrWrapf(t *testing.T) {
 }
 
 func TestErrNewf(t *testing.T) {
+	t.Parallel()
 	if have, want := errNewf("Hello World %d", 633), "Hello World 633"; have.msg != want {
 		t.Errorf("have %q want %q", have.msg, want)
 	}
@@ -611,6 +658,7 @@ func TestErrNewf(t *testing.T) {
 }
 
 func TestHasBehaviour(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		err           error
 		wantBehaviour int
@@ -620,6 +668,7 @@ func TestHasBehaviour(t *testing.T) {
 		{NewAlreadyExistsf("err29"), BehaviourAlreadyExists},
 		{NewEmptyf("err50"), BehaviourEmpty},
 		{NewFatalf("err31"), BehaviourFatal},
+		{NewInterruptedf("err31a"), BehaviourInterrupted},
 		{NewNotFoundf("err32"), BehaviourNotFound},
 		{NewNotImplementedf("err33"), BehaviourNotImplemented},
 		{NewNotSupportedf("err34"), BehaviourNotSupported},
