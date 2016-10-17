@@ -23,14 +23,18 @@ type RowsEventHandler interface {
 }
 
 func (c *Canal) RegRowsEventHandler(h RowsEventHandler) {
-	c.rsLock.Lock()
+	c.rsMu.Lock()
+	defer c.rsMu.Unlock()
+
+	if c.rsHandlers == nil {
+		c.rsHandlers = make([]RowsEventHandler, 0, 4)
+	}
 	c.rsHandlers = append(c.rsHandlers, h)
-	c.rsLock.Unlock()
 }
 
 func (c *Canal) travelRowsEventHandler(action string, table *schema.Table, rows [][]interface{}) error {
-	c.rsLock.RLock()
-	defer c.rsLock.RUnlock()
+	c.rsMu.RLock()
+	defer c.rsMu.RUnlock()
 
 	var err error
 	for _, h := range c.rsHandlers {
@@ -49,8 +53,8 @@ func (c *Canal) travelRowsEventHandler(action string, table *schema.Table, rows 
 }
 
 func (c *Canal) flushEventHandlers() error {
-	c.rsLock.RLock()
-	defer c.rsLock.RUnlock()
+	c.rsMu.RLock()
+	defer c.rsMu.RUnlock()
 
 	var err error
 	for _, h := range c.rsHandlers {

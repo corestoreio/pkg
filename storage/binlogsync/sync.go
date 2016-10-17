@@ -17,19 +17,23 @@ const (
 )
 
 func (c *Canal) startSyncBinlog() error {
-	pos := mysql.Position{Name: c.master.FileName, Pos: c.master.Position}
+	pos := c.masterPos
 
 	if c.Log.IsInfo() {
 		c.Log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
 	}
 
-	s, err := c.syncer.StartSync(pos)
+	fixMePos := mysql.Position{
+		Name: pos.Name,
+		Pos:  pos.Pos,
+	}
+
+	s, err := c.syncer.StartSync(fixMePos)
 	if err != nil {
 		return errors.NewFatalf("[binlogsync] Start sync replication at %s error %v", pos, err)
 	}
 
 	timeout := time.Second
-	forceSavePos := false
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		ev, err := s.GetEvent(ctx)
@@ -48,8 +52,6 @@ func (c *Canal) startSyncBinlog() error {
 		//next binlog pos
 		pos.Pos = ev.Header.LogPos
 
-		forceSavePos = false
-
 		switch e := ev.Event.(type) {
 		case *replication.RotateEvent:
 			if err := c.flushEventHandlers(); err != nil {
@@ -59,7 +61,6 @@ func (c *Canal) startSyncBinlog() error {
 			pos.Name = string(e.NextLogName)
 			pos.Pos = uint32(e.Position)
 			// r.ev <- pos
-			forceSavePos = true
 
 			if c.Log.IsInfo() {
 				c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Stringer("position", pos))
@@ -79,8 +80,10 @@ func (c *Canal) startSyncBinlog() error {
 			//	fmt.Printf("%#v\n\n", e)
 		}
 
-		c.master.Update(pos.Name, pos.Pos)
-		c.master.Save(forceSavePos)
+		c.masterUpdate(pos.Name, pos.Pos)
+		if err := c.masterSave(); err != nil {
+			c.Log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
+		}
 	}
 
 	return nil
@@ -121,37 +124,37 @@ func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
 	return c.travelRowsEventHandler(action, t, ev.Rows)
 }
 
-func (c *Canal) WaitUntilPos(pos mysql.Position, timeout int) error {
-	if timeout <= 0 {
-		timeout = 60
-	}
-
-	timer := time.NewTimer(time.Duration(timeout) * time.Second)
-	for {
-		select {
-		case <-timer.C:
-			return errors.NewTimeoutf("[binlogsync] WaitUntilPos wait position %v err", pos)
-		default:
-			curpos := c.master.Pos()
-			if curpos.Compare(pos) >= 0 {
-				return nil
-			} else {
-				time.Sleep(100 * time.Millisecond)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (c *Canal) CatchMasterPos(timeout int) error {
-	rr, err := c.Execute("SHOW MASTER STATUS")
-	if err != nil {
-		return errors.Wrap(err, "[binlogsync] CatchMasterPos")
-	}
-
-	name, _ := rr.GetString(0, 0)
-	pos, _ := rr.GetInt(0, 1)
-
-	return c.WaitUntilPos(mysql.Position{Name: name, Pos: uint32(pos)}, timeout)
-}
+// todo: implement when needed
+//func (c *Canal) WaitUntilPos(pos mysql.Position, timeout int) error {
+//	if timeout <= 0 {
+//		timeout = 60
+//	}
+//
+//	timer := time.NewTimer(time.Duration(timeout) * time.Second)
+//	for {
+//		select {
+//		case <-timer.C:
+//			return errors.NewTimeoutf("[binlogsync] WaitUntilPos wait position %v err", pos)
+//		default:
+//			if c.masterPos.Compare(pos) >= 0 {
+//				return nil
+//			} else {
+//				time.Sleep(100 * time.Millisecond)
+//			}
+//		}
+//	}
+//
+//	return nil
+//}
+//
+//func (c *Canal) CatchMasterPos(timeout int) error {
+//	rr, err := c.Execute("SHOW MASTER STATUS")
+//	if err != nil {
+//		return errors.Wrap(err, "[binlogsync] CatchMasterPos")
+//	}
+//
+//	name, _ := rr.GetString(0, 0)
+//	pos, _ := rr.GetInt(0, 1)
+//
+//	return c.WaitUntilPos(mysql.Position{Name: name, Pos: uint32(pos)}, timeout)
+//}
