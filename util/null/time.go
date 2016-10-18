@@ -1,43 +1,11 @@
 package null
 
 import (
-	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
 )
-
-// Time is a nullable time.Time. It supports SQL and JSON serialization.
-// It will marshal to null if null.
-type Time struct {
-	Time  time.Time
-	Valid bool
-}
-
-// Scan implements the Scanner interface.
-func (t *Time) Scan(value interface{}) error {
-	var err error
-	switch x := value.(type) {
-	case time.Time:
-		t.Time = x
-	case nil:
-		t.Valid = false
-		return nil
-	default:
-		err = fmt.Errorf("null: cannot scan type %T into null.Time: %v", value, value)
-	}
-	t.Valid = err == nil
-	return err
-}
-
-// Value implements the driver Valuer interface.
-func (t Time) Value() (driver.Value, error) {
-	if !t.Valid {
-		return nil, nil
-	}
-	return t.Time, nil
-}
 
 // NewTime creates a new Time.
 func NewTime(t time.Time, valid bool) Time {

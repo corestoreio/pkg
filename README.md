@@ -173,8 +173,9 @@ from the geniuses listed below:
 | 2013 The Go Authors | [singleflight](https://github.com/corestoreio/csfw/tree/master/sync/singleflight) | Copyright (c) 2013 BSD Style |
 | Minio Cloud Storage, (C) 2016 Minio, Inc. | [blake2b-simd](https://github.com/minio/blake2b-simd) | Apache License, Version 2.0 |
 | Ventu.io, Oleg Sklyar, contributors. | [util/shortid](http://github.com/corestoreio/csfw/tree/master/utils/shortid) | MIT License Copyright (c) 2016, |
-| Carl Jackson (carl@avtok.com) (Goji) | [util/shortid](http://github.com/corestoreio/csfw/tree/master/net/responseproxy) | Copyright (c) 2014, 2015, 2016 |
-| Greg Roseberry, 2014; Patrick O'Brien, 2016 | [util/shortid](http://github.com/corestoreio/csfw/tree/master/util/null) | BSD Copyright (c) 2014, 2015, 2016 |
+| Carl Jackson (carl@avtok.com) (Goji) | [net/responseproxy](http://github.com/corestoreio/csfw/tree/master/net/responseproxy) | Copyright (c) 2014, 2015, 2016 |
+| Greg Roseberry, 2014; Patrick O'Brien, 2016 | [util/null](http://github.com/corestoreio/csfw/tree/master/util/null) | BSD Copyright (c) 2014, 2015, 2016 |
+| The Go-MySQL-Driver Authors | [util/null/time_mysql.go](http://github.com/corestoreio/csfw/tree/master/util/null/time_mysql.go) | Mozilla Public License, v. 2.0, Copyright 2012  |
 
 ## Licensing
 
