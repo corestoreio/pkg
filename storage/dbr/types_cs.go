@@ -14,31 +14,31 @@
 
 package dbr
 
-import (
-	"fmt"
-	"strings"
-	// "github.com/ugorji/go/codec"
-)
-
-// removed because the binary grows for 5MB. will be added once needed.
-// var _ codec.Selfer = (*NullString)(nil)
-
-// GoString satisfies the interface fmt.GoStringer when using %#v in Printf methods.
-// Returns
-// 		dbr.NewNullString(`...`,bool)
-func (ns NullString) GoString() string {
-	if ns.Valid && strings.ContainsRune(ns.String, '`') {
-		// `This is my`string`
-		ns.String = strings.Join(strings.Split(ns.String, "`"), "`+\"`\"+`")
-		// `This is my`+"`"+`string`
-	}
-
-	ns.String = "`" + ns.String + "`"
-	if !ns.Valid {
-		ns.String = "nil"
-	}
-	return fmt.Sprintf("dbr.NewNullString(%s)", ns.String)
-}
+//import (
+//	"fmt"
+//	"strings"
+//	// "github.com/ugorji/go/codec"
+//)
+//
+//// removed because the binary grows for 5MB. will be added once needed.
+//// var _ codec.Selfer = (*NullString)(nil)
+//
+//// GoString satisfies the interface fmt.GoStringer when using %#v in Printf methods.
+//// Returns
+//// 		dbr.NewNullString(`...`,bool)
+//func (ns NullString) GoString() string {
+//	if ns.Valid && strings.ContainsRune(ns.String, '`') {
+//		// `This is my`string`
+//		ns.String = strings.Join(strings.Split(ns.String, "`"), "`+\"`\"+`")
+//		// `This is my`+"`"+`string`
+//	}
+//
+//	ns.String = "`" + ns.String + "`"
+//	if !ns.Valid {
+//		ns.String = "nil"
+//	}
+//	return fmt.Sprintf("dbr.NewNullString(%s)", ns.String)
+//}
 
 //// CodecEncodeSelf for ugorji.go codec package
 //func (n NullString) CodecEncodeSelf(e *codec.Encoder) {

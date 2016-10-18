@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/null"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,23 +60,23 @@ func realDb() (driver string, dsn string) {
 type dbrPerson struct {
 	Id    int64
 	Name  string
-	Email NullString
-	Key   NullString
+	Email null.String
+	Key   null.String
 }
 
 type nullTypedRecord struct {
 	Id         int64
-	StringVal  NullString
-	Int64Val   NullInt64
-	Float64Val NullFloat64
-	TimeVal    NullTime
-	BoolVal    NullBool
+	StringVal  null.String
+	Int64Val   null.Int64
+	Float64Val null.Float64
+	TimeVal    null.Time
+	BoolVal    null.Bool
 }
 
 func installFixtures(db *sql.DB) {
 	createPeopleTable := fmt.Sprintf(`
 		CREATE TABLE dbr_people (
-			id int(11) DEFAULT NULL auto_increment PRIMARY KEY,
+			id int(11) NOT NULL auto_increment PRIMARY KEY,
 			name varchar(255) NOT NULL,
 			email varchar(255),
 			%s varchar(255)
@@ -83,7 +85,7 @@ func installFixtures(db *sql.DB) {
 
 	createNullTypesTable := `
 		CREATE TABLE null_types (
-			id int(11) DEFAULT NULL auto_increment PRIMARY KEY,
+			id int(11) NOT NULL auto_increment PRIMARY KEY,
 			string_val varchar(255) NULL,
 			int64_val int(11) NULL,
 			float64_val float NULL,

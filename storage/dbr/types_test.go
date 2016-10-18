@@ -6,59 +6,59 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
+	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewNullString(t *testing.T) {
-	assert.Equal(t, "product", NewNullString("product").String)
-	assert.True(t, NewNullString("product").Valid)
-	assert.False(t, NewNullString(nil).Valid)
-	assert.True(t, NewNullString("").Valid)
-	v, err := NewNullString("product").Value()
+func TestNullStringFrom(t *testing.T) {
+	assert.Equal(t, "product", null.StringFrom("product").String)
+	assert.True(t, null.StringFrom("product").Valid)
+	assert.False(t, null.StringFromPtr(nil).Valid)
+	assert.True(t, null.StringFrom("").Valid)
+	v, err := null.StringFrom("product").Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "product", v)
 }
 
 func TestNewNullInt64(t *testing.T) {
-	assert.EqualValues(t, 1257894000, NewNullInt64(1257894000).Int64)
-	assert.True(t, NewNullInt64(1257894000).Valid)
-	assert.True(t, NewNullInt64(0).Valid)
-	assert.False(t, NewNullInt64(nil).Valid)
-	v, err := NewNullInt64(1257894000).Value()
+	assert.EqualValues(t, 1257894000, null.Int64From(1257894000).Int64)
+	assert.True(t, null.Int64From(1257894000).Valid)
+	assert.True(t, null.Int64From(0).Valid)
+	assert.False(t, null.Int64FromPtr(nil).Valid)
+	v, err := null.Int64From(1257894000).Value()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1257894000, v)
 }
 
 func TestNewNullFloat64(t *testing.T) {
 	var test float64 = 1257894000.93445000001
-	assert.Equal(t, test, NewNullFloat64(test).Float64)
-	assert.True(t, NewNullFloat64(test).Valid)
-	assert.True(t, NewNullFloat64(0).Valid)
-	assert.False(t, NewNullFloat64(nil).Valid)
-	v, err := NewNullFloat64(test).Value()
+	assert.Equal(t, test, null.Float64From(test).Float64)
+	assert.True(t, null.Float64From(test).Valid)
+	assert.True(t, null.Float64From(0).Valid)
+	assert.False(t, null.Float64FromPtr(nil).Valid)
+	v, err := null.Float64From(test).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, test, v)
 }
 
 func TestNewNullTime(t *testing.T) {
 	var test = time.Now()
-	assert.Equal(t, test, NewNullTime(test).Time)
-	assert.True(t, NewNullTime(test).Valid)
-	assert.True(t, NewNullTime(time.Time{}).Valid)
-	assert.False(t, NewNullTime(nil).Valid)
-	v, err := NewNullTime(test).Value()
+	assert.Equal(t, test, null.TimeFrom(test).Time)
+	assert.True(t, null.TimeFrom(test).Valid)
+	assert.True(t, null.TimeFrom(time.Time{}).Valid)
+	assert.False(t, null.TimeFromPtr(nil).Valid)
+	v, err := null.TimeFrom(test).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, test, v)
 }
 
 func TestNewNullBool(t *testing.T) {
 
-	assert.Equal(t, true, NewNullBool(true).Bool)
-	assert.True(t, NewNullBool(true).Valid)
-	assert.True(t, NewNullBool(false).Valid)
-	assert.False(t, NewNullBool(nil).Valid)
-	v, err := NewNullBool(true).Value()
+	assert.Equal(t, true, null.BoolFrom(true).Bool)
+	assert.True(t, null.BoolFrom(true).Valid)
+	assert.True(t, null.BoolFrom(false).Valid)
+	assert.False(t, null.BoolFromPtr(nil).Valid)
+	v, err := null.BoolFrom(true).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, true, v)
 }
@@ -140,10 +140,10 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
-		StringVal:  NullString{sql.NullString{String: "wow", Valid: true}},
-		Int64Val:   NullInt64{sql.NullInt64{Int64: 42, Valid: true}},
-		Float64Val: NullFloat64{sql.NullFloat64{Float64: 1.618, Valid: true}},
-		TimeVal:    NullTime{mysql.NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true}},
-		BoolVal:    NullBool{sql.NullBool{Bool: true, Valid: true}},
+		StringVal:  null.String{sql.NullString{String: "wow", Valid: true}},
+		Int64Val:   null.Int64{sql.NullInt64{Int64: 42, Valid: true}},
+		Float64Val: null.Float64{sql.NullFloat64{Float64: 1.618, Valid: true}},
+		TimeVal:    null.Time{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
+		BoolVal:    null.Bool{sql.NullBool{Bool: true, Valid: true}},
 	}
 }
