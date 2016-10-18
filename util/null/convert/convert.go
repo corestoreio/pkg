@@ -5,7 +5,7 @@ package convert
 // license that can be found in the LICENSE file.
 
 // Type conversions for Scan.
-// These functions are copied from database/sql/convert.go build 1.6.2
+// These functions are copied from database/sql/convert.go build 1.7.1
 
 import (
 	"database/sql"
@@ -156,7 +156,12 @@ func ConvertAssign(dest, src interface{}) error {
 
 	dv := reflect.Indirect(dpv)
 	if sv.IsValid() && sv.Type().AssignableTo(dv.Type()) {
-		dv.Set(sv)
+		switch b := src.(type) {
+		case []byte:
+			dv.Set(reflect.ValueOf(cloneBytes(b)))
+		default:
+			dv.Set(sv)
+		}
 		return nil
 	}
 
