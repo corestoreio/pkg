@@ -17,4 +17,5 @@
 // Sub-package `backendcsrf` implements the external configuration loading.
 //
 // http://stackoverflow.com/questions/20504846/why-is-it-common-to-put-csrf-prevention-tokens-in-cookies/20518324#20518324
+// https://docs.angularjs.org/api/ng/service/$http#cross-site-request-forgery-xsrf-protection
 package csrf
