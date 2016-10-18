@@ -53,7 +53,7 @@ func (cc ConfigIPRange) Get(sg config.Scoped) (net.IPRanges, error) {
 			return nil, errors.NewNotValidf("[backendauth] IP Range %q not in expected format: IP.From-IP.To", row)
 		}
 		if row[0] != "" && row[1] != "" {
-			rngs = append(rngs, net.NewIPRange(row[0], row[1]))
+			rngs = append(rngs, net.MakeIPRange(row[0], row[1]))
 		}
 	}
 	return rngs, nil

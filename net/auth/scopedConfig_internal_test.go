@@ -21,11 +21,11 @@ import (
 )
 
 func TestAuthProviders_Do_Len0(t *testing.T) {
-	ap := authProviders{}
+	ap := providers{}
 	err := ap.do(0, nil)
 	assert.True(t, errors.IsNotImplemented(err), "%+v", err)
 }
 
 func TestAuthTriggers_Do_Len0(t *testing.T) {
-	assert.True(t, authTriggers{}.do(true, nil))
+	assert.True(t, triggers{}.do(true, nil))
 }

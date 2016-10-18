@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package backendauth defines the backend configuration options and element slices.
+// Package backendauth (TODO) defines the backend configuration options and
+// element slices.
 package backendauth

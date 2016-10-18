@@ -35,6 +35,7 @@ func withError() auth.Option {
 }
 
 func TestMustNew_Default(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -47,6 +48,7 @@ func TestMustNew_Default(t *testing.T) {
 }
 
 func TestMustNew_Website(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)

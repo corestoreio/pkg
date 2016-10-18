@@ -23,18 +23,18 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// AuthenticationTriggerFunc defines the condition if the AuthenticationFunc
+// TriggerFunc defines the condition if the ProviderFunc
 // should be executed. An trigger can be for example a certain path or an IP
 // address.
-type AuthenticationTriggerFunc func(r *http.Request) bool
+type TriggerFunc func(r *http.Request) bool
 
-// AuthenticationFunc checks if a request is allowed to proceed. It returns nil
+// ProviderFunc checks if a request is allowed to proceed. It returns nil
 // on success. If you compare usernames and passwords make sure to use
 // subtle.ConstantTimeCompare(). If callNext returns true the next authenticator
 // gets called despite an occurred error, which gets dropped silently. If all
-// AuthenticationFuncs return true to call the next, then the last function call
+// ProviderFuncs return true to call the next, then the last function call
 // gets a force checked error.
-type AuthenticationFunc func(scopeID scope.TypeID, r *http.Request) (callNext bool, err error)
+type ProviderFunc func(scopeID scope.TypeID, r *http.Request) (callNext bool, err error)
 
 var defaultUnauthorizedHandler = mw.ErrorWithStatusCode(http.StatusUnauthorized)
 
@@ -43,13 +43,13 @@ type ScopedConfig struct {
 	scopedConfigGeneric
 	caseSensitivePath bool
 	combineTrigger    bool
-	// shouldDoAuthChecks a list of functions which checks if the authenticator
+	// triggers a list of functions which checks if the authenticator
 	// should be triggered. the first function to return true triggers the
 	// authProvider.
-	authTriggers
-	// authProviders a list of functions which may return an error if authentication
-	// fails.
-	authProviders
+	triggers
+	// providers a list of functions which may return an error if authentication
+	// fails or even call the next provider in the chain.
+	providers
 	UnauthorizedHandler mw.ErrorHandler
 }
 
@@ -64,8 +64,8 @@ func (sc *ScopedConfig) isValid() error {
 	if sc.Disabled {
 		return nil
 	}
-	if 0 == len(sc.authProviders) || 0 == len(sc.authTriggers) {
-		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, len(sc.authTriggers) == 0, len(sc.authProviders) == 0)
+	if 0 == len(sc.providers) || 0 == len(sc.triggers) {
+		return errors.NewNotValidf(errScopedConfigNotValid, sc.ScopeID, len(sc.triggers) == 0, len(sc.providers) == 0)
 	}
 	return nil
 }
@@ -89,10 +89,10 @@ func (sc ScopedConfig) Authenticate(r *http.Request) error {
 	}
 	// an empty or nil authTriggers always returns true to trigger the
 	// authentication provider.
-	if !sc.authTriggers.do(sc.combineTrigger, r) {
+	if !sc.triggers.do(sc.combineTrigger, r) {
 		return nil
 	}
-	if err := sc.authProviders.do(sc.ScopeID, r); err != nil {
+	if err := sc.providers.do(sc.ScopeID, r); err != nil {
 		return errors.Wrapf(err, "[auth] Access denied to %q", r.URL.Path)
 	}
 	return nil
@@ -100,27 +100,27 @@ func (sc ScopedConfig) Authenticate(r *http.Request) error {
 
 type authProvider struct {
 	prio int
-	AuthenticationFunc
+	ProviderFunc
 }
-type authProviders []authProvider
+type providers []authProvider
 
-func (ap authProviders) sort()              { sort.Stable(ap) }
-func (ap authProviders) Len() int           { return len(ap) }
-func (ap authProviders) Less(i, j int) bool { return ap[i].prio < ap[j].prio }
-func (ap authProviders) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
+func (ap providers) sort()              { sort.Stable(ap) }
+func (ap providers) Len() int           { return len(ap) }
+func (ap providers) Less(i, j int) bool { return ap[i].prio < ap[j].prio }
+func (ap providers) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
 
 // do iterates over the Authenticators and checks if it should call the next
 // Authenticator and drop silently the error. Even if the last Authenticator
 // forces to call the next non-existent Authenticator this function detects that
 // and checks the very last error.
-func (ap authProviders) do(scopeID scope.TypeID, r *http.Request) error {
+func (ap providers) do(scopeID scope.TypeID, r *http.Request) error {
 	if len(ap) == 0 {
 		return errors.NewNotImplementedf("[auth] No authentication provider available")
 	}
 
 	nc := 1 // nc == next counter
 	for i, apf := range ap {
-		next, err := apf.AuthenticationFunc(scopeID, r)
+		next, err := apf.ProviderFunc(scopeID, r)
 		if next && nc < len(ap) {
 			nc++
 			continue
@@ -136,23 +136,23 @@ func (ap authProviders) do(scopeID scope.TypeID, r *http.Request) error {
 // priority in which these trigger functions gets executed.
 type authTrigger struct {
 	prio int
-	AuthenticationTriggerFunc
+	TriggerFunc
 }
 
-type authTriggers []authTrigger
+type triggers []authTrigger
 
-func (ap authTriggers) sort()              { sort.Stable(ap) }
-func (ap authTriggers) Len() int           { return len(ap) }
-func (ap authTriggers) Less(i, j int) bool { return ap[i].prio < ap[j].prio }
-func (ap authTriggers) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
+func (ap triggers) sort()              { sort.Stable(ap) }
+func (ap triggers) Len() int           { return len(ap) }
+func (ap triggers) Less(i, j int) bool { return ap[i].prio < ap[j].prio }
+func (ap triggers) Swap(i, j int)      { ap[i], ap[j] = ap[j], ap[i] }
 
-func (ap authTriggers) do(combined bool, r *http.Request) bool {
+func (ap triggers) do(combined bool, r *http.Request) bool {
 	if len(ap) == 0 {
 		return true
 	}
 	var i int
 	for _, check := range ap {
-		ok := check.AuthenticationTriggerFunc(r)
+		ok := check.TriggerFunc(r)
 		if ok && !combined {
 			return true
 		}

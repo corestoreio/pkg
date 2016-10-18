@@ -24,13 +24,14 @@ import (
 )
 
 func TestBasicAuthValidator_UnknownHash(t *testing.T) {
+	t.Parallel()
 	af, err := basicAuthValidator("?", "", "")
 	assert.Nil(t, af)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 }
 
 func TestBasicAuthHandler(t *testing.T) {
-
+	t.Parallel()
 	errHndlr := basicAuthHandler("My'R\"ealm")
 	hndlr := errHndlr(nil)
 

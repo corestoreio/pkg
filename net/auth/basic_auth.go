@@ -37,7 +37,7 @@ func basicAuthValidator(hashName, username, password string) (BasicAuthFunc, err
 	}, nil
 }
 
-func basicAuth(baf BasicAuthFunc) AuthenticationFunc {
+func basicAuth(baf BasicAuthFunc) ProviderFunc {
 	var errInvalidData = errors.NewUnauthorizedf("[auth] Invalid username or password")
 	return func(scopeID scope.TypeID, r *http.Request) (callNext bool, err error) {
 		givenUser, givenPass, ok := r.BasicAuth()
