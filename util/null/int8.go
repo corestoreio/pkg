@@ -3,10 +3,9 @@ package null
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"strconv"
 
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null/convert"
 )
 
@@ -23,8 +22,8 @@ type Int8 struct {
 	NullInt8
 }
 
-// NewInt8 creates a new Int8
-func NewInt8(i int8, valid bool) Int8 {
+// MakeInt8 creates a new Int8
+func MakeInt8(i int8, valid bool) Int8 {
 	return Int8{
 		NullInt8: NullInt8{
 			Int8:  i,
@@ -35,15 +34,15 @@ func NewInt8(i int8, valid bool) Int8 {
 
 // Int8From creates a new Int8 that will always be valid.
 func Int8From(i int8) Int8 {
-	return NewInt8(i, true)
+	return MakeInt8(i, true)
 }
 
 // Int8FromPtr creates a new Int8 that be null if i is nil.
 func Int8FromPtr(i *int8) Int8 {
 	if i == nil {
-		return NewInt8(0, false)
+		return MakeInt8(0, false)
 	}
-	return NewInt8(*i, true)
+	return MakeInt8(*i, true)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -66,7 +65,7 @@ func (i *Int8) UnmarshalJSON(data []byte) error {
 		i.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type null.Int8", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Int8", v)
 	}
 	i.Valid = err == nil
 	return err

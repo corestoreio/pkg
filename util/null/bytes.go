@@ -2,7 +2,6 @@ package null
 
 import (
 	"database/sql/driver"
-
 	"github.com/corestoreio/csfw/util/null/convert"
 )
 
@@ -19,8 +18,8 @@ type Bytes struct {
 	NullBytes
 }
 
-// NewBytes creates a new Bytes
-func NewBytes(b []byte, valid bool) Bytes {
+// MakeBytes creates a new Bytes
+func MakeBytes(b []byte, valid bool) Bytes {
 	return Bytes{
 		NullBytes: NullBytes{
 			Bytes: b,
@@ -31,15 +30,15 @@ func NewBytes(b []byte, valid bool) Bytes {
 
 // BytesFrom creates a new Bytes that will be invalid if nil.
 func BytesFrom(b []byte) Bytes {
-	return NewBytes(b, b != nil)
+	return MakeBytes(b, b != nil)
 }
 
 // BytesFromPtr creates a new Bytes that will be invalid if nil.
 func BytesFromPtr(b *[]byte) Bytes {
 	if b == nil {
-		return NewBytes(nil, false)
+		return MakeBytes(nil, false)
 	}
-	n := NewBytes(*b, true)
+	n := MakeBytes(*b, true)
 	return n
 }
 

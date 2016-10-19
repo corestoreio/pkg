@@ -3,10 +3,9 @@ package zero
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"strconv"
 
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null/convert"
 )
 
@@ -64,7 +63,7 @@ func (f *Float32) UnmarshalJSON(data []byte) error {
 		f.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type zero.Float32", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type zero.Float32", v)
 	}
 	f.Valid = (err == nil) && (f.Float32 != 0)
 	return err

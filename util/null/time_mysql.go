@@ -10,8 +10,9 @@ package null
 
 import (
 	"database/sql/driver"
-	"fmt"
 	"time"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 const timeFormat = "2006-01-02 15:04:05.999999"
@@ -63,7 +64,7 @@ func (nt *Time) Scan(value interface{}) (err error) {
 	}
 
 	nt.Valid = false
-	return fmt.Errorf("Can't convert %T to time.Time", value)
+	return errors.NewNotValidf("Can't convert %T to time.Time", value)
 }
 
 // Value implements the driver Valuer interface.
@@ -83,7 +84,7 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 		}
 		t, err = time.Parse(timeFormat[:len(str)], str)
 	default:
-		err = fmt.Errorf("invalid time string: %s", str)
+		err = errors.NewNotValidf("invalid time string: %s", str)
 		return
 	}
 

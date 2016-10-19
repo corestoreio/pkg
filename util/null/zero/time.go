@@ -3,9 +3,9 @@ package zero
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"time"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Time is a nullable time.Time.
@@ -26,7 +26,7 @@ func (t *Time) Scan(value interface{}) error {
 		t.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("null: cannot scan type %T into null.Time: %v", value, value)
+		err = errors.NewNotValidf("null: cannot scan type %T into null.Time: %v", value, value)
 	}
 	t.Valid = err == nil
 	return err
@@ -94,7 +94,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		ti, tiOK := x["Time"].(string)
 		valid, validOK := x["Valid"].(bool)
 		if !tiOK || !validOK {
-			return fmt.Errorf(`json: unmarshalling object into Go value of type null.Time requires key "Time" to be of type string and key "Valid" to be of type bool; found %T and %T, respectively`, x["Time"], x["Valid"])
+			return errors.NewNotValidf(`json: unmarshalling object into Go value of type null.Time requires key "Time" to be of type string and key "Valid" to be of type bool; found %T and %T, respectively`, x["Time"], x["Valid"])
 		}
 		err = t.Time.UnmarshalText([]byte(ti))
 		t.Valid = valid
@@ -103,7 +103,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		t.Valid = false
 		return nil
 	default:
-		return fmt.Errorf("json: cannot unmarshal %v into Go value of type null.Time", reflect.TypeOf(v).Name())
+		return errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Time", v)
 	}
 }
 

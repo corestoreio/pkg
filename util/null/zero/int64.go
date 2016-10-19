@@ -3,9 +3,9 @@ package zero
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"strconv"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Int64 is a nullable int64.
@@ -59,7 +59,7 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 		i.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type zero.Int64", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type zero.Int64", v)
 	}
 	i.Valid = (err == nil) && (i.Int64 != 0)
 	return err

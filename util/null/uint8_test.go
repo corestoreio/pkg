@@ -111,7 +111,7 @@ func TestMarshalUint8(t *testing.T) {
 	assertJSONEquals(t, data, "254", "non-empty json marshal")
 
 	// invalid values should be encoded as null
-	null := NewUint8(0, false)
+	null := MakeUint8(0, false)
 	data, err = json.Marshal(null)
 	maybePanic(err)
 	assertJSONEquals(t, data, "null", "null json marshal")
@@ -124,7 +124,7 @@ func TestMarshalUint8Text(t *testing.T) {
 	assertJSONEquals(t, data, "254", "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := NewUint8(0, false)
+	null := MakeUint8(0, false)
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -137,7 +137,7 @@ func TestUint8Pointer(t *testing.T) {
 		t.Errorf("bad %s uint8: %#v ≠ %d\n", "pointer", ptr, 254)
 	}
 
-	null := NewUint8(0, false)
+	null := MakeUint8(0, false)
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s uint8: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -150,19 +150,19 @@ func TestUint8IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := NewUint8(0, false)
+	null := MakeUint8(0, false)
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
 
-	zero := NewUint8(0, true)
+	zero := MakeUint8(0, true)
 	if zero.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 }
 
 func TestUint8SetValid(t *testing.T) {
-	change := NewUint8(0, false)
+	change := MakeUint8(0, false)
 	assertNullUint8(t, change, "SetValid()")
 	change.SetValid(254)
 	assertUint8(t, change, "SetValid()")

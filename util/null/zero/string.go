@@ -7,8 +7,8 @@ package zero
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"reflect"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // String is a nullable string.
@@ -60,7 +60,7 @@ func (s *String) UnmarshalJSON(data []byte) error {
 		s.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type zero.String", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type zero.String", v)
 	}
 	s.Valid = (err == nil) && (s.String != "")
 	return err

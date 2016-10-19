@@ -2,13 +2,13 @@ package null
 
 import (
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"time"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // NewTime creates a new Time.
-func NewTime(t time.Time, valid bool) Time {
+func MakeTime(t time.Time, valid bool) Time {
 	return Time{
 		Time:  t,
 		Valid: valid,
@@ -17,15 +17,15 @@ func NewTime(t time.Time, valid bool) Time {
 
 // TimeFrom creates a new Time that will always be valid.
 func TimeFrom(t time.Time) Time {
-	return NewTime(t, true)
+	return MakeTime(t, true)
 }
 
 // TimeFromPtr creates a new Time that will be null if t is nil.
 func TimeFromPtr(t *time.Time) Time {
 	if t == nil {
-		return NewTime(time.Time{}, false)
+		return MakeTime(time.Time{}, false)
 	}
-	return NewTime(*t, true)
+	return MakeTime(*t, true)
 }
 
 // MarshalJSON implements json.Marshaler.
@@ -53,7 +53,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		ti, tiOK := x["Time"].(string)
 		valid, validOK := x["Valid"].(bool)
 		if !tiOK || !validOK {
-			return fmt.Errorf(`json: unmarshalling object into Go value of type null.Time requires key "Time" to be of type string and key "Valid" to be of type bool; found %T and %T, respectively`, x["Time"], x["Valid"])
+			return errors.NewNotValidf(`json: unmarshalling object into Go value of type null.Time requires key "Time" to be of type string and key "Valid" to be of type bool; found %T and %T, respectively`, x["Time"], x["Valid"])
 		}
 		err = t.Time.UnmarshalText([]byte(ti))
 		t.Valid = valid
@@ -62,7 +62,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		t.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type null.Time", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Time", v)
 	}
 	t.Valid = err == nil
 	return err

@@ -113,7 +113,7 @@ func TestTimeFromPtr(t *testing.T) {
 
 func TestTimeSetValid(t *testing.T) {
 	var ti time.Time
-	change := NewTime(ti, false)
+	change := MakeTime(ti, false)
 	assertNullTime(t, change, "SetValid()")
 	change.SetValid(timeValue)
 	assertTime(t, change, "SetValid()")
@@ -127,7 +127,7 @@ func TestTimePointer(t *testing.T) {
 	}
 
 	var nt time.Time
-	null := NewTime(nt, false)
+	null := MakeTime(nt, false)
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s time: %#v ≠ %s\n", "nil pointer", ptr, "nil")

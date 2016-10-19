@@ -111,7 +111,7 @@ func TestMarshalInt64(t *testing.T) {
 	assertJSONEquals(t, data, "9223372036854775806", "non-empty json marshal")
 
 	// invalid values should be encoded as null
-	null := NewInt64(0, false)
+	null := MakeInt64(0, false)
 	data, err = json.Marshal(null)
 	maybePanic(err)
 	assertJSONEquals(t, data, "null", "null json marshal")
@@ -124,7 +124,7 @@ func TestMarshalInt64Text(t *testing.T) {
 	assertJSONEquals(t, data, "9223372036854775806", "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := NewInt64(0, false)
+	null := MakeInt64(0, false)
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -137,7 +137,7 @@ func TestInt64Pointer(t *testing.T) {
 		t.Errorf("bad %s int64: %#v ≠ %d\n", "pointer", ptr, 9223372036854775806)
 	}
 
-	null := NewInt64(0, false)
+	null := MakeInt64(0, false)
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s int64: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -150,19 +150,19 @@ func TestInt64IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := NewInt64(0, false)
+	null := MakeInt64(0, false)
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
 
-	zero := NewInt64(0, true)
+	zero := MakeInt64(0, true)
 	if zero.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 }
 
 func TestInt64SetValid(t *testing.T) {
-	change := NewInt64(0, false)
+	change := MakeInt64(0, false)
 	assertNullInt64(t, change, "SetValid()")
 	change.SetValid(9223372036854775806)
 	assertInt64(t, change, "SetValid()")

@@ -147,7 +147,7 @@ func TestMarshalJSON(t *testing.T) {
 	assertJSONEquals(t, data, `"hello"`, "non-empty json marshal")
 
 	// invalid values should be encoded as null
-	null := NewJSON(nil, false)
+	null := MakeJSON(nil, false)
 	data, err = json.Marshal(null)
 	maybePanic(err)
 	assertJSONEquals(t, data, "null", "null json marshal")
@@ -160,7 +160,7 @@ func TestMarshalJSONText(t *testing.T) {
 	assertJSONEquals(t, data, `"hello"`, "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := NewJSON(nil, false)
+	null := MakeJSON(nil, false)
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -173,7 +173,7 @@ func TestJSONPointer(t *testing.T) {
 		t.Errorf("bad %s []byte: %#v ≠ %s\n", "pointer", ptr, `"hello"`)
 	}
 
-	null := NewJSON(nil, false)
+	null := MakeJSON(nil, false)
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s []byte: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -186,19 +186,19 @@ func TestJSONIsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := NewJSON(nil, false)
+	null := MakeJSON(nil, false)
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
 
-	zero := NewJSON(nil, true)
+	zero := MakeJSON(nil, true)
 	if zero.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 }
 
 func TestJSONSetValid(t *testing.T) {
-	change := NewJSON(nil, false)
+	change := MakeJSON(nil, false)
 	assertNullJSON(t, change, "SetValid()")
 	change.SetValid([]byte(`"hello"`))
 	assertJSON(t, change, "SetValid()")

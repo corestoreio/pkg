@@ -84,7 +84,7 @@ func TestMarshalFloat32(t *testing.T) {
 	assertJSONEquals(t, data, "1.2345", "non-empty json marshal")
 
 	// invalid values should be encoded as null
-	null := NewFloat32(0, false)
+	null := MakeFloat32(0, false)
 	data, err = json.Marshal(null)
 	maybePanic(err)
 	assertJSONEquals(t, data, "null", "null json marshal")
@@ -97,7 +97,7 @@ func TestMarshalFloat32Text(t *testing.T) {
 	assertJSONEquals(t, data, "1.2345", "non-empty text marshal")
 
 	// invalid values should be encoded as null
-	null := NewFloat32(0, false)
+	null := MakeFloat32(0, false)
 	data, err = null.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "null text marshal")
@@ -110,7 +110,7 @@ func TestFloat32Pointer(t *testing.T) {
 		t.Errorf("bad %s float32: %#v ≠ %v\n", "pointer", ptr, 1.2345)
 	}
 
-	null := NewFloat32(0, false)
+	null := MakeFloat32(0, false)
 	ptr = null.Ptr()
 	if ptr != nil {
 		t.Errorf("bad %s float32: %#v ≠ %s\n", "nil pointer", ptr, "nil")
@@ -123,19 +123,19 @@ func TestFloat32IsZero(t *testing.T) {
 		t.Errorf("IsZero() should be false")
 	}
 
-	null := NewFloat32(0, false)
+	null := MakeFloat32(0, false)
 	if !null.IsZero() {
 		t.Errorf("IsZero() should be true")
 	}
 
-	zero := NewFloat32(0, true)
+	zero := MakeFloat32(0, true)
 	if zero.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
 }
 
 func TestFloat32SetValid(t *testing.T) {
-	change := NewFloat32(0, false)
+	change := MakeFloat32(0, false)
 	assertNullFloat32(t, change, "SetValid()")
 	change.SetValid(1.2345)
 	assertFloat32(t, change, "SetValid()")

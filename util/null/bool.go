@@ -3,9 +3,8 @@ package null
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"reflect"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Bool is a nullable bool.
@@ -15,8 +14,8 @@ type Bool struct {
 	sql.NullBool
 }
 
-// NewBool creates a new Bool
-func NewBool(b bool, valid bool) Bool {
+// MakeBool creates a new Bool
+func MakeBool(b bool, valid bool) Bool {
 	return Bool{
 		NullBool: sql.NullBool{
 			Bool:  b,
@@ -27,15 +26,15 @@ func NewBool(b bool, valid bool) Bool {
 
 // BoolFrom creates a new Bool that will always be valid.
 func BoolFrom(b bool) Bool {
-	return NewBool(b, true)
+	return MakeBool(b, true)
 }
 
 // BoolFromPtr creates a new Bool that will be null if f is nil.
 func BoolFromPtr(b *bool) Bool {
 	if b == nil {
-		return NewBool(false, false)
+		return MakeBool(false, false)
 	}
-	return NewBool(*b, true)
+	return MakeBool(*b, true)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -57,7 +56,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 		b.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type null.Bool", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Bool", v)
 	}
 	b.Valid = err == nil
 	return err

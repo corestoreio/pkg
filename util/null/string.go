@@ -7,8 +7,8 @@ package null
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"reflect"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // String is a nullable string. It supports SQL and JSON serialization.
@@ -19,19 +19,19 @@ type String struct {
 
 // StringFrom creates a new String that will never be blank.
 func StringFrom(s string) String {
-	return NewString(s, true)
+	return MakeString(s, true)
 }
 
 // StringFromPtr creates a new String that be null if s is nil.
 func StringFromPtr(s *string) String {
 	if s == nil {
-		return NewString("", false)
+		return MakeString("", false)
 	}
-	return NewString(*s, true)
+	return MakeString(*s, true)
 }
 
-// NewString creates a new String
-func NewString(s string, valid bool) String {
+// MakeString creates a new String
+func MakeString(s string, valid bool) String {
 	return String{
 		NullString: sql.NullString{
 			String: s,
@@ -58,7 +58,7 @@ func (s *String) UnmarshalJSON(data []byte) error {
 		s.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type null.String", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.String", v)
 	}
 	s.Valid = err == nil
 	return err

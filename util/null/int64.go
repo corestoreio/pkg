@@ -3,9 +3,9 @@ package null
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"strconv"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Int64 is an nullable int64.
@@ -15,8 +15,8 @@ type Int64 struct {
 	sql.NullInt64
 }
 
-// NewInt64 creates a new Int64
-func NewInt64(i int64, valid bool) Int64 {
+// MakeInt64 creates a new Int64
+func MakeInt64(i int64, valid bool) Int64 {
 	return Int64{
 		NullInt64: sql.NullInt64{
 			Int64: i,
@@ -27,15 +27,15 @@ func NewInt64(i int64, valid bool) Int64 {
 
 // Int64From creates a new Int64 that will always be valid.
 func Int64From(i int64) Int64 {
-	return NewInt64(i, true)
+	return MakeInt64(i, true)
 }
 
 // Int64FromPtr creates a new Int64 that be null if i is nil.
 func Int64FromPtr(i *int64) Int64 {
 	if i == nil {
-		return NewInt64(0, false)
+		return MakeInt64(0, false)
 	}
-	return NewInt64(*i, true)
+	return MakeInt64(*i, true)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -58,7 +58,7 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 		i.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type null.Int64", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Int64", v)
 	}
 	i.Valid = err == nil
 	return err

@@ -3,9 +3,8 @@ package zero
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
-	"fmt"
-	"reflect"
+
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Bool is a nullable bool. False input is considered null.
@@ -56,7 +55,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 		b.Valid = false
 		return nil
 	default:
-		err = fmt.Errorf("json: cannot unmarshal %v into Go value of type zero.Bool", reflect.TypeOf(v).Name())
+		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type zero.Bool", v)
 	}
 	b.Valid = (err == nil) && b.Bool
 	return err
