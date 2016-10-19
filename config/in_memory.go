@@ -64,7 +64,7 @@ func (sp *kvmap) Get(key cfgpath.Path) (interface{}, error) {
 	if ok {
 		return data.v, nil
 	}
-	return nil, errors.NewNotFoundf("[config] KVMap Unknown Key %q", key)
+	return nil, keyNotFound{key}
 }
 
 // AllKeys implements Storager interface
@@ -80,3 +80,13 @@ func (sp *kvmap) AllKeys() (cfgpath.PathSlice, error) {
 	sp.RUnlock()
 	return ret, nil
 }
+
+// keyNotFound for performance and allocs reasons in benchmarks to test properly
+// the cfg* code and not the configuration Service. The NotFound error has been
+// hard coded which does not record the position where the error happens. We can
+// maybe add the path which was not found but that will trigger 2 allocs because
+// of the sprintf ... which could be bypassed with a bufferpool ;-)
+type keyNotFound struct{ key cfgpath.Path }
+
+func (a keyNotFound) Error() string  { return "[config] KVMap Unknown Key: " + a.key.String() }
+func (a keyNotFound) NotFound() bool { return true }
