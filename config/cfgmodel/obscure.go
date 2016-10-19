@@ -27,21 +27,20 @@ type Encryptor interface {
 	Decrypt([]byte) ([]byte, error)
 }
 
-// NoopEncryptor does nothing and only used for testing.
-// Noop = No operator
-type NoopEncryptor struct {
+// EncryptorProxy a wrapper type
+type EncryptorProxy struct {
 	// EncErr allows to return an error while encrypting
-	EncErr error
+	EncFn func(s []byte) ([]byte, error)
 	// DecErr allows to return an error while decryption
-	DecErr error
+	DecFn func(s []byte) ([]byte, error)
 }
 
-func (ne NoopEncryptor) Encrypt(s []byte) ([]byte, error) {
-	return s, ne.EncErr
+func (ne EncryptorProxy) Encrypt(s []byte) ([]byte, error) {
+	return ne.EncFn(s)
 }
 
-func (ne NoopEncryptor) Decrypt(s []byte) ([]byte, error) {
-	return s, ne.DecErr
+func (ne EncryptorProxy) Decrypt(s []byte) ([]byte, error) {
+	return ne.DecFn(s)
 }
 
 // WithEncryptor sets the functions for reading and writing encrypted data

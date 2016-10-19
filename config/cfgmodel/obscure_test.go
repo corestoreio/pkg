@@ -25,7 +25,7 @@ import (
 )
 
 var _ cfgmodel.Encryptor = (*rot13)(nil)
-var _ cfgmodel.Encryptor = (*cfgmodel.NoopEncryptor)(nil)
+var _ cfgmodel.Encryptor = (*cfgmodel.EncryptorProxy)(nil)
 
 type rot13 struct {
 }
@@ -77,9 +77,12 @@ func TestObscure(t *testing.T) {
 	assert.Exactly(t, "stores/12/aa/bb/cc", mw.ArgPath)
 }
 
-func TestNoopEncryptor(t *testing.T) {
+func TestEncryptorProxy(t *testing.T) {
 
-	ne := cfgmodel.NoopEncryptor{}
+	ne := cfgmodel.EncryptorProxy{
+		EncFn: func(s []byte) ([]byte, error) { return s, nil },
+		DecFn: func(s []byte) ([]byte, error) { return s, nil },
+	}
 
 	var a = []byte("a")
 	e, err := ne.Encrypt(a)

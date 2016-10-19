@@ -34,10 +34,11 @@ type optionBox struct {
 	*StringCSV
 	*CSV
 	*IntCSV
+	*Encode
 }
 
-// BaseOption as an optional argument for the New*() functions. These options
-// will be applied to the underlying unexported baseValue type.
+// Option as an optional argument for all New*() functions. These options will
+// be applied to the underlying unexported baseValue type.
 type Option func(*optionBox) error
 
 // WithFieldFromSectionSlice extracts the element.Field from the global
