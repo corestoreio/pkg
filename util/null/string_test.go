@@ -1,7 +1,9 @@
 package null
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -181,6 +183,25 @@ func TestStringScan(t *testing.T) {
 func maybePanic(err error) {
 	if err != nil {
 		panic(err)
+	}
+}
+
+var _ fmt.GoStringer = (*String)(nil)
+
+func TestString_GoString(t *testing.T) {
+	s := MakeString("test", true)
+	if have, want := s.GoString(), "null.StringFrom(`test`)"; have != want {
+		t.Errorf("Have: %v Want: %v", have, want)
+	}
+	s = MakeString("test", false)
+	if have, want := s.GoString(), "null.String{}"; have != want {
+		t.Errorf("Have: %v Want: %v", have, want)
+	}
+	s = MakeString("te`st", true)
+	// null.MakeString(`te`+"`"+`st`)
+	gsWant := []byte{0x6e, 0x75, 0x6c, 0x6c, 0x2e, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x46, 0x72, 0x6f, 0x6d, 0x28, 0x60, 0x74, 0x65, 0x60, 0x2b, 0x22, 0x60, 0x22, 0x2b, 0x60, 0x73, 0x74, 0x60, 0x29}
+	if !bytes.Equal(gsWant, []byte(s.GoString())) {
+		t.Errorf("Have: %#v Want: %v", s.GoString(), string(gsWant))
 	}
 }
 

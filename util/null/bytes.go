@@ -2,6 +2,7 @@ package null
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"github.com/corestoreio/csfw/util/null/convert"
 )
 
@@ -40,6 +41,14 @@ func BytesFromPtr(b *[]byte) Bytes {
 	}
 	n := MakeBytes(*b, true)
 	return n
+}
+
+// GoString prints an optimized Go representation.
+func (b Bytes) GoString() string {
+	if !b.Valid {
+		return "null.Bytes{}"
+	}
+	return fmt.Sprintf("null.BytesFrom(%#v)", b.Bytes)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

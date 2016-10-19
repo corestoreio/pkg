@@ -3,6 +3,7 @@ package null
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -160,5 +161,24 @@ func assertBytes(t *testing.T, i Bytes, from string) {
 func assertNullBytes(t *testing.T, i Bytes, from string) {
 	if i.Valid {
 		t.Error(from, "is valid, but should be invalid")
+	}
+}
+
+var _ fmt.GoStringer = (*Bytes)(nil)
+
+func TestBytes_GoString(t *testing.T) {
+	b := MakeBytes([]byte("test"), true)
+	if have, want := b.GoString(), "null.BytesFrom([]byte{0x74, 0x65, 0x73, 0x74})"; have != want {
+		t.Errorf("Have: %v Want: %v", have, want)
+	}
+	b = MakeBytes([]byte("test"), false)
+	if have, want := b.GoString(), "null.Bytes{}"; have != want {
+		t.Errorf("Have: %v Want: %v", have, want)
+	}
+	b = MakeBytes([]byte("te`st"), true)
+	// null.MakeString(`te`+"`"+`st`)
+	gsWant := []byte(`null.BytesFrom([]byte{0x74, 0x65, 0x60, 0x73, 0x74})`)
+	if !bytes.Equal(gsWant, []byte(b.GoString())) {
+		t.Errorf("Have: %#v Want: %v", b.GoString(), string(gsWant))
 	}
 }

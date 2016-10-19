@@ -7,8 +7,8 @@ package null
 import (
 	"database/sql"
 	"encoding/json"
-
 	"github.com/corestoreio/csfw/util/errors"
+	"strings"
 )
 
 // String is a nullable string. It supports SQL and JSON serialization.
@@ -38,6 +38,19 @@ func MakeString(s string, valid bool) String {
 			Valid:  valid,
 		},
 	}
+}
+
+// GoString prints an optimized Go representation. Takes are of backticks.
+func (ns String) GoString() string {
+	if ns.Valid && strings.ContainsRune(ns.String, '`') {
+		// `This is my`string`
+		ns.String = strings.Join(strings.Split(ns.String, "`"), "`+\"`\"+`")
+		// `This is my`+"`"+`string`
+	}
+	if !ns.Valid {
+		return "null.String{}"
+	}
+	return "null.StringFrom(`" + ns.String + "`)"
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
