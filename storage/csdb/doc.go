@@ -12,7 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package csdb implements MySQL handling and general SQL functions.
-*/
+// Package csdb implements MySQL table handling and general SQL functions.
 package csdb

@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,12 +46,12 @@ func TestGetColumnsMage19(t *testing.T) {
 		wantJoinFields string
 	}{
 		{"core_config_data",
-			"csdb.Column{Field:dbr.NewNullString(`config_id`), Type:dbr.NewNullString(`int(10) unsigned`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(`PRI`), Default:dbr.NewNullString(nil), Extra:dbr.NewNullString(`auto_increment`)},\ncsdb.Column{Field:dbr.NewNullString(`scope`), Type:dbr.NewNullString(`varchar(8)`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(`MUL`), Default:dbr.NewNullString(`default`), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`scope_id`), Type:dbr.NewNullString(`int(11)`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(``), Default:dbr.NewNullString(`0`), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`path`), Type:dbr.NewNullString(`varchar(255)`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(``), Default:dbr.NewNullString(`general`), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`value`), Type:dbr.NewNullString(`text`), Null:dbr.NewNullString(`YES`), Key:dbr.NewNullString(``), Default:dbr.NewNullString(nil), Extra:dbr.NewNullString(``)}\n",
+			"csdb.Column{Field:null.StringFrom(`config_id`), Type:null.StringFrom(`int(10) unsigned`), Null:null.StringFrom(`NO`), Key:null.StringFrom(`PRI`), Default:null.String{}, Extra:null.StringFrom(`auto_increment`)},\ncsdb.Column{Field:null.StringFrom(`scope`), Type:null.StringFrom(`varchar(8)`), Null:null.StringFrom(`NO`), Key:null.StringFrom(`MUL`), Default:null.StringFrom(`default`), Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`scope_id`), Type:null.StringFrom(`int(11)`), Null:null.StringFrom(`NO`), Key:null.StringFrom(``), Default:null.StringFrom(`0`), Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`path`), Type:null.StringFrom(`varchar(255)`), Null:null.StringFrom(`NO`), Key:null.StringFrom(``), Default:null.StringFrom(`general`), Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`value`), Type:null.StringFrom(`text`), Null:null.StringFrom(`YES`), Key:null.StringFrom(``), Default:null.String{}, Extra:null.StringFrom(``)}\n",
 			nil,
 			"config_id_scope_scope_id_path_value",
 		},
 		{"catalog_category_product",
-			"csdb.Column{Field:dbr.NewNullString(`category_id`), Type:dbr.NewNullString(`int(10) unsigned`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(`PRI`), Default:dbr.NewNullString(`0`), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`product_id`), Type:dbr.NewNullString(`int(10) unsigned`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(`PRI`), Default:dbr.NewNullString(`0`), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`position`), Type:dbr.NewNullString(`int(11)`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(``), Default:dbr.NewNullString(`0`), Extra:dbr.NewNullString(``)}\n",
+			"csdb.Column{Field:null.StringFrom(`category_id`), Type:null.StringFrom(`int(10) unsigned`), Null:null.StringFrom(`NO`), Key:null.StringFrom(`PRI`), Default:null.StringFrom(`0`), Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`product_id`), Type:null.StringFrom(`int(10) unsigned`), Null:null.StringFrom(`NO`), Key:null.StringFrom(`PRI`), Default:null.StringFrom(`0`), Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`position`), Type:null.StringFrom(`int(11)`), Null:null.StringFrom(`NO`), Key:null.StringFrom(``), Default:null.StringFrom(`0`), Extra:null.StringFrom(``)}\n",
 			nil,
 			"category_id_product_id_position",
 		},
@@ -87,18 +87,18 @@ func TestColumns(t *testing.T) {
 			mustStructure(table1).Columns.PrimaryKeys().Len(),
 			0,
 			mustStructure(table1).Columns.GoString(),
-			"csdb.Column{Field:dbr.NewNullString(`category_id`), Type:dbr.NewNullString(`int(10) unsigned`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(`MUL`), Default:dbr.NewNullString(`0`), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`path`), Type:dbr.NewNullString(`varchar(255)`), Null:dbr.NewNullString(`YES`), Key:dbr.NewNullString(`MUL`), Default:dbr.NewNullString(nil), Extra:dbr.NewNullString(``)}",
+			"csdb.Column{Field:null.StringFrom(`category_id`), Type:null.StringFrom(`int(10) unsigned`), Null:null.StringFrom(`NO`), Key:null.StringFrom(`MUL`), Default:null.StringFrom(`0`), Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`path`), Type:null.StringFrom(`varchar(255)`), Null:null.StringFrom(`YES`), Key:null.StringFrom(`MUL`), Default:null.String{}, Extra:null.StringFrom(``)}",
 		},
 		{
 			mustStructure(table2).Columns.PrimaryKeys().Len(),
 			1,
 			mustStructure(table2).Columns.GoString(),
-			"csdb.Column{Field:dbr.NewNullString(`category_id`), Type:dbr.NewNullString(`int(10) unsigned`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(`PRI`), Default:dbr.NewNullString(`0`), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`path`), Type:dbr.NewNullString(`varchar(255)`), Null:dbr.NewNullString(`YES`), Key:dbr.NewNullString(nil), Default:dbr.NewNullString(nil), Extra:dbr.NewNullString(``)}",
+			"csdb.Column{Field:null.StringFrom(`category_id`), Type:null.StringFrom(`int(10) unsigned`), Null:null.StringFrom(`NO`), Key:null.StringFrom(`PRI`), Default:null.StringFrom(`0`), Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`path`), Type:null.StringFrom(`varchar(255)`), Null:null.StringFrom(`YES`), Key:null.String{}, Default:null.String{}, Extra:null.StringFrom(``)}",
 		},
 		{
 			mustStructure(table4).Columns.UniqueKeys().Len(), 1,
 			mustStructure(table4).Columns.GoString(),
-			"csdb.Column{Field:dbr.NewNullString(`user_id`), Type:dbr.NewNullString(`int(10) unsigned`), Null:dbr.NewNullString(`NO`), Key:dbr.NewNullString(`PRI`), Default:dbr.NewNullString(nil), Extra:dbr.NewNullString(`auto_increment`)},\ncsdb.Column{Field:dbr.NewNullString(`email`), Type:dbr.NewNullString(`varchar(128)`), Null:dbr.NewNullString(`YES`), Key:dbr.NewNullString(``), Default:dbr.NewNullString(nil), Extra:dbr.NewNullString(``)},\ncsdb.Column{Field:dbr.NewNullString(`username`), Type:dbr.NewNullString(`varchar(40)`), Null:dbr.NewNullString(`YES`), Key:dbr.NewNullString(`UNI`), Default:dbr.NewNullString(nil), Extra:dbr.NewNullString(``)}",
+			"csdb.Column{Field:null.StringFrom(`user_id`), Type:null.StringFrom(`int(10) unsigned`), Null:null.StringFrom(`NO`), Key:null.StringFrom(`PRI`), Default:null.String{}, Extra:null.StringFrom(`auto_increment`)},\ncsdb.Column{Field:null.StringFrom(`email`), Type:null.StringFrom(`varchar(128)`), Null:null.StringFrom(`YES`), Key:null.StringFrom(``), Default:null.String{}, Extra:null.StringFrom(``)},\ncsdb.Column{Field:null.StringFrom(`username`), Type:null.StringFrom(`varchar(40)`), Null:null.StringFrom(`YES`), Key:null.StringFrom(`UNI`), Default:null.String{}, Extra:null.StringFrom(``)}",
 		},
 		{mustStructure(table4).Columns.PrimaryKeys().Len(), 1, "", ""},
 	}
@@ -133,20 +133,20 @@ func TestColumnsMap(t *testing.T) {
 
 	cols := csdb.Columns{
 		0: csdb.Column{
-			Field:   dbr.NewNullString(`category_id131`),
-			Type:    dbr.NewNullString(`int(10) unsigned`),
-			Null:    dbr.NewNullString(`NO`),
-			Key:     dbr.NewNullString(`PRI`),
-			Default: dbr.NewNullString(`0`),
-			Extra:   dbr.NewNullString(``),
+			Field:   null.StringFrom(`category_id131`),
+			Type:    null.StringFrom(`int(10) unsigned`),
+			Null:    null.StringFrom(`NO`),
+			Key:     null.StringFrom(`PRI`),
+			Default: null.StringFrom(`0`),
+			Extra:   null.StringFrom(``),
 		},
 		1: csdb.Column{
-			Field:   dbr.NewNullString(`is_root_category180`),
-			Type:    dbr.NewNullString(`smallint(2) unsigned`),
-			Null:    dbr.NewNullString(`YES`),
-			Key:     dbr.NewNullString(``),
-			Default: dbr.NewNullString(`0`),
-			Extra:   dbr.NewNullString(``),
+			Field:   null.StringFrom(`is_root_category180`),
+			Type:    null.StringFrom(`smallint(2) unsigned`),
+			Null:    null.StringFrom(`YES`),
+			Key:     null.StringFrom(``),
+			Default: null.StringFrom(`0`),
+			Extra:   null.StringFrom(``),
 		},
 	}
 	colsHave := cols.Map(func(c csdb.Column) csdb.Column {
@@ -155,8 +155,8 @@ func TestColumnsMap(t *testing.T) {
 	})
 
 	colsWant := csdb.Columns{
-		csdb.Column{Field: dbr.NewNullString(`category_id1312`), Type: dbr.NewNullString(`int(10) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-		csdb.Column{Field: dbr.NewNullString(`is_root_category1802`), Type: dbr.NewNullString(`smallint(2) unsigned`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+		csdb.Column{Field: null.StringFrom(`category_id1312`), Type: null.StringFrom(`int(10) unsigned`), Null: null.StringFrom(`NO`), Key: null.StringFrom(`PRI`), Default: null.StringFrom(`0`), Extra: null.StringFrom(``)},
+		csdb.Column{Field: null.StringFrom(`is_root_category1802`), Type: null.StringFrom(`smallint(2) unsigned`), Null: null.StringFrom(`YES`), Key: null.StringFrom(``), Default: null.StringFrom(`0`), Extra: null.StringFrom(``)},
 	}
 
 	assert.Exactly(t, colsWant, colsHave)
@@ -166,27 +166,27 @@ func TestColumnsFilter(t *testing.T) {
 
 	cols := csdb.Columns{
 		0: csdb.Column{
-			Field:   dbr.NewNullString(`category_id131`),
-			Type:    dbr.NewNullString(`int(10) unsigned`),
-			Null:    dbr.NewNullString(`NO`),
-			Key:     dbr.NewNullString(`PRI`),
-			Default: dbr.NewNullString(`0`),
-			Extra:   dbr.NewNullString(``),
+			Field:   null.StringFrom(`category_id131`),
+			Type:    null.StringFrom(`int(10) unsigned`),
+			Null:    null.StringFrom(`NO`),
+			Key:     null.StringFrom(`PRI`),
+			Default: null.StringFrom(`0`),
+			Extra:   null.StringFrom(``),
 		},
 		1: csdb.Column{
-			Field:   dbr.NewNullString(`is_root_category180`),
-			Type:    dbr.NewNullString(`smallint(2) unsigned`),
-			Null:    dbr.NewNullString(`YES`),
-			Key:     dbr.NewNullString(``),
-			Default: dbr.NewNullString(`0`),
-			Extra:   dbr.NewNullString(``),
+			Field:   null.StringFrom(`is_root_category180`),
+			Type:    null.StringFrom(`smallint(2) unsigned`),
+			Null:    null.StringFrom(`YES`),
+			Key:     null.StringFrom(``),
+			Default: null.StringFrom(`0`),
+			Extra:   null.StringFrom(``),
 		},
 	}
 	colsHave := cols.Filter(func(c csdb.Column) bool {
 		return c.Field.String == "is_root_category180"
 	})
 	colsWant := csdb.Columns{
-		csdb.Column{Field: dbr.NewNullString(`is_root_category180`), Type: dbr.NewNullString(`smallint(2) unsigned`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+		csdb.Column{Field: null.StringFrom(`is_root_category180`), Type: null.StringFrom(`smallint(2) unsigned`), Null: null.StringFrom(`YES`), Key: null.StringFrom(``), Default: null.StringFrom(`0`), Extra: null.StringFrom(``)},
 	}
 
 	assert.Exactly(t, colsWant, colsHave)
@@ -201,83 +201,83 @@ func TestGetGoPrimitive(t *testing.T) {
 	}{
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`category_id131`),
-				Type:    dbr.NewNullString(`int(10) unsigned`),
-				Null:    dbr.NewNullString(`NO`),
-				Key:     dbr.NewNullString(`PRI`),
-				Default: dbr.NewNullString(`0`),
-				Extra:   dbr.NewNullString(``),
+				Field:   null.StringFrom(`category_id131`),
+				Type:    null.StringFrom(`int(10) unsigned`),
+				Null:    null.StringFrom(`NO`),
+				Key:     null.StringFrom(`PRI`),
+				Default: null.StringFrom(`0`),
+				Extra:   null.StringFrom(``),
 			},
 			false,
 			"int64",
 		},
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`category_id143`),
-				Type:    dbr.NewNullString(`int(10) unsigned`),
-				Null:    dbr.NewNullString(`YES`),
-				Key:     dbr.NewNullString(`PRI`),
-				Default: dbr.NewNullString(`0`),
-				Extra:   dbr.NewNullString(``),
+				Field:   null.StringFrom(`category_id143`),
+				Type:    null.StringFrom(`int(10) unsigned`),
+				Null:    null.StringFrom(`YES`),
+				Key:     null.StringFrom(`PRI`),
+				Default: null.StringFrom(`0`),
+				Extra:   null.StringFrom(``),
 			},
 			false,
 			"int64",
 		},
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`category_id155`),
-				Type:    dbr.NewNullString(`int(10) unsigned`),
-				Null:    dbr.NewNullString(`YES`),
-				Key:     dbr.NewNullString(`PRI`),
-				Default: dbr.NewNullString(`0`),
-				Extra:   dbr.NewNullString(``),
+				Field:   null.StringFrom(`category_id155`),
+				Type:    null.StringFrom(`int(10) unsigned`),
+				Null:    null.StringFrom(`YES`),
+				Key:     null.StringFrom(`PRI`),
+				Default: null.StringFrom(`0`),
+				Extra:   null.StringFrom(``),
 			},
 			true,
-			"dbr.NullInt64",
+			"null.Int64",
 		},
 
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`is_root_category155`),
-				Type:    dbr.NewNullString(`smallint(2) unsigned`),
-				Null:    dbr.NewNullString(`YES`),
-				Key:     dbr.NewNullString(``),
-				Default: dbr.NewNullString(`0`),
-				Extra:   dbr.NewNullString(``),
+				Field:   null.StringFrom(`is_root_category155`),
+				Type:    null.StringFrom(`smallint(2) unsigned`),
+				Null:    null.StringFrom(`YES`),
+				Key:     null.StringFrom(``),
+				Default: null.StringFrom(`0`),
+				Extra:   null.StringFrom(``),
 			},
 			false,
 			"bool",
 		},
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`is_root_category180`),
-				Type:    dbr.NewNullString(`smallint(2) unsigned`),
-				Null:    dbr.NewNullString(`YES`),
-				Key:     dbr.NewNullString(``),
-				Default: dbr.NewNullString(`0`),
-				Extra:   dbr.NewNullString(``),
+				Field:   null.StringFrom(`is_root_category180`),
+				Type:    null.StringFrom(`smallint(2) unsigned`),
+				Null:    null.StringFrom(`YES`),
+				Key:     null.StringFrom(``),
+				Default: null.StringFrom(`0`),
+				Extra:   null.StringFrom(``),
 			},
 			true,
-			"dbr.NullBool",
+			"null.Bool",
 		},
 
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`product_name193`),
-				Type:    dbr.NewNullString(`varchar(255)`),
-				Null:    dbr.NewNullString(`YES`),
-				Key:     dbr.NewNullString(``),
-				Default: dbr.NewNullString(`0`),
-				Extra:   dbr.NewNullString(``),
+				Field:   null.StringFrom(`product_name193`),
+				Type:    null.StringFrom(`varchar(255)`),
+				Null:    null.StringFrom(`YES`),
+				Key:     null.StringFrom(``),
+				Default: null.StringFrom(`0`),
+				Extra:   null.StringFrom(``),
 			},
 			true,
-			"dbr.NullString",
+			"null.String",
 		},
 		{
 			csdb.Column{
-				Field: dbr.NewNullString(`product_name193`),
-				Type:  dbr.NewNullString(`varchar(255)`),
-				Null:  dbr.NewNullString(`YES`),
+				Field: null.StringFrom(`product_name193`),
+				Type:  null.StringFrom(`varchar(255)`),
+				Null:  null.StringFrom(`YES`),
 			},
 			false,
 			"string",
@@ -285,37 +285,37 @@ func TestGetGoPrimitive(t *testing.T) {
 
 		{
 			csdb.Column{
-				Field: dbr.NewNullString(`price`),
-				Type:  dbr.NewNullString(`decimal(12,4)`),
-				Null:  dbr.NewNullString(`YES`),
+				Field: null.StringFrom(`price`),
+				Type:  null.StringFrom(`decimal(12,4)`),
+				Null:  null.StringFrom(`YES`),
 			},
 			false,
 			"money.Money",
 		},
 		{
 			csdb.Column{
-				Field: dbr.NewNullString(`shipping_adjustment_230`),
-				Type:  dbr.NewNullString(`decimal(12,4)`),
-				Null:  dbr.NewNullString(`YES`),
+				Field: null.StringFrom(`shipping_adjustment_230`),
+				Type:  null.StringFrom(`decimal(12,4)`),
+				Null:  null.StringFrom(`YES`),
 			},
 			true,
 			"money.Money",
 		},
 		{
 			csdb.Column{
-				Field: dbr.NewNullString(`grand_absolut_233`),
-				Type:  dbr.NewNullString(`decimal(12,4)`),
-				Null:  dbr.NewNullString(`YES`),
+				Field: null.StringFrom(`grand_absolut_233`),
+				Type:  null.StringFrom(`decimal(12,4)`),
+				Null:  null.StringFrom(`YES`),
 			},
 			true,
 			"money.Money",
 		},
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`some_currencies_242`),
-				Type:    dbr.NewNullString(`decimal(12,4)`),
-				Null:    dbr.NewNullString(`NO`),
-				Default: dbr.NewNullString(`0.0000`),
+				Field:   null.StringFrom(`some_currencies_242`),
+				Type:    null.StringFrom(`decimal(12,4)`),
+				Null:    null.StringFrom(`NO`),
+				Default: null.StringFrom(`0.0000`),
 			},
 			true,
 			"money.Money",
@@ -323,20 +323,20 @@ func TestGetGoPrimitive(t *testing.T) {
 
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`weight_252`),
-				Type:    dbr.NewNullString(`decimal(10,4)`),
-				Null:    dbr.NewNullString(`YES`),
-				Default: dbr.NewNullString(`0.0000`),
+				Field:   null.StringFrom(`weight_252`),
+				Type:    null.StringFrom(`decimal(10,4)`),
+				Null:    null.StringFrom(`YES`),
+				Default: null.StringFrom(`0.0000`),
 			},
 			true,
-			"dbr.NullFloat64",
+			"null.Float64",
 		},
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`weight_263`),
-				Type:    dbr.NewNullString(`double(10,4)`),
-				Null:    dbr.NewNullString(`YES`),
-				Default: dbr.NewNullString(`0.0000`),
+				Field:   null.StringFrom(`weight_263`),
+				Type:    null.StringFrom(`double(10,4)`),
+				Null:    null.StringFrom(`YES`),
+				Default: null.StringFrom(`0.0000`),
 			},
 			false,
 			"float64",
@@ -344,29 +344,29 @@ func TestGetGoPrimitive(t *testing.T) {
 
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`created_at_274`),
-				Type:    dbr.NewNullString(`date`),
-				Null:    dbr.NewNullString(`YES`),
-				Default: dbr.NewNullString(`0000-00-00`),
+				Field:   null.StringFrom(`created_at_274`),
+				Type:    null.StringFrom(`date`),
+				Null:    null.StringFrom(`YES`),
+				Default: null.StringFrom(`0000-00-00`),
 			},
 			false,
 			"time.Time",
 		},
 		{
 			csdb.Column{
-				Field:   dbr.NewNullString(`created_at_274`),
-				Type:    dbr.NewNullString(`date`),
-				Null:    dbr.NewNullString(`YES`),
-				Default: dbr.NewNullString(`0000-00-00`),
+				Field:   null.StringFrom(`created_at_274`),
+				Type:    null.StringFrom(`date`),
+				Null:    null.StringFrom(`YES`),
+				Default: null.StringFrom(`0000-00-00`),
 			},
 			true,
-			"dbr.NullTime",
+			"null.Time",
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		have := test.c.GetGoPrimitive(test.useNullType)
-		assert.Equal(t, test.want, have, "Test: %#v", test)
+		assert.Equal(t, test.want, have, "(%d) Test: %#v", i, test)
 	}
 
 }
@@ -402,28 +402,28 @@ var benchmarkColumnsJoinFields string
 var benchmarkColumnsJoinFieldsWant = "category_id|product_id|position"
 var benchmarkColumnsJoinFieldsData = csdb.Columns{
 	csdb.Column{
-		Field:   dbr.NewNullString("category_id"),
-		Type:    dbr.NewNullString("int(10) unsigned"),
-		Null:    dbr.NewNullString("NO"),
-		Key:     dbr.NewNullString(nil),
-		Default: dbr.NewNullString("0"),
-		Extra:   dbr.NewNullString(""),
+		Field:   null.StringFrom("category_id"),
+		Type:    null.StringFrom("int(10) unsigned"),
+		Null:    null.StringFrom("NO"),
+		Key:     null.StringFromPtr(nil),
+		Default: null.StringFrom("0"),
+		Extra:   null.StringFrom(""),
 	},
 	csdb.Column{
-		Field:   dbr.NewNullString("product_id"),
-		Type:    dbr.NewNullString("int(10) unsigned"),
-		Null:    dbr.NewNullString("NO"),
-		Key:     dbr.NewNullString(""),
-		Default: dbr.NewNullString("0"),
-		Extra:   dbr.NewNullString(""),
+		Field:   null.StringFrom("product_id"),
+		Type:    null.StringFrom("int(10) unsigned"),
+		Null:    null.StringFrom("NO"),
+		Key:     null.StringFrom(""),
+		Default: null.StringFrom("0"),
+		Extra:   null.StringFrom(""),
 	},
 	csdb.Column{
-		Field:   dbr.NewNullString("position"),
-		Type:    dbr.NewNullString("int(10) unsigned"),
-		Null:    dbr.NewNullString("YES"),
-		Key:     dbr.NewNullString(""),
-		Default: dbr.NullString{},
-		Extra:   dbr.NewNullString(""),
+		Field:   null.StringFrom("position"),
+		Type:    null.StringFrom("int(10) unsigned"),
+		Null:    null.StringFrom("YES"),
+		Key:     null.StringFrom(""),
+		Default: null.String{},
+		Extra:   null.StringFrom(""),
 	},
 }
 

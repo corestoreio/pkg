@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
 )
 
@@ -38,7 +39,7 @@ type Columns []Column
 
 // Column contains info about one database column retrieved from `SHOW COLUMNS FROM table`
 type Column struct {
-	Field, Type, Null, Key, Default, Extra dbr.NullString
+	Field, Type, Null, Key, Default, Extra null.String
 }
 
 // new idea and use information_schema.columns instead of SHOW COLUMNs query ...
@@ -70,20 +71,20 @@ type Column struct {
 //type Column2 struct {
 //	Field            string         `db:"COLUMN_NAME"`              //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
 //	Pos              int            `db:"ORDINAL_POSITION"`         //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
-//	Default          dbr.NullString `db:"COLUMN_DEFAULT"`           //`COLUMN_DEFAULT` longtext,
+//	Default          null.String `db:"COLUMN_DEFAULT"`           //`COLUMN_DEFAULT` longtext,
 //	Null             bool           `db:"IS_NULLABLE"`              //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
 //	DataType         DataType       `db:"DATA_TYPE"`                //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
-//	CharMaxLength    dbr.NullInt64  `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
-//	NumericPrecision dbr.NullInt64  `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
-//	NumericScale     dbr.NullInt64  `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
+//	CharMaxLength    null.Int64  `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
+//	NumericPrecision null.Int64  `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
+//	NumericScale     null.Int64  `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
 //	Type             string         `db:"COLUMN_TYPE"`              //`COLUMN_TYPE` longtext NOT NULL,
 //	ColumnKey        ColumnKey      `db:"COLUMN_KEY"`               //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
 //	ColumnExtra      ColumnExtra    `db:"EXTRA"`                    //`EXTRA` varchar(30) NOT NULL DEFAULT '',
 //	Comment          string         `db:"COLUMN_COMMENT"`           //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
 //}
 
-// GetColumns returns all columns from a table. It discards the column entity_type_id from some
-// entity tables.
+// GetColumns returns all columns from a table. It discards the column
+// entity_type_id from some entity tables.
 func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 	var cols = make(Columns, 0, 100)
 
@@ -343,25 +344,25 @@ func (c Column) GetGoPrimitive(useNullType bool) string {
 	isNull := c.IsNull() && useNullType
 	switch {
 	case c.IsBool() && isNull:
-		goType = "dbr.NullBool"
+		goType = "null.Bool"
 	case c.IsBool():
 		goType = "bool"
 	case c.IsInt() && isNull:
-		goType = "dbr.NullInt64"
+		goType = "null.Int64"
 	case c.IsInt():
 		goType = "int64" // rethink if it is worth to introduce uint64 because of some unsigned columns
 	case c.IsString() && isNull:
-		goType = "dbr.NullString"
+		goType = "null.String"
 	case c.IsString():
 		goType = "string"
 	case c.IsMoney():
 		goType = "money.Money"
 	case c.IsFloat() && isNull:
-		goType = "dbr.NullFloat64"
+		goType = "null.Float64"
 	case c.IsFloat():
 		goType = "float64"
 	case c.IsDate() && isNull:
-		goType = "dbr.NullTime"
+		goType = "null.Time"
 	case c.IsDate():
 		goType = "time.Time"
 	}
