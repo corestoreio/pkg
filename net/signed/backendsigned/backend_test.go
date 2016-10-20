@@ -30,5 +30,5 @@ func init() {
 	}
 	backend = backendsigned.New(cfgStruct)
 
-	backend.Key.Encryptor = cfgmodel.NoopEncryptor{}
+	backend.Key.Encryptor = cfgmodel.EncryptorProxy{}
 }

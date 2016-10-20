@@ -31,5 +31,5 @@ func init() {
 	}
 
 	backend = backendjwt.New(cfgStruct)
-	backend.HmacPassword.Encryptor = cfgmodel.NoopEncryptor{}
+	backend.HmacPassword.Encryptor = cfgmodel.EncryptorProxy{}
 }
