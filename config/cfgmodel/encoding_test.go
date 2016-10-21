@@ -15,15 +15,18 @@
 package cfgmodel_test
 
 import (
+	"encoding/json"
 	"testing"
 
-	"encoding/json"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ cfgmodel.Encoder = (*cfgmodel.EncodeFunc)(nil)
+var _ cfgmodel.Decoder = (*cfgmodel.DecodeFunc)(nil)
 
 func TestEncode(t *testing.T) {
 
@@ -44,7 +47,8 @@ func TestEncode(t *testing.T) {
 
 	b := cfgmodel.NewEncode(
 		cfgPath,
-		cfgmodel.WithEncoder(json.Marshal, json.Unmarshal),
+		cfgmodel.WithEncoder(cfgmodel.EncodeFunc(json.Marshal)),
+		cfgmodel.WithDecoder(cfgmodel.DecodeFunc(json.Unmarshal)),
 		cfgmodel.WithScopeStore(),
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope

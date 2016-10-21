@@ -24,11 +24,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ cfgmodel.Encryptor = (*rot13)(nil)
-var _ cfgmodel.Encryptor = (*cfgmodel.EncryptorProxy)(nil)
+var _ cfgmodel.Encrypter = (*rot13)(nil)
+var _ cfgmodel.Decrypter = (*rot13)(nil)
+var _ cfgmodel.Encrypter = (*cfgmodel.EncryptFunc)(nil)
+var _ cfgmodel.Decrypter = (*cfgmodel.DecryptFunc)(nil)
 
-type rot13 struct {
-}
+// rot13 represents the most powerful encryption algorithm in the world ;-)
+// Apply it two times to get the doubled security of encryption.
+type rot13 struct{}
 
 func (rt rot13) Encrypt(s []byte) ([]byte, error) {
 	var buf [1024]byte
@@ -56,8 +59,9 @@ func TestObscure(t *testing.T) {
 
 	b := cfgmodel.NewObscure(
 		cfgPath,
-		cfgmodel.WithCSVComma(''), // trick it
-		cfgmodel.WithEncryptor(rot13{}),
+		cfgmodel.WithCSVComma(''), // trick it only for testing.
+		cfgmodel.WithEncrypter(rot13{}),
+		cfgmodel.WithDecrypter(rot13{}),
 		cfgmodel.WithScopeStore(),
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
@@ -75,22 +79,4 @@ func TestObscure(t *testing.T) {
 	b.Write(mw, wantPlain, scope.Store.Pack(12))
 	assert.Exactly(t, wantCiphered, mw.ArgValue)
 	assert.Exactly(t, "stores/12/aa/bb/cc", mw.ArgPath)
-}
-
-func TestEncryptorProxy(t *testing.T) {
-
-	ne := cfgmodel.EncryptorProxy{
-		EncFn: func(s []byte) ([]byte, error) { return s, nil },
-		DecFn: func(s []byte) ([]byte, error) { return s, nil },
-	}
-
-	var a = []byte("a")
-	e, err := ne.Encrypt(a)
-	assert.Exactly(t, a, e)
-	assert.NoError(t, err)
-
-	var b = []byte("b")
-	d, err := ne.Decrypt(b)
-	assert.Exactly(t, b, d)
-	assert.NoError(t, err)
 }

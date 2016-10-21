@@ -20,37 +20,52 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Encryptor functions needed for encryption and decryption of
-// string values. For example implements M1 and M2 encryption key functions.
-type Encryptor interface {
+// todo implement compatible type for both interfaces like in the example ExampleNewGCM_encrypt() and ExampleNewGCM_decrypt of the std lib cipher package.
+
+// Encrypter defines a function which encrypts the plaintext input data and
+// returns the encrypted data. Or may return an error.
+type Encrypter interface {
 	Encrypt([]byte) ([]byte, error)
+}
+
+// Decrypter defines a function which decrypts the input data and returns the
+// plaintext data. Or may return an error.
+type Decrypter interface {
 	Decrypt([]byte) ([]byte, error)
 }
 
-// EncryptorProxy a wrapper type
-type EncryptorProxy struct {
-	// EncErr allows to return an error while encrypting
-	EncFn func(s []byte) ([]byte, error)
-	// DecErr allows to return an error while decryption
-	DecFn func(s []byte) ([]byte, error)
+// EncodeFunc defines a wrapper type to match interface Encoder
+type EncryptFunc func(s []byte) ([]byte, error)
+
+func (ef EncryptFunc) Encrypt(s []byte) ([]byte, error) {
+	return ef(s)
 }
 
-func (ne EncryptorProxy) Encrypt(s []byte) ([]byte, error) {
-	return ne.EncFn(s)
+// DecryptFunc defines a wrapper type to match interface Decoder
+type DecryptFunc func(v interface{}) (data []byte, _ error)
+
+func (df DecryptFunc) Decrypt(s []byte) ([]byte, error) {
+	return df(s)
 }
 
-func (ne EncryptorProxy) Decrypt(s []byte) ([]byte, error) {
-	return ne.DecFn(s)
-}
-
-// WithEncryptor sets the functions for reading and writing encrypted data
-// to the configuration service.
-func WithEncryptor(e Encryptor) Option {
+// WithEncrypter sets the encryption function. Convenient helper function.
+func WithEncrypter(e Encrypter) Option {
 	return func(b *optionBox) error {
 		if b.Obscure == nil {
 			return nil
 		}
-		b.Obscure.Encryptor = e
+		b.Obscure.Encrypter = e
+		return nil
+	}
+}
+
+// WithDecrypter set the decryption function. Convenient helper function.
+func WithDecrypter(d Decrypter) Option {
+	return func(b *optionBox) error {
+		if b.Obscure == nil {
+			return nil
+		}
+		b.Obscure.Decrypter = d
 		return nil
 	}
 }
@@ -58,7 +73,8 @@ func WithEncryptor(e Encryptor) Option {
 // Obscure backend model for handling sensible values
 type Obscure struct {
 	Byte
-	Encryptor
+	Encrypter
+	Decrypter
 }
 
 // NewObscure creates a new Obscure with validation checks when writing values.

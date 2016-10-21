@@ -20,22 +20,52 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// EncodeFunc encodes the value v into a byte slice.
+// Encoder encodes the value v into a byte slice.
+type Encoder interface {
+	Encode(v interface{}) (data []byte, _ error)
+}
+
+// Decoder decodes the data into the pointer vPtr.
+type Decoder interface {
+	Decode(data []byte, vPtr interface{}) error
+}
+
+// EncodeFunc defines a wrapper type to match interface Encoder
 type EncodeFunc func(v interface{}) (data []byte, _ error)
 
-// DecodeFunc decodes the data into the pointer vPtr.
+func (ef EncodeFunc) Encode(v interface{}) (data []byte, _ error) {
+	return ef(v)
+}
+
+// DecodeFunc defines a wrapper type to match interface Decoder
 type DecodeFunc func(data []byte, vPtr interface{}) error
+
+func (df DecodeFunc) Decode(data []byte, vPtr interface{}) error {
+	return df(data, vPtr)
+}
 
 // WithEncoder sets the functions for encoding and decoding data to the
 // configuration service. Tip: You can directly use json.Marshal, json.Unmarshal
 // or xml.Marshal, xml.Unmarshal.
-func WithEncoder(e EncodeFunc, d DecodeFunc) Option {
+func WithEncoder(e Encoder) Option {
 	return func(b *optionBox) error {
 		if b.Encode == nil {
 			return nil
 		}
-		b.Encode.EncodeFunc = e
-		b.Encode.DecodeFunc = d
+		b.Encode.Encoder = e
+		return nil
+	}
+}
+
+// WithEncoder sets the functions for encoding and decoding data to the
+// configuration service. Tip: You can directly use json.Marshal, json.Unmarshal
+// or xml.Marshal, xml.Unmarshal.
+func WithDecoder(d Decoder) Option {
+	return func(b *optionBox) error {
+		if b.Encode == nil {
+			return nil
+		}
+		b.Encode.Decoder = d
 		return nil
 	}
 }
@@ -44,8 +74,8 @@ func WithEncoder(e EncodeFunc, d DecodeFunc) Option {
 // which needs encoding and decoding.
 type Encode struct {
 	Byte
-	EncodeFunc
-	DecodeFunc
+	Encoder
+	Decoder
 }
 
 // NewEncode creates a new Encode with validation checks when writing values.
@@ -81,12 +111,12 @@ func (p Encode) Get(sg config.Scoped, vPtr interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "[cfgmodel] Encode.Byte.Get")
 	}
-	return errors.Wrap(p.DecodeFunc(s, vPtr), "[cfgmodel] Encode.Get.Decode")
+	return errors.Wrap(p.Decode(s, vPtr), "[cfgmodel] Encode.Get.Decode")
 }
 
 // Write writes a raw value encrypted. Panics if Encryptor interface is nil.
 func (p Encode) Write(w config.Writer, v interface{}, h scope.TypeID) error {
-	raw, err := p.EncodeFunc(v)
+	raw, err := p.Encode(v)
 	if err != nil {
 		return errors.Wrap(err, "[cfgmodel] Encode.Write.Encode")
 	}
