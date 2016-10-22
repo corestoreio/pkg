@@ -26,3 +26,8 @@ type Manager struct {
 	users UserSlice
 	mu    sync.RWMutex
 }
+
+// In which case I'd expect the slice of errors to be a 1:1 mapping based on
+// index to the passed in IDs (so you could have not found errors or not
+// authorized errors etc per user).
+// func DeleteUsers(ids []UserID) []error
