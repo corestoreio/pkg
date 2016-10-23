@@ -103,7 +103,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		t.Valid = false
 		return nil
 	default:
-		return errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Time", v)
+		return errors.NewNotValidf("[null] json: cannot unmarshal %#v into Go value of type null.Time", v)
 	}
 }
 

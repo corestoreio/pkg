@@ -2,6 +2,7 @@ package null
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"strconv"
 	"testing"
@@ -19,6 +20,21 @@ func TestInt64From(t *testing.T) {
 	zero := Int64From(0)
 	if !zero.Valid {
 		t.Error("Int64From(0)", "is invalid, but should be valid")
+	}
+}
+
+func TestInt64_GoString(t *testing.T) {
+	tests := []struct {
+		i64  Int64
+		want string
+	}{
+		{Int64{}, "null.Int64{}"},
+		{Int64From(2), "null.Int64From(2)"},
+	}
+	for i, test := range tests {
+		if have, want := fmt.Sprintf("%#v", test.i64), test.want; have != want {
+			t.Errorf("%d: Have: %v Want: %v", i, have, want)
+		}
 	}
 }
 

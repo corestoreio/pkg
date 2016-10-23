@@ -64,7 +64,7 @@ func (f *Float32) UnmarshalJSON(data []byte) error {
 		f.Valid = false
 		return nil
 	default:
-		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Float32", v)
+		err = errors.NewNotValidf("[null] json: cannot unmarshal %#v into Go value of type null.Float32", v)
 	}
 	f.Valid = err == nil
 	return err

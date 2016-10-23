@@ -38,6 +38,14 @@ func Int64FromPtr(i *int64) Int64 {
 	return MakeInt64(*i, true)
 }
 
+// GoString prints an optimized Go representation. Takes are of backticks.
+func (i Int64) GoString() string {
+	if !i.Valid {
+		return "null.Int64{}"
+	}
+	return "null.Int64From(" + strconv.FormatInt(i.Int64, 10) + ")"
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 // It supports number and null input.
 // 0 will not be considered a null Int64.
@@ -58,7 +66,7 @@ func (i *Int64) UnmarshalJSON(data []byte) error {
 		i.Valid = false
 		return nil
 	default:
-		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type null.Int64", v)
+		err = errors.NewNotValidf("[null] json: cannot unmarshal %#v into Go value of type null.Int64", v)
 	}
 	i.Valid = err == nil
 	return err

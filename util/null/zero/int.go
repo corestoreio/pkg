@@ -65,7 +65,7 @@ func (i *Int) UnmarshalJSON(data []byte) error {
 		i.Valid = false
 		return nil
 	default:
-		err = errors.NewNotValidf("json: cannot unmarshal %#v into Go value of type zero.Int", v)
+		err = errors.NewNotValidf("[null] json: cannot unmarshal %#v into Go value of type zero.Int", v)
 	}
 	i.Valid = (err == nil) && (i.Int != 0)
 	return err
