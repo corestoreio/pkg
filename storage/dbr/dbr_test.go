@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"testing"
 
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/stretchr/testify/assert"
 )
 
 //
@@ -27,10 +24,9 @@ func createFakeSession() *Session {
 }
 
 func createRealSession() *Session {
-	dn, dsn := realDb()
+	_, dsn := realDb()
 	cxn, err := NewConnection(
 		WithDSN(dsn),
-		WithDriver(dn),
 	)
 	if err != nil {
 		panic(err)
@@ -50,7 +46,7 @@ func realDb() (driver string, dsn string) {
 		driver = DefaultDriverName
 	}
 
-	dsn = os.Getenv("CS_DSN_TEST")
+	dsn = os.Getenv("CS_DSN")
 	if dsn == "" {
 		dsn = "root:unprotected@unix(/tmp/mysql.sock)/uservoice_development?charset=utf8&parseTime=true"
 	}
@@ -112,11 +108,12 @@ func installFixtures(db *sql.DB) {
 	}
 }
 
-func TestNewConnection_NotImplemted(t *testing.T) {
-	c, err := NewConnection(WithDriver("ODBC"))
-	assert.Nil(t, c)
-	assert.True(t, errors.IsNotImplemented(err), "Error: %+v", err)
-	pl := fmt.Sprintf("%+v", err)
-	assert.Contains(t, pl, `github.com/corestoreio/csfw/storage/dbr/dbr.go:`)
-	assert.Contains(t, pl, `[dbr] unsupported driver: "ODBC`)
-}
+//func TestNewConnection_NotImplemted(t *testing.T) {
+//	c, err := NewConnection(WithDSN("mysql://localhost:3306/test"))
+//	//c.dn = "ODBC"
+//	assert.Nil(t, c)
+//	assert.True(t, errors.IsNotImplemented(err), "Error: %+v", err)
+//	pl := fmt.Sprintf("%+v", err)
+//	assert.Contains(t, pl, `github.com/corestoreio/csfw/storage/dbr/dbr.go:`)
+//	assert.Contains(t, pl, `[dbr] unsupported driver: "ODBC`)
+//}
