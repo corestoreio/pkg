@@ -43,3 +43,17 @@ func TestIsValidIdentifier(t *testing.T) {
 		}
 	}
 }
+
+var benchmarkIsValidIdentifier error
+
+func BenchmarkIsValidIdentifier(b *testing.B) {
+	const id = `$catalog_product_3ntity`
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkIsValidIdentifier = csdb.IsValidIdentifier(id)
+	}
+	if benchmarkIsValidIdentifier != nil {
+		b.Fatalf("%+v", benchmarkIsValidIdentifier)
+	}
+}

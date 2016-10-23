@@ -19,15 +19,15 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Table represents a table from the database
+// Table represents a table from a database.
 type Table struct {
-	// Name is the table name
+	// Name of the table
 	Name string
 	// Columns all table columns
 	Columns Columns
-	// CountPK number of primary keys
+	// CountPK number of primary keys. Auto updated.
 	CountPK int
-	// CountUnique number of unique keys
+	// CountUnique number of unique keys. Auto updated.
 	CountUnique int
 
 	// internal caches
@@ -37,9 +37,9 @@ type Table struct {
 }
 
 // NewTable initializes a new table structure
-func NewTable(n string, cs ...Column) *Table {
+func NewTable(tableName string, cs ...*Column) *Table {
 	ts := &Table{
-		Name:    n,
+		Name:    tableName,
 		Columns: Columns(cs),
 	}
 	return ts.update()
@@ -57,29 +57,35 @@ func (ts *Table) update() *Table {
 
 // Load reads the column information from the DB. @todo
 func (ts *Table) LoadColumns(dbrSess dbr.SessionRunner) (err error) {
-	ts.Columns, err = GetColumns(dbrSess, ts.Name)
+	ts.Columns, err = LoadColumns(dbrSess, ts.Name)
 	ts.update()
 	return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", ts.Name)
 }
 
-// TableAliasQuote returns a table name with the alias.
-// catalog_product_entity with alias e would become `catalog_product_entity` AS `e`.
+// TableAliasQuote returns a table name with the alias. catalog_product_entity
+// with alias e would become `catalog_product_entity` AS `e`.
 func (ts *Table) TableAliasQuote(alias string) string {
 	return dbr.Quoter.QuoteAs(ts.Name, alias)
 }
 
-// ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around them. Returns a copy.
+// ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around
+// them. Returns a copy.
 func (ts *Table) ColumnAliasQuote(alias string) []string {
-	return dbr.Quoter.TableColumnAlias(alias, append([]string(nil), ts.fields...)...)
+	sl := make([]string, len(ts.fields))
+	copy(sl, ts.fields)
+	return dbr.Quoter.TableColumnAlias(alias, sl...)
 }
 
-// AllColumnAliasQuote prefixes all columns with an alias and puts quotes around them. Returns a copy.
+// AllColumnAliasQuote prefixes all columns with an alias and puts quotes around
+// them. Returns a copy.
 func (ts *Table) AllColumnAliasQuote(alias string) []string {
-	c := append([]string(nil), ts.fieldsPK...)
-	return dbr.Quoter.TableColumnAlias(alias, append(c, ts.fields...)...)
+	sl := make([]string, len(ts.fieldsPK)+len(ts.fields))
+	n := copy(sl, ts.fieldsPK)
+	copy(sl[n:], ts.fields)
+	return dbr.Quoter.TableColumnAlias(alias, sl...)
 }
 
-// In checks if column name n is a column of this table
+// In checks if column name n is a column of this table. Case sensitive.
 func (ts *Table) In(n string) bool {
 	for _, c := range ts.fieldsPK {
 		if c == n {
@@ -95,18 +101,33 @@ func (ts *Table) In(n string) bool {
 }
 
 // Select generates a SELECT * FROM tableName statement
-func (ts *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
-	if ts == nil {
+func (t *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
+	if t == nil {
 		return nil, errors.NewFatalf("[csdb] Table cannot be nil")
 	}
 	return dbrSess.
-		Select(ts.AllColumnAliasQuote(MainTable)...).
-		From(ts.Name, MainTable), nil
+		Select(t.AllColumnAliasQuote(MainTable)...).
+		From(t.Name, MainTable), nil
 }
 
-func (ts *Table) Update() {}
-func (ts *Table) Delete() {}
-func (ts *Table) Insert() {}
-func (ts *Table) Alter()  {}
-func (ts *Table) Drop()   {}
-func (ts *Table) Create() {}
+// LoadSlice performs a SELECT * FROM `tableName` query and puts the results
+// into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
+// and an error. The variadic thrid arguments can modify the SQL query.
+func (t *Table) LoadSlice(dbrSess dbr.SessionRunner, dest interface{}, cbs ...dbr.SelectCb) (int, error) {
+	sb, err := t.Select(dbrSess)
+	if err != nil {
+		return 0, errors.Wrap(err, "[csdb] LoadSlice.Select")
+	}
+
+	for _, cb := range cbs {
+		sb = cb(sb)
+	}
+	return sb.LoadStructs(dest)
+}
+
+//func (ts *Table) Update() {}
+//func (ts *Table) Delete() {}
+//func (ts *Table) Insert() {}
+//func (ts *Table) Alter()  {}
+//func (ts *Table) Drop()   {}
+//func (ts *Table) Create() {}

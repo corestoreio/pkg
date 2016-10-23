@@ -24,14 +24,14 @@ import (
 )
 
 const (
-	table1 csdb.Index = iota
+	table1 = iota // must start with 0 because of the for loops
 	table2
 	table3
 	table4
 	table5
 )
 
-var tableMap csdb.TableManager
+var tableMap *csdb.Tables
 
 // Returns a session that's not backed by a database
 func createFakeSession() *dbr.Session {
@@ -43,109 +43,96 @@ func createFakeSession() *dbr.Session {
 }
 
 func init() {
-	tableMap = csdb.MustNewTableService(
+	tableMap = csdb.MustNewTables(
 		csdb.WithTable(
 			table1,
 			"catalog_category_anc_categs_index_idx",
-			csdb.Column{
-				Field:   null.StringFrom("category_id"),
-				Type:    null.StringFrom("int(10) unsigned"),
-				Null:    null.StringFrom("NO"),
-				Key:     null.StringFrom("MUL"),
+			&csdb.Column{
+				Field:   ("category_id"),
+				TypeRaw: ("int(10) unsigned"),
+				Key:     ("MUL"),
 				Default: null.StringFrom("0"),
-				Extra:   null.StringFrom(""),
+				Extra:   (""),
 			},
-			csdb.Column{
-				Field:   null.StringFrom("path"),
-				Type:    null.StringFrom("varchar(255)"),
-				Null:    null.StringFrom("YES"),
-				Key:     null.StringFrom("MUL"),
-				Default: null.String{},
-				Extra:   null.StringFrom(""),
+			&csdb.Column{
+				Field:   ("path"),
+				TypeRaw: ("varchar(255)"),
+				Null:    csdb.ColumnNull,
+				Key:     ("MUL"),
+				Extra:   (""),
 			},
 		),
 		csdb.WithTable(
 			table2,
 			"catalog_category_anc_categs_index_tmp",
-			csdb.Column{
-				Field:   null.StringFrom("category_id"),
-				Type:    null.StringFrom("int(10) unsigned"),
-				Null:    null.StringFrom("NO"),
-				Key:     null.StringFrom("PRI"),
+			&csdb.Column{
+				Field:   ("category_id"),
+				TypeRaw: ("int(10) unsigned"),
+				Key:     ("PRI"),
 				Default: null.StringFrom("0"),
-				Extra:   null.StringFrom(""),
+				Extra:   (""),
 			},
-			csdb.Column{
-				Field:   null.StringFrom("path"),
-				Type:    null.StringFrom("varchar(255)"),
-				Null:    null.StringFrom("YES"),
-				Key:     null.StringFromPtr(nil),
-				Default: null.String{},
-				Extra:   null.StringFrom(""),
+			&csdb.Column{
+				Field:   ("path"),
+				TypeRaw: ("varchar(255)"),
+				Null:    csdb.ColumnNull,
+				Extra:   (""),
 			},
 		),
 	)
 
-	tableMap.Append(table3, csdb.NewTable(
+	tableMap.Insert(table3, csdb.NewTable(
 		"catalog_category_anc_products_index_idx",
-		csdb.Column{
-			Field:   null.StringFrom("category_id"),
-			Type:    null.StringFrom("int(10) unsigned"),
-			Null:    null.StringFrom("NO"),
-			Key:     null.StringFromPtr(nil),
+		&csdb.Column{
+			Field:   ("category_id"),
+			TypeRaw: ("int(10) unsigned"),
 			Default: null.StringFrom("0"),
-			Extra:   null.StringFrom(""),
+			Extra:   (""),
 		},
-		csdb.Column{
-			Field:   null.StringFrom("product_id"),
-			Type:    null.StringFrom("int(10) unsigned"),
-			Null:    null.StringFrom("NO"),
-			Key:     null.StringFrom(""),
+		&csdb.Column{
+			Field:   ("product_id"),
+			TypeRaw: ("int(10) unsigned"),
+			Key:     (""),
 			Default: null.StringFrom("0"),
-			Extra:   null.StringFrom(""),
+			Extra:   (""),
 		},
-		csdb.Column{
-			Field:   null.StringFrom("position"),
-			Type:    null.StringFrom("int(10) unsigned"),
-			Null:    null.StringFrom("YES"),
-			Key:     null.StringFrom(""),
-			Default: null.String{},
-			Extra:   null.StringFrom(""),
+		&csdb.Column{
+			Field:   ("position"),
+			TypeRaw: ("int(10) unsigned"),
+			Null:    csdb.ColumnNull,
+			Key:     (""),
+			Extra:   (""),
 		},
 	),
 	)
-	tableMap.Append(table4, csdb.NewTable(
+	tableMap.Insert(table4, csdb.NewTable(
 		"admin_user",
-		csdb.Column{
-			Field:   null.StringFrom("user_id"),
-			Type:    null.StringFrom("int(10) unsigned"),
-			Null:    null.StringFrom("NO"),
-			Key:     null.StringFrom("PRI"),
-			Default: null.String{},
-			Extra:   null.StringFrom("auto_increment"),
+		&csdb.Column{
+			Field:   ("user_id"),
+			TypeRaw: ("int(10) unsigned"),
+			Key:     ("PRI"),
+			Extra:   ("auto_increment"),
 		},
-		csdb.Column{
-			Field:   null.StringFrom("email"),
-			Type:    null.StringFrom("varchar(128)"),
-			Null:    null.StringFrom("YES"),
-			Key:     null.StringFrom(""),
-			Default: null.String{},
-			Extra:   null.StringFrom(""),
+		&csdb.Column{
+			Field:   ("email"),
+			TypeRaw: ("varchar(128)"),
+			Null:    csdb.ColumnNull,
+			Key:     (""),
+			Extra:   (""),
 		},
-		csdb.Column{
-			Field:   null.StringFrom("username"),
-			Type:    null.StringFrom("varchar(40)"),
-			Null:    null.StringFrom("YES"),
-			Key:     null.StringFrom("UNI"),
-			Default: null.String{},
-			Extra:   null.StringFrom(""),
+		&csdb.Column{
+			Field:   ("username"),
+			TypeRaw: ("varchar(40)"),
+			Null:    csdb.ColumnNull,
+			Key:     ("UNI"),
+			Extra:   (""),
 		},
 	),
 	)
 }
 
-func mustStructure(i csdb.Index) *csdb.Table {
-	st1, err := tableMap.Structure(i)
+func mustStructure(i int) *csdb.Table {
+	st1, err := tableMap.Table(i)
 	if err != nil {
 		panic(err)
 	}
@@ -154,14 +141,14 @@ func mustStructure(i csdb.Index) *csdb.Table {
 
 func TestTableStructure(t *testing.T) {
 
-	sValid, err := tableMap.Structure(table1)
+	sValid, err := tableMap.Table(table1)
 	assert.NotNil(t, sValid)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "catalog_category_anc_categs_index_tmp", tableMap.Name(table2))
 	assert.Equal(t, "", tableMap.Name(table5))
 
-	sInvalid, err := tableMap.Structure(table5)
+	sInvalid, err := tableMap.Table(table5)
 	assert.Nil(t, sInvalid)
 	assert.Error(t, err)
 
@@ -185,10 +172,10 @@ func TestTableStructureTableAliasQuote(t *testing.T) {
 		"catalog_category_anc_products_index_idx": "`catalog_category_anc_products_index_idx` AS `alias`",
 		"admin_user":                              "`admin_user` AS `alias`",
 	}
-	for i := csdb.Index(0); tableMap.Next(i); i++ {
-		table, err := tableMap.Structure(i)
+	for i := 0; i < tableMap.Len(); i++ {
+		table, err := tableMap.Table(i)
 		if err != nil {
-			t.Error(err)
+			t.Fatalf("%+v", err)
 		}
 		have := table.TableAliasQuote("alias")
 		assert.EqualValues(t, want[table.Name], have, "Table %s", table.Name)
@@ -203,8 +190,8 @@ func TestTableStructureColumnAliasQuote(t *testing.T) {
 		"catalog_category_anc_products_index_idx": {"`alias`.`category_id`", "`alias`.`product_id`", "`alias`.`position`"},
 		"admin_user":                              {"`alias`.`email`", "`alias`.`username`"},
 	}
-	for i := csdb.Index(0); tableMap.Next(i); i++ {
-		table, err := tableMap.Structure(i)
+	for i := 0; i < tableMap.Len(); i++ {
+		table, err := tableMap.Table(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -221,8 +208,8 @@ func TestTableStructureAllColumnAliasQuote(t *testing.T) {
 		"catalog_category_anc_products_index_idx": {"`alias`.`category_id`", "`alias`.`product_id`", "`alias`.`position`"},
 		"admin_user":                              {"`alias`.`user_id`", "`alias`.`email`", "`alias`.`username`"},
 	}
-	for i := csdb.Index(0); tableMap.Next(i); i++ {
-		table, err := tableMap.Structure(i)
+	for i := 0; i < tableMap.Len(); i++ {
+		table, err := tableMap.Table(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -238,8 +225,8 @@ func TestTableStructureIn(t *testing.T) {
 		"catalog_category_anc_categs_index_tmp":   true,
 		"catalog_category_anc_products_index_idx": false,
 	}
-	for i := csdb.Index(0); tableMap.Next(i); i++ {
-		table, err := tableMap.Structure(i)
+	for i := 0; i < tableMap.Len(); i++ {
+		table, err := tableMap.Table(i)
 		if err != nil {
 			t.Error(err)
 		}
@@ -252,8 +239,8 @@ func TestTableStructureIn(t *testing.T) {
 		"catalog_category_anc_categs_index_tmp":   true,
 		"catalog_category_anc_products_index_idx": true,
 	}
-	for i := csdb.Index(0); i < tableMap.Len(); i++ {
-		table, err := tableMap.Structure(i)
+	for i := 0; i < tableMap.Len(); i++ {
+		table, err := tableMap.Table(i)
 		if err != nil {
 			t.Error(err)
 		}

@@ -18,33 +18,32 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// IsValidIdentifier checks the permissible syntax for identifiers.
-// Certain objects within MySQL, including database, table, index, column, alias,
-// view, stored procedure, partition, tablespace, and other object names are
-// known as identifiers.
-// ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar, underscore)
-// Max length 63 characters.
-// Returns errors.NotValid
+// IsValidIdentifier checks the permissible syntax for identifiers. Certain
+// objects within MySQL, including database, table, index, column, alias, view,
+// stored procedure, partition, tablespace, and other object names are known as
+// identifiers. ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar,
+// underscore) Max length 63 characters. Returns errors.NotValid
 //
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-func IsValidIdentifier(name string) error {
-
-	if len(name) > 63 || name == "" {
-		return errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
-	}
-
-	for _, r := range name {
-		var ok bool
-		switch {
-		case '0' <= r && r <= '9':
-			ok = true
-		case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
-			ok = true
-		case r == '$', r == '_':
-			ok = true
+func IsValidIdentifier(names ...string) error {
+	for _, name := range names {
+		if len(name) > 63 || name == "" {
+			return errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
 		}
-		if !ok {
-			return errors.NewNotValidf("[csdb] Invalid character %q in name %q", string(r), name)
+
+		for _, r := range name {
+			var ok bool
+			switch {
+			case '0' <= r && r <= '9':
+				ok = true
+			case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
+				ok = true
+			case r == '$', r == '_':
+				ok = true
+			}
+			if !ok {
+				return errors.NewNotValidf("[csdb] Invalid character %q in name %q", string(r), name)
+			}
 		}
 	}
 	return nil

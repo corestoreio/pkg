@@ -53,14 +53,20 @@ func GetParsedDSN() (*url.URL, error) {
 }
 
 // Connect creates a new database connection from a DSN stored in an
-// environment variable.
+// environment variable CS_DSN.
 func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
 	dsn, err := GetDSN()
 	if err != nil {
 		return nil, errors.Wrap(err, "[csdb] GetDSN")
 	}
 	c, err := dbr.NewConnection(dbr.WithDSN(dsn))
-	return c.ApplyOpts(opts...), err
+	if err != nil {
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection")
+	}
+	if err := c.Options(opts...); err != nil {
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection.Options")
+	}
+	return c, err
 }
 
 // MustConnectTest is a helper function that creates a
@@ -70,5 +76,7 @@ func MustConnectTest(opts ...dbr.ConnectionOption) *dbr.Connection {
 	if err != nil {
 		panic(err)
 	}
-	return dbr.MustConnectAndVerify(dbr.WithDSN(dsn)).ApplyOpts(opts...)
+	cos := make([]dbr.ConnectionOption, 0, 2)
+	cos = append(cos, dbr.WithDSN(dsn))
+	return dbr.MustConnectAndVerify(append(cos, opts...)...)
 }
