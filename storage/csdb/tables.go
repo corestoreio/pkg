@@ -17,7 +17,8 @@ package csdb
 import (
 	"sync"
 
-	"github.com/corestoreio/csfw/storage/dbr"
+	"context"
+
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -38,16 +39,35 @@ type Tables struct {
 	ts map[int]*Table
 }
 
-// WithTable adds a database table to the TableService by the table name and index.
-// You can optionally specify the columns to skip the Init() function.
+// WithTable inserts a new table to the Tables struct, identified by its
+// index. You can optionally specify the columns.
 func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 	return func(tm *Tables) error {
-
 		if err := IsValidIdentifier(tableName); err != nil {
-			return errors.Wrap(err, "[csdb] WithTable.IsValidIdentifier")
+			return errors.Wrap(err, "[csdb] WithNewTable.IsValidIdentifier")
 		}
 
 		if err := tm.Insert(idx, NewTable(tableName, cols...)); err != nil {
+			return errors.Wrap(err, "[csdb] WithNewTable.Tables.Insert")
+		}
+		return nil
+	}
+}
+
+// WithTableLoadColumns inserts a new table to the Tables struct, identified by
+// its index.
+func WithTableLoadColumns(ctx context.Context, db Querier, idx int, tableName string) TableOption {
+	return func(tm *Tables) error {
+		if err := IsValidIdentifier(tableName); err != nil {
+			return errors.Wrap(err, "[csdb] WithTableLoadColumns.IsValidIdentifier")
+		}
+
+		t := NewTable(tableName)
+		if err := t.LoadColumns(ctx, db); err != nil {
+			return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
+		}
+
+		if err := tm.Insert(idx, t); err != nil {
 			return errors.Wrap(err, "[csdb] Tables.Insert")
 		}
 		return nil
@@ -78,13 +98,13 @@ func WithTableNames(idx []int, tableName []string) TableOption {
 
 // WithLoadColumnDefinitions loads the column definitions from the database for each
 // table in the internal map. Thread safe.
-func WithLoadColumnDefinitions(dbrSess dbr.SessionRunner) TableOption {
+func WithLoadColumnDefinitions(ctx context.Context, db Querier) TableOption {
 	return func(tm *Tables) error {
 		tm.mu.Lock()
 		defer tm.mu.Unlock()
 
 		for _, table := range tm.ts {
-			if err := table.LoadColumns(dbrSess); err != nil {
+			if err := table.LoadColumns(ctx, db); err != nil {
 				return errors.Wrap(err, "[csdb] table.LoadColumns")
 			}
 		}
@@ -122,15 +142,12 @@ func (tm *Tables) Options(opts ...TableOption) error {
 	return nil
 }
 
-// Table returns the structure from a map m by a giving index i. The returned
-// pointer is a shallow copy of the internal table.
+// Table returns the structure from a map m by a giving index i.
 func (tm *Tables) Table(i int) (*Table, error) {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 	if t, ok := tm.ts[i]; ok && t != nil {
-		t2 := new(Table)
-		*t2 = *t
-		return t2, nil
+		return t, nil
 	}
 	return nil, errors.NewNotFoundf("[csdb] Table at index %d not found.", i)
 }

@@ -15,6 +15,7 @@
 package csdb_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -130,7 +131,7 @@ func TestIntegration_WithLoadColumnDefinitions(t *testing.T) {
 	i := 4711
 	tm0 := csdb.MustNewTables(
 		csdb.WithTable(i, "admin_user"),
-		csdb.WithLoadColumnDefinitions(dbc.NewSession()),
+		csdb.WithLoadColumnDefinitions(context.TODO(), dbc.DB),
 	)
 
 	table, err2 := tm0.Table(i)

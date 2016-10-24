@@ -15,6 +15,7 @@
 package csdb
 
 import (
+	"context"
 	"database/sql"
 	"sync"
 	"time"
@@ -27,12 +28,6 @@ import (
 // PersistentStmt. If no query will be executed within this idle time the
 // statement gets closed.
 var DefaultResurrectStmtIdleTime = time.Second * 10
-
-// Preparer defines the only needed function to create a new statement
-// in the database.
-type Preparer interface {
-	Prepare(query string) (*sql.Stmt, error)
-}
 
 // ResurrectStmt creates a long living sql.Stmt in the database but closes it
 // if within an idle time no query will be executed. Once there is a new
@@ -156,7 +151,7 @@ func (su *ResurrectStmt) canClose(t time.Time) bool {
 
 // Stmt returns a prepared statement or an error. The statement gets
 // automatically re-opened once it is closed after an idle time.
-func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
+func (su *ResurrectStmt) Stmt(ctx context.Context) (*sql.Stmt, error) {
 	su.mu.Lock()
 	defer su.mu.Unlock()
 
@@ -165,7 +160,7 @@ func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 	}
 
 	var err error
-	su.stmt, err = su.DB.Prepare(su.SQL)
+	su.stmt, err = su.DB.PrepareContext(ctx, su.SQL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[csdb] DB.Prepare %q", su.SQL)
 	}

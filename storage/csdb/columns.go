@@ -16,12 +16,12 @@ package csdb
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"hash/fnv"
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
@@ -43,6 +43,7 @@ type Columns []*Column
 
 // Column contains information about one database column retrieved from
 // information_schema.COLUMNS
+// TODO use structure from new database/sql
 type Column struct {
 	Field   string      `db:"COLUMN_NAME"`      //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
 	Pos     int64       `db:"ORDINAL_POSITION"` //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
@@ -63,21 +64,15 @@ type Column struct {
 
 // LoadColumns returns all columns from a table in the current database to which
 // dbr.SessionRunner has been bound to.
-func LoadColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
-	sel := dbrSess.SelectBySql(`SELECT
+func LoadColumns(ctx context.Context, db Querier, table string) (Columns, error) {
+
+	rows, err := db.QueryContext(ctx, `SELECT
 		 COLUMN_NAME,ORDINAL_POSITION,COLUMN_DEFAULT,
 		 IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,
 		 NUMERIC_SCALE,COLUMN_TYPE,COLUMN_KEY,EXTRA,COLUMN_COMMENT
 	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?`, table)
-
-	selSql, selArg, err := sel.ToSql()
 	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] ToSql")
-	}
-
-	rows, err := sel.Query(selSql, selArg...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "[csdb] Query: %q Args: %#v", selSql, selArg)
+		return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for table %q", table)
 	}
 	defer rows.Close()
 
@@ -86,13 +81,13 @@ func LoadColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 		c := new(Column)
 		err := rows.Scan(&c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.TypeRaw, &c.Key, &c.Extra, &c.Comment)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] Scan Query: %q Args: %#v", selSql, selArg)
+			return nil, errors.Wrap(err, "[csdb] Scan Query")
 		}
 		cs = append(cs, c)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, errors.Wrapf(err, "[csdb] rows.Err Query: %q Args: %#v", selSql, selArg)
+		return nil, errors.Wrapf(err, "[csdb] rows.Err Query ")
 	}
 	if len(cs) == 0 {
 		return nil, errors.NewNotFoundf("[csdb] Table %q not found in current database connection.", table)

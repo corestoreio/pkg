@@ -15,6 +15,8 @@
 package csdb
 
 import (
+	"context"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -47,6 +49,9 @@ func NewTable(tableName string, cs ...*Column) *Table {
 
 // update recalculates the internal cached fields
 func (ts *Table) update() *Table {
+	if len(ts.Columns) == 0 {
+		return ts
+	}
 	ts.fieldsPK = ts.Columns.PrimaryKeys().FieldNames()
 	ts.fieldsUNI = ts.Columns.UniqueKeys().FieldNames()
 	ts.fields = ts.Columns.ColumnsNoPK().FieldNames()
@@ -55,9 +60,9 @@ func (ts *Table) update() *Table {
 	return ts
 }
 
-// Load reads the column information from the DB. @todo
-func (ts *Table) LoadColumns(dbrSess dbr.SessionRunner) (err error) {
-	ts.Columns, err = LoadColumns(dbrSess, ts.Name)
+// LoadColumns reads the column information from the DB.
+func (ts *Table) LoadColumns(ctx context.Context, db Querier) (err error) {
+	ts.Columns, err = LoadColumns(ctx, db, ts.Name)
 	ts.update()
 	return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", ts.Name)
 }

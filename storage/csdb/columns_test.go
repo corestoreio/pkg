@@ -16,6 +16,7 @@ package csdb_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -39,7 +40,6 @@ func TestGetColumnsMage19(t *testing.T) {
 
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
-	sess := dbc.NewSession()
 
 	tests := []struct {
 		table          string
@@ -65,7 +65,7 @@ func TestGetColumnsMage19(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		cols1, err := csdb.LoadColumns(sess, test.table)
+		cols1, err := csdb.LoadColumns(context.TODO(), dbc.DB, test.table)
 		if test.wantErr != nil {
 			assert.Error(t, err, "Index %d => %+v", i, err)
 			assert.True(t, test.wantErr(err), "Index %d", i)
@@ -431,12 +431,12 @@ var benchmarkGetColumnsHashWant = []byte{0x3b, 0x2d, 0xdd, 0xf4, 0x4e, 0x2b, 0x3
 func BenchmarkGetColumns(b *testing.B) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
-	sess := dbc.NewSession()
 	var err error
+	ctx := context.TODO()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkGetColumns, err = csdb.LoadColumns(sess, "eav_attribute")
+		benchmarkGetColumns, err = csdb.LoadColumns(ctx, dbc.DB, "eav_attribute")
 		if err != nil {
 			b.Error(err)
 		}

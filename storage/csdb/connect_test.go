@@ -67,9 +67,14 @@ func TestGetParsedDSN(t *testing.T) {
 	}{
 		{"Invalid://\\DSN", errors.New("Cannot parse DSN into URL"), ""},
 		{
-			"mysql://root:passwrd@localhost:3306/databaseName?BinlogSlaveId=100&BinlogDumpNonBlock=0",
+			"mysql://root:passwrd@tcp(localhost:3306)/databaseName?BinlogSlaveId=100&BinlogDumpNonBlock=0",
 			nil,
-			`mysql://root:passw%EF%A3%BFrd@localhost:3306/databaseName?BinlogSlaveId=100&BinlogDumpNonBlock=0`,
+			"mysql://root:passw\uf8ffrd@tcp(localhost:3306)/databaseName?BinlogSlaveId=100&BinlogDumpNonBlock=0",
+		},
+		{
+			"magento2:magento2@tcp(localhost:3306)/magento2",
+			nil,
+			`magento2:magento2@tcp(localhost:3306)/magento2`,
 		},
 	}
 
@@ -83,6 +88,7 @@ func TestGetParsedDSN(t *testing.T) {
 			assert.Contains(t, haveErr.Error(), test.wantErr.Error(), "Index %d => %+v", i, haveErr)
 			continue
 		}
-		assert.Exactly(t, test.wantURL, haveURL.String(), "Index %d", i)
+		require.NoError(t, haveErr, "%+v", haveErr)
+		assert.Exactly(t, test.wantURL, haveURL.FormatDSN(), "Index %d", i)
 	}
 }

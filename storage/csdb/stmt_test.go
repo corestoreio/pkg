@@ -14,6 +14,7 @@
 package csdb_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	golog "log"
@@ -58,7 +59,7 @@ func (tw *typeWriter) Save(key string, value int) error {
 	tw.Write.StartStmtUse()
 	defer tw.Write.StopStmtUse()
 
-	stmt, err := tw.Write.Stmt()
+	stmt, err := tw.Write.Stmt(context.TODO())
 	if err != nil {
 		return err
 	}
