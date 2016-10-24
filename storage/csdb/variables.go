@@ -71,24 +71,24 @@ func (v *Variable) LoadOne(ctx context.Context, db QueryRower, name string) erro
 // wildcard.
 func (vs *Variables) AppendFiltered(ctx context.Context, db Querier, name string) (err error) {
 	if err := isValidVarName(name, true); err != nil {
-		return errors.Wrap(err, "[csdb] Variable.ShowVariable")
+		return errors.Wrap(err, "[csdb] Variables.isValidVarName")
 	}
-	if vs == nil {
-		vs2 := make(Variables, 0, 20)
-		vs = &vs2
-	}
+
 	var rows *sql.Rows
 	if name != "" {
 		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES LIKE %q", name)
 	} else {
 		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES")
 	}
+	if err != nil {
+		return errors.Wrap(err, "[csdb] csdb.QueryContext")
+	}
 
 	defer rows.Close()
 	for rows.Next() {
 		v := new(Variable)
 		if err := rows.Scan(&v.Name, &v.Value); err != nil {
-			return errors.Wrap(err, "[binlogsync] ShowVariable")
+			return errors.Wrap(err, "[csdb] Variables.Scan")
 		}
 		*vs = append(*vs, v)
 	}
