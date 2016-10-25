@@ -36,12 +36,12 @@ type MasterStatus struct {
 	Executed_Gtid_Set string
 }
 
-// ShowMasterStatus retrieves the current master status.
-func ShowMasterStatus(ctx context.Context, db QueryRower) (MasterStatus, error) {
-	var ms MasterStatus
+// Load retrieves the current master status from the database and puts it into
+// variable ms.
+func (ms *MasterStatus) Load(ctx context.Context, db QueryRower) error {
 	row := db.QueryRowContext(ctx, "SHOW MASTER STATUS")
 	if err := row.Scan(&ms.File, &ms.Position, &ms.Binlog_Do_DB, &ms.Binlog_Ignore_DB, &ms.Executed_Gtid_Set); err != nil {
-		return ms, errors.Wrap(err, "[csdb] ShowMasterStatus")
+		return errors.Wrap(err, "[csdb] ShowMasterStatus")
 	}
-	return ms, nil
+	return nil
 }

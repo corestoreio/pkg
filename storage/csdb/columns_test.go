@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ func TestGetColumnsMage19(t *testing.T) {
 		t.Skipf("Skipping because environment variable %q not found.", csdb.EnvDSN)
 	}
 
-	dbc := csdb.MustConnectTest()
+	dbc := cstesting.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
 	tests := []struct {
@@ -429,7 +430,7 @@ var benchmarkGetColumnsHashWant = []byte{0x3b, 0x2d, 0xdd, 0xf4, 0x4e, 0x2b, 0x3
 
 // BenchmarkGetColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
 func BenchmarkGetColumns(b *testing.B) {
-	dbc := csdb.MustConnectTest()
+	dbc := cstesting.MustConnectTest()
 	defer dbc.Close()
 	var err error
 	ctx := context.TODO()

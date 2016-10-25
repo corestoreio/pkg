@@ -15,11 +15,10 @@
 package csdb
 
 import (
-	"os"
-
-	"github.com/corestoreio/csfw/storage/dbr"
+	"fmt"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/go-sql-driver/mysql"
+	"os"
 )
 
 // EnvDSN is the name of the environment variable
@@ -35,7 +34,17 @@ func getDSN(env string, err error) (string, error) {
 
 // GetDSN returns the data source name from an environment variable or an error
 func GetDSN() (string, error) {
-	return getDSN(EnvDSN, errors.NewNotFoundf("Env var: %q not found", EnvDSN))
+	return getDSN(EnvDSN, errors.NewNotFoundf("DSN in environment variable %q not found.", EnvDSN))
+}
+
+// MustGetDSN returns the data source name from an environment variable or
+// panics on error.
+func MustGetDSN() string {
+	d, err := GetDSN()
+	if err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+	return d
 }
 
 // GetParsedDSN checks the environment variable EnvDSN and if a DSN can be found
@@ -50,33 +59,4 @@ func GetParsedDSN() (*mysql.Config, error) {
 		return nil, errors.Wrap(err, "[csdb] Cannot parse DSN into URL")
 	}
 	return pd, nil
-}
-
-// Connect creates a new database connection from a DSN stored in an
-// environment variable CS_DSN.
-func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
-	dsn, err := GetDSN()
-	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] GetDSN")
-	}
-	c, err := dbr.NewConnection(dbr.WithDSN(dsn))
-	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection")
-	}
-	if err := c.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection.Options")
-	}
-	return c, err
-}
-
-// MustConnectTest is a helper function that creates a
-// new database connection using environment variables.
-func MustConnectTest(opts ...dbr.ConnectionOption) *dbr.Connection {
-	dsn, err := GetDSN()
-	if err != nil {
-		panic(err)
-	}
-	cos := make([]dbr.ConnectionOption, 0, 2)
-	cos = append(cos, dbr.WithDSN(dsn))
-	return dbr.MustConnectAndVerify(append(cos, opts...)...)
 }

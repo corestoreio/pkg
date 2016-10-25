@@ -62,8 +62,7 @@ type Column struct {
 	Comment string `db:"COLUMN_COMMENT"` //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
 }
 
-// LoadColumns returns all columns from a table in the current database to which
-// dbr.SessionRunner has been bound to.
+// LoadColumns returns all columns from a table in the current database.
 func LoadColumns(ctx context.Context, db Querier, table string) (Columns, error) {
 
 	rows, err := db.QueryContext(ctx, `SELECT

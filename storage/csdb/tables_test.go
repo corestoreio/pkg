@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -126,7 +127,7 @@ func TestIntegration_WithLoadColumnDefinitions(t *testing.T) {
 		t.Skipf("Skipping because environment variable %q not found.", csdb.EnvDSN)
 	}
 
-	dbc := csdb.MustConnectTest()
+	dbc := cstesting.MustConnectTest()
 	defer dbc.Close()
 	i := 4711
 	tm0 := csdb.MustNewTables(

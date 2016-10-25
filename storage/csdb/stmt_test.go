@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -202,7 +203,7 @@ func TestResurrectStmtRealDB(t *testing.T) {
 		t.Skip("Skipping because no DSN found.")
 	}
 
-	dbc := csdb.MustConnectTest()
+	dbc := cstesting.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
 	tw := newTypeWriterReal(dbc.DB, l)
