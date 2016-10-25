@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package containable implements a container using key value pairs with an
-// expiration.
-//
-// External packages should define the interface of function which they may need
-// to implement a dictionary or aka. black list.
+// Package containable implements a container using a key with an expiration.
 package containable
