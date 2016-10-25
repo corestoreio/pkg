@@ -15,9 +15,42 @@
 package cstesting
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/errors"
 )
+
+// EnvDSN is the name of the environment variable
+const EnvDSN string = "CS_DSN"
+
+func getDSN(env string) (string, error) {
+	dsn := os.Getenv(env)
+	if dsn == "" {
+		return "", errors.NewNotFoundf("DSN in environment variable %q not found.", EnvDSN)
+	}
+	return dsn, nil
+}
+
+// MustGetDSN returns the data source name from an environment variable or
+// panics on error.
+func MustGetDSN() string {
+	d, err := getDSN(EnvDSN)
+	if err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+	return d
+}
+
+// MustConnectTest is a helper function that creates a new database connection
+// using a DSN from an environment variable found in the constant csdb.EnvDSN.
+func MustConnectTest(opts ...dbr.ConnectionOption) *dbr.Connection {
+	cos := make([]dbr.ConnectionOption, 0, 2)
+	cos = append(cos, dbr.WithDSN(MustGetDSN()))
+	return dbr.MustConnectAndVerify(append(cos, opts...)...)
+}
 
 // MockDB creates a mocked database connection. Fatals on error.
 func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
