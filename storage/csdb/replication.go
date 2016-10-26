@@ -16,6 +16,8 @@ package csdb
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -43,5 +45,45 @@ func (ms *MasterStatus) Load(ctx context.Context, db QueryRower) error {
 	if err := row.Scan(&ms.File, &ms.Position, &ms.Binlog_Do_DB, &ms.Binlog_Ignore_DB, &ms.Executed_Gtid_Set); err != nil {
 		return errors.Wrap(err, "[csdb] ShowMasterStatus")
 	}
+	return nil
+}
+
+// Compare compares with another MasterStatus. Returns 1 if left hand side is
+// bigger, 0 if both are equal and -1 if right hand side is bigger.
+func (ms MasterStatus) Compare(other MasterStatus) int {
+	// todo write test to refactor this into a switch statement
+	// First compare binlog name
+	if ms.File > other.File {
+		return 1
+	} else if ms.File < other.File {
+		return -1
+	} else {
+		// Same binlog file, compare position
+		if ms.Position > other.Position {
+			return 1
+		} else if ms.Position < other.Position {
+			return -1
+		} else {
+			return 0
+		}
+	}
+}
+
+// String converts the file name and the position to a string, separated by a
+// semi-colon.
+func (ms MasterStatus) String() string {
+	return ms.File + ";" + strconv.FormatUint(uint64(ms.Position), 10)
+}
+
+// FromString parses as string in the format: mysql-bin.000002;236423 means
+// filename;position.
+func (ms *MasterStatus) FromString(str string) error {
+	c := strings.IndexByte(str, ';')
+	ms.File = str[:c]
+	pos, err := strconv.ParseUint(str[c+1:], 10, 32)
+	if err != nil {
+		return errors.Wrap(err, "[binlogsync] FromString.ParseUint")
+	}
+	ms.Position = uint(pos)
 	return nil
 }

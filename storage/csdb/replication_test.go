@@ -24,6 +24,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMasterStatus_Compare(t *testing.T) {
+	tests := []struct {
+		left, right csdb.MasterStatus
+		want        int
+	}{
+		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000001", Position: 4}, -1},
+		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, 0},
+		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000001", Position: 2}, 1},
+		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000002", Position: 2}, -1},
+		{csdb.MasterStatus{File: "mysql-bin.000003", Position: 1}, csdb.MasterStatus{File: "mysql-bin.000002", Position: 2}, 1},
+	}
+	for i, test := range tests {
+		have := test.left.Compare(test.right)
+		assert.Exactly(t, test.want, have, "Index %d", i)
+	}
+}
+
 func TestShowMasterStatus(t *testing.T) {
 	dbc, dbMock := cstesting.MockDB(t)
 	defer func() {

@@ -16,9 +16,10 @@ package csdb
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/go-sql-driver/mysql"
-	"os"
 )
 
 // EnvDSN is the name of the environment variable
