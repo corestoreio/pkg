@@ -51,22 +51,19 @@ func (ms *MasterStatus) Load(ctx context.Context, db QueryRower) error {
 // Compare compares with another MasterStatus. Returns 1 if left hand side is
 // bigger, 0 if both are equal and -1 if right hand side is bigger.
 func (ms MasterStatus) Compare(other MasterStatus) int {
-	// todo write test to refactor this into a switch statement
+	switch {
 	// First compare binlog name
-	if ms.File > other.File {
+	case ms.File > other.File:
 		return 1
-	} else if ms.File < other.File {
+	case ms.File < other.File:
 		return -1
-	} else {
-		// Same binlog file, compare position
-		if ms.Position > other.Position {
-			return 1
-		} else if ms.Position < other.Position {
-			return -1
-		} else {
-			return 0
-		}
+	// Same binlog file, compare position
+	case ms.Position > other.Position:
+		return 1
+	case ms.Position < other.Position:
+		return -1
 	}
+	return 0
 }
 
 // String converts the file name and the position to a string, separated by a
