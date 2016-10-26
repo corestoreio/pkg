@@ -1,4 +1,4 @@
-package conv_test
+package conv
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/util/conv"
 )
 
 var benchmarkToString string
@@ -16,7 +15,7 @@ func benchmarkToStringF(b *testing.B, s interface{}) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkToString = conv.ToString(s)
+		benchmarkToString = ToString(s)
 	}
 	if benchmarkToString == "" {
 		b.Fatal("benchmarkToString is empty :-(")
@@ -29,10 +28,23 @@ func benchmarkToFloat64F(b *testing.B, s interface{}) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkToFloat64 = conv.ToFloat64(s)
+		benchmarkToFloat64 = ToFloat64(s)
 	}
 	if benchmarkToFloat64 < 0.001 {
 		b.Fatal("benchmarkToFloat64 is empty :-(")
+	}
+}
+
+var benchmarkToBool bool
+
+func benchmarkToBoolF(b *testing.B, s interface{}) {
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkToBool = ToBool(s)
+	}
+	if !benchmarkToBool {
+		b.Fatal("benchmarkToBool is false :-(")
 	}
 }
 
@@ -74,4 +86,12 @@ func BenchmarkToFloat64_Int64(b *testing.B) {
 func BenchmarkToFloat64_String(b *testing.B) {
 	var val = fmt.Sprintf("%.10f", math.E)
 	benchmarkToFloat64F(b, val)
+}
+
+func BenchmarkToBool_String(b *testing.B) {
+	benchmarkToBoolF(b, "true")
+}
+
+func BenchmarkToBool_Interface(b *testing.B) {
+	benchmarkToBoolF(b, toBool{true})
 }

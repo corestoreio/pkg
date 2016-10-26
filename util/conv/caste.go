@@ -66,8 +66,18 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 	}
 }
 
-// ToBoolE casts an empty interface to a bool.
+// ToBoolE casts an empty interface to a bool. If a type implements function
+//		ToBool() bool
+// this function will get called.
 func ToBoolE(i interface{}) (bool, error) {
+
+	// if a type implements an iFacer interface then we call this. we call it
+	// only at the end of the type switch because it costs performance to assert
+	// to the iFacer interface. TODO(CyS): Implement for all other functions.
+	type iFacer interface {
+		ToBool() bool
+	}
+
 	i = indirect(i)
 
 	switch b := i.(type) {
@@ -76,17 +86,58 @@ func ToBoolE(i interface{}) (bool, error) {
 	case nil:
 		return false, nil
 	case int:
-		if i.(int) != 0 {
+		if b != 0 {
+			return true, nil
+		}
+		return false, nil
+	case int8:
+		if b != 0 {
+			return true, nil
+		}
+		return false, nil
+	case int16:
+		if b != 0 {
+			return true, nil
+		}
+		return false, nil
+	case int32:
+		if b != 0 {
 			return true, nil
 		}
 		return false, nil
 	case int64:
-		if i.(int64) != 0 {
+		if b != 0 {
 			return true, nil
 		}
 		return false, nil
+	case uint:
+		return b > 0, nil
+	case uint8:
+		return b > 0, nil
+	case uint16:
+		return b > 0, nil
+	case uint32:
+		return b > 0, nil
+	case uint64:
+		return b > 0, nil
+	case float64:
+		return b > 0, nil
+	case float32:
+		return b > 0, nil
 	case string:
-		return strconv.ParseBool(i.(string))
+		switch b {
+		case "YES", "yes":
+			return true, nil
+		case "NO", "no":
+			return false, nil
+		}
+		b2, err := strconv.ParseBool(b)
+		if err != nil {
+			return false, errors.NewNotValidf("[conv] Unable to cast %#v to bool", i)
+		}
+		return b2, nil
+	case iFacer:
+		return b.ToBool(), nil
 	default:
 		return false, errors.NewNotValidf("[conv] Unable to cast %#v to bool", i)
 	}
@@ -161,7 +212,6 @@ func ToIntE(i interface{}) (int, error) {
 			return int(v), nil
 		}
 		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to int. %s", i, err)
-
 	case float64:
 		return int(s), nil
 	case bool:
@@ -173,6 +223,74 @@ func ToIntE(i interface{}) (int, error) {
 		return 0, nil
 	default:
 		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to int", i)
+	}
+}
+
+// ToUintE casts an empty interface to an uint.
+func ToUintE(i interface{}) (uint, error) {
+	i = indirect(i)
+
+	switch s := i.(type) {
+	case int:
+		if s > 0 {
+			return uint(s), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
+	case int64:
+		if s > 0 {
+			return uint(s), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
+	case int32:
+		if s > 0 {
+			return uint(s), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
+	case int16:
+		if s > 0 {
+			return uint(s), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
+	case int8:
+		if s > 0 {
+			return uint(s), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
+	case uint:
+		return uint(s), nil
+	case uint64:
+		return uint(s), nil
+	case uint32:
+		return uint(s), nil
+	case uint16:
+		return uint(s), nil
+	case uint8:
+		return uint(s), nil
+	case string:
+		v, err := strconv.ParseUint(s, 10, strconv.IntSize)
+		if err == nil {
+			return uint(v), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint. %s", i, err)
+	case float64:
+		if s > 0 && s < math.MaxUint64 {
+			return uint(s), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
+	case float32:
+		if s > 0 && s < math.MaxUint32 {
+			return uint(s), nil
+		}
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
+	case bool:
+		if s {
+			return 1, nil
+		}
+		return 0, nil
+	case nil:
+		return 0, nil
+	default:
+		return 0, errors.NewNotValidf("[conv] Unable to cast %#v to uint", i)
 	}
 }
 

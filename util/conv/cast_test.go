@@ -42,6 +42,56 @@ func TestToInt64(t *testing.T) {
 	assert.Exactly(t, i64_8, ToInt64(eight))
 }
 
+func TestToUint(t *testing.T) {
+	tests := []struct {
+		raw    interface{}
+		want   uint
+		errBhf errors.BehaviourFunc
+	}{
+		0:  {int(8), 8, nil},
+		1:  {int(-8), 0, errors.IsNotValid},
+		2:  {int64(8), 8, nil},
+		3:  {int64(math.MaxInt64), math.MaxInt64, nil},
+		4:  {int64(-8), 0, errors.IsNotValid},
+		5:  {int32(8), 8, nil},
+		6:  {int32(-8), 0, errors.IsNotValid},
+		7:  {int16(8), 8, nil},
+		8:  {int16(-8), 0, errors.IsNotValid},
+		9:  {int8(8), 8, nil},
+		10: {int8(-8), 0, errors.IsNotValid},
+		11: {-1, 0, errors.IsNotValid},
+		12: {uint(8), 8, nil},
+		13: {uint64(8), 8, nil},
+		14: {uint32(8), 8, nil},
+		15: {uint16(8), 8, nil},
+		16: {uint8(8), 8, nil},
+		17: {"8", 8, nil},
+		18: {"-8", 0, errors.IsNotValid},
+		19: {"f", 0, errors.IsNotValid},
+		20: {float64(-8), 0, errors.IsNotValid},
+		21: {float64(math.MaxFloat64), 0, errors.IsNotValid},
+		22: {float32(-8), 0, errors.IsNotValid},
+		23: {float32(8), 8, nil},
+		24: {float32(math.MaxFloat32), 0, errors.IsNotValid},
+		25: {true, 1, nil},
+		26: {false, 0, nil},
+		27: {nil, 0, nil},
+		28: {make(chan struct{}), 0, errors.IsNotValid},
+	}
+	for i, test := range tests {
+
+		haveUint, haveErr := ToUintE(test.raw)
+
+		if test.errBhf != nil {
+			assert.True(t, test.errBhf(haveErr), "IDX %d: %+v", i, haveErr)
+			assert.Empty(t, haveUint, "IDX %d", i)
+			continue
+		}
+		assert.Exactly(t, test.want, haveUint, "IDX %d", i)
+		assert.NoError(t, haveErr, "IDX %d: %+v", i, haveErr)
+	}
+}
+
 func TestToFloat64(t *testing.T) {
 
 	tests := []struct {
@@ -49,28 +99,24 @@ func TestToFloat64(t *testing.T) {
 		want    float64
 		wantErr bool
 	}{
-		{8, 8, false},
-		{math.E, math.E, false},
-		{float32(4.56789), 4.567890167236328, false},
-
-		{int64(56789), 56789, false},
-		{int32(56789), 56789, false},
-		{int16(math.MaxInt16), float64(math.MaxInt16), false},
-		{int8(math.MaxInt8), float64(math.MaxInt8), false},
-		{int(254), 254, false},
-
-		{uint64(56789), 56789, false},
-		{uint32(56789), 56789, false},
-		{uint16(math.MaxUint16), float64(math.MaxUint16), false},
-		{uint8(math.MaxUint8), float64(math.MaxUint8), false},
-		{uint(254), 254, false},
-
-		{fmt.Sprintf("%.10f", math.Phi), 1.6180339887, false},
-		{`hello`, 0, true},
-
-		{[]byte(fmt.Sprintf("%.10f", math.Phi)), 1.6180339887, false},
-		{[]byte(`hello`), 0, true},
-		{nil, 0, true},
+		0:  {8, 8, false},
+		1:  {math.E, math.E, false},
+		2:  {float32(4.56789), 4.567890167236328, false},
+		3:  {int64(56789), 56789, false},
+		4:  {int32(56789), 56789, false},
+		5:  {int16(math.MaxInt16), float64(math.MaxInt16), false},
+		6:  {int8(math.MaxInt8), float64(math.MaxInt8), false},
+		7:  {int(254), 254, false},
+		8:  {uint64(56789), 56789, false},
+		9:  {uint32(56789), 56789, false},
+		10: {uint16(math.MaxUint16), float64(math.MaxUint16), false},
+		11: {uint8(math.MaxUint8), float64(math.MaxUint8), false},
+		12: {uint(254), 254, false},
+		13: {fmt.Sprintf("%.10f", math.Phi), 1.6180339887, false},
+		14: {`hello`, 0, true},
+		15: {[]byte(fmt.Sprintf("%.10f", math.Phi)), 1.6180339887, false},
+		16: {[]byte(`hello`), 0, true},
+		17: {nil, 0, true},
 	}
 	for i, test := range tests {
 		gotF64, gotErr := ToFloat64E(test.have)
@@ -206,7 +252,7 @@ func TestSlices(t *testing.T) {
 	assert.Equal(t, []int{2, 3}, ToIntSlice([2]string{"2", "3"}))
 }
 
-func TestToBool(t *testing.T) {
+func TestToBool2(t *testing.T) {
 
 	assert.Equal(t, ToBool(0), false)
 	assert.Equal(t, ToBool(int64(0)), false)
@@ -218,6 +264,10 @@ func TestToBool(t *testing.T) {
 	assert.Equal(t, ToBool("F"), false)
 	assert.Equal(t, ToBool(false), false)
 	assert.Equal(t, ToBool("foo"), false)
+	assert.Equal(t, ToBool("no"), false)
+	assert.Equal(t, ToBool("NO"), false)
+	assert.Equal(t, ToBool("YES"), true)
+	assert.Equal(t, ToBool("yes"), true)
 
 	assert.Equal(t, ToBool("true"), true)
 	assert.Equal(t, ToBool("TRUE"), true)
@@ -226,9 +276,90 @@ func TestToBool(t *testing.T) {
 	assert.Equal(t, ToBool("T"), true)
 	assert.Equal(t, ToBool(1), true)
 	assert.Equal(t, ToBool(int64(2)), true)
+	assert.Equal(t, ToBool(int64(-2)), true)
 	assert.Equal(t, ToBool(true), true)
 	assert.Equal(t, ToBool(-1), true)
 	assert.Equal(t, ToBool(int64(-1)), true)
+}
+
+type toBool struct{ bool }
+
+func (tb toBool) ToBool() bool { return tb.bool }
+
+func TestToBool(t *testing.T) {
+	tests := []struct {
+		raw    interface{}
+		want   bool
+		errBhf errors.BehaviourFunc
+	}{
+		0:  {"f", false, nil},
+		1:  {"F", false, nil},
+		2:  {"t", true, nil},
+		3:  {"T", true, nil},
+		4:  {int(0), false, nil},
+		5:  {int(8), true, nil},
+		6:  {int(-8), true, nil},
+		7:  {int64(0), false, nil},
+		8:  {int64(8), true, nil},
+		9:  {int64(math.MaxInt64), true, nil},
+		10: {int64(-8), true, nil},
+		11: {int32(0), false, nil},
+		12: {int32(8), true, nil},
+		13: {int32(-8), true, nil},
+		14: {int16(0), false, nil},
+		15: {int16(8), true, nil},
+		16: {int16(-8), true, nil},
+		17: {int8(8), true, nil},
+		18: {int8(0), false, nil},
+		19: {int8(-8), true, nil},
+		20: {-1, true, nil},
+		21: {0, false, nil},
+		22: {uint(0), false, nil},
+		23: {uint(8), true, nil},
+		24: {uint64(0), false, nil},
+		25: {uint64(8), true, nil},
+		26: {uint32(0), false, nil},
+		27: {uint32(8), true, nil},
+		28: {uint16(0), false, nil},
+		29: {uint16(8), true, nil},
+		30: {uint8(0), false, nil},
+		31: {uint8(8), true, nil},
+		32: {"8", false, errors.IsNotValid},
+		33: {"-8", false, errors.IsNotValid},
+		34: {"f", false, nil},
+		35: {"t", true, nil},
+		36: {"YES", true, nil},
+		37: {"yes", true, nil},
+		38: {"no", false, nil},
+		39: {"NO", false, nil},
+		40: {float64(0), false, nil},
+		41: {float64(-8), false, nil},
+		42: {float64(math.MaxFloat64), true, nil},
+		43: {float32(0), false, nil},
+		44: {float32(-8), false, nil},
+		45: {float32(8), true, nil},
+		46: {float32(math.MaxFloat32), true, nil},
+		47: {true, true, nil},
+		48: {false, false, nil},
+		49: {nil, false, nil},
+		50: {make(chan struct{}), false, errors.IsNotValid},
+		51: {toBool{true}, true, nil},
+		52: {toBool{false}, false, nil},
+	}
+	for i, test := range tests {
+
+		haveUint, haveErr := ToBoolE(test.raw)
+
+		if test.errBhf != nil {
+			assert.True(t, test.errBhf(haveErr), "IDX %d: %+v", i, haveErr)
+			assert.Empty(t, haveUint, "IDX %d", i)
+			continue
+		}
+		assert.Exactly(t, test.want, haveUint, "IDX %d", i)
+		if haveErr != nil {
+			t.Errorf("IDX %d: %+v", i, haveErr)
+		}
+	}
 }
 
 func TestIndirectPointers(t *testing.T) {
