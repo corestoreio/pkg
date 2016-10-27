@@ -23,6 +23,8 @@ import (
 
 // Table represents a table from a database.
 type Table struct {
+	// Schema represents the name of the database. Might be empty.
+	Schema string
 	// Name of the table
 	Name string
 	// Columns all table columns

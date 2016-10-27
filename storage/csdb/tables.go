@@ -34,7 +34,9 @@ type TableOption func(*Tables) error
 
 // Tables handles all the tables. Thread safe.
 type Tables struct {
-	mu sync.RWMutex
+	// Schema represents the name of the database. Might be empty.
+	Schema string
+	mu     sync.RWMutex
 	// ts uses int as the table index
 	ts map[int]*Table
 }
@@ -152,8 +154,8 @@ func (tm *Tables) Table(i int) (*Table, error) {
 	return nil, errors.NewNotFoundf("[csdb] Table at index %d not found.", i)
 }
 
-// Name is a short hand to return a table name by given index i. Does not return an error
-// when the table can't be found. Returns an empty string
+// Name is a short hand to return a table name by given index i. Does not return
+// an error when the table can't be found. Returns an empty string.
 func (tm *Tables) Name(i int) string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()

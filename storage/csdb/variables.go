@@ -55,6 +55,7 @@ func isValidVarName(name string, allowPercent bool) error {
 }
 
 // LoadOne loads a single variable identified by name for the current session.
+// For now MySQL DSN must have set interpolateParams to true.
 func (v *Variable) LoadOne(ctx context.Context, db QueryRower, name string) error {
 	if err := isValidVarName(name, false); err != nil {
 		return errors.Wrap(err, "[csdb] Variable.ShowVariable")
@@ -68,7 +69,7 @@ func (v *Variable) LoadOne(ctx context.Context, db QueryRower, name string) erro
 
 // AppendFiltered appends multiple variables to the current slice. If name is
 // empty, all variables will be loaded. Name argument can contain the SQL
-// wildcard.
+// wildcard. For now MySQL DSN must have set interpolateParams to true.
 func (vs *Variables) AppendFiltered(ctx context.Context, db Querier, name string) (err error) {
 	if err := isValidVarName(name, true); err != nil {
 		return errors.Wrap(err, "[csdb] Variables.isValidVarName")
@@ -76,7 +77,7 @@ func (vs *Variables) AppendFiltered(ctx context.Context, db Querier, name string
 
 	var rows *sql.Rows
 	if name != "" {
-		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES LIKE %q", name)
+		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES LIKE ?", name)
 	} else {
 		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES")
 	}
