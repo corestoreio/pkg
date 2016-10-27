@@ -1,10 +1,10 @@
 package binlogsync
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"net/url"
-	"strconv"
+	"net"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -12,10 +12,11 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/go-sql-driver/mysql"
 	"github.com/siddontang/go-mysql/replication"
-	"github.com/siddontang/go-mysql/schema"
 )
 
 // Use flavor for different MySQL versions,
@@ -24,9 +25,9 @@ const (
 	MariaDBFlavor = "mariadb"
 )
 
-// db matches type database/sql.DB
-type DBQueryier interface {
-	QueryRow(query string, args ...interface{}) *sql.Row
+type DBer interface {
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 	Close() error
 }
 
@@ -35,14 +36,13 @@ type Canal struct {
 	// mclose acts only during the call to Close().
 	mclose sync.Mutex
 	// dsn contains the parsed DSN
-	dsn *url.URL
-	// database sets the name to which the current Canal object has been bound to.
-	database string
+	dsn         *mysql.Config
+	canalParams map[string]string
 
 	cfgw config.Writer
 
 	masterMu           sync.RWMutex
-	masterPos          Position
+	masterStatus       csdb.MasterStatus
 	masterLastSaveTime time.Time
 
 	syncer *replication.BinlogSyncer
@@ -50,10 +50,12 @@ type Canal struct {
 	rsMu       sync.RWMutex
 	rsHandlers []RowsEventHandler
 
-	db DBQueryier
+	db DBer
 
-	tableLock sync.RWMutex
-	tables    map[string]*schema.Table
+	// Tables contains the overall SQL table cache. If a table gets modified
+	// during runtime of this program then somehow we must clear the cache to
+	// reload the table structures.
+	Tables *csdb.Tables
 
 	closed *int32
 	Log    log.Logger
@@ -66,12 +68,12 @@ type Option func(*Canal) error
 // WithMySQL adds the database/sql.DB driver including a ping to the database.
 func WithMySQL() Option {
 	return func(c *Canal) error {
-		db, err := sql.Open("mysql", c.dsn.String())
+		db, err := sql.Open("mysql", c.dsn.FormatDSN())
 		if err != nil {
 			return errors.Wrap(err, "[binlogsync] sql.Open")
 		}
 		if err := db.Ping(); err != nil {
-			return errors.Wrap(err, "[binlogsync] sql.Ping")
+			return errors.Wrap(err, "[binlogsync] sql ping failed")
 		}
 		c.db = db
 		return nil
@@ -79,8 +81,11 @@ func WithMySQL() Option {
 }
 
 // WithDB allows to set your own DB connection. Mostly used for testing.
-func WithDB(db DBQueryier) Option {
-	return func(c *Canal) error {
+func WithDB(db *sql.DB) Option {
+	return func(c *Canal) (err error) {
+		if err := db.Ping(); err != nil {
+			return errors.Wrap(err, "[binlogsync] sql ping failed")
+		}
 		c.db = db
 		return nil
 	}
@@ -95,59 +100,82 @@ func WithConfigurationWriter(w config.Writer) Option {
 }
 
 func withUpdateBinlogStartPosition(c *Canal) error {
-	ms, err := c.ShowMasterStatus()
-	if err != nil {
-		return errors.Wrap(err, "[binlogsync] ShowMasterStatus")
+	var ms csdb.MasterStatus
+	if err := ms.Load(context.TODO(), c.db); err != nil {
+		return errors.Wrap(err, "[binlogsync] ShowMasterStatus Load")
 	}
 
-	c.masterPos = ms
+	c.masterStatus = ms
 
-	hasPos := conv.ToInt(c.dsn.Query().Get("BinlogStartPosition"))
-	if hasPos >= 4 {
-		c.masterPos.Pos = uint32(hasPos)
+	if v, ok := c.canalParams["BinlogStartPosition"]; ok && v != "" {
+		hasPos := conv.ToUint(c.canalParams["BinlogStartPosition"])
+		if hasPos >= 4 {
+			c.masterStatus.Position = uint(hasPos)
+		}
 	}
 	return nil
 }
 
+// withPrepareSyncer creates its own database connection.
 func withPrepareSyncer(c *Canal) error {
-	pw, _ := c.dsn.User.Password()
+	host, port, err := net.SplitHostPort(c.dsn.Addr)
+	if err != nil {
+		return errors.Wrap(err, "[binlogsync] withPrepareSyncer SplitHostPort")
+	}
+	var blSlaveID = 100
+	if v, ok := c.canalParams["BinlogSlaveId"]; ok && v != "" {
+		blSlaveID = conv.ToInt(c.canalParams["BinlogSlaveId"])
+	}
+
 	cfg := replication.BinlogSyncerConfig{
-		ServerID: uint32(conv.ToInt(c.dsn.Query().Get("BinlogSlaveId"))),
+		ServerID: uint32(blSlaveID),
 		Flavor:   c.flavor(),
-		Host:     c.dsn.Hostname(),
-		Port:     uint16(conv.ToInt(c.dsn.Port())),
-		User:     c.dsn.User.Username(),
-		Password: pw,
+		Host:     host,
+		Port:     uint16(conv.ToInt(port)),
+		User:     c.dsn.User,
+		Password: c.dsn.Passwd,
 	}
 	c.syncer = replication.NewBinlogSyncer(&cfg)
 	return nil
 }
 
 func withCheckBinlogRowFormat(c *Canal) error {
-	row := c.db.QueryRow(`SHOW GLOBAL VARIABLES LIKE "binlog_format";`)
-	res := &struct {
-		VariableName, Value string
-	}{}
-	if err := row.Scan(res.VariableName, res.Value); err != nil {
+	v := csdb.Variable{}
+	if err := v.LoadOne(context.TODO(), c.db, "binlog_format"); err != nil {
 		return errors.Wrap(err, "[binlogsync] checkBinlogRowFormat row.Scan")
 	}
-	if res.Value != "ROW" {
-		return errors.NewNotSupportedf("[binlogsync] binlog must have the configured ROW format, but got %q", res.Value)
+	if v.Value != "ROW" {
+		return errors.NewNotSupportedf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q", v.Name, v.Value)
 	}
 	return nil
 }
 
+var customMySQLParams = []string{"BinlogStartPosition", "BinlogSlaveId", "flavor"}
+
 // NewCanal creates a new canal object to start reading the MySQL binary log. If
 // you don't provide a database connection option this function will panic.
-// export CS_DSN='mysql://root:PASSWORD@localhost:3306/DATABASE_NAME?BinlogSlaveId=100&BinlogStartPosition=0'
-func NewCanal(dsn *url.URL, db Option, opts ...Option) (*Canal, error) {
+// export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME?BinlogSlaveId=100&BinlogStartPosition=0'
+func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	c := new(Canal)
 	c.dsn = dsn
 	c.closed = new(int32)
 	atomic.StoreInt32(c.closed, 0)
 
-	c.database = dsn.Path[1:] // strip first slash, let it panic if the DSN has been provided incorrectly.
-	c.tables = make(map[string]*schema.Table)
+	// remove custom parameters from DSN and copy them into our own map because
+	// otherwise MySQL connection fails due to unknown connection parameters.
+	if c.dsn.Params != nil {
+		c.canalParams = make(map[string]string)
+		for _, p := range customMySQLParams {
+			if v, ok := c.dsn.Params[p]; ok && v != "" {
+				c.canalParams[p] = v
+				delete(c.dsn.Params, p)
+			}
+		}
+
+	}
+
+	c.Tables = csdb.MustNewTables()
+	c.Tables.Schema = c.dsn.DBName
 	c.Log = log.BlackHole{}
 
 	opts2 := []Option{db}
@@ -181,33 +209,32 @@ func (m *Canal) masterSave() error {
 	return nil
 }
 
-func (m *Canal) masterUpdate(name string, pos uint32) {
+func (m *Canal) masterUpdate(fileName string, pos uint) {
 	m.masterMu.Lock()
 	defer m.masterMu.Unlock()
-	m.masterPos.Name = name
-	m.masterPos.Pos = pos
+	m.masterStatus.File = fileName
+	m.masterStatus.Position = pos
 }
 
-func (m *Canal) SyncedPosition() Position {
+func (m *Canal) SyncedPosition() csdb.MasterStatus {
 	m.masterMu.RLock()
 	defer m.masterMu.RUnlock()
-
-	return m.masterPos
+	return m.masterStatus
 }
 
-func (c *Canal) Start() error {
+func (c *Canal) Start(ctx context.Context) error {
 	c.wg.Add(1)
-	go c.run()
+	go c.run(ctx)
 
 	return nil
 }
 
 // run gets executed in its own goroutine
-func (c *Canal) run() error {
+func (c *Canal) run(ctx context.Context) error {
 	// refactor for better error handling
 	defer c.wg.Done()
 
-	if err := c.startSyncBinlog(); err != nil {
+	if err := c.startSyncBinlog(ctx); err != nil {
 		if !c.isClosed() {
 			c.Log.Info("[binlogsync] Canal start has encountered a sync binlog error", log.Err(err))
 		}
@@ -243,48 +270,45 @@ func (c *Canal) Close() error {
 	return nil
 }
 
-func (c *Canal) FlushTables() error {
-	c.tableLock.Lock()
-	defer c.tableLock.Unlock()
-	c.tables = make(map[string]*schema.Table)
+// FindTable tries to find a table by its ID. If the table cannot be found, it
+// will add the table to the internal map and performs a column load from the
+// information_schema.
+func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (*csdb.Table, error) {
 
-	return nil
-}
-func (c *Canal) GetTable(table string) (*schema.Table, error) {
-	key := c.database + "." + table
-	c.tableLock.RLock()
-	t, ok := c.tables[key]
-	c.tableLock.RUnlock()
-
-	if ok {
+	t, err := c.Tables.Table(id)
+	if err == nil {
 		return t, nil
 	}
-
-	t, err := schema.NewTable(c, c.database, table)
-	if err != nil {
-		return nil, errors.Wrapf(err, "[binlogsync] GetTable schema.NewTable")
+	if !errors.IsNotFound(err) {
+		return nil, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
 	}
 
-	c.tableLock.Lock()
-	c.tables[key] = t
-	c.tableLock.Unlock()
+	if err := c.Tables.Options(csdb.WithTableLoadColumns(ctx, c.db, id, tableName)); err != nil {
+		return nil, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
+	}
+
+	t, err = c.Tables.Table(id)
+	t.Schema = c.dsn.DBName
+	if err != nil {
+		return nil, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
+	}
 
 	return t, nil
 }
 
 // Check MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB
-func (c *Canal) CheckBinlogRowImage(image string) error {
+func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 	// need to check MySQL binlog row image? full, minimal or noblob?
 	// now only log
 	if c.flavor() == MySQLFlavor {
-		row := c.db.QueryRow(`SHOW GLOBAL VARIABLES LIKE "binlog_row_image"`)
-		res := &struct{ VariableName, Value string }{}
-		if err := row.Scan(res.VariableName, res.Value); err != nil {
-			return errors.Wrap(err, "[binlogsync] CheckBinlogRowImage Execute")
+		var v csdb.Variable
+		if err := v.LoadOne(ctx, c.db, "binlog_row_image"); err != nil {
+			return errors.Wrap(err, "[binlogsync] CheckBinlogRowImage LoadOne")
 		}
+
 		// MySQL has binlog row image from 5.6, so older will return empty
-		if res.Value != "" && !strings.EqualFold(res.Value, image) {
-			return errors.NewNotSupportedf("[binlogsync] MySQL uses %q binlog row image, but we want %q", res.Value, image)
+		if v.Value != "" && !strings.EqualFold(v.Value, image) {
+			return errors.NewNotSupportedf("[binlogsync] MySQL uses %q binlog row image, but we want %q", v.Value, image)
 		}
 	}
 
@@ -292,7 +316,10 @@ func (c *Canal) CheckBinlogRowImage(image string) error {
 }
 
 func (c *Canal) flavor() string {
-	f := c.dsn.Query().Get("flavor")
+	var f string
+	if v, ok := c.canalParams["flavor"]; ok && v != "" {
+		f = c.canalParams["flavor"]
+	}
 	if f == "" {
 		f = MySQLFlavor
 	}
@@ -304,20 +331,4 @@ func (c *Canal) flavor() string {
 	}
 	// todo remove panic
 	panic(fmt.Sprintf("[binlogsync] Unknown flavor: %q", f))
-}
-
-func (c *Canal) ShowMasterStatus() (p Position, _ error) {
-	row := c.db.QueryRow("SHOW MASTER STATUS")
-	res := &struct {
-		VariableName, Value string
-	}{}
-	if err := row.Scan(res.VariableName, res.Value); err != nil {
-		return p, errors.Wrap(err, "[binlogsync] ShowMasterStatus")
-	}
-
-	pos, err := strconv.ParseUint(res.Value, 10, 32)
-	if err != nil {
-		return p, errors.Wrap(err, "[binlogsync] ShowMasterStatus ParseUint")
-	}
-	return Position{Name: res.VariableName, Pos: uint32(pos)}, nil
 }

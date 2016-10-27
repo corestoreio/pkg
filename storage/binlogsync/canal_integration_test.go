@@ -15,27 +15,29 @@
 package binlogsync_test
 
 import (
+	"context"
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/corestoreio/csfw/storage/binlogsync"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/siddontang/go-mysql/schema"
 )
 
 func TestIntegrationNewCanal(t *testing.T) {
 	dsn, err := csdb.GetParsedDSN()
 	if err != nil {
-		t.Fatalf("Failed to get DSN from env %q with %+v", csdb.EnvDSN, err)
+		t.Skipf("Failed to get DSN from env %q with %+v", csdb.EnvDSN, err)
 	}
-	c, err := binlogsync.NewCanal(dsn)
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
-	c.RegRowsEventHandler(&catalogProductEvent{t: t})
+	c.RegisterRowsEventHandler(catalogProductEvent{idx: 1001, t: t})
+	c.RegisterRowsEventHandler(catalogProductEvent{idx: 1002, t: t})
 
-	if err := c.Start(); err != nil {
+	if err := c.Start(context.Background()); err != nil {
 		t.Fatalf("%+v", err)
 	}
 	time.Sleep(time.Second * 10)
@@ -44,21 +46,24 @@ func TestIntegrationNewCanal(t *testing.T) {
 }
 
 type catalogProductEvent struct {
-	t *testing.T
+	idx int
+	t   *testing.T
 }
 
-func (cpe *catalogProductEvent) Do(action string, table *schema.Table, rows [][]interface{}) error {
+func (cpe catalogProductEvent) Do(_ context.Context, action string, table *csdb.Table, rows [][]interface{}) error {
+	sl := time.Duration(rand.Intn(100)) * time.Millisecond
+	time.Sleep(sl)
 
-	cpe.t.Logf("%s.%s", table.Schema, table.Name)
+	cpe.t.Logf("%d Sleep: %s => %q.%q", cpe.idx, sl, table.Schema, table.Name)
 	for _, r := range rows {
 		cpe.t.Logf("%#v", r)
 	}
 	cpe.t.Logf("\n")
 	return nil
 }
-func (cpe *catalogProductEvent) Complete() error {
+func (cpe catalogProductEvent) Complete(_ context.Context) error {
 	return nil // errors.NewFatalf("[test] What is incomplete?")
 }
-func (cpe *catalogProductEvent) String() string {
+func (cpe catalogProductEvent) String() string {
 	return "WTF? catalogProductEvent"
 }

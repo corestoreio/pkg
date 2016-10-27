@@ -16,16 +16,16 @@ const (
 	DeleteAction = "delete"
 )
 
-func (c *Canal) startSyncBinlog() error {
-	pos := c.masterPos
+func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
+	pos := c.masterStatus
 
 	if c.Log.IsInfo() {
 		c.Log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
 	}
 
 	fixMePos := mysql.Position{
-		Name: pos.Name,
-		Pos:  pos.Pos,
+		Name: pos.File,
+		Pos:  uint32(pos.Position),
 	}
 
 	s, err := c.syncer.StartSync(fixMePos)
@@ -35,7 +35,7 @@ func (c *Canal) startSyncBinlog() error {
 
 	timeout := time.Second
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		ctx, cancel := context.WithTimeout(ctxArg, 2*time.Second)
 		ev, err := s.GetEvent(ctx)
 		cancel()
 
@@ -50,16 +50,16 @@ func (c *Canal) startSyncBinlog() error {
 		timeout = time.Second
 
 		//next binlog pos
-		pos.Pos = ev.Header.LogPos
+		pos.Position = uint(ev.Header.LogPos)
 
 		switch e := ev.Event.(type) {
 		case *replication.RotateEvent:
-			if err := c.flushEventHandlers(); err != nil {
+			if err := c.flushEventHandlers(ctxArg); err != nil {
 				// todo maybe better err handling ...
 				return errors.Wrap(err, "[binlogsync] startSyncBinlog.flushEventHandlers")
 			}
-			pos.Name = string(e.NextLogName)
-			pos.Pos = uint32(e.Position)
+			pos.File = string(e.NextLogName)
+			pos.Position = uint(e.Position)
 			// r.ev <- pos
 
 			if c.Log.IsInfo() {
@@ -68,7 +68,7 @@ func (c *Canal) startSyncBinlog() error {
 
 		case *replication.RowsEvent:
 			// we only focus row based event
-			if err = c.handleRowsEvent(ev); err != nil {
+			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
 				if c.Log.IsInfo() {
 					c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos))
 				}
@@ -80,7 +80,7 @@ func (c *Canal) startSyncBinlog() error {
 			//	fmt.Printf("%#v\n\n", e)
 		}
 
-		c.masterUpdate(pos.Name, pos.Pos)
+		c.masterUpdate(pos.File, pos.Position)
 		if err := c.masterSave(); err != nil {
 			c.Log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
 		}
@@ -89,7 +89,7 @@ func (c *Canal) startSyncBinlog() error {
 	return nil
 }
 
-func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
+func (c *Canal) handleRowsEvent(ctx context.Context, e *replication.BinlogEvent) error {
 	ev, ok := e.Event.(*replication.RowsEvent)
 	if !ok {
 		return errors.NewFatalf("[binlogsync] handleRowsEvent: Failed to cast to *replication.RowsEvent type")
@@ -97,18 +97,18 @@ func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
 
 	// Caveat: table may be altered at runtime.
 
-	if in := string(ev.Table.Schema); c.database != in {
+	if in := string(ev.Table.Schema); c.dsn.DBName != in {
 		if c.Log.IsDebug() {
-			c.Log.Debug("[binlogsync] Skipping database", log.String("database_have", in), log.String("database_want", c.database), log.Int("table_id", int(ev.TableID)))
+			c.Log.Debug("[binlogsync] Skipping database", log.String("database_have", in), log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
 	}
 
 	table := string(ev.Table.Table)
 
-	t, err := c.GetTable(table)
+	t, err := c.FindTable(ctx, int(ev.TableID), table)
 	if err != nil {
-		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.database, table)
+		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.dsn.DBName, table)
 	}
 	var action string
 	switch e.Header.EventType {
@@ -121,7 +121,7 @@ func (c *Canal) handleRowsEvent(e *replication.BinlogEvent) error {
 	default:
 		return errors.NewNotSupportedf("[binlogsync] EventType %v not yet supported", e.Header.EventType)
 	}
-	return c.travelRowsEventHandler(action, t, ev.Rows)
+	return c.travelRowsEventHandler(ctx, action, t, ev.Rows)
 }
 
 // todo: implement when needed

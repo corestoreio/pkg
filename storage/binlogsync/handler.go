@@ -1,9 +1,12 @@
 package binlogsync
 
 import (
+	"context"
+
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/siddontang/go-mysql/schema"
+	"golang.org/x/sync/errgroup"
 )
 
 // RowsEventHandler calls your code when an event gets dispatched.
@@ -13,16 +16,19 @@ type RowsEventHandler interface {
 	// syncer. Binlog has three update event version, v0, v1 and v2. For v1 and
 	// v2, the rows number must be even. Two rows for one event, format is
 	// [before update row, after update row] for update v0, only one row for a
-	// event, and we don't support this version yet.
-	Do(action string, table *schema.Table, rows [][]interface{}) error
-	// Complete runs before a binlog rotation event happens. Same error rules apply
-	// here like for function Do().
-	Complete() error
+	// event, and we don't support this version yet. The Do function will run in
+	// its own Goroutine.
+	Do(ctx context.Context, action string, table *csdb.Table, rows [][]interface{}) error
+	// Complete runs before a binlog rotation event happens. Same error rules
+	// apply here like for function Do(). The Complete function will run in its
+	// own Goroutine.
+	Complete(context.Context) error
 	// String returns the name of the handler
 	String() string
 }
 
-func (c *Canal) RegRowsEventHandler(h RowsEventHandler) {
+// RegisterRowsEventHandler adds a new event handler to the internal list.
+func (c *Canal) RegisterRowsEventHandler(h RowsEventHandler) {
 	c.rsMu.Lock()
 	defer c.rsMu.Unlock()
 
@@ -32,40 +38,50 @@ func (c *Canal) RegRowsEventHandler(h RowsEventHandler) {
 	c.rsHandlers = append(c.rsHandlers, h)
 }
 
-func (c *Canal) travelRowsEventHandler(action string, table *schema.Table, rows [][]interface{}) error {
+func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table *csdb.Table, rows [][]interface{}) error {
 	c.rsMu.RLock()
 	defer c.rsMu.RUnlock()
 
-	var err error
+	erg, ctx := errgroup.WithContext(ctx)
+
 	for _, h := range c.rsHandlers {
-		err = h.Do(action, table, rows)
-		isInterr := errors.IsInterrupted(err)
-		if err != nil && !isInterr {
-			c.Log.Info("[binlogsync] Handler.Do error", log.Err(err), log.Stringer("handler_name", h),
-				log.String("action", action), log.String("schema", table.Schema), log.String("table", table.Name))
-		} else if isInterr {
-			c.Log.Info("[binlogsync] Handler.Do Interrupt", log.Err(err), log.Stringer("handler_name", h),
-				log.String("action", action), log.String("schema", table.Schema), log.String("table", table.Name))
-			return errors.Wrap(err, "[binlogsync] travelRowsEventHandler interrupted")
-		}
+		h := h
+		erg.Go(func() error {
+			err := h.Do(ctx, action, table, rows)
+			isInterr := errors.IsInterrupted(err)
+			if err != nil && !isInterr {
+				c.Log.Info("[binlogsync] Handler.Do error", log.Err(err), log.Stringer("handler_name", h),
+					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
+			} else if isInterr {
+				c.Log.Info("[binlogsync] Handler.Do Interrupt", log.Err(err), log.Stringer("handler_name", h),
+					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
+				return errors.Wrap(err, "[binlogsync] travelRowsEventHandler interrupted")
+			}
+			return nil
+		})
 	}
-	return nil
+	return errors.Wrap(erg.Wait(), "[binlogsync] travelRowsEventHandler errgroup Wait")
 }
 
-func (c *Canal) flushEventHandlers() error {
+func (c *Canal) flushEventHandlers(ctx context.Context) error {
 	c.rsMu.RLock()
 	defer c.rsMu.RUnlock()
 
-	var err error
+	erg, ctx := errgroup.WithContext(ctx)
+
 	for _, h := range c.rsHandlers {
-		err = h.Complete()
-		isInterr := errors.IsInterrupted(err)
-		if err != nil && !isInterr {
-			c.Log.Info("[binlogsync] flushEventHandlers.Handler.Complete error", log.Err(err), log.Stringer("handler_name", h))
-		} else if isInterr {
-			c.Log.Info("[binlogsync] flushEventHandlers.Handler.Complete interrupted", log.Err(err), log.Stringer("handler_name", h))
-			return errors.Wrap(err, "[binlogsync] flushEventHandlers interrupted")
-		}
+		h := h
+		erg.Go(func() error {
+			err := h.Complete(ctx)
+			isInterr := errors.IsInterrupted(err)
+			if err != nil && !isInterr {
+				c.Log.Info("[binlogsync] flushEventHandlers.Handler.Complete error", log.Err(err), log.Stringer("handler_name", h))
+			} else if isInterr {
+				c.Log.Info("[binlogsync] flushEventHandlers.Handler.Complete interrupted", log.Err(err), log.Stringer("handler_name", h))
+				return errors.Wrap(err, "[binlogsync] flushEventHandlers interrupted")
+			}
+			return nil
+		})
 	}
-	return nil
+	return errors.Wrap(erg.Wait(), "[binlogsync] flushEventHandlers errgroup Wait")
 }
