@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -156,7 +157,7 @@ func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), `MySQL Syntax not implemted`)
 }
 
-func TestNewCanal_SuccessfulStart(t *testing.T) {
+func newTestCanal(t *testing.T) (*binlogsync.Canal, sqlmock.Sqlmock, func()) {
 	dsn := &mysql.Config{
 		User:   "root",
 		Passwd: "",
@@ -165,13 +166,13 @@ func TestNewCanal_SuccessfulStart(t *testing.T) {
 		DBName: "TestDB",
 	}
 	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
+	deferred := func() {
 		dbMock.ExpectClose()
 		assert.NoError(t, dbc.Close())
 		if err := dbMock.ExpectationsWereMet(); err != nil {
 			t.Error("there were unfulfilled expections", err)
 		}
-	}()
+	}
 
 	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
 		WithArgs().
@@ -190,40 +191,68 @@ func TestNewCanal_SuccessfulStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+	return c, dbMock, deferred
+}
+
+func TestNewCanal_SuccessfulStart(t *testing.T) {
+	c, _, deferred := newTestCanal(t)
+	defer deferred()
+
 	cp := c.SyncedPosition()
 	assert.Exactly(t, `mysqlbin.log:0001`, cp.File)
 	assert.Exactly(t, uint(4711), cp.Position)
 }
 
 func TestCanal_FindTable(t *testing.T) {
-	dsn := &mysql.Config{
-		User:   "root",
-		Passwd: "",
-		Net:    "x'err",
-		Addr:   "tcp127",
-		DBName: "TestDB",
-	}
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
-		}
-	}()
+	c, dbMock, deferred := newTestCanal(t)
+	defer deferred()
 
-	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
-	if err != nil {
-		t.Fatalf("%+v", err)
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta(csdb.DMLLoadColumns)).
+		WithArgs("core_config_data").
+		WillReturnRows(
+			cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
+
+	// food for the race detector and to test that only one query will be executed.
+	const iterations = 10
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	for i := 0; i < iterations; i++ {
+		go func(wg *sync.WaitGroup, i int) {
+			defer wg.Done()
+
+			if i < 4 {
+				time.Sleep(time.Microsecond * time.Duration(i*10))
+			}
+
+			tbl, err := c.FindTable(context.Background(), 31, "core_config_data")
+			if err != nil {
+				t.Fatalf("%+v", err)
+			}
+			assert.Exactly(t,
+				c.DSN.DBName,
+				tbl.Schema,
+			)
+			assert.Exactly(t, `core_config_data`, tbl.Name)
+			assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, tbl.Columns.FieldNames())
+
+		}(&wg, i)
 	}
+	wg.Wait()
+
+}
+
+func TestCanal_FindTable_Error(t *testing.T) {
+	c, dbMock, deferred := newTestCanal(t)
+	defer deferred()
+
+	wantErr := errors.NewUnauthorizedf("Du kommst da nicht rein")
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta(csdb.DMLLoadColumns)).
+		WithArgs("core_config_data").
+		WillReturnError(wantErr)
 
 	tbl, err := c.FindTable(context.Background(), 31, "core_config_data")
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	assert.Exactly(t, dsn.DBName, tbl.Schema)
-	assert.Exactly(t, `core_config_data`, tbl.Name)
-	assert.Exactly(t, []string{""}, tbl.Columns.FieldNames())
+	assert.Nil(t, tbl)
+	assert.True(t, errors.IsUnauthorized(err), "%+v", err)
 }
 
 func TestIntegrationNewCanal(t *testing.T) {

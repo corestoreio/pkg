@@ -13,6 +13,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/go-sql-driver/mysql"
@@ -35,8 +36,8 @@ type DBer interface {
 type Canal struct {
 	// mclose acts only during the call to Close().
 	mclose sync.Mutex
-	// dsn contains the parsed DSN
-	dsn         *mysql.Config
+	// DSN contains the parsed DSN
+	DSN         *mysql.Config
 	canalParams map[string]string
 
 	cfgw config.Writer
@@ -55,7 +56,11 @@ type Canal struct {
 	// Tables contains the overall SQL table cache. If a table gets modified
 	// during runtime of this program then somehow we must clear the cache to
 	// reload the table structures.
-	Tables *csdb.Tables
+	tables *csdb.Tables
+	// tableSFG takes to only execute one SQL query per table in parallel
+	// situations. No need for a pointer because Canal is already a pointer. So
+	// simple embedding.
+	tableSFG *singleflight.Group
 
 	closed *int32
 	Log    log.Logger
@@ -68,7 +73,7 @@ type Option func(*Canal) error
 // WithMySQL adds the database/sql.DB driver including a ping to the database.
 func WithMySQL() Option {
 	return func(c *Canal) error {
-		db, err := sql.Open("mysql", c.dsn.FormatDSN())
+		db, err := sql.Open("mysql", c.DSN.FormatDSN())
 		if err != nil {
 			return errors.Wrap(err, "[binlogsync] sql.Open")
 		}
@@ -119,7 +124,7 @@ func withUpdateBinlogStartPosition(c *Canal) error {
 
 // withPrepareSyncer creates its own database connection.
 func withPrepareSyncer(c *Canal) error {
-	host, port, err := net.SplitHostPort(c.dsn.Addr)
+	host, port, err := net.SplitHostPort(c.DSN.Addr)
 	if err != nil {
 		return errors.Wrap(err, "[binlogsync] withPrepareSyncer SplitHostPort")
 	}
@@ -133,8 +138,8 @@ func withPrepareSyncer(c *Canal) error {
 		Flavor:   c.flavor(),
 		Host:     host,
 		Port:     uint16(conv.ToInt(port)),
-		User:     c.dsn.User,
-		Password: c.dsn.Passwd,
+		User:     c.DSN.User,
+		Password: c.DSN.Passwd,
 	}
 	c.syncer = replication.NewBinlogSyncer(&cfg)
 	return nil
@@ -158,25 +163,26 @@ var customMySQLParams = []string{"BinlogStartPosition", "BinlogSlaveId", "flavor
 // export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME?BinlogSlaveId=100&BinlogStartPosition=0'
 func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	c := new(Canal)
-	c.dsn = dsn
+	c.DSN = dsn
 	c.closed = new(int32)
 	atomic.StoreInt32(c.closed, 0)
 
 	// remove custom parameters from DSN and copy them into our own map because
 	// otherwise MySQL connection fails due to unknown connection parameters.
-	if c.dsn.Params != nil {
+	if c.DSN.Params != nil {
 		c.canalParams = make(map[string]string)
 		for _, p := range customMySQLParams {
-			if v, ok := c.dsn.Params[p]; ok && v != "" {
+			if v, ok := c.DSN.Params[p]; ok && v != "" {
 				c.canalParams[p] = v
-				delete(c.dsn.Params, p)
+				delete(c.DSN.Params, p)
 			}
 		}
 
 	}
 
-	c.Tables = csdb.MustNewTables()
-	c.Tables.Schema = c.dsn.DBName
+	c.tables = csdb.MustNewTables()
+	c.tables.Schema = c.DSN.DBName
+	c.tableSFG = new(singleflight.Group)
 	c.Log = log.BlackHole{}
 
 	opts2 := []Option{db}
@@ -276,25 +282,32 @@ func (c *Canal) Close() error {
 // information_schema.
 func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (*csdb.Table, error) {
 
-	t, err := c.Tables.Table(id)
+	t, err := c.tables.Table(id)
 	if err == nil {
 		return t, nil
 	}
 	if !errors.IsNotFound(err) {
 		return nil, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
 	}
+	dbName := c.DSN.DBName
+	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
+		if err := c.tables.Options(csdb.WithTableLoadColumns(ctx, c.db, id, tableName)); err != nil {
+			return nil, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
+		}
 
-	if err := c.Tables.Options(csdb.WithTableLoadColumns(ctx, c.db, id, tableName)); err != nil {
-		return nil, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
-	}
+		t, err = c.tables.Table(id)
+		t.Schema = dbName
+		if err != nil {
+			return nil, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
+		}
+		return t, nil
+	})
 
-	t, err = c.Tables.Table(id)
-	t.Schema = c.dsn.DBName
 	if err != nil {
-		return nil, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
+		return nil, errors.Wrapf(err, "[binlogsync] FindTable.SingleFlight error")
 	}
 
-	return t, nil
+	return val.(*csdb.Table), nil
 }
 
 // Check MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB

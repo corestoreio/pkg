@@ -51,10 +51,10 @@ func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table
 			isInterr := errors.IsInterrupted(err)
 			if err != nil && !isInterr {
 				c.Log.Info("[binlogsync] Handler.Do error", log.Err(err), log.Stringer("handler_name", h),
-					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
+					log.String("action", action), log.String("schema", c.DSN.DBName), log.String("table", table.Name))
 			} else if isInterr {
 				c.Log.Info("[binlogsync] Handler.Do Interrupt", log.Err(err), log.Stringer("handler_name", h),
-					log.String("action", action), log.String("schema", c.dsn.DBName), log.String("table", table.Name))
+					log.String("action", action), log.String("schema", c.DSN.DBName), log.String("table", table.Name))
 				return errors.Wrap(err, "[binlogsync] travelRowsEventHandler interrupted")
 			}
 			return nil

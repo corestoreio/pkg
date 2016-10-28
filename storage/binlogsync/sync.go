@@ -97,9 +97,9 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *replication.BinlogEvent)
 
 	// Caveat: table may be altered at runtime.
 
-	if in := string(ev.Table.Schema); c.dsn.DBName != in {
+	if in := string(ev.Table.Schema); c.DSN.DBName != in {
 		if c.Log.IsDebug() {
-			c.Log.Debug("[binlogsync] Skipping database", log.String("database_have", in), log.String("database_want", c.dsn.DBName), log.Int("table_id", int(ev.TableID)))
+			c.Log.Debug("[binlogsync] Skipping database", log.String("database_have", in), log.String("database_want", c.DSN.DBName), log.Int("table_id", int(ev.TableID)))
 		}
 		return nil
 	}
@@ -108,7 +108,7 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *replication.BinlogEvent)
 
 	t, err := c.FindTable(ctx, int(ev.TableID), table)
 	if err != nil {
-		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.dsn.DBName, table)
+		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.DSN.DBName, table)
 	}
 	var action string
 	switch e.Header.EventType {
