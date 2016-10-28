@@ -16,13 +16,215 @@ package binlogsync_test
 
 import (
 	"context"
+	"database/sql"
 	"math/rand"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/binlogsync"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/go-sql-driver/mysql"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestCanal_Option_With_DB_Error(t *testing.T) {
+	t.Run("MySQL Ping", func(t *testing.T) {
+		dsn := &mysql.Config{
+			User:   "root",
+			Passwd: "",
+			Net:    "x'",
+			Addr:   "tcp127",
+			DBName: "",
+		}
+		c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL())
+		assert.Nil(t, c)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), `unknown network x'`)
+	})
+
+	t.Run("DB Ping", func(t *testing.T) {
+		dsn := &mysql.Config{
+			User:   "root",
+			Passwd: "",
+			Net:    "x'",
+			Addr:   "tcp127",
+			DBName: "",
+		}
+		db, err := sql.Open("mysql", "root:root@localhost/db")
+		c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(db))
+		assert.Nil(t, c)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), `default addr for network 'localhost' unknown`)
+	})
+}
+
+func TestNewCanal_FailedMasterStatus(t *testing.T) {
+	dsn := &mysql.Config{
+		User:   "root",
+		Passwd: "",
+		Net:    "x'err",
+		Addr:   "localhost:3306",
+		DBName: "TestDB",
+	}
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	wantErr := errors.NewAlreadyClosedf("I'm already closed")
+	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
+		WillReturnError(wantErr)
+
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
+	assert.Nil(t, c)
+	assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+}
+
+func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
+	dsn := &mysql.Config{
+		User:   "root",
+		Passwd: "",
+		Net:    "x'err",
+		Addr:   "localhost:3306",
+		DBName: "TestDB",
+	}
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
+		WithArgs().
+		WillReturnRows(
+			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
+				FromCSVString(`mysqlbin.log:0001,4711,,,`),
+		)
+	dbMock.ExpectQuery(`SHOW SESSION VARIABLES LIKE`).
+		WithArgs().
+		WillReturnRows(
+			sqlmock.NewRows([]string{"Variable_Name", "Value"}).
+				FromCSVString(`binlog_format,a cat`),
+		)
+
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
+	assert.Nil(t, c)
+	assert.True(t, errors.IsNotSupported(err), "%+v", err)
+	assert.Contains(t, err.Error(), `a cat`)
+}
+
+func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
+	dsn := &mysql.Config{
+		User:   "root",
+		Passwd: "",
+		Net:    "x'err",
+		Addr:   "localhost:3306",
+		DBName: "TestDB",
+	}
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
+		WithArgs().
+		WillReturnRows(
+			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
+				FromCSVString(`mysqlbin.log:0001,4711,,,`),
+		)
+	wantErr := errors.NewNotImplementedf("MySQL Syntax not implemted")
+	dbMock.ExpectQuery(`SHOW SESSION VARIABLES LIKE`).
+		WillReturnError(wantErr)
+
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
+	assert.Nil(t, c)
+	assert.True(t, errors.IsNotImplemented(err), "%+v", err)
+	assert.Contains(t, err.Error(), `MySQL Syntax not implemted`)
+}
+
+func TestNewCanal_SuccessfulStart(t *testing.T) {
+	dsn := &mysql.Config{
+		User:   "root",
+		Passwd: "",
+		Net:    "x'err",
+		Addr:   "localhost:3306",
+		DBName: "TestDB",
+	}
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	dbMock.ExpectQuery(`SHOW MASTER STATUS`).
+		WithArgs().
+		WillReturnRows(
+			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
+				FromCSVString(`mysqlbin.log:0001,4711,,,`),
+		)
+	dbMock.ExpectQuery(`SHOW SESSION VARIABLES LIKE`).
+		WithArgs().
+		WillReturnRows(
+			sqlmock.NewRows([]string{"Variable_Name", "Value"}).
+				FromCSVString(`binlog_format,row`),
+		)
+
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	cp := c.SyncedPosition()
+	assert.Exactly(t, `mysqlbin.log:0001`, cp.File)
+	assert.Exactly(t, uint(4711), cp.Position)
+}
+
+func TestCanal_FindTable(t *testing.T) {
+	dsn := &mysql.Config{
+		User:   "root",
+		Passwd: "",
+		Net:    "x'err",
+		Addr:   "tcp127",
+		DBName: "TestDB",
+	}
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	tbl, err := c.FindTable(context.Background(), 31, "core_config_data")
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Exactly(t, dsn.DBName, tbl.Schema)
+	assert.Exactly(t, `core_config_data`, tbl.Name)
+	assert.Exactly(t, []string{""}, tbl.Columns.FieldNames())
+}
 
 func TestIntegrationNewCanal(t *testing.T) {
 	dsn, err := csdb.GetParsedDSN()

@@ -80,7 +80,7 @@ func WithMySQL() Option {
 	}
 }
 
-// WithDB allows to set your own DB connection. Mostly used for testing.
+// WithDB allows to set your own DB connection.
 func WithDB(db *sql.DB) Option {
 	return func(c *Canal) (err error) {
 		if err := db.Ping(); err != nil {
@@ -91,6 +91,7 @@ func WithDB(db *sql.DB) Option {
 	}
 }
 
+// WithConfigurationWriter used to persists the current binlog position.
 func WithConfigurationWriter(w config.Writer) Option {
 	//Write(p cfgpath.Path, value interface{}) error
 	return func(c *Canal) error {
@@ -144,7 +145,7 @@ func withCheckBinlogRowFormat(c *Canal) error {
 	if err := v.LoadOne(context.TODO(), c.db, "binlog_format"); err != nil {
 		return errors.Wrap(err, "[binlogsync] checkBinlogRowFormat row.Scan")
 	}
-	if v.Value != "ROW" {
+	if !strings.EqualFold(v.Value, "ROW") {
 		return errors.NewNotSupportedf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q", v.Name, v.Value)
 	}
 	return nil
