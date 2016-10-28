@@ -121,7 +121,7 @@ func TestColumnComment(t *testing.T) {
 	c := column{
 		Column: csdb.Column{
 			Field:   dbr.NewNullString("entity_id"),
-			Type:    dbr.NewNullString("varchar"),
+			TypeRaw: dbr.NewNullString("varchar"),
 			Null:    dbr.NewNullString("YES"),
 			Key:     dbr.NewNullString("PRI"),
 			Default: dbr.NewNullString("0"),
@@ -269,7 +269,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 
 	for _, col := range colSliceDbr {
 		assert.True(t, col.Field.Valid, fmt.Sprintf("%#v", col))
-		assert.True(t, col.Type.Valid, fmt.Sprintf("%#v", col))
+		assert.True(t, col.TypeRaw.Valid, fmt.Sprintf("%#v", col))
 	}
 
 	columns2, err2 := SQLQueryToColumns(dbc.DB, nil, "SELECT * FROM `catalog_product_option`", " ORDER BY option_id DESC")
@@ -279,7 +279,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 	assert.Len(t, columns2, 10)
 	for _, col := range columns2 {
 		assert.True(t, col.Field.Valid, fmt.Sprintf("%#v", col))
-		assert.True(t, col.Type.Valid, fmt.Sprintf("%#v", col))
+		assert.True(t, col.TypeRaw.Valid, fmt.Sprintf("%#v", col))
 	}
 
 	colSliceDbr.MapSQLToGoDBRType()

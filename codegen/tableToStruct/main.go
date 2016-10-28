@@ -19,6 +19,8 @@ import (
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/log"
 )
 
@@ -33,9 +35,22 @@ func init() {
 	log.PkgLog = PkgLog
 }
 
+// Connect creates a new database connection from a DSN stored in an
+// environment variable CS_DSN.
+func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
+	c, err := dbr.NewConnection(dbr.WithDSN(csdb.MustGetDSN()))
+	if err != nil {
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection")
+	}
+	if err := c.Options(opts...); err != nil {
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection.Options")
+	}
+	return c, err
+}
+
 func main() {
 	defer log.WhenDone(PkgLog).Info("Stats")
-	dbc, err := csdb.Connect()
+	dbc, err := Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()
 	var wg sync.WaitGroup

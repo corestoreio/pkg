@@ -48,7 +48,7 @@ const (
 )
 
 func init() {
-	TableCollection = csdb.MustNewTableService(
+	TableCollection = csdb.MustNewTables(
 		csdb.WithTable(TableIndexStore, "store"),
 		csdb.WithTable(TableIndexGroup, "store_group"),
 		csdb.WithTable(TableIndexWebsite, "store_website"),

@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // depends on generated code from tableToStruct
@@ -37,8 +38,21 @@ type context struct {
 	aat *codegen.AddAttrTables
 }
 
+// Connect creates a new database connection from a DSN stored in an
+// environment variable CS_DSN.
+func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
+	c, err := dbr.NewConnection(dbr.WithDSN(csdb.MustGetDSN()))
+	if err != nil {
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection")
+	}
+	if err := c.Options(opts...); err != nil {
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection.Options")
+	}
+	return c, err
+}
+
 func newContext() *context {
-	dbc, err := csdb.Connect()
+	dbc, err := Connect()
 	codegen.LogFatal(err)
 
 	return &context{

@@ -186,7 +186,7 @@ func (c column) Comment() string {
 	if c.Default.String != "" {
 		sqlDefault = "DEFAULT '" + c.Default.String + "'"
 	}
-	return "// " + c.Name() + " " + c.Type.String + " " + sqlNull + " " + c.Key.String + " " + sqlDefault + " " + c.Extra.String
+	return "// " + c.Name() + " " + c.TypeRaw.String + " " + sqlNull + " " + c.Key.String + " " + sqlDefault + " " + c.Extra.String
 }
 
 func (c column) updateGoPrimitive(useSQL bool) column {
@@ -281,7 +281,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 	col := column{}
 	for rows.Next() {
 
-		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
+		err := rows.Scan(&col.Field, &col.TypeRaw, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Query Scan Table %q", table)
 		}
