@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -31,7 +32,7 @@ import (
 type csvOptions func(*config)
 
 type config struct {
-	r    *csv.Reader
+	cc   *CSVConfig
 	path string
 	test bool
 }
@@ -41,9 +42,34 @@ func WithFile(elem ...string) csvOptions {
 	return func(c *config) { c.path = filepath.Join(elem...) }
 }
 
+// CSVConfig allows to set special options when parsing the csv file.
+type CSVConfig struct {
+	// Comma is the field delimiter.
+	// It is set to comma (',') by NewReader.
+	Comma rune
+	// Comment, if not 0, is the comment character. Lines beginning with the
+	// Comment character without preceding whitespace are ignored. With leading
+	// whitespace the Comment character becomes part of the field, even if
+	// TrimLeadingSpace is true.
+	Comment rune
+	// FieldsPerRecord is the number of expected fields per record. If
+	// FieldsPerRecord is positive, Read requires each record to have the given
+	// number of fields. If FieldsPerRecord is 0, Read sets it to the number of
+	// fields in the first record, so that future records must have the same
+	// field count. If FieldsPerRecord is negative, no check is made and records
+	// may have a variable number of fields.
+	FieldsPerRecord int
+	// If LazyQuotes is true, a quote may appear in an unquoted field and a
+	// non-doubled quote may appear in a quoted field.
+	LazyQuotes bool
+	// If TrimLeadingSpace is true, leading white space in a field is ignored.
+	// This is done even if the field delimiter, Comma, is white space.
+	TrimLeadingSpace bool
+}
+
 // WithReaderConfig sets CSV reader options
-func WithReaderConfig(cr *csv.Reader) csvOptions {
-	return func(c *config) { c.r = cr }
+func WithReaderConfig(cr CSVConfig) csvOptions {
+	return func(c *config) { c.cc = &cr }
 }
 
 // WithTestMode allows better testing. Converts []bytes in driver.Value to
@@ -68,13 +94,18 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 	}
 
 	csvReader := csv.NewReader(f)
-	if cfg.r != nil {
-		csvReader.Comma = cfg.r.Comma
-		csvReader.Comment = cfg.r.Comment
-		csvReader.FieldsPerRecord = cfg.r.FieldsPerRecord
-		csvReader.LazyQuotes = cfg.r.LazyQuotes
-		csvReader.TrailingComma = cfg.r.TrailingComma
-		csvReader.TrimLeadingSpace = cfg.r.TrimLeadingSpace
+	if cfg.cc != nil {
+		if cfg.cc.Comma > 0 {
+			csvReader.Comma = cfg.cc.Comma
+		}
+		if cfg.cc.Comment > 0 {
+			csvReader.Comment = cfg.cc.Comment
+		}
+		if cfg.cc.FieldsPerRecord > 0 {
+			csvReader.FieldsPerRecord = cfg.cc.FieldsPerRecord
+		}
+		csvReader.LazyQuotes = cfg.cc.LazyQuotes
+		csvReader.TrimLeadingSpace = cfg.cc.TrimLeadingSpace
 	}
 
 	j := 0
@@ -93,7 +124,7 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 			return
 		}
 		if j == 0 {
-			columns = make([]string, len(res), len(res))
+			columns = make([]string, len(res))
 		}
 
 		row := make([]driver.Value, len(res))
@@ -102,11 +133,8 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 			if j == 0 {
 				columns[i] = v
 			} else {
-				b := parseCol(v)
+				b := parseCol(cfg, v)
 				row[i] = b
-				if cfg.test {
-					row[i] = text.Chars(b)
-				}
 			}
 		}
 		if j > 0 {
@@ -116,10 +144,13 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 	}
 }
 
-func parseCol(s string) []byte {
+func parseCol(c *config, s string) driver.Value {
 	switch {
 	case strings.ToLower(s) == "null":
 		return nil
+	}
+	if c.test {
+		return text.Chars(s)
 	}
 	return []byte(s)
 }
@@ -145,4 +176,11 @@ func MustMockRows(opts ...csvOptions) sqlmock.Rows {
 		panic(err)
 	}
 	return r
+}
+
+var whiteSpaceRemover = regexp.MustCompile("\\s+")
+
+func SQLMockQuoteMeta(s string) string {
+	s = regexp.QuoteMeta(s)
+	return whiteSpaceRemover.ReplaceAllString(s, " ")
 }
