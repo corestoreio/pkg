@@ -3,7 +3,6 @@ package binlogsync
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -11,8 +10,10 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
@@ -34,6 +35,9 @@ type DBer interface {
 
 // Canal can sync your MySQL data. MySQL must use the binlog format ROW.
 type Canal struct {
+	// BackendPosition initial idea. writing supported but not loading
+	BackendPosition cfgmodel.Str
+
 	// mclose acts only during the call to Close().
 	mclose sync.Mutex
 	// DSN contains the parsed DSN
@@ -105,7 +109,7 @@ func WithConfigurationWriter(w config.Writer) Option {
 	}
 }
 
-func withUpdateBinlogStartPosition(c *Canal) error {
+func withUpdateBinlogStart(c *Canal) error {
 	var ms csdb.MasterStatus
 	if err := ms.Load(context.TODO(), c.db); err != nil {
 		return errors.Wrap(err, "[binlogsync] ShowMasterStatus Load")
@@ -113,10 +117,12 @@ func withUpdateBinlogStartPosition(c *Canal) error {
 
 	c.masterStatus = ms
 
+	if v, ok := c.canalParams["BinlogStartFile"]; ok && v != "" {
+		c.masterStatus.File = v
+	}
 	if v, ok := c.canalParams["BinlogStartPosition"]; ok && v != "" {
-		hasPos := conv.ToUint(c.canalParams["BinlogStartPosition"])
-		if hasPos >= 4 {
-			c.masterStatus.Position = uint(hasPos)
+		if hasPos := conv.ToUint(v); hasPos >= 4 {
+			c.masterStatus.Position = hasPos
 		}
 	}
 	return nil
@@ -130,7 +136,7 @@ func withPrepareSyncer(c *Canal) error {
 	}
 	var blSlaveID = 100
 	if v, ok := c.canalParams["BinlogSlaveId"]; ok && v != "" {
-		blSlaveID = conv.ToInt(c.canalParams["BinlogSlaveId"])
+		blSlaveID = conv.ToInt(v)
 	}
 
 	cfg := replication.BinlogSyncerConfig{
@@ -156,16 +162,18 @@ func withCheckBinlogRowFormat(c *Canal) error {
 	return nil
 }
 
-var customMySQLParams = []string{"BinlogStartPosition", "BinlogSlaveId", "flavor"}
+var customMySQLParams = []string{"BinlogStartFile", "BinlogStartPosition", "BinlogSlaveId", "flavor"}
 
 // NewCanal creates a new canal object to start reading the MySQL binary log. If
 // you don't provide a database connection option this function will panic.
-// export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME?BinlogSlaveId=100&BinlogStartPosition=0'
+// export CS_DSN='root:PASSWORD@tcp(localhost:3306)/DATABASE_NAME?BinlogSlaveId=100&BinlogStartFile=mysql-bin.000002&BinlogStartPosition=4'
 func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	c := new(Canal)
 	c.DSN = dsn
 	c.closed = new(int32)
 	atomic.StoreInt32(c.closed, 0)
+
+	c.BackendPosition = cfgmodel.NewStr("storage/binlogsync/position")
 
 	// remove custom parameters from DSN and copy them into our own map because
 	// otherwise MySQL connection fails due to unknown connection parameters.
@@ -187,7 +195,7 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 
 	opts2 := []Option{db}
 	opts2 = append(opts2, opts...)
-	opts2 = append(opts2, withUpdateBinlogStartPosition, withPrepareSyncer, withCheckBinlogRowFormat)
+	opts2 = append(opts2, withUpdateBinlogStart, withPrepareSyncer, withCheckBinlogRowFormat)
 
 	for _, opt := range opts2 {
 		if err := opt(c); err != nil {
@@ -207,9 +215,18 @@ func (m *Canal) masterSave() error {
 	m.masterMu.Lock()
 	defer m.masterMu.Unlock()
 
-	//if err := m.cfgw.Write(); err != nil {
-	//	return errors.Wrap(err, "[binlogsync] failed to write into config")
-	//}
+	if m.cfgw == nil {
+		if m.Log.IsDebug() {
+			m.Log.Debug("[binlogsync] Master Status cannot be saved because config.Writer is nil",
+				log.String("database", m.DSN.DBName), log.Stringer("master_status", m.masterStatus))
+		}
+		return nil
+	}
+
+	// todo refactor to find a different way by not importing package config and scope
+	if err := m.BackendPosition.Write(m.cfgw, m.masterStatus.String(), scope.DefaultTypeID); err != nil {
+		return errors.Wrap(err, "[binlogsync] failed to write into config")
+	}
 
 	m.masterLastSaveTime = n
 
@@ -277,37 +294,38 @@ func (c *Canal) Close() error {
 	return nil
 }
 
-// FindTable tries to find a table by its ID. If the table cannot be found, it
-// will add the table to the internal map and performs a column load from the
-// information_schema.
-func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (*csdb.Table, error) {
-
+// FindTable tries to find a table by its ID. If the table cannot be found by
+// the first search, it will add the table to the internal map and performs a
+// column load from the information_schema and then returns the fully defined
+// table.
+func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (csdb.Table, error) {
+	// deference the table pointer to avoid race conditions and devs modifying the
+	// table ;-)
 	t, err := c.tables.Table(id)
 	if err == nil {
-		return t, nil
+		return *t, nil
 	}
 	if !errors.IsNotFound(err) {
-		return nil, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
+		return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
 	}
-	dbName := c.DSN.DBName
+
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
 		if err := c.tables.Options(csdb.WithTableLoadColumns(ctx, c.db, id, tableName)); err != nil {
-			return nil, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
+			return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
 		}
 
 		t, err = c.tables.Table(id)
-		t.Schema = dbName
 		if err != nil {
-			return nil, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
+			return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
 		}
-		return t, nil
+		return *t, nil
 	})
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "[binlogsync] FindTable.SingleFlight error")
+		return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.SingleFlight error")
 	}
 
-	return val.(*csdb.Table), nil
+	return val.(csdb.Table), nil
 }
 
 // Check MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB
@@ -332,17 +350,14 @@ func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 func (c *Canal) flavor() string {
 	var f string
 	if v, ok := c.canalParams["flavor"]; ok && v != "" {
-		f = c.canalParams["flavor"]
+		f = v
 	}
 	if f == "" {
 		f = MySQLFlavor
 	}
 	switch f {
-	case MySQLFlavor:
-		return MySQLFlavor
 	case MariaDBFlavor:
 		return MariaDBFlavor
 	}
-	// todo remove panic
-	panic(fmt.Sprintf("[binlogsync] Unknown flavor: %q", f))
+	return MySQLFlavor
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/siddontang/go-mysql/replication"
 )
 
+// Action constants to figure out the type of an event. Those constants will be
+// passed to the interface RowsEventHandler.
 const (
 	UpdateAction = "update"
 	InsertAction = "insert"
@@ -110,18 +112,18 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *replication.BinlogEvent)
 	if err != nil {
 		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.DSN.DBName, table)
 	}
-	var action string
+	var a string
 	switch e.Header.EventType {
 	case replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
-		action = InsertAction
+		a = InsertAction
 	case replication.DELETE_ROWS_EVENTv1, replication.DELETE_ROWS_EVENTv2:
-		action = DeleteAction
+		a = DeleteAction
 	case replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
-		action = UpdateAction
+		a = UpdateAction
 	default:
-		return errors.NewNotSupportedf("[binlogsync] EventType %v not yet supported", e.Header.EventType)
+		return errors.NewNotSupportedf("[binlogsync] EventType %v not yet supported. Table %q.%q", e.Header.EventType, c.DSN.DBName, table)
 	}
-	return c.travelRowsEventHandler(ctx, action, t, ev.Rows)
+	return c.travelRowsEventHandler(ctx, a, t, ev.Rows)
 }
 
 // todo: implement when needed
