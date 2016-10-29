@@ -15,9 +15,8 @@
 package csdb
 
 import (
-	"sync"
-
 	"context"
+	"sync"
 
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -65,6 +64,7 @@ func WithTableLoadColumns(ctx context.Context, db Querier, idx int, tableName st
 		}
 
 		t := NewTable(tableName)
+		t.Schema = tm.Schema
 		if err := t.LoadColumns(ctx, db); err != nil {
 			return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
 		}

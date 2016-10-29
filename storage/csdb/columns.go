@@ -54,7 +54,7 @@ type Column struct {
 	CharMaxLength null.Int64 `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
 	Precision     null.Int64 `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
 	Scale         null.Int64 `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
-	// TypeRaw SQL string of the column type
+	// TypeRaw full SQL string of the column type
 	TypeRaw string `db:"COLUMN_TYPE"` //`COLUMN_TYPE` longtext NOT NULL,
 	// Key primary or unique or ...
 	Key     string `db:"COLUMN_KEY"`     //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
@@ -62,14 +62,19 @@ type Column struct {
 	Comment string `db:"COLUMN_COMMENT"` //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
 }
 
-// LoadColumns returns all columns from a table in the current database.
-func LoadColumns(ctx context.Context, db Querier, table string) (Columns, error) {
-
-	rows, err := db.QueryContext(ctx, `SELECT
+// DMLLoadColumns specifies the data manipulation language for retrieving all
+// columns in the current database for a specific table.
+const DMLLoadColumns = `SELECT
 		 COLUMN_NAME,ORDINAL_POSITION,COLUMN_DEFAULT,
 		 IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,
 		 NUMERIC_SCALE,COLUMN_TYPE,COLUMN_KEY,EXTRA,COLUMN_COMMENT
-	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?`, table)
+	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?`
+
+// LoadColumns returns all columns from a table in the current database. For now
+// MySQL DSN must have set interpolateParams to true.
+func LoadColumns(ctx context.Context, db Querier, table string) (Columns, error) {
+
+	rows, err := db.QueryContext(ctx, DMLLoadColumns, table)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for table %q", table)
 	}
