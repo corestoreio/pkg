@@ -30,6 +30,7 @@ import (
 )
 
 func TestHTTPParallelUsers_WrongInterval(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			if s, ok := r.(string); ok {
@@ -48,6 +49,7 @@ func TestHTTPParallelUsers_WrongInterval(t *testing.T) {
 }
 
 func TestHTTPParallelUsers_Single(t *testing.T) {
+	t.Parallel()
 	tg := cstesting.NewHTTPParallelUsers(1, 1, 1, time.Nanosecond)
 	req := httptest.NewRequest("GET", "http://corestore.io", nil)
 
@@ -62,6 +64,7 @@ func TestHTTPParallelUsers_Single(t *testing.T) {
 }
 
 func TestHTTPParallelUsers_Long(t *testing.T) {
+	t.Parallel()
 	startTime := time.Now()
 	const (
 		users        = 4
@@ -99,6 +102,7 @@ func TestHTTPParallelUsers_Long(t *testing.T) {
 }
 
 func TestHTTPParallelUsers_ServeHTTPNewRequest(t *testing.T) {
+	t.Parallel()
 	startTime := time.Now()
 	const (
 		users        = 4

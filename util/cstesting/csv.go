@@ -61,10 +61,10 @@ type CSVConfig struct {
 	FieldsPerRecord int
 	// If LazyQuotes is true, a quote may appear in an unquoted field and a
 	// non-doubled quote may appear in a quoted field.
-	LazyQuotes bool
+	LazyQuotes *bool
 	// If TrimLeadingSpace is true, leading white space in a field is ignored.
 	// This is done even if the field delimiter, Comma, is white space.
-	TrimLeadingSpace bool
+	TrimLeadingSpace *bool
 }
 
 // WithReaderConfig sets CSV reader options
@@ -104,8 +104,12 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 		if cfg.cc.FieldsPerRecord > 0 {
 			csvReader.FieldsPerRecord = cfg.cc.FieldsPerRecord
 		}
-		csvReader.LazyQuotes = cfg.cc.LazyQuotes
-		csvReader.TrimLeadingSpace = cfg.cc.TrimLeadingSpace
+		if cfg.cc.LazyQuotes != nil {
+			csvReader.LazyQuotes = *cfg.cc.LazyQuotes
+		}
+		if cfg.cc.TrimLeadingSpace != nil {
+			csvReader.TrimLeadingSpace = *cfg.cc.TrimLeadingSpace
+		}
 	}
 
 	j := 0
@@ -180,6 +184,9 @@ func MustMockRows(opts ...csvOptions) sqlmock.Rows {
 
 var whiteSpaceRemover = regexp.MustCompile("\\s+")
 
+// SQLMockQuoteMeta hacky work around to remove multiple \s via regexp and
+// replace them with a single whitespace. Because the SQL Mock driver creates
+// from a multi line string a single line string.
 func SQLMockQuoteMeta(s string) string {
 	s = regexp.QuoteMeta(s)
 	return whiteSpaceRemover.ReplaceAllString(s, " ")

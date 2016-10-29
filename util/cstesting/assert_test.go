@@ -31,6 +31,7 @@ func (m *mockErrorf) Errorf(format string, args ...interface{}) {
 }
 
 func TestEqualPointers(t *testing.T) {
+	t.Parallel()
 	var p1 = new(string)
 	var p2 = new(string)
 
@@ -42,7 +43,7 @@ func TestEqualPointers(t *testing.T) {
 }
 
 func TestContainsCount(t *testing.T) {
-
+	t.Parallel()
 	me := &mockErrorf{}
 	cstesting.ContainsCount(me, "Hello Gopher", "Rust", 1)
 	assert.Exactly(t, "\"Hello Gopher\" should contain \"Rust\" times 1 Have: 0 Want: 1", me.data)
