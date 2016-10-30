@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
+	"context"
 
 	. "github.com/pingcap/check"
 	uuid "github.com/satori/go.uuid"
@@ -195,7 +195,7 @@ func (t *testSyncerSuite) testPositionSync(c *C) {
 
 	// Test re-sync.
 	time.Sleep(100 * time.Millisecond)
-	t.b.c.SetReadDeadline(time.Now().Add(time.Millisecond))
+	t.b.con.SetReadDeadline(time.Now().Add(time.Millisecond))
 	time.Sleep(100 * time.Millisecond)
 
 	t.testSync(c, s)

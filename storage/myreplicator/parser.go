@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/juju/errors"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 type BinlogParser struct {
@@ -35,13 +35,13 @@ type OnEventFunc func(*BinlogEvent) error
 func (p *BinlogParser) ParseFile(name string, offset int64, onEvent OnEventFunc) error {
 	f, err := os.Open(name)
 	if err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 	defer f.Close()
 
 	b := make([]byte, 4)
 	if _, err = f.Read(b); err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	} else if !bytes.Equal(b, BinLogFileHeader) {
 		return errors.Errorf("%s is not a valid binlog file, head 4 bytes must fe'bin' ", name)
 	}
@@ -69,13 +69,13 @@ func (p *BinlogParser) parseReader(r io.Reader, onEvent OnEventFunc) error {
 		if _, err = io.ReadFull(r, headBuf); err == io.EOF {
 			return nil
 		} else if err != nil {
-			return errors.Trace(err)
+			return errors.Wrap(err, "[myreplicator]")
 		}
 
 		var h *EventHeader
 		h, err = p.parseHeader(headBuf)
 		if err != nil {
-			return errors.Trace(err)
+			return errors.Wrap(err, "[myreplicator]")
 		}
 
 		if h.EventSize <= uint32(EventHeaderSize) {
@@ -104,7 +104,7 @@ func (p *BinlogParser) parseReader(r io.Reader, onEvent OnEventFunc) error {
 		}
 
 		if err = onEvent(&BinlogEvent{rawData, h, e}); err != nil {
-			return errors.Trace(err)
+			return errors.Wrap(err, "[myreplicator]")
 		}
 	}
 

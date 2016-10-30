@@ -1,19 +1,19 @@
 package myreplicator
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
-	"github.com/juju/errors"
-	"github.com/ngaut/log"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 var (
-	ErrNeedSyncAgain = errors.New("Last sync error or closed, try sync and get event again")
-	ErrSyncClosed    = errors.New("Sync was closed")
+	errSyncAlreadyClosed = errors.NewAlreadyClosedf("[myreplicator] Sync was closed")
 )
 
 // BinlogStreamer gets the streaming event.
 type BinlogStreamer struct {
+	Log log.Logger
 	ch  chan *BinlogEvent
 	ech chan error
 	err error
@@ -21,39 +21,43 @@ type BinlogStreamer struct {
 
 // GetEvent gets the binlog event one by one, it will block until Syncer receives any events from MySQL
 // or meets a sync error. You can pass a context (like Cancel or Timeout) to break the block.
+// Returns a temporary error behaviour
 func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	if s.err != nil {
-		return nil, ErrNeedSyncAgain
+		return nil, errors.NewTemporaryf("[myreplicator] Last sync error or closed, try sync and get event again")
 	}
 
 	select {
 	case c := <-s.ch:
 		return c, nil
 	case s.err = <-s.ech:
-		return nil, s.err
+		return nil, errors.Wrap(s.err, "[myreplicator] GetEvent error")
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return nil, errors.Wrap(ctx.Err(), "[myreplicator] GetEvent context error")
 	}
 }
 
 func (s *BinlogStreamer) close() {
-	s.closeWithError(ErrSyncClosed)
+	s.closeWithError(errors.Wrap(errSyncAlreadyClosed, "[myreplicator] binlogstreamer close"))
 }
 
 func (s *BinlogStreamer) closeWithError(err error) {
 	if err == nil {
-		err = ErrSyncClosed
+		err = errors.Wrap(errSyncAlreadyClosed, "")
 	}
-	log.Errorf("close sync with err: %v", err)
+	// log.Errorf("close sync with err: %v", err)
 	select {
 	case s.ech <- err:
+		if s.Log.IsInfo() {
+			s.Log.Info("[myreplicator] closeWithError", log.Err(s.ech))
+		}
 	default:
 	}
 }
 
-func newBinlogStreamer() *BinlogStreamer {
+func newBinlogStreamer(l log.Logger) *BinlogStreamer {
 	s := new(BinlogStreamer)
-
+	s.Log = l
 	s.ch = make(chan *BinlogEvent, 10240)
 	s.ech = make(chan error, 4)
 

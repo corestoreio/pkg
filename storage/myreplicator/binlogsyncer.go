@@ -1,22 +1,22 @@
 package myreplicator
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
-
-	"github.com/juju/errors"
-	"github.com/ngaut/log"
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/siddontang/go-mysql/client"
-	. "github.com/siddontang/go-mysql/mysql"
+	"github.com/siddontang/go-mysql/mysql"
 )
 
 var (
-	errSyncRunning = errors.New("Sync is running, must Close first")
+	errSyncRunning = errors.NewAlreadyExistsf("[myreplicator] Sync is already running. You should close it first.")
 )
 
 // BinlogSyncerConfig is the configuration for BinlogSyncer.
@@ -44,6 +44,8 @@ type BinlogSyncerConfig struct {
 
 	// RawModeEanbled is for not parsing binlog event.
 	RawModeEanbled bool
+
+	Log log.Logger
 }
 
 // BinlogSyncer syncs binlog event from server.
@@ -52,13 +54,13 @@ type BinlogSyncer struct {
 
 	cfg *BinlogSyncerConfig
 
-	c *client.Conn
+	con *client.Conn
 
 	wg sync.WaitGroup
 
 	parser *BinlogParser
 
-	nextPos Position
+	nextPos csdb.MasterStatus
 
 	running bool
 
@@ -68,7 +70,12 @@ type BinlogSyncer struct {
 
 // NewBinlogSyncer creates the BinlogSyncer with cfg.
 func NewBinlogSyncer(cfg *BinlogSyncerConfig) *BinlogSyncer {
-	log.Infof("create BinlogSyncer with config %v", cfg)
+	if cfg.Log == nil {
+		cfg.Log = log.BlackHole{}
+	}
+	if cfg.Log.IsDebug() {
+		cfg.Log.Debug("NewBinlogSyncer.BinlogSyncerConfig", log.Object("config", cfg))
+	}
 
 	b := new(BinlogSyncer)
 
@@ -95,22 +102,30 @@ func (b *BinlogSyncer) close() {
 		return
 	}
 
-	log.Info("syncer is closing...")
+	if b.cfg.Log.IsInfo() {
+		b.cfg.Log.Info("BinlogSyncer.close.closing", log.Bool("in_progress", true))
+	}
 
 	b.running = false
 	b.cancel()
 
-	if b.c != nil {
-		b.c.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	if b.con != nil {
+		if err := b.con.SetReadDeadline(time.Now().Add(100 * time.Millisecond)); err != nil && b.cfg.Log.IsDebug() {
+			b.cfg.Log.Debug("BinlogSyncer.SetReadDeadline.error", log.Err(err), log.Object("config", b.cfg))
+		}
 	}
 
 	b.wg.Wait()
 
-	if b.c != nil {
-		b.c.Close()
+	if b.con != nil {
+		if err := b.con.Close(); err != nil && b.cfg.Log.IsDebug() {
+			b.cfg.Log.Debug("BinlogSyncer.con.close.error", log.Err(err), log.Object("config", b.cfg))
+		}
 	}
 
-	log.Info("syncer is closed")
+	if b.cfg.Log.IsInfo() {
+		b.cfg.Log.Info("BinlogSyncer.close.closed", log.Bool("in_progress", false))
+	}
 }
 
 func (b *BinlogSyncer) isClosed() bool {
@@ -123,21 +138,25 @@ func (b *BinlogSyncer) isClosed() bool {
 }
 
 func (b *BinlogSyncer) registerSlave() error {
-	if b.c != nil {
-		b.c.Close()
+	if b.con != nil {
+		if err := b.con.Close(); err != nil && b.cfg.Log.IsDebug() {
+			b.cfg.Log.Debug("BinlogSyncer.registerSlave.con.close.error", log.Err(err), log.Object("config", b.cfg))
+		}
 	}
 
-	log.Infof("register slave for master server %s:%d", b.cfg.Host, b.cfg.Port)
+	if b.cfg.Log.IsInfo() {
+		b.cfg.Log.Info("BinlogSyncer.registerSlave.new", log.String("slave_host", b.cfg.Host), log.Uint("slave_port", uint(b.cfg.Port)), log.Object("config", b.cfg))
+	}
 	var err error
-	b.c, err = client.Connect(fmt.Sprintf("%s:%d", b.cfg.Host, b.cfg.Port), b.cfg.User, b.cfg.Password, "")
+	b.con, err = client.Connect(fmt.Sprintf("%s:%d", b.cfg.Host, b.cfg.Port), b.cfg.User, b.cfg.Password, "")
 	if err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator] registerSlave failed to create new client connection")
 	}
 
 	//for mysql 5.6+, binlog has a crc32 checksum
 	//before mysql 5.6, this will not work, don't matter.:-)
-	if r, err := b.c.Execute("SHOW GLOBAL VARIABLES LIKE 'BINLOG_CHECKSUM'"); err != nil {
-		return errors.Trace(err)
+	if r, err := b.con.Execute("SHOW GLOBAL VARIABLES LIKE 'BINLOG_CHECKSUM'"); err != nil {
+		return errors.Wrap(err, "[myreplicator]")
 	} else {
 		s, _ := r.GetString(0, 1)
 		if s != "" {
@@ -149,47 +168,47 @@ func (b *BinlogSyncer) registerSlave() error {
 			// necessary checksummed.
 			// That preference is specified below.
 
-			if _, err = b.c.Execute(`SET @master_binlog_checksum='NONE'`); err != nil {
-				return errors.Trace(err)
+			if _, err = b.con.Execute(`SET @master_binlog_checksum='NONE'`); err != nil {
+				return errors.Wrap(err, "[myreplicator]")
 			}
 
 			// if _, err = b.c.Execute(`SET @master_binlog_checksum=@@global.binlog_checksum`); err != nil {
-			// 	return errors.Trace(err)
+			// 	return errors.Wrap(err,"[myreplicator]")
 			// }
 
 		}
 	}
 
 	if err = b.writeRegisterSlaveCommand(); err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
-	if _, err = b.c.ReadOKPacket(); err != nil {
-		return errors.Trace(err)
+	if _, err = b.con.ReadOKPacket(); err != nil {
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
 	return nil
 }
 
-func (b *BinlogSyncer) enalbeSemiSync() error {
+func (b *BinlogSyncer) enableSemiSync() error {
 	if !b.cfg.SemiSyncEnabled {
 		return nil
 	}
 
-	if r, err := b.c.Execute("SHOW VARIABLES LIKE 'rpl_semi_sync_master_enabled';"); err != nil {
-		return errors.Trace(err)
+	if r, err := b.con.Execute("SHOW VARIABLES LIKE 'rpl_semi_sync_master_enabled';"); err != nil {
+		return errors.Wrap(err, "[myreplicator]")
 	} else {
 		s, _ := r.GetString(0, 1)
 		if s != "ON" {
-			log.Errorf("master does not support semi synchronous myreplicator, use no semi-sync")
+			b.cfg.Log.Info("BinlogSyncer.enableSemiSync.failed", log.String("reason", "master does not support semi synchronous myreplicator, use non-semi-sync"))
 			b.cfg.SemiSyncEnabled = false
 			return nil
 		}
 	}
 
-	_, err := b.c.Execute(`SET @rpl_semi_sync_slave = 1;`)
+	_, err := b.con.Execute(`SET @rpl_semi_sync_slave = 1;`)
 	if err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
 	return nil
@@ -197,15 +216,15 @@ func (b *BinlogSyncer) enalbeSemiSync() error {
 
 func (b *BinlogSyncer) prepare() error {
 	if b.isClosed() {
-		return errors.Trace(ErrSyncClosed)
+		return errors.NewAlreadyClosedf("[myreplicator] Syncer already closed")
 	}
 
 	if err := b.registerSlave(); err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
-	if err := b.enalbeSemiSync(); err != nil {
-		return errors.Trace(err)
+	if err := b.enableSemiSync(); err != nil {
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
 	return nil
@@ -214,7 +233,7 @@ func (b *BinlogSyncer) prepare() error {
 func (b *BinlogSyncer) startDumpStream() *BinlogStreamer {
 	b.running = true
 
-	s := newBinlogStreamer()
+	s := newBinlogStreamer(b.cfg.Log)
 
 	b.wg.Add(1)
 	go b.onStream(s)
@@ -222,40 +241,44 @@ func (b *BinlogSyncer) startDumpStream() *BinlogStreamer {
 }
 
 // StartSync starts syncing from the `pos` position.
-func (b *BinlogSyncer) StartSync(pos Position) (*BinlogStreamer, error) {
-	log.Infof("begin to sync binlog from position %s", pos)
+func (b *BinlogSyncer) StartSync(pos csdb.MasterStatus) (*BinlogStreamer, error) {
+	if b.cfg.Log.IsInfo() {
+		b.cfg.Log.Info("BinlogSyncer.StartSync", log.Bool("position", pos))
+	}
 
 	b.m.Lock()
 	defer b.m.Unlock()
 
 	if b.running {
-		return nil, errors.Trace(errSyncRunning)
+		return nil, errors.Wrap(errSyncRunning, "[myreplicator]")
 	}
 
 	if err := b.prepareSyncPos(pos); err != nil {
-		return nil, errors.Trace(err)
+		return nil, errors.Wrap(err, "[myreplicator]")
 	}
 
 	return b.startDumpStream(), nil
 }
 
 // StartSyncGTID starts syncing from the `gset` GTIDSet.
-func (b *BinlogSyncer) StartSyncGTID(gset GTIDSet) (*BinlogStreamer, error) {
-	log.Infof("begin to sync binlog from GTID %s", gset)
+func (b *BinlogSyncer) StartSyncGTID(gset mysql.GTIDSet) (*BinlogStreamer, error) {
+	if b.cfg.Log.IsInfo() {
+		b.cfg.Log.Info("BinlogSyncer.StartSyncGTID", log.Stringer("gtid", gset))
+	}
 
 	b.m.Lock()
 	defer b.m.Unlock()
 
 	if b.running {
-		return nil, errors.Trace(errSyncRunning)
+		return nil, errors.Wrap(errSyncRunning, "[myreplicator]")
 	}
 
 	if err := b.prepare(); err != nil {
-		return nil, errors.Trace(err)
+		return nil, errors.Wrap(err, "[myreplicator]")
 	}
 
 	var err error
-	if b.cfg.Flavor != MariaDBFlavor {
+	if b.cfg.Flavor != mysql.MariaDBFlavor {
 		// default use MySQL
 		err = b.writeBinlogDumpMysqlGTIDCommand(gset)
 	} else {
@@ -269,38 +292,38 @@ func (b *BinlogSyncer) StartSyncGTID(gset GTIDSet) (*BinlogStreamer, error) {
 	return b.startDumpStream(), nil
 }
 
-func (b *BinlogSyncer) writeBinglogDumpCommand(p Position) error {
-	b.c.ResetSequence()
+func (b *BinlogSyncer) writeBinglogDumpCommand(p csdb.MasterStatus) error {
+	b.con.ResetSequence()
 
-	data := make([]byte, 4+1+4+2+4+len(p.Name))
+	data := make([]byte, 4+1+4+2+4+len(p.File))
 
 	pos := 4
-	data[pos] = COM_BINLOG_DUMP
+	data[pos] = mysql.COM_BINLOG_DUMP
 	pos++
 
-	binary.LittleEndian.PutUint32(data[pos:], p.Pos)
+	binary.LittleEndian.PutUint32(data[pos:], uint32(p.Position))
 	pos += 4
 
 	binary.LittleEndian.PutUint16(data[pos:], BINLOG_DUMP_NEVER_STOP)
 	pos += 2
 
-	binary.LittleEndian.PutUint32(data[pos:], b.cfg.ServerID)
+	binary.LittleEndian.PutUint32(data[pos:], uint32(b.cfg.ServerID))
 	pos += 4
 
-	copy(data[pos:], p.Name)
+	copy(data[pos:], p.File)
 
-	return b.c.WritePacket(data)
+	return b.con.WritePacket(data)
 }
 
-func (b *BinlogSyncer) writeBinlogDumpMysqlGTIDCommand(gset GTIDSet) error {
-	p := Position{"", 4}
+func (b *BinlogSyncer) writeBinlogDumpMysqlGTIDCommand(gset mysql.GTIDSet) error {
+	p := csdb.MasterStatus{Position: 4}
 	gtidData := gset.Encode()
 
-	b.c.ResetSequence()
+	b.con.ResetSequence()
 
-	data := make([]byte, 4+1+2+4+4+len(p.Name)+8+4+len(gtidData))
+	data := make([]byte, 4+1+2+4+4+len(p.File)+8+4+len(gtidData))
 	pos := 4
-	data[pos] = COM_BINLOG_DUMP_GTID
+	data[pos] = mysql.COM_BINLOG_DUMP_GTID
 	pos++
 
 	binary.LittleEndian.PutUint16(data[pos:], 0)
@@ -309,13 +332,13 @@ func (b *BinlogSyncer) writeBinlogDumpMysqlGTIDCommand(gset GTIDSet) error {
 	binary.LittleEndian.PutUint32(data[pos:], b.cfg.ServerID)
 	pos += 4
 
-	binary.LittleEndian.PutUint32(data[pos:], uint32(len(p.Name)))
+	binary.LittleEndian.PutUint32(data[pos:], uint32(len(p.File)))
 	pos += 4
 
-	n := copy(data[pos:], p.Name)
+	n := copy(data[pos:], p.File)
 	pos += n
 
-	binary.LittleEndian.PutUint64(data[pos:], uint64(p.Pos))
+	binary.LittleEndian.PutUint64(data[pos:], uint64(p.Position))
 	pos += 8
 
 	binary.LittleEndian.PutUint32(data[pos:], uint32(len(gtidData)))
@@ -325,17 +348,17 @@ func (b *BinlogSyncer) writeBinlogDumpMysqlGTIDCommand(gset GTIDSet) error {
 
 	data = data[0:pos]
 
-	return b.c.WritePacket(data)
+	return b.con.WritePacket(data)
 }
 
-func (b *BinlogSyncer) writeBinlogDumpMariadbGTIDCommand(gset GTIDSet) error {
+func (b *BinlogSyncer) writeBinlogDumpMariadbGTIDCommand(gset mysql.GTIDSet) error {
 	// Copy from vitess
 
 	startPos := gset.String()
 
 	// Tell the server that we understand GTIDs by setting our slave capability
 	// to MARIA_SLAVE_CAPABILITY_GTID = 4 (MariaDB >= 10.0.1).
-	if _, err := b.c.Execute("SET @mariadb_slave_capability=4"); err != nil {
+	if _, err := b.con.Execute("SET @mariadb_slave_capability=4"); err != nil {
 		return errors.Errorf("failed to set @mariadb_slave_capability=4: %v", err)
 	}
 
@@ -343,19 +366,19 @@ func (b *BinlogSyncer) writeBinlogDumpMariadbGTIDCommand(gset GTIDSet) error {
 	// provide the start position in GTID form.
 	query := fmt.Sprintf("SET @slave_connect_state='%s'", startPos)
 
-	if _, err := b.c.Execute(query); err != nil {
+	if _, err := b.con.Execute(query); err != nil {
 		return errors.Errorf("failed to set @slave_connect_state='%s': %v", startPos, err)
 	}
 
 	// Real slaves set this upon connecting if their gtid_strict_mode option was
 	// enabled. We always use gtid_strict_mode because we need it to make our
 	// internal GTID comparisons safe.
-	if _, err := b.c.Execute("SET @slave_gtid_strict_mode=1"); err != nil {
+	if _, err := b.con.Execute("SET @slave_gtid_strict_mode=1"); err != nil {
 		return errors.Errorf("failed to set @slave_gtid_strict_mode=1: %v", err)
 	}
 
 	// Since we use @slave_connect_state, the file and position here are ignored.
-	return b.writeBinglogDumpCommand(Position{"", 0})
+	return b.writeBinglogDumpCommand(csdb.MasterStatus{})
 }
 
 // localHostname returns the hostname that register slave would register as.
@@ -368,7 +391,7 @@ func (b *BinlogSyncer) localHostname() string {
 }
 
 func (b *BinlogSyncer) writeRegisterSlaveCommand() error {
-	b.c.ResetSequence()
+	b.con.ResetSequence()
 
 	hostname := b.localHostname()
 
@@ -376,7 +399,7 @@ func (b *BinlogSyncer) writeRegisterSlaveCommand() error {
 	data := make([]byte, 4+1+4+1+len(hostname)+1+len(b.cfg.User)+1+len(b.cfg.Password)+2+4+4)
 	pos := 4
 
-	data[pos] = COM_REGISTER_SLAVE
+	data[pos] = mysql.COM_REGISTER_SLAVE
 	pos++
 
 	binary.LittleEndian.PutUint32(data[pos:], b.cfg.ServerID)
@@ -408,60 +431,62 @@ func (b *BinlogSyncer) writeRegisterSlaveCommand() error {
 	// master ID, 0 is OK
 	binary.LittleEndian.PutUint32(data[pos:], 0)
 
-	return b.c.WritePacket(data)
+	return b.con.WritePacket(data)
 }
 
-func (b *BinlogSyncer) replySemiSyncACK(p Position) error {
-	b.c.ResetSequence()
+func (b *BinlogSyncer) replySemiSyncACK(p csdb.MasterStatus) error {
+	b.con.ResetSequence()
 
-	data := make([]byte, 4+1+8+len(p.Name))
+	data := make([]byte, 4+1+8+len(p.File))
 	pos := 4
 	// semi sync indicator
 	data[pos] = SemiSyncIndicator
 	pos++
 
-	binary.LittleEndian.PutUint64(data[pos:], uint64(p.Pos))
+	binary.LittleEndian.PutUint64(data[pos:], uint64(p.Position))
 	pos += 8
 
-	copy(data[pos:], p.Name)
+	copy(data[pos:], p.File)
 
-	err := b.c.WritePacket(data)
+	err := b.con.WritePacket(data)
 	if err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
-	_, err = b.c.ReadOKPacket()
+	_, err = b.con.ReadOKPacket()
 	if err != nil {
 	}
-	return errors.Trace(err)
+	return errors.Wrap(err, "[myreplicator]")
 }
 
 func (b *BinlogSyncer) retrySync() error {
 	b.m.Lock()
 	defer b.m.Unlock()
 
-	log.Infof("begin to re-sync from %s", b.nextPos)
+	if b.cfg.Log.IsInfo() {
+		b.cfg.Log.Info("BinlogSyncer.retrySync", log.Stringer("position", b.nextPos))
+	}
 
 	b.parser.Reset()
 	if err := b.prepareSyncPos(b.nextPos); err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
 	return nil
 }
 
-func (b *BinlogSyncer) prepareSyncPos(pos Position) error {
+func (b *BinlogSyncer) prepareSyncPos(pos csdb.MasterStatus) error {
 	// always start from position 4
-	if pos.Pos < 4 {
-		pos.Pos = 4
+	if pos.Position < 4 {
+		pos.Position = 4
 	}
 
 	if err := b.prepare(); err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
 	if err := b.writeBinglogDumpCommand(pos); err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
 	return nil
@@ -470,19 +495,21 @@ func (b *BinlogSyncer) prepareSyncPos(pos Position) error {
 func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 	defer func() {
 		if e := recover(); e != nil {
-			s.closeWithError(fmt.Errorf("Err: %v\n Stack: %s", e, Pstack()))
+			s.closeWithError(errors.NewFatalf("[myreplicator] onStream.Recovered with error: %v", e))
 		}
 		b.wg.Done()
 	}()
 
 	for {
-		data, err := b.c.ReadPacket()
+		data, err := b.con.ReadPacket()
 		if err != nil {
-			log.Error(err)
+			if b.cfg.Log.IsInfo() {
+				b.cfg.Log.Info("BinlogSyncer.onStream.connection.readpacket", log.Err(err), log.Object("config", b.cfg))
+			}
 
 			// we meet connection error, should re-connect again with
 			// last nextPos we got.
-			if len(b.nextPos.Name) == 0 {
+			if b.nextPos.File == "" {
 				// we can't get the correct position, close.
 				s.closeWithError(err)
 				return
@@ -496,7 +523,9 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 					return
 				case <-time.After(time.Second):
 					if err = b.retrySync(); err != nil {
-						log.Errorf("retry sync err: %v, wait 1s and retry again", err)
+						if b.cfg.Log.IsInfo() {
+							b.cfg.Log.Info("BinlogSyncer.onStream.retrySync.waitAsecond", log.Err(err), log.Object("config", b.cfg))
+						}
 						continue
 					}
 				}
@@ -509,13 +538,13 @@ func (b *BinlogSyncer) onStream(s *BinlogStreamer) {
 		}
 
 		switch data[0] {
-		case OK_HEADER:
+		case mysql.OK_HEADER:
 			if err = b.parseEvent(s, data); err != nil {
 				s.closeWithError(err)
 				return
 			}
-		case ERR_HEADER:
-			err = b.c.HandleErrorPacket(data)
+		case mysql.ERR_HEADER:
+			err = b.con.HandleErrorPacket(data)
 			s.closeWithError(err)
 			return
 		default:
@@ -538,18 +567,20 @@ func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
 
 	e, err := b.parser.parse(data)
 	if err != nil {
-		return errors.Trace(err)
+		return errors.Wrap(err, "[myreplicator]")
 	}
 
 	if e.Header.LogPos > 0 {
 		// Some events like FormatDescriptionEvent return 0, ignore.
-		b.nextPos.Pos = e.Header.LogPos
+		b.nextPos.Position = e.Header.LogPos
 	}
 
 	if re, ok := e.Event.(*RotateEvent); ok {
-		b.nextPos.Name = string(re.NextLogName)
-		b.nextPos.Pos = uint32(re.Position)
-		log.Infof("rotate to %s", b.nextPos)
+		b.nextPos.File = string(re.NextLogName)
+		b.nextPos.Position = uint(re.Position)
+		if b.cfg.Log.IsInfo() {
+			b.cfg.Log.Info("BinlogSyncer.parseEvent.RotateEvent", log.Stringer("position", b.nextPos), log.Object("config", b.cfg))
+		}
 	}
 
 	needStop := false
@@ -562,7 +593,7 @@ func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
 	if needACK {
 		err := b.replySemiSyncACK(b.nextPos)
 		if err != nil {
-			return errors.Trace(err)
+			return errors.Wrap(err, "[myreplicator]")
 		}
 	}
 
