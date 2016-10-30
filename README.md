@@ -176,6 +176,8 @@ from the geniuses listed below:
 | Carl Jackson (carl@avtok.com) (Goji) | [net/responseproxy](http://github.com/corestoreio/csfw/tree/master/net/responseproxy) | Copyright (c) 2014, 2015, 2016 |
 | Greg Roseberry, 2014; Patrick O'Brien, 2016 | [util/null](http://github.com/corestoreio/csfw/tree/master/util/null) | BSD Copyright (c) 2014, 2015, 2016 |
 | The Go-MySQL-Driver Authors | [util/null/time_mysql.go](http://github.com/corestoreio/csfw/tree/master/util/null/time_mysql.go) | Mozilla Public License, v. 2.0, Copyright 2012  |
+| siddontang | [storage/binlogsync](http://github.com/corestoreio/csfw/tree/master/storage/binlogsync) | MIT Copyright (c) 2014  |
+| siddontang | [storage/myreplicator](http://github.com/corestoreio/csfw/tree/master/storage/myreplicator) | MIT Copyright (c) 2014  |
 
 ## Licensing
 
