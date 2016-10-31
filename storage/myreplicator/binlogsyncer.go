@@ -243,7 +243,7 @@ func (b *BinlogSyncer) startDumpStream() *BinlogStreamer {
 // StartSync starts syncing from the `pos` position.
 func (b *BinlogSyncer) StartSync(pos csdb.MasterStatus) (*BinlogStreamer, error) {
 	if b.cfg.Log.IsInfo() {
-		b.cfg.Log.Info("BinlogSyncer.StartSync", log.Bool("position", pos))
+		b.cfg.Log.Info("BinlogSyncer.StartSync", log.Stringer("position", pos))
 	}
 
 	b.m.Lock()
@@ -572,7 +572,7 @@ func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
 
 	if e.Header.LogPos > 0 {
 		// Some events like FormatDescriptionEvent return 0, ignore.
-		b.nextPos.Position = e.Header.LogPos
+		b.nextPos.Position = uint(e.Header.LogPos)
 	}
 
 	if re, ok := e.Event.(*RotateEvent); ok {
@@ -585,7 +585,7 @@ func (b *BinlogSyncer) parseEvent(s *BinlogStreamer, data []byte) error {
 
 	needStop := false
 	select {
-	case s.ch <- e:
+	case s.bleChan <- e:
 	case <-b.ctx.Done():
 		needStop = true
 	}

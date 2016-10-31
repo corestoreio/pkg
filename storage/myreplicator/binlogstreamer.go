@@ -13,10 +13,10 @@ var (
 
 // BinlogStreamer gets the streaming event.
 type BinlogStreamer struct {
-	Log log.Logger
-	ch  chan *BinlogEvent
-	ech chan error
-	err error
+	Log     log.Logger
+	bleChan chan *BinlogEvent
+	errChan chan error
+	err     error
 }
 
 // GetEvent gets the binlog event one by one, it will block until Syncer receives any events from MySQL
@@ -28,9 +28,9 @@ func (s *BinlogStreamer) GetEvent(ctx context.Context) (*BinlogEvent, error) {
 	}
 
 	select {
-	case c := <-s.ch:
-		return c, nil
-	case s.err = <-s.ech:
+	case ble := <-s.bleChan:
+		return ble, nil
+	case s.err = <-s.errChan:
 		return nil, errors.Wrap(s.err, "[myreplicator] GetEvent error")
 	case <-ctx.Done():
 		return nil, errors.Wrap(ctx.Err(), "[myreplicator] GetEvent context error")
@@ -47,9 +47,9 @@ func (s *BinlogStreamer) closeWithError(err error) {
 	}
 	// log.Errorf("close sync with err: %v", err)
 	select {
-	case s.ech <- err:
+	case s.errChan <- err:
 		if s.Log.IsInfo() {
-			s.Log.Info("[myreplicator] closeWithError", log.Err(s.ech))
+			s.Log.Info("[myreplicator] closeWithError", log.Err(err))
 		}
 	default:
 	}
@@ -58,8 +58,8 @@ func (s *BinlogStreamer) closeWithError(err error) {
 func newBinlogStreamer(l log.Logger) *BinlogStreamer {
 	s := new(BinlogStreamer)
 	s.Log = l
-	s.ch = make(chan *BinlogEvent, 10240)
-	s.ech = make(chan error, 4)
+	s.bleChan = make(chan *BinlogEvent, 10240)
+	s.errChan = make(chan error, 4)
 
 	return s
 }

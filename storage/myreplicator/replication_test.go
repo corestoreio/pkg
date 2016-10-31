@@ -1,69 +1,68 @@
 package myreplicator
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"os"
-	"sync"
-	"testing"
-	"time"
-
-	"context"
-
-	. "github.com/pingcap/check"
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/pingcap/check"
 	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/mysql"
+	"net"
+	"os"
+	"strconv"
+	"sync"
+	"testing"
+	"time"
 )
-
-// Use docker mysql to test, mysql is 3306, mariadb is 3316
-var testHost = flag.String("host", "127.0.0.1", "MySQL master host")
 
 var testOutputLogs = flag.Bool("out", false, "output binlog event")
 
 func TestBinLogSyncer(t *testing.T) {
-	TestingT(t)
+	check.TestingT(t)
 }
 
 type testSyncerSuite struct {
-	b *BinlogSyncer
-	c *client.Conn
+	bls *BinlogSyncer
+	con *client.Conn
 
 	wg sync.WaitGroup
 
 	flavor string
 }
 
-var _ = Suite(&testSyncerSuite{})
+var _ = check.Suite(&testSyncerSuite{})
 
-func (t *testSyncerSuite) SetUpSuite(c *C) {
-
+func (t *testSyncerSuite) SetUpSuite(c *check.C) {
 }
 
-func (t *testSyncerSuite) TearDownSuite(c *C) {
+func (t *testSyncerSuite) TearDownSuite(c *check.C) {
 }
 
-func (t *testSyncerSuite) SetUpTest(c *C) {
+func (t *testSyncerSuite) SetUpTest(c *check.C) {
 }
 
-func (t *testSyncerSuite) TearDownTest(c *C) {
-	if t.b != nil {
-		t.b.Close()
-		t.b = nil
+func (t *testSyncerSuite) TearDownTest(c *check.C) {
+	defer os.RemoveAll("./testdata/var")
+
+	if t.bls != nil {
+		t.bls.Close()
+		t.bls = nil
 	}
 
-	if t.c != nil {
-		t.c.Close()
-		t.c = nil
+	if t.con != nil {
+		t.con.Close()
+		t.con = nil
 	}
 }
 
-func (t *testSyncerSuite) testExecute(c *C, query string) {
-	_, err := t.c.Execute(query)
-	c.Assert(err, IsNil)
+func (t *testSyncerSuite) testExecute(c *check.C, query string) {
+	_, err := t.con.Execute(query)
+	c.Assert(err, check.IsNil)
 }
 
-func (t *testSyncerSuite) testSync(c *C, s *BinlogStreamer) {
+func (t *testSyncerSuite) testSync(c *check.C, s *BinlogStreamer) {
 	t.wg.Add(1)
 	go func() {
 		defer t.wg.Done()
@@ -83,7 +82,7 @@ func (t *testSyncerSuite) testSync(c *C, s *BinlogStreamer) {
 				return
 			}
 
-			c.Assert(err, IsNil)
+			c.Assert(err, check.IsNil)
 
 			if *testOutputLogs {
 				e.Dump(os.Stdout)
@@ -142,128 +141,137 @@ func (t *testSyncerSuite) testSync(c *C, s *BinlogStreamer) {
 	t.wg.Wait()
 }
 
-func (t *testSyncerSuite) setupTest(c *C, flavor string) {
-	var port uint16 = 3306
-	switch flavor {
-	case mysql.MariaDBFlavor:
-		port = 3316
-	}
+func (t *testSyncerSuite) setupTest(c *check.C, flavor string) {
 
 	t.flavor = flavor
 
 	var err error
-	if t.c != nil {
-		t.c.Close()
+	if t.con != nil {
+		t.con.Close()
 	}
 
-	t.c, err = client.Connect(fmt.Sprintf("%s:%d", *testHost, port), "root", "", "")
+	dsn, err := csdb.GetParsedDSN()
+	if err != nil {
+		c.Skip(fmt.Sprintf("Failed to get DSN from env %q with %s", csdb.EnvDSN, err))
+	}
+
+	t.con, err = client.Connect(dsn.Addr, dsn.User, dsn.Passwd, dsn.DBName)
 	if err != nil {
 		c.Skip(err.Error())
 	}
 
 	// _, err = t.c.Execute("CREATE DATABASE IF NOT EXISTS test")
-	// c.Assert(err, IsNil)
+	// c.Assert(err, check.IsNil)
 
-	_, err = t.c.Execute("USE test")
-	c.Assert(err, IsNil)
+	_, err = t.con.Execute("USE test")
+	c.Assert(err, check.IsNil)
 
-	if t.b != nil {
-		t.b.Close()
+	if t.bls != nil {
+		t.bls.Close()
+	}
+	host, port, _ := net.SplitHostPort(dsn.Addr)
+	po, err := strconv.ParseUint(port, 10, 32)
+	if err != nil {
+		c.Fatal(err)
 	}
 
 	cfg := BinlogSyncerConfig{
 		ServerID: 100,
 		Flavor:   flavor,
-		Host:     *testHost,
-		Port:     port,
-		User:     "root",
-		Password: "",
+		Host:     host,
+		Port:     uint16(po),
+		User:     dsn.User,
+		Password: dsn.Passwd,
 	}
 
-	t.b = NewBinlogSyncer(&cfg)
+	t.bls = NewBinlogSyncer(&cfg)
 }
 
-func (t *testSyncerSuite) testPositionSync(c *C) {
+func (t *testSyncerSuite) testPositionSync(c *check.C) {
 	//get current master binlog file and position
-	r, err := t.c.Execute("SHOW MASTER STATUS")
-	c.Assert(err, IsNil)
+	r, err := t.con.Execute("SHOW MASTER STATUS")
+	c.Assert(err, check.IsNil)
 	binFile, _ := r.GetString(0, 0)
 	binPos, _ := r.GetInt(0, 1)
 
-	s, err := t.b.StartSync(mysql.Position{binFile, uint32(binPos)})
-	c.Assert(err, IsNil)
+	s, err := t.bls.StartSync(csdb.MasterStatus{File: binFile, Position: uint(binPos)})
+	c.Assert(err, check.IsNil)
 
 	// Test re-sync.
 	time.Sleep(100 * time.Millisecond)
-	t.b.con.SetReadDeadline(time.Now().Add(time.Millisecond))
+	t.bls.con.SetReadDeadline(time.Now().Add(time.Millisecond))
 	time.Sleep(100 * time.Millisecond)
 
 	t.testSync(c, s)
 }
 
-func (t *testSyncerSuite) TestMysqlPositionSync(c *C) {
+func (t *testSyncerSuite) TestMysqlPositionSync(c *check.C) {
 	t.setupTest(c, mysql.MySQLFlavor)
 	t.testPositionSync(c)
 }
 
-func (t *testSyncerSuite) TestMysqlGTIDSync(c *C) {
+func (t *testSyncerSuite) TestMysqlGTIDSync(c *check.C) {
 	t.setupTest(c, mysql.MySQLFlavor)
 
-	r, err := t.c.Execute("SELECT @@gtid_mode")
-	c.Assert(err, IsNil)
+	r, err := t.con.Execute("SELECT @@gtid_mode")
+	c.Assert(err, check.IsNil)
 	modeOn, _ := r.GetString(0, 0)
 	if modeOn != "ON" {
 		c.Skip("GTID mode is not ON")
 	}
 
-	r, err = t.c.Execute("SHOW GLOBAL VARIABLES LIKE 'SERVER_UUID'")
-	c.Assert(err, IsNil)
+	r, err = t.con.Execute("SHOW GLOBAL VARIABLES LIKE 'SERVER_UUID'")
+	c.Assert(err, check.IsNil)
 
 	var masterUuid uuid.UUID
 	if s, _ := r.GetString(0, 1); len(s) > 0 && s != "NONE" {
 		masterUuid, err = uuid.FromString(s)
-		c.Assert(err, IsNil)
+		c.Assert(err, check.IsNil)
 	}
 
 	set, _ := mysql.ParseMysqlGTIDSet(fmt.Sprintf("%s:%d-%d", masterUuid.String(), 1, 2))
 
-	s, err := t.b.StartSyncGTID(set)
-	c.Assert(err, IsNil)
+	s, err := t.bls.StartSyncGTID(set)
+	c.Assert(err, check.IsNil)
 
 	t.testSync(c, s)
 }
 
-func (t *testSyncerSuite) TestMariadbPositionSync(c *C) {
+func (t *testSyncerSuite) TestMariadbPositionSync(c *check.C) {
+	c.Skip("todo MariaDB Tests")
+
 	t.setupTest(c, mysql.MariaDBFlavor)
 
 	t.testPositionSync(c)
 }
 
-func (t *testSyncerSuite) TestMariadbGTIDSync(c *C) {
+func (t *testSyncerSuite) TestMariadbGTIDSync(c *check.C) {
+	c.Skip("todo MariaDB Tests")
+
 	t.setupTest(c, mysql.MariaDBFlavor)
 
 	// get current master gtid binlog pos
-	r, err := t.c.Execute("SELECT @@gtid_binlog_pos")
-	c.Assert(err, IsNil)
+	r, err := t.con.Execute("SELECT @@gtid_binlog_pos")
+	c.Assert(err, check.IsNil)
 
 	str, _ := r.GetString(0, 0)
 	set, _ := mysql.ParseMariadbGTIDSet(str)
 
-	s, err := t.b.StartSyncGTID(set)
-	c.Assert(err, IsNil)
+	s, err := t.bls.StartSyncGTID(set)
+	c.Assert(err, check.IsNil)
 
 	t.testSync(c, s)
 }
 
-func (t *testSyncerSuite) TestMysqlSemiPositionSync(c *C) {
+func (t *testSyncerSuite) TestMysqlSemiPositionSync(c *check.C) {
 	t.setupTest(c, mysql.MySQLFlavor)
 
-	t.b.cfg.SemiSyncEnabled = true
+	t.bls.cfg.SemiSyncEnabled = true
 
 	t.testPositionSync(c)
 }
 
-func (t *testSyncerSuite) TestMysqlBinlogCodec(c *C) {
+func (t *testSyncerSuite) TestMysqlBinlogCodec(c *check.C) {
 	t.setupTest(c, mysql.MySQLFlavor)
 
 	t.testExecute(c, "RESET MASTER")
@@ -282,10 +290,12 @@ func (t *testSyncerSuite) TestMysqlBinlogCodec(c *C) {
 		t.testSync(c, nil)
 	}()
 
-	os.RemoveAll("./var")
+	if err := os.RemoveAll("./testdata/var"); err != nil {
+		c.Error(err)
+	}
 
-	err := t.b.StartBackup("./var", mysql.Position{"", uint32(0)}, 2*time.Second)
-	c.Assert(err, IsNil)
+	err := t.bls.StartBackup("./testdata/var", csdb.MasterStatus{Position: uint(0)}, 2*time.Second)
+	c.Assert(err, check.IsNil)
 
 	p := NewBinlogParser()
 
@@ -298,8 +308,8 @@ func (t *testSyncerSuite) TestMysqlBinlogCodec(c *C) {
 	}
 
 	err = p.ParseFile("./var/mysql.000001", 0, f)
-	c.Assert(err, IsNil)
+	c.Assert(err, check.IsNil)
 
 	err = p.ParseFile("./var/mysql.000002", 0, f)
-	c.Assert(err, IsNil)
+	c.Assert(err, check.IsNil)
 }

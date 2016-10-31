@@ -1,8 +1,2 @@
-/*
-Replication package is to handle MySQL myreplicator protocol.
-
-Todo:
-
-+ Get table information when handing rows event.
-*/
+// Package myreplicator handles the MySQL binary replication protocol.
 package myreplicator
