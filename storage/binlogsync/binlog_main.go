@@ -24,11 +24,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/myreplicator"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/siddontang/go-mysql/mysql"
-	"github.com/siddontang/go-mysql/replication"
 )
 
 func main() {
@@ -38,27 +38,31 @@ func main() {
 		panic(fmt.Sprintf("%+v", err))
 	}
 
-	pw, _ := dsn.User.Password()
-	cfg := replication.BinlogSyncerConfig{
+	host, port, _ := net.SplitHostPort(dsn.Addr)
+	cfg := myreplicator.BinlogSyncerConfig{
 		ServerID: 100,
 		Flavor:   "mysql",
-		Host:     dsn.Hostname(),
-		Port:     uint16(conv.ToInt(dsn.Port())),
-		User:     dsn.User.Username(),
-		Password: pw,
+		Host:     host,
+		Port:     uint16(conv.ToInt(port)),
+		User:     dsn.User,
+		Password: dsn.Passwd,
 	}
-	syncer := replication.NewBinlogSyncer(&cfg)
+	syncer := myreplicator.NewBinlogSyncer(&cfg)
 	defer syncer.Close()
 
 	// mysql.Position change to whatever SHOW MASTER STATUS tells you
-	streamer, err := syncer.StartSync(mysql.Position{Name: "mysql-bin.000001", Pos: 80338})
+	streamer, err := syncer.StartSync(csdb.MasterStatus{File: "mysql-bin.000001", Position: 4})
 	if err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}
 
 	buf := bytes.Buffer{}
 	for {
-		ev, _ := streamer.GetEvent(context.Background())
+		ev, err := streamer.GetEvent(context.Background())
+		if err != nil {
+			panic(fmt.Sprintf("%+v", err))
+		}
+
 		ev.Dump(&buf)
 		println(buf.String(), "\n")
 		buf.Reset()

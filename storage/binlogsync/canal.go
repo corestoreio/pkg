@@ -13,12 +13,12 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/myreplicator"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/go-sql-driver/mysql"
-	"github.com/siddontang/go-mysql/replication"
 )
 
 // Use flavor for different MySQL versions,
@@ -50,7 +50,7 @@ type Canal struct {
 	masterStatus       csdb.MasterStatus
 	masterLastSaveTime time.Time
 
-	syncer *replication.BinlogSyncer
+	syncer *myreplicator.BinlogSyncer
 
 	rsMu       sync.RWMutex
 	rsHandlers []RowsEventHandler
@@ -139,7 +139,7 @@ func withPrepareSyncer(c *Canal) error {
 		blSlaveID = conv.ToInt(v)
 	}
 
-	cfg := replication.BinlogSyncerConfig{
+	cfg := myreplicator.BinlogSyncerConfig{
 		ServerID: uint32(blSlaveID),
 		Flavor:   c.flavor(),
 		Host:     host,
@@ -147,7 +147,7 @@ func withPrepareSyncer(c *Canal) error {
 		User:     c.DSN.User,
 		Password: c.DSN.Passwd,
 	}
-	c.syncer = replication.NewBinlogSyncer(&cfg)
+	c.syncer = myreplicator.NewBinlogSyncer(&cfg)
 	return nil
 }
 

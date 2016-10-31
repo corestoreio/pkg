@@ -5,9 +5,8 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/myreplicator"
 	"github.com/corestoreio/csfw/util/errors"
-	"github.com/siddontang/go-mysql/mysql"
-	"github.com/siddontang/go-mysql/replication"
 )
 
 // Action constants to figure out the type of an event. Those constants will be
@@ -25,12 +24,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 		c.Log.Info("[binlogsync] Start syncing of binlog", log.Stringer("position", pos))
 	}
 
-	fixMePos := mysql.Position{
-		Name: pos.File,
-		Pos:  uint32(pos.Position),
-	}
-
-	s, err := c.syncer.StartSync(fixMePos)
+	s, err := c.syncer.StartSync(pos)
 	if err != nil {
 		return errors.NewFatalf("[binlogsync] Start sync replication at %s error %v", pos, err)
 	}
@@ -55,7 +49,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 		pos.Position = uint(ev.Header.LogPos)
 
 		switch e := ev.Event.(type) {
-		case *replication.RotateEvent:
+		case *myreplicator.RotateEvent:
 			if err := c.flushEventHandlers(ctxArg); err != nil {
 				// todo maybe better err handling ...
 				return errors.Wrap(err, "[binlogsync] startSyncBinlog.flushEventHandlers")
@@ -68,7 +62,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 				c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Stringer("position", pos))
 			}
 
-		case *replication.RowsEvent:
+		case *myreplicator.RowsEvent:
 			// we only focus row based event
 			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
 				if c.Log.IsInfo() {
@@ -76,7 +70,7 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 				}
 				return errors.Wrap(err, "[binlogsync] handleRowsEvent")
 			}
-		case *replication.TableMapEvent:
+		case *myreplicator.TableMapEvent:
 			continue
 			//default:
 			//	fmt.Printf("%#v\n\n", e)
@@ -91,10 +85,10 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 	return nil
 }
 
-func (c *Canal) handleRowsEvent(ctx context.Context, e *replication.BinlogEvent) error {
-	ev, ok := e.Event.(*replication.RowsEvent)
+func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent) error {
+	ev, ok := e.Event.(*myreplicator.RowsEvent)
 	if !ok {
-		return errors.NewFatalf("[binlogsync] handleRowsEvent: Failed to cast to *replication.RowsEvent type")
+		return errors.NewFatalf("[binlogsync] handleRowsEvent: Failed to cast to *myreplicator.RowsEvent type")
 	}
 
 	// Caveat: table may be altered at runtime.
@@ -114,11 +108,11 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *replication.BinlogEvent)
 	}
 	var a string
 	switch e.Header.EventType {
-	case replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
+	case myreplicator.WRITE_ROWS_EVENTv1, myreplicator.WRITE_ROWS_EVENTv2:
 		a = InsertAction
-	case replication.DELETE_ROWS_EVENTv1, replication.DELETE_ROWS_EVENTv2:
+	case myreplicator.DELETE_ROWS_EVENTv1, myreplicator.DELETE_ROWS_EVENTv2:
 		a = DeleteAction
-	case replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
+	case myreplicator.UPDATE_ROWS_EVENTv1, myreplicator.UPDATE_ROWS_EVENTv2:
 		a = UpdateAction
 	default:
 		return errors.NewNotSupportedf("[binlogsync] EventType %v not yet supported. Table %q.%q", e.Header.EventType, c.DSN.DBName, table)

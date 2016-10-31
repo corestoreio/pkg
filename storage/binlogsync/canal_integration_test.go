@@ -25,6 +25,7 @@ import (
 )
 
 func TestIntegrationNewCanal(t *testing.T) {
+	t.Parallel()
 	dsn, err := csdb.GetParsedDSN()
 	if err != nil {
 		t.Skipf("Failed to get DSN from env %q with %s", csdb.EnvDSN, err)
