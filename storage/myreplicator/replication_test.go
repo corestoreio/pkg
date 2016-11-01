@@ -295,6 +295,9 @@ func (t *testSyncerSuite) TestMysqlBinlogCodec(c *check.C) {
 	}
 
 	err := t.bls.StartBackup("./testdata/var", csdb.MasterStatus{Position: uint(0)}, 2*time.Second)
+	if err != nil {
+		c.Fatalf("%+v", err)
+	}
 	c.Assert(err, check.IsNil)
 
 	p := NewBinlogParser()
