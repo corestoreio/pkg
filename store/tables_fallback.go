@@ -25,16 +25,17 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/null"
 )
 
 // TableIndex... is the index to a table. These constants are guaranteed
 // to stay the same for all Magento versions. Please access a table via this
 // constant instead of the raw table name. TableIndex iotas must start with 0.
 const (
-	TableIndexStore   csdb.Index = iota // Table: store
-	TableIndexGroup                     // Table: store_group
-	TableIndexWebsite                   // Table: store_website
-	TableIndexZZZ                       // the maximum index, which is not available.
+	TableIndexStore   = iota // Table: store
+	TableIndexGroup          // Table: store_group
+	TableIndexWebsite        // Table: store_website
+	TableIndexZZZ            // the maximum index, which is not available.
 )
 
 // will be initialized in tables_fallback_test.go
@@ -55,13 +56,13 @@ type TableStoreSlice []*TableStore
 // TableStore represents a type for DB table store
 // Generated via tableToStruct.
 type TableStore struct {
-	StoreID   int64          `db:"store_id" json:",omitempty"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment
-	Code      dbr.NullString `db:"code" json:",omitempty"`       // code varchar(32) NULL UNI
-	WebsiteID int64          `db:"website_id" json:",omitempty"` // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	GroupID   int64          `db:"group_id" json:",omitempty"`   // group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	Name      string         `db:"name" json:",omitempty"`       // name varchar(255) NOT NULL
-	SortOrder int64          `db:"sort_order" json:",omitempty"` // sort_order smallint(5) unsigned NOT NULL  DEFAULT '0'
-	IsActive  bool           `db:"is_active" json:",omitempty"`  // is_active smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	StoreID   int64       `db:"store_id" json:",omitempty"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment
+	Code      null.String `db:"code" json:",omitempty"`       // code varchar(32) NULL UNI
+	WebsiteID int64       `db:"website_id" json:",omitempty"` // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	GroupID   int64       `db:"group_id" json:",omitempty"`   // group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	Name      string      `db:"name" json:",omitempty"`       // name varchar(255) NOT NULL
+	SortOrder int64       `db:"sort_order" json:",omitempty"` // sort_order smallint(5) unsigned NOT NULL  DEFAULT '0'
+	IsActive  bool        `db:"is_active" json:",omitempty"`  // is_active smallint(5) unsigned NOT NULL MUL DEFAULT '0'
 }
 
 // parentSQLSelect fills this slice with data from the database.
@@ -549,12 +550,12 @@ type TableWebsiteSlice []*TableWebsite
 // TableWebsite represents a type for DB table store_website
 // Generated via tableToStruct.
 type TableWebsite struct {
-	WebsiteID      int64          `db:"website_id" json:",omitempty"`       // website_id smallint(5) unsigned NOT NULL PRI  auto_increment
-	Code           dbr.NullString `db:"code" json:",omitempty"`             // code varchar(32) NULL UNI
-	Name           dbr.NullString `db:"name" json:",omitempty"`             // name varchar(64) NULL
-	SortOrder      int64          `db:"sort_order" json:",omitempty"`       // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	DefaultGroupID int64          `db:"default_group_id" json:",omitempty"` // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	IsDefault      dbr.NullBool   `db:"is_default" json:",omitempty"`       // is_default smallint(5) unsigned NULL  DEFAULT '0'
+	WebsiteID      int64       `db:"website_id" json:",omitempty"`       // website_id smallint(5) unsigned NOT NULL PRI  auto_increment
+	Code           null.String `db:"code" json:",omitempty"`             // code varchar(32) NULL UNI
+	Name           null.String `db:"name" json:",omitempty"`             // name varchar(64) NULL
+	SortOrder      int64       `db:"sort_order" json:",omitempty"`       // sort_order smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	DefaultGroupID int64       `db:"default_group_id" json:",omitempty"` // default_group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	IsDefault      null.Bool   `db:"is_default" json:",omitempty"`       // is_default smallint(5) unsigned NULL  DEFAULT '0'
 }
 
 // parentSQLSelect fills this slice with data from the database.
