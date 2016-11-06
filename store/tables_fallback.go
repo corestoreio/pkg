@@ -23,7 +23,6 @@ package store
 import (
 	"sort"
 
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/null"
 )
@@ -68,7 +67,7 @@ type TableStore struct {
 // parentSQLSelect fills this slice with data from the database.
 // Generated via tableToStruct.
 func (s *TableStoreSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return csdb.LoadSlice(dbrSess, TableCollection, TableIndexStore, &(*s), cbs...)
+	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexStore, &(*s), cbs...)
 }
 
 // SQLInsert inserts all records into the database @todo.
@@ -329,7 +328,7 @@ type TableGroup struct {
 // parentSQLSelect fills this slice with data from the database.
 // Generated via tableToStruct.
 func (s *TableGroupSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(*s), cbs...)
+	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(*s), cbs...)
 }
 
 // SQLInsert inserts all records into the database @todo.
@@ -561,7 +560,7 @@ type TableWebsite struct {
 // parentSQLSelect fills this slice with data from the database.
 // Generated via tableToStruct.
 func (s *TableWebsiteSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(*s), cbs...)
+	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(*s), cbs...)
 }
 
 // SQLInsert inserts all records into the database @todo.
