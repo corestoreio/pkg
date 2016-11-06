@@ -94,7 +94,7 @@ func ExampleService() {
 	// Scope1: DefaultGopher
 	// Scope2: WebsiteGopher
 	// Scope3: StoreGopher
-	// Scope4a: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key "stores/3/scope/test/string"
-	// Scope4b: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key "stores/3/scope/test/string"
+	// Scope4a: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key: stores/3/scope/test/string
+	// Scope4b: srvString Error: [config] Storage.String.get: [config] KVMap Unknown Key: stores/3/scope/test/string
 	// Scope4: Is KeyNotFound true
 }
