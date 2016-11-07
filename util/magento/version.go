@@ -16,9 +16,9 @@ package magento
 
 // Version* defines the return values of Version() function.
 const (
-	VersionAll = iota + 1
-	Version1
+	Version1 = 2 << (iota + 1)
 	Version2
+	VersionAll = Version1 | Version2
 )
 
 var v1 = [4]string{"core_store", "core_website", "core_store_group", "api_user"}

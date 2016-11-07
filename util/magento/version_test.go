@@ -26,6 +26,7 @@ var magento2TableList = []string{"admin_system_messages", "admin_user", "adminno
 
 func TestVersion(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		want   int
 		prefix string
