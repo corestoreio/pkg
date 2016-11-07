@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package magento
 
-// MagentoV* defines the return values of MagentoVersion() function
+// Version* defines the return values of Version() function.
 const (
-	MagentoV1 int = iota + 1
-	MagentoV2
+	VersionAll = iota + 1
+	Version1
+	Version2
 )
 
-// MagentoVersion detects by reading the list of tables which Magento version you
-// are running. It searches for the tables core_store, core_website,
-// core_store_group and api_user for Magento v1.
-// It searches for the tables integration, store_website, store_group
-// and authorization_role for Magento v2. Prefix is the prefix for each table.
-func MagentoVersion(prefix string, tableList []string) int {
-	var v1 = [4]string{"core_store", "core_website", "core_store_group", "api_user"}
-	var v2 = [4]string{"integration", "store_website", "store_group", "authorization_role"}
+var v1 = [4]string{"core_store", "core_website", "core_store_group", "api_user"}
+var v2 = [4]string{"integration", "store_website", "store_group", "authorization_role"}
+
+// Version detects the running version by reading the list of tables. It
+// searches for the tables core_store, core_website, core_store_group and
+// api_user for Magento v1. It searches for the tables integration,
+// store_website, store_group and authorization_role for Magento v2. Prefix is
+// the prefix for each table. Returns zero if the version cannot be detected.
+func Version(prefix string, tableList []string) int {
 	var one, two bool
 	lv1 := len(v1)
 	f1, f2 := 0, 0
@@ -50,9 +52,9 @@ func MagentoVersion(prefix string, tableList []string) int {
 	}
 	switch {
 	case one:
-		return MagentoV1
+		return Version1
 	case two:
-		return MagentoV2
+		return Version2
 	default:
 		return 0
 	}
