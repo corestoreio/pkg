@@ -44,12 +44,17 @@ func MustGetDSN() string {
 	return d
 }
 
-// MustConnectTest is a helper function that creates a new database connection
+// MustConnectDB is a helper function that creates a new database connection
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
-func MustConnectTest(opts ...dbr.ConnectionOption) *dbr.Connection {
+// If the environment variable has not been set it returns nil,false.
+func MustConnectDB(opts ...dbr.ConnectionOption) (*dbr.Connection, bool) {
+	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
+		return nil, false
+	}
+
 	cos := make([]dbr.ConnectionOption, 0, 2)
 	cos = append(cos, dbr.WithDSN(MustGetDSN()))
-	return dbr.MustConnectAndVerify(append(cos, opts...)...)
+	return dbr.MustConnectAndVerify(append(cos, opts...)...), true
 }
 
 // MockDB creates a mocked database connection. Fatals on error.

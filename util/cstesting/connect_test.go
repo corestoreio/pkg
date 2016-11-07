@@ -26,3 +26,18 @@ func TestMockDB(t *testing.T) {
 	assert.NotNil(t, dbc)
 	assert.NotNil(t, mockDB)
 }
+
+func TestMustConnectDB(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			assert.NotNil(t, r, "There should be no panic")
+		}
+	}()
+
+	db, ok := cstesting.MustConnectDB()
+	if !ok {
+		assert.Nil(t, db)
+	} else {
+		assert.NotNil(t, db)
+	}
+}
