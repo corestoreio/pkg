@@ -14,9 +14,13 @@
 
 package magento
 
+// Version specific type which defines the current installed version of database
+// tables.
+type Version int
+
 // Version* defines the return values of Version() function.
 const (
-	Version1 = 2 << (iota + 1)
+	Version1 Version = 2 << (iota + 1)
 	Version2
 	VersionAll = Version1 | Version2
 )
@@ -24,12 +28,12 @@ const (
 var v1 = [4]string{"core_store", "core_website", "core_store_group", "api_user"}
 var v2 = [4]string{"integration", "store_website", "store_group", "authorization_role"}
 
-// Version detects the running version by reading the list of tables. It
+// DetectVersion detects the running version by reading the list of tables. It
 // searches for the tables core_store, core_website, core_store_group and
 // api_user for Magento v1. It searches for the tables integration,
 // store_website, store_group and authorization_role for Magento v2. Prefix is
 // the prefix for each table. Returns zero if the version cannot be detected.
-func Version(prefix string, tableList []string) int {
+func DetectVersion(prefix string, tableList []string) Version {
 	var one, two bool
 	lv1 := len(v1)
 	f1, f2 := 0, 0

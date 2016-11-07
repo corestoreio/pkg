@@ -42,7 +42,7 @@ func TestVersion(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		vers := magento.Version(test.prefix, test.ts)
+		vers := magento.DetectVersion(test.prefix, test.ts)
 		assert.Equal(t, test.want, vers, "%v", test)
 	}
 }
@@ -53,7 +53,7 @@ var benchmarkVersion int
 func BenchmarkVersionV1(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkVersion = magento.Version("", magento1TableList)
+		benchmarkVersion = magento.DetectVersion("", magento1TableList)
 	}
 	if benchmarkVersion != magento.Version1 {
 		b.Error("Must be Version1!")
@@ -64,7 +64,7 @@ func BenchmarkVersionV1(b *testing.B) {
 func BenchmarkVersionV2(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkVersion = magento.Version("", magento2TableList)
+		benchmarkVersion = magento.DetectVersion("", magento2TableList)
 	}
 	if benchmarkVersion != magento.Version2 {
 		b.Error("Must be Version2!")
