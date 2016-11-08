@@ -203,7 +203,10 @@ func TestResurrectStmtRealDB(t *testing.T) {
 		t.Skip("Skipping because no DSN found.")
 	}
 
-	dbc := cstesting.MustConnectTest()
+	dbc, _ := cstesting.MustConnectDB()
+	if dbc == nil {
+		t.Skip("Environment DB DSN not found")
+	}
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
 	tw := newTypeWriterReal(dbc.DB, l)

@@ -123,12 +123,13 @@ func TestWithTableNames(t *testing.T) {
 
 func TestIntegration_WithLoadColumnDefinitions(t *testing.T) {
 	t.Parallel()
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skipf("Skipping because environment variable %q not found.", csdb.EnvDSN)
-	}
 
-	dbc := cstesting.MustConnectTest()
+	dbc, _ := cstesting.MustConnectDB()
+	if dbc == nil {
+		t.Skip("Environment DB DSN not found")
+	}
 	defer dbc.Close()
+
 	i := 4711
 	tm0 := csdb.MustNewTables(
 		csdb.WithTable(i, "admin_user"),

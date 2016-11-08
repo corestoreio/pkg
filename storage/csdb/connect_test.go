@@ -52,6 +52,7 @@ func TestGetDSN(t *testing.T) {
 	}
 }
 
+// This test is flaky because FormatDSN has params as a map
 func TestGetParsedDSN(t *testing.T) {
 	currentDSN := os.Getenv(EnvDSN)
 	defer func() {

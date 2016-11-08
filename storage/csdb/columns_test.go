@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/magento"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,12 +36,15 @@ var _ sort.Interface = (*csdb.Columns)(nil)
 
 func TestGetColumnsMage19(t *testing.T) {
 	t.Parallel()
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skipf("Skipping because environment variable %q not found.", csdb.EnvDSN)
-	}
 
-	dbc := cstesting.MustConnectTest()
+	dbc, version := cstesting.MustConnectDB()
+	if dbc == nil {
+		t.Skip("Environment DB DSN not found")
+	}
 	defer func() { assert.NoError(t, dbc.Close()) }()
+	if version != magento.Version1 {
+		t.Skip("Environment DB DSN should refer to a Magento1 database")
+	}
 
 	tests := []struct {
 		table          string
@@ -430,7 +434,10 @@ var benchmarkGetColumnsHashWant = []byte{0x3b, 0x2d, 0xdd, 0xf4, 0x4e, 0x2b, 0x3
 
 // BenchmarkGetColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
 func BenchmarkGetColumns(b *testing.B) {
-	dbc := cstesting.MustConnectTest()
+	dbc, _ := cstesting.MustConnectDB()
+	if dbc == nil {
+		b.Skip("Environment DB DSN not found")
+	}
 	defer dbc.Close()
 	var err error
 	ctx := context.TODO()
