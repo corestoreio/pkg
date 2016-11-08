@@ -15,12 +15,16 @@
 package cstesting
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/magento"
 )
 
 // EnvDSN is the name of the environment variable
@@ -44,17 +48,56 @@ func MustGetDSN() string {
 	return d
 }
 
+type dsnVersion struct {
+	sync.RWMutex
+	cache map[string]magento.Version
+}
+
+func (dv *dsnVersion) v(dsn string) magento.Version {
+	dv.RLock()
+	defer dv.RUnlock()
+	return dv.cache[dsn]
+}
+
+func (dv *dsnVersion) set(dsn string, v magento.Version) {
+	dv.Lock()
+	defer dv.Unlock()
+	dv.cache[dsn] = v
+}
+
+// dsnVersion stores for a specific DSN the Magento version of the database.
+// This struct avoids rescanning the database tables.
+var dsnVersionCache = &dsnVersion{
+	cache: make(map[string]magento.Version),
+}
+
 // MustConnectDB is a helper function that creates a new database connection
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
-// If the environment variable has not been set it returns nil,false.
-func MustConnectDB(opts ...dbr.ConnectionOption) (*dbr.Connection, bool) {
-	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
-		return nil, false
+// It queries the database to figure out the current version of Magento. If the
+// environment variable has not been set it returns nil,0. See package magento
+func MustConnectDB(opts ...dbr.ConnectionOption) (*dbr.Connection, magento.Version) {
+	dsn, err := getDSN(EnvDSN)
+	if errors.IsNotFound(err) {
+		return nil, 0
 	}
 
 	cos := make([]dbr.ConnectionOption, 0, 2)
 	cos = append(cos, dbr.WithDSN(MustGetDSN()))
-	return dbr.MustConnectAndVerify(append(cos, opts...)...), true
+	dbc := dbr.MustConnectAndVerify(append(cos, opts...)...)
+
+	if v := dsnVersionCache.v(dsn); v > 0 {
+		return dbc, v
+	}
+
+	tables, err := showTables(context.Background(), dbc.DB)
+	if err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+
+	v := magento.DetectVersion("", tables) // hmm refactor later if we need a prefix
+	dsnVersionCache.set(dsn, v)
+
+	return dbc, v
 }
 
 // MockDB creates a mocked database connection. Fatals on error.
@@ -65,4 +108,28 @@ func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 	dbc, err := dbr.NewConnection(dbr.WithDB(db))
 	fatalIfError(t, err)
 	return dbc, sm
+}
+
+// showTables executes the query SHOW TABLES and returns all tables within the
+// current database.
+func showTables(ctx context.Context, db *sql.DB) ([]string, error) {
+	rows, err := db.QueryContext(ctx, "SHOW TABLES")
+	if err != nil {
+		return nil, errors.Wrap(err, "[csdb] ShowTables: SHOW TABLES failed")
+	}
+	defer rows.Close()
+
+	var tables = make([]string, 0, 200)
+	var table = new(string)
+	for rows.Next() {
+		if err := rows.Scan(table); err != nil {
+			return nil, errors.Wrap(err, "[csdb] ShowTables: scan failed")
+		}
+		tables = append(tables, *table)
+		*table = ""
+	}
+	if rows.Err() != nil {
+		return nil, errors.Wrap(rows.Err(), "[csdb] ShowTables: row error")
+	}
+	return tables, nil
 }
