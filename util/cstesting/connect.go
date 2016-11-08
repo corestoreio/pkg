@@ -74,7 +74,7 @@ var dsnVersionCache = &dsnVersion{
 // MustConnectDB is a helper function that creates a new database connection
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
 // It queries the database to figure out the current version of Magento. If the
-// environment variable has not been set it returns nil,0. See package magento
+// DSN environment variable has not been set it returns nil,0.
 func MustConnectDB(opts ...dbr.ConnectionOption) (*dbr.Connection, magento.Version) {
 	dsn, err := getDSN(EnvDSN)
 	if errors.IsNotFound(err) {
