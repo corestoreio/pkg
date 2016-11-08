@@ -80,11 +80,13 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 		return nil, errors.NewNotImplementedf("[dbr] unsupported driver: %q", c.dn)
 	}
 
+	if c.dsn != nil {
+		c.DatabaseName = c.dsn.DBName
+	}
+
 	if c.DB != nil || c.dsn == nil {
 		return c, nil
 	}
-
-	c.DatabaseName = c.dsn.DBName
 
 	var err error
 	if c.DB, err = sql.Open(c.dn, c.dsn.FormatDSN()); err != nil {
