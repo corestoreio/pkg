@@ -148,14 +148,24 @@ func (tm *Tables) Options(opts ...TableOption) error {
 func (tm *Tables) Table(i int) (*Table, error) {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-	if t, ok := tm.ts[i]; ok && t != nil {
+	if t, ok := tm.ts[i]; ok {
 		return t, nil
 	}
 	return nil, errors.NewNotFoundf("[csdb] Table at index %d not found.", i)
 }
 
+// MustTable same as Table function but panics when the table cannot be found or
+// any other error occurs.
+func (tm *Tables) MustTable(i int) *Table {
+	t, err := tm.Table(i)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 // Name is a short hand to return a table name by given index i. Does not return
-// an error when the table can't be found. Returns an empty string.
+// an error when the table can't be found but returns an empty string.
 func (tm *Tables) Name(i int) string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
@@ -172,8 +182,8 @@ func (tm *Tables) Len() int {
 	return len(tm.ts)
 }
 
-// Inserts a new table into the map. If an entry already exists it the returns
-// an AlreadyExists error behaviour. It panics if ts is nil.
+// Insert adds a new table into the map. If an entry already exists, it will
+// return an AlreadyExists error behaviour.
 func (tm *Tables) Insert(i int, ts *Table) error {
 	_ = ts.Name // let it panic if ts is nil
 	tm.mu.Lock()
@@ -185,8 +195,8 @@ func (tm *Tables) Insert(i int, ts *Table) error {
 	return nil
 }
 
-// Append adds a table. Overrides silently existing entries. Panics if ts is
-// nil.
+// Update sets a new table for a given index. Overrides silently existing
+// entries.
 func (tm *Tables) Update(i int, ts *Table) error {
 	_ = ts.Name // let it panic if ts is nil
 	tm.mu.Lock()

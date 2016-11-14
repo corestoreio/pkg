@@ -34,7 +34,6 @@ const (
 	columnPrimary          = "PRI"
 	columnUnique           = "UNI"
 	columnNull             = "YES"
-	columnNotNull          = "NO"
 	columnAutoIncrement    = "auto_increment"
 	columnUnsigned         = "unsigned"
 	columnCurrentTimestamp = "CURRENT_TIMESTAMP"
@@ -114,25 +113,25 @@ func (cs Columns) Hash() ([]byte, error) {
 	var fl byte = 'f' // letter f for false
 	var buf bytes.Buffer
 	for _, c := range cs {
-		buf.WriteString(c.Field)
+		_, _ = buf.WriteString(c.Field)
 
-		buf.WriteString(strconv.Itoa(int(c.Pos)))
-		buf.WriteString(c.Default.String)
+		_, _ = buf.WriteString(strconv.Itoa(int(c.Pos)))
+		_, _ = buf.WriteString(c.Default.String)
 
 		if c.IsNull() {
-			buf.WriteByte(tr)
+			_ = buf.WriteByte(tr)
 		} else {
-			buf.WriteByte(fl)
+			_ = buf.WriteByte(fl)
 		}
 
-		buf.WriteString(c.DataType)
-		buf.WriteString(strconv.Itoa(int(c.CharMaxLength.Int64)))
-		buf.WriteString(strconv.Itoa(int(c.Precision.Int64)))
-		buf.WriteString(strconv.Itoa(int(c.Scale.Int64)))
-		buf.WriteString(c.ColumnType)
-		buf.WriteString(c.Key)
-		buf.WriteString(c.Extra)
-		buf.WriteString(c.Comment)
+		_, _ = buf.WriteString(c.DataType)
+		_, _ = buf.WriteString(strconv.Itoa(int(c.CharMaxLength.Int64)))
+		_, _ = buf.WriteString(strconv.Itoa(int(c.Precision.Int64)))
+		_, _ = buf.WriteString(strconv.Itoa(int(c.Scale.Int64)))
+		_, _ = buf.WriteString(c.ColumnType)
+		_, _ = buf.WriteString(c.Key)
+		_, _ = buf.WriteString(c.Extra)
+		_, _ = buf.WriteString(c.Comment)
 	}
 
 	f64 := fnv.New64a()
@@ -160,6 +159,8 @@ func (cs Columns) Map(f func(*Column) *Column) Columns {
 	for i, c := range cs {
 		var c2 = new(Column)
 		*c2 = *c
+		// columns.go:161::error: assignment copies lock value to *c2: csdb.Column contains sync.RWMutex (vet)
+		// hmmm ...
 		cols[i] = f(c2)
 	}
 	return cols
@@ -229,11 +230,11 @@ func (cs Columns) String() string {
 func (cs Columns) GoString() string {
 	// fix tests if you change this layout of the returned string
 	var buf bytes.Buffer
-	buf.WriteString("csdb.Columns{\n")
+	_, _ = buf.WriteString("csdb.Columns{\n")
 	for _, c := range cs {
-		fmt.Fprintf(&buf, "%#v,\n", c)
+		_, _ = fmt.Fprintf(&buf, "%#v,\n", c)
 	}
-	buf.WriteByte('}')
+	_ = buf.WriteByte('}')
 	return buf.String()
 }
 
@@ -261,7 +262,7 @@ func (c *Column) GoString() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	buf.WriteString("&csdb.Column{")
+	_, _ = buf.WriteString("&csdb.Column{")
 	fmt.Fprintf(buf, "Field: %q, ", c.Field)
 	if c.Pos > 0 {
 		fmt.Fprintf(buf, "Pos: %d, ", c.Pos)
@@ -296,7 +297,7 @@ func (c *Column) GoString() string {
 	if c.Comment != "" {
 		fmt.Fprintf(buf, "Comment: %q, ", c.Comment)
 	}
-	buf.WriteByte('}')
+	_ = buf.WriteByte('}')
 	return buf.String()
 }
 
@@ -310,7 +311,7 @@ func (c *Column) IsPK() bool {
 	return c.Field != "" && c.Key == columnPrimary
 }
 
-// IsPK checks if column is a unique key
+// IsUnique checks if column is a unique key
 func (c *Column) IsUnique() bool {
 	return c.Field != "" && c.Key == columnUnique
 }

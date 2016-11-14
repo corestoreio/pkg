@@ -50,56 +50,56 @@ func NewTable(tableName string, cs ...*Column) *Table {
 }
 
 // update recalculates the internal cached fields
-func (ts *Table) update() *Table {
-	if len(ts.Columns) == 0 {
-		return ts
+func (t *Table) update() *Table {
+	if len(t.Columns) == 0 {
+		return t
 	}
-	ts.fieldsPK = ts.Columns.PrimaryKeys().FieldNames()
-	ts.fieldsUNI = ts.Columns.UniqueKeys().FieldNames()
-	ts.fields = ts.Columns.ColumnsNoPK().FieldNames()
-	ts.CountPK = ts.Columns.PrimaryKeys().Len()
-	ts.CountUnique = ts.Columns.UniqueKeys().Len()
-	return ts
+	t.fieldsPK = t.Columns.PrimaryKeys().FieldNames()
+	t.fieldsUNI = t.Columns.UniqueKeys().FieldNames()
+	t.fields = t.Columns.ColumnsNoPK().FieldNames()
+	t.CountPK = t.Columns.PrimaryKeys().Len()
+	t.CountUnique = t.Columns.UniqueKeys().Len()
+	return t
 }
 
 // LoadColumns reads the column information from the DB.
-func (ts *Table) LoadColumns(ctx context.Context, db Querier) (err error) {
-	ts.Columns, err = LoadColumns(ctx, db, ts.Name)
-	ts.update()
-	return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", ts.Name)
+func (t *Table) LoadColumns(ctx context.Context, db Querier) (err error) {
+	t.Columns, err = LoadColumns(ctx, db, t.Name)
+	t.update()
+	return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", t.Name)
 }
 
 // TableAliasQuote returns a table name with the alias. catalog_product_entity
 // with alias e would become `catalog_product_entity` AS `e`.
-func (ts *Table) TableAliasQuote(alias string) string {
-	return dbr.Quoter.QuoteAs(ts.Name, alias)
+func (t *Table) TableAliasQuote(alias string) string {
+	return dbr.Quoter.QuoteAs(t.Name, alias)
 }
 
 // ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around
 // them. Returns a copy.
-func (ts *Table) ColumnAliasQuote(alias string) []string {
-	sl := make([]string, len(ts.fields))
-	copy(sl, ts.fields)
+func (t *Table) ColumnAliasQuote(alias string) []string {
+	sl := make([]string, len(t.fields))
+	copy(sl, t.fields)
 	return dbr.Quoter.TableColumnAlias(alias, sl...)
 }
 
 // AllColumnAliasQuote prefixes all columns with an alias and puts quotes around
 // them. Returns a copy.
-func (ts *Table) AllColumnAliasQuote(alias string) []string {
-	sl := make([]string, len(ts.fieldsPK)+len(ts.fields))
-	n := copy(sl, ts.fieldsPK)
-	copy(sl[n:], ts.fields)
+func (t *Table) AllColumnAliasQuote(alias string) []string {
+	sl := make([]string, len(t.fieldsPK)+len(t.fields))
+	n := copy(sl, t.fieldsPK)
+	copy(sl[n:], t.fields)
 	return dbr.Quoter.TableColumnAlias(alias, sl...)
 }
 
 // In checks if column name n is a column of this table. Case sensitive.
-func (ts *Table) In(n string) bool {
-	for _, c := range ts.fieldsPK {
+func (t *Table) In(n string) bool {
+	for _, c := range t.fieldsPK {
 		if c == n {
 			return true
 		}
 	}
-	for _, c := range ts.fields {
+	for _, c := range t.fields {
 		if c == n {
 			return true
 		}
@@ -107,7 +107,8 @@ func (ts *Table) In(n string) bool {
 	return false
 }
 
-// Select generates a SELECT * FROM tableName statement
+// Select generates a SELECT * FROM tableName statement.
+// DEPRECATED
 func (t *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
 	if t == nil {
 		return nil, errors.NewFatalf("[csdb] Table cannot be nil")
@@ -120,6 +121,7 @@ func (t *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
 // LoadSlice performs a SELECT * FROM `tableName` query and puts the results
 // into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
 // and an error. The variadic thrid arguments can modify the SQL query.
+// DEPRECATED
 func (t *Table) LoadSlice(dbrSess dbr.SessionRunner, dest interface{}, cbs ...dbr.SelectCb) (int, error) {
 	sb, err := t.Select(dbrSess)
 	if err != nil {
@@ -131,10 +133,3 @@ func (t *Table) LoadSlice(dbrSess dbr.SessionRunner, dest interface{}, cbs ...db
 	}
 	return sb.LoadStructs(dest)
 }
-
-//func (ts *Table) Update() {}
-//func (ts *Table) Delete() {}
-//func (ts *Table) Insert() {}
-//func (ts *Table) Alter()  {}
-//func (ts *Table) Drop()   {}
-//func (ts *Table) Create() {}

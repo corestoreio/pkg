@@ -45,6 +45,7 @@ func TestNewTableService(t *testing.T) {
 
 func TestNewTableServicePanic(t *testing.T) {
 	t.Parallel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := r.(error)
@@ -61,6 +62,7 @@ func TestNewTableServicePanic(t *testing.T) {
 
 func TestTables_Insert(t *testing.T) {
 	t.Parallel()
+
 	ts := csdb.MustNewTables()
 
 	t.Run("Insert OK", func(t *testing.T) {
@@ -75,6 +77,7 @@ func TestTables_Insert(t *testing.T) {
 
 func TestTables_Delete(t *testing.T) {
 	t.Parallel()
+
 	ts := csdb.MustNewTables(csdb.WithTableNames([]int{3, 5, 7}, []string{"a3", "b5", "c7"}))
 	t.Run("Delete One", func(t *testing.T) {
 		ts.Delete(5)
@@ -88,6 +91,7 @@ func TestTables_Delete(t *testing.T) {
 
 func TestTables_Update(t *testing.T) {
 	t.Parallel()
+
 	ts := csdb.MustNewTables(csdb.WithTableNames([]int{3, 5, 7}, []string{"a3", "b5", "c7"}))
 	t.Run("One", func(t *testing.T) {
 		ts.Update(5, csdb.NewTable("x5"))
@@ -98,8 +102,28 @@ func TestTables_Update(t *testing.T) {
 	})
 }
 
+func TestTables_MustTable(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if r := recover(); r != nil {
+			err := r.(error)
+			assert.True(t, errors.IsNotFound(err), "%+v", err)
+		} else {
+			t.Error("Expecting a panic")
+		}
+	}()
+
+	ts := csdb.MustNewTables(csdb.WithTableNames([]int{3}, []string{"a3"}))
+	tbl := ts.MustTable(3)
+	assert.NotNil(t, tbl)
+	tbl = ts.MustTable(44)
+	assert.Nil(t, tbl)
+}
+
 func TestWithTableNames(t *testing.T) {
 	t.Parallel()
+
 	ts := csdb.MustNewTables(csdb.WithTableNames([]int{3, 5, 7}, []string{"a3", "b5", "c7"}))
 	t.Run("Ok", func(t *testing.T) {
 		assert.Exactly(t, "a3", ts.Name(3))

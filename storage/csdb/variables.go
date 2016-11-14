@@ -70,11 +70,12 @@ func (v *Variable) LoadOne(ctx context.Context, db QueryRower, name string) erro
 // AppendFiltered appends multiple variables to the current slice. If name is
 // empty, all variables will be loaded. Name argument can contain the SQL
 // wildcard. For now MySQL DSN must have set interpolateParams to true.
-func (vs *Variables) AppendFiltered(ctx context.Context, db Querier, name string) (err error) {
+func (vs *Variables) AppendFiltered(ctx context.Context, db Querier, name string) error {
 	if err := isValidVarName(name, true); err != nil {
 		return errors.Wrap(err, "[csdb] Variables.isValidVarName")
 	}
 
+	var err error
 	var rows *sql.Rows
 	if name != "" {
 		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES LIKE ?", name)

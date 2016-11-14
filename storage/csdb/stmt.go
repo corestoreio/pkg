@@ -155,7 +155,7 @@ func (su *ResurrectStmt) Stmt(ctx context.Context) (*sql.Stmt, error) {
 	su.mu.Lock()
 	defer su.mu.Unlock()
 
-	if false == su.closed {
+	if !su.closed {
 		return su.stmt, nil
 	}
 
