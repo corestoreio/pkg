@@ -21,7 +21,9 @@ import (
 	"hash/fnv"
 	"strconv"
 	"strings"
+	"sync"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
@@ -29,37 +31,42 @@ import (
 
 // Helper constants to detect certain features of a table and or column.
 const (
-	ColumnPrimary          = "PRI"
-	ColumnUnique           = "UNI"
-	ColumnNull             = "YES"
-	ColumnNotNull          = "NO"
-	ColumnAutoIncrement    = "auto_increment"
-	ColumnUnsigned         = "unsigned"
-	ColumnCurrentTimestamp = "CURRENT_TIMESTAMP"
+	columnPrimary          = "PRI"
+	columnUnique           = "UNI"
+	columnNull             = "YES"
+	columnNotNull          = "NO"
+	columnAutoIncrement    = "auto_increment"
+	columnUnsigned         = "unsigned"
+	columnCurrentTimestamp = "CURRENT_TIMESTAMP"
 )
 
 // Columns contains a slice of column types
 type Columns []*Column
 
-// Column contains information about one database column retrieved from
+// Column contains information about one database table column retrieved from
 // information_schema.COLUMNS
-// TODO use structure from new database/sql
 type Column struct {
 	Field   string      `db:"COLUMN_NAME"`      //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
 	Pos     int64       `db:"ORDINAL_POSITION"` //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
 	Default null.String `db:"COLUMN_DEFAULT"`   //`COLUMN_DEFAULT` longtext,
 	Null    string      `db:"IS_NULLABLE"`      //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
-	// DataType contains the basic type of a column like smallint, int, mediumblob, float, double, etc...
+	// DataType contains the basic type of a column like smallint, int, mediumblob,
+	// float, double, etc... but always transformed to lower case.
 	DataType      string     `db:"DATA_TYPE"`                //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
 	CharMaxLength null.Int64 `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
 	Precision     null.Int64 `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
 	Scale         null.Int64 `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
-	// TypeRaw full SQL string of the column type
-	TypeRaw string `db:"COLUMN_TYPE"` //`COLUMN_TYPE` longtext NOT NULL,
+	// ColumnType full SQL string of the column type
+	ColumnType string `db:"COLUMN_TYPE"` //`COLUMN_TYPE` longtext NOT NULL,
 	// Key primary or unique or ...
 	Key     string `db:"COLUMN_KEY"`     //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
 	Extra   string `db:"EXTRA"`          //`EXTRA` varchar(30) NOT NULL DEFAULT '',
 	Comment string `db:"COLUMN_COMMENT"` //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
+
+	mu sync.RWMutex
+	// DataTypeSimple contains the simplified data type of the field DataType.
+	// Fo example bigint, smallint, tinyiny will result in "int".
+	dataTypeSimple string
 }
 
 // DMLLoadColumns specifies the data manipulation language for retrieving all
@@ -83,10 +90,11 @@ func LoadColumns(ctx context.Context, db Querier, table string) (Columns, error)
 	var cs = make(Columns, 0, 10)
 	for rows.Next() {
 		c := new(Column)
-		err := rows.Scan(&c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.TypeRaw, &c.Key, &c.Extra, &c.Comment)
+		err := rows.Scan(&c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.ColumnType, &c.Key, &c.Extra, &c.Comment)
 		if err != nil {
 			return nil, errors.Wrap(err, "[csdb] Scan Query")
 		}
+		c.DataType = strings.ToLower(c.DataType)
 		cs = append(cs, c)
 	}
 	err = rows.Err()
@@ -121,12 +129,12 @@ func (cs Columns) Hash() ([]byte, error) {
 		buf.WriteString(strconv.Itoa(int(c.CharMaxLength.Int64)))
 		buf.WriteString(strconv.Itoa(int(c.Precision.Int64)))
 		buf.WriteString(strconv.Itoa(int(c.Scale.Int64)))
-		buf.WriteString(c.TypeRaw)
+		buf.WriteString(c.ColumnType)
 		buf.WriteString(c.Key)
 		buf.WriteString(c.Extra)
 		buf.WriteString(c.Comment)
-
 	}
+
 	f64 := fnv.New64a()
 	if _, err := f64.Write(buf.Bytes()); err != nil {
 		return nil, err
@@ -247,102 +255,152 @@ func (cs Columns) JoinFields(sep ...string) string {
 	return strings.Join(cs.FieldNames(), aSep)
 }
 
+// GoString returns the Go types representation. See interface fmt.GoStringer
+func (c *Column) GoString() string {
+	// fix tests if you change this layout of the returned string or rename fields.
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	buf.WriteString("&csdb.Column{")
+	fmt.Fprintf(buf, "Field: %q, ", c.Field)
+	if c.Pos > 0 {
+		fmt.Fprintf(buf, "Pos: %d, ", c.Pos)
+	}
+	if c.Default.Valid {
+		fmt.Fprintf(buf, "Default: null.StringFrom(%q), ", c.Default.String)
+	}
+	if c.Null != "" {
+		fmt.Fprintf(buf, "Null: %q, ", c.Null)
+	}
+	if c.DataType != "" {
+		fmt.Fprintf(buf, "DataType: %q, ", c.DataType)
+	}
+	if c.CharMaxLength.Valid {
+		fmt.Fprintf(buf, "CharMaxLength: null.Int64From(%d), ", c.CharMaxLength.Int64)
+	}
+	if c.Precision.Valid {
+		fmt.Fprintf(buf, "Precision: null.Int64From(%d), ", c.Precision.Int64)
+	}
+	if c.Scale.Valid {
+		fmt.Fprintf(buf, "Scale: null.Int64From(%d), ", c.Scale.Int64)
+	}
+	if c.ColumnType != "" {
+		fmt.Fprintf(buf, "ColumnType: %q, ", c.ColumnType)
+	}
+	if c.Key != "" {
+		fmt.Fprintf(buf, "Key: %q, ", c.Key)
+	}
+	if c.Extra != "" {
+		fmt.Fprintf(buf, "Extra: %q, ", c.Extra)
+	}
+	if c.Comment != "" {
+		fmt.Fprintf(buf, "Comment: %q, ", c.Comment)
+	}
+	buf.WriteByte('}')
+	return buf.String()
+}
+
 // IsNull checks if column can have null values
 func (c *Column) IsNull() bool {
-	return c.Null == ColumnNull
+	return c.Null == columnNull
 }
 
 // IsPK checks if column is a primary key
 func (c *Column) IsPK() bool {
-	return c.Field != "" && c.Key == ColumnPrimary
+	return c.Field != "" && c.Key == columnPrimary
 }
 
 // IsPK checks if column is a unique key
 func (c *Column) IsUnique() bool {
-	return c.Field != "" && c.Key == ColumnUnique
+	return c.Field != "" && c.Key == columnUnique
 }
 
 // IsAutoIncrement checks if column has an auto increment property
 func (c *Column) IsAutoIncrement() bool {
-	return c.Field != "" && c.Extra == ColumnAutoIncrement
-}
-
-// IsBool checks the name of a column if it contains bool values. Magento uses
-// often smallint field types to store bool values.
-func (c *Column) IsBool() bool {
-	if len(c.Field) < 3 {
-		return false
-	}
-	return columnTypes.byName.bool.ContainsReverse(c.Field)
-}
-
-// IsInt checks if a column contains a MySQL int type, independent from its length.
-func (c *Column) IsInt() bool {
-	switch c.DataType {
-	case "bigint", "int", "mediumint", "smallint", "tinyint":
-		return true
-	}
-	return false
-}
-
-// IsString checks if a column contains a MySQL varchar or text type.
-func (c *Column) IsString() bool {
-	switch c.DataType {
-	case "longtext", "mediumtext", "text", "tinytext", "varchar", "enum", "char":
-		return true
-	}
-	return false
-}
-
-// IsDate checks if a column contains a MySQL timestamp or date type.
-func (c *Column) IsDate() bool {
-	switch c.DataType {
-	case "date", "datetime", "timestamp":
-		return true
-	}
-	return false
-}
-
-// IsFloat checks if a column contains a MySQL decimal or float type.
-func (c *Column) IsFloat() bool {
-	switch c.DataType {
-	case "decimal", "float", "double":
-		return true
-	}
-	return false
-}
-
-// IsMoney checks if a column contains a MySQL decimal or float type and the
-// column name.
-// This function needs a lot of care ...
-func (c *Column) IsMoney() bool {
-	// needs more love
-	if !c.IsFloat() {
-		return false
-	}
-	var ret bool
-	switch {
-	// could us a long list of || statements but switch looks nicer :-)
-	case columnTypes.byName.moneyEqual.Contains(c.Field):
-		ret = true
-	case columnTypes.byName.money.ContainsReverse(c.Field):
-		ret = true
-	case columnTypes.byName.moneySW.StartsWithReverse(c.Field):
-		ret = true
-	case !c.IsNull() && c.Default.String == "0.0000":
-		ret = true
-	}
-	return ret
+	return c.Field != "" && c.Extra == columnAutoIncrement
 }
 
 // IsUnsigned checks if field TypeRaw contains the word unsigned.
 func (c *Column) IsUnsigned() bool {
-	return strings.Contains(c.TypeRaw, ColumnUnsigned)
+	return strings.Contains(c.ColumnType, columnUnsigned)
 }
 
 // IsCurrentTimestamp checks if the Default field is a current timestamp
 func (c *Column) IsCurrentTimestamp() bool {
-	return c.Default.String == ColumnCurrentTimestamp
+	return c.Default.String == columnCurrentTimestamp
+}
+
+const (
+	colTypeBool   = "bool"
+	colTypeByte   = "bytes"
+	colTypeDate   = "date"
+	colTypeFloat  = "float"
+	colTypeInt    = "int"
+	colTypeMoney  = "money"
+	colTypeString = "string"
+	colTypeTime   = "time"
+)
+
+// DataTypeSimple calculates the simplified data type of the field DataType. The
+// calculated result will be cached. For example bigint, smallint, tinyint will
+// result in "int". The returned string guarantees to be lower case. Available
+// returned types are: bool, bytes, date, float, int, money, string, time. Data
+// type money is special for the database schema. This function is thread safe.
+func (c *Column) DataTypeSimple() string {
+	c.mu.RLock()
+	dts := c.dataTypeSimple
+	c.mu.RUnlock()
+	if dts != "" {
+		return dts
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.dataTypeSimple = "undefnied"
+
+	switch c.DataType {
+	case "bigint", "int", "mediumint", "smallint", "tinyint":
+		c.dataTypeSimple = colTypeInt
+	case "longtext", "mediumtext", "text", "tinytext", "varchar", "enum", "char":
+		c.dataTypeSimple = colTypeString
+	case "longblob", "mediumblob", "blob", "varbinary", "binary":
+		c.dataTypeSimple = colTypeByte
+	case "date", "datetime", "timestamp":
+		c.dataTypeSimple = colTypeDate
+	case "time":
+		c.dataTypeSimple = colTypeTime
+	case "decimal", "float", "double":
+		c.dataTypeSimple = colTypeFloat
+	case "bit":
+		c.dataTypeSimple = colTypeBool
+	}
+
+	switch {
+	case columnTypes.byName.bool.ContainsReverse(c.Field):
+		c.dataTypeSimple = colTypeBool
+	case c.dataTypeSimple == colTypeFloat && c.isMoney():
+		c.dataTypeSimple = colTypeMoney
+	}
+	return c.dataTypeSimple
+}
+
+// isMoney checks if a column contains a MySQL decimal or float type and if the
+// column name has a special naming.
+// This function needs a lot of care ...
+func (c *Column) isMoney() bool {
+	// needs more love
+	switch {
+	// could us a long list of || statements but switch looks nicer :-)
+	case columnTypes.byName.moneyEqual.Contains(c.Field):
+		return true
+	case columnTypes.byName.money.ContainsReverse(c.Field):
+		return true
+	case columnTypes.byName.moneySW.StartsWithReverse(c.Field):
+		return true
+	case !c.IsNull() && c.Default.String == "0.0000":
+		return true
+	}
+	return false
 }
 
 // GoPrimitive detects the Go type of a SQL table column as a non nullable type.
@@ -358,29 +416,39 @@ func (c *Column) GoPrimitiveNull() string {
 func (c *Column) goPrimitive(useNullType bool) string {
 	var goType = "undefined"
 	isNull := c.IsNull() && useNullType
-	switch {
-	case c.IsBool() && isNull:
-		goType = "null.Bool"
-	case c.IsBool():
+	switch c.DataTypeSimple() {
+	case colTypeBool:
 		goType = "bool"
-	case c.IsInt() && isNull:
-		goType = "null.Int64"
-	case c.IsInt():
-		goType = "int64" // rethink if it is worth to introduce uint64 because of some unsigned columns
-	case c.IsString() && isNull:
-		goType = "null.String"
-	case c.IsString():
+		if isNull {
+			goType = "null.Bool"
+		}
+	case colTypeInt:
+		goType = "int64"
+		if isNull {
+			goType = "null.Int64"
+		}
+	case colTypeString:
 		goType = "string"
-	case c.IsMoney():
-		goType = "money.Money"
-	case c.IsFloat() && isNull:
-		goType = "null.Float64"
-	case c.IsFloat():
+		if isNull {
+			goType = "null.String"
+		}
+	case colTypeFloat:
 		goType = "float64"
-	case c.IsDate() && isNull:
-		goType = "null.Time"
-	case c.IsDate():
+		if isNull {
+			goType = "null.Float64"
+		}
+	case colTypeDate:
 		goType = "time.Time"
+		if isNull {
+			goType = "null.Time"
+		}
+	case colTypeTime:
+		goType = "time.Time"
+		if isNull {
+			goType = "null.Time"
+		}
+	case colTypeMoney:
+		goType = "money.Money"
 	}
 	return goType
 }
