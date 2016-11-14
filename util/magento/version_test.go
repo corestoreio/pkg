@@ -28,7 +28,7 @@ func TestVersion(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		want   int
+		want   magento.Version
 		prefix string
 		ts     []string
 	}{
@@ -47,9 +47,8 @@ func TestVersion(t *testing.T) {
 	}
 }
 
-var benchmarkVersion int
+var benchmarkVersion magento.Version
 
-// BenchmarkVersionV1-4         	   30000	     53861 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkVersionV1(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -60,7 +59,6 @@ func BenchmarkVersionV1(b *testing.B) {
 	}
 }
 
-// BenchmarkVersionV2-4         	   30000	     49280 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkVersionV2(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
