@@ -31,17 +31,28 @@ const (
 // TableOption applies options to the Tables struct.
 type TableOption func(*Tables) error
 
-// Tables handles all the tables. Thread safe.
+// Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
 	// Schema represents the name of the database. Might be empty.
 	Schema string
+	// Prefix will be put in front of each table name. TODO implement table prefix.
+	Prefix string
 	mu     sync.RWMutex
-	// ts uses int as the table index
+	// ts uses int as the table index.
+	// What is the reason to use int as the table index and not a name? Because
+	// table names between M1 and M2 get renamed and in a Go SQL code generator
+	// script of the CoreStore project, we can guarantee that the generated
+	// index constant will always stay the same but the name of the table
+	// differs.
 	ts map[int]*Table
 }
 
-// WithTable inserts a new table to the Tables struct, identified by its
-// index. You can optionally specify the columns.
+// WithTable inserts a new table to the Tables struct, identified by its index.
+// You can optionally specify the columns. What is the reason to use int as the
+// table index and not a name? Because table names between M1 and M2 get renamed
+// and in a Go SQL code generator script of the CoreStore project, we can
+// guarantee that the generated index constant will always stay the same but the
+// name of the table differs.
 func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 	return func(tm *Tables) error {
 		if err := IsValidIdentifier(tableName); err != nil {
@@ -56,7 +67,11 @@ func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 }
 
 // WithTableLoadColumns inserts a new table to the Tables struct, identified by
-// its index.
+// its index. What is the reason to use int as the table index and not a name?
+// Because table names between M1 and M2 get renamed and in a Go SQL code
+// generator script of the CoreStore project, we can guarantee that the
+// generated index constant will always stay the same but the name of the table
+// differs.
 func WithTableLoadColumns(ctx context.Context, db Querier, idx int, tableName string) TableOption {
 	return func(tm *Tables) error {
 		if err := IsValidIdentifier(tableName); err != nil {
@@ -144,7 +159,11 @@ func (tm *Tables) Options(opts ...TableOption) error {
 	return nil
 }
 
-// Table returns the structure from a map m by a giving index i.
+// Table returns the structure from a map m by a giving index i. What is the
+// reason to use int as the table index and not a name? Because table names
+// between M1 and M2 get renamed and in a Go SQL code generator script of the
+// CoreStore project, we can guarantee that the generated index constant will
+// always stay the same but the name of the table differs.
 func (tm *Tables) Table(i int) (*Table, error) {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
