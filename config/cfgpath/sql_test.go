@@ -22,10 +22,9 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,17 +33,17 @@ var _ driver.Valuer = (*cfgpath.Route)(nil)
 
 func TestIntegrationSQLType(t *testing.T) {
 
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skip(err)
+	dbCon, version := cstesting.MustConnectDB()
+	if version < 0 {
+		t.Skip("Environment DB DSN not found")
 	}
-	dbCon := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbCon.Close()) }()
 
 	var testPath = `system/full_page_cache/varnish/` + util.RandAlnum(5)
 	var insPath = cfgpath.NewRoute(testPath)
 	var insVal = time.Now().Unix()
 
-	// just for testing !
+	// just for testing! TODO refactor test
 	stmt, err := dbCon.DB.Prepare("INSERT INTO `" + tableCollection.Name(tableIndexCoreConfigData) + "` (path,value) values (?,?)")
 	if false == assert.NoError(t, err) {
 		t.Fatal("Stopping ...")
@@ -61,10 +60,12 @@ func TestIntegrationSQLType(t *testing.T) {
 	assert.NotEmpty(t, id)
 
 	var ccds TableCoreConfigDataSlice
-	rows, err := csdb.LoadSlice(dbCon.NewSession(), tableCollection, tableIndexCoreConfigData, &ccds, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+	tbl := tableCollection.MustTable(tableIndexCoreConfigData)
+	rows, err := tbl.LoadSlice(dbCon.NewSession(), &ccds, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		sb.Where(dbr.ConditionRaw("config_id=?", id))
 		return sb
 	})
+
 	assert.NoError(t, err)
 	assert.NotEmpty(t, rows)
 
