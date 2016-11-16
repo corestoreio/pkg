@@ -16,8 +16,8 @@ package backendcors
 
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/net/cors"
 )
 
@@ -97,7 +97,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 	optsCSV := append([]cfgmodel.Option{}, opts...)
 	optsCSV = append(optsCSV, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithCSVComma('\n'))
 	optsYN := append([]cfgmodel.Option{}, opts...)
-	optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
+	optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(cfgsource.YesNo))
 
 	be.ExposedHeaders = cfgmodel.NewStringCSV(`net/cors/exposed_headers`, optsCSV...)
 	be.AllowedOrigins = cfgmodel.NewStringCSV(`net/cors/allowed_origins`, optsCSV...)

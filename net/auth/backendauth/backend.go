@@ -16,8 +16,8 @@ package backendauth
 
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/net/auth"
 )
 
@@ -69,13 +69,13 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	be.Disabled = cfgmodel.NewBool(`net/auth/disabled`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.Disabled = cfgmodel.NewBool(`net/auth/disabled`, append(opts, cfgmodel.WithSource(cfgsource.EnableDisable))...)
 
 	//opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 	//optsCSV := append([]cfgmodel.Option{}, opts...)
 	//optsCSV = append(optsCSV, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithCSVComma('\n'))
 	//optsYN := append([]cfgmodel.Option{}, opts...)
-	//optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(source.YesNo))
+	//optsYN = append(optsYN, cfgmodel.WithFieldFromSectionSlice(cfgStruct), cfgmodel.WithSource(cfgsource.YesNo))
 	//
 	//pp.AllowedIPs = cfgmodel.NewStringCSV(`net/auth/exposed_headers`, optsCSV...)
 

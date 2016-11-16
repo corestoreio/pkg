@@ -16,8 +16,8 @@ package backendgeoip
 
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/net/geoip"
 )
 
@@ -108,8 +108,8 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 // mutex will protect the fields during loading. The argument SectionSlice will
 // be applied to all models.
 
-var redirects = source.NewByInt(
-	source.Ints{
+var redirects = cfgsource.NewByInt(
+	cfgsource.Ints{
 		{301, "301 moved permanently"},
 		{302, "302 found"},
 		{303, "303 see other"},

@@ -66,7 +66,9 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.EncryptorProxy{}))
+	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncrypter(cfgmodel.EncryptFunc(func(s []byte) ([]byte, error) {
+		return s, nil
+	})))
 
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		pb.SigningMethod.MustFQ():         "ES384",
@@ -120,7 +122,9 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.EncryptorProxy{}))
+	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncrypter(cfgmodel.EncryptFunc(func(s []byte) ([]byte, error) {
+		return s, nil
+	})))
 
 	cfgSrv := cfgmock.NewService(cfgmock.PathValue{
 		pb.SigningMethod.MustFQ():    "HS384",
@@ -237,7 +241,9 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 
 func TestServiceWithBackend_RSAFail(t *testing.T) {
 
-	jwts, pb := getJwts(cfgmodel.WithEncryptor(cfgmodel.EncryptorProxy{}))
+	jwts, pb := getJwts(cfgmodel.WithEncrypter(cfgmodel.EncryptFunc(func(s []byte) ([]byte, error) {
+		return s, nil
+	})))
 
 	cr := cfgmock.NewService(cfgmock.PathValue{
 		pb.SigningMethod.MustFQ():  "RS256",
@@ -261,7 +267,9 @@ func TestServiceWithBackend_WithRunMode_Valid_Request(t *testing.T) {
 	}
 
 	// use that configuration structure to apply it to the configuration models.
-	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncryptor(cfgmodel.EncryptorProxy{}))
+	pb := backendjwt.New(cfgStruct, cfgmodel.WithEncrypter(cfgmodel.EncryptFunc(func(s []byte) ([]byte, error) {
+		return s, nil
+	})))
 
 	// create a configuration for websiteID 1. this configuration resides usually in
 	// the MySQL core_config_data table.

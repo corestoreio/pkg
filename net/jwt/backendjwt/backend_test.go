@@ -31,5 +31,10 @@ func init() {
 	}
 
 	backend = backendjwt.New(cfgStruct)
-	backend.HmacPassword.Encryptor = cfgmodel.EncryptorProxy{}
+	backend.HmacPassword.Encrypter = cfgmodel.EncryptFunc(func(s []byte) ([]byte, error) {
+		return s, nil
+	})
+	backend.HmacPassword.Decrypter = cfgmodel.DecryptFunc(func(v interface{}) (data []byte, _ error) {
+		return nil, nil
+	})
 }

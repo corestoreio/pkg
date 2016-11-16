@@ -16,8 +16,8 @@ package backendjwt
 
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/net/jwt"
 )
 
@@ -89,13 +89,13 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	be.Disabled = cfgmodel.NewBool(`net/jwt/disabled`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.Disabled = cfgmodel.NewBool(`net/jwt/disabled`, append(opts, cfgmodel.WithSource(cfgsource.EnableDisable))...)
 	be.SigningMethod = NewConfigSigningMethod(`net/jwt/signing_method`, opts...)
 	be.Expiration = cfgmodel.NewDuration(`net/jwt/expiration`, opts...)
 	be.Skew = cfgmodel.NewDuration(`net/jwt/skew`, opts...)
-	be.SingleTokenUsage = cfgmodel.NewBool(`net/jwt/single_usage`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.SingleTokenUsage = cfgmodel.NewBool(`net/jwt/single_usage`, append(opts, cfgmodel.WithSource(cfgsource.EnableDisable))...)
 	be.HmacPassword = cfgmodel.NewObscure(`net/jwt/hmac_password`, opts...)
-	be.HmacPasswordPerUser = cfgmodel.NewBool(`net/jwt/hmac_password_per_user`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.HmacPasswordPerUser = cfgmodel.NewBool(`net/jwt/hmac_password_per_user`, append(opts, cfgmodel.WithSource(cfgsource.EnableDisable))...)
 	be.RSAKey = cfgmodel.NewObscure(`net/jwt/rsa_key`, opts...)
 	be.RSAKeyPassword = cfgmodel.NewObscure(`net/jwt/rsa_key_password`, opts...)
 	be.ECDSAKey = cfgmodel.NewObscure(`net/jwt/ecdsa_key`, opts...)
