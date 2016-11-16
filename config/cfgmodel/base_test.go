@@ -20,15 +20,15 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ source.Optioner = (*baseValue)(nil)
+var _ cfgsource.Optioner = (*baseValue)(nil)
 
 // configStructure might be a duplicate of primitives_test but note that the
 // test package names are different.

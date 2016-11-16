@@ -16,4 +16,4 @@
 // used in config/models.
 //
 // In Mage world this is called ToOptionArray() or ToOptionHash().
-package source
+package cfgsource

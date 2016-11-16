@@ -21,8 +21,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
@@ -218,9 +218,9 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(3)
-	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(source.YesNo))
+	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(cfgsource.YesNo))
 
-	assert.Exactly(t, source.YesNo, b.Options())
+	assert.Exactly(t, cfgsource.YesNo, b.Options())
 
 	tests := []struct {
 		sg      config.Scoped
@@ -301,7 +301,7 @@ func TestBoolWrite(t *testing.T) {
 
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).BindWebsite(3)
-	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(source.YesNo))
+	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(cfgsource.YesNo))
 
 	mw := &cfgmock.Write{}
 	err := b.Write(mw, true, scope.Store.Pack(3))
@@ -728,7 +728,7 @@ func TestNewInt_Option_Error(t *testing.T) {
 		cfgmodel.WithSourceByString("a", "A", "b", "b"),
 	)
 
-	assert.Exactly(t, source.MustNewByString("a", "A", "b", "b"), b.Source)
+	assert.Exactly(t, cfgsource.MustNewByString("a", "A", "b", "b"), b.Source)
 
 	err := b.Option(cfgmodel.WithSourceByString(
 		"One", "2", "Two",

@@ -20,8 +20,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -65,7 +65,7 @@ func WithField(f *element.Field) Option {
 
 // WithSource sets a source slice for Options() and validation. Convenient
 // helper function.
-func WithSource(vl source.Slice) Option {
+func WithSource(vl cfgsource.Slice) Option {
 	return func(b *optionBox) error {
 		b.Source = vl
 		return nil
@@ -73,19 +73,19 @@ func WithSource(vl source.Slice) Option {
 }
 
 // WithSourceByString sets a source slice for Options() and validation. Wrapper
-// for source.NewByString.  Convenient helper function.
+// for cfgsource.NewByString.  Convenient helper function.
 func WithSourceByString(pairs ...string) Option {
 	return func(b *optionBox) (err error) {
-		b.Source, err = source.NewByString(pairs...)
+		b.Source, err = cfgsource.NewByString(pairs...)
 		return errors.Wrap(err, "[cfgmodel] WithSourceByString")
 	}
 }
 
 // WithSourceByInt sets a source slice for Options() and validation. Wrapper for
-// source.NewByInt. Convenient helper function.
-func WithSourceByInt(vli source.Ints) Option {
+// cfgsource.NewByInt. Convenient helper function.
+func WithSourceByInt(vli cfgsource.Ints) Option {
 	return func(b *optionBox) error {
-		b.Source = source.NewByInt(vli)
+		b.Source = cfgsource.NewByInt(vli)
 		return nil
 	}
 }
@@ -130,7 +130,7 @@ type baseValue struct {
 	// slice is also used for validation to get and write the correct values.
 	// Validation gets triggered only when the slice has been set. The Options()
 	// function will be used to access this slice.
-	Source source.Slice
+	Source cfgsource.Slice
 	// LastError might contain an error when an applied functional option
 	// returns an error in any New*() constructor. Exported for testing reasons.
 	// Every Get() function in a primitive type checks for this error.
@@ -248,7 +248,7 @@ func (bv baseValue) inScope(h scope.TypeID) (err error) {
 // Usually this function gets customized in a sub-type. Customization can have
 // different arguments, etc but must always call this function to set source
 // slice.
-func (bv baseValue) Options() source.Slice {
+func (bv baseValue) Options() cfgsource.Slice {
 	return bv.Source
 }
 
@@ -296,7 +296,7 @@ func (bv baseValue) IsSet() bool {
 	return bv.route.IsEmpty() == false
 }
 
-// ValidateString checks if string v is contained in Source source.Slice.
+// ValidateString checks if string v is contained in Source cfgsource.Slice.
 // Error behaviour: NotValid
 func (bv baseValue) ValidateString(v string) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
@@ -309,7 +309,7 @@ func (bv baseValue) ValidateString(v string) (err error) {
 	return
 }
 
-// ValidateInt checks if int v is contained in non-nil Source source.Slice.
+// ValidateInt checks if int v is contained in non-nil Source cfgsource.Slice.
 // Error behaviour: NotValid
 func (bv baseValue) ValidateInt(v int) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValInt(v) {
@@ -322,7 +322,7 @@ func (bv baseValue) ValidateInt(v int) (err error) {
 	return
 }
 
-// ValidateFloat64 checks if float64 v is contained in non-nil Source source.Slice.
+// ValidateFloat64 checks if float64 v is contained in non-nil Source cfgsource.Slice.
 // Error behaviour: NotValid
 func (bv baseValue) ValidateFloat64(v float64) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
@@ -335,7 +335,7 @@ func (bv baseValue) ValidateFloat64(v float64) (err error) {
 	return
 }
 
-// ValidateTime checks if time.Time v is contained in non-nil Source source.Slice.
+// ValidateTime checks if time.Time v is contained in non-nil Source cfgsource.Slice.
 // Error behaviour: NotValid
 func (bv baseValue) ValidateTime(v time.Time) (err error) {
 	// todo:

@@ -65,7 +65,7 @@ func (b Bool) Get(sg config.Scoped) (bool, error) {
 	return v, err
 }
 
-// Write writes a bool value without validating it against the source.Slice.
+// Write writes a bool value without validating it against the cfgsource.Slice.
 func (b Bool) Write(w config.Writer, v bool, h scope.TypeID) error {
 	return b.baseValue.Write(w, v, h)
 }
@@ -114,7 +114,7 @@ func (bt Byte) Get(sg config.Scoped) ([]byte, error) {
 	return v, err
 }
 
-// Write writes a byte slice without validating it against the source.Slice.
+// Write writes a byte slice without validating it against the cfgsource.Slice.
 func (str Byte) Write(w config.Writer, v []byte, h scope.TypeID) error {
 	return str.baseValue.Write(w, v, h)
 }
@@ -163,7 +163,7 @@ func (str Str) Get(sg config.Scoped) (string, error) {
 	return v, err
 }
 
-// Write writes a string value without validating it against the source.Slice.
+// Write writes a string value without validating it against the cfgsource.Slice.
 func (str Str) Write(w config.Writer, v string, h scope.TypeID) error {
 	return str.baseValue.Write(w, v, h)
 }
@@ -210,7 +210,7 @@ func (i Int) Get(sg config.Scoped) (int, error) {
 	return v, err
 }
 
-// Write writes an int value without validating it against the source.Slice.
+// Write writes an int value without validating it against the cfgsource.Slice.
 func (i Int) Write(w config.Writer, v int, h scope.TypeID) error {
 	return i.baseValue.Write(w, v, h)
 }
@@ -259,7 +259,7 @@ func (f Float64) Get(sg config.Scoped) (float64, error) {
 	return v, err
 }
 
-// Write writes a float64 value without validating it against the source.Slice.
+// Write writes a float64 value without validating it against the cfgsource.Slice.
 func (f Float64) Write(w config.Writer, v float64, h scope.TypeID) error {
 	return f.baseValue.Write(w, v, h)
 }

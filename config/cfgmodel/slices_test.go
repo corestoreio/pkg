@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
@@ -87,7 +87,7 @@ func TestStringCSVWrite(t *testing.T) {
 	)
 
 	mw := &cfgmock.Write{}
-	b.Source.Merge(source.MustNewByString("a", "a", "b", "b", "c", "c"))
+	b.Source.Merge(cfgsource.MustNewByString("a", "a", "b", "b", "c", "c"))
 
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultTypeID))
 	assert.Exactly(t, wantPath, mw.ArgPath)
@@ -130,7 +130,7 @@ func TestIntCSV(t *testing.T) {
 	b := cfgmodel.NewIntCSV(
 		pathWebCorsIntSlice,
 		cfgmodel.WithFieldFromSectionSlice(configStructure),
-		cfgmodel.WithSourceByInt(source.Ints{
+		cfgmodel.WithSourceByInt(cfgsource.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
@@ -184,7 +184,7 @@ func TestIntCSVWrite(t *testing.T) {
 	b := cfgmodel.NewIntCSV(
 		pathWebCorsIntSlice,
 		cfgmodel.WithFieldFromSectionSlice(configStructure),
-		cfgmodel.WithSourceByInt(source.Ints{
+		cfgmodel.WithSourceByInt(cfgsource.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
@@ -194,7 +194,7 @@ func TestIntCSVWrite(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).BindStore(4).String()
 
 	mw := &cfgmock.Write{}
-	b.Source.Merge(source.NewByInt(source.Ints{
+	b.Source.Merge(cfgsource.NewByInt(cfgsource.Ints{
 		{2018, "Year 2018"},
 	}))
 	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store.Pack(4)))
@@ -211,7 +211,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	b := cfgmodel.NewIntCSV(
 		pathWebCorsIntSlice,
 		cfgmodel.WithFieldFromSectionSlice(configStructure),
-		cfgmodel.WithSourceByInt(source.Ints{
+		cfgmodel.WithSourceByInt(cfgsource.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},

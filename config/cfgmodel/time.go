@@ -64,7 +64,7 @@ func (t Time) Get(sg config.Scoped) (time.Time, error) {
 	return v, err
 }
 
-// Write writes a time value without validating it against the source.Slice.
+// Write writes a time value without validating it against the cfgsource.Slice.
 func (t Time) Write(w config.Writer, v time.Time, h scope.TypeID) error {
 	return t.baseValue.Write(w, v, h)
 }
@@ -113,7 +113,7 @@ func (t Duration) Get(sg config.Scoped) (time.Duration, error) {
 	return v, err
 }
 
-// Write writes a duration value without validating it against the source.Slice.
+// Write writes a duration value without validating it against the cfgsource.Slice.
 func (t Duration) Write(w config.Writer, v time.Duration, h scope.TypeID) error {
 	return t.baseValue.Write(w, v.String(), h)
 }

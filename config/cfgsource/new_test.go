@@ -12,23 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package source
+package cfgsource_test
 
-// YesNo defines an immutable slice with yes and no options.
-var YesNo = NewByBool(Bools{
-	{false, "No"},
-	{true, "Yes"},
-})
+import (
+	"testing"
 
-// EnableDisable defines an immutable slice with enable and disable options.
-var EnableDisable = NewByBool(Bools{
-	{false, "Disable"},
-	{true, "Enable"},
-})
-
-// Protocol defines an immutable slice with available HTTP protocols
-var Protocol = MustNewByString(
-	"", "",
-	"http", "HTTP (unsecure)",
-	"https", "HTTP (TLS)",
+	"github.com/corestoreio/csfw/config/cfgsource"
+	"github.com/corestoreio/csfw/util/errors"
 )
+
+func TestMustNewByString(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			err, ok := r.(error)
+			if !ok {
+				t.Fatal("Expecting an error")
+			} else {
+				if have, want := errors.IsNotValid(err), true; have != want {
+					t.Fatalf("Have %t Want %t", have, want)
+				}
+			}
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	_ = cfgsource.MustNewByString("Panic")
+}
