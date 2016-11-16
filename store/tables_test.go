@@ -17,24 +17,23 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
 // These constants are here on purpose hard coded
 func TestGetTable(t *testing.T) {
-
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skip(err)
+	dbc, _ := cstesting.MustConnectDB()
+	if dbc == nil {
+		t.Skip("Environment DB DSN not found")
 	}
-	dbCon := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbCon.Close()) }()
+	defer func() { assert.NoError(t, dbc.Close()) }()
+
 	// store.TableCollection initialized with test TestTableGroupSliceLoad()
 
 	tests := []struct {
-		ti    csdb.Index
+		ti    int
 		isErr bool
 	}{
 		{ti: store.TableIndexGroup, isErr: false},
@@ -44,7 +43,7 @@ func TestGetTable(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ts, err := store.TableCollection.Structure(test.ti)
+		ts, err := store.TableCollection.Table(test.ti)
 		tn := store.TableCollection.Name(test.ti)
 		if test.isErr == false {
 			assert.NoError(t, err)

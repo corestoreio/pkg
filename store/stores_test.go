@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,14 +27,14 @@ func TestStoreSlice_Map_Each(t *testing.T) {
 	ss := store.StoreSlice{
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
+			&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("admin"), Name: null.StringFrom("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: null.BoolFrom(false)},
 			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		),
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
+			&store.TableStore{StoreID: 2, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("admin"), Name: null.StringFrom("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: null.BoolFrom(false)},
 			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		),
 	}
@@ -55,19 +55,19 @@ func TestStoreSlice_ActiveCodes(t *testing.T) {
 	ss := store.StoreSlice{
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 			nil,
 			nil,
 		),
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false},
+			&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false},
 			nil,
 			nil,
 		),
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
+			&store.TableStore{StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
 			nil,
 			nil,
 		),
@@ -91,19 +91,19 @@ func TestStoreSlice_ActiveIDs(t *testing.T) {
 	ss := store.StoreSlice{
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 			nil,
 			nil,
 		),
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false},
+			&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false},
 			nil,
 			nil,
 		),
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
+			&store.TableStore{StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 20, IsActive: true},
 			nil,
 			nil,
 		),
@@ -116,19 +116,19 @@ func TestStoreSlice_Sort(t *testing.T) {
 	ss := store.StoreSlice{
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 2, IsActive: true},
+			&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 2, IsActive: true},
 			nil,
 			nil,
 		),
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 1, IsActive: false},
+			&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 1, IsActive: false},
 			nil,
 			nil,
 		),
 		store.MustNewStore(
 			cfgmock.NewService(),
-			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 3, IsActive: true},
+			&store.TableStore{StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Swiss", SortOrder: 3, IsActive: true},
 			nil,
 			nil,
 		),
@@ -145,7 +145,7 @@ func BenchmarkStoreSlice_Filter(b *testing.B) {
 	stores := make(store.StoreSlice, count)
 	for i := 0; i < count; i++ {
 		stores[i] = store.MustNewStore(cfg,
-			&store.TableStore{StoreID: int64(i), Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 1, IsActive: (i % 2) == 0},
+			&store.TableStore{StoreID: int64(i), Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 1, IsActive: (i % 2) == 0},
 			nil, nil)
 	}
 	f := func(s store.Store) bool {

@@ -16,41 +16,41 @@ package store_test
 
 import (
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/null"
 )
 
 func init() {
-	store.TableCollection = csdb.MustNewTableService(
+	store.TableCollection = csdb.MustNewTables(
 		csdb.WithTable(
 			store.TableIndexStore,
 			"store",
-			csdb.Column{Field: dbr.NewNullString(`store_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(`auto_increment`)},
-			csdb.Column{Field: dbr.NewNullString(`code`), Type: dbr.NewNullString(`varchar(32)`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(`UNI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`website_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`group_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`name`), Type: dbr.NewNullString(`varchar(255)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`sort_order`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`is_active`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+			&csdb.Column{Field: (`store_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`PRI`), Extra: (`auto_increment`)},
+			&csdb.Column{Field: (`code`), ColumnType: (`varchar(32)`), Null: (`YES`), Key: (`UNI`), Extra: (``)},
+			&csdb.Column{Field: (`website_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`0`), Extra: (``)},
+			&csdb.Column{Field: (`group_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`0`), Extra: (``)},
+			&csdb.Column{Field: (`name`), ColumnType: (`varchar(255)`), Null: (`NO`), Key: (``), Extra: (``)},
+			&csdb.Column{Field: (`sort_order`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (``), Default: null.StringFrom(`0`), Extra: (``)},
+			&csdb.Column{Field: (`is_active`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`0`), Extra: (``)},
 		),
 		csdb.WithTable(
 			store.TableIndexGroup,
 			"store_group",
-			csdb.Column{Field: dbr.NewNullString(`group_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(`auto_increment`)},
-			csdb.Column{Field: dbr.NewNullString(`website_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`name`), Type: dbr.NewNullString(`varchar(255)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`root_category_id`), Type: dbr.NewNullString(`int(10) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`default_store_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+			&csdb.Column{Field: (`group_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`PRI`), Extra: (`auto_increment`)},
+			&csdb.Column{Field: (`website_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`0`), Extra: (``)},
+			&csdb.Column{Field: (`name`), ColumnType: (`varchar(255)`), Null: (`NO`), Key: (``), Extra: (``)},
+			&csdb.Column{Field: (`root_category_id`), ColumnType: (`int(10) unsigned`), Null: (`NO`), Key: (``), Default: null.StringFrom(`0`), Extra: (``)},
+			&csdb.Column{Field: (`default_store_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`0`), Extra: (``)},
 		),
 		csdb.WithTable(
 			store.TableIndexWebsite,
 			"store_website",
-			csdb.Column{Field: dbr.NewNullString(`website_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(`auto_increment`)},
-			csdb.Column{Field: dbr.NewNullString(`code`), Type: dbr.NewNullString(`varchar(32)`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(`UNI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`name`), Type: dbr.NewNullString(`varchar(64)`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`sort_order`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`default_group_id`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`is_default`), Type: dbr.NewNullString(`smallint(5) unsigned`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+			&csdb.Column{Field: (`website_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`PRI`), Extra: (`auto_increment`)},
+			&csdb.Column{Field: (`code`), ColumnType: (`varchar(32)`), Null: (`YES`), Key: (`UNI`), Extra: (``)},
+			&csdb.Column{Field: (`name`), ColumnType: (`varchar(64)`), Null: (`YES`), Key: (``), Extra: (``)},
+			&csdb.Column{Field: (`sort_order`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`0`), Extra: (``)},
+			&csdb.Column{Field: (`default_group_id`), ColumnType: (`smallint(5) unsigned`), Null: (`NO`), Key: (`MUL`), Default: null.StringFrom(`0`), Extra: (``)},
+			&csdb.Column{Field: (`is_default`), ColumnType: (`smallint(5) unsigned`), Null: (`YES`), Key: (``), Default: null.StringFrom(`0`), Extra: (``)},
 		),
 	)
 }

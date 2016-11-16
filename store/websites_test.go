@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,13 +28,13 @@ func TestWebsiteSlice_Map_Each(t *testing.T) {
 	ws := store.WebsiteSlice{
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			store.TableGroupSlice{
 				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 			},
 			store.TableStoreSlice{
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+				&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
 			},
 		),
 	}
@@ -59,19 +59,19 @@ func TestWebsiteSlice_Sort(t *testing.T) {
 	ws := store.WebsiteSlice{
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 3, Code: dbr.NewNullString("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 3, Code: null.StringFrom("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
@@ -84,19 +84,19 @@ func TestWebsiteSlice_Codes(t *testing.T) {
 	ws := store.WebsiteSlice{
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 3, Code: dbr.NewNullString("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 3, Code: null.StringFrom("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
@@ -109,19 +109,19 @@ func TestWebsiteSlice_IDs(t *testing.T) {
 	ws := store.WebsiteSlice{
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), SortOrder: 4, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("uk"), SortOrder: 3, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
 		store.MustNewWebsite(
 			cfgmock.NewService(),
-			&store.TableWebsite{WebsiteID: 3, Code: dbr.NewNullString("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 3, Code: null.StringFrom("ch"), SortOrder: 5, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			nil,
 			nil,
 		),
@@ -133,9 +133,9 @@ func TestWebsiteSlice_IDs(t *testing.T) {
 var treeStoreSrv = store.MustNewService(
 	cfgmock.NewService(),
 	store.WithTableWebsites(
-		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
+		&store.TableWebsite{WebsiteID: 0, Code: null.StringFrom("admin"), Name: null.StringFrom("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: null.BoolFrom(false)},
+		&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
+		&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("oz"), Name: null.StringFrom("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: null.BoolFrom(false)},
 	),
 	store.WithTableGroups(
 		&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -144,13 +144,13 @@ var treeStoreSrv = store.MustNewService(
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	),
 	store.WithTableStores(
-		&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-		&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-		&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-		&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-		&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-		&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
+		&store.TableStore{StoreID: 0, Code: null.StringFrom("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+		&store.TableStore{StoreID: 5, Code: null.StringFrom("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+		&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		&store.TableStore{StoreID: 4, Code: null.StringFrom("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+		&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+		&store.TableStore{StoreID: 6, Code: null.StringFrom("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+		&store.TableStore{StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 	),
 )
 

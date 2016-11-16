@@ -18,44 +18,18 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/null"
 )
-
-// RequestedStoreAU satisfies the interface store.Requester and returns always
-// the Australian store.
-//type RequestedStoreAU struct {
-//	// Getter will be applied to the function NewStoreAU()
-//	config.Getter
-//	// ScpOpt contains the scope which has been passed into the function
-//	// RequestedStore() for later inspection.
-//	RequestedStoreID int64
-//}
-//
-//func (rs *RequestedStoreAU) RequestedStore(id int64) (activeStore *store.Store, err error) {
-//	rs.RequestedStoreID = id
-//	return NewStoreAU(rs.Getter)
-//}
-//
-//// NewRequestedStoreAU creates a new type. Only one argument may be passed.
-//func NewRequestedStoreAU(cgs ...config.Getter) *RequestedStoreAU {
-//	var cg config.Getter
-//	if len(cgs) > 0 {
-//		cg = cgs[0]
-//	}
-//	return &RequestedStoreAU{
-//		Getter: cg,
-//	}
-//}
 
 // NewStoreAU creates a new Store with an attached config.
 // Store ID 5, Code "au"; Website ID 2, Code "oz"; GroupID 3.
 func NewStoreAU(cfg config.Getter) (store.Store, error) {
 	st, err := store.NewStore(
 		cfg,
-		&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
+		&store.TableStore{StoreID: 5, Code: null.StringFrom("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+		&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("oz"), Name: null.StringFrom("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: null.BoolFrom(false)},
 		&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 	)
 	return st, errors.Wrap(err, "[storemock] NewStoreAU")

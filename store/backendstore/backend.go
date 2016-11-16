@@ -17,8 +17,8 @@ package backendstore
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -86,7 +86,7 @@ func New(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *Configuration
 
 	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	be.GeneralSingleStoreModeEnabled = cfgmodel.NewBool(`general/single_store_mode/enabled`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	be.GeneralSingleStoreModeEnabled = cfgmodel.NewBool(`general/single_store_mode/enabled`, append(opts, cfgmodel.WithSource(cfgsource.EnableDisable))...)
 
 	be.GeneralStoreInformationName = cfgmodel.NewStr(`general/store_information/name`, opts...)
 	be.GeneralStoreInformationPhone = cfgmodel.NewStr(`general/store_information/phone`, opts...)

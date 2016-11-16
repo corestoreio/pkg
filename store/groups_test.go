@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,17 +28,17 @@ func TestGroupSlice_Map_Each(t *testing.T) {
 		store.MustNewGroup(
 			cfgmock.NewService(),
 			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
 			store.TableStoreSlice{
-				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 			},
 		),
 		store.MustNewGroup(
 			cfgmock.NewService(),
 			&store.TableGroup{GroupID: 2, WebsiteID: 2, Name: "DACH2 Group", RootCategoryID: 2, DefaultStoreID: 2},
-			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("euro2"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 2, IsDefault: dbr.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("euro2"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 2, IsDefault: null.BoolFrom(true)},
 			store.TableStoreSlice{
-				&store.TableStore{StoreID: 2, Code: dbr.NewNullString("de2"), WebsiteID: 2, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 2, Code: null.StringFrom("de2"), WebsiteID: 2, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 			},
 		),
 	}

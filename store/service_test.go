@@ -24,12 +24,12 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,9 +37,9 @@ var _ store.Finder = (*store.Service)(nil)
 
 var serviceStoreSimpleTest = store.MustNewService(
 	cfgmock.NewService(),
-	store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+	store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 	store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
-	store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+	store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 )
 
 func TestNewServiceStore_QueryInvalidStore(t *testing.T) {
@@ -67,7 +67,7 @@ func TestMustNewService_Panic(t *testing.T) {
 		}
 	}()
 	_ = store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
 	)
 }
@@ -82,7 +82,7 @@ func TestMustNewService_NoPanic(t *testing.T) {
 		{0, errors.IsNotFound},
 	}
 	serviceEmpty := store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 	)
 	for i, test := range tests {
 		s, err := serviceEmpty.Store(test.have)
@@ -94,8 +94,8 @@ func TestMustNewService_NoPanic(t *testing.T) {
 func TestMustNewService_DefaultWebsiteCheck(t *testing.T) {
 
 	s, err := store.NewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), IsDefault: dbr.NewNullBool(true)}),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 12, Code: dbr.NewNullString("euro2"), IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), IsDefault: null.BoolFrom(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 12, Code: null.StringFrom("euro2"), IsDefault: null.BoolFrom(true)}),
 	)
 	assert.Nil(t, s)
 	assert.True(t, errors.IsNotValid(err), "%+v", err)
@@ -105,9 +105,9 @@ func TestNewService_DefaultStoreView_OK(t *testing.T) {
 
 	serviceDefaultStore := store.MustNewService(
 		cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
-		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 	)
 
 	// call it twice to test internal caching
@@ -129,9 +129,9 @@ func TestNewService_DefaultStoreView_NOK(t *testing.T) {
 
 	serviceDefaultStore := store.MustNewService(
 		cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
-		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 	)
 
 	// call it twice to test internal caching
@@ -145,12 +145,12 @@ func TestNewService_Stores(t *testing.T) {
 
 	serviceStores := store.MustNewService(
 		cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
 		store.WithTableStores(
-			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-			&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+			&store.TableStore{StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 		),
 	)
 
@@ -180,7 +180,7 @@ func TestMustNewService_Stores_Panic(t *testing.T) {
 	}()
 	_ = store.MustNewService(cfgmock.NewService(),
 		store.WithTableStores(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 10, WebsiteID: 21, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
 	)
 }
@@ -188,9 +188,9 @@ func TestMustNewService_Stores_Panic(t *testing.T) {
 func TestNewService_Group(t *testing.T) {
 
 	serviceGroupSimpleTest := store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
-		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 	)
 
 	tests := []struct {
@@ -225,9 +225,9 @@ func TestNewService_Group(t *testing.T) {
 func TestNewService_Groups(t *testing.T) {
 
 	serviceGroups := store.MustNewService(cfgmock.NewService(),
-		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 	)
 	const iterations = 10
 	var wg sync.WaitGroup
@@ -250,9 +250,9 @@ func TestNewService_Groups(t *testing.T) {
 func TestNewService_Website(t *testing.T) {
 
 	serviceWebsite := store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 		store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
-		store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+		store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 	)
 
 	tests := []struct {
@@ -286,8 +286,8 @@ func TestNewService_Website(t *testing.T) {
 func TestNewService_Websites(t *testing.T) {
 	srv := store.MustNewService(cfgmock.NewService(),
 		store.WithTableWebsites(
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("European Union"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("uk"), Name: dbr.NewNullString("Britain (without Scotland)"), SortOrder: 0, DefaultGroupID: 2},
+			&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("European Union"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)},
+			&store.TableWebsite{WebsiteID: 2, Code: null.StringFrom("uk"), Name: null.StringFrom("Britain (without Scotland)"), SortOrder: 0, DefaultGroupID: 2},
 		),
 	)
 	assert.Exactly(t, []int64{1, 2}, srv.Websites().IDs())
@@ -333,9 +333,9 @@ func TestService_IsAllowedStoreID(t *testing.T) {
 		{eurSrv, scope.MakeTypeID(124, 1), 4, false, "", nil},
 		{eurSrv, scope.MakeTypeID(124, 0), 4, false, "", nil},
 		{store.MustNewService(cfgmock.NewService(),
-			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: null.BoolFrom(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
-			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 		), 0, 2, false, "", errors.IsNotFound},
 	}
 	for i, test := range tests {
@@ -367,9 +367,9 @@ func TestService_DefaultStoreID(t *testing.T) {
 		{eurSrv, scope.MakeTypeID(scope.Website, 2), 5, 2, nil}, // oz scope
 		{eurSrv, scope.MakeTypeID(scope.Website, 9999), 0, 0, errors.IsNotFound},
 		{store.MustNewService(cfgmock.NewService(), // default store not active
-			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: null.BoolFrom(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
-			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
 		), scope.MakeTypeID(scope.Website, 1), 0, 0, errors.IsNotValid},
 
 		{eurSrv, scope.MakeTypeID(scope.Group, 0), 0, 0, nil}, // admin scope
@@ -378,12 +378,12 @@ func TestService_DefaultStoreID(t *testing.T) {
 		{eurSrv, scope.MakeTypeID(scope.Group, 3), 5, 2, nil}, // au scope
 		{eurSrv, scope.MakeTypeID(scope.Group, 9999), 0, 0, errors.IsNotFound},
 		{store.MustNewService(cfgmock.NewService(), // default store not active
-			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: null.BoolFrom(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
-			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: false}),
 		), scope.MakeTypeID(scope.Group, 1), 0, 0, errors.IsNotValid},
 		{store.MustNewService(cfgmock.NewService(), // default store not found
-			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: null.BoolFrom(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 1}),
 		), scope.MakeTypeID(scope.Group, 1), 0, 0, errors.IsNotFound},
 
@@ -393,9 +393,9 @@ func TestService_DefaultStoreID(t *testing.T) {
 		{eurSrv, scope.MakeTypeID(scope.Store, 3), 0, 0, errors.IsNotValid}, // ch store is not active
 
 		{store.MustNewService(cfgmock.NewService(),
-			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+			store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: null.BoolFrom(true)}),
 			store.WithTableGroups(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2}),
-			store.WithTableStores(&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
+			store.WithTableStores(&store.TableStore{StoreID: 1, Code: null.StringFrom("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true}),
 		), 0, 0, 0, errors.IsNotFound},
 	}
 	for i, test := range tests {
@@ -483,10 +483,10 @@ func TestService_AllowedStores(t *testing.T) {
 
 func TestService_HasSingleStore(t *testing.T) {
 	s := store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: null.BoolFrom(true)}),
 	)
 	s1 := store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: null.BoolFrom(true)}),
 	)
 	s1.SingleStoreModeEnabled = false
 
@@ -511,7 +511,7 @@ func TestService_IsSingleStoreMode(t *testing.T) {
 	const xPath = `general/single_store_mode/enabled`
 
 	s := store.MustNewService(cfgmock.NewService(),
-		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: dbr.NewNullBool(true)}),
+		store.WithTableWebsites(&store.TableWebsite{WebsiteID: 1, Code: null.StringFrom("euro"), Name: null.StringFrom("Europe"), SortOrder: 0, DefaultGroupID: 12, IsDefault: null.BoolFrom(true)}),
 	)
 
 	// no stores and backend not set so true
