@@ -15,21 +15,22 @@
 package ccd
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/csfw/util/null"
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go
 // file will set the value.
-var TableCollection csdb.TableManager
+var TableCollection *csdb.Tables
 
 // DBStorage connects the MySQL DB with the config.Service type. Implements
 // interface config.Storager.
@@ -137,7 +138,7 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 		return errors.Wrapf(err, "[ccd] Set.conv.ToStringE. SQL: %q Key: %q Value: %v", dbs.Write.SQL, key, value)
 	}
 
-	stmt, err := dbs.Write.Stmt()
+	stmt, err := dbs.Write.Stmt(context.TODO())
 	if err != nil {
 		return errors.Wrapf(err, "[ccd] Set.Write.Stmt. SQL: %q Key: %q", dbs.Write.SQL, key)
 	}
@@ -179,7 +180,7 @@ func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 	dbs.Read.StartStmtUse()
 	defer dbs.Read.StopStmtUse()
 
-	stmt, err := dbs.Read.Stmt()
+	stmt, err := dbs.Read.Stmt(context.TODO())
 	if err != nil {
 		return nil, errors.Wrapf(err, "[ccd] Get.Read.Stmt. SQL: %q Key: %q", dbs.Read.SQL, key)
 	}
@@ -189,7 +190,7 @@ func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 		return nil, errors.Wrapf(err, "[ccd] Get.key.Level. SQL: %q Key: %q", dbs.Read.SQL, key)
 	}
 
-	var data dbr.NullString
+	var data null.String
 	scp, id := key.ScopeID.Unpack()
 	err = stmt.QueryRow(scp.StrType(), id, pl).Scan(&data)
 	if err != nil {
@@ -211,7 +212,7 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 	dbs.All.StartStmtUse()
 	defer dbs.All.StopStmtUse()
 
-	stmt, err := dbs.All.Stmt()
+	stmt, err := dbs.All.Stmt(context.TODO())
 	if err != nil {
 		return nil, errors.Wrapf(err, "[ccd] AllKeys.All.Stmt. SQL: %q", dbs.All.SQL)
 	}
@@ -224,9 +225,9 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 
 	const maxCap = 750 // Just a guess the 750
 	var ret = make(cfgpath.PathSlice, 0, maxCap)
-	var sqlScope dbr.NullString
-	var sqlScopeID dbr.NullInt64
-	var sqlPath dbr.NullString
+	var sqlScope null.String
+	var sqlScopeID null.Int64
+	var sqlPath null.String
 
 	for rows.Next() {
 		if err := rows.Scan(&sqlScope, &sqlScopeID, &sqlPath); err != nil {

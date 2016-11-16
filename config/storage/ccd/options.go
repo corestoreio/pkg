@@ -18,7 +18,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
@@ -31,7 +30,7 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.Option {
 	return func(s *config.Service) error {
 
 		var ccd TableCoreConfigDataSlice
-		loadedRows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
+		loadedRows, err := TableCollection.MustTable(TableIndexCoreConfigData).LoadSlice(dbrSess, &ccd)
 		if s.Log.IsDebug() {
 			s.Log.Debug("ccd.WithCoreConfigData.LoadSlice", log.Int("rows", loadedRows), log.Err(err))
 		}

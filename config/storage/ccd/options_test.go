@@ -57,7 +57,7 @@ func Test_WithCoreConfigData(t *testing.T) {
 		}
 	}()
 
-	sess := dbc.NewSession(nil) // nil tricks the NewSession ;-)
+	sess := dbc.NewSession()
 
 	dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
 		cstesting.MustMockRows(cstesting.WithFile("testdata", "core_config_data.csv")),
