@@ -99,7 +99,7 @@ func TestWithCompressorDeflateConcrete(t *testing.T) {
 		}()
 		var un = make([]byte, len(testJson))
 		rl, err := fr.Read(un)
-		if err != nil {
+		if err != nil && err != io.EOF {
 			t.Error(err)
 		}
 		if rl != len(testJson) {

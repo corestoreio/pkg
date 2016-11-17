@@ -22,6 +22,19 @@ import (
 // backend overall backend models for all tests
 var backend *backendsigned.Configuration
 
+var _ cfgmodel.Encrypter = (*noopCrypt)(nil)
+var _ cfgmodel.Decrypter = (*noopCrypt)(nil)
+
+type noopCrypt struct{}
+
+func (noopCrypt) Encrypt(s []byte) ([]byte, error) {
+	return s, nil
+}
+
+func (noopCrypt) Decrypt(s []byte) ([]byte, error) {
+	return s, nil
+}
+
 // this would belong into the test suit setup
 func init() {
 	cfgStruct, err := backendsigned.NewConfigStructure()
@@ -30,5 +43,6 @@ func init() {
 	}
 	backend = backendsigned.New(cfgStruct)
 
-	backend.Key.Encryptor = cfgmodel.EncryptorProxy{}
+	backend.Key.Encrypter = noopCrypt{}
+	backend.Key.Decrypter = noopCrypt{}
 }
