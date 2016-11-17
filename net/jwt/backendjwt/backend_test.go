@@ -22,6 +22,19 @@ import (
 // backend overall backend models for all tests
 var backend *backendjwt.Configuration
 
+var _ cfgmodel.Encrypter = (*noopCrypt)(nil)
+var _ cfgmodel.Decrypter = (*noopCrypt)(nil)
+
+type noopCrypt struct{}
+
+func (noopCrypt) Encrypt(s []byte) ([]byte, error) {
+	return s, nil
+}
+
+func (noopCrypt) Decrypt(s []byte) ([]byte, error) {
+	return s, nil
+}
+
 // this would belong into the test suit setup
 func init() {
 
@@ -31,10 +44,6 @@ func init() {
 	}
 
 	backend = backendjwt.New(cfgStruct)
-	backend.HmacPassword.Encrypter = cfgmodel.EncryptFunc(func(s []byte) ([]byte, error) {
-		return s, nil
-	})
-	backend.HmacPassword.Decrypter = cfgmodel.DecryptFunc(func(v interface{}) (data []byte, _ error) {
-		return nil, nil
-	})
+	backend.HmacPassword.Encrypter = noopCrypt{}
+	backend.HmacPassword.Decrypter = noopCrypt{}
 }

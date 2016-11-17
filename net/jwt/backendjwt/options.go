@@ -100,7 +100,11 @@ func (be *Configuration) PrepareOptionFactory() jwt.OptionFactoryFunc {
 			if err != nil {
 				return jwt.OptionsError(errors.Wrap(err, "[backendjwt] NetJwtHmacPassword.Get"))
 			}
-			key = csjwt.WithPassword(password)
+			if len(password) == 0 {
+				key = csjwt.WithPasswordRandom()
+			} else {
+				key = csjwt.WithPassword(password)
+			}
 		default:
 			return jwt.OptionsError(errors.Errorf("[jwt] Unknown signing method: %q", signingMethod.Alg()))
 		}

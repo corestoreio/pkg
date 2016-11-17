@@ -94,7 +94,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						element.Field{
 							// Path: net/jwt/hmac_password
 							ID:        cfgpath.NewRoute("hmac_password"),
-							Label:     text.Chars(`Global HMAC Token Password`),
+							Label:     text.Chars(`Global HMAC Token Password. If empty, a random very long password will be generated.`),
 							Type:      element.TypeObscure,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
