@@ -14,6 +14,8 @@
 
 // Package element represents Magento system.xml configuration elements.
 //
+//	TODO: refactor API and types. Remove text.Chars, use pointer
+//
 // Thw following diagram shows the tree structure:
 //    +---------+
 //    | Section |
