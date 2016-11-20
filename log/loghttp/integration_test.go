@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package log_test
+package loghttp_test
 
 import (
 	"net/http"
@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/loghttp"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
@@ -51,7 +52,7 @@ func TestHTTPRequest_Race(t *testing.T) {
 					log.String("user_id", rec.Header().Get(cstesting.HeaderUserID)),
 					log.String("loop_cnt", rec.Header().Get(cstesting.HeaderLoopID)),
 					log.String("sleep_dur", rec.Header().Get(cstesting.HeaderSleep)),
-					log.HTTPRequest("myReq", r))
+					loghttp.Request("myReq", r))
 			}
 		}),
 	)

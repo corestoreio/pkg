@@ -35,11 +35,8 @@
 package log
 
 import (
-	"encoding"
 	"fmt"
 	"math"
-	"net/http"
-	"net/http/httputil"
 	"strconv"
 	"time"
 
@@ -60,18 +57,20 @@ const (
 	typeString
 	typeStrings
 	typeStringer
+	typeStringFn
 	typeGoStringer
 	typeObject
 	typeMarshaler
-	typeTextMarshaler
-	typeHTTPRequest
-	typeHTTPRequestHeader
-	typeHTTPResponse
 )
 
-// JSONMarshaler is the interface implemented by types that
+// textMarshaler a copy of encoding.TextMarshaler
+type textMarshaler interface {
+	MarshalText() (text []byte, err error)
+}
+
+// jsonMarshaler is the interface implemented by types that
 // can marshal themselves into valid JSON.
-type JSONMarshaler interface {
+type jsonMarshaler interface {
 	MarshalJSON() ([]byte, error)
 }
 
@@ -100,6 +99,11 @@ type KeyValuer interface {
 	AddString(string, string)
 	Nest(string, func(KeyValuer) error) error
 }
+
+// AddStrFn same as KeyValuer.AddString to allow creating 3rd party log packages
+// which can log very different types for which we do not want to create a
+// Marshaler.
+type AddStringFn func(string, string)
 
 // Fields a slice of n Field types
 type Fields []Field
@@ -148,7 +152,8 @@ type Field struct {
 	int64
 	float64
 	string
-	obj interface{}
+	strFn func(AddStringFn) error
+	obj   interface{}
 }
 
 // AddTo adds a field to KeyValue encoder
@@ -205,44 +210,10 @@ func (f Field) AddTo(kv KeyValuer) error {
 		kv.AddObject(f.key, f.obj)
 	case typeMarshaler:
 		return kv.AddMarshaler(f.key, f.obj.(Marshaler))
-	case typeTextMarshaler:
-		txt, err := f.obj.(encoding.TextMarshaler).MarshalText()
-		if err != nil {
-			return errors.Wrap(err, "[log] AddTo.TextMarshaler")
-		}
-		kv.AddString(f.key, string(txt))
-	case typeHTTPRequest:
-		return f.addToHttpRequest(kv, true)
-	case typeHTTPRequestHeader:
-		return f.addToHttpRequest(kv, false)
-	case typeHTTPResponse:
-		if r, ok := f.obj.(*http.Response); ok {
-			b, err := httputil.DumpResponse(r, true)
-			if err != nil {
-				return errors.Wrap(err, "[log] AddTo.HTTPRequest.DumpResponse")
-			}
-			kv.AddString(f.key, string(b))
-		} else {
-			kv.AddString(f.key, fmt.Sprintf("Cannot type assert *http.Response from obj: %#v", f.obj))
-		}
+	case typeStringFn:
+		return errors.Wrap(f.strFn(kv.AddString), "[log] AddTo.StringFn")
 	default:
 		return errors.NewFatalf("[log] Unknown field type found: %v", f)
-	}
-	return nil
-}
-
-func (f Field) addToHttpRequest(kv KeyValuer, dumpBody bool) error {
-	if r, ok := f.obj.(*http.Request); ok {
-		// copy the request to avoid some race conditions
-		r2 := new(http.Request)
-		*r2 = *r
-		b, err := httputil.DumpRequest(r2, dumpBody)
-		if err != nil {
-			return errors.Wrap(err, "[log] AddTo.HTTPRequest.DumpRequest")
-		}
-		kv.AddString(f.key, string(b))
-	} else {
-		kv.AddString(f.key, fmt.Sprintf("Cannot type assert *http.Request from obj: %#v", f.obj))
 	}
 	return nil
 }
@@ -308,6 +279,12 @@ func Strings(key string, vals ...string) Field {
 	return Field{key: key, fieldType: typeStrings, obj: vals}
 }
 
+// StringFn constructs a Field with the given key and a closure to the
+// AddStringFn.
+func StringFn(key string, fn func(AddStringFn) error) Field {
+	return Field{key: key, fieldType: typeStringFn, strFn: fn}
+}
+
 // Stringer constructs a Field with the given key and value. The value
 // is the result of the String() method.
 func Stringer(key string, val fmt.Stringer) Field {
@@ -320,20 +297,32 @@ func GoStringer(key string, val fmt.GoStringer) Field {
 	return Field{key: key, fieldType: typeGoStringer, obj: val}
 }
 
-// Text constructs a Field with the given key and value. The value
-// is the result of the MarshalText() method.
-func Text(key string, val encoding.TextMarshaler) Field {
-	return Field{key: key, fieldType: typeTextMarshaler, obj: val}
+// Text constructs a Field with the given key and value. The value is the result
+// of the MarshalText() method. See package encoding in the standard library for
+// encoding.TextMarshaler.
+func Text(key string, val textMarshaler) Field {
+	return Field{key: key, fieldType: typeStringFn, strFn: func(addString AddStringFn) error {
+		txt, err := val.MarshalText()
+		if err != nil {
+			return errors.Wrap(err, "[log] AddTo.TextMarshaler")
+		}
+		addString(key, string(txt))
+		return nil
+	}}
 }
 
-// JSON constructs a Field with the given key and value. The value
-// is the result of the MarshalJSON() method.
-func JSON(key string, val JSONMarshaler) Field {
-	j, err := val.MarshalJSON()
-	if err != nil {
-		return Err(errors.Wrap(err, "[log] MarshalJSON"))
-	}
-	return Field{key: key, fieldType: typeString, string: string(j)}
+// JSON constructs a Field with the given key and value. The value is the result
+// of the MarshalJSON() method. See package encoding/json in the standard
+// library for json.Marshaler.
+func JSON(key string, val jsonMarshaler) Field {
+	return Field{key: key, fieldType: typeStringFn, strFn: func(addString AddStringFn) error {
+		j, err := val.MarshalJSON()
+		if err != nil {
+			return errors.Wrap(err, "[log] JSON.MarshalJSON")
+		}
+		addString(key, string(j))
+		return nil
+	}}
 }
 
 // Time constructs a Field with the given key and value. It represents a
@@ -387,38 +376,4 @@ func Marshal(key string, val Marshaler) Field {
 // namespace.
 func Nest(key string, fields ...Field) Field {
 	return Field{key: key, fieldType: typeMarshaler, obj: Fields(fields)}
-}
-
-// HTTPRequest transforms the request with the function httputil.DumpRequest(r,
-// true) into a string. The body gets logged also. Not completely race condition
-// free because it depends on the Body io.ReadCloser implementation.
-//
-// DumpRequest returns the given request in its HTTP/1.x wire representation. It
-// should only be used by servers to debug client requests. The returned
-// representation is an approximation only; some details of the initial request
-// are lost while parsing it into an http.Request. In particular, the order and
-// case of header field names are lost. The order of values in multi-valued
-// headers is kept intact. HTTP/2 requests are dumped in HTTP/1.x form, not in
-// their original binary representations.
-func HTTPRequest(key string, r *http.Request) Field {
-	// i kind don't like importing http and httputil ... but i also don't like
-	// to craft extra another package. maybe someone has a better idea.
-	return Field{key: key, fieldType: typeHTTPRequest, obj: r}
-}
-
-// todo: add http.DumpRequestOut() with header+body and header only
-
-// HTTPRequestHeader transforms the request with the function
-// httputil.DumpRequest(r, false) into a string. The body gets not logged and
-// hence it is race condition free.
-func HTTPRequestHeader(key string, r *http.Request) Field {
-	return Field{key: key, fieldType: typeHTTPRequestHeader, obj: r}
-}
-
-// HTTPResponse transforms the response with the function
-// httputil.DumpResponse(r, true) into a string. Same behaviour as
-// HTTPRequest(). The body gets logged also. Not completely race condition free
-// because it depends on the Body io.ReadCloser implementation.
-func HTTPResponse(key string, r *http.Response) Field {
-	return Field{key: key, fieldType: typeHTTPResponse, obj: r}
 }

@@ -16,19 +16,32 @@ package log
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"math"
 	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/stretchr/testify/assert"
 )
+
+type iFaceCheck struct{}
+
+func (iFaceCheck) MarshalText() ([]byte, error) {
+	return nil, nil
+}
+func (iFaceCheck) MarshalJSON() ([]byte, error) {
+	return nil, nil
+}
+
+// Test if our internal interface definition is up to par with the stdlib.
+var _ textMarshaler = (*iFaceCheck)(nil)
+var _ encoding.TextMarshaler = (*iFaceCheck)(nil)
+var _ jsonMarshaler = (*iFaceCheck)(nil)
+var _ json.Marshaler = (*iFaceCheck)(nil)
 
 const testKey = "MyTestKey"
 
@@ -214,7 +227,7 @@ func TestField_Marshaler(t *testing.T) {
 func TestField_Text(t *testing.T) {
 	const data = `35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams`
 	f := Text(testKey, text.Chars(data))
-	assert.Exactly(t, typeTextMarshaler, f.fieldType)
+	assert.Exactly(t, typeStringFn, f.fieldType)
 	assert.Empty(t, f.string)
 	assert.Exactly(t, testKey, f.key)
 	buf := &bytes.Buffer{}
@@ -228,30 +241,39 @@ func TestField_Text(t *testing.T) {
 func TestField_TextError(t *testing.T) {
 	var data = gs{data: nil, err: errors.New("Errr")}
 	f := Text(testKey, data)
-	assert.Exactly(t, typeTextMarshaler, f.fieldType)
+	assert.Exactly(t, typeStringFn, f.fieldType)
 	assert.Empty(t, f.string)
 	assert.Exactly(t, testKey, f.key)
 	buf := &bytes.Buffer{}
 	wt := WriteTypes{W: buf}
 	err := f.AddTo(wt)
 	assert.Empty(t, buf.String())
-	assert.EqualError(t, err, "[log] AddTo.TextMarshaler: Errr")
+	assert.EqualError(t, err, "[log] AddTo.StringFn: [log] AddTo.TextMarshaler: Errr")
 
 }
 
 func TestField_JSON(t *testing.T) {
 	const data = `12. “Reality is frequently inaccurate.” Douglas Adams`
 	f := JSON(testKey, gs{data: data})
-	assert.Exactly(t, typeString, f.fieldType)
-	assert.Exactly(t, `"`+data+`"`, f.string)
+	assert.Exactly(t, typeStringFn, f.fieldType)
+	assert.Empty(t, f.string)
 	assert.Exactly(t, testKey, f.key)
+
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	assert.NoError(t, f.AddTo(wt))
+	assert.Exactly(t, ` MyTestKey: "\"12. “Reality is frequently inaccurate.” Douglas Adams\""`, buf.String())
 }
 
 func TestField_JSONError(t *testing.T) {
 	f := JSON(testKey, gs{data: make(chan struct{})})
-	assert.Exactly(t, typeString, f.fieldType)
-	assert.Exactly(t, "[log] MarshalJSON: json: unsupported type: chan struct {}", f.string)
-	assert.Exactly(t, ErrorKeyName, f.key)
+	assert.Exactly(t, typeStringFn, f.fieldType)
+	assert.Exactly(t, testKey, f.key)
+	buf := &bytes.Buffer{}
+	wt := WriteTypes{W: buf}
+	err := f.AddTo(wt)
+	assert.Empty(t, buf.String())
+	assert.EqualError(t, err, "[log] AddTo.StringFn: [log] JSON.MarshalJSON: json: unsupported type: chan struct {}")
 }
 
 func TestField_Time(t *testing.T) {
@@ -342,104 +364,4 @@ func TestField_Nest_Error(t *testing.T) {
 	}
 	assert.Contains(t, buf.String(), `nest1: "1" error: NestError. Smoke Alarm on ;-)`)
 	assert.Contains(t, buf.String(), `[log] AddTo.TextMarshaler`)
-}
-
-func TestField_HTTPRequest(t *testing.T) {
-	const data = `35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams`
-
-	req := httptest.NewRequest("GET", "https://corestore.io", strings.NewReader(data))
-	req.Header.Set("X-CoreStore-ID", "349:44")
-
-	f := HTTPRequest(testKey, req)
-	assert.Exactly(t, typeHTTPRequest, f.fieldType)
-	assert.Empty(t, f.string)
-	assert.Exactly(t, testKey, f.key)
-	buf := &bytes.Buffer{}
-	wt := WriteTypes{W: buf}
-	if err := f.AddTo(wt); err != nil {
-		t.Fatal(err)
-	}
-	assert.Exactly(t, " MyTestKey: \"GET https://corestore.io HTTP/1.1\\r\\nX-Corestore-Id: 349:44\\r\\n\\r\\n35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams\"", buf.String())
-}
-
-func TestField_HTTPRequestHeader(t *testing.T) {
-	const data = `35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams`
-
-	req := httptest.NewRequest("GET", "https://corestore.io", strings.NewReader(data))
-	req.Header.Set("X-CoreStore-ID", "349:44")
-
-	f := HTTPRequestHeader(testKey, req)
-	assert.Exactly(t, typeHTTPRequestHeader, f.fieldType)
-	assert.Empty(t, f.string)
-	assert.Exactly(t, testKey, f.key)
-	buf := &bytes.Buffer{}
-	wt := WriteTypes{W: buf}
-	if err := f.AddTo(wt); err != nil {
-		t.Fatal(err)
-	}
-	assert.Exactly(t, " MyTestKey: \"GET https://corestore.io HTTP/1.1\\r\\nX-Corestore-Id: 349:44\\r\\n\\r\\n\"", buf.String())
-}
-
-func TestField_HTTPRequest_Error(t *testing.T) {
-	f := Field{
-		key:       testKey,
-		fieldType: typeHTTPRequest,
-		obj:       123456789,
-	}
-
-	assert.Exactly(t, typeHTTPRequest, f.fieldType)
-	assert.Empty(t, f.string)
-	assert.Exactly(t, testKey, f.key)
-	buf := &bytes.Buffer{}
-	wt := WriteTypes{W: buf}
-	if err := f.AddTo(wt); err != nil {
-		t.Fatal(err)
-	}
-	assert.Exactly(t, " MyTestKey: \"Cannot type assert *http.Request from obj: 123456789\"", buf.String())
-}
-
-func TestField_HTTPResponse(t *testing.T) {
-	const data = `35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams`
-
-	res := &http.Response{
-		Status:     "200 OK",
-		StatusCode: 200,
-		Proto:      "HTTP/1.0",
-		ProtoMajor: 1,
-		ProtoMinor: 0,
-		Header: http.Header{
-			"X-CoreStore-ID": []string{"987654321"},
-		},
-		Body:          ioutil.NopCloser(strings.NewReader(data)),
-		ContentLength: int64(len(data)),
-	}
-
-	f := HTTPResponse(testKey, res)
-	assert.Exactly(t, typeHTTPResponse, f.fieldType)
-	assert.Empty(t, f.string)
-	assert.Exactly(t, testKey, f.key)
-	buf := &bytes.Buffer{}
-	wt := WriteTypes{W: buf}
-	if err := f.AddTo(wt); err != nil {
-		t.Fatal(err)
-	}
-	assert.Exactly(t, " MyTestKey: \"HTTP/1.0 200 OK\\r\\nContent-Length: 85\\r\\nX-CoreStore-ID: 987654321\\r\\n\\r\\n35. “My universe is my eyes and my ears. Anything else is hearsay.” Douglas Adams\"", buf.String())
-}
-
-func TestField_HTTPResponse_Error(t *testing.T) {
-	f := Field{
-		key:       testKey,
-		fieldType: typeHTTPResponse,
-		obj:       123456789,
-	}
-
-	assert.Exactly(t, typeHTTPResponse, f.fieldType)
-	assert.Empty(t, f.string)
-	assert.Exactly(t, testKey, f.key)
-	buf := &bytes.Buffer{}
-	wt := WriteTypes{W: buf}
-	if err := f.AddTo(wt); err != nil {
-		t.Fatal(err)
-	}
-	assert.Exactly(t, " MyTestKey: \"Cannot type assert *http.Response from obj: 123456789\"", buf.String())
 }
