@@ -14,4 +14,6 @@
 
 // Package responseproxy provides various proxy functions for extending
 // http.ResponseWriter.
+//
+// TODO: Use idea from https://github.com/felixge/httpsnoop/blob/master/wrap.go
 package responseproxy
