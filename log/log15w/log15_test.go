@@ -16,9 +16,8 @@ package log15w_test
 
 import (
 	"bytes"
-	"testing"
-
 	"math"
+	"testing"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/log15w"
@@ -108,6 +107,6 @@ func TestAddMarshaler_Error(t *testing.T) {
 	l.Debug("marshalling", log.Marshal("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `"error":"github.com/corestoreio/csfw/log/log15w/log15_test.go:110: Whooops\n"`)
+	assert.Contains(t, buf.String(), `"error":"Whooops\ngithub.com/corestoreio/csfw/log/log15w_test.TestAddMarshaler_Error`)
 	assert.Contains(t, buf.String(), `"kvbool":"false","kvfloat64":0,"kvstring":""`)
 }

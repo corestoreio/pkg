@@ -32,8 +32,9 @@ var _ log.Logger = (*zapw.Wrap)(nil)
 func getZap(lvl zap.Level) (*bytes.Buffer, log.Logger) {
 	buf := &bytes.Buffer{}
 	l := zapw.Wrap{
-		Zap: zap.NewJSON(lvl, zap.Fields(zap.Int("answer", 42)), zap.Output(zap.AddSync(buf)), zap.ErrorOutput(zap.AddSync(buf))),
+		Zap: zap.New(zap.NewJSONEncoder(zap.NoTime()), lvl, zap.Output(zap.AddSync(buf)), zap.ErrorOutput(zap.AddSync(buf)), zap.Fields(zap.Int("answer", 42))),
 	}
+
 	return buf, l
 }
 
@@ -50,16 +51,22 @@ func getZapWithLog(lvl zap.Level) string {
 }
 
 func TestNewJSON_Debug(t *testing.T) {
-	out := getZapWithLog(zap.Debug)
-	assert.Contains(t, out, `ds":{"answer":42,"error":"I'm an debug error","pi":3.14159,"kDebug":"v1","debugDur":600000000`)
+	out := getZapWithLog(zap.DebugLevel)
+	assert.Contains(t, out, `"answer":42`)
+	assert.Contains(t, out, `"error":"I'm an debug error"`)
 	assert.Contains(t, out, `"pi":3.14159`)
-	assert.Contains(t, out, `"fields":{"answer":42,"error":"I'm an info error","e":2.7182,"kInfo":"v1","infoDur":3600000000`)
+	assert.Contains(t, out, `"debugDur":600000000`)
+	assert.Contains(t, out, `"pi":3.14159`)
+	assert.Contains(t, out, `"error":"I'm an info error"`)
+	assert.Contains(t, out, `"kInfo":"v1"`)
+	assert.Contains(t, out, `"infoDur":3600000000`)
 }
 
 func TestNewJSON_Info(t *testing.T) {
-	out := getZapWithLog(zap.Info)
+	out := getZapWithLog(zap.InfoLevel)
 	assert.NotContains(t, out, `ds":{"answer":42,"error":"I'm an debug error","pi":3.14159,"kDebug":"v1","debugDur":600000000`)
-	assert.Contains(t, out, `"fields":{"answer":42,"error":"I'm an info error","e":2.7182,"kInfo":"v1","infoDur":3600000000`)
+	assert.Contains(t, out, `"error":"I'm an info error"`)
+	assert.Contains(t, out, `"kInfo":"v1","infoDur":3600000000`)
 	assert.Contains(t, out, `"e":2.7182`)
 }
 
@@ -78,7 +85,7 @@ func (mm marshalMock) MarshalLog(kv log.KeyValuer) error {
 }
 
 func TestAddMarshaler(t *testing.T) {
-	buf, l := getZap(zap.Debug)
+	buf, l := getZap(zap.DebugLevel)
 
 	l.Debug("log_15_debug", log.Err(errors.New("I'm an debug error")), log.Float64("pi", 3.14159))
 
@@ -87,14 +94,16 @@ func TestAddMarshaler(t *testing.T) {
 		float64: math.Ln2,
 		bool:    true,
 	}))
-	assert.Contains(t, buf.String(), `"fields":{"answer":42,"anObject":42,"kvbool":true,"kvstring":"s1","kvfloat64":0.6931471805599453}`)
+	assert.Contains(t, buf.String(), `"anObject":42`)
+	assert.Contains(t, buf.String(), `"kvfloat64":0.6931471805599453`)
+	assert.Contains(t, buf.String(), `"kvstring":"s1"`)
 }
 
 func TestAddMarshaler_Error(t *testing.T) {
-	buf, l := getZap(zap.Debug)
+	buf, l := getZap(zap.DebugLevel)
 
 	l.Debug("marshalling", log.Marshal("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `"fields":{"answer":42,"kvbool":false,"kvstring":"","kvfloat64":0,"error":"github.com/corestoreio/csfw/log/zapw/zap_test.go:98: Whooops\n"}`)
+	assert.Contains(t, buf.String(), `"level":"debug","msg":"marshalling","answer":42,"kvbool":false,"kvstring":"","kvfloat64":0,"error":"Whooops\ngithub.com/corestoreio/csfw/log/zapw_test.TestAddMarshaler_Error`)
 }

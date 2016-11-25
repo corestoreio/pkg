@@ -15,6 +15,8 @@
 package zapw
 
 import (
+	"fmt"
+
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/uber-go/zap"
@@ -60,12 +62,12 @@ func (l Wrap) SetLevel(lvl int) {
 
 // IsDebug returns true if Debug level is enabled
 func (l Wrap) IsDebug() bool {
-	return l.Zap.Level() <= zap.Debug
+	return l.Zap.Level() <= zap.DebugLevel
 }
 
 // IsInfo returns true if Info level is enabled
 func (l Wrap) IsInfo() bool {
-	return l.Zap.Level() <= zap.Info
+	return l.Zap.Level() <= zap.InfoLevel
 }
 
 type zapFieldWrap struct {
@@ -78,7 +80,7 @@ func doFieldWrap(fs ...log.Field) []zap.Field {
 	}
 
 	if err := log.Fields(fs).AddTo(fw); err != nil {
-		fw.AddString(log.ErrorKeyName, errors.PrintLoc(err))
+		fw.AddString(log.ErrorKeyName, fmt.Sprintf("%+v", err))
 	}
 	return fw.zf
 }
@@ -97,7 +99,7 @@ func (se *zapFieldWrap) AddInt64(k string, v int64) {
 }
 func (se *zapFieldWrap) AddMarshaler(k string, v log.Marshaler) error {
 	if err := v.MarshalLog(se); err != nil {
-		se.AddString(log.ErrorKeyName, errors.PrintLoc(err))
+		se.AddString(log.ErrorKeyName, fmt.Sprintf("%+v", err))
 	}
 	return nil
 }

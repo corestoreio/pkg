@@ -15,6 +15,7 @@
 package log15w
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/corestoreio/csfw/log"
@@ -90,7 +91,7 @@ func doLog15FieldWrap(fs ...log.Field) []interface{} {
 	defer log15IFSlicePool.Put(fw)
 
 	if err := log.Fields(fs).AddTo(fw); err != nil {
-		fw.AddString(log.ErrorKeyName, errors.PrintLoc(err))
+		fw.AddString(log.ErrorKeyName, fmt.Sprintf("%+v", err))
 	}
 	return fw.ifaces
 }
@@ -113,7 +114,7 @@ func (se *log15FieldWrap) AddInt64(k string, v int64) {
 }
 func (se *log15FieldWrap) AddMarshaler(k string, v log.Marshaler) error {
 	if err := v.MarshalLog(se); err != nil {
-		se.AddString(log.ErrorKeyName, errors.PrintLoc(err))
+		se.AddString(log.ErrorKeyName, fmt.Sprintf("%+v", err))
 	}
 	return nil
 }

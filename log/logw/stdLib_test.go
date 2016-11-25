@@ -156,7 +156,9 @@ func TestAddMarshaler_Error(t *testing.T) {
 	sl.Debug("marshalling", log.Marshal("marshalLogMock", marshalMock{
 		error: errors.New("Whooops"),
 	}))
-	assert.Contains(t, buf.String(), `marshalling kvbool: false kvstring: "" kvfloat64: 0 error: github.com/corestoreio/csfw/log/logw/stdLib_test.go:158: Whooops`)
+	assert.Regexp(t,
+		`marshalling kvbool: false kvstring: "" kvfloat64: 0 error: Whooops\s+github.com/corestoreio/csfw/log/logw_test.TestAddMarshaler_Error`,
+		buf.String())
 }
 
 func TestStdLogNewPanic(t *testing.T) {

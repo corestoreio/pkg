@@ -16,17 +16,18 @@ package loghttp_test
 
 import (
 	"bytes"
-	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/log/loghttp"
-	"github.com/corestoreio/csfw/util/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/tdewolff/buffer"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/log/loghttp"
+	"github.com/corestoreio/csfw/util/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/tdewolff/buffer"
 )
 
 const testKey = "MyTestKey"
