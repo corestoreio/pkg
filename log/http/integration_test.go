@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package loghttp_test
+package http_test
 
 import (
 	"net/http"
@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/log/loghttp"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
