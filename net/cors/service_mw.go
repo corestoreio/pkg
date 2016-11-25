@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -30,7 +31,7 @@ func (s *Service) WithCORS(next http.Handler) http.Handler {
 		if err != nil {
 			s.Log.Info("cors.Service.WithCORS.configByContext.Error", log.Err(err))
 			if s.Log.IsDebug() {
-				s.Log.Debug("cors.Service.WithCORS.configByContext", log.Err(err), log.HTTPRequest("request", r))
+				s.Log.Debug("cors.Service.WithCORS.configByContext", log.Err(err), loghttp.Request("request", r))
 			}
 			s.ErrorHandler(errors.Wrap(err, "cors.Service.WithCORS.configFromContext")).ServeHTTP(w, r)
 			return

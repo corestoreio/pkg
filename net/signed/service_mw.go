@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -30,14 +31,14 @@ func (s *Service) WithResponseSignature(next http.Handler) http.Handler {
 		scpCfg, err := s.configByContext(r.Context())
 		if err != nil {
 			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithResponseSignature.configByContext", log.Err(err), log.HTTPRequest("request", r))
+				s.Log.Debug("signed.Service.WithResponseSignature.configByContext", log.Err(err), loghttp.Request("request", r))
 			}
 			s.ErrorHandler(errors.Wrap(err, "signed.Service.WithResponseSignature.configFromContext")).ServeHTTP(w, r)
 			return
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithResponseSignature.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("signed.Service.WithResponseSignature.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), loghttp.Request("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return
@@ -65,14 +66,14 @@ func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler
 		scpCfg, err := s.configByContext(r.Context())
 		if err != nil {
 			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithRequestSignatureValidation.configByContext", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("signed.Service.WithRequestSignatureValidation.configByContext", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), loghttp.Request("request", r))
 			}
 			s.ErrorHandler(errors.Wrap(err, "signed.Service.WithRequestSignatureValidation.configFromContext")).ServeHTTP(w, r)
 			return
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithRequestSignatureValidation.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("signed.Service.WithRequestSignatureValidation.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), loghttp.Request("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return
@@ -83,7 +84,7 @@ func (s *Service) WithRequestSignatureValidation(next http.Handler) http.Handler
 				s.Log.Info("signed.Service.WithRequestSignatureValidation.ValidateBody", log.Err(err))
 			}
 			if s.Log.IsDebug() {
-				s.Log.Debug("signed.Service.WithRequestSignatureValidation.ValidateBody", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("signed.Service.WithRequestSignatureValidation.ValidateBody", log.Err(err), log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), loghttp.Request("request", r))
 			}
 			scpCfg.ErrorHandler(err).ServeHTTP(w, r)
 			return

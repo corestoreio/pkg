@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/log"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -143,7 +144,7 @@ func WithCloseNotify(opts ...Option) Middleware {
 					<-notify
 					cancel()
 					if ob.log.IsDebug() {
-						ob.log.Debug("mw.WithCloseNotify.cancel", log.Bool("cancelled", true), log.HTTPRequest("request", r))
+						ob.log.Debug("mw.WithCloseNotify.cancel", log.Bool("cancelled", true), loghttp.Request("request", r))
 					}
 				}()
 			}

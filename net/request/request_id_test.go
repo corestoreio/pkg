@@ -18,13 +18,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"net/http"
+	"regexp"
+	"time"
+
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/request"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"regexp"
-	"time"
 )
 
 var idGen = &request.ID{}

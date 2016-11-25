@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 
 	"github.com/corestoreio/csfw/log"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/mw"
 )
 
@@ -99,7 +100,7 @@ func (iw *ID) With() mw.Middleware {
 				id = iw.NewIDFunc(r)
 			}
 			if iw.IsDebug() {
-				iw.Debug("request.ID.With", log.String("id", id), log.HTTPRequest("request", r))
+				iw.Debug("request.ID.With", log.String("id", id), loghttp.Request("request", r))
 			}
 			w.Header().Set(iw.HeaderIDKeyName, id)
 			h.ServeHTTP(w, r)

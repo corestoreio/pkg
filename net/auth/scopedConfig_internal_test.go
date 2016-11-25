@@ -15,9 +15,10 @@
 package auth
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAuthProviders_Do_Len0(t *testing.T) {

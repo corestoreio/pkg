@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
@@ -159,7 +160,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.DefaultStoreID.Error", log.Err(err),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				errH(errors.Wrap(err, "[store] WithRunMode.DefaultStoreID")).ServeHTTP(w, r)
 				return
@@ -175,7 +176,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.NextHandler.WithoutCode",
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				next.ServeHTTP(w, r)
 				return
@@ -188,7 +189,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.StoreIDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				errH(errors.Wrap(err, "[store] WithRunMode.StoreIDbyCode")).ServeHTTP(w, r)
 				return
@@ -198,7 +199,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 				if lg.IsDebug() {
 					lg.Debug("runmode.WithRunMode.StoreNotAllowed",
 						log.String("store_code", reqCode), log.Int64("store_id", storeID), log.Int64("new_store_id", newStoreID),
-						log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				procCode.ProcessDenied(runMode, storeID, newStoreID, w, r)
 				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
@@ -217,7 +218,7 @@ func WithRunMode(sf store.Finder, o Options) mw.Middleware {
 			if lg.IsDebug() {
 				lg.Debug("runmode.WithRunMode.NextHandler.WithCode",
 					log.String("store_code", reqCode), log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+					log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 			}
 			next.ServeHTTP(w, r)
 		})

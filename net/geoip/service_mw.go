@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/request"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -31,7 +32,7 @@ func (s *Service) CountryByIP(r *http.Request) (*Country, error) {
 	if ip == nil {
 		nf := errors.NewNotFoundf(errCannotGetRemoteAddr)
 		if s.Log.IsDebug() {
-			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", log.Err(nf), log.HTTPRequest("request", r))
+			s.Log.Debug("geoip.Service.newContextCountryByIP.GetRemoteAddr", log.Err(nf), loghttp.Request("request", r))
 		}
 		return nil, nf
 	}
@@ -41,7 +42,7 @@ func (s *Service) CountryByIP(r *http.Request) (*Country, error) {
 		if s.Log.IsDebug() {
 			s.Log.Debug(
 				"geoip.Service.newContextCountryByIP.GeoIP.Country",
-				log.Err(err), log.Stringer("remote_addr", ip), log.HTTPRequest("request", r))
+				log.Err(err), log.Stringer("remote_addr", ip), loghttp.Request("request", r))
 		}
 		return nil, errors.Wrap(err, "[geoip] getting country")
 	}
@@ -86,14 +87,14 @@ func (s *Service) WithIsCountryAllowedByIP(next http.Handler) http.Handler {
 		scpCfg, err := s.configByContext(r.Context())
 		if err != nil {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.configByContext", log.Err(err), log.HTTPRequest("request", r))
+				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.configByContext", log.Err(err), loghttp.Request("request", r))
 			}
 			s.ErrorHandler(errors.Wrap(err, "geoip.Service.WithIsCountryAllowedByIP.configFromContext")).ServeHTTP(w, r)
 			return
 		}
 		if scpCfg.Disabled {
 			if s.Log.IsDebug() {
-				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), log.HTTPRequest("request", r))
+				s.Log.Debug("geoip.Service.WithIsCountryAllowedByIP.Disabled", log.Stringer("scope", scpCfg.ScopeID), log.Object("scpCfg", scpCfg), loghttp.Request("request", r))
 			}
 			next.ServeHTTP(w, r)
 			return

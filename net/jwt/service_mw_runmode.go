@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/log"
+	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
@@ -55,7 +56,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			if err != nil {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.DefaultStoreID.Error", log.Err(err),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				s.ErrorHandler(errors.Wrap(err, "[store] WithRunMode.DefaultStoreID")).ServeHTTP(w, r)
 				return
@@ -66,7 +67,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			if err != nil {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.ConfigFromScope.Error", log.Err(err),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				s.ErrorHandler(errors.Wrap(err, "[jwt] ConfigByScopedGetter")).ServeHTTP(w, r)
 				return
@@ -75,7 +76,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			if defaultScpCfg.Disabled {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.Disabled", log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
 				next.ServeHTTP(w, r)
@@ -86,7 +87,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			ctx := withContext(r.Context(), token)
 			if err != nil {
 				if s.Log.IsDebug() {
-					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg), log.HTTPRequest("request", r))
+					s.Log.Debug("jwt.Service.WithToken.ParseFromRequest", log.Err(err), log.Marshal("token", token), log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg), loghttp.Request("request", r))
 				}
 				// todo what should be done when the token has expired?
 				r = r.WithContext(scope.WithContext(r.Context(), websiteID, storeID))
@@ -101,7 +102,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.NextHandler.WithoutCode", log.Marshal("token", token),
 						log.Stringer("scope", defaultScpCfg.ScopeID), log.Object("scpCfg", defaultScpCfg),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				r = r.WithContext(scope.WithContext(ctx, websiteID, storeID))
 				next.ServeHTTP(w, r)
@@ -113,7 +114,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			if err != nil && !errors.IsNotFound(err) {
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.IDbyCode.Error", log.Err(err), log.String("http_store_code", reqCode),
-						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Int64("store_id", storeID), log.Int64("website_id", websiteID), log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				defaultScpCfg.ErrorHandler(errors.Wrap(err, "[store] WithRunMode.IDbyCode")).ServeHTTP(w, r)
 				return
@@ -123,7 +124,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 				if s.Log.IsDebug() {
 					s.Log.Debug("jwt.Service.WithRunMode.StoreNotAllowed",
 						log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-						log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+						log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 				}
 				r = r.WithContext(scope.WithContext(ctx, websiteID, storeID))
 				defaultScpCfg.UnauthorizedHandler(errors.NewUnauthorizedf(
@@ -141,7 +142,7 @@ func (s *Service) WithRunMode(rm scope.RunModeCalculater, sf StoreFinder) mw.Mid
 			if s.Log.IsDebug() {
 				s.Log.Debug("jwt.Service.WithRunMode.NextHandler.WithCode",
 					log.Int64("store_id", storeID), log.Int64("website_id", websiteID),
-					log.Stringer("run_mode", runMode), log.HTTPRequest("request", r))
+					log.Stringer("run_mode", runMode), loghttp.Request("request", r))
 			}
 			next.ServeHTTP(w, r)
 		})
