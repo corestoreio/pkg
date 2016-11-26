@@ -12,7 +12,6 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/siddontang/go-mysql/mysql"
-	"github.com/siddontang/go/hack"
 )
 
 type TableMapEvent struct {
@@ -156,7 +155,8 @@ func (e *TableMapEvent) decodeMeta(data []byte) error {
 		case mysql.MYSQL_TYPE_BLOB,
 			mysql.MYSQL_TYPE_DOUBLE,
 			mysql.MYSQL_TYPE_FLOAT,
-			mysql.MYSQL_TYPE_GEOMETRY:
+			mysql.MYSQL_TYPE_GEOMETRY,
+			mysql.MYSQL_TYPE_JSON:
 			e.ColumnMeta[i] = uint16(data[pos])
 			pos++
 		case mysql.MYSQL_TYPE_TIME2,
@@ -483,6 +483,11 @@ func (e *RowsEvent) decodeValue(data []byte, tp byte, meta uint16) (v interface{
 		v, n = decodeString(data, length)
 	case mysql.MYSQL_TYPE_STRING:
 		v, n = decodeString(data, length)
+	case mysql.MYSQL_TYPE_JSON:
+		length = int(binary.LittleEndian.Uint16(data[0:]))
+		n = length + int(meta)
+		// TODO: parse the json
+		v = string(data[meta:n])
 	default:
 		err = fmt.Errorf("unsupport type %d in binlog and don't know how to handle", tp)
 	}
@@ -494,11 +499,11 @@ func decodeString(data []byte, length int) (v string, n int) {
 		length = int(data[0])
 
 		n = int(length) + 1
-		v = hack.String(data[1:n])
+		v = string(data[1:n])
 	} else {
 		length = int(binary.LittleEndian.Uint16(data[0:]))
 		n = length + 2
-		v = hack.String(data[2:n])
+		v = string(data[2:n])
 	}
 
 	return
@@ -571,7 +576,7 @@ func decodeDecimal(data []byte, precision int, decimals int) (float64, int, erro
 		pos += size
 	}
 
-	f, err := strconv.ParseFloat(hack.String(res.Bytes()), 64)
+	f, err := strconv.ParseFloat(string(res.Bytes()), 64)
 	return f, pos, err
 }
 

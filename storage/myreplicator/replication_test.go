@@ -4,17 +4,18 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/pingcap/check"
-	uuid "github.com/satori/go.uuid"
-	"github.com/siddontang/go-mysql/client"
-	"github.com/siddontang/go-mysql/mysql"
 	"net"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/pingcap/check"
+	uuid "github.com/satori/go.uuid"
+	"github.com/siddontang/go-mysql/client"
+	"github.com/siddontang/go-mysql/mysql"
 )
 
 var testOutputLogs = flag.Bool("out", false, "output binlog event")
@@ -94,36 +95,36 @@ func (t *testSyncerSuite) testSync(c *check.C, s *BinlogStreamer) {
 	//use mixed format
 	t.testExecute(c, "SET SESSION binlog_format = 'MIXED'")
 
-	str := `DROP TABLE IF EXISTS test_myreplicator`
+	str := `DROP TABLE IF EXISTS test_replication`
 	t.testExecute(c, str)
 
-	str = `CREATE TABLE IF NOT EXISTS test_myreplicator (
-	         id BIGINT(64) UNSIGNED  NOT NULL AUTO_INCREMENT,
-	         str VARCHAR(256),
-	         f FLOAT,
-	         d DOUBLE,
-	         de DECIMAL(10,2),
-	         i INT,
-	         bi BIGINT,
-	         e enum ("e1", "e2"),
-	         b BIT(8),
-	         y YEAR,
-	         da DATE,
-	         ts TIMESTAMP,
-	         dt DATETIME,
-	         tm TIME,
-	         t TEXT,
-	         bb BLOB,
-	         se SET('a', 'b', 'c'),
-	      PRIMARY KEY (id)
-	       ) ENGINE=InnoDB DEFAULT CHARSET=utf8`
+	str = `CREATE TABLE IF NOT EXISTS test_replication (
+			id BIGINT(64) UNSIGNED  NOT NULL AUTO_INCREMENT,
+			str VARCHAR(256),
+			f FLOAT,
+			d DOUBLE,
+			de DECIMAL(10,2),
+			i INT,
+			bi BIGINT,
+			e enum ("e1", "e2"),
+			b BIT(8),
+			y YEAR,
+			da DATE,
+			ts TIMESTAMP,
+			dt DATETIME,
+			tm TIME,
+			t TEXT,
+			bb BLOB,
+			se SET('a', 'b', 'c'),
+			PRIMARY KEY (id)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8`
 
 	t.testExecute(c, str)
 
 	//use row format
 	t.testExecute(c, "SET SESSION binlog_format = 'ROW'")
 
-	t.testExecute(c, `INSERT INTO test_myreplicator (str, f, i, e, b, y, da, ts, dt, tm, de, t, bb, se)
+	t.testExecute(c, `INSERT INTO test_replication (str, f, i, e, b, y, da, ts, dt, tm, de, t, bb, se)
 		VALUES ("3", -3.14, 10, "e1", 0b0011, 1985,
 		"2012-05-07", "2012-05-07 14:01:01", "2012-05-07 14:01:01",
 		"14:01:01", -45363.64, "abc", "12345", "a,b")`)
@@ -133,9 +134,25 @@ func (t *testSyncerSuite) testSync(c *check.C, s *BinlogStreamer) {
 	if t.flavor == mysql.MySQLFlavor {
 		t.testExecute(c, "SET SESSION binlog_row_image = 'MINIMAL'")
 
-		t.testExecute(c, fmt.Sprintf(`INSERT INTO test_myreplicator (id, str, f, i, bb, de) VALUES (%d, "4", -3.14, 100, "abc", -45635.64)`, id))
-		t.testExecute(c, fmt.Sprintf(`UPDATE test_myreplicator SET f = -12.14, de = 555.34 WHERE id = %d`, id))
-		t.testExecute(c, fmt.Sprintf(`DELETE FROM test_myreplicator WHERE id = %d`, id))
+		t.testExecute(c, fmt.Sprintf(`INSERT INTO test_replication (id, str, f, i, bb, de) VALUES (%d, "4", -3.14, 100, "abc", -45635.64)`, id))
+		t.testExecute(c, fmt.Sprintf(`UPDATE test_replication SET f = -12.14, de = 555.34 WHERE id = %d`, id))
+		t.testExecute(c, fmt.Sprintf(`DELETE FROM test_replication WHERE id = %d`, id))
+	}
+
+	// check whether we can create the table including the json field
+	str = `DROP TABLE IF EXISTS test_json`
+	t.testExecute(c, str)
+
+	str = `CREATE TABLE IF NOT EXISTS test_json (
+			id BIGINT(64) UNSIGNED  NOT NULL AUTO_INCREMENT,
+			c1 JSON,
+			c2 DECIMAL(10, 0),
+			PRIMARY KEY (id)
+			) ENGINE=InnoDB`
+
+	if _, err := t.con.Execute(str); err == nil {
+		t.testExecute(c, `INSERT INTO test_json (c2) VALUES (1)`)
+		t.testExecute(c, `INSERT INTO test_json (c1, c2) VALUES ('{"key1": "value1", "key2": "value2"}', 1)`)
 	}
 
 	t.wg.Wait()
