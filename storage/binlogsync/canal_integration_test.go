@@ -24,6 +24,8 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 )
 
+// TODO(CyS): Add more tests
+
 func TestIntegrationNewCanal(t *testing.T) {
 	t.Parallel()
 	dsn, err := csdb.GetParsedDSN()
@@ -36,7 +38,7 @@ func TestIntegrationNewCanal(t *testing.T) {
 	}
 
 	c.RegisterRowsEventHandler(catalogProductEvent{idx: 1001, t: t})
-	c.RegisterRowsEventHandler(catalogProductEvent{idx: 1002, t: t})
+	//c.RegisterRowsEventHandler(catalogProductEvent{idx: 1002, t: t})
 
 	if err := c.Start(context.Background()); err != nil {
 		t.Fatalf("%+v", err)

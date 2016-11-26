@@ -70,7 +70,10 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 				}
 				return errors.Wrap(err, "[binlogsync] handleRowsEvent")
 			}
-		case *myreplicator.TableMapEvent:
+		case
+			*myreplicator.TableMapEvent,
+			*myreplicator.FormatDescriptionEvent:
+			// don't update Master with file and position
 			continue
 			//default:
 			//	fmt.Printf("%#v\n\n", e)
