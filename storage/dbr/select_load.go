@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"reflect"
-	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -43,7 +43,7 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 	kindOfDest := valueOfDest.Kind()
 
 	if kindOfDest != reflect.Ptr {
-		panic("invalid type passed to LoadStructs. Need a pointer to a slice")
+		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadStructs. Need a pointer to a slice")
 	}
 
 	// This must a slice
@@ -51,18 +51,18 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 	kindOfDest = valueOfDest.Kind()
 
 	if kindOfDest != reflect.Slice {
-		panic("invalid type passed to LoadStructs. Need a pointer to a slice")
+		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadStructs. Need a pointer to a slice")
 	}
 
 	// The slice elements must be pointers to structures
 	recordType := valueOfDest.Type().Elem()
 	if recordType.Kind() != reflect.Ptr {
-		panic("Elements need to be pointers to structures")
+		return 0, errors.NewNotValidf("[dbr] Elements need to be pointers to structures")
 	}
 
 	recordType = recordType.Elem()
 	if recordType.Kind() != reflect.Struct {
-		panic("Elements need to be pointers to structures")
+		return 0, errors.NewNotValidf("[dbr] Elements need to be pointers to structures")
 	}
 
 	//
@@ -70,37 +70,37 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 	//
 	tSQL, tArg, err := b.ToSql()
 	if err != nil {
-		return 0, b.EventErr("dbr.select.load_structs.tosql", err)
+		return 0, errors.Wrap(err, "[dbr] select.load_structs.tosql")
 	}
 
 	fullSql, err := Preprocess(tSQL, tArg)
 	if err != nil {
-		return 0, b.EventErr("dbr.select.load_all.interpolate", err)
+		return 0, errors.Wrap(err, "[dbr] select.load_all.interpolate")
 	}
 
 	numberOfRowsReturned := 0
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadStructs.QueryContext.timing", log.String("sql", fullSql))
+	}
 
 	// Run the query:
 	rows, err := b.QueryContext(ctx, fullSql)
 	if err != nil {
-		return 0, b.EventErrKv("dbr.select.load_all.query", err, kvs{"sql": fullSql})
+		return 0, errors.Wrap(err, "[dbr] select.load_all.query")
 	}
 	defer rows.Close()
 
 	// Get the columns returned
 	columns, err := rows.Columns()
 	if err != nil {
-		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_one.rows.Columns", err, kvs{"sql": fullSql})
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_one.rows.Columns")
 	}
 
 	// Create a map of this result set to the struct fields
 	fieldMap, err := calculateFieldMap(recordType, columns, false)
 	if err != nil {
-		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all.calculateFieldMap", err, kvs{"sql": fullSql})
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.calculateFieldMap")
 	}
 
 	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
@@ -116,13 +116,13 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 		// Prepare the holder for this record
 		scannable, err := prepareHolderFor(newRecord, fieldMap, holder)
 		if err != nil {
-			return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all.holderFor", err, kvs{"sql": fullSql})
+			return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.holderFor")
 		}
 
 		// Load up our new structure with the row's values
 		err = rows.Scan(scannable...)
 		if err != nil {
-			return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all.scan", err, kvs{"sql": fullSql})
+			return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.scan")
 		}
 
 		// Append our new record to the slice:
@@ -134,7 +134,7 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 
 	// Check for errors at the end. Supposedly these are error that can happen during iteration.
 	if err = rows.Err(); err != nil {
-		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all.rows_err", err, kvs{"sql": fullSql})
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.rows_err")
 	}
 
 	return numberOfRowsReturned, nil
@@ -152,7 +152,7 @@ func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error 
 	kindOfDest := valueOfDest.Kind()
 
 	if kindOfDest != reflect.Ptr || indirectOfDest.Kind() != reflect.Struct {
-		panic("you need to pass in the address of a struct")
+		return errors.NewNotValidf("[dbr] you need to pass in the address of a struct")
 	}
 
 	recordType := indirectOfDest.Type()
@@ -162,7 +162,7 @@ func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error 
 	//
 	tSQL, tArg, err := b.ToSql()
 	if err != nil {
-		return b.EventErr("dbr.select.load_struct.tosql", err)
+		return errors.Wrap(err, "[dbr] select.load_struct.tosql")
 	}
 
 	fullSql, err := Preprocess(tSQL, tArg)
@@ -170,27 +170,27 @@ func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error 
 		return err
 	}
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadStruct.ExecContext.timing", log.String("sql", fullSql))
+	}
 
 	// Run the query:
 	rows, err := b.QueryContext(ctx, fullSql)
 	if err != nil {
-		return b.EventErrKv("dbr.select.load_one.query", err, kvs{"sql": fullSql})
+		return errors.Wrap(err, "[dbr] select.load_one.query")
 	}
 	defer rows.Close()
 
 	// Get the columns of this result set
 	columns, err := rows.Columns()
 	if err != nil {
-		return b.EventErrKv("dbr.select.load_one.rows.Columns", err, kvs{"sql": fullSql})
+		return errors.Wrap(err, "[dbr] select.load_one.rows.Columns")
 	}
 
 	// Create a map of this result set to the struct columns
 	fieldMap, err := calculateFieldMap(recordType, columns, false)
 	if err != nil {
-		return b.EventErrKv("dbr.select.load_one.calculateFieldMap", err, kvs{"sql": fullSql})
+		return errors.Wrap(err, "[dbr] select.load_one.calculateFieldMap")
 	}
 
 	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
@@ -200,19 +200,19 @@ func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error 
 		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
 		scannable, err := prepareHolderFor(indirectOfDest, fieldMap, holder)
 		if err != nil {
-			return b.EventErrKv("dbr.select.load_one.holderFor", err, kvs{"sql": fullSql})
+			return errors.Wrap(err, "[dbr] select.load_one.holderFor")
 		}
 
 		// Load up our new structure with the row's values
 		err = rows.Scan(scannable...)
 		if err != nil {
-			return b.EventErrKv("dbr.select.load_one.scan", err, kvs{"sql": fullSql})
+			return errors.Wrap(err, "[dbr] select.load_one.scan")
 		}
 		return nil
 	}
 
 	if err := rows.Err(); err != nil {
-		return b.EventErrKv("dbr.select.load_one.rows_err", err, kvs{"sql": fullSql})
+		return errors.Wrap(err, "[dbr] select.load_one.rows_err")
 	}
 
 	return ErrNotFound
@@ -228,7 +228,7 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 	kindOfDest := valueOfDest.Kind()
 
 	if kindOfDest != reflect.Ptr {
-		panic("invalid type passed to LoadValues. Need a pointer to a slice")
+		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadValues. Need a pointer to a slice")
 	}
 
 	// This must a slice
@@ -236,7 +236,7 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 	kindOfDest = valueOfDest.Kind()
 
 	if kindOfDest != reflect.Slice {
-		panic("invalid type passed to LoadValues. Need a pointer to a slice")
+		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadValues. Need a pointer to a slice")
 	}
 
 	recordType := valueOfDest.Type().Elem()
@@ -251,7 +251,7 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 	//
 	tSQL, tArg, err := b.ToSql()
 	if err != nil {
-		return 0, b.EventErr("dbr.select.load_values.tosql", err)
+		return 0, errors.Wrap(err, "[dbr] select.load_values.tosql")
 	}
 
 	fullSql, err := Preprocess(tSQL, tArg)
@@ -261,14 +261,14 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 
 	numberOfRowsReturned := 0
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadValues.QueryContext.timing", log.String("sql", fullSql))
+	}
 
 	// Run the query:
 	rows, err := b.QueryContext(ctx, fullSql)
 	if err != nil {
-		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all_values.query", err, kvs{"sql": fullSql})
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all_values.query")
 	}
 	defer rows.Close()
 
@@ -280,7 +280,7 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 
 		err = rows.Scan(pointerToNewValue.Interface())
 		if err != nil {
-			return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all_values.scan", err, kvs{"sql": fullSql})
+			return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all_values.scan")
 		}
 
 		// Append our new value to the slice:
@@ -291,7 +291,7 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 	valueOfDest.Set(sliceValue)
 
 	if err := rows.Err(); err != nil {
-		return numberOfRowsReturned, b.EventErrKv("dbr.select.load_all_values.rows_err", err, kvs{"sql": fullSql})
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all_values.rows_err")
 	}
 
 	return numberOfRowsReturned, nil
@@ -305,7 +305,7 @@ func (b *SelectBuilder) LoadValue(ctx context.Context, dest interface{}) error {
 	kindOfDest := valueOfDest.Kind()
 
 	if kindOfDest != reflect.Ptr {
-		panic("Destination must be a pointer")
+		return errors.NewNotValidf("[dbr] Destination must be a pointer")
 	}
 
 	//
@@ -313,7 +313,7 @@ func (b *SelectBuilder) LoadValue(ctx context.Context, dest interface{}) error {
 	//
 	tSQL, tArg, err := b.ToSql()
 	if err != nil {
-		return b.EventErr("dbr.select.load_value.tosql", err)
+		return errors.Wrap(err, "[dbr] select.load_value.tosql")
 	}
 
 	fullSql, err := Preprocess(tSQL, tArg)
@@ -321,27 +321,27 @@ func (b *SelectBuilder) LoadValue(ctx context.Context, dest interface{}) error {
 		return err
 	}
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadValue.QueryContext.timing", log.String("sql", fullSql))
+	}
 
 	// Run the query:
 	rows, err := b.QueryContext(ctx, fullSql)
 	if err != nil {
-		return b.EventErrKv("dbr.select.load_value.query", err, kvs{"sql": fullSql})
+		return errors.Wrap(err, "[dbr] select.load_value.query")
 	}
 	defer rows.Close()
 
 	if rows.Next() {
 		err = rows.Scan(dest)
 		if err != nil {
-			return b.EventErrKv("dbr.select.load_value.scan", err, kvs{"sql": fullSql})
+			return errors.Wrap(err, "[dbr] select.load_value.scan")
 		}
 		return nil
 	}
 
 	if err := rows.Err(); err != nil {
-		return b.EventErrKv("dbr.select.load_value.rows_err", err, kvs{"sql": fullSql})
+		return errors.Wrap(err, "[dbr] select.load_value.rows_err")
 	}
 
 	return ErrNotFound

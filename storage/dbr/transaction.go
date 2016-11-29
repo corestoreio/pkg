@@ -2,11 +2,14 @@ package dbr
 
 import (
 	"database/sql"
+
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // Tx is a transaction for the given Session
 type Tx struct {
-	*Session
+	log.Logger
 	*sql.Tx
 }
 
@@ -14,49 +17,35 @@ type Tx struct {
 func (sess *Session) Begin() (*Tx, error) {
 	tx, err := sess.cxn.DB.Begin()
 	if err != nil {
-		return nil, sess.EventErr("dbr.begin.error", err)
-	} else {
-		sess.Event("dbr.begin")
+		return nil, errors.Wrap(err, "[dbr] transaction.begin.error")
 	}
 
 	return &Tx{
-		Session: sess,
-		Tx:      tx,
+		Logger: sess.Logger,
+		Tx:     tx,
 	}, nil
 }
 
 // Commit finishes the transaction
 func (tx *Tx) Commit() error {
-	err := tx.Tx.Commit()
-	if err != nil {
-		return tx.EventErr("dbr.commit.error", err)
-	} else {
-		tx.Event("dbr.commit")
-	}
-	return nil
+	return errors.Wrap(tx.Tx.Commit(), "[dbr] transaction.commit.error")
 }
 
 // Rollback cancels the transaction
 func (tx *Tx) Rollback() error {
-	err := tx.Tx.Rollback()
-	if err != nil {
-		return tx.EventErr("dbr.rollback", err)
-	} else {
-		tx.Event("dbr.rollback")
-	}
-	return nil
+	return errors.Wrap(tx.Tx.Rollback(), "[dbr] transaction.rollback.error")
 }
 
-// RollbackUnlessCommitted rollsback the transaction unless it has already been committed or rolled back.
-// Useful to defer tx.RollbackUnlessCommitted() -- so you don't have to handle N failure cases
-// Keep in mind the only way to detect an error on the rollback is via the event log.
+// RollbackUnlessCommitted rolls back the transaction unless it has already been
+// committed or rolled back. Useful to defer tx.RollbackUnlessCommitted() -- so
+// you don't have to handle N failure cases Keep in mind the only way to detect
+// an error on the rollback is via the event log.
 func (tx *Tx) RollbackUnlessCommitted() {
 	err := tx.Tx.Rollback()
 	if err == sql.ErrTxDone {
 		// ok
 	} else if err != nil {
-		tx.EventErr("dbr.rollback_unless_committed", err)
-	} else {
-		tx.Event("dbr.rollback")
+		//tx.EventErr("dbr.rollback_unless_committed", err)
+		panic(err) // todo remove panic
 	}
 }

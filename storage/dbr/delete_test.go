@@ -59,7 +59,7 @@ func TestDeleteReal(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a Barack
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "barack@whitehouse.gov").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "barack@whitehouse.gov").Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Get Barack's ID
@@ -67,7 +67,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where(ConditionRaw("id = ?", id)).Exec()
+	res, err = s.DeleteFrom("dbr_people").Where(ConditionRaw("id = ?", id)).Exec(context.TODO())
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists

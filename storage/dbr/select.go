@@ -3,12 +3,13 @@ package dbr
 import (
 	"fmt"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 // SelectBuilder contains the clauses for a SELECT statement
 type SelectBuilder struct {
-	EventReceiver
+	log.Logger
 	Querier
 
 	RawFullSql   string
@@ -33,38 +34,38 @@ var _ queryBuilder = (*SelectBuilder)(nil)
 // Select creates a new SelectBuilder that select that given columns
 func (sess *Session) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		EventReceiver: sess.EventReceiver,
-		Querier:       sess.cxn.DB,
-		Columns:       cols,
+		Logger:  sess.Logger.New("session"),
+		Querier: sess.cxn.DB,
+		Columns: cols,
 	}
 }
 
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments
 func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		EventReceiver: sess.EventReceiver,
-		Querier:       sess.cxn.DB,
-		RawFullSql:    sql,
-		RawArguments:  args,
+		Logger:       sess.Logger.New("session"),
+		Querier:      sess.cxn.DB,
+		RawFullSql:   sql,
+		RawArguments: args,
 	}
 }
 
 // Select creates a new SelectBuilder that select that given columns bound to the transaction
 func (tx *Tx) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		EventReceiver: tx.EventReceiver,
-		Querier:       tx.Tx,
-		Columns:       cols,
+		Logger:  tx.Logger.New("session"),
+		Querier: tx.Tx,
+		Columns: cols,
 	}
 }
 
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		EventReceiver: tx.EventReceiver,
-		Querier:       tx.Tx,
-		RawFullSql:    sql,
-		RawArguments:  args,
+		Logger:       tx.Logger.New("session"),
+		Querier:      tx.Tx,
+		RawFullSql:   sql,
+		RawArguments: args,
 	}
 }
 

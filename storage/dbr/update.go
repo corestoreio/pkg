@@ -1,12 +1,14 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 type expr struct {
@@ -21,8 +23,8 @@ func Expr(sql string, values ...interface{}) *expr {
 
 // UpdateBuilder contains the clauses for an UPDATE statement
 type UpdateBuilder struct {
-	*Session
-	runner
+	log.Logger
+	Execer
 
 	RawFullSql   string
 	RawArguments []interface{}
@@ -47,20 +49,21 @@ type setClause struct {
 // Update creates a new UpdateBuilder for the given table
 func (sess *Session) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session: sess,
-		runner:  sess.cxn.DB,
-		Table:   NewAlias(table...),
+		Logger: sess.Logger.New("session"),
+		Execer: sess.cxn.DB,
+		Table:  NewAlias(table...),
 	}
 }
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments
 func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	if err := argsValuer(&args); err != nil {
-		sess.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
+		//sess.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
+		panic(err) // todo remove panic
 	}
 	return &UpdateBuilder{
-		Session:      sess,
-		runner:       sess.cxn.DB,
+		Logger:       sess.Logger.New("session"),
+		Execer:       sess.cxn.DB,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}
@@ -69,20 +72,21 @@ func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 // Update creates a new UpdateBuilder for the given table bound to a transaction
 func (tx *Tx) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Table:   NewAlias(table...),
+		Logger: tx.Logger.New("session"),
+		Execer: tx.Tx,
+		Table:  NewAlias(table...),
 	}
 }
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments bound to a transaction
 func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	if err := argsValuer(&args); err != nil {
-		tx.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
+		// tx.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
+		panic(err) // todo remove panic
 	}
 	return &UpdateBuilder{
-		Session:      tx.Session,
-		runner:       tx.Tx,
+		Logger:       tx.Logger.New("session"),
+		Execer:       tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}
@@ -216,24 +220,24 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
 
 // Exec executes the statement represented by the UpdateBuilder
 // It returns the raw database/sql Result and an error if there was one
-func (b *UpdateBuilder) Exec() (sql.Result, error) {
+func (b *UpdateBuilder) Exec(ctx context.Context) (sql.Result, error) {
 	sql, args, err := b.ToSql()
 	if err != nil {
-		return nil, b.EventErrKv("dbr.update.exec.tosql", err, nil)
+		return nil, errors.Wrap(err, "[dbr] update.exec.tosql")
 	}
 
 	fullSql, err := Preprocess(sql, args)
 	if err != nil {
-		return nil, b.EventErrKv("dbr.update.exec.interpolate", err, kvs{"sql": fullSql})
+		return nil, errors.Wrap(err, "[dbr] update.exec.interpolate")
 	}
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.update", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.UpdateBuilder.ExecContext.timing", log.String("sql", fullSql))
+	}
 
-	result, err := b.runner.Exec(fullSql)
+	result, err := b.ExecContext(ctx, fullSql)
 	if err != nil {
-		return result, b.EventErrKv("dbr.update.exec.exec", err, kvs{"sql": fullSql})
+		return result, errors.Wrap(err, "[dbr] update.exec.exec")
 	}
 
 	return result, nil

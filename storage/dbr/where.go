@@ -2,8 +2,6 @@ package dbr
 
 import (
 	"reflect"
-
-	"github.com/corestoreio/csfw/log"
 )
 
 // todo for maybe later the sync.Pool code
@@ -40,7 +38,7 @@ type ConditionArg func(*whereFragment)
 
 func ConditionRaw(raw string, values ...interface{}) ConditionArg {
 	if err := argsValuer(&values); err != nil {
-		PkgLog.Info("dbr.insertbuilder.values", log.Err(err), log.Object("args", values))
+		panic(err) // todo remove panic
 	}
 	return func(wf *whereFragment) {
 		wf.Condition = raw

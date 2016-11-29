@@ -1,10 +1,10 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 
-	"context"
-
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/go-sql-driver/mysql"
 )
@@ -16,7 +16,7 @@ const DefaultDriverName = DriverNameMySQL
 // events, errors, and timings to
 type Connection struct {
 	DB *sql.DB
-	EventReceiver
+	log.Logger
 	// dn internal driver name
 	dn string
 	// dsn Data Source Name
@@ -29,7 +29,7 @@ type Connection struct {
 // Session represents a business unit of execution for some connection
 type Session struct {
 	cxn *Connection
-	EventReceiver
+	log.Logger
 }
 
 // ConnectionOption can be used as an argument in NewConnection to configure a
@@ -40,14 +40,6 @@ type ConnectionOption func(*Connection) error
 func WithDB(db *sql.DB) ConnectionOption {
 	return func(c *Connection) error {
 		c.DB = db
-		return nil
-	}
-}
-
-// WithEventReceiver sets the event receiver for a connection.
-func WithEventReceiver(log EventReceiver) ConnectionOption {
-	return func(c *Connection) error {
-		c.EventReceiver = log
 		return nil
 	}
 }
@@ -69,8 +61,8 @@ func WithDSN(dsn string) ConnectionOption {
 // returned. You can either apply a DSN or a pre configured *sql.DB type.
 func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	c := &Connection{
-		dn:            DriverNameMySQL,
-		EventReceiver: nullReceiver,
+		dn:     DriverNameMySQL,
+		Logger: log.BlackHole{},
 	}
 	if err := c.Options(opts...); err != nil {
 		return nil, errors.Wrap(err, "[dbr] NewConnection.ApplyOpts")
@@ -124,8 +116,8 @@ func (c *Connection) Options(opts ...ConnectionOption) error {
 // NewSession instantiates a Session for the Connection
 func (c *Connection) NewSession(opts ...SessionOption) *Session {
 	s := &Session{
-		cxn:           c,
-		EventReceiver: c.EventReceiver, // Use parent instrumentation
+		cxn:    c,
+		Logger: c.Logger.New("session"),
 	}
 	s.Options(opts...)
 	return s
@@ -133,28 +125,16 @@ func (c *Connection) NewSession(opts ...SessionOption) *Session {
 
 // Close closes the database, releasing any open resources.
 func (c *Connection) Close() error {
-	return c.EventErr("dbr.connection.close", c.DB.Close())
+	return errors.Wrap(c.DB.Close(), "[dbr] connection.close")
 }
 
 // Ping verifies a connection to the database is still alive, establishing a connection if necessary.
 func (c *Connection) Ping() error {
-	return c.EventErr("dbr.connection.ping", c.DB.Ping())
+	return errors.Wrap(c.DB.Ping(), "[dbr] connection.ping")
 }
 
 // SessionOption can be used as an argument in NewSession to configure a session.
 type SessionOption func(cxn *Connection, s *Session) error
-
-// SetSessionEventReceiver sets an event receiver securely to a session. Falls
-// back to the parent event receiver if argument is nil.
-func SetSessionEventReceiver(log EventReceiver) SessionOption {
-	return func(cxn *Connection, s *Session) error {
-		if log == nil {
-			log = cxn.EventReceiver // Use parent instrumentation
-		}
-		s.EventReceiver = log
-		return nil
-	}
-}
 
 // Options applies options to a session
 func (s *Session) Options(opts ...SessionOption) error {
@@ -181,10 +161,10 @@ type Querier interface {
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-type runner interface {
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	//QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	//QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	//ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+type Execer interface {
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}
+
+type QueryRower interface {
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
 }

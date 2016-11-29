@@ -15,7 +15,7 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.Begin()
 	assert.NoError(t, err)
 
-	res, err := tx.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
+	res, err := tx.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec(context.TODO())
 
 	assert.NoError(t, err)
 	id, err := res.LastInsertId()

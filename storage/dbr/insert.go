@@ -2,20 +2,20 @@ package dbr
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
 	"reflect"
-	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
 // InsertBuilder contains the clauses for an INSERT statement
 type InsertBuilder struct {
-	*Session
-	runner
+	log.Logger
+	Execer
 
 	Into string
 	Cols []string
@@ -29,18 +29,18 @@ var _ queryBuilder = (*InsertBuilder)(nil)
 // InsertInto instantiates a InsertBuilder for the given table
 func (sess *Session) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
-		Session: sess,
-		runner:  sess.cxn.DB,
-		Into:    into,
+		Logger: sess.Logger.New("session"),
+		Execer: sess.cxn.DB,
+		Into:   into,
 	}
 }
 
 // InsertInto instantiates a InsertBuilder for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Into:    into,
+		Logger: tx.Logger.New("session"),
+		Execer: tx.Tx,
+		Into:   into,
 	}
 }
 
@@ -56,7 +56,8 @@ func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 // a pointer to the value.
 func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
 	if err := argsValuer(&vals); err != nil {
-		b.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(vals)})
+		// b.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(vals)})
+		panic(err) // todo remove panic
 	}
 	b.Vals = append(b.Vals, vals)
 	return b
@@ -101,16 +102,16 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 // It returns the string with placeholders and a slice of query arguments
 func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	if len(b.Into) == 0 {
-		return "", nil, ErrMissingTable
+		return "", nil, errors.NewEmptyf("[dbr] InsertBuilder: Table is empty")
 	}
 	if len(b.Cols) == 0 && len(b.Maps) == 0 {
-		return "", nil, errors.New("[dbr] no columns or map specified")
+		return "", nil, errors.NewEmptyf("[dbr] no columns or map specified")
 	} else if len(b.Maps) == 0 {
 		if len(b.Vals) == 0 && len(b.Recs) == 0 {
-			return "", nil, errors.New("[dbr] no values or records specified")
+			return "", nil, errors.NewEmptyf("[dbr] no values or records specified")
 		}
 		if len(b.Cols) == 0 && (len(b.Vals) > 0 || len(b.Recs) > 0) {
-			return "", nil, errors.New("[dbr] no columns specified")
+			return "", nil, errors.NewEmptyf("[dbr] no columns specified")
 		}
 	}
 
@@ -227,40 +228,24 @@ func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}, erro
 // INSERT statement, LAST_INSERT_ID() returns the value generated for
 // the first inserted row only. The reason for this is to make it possible to
 // reproduce easily the same INSERT statement against some other server.
-func (b *InsertBuilder) Exec() (sql.Result, error) {
+func (b *InsertBuilder) Exec(ctx context.Context) (sql.Result, error) {
 	sql, args, err := b.ToSql()
 	if err != nil {
-		return nil, b.EventErrKv("dbr.insert.exec.tosql", err, nil)
+		return nil, errors.Wrap(err, "[dbr] insert.exec.tosql")
 	}
 
 	fullSql, err := Preprocess(sql, args)
 	if err != nil {
-		return nil, b.EventErrKv("dbr.insert.exec.interpolate", err, kvs{"sql": sql, "args": fmt.Sprint(args)})
+		return nil, errors.Wrap(err, "dbr.insert.exec.interpolate")
 	}
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.insert", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.InsertBuilder.ExecContext.timing", log.String("sql", fullSql))
+	}
 
-	result, err := b.runner.Exec(fullSql)
+	result, err := b.ExecContext(ctx, fullSql)
 	if err != nil {
-		return result, b.EventErrKv("dbr.insert.exec.exec", err, kvs{"sql": fullSql})
-	}
-
-	// If the structure has an "Id" field which is an int64, set it from the LastInsertId(). Otherwise, don't bother.
-	if len(b.Recs) == 1 {
-		rec := b.Recs[0]
-		val := reflect.Indirect(reflect.ValueOf(rec))
-		if val.Kind() == reflect.Struct && val.CanSet() {
-			// @todo important: make Id configurable to match all magento internal ID columns
-			if idField := val.FieldByName("Id"); idField.IsValid() && idField.Kind() == reflect.Int64 {
-				if lastID, err := result.LastInsertId(); err == nil {
-					idField.Set(reflect.ValueOf(lastID))
-				} else {
-					b.EventErrKv("dbr.insert.exec.last_inserted_id", err, kvs{"sql": fullSql})
-				}
-			}
-		}
+		return result, errors.Wrap(err, "[dbr] insert.exec.exec")
 	}
 
 	return result, nil

@@ -68,7 +68,7 @@ func TestInsertRecordsToSql(t *testing.T) {
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values("Barack", "44").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values("Barack", "44").Exec(context.TODO())
 	assert.NoError(t, err)
 
 	rowsAff, err := res.RowsAffected()
@@ -79,7 +79,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
@@ -87,12 +87,12 @@ func TestInsertReal(t *testing.T) {
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
-	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(&person).Exec()
+	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(&person).Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (struct)
 	s = createRealSessionWithFixtures()
-	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(person).Exec()
+	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(person).Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 }
 

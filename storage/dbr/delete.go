@@ -1,17 +1,19 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // DeleteBuilder contains the clauses for a DELETE statement
 type DeleteBuilder struct {
-	*Session
-	runner
+	log.Logger
+	Execer
 
 	From           alias
 	WhereFragments []*whereFragment
@@ -27,9 +29,9 @@ var _ queryBuilder = (*DeleteBuilder)(nil)
 // DeleteFrom creates a new DeleteBuilder for the given table
 func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
-		Session: sess,
-		runner:  sess.cxn.DB,
-		From:    NewAlias(from...),
+		Logger: sess.Logger.New("session"),
+		Execer: sess.cxn.DB,
+		From:   NewAlias(from...),
 	}
 }
 
@@ -37,9 +39,9 @@ func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		From:    NewAlias(from...),
+		Logger: tx.Logger.New("session"),
+		Execer: tx.Tx,
+		From:   NewAlias(from...),
 	}
 }
 
@@ -125,24 +127,24 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
 
 // Exec executes the statement represented by the DeleteBuilder
 // It returns the raw database/sql Result and an error if there was one
-func (b *DeleteBuilder) Exec() (sql.Result, error) {
+func (b *DeleteBuilder) Exec(ctx context.Context) (sql.Result, error) {
 	sql, args, err := b.ToSql()
 	if err != nil {
-		return nil, b.EventErrKv("dbr.delete.exec.tosql", err, nil)
+		return nil, errors.Wrap(err, "[dbr] delete.exec.tosql")
 	}
 
 	fullSql, err := Preprocess(sql, args)
 	if err != nil {
-		return nil, b.EventErrKv("dbr.delete.exec.interpolate", err, kvs{"sql": fullSql})
+		return nil, errors.Wrapf(err, "[dbr] delete.exec.interpolate: %q", fullSql)
 	}
 
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.delete", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.DeleteBuilder.ExecContext.timing", log.String("sql", fullSql))
+	}
 
-	result, err := b.runner.Exec(fullSql)
+	result, err := b.ExecContext(ctx, fullSql)
 	if err != nil {
-		return result, b.EventErrKv("dbr.delete.exec.exec", err, kvs{"sql": fullSql})
+		return result, errors.Wrap(err, "[dbr] delete.exec.ExecContext")
 	}
 
 	return result, nil

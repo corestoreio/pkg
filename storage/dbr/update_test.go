@@ -86,11 +86,11 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a user with a key
-	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").Values("Benjamin", "ben@whitehouse.gov", "6").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").Values("Benjamin", "ben@whitehouse.gov", "6").Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(ConditionMap(Eq{"key": "6"})).Exec()
+	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(ConditionMap(Eq{"key": "6"})).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -110,7 +110,7 @@ func TestUpdateReal(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a George
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("George", "george@whitehouse.gov").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("George", "george@whitehouse.gov").Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Get George's ID
@@ -118,7 +118,7 @@ func TestUpdateReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Rename our George to Barack
-	res, err = s.Update("dbr_people").SetMap(map[string]interface{}{"name": "Barack", "email": "barack@whitehouse.gov"}).Where(ConditionRaw("id = ?", id)).Exec()
+	res, err = s.Update("dbr_people").SetMap(map[string]interface{}{"name": "Barack", "email": "barack@whitehouse.gov"}).Where(ConditionRaw("id = ?", id)).Exec(context.TODO())
 
 	assert.NoError(t, err)
 
