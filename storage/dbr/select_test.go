@@ -5,6 +5,7 @@ import (
 
 	"context"
 
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -278,7 +279,7 @@ func TestSelectLoadStruct(t *testing.T) {
 	// Not found:
 	var person2 dbrPerson
 	err = s.Select("id", "name", "email").From("dbr_people").Where(ConditionRaw("email = ?", "dontexist@uservoice.com")).LoadStruct(context.TODO(), &person2)
-	assert.Equal(t, err, ErrNotFound)
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
 }
 
 func TestSelectBySqlLoadStructs(t *testing.T) {

@@ -34,6 +34,8 @@ type whereFragment struct {
 	EqualityMap map[string]interface{}
 }
 
+type WhereFragments []*whereFragment
+
 type ConditionArg func(*whereFragment)
 
 func ConditionRaw(raw string, values ...interface{}) ConditionArg {

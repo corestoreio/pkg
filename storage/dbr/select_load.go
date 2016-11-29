@@ -30,9 +30,10 @@ func (b *SelectBuilder) Rows(ctx context.Context, q Querier, hss ...SelectHook) 
 // For fields in the structure that aren't in the query but without db:"-", return error
 // For fields in the query that aren't in the structure, we'll ignore them.
 
-// LoadStructs executes the SelectBuilder and loads the resulting data into a slice of structs
-// dest must be a pointer to a slice of pointers to structs
-// Returns the number of items found (which is not necessarily the # of items set)
+// LoadStructs executes the SelectBuilder and loads the resulting data into a
+// slice of structs dest must be a pointer to a slice of pointers to structs.
+// Returns the number of items found (which is not necessarily the # of items
+// set). Slow because of the massive use of reflection.
 func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -140,9 +141,9 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 	return numberOfRowsReturned, nil
 }
 
-// LoadStruct executes the SelectBuilder and loads the resulting data into a struct
-// dest must be a pointer to a struct
-// Returns ErrNotFound if nothing was found
+// LoadStruct executes the SelectBuilder and loads the resulting data into a
+// struct dest must be a pointer to a struct Returns ErrNotFound behaviour. Slow
+// because of the massive use of reflection.
 func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error {
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -215,11 +216,13 @@ func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error 
 		return errors.Wrap(err, "[dbr] select.load_one.rows_err")
 	}
 
-	return ErrNotFound
+	return errors.NewNotFoundf("[dbr] Entry not found")
 }
 
-// LoadValues executes the SelectBuilder and loads the resulting data into a slice of primitive values
-// Returns ErrNotFound if no value was found, and it was therefore not set.
+// LoadValues executes the SelectBuilder and loads the resulting data into a
+// slice of primitive values Returns ErrNotFound behaviour if no value was
+// found, and it was therefore not set. Slow because of the massive use of
+// reflection.
 func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, error) {
 	// Validate the dest and reflection values we need
 
@@ -297,8 +300,9 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 	return numberOfRowsReturned, nil
 }
 
-// LoadValue executes the SelectBuilder and loads the resulting data into a primitive value
-// Returns ErrNotFound if no value was found, and it was therefore not set.
+// LoadValue executes the SelectBuilder and loads the resulting data into a
+// primitive value Returns ErrNotFound if no value was found, and it was
+// therefore not set. Slow because of the massive use of reflection.
 func (b *SelectBuilder) LoadValue(ctx context.Context, dest interface{}) error {
 	// Validate the dest
 	valueOfDest := reflect.ValueOf(dest)
@@ -344,5 +348,5 @@ func (b *SelectBuilder) LoadValue(ctx context.Context, dest interface{}) error {
 		return errors.Wrap(err, "[dbr] select.load_value.rows_err")
 	}
 
-	return ErrNotFound
+	return errors.NewNotFoundf("[dbr] Entry not found")
 }

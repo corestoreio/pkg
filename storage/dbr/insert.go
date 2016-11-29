@@ -81,7 +81,7 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 		if val, err := dbVal.Value(); err == nil {
 			value = val // overrides the current value ...
 		} else {
-			panic(err)
+			panic(err) // todo remove panic
 		}
 	}
 
@@ -93,7 +93,7 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	} else if lenVals == 1 {
 		b.Vals[0] = append(b.Vals[0], value)
 	} else {
-		panic("pair only allows you to specify 1 record to insret")
+		panic("pair only allows you to specify 1 record to insret") // todo remove panic
 	}
 	return b
 }
@@ -102,54 +102,54 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 // It returns the string with placeholders and a slice of query arguments
 func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	if len(b.Into) == 0 {
-		return "", nil, errors.NewEmptyf("[dbr] InsertBuilder: Table is empty")
+		return "", nil, errors.NewEmptyf(errTableMissing)
 	}
 	if len(b.Cols) == 0 && len(b.Maps) == 0 {
-		return "", nil, errors.NewEmptyf("[dbr] no columns or map specified")
+		return "", nil, errors.NewEmptyf(errColumnsMissing)
 	} else if len(b.Maps) == 0 {
 		if len(b.Vals) == 0 && len(b.Recs) == 0 {
-			return "", nil, errors.NewEmptyf("[dbr] no values or records specified")
+			return "", nil, errors.NewEmptyf(errRecordsMissing)
 		}
 		if len(b.Cols) == 0 && (len(b.Vals) > 0 || len(b.Recs) > 0) {
-			return "", nil, errors.NewEmptyf("[dbr] no columns specified")
+			return "", nil, errors.NewEmptyf(errColumnsMissing)
 		}
 	}
 
-	var sql = bufferpool.Get()
+	var buf = bufferpool.Get()
 
-	sql.WriteString("INSERT INTO ")
-	sql.WriteString(b.Into)
-	sql.WriteString(" (")
+	buf.WriteString("INSERT INTO ")
+	buf.WriteString(b.Into)
+	buf.WriteString(" (")
 
 	if len(b.Maps) != 0 {
-		return b.MapToSql(sql)
+		return b.MapToSql(buf)
 	}
-	defer bufferpool.Put(sql)
+	defer bufferpool.Put(buf)
 
 	var args []interface{}
 	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
 	defer bufferpool.Put(placeholder)
 
-	// Simulataneously write the cols to the sql buffer, and build a placeholder
+	// Simultaneously write the cols to the sql buffer, and build a placeholder
 	placeholder.WriteRune('(')
 	for i, c := range b.Cols {
 		if i > 0 {
-			sql.WriteRune(',')
+			buf.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(c, sql)
+		Quoter.writeQuotedColumn(c, buf)
 		placeholder.WriteRune('?')
 	}
-	sql.WriteString(") VALUES ")
+	buf.WriteString(") VALUES ")
 	placeholder.WriteRune(')')
 	placeholderStr := placeholder.String()
 
 	// Go thru each value we want to insert. Write the placeholders, and collect args
 	for i, row := range b.Vals {
 		if i > 0 {
-			sql.WriteRune(',')
+			buf.WriteRune(',')
 		}
-		sql.WriteString(placeholderStr)
+		buf.WriteString(placeholderStr)
 
 		for _, v := range row {
 			args = append(args, v)
@@ -160,9 +160,9 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	// Go thru the records. Write the placeholders, and do reflection on the records to extract args
 	for i, rec := range b.Recs {
 		if i > 0 || anyVals {
-			sql.WriteRune(',')
+			buf.WriteRune(',')
 		}
-		sql.WriteString(placeholderStr)
+		buf.WriteString(placeholderStr)
 
 		ind := reflect.Indirect(reflect.ValueOf(rec))
 		vals, err := valuesFor(ind.Type(), ind, b.Cols)
@@ -174,7 +174,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 		}
 	}
 
-	return sql.String(), args, nil
+	return buf.String(), args, nil
 }
 
 // MapToSql serialized the InsertBuilder to a SQL string

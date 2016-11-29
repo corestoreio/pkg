@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 func isUint(k reflect.Kind) bool {
@@ -51,7 +52,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 	// Get the number of arguments to add to this query
 	if sql == "" {
 		if len(vals) != 0 {
-			return "", ErrArgumentMismatch
+			return "", errors.NewNotValidf(errArgMismatch)
 		}
 		return "", nil
 	}
@@ -68,7 +69,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 		switch {
 		case r == '?':
 			if curVal >= len(vals) {
-				return "", ErrArgumentMismatch
+				return "", errors.NewNotValidf(errArgMismatch)
 			}
 			if err := interpolate(buf, vals[curVal]); err != nil {
 				return "", err
@@ -77,7 +78,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 		case r == '`', r == '\'', r == '"':
 			p := strings.IndexRune(sql[pos:], r)
 			if p == -1 {
-				return "", ErrInvalidSyntax
+				return "", errors.NewNotValidf("[dbr] Preprocess: Invalid syntax")
 			}
 			if r == '"' {
 				r = '\''
@@ -97,7 +98,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 	}
 
 	if curVal != len(vals) {
-		return "", ErrArgumentMismatch
+		return "", errors.NewNotValidf(errArgMismatch)
 	}
 	return buf.String(), nil
 }
@@ -130,7 +131,7 @@ func interpolate(w QueryWriter, v interface{}) error {
 		var str = valueOfV.String()
 
 		if !utf8.ValidString(str) {
-			return ErrNotUTF8
+			return errors.NewNotValidf(errNotUTF8)
 		}
 		D.EscapeString(w, str)
 	case isFloat(kindOfV):
@@ -144,7 +145,7 @@ func interpolate(w QueryWriter, v interface{}) error {
 			t := valueOfV.Interface().(time.Time)
 			D.EscapeTime(w, t)
 		} else {
-			return ErrInvalidValue
+			return errors.NewNotValidf("[dbr] Interpolate: Invalid value for time")
 		}
 	case kindOfV == reflect.Slice:
 		typeOfV := reflect.TypeOf(v)
@@ -156,7 +157,7 @@ func interpolate(w QueryWriter, v interface{}) error {
 
 		switch {
 		case sliceLen == 0:
-			return ErrInvalidSliceLength
+			return errors.NewNotValidf("[dbr] Interpolate: Invalid slice length")
 		case isInt(kindOfSubtype):
 			for i := 0; i < sliceLen; i++ {
 				var ival = valueOfV.Index(i).Int()
@@ -171,7 +172,7 @@ func interpolate(w QueryWriter, v interface{}) error {
 			for i := 0; i < sliceLen; i++ {
 				var str = valueOfV.Index(i).String()
 				if !utf8.ValidString(str) {
-					return ErrNotUTF8
+					return errors.NewNotValidf(errNotUTF8)
 				}
 				var buf = bufferpool.Get()
 				D.EscapeString(buf, str)
@@ -179,13 +180,13 @@ func interpolate(w QueryWriter, v interface{}) error {
 				bufferpool.Put(buf)
 			}
 		default:
-			return ErrInvalidSliceValue
+			return errors.NewNotValidf("[dbr] Interpolate: Invalid slice value")
 		}
 		w.WriteRune('(')
 		w.WriteString(strings.Join(stringSlice, ","))
 		w.WriteRune(')')
 	default:
-		return ErrInvalidValue
+		return errors.NewNotValidf("[dbr] Interpolate: Invalid value")
 	}
 	return nil
 }

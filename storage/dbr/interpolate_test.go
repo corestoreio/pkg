@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"testing"
 
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -89,19 +90,19 @@ func TestIntepolatingValuers(t *testing.T) {
 
 func TestInterpolateErrors(t *testing.T) {
 	_, err := Preprocess("SELECT * FROM x WHERE a = ? AND b = ?", []interface{}{1})
-	assert.Equal(t, err, ErrArgumentMismatch)
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 
 	_, err = Preprocess("SELECT * FROM x WHERE", []interface{}{1})
-	assert.Equal(t, err, ErrArgumentMismatch)
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 
 	_, err = Preprocess("SELECT * FROM x WHERE a = ?", []interface{}{string([]byte{0x34, 0xFF, 0xFE})})
-	assert.Equal(t, err, ErrNotUTF8)
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 
 	_, err = Preprocess("SELECT * FROM x WHERE a = ?", []interface{}{struct{}{}})
-	assert.Equal(t, err, ErrInvalidValue)
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 
 	_, err = Preprocess("SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{{}, {}}})
-	assert.Equal(t, err, ErrInvalidSliceValue)
+	assert.True(t, errors.IsNotValid(err), "%+v", err)
 }
 
 func TestPreprocess(t *testing.T) {
@@ -110,7 +111,7 @@ func TestPreprocess(t *testing.T) {
 		sql    string
 		args   []interface{}
 		expSql string
-		expErr error
+		errBhf errors.BehaviourFunc
 	}{
 		// NULL
 		{"SELECT * FROM x WHERE a = ?", []interface{}{nil},
@@ -155,21 +156,21 @@ func TestPreprocess(t *testing.T) {
 
 		// errors
 		{"SELECT * FROM x WHERE a = ? AND b = ?", []interface{}{1},
-			"", ErrArgumentMismatch},
+			"", errors.IsNotValid},
 
 		{"SELECT * FROM x WHERE", []interface{}{1},
-			"", ErrArgumentMismatch},
+			"", errors.IsNotValid},
 
 		{"SELECT * FROM x WHERE a = ?", []interface{}{string([]byte{0x34, 0xFF, 0xFE})},
-			"", ErrNotUTF8},
+			"", errors.IsNotValid},
 
 		{"SELECT * FROM x WHERE a = ?", []interface{}{struct{}{}},
-			"", ErrInvalidValue},
+			"", errors.IsNotValid},
 
 		{"SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{{}, {}}},
-			"", ErrInvalidSliceValue},
-		{"SELECT 'hello", noArgs, "", ErrInvalidSyntax},
-		{`SELECT "hello`, noArgs, "", ErrInvalidSyntax},
+			"", errors.IsNotValid},
+		{"SELECT 'hello", noArgs, "", errors.IsNotValid},
+		{`SELECT "hello`, noArgs, "", errors.IsNotValid},
 
 		// preprocessing
 		{"SELECT '?'", noArgs, "SELECT '?'", nil},
@@ -186,8 +187,10 @@ func TestPreprocess(t *testing.T) {
 
 	for _, test := range tests {
 		str, err := Preprocess(test.sql, test.args)
-		if err != test.expErr {
-			t.Errorf("\ngot error: %v\nwant: %v", err, test.expErr)
+		if test.errBhf != nil {
+			if !test.errBhf(err) {
+				t.Errorf("\ngot error: %v\nwant: %s", err, test.errBhf(err))
+			}
 		}
 		if str != test.expSql {
 			t.Errorf("\ngot: %v\nwant: %v", str, test.expSql)

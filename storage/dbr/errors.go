@@ -1,18 +1,9 @@
 package dbr
 
-import (
-	"errors"
-)
-
-// Global errors
-var (
-	ErrNotFound           = errors.New("not found")
-	ErrNotUTF8            = errors.New("invalid UTF-8")
-	ErrInvalidSliceLength = errors.New("length of slice is 0. length must be >= 1")
-	ErrInvalidSliceValue  = errors.New("trying to interpolate invalid slice value into query")
-	ErrInvalidValue       = errors.New("trying to interpolate invalid value into query")
-	ErrArgumentMismatch   = errors.New("mismatch between ? (placeholders) and arguments")
-	ErrInvalidSyntax      = errors.New("SQL syntax error")
-	ErrMissingTable       = errors.New("Table name not specified")
-	ErrMissingSet         = errors.New("Missing SET in UPDATE")
+const (
+	errTableMissing   = "[dbr] Table is missing"
+	errColumnsMissing = "[dbr] no columns or map specified"
+	errRecordsMissing = "[dbr] no values or records specified"
+	errArgMismatch    = "[dbr] Arguments are imbalanced"
+	errNotUTF8        = "[dbr]  String is not an UTF8 string"
 )

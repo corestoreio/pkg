@@ -1,5 +1,7 @@
 package dbr
 
+type JoinFragments []*joinFragment
+
 type (
 	joinFragment struct {
 		// left, right, inner, middle, upper, lower ...

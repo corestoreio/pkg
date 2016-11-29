@@ -157,10 +157,10 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
 	}
 
 	if len(b.Table.Expression) == 0 {
-		return "", nil, ErrMissingTable
+		return "", nil, errors.NewEmptyf("[dbr] UpdateBuilder: Table is empty")
 	}
 	if len(b.SetClauses) == 0 {
-		return "", nil, ErrMissingSet
+		return "", nil, errors.NewEmptyf("[dbr] DeleteBuilder: SetClauses are empty")
 	}
 
 	var sql = bufferpool.Get()

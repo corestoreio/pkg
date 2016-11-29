@@ -5,6 +5,7 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 // SelectBuilder contains the clauses for a SELECT statement
@@ -15,13 +16,13 @@ type SelectBuilder struct {
 	RawFullSql   string
 	RawArguments []interface{}
 
-	IsDistinct      bool
-	Columns         []string
-	FromTable       alias
-	WhereFragments  []*whereFragment
-	JoinFragments   []*joinFragment
+	IsDistinct bool
+	Columns    []string
+	FromTable  alias
+	WhereFragments
+	JoinFragments
 	GroupBys        []string
-	HavingFragments []*whereFragment
+	HavingFragments WhereFragments
 	OrderBys        []string
 	LimitCount      uint64
 	LimitValid      bool
@@ -146,11 +147,11 @@ func (b *SelectBuilder) ToSql() (string, []interface{}, error) {
 		return b.RawFullSql, b.RawArguments, nil
 	}
 
-	if len(b.Columns) == 0 {
-		panic("no columns specified")
-	}
 	if len(b.FromTable.Expression) == 0 {
-		panic("no table specified")
+		return "", nil, errors.NewEmptyf(errTableMissing)
+	}
+	if len(b.Columns) == 0 {
+		return "", nil, errors.NewEmptyf(errColumnsMissing)
 	}
 
 	var sql = bufferpool.Get()

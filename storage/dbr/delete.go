@@ -86,54 +86,54 @@ func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
 // It returns the string with placeholders and a slice of query arguments
 func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
 	if len(b.From.Expression) == 0 {
-		return "", nil, ErrMissingTable
+		return "", nil, errors.NewEmptyf(errTableMissing)
 	}
 
-	var sql = bufferpool.Get()
-	defer bufferpool.Put(sql)
+	var buf = bufferpool.Get()
+	defer bufferpool.Put(buf)
 	var args []interface{}
 
-	sql.WriteString("DELETE FROM ")
-	sql.WriteString(b.From.QuoteAs())
+	buf.WriteString("DELETE FROM ")
+	buf.WriteString(b.From.QuoteAs())
 
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {
-		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, sql, &args)
+		buf.WriteString(" WHERE ")
+		writeWhereFragmentsToSql(b.WhereFragments, buf, &args)
 	}
 
 	// Ordering and limiting
 	if len(b.OrderBys) > 0 {
-		sql.WriteString(" ORDER BY ")
+		buf.WriteString(" ORDER BY ")
 		for i, s := range b.OrderBys {
 			if i > 0 {
-				sql.WriteString(", ")
+				buf.WriteString(", ")
 			}
-			sql.WriteString(s)
+			buf.WriteString(s)
 		}
 	}
 
 	if b.LimitValid {
-		sql.WriteString(" LIMIT ")
-		fmt.Fprint(sql, b.LimitCount)
+		buf.WriteString(" LIMIT ")
+		fmt.Fprint(buf, b.LimitCount)
 	}
 
 	if b.OffsetValid {
-		sql.WriteString(" OFFSET ")
-		fmt.Fprint(sql, b.OffsetCount)
+		buf.WriteString(" OFFSET ")
+		fmt.Fprint(buf, b.OffsetCount)
 	}
-	return sql.String(), args, nil
+	return buf.String(), args, nil
 }
 
 // Exec executes the statement represented by the DeleteBuilder
 // It returns the raw database/sql Result and an error if there was one
 func (b *DeleteBuilder) Exec(ctx context.Context) (sql.Result, error) {
-	sql, args, err := b.ToSql()
+	sqlStr, args, err := b.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] delete.exec.tosql")
 	}
 
-	fullSql, err := Preprocess(sql, args)
+	fullSql, err := Preprocess(sqlStr, args)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[dbr] delete.exec.interpolate: %q", fullSql)
 	}
