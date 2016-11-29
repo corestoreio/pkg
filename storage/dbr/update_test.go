@@ -3,6 +3,8 @@ package dbr
 import (
 	"testing"
 
+	"context"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -97,7 +99,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionMap(Eq{"email": "ben@whitehouse.gov"})).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(ConditionMap(Eq{"email": "ben@whitehouse.gov"})).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Name, "Benjamin")
@@ -121,7 +123,7 @@ func TestUpdateReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)

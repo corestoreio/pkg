@@ -49,7 +49,7 @@ func (sess *Session) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: sess,
 		runner:  sess.cxn.DB,
-		Table:   newAlias(table...),
+		Table:   NewAlias(table...),
 	}
 }
 
@@ -71,7 +71,7 @@ func (tx *Tx) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: tx.Session,
 		runner:  tx.Tx,
-		Table:   newAlias(table...),
+		Table:   NewAlias(table...),
 	}
 }
 

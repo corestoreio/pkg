@@ -4,6 +4,8 @@ import (
 	// "database/sql"
 	"testing"
 
+	"context"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +27,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
+	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)
@@ -45,7 +47,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("email = ?", "jonathan@uservoice.com")).LoadStruct(&person)
+	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("email = ?", "jonathan@uservoice.com")).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 	assert.Equal(t, person.Name, "Jonathan")
 

@@ -29,7 +29,7 @@ func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Session: sess,
 		runner:  sess.cxn.DB,
-		From:    newAlias(from...),
+		From:    NewAlias(from...),
 	}
 }
 
@@ -39,7 +39,7 @@ func (tx *Tx) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Session: tx.Session,
 		runner:  tx.Tx,
-		From:    newAlias(from...),
+		From:    NewAlias(from...),
 	}
 }
 

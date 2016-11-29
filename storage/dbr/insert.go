@@ -164,7 +164,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 		sql.WriteString(placeholderStr)
 
 		ind := reflect.Indirect(reflect.ValueOf(rec))
-		vals, err := b.valuesFor(ind.Type(), ind, b.Cols)
+		vals, err := valuesFor(ind.Type(), ind, b.Cols)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "[dbr] valuesFor")
 		}

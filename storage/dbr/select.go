@@ -8,8 +8,8 @@ import (
 
 // SelectBuilder contains the clauses for a SELECT statement
 type SelectBuilder struct {
-	*Session
-	runner
+	EventReceiver
+	Querier
 
 	RawFullSql   string
 	RawArguments []interface{}
@@ -33,38 +33,38 @@ var _ queryBuilder = (*SelectBuilder)(nil)
 // Select creates a new SelectBuilder that select that given columns
 func (sess *Session) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		Session: sess,
-		runner:  sess.cxn.DB,
-		Columns: cols,
+		EventReceiver: sess.EventReceiver,
+		Querier:       sess.cxn.DB,
+		Columns:       cols,
 	}
 }
 
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments
 func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		Session:      sess,
-		runner:       sess.cxn.DB,
-		RawFullSql:   sql,
-		RawArguments: args,
+		EventReceiver: sess.EventReceiver,
+		Querier:       sess.cxn.DB,
+		RawFullSql:    sql,
+		RawArguments:  args,
 	}
 }
 
 // Select creates a new SelectBuilder that select that given columns bound to the transaction
 func (tx *Tx) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Columns: cols,
+		EventReceiver: tx.EventReceiver,
+		Querier:       tx.Tx,
+		Columns:       cols,
 	}
 }
 
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		Session:      tx.Session,
-		runner:       tx.Tx,
-		RawFullSql:   sql,
-		RawArguments: args,
+		EventReceiver: tx.EventReceiver,
+		Querier:       tx.Tx,
+		RawFullSql:    sql,
+		RawArguments:  args,
 	}
 }
 
@@ -77,7 +77,7 @@ func (b *SelectBuilder) Distinct() *SelectBuilder {
 // From sets the table to SELECT FROM. If second argument will be provided this is
 // then considered as the alias. SELECT ... FROM table AS alias.
 func (b *SelectBuilder) From(from ...string) *SelectBuilder {
-	b.FromTable = newAlias(from...)
+	b.FromTable = NewAlias(from...)
 	return b
 }
 

@@ -26,7 +26,7 @@ func JoinColumns(columns ...string) []string {
 func (b *SelectBuilder) join(j string, t, c []string, on ...ConditionArg) *SelectBuilder {
 	b.JoinFragments = append(b.JoinFragments, &joinFragment{
 		JoinType:     j,
-		Table:        newAlias(t...),
+		Table:        NewAlias(t...),
 		Columns:      c,
 		OnConditions: newWhereFragments(on...),
 	})

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"context"
+
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
@@ -92,7 +94,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		err = s.Select("*").From("null_types").Where(ConditionRaw("id = ?", id)).LoadStruct(nullTypeSet)
+		err = s.Select("*").From("null_types").Where(ConditionRaw("id = ?", id)).LoadStruct(context.TODO(), nullTypeSet)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)

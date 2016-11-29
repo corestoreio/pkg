@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -75,7 +76,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
 	var count int64
-	err = s.Select("count(*)").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadValue(&count)
+	err = s.Select("count(*)").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadValue(context.TODO(), &count)
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
 }

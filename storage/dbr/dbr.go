@@ -3,6 +3,8 @@ package dbr
 import (
 	"database/sql"
 
+	"context"
+
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/go-sql-driver/mysql"
 )
@@ -173,6 +175,10 @@ type SessionRunner interface {
 	Update(table ...string) *UpdateBuilder
 	UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 	DeleteFrom(from ...string) *DeleteBuilder
+}
+
+type Querier interface {
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
 type runner interface {

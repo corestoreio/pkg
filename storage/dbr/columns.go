@@ -17,7 +17,7 @@ package dbr
 // IfNullAs returns IFNULL(`t1`.`c1`,`t2`.`c2`) AS `as` means
 // if column c1 is null then use column c2.
 func IfNullAs(t1, c1, t2, c2, as string) string {
-	return newAlias(
+	return NewAlias(
 		"IFNULL("+Quoter.TableColumnAlias(t1, c1)[0]+", "+Quoter.TableColumnAlias(t2, c2)[0]+")",
 		as,
 	).String()
