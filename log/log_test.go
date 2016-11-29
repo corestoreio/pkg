@@ -43,23 +43,24 @@ func testWhenDone(lvl int) func(*testing.T) {
 		l := logw.NewLog(logw.WithWriter(buf), logw.WithLevel(lvl))
 		var wg sync.WaitGroup
 		wg.Add(1)
+		wd := log.WhenDone(l)
 		go func(wg2 *sync.WaitGroup) {
 			defer wg2.Done()
-			defer log.WhenDone(l).Debug("WhenDoneDebug", log.Int("key1", 123))
-			defer log.WhenDone(l).Info("WhenDoneInfo", log.Int("key2", 321))
-			time.Sleep(time.Millisecond * 100)
+			defer wd.Debug("WhenDoneDebug", log.Int("key1", 123))
+			defer wd.Info("WhenDoneInfo", log.Int("key2", 321))
+			time.Sleep(time.Millisecond * 250)
 		}(&wg)
 		wg.Wait()
 
 		if lvl == logw.LevelDebug {
-			assert.Contains(t, buf.String(), `WhenDoneDebug key1: 123 Duration: 10`)
+			assert.Contains(t, buf.String(), `WhenDoneDebug key1: 123 Duration: 25`)
 		} else {
-			assert.NotContains(t, buf.String(), `WhenDoneDebug key1: 123 Duration: 10`)
+			assert.NotContains(t, buf.String(), `WhenDoneDebug key1: 123 Duration: 25`)
 		}
 		if lvl >= logw.LevelInfo {
-			assert.Contains(t, buf.String(), `WhenDoneInfo key2: 321 Duration: 10`)
+			assert.Contains(t, buf.String(), `WhenDoneInfo key2: 321 Duration: 25`)
 		} else {
-			assert.NotContains(t, buf.String(), `WhenDoneInfo key2: 321 Duration: 10`)
+			assert.NotContains(t, buf.String(), `WhenDoneInfo key2: 321 Duration: 25`)
 		}
 	}
 }
