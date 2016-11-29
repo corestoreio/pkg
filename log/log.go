@@ -154,14 +154,10 @@ func WhenDone(l Logger) Deferred {
 	start := time.Now()
 	return Deferred{
 		Info: func(msg string, fields ...Field) {
-			if l.IsInfo() {
-				l.Info(msg, append(fields, Duration("Duration", time.Since(start)))...)
-			}
+			l.Info(msg, append(fields, Duration("Duration", time.Since(start)))...)
 		},
 		Debug: func(msg string, fields ...Field) {
-			if l.IsDebug() {
-				l.Debug(msg, append(fields, Duration("Duration", time.Since(start)))...)
-			}
+			l.Debug(msg, append(fields, Duration("Duration", time.Since(start)))...)
 		},
 	}
 }
