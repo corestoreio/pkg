@@ -13,7 +13,10 @@ func BenchmarkDeleteSql(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		s.DeleteFrom("alpha").Where(ConditionRaw("a", "b")).Limit(1).OrderDir("id", true).ToSql()
+		_, _, err := s.DeleteFrom("alpha").Where(ConditionRaw("a", "b")).Limit(1).OrderDir("id", true).ToSql()
+		if err != nil {
+			b.Fatalf("%+v", err)
+		}
 	}
 }
 

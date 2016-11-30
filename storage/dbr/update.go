@@ -49,7 +49,7 @@ type setClause struct {
 // Update creates a new UpdateBuilder for the given table
 func (sess *Session) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
-		Logger: sess.Logger.New("session"),
+		Logger: sess.Logger,
 		Execer: sess.cxn.DB,
 		Table:  NewAlias(table...),
 	}
@@ -62,7 +62,7 @@ func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 		panic(err) // todo remove panic
 	}
 	return &UpdateBuilder{
-		Logger:       sess.Logger.New("session"),
+		Logger:       sess.Logger,
 		Execer:       sess.cxn.DB,
 		RawFullSql:   sql,
 		RawArguments: args,
@@ -72,7 +72,7 @@ func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 // Update creates a new UpdateBuilder for the given table bound to a transaction
 func (tx *Tx) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
-		Logger: tx.Logger.New("session"),
+		Logger: tx.Logger,
 		Execer: tx.Tx,
 		Table:  NewAlias(table...),
 	}
@@ -85,7 +85,7 @@ func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 		panic(err) // todo remove panic
 	}
 	return &UpdateBuilder{
-		Logger:       tx.Logger.New("session"),
+		Logger:       tx.Logger,
 		Execer:       tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,

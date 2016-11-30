@@ -117,7 +117,7 @@ func (c *Connection) Options(opts ...ConnectionOption) error {
 func (c *Connection) NewSession(opts ...SessionOption) *Session {
 	s := &Session{
 		cxn:    c,
-		Logger: c.Logger.New("session"),
+		Logger: c.Logger,
 	}
 	s.Options(opts...)
 	return s

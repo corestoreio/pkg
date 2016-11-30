@@ -35,7 +35,7 @@ var _ queryBuilder = (*SelectBuilder)(nil)
 // Select creates a new SelectBuilder that select that given columns
 func (sess *Session) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		Logger:  sess.Logger.New("session"),
+		Logger:  sess.Logger,
 		Querier: sess.cxn.DB,
 		Columns: cols,
 	}
@@ -44,7 +44,7 @@ func (sess *Session) Select(cols ...string) *SelectBuilder {
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments
 func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		Logger:       sess.Logger.New("session"),
+		Logger:       sess.Logger,
 		Querier:      sess.cxn.DB,
 		RawFullSql:   sql,
 		RawArguments: args,
@@ -54,7 +54,7 @@ func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder
 // Select creates a new SelectBuilder that select that given columns bound to the transaction
 func (tx *Tx) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		Logger:  tx.Logger.New("session"),
+		Logger:  tx.Logger,
 		Querier: tx.Tx,
 		Columns: cols,
 	}
@@ -63,7 +63,7 @@ func (tx *Tx) Select(cols ...string) *SelectBuilder {
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		Logger:       tx.Logger.New("session"),
+		Logger:       tx.Logger,
 		Querier:      tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,

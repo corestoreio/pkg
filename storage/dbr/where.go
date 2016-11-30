@@ -18,7 +18,7 @@ import (
 //
 //// Put returns a buffer to the pool.
 //// The buffer is reset before it is put back into circulation.
-//func wfPut(wfs []*whereFragment) {
+//func wfPut(wfs WhereFragments) {
 //		wf.Condition = ""
 //		wf.Values = nil
 //		wf.EqualityMap = nil
@@ -55,8 +55,8 @@ func ConditionMap(eq Eq) ConditionArg {
 	}
 }
 
-func newWhereFragments(wargs ...ConditionArg) []*whereFragment {
-	ret := make([]*whereFragment, len(wargs))
+func newWhereFragments(wargs ...ConditionArg) WhereFragments {
+	ret := make(WhereFragments, len(wargs))
 	for i, warg := range wargs {
 		ret[i] = new(whereFragment)
 		warg(ret[i])
@@ -65,7 +65,7 @@ func newWhereFragments(wargs ...ConditionArg) []*whereFragment {
 }
 
 // Invariant: only called when len(fragments) > 0
-func writeWhereFragmentsToSql(fragments []*whereFragment, sql QueryWriter, args *[]interface{}) {
+func writeWhereFragmentsToSql(fragments WhereFragments, sql QueryWriter, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {

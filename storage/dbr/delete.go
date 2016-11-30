@@ -15,13 +15,13 @@ type DeleteBuilder struct {
 	log.Logger
 	Execer
 
-	From           alias
-	WhereFragments []*whereFragment
-	OrderBys       []string
-	LimitCount     uint64
-	LimitValid     bool
-	OffsetCount    uint64
-	OffsetValid    bool
+	From alias
+	WhereFragments
+	OrderBys    []string
+	LimitCount  uint64
+	LimitValid  bool
+	OffsetCount uint64
+	OffsetValid bool
 }
 
 var _ queryBuilder = (*DeleteBuilder)(nil)
@@ -29,9 +29,10 @@ var _ queryBuilder = (*DeleteBuilder)(nil)
 // DeleteFrom creates a new DeleteBuilder for the given table
 func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
-		Logger: sess.Logger.New("session"),
-		Execer: sess.cxn.DB,
-		From:   NewAlias(from...),
+		Logger:         sess.Logger,
+		Execer:         sess.cxn.DB,
+		From:           NewAlias(from...),
+		WhereFragments: make(WhereFragments, 0, 2),
 	}
 }
 
@@ -39,9 +40,10 @@ func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
-		Logger: tx.Logger.New("session"),
-		Execer: tx.Tx,
-		From:   NewAlias(from...),
+		Logger:         tx.Logger,
+		Execer:         tx.Tx,
+		From:           NewAlias(from...),
+		WhereFragments: make(WhereFragments, 0, 2),
 	}
 }
 

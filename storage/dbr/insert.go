@@ -29,7 +29,7 @@ var _ queryBuilder = (*InsertBuilder)(nil)
 // InsertInto instantiates a InsertBuilder for the given table
 func (sess *Session) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
-		Logger: sess.Logger.New("session"),
+		Logger: sess.Logger,
 		Execer: sess.cxn.DB,
 		Into:   into,
 	}
@@ -38,7 +38,7 @@ func (sess *Session) InsertInto(into string) *InsertBuilder {
 // InsertInto instantiates a InsertBuilder for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
-		Logger: tx.Logger.New("session"),
+		Logger: tx.Logger,
 		Execer: tx.Tx,
 		Into:   into,
 	}
