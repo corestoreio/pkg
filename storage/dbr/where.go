@@ -34,10 +34,13 @@ type whereFragment struct {
 	EqualityMap map[string]interface{}
 }
 
+// WhereFragments provides a list where clauses
 type WhereFragments []*whereFragment
 
+// ConditionArg
 type ConditionArg func(*whereFragment)
 
+// ConditionRaw adds a condition and checks values if they implement driver.Valuer.
 func ConditionRaw(raw string, values ...interface{}) ConditionArg {
 	if err := argsValuer(&values); err != nil {
 		panic(err) // todo remove panic
@@ -90,33 +93,35 @@ func writeEqualityMapToSql(eq map[string]interface{}, sql QueryWriter, args *[]i
 	for k, v := range eq {
 		if v == nil {
 			anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
-		} else {
-			vVal := reflect.ValueOf(v)
+			continue
+		}
 
-			if vVal.Kind() == reflect.Array || vVal.Kind() == reflect.Slice {
-				vValLen := vVal.Len()
-				if vValLen == 0 {
-					if vVal.IsNil() {
-						anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
-					} else {
-						if anyConditions {
-							_, _ = sql.WriteString(" AND (1=0)")
-						} else {
-							_, _ = sql.WriteString("(1=0)")
-						}
-					}
-				} else if vValLen == 1 {
-					anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
-					*args = append(*args, vVal.Index(0).Interface())
+		vVal := reflect.ValueOf(v)
+
+		if vVal.Kind() == reflect.Array || vVal.Kind() == reflect.Slice {
+			vValLen := vVal.Len()
+			if vValLen == 0 {
+				if vVal.IsNil() {
+					anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
 				} else {
-					anyConditions = writeWhereCondition(sql, k, " IN ?", anyConditions)
-					*args = append(*args, v)
+					if anyConditions {
+						_, _ = sql.WriteString(" AND (1=0)")
+					} else {
+						_, _ = sql.WriteString("(1=0)")
+					}
 				}
-			} else {
+			} else if vValLen == 1 {
 				anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+				*args = append(*args, vVal.Index(0).Interface())
+			} else {
+				anyConditions = writeWhereCondition(sql, k, " IN ?", anyConditions)
 				*args = append(*args, v)
 			}
+		} else {
+			anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+			*args = append(*args, v)
 		}
+
 	}
 
 	return anyConditions

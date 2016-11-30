@@ -35,6 +35,39 @@ func TestInterpolateInts(t *testing.T) {
 	assert.Equal(t, str, "SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10")
 }
 
+var preprocessSink string
+
+// 500000	      4013 ns/op	     174 B/op	      11 allocs/op
+func BenchmarkPreprocess(b *testing.B) {
+	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
+	args := []interface{}{
+		int(1),
+		int8(-2),
+		int16(3),
+		int32(4),
+		int64(5),
+		uint(6),
+		uint8(7),
+		uint16(8),
+		uint32(9),
+		uint64(10),
+		"Hello",
+		true,
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var err error
+		preprocessSink, err = Preprocess("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?", args)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	if preprocessSink != want {
+		b.Errorf("Have: %v Want: %v", preprocessSink, want)
+	}
+}
+
 func TestInterpolateBools(t *testing.T) {
 	args := []interface{}{true, false}
 

@@ -1,7 +1,7 @@
 package dbr
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -227,12 +227,12 @@ func (b *SelectBuilder) ToSql() (string, []interface{}, error) {
 
 	if b.LimitValid {
 		sql.WriteString(" LIMIT ")
-		fmt.Fprint(sql, b.LimitCount)
+		sql.WriteString(strconv.FormatUint(b.LimitCount, 10))
 	}
 
 	if b.OffsetValid {
 		sql.WriteString(" OFFSET ")
-		fmt.Fprint(sql, b.OffsetCount)
+		sql.WriteString(strconv.FormatUint(b.OffsetCount, 10))
 	}
 	return sql.String(), args, nil
 }

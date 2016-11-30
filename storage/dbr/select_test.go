@@ -36,6 +36,7 @@ func BenchmarkSelectFullSql(b *testing.B) {
 	argEq3 := ConditionMap(Eq{"h": []int{1, 2, 3}})
 
 	b.ResetTimer()
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		s.Select("a", "b", "z", "y", "x").
 			Distinct().

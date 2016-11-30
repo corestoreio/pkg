@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"database/sql/driver"
@@ -116,6 +115,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	}
 
 	var buf = bufferpool.Get()
+	defer bufferpool.Put(buf)
 
 	buf.WriteString("INSERT INTO ")
 	buf.WriteString(b.Into)
@@ -124,7 +124,6 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	if len(b.Maps) != 0 {
 		return b.MapToSql(buf)
 	}
-	defer bufferpool.Put(buf)
 
 	var args []interface{}
 	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
@@ -150,10 +149,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 			buf.WriteRune(',')
 		}
 		buf.WriteString(placeholderStr)
-
-		for _, v := range row {
-			args = append(args, v)
-		}
+		args = append(args, row...)
 	}
 	anyVals := len(b.Vals) > 0
 
@@ -169,9 +165,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 		if err != nil {
 			return "", nil, errors.Wrap(err, "[dbr] valuesFor")
 		}
-		for _, v := range vals {
-			args = append(args, v)
-		}
+		args = append(args, vals...)
 	}
 
 	return buf.String(), args, nil
@@ -180,8 +174,8 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 // MapToSql serialized the InsertBuilder to a SQL string
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
-func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}, error) {
-	defer bufferpool.Put(sql)
+func (b *InsertBuilder) MapToSql(w QueryWriter) (string, []interface{}, error) {
+
 	keys := make([]string, len(b.Maps))
 	vals := make([]interface{}, len(b.Maps))
 	i := 0
@@ -205,21 +199,19 @@ func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}, erro
 	placeholder.WriteRune('(')
 	for i, c := range keys {
 		if i > 0 {
-			sql.WriteRune(',')
+			w.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(c, sql)
+		Quoter.writeQuotedColumn(c, w)
 		placeholder.WriteRune('?')
 	}
-	sql.WriteString(") VALUES ")
+	w.WriteString(") VALUES ")
 	placeholder.WriteRune(')')
-	sql.WriteString(placeholder.String())
+	w.WriteString(placeholder.String())
 
-	for _, row := range vals {
-		args = append(args, row)
-	}
+	args = append(args, vals...)
 
-	return sql.String(), args, nil
+	return w.String(), args, nil
 }
 
 // Exec executes the statement represented by the InsertBuilder
