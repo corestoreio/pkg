@@ -108,12 +108,6 @@ func installFixtures(db *sql.DB) {
 	}
 }
 
-//func TestNewConnection_NotImplemted(t *testing.T) {
-//	c, err := NewConnection(WithDSN("mysql://localhost:3306/test"))
-//	//c.dn = "ODBC"
-//	assert.Nil(t, c)
-//	assert.True(t, errors.IsNotImplemented(err), "Error: %+v", err)
-//	pl := fmt.Sprintf("%+v", err)
-//	assert.Contains(t, pl, `github.com/corestoreio/csfw/storage/dbr/dbr.go:`)
-//	assert.Contains(t, pl, `[dbr] unsupported driver: "ODBC`)
-//}
+var _ Querier = (*sql.DB)(nil)
+var _ Execer = (*sql.DB)(nil)
+var _ QueryRower = (*sql.DB)(nil)

@@ -32,6 +32,28 @@ type Session struct {
 	log.Logger
 }
 
+// Querier can execute a SELECT query.
+type Querier interface {
+	// QueryContext executes a query that returns rows, typically a SELECT. The
+	// args are for any placeholder parameters in the query.
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+}
+
+// Execer can execute all other queries except SELECT.
+type Execer interface {
+	// ExecContext executes a query that doesn't return rows. For example: an
+	// INSERT and UPDATE.
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}
+
+// QueryRower executes a SELECT query which returns one row.
+type QueryRower interface {
+	// QueryRowContext executes a query that is expected to return at most one
+	// row. QueryRowContext always returns a non-nil value. Errors are deferred
+	// until Row's Scan method is called.
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+}
+
 // ConnectionOption can be used as an argument in NewConnection to configure a
 // connection.
 type ConnectionOption func(*Connection) error
@@ -147,24 +169,12 @@ func (s *Session) Options(opts ...SessionOption) error {
 }
 
 // SessionRunner can do anything that a Session can except start a transaction.
-type SessionRunner interface {
-	Select(cols ...string) *SelectBuilder
-	SelectBySql(sql string, args ...interface{}) *SelectBuilder
-
-	InsertInto(into string) *InsertBuilder
-	Update(table ...string) *UpdateBuilder
-	UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
-	DeleteFrom(from ...string) *DeleteBuilder
-}
-
-type Querier interface {
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-}
-
-type Execer interface {
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-}
-
-type QueryRower interface {
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-}
+//type SessionRunner interface {
+//	Select(cols ...string) *SelectBuilder
+//	SelectBySql(sql string, args ...interface{}) *SelectBuilder
+//
+//	InsertInto(into string) *InsertBuilder
+//	Update(table ...string) *UpdateBuilder
+//	UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
+//	DeleteFrom(from ...string) *DeleteBuilder
+//}
