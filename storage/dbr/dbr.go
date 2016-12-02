@@ -117,7 +117,7 @@ func WrapExecContext(ctx context.Context, db interface {
 // QueryRower executes a SELECT query which returns one row.
 type QueryRower interface {
 	// QueryRow executes a query that is expected to return at most one
-	// row. QueryRowContext always returns a non-nil value. Errors are deferred
+	// row. QueryRow always returns a non-nil value. Errors are deferred
 	// until Row's Scan method is called.
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
@@ -253,11 +253,11 @@ func (s *Session) Options(opts ...SessionOption) error {
 
 // SessionRunner can do anything that a Session can except start a transaction.
 //type SessionRunner interface {
-//	Select(cols ...string) *SelectBuilder
-//	SelectBySql(sql string, args ...interface{}) *SelectBuilder
+//	Select(cols ...string) *Select
+//	SelectBySql(sql string, args ...interface{}) *Select
 //
-//	InsertInto(into string) *InsertBuilder
-//	Update(table ...string) *UpdateBuilder
-//	UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
-//	DeleteFrom(from ...string) *DeleteBuilder
+//	InsertInto(into string) *Insert
+//	Update(table ...string) *Update
+//	UpdateBySql(sql string, args ...interface{}) *Update
+//	DeleteFrom(from ...string) *Delete
 //}

@@ -1,5 +1,6 @@
 package dbr
 
+// JoinFragments defines multiple join conditions.
 type JoinFragments []*joinFragment
 
 type (
@@ -25,10 +26,10 @@ func JoinColumns(columns ...string) []string {
 	return columns
 }
 
-func (b *SelectBuilder) join(j string, t, c []string, on ...ConditionArg) *SelectBuilder {
+func (b *Select) join(j string, t, c []string, on ...ConditionArg) *Select {
 	b.JoinFragments = append(b.JoinFragments, &joinFragment{
 		JoinType:     j,
-		Table:        NewAlias(t...),
+		Table:        MakeAlias(t...),
 		Columns:      c,
 		OnConditions: newWhereFragments(on...),
 	})
@@ -36,16 +37,16 @@ func (b *SelectBuilder) join(j string, t, c []string, on ...ConditionArg) *Selec
 }
 
 // Join creates a join construct with the onConditions glued together with AND
-func (b *SelectBuilder) Join(table, columns []string, onConditions ...ConditionArg) *SelectBuilder {
+func (b *Select) Join(table, columns []string, onConditions ...ConditionArg) *Select {
 	return b.join("INNER", table, columns, onConditions...)
 }
 
 // LeftJoin creates a join construct with the onConditions glued together with AND
-func (b *SelectBuilder) LeftJoin(table, columns []string, onConditions ...ConditionArg) *SelectBuilder {
+func (b *Select) LeftJoin(table, columns []string, onConditions ...ConditionArg) *Select {
 	return b.join("LEFT", table, columns, onConditions...)
 }
 
 // LeftJoin creates a join construct with the onConditions glued together with AND
-func (b *SelectBuilder) RightJoin(table, columns []string, onConditions ...ConditionArg) *SelectBuilder {
+func (b *Select) RightJoin(table, columns []string, onConditions ...ConditionArg) *Select {
 	return b.join("RIGHT", table, columns, onConditions...)
 }

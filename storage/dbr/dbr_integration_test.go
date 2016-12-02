@@ -30,6 +30,36 @@ var _ dbr.Querier = (*sql.DB)(nil)
 var _ dbr.Execer = (*sql.DB)(nil)
 var _ dbr.QueryRower = (*sql.DB)(nil)
 
+var _ dbr.Preparer = (*dbMock)(nil)
+var _ dbr.Querier = (*dbMock)(nil)
+var _ dbr.Execer = (*dbMock)(nil)
+
+type dbMock struct {
+	error
+	prepareFn func(query string) (*sql.Stmt, error)
+}
+
+func (pm dbMock) Prepare(query string) (*sql.Stmt, error) {
+	if pm.error != nil {
+		return nil, pm.error
+	}
+	return pm.prepareFn(query)
+}
+
+func (pm dbMock) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	if pm.error != nil {
+		return nil, pm.error
+	}
+	return nil, nil
+}
+
+func (pm dbMock) Exec(query string, args ...interface{}) (sql.Result, error) {
+	if pm.error != nil {
+		return nil, pm.error
+	}
+	return nil, nil
+}
+
 func TestWrapPrepareContext(t *testing.T) {
 
 	dbc, dbMock := cstesting.MockDB(t)

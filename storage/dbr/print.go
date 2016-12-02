@@ -1,40 +1,45 @@
 package dbr
 
-import "github.com/corestoreio/csfw/util/errors"
+import "fmt"
 
-type queryBuilder interface {
-	ToSql() (string, []interface{}, error)
+// QueryBuilder assembles a query and returns the raw SQL without parameter
+// substitution and the arguments.
+type QueryBuilder interface {
+	ToSQL() (string, []interface{}, error)
 }
 
-func makeSql(b queryBuilder) (string, error) {
-	// todo add maybe logging in debug mode
-	sRaw, vals, err := b.ToSql()
+func makeSql(b QueryBuilder) string {
+	sRaw, vals, err := b.ToSQL()
 	if err != nil {
-		return "", errors.Wrap(err, "[dbr] makeSql.tosql")
+		return fmt.Sprintf("[dbr] ToSQL Error: %+v", err)
 	}
 	sql, err := Preprocess(sRaw, vals)
 	if err != nil {
-		return "", errors.Wrap(err, "[dbr] makeSql.string")
+		return fmt.Sprintf("[dbr] Preprocess Error: %+v", err)
 	}
-	return sql, nil
+	return sql
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
-func (b *DeleteBuilder) String() (string, error) {
+// On error, the error gets printed. Fulfills interface fmt.Stringer.
+func (b *Delete) String() string {
 	return makeSql(b)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
-func (b *InsertBuilder) String() (string, error) {
+// On error, the error gets printed. Fulfills interface fmt.Stringer.
+func (b *Insert) String() string {
 	return makeSql(b)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
-func (b *SelectBuilder) String() (string, error) {
+// On error, the error gets printed. Fulfills interface fmt.Stringer.
+func (b *Select) String() string {
 	return makeSql(b)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
-func (b *UpdateBuilder) String() (string, error) {
+// On error, the error gets printed. Fulfills interface fmt.Stringer.
+func (b *Update) String() string {
 	return makeSql(b)
 }

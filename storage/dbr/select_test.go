@@ -21,7 +21,7 @@ func BenchmarkSelectBasicSql(b *testing.B) {
 			Where(argEq).
 			OrderDir("id", false).
 			Paginate(1, 20).
-			ToSql()
+			ToSQL()
 	}
 }
 
@@ -53,7 +53,7 @@ func BenchmarkSelectFullSql(b *testing.B) {
 			OrderBy("l").
 			Limit(7).
 			Offset(8).
-			ToSql()
+			ToSQL()
 	}
 }
 
@@ -61,7 +61,7 @@ func TestSelectBasicToSql(t *testing.T) {
 	s := createFakeSession()
 	sel := s.Select("a", "b").From("c").Where(ConditionRaw("id = ?", 1))
 	for i := 0; i < 3; i++ {
-		sql, args, err := sel.ToSql()
+		sql, args, err := sel.ToSQL()
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT a, b FROM `c` WHERE (id = ?)", sql, "Loop %d", 0)
 		assert.Equal(t, []interface{}{1}, args, "Loop %d", 0)
@@ -82,7 +82,7 @@ func TestSelectFullToSql(t *testing.T) {
 		Limit(7).
 		Offset(8)
 
-	sql, args, err := sel.ToSql()
+	sql, args, err := sel.ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT DISTINCT a, b FROM `c` AS `cc` WHERE (d = ? OR e = ?) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8", sql)
 	assert.Equal(t, []interface{}{1, "wat", 2, 3, []int{4, 5, 6}}, args)
@@ -97,7 +97,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 		Where(ConditionRaw("d = ?", 1)).
 		Paginate(1, 20).
 		OrderDir("id", false).
-		ToSql()
+		ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT a, b FROM `c` WHERE (d = ?) ORDER BY id DESC LIMIT 20 OFFSET 0", sql)
 	assert.Equal(t, []interface{}{1}, args)
@@ -107,7 +107,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 		Where(ConditionRaw("d = ?", 1)).
 		Paginate(3, 30).
 		OrderDir("id", true).
-		ToSql()
+		ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT a, b FROM `c` WHERE (d = ?) ORDER BY id ASC LIMIT 30 OFFSET 60", sql)
 	assert.Equal(t, []interface{}{1}, args)
@@ -116,7 +116,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 func TestSelectNoWhereSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a", "b").From("c").ToSql()
+	sql, args, err := s.Select("a", "b").From("c").ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a, b FROM `c`")
 	assert.Equal(t, args, []interface{}(nil))
@@ -125,7 +125,7 @@ func TestSelectNoWhereSql(t *testing.T) {
 func TestSelectMultiHavingSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a", "b").From("c").Where(ConditionRaw("p = ?", 1)).GroupBy("z").Having(ConditionRaw("z = ?", 2), ConditionRaw("y = ?", 3)).ToSql()
+	sql, args, err := s.Select("a", "b").From("c").Where(ConditionRaw("p = ?", 1)).GroupBy("z").Having(ConditionRaw("z = ?", 2), ConditionRaw("y = ?", 3)).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a, b FROM `c` WHERE (p = ?) GROUP BY z HAVING (z = ?) AND (y = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 3})
@@ -134,7 +134,7 @@ func TestSelectMultiHavingSql(t *testing.T) {
 func TestSelectMultiOrderSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a", "b").From("c").OrderBy("name ASC").OrderBy("id DESC").ToSql()
+	sql, args, err := s.Select("a", "b").From("c").OrderBy("name ASC").OrderBy("id DESC").ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a, b FROM `c` ORDER BY name ASC, id DESC")
 	assert.Equal(t, args, []interface{}(nil))
@@ -143,12 +143,12 @@ func TestSelectMultiOrderSql(t *testing.T) {
 func TestSelectWhereMapSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1})).ToSql()
+	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1})).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": true})).ToSql()
+	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": true})).ToSQL()
 	assert.NoError(t, err)
 	if sql == "SELECT a FROM `b` WHERE (`a` = ?) AND (`b` = ?)" {
 		assert.Equal(t, args, []interface{}{1, true})
@@ -157,29 +157,29 @@ func TestSelectWhereMapSql(t *testing.T) {
 		assert.Equal(t, args, []interface{}{true, 1})
 	}
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": nil})).ToSql()
+	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": nil})).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1, 2, 3}})).ToSql()
+	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1, 2, 3}})).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IN ?)")
 	assert.Equal(t, args, []interface{}{[]int{1, 2, 3}})
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1}})).ToSql()
+	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1}})).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
 	// NOTE: a has no valid values, we want a query that returns nothing
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{}})).ToSql()
+	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{}})).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (1=0)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	var aval []int
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": aval})).ToSql()
+	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": aval})).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
@@ -187,7 +187,7 @@ func TestSelectWhereMapSql(t *testing.T) {
 	sql, args, err = s.Select("a").From("b").
 		Where(ConditionMap(Eq{"a": []int(nil)})).
 		Where(ConditionMap(Eq{"b": false})).
-		ToSql()
+		ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL) AND (`b` = ?)")
 	assert.Equal(t, args, []interface{}{false})
@@ -196,7 +196,7 @@ func TestSelectWhereMapSql(t *testing.T) {
 func TestSelectWhereEqSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": []int64{1, 2, 3}})).ToSql()
+	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": []int64{1, 2, 3}})).ToSQL()
 	assert.NoError(t, err)
 	if sql == "SELECT a FROM `b` WHERE (`a` = ?) AND (`b` IN ?)" {
 		assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
@@ -209,18 +209,18 @@ func TestSelectWhereEqSql(t *testing.T) {
 func TestSelectBySql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.SelectBySql("SELECT * FROM users WHERE x = 1").ToSql()
+	sql, args, err := s.SelectBySql("SELECT * FROM users WHERE x = 1").ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT * FROM users WHERE x = 1")
 	assert.Equal(t, args, []interface{}(nil))
 
-	sql, args, err = s.SelectBySql("SELECT * FROM users WHERE x = ? AND y IN ?", 9, []int{5, 6, 7}).ToSql()
+	sql, args, err = s.SelectBySql("SELECT * FROM users WHERE x = ? AND y IN ?", 9, []int{5, 6, 7}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT * FROM users WHERE x = ? AND y IN ?")
 	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
 
 	// Doesn't fix shit if it's broken:
-	sql, args, err = s.SelectBySql("wat", 9, []int{5, 6, 7}).ToSql()
+	sql, args, err = s.SelectBySql("wat", 9, []int{5, 6, 7}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "wat")
 	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
@@ -229,9 +229,9 @@ func TestSelectBySql(t *testing.T) {
 func TestSelectVarieties(t *testing.T) {
 	s := createFakeSession()
 
-	sql, _, err := s.Select("id, name, email").From("users").ToSql()
+	sql, _, err := s.Select("id, name, email").From("users").ToSQL()
 	assert.NoError(t, err)
-	sql2, _, err2 := s.Select("id", "name", "email").From("users").ToSql()
+	sql2, _, err2 := s.Select("id", "name", "email").From("users").ToSQL()
 	assert.NoError(t, err2)
 	assert.Equal(t, sql, sql2)
 }
@@ -364,7 +364,7 @@ func TestSelectJoin(t *testing.T) {
 			ConditionRaw("`p1`.`id` = ?", 42),
 		)
 
-	sql, _, err := sqlObj.ToSql()
+	sql, _, err := sqlObj.ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t,
 		"SELECT p1.*, p2.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
@@ -381,7 +381,7 @@ func TestSelectJoin(t *testing.T) {
 			ConditionRaw("`p1`.`id` = ?", 42),
 		)
 
-	sql, _, err = sqlObj.ToSql()
+	sql, _, err = sqlObj.ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t,
 		"SELECT p1.*, p2.name FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
@@ -397,7 +397,7 @@ func TestSelectJoin(t *testing.T) {
 			ConditionRaw("`p2`.`id` = `p1`.`id`"),
 		)
 
-	sql, _, err = sqlObj.ToSql()
+	sql, _, err = sqlObj.ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t,
 		"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
@@ -407,3 +407,23 @@ func TestSelectJoin(t *testing.T) {
 }
 
 // Series of tests that test mapping struct fields to columns
+
+func TestSelect_AddAtomicHooks(t *testing.T) {
+	s := NewSelect("tableA", "tA")
+
+	s.Columns = []string{"a", "b"}
+	s.OrderBy("col2")
+	s.AddAtomicHooks(func(s2 *Select) {
+		s2.OrderDir("col1", false)
+	})
+
+	sql, args, err := s.ToSQL()
+	assert.NoError(t, err)
+	assert.Nil(t, args)
+	assert.NotEmpty(t, sql)
+
+	sql, args, err = s.ToSQL()
+	assert.NoError(t, err)
+	assert.Nil(t, args)
+	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` ORDER BY col2, col1 DESC", sql)
+}

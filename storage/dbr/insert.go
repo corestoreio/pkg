@@ -10,11 +10,11 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// InsertBuilder contains the clauses for an INSERT statement
-type InsertBuilder struct {
-	log.Logger
+// Insert contains the clauses for an INSERT statement
+type Insert struct {
+	log.Logger // optional
 	Execer
-	// Preparer todo idea
+	Preparer
 
 	Into string
 	Cols []string
@@ -23,28 +23,28 @@ type InsertBuilder struct {
 	Maps map[string]interface{}
 }
 
-var _ queryBuilder = (*InsertBuilder)(nil)
-
-// InsertInto instantiates a InsertBuilder for the given table
-func (sess *Session) InsertInto(into string) *InsertBuilder {
-	return &InsertBuilder{
-		Logger: sess.Logger,
-		Execer: sess.cxn.DB,
-		Into:   into,
+// InsertInto instantiates a Insert for the given table
+func (sess *Session) InsertInto(into string) *Insert {
+	return &Insert{
+		Logger:   sess.Logger,
+		Execer:   sess.cxn.DB,
+		Preparer: sess.cxn.DB,
+		Into:     into,
 	}
 }
 
-// InsertInto instantiates a InsertBuilder for the given table bound to a transaction
-func (tx *Tx) InsertInto(into string) *InsertBuilder {
-	return &InsertBuilder{
-		Logger: tx.Logger,
-		Execer: tx.Tx,
-		Into:   into,
+// InsertInto instantiates a Insert for the given table bound to a transaction
+func (tx *Tx) InsertInto(into string) *Insert {
+	return &Insert{
+		Logger:   tx.Logger,
+		Execer:   tx.Tx,
+		Preparer: tx.Tx,
+		Into:     into,
 	}
 }
 
 // Columns appends columns to insert in the statement
-func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
+func (b *Insert) Columns(columns ...string) *Insert {
 	b.Cols = columns
 	return b
 }
@@ -53,7 +53,7 @@ func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 // Pro Tip: Use Values() and not Record() to avoid reflection.
 // Only this function will consider the driver.Valuer interface when you pass
 // a pointer to the value.
-func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
+func (b *Insert) Values(vals ...interface{}) *Insert {
 	if err := argsValuer(&vals); err != nil {
 		// b.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(vals)})
 		panic(err) // todo remove panic
@@ -63,19 +63,19 @@ func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
 }
 
 // Record pulls in values to match Columns from the record. Uses reflection.
-func (b *InsertBuilder) Record(record interface{}) *InsertBuilder {
+func (b *Insert) Record(record interface{}) *Insert {
 	b.Recs = append(b.Recs, record)
 	return b
 }
 
 // Record pulls in values to match Columns from the record
-func (b *InsertBuilder) Map(m map[string]interface{}) *InsertBuilder {
+func (b *Insert) Map(m map[string]interface{}) *Insert {
 	b.Maps = m
 	return b
 }
 
 // Pair adds a key/value pair to the statement. Uses not reflection.
-func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
+func (b *Insert) Pair(column string, value interface{}) *Insert {
 	if dbVal, ok := value.(driver.Valuer); ok {
 		if val, err := dbVal.Value(); err == nil {
 			value = val // overrides the current value ...
@@ -97,9 +97,9 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	return b
 }
 
-// ToSql serialized the InsertBuilder to a SQL string
+// ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
+func (b *Insert) ToSQL() (string, []interface{}, error) {
 	if len(b.Into) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)
 	}
@@ -171,10 +171,10 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	return buf.String(), args, nil
 }
 
-// MapToSql serialized the InsertBuilder to a SQL string
+// MapToSql serialized the Insert to a SQL string
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
-func (b *InsertBuilder) MapToSql(w QueryWriter) (string, []interface{}, error) {
+func (b *Insert) MapToSql(w QueryWriter) (string, []interface{}, error) {
 
 	keys := make([]string, len(b.Maps))
 	vals := make([]interface{}, len(b.Maps))
@@ -214,31 +214,46 @@ func (b *InsertBuilder) MapToSql(w QueryWriter) (string, []interface{}, error) {
 	return w.String(), args, nil
 }
 
-// Exec executes the statement represented by the InsertBuilder
+// Exec executes the statement represented by the Insert
 // It returns the raw database/sql Result and an error if there was one.
 // Regarding LastInsertID(): If you insert multiple rows using a single
 // INSERT statement, LAST_INSERT_ID() returns the value generated for
 // the first inserted row only. The reason for this is to make it possible to
 // reproduce easily the same INSERT statement against some other server.
-func (b *InsertBuilder) Exec() (sql.Result, error) {
-	sql, args, err := b.ToSql()
+func (b *Insert) Exec() (sql.Result, error) {
+	sql, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] insert.exec.tosql")
+		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
 	}
 
 	fullSql, err := Preprocess(sql, args)
 	if err != nil {
-		return nil, errors.Wrap(err, "dbr.insert.exec.interpolate")
+		return nil, errors.Wrap(err, "[dbr] Insert.Exec.Preprocess")
 	}
 
-	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.InsertBuilder.ExecContext.timing", log.String("sql", fullSql))
+	if b.Logger != nil && b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSql))
 	}
 
 	result, err := b.Execer.Exec(fullSql)
 	if err != nil {
-		return result, errors.Wrap(err, "[dbr] insert.exec.exec")
+		return result, errors.Wrap(err, "[dbr] Insert.Exec.Exec")
 	}
 
 	return result, nil
+}
+
+// Prepare creates a prepared statement
+func (b *Insert) Prepare() (*sql.Stmt, error) {
+	rawSQL, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
+	}
+
+	if b.Logger != nil && b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.Insert.Prepare.Timing", log.String("sql", rawSQL))
+	}
+
+	stmt, err := b.Preparer.Prepare(rawSQL)
+	return stmt, errors.Wrap(err, "[dbr] Insert.Prepare.Prepare")
 }

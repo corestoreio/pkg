@@ -17,10 +17,10 @@ package dbr
 // These types are four callbacks to allow changes to the underlying SQL query
 // builder by a 3rd party package.
 type (
-	SelectHook func(*SelectBuilder)
-	InsertHook func(*InsertBuilder)
-	UpdateHook func(*UpdateBuilder)
-	DeleteHook func(*DeleteBuilder)
+	SelectHook func(*Select)
+	InsertHook func(*Insert)
+	UpdateHook func(*Update)
+	DeleteHook func(*Delete)
 
 	SelectHooks []SelectHook
 	InsertHooks []InsertHook
@@ -29,28 +29,28 @@ type (
 )
 
 // Apply runs all SELECT hooks.
-func (hs SelectHooks) Apply(b *SelectBuilder) {
+func (hs SelectHooks) Apply(b *Select) {
 	for _, h := range hs {
 		h(b)
 	}
 }
 
 // Apply runs all INSERT hooks.
-func (hs InsertHooks) Apply(b *InsertBuilder) {
+func (hs InsertHooks) Apply(b *Insert) {
 	for _, h := range hs {
 		h(b)
 	}
 }
 
 // Apply runs all Update hooks.
-func (hs UpdateHooks) Apply(b *UpdateBuilder) {
+func (hs UpdateHooks) Apply(b *Update) {
 	for _, h := range hs {
 		h(b)
 	}
 }
 
 // Apply runs all DELETE hooks.
-func (hs DeleteHooks) Apply(b *DeleteBuilder) {
+func (hs DeleteHooks) Apply(b *Delete) {
 	for _, h := range hs {
 		h(b)
 	}

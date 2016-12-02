@@ -90,7 +90,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 		case r == '[':
 			w := strings.IndexRune(sql[pos:], ']')
 			col := sql[pos : pos+w]
-			D.EscapeIdent(buf, col)
+			dialect.EscapeIdent(buf, col)
 			pos += w + 1 // size of ']'
 		default:
 			buf.WriteRune(r)
@@ -133,17 +133,17 @@ func interpolate(w QueryWriter, v interface{}) error {
 		if !utf8.ValidString(str) {
 			return errors.NewNotValidf(errNotUTF8)
 		}
-		D.EscapeString(w, str)
+		dialect.EscapeString(w, str)
 	case isFloat(kindOfV):
 		var fval = valueOfV.Float()
 
 		w.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
 	case kindOfV == reflect.Bool:
-		D.EscapeBool(w, valueOfV.Bool())
+		dialect.EscapeBool(w, valueOfV.Bool())
 	case kindOfV == reflect.Struct:
 		if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
 			t := valueOfV.Interface().(time.Time)
-			D.EscapeTime(w, t)
+			dialect.EscapeTime(w, t)
 		} else {
 			return errors.NewNotValidf("[dbr] Interpolate: Invalid value for time")
 		}
@@ -175,7 +175,7 @@ func interpolate(w QueryWriter, v interface{}) error {
 					return errors.NewNotValidf(errNotUTF8)
 				}
 				var buf = bufferpool.Get()
-				D.EscapeString(buf, str)
+				dialect.EscapeString(buf, str)
 				stringSlice = append(stringSlice, buf.String())
 				bufferpool.Put(buf)
 			}

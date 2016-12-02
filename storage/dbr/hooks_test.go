@@ -23,10 +23,10 @@ import (
 
 func TestNewHook(t *testing.T) {
 
-	hSel := func(*dbr.SelectBuilder) {}
-	hIns := func(*dbr.InsertBuilder) {}
-	hUpd := func(*dbr.UpdateBuilder) {}
-	hDel := func(*dbr.DeleteBuilder) {}
+	hSel := func(*dbr.Select) {}
+	hIns := func(*dbr.Insert) {}
+	hUpd := func(*dbr.Update) {}
+	hDel := func(*dbr.Delete) {}
 
 	h := dbr.NewHook()
 	h.AddSelectAfter(hSel, hSel)

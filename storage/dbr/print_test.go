@@ -12,13 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbr
+package dbr_test
 
-// IfNullAs returns IFNULL(`t1`.`c1`,`t2`.`c2`) AS `as` means
-// if column c1 is null then use column c2.
-func IfNullAs(t1, c1, t2, c2, as string) string {
-	return MakeAlias(
-		"IFNULL("+Quoter.TableColumnAlias(t1, c1)[0]+", "+Quoter.TableColumnAlias(t2, c2)[0]+")",
-		as,
-	).String()
-}
+import (
+	"fmt"
+
+	"github.com/corestoreio/csfw/storage/dbr"
+)
+
+// check if the types implement the interfaces
+
+var _ fmt.Stringer = (*dbr.Delete)(nil)
+var _ fmt.Stringer = (*dbr.Insert)(nil)
+var _ fmt.Stringer = (*dbr.Update)(nil)
+var _ fmt.Stringer = (*dbr.Select)(nil)
+
+var _ dbr.QueryBuilder = (*dbr.Select)(nil)
+var _ dbr.QueryBuilder = (*dbr.Delete)(nil)
+var _ dbr.QueryBuilder = (*dbr.Update)(nil)
+var _ dbr.QueryBuilder = (*dbr.Insert)(nil)

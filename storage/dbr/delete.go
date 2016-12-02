@@ -2,16 +2,18 @@ package dbr
 
 import (
 	"database/sql"
-	"fmt"
+	"strconv"
+	"sync"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// DeleteBuilder contains the clauses for a DELETE statement
-type DeleteBuilder struct {
-	log.Logger
+// Delete contains the clauses for a DELETE statement
+type Delete struct {
+	log.Logger // optional
+
 	Execer
 	Preparer
 
@@ -22,48 +24,64 @@ type DeleteBuilder struct {
 	LimitValid  bool
 	OffsetCount uint64
 	OffsetValid bool
+
+	onceHooks DeleteHooks
+	once      sync.Once
 }
 
-var _ queryBuilder = (*DeleteBuilder)(nil)
+// NewDelete creates a new object with a black hole logger.
+func NewDelete(from ...string) *Delete {
+	return &Delete{
+		Logger: log.BlackHole{},
+		From:   MakeAlias(from...),
+	}
+}
 
-// DeleteFrom creates a new DeleteBuilder for the given table
-func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
-	return &DeleteBuilder{
+// DeleteFrom creates a new Delete for the given table
+func (sess *Session) DeleteFrom(from ...string) *Delete {
+	return &Delete{
 		Logger:         sess.Logger,
 		Execer:         sess.cxn.DB,
 		Preparer:       sess.cxn.DB,
-		From:           NewAlias(from...),
+		From:           MakeAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
 }
 
-// DeleteFrom creates a new DeleteBuilder for the given table
+// DeleteFrom creates a new Delete for the given table
 // in the context for a transaction
-func (tx *Tx) DeleteFrom(from ...string) *DeleteBuilder {
-	return &DeleteBuilder{
+func (tx *Tx) DeleteFrom(from ...string) *Delete {
+	return &Delete{
 		Logger:         tx.Logger,
 		Execer:         tx.Tx,
 		Preparer:       tx.Tx,
-		From:           NewAlias(from...),
+		From:           MakeAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
+}
+
+// AddAtomicHooks acting as call backs to modify the query. Hooks run only once
+// per Delete object. They run as the very first code in the ToSQL function.
+func (b *Delete) AddAtomicHooks(shs ...DeleteHook) *Delete {
+	b.onceHooks = append(b.onceHooks, shs...)
+	return b
 }
 
 // Where appends a WHERE clause to the statement whereSqlOrMap can be a
 // string or map. If it's a string, args wil replaces any places holders
-func (b *DeleteBuilder) Where(args ...ConditionArg) *DeleteBuilder {
+func (b *Delete) Where(args ...ConditionArg) *Delete {
 	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
 	return b
 }
 
 // OrderBy appends an ORDER BY clause to the statement
-func (b *DeleteBuilder) OrderBy(ord string) *DeleteBuilder {
+func (b *Delete) OrderBy(ord string) *Delete {
 	b.OrderBys = append(b.OrderBys, ord)
 	return b
 }
 
 // OrderDir appends an ORDER BY clause with a direction to the statement
-func (b *DeleteBuilder) OrderDir(ord string, isAsc bool) *DeleteBuilder {
+func (b *Delete) OrderDir(ord string, isAsc bool) *Delete {
 	if isAsc {
 		b.OrderBys = append(b.OrderBys, ord+" ASC")
 	} else {
@@ -73,22 +91,26 @@ func (b *DeleteBuilder) OrderDir(ord string, isAsc bool) *DeleteBuilder {
 }
 
 // Limit sets a LIMIT clause for the statement; overrides any existing LIMIT
-func (b *DeleteBuilder) Limit(limit uint64) *DeleteBuilder {
+func (b *Delete) Limit(limit uint64) *Delete {
 	b.LimitCount = limit
 	b.LimitValid = true
 	return b
 }
 
 // Offset sets an OFFSET clause for the statement; overrides any existing OFFSET
-func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
+func (b *Delete) Offset(offset uint64) *Delete {
 	b.OffsetCount = offset
 	b.OffsetValid = true
 	return b
 }
 
-// ToSql serialized the DeleteBuilder to a SQL string
+// ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
+func (b *Delete) ToSQL() (string, []interface{}, error) {
+	b.once.Do(func() {
+		b.onceHooks.Apply(b)
+	})
+
 	if len(b.From.Expression) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)
 	}
@@ -119,34 +141,34 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
 
 	if b.LimitValid {
 		buf.WriteString(" LIMIT ")
-		fmt.Fprint(buf, b.LimitCount)
+		buf.WriteString(strconv.FormatUint(b.LimitCount, 10))
 	}
 
 	if b.OffsetValid {
 		buf.WriteString(" OFFSET ")
-		fmt.Fprint(buf, b.OffsetCount)
+		buf.WriteString(strconv.FormatUint(b.OffsetCount, 10))
 	}
 	return buf.String(), args, nil
 }
 
-// Exec executes the statement represented by the DeleteBuilder
+// Exec executes the statement represented by the Delete
 // It returns the raw database/sql Result and an error if there was one
-func (b *DeleteBuilder) Exec() (sql.Result, error) {
-	sqlStr, args, err := b.ToSql()
+func (b *Delete) Exec() (sql.Result, error) {
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] delete.exec.tosql")
+		return nil, errors.Wrap(err, "[dbr] Delete.Exec.ToSQL")
 	}
 
-	fullSql, err := Preprocess(sqlStr, args)
+	fullSQL, err := Preprocess(sqlStr, args)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[dbr] delete.exec.interpolate: %q", fullSql)
+		return nil, errors.Wrapf(err, "[dbr] Delete.Exec.Preprocess: %q", fullSQL)
 	}
 
-	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.DeleteBuilder.Exec.timing", log.String("sql", fullSql))
+	if b.Logger != nil && b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.Delete.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.Execer.Exec(fullSql)
+	result, err := b.Execer.Exec(fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] delete.exec.Exec")
 	}
@@ -154,23 +176,19 @@ func (b *DeleteBuilder) Exec() (sql.Result, error) {
 	return result, nil
 }
 
-// Prepare executes the statement represented by the DeleteBuilder. It returns
-// the raw database/sql Statement and an error if there was one. Provided
-// arguments in the DeleteBuilder are getting ignored.
-func (b *DeleteBuilder) Prepare() (*sql.Stmt, error) {
-	sqlStr, _, err := b.ToSql()
+// Prepare executes the statement represented by the Delete. It returns the raw
+// database/sql Statement and an error if there was one. Provided arguments in
+// the Delete are getting ignored. It panics when field Preparer is nil.
+func (b *Delete) Prepare() (*sql.Stmt, error) {
+	sqlStr, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] delete.Prepare.tosql")
+		return nil, errors.Wrap(err, "[dbr] Delete.Prepare.ToSQL")
 	}
 
-	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.DeleteBuilder.Prepare.timing", log.String("sql", sqlStr))
+	if b.Logger != nil && b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.Delete.Prepare.Timing", log.String("sql", sqlStr))
 	}
 
 	stmt, err := b.Preparer.Prepare(sqlStr)
-	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] delete.Prepare.Prepare")
-	}
-
-	return stmt, nil
+	return stmt, errors.Wrap(err, "[dbr] Delete.Prepare.Prepare")
 }

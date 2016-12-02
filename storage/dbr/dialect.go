@@ -2,11 +2,11 @@ package dbr
 
 import "time"
 
-var D Dialect = Mysql{}
+var dialect dialecter = mysqlDialect{}
 
-// Dialect is an interface that wraps the diverse properties of individual
+// dialecter is an interface that wraps the diverse properties of individual
 // SQL drivers.
-type Dialect interface {
+type dialecter interface {
 	EscapeIdent(w QueryWriter, ident string)
 	EscapeBool(w QueryWriter, b bool)
 	EscapeString(w QueryWriter, s string)

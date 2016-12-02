@@ -8,18 +8,45 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Rows executes a query and returns the row result.
-func (b *SelectBuilder) Rows(hss ...SelectHook) (*sql.Rows, error) {
+// Rows executes a query and returns many rows. Does no interpolation.
+func (b *Select) Rows() (*sql.Rows, error) {
 
-	SelectHooks(hss).Apply(b)
-
-	sqlStr, args, err := b.ToSql()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[store] SelectBuilder.Rows.ToSql")
+		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
-	rows, err := b.Querier.Query(sqlStr, args...)
 
-	return rows, errors.Wrap(err, "[store] SelectBuilder.Rows.QueryContext")
+	if b.Logger != nil && b.Logger.IsInfo() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Logger).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
+	}
+
+	rows, err := b.Querier.Query(sqlStr, args...)
+	return rows, errors.Wrap(err, "[store] Select.Rows.QueryContext")
+}
+
+// Row executes a query that is expected to return at most one
+// row. QueryRow always returns a non-nil value. Errors are deferred
+// until Row's Scan method is called.
+func (b *Select) Row() *sql.Row {
+
+	sqlStr, args, err := b.ToSQL()
+	if err != nil {
+		panic(err) // todo remove panic and log error .... ?
+		// return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
+	}
+	return b.QueryRower.QueryRow(sqlStr, args...)
+}
+
+// Prepare prepares a SQL statement.
+func (b *Select) Prepare() (*sql.Stmt, error) {
+
+	sqlStr, _, err := b.ToSQL()
+	if err != nil {
+		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
+	}
+	stmt, err := b.Preparer.Prepare(sqlStr)
+	return stmt, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
 // Unvetted thots:
@@ -29,11 +56,11 @@ func (b *SelectBuilder) Rows(hss ...SelectHook) (*sql.Rows, error) {
 // For fields in the structure that aren't in the query but without db:"-", return error
 // For fields in the query that aren't in the structure, we'll ignore them.
 
-// LoadStructs executes the SelectBuilder and loads the resulting data into a
+// LoadStructs executes the Select and loads the resulting data into a
 // slice of structs dest must be a pointer to a slice of pointers to structs.
 // Returns the number of items found (which is not necessarily the # of items
 // set). Slow because of the massive use of reflection.
-func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
+func (b *Select) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -68,39 +95,40 @@ func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Get full SQL
 	//
-	tSQL, tArg, err := b.ToSql()
+	tSQL, tArg, err := b.ToSQL()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] select.load_structs.tosql")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
 	}
 
-	fullSql, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] select.load_all.interpolate")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Preprocess")
 	}
 
 	numberOfRowsReturned := 0
 
-	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadStructs.QueryContext.timing", log.String("sql", fullSql))
+	if b.Logger != nil && b.Logger.IsInfo() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadStructs.QueryContext.timing", log.String("sql", tSQL))
 	}
 
 	// Run the query:
-	rows, err := b.Query(fullSql)
+	rows, err := b.Querier.Query(fullSQL)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] select.load_all.query")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
 	}
 	defer rows.Close()
 
 	// Get the columns returned
 	columns, err := rows.Columns()
 	if err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_one.rows.Columns")
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.load_one.rows.Columns")
 	}
 
 	// Create a map of this result set to the struct fields
 	fieldMap, err := calculateFieldMap(recordType, columns, false)
 	if err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.calculateFieldMap")
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.calculateFieldMap")
 	}
 
 	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
@@ -116,13 +144,13 @@ func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 		// Prepare the holder for this record
 		scannable, err := prepareHolderFor(newRecord, fieldMap, holder)
 		if err != nil {
-			return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.holderFor")
+			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.holderFor")
 		}
 
 		// Load up our new structure with the row's values
 		err = rows.Scan(scannable...)
 		if err != nil {
-			return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.scan")
+			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
 		}
 
 		// Append our new record to the slice:
@@ -134,16 +162,16 @@ func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 
 	// Check for errors at the end. Supposedly these are error that can happen during iteration.
 	if err = rows.Err(); err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all.rows_err")
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.rows_err")
 	}
 
 	return numberOfRowsReturned, nil
 }
 
-// LoadStruct executes the SelectBuilder and loads the resulting data into a
+// LoadStruct executes the Select and loads the resulting data into a
 // struct dest must be a pointer to a struct Returns ErrNotFound behaviour. Slow
 // because of the massive use of reflection.
-func (b *SelectBuilder) LoadStruct(dest interface{}) error {
+func (b *Select) LoadStruct(dest interface{}) error {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -160,9 +188,9 @@ func (b *SelectBuilder) LoadStruct(dest interface{}) error {
 	//
 	// Get full SQL
 	//
-	tSQL, tArg, err := b.ToSql()
+	tSQL, tArg, err := b.ToSQL()
 	if err != nil {
-		return errors.Wrap(err, "[dbr] select.load_struct.tosql")
+		return errors.Wrap(err, "[dbr] Select.LoadStruct.ToSQL")
 	}
 
 	fullSql, err := Preprocess(tSQL, tArg)
@@ -170,27 +198,27 @@ func (b *SelectBuilder) LoadStruct(dest interface{}) error {
 		return err
 	}
 
-	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadStruct.ExecContext.timing", log.String("sql", fullSql))
+	if b.Logger != nil && b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadStruct.ExecContext.timing", log.String("sql", fullSql))
 	}
 
 	// Run the query:
 	rows, err := b.Query(fullSql)
 	if err != nil {
-		return errors.Wrap(err, "[dbr] select.load_one.query")
+		return errors.Wrap(err, "[dbr] Select.load_one.query")
 	}
 	defer rows.Close()
 
 	// Get the columns of this result set
 	columns, err := rows.Columns()
 	if err != nil {
-		return errors.Wrap(err, "[dbr] select.load_one.rows.Columns")
+		return errors.Wrap(err, "[dbr] Select.load_one.rows.Columns")
 	}
 
 	// Create a map of this result set to the struct columns
 	fieldMap, err := calculateFieldMap(recordType, columns, false)
 	if err != nil {
-		return errors.Wrap(err, "[dbr] select.load_one.calculateFieldMap")
+		return errors.Wrap(err, "[dbr] Select.load_one.calculateFieldMap")
 	}
 
 	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
@@ -200,29 +228,29 @@ func (b *SelectBuilder) LoadStruct(dest interface{}) error {
 		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
 		scannable, err := prepareHolderFor(indirectOfDest, fieldMap, holder)
 		if err != nil {
-			return errors.Wrap(err, "[dbr] select.load_one.holderFor")
+			return errors.Wrap(err, "[dbr] Select.load_one.holderFor")
 		}
 
 		// Load up our new structure with the row's values
 		err = rows.Scan(scannable...)
 		if err != nil {
-			return errors.Wrap(err, "[dbr] select.load_one.scan")
+			return errors.Wrap(err, "[dbr] Select.load_one.scan")
 		}
 		return nil
 	}
 
 	if err := rows.Err(); err != nil {
-		return errors.Wrap(err, "[dbr] select.load_one.rows_err")
+		return errors.Wrap(err, "[dbr] Select.load_one.rows_err")
 	}
 
 	return errors.NewNotFoundf("[dbr] Entry not found")
 }
 
-// LoadValues executes the SelectBuilder and loads the resulting data into a
+// LoadValues executes the Select and loads the resulting data into a
 // slice of primitive values Returns ErrNotFound behaviour if no value was
 // found, and it was therefore not set. Slow because of the massive use of
 // reflection.
-func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
+func (b *Select) LoadValues(dest interface{}) (int, error) {
 	// Validate the dest and reflection values we need
 
 	// This must be a pointer to a slice
@@ -251,9 +279,9 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 	//
 	// Get full SQL
 	//
-	tSQL, tArg, err := b.ToSql()
+	tSQL, tArg, err := b.ToSQL()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] select.load_values.tosql")
+		return 0, errors.Wrap(err, "[dbr] Select.load_values.ToSQL")
 	}
 
 	fullSql, err := Preprocess(tSQL, tArg)
@@ -263,14 +291,14 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 
 	numberOfRowsReturned := 0
 
-	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadValues.QueryContext.timing", log.String("sql", fullSql))
+	if b.Logger != nil && b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValues.QueryContext.timing", log.String("sql", fullSql))
 	}
 
 	// Run the query:
 	rows, err := b.Query(fullSql)
 	if err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all_values.query")
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.query")
 	}
 	defer rows.Close()
 
@@ -282,7 +310,7 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 
 		err = rows.Scan(pointerToNewValue.Interface())
 		if err != nil {
-			return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all_values.scan")
+			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.scan")
 		}
 
 		// Append our new value to the slice:
@@ -293,16 +321,16 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 	valueOfDest.Set(sliceValue)
 
 	if err := rows.Err(); err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all_values.rows_err")
+		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.rows_err")
 	}
 
 	return numberOfRowsReturned, nil
 }
 
-// LoadValue executes the SelectBuilder and loads the resulting data into a
+// LoadValue executes the Select and loads the resulting data into a
 // primitive value Returns ErrNotFound if no value was found, and it was
 // therefore not set. Slow because of the massive use of reflection.
-func (b *SelectBuilder) LoadValue(dest interface{}) error {
+func (b *Select) LoadValue(dest interface{}) error {
 	// Validate the dest
 	valueOfDest := reflect.ValueOf(dest)
 	kindOfDest := valueOfDest.Kind()
@@ -314,9 +342,9 @@ func (b *SelectBuilder) LoadValue(dest interface{}) error {
 	//
 	// Get full SQL
 	//
-	tSQL, tArg, err := b.ToSql()
+	tSQL, tArg, err := b.ToSQL()
 	if err != nil {
-		return errors.Wrap(err, "[dbr] select.load_value.tosql")
+		return errors.Wrap(err, "[dbr] Select.LoadValue.ToSQL")
 	}
 
 	fullSql, err := Preprocess(tSQL, tArg)
@@ -324,27 +352,23 @@ func (b *SelectBuilder) LoadValue(dest interface{}) error {
 		return err
 	}
 
-	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.SelectBuilder.LoadValue.QueryContext.timing", log.String("sql", fullSql))
+	if b.Logger != nil && b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValue.QueryContext.timing", log.String("sql", fullSql))
 	}
 
 	// Run the query:
 	rows, err := b.Query(fullSql)
 	if err != nil {
-		return errors.Wrap(err, "[dbr] select.load_value.query")
+		return errors.Wrap(err, "[dbr] Select.LoadValue.Query")
 	}
 	defer rows.Close()
 
 	if rows.Next() {
-		err = rows.Scan(dest)
-		if err != nil {
-			return errors.Wrap(err, "[dbr] select.load_value.scan")
-		}
-		return nil
+		return errors.Wrap(rows.Scan(dest), "[dbr] Select.LoadValue.Scan")
 	}
 
 	if err := rows.Err(); err != nil {
-		return errors.Wrap(err, "[dbr] select.load_value.rows_err")
+		return errors.Wrap(err, "[dbr] Select.LoadValue.Rows_err")
 	}
 
 	return errors.NewNotFoundf("[dbr] Entry not found")

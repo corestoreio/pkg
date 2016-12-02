@@ -107,3 +107,33 @@ func installFixtures(db *sql.DB) {
 		}
 	}
 }
+
+var _ Preparer = (*dbMock)(nil)
+var _ Querier = (*dbMock)(nil)
+var _ Execer = (*dbMock)(nil)
+
+type dbMock struct {
+	error
+	prepareFn func(query string) (*sql.Stmt, error)
+}
+
+func (pm dbMock) Prepare(query string) (*sql.Stmt, error) {
+	if pm.error != nil {
+		return nil, pm.error
+	}
+	return pm.prepareFn(query)
+}
+
+func (pm dbMock) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	if pm.error != nil {
+		return nil, pm.error
+	}
+	return nil, nil
+}
+
+func (pm dbMock) Exec(query string, args ...interface{}) (sql.Result, error) {
+	if pm.error != nil {
+		return nil, pm.error
+	}
+	return nil, nil
+}

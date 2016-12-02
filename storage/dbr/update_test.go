@@ -3,6 +3,7 @@ package dbr
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +13,7 @@ func BenchmarkUpdateValuesSql(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		s.Update("alpha").Set("something_id", 1).Where(ConditionRaw("id", 1)).ToSql()
+		s.Update("alpha").Set("something_id", 1).Where(ConditionRaw("id", 1)).ToSQL()
 	}
 }
 
@@ -22,14 +23,14 @@ func BenchmarkUpdateValueMapSql(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		s.Update("alpha").Set("something_id", 1).SetMap(map[string]interface{}{"b": 1, "c": 2}).Where(ConditionRaw("id", 1)).ToSql()
+		s.Update("alpha").Set("something_id", 1).SetMap(map[string]interface{}{"b": 1, "c": 2}).Where(ConditionRaw("id", 1)).ToSQL()
 	}
 }
 
 func TestUpdateAllToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).ToSql()
+	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "UPDATE `a` SET `b` = ?, `c` = ?")
 	assert.Equal(t, args, []interface{}{1, 2})
@@ -38,7 +39,7 @@ func TestUpdateAllToSql(t *testing.T) {
 func TestUpdateSingleToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).Where(ConditionRaw("id = ?", 1)).ToSql()
+	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).Where(ConditionRaw("id = ?", 1)).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 1})
@@ -47,7 +48,7 @@ func TestUpdateSingleToSql(t *testing.T) {
 func TestUpdateSetMapToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where(ConditionRaw("id = ?", 1)).ToSql()
+	sql, args, err := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where(ConditionRaw("id = ?", 1)).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)" {
 		assert.Equal(t, args, []interface{}{1, 2, 1})
@@ -60,12 +61,12 @@ func TestUpdateSetMapToSql(t *testing.T) {
 func TestUpdateSetExprToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(ConditionRaw("id = ?", 9)).ToSql()
+	sql, args, err := s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(ConditionRaw("id = ?", 9)).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1, 9})
 
-	sql, args, err = s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + ?", 2)).Where(ConditionRaw("id = ?", 9)).ToSql()
+	sql, args, err = s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + ?", 2)).Where(ConditionRaw("id = ?", 9)).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 9})
@@ -74,7 +75,7 @@ func TestUpdateSetExprToSql(t *testing.T) {
 func TestUpdateTenStaringFromTwentyToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", 1).Limit(10).Offset(20).ToSql()
+	sql, args, err := s.Update("a").Set("b", 1).Limit(10).Offset(20).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "UPDATE `a` SET `b` = ? LIMIT 10 OFFSET 20")
 	assert.Equal(t, args, []interface{}{1})
@@ -128,4 +129,29 @@ func TestUpdateReal(t *testing.T) {
 	assert.Equal(t, person.Name, "Barack")
 	assert.Equal(t, person.Email.Valid, true)
 	assert.Equal(t, person.Email.String, "barack@whitehouse.gov")
+}
+
+func TestUpdate_Prepare(t *testing.T) {
+
+	t.Run("ToSQL Error", func(t *testing.T) {
+		in := &Update{}
+		in.Set("a", 1)
+		stmt, err := in.Prepare()
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsEmpty(err))
+	})
+
+	t.Run("Prepare Error", func(t *testing.T) {
+		in := &Update{
+			Preparer: dbMock{
+				error: errors.NewAlreadyClosedf("Who closed myself?"),
+			},
+		}
+		in.Table = MakeAlias("tableY")
+		in.Set("a", 1)
+
+		stmt, err := in.Prepare()
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
 }

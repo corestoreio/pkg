@@ -2,18 +2,23 @@ package dbr
 
 import (
 	"strconv"
+	"sync"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// SelectBuilder contains the clauses for a SELECT statement
-type SelectBuilder struct {
-	log.Logger
+// Select contains the clauses for a SELECT statement
+type Select struct {
+	log.Logger // optional
+	// The next three fields depend on which method receiver you would like to
+	// execute. Leaving them empty results in a panic.
 	Querier
+	QueryRower
+	Preparer
 
-	RawFullSql   string
+	RawFullSQL   string
 	RawArguments []interface{}
 
 	IsDistinct bool
@@ -28,88 +33,112 @@ type SelectBuilder struct {
 	LimitValid      bool
 	OffsetCount     uint64
 	OffsetValid     bool
+
+	onceHooks SelectHooks
+	once      sync.Once
 }
 
-var _ queryBuilder = (*SelectBuilder)(nil)
-
-// Select creates a new SelectBuilder that select that given columns
-func (sess *Session) Select(cols ...string) *SelectBuilder {
-	return &SelectBuilder{
-		Logger:  sess.Logger,
-		Querier: sess.cxn.DB,
-		Columns: cols,
+// NewSelect creates a new object with a black hole logger.
+func NewSelect(from ...string) *Select {
+	return &Select{
+		Logger:    log.BlackHole{},
+		FromTable: MakeAlias(from...),
 	}
 }
 
-// SelectBySql creates a new SelectBuilder for the given SQL string and arguments
-func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
-	return &SelectBuilder{
+// Select creates a new Select that select that given columns
+func (sess *Session) Select(cols ...string) *Select {
+	return &Select{
+		Logger:     sess.Logger,
+		Querier:    sess.cxn.DB,
+		QueryRower: sess.cxn.DB,
+		Preparer:   sess.cxn.DB,
+		Columns:    cols,
+	}
+}
+
+// SelectBySql creates a new Select for the given SQL string and arguments
+func (sess *Session) SelectBySql(sql string, args ...interface{}) *Select {
+	return &Select{
 		Logger:       sess.Logger,
 		Querier:      sess.cxn.DB,
-		RawFullSql:   sql,
+		QueryRower:   sess.cxn.DB,
+		Preparer:     sess.cxn.DB,
+		RawFullSQL:   sql,
 		RawArguments: args,
 	}
 }
 
-// Select creates a new SelectBuilder that select that given columns bound to the transaction
-func (tx *Tx) Select(cols ...string) *SelectBuilder {
-	return &SelectBuilder{
-		Logger:  tx.Logger,
-		Querier: tx.Tx,
-		Columns: cols,
+// Select creates a new Select that select that given columns bound to the transaction
+func (tx *Tx) Select(cols ...string) *Select {
+	return &Select{
+		Logger:     tx.Logger,
+		QueryRower: tx.Tx,
+		Querier:    tx.Tx,
+		Preparer:   tx.Tx,
+		Columns:    cols,
 	}
 }
 
-// SelectBySql creates a new SelectBuilder for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
-	return &SelectBuilder{
+// SelectBySql creates a new Select for the given SQL string and arguments bound to the transaction
+func (tx *Tx) SelectBySql(sql string, args ...interface{}) *Select {
+	return &Select{
 		Logger:       tx.Logger,
+		QueryRower:   tx.Tx,
 		Querier:      tx.Tx,
-		RawFullSql:   sql,
+		Preparer:     tx.Tx,
+		RawFullSQL:   sql,
 		RawArguments: args,
 	}
+}
+
+// AddAtomicHooks acting as call backs to modify the query. Hooks run only once
+// per Select object. They run as the very first code in the ToSQL function.
+func (b *Select) AddAtomicHooks(shs ...SelectHook) *Select {
+	b.onceHooks = append(b.onceHooks, shs...)
+	return b
 }
 
 // Distinct marks the statement as a DISTINCT SELECT
-func (b *SelectBuilder) Distinct() *SelectBuilder {
+func (b *Select) Distinct() *Select {
 	b.IsDistinct = true
 	return b
 }
 
 // From sets the table to SELECT FROM. If second argument will be provided this is
 // then considered as the alias. SELECT ... FROM table AS alias.
-func (b *SelectBuilder) From(from ...string) *SelectBuilder {
-	b.FromTable = NewAlias(from...)
+func (b *Select) From(from ...string) *Select {
+	b.FromTable = MakeAlias(from...)
 	return b
 }
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs
-func (b *SelectBuilder) Where(args ...ConditionArg) *SelectBuilder {
+func (b *Select) Where(args ...ConditionArg) *Select {
 	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
 	return b
 }
 
 // GroupBy appends a column to group the statement
-func (b *SelectBuilder) GroupBy(group string) *SelectBuilder {
+func (b *Select) GroupBy(group string) *Select {
 	b.GroupBys = append(b.GroupBys, group)
 	return b
 }
 
 // Having appends a HAVING clause to the statement
-func (b *SelectBuilder) Having(args ...ConditionArg) *SelectBuilder {
+func (b *Select) Having(args ...ConditionArg) *Select {
 	b.HavingFragments = append(b.HavingFragments, newWhereFragments(args...)...)
 	return b
 }
 
 // OrderBy appends a column to ORDER the statement by
-func (b *SelectBuilder) OrderBy(ord string) *SelectBuilder {
+func (b *Select) OrderBy(ord string) *Select {
 	b.OrderBys = append(b.OrderBys, ord)
 	return b
 }
 
 // OrderDir appends a column to ORDER the statement by with a given direction
-func (b *SelectBuilder) OrderDir(ord string, isAsc bool) *SelectBuilder {
+func (b *Select) OrderDir(ord string, isAsc bool) *Select {
 	if isAsc {
 		b.OrderBys = append(b.OrderBys, ord+" ASC")
 	} else {
@@ -119,14 +148,14 @@ func (b *SelectBuilder) OrderDir(ord string, isAsc bool) *SelectBuilder {
 }
 
 // Limit sets a limit for the statement; overrides any existing LIMIT
-func (b *SelectBuilder) Limit(limit uint64) *SelectBuilder {
+func (b *Select) Limit(limit uint64) *Select {
 	b.LimitCount = limit
 	b.LimitValid = true
 	return b
 }
 
 // Offset sets an offset for the statement; overrides any existing OFFSET
-func (b *SelectBuilder) Offset(offset uint64) *SelectBuilder {
+func (b *Select) Offset(offset uint64) *Select {
 	b.OffsetCount = offset
 	b.OffsetValid = true
 	return b
@@ -134,17 +163,21 @@ func (b *SelectBuilder) Offset(offset uint64) *SelectBuilder {
 
 // Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage
 // Assumes page/perPage are valid. Page and perPage must be >= 1
-func (b *SelectBuilder) Paginate(page, perPage uint64) *SelectBuilder {
+func (b *Select) Paginate(page, perPage uint64) *Select {
 	b.Limit(perPage)
 	b.Offset((page - 1) * perPage)
 	return b
 }
 
-// ToSql serialized the SelectBuilder to a SQL string
+// ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *SelectBuilder) ToSql() (string, []interface{}, error) {
-	if b.RawFullSql != "" {
-		return b.RawFullSql, b.RawArguments, nil
+func (b *Select) ToSQL() (string, []interface{}, error) {
+	b.once.Do(func() {
+		b.onceHooks.Apply(b)
+	})
+
+	if b.RawFullSQL != "" {
+		return b.RawFullSQL, b.RawArguments, nil
 	}
 
 	if len(b.FromTable.Expression) == 0 {

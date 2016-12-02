@@ -5,7 +5,8 @@ type alias struct {
 	Alias      string
 }
 
-func NewAlias(as ...string) alias {
+// MakeAlias creates a new alias expression
+func MakeAlias(as ...string) alias {
 	a := alias{
 		Expression: as[0],
 	}
