@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"context"
 	"database/sql"
 	"reflect"
 
@@ -10,7 +9,7 @@ import (
 )
 
 // Rows executes a query and returns the row result.
-func (b *SelectBuilder) Rows(ctx context.Context, q Querier, hss ...SelectHook) (*sql.Rows, error) {
+func (b *SelectBuilder) Rows(hss ...SelectHook) (*sql.Rows, error) {
 
 	SelectHooks(hss).Apply(b)
 
@@ -18,7 +17,7 @@ func (b *SelectBuilder) Rows(ctx context.Context, q Querier, hss ...SelectHook) 
 	if err != nil {
 		return nil, errors.Wrap(err, "[store] SelectBuilder.Rows.ToSql")
 	}
-	rows, err := q.QueryContext(ctx, sqlStr, args...)
+	rows, err := b.Querier.Query(sqlStr, args...)
 
 	return rows, errors.Wrap(err, "[store] SelectBuilder.Rows.QueryContext")
 }
@@ -34,7 +33,7 @@ func (b *SelectBuilder) Rows(ctx context.Context, q Querier, hss ...SelectHook) 
 // slice of structs dest must be a pointer to a slice of pointers to structs.
 // Returns the number of items found (which is not necessarily the # of items
 // set). Slow because of the massive use of reflection.
-func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int, error) {
+func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -86,7 +85,7 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 	}
 
 	// Run the query:
-	rows, err := b.QueryContext(ctx, fullSql)
+	rows, err := b.Query(fullSql)
 	if err != nil {
 		return 0, errors.Wrap(err, "[dbr] select.load_all.query")
 	}
@@ -144,7 +143,7 @@ func (b *SelectBuilder) LoadStructs(ctx context.Context, dest interface{}) (int,
 // LoadStruct executes the SelectBuilder and loads the resulting data into a
 // struct dest must be a pointer to a struct Returns ErrNotFound behaviour. Slow
 // because of the massive use of reflection.
-func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error {
+func (b *SelectBuilder) LoadStruct(dest interface{}) error {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -176,7 +175,7 @@ func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error 
 	}
 
 	// Run the query:
-	rows, err := b.QueryContext(ctx, fullSql)
+	rows, err := b.Query(fullSql)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] select.load_one.query")
 	}
@@ -223,7 +222,7 @@ func (b *SelectBuilder) LoadStruct(ctx context.Context, dest interface{}) error 
 // slice of primitive values Returns ErrNotFound behaviour if no value was
 // found, and it was therefore not set. Slow because of the massive use of
 // reflection.
-func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, error) {
+func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 	// Validate the dest and reflection values we need
 
 	// This must be a pointer to a slice
@@ -269,7 +268,7 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 	}
 
 	// Run the query:
-	rows, err := b.QueryContext(ctx, fullSql)
+	rows, err := b.Query(fullSql)
 	if err != nil {
 		return numberOfRowsReturned, errors.Wrap(err, "[dbr] select.load_all_values.query")
 	}
@@ -303,7 +302,7 @@ func (b *SelectBuilder) LoadValues(ctx context.Context, dest interface{}) (int, 
 // LoadValue executes the SelectBuilder and loads the resulting data into a
 // primitive value Returns ErrNotFound if no value was found, and it was
 // therefore not set. Slow because of the massive use of reflection.
-func (b *SelectBuilder) LoadValue(ctx context.Context, dest interface{}) error {
+func (b *SelectBuilder) LoadValue(dest interface{}) error {
 	// Validate the dest
 	valueOfDest := reflect.ValueOf(dest)
 	kindOfDest := valueOfDest.Kind()
@@ -330,7 +329,7 @@ func (b *SelectBuilder) LoadValue(ctx context.Context, dest interface{}) error {
 	}
 
 	// Run the query:
-	rows, err := b.QueryContext(ctx, fullSql)
+	rows, err := b.Query(fullSql)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] select.load_value.query")
 	}

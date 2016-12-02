@@ -107,7 +107,3 @@ func installFixtures(db *sql.DB) {
 		}
 	}
 }
-
-var _ Querier = (*sql.DB)(nil)
-var _ Execer = (*sql.DB)(nil)
-var _ QueryRower = (*sql.DB)(nil)

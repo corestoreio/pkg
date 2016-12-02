@@ -3,8 +3,6 @@ package dbr
 import (
 	"testing"
 
-	"context"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,11 +84,11 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a user with a key
-	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").Values("Benjamin", "ben@whitehouse.gov", "6").Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").Values("Benjamin", "ben@whitehouse.gov", "6").Exec()
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(ConditionMap(Eq{"key": "6"})).Exec(context.TODO())
+	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(ConditionMap(Eq{"key": "6"})).Exec()
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -99,7 +97,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionMap(Eq{"email": "ben@whitehouse.gov"})).LoadStruct(context.TODO(), &person)
+	err = s.Select("*").From("dbr_people").Where(ConditionMap(Eq{"email": "ben@whitehouse.gov"})).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Name, "Benjamin")
@@ -110,7 +108,7 @@ func TestUpdateReal(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a George
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("George", "george@whitehouse.gov").Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("George", "george@whitehouse.gov").Exec()
 	assert.NoError(t, err)
 
 	// Get George's ID
@@ -118,12 +116,12 @@ func TestUpdateReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Rename our George to Barack
-	res, err = s.Update("dbr_people").SetMap(map[string]interface{}{"name": "Barack", "email": "barack@whitehouse.gov"}).Where(ConditionRaw("id = ?", id)).Exec(context.TODO())
+	res, err = s.Update("dbr_people").SetMap(map[string]interface{}{"name": "Barack", "email": "barack@whitehouse.gov"}).Where(ConditionRaw("id = ?", id)).Exec()
 
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(context.TODO(), &person)
+	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)

@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -62,7 +61,7 @@ func TestDeleteReal(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a Barack
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "barack@whitehouse.gov").Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "barack@whitehouse.gov").Exec()
 	assert.NoError(t, err)
 
 	// Get Barack's ID
@@ -70,7 +69,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where(ConditionRaw("id = ?", id)).Exec(context.TODO())
+	res, err = s.DeleteFrom("dbr_people").Where(ConditionRaw("id = ?", id)).Exec()
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -79,7 +78,11 @@ func TestDeleteReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
 	var count int64
-	err = s.Select("count(*)").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadValue(context.TODO(), &count)
+	err = s.Select("count(*)").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadValue(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
+}
+
+func TestDeleteBuilder_Prepare(t *testing.T) {
+	t.Skip("TODO")
 }

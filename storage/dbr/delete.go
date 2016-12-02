@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 
@@ -14,6 +13,7 @@ import (
 type DeleteBuilder struct {
 	log.Logger
 	Execer
+	Preparer
 
 	From alias
 	WhereFragments
@@ -31,6 +31,7 @@ func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Logger:         sess.Logger,
 		Execer:         sess.cxn.DB,
+		Preparer:       sess.cxn.DB,
 		From:           NewAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
@@ -42,6 +43,7 @@ func (tx *Tx) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Logger:         tx.Logger,
 		Execer:         tx.Tx,
+		Preparer:       tx.Tx,
 		From:           NewAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
@@ -129,7 +131,7 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
 
 // Exec executes the statement represented by the DeleteBuilder
 // It returns the raw database/sql Result and an error if there was one
-func (b *DeleteBuilder) Exec(ctx context.Context) (sql.Result, error) {
+func (b *DeleteBuilder) Exec() (sql.Result, error) {
 	sqlStr, args, err := b.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] delete.exec.tosql")
@@ -141,13 +143,34 @@ func (b *DeleteBuilder) Exec(ctx context.Context) (sql.Result, error) {
 	}
 
 	if b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.DeleteBuilder.ExecContext.timing", log.String("sql", fullSql))
+		defer log.WhenDone(b.Logger).Info("dbr.DeleteBuilder.Exec.timing", log.String("sql", fullSql))
 	}
 
-	result, err := b.ExecContext(ctx, fullSql)
+	result, err := b.Execer.Exec(fullSql)
 	if err != nil {
-		return result, errors.Wrap(err, "[dbr] delete.exec.ExecContext")
+		return result, errors.Wrap(err, "[dbr] delete.exec.Exec")
 	}
 
 	return result, nil
+}
+
+// Prepare executes the statement represented by the DeleteBuilder. It returns
+// the raw database/sql Statement and an error if there was one. Provided
+// arguments in the DeleteBuilder are getting ignored.
+func (b *DeleteBuilder) Prepare() (*sql.Stmt, error) {
+	sqlStr, _, err := b.ToSql()
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] delete.Prepare.tosql")
+	}
+
+	if b.Logger.IsInfo() {
+		defer log.WhenDone(b.Logger).Info("dbr.DeleteBuilder.Prepare.timing", log.String("sql", sqlStr))
+	}
+
+	stmt, err := b.Preparer.Prepare(sqlStr)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] delete.Prepare.Prepare")
+	}
+
+	return stmt, nil
 }

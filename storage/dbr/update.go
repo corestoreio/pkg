@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"context"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
@@ -220,7 +219,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
 
 // Exec executes the statement represented by the UpdateBuilder
 // It returns the raw database/sql Result and an error if there was one
-func (b *UpdateBuilder) Exec(ctx context.Context) (sql.Result, error) {
+func (b *UpdateBuilder) Exec() (sql.Result, error) {
 	sql, args, err := b.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] update.exec.tosql")
@@ -235,7 +234,7 @@ func (b *UpdateBuilder) Exec(ctx context.Context) (sql.Result, error) {
 		defer log.WhenDone(b.Logger).Info("dbr.UpdateBuilder.ExecContext.timing", log.String("sql", fullSql))
 	}
 
-	result, err := b.ExecContext(ctx, fullSql)
+	result, err := b.Execer.Exec(fullSql)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] update.exec.exec")
 	}

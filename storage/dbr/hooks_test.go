@@ -15,9 +15,10 @@
 package dbr_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewHook(t *testing.T) {

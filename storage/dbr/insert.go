@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"context"
 	"database/sql"
 	"database/sql/driver"
 	"reflect"
@@ -15,6 +14,7 @@ import (
 type InsertBuilder struct {
 	log.Logger
 	Execer
+	// Preparer todo idea
 
 	Into string
 	Cols []string
@@ -220,7 +220,7 @@ func (b *InsertBuilder) MapToSql(w QueryWriter) (string, []interface{}, error) {
 // INSERT statement, LAST_INSERT_ID() returns the value generated for
 // the first inserted row only. The reason for this is to make it possible to
 // reproduce easily the same INSERT statement against some other server.
-func (b *InsertBuilder) Exec(ctx context.Context) (sql.Result, error) {
+func (b *InsertBuilder) Exec() (sql.Result, error) {
 	sql, args, err := b.ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] insert.exec.tosql")
@@ -235,7 +235,7 @@ func (b *InsertBuilder) Exec(ctx context.Context) (sql.Result, error) {
 		defer log.WhenDone(b.Logger).Info("dbr.InsertBuilder.ExecContext.timing", log.String("sql", fullSql))
 	}
 
-	result, err := b.ExecContext(ctx, fullSql)
+	result, err := b.Execer.Exec(fullSql)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] insert.exec.exec")
 	}

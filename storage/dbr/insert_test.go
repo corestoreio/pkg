@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -68,7 +67,7 @@ func TestInsertRecordsToSql(t *testing.T) {
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values("Barack", "44").Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values("Barack", "44").Exec()
 	assert.NoError(t, err)
 
 	rowsAff, err := res.RowsAffected()
@@ -79,7 +78,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
@@ -87,12 +86,12 @@ func TestInsertReal(t *testing.T) {
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
-	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(&person).Exec(context.TODO())
+	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(&person).Exec()
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (struct)
 	s = createRealSessionWithFixtures()
-	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(person).Exec(context.TODO())
+	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(person).Exec()
 	validateInsertingBarack(t, s, res, err)
 }
 
@@ -107,7 +106,7 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(context.TODO(), &person)
+	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)
