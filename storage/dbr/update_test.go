@@ -155,3 +155,24 @@ func TestUpdate_Prepare(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 }
+
+func TestUpdate_AddHookBeforeToSQLOnce(t *testing.T) {
+	up := NewUpdate("tableA", "tA")
+
+	up.Set("a", 1).Set("b", true)
+
+	up.AddHookBeforeToSQLOnce(func(u2 *Update) {
+		u2.Set("c", 3.14159)
+		u2.OrderBy("a ASC")
+	})
+
+	sql, args, err := up.ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, []interface{}{1, true, 3.14159}, args)
+	assert.NotEmpty(t, sql)
+
+	sql, args, err = up.ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, []interface{}{1, true, 3.14159}, args)
+	assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ? ORDER BY a ASC", sql)
+}

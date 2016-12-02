@@ -34,8 +34,8 @@ type Select struct {
 	OffsetCount     uint64
 	OffsetValid     bool
 
-	onceHooks SelectHooks
-	once      sync.Once
+	onceToSQLbefore SelectHooks
+	syncOnceBefore  sync.Once
 }
 
 // NewSelect creates a new object with a black hole logger.
@@ -92,10 +92,10 @@ func (tx *Tx) SelectBySql(sql string, args ...interface{}) *Select {
 	}
 }
 
-// AddAtomicHooks acting as call backs to modify the query. Hooks run only once
+// AddHookBeforeToSQLOnce acting as call backs to modify the query. Hooks run only once
 // per Select object. They run as the very first code in the ToSQL function.
-func (b *Select) AddAtomicHooks(shs ...SelectHook) *Select {
-	b.onceHooks = append(b.onceHooks, shs...)
+func (b *Select) AddHookBeforeToSQLOnce(shs ...SelectHook) *Select {
+	b.onceToSQLbefore = append(b.onceToSQLbefore, shs...)
 	return b
 }
 
@@ -172,8 +172,8 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) ToSQL() (string, []interface{}, error) {
-	b.once.Do(func() {
-		b.onceHooks.Apply(b)
+	b.syncOnceBefore.Do(func() {
+		b.onceToSQLbefore.Apply(b)
 	})
 
 	if b.RawFullSQL != "" {

@@ -413,7 +413,7 @@ func TestSelect_AddAtomicHooks(t *testing.T) {
 
 	s.Columns = []string{"a", "b"}
 	s.OrderBy("col2")
-	s.AddAtomicHooks(func(s2 *Select) {
+	s.AddHookBeforeToSQLOnce(func(s2 *Select) {
 		s2.OrderDir("col1", false)
 	})
 

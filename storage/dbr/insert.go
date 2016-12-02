@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"reflect"
+	"sync"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -21,6 +22,17 @@ type Insert struct {
 	Vals [][]interface{}
 	Recs []interface{}
 	Maps map[string]interface{}
+
+	onceToSQLbefore InsertHooks
+	syncOnceBefore  sync.Once
+}
+
+// NewDelete creates a new object with a black hole logger.
+func NewInsert(into string) *Insert {
+	return &Insert{
+		Logger: log.BlackHole{},
+		Into:   into,
+	}
 }
 
 // InsertInto instantiates a Insert for the given table
@@ -43,19 +55,24 @@ func (tx *Tx) InsertInto(into string) *Insert {
 	}
 }
 
-// Columns appends columns to insert in the statement
-func (b *Insert) Columns(columns ...string) *Insert {
-	b.Cols = columns
+// AddAtomicHooks acting as call backs to modify the query. Hooks run only once
+// per Insert object. They run as the very first code in the ToSQL function.
+func (b *Insert) AddHookBeforeToSQLOnce(shs ...InsertHook) *Insert {
+	b.onceToSQLbefore = append(b.onceToSQLbefore, shs...)
 	return b
 }
 
-// Values appends a set of values to the statement.
-// Pro Tip: Use Values() and not Record() to avoid reflection.
-// Only this function will consider the driver.Valuer interface when you pass
-// a pointer to the value.
+// Columns appends columns to insert in the statement.
+func (b *Insert) Columns(columns ...string) *Insert {
+	b.Cols = append(b.Cols, columns...)
+	return b
+}
+
+// Values appends a set of values to the statement. Pro Tip: Use Values() and
+// not Record() to avoid reflection. Only this function will consider the
+// driver.Valuer interface when you pass a pointer to the value.
 func (b *Insert) Values(vals ...interface{}) *Insert {
 	if err := argsValuer(&vals); err != nil {
-		// b.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(vals)})
 		panic(err) // todo remove panic
 	}
 	b.Vals = append(b.Vals, vals)
@@ -68,9 +85,15 @@ func (b *Insert) Record(record interface{}) *Insert {
 	return b
 }
 
-// Record pulls in values to match Columns from the record
+// Record pulls in values to match Columns from the record. Calling multiple
+// times will add new map entries to the Insert map.
 func (b *Insert) Map(m map[string]interface{}) *Insert {
-	b.Maps = m
+	if b.Maps == nil {
+		b.Maps = make(map[string]interface{})
+	}
+	for col, val := range m {
+		b.Maps[col] = val
+	}
 	return b
 }
 
@@ -100,6 +123,10 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
+	b.syncOnceBefore.Do(func() {
+		b.onceToSQLbefore.Apply(b)
+	})
+
 	if len(b.Into) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)
 	}

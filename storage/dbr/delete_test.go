@@ -108,11 +108,11 @@ func TestDelete_Prepare(t *testing.T) {
 	})
 }
 
-func TestDelete_AddAtomicHooks(t *testing.T) {
+func TestDelete_AddHookBeforeToSQLOnce(t *testing.T) {
 	d := NewDelete("tableA", "main_table")
 
 	d.OrderBy("col2")
-	d.AddAtomicHooks(func(s2 *Delete) {
+	d.AddHookBeforeToSQLOnce(func(s2 *Delete) {
 		s2.OrderDir("col1", false)
 	})
 

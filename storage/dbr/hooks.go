@@ -42,7 +42,7 @@ func (hs InsertHooks) Apply(b *Insert) {
 	}
 }
 
-// Apply runs all Update hooks.
+// Apply runs all UPDATE hooks.
 func (hs UpdateHooks) Apply(b *Update) {
 	for _, h := range hs {
 		h(b)
@@ -59,10 +59,12 @@ func (hs DeleteHooks) Apply(b *Delete) {
 // Hook a type for embedding to define hooks for manipulating the SQL. DML
 // stands for data manipulation language.
 type Hook struct {
-	SelectAfter SelectHooks
-	InsertAfter InsertHooks
-	UpdateAfter UpdateHooks
-	DeleteAfter DeleteHooks
+	BeforeToSQL struct {
+		SelectHooks
+		InsertHooks
+		UpdateHooks
+		DeleteHooks
+	}
 }
 
 // NewHookDML creates a new set of hooks for data manipulation language
@@ -73,26 +75,26 @@ func NewHook() *Hook {
 // Merge merges one or more other hooks into the current hook.
 func (h *Hook) Merge(hooks ...*Hook) *Hook {
 	for _, hs := range hooks {
-		h.AddSelectAfter(hs.SelectAfter...)
-		h.AddInsertAfter(hs.InsertAfter...)
-		h.AddUpdateAfter(hs.UpdateAfter...)
-		h.AddDeleteAfter(hs.DeleteAfter...)
+		h.AddSelectAfter(hs.BeforeToSQL.SelectHooks...)
+		h.AddInsertAfter(hs.BeforeToSQL.InsertHooks...)
+		h.AddUpdateAfter(hs.BeforeToSQL.UpdateHooks...)
+		h.AddDeleteAfter(hs.BeforeToSQL.DeleteHooks...)
 	}
 	return h
 }
 
 func (h *Hook) AddSelectAfter(sh ...SelectHook) {
-	h.SelectAfter = append(h.SelectAfter, sh...)
+	h.BeforeToSQL.SelectHooks = append(h.BeforeToSQL.SelectHooks, sh...)
 }
 
 func (h *Hook) AddInsertAfter(sh ...InsertHook) {
-	h.InsertAfter = append(h.InsertAfter, sh...)
+	h.BeforeToSQL.InsertHooks = append(h.BeforeToSQL.InsertHooks, sh...)
 }
 
 func (h *Hook) AddUpdateAfter(sh ...UpdateHook) {
-	h.UpdateAfter = append(h.UpdateAfter, sh...)
+	h.BeforeToSQL.UpdateHooks = append(h.BeforeToSQL.UpdateHooks, sh...)
 }
 
 func (h *Hook) AddDeleteAfter(sh ...DeleteHook) {
-	h.DeleteAfter = append(h.DeleteAfter, sh...)
+	h.BeforeToSQL.DeleteHooks = append(h.BeforeToSQL.DeleteHooks, sh...)
 }

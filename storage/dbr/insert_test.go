@@ -142,3 +142,23 @@ func TestInsert_Prepare(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 }
+
+func TestInsert_AddHookBeforeToSQLOnce(t *testing.T) {
+	ins := NewInsert("tableA")
+
+	ins.Columns("a", "b").Values(1, true)
+
+	ins.AddHookBeforeToSQLOnce(func(i2 *Insert) {
+		i2.Pair("c", 3.14159)
+	})
+
+	sql, args, err := ins.ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, []interface{}{1, true, 3.14159}, args)
+	assert.NotEmpty(t, sql)
+
+	sql, args, err = ins.ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, []interface{}{1, true, 3.14159}, args)
+	assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`c`) VALUES (?,?,?)", sql)
+}

@@ -34,10 +34,10 @@ func TestNewHook(t *testing.T) {
 	h.AddUpdateAfter(hUpd, hUpd)
 	h.AddDeleteAfter(hDel, hDel)
 
-	assert.Len(t, h.SelectAfter, 2)
-	assert.Len(t, h.InsertAfter, 2)
-	assert.Len(t, h.UpdateAfter, 2)
-	assert.Len(t, h.DeleteAfter, 2)
+	assert.Len(t, h.BeforeToSQL.SelectHooks, 2)
+	assert.Len(t, h.BeforeToSQL.InsertHooks, 2)
+	assert.Len(t, h.BeforeToSQL.UpdateHooks, 2)
+	assert.Len(t, h.BeforeToSQL.DeleteHooks, 2)
 
 	h2 := dbr.NewHook()
 	h2.AddSelectAfter(hSel, hSel)
@@ -45,20 +45,19 @@ func TestNewHook(t *testing.T) {
 	h2.AddUpdateAfter(hUpd, hUpd)
 	h2.AddDeleteAfter(hDel, hDel)
 
-	assert.Len(t, h2.SelectAfter, 2)
-	assert.Len(t, h2.InsertAfter, 2)
-	assert.Len(t, h2.UpdateAfter, 2)
-	assert.Len(t, h2.DeleteAfter, 2)
+	assert.Len(t, h2.BeforeToSQL.SelectHooks, 2)
+	assert.Len(t, h2.BeforeToSQL.InsertHooks, 2)
+	assert.Len(t, h2.BeforeToSQL.UpdateHooks, 2)
+	assert.Len(t, h2.BeforeToSQL.DeleteHooks, 2)
 
 	h.Merge(h2, h2)
-	assert.Len(t, h.SelectAfter, 6)
-	assert.Len(t, h.InsertAfter, 6)
-	assert.Len(t, h.UpdateAfter, 6)
-	assert.Len(t, h.DeleteAfter, 6)
+	assert.Len(t, h.BeforeToSQL.SelectHooks, 6)
+	assert.Len(t, h.BeforeToSQL.InsertHooks, 6)
+	assert.Len(t, h.BeforeToSQL.UpdateHooks, 6)
+	assert.Len(t, h.BeforeToSQL.DeleteHooks, 6)
 
-	h.SelectAfter.Apply(nil)
-	h.InsertAfter.Apply(nil)
-	h.UpdateAfter.Apply(nil)
-	h.DeleteAfter.Apply(nil)
-
+	h.BeforeToSQL.SelectHooks.Apply(nil)
+	h.BeforeToSQL.InsertHooks.Apply(nil)
+	h.BeforeToSQL.UpdateHooks.Apply(nil)
+	h.BeforeToSQL.DeleteHooks.Apply(nil)
 }

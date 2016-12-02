@@ -6,6 +6,8 @@ import (
 
 	"strconv"
 
+	"sync"
+
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
@@ -38,11 +40,30 @@ type Update struct {
 	LimitValid     bool
 	OffsetCount    uint64
 	OffsetValid    bool
+
+	onceToSQLbefore UpdateHooks
+	syncOnceBefore  sync.Once
+}
+
+// NewUpdate creates a new object with a black hole logger.
+func NewUpdate(table ...string) *Update {
+	return &Update{
+		Logger: log.BlackHole{},
+		Table:  MakeAlias(table...),
+	}
 }
 
 type setClause struct {
 	column string
 	value  interface{}
+}
+
+// AddHookBeforeToSQLOnce acting as call backs to modify the query. Hooks run
+// only once per Update object. They run as the very first code in the ToSQL
+// function.
+func (b *Update) AddHookBeforeToSQLOnce(shs ...UpdateHook) *Update {
+	b.onceToSQLbefore = append(b.onceToSQLbefore, shs...)
+	return b
 }
 
 // Update creates a new Update for the given table
@@ -151,6 +172,10 @@ func (b *Update) Offset(offset uint64) *Update {
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) ToSQL() (string, []interface{}, error) {
+	b.syncOnceBefore.Do(func() {
+		b.onceToSQLbefore.Apply(b)
+	})
+
 	if b.RawFullSQL != "" {
 		return b.RawFullSQL, b.RawArguments, nil
 	}
@@ -165,7 +190,7 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	var args []interface{}
+	var args = make([]interface{}, 0, len(b.SetClauses))
 
 	buf.WriteString("UPDATE ")
 	buf.WriteString(b.Table.QuoteAs())

@@ -13,7 +13,6 @@ import (
 // Delete contains the clauses for a DELETE statement
 type Delete struct {
 	log.Logger // optional
-
 	Execer
 	Preparer
 
@@ -25,8 +24,8 @@ type Delete struct {
 	OffsetCount uint64
 	OffsetValid bool
 
-	onceHooks DeleteHooks
-	once      sync.Once
+	onceToSQLbefore DeleteHooks
+	syncOnceBefore  sync.Once
 }
 
 // NewDelete creates a new object with a black hole logger.
@@ -60,10 +59,11 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 	}
 }
 
-// AddAtomicHooks acting as call backs to modify the query. Hooks run only once
-// per Delete object. They run as the very first code in the ToSQL function.
-func (b *Delete) AddAtomicHooks(shs ...DeleteHook) *Delete {
-	b.onceHooks = append(b.onceHooks, shs...)
+// AddHookBeforeToSQLOnce acting as call backs to modify the query. Hooks run
+// only once per Delete object. They run as the very first code in the ToSQL
+// function.
+func (b *Delete) AddHookBeforeToSQLOnce(shs ...DeleteHook) *Delete {
+	b.onceToSQLbefore = append(b.onceToSQLbefore, shs...)
 	return b
 }
 
@@ -107,8 +107,8 @@ func (b *Delete) Offset(offset uint64) *Delete {
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, []interface{}, error) {
-	b.once.Do(func() {
-		b.onceHooks.Apply(b)
+	b.syncOnceBefore.Do(func() {
+		b.onceToSQLbefore.Apply(b)
 	})
 
 	if len(b.From.Expression) == 0 {
