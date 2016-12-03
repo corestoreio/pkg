@@ -8,7 +8,7 @@ type QueryBuilder interface {
 	ToSQL() (string, []interface{}, error)
 }
 
-func makeSql(b QueryBuilder) string {
+func makeSQL(b QueryBuilder) string {
 	sRaw, vals, err := b.ToSQL()
 	if err != nil {
 		return fmt.Sprintf("[dbr] ToSQL Error: %+v", err)
@@ -23,23 +23,23 @@ func makeSql(b QueryBuilder) string {
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Delete) String() string {
-	return makeSql(b)
+	return makeSQL(b)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Insert) String() string {
-	return makeSql(b)
+	return makeSQL(b)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Select) String() string {
-	return makeSql(b)
+	return makeSQL(b)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Update) String() string {
-	return makeSql(b)
+	return makeSQL(b)
 }

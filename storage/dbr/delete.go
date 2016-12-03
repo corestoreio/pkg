@@ -67,7 +67,7 @@ func (b *Delete) AddHookBeforeToSQLOnce(shs ...DeleteHook) *Delete {
 	return b
 }
 
-// Where appends a WHERE clause to the statement whereSqlOrMap can be a
+// Where appends a WHERE clause to the statement whereSQLOrMap can be a
 // string or map. If it's a string, args wil replaces any places holders
 func (b *Delete) Where(args ...ConditionArg) *Delete {
 	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
@@ -125,7 +125,7 @@ func (b *Delete) ToSQL() (string, []interface{}, error) {
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {
 		buf.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, buf, &args)
+		writeWhereFragmentsToSQL(b.WhereFragments, buf, &args)
 	}
 
 	// Ordering and limiting

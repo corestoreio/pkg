@@ -68,7 +68,7 @@ func newWhereFragments(wargs ...ConditionArg) WhereFragments {
 }
 
 // Invariant: only called when len(fragments) > 0
-func writeWhereFragmentsToSql(fragments WhereFragments, sql QueryWriter, args *[]interface{}) {
+func writeWhereFragmentsToSQL(fragments WhereFragments, sql QueryWriter, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {
@@ -84,12 +84,12 @@ func writeWhereFragmentsToSql(fragments WhereFragments, sql QueryWriter, args *[
 				*args = append(*args, f.Values...)
 			}
 		} else if f.EqualityMap != nil {
-			anyConditions = writeEqualityMapToSql(f.EqualityMap, sql, args, anyConditions)
+			anyConditions = writeEqualityMapToSQL(f.EqualityMap, sql, args, anyConditions)
 		}
 	}
 }
 
-func writeEqualityMapToSql(eq map[string]interface{}, sql QueryWriter, args *[]interface{}, anyConditions bool) bool {
+func writeEqualityMapToSQL(eq map[string]interface{}, sql QueryWriter, args *[]interface{}, anyConditions bool) bool {
 	for k, v := range eq {
 		if v == nil {
 			anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)

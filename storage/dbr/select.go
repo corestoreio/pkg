@@ -57,8 +57,8 @@ func (sess *Session) Select(cols ...string) *Select {
 	}
 }
 
-// SelectBySql creates a new Select for the given SQL string and arguments
-func (sess *Session) SelectBySql(sql string, args ...interface{}) *Select {
+// SelectBySQL creates a new Select for the given SQL string and arguments
+func (sess *Session) SelectBySQL(sql string, args ...interface{}) *Select {
 	return &Select{
 		Logger:       sess.Logger,
 		Querier:      sess.cxn.DB,
@@ -80,8 +80,8 @@ func (tx *Tx) Select(cols ...string) *Select {
 	}
 }
 
-// SelectBySql creates a new Select for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySql(sql string, args ...interface{}) *Select {
+// SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
+func (tx *Tx) SelectBySQL(sql string, args ...interface{}) *Select {
 	return &Select{
 		Logger:       tx.Logger,
 		QueryRower:   tx.Tx,
@@ -224,13 +224,13 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 			sql.WriteString(" JOIN ")
 			sql.WriteString(f.Table.QuoteAs())
 			sql.WriteString(" ON ")
-			writeWhereFragmentsToSql(f.OnConditions, sql, &args)
+			writeWhereFragmentsToSQL(f.OnConditions, sql, &args)
 		}
 	}
 
 	if len(b.WhereFragments) > 0 {
 		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, sql, &args)
+		writeWhereFragmentsToSQL(b.WhereFragments, sql, &args)
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -245,7 +245,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 
 	if len(b.HavingFragments) > 0 {
 		sql.WriteString(" HAVING ")
-		writeWhereFragmentsToSql(b.HavingFragments, sql, &args)
+		writeWhereFragmentsToSQL(b.HavingFragments, sql, &args)
 	}
 
 	if len(b.OrderBys) > 0 {

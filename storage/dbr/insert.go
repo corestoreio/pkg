@@ -27,7 +27,7 @@ type Insert struct {
 	syncOnceBefore  sync.Once
 }
 
-// NewDelete creates a new object with a black hole logger.
+// NewInsert creates a new object with a black hole logger.
 func NewInsert(into string) *Insert {
 	return &Insert{
 		Logger: log.BlackHole{},
@@ -149,7 +149,7 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 	buf.WriteString(" (")
 
 	if len(b.Maps) != 0 {
-		return b.MapToSql(buf)
+		return b.MapToSQL(buf)
 	}
 
 	var args []interface{}
@@ -198,10 +198,10 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 	return buf.String(), args, nil
 }
 
-// MapToSql serialized the Insert to a SQL string
+// MapToSQL serialized the Insert to a SQL string
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Insert) MapToSql(w QueryWriter) (string, []interface{}, error) {
+func (b *Insert) MapToSQL(w QueryWriter) (string, []interface{}, error) {
 
 	keys := make([]string, len(b.Maps))
 	vals := make([]interface{}, len(b.Maps))
@@ -212,7 +212,7 @@ func (b *Insert) MapToSql(w QueryWriter) (string, []interface{}, error) {
 			if val, err := dbVal.Value(); err == nil {
 				vals[i] = val
 			} else {
-				return "", nil, errors.Wrap(err, "[dbr] MapToSql -> driver.Valuer")
+				return "", nil, errors.Wrap(err, "[dbr] MapToSQL -> driver.Valuer")
 			}
 		} else {
 			vals[i] = v
@@ -253,16 +253,16 @@ func (b *Insert) Exec() (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
 	}
 
-	fullSql, err := Preprocess(sql, args)
+	fullSQL, err := Preprocess(sql, args)
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.Preprocess")
 	}
 
 	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSql))
+		defer log.WhenDone(b.Logger).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.Execer.Exec(fullSql)
+	result, err := b.Execer.Exec(fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Insert.Exec.Exec")
 	}

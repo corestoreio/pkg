@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkDeleteSql(b *testing.B) {
+func BenchmarkDeleteSQL(b *testing.B) {
 	s := createFakeSession()
 
 	b.ResetTimer()
@@ -20,7 +20,7 @@ func BenchmarkDeleteSql(b *testing.B) {
 	}
 }
 
-func TestDeleteAllToSql(t *testing.T) {
+func TestDeleteAllToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, _, err := s.DeleteFrom("a").ToSQL()
@@ -32,7 +32,7 @@ func TestDeleteAllToSql(t *testing.T) {
 	assert.Equal(t, sql, "DELETE FROM `a` AS `b`")
 }
 
-func TestDeleteSingleToSql(t *testing.T) {
+func TestDeleteSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	del := s.DeleteFrom("a").Where(ConditionRaw("id = ?", 1))
@@ -50,7 +50,7 @@ func TestDeleteSingleToSql(t *testing.T) {
 
 }
 
-func TestDeleteTenStaringFromTwentyToSql(t *testing.T) {
+func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, _, err := s.DeleteFrom("a").Limit(10).Offset(20).OrderBy("id").ToSQL()

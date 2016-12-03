@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkSelectBasicSql(b *testing.B) {
+func BenchmarkSelectBasicSQL(b *testing.B) {
 	s := createFakeSession()
 
 	// Do some allocations outside the loop so they don't affect the results
@@ -25,7 +25,7 @@ func BenchmarkSelectBasicSql(b *testing.B) {
 	}
 }
 
-func BenchmarkSelectFullSql(b *testing.B) {
+func BenchmarkSelectFullSQL(b *testing.B) {
 	s := createFakeSession()
 
 	// Do some allocations outside the loop so they don't affect the results
@@ -57,7 +57,7 @@ func BenchmarkSelectFullSql(b *testing.B) {
 	}
 }
 
-func TestSelectBasicToSql(t *testing.T) {
+func TestSelectBasicToSQL(t *testing.T) {
 	s := createFakeSession()
 	sel := s.Select("a", "b").From("c").Where(ConditionRaw("id = ?", 1))
 	for i := 0; i < 3; i++ {
@@ -68,7 +68,7 @@ func TestSelectBasicToSql(t *testing.T) {
 	}
 }
 
-func TestSelectFullToSql(t *testing.T) {
+func TestSelectFullToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sel := s.Select("a", "b").
@@ -89,7 +89,7 @@ func TestSelectFullToSql(t *testing.T) {
 
 }
 
-func TestSelectPaginateOrderDirToSql(t *testing.T) {
+func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").
@@ -113,7 +113,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 	assert.Equal(t, []interface{}{1}, args)
 }
 
-func TestSelectNoWhereSql(t *testing.T) {
+func TestSelectNoWhereSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").From("c").ToSQL()
@@ -122,7 +122,7 @@ func TestSelectNoWhereSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}(nil))
 }
 
-func TestSelectMultiHavingSql(t *testing.T) {
+func TestSelectMultiHavingSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").From("c").Where(ConditionRaw("p = ?", 1)).GroupBy("z").Having(ConditionRaw("z = ?", 2), ConditionRaw("y = ?", 3)).ToSQL()
@@ -131,7 +131,7 @@ func TestSelectMultiHavingSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, 2, 3})
 }
 
-func TestSelectMultiOrderSql(t *testing.T) {
+func TestSelectMultiOrderSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").From("c").OrderBy("name ASC").OrderBy("id DESC").ToSQL()
@@ -140,7 +140,7 @@ func TestSelectMultiOrderSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}(nil))
 }
 
-func TestSelectWhereMapSql(t *testing.T) {
+func TestSelectWhereMapSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1})).ToSQL()
@@ -193,7 +193,7 @@ func TestSelectWhereMapSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{false})
 }
 
-func TestSelectWhereEqSql(t *testing.T) {
+func TestSelectWhereEqSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": []int64{1, 2, 3}})).ToSQL()
@@ -206,21 +206,21 @@ func TestSelectWhereEqSql(t *testing.T) {
 	}
 }
 
-func TestSelectBySql(t *testing.T) {
+func TestSelectBySQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.SelectBySql("SELECT * FROM users WHERE x = 1").ToSQL()
+	sql, args, err := s.SelectBySQL("SELECT * FROM users WHERE x = 1").ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT * FROM users WHERE x = 1")
 	assert.Equal(t, args, []interface{}(nil))
 
-	sql, args, err = s.SelectBySql("SELECT * FROM users WHERE x = ? AND y IN ?", 9, []int{5, 6, 7}).ToSQL()
+	sql, args, err = s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN ?", 9, []int{5, 6, 7}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT * FROM users WHERE x = ? AND y IN ?")
 	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
 
 	// Doesn't fix shit if it's broken:
-	sql, args, err = s.SelectBySql("wat", 9, []int{5, 6, 7}).ToSQL()
+	sql, args, err = s.SelectBySQL("wat", 9, []int{5, 6, 7}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "wat")
 	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
@@ -281,11 +281,11 @@ func TestSelectLoadStruct(t *testing.T) {
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 }
 
-func TestSelectBySqlLoadStructs(t *testing.T) {
+func TestSelectBySQLLoadStructs(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.SelectBySql("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadStructs(&people)
+	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadStructs(&people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkUpdateValuesSql(b *testing.B) {
+func BenchmarkUpdateValuesSQL(b *testing.B) {
 	s := createFakeSession()
 
 	b.ResetTimer()
@@ -17,7 +17,7 @@ func BenchmarkUpdateValuesSql(b *testing.B) {
 	}
 }
 
-func BenchmarkUpdateValueMapSql(b *testing.B) {
+func BenchmarkUpdateValueMapSQL(b *testing.B) {
 	s := createFakeSession()
 
 	b.ResetTimer()
@@ -27,7 +27,7 @@ func BenchmarkUpdateValueMapSql(b *testing.B) {
 	}
 }
 
-func TestUpdateAllToSql(t *testing.T) {
+func TestUpdateAllToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).ToSQL()
@@ -36,7 +36,7 @@ func TestUpdateAllToSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, 2})
 }
 
-func TestUpdateSingleToSql(t *testing.T) {
+func TestUpdateSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).Where(ConditionRaw("id = ?", 1)).ToSQL()
@@ -45,7 +45,7 @@ func TestUpdateSingleToSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, 2, 1})
 }
 
-func TestUpdateSetMapToSql(t *testing.T) {
+func TestUpdateSetMapToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where(ConditionRaw("id = ?", 1)).ToSQL()
@@ -58,7 +58,7 @@ func TestUpdateSetMapToSql(t *testing.T) {
 	}
 }
 
-func TestUpdateSetExprToSql(t *testing.T) {
+func TestUpdateSetExprToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(ConditionRaw("id = ?", 9)).ToSQL()
@@ -72,7 +72,7 @@ func TestUpdateSetExprToSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, 2, 9})
 }
 
-func TestUpdateTenStaringFromTwentyToSql(t *testing.T) {
+func TestUpdateTenStaringFromTwentyToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Update("a").Set("b", 1).Limit(10).Offset(20).ToSQL()

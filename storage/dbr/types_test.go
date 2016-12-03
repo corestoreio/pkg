@@ -31,7 +31,7 @@ func TestNewNullInt64(t *testing.T) {
 }
 
 func TestNewNullFloat64(t *testing.T) {
-	var test float64 = 1257894000.93445000001
+	var test = 1257894000.93445000001
 	assert.Equal(t, test, null.Float64From(test).Float64)
 	assert.True(t, null.Float64From(test).Valid)
 	assert.True(t, null.Float64From(0).Valid)

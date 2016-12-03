@@ -100,10 +100,9 @@ func valuesFor(recordType reflect.Type, record reflect.Value, columns []string) 
 	for i, fieldIndex := range fieldMap {
 		if fieldIndex == nil {
 			return nil, fmt.Errorf("fieldIndex is nil: %#v", fieldMap)
-		} else {
-			field := record.FieldByIndex(fieldIndex)
-			values[i] = field.Interface()
 		}
+		field := record.FieldByIndex(fieldIndex)
+		values[i] = field.Interface()
 	}
 
 	return values, nil

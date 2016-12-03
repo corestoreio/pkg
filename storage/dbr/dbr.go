@@ -254,10 +254,10 @@ func (s *Session) Options(opts ...SessionOption) error {
 // SessionRunner can do anything that a Session can except start a transaction.
 //type SessionRunner interface {
 //	Select(cols ...string) *Select
-//	SelectBySql(sql string, args ...interface{}) *Select
+//	SelectBySQL(sql string, args ...interface{}) *Select
 //
 //	InsertInto(into string) *Insert
 //	Update(table ...string) *Update
-//	UpdateBySql(sql string, args ...interface{}) *Update
+//	UpdateBySQL(sql string, args ...interface{}) *Update
 //	DeleteFrom(from ...string) *Delete
 //}

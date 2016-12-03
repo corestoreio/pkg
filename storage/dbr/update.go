@@ -75,8 +75,8 @@ func (sess *Session) Update(table ...string) *Update {
 	}
 }
 
-// UpdateBySql creates a new Update for the given SQL string and arguments
-func (sess *Session) UpdateBySql(sql string, args ...interface{}) *Update {
+// UpdateBySQL creates a new Update for the given SQL string and arguments
+func (sess *Session) UpdateBySQL(sql string, args ...interface{}) *Update {
 	if err := argsValuer(&args); err != nil {
 		//sess.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
 		panic(err) // todo remove panic
@@ -98,8 +98,8 @@ func (tx *Tx) Update(table ...string) *Update {
 	}
 }
 
-// UpdateBySql creates a new Update for the given SQL string and arguments bound to a transaction
-func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *Update {
+// UpdateBySQL creates a new Update for the given SQL string and arguments bound to a transaction
+func (tx *Tx) UpdateBySQL(sql string, args ...interface{}) *Update {
 	if err := argsValuer(&args); err != nil {
 		// tx.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
 		panic(err) // todo remove panic
@@ -215,7 +215,7 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {
 		buf.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, buf, &args)
+		writeWhereFragmentsToSQL(b.WhereFragments, buf, &args)
 	}
 
 	// Ordering and limiting
@@ -250,16 +250,16 @@ func (b *Update) Exec() (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.ToSQL")
 	}
 
-	fullSql, err := Preprocess(rawSQL, args)
+	fullSQL, err := Preprocess(rawSQL, args)
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.Preprocess")
 	}
 
 	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Update.Exec.Timing", log.String("sql", fullSql))
+		defer log.WhenDone(b.Logger).Info("dbr.Update.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.Execer.Exec(fullSql)
+	result, err := b.Execer.Exec(fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Update.Exec.Exec")
 	}

@@ -10,12 +10,12 @@ import (
 )
 
 type someRecord struct {
-	SomethingId int
-	UserId      int64
+	SomethingID int
+	UserID      int64
 	Other       bool
 }
 
-func BenchmarkInsertValuesSql(b *testing.B) {
+func BenchmarkInsertValuesSQL(b *testing.B) {
 	s := createFakeSession()
 
 	b.ResetTimer()
@@ -25,7 +25,7 @@ func BenchmarkInsertValuesSql(b *testing.B) {
 	}
 }
 
-func BenchmarkInsertRecordsSql(b *testing.B) {
+func BenchmarkInsertRecordsSQL(b *testing.B) {
 	s := createFakeSession()
 	obj := someRecord{1, 99, false}
 
@@ -36,7 +36,7 @@ func BenchmarkInsertRecordsSql(b *testing.B) {
 	}
 }
 
-func TestInsertSingleToSql(t *testing.T) {
+func TestInsertSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.InsertInto("a").Columns("b", "c").Values(1, 2).ToSQL()
@@ -45,7 +45,7 @@ func TestInsertSingleToSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, 2})
 }
 
-func TestInsertMultipleToSql(t *testing.T) {
+func TestInsertMultipleToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.InsertInto("a").Columns("b", "c").Values(1, 2).Values(3, 4).ToSQL()
@@ -54,7 +54,7 @@ func TestInsertMultipleToSql(t *testing.T) {
 	assert.Equal(t, args, []interface{}{1, 2, 3, 4})
 }
 
-func TestInsertRecordsToSql(t *testing.T) {
+func TestInsertRecordsToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	objs := []someRecord{{1, 88, false}, {2, 99, true}}

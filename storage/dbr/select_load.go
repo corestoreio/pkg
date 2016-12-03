@@ -193,17 +193,17 @@ func (b *Select) LoadStruct(dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.LoadStruct.ToSQL")
 	}
 
-	fullSql, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg)
 	if err != nil {
 		return err
 	}
 
 	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadStruct.ExecContext.timing", log.String("sql", fullSql))
+		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadStruct.ExecContext.timing", log.String("sql", fullSQL))
 	}
 
 	// Run the query:
-	rows, err := b.Query(fullSql)
+	rows, err := b.Query(fullSQL)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] Select.load_one.query")
 	}
@@ -284,7 +284,7 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 		return 0, errors.Wrap(err, "[dbr] Select.load_values.ToSQL")
 	}
 
-	fullSql, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg)
 	if err != nil {
 		return 0, err
 	}
@@ -292,11 +292,11 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 	numberOfRowsReturned := 0
 
 	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValues.QueryContext.timing", log.String("sql", fullSql))
+		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValues.QueryContext.timing", log.String("sql", fullSQL))
 	}
 
 	// Run the query:
-	rows, err := b.Query(fullSql)
+	rows, err := b.Query(fullSQL)
 	if err != nil {
 		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.query")
 	}
@@ -347,17 +347,17 @@ func (b *Select) LoadValue(dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.LoadValue.ToSQL")
 	}
 
-	fullSql, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg)
 	if err != nil {
 		return err
 	}
 
 	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValue.QueryContext.timing", log.String("sql", fullSql))
+		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValue.QueryContext.timing", log.String("sql", fullSQL))
 	}
 
 	// Run the query:
-	rows, err := b.Query(fullSql)
+	rows, err := b.Query(fullSQL)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] Select.LoadValue.Query")
 	}

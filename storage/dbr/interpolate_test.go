@@ -108,9 +108,8 @@ type myString struct {
 func (m myString) Value() (driver.Value, error) {
 	if m.Present {
 		return m.Val, nil
-	} else {
-		return nil, nil
 	}
+	return nil, nil
 }
 
 func TestIntepolatingValuers(t *testing.T) {
@@ -143,7 +142,7 @@ func TestPreprocess(t *testing.T) {
 	tests := []struct {
 		sql    string
 		args   []interface{}
-		expSql string
+		expSQL string
 		errBhf errors.BehaviourFunc
 	}{
 		// NULL
@@ -225,8 +224,8 @@ func TestPreprocess(t *testing.T) {
 				t.Errorf("\ngot error: %v\nwant: %s", err, test.errBhf(err))
 			}
 		}
-		if str != test.expSql {
-			t.Errorf("\ngot: %v\nwant: %v", str, test.expSql)
+		if str != test.expSQL {
+			t.Errorf("\ngot: %v\nwant: %v", str, test.expSQL)
 		}
 	}
 }
