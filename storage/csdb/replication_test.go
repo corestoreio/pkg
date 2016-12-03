@@ -62,5 +62,5 @@ func TestShowMasterStatus(t *testing.T) {
 	}
 	assert.Exactly(t, "mysql-bin.000001", v.File)
 	assert.Exactly(t, uint(3581378), v.Position)
-	assert.Exactly(t, "123-456-789", v.Executed_Gtid_Set)
+	assert.Exactly(t, "123-456-789", v.ExecutedGTIDSet)
 }

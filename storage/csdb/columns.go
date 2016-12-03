@@ -89,8 +89,7 @@ func LoadColumns(db dbr.Querier, table string) (Columns, error) {
 	var cs = make(Columns, 0, 10)
 	for rows.Next() {
 		c := new(Column)
-		err := rows.Scan(&c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.ColumnType, &c.Key, &c.Extra, &c.Comment)
-		if err != nil {
+		if err := rows.Scan(&c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.ColumnType, &c.Key, &c.Extra, &c.Comment); err != nil {
 			return nil, errors.Wrap(err, "[csdb] Scan Query")
 		}
 		c.DataType = strings.ToLower(c.DataType)

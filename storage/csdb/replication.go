@@ -22,27 +22,27 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// MasterStatus: This statement provides status information about the binary log
+// MasterStatus This statement provides status information about the binary log
 // files of the master. It requires either the SUPER or REPLICATION CLIENT
 // privilege.
 type MasterStatus struct {
-	File             string
-	Position         uint
-	Binlog_Do_DB     string
-	Binlog_Ignore_DB string
-	// Executed_Gtid_Set: When global transaction IDs are in use, Executed_Gtid_Set
+	File           string
+	Position       uint
+	BinlogDoDB     string
+	BinlogIgnoreDB string
+	// ExecutedGTIDSet: When global transaction IDs are in use, ExecutedGTIDSet
 	// shows the set of GTIDs for transactions that have been executed on the
 	// master. This is the same as the value for the gtid_executed system variable
-	// on this server, as well as the value for Executed_Gtid_Set in the output of
+	// on this server, as well as the value for ExecutedGTIDSet in the output of
 	// SHOW SLAVE STATUS on this server.
-	Executed_Gtid_Set string
+	ExecutedGTIDSet string
 }
 
 // Load retrieves the current master status from the database and puts it into
 // variable ms.
 func (ms *MasterStatus) Load(db dbr.QueryRower) error {
 	row := db.QueryRow("SHOW MASTER STATUS")
-	if err := row.Scan(&ms.File, &ms.Position, &ms.Binlog_Do_DB, &ms.Binlog_Ignore_DB, &ms.Executed_Gtid_Set); err != nil {
+	if err := row.Scan(&ms.File, &ms.Position, &ms.BinlogDoDB, &ms.BinlogIgnoreDB, &ms.ExecutedGTIDSet); err != nil {
 		return errors.Wrap(err, "[csdb] ShowMasterStatus")
 	}
 	return nil
