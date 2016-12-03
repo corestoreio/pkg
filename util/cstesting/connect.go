@@ -15,8 +15,6 @@
 package cstesting
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"sync"
@@ -89,7 +87,7 @@ func MustConnectDB(opts ...dbr.ConnectionOption) (*dbr.Connection, magento.Versi
 		return dbc, v
 	}
 
-	tables, err := showTables(context.Background(), dbc.DB)
+	tables, err := showTables(dbc.DB)
 	if err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}
@@ -112,8 +110,8 @@ func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 
 // showTables executes the query SHOW TABLES and returns all tables within the
 // current database.
-func showTables(ctx context.Context, db *sql.DB) ([]string, error) {
-	rows, err := db.QueryContext(ctx, "SHOW TABLES")
+func showTables(db dbr.Querier) ([]string, error) {
+	rows, err := db.Query("SHOW TABLES")
 	if err != nil {
 		return nil, errors.Wrap(err, "[csdb] ShowTables: SHOW TABLES failed")
 	}
