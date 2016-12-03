@@ -15,10 +15,10 @@
 package csdb
 
 import (
-	"context"
 	"strconv"
 	"strings"
 
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -40,8 +40,8 @@ type MasterStatus struct {
 
 // Load retrieves the current master status from the database and puts it into
 // variable ms.
-func (ms *MasterStatus) Load(ctx context.Context, db QueryRower) error {
-	row := db.QueryRowContext(ctx, "SHOW MASTER STATUS")
+func (ms *MasterStatus) Load(db dbr.QueryRower) error {
+	row := db.QueryRow("SHOW MASTER STATUS")
 	if err := row.Scan(&ms.File, &ms.Position, &ms.Binlog_Do_DB, &ms.Binlog_Ignore_DB, &ms.Executed_Gtid_Set); err != nil {
 		return errors.Wrap(err, "[csdb] ShowMasterStatus")
 	}

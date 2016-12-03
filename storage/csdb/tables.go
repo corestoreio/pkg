@@ -15,9 +15,9 @@
 package csdb
 
 import (
-	"context"
 	"sync"
 
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -72,7 +72,7 @@ func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 // generator script of the CoreStore project, we can guarantee that the
 // generated index constant will always stay the same but the name of the table
 // differs.
-func WithTableLoadColumns(ctx context.Context, db Querier, idx int, tableName string) TableOption {
+func WithTableLoadColumns(db dbr.Querier, idx int, tableName string) TableOption {
 	return func(tm *Tables) error {
 		if err := IsValidIdentifier(tableName); err != nil {
 			return errors.Wrap(err, "[csdb] WithTableLoadColumns.IsValidIdentifier")
@@ -80,7 +80,7 @@ func WithTableLoadColumns(ctx context.Context, db Querier, idx int, tableName st
 
 		t := NewTable(tableName)
 		t.Schema = tm.Schema
-		if err := t.LoadColumns(ctx, db); err != nil {
+		if err := t.LoadColumns(db); err != nil {
 			return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
 		}
 
@@ -115,13 +115,14 @@ func WithTableNames(idx []int, tableName []string) TableOption {
 
 // WithLoadColumnDefinitions loads the column definitions from the database for each
 // table in the internal map. Thread safe.
-func WithLoadColumnDefinitions(ctx context.Context, db Querier) TableOption {
+func WithLoadColumnDefinitions(db dbr.Querier) TableOption {
 	return func(tm *Tables) error {
 		tm.mu.Lock()
 		defer tm.mu.Unlock()
 
 		for _, table := range tm.ts {
-			if err := table.LoadColumns(ctx, db); err != nil {
+			// could be refactored to fire only one query ... but later.
+			if err := table.LoadColumns(db); err != nil {
 				return errors.Wrap(err, "[csdb] table.LoadColumns")
 			}
 		}

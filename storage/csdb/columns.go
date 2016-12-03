@@ -16,13 +16,13 @@ package csdb
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"hash/fnv"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
@@ -78,9 +78,9 @@ const DMLLoadColumns = `SELECT
 
 // LoadColumns returns all columns from a table in the current database. For now
 // MySQL DSN must have set interpolateParams to true.
-func LoadColumns(ctx context.Context, db Querier, table string) (Columns, error) {
+func LoadColumns(db dbr.Querier, table string) (Columns, error) {
 
-	rows, err := db.QueryContext(ctx, DMLLoadColumns, table)
+	rows, err := db.Query(DMLLoadColumns, table)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for table %q", table)
 	}

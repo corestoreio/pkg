@@ -15,8 +15,6 @@
 package csdb
 
 import (
-	"context"
-
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -38,6 +36,8 @@ type Table struct {
 	fieldsPK  []string // all PK column field
 	fieldsUNI []string // all unique key column field
 	fields    []string // all other non-pk column field
+
+	selectAllCache *dbr.Select
 }
 
 // NewTable initializes a new table structure
@@ -59,12 +59,18 @@ func (t *Table) update() *Table {
 	t.fields = t.Columns.ColumnsNoPK().FieldNames()
 	t.CountPK = t.Columns.PrimaryKeys().Len()
 	t.CountUnique = t.Columns.UniqueKeys().Len()
+
+	t.selectAllCache = &dbr.Select{
+		Columns:   t.AllColumnAliasQuote(MainTable),
+		FromTable: dbr.MakeAlias(t.Name, MainTable),
+	}
+
 	return t
 }
 
 // LoadColumns reads the column information from the DB.
-func (t *Table) LoadColumns(ctx context.Context, db Querier) (err error) {
-	t.Columns, err = LoadColumns(ctx, db, t.Name)
+func (t *Table) LoadColumns(db dbr.Querier) (err error) {
+	t.Columns, err = LoadColumns(db, t.Name)
 	t.update()
 	return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", t.Name)
 }
@@ -72,6 +78,9 @@ func (t *Table) LoadColumns(ctx context.Context, db Querier) (err error) {
 // TableAliasQuote returns a table name with the alias. catalog_product_entity
 // with alias e would become `catalog_product_entity` AS `e`.
 func (t *Table) TableAliasQuote(alias string) string {
+	if t.Schema != "" {
+		return dbr.Quoter.QuoteAs(t.Schema+"."+t.Name, alias)
+	}
 	return dbr.Quoter.QuoteAs(t.Name, alias)
 }
 
@@ -108,28 +117,18 @@ func (t *Table) In(n string) bool {
 }
 
 // Select generates a SELECT * FROM tableName statement.
-// DEPRECATED
-func (t *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
-	if t == nil {
-		return nil, errors.NewFatalf("[csdb] Table cannot be nil")
-	}
-	return dbrSess.
-		Select(t.AllColumnAliasQuote(MainTable)...).
-		From(t.Name, MainTable), nil
+func (t *Table) Select() *dbr.Select {
+	var sb = new(dbr.Select)
+	*sb = *t.selectAllCache // shallow copy, buggy, copies slice header ...
+	return sb
 }
 
 // LoadSlice performs a SELECT * FROM `tableName` query and puts the results
 // into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
-// and an error. The variadic thrid arguments can modify the SQL query.
-// DEPRECATED
-func (t *Table) LoadSlice(dbrSess dbr.SessionRunner, dest interface{}, cbs ...dbr.SelectCb) (int, error) {
-	sb, err := t.Select(dbrSess)
-	if err != nil {
-		return 0, errors.Wrap(err, "[csdb] LoadSlice.Select")
-	}
-
-	for _, cb := range cbs {
-		sb = cb(sb)
-	}
+// and an error. The variadic third arguments can modify the SQL query.
+func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, cbs ...dbr.SelectHook) (int, error) {
+	sb := t.Select()
+	sb.Querier = db
+	sb.AddHookBeforeToSQLOnce(cbs...)
 	return sb.LoadStructs(dest)
 }

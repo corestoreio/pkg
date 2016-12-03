@@ -15,9 +15,9 @@
 package csdb
 
 import (
-	"context"
 	"database/sql"
 
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -56,11 +56,11 @@ func isValidVarName(name string, allowPercent bool) error {
 
 // LoadOne loads a single variable identified by name for the current session.
 // For now MySQL DSN must have set interpolateParams to true.
-func (v *Variable) LoadOne(ctx context.Context, db QueryRower, name string) error {
+func (v *Variable) LoadOne(db dbr.QueryRower, name string) error {
 	if err := isValidVarName(name, false); err != nil {
 		return errors.Wrap(err, "[csdb] Variable.ShowVariable")
 	}
-	row := db.QueryRowContext(ctx, "SHOW SESSION VARIABLES LIKE ?", name)
+	row := db.QueryRow("SHOW SESSION VARIABLES LIKE ?", name)
 	if err := row.Scan(&v.Name, &v.Value); err != nil {
 		return errors.Wrap(err, "[csdb] ShowVariable")
 	}
@@ -70,7 +70,7 @@ func (v *Variable) LoadOne(ctx context.Context, db QueryRower, name string) erro
 // AppendFiltered appends multiple variables to the current slice. If name is
 // empty, all variables will be loaded. Name argument can contain the SQL
 // wildcard. For now MySQL DSN must have set interpolateParams to true.
-func (vs *Variables) AppendFiltered(ctx context.Context, db Querier, name string) error {
+func (vs *Variables) AppendFiltered(db dbr.Querier, name string) error {
 	if err := isValidVarName(name, true); err != nil {
 		return errors.Wrap(err, "[csdb] Variables.isValidVarName")
 	}
@@ -78,9 +78,9 @@ func (vs *Variables) AppendFiltered(ctx context.Context, db Querier, name string
 	var err error
 	var rows *sql.Rows
 	if name != "" {
-		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES LIKE ?", name)
+		rows, err = db.Query("SHOW SESSION VARIABLES LIKE ?", name)
 	} else {
-		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES")
+		rows, err = db.Query("SHOW SESSION VARIABLES")
 	}
 	if err != nil {
 		return errors.Wrap(err, "[csdb] csdb.QueryContext")

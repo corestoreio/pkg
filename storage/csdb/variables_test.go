@@ -15,7 +15,6 @@
 package csdb
 
 import (
-	"context"
 	"encoding/json"
 	"sort"
 	"testing"
@@ -96,14 +95,14 @@ func TestVariable_LoadOne(t *testing.T) {
 		WillReturnRows(mockedRows)
 
 	v := &Variable{}
-	err := v.LoadOne(context.TODO(), dbc.DB, "keyVal01")
+	err := v.LoadOne(dbc.DB, "keyVal01")
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "keyVal01", v.Name)
 	assert.Exactly(t, "helloWorld", v.Value)
 
-	err = v.LoadOne(context.TODO(), nil, "test__var")
+	err = v.LoadOne(nil, "test__var")
 	assert.True(t, errors.IsNotValid(err), "%+v", err)
 }
 
@@ -118,7 +117,7 @@ func TestVariables_AppendFiltered(t *testing.T) {
 			WithArgs(("keyVal11")).WillReturnRows(mockedRows)
 
 		var vs Variables
-		if err := vs.AppendFiltered(context.TODO(), dbc.DB, "keyVal11"); err != nil {
+		if err := vs.AppendFiltered(dbc.DB, "keyVal11"); err != nil {
 			t.Fatalf("%+v", err)
 		}
 		assert.Exactly(t, `keyVal11`, vs.FindOne("keyVal11").Name)
@@ -134,7 +133,7 @@ func TestVariables_AppendFiltered(t *testing.T) {
 			WillReturnRows(mockedRows)
 
 		var vs Variables
-		if err := vs.AppendFiltered(context.TODO(), dbc.DB, ""); err != nil {
+		if err := vs.AppendFiltered(dbc.DB, ""); err != nil {
 			t.Fatalf("%+v", err)
 		}
 		js, err := json.Marshal(vs)
@@ -147,7 +146,7 @@ func TestVariables_AppendFiltered(t *testing.T) {
 
 	t.Run("Invalid Name", func(t *testing.T) {
 		var vs Variables
-		err := vs.AppendFiltered(context.TODO(), dbc.DB, "")
+		err := vs.AppendFiltered(dbc.DB, "")
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 

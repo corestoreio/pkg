@@ -15,7 +15,6 @@
 package csdb_test
 
 import (
-	"context"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
@@ -57,7 +56,7 @@ func TestShowMasterStatus(t *testing.T) {
 	dbMock.ExpectQuery("SHOW MASTER STATUS").WillReturnRows(mockedRows)
 
 	v := new(csdb.MasterStatus)
-	err := v.Load(context.TODO(), dbc.DB)
+	err := v.Load(dbc.DB)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

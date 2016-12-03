@@ -16,7 +16,6 @@ package csdb_test
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -71,7 +70,7 @@ func TestGetColumnsMage19(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		cols1, err := csdb.LoadColumns(context.TODO(), dbc.DB, test.table)
+		cols1, err := csdb.LoadColumns(dbc.DB, test.table)
 		if test.wantErr != nil {
 			assert.Error(t, err, "Index %d => %+v", i, err)
 			assert.True(t, test.wantErr(err), "Index %d", i)
@@ -441,11 +440,10 @@ func BenchmarkGetColumns(b *testing.B) {
 	}
 	defer dbc.Close()
 	var err error
-	ctx := context.TODO()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkGetColumns, err = csdb.LoadColumns(ctx, dbc.DB, "eav_attribute")
+		benchmarkGetColumns, err = csdb.LoadColumns(dbc.DB, "eav_attribute")
 		if err != nil {
 			b.Error(err)
 		}

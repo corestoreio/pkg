@@ -15,12 +15,12 @@
 package csdb
 
 import (
-	"context"
 	"database/sql"
 	"sync"
 	"time"
 
 	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -38,9 +38,9 @@ var DefaultResurrectStmtIdleTime = time.Second * 10
 type ResurrectStmt struct {
 	// DB contains for now only the prepare() function for a new statement
 	// may be extended in the far future.
-	DB Preparer
-	// SQL is any prepareable SQL command, use ? for argument placeholders
-	SQL string
+	db dbr.Preparer
+	// sqlRaw is any prepareable SQL command, use ? for argument placeholders
+	sqlRaw string
 	// Idle defines the duration how to wait until no query will be executed.
 	Idle time.Duration
 	// Log default logger is PkgLof
@@ -58,13 +58,13 @@ type ResurrectStmt struct {
 // NewResurrectStmt creates a new resurrected statement via a DB connection
 // to prepare the stmt and a SQL query string. Default idle time is defined
 // in DefaultResurrectStmtIdleTime. Default logger: PkgLog.
-func NewResurrectStmt(p Preparer, SQL string) *ResurrectStmt {
+func NewResurrectStmt(p dbr.Preparer, SQL string) *ResurrectStmt {
 	// the overall question here is if the Stmt() function should
 	// return an error once the ticker has been stopped or is not running.
 
 	return &ResurrectStmt{
-		DB:     p,
-		SQL:    SQL,
+		db:     p,
+		sqlRaw: SQL,
 		Idle:   DefaultResurrectStmtIdleTime,
 		Log:    log.BlackHole{},
 		stop:   make(chan struct{}),
@@ -110,7 +110,7 @@ func (su *ResurrectStmt) close() error {
 	}()
 
 	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", log.String("SQL", su.SQL))
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", log.String("SQL", su.sqlRaw))
 	}
 	if su.stmt == nil {
 		// statement has not been opened or is unused.
@@ -133,7 +133,7 @@ func (su *ResurrectStmt) checkIdle() {
 				// stmt has not been used within the last x seconds.
 				// so close the stmt and release the resources in the DB.
 				if err := su.close(); err != nil {
-					su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", log.Err(err), log.String("SQL", su.SQL))
+					su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", log.Err(err), log.String("SQL", su.sqlRaw))
 				}
 			}
 		case <-su.stop:
@@ -151,7 +151,7 @@ func (su *ResurrectStmt) canClose(t time.Time) bool {
 
 // Stmt returns a prepared statement or an error. The statement gets
 // automatically re-opened once it is closed after an idle time.
-func (su *ResurrectStmt) Stmt(ctx context.Context) (*sql.Stmt, error) {
+func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 	su.mu.Lock()
 	defer su.mu.Unlock()
 
@@ -160,12 +160,12 @@ func (su *ResurrectStmt) Stmt(ctx context.Context) (*sql.Stmt, error) {
 	}
 
 	var err error
-	su.stmt, err = su.DB.PrepareContext(ctx, su.SQL)
+	su.stmt, err = su.db.Prepare(su.sqlRaw)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[csdb] DB.Prepare %q", su.SQL)
+		return nil, errors.Wrapf(err, "[csdb] DB.Prepare %q", su.sqlRaw)
 	}
 	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", log.String("SQL", su.SQL))
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", log.String("SQL", su.sqlRaw))
 	}
 	su.closed = false
 	return su.stmt, nil
