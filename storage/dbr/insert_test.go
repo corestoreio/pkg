@@ -7,11 +7,12 @@ import (
 
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type someRecord struct {
-	SomethingID int
-	UserID      int64
+	SomethingID int   `db:"something_id"`
+	UserID      int64 `db:"user_id"`
 	Other       bool
 }
 
@@ -59,10 +60,20 @@ func TestInsertRecordsToSQL(t *testing.T) {
 
 	objs := []someRecord{{1, 88, false}, {2, 99, true}}
 	sql, args, err := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, sql, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)")
+	require.NoError(t, err)
+	assert.Equal(t, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)", sql)
 	// without fmt.Sprint we have an error despite objects are equal ...
-	assert.Equal(t, fmt.Sprint(args), fmt.Sprint([]interface{}{1, 88, false, 2, 99, true}))
+	assert.Equal(t, fmt.Sprint([]interface{}{1, 88, false, 2, 99, true}), fmt.Sprint(args))
+}
+
+func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
+	s := createFakeSession()
+
+	objs := []someRecord{{1, 88, false}, {2, 99, true}}
+	sql, args, err := s.InsertInto("a").Columns("something_it", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSQL()
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
+	assert.Nil(t, args)
+	assert.Empty(t, sql)
 }
 
 func TestInsertKeywordColumnName(t *testing.T) {

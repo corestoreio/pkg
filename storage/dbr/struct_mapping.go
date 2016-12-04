@@ -1,11 +1,10 @@
 package dbr
 
 import (
-	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/errors"
 )
 
 var destDummy interface{}
@@ -17,7 +16,9 @@ type fieldMapQueueElement struct {
 
 // recordType is the type of a structure
 func calculateFieldMap(recordType reflect.Type, columns []string, requireAllColumns bool) ([][]int, error) {
-	// each value is either the slice to get to the field via FieldByIndex(index []int) in the record, or nil if we don't want to map it to the structure.
+
+	// each value is either the slice to get to the field via FieldByIndex(index
+	// []int) in the record, or nil if we don't want to map it to the structure.
 	lenColumns := len(columns)
 	fieldMap := make([][]int, lenColumns)
 
@@ -64,7 +65,7 @@ func calculateFieldMap(recordType reflect.Type, columns []string, requireAllColu
 		}
 
 		if requireAllColumns && fieldMap[i] == nil {
-			return nil, errors.New(fmt.Sprint("couldn't find match for column ", col))
+			return nil, errors.NewNotFoundf("[dbr] calculateFieldMap: couldn't find match for column %q", col)
 		}
 	}
 
@@ -93,13 +94,13 @@ func prepareHolderFor(record reflect.Value, fieldMap [][]int, holder []interface
 func valuesFor(recordType reflect.Type, record reflect.Value, columns []string) ([]interface{}, error) {
 	fieldMap, err := calculateFieldMap(recordType, columns, true)
 	if err != nil {
-		return nil, fmt.Errorf("err: calc field map: %s", err)
+		return nil, errors.Wrap(err, "[dbr] valuesFor.calculateFieldMap")
 	}
 
 	values := make([]interface{}, len(columns))
 	for i, fieldIndex := range fieldMap {
 		if fieldIndex == nil {
-			return nil, fmt.Errorf("fieldIndex is nil: %#v", fieldMap)
+			return nil, errors.NewEmptyf("[dbr] fieldIndex is nil: %#v", fieldMap)
 		}
 		field := record.FieldByIndex(fieldIndex)
 		values[i] = field.Interface()

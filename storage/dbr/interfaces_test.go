@@ -23,12 +23,21 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
+var _ dbr.DBer = (*sql.DB)(nil)
 var _ dbr.Preparer = (*sql.DB)(nil)
 var _ dbr.Querier = (*sql.DB)(nil)
 var _ dbr.Execer = (*sql.DB)(nil)
 var _ dbr.QueryRower = (*sql.DB)(nil)
+
+var _ dbr.Stmter = (*sql.Stmt)(nil)
+var _ dbr.StmtQueryRower = (*sql.Stmt)(nil)
+var _ dbr.StmtQueryer = (*sql.Stmt)(nil)
+var _ dbr.StmtExecer = (*sql.Stmt)(nil)
+
+var _ dbr.Txer = (*sql.Tx)(nil)
 
 var _ dbr.Preparer = (*dbMock)(nil)
 var _ dbr.Querier = (*dbMock)(nil)
@@ -60,73 +69,73 @@ func (pm dbMock) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return nil, nil
 }
 
-func TestWrapPrepareContext(t *testing.T) {
+func TestWrapDBContext(t *testing.T) {
 
-	dbc, dbMock := cstesting.MockDB(t)
+	dbConn, dbMock := cstesting.MockDB(t)
 	defer func() {
 		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
+		assert.NoError(t, dbConn.Close())
 		if err := dbMock.ExpectationsWereMet(); err != nil {
 			t.Error("there were unfulfilled expections", err)
 		}
 	}()
-	dbMock.ExpectPrepare("INSERT INTO TABLE abc").WillReturnError(errors.New("Upssss"))
 
-	pc := dbr.WrapPrepareContext(context.TODO(), dbc.DB)
-	stmt, err := pc.Prepare("INSERT INTO TABLE abc")
+	dbCTX := dbr.WrapDBContext(context.TODO(), dbConn.DB)
+
+	dbMock.ExpectPrepare("INSERT INTO TABLE abc").WillReturnError(errors.New("Upssss"))
+	stmt, err := dbCTX.Prepare("INSERT INTO TABLE abc")
 	assert.Nil(t, stmt)
 	assert.EqualError(t, err, "Upssss", "%+v", err)
-}
 
-func TestWrapQueryContext(t *testing.T) {
-
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
-		}
-	}()
 	dbMock.ExpectQuery("SELECT a FROM tableX").WithArgs(1).WillReturnError(errors.New("Upssss"))
-
-	qc := dbr.WrapQueryContext(context.TODO(), dbc.DB)
-	rows, err := qc.Query("SELECT a FROM tableX where b = ?", 1)
+	rows, err := dbCTX.Query("SELECT a FROM tableX where b = ?", 1)
 	assert.Nil(t, rows)
 	assert.EqualError(t, err, "Upssss", "%+v", err)
-}
 
-func TestWrapQueryRowContext(t *testing.T) {
-
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
-		}
-	}()
-	dbMock.ExpectQuery("SELECT a FROM tableX").WithArgs(1).WillReturnError(errors.New("Upssss"))
-
-	row := dbr.WrapQueryRowContext(context.TODO(), dbc.DB).QueryRow("SELECT a FROM tableX where b = ?", 1)
-	var x string
-	err := row.Scan(&x)
+	dbMock.ExpectQuery("SELECT a FROM tableY").WithArgs(1).WillReturnError(errors.New("Upssss"))
+	row := dbCTX.QueryRow("SELECT a FROM tableY where b = ?", 1)
+	err = row.Scan()
 	assert.EqualError(t, err, "Upssss", "%+v", err)
-}
 
-func TestWrapExecContext(t *testing.T) {
-
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
-		}
-	}()
 	dbMock.ExpectExec("ALTER TABLE add").WithArgs(1).WillReturnError(errors.New("Upssss"))
-
-	res, err := dbr.WrapExecContext(context.TODO(), dbc.DB).Exec("ALTER TABLE add a = ?", 1)
+	res, err := dbCTX.Exec("ALTER TABLE add a = ?", 1)
 	assert.Nil(t, res)
 	assert.EqualError(t, err, "Upssss", "%+v", err)
+}
+
+func TestWrapStmtContext(t *testing.T) {
+
+	dbConn, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbConn.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	dbMock.ExpectPrepare("INSERT INTO TABLE abc").ExpectExec().WillReturnError(errors.New("Upssss Exec"))
+	dbMock.ExpectPrepare("SELECT a FROM tableA WHERE a = ").ExpectQuery().WithArgs(123).WillReturnError(errors.New("Upssss Query"))
+	dbMock.ExpectPrepare("SELECT b FROM tableB WHERE b = ").ExpectQuery().WithArgs(456).WillReturnError(errors.New("Upssss QueryRow"))
+
+	stmt, err := dbConn.DB.Prepare("INSERT INTO TABLE abc")
+	require.NoError(t, err, "%+v", err)
+	stmtCTX := dbr.WrapStmtContext(context.TODO(), stmt)
+	res, err := stmtCTX.Exec()
+	assert.Nil(t, res)
+	assert.EqualError(t, err, "Upssss Exec", "%+v", err)
+
+	stmt, err = dbConn.DB.Prepare("SELECT a FROM tableA WHERE a = ?")
+	require.NoError(t, err, "%+v", err)
+	stmtCTX = dbr.WrapStmtContext(context.TODO(), stmt)
+	rows, err := stmtCTX.Query(123)
+	assert.Nil(t, rows)
+	assert.EqualError(t, err, "Upssss Query", "%+v", err)
+
+	stmt, err = dbConn.DB.Prepare("SELECT b FROM tableB WHERE b = ?")
+	require.NoError(t, err, "%+v", err)
+	stmtCTX = dbr.WrapStmtContext(context.TODO(), stmt)
+	row := stmtCTX.QueryRow(456)
+	err = row.Scan()
+	assert.EqualError(t, err, "Upssss QueryRow", "%+v", err)
 }

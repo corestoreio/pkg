@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"context"
 	"database/sql"
 
 	"github.com/corestoreio/csfw/log"
@@ -27,114 +26,10 @@ type Connection struct {
 }
 
 // Session represents a business unit of execution for some connection
+// DEPRECATED
 type Session struct {
 	cxn *Connection
 	log.Logger
-}
-
-type wrapContext struct {
-	context.Context
-	pc interface {
-		PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-	}
-	qc interface {
-		QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	}
-	ec interface {
-		ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	}
-	qrc interface {
-		QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	}
-}
-
-// Preparer defines the only needed function to create a new prepared statement
-// in the database.
-type Preparer interface {
-	Prepare(query string) (*sql.Stmt, error)
-}
-
-func (wc wrapContext) Prepare(query string) (*sql.Stmt, error) {
-	return wc.pc.PrepareContext(wc.Context, query)
-}
-
-// WrapPrepareContext wraps a context around the PrepareContext function and
-// returns an Preparer including your context. The provided context is used for
-// the preparation of the statement, not for the execution of the statement.
-func WrapPrepareContext(ctx context.Context, db interface {
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-}) Preparer {
-	return wrapContext{
-		Context: ctx,
-		pc:      db,
-	}
-}
-
-// Querier can execute a SELECT query which can return many rows.
-type Querier interface {
-	// Query executes a query that returns rows, typically a SELECT. The
-	// args are for any placeholder parameters in the query.
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-}
-
-func (wc wrapContext) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return wc.qc.QueryContext(wc.Context, query, args...)
-}
-
-// WrapQueryContext wraps a context around the QueryContext function and returns
-// an Querier including your context.
-func WrapQueryContext(ctx context.Context, db interface {
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-}) Querier {
-	return wrapContext{
-		Context: ctx,
-		qc:      db,
-	}
-}
-
-// Execer can execute all other queries except SELECT.
-type Execer interface {
-	// Exec executes a query that doesn't return rows. For example: an
-	// INSERT, UPDATE or DELETE or CREATE.
-	Exec(query string, args ...interface{}) (sql.Result, error)
-}
-
-func (wc wrapContext) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return wc.ec.ExecContext(wc.Context, query, args...)
-}
-
-// WrapExecContext wraps a context around the ExecContext function and returns
-// an Execer including your context.
-func WrapExecContext(ctx context.Context, db interface {
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-}) Execer {
-	return wrapContext{
-		Context: ctx,
-		ec:      db,
-	}
-}
-
-// QueryRower executes a SELECT query which returns one row.
-type QueryRower interface {
-	// QueryRow executes a query that is expected to return at most one
-	// row. QueryRow always returns a non-nil value. Errors are deferred
-	// until Row's Scan method is called.
-	QueryRow(query string, args ...interface{}) *sql.Row
-}
-
-func (wc wrapContext) QueryRow(query string, args ...interface{}) *sql.Row {
-	return wc.qrc.QueryRowContext(wc.Context, query, args...)
-}
-
-// WrapQueryRowContext wraps a context around the QueryRowContext function and
-// returns a QueryRower including your context.
-func WrapQueryRowContext(ctx context.Context, db interface {
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-}) QueryRower {
-	return wrapContext{
-		Context: ctx,
-		qrc:     db,
-	}
 }
 
 // ConnectionOption can be used as an argument in NewConnection to configure a
@@ -239,6 +134,7 @@ func (c *Connection) Ping() error {
 }
 
 // SessionOption can be used as an argument in NewSession to configure a session.
+// DEPRECATED
 type SessionOption func(cxn *Connection, s *Session) error
 
 // Options applies options to a session
