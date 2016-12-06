@@ -22,9 +22,9 @@ type Insert struct {
 	Recs []interface{}
 	Maps map[string]interface{}
 
-	// Events allows to dispatch certain functions in different situations.
-	// Default Events are nil. Only the INSERT events get dispatched.
-	*Events
+	// InsertEvents allows to dispatch certain functions in different
+	// situations. Default Events are nil.
+	*InsertEvents
 }
 
 // NewInsert creates a new object with a black hole logger.
@@ -117,7 +117,7 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
 
-	b.Events.dispatchInsert(EventToSQLBefore, b)
+	b.InsertEvents.dispatch(eventToSQLBefore, b)
 
 	if len(b.Into) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)

@@ -12,46 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbr_test
+package dbr
 
-//
-//func TestNewHook(t *testing.T) {
-//
-//	hSel := func(*dbr.Select) {}
-//	hIns := func(*dbr.Insert) {}
-//	hUpd := func(*dbr.Update) {}
-//	hDel := func(*dbr.Delete) {}
-//
-//	h := dbr.NewEvents()
-//	h.AddSelectAfter(hSel, hSel)
-//	h.AddInsertAfter(hIns, hIns)
-//	h.AddUpdateAfter(hUpd, hUpd)
-//	h.AddDeleteAfter(hDel, hDel)
-//
-//	assert.Len(t, h.BeforeToSQL.SelectHooks, 2)
-//	assert.Len(t, h.BeforeToSQL.InsertHooks, 2)
-//	assert.Len(t, h.BeforeToSQL.UpdateHooks, 2)
-//	assert.Len(t, h.BeforeToSQL.DeleteHooks, 2)
-//
-//	h2 := dbr.NewEvents()
-//	h2.AddSelectAfter(hSel, hSel)
-//	h2.AddInsertAfter(hIns, hIns)
-//	h2.AddUpdateAfter(hUpd, hUpd)
-//	h2.AddDeleteAfter(hDel, hDel)
-//
-//	assert.Len(t, h2.BeforeToSQL.SelectHooks, 2)
-//	assert.Len(t, h2.BeforeToSQL.InsertHooks, 2)
-//	assert.Len(t, h2.BeforeToSQL.UpdateHooks, 2)
-//	assert.Len(t, h2.BeforeToSQL.DeleteHooks, 2)
-//
-//	h.Merge(h2, h2)
-//	assert.Len(t, h.BeforeToSQL.SelectHooks, 6)
-//	assert.Len(t, h.BeforeToSQL.InsertHooks, 6)
-//	assert.Len(t, h.BeforeToSQL.UpdateHooks, 6)
-//	assert.Len(t, h.BeforeToSQL.DeleteHooks, 6)
-//
-//	h.BeforeToSQL.SelectHooks.Apply(nil)
-//	h.BeforeToSQL.InsertHooks.Apply(nil)
-//	h.BeforeToSQL.UpdateHooks.Apply(nil)
-//	h.BeforeToSQL.DeleteHooks.Apply(nil)
-//}
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewHook(t *testing.T) {
+
+	hSel := func(*Select) {}
+	hIns := func(*Insert) {}
+	hUpd := func(*Update) {}
+	hDel := func(*Delete) {}
+
+	h := NewEvents()
+	h.Select.AddBeforeToSQL(hSel, hSel)
+	h.Insert.AddBeforeToSQL(hIns, hIns)
+	h.Update.AddBeforeToSQL(hUpd, hUpd)
+	h.Delete.AddBeforeToSQL(hDel, hDel)
+
+	assert.Len(t, h.Select.receivers[eventToSQLBefore], 2)
+	assert.Len(t, h.Insert.receivers[eventToSQLBefore], 2)
+	assert.Len(t, h.Update.receivers[eventToSQLBefore], 2)
+	assert.Len(t, h.Delete.receivers[eventToSQLBefore], 2)
+
+	h2 := NewEvents()
+	h2.Select.AddBeforeToSQL(hSel, hSel)
+	h2.Insert.AddBeforeToSQL(hIns, hIns)
+	h2.Update.AddBeforeToSQL(hUpd, hUpd)
+	h2.Delete.AddBeforeToSQL(hDel, hDel)
+
+	assert.Len(t, h.Select.receivers[eventToSQLBefore], 2)
+	assert.Len(t, h.Insert.receivers[eventToSQLBefore], 2)
+	assert.Len(t, h.Update.receivers[eventToSQLBefore], 2)
+	assert.Len(t, h.Delete.receivers[eventToSQLBefore], 2)
+
+	h.Merge(h2, h2)
+	assert.Len(t, h.Select.receivers[eventToSQLBefore], 6)
+	assert.Len(t, h.Insert.receivers[eventToSQLBefore], 6)
+	assert.Len(t, h.Update.receivers[eventToSQLBefore], 6)
+	assert.Len(t, h.Delete.receivers[eventToSQLBefore], 6)
+
+	h.Select.dispatch(eventToSQLBefore, nil)
+	h.Insert.dispatch(eventToSQLBefore, nil)
+	h.Update.dispatch(eventToSQLBefore, nil)
+	h.Delete.dispatch(eventToSQLBefore, nil)
+}

@@ -38,9 +38,9 @@ type Update struct {
 	OffsetCount    uint64
 	OffsetValid    bool
 
-	// Events allows to dispatch certain functions in different situations.
+	// UpdateEvents allows to dispatch certain functions in different situations.
 	// Default Events are nil. Only the INSERT events get dispatched.
-	*Events
+	*UpdateEvents
 }
 
 // NewUpdate creates a new object with a black hole logger.
@@ -162,7 +162,8 @@ func (b *Update) Offset(offset uint64) *Update {
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) ToSQL() (string, []interface{}, error) {
-	b.Events.dispatchUpdate(EventToSQLBefore, b)
+
+	b.UpdateEvents.dispatch(eventToSQLBefore, b)
 
 	if b.RawFullSQL != "" {
 		return b.RawFullSQL, b.RawArguments, nil

@@ -14,122 +14,179 @@
 
 package dbr
 
+import "sync"
+
 type eventType uint8
 
 const (
-	// EventToSQLBefore gets dispatched before generating the SQL string.
-	EventToSQLBefore eventType = iota
+	eventToSQLBefore eventType = iota
+	eventToSQLBeforeOnce
 	maxEventTypes
 )
 
-// Functions which acts as event receivers to allow changes to the underlying
-// unprocessed SQL query.
 type (
-	SelectEvent func(*Select)
-	InsertEvent func(*Insert)
-	UpdateEvent func(*Update)
-	DeleteEvent func(*Delete)
+	SelectReceiverFn func(*Select)
+	SelectEvents     struct {
+		receivers [maxEventTypes][]SelectReceiverFn
+	}
+	InsertReceiverFn func(*Insert)
+	InsertEvents     struct {
+		receivers [maxEventTypes][]InsertReceiverFn
+	}
+	UpdateReceiverFn func(*Update)
+	UpdateEvents     struct {
+		receivers [maxEventTypes][]UpdateReceiverFn
+	}
+	DeleteReceiverFn func(*Delete)
+	DeleteEvents     struct {
+		receivers [maxEventTypes][]DeleteReceiverFn
+	}
 )
 
 // Events a type for embedding to define events for manipulating the SQL.
 type Events struct {
-	selectEvents [maxEventTypes][]SelectEvent
-	insertEvents [maxEventTypes][]InsertEvent
-	updateEvents [maxEventTypes][]UpdateEvent
-	deleteEvents [maxEventTypes][]DeleteEvent
+	Select *SelectEvents
+	Insert *InsertEvents
+	Update *UpdateEvents
+	Delete *DeleteEvents
 }
 
-// NewEvents creates a new set of hooks for data manipulation language
+// NewEvents creates a new set of events for data manipulation language.
 func NewEvents() *Events {
-	return new(Events)
+	return &Events{
+		Select: new(SelectEvents),
+		Insert: new(InsertEvents),
+		Update: new(UpdateEvents),
+		Delete: new(DeleteEvents),
+	}
 }
 
-// Merge merges one or more other hooks into the current hook.
-func (h *Events) Merge(events ...*Events) *Events {
-	if h == nil {
-		h = NewEvents()
+// Merge merges other events into the current event container.
+func (e *Events) Merge(events ...*Events) *Events {
+	if e == nil {
+		e = NewEvents()
 	}
 	for _, et := range events {
-		if et != nil {
-			for idx, selEvs := range et.selectEvents {
-				if eventType(idx) < maxEventTypes {
-					for _, evt := range selEvs {
-						h.AddSelect(eventType(idx), evt)
-					}
-				}
+		for idx, recs := range et.Select.receivers {
+			if eventType(idx) < maxEventTypes {
+				e.Select.receivers[idx] = append(e.Select.receivers[idx], recs...)
 			}
 		}
-		//h.AddInsert(hs.insertEvents...)
-		//h.AddUpdate(hs.updateEvents...)
-		//h.AddDelete(hs.deleteEvents...)
+		for idx, recs := range et.Insert.receivers {
+			if eventType(idx) < maxEventTypes {
+				e.Insert.receivers[idx] = append(e.Insert.receivers[idx], recs...)
+			}
+		}
+		for idx, recs := range et.Update.receivers {
+			if eventType(idx) < maxEventTypes {
+				e.Update.receivers[idx] = append(e.Update.receivers[idx], recs...)
+			}
+		}
+		for idx, recs := range et.Delete.receivers {
+			if eventType(idx) < maxEventTypes {
+				e.Delete.receivers[idx] = append(e.Delete.receivers[idx], recs...)
+			}
+		}
 	}
-	return h
+	return e
 }
 
-func (h *Events) AddSelect(et eventType, sh ...SelectEvent) *Events {
-	if h == nil {
-		h = NewEvents()
+func (e *SelectEvents) AddBeforeToSQL(fns ...SelectReceiverFn) *SelectEvents {
+	if e == nil {
+		e = new(SelectEvents)
 	}
-	h.selectEvents[et] = append(h.selectEvents[et], sh...)
-	return h
+	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
+	return e
 }
 
-func (h *Events) dispatchSelect(et eventType, b *Select) {
-	if h == nil {
+func (e *SelectEvents) dispatch(et eventType, b *Select) {
+	if e == nil {
 		return
 	}
-	for _, e := range h.selectEvents[et] {
+	for _, e := range e.receivers[et] {
 		e(b)
 	}
 }
 
-func (h *Events) AddInsert(et eventType, sh ...InsertEvent) *Events {
-	if h == nil {
-		h = NewEvents()
+func (e *InsertEvents) AddBeforeToSQL(fns ...InsertReceiverFn) *InsertEvents {
+	if e == nil {
+		e = new(InsertEvents)
 	}
-	h.insertEvents[et] = append(h.insertEvents[et], sh...)
-	return h
+	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
+	return e
 }
 
-func (h *Events) dispatchInsert(et eventType, b *Insert) {
-	if h == nil {
+func (e *InsertEvents) AddBeforeToSQLOnce(fns ...InsertReceiverFn) *InsertEvents {
+	if e == nil {
+		e = new(InsertEvents)
+	}
+	newFns := make([]InsertReceiverFn, len(fns))
+	for i, fn := range fns {
+		fn := fn // catch variables because of the closure
+		i := i
+		var onesie sync.Once
+		newFns[i] = func(b *Insert) { onesie.Do(func() { fn(b) }) }
+	}
+	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], newFns...)
+	return e
+}
+
+func (e *InsertEvents) dispatch(et eventType, b *Insert) {
+	if e == nil {
 		return
 	}
-	for _, e := range h.insertEvents[et] {
+	for _, e := range e.receivers[et] {
 		e(b)
 	}
 }
 
-func (h *Events) AddUpdate(et eventType, sh ...UpdateEvent) *Events {
-	if h == nil {
-		h = NewEvents()
+func (e *UpdateEvents) AddBeforeToSQL(fns ...UpdateReceiverFn) *UpdateEvents {
+	if e == nil {
+		e = new(UpdateEvents)
 	}
-	h.updateEvents[et] = append(h.updateEvents[et], sh...)
-	return h
+	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
+	return e
 }
 
-func (h *Events) dispatchUpdate(et eventType, b *Update) {
-	if h == nil {
+func (e *UpdateEvents) dispatch(et eventType, b *Update) {
+	if e == nil {
 		return
 	}
-	for _, e := range h.updateEvents[et] {
+	for _, e := range e.receivers[et] {
 		e(b)
 	}
 }
 
-func (h *Events) AddDelete(et eventType, sh ...DeleteEvent) *Events {
-	if h == nil {
-		h = NewEvents()
+// AddBeforeToSQL dispatches the events every time ToSQL gets called.
+func (e *DeleteEvents) AddBeforeToSQL(fns ...DeleteReceiverFn) *DeleteEvents {
+	if e == nil {
+		e = new(DeleteEvents)
 	}
-	h.deleteEvents[et] = append(h.deleteEvents[et], sh...)
-	return h
+	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
+	return e
 }
 
-func (h *Events) dispatchDelete(et eventType, b *Delete) {
-	if h == nil {
+// AddBeforeToSQLOnce dispatches the events only once before ToSQL gets called.
+func (e *DeleteEvents) AddBeforeToSQLOnce(fns ...DeleteReceiverFn) *DeleteEvents {
+	if e == nil {
+		e = new(DeleteEvents)
+	}
+	newFns := make([]DeleteReceiverFn, len(fns))
+	for i, fn := range fns {
+		fn := fn // catch variables because of the closure
+		i := i
+		var onesie sync.Once
+		newFns[i] = func(b *Delete) { onesie.Do(func() { fn(b) }) }
+	}
+	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], newFns...)
+	return e
+}
+
+func (e *DeleteEvents) dispatch(et eventType, b *Delete) {
+	if e == nil {
 		return
 	}
-	for _, e := range h.deleteEvents[et] {
+	for _, e := range e.receivers[et] {
 		e(b)
 	}
 }
