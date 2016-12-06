@@ -3,7 +3,6 @@ package dbr
 import (
 	"database/sql"
 	"strconv"
-	"sync"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -24,8 +23,9 @@ type Delete struct {
 	OffsetCount uint64
 	OffsetValid bool
 
-	onceToSQLbefore DeleteHooks
-	syncOnceBefore  sync.Once
+	// Events allows to dispatch certain functions in different situations.
+	// Default Events are nil. Only the DELETE events get dispatched.
+	*Events
 }
 
 // NewDelete creates a new object with a black hole logger.
@@ -57,14 +57,6 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 		From:           MakeAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
-}
-
-// AddHookBeforeToSQLOnce acting as call backs to modify the query. Hooks run
-// only once per Delete object. They run as the very first code in the ToSQL
-// function.
-func (b *Delete) AddHookBeforeToSQLOnce(shs ...DeleteHook) *Delete {
-	b.onceToSQLbefore = append(b.onceToSQLbefore, shs...)
-	return b
 }
 
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a
@@ -107,9 +99,8 @@ func (b *Delete) Offset(offset uint64) *Delete {
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, []interface{}, error) {
-	b.syncOnceBefore.Do(func() {
-		b.onceToSQLbefore.Apply(b)
-	})
+
+	b.Events.dispatchDelete(EventToSQLBefore, b)
 
 	if len(b.From.Expression) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)

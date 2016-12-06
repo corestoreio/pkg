@@ -2,7 +2,6 @@ package dbr
 
 import (
 	"strconv"
-	"sync"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -34,8 +33,9 @@ type Select struct {
 	OffsetCount     uint64
 	OffsetValid     bool
 
-	onceToSQLbefore SelectHooks
-	syncOnceBefore  sync.Once
+	// Events allows to dispatch certain functions in different situations.
+	// Default Events are nil. Only the SELECT events get dispatched.
+	*Events
 }
 
 // NewSelect creates a new object with a black hole logger.
@@ -90,13 +90,6 @@ func (tx *Tx) SelectBySQL(sql string, args ...interface{}) *Select {
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
-}
-
-// AddHookBeforeToSQLOnce acting as call backs to modify the query. Hooks run only once
-// per Select object. They run as the very first code in the ToSQL function.
-func (b *Select) AddHookBeforeToSQLOnce(shs ...SelectHook) *Select {
-	b.onceToSQLbefore = append(b.onceToSQLbefore, shs...)
-	return b
 }
 
 // Distinct marks the statement as a DISTINCT SELECT
@@ -172,9 +165,8 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) ToSQL() (string, []interface{}, error) {
-	b.syncOnceBefore.Do(func() {
-		b.onceToSQLbefore.Apply(b)
-	})
+
+	b.Events.dispatchSelect(EventToSQLBefore, b)
 
 	if b.RawFullSQL != "" {
 		return b.RawFullSQL, b.RawArguments, nil

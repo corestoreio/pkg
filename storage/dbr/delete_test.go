@@ -108,21 +108,21 @@ func TestDelete_Prepare(t *testing.T) {
 	})
 }
 
-func TestDelete_AddHookBeforeToSQLOnce(t *testing.T) {
-	d := NewDelete("tableA", "main_table")
-
-	d.OrderBy("col2")
-	d.AddHookBeforeToSQLOnce(func(s2 *Delete) {
-		s2.OrderDir("col1", false)
-	})
-
-	sql, args, err := d.ToSQL()
-	assert.NoError(t, err)
-	assert.Nil(t, args)
-	assert.NotEmpty(t, sql)
-
-	sql, args, err = d.ToSQL()
-	assert.NoError(t, err)
-	assert.Nil(t, args)
-	assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY col2, col1 DESC", sql)
-}
+//func TestDelete_AddHookBeforeToSQLOnce(t *testing.T) {
+//	d := NewDelete("tableA", "main_table")
+//
+//	d.OrderBy("col2")
+//	d.AddHookBeforeToSQLOnce(func(s2 *Delete) {
+//		s2.OrderDir("col1", false)
+//	})
+//
+//	sql, args, err := d.ToSQL()
+//	assert.NoError(t, err)
+//	assert.Nil(t, args)
+//	assert.NotEmpty(t, sql)
+//
+//	sql, args, err = d.ToSQL()
+//	assert.NoError(t, err)
+//	assert.Nil(t, args)
+//	assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY col2, col1 DESC", sql)
+//}

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"reflect"
-	"sync"
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -23,8 +22,9 @@ type Insert struct {
 	Recs []interface{}
 	Maps map[string]interface{}
 
-	onceToSQLbefore InsertHooks
-	syncOnceBefore  sync.Once
+	// Events allows to dispatch certain functions in different situations.
+	// Default Events are nil. Only the INSERT events get dispatched.
+	*Events
 }
 
 // NewInsert creates a new object with a black hole logger.
@@ -53,13 +53,6 @@ func (tx *Tx) InsertInto(into string) *Insert {
 		Preparer: tx.Tx,
 		Into:     into,
 	}
-}
-
-// AddAtomicHooks acting as call backs to modify the query. Hooks run only once
-// per Insert object. They run as the very first code in the ToSQL function.
-func (b *Insert) AddHookBeforeToSQLOnce(shs ...InsertHook) *Insert {
-	b.onceToSQLbefore = append(b.onceToSQLbefore, shs...)
-	return b
 }
 
 // Columns appends columns to insert in the statement.
@@ -123,9 +116,8 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
-	b.syncOnceBefore.Do(func() {
-		b.onceToSQLbefore.Apply(b)
-	})
+
+	b.Events.dispatchInsert(EventToSQLBefore, b)
 
 	if len(b.Into) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)

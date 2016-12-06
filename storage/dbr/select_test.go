@@ -408,22 +408,22 @@ func TestSelectJoin(t *testing.T) {
 
 // Series of tests that test mapping struct fields to columns
 
-func TestSelect_AddAtomicHooks(t *testing.T) {
-	s := NewSelect("tableA", "tA")
-
-	s.Columns = []string{"a", "b"}
-	s.OrderBy("col2")
-	s.AddHookBeforeToSQLOnce(func(s2 *Select) {
-		s2.OrderDir("col1", false)
-	})
-
-	sql, args, err := s.ToSQL()
-	assert.NoError(t, err)
-	assert.Nil(t, args)
-	assert.NotEmpty(t, sql)
-
-	sql, args, err = s.ToSQL()
-	assert.NoError(t, err)
-	assert.Nil(t, args)
-	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` ORDER BY col2, col1 DESC", sql)
-}
+//func TestSelect_AddAtomicHooks(t *testing.T) {
+//	s := NewSelect("tableA", "tA")
+//
+//	s.Columns = []string{"a", "b"}
+//	s.OrderBy("col2")
+//	s.AddHookBeforeToSQLOnce(func(s2 *Select) {
+//		s2.OrderDir("col1", false)
+//	})
+//
+//	sql, args, err := s.ToSQL()
+//	assert.NoError(t, err)
+//	assert.Nil(t, args)
+//	assert.NotEmpty(t, sql)
+//
+//	sql, args, err = s.ToSQL()
+//	assert.NoError(t, err)
+//	assert.Nil(t, args)
+//	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` ORDER BY col2, col1 DESC", sql)
+//}
