@@ -54,14 +54,14 @@ func realDb() (driver string, dsn string) {
 }
 
 type dbrPerson struct {
-	Id    int64
+	ID    int64 `db:"id"`
 	Name  string
 	Email null.String
 	Key   null.String
 }
 
 type nullTypedRecord struct {
-	Id         int64
+	ID         int64 `db:"id"`
 	StringVal  null.String
 	Int64Val   null.Int64
 	Float64Val null.Float64

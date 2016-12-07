@@ -113,20 +113,20 @@ func TestDelete_Events(t *testing.T) {
 	d := NewDelete("tableA", "main_table")
 
 	d.OrderBy("col2")
-	d.DeleteEvents = d.AddBeforeToSQLOnce(func(s2 *Delete) {
+	d.Events.AddBeforeToSQLOnce(func(s2 *Delete) {
 		s2.OrderDir("col1", false)
 	}, func(s3 *Delete) {
 		s3.Where(ConditionRaw("store_id=?", 1))
 	})
 
-	d.AddBeforeToSQL(func(b *Delete) {
+	d.Events.AddBeforeToSQL(func(b *Delete) {
 		b.Where(ConditionRaw("repetitive=?", 3))
 	})
 
 	sql, args, err := d.ToSQL()
 	assert.NoError(t, err)
 	assert.Exactly(t, []interface{}{1, 3}, args)
-	assert.NotEmpty(t, sql)
+	assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
 
 	sql, args, err = d.ToSQL()
 	assert.NoError(t, err)

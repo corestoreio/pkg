@@ -33,9 +33,9 @@ type Select struct {
 	OffsetCount     uint64
 	OffsetValid     bool
 
-	// SelectEvents allows to dispatch certain functions in different
-	// situations. Default Events are nil.
-	*SelectEvents
+	// Events allows to dispatch certain functions in different
+	// situations.
+	Events SelectEvents
 }
 
 // NewSelect creates a new object with a black hole logger.
@@ -166,7 +166,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) ToSQL() (string, []interface{}, error) {
 
-	b.SelectEvents.dispatch(eventToSQLBefore, b)
+	b.Events.dispatch(eventToSQLBefore, b)
 
 	if b.RawFullSQL != "" {
 		return b.RawFullSQL, b.RawArguments, nil

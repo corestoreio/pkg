@@ -38,9 +38,9 @@ type Update struct {
 	OffsetCount    uint64
 	OffsetValid    bool
 
-	// UpdateEvents allows to dispatch certain functions in different situations.
+	// Events allows to dispatch certain functions in different situations.
 	// Default Events are nil. Only the INSERT events get dispatched.
-	*UpdateEvents
+	Events UpdateEvents
 }
 
 // NewUpdate creates a new object with a black hole logger.
@@ -163,7 +163,7 @@ func (b *Update) Offset(offset uint64) *Update {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) ToSQL() (string, []interface{}, error) {
 
-	b.UpdateEvents.dispatch(eventToSQLBefore, b)
+	b.Events.dispatch(eventToSQLBefore, b)
 
 	if b.RawFullSQL != "" {
 		return b.RawFullSQL, b.RawArguments, nil
@@ -231,8 +231,8 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 	return buf.String(), args, nil
 }
 
-// Exec executes the statement represented by the Update
-// It returns the raw database/sql Result and an error if there was one
+// Exec executes the statement represented by the Update object. It returns the
+// raw database/sql Result and an error if there was one.
 func (b *Update) Exec() (sql.Result, error) {
 	rawSQL, args, err := b.ToSQL()
 	if err != nil {
@@ -256,8 +256,8 @@ func (b *Update) Exec() (sql.Result, error) {
 	return result, nil
 }
 
-// Exec executes the statement represented by the Update
-// It returns the raw database/sql Result and an error if there was one
+// Prepare creates a new prepared statement represented by the Update object. It
+// returns the raw database/sql Stmt and an error if there was one.
 func (b *Update) Prepare() (*sql.Stmt, error) {
 	rawSQL, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
 	if err != nil {

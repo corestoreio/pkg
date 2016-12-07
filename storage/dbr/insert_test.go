@@ -121,7 +121,7 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, person.Id, id)
+	assert.Equal(t, person.ID, id)
 	assert.Equal(t, person.Name, "Barack")
 	assert.Equal(t, person.Email.Valid, true)
 	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
@@ -161,20 +161,20 @@ func TestInsert_Events(t *testing.T) {
 
 	ins.Columns("a", "b").Values(1, true)
 
-	ins.InsertEvents = ins.AddBeforeToSQLOnce(func(i *Insert) {
+	ins.Events.AddBeforeToSQLOnce(func(i *Insert) {
 		i.Pair("colA", 3.14159)
 	}, func(i *Insert) {
 		i.Pair("colB", 2.7182)
 	})
 
-	ins.AddBeforeToSQL(func(i *Insert) {
+	ins.Events.AddBeforeToSQL(func(i *Insert) {
 		i.Pair("colC", "X1")
 	})
 
 	sql, args, err := ins.ToSQL()
 	assert.NoError(t, err)
 	assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1"}, args)
-	assert.NotEmpty(t, sql)
+	assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
 
 	sql, args, err = ins.ToSQL()
 	assert.NoError(t, err)

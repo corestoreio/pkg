@@ -25,9 +25,9 @@ func (b *Select) Rows() (*sql.Rows, error) {
 	return rows, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
-// Row executes a query that is expected to return at most one
-// row. QueryRow always returns a non-nil value. Errors are deferred
-// until Row's Scan method is called.
+// Row executes a query that is expected to return at most one row. QueryRow
+// always returns a non-nil value. Errors are deferred until Row's Scan method
+// is called.
 func (b *Select) Row() *sql.Row {
 
 	sqlStr, args, err := b.ToSQL()
@@ -56,10 +56,10 @@ func (b *Select) Prepare() (*sql.Stmt, error) {
 // For fields in the structure that aren't in the query but without db:"-", return error
 // For fields in the query that aren't in the structure, we'll ignore them.
 
-// LoadStructs executes the Select and loads the resulting data into a
-// slice of structs dest must be a pointer to a slice of pointers to structs.
-// Returns the number of items found (which is not necessarily the # of items
-// set). Slow because of the massive use of reflection.
+// LoadStructs executes the Select and loads the resulting data into a slice of
+// structs dest must be a pointer to a slice of pointers to structs. Returns the
+// number of items found (which is not necessarily the # of items set). Slow
+// because of the massive use of reflection.
 func (b *Select) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -168,8 +168,8 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 	return numberOfRowsReturned, nil
 }
 
-// LoadStruct executes the Select and loads the resulting data into a
-// struct dest must be a pointer to a struct Returns ErrNotFound behaviour. Slow
+// LoadStruct executes the Select and loads the resulting data into a struct
+// dest must be a pointer to a struct Returns ErrNotFound behaviour. Slow
 // because of the massive use of reflection.
 func (b *Select) LoadStruct(dest interface{}) error {
 	//
@@ -221,11 +221,13 @@ func (b *Select) LoadStruct(dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.load_one.calculateFieldMap")
 	}
 
-	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
+	// Build a 'holder', which is an []interface{}. Each value will be the set to
+	// address of the field corresponding to our newly made records:
 	holder := make([]interface{}, len(fieldMap))
 
 	if rows.Next() {
-		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
+		// Build a 'holder', which is an []interface{}. Each value will be the address
+		// of the field corresponding to our newly made record:
 		scannable, err := prepareHolderFor(indirectOfDest, fieldMap, holder)
 		if err != nil {
 			return errors.Wrap(err, "[dbr] Select.load_one.holderFor")
@@ -246,10 +248,9 @@ func (b *Select) LoadStruct(dest interface{}) error {
 	return errors.NewNotFoundf("[dbr] Entry not found")
 }
 
-// LoadValues executes the Select and loads the resulting data into a
-// slice of primitive values Returns ErrNotFound behaviour if no value was
-// found, and it was therefore not set. Slow because of the massive use of
-// reflection.
+// LoadValues executes the Select and loads the resulting data into a slice of
+// primitive values Returns ErrNotFound behaviour if no value was found, and it
+// was therefore not set. Slow because of the massive use of reflection.
 func (b *Select) LoadValues(dest interface{}) (int, error) {
 	// Validate the dest and reflection values we need
 
@@ -327,9 +328,9 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 	return numberOfRowsReturned, nil
 }
 
-// LoadValue executes the Select and loads the resulting data into a
-// primitive value Returns ErrNotFound if no value was found, and it was
-// therefore not set. Slow because of the massive use of reflection.
+// LoadValue executes the Select and loads the resulting data into a primitive
+// value Returns ErrNotFound if no value was found, and it was therefore not
+// set. Slow because of the massive use of reflection.
 func (b *Select) LoadValue(dest interface{}) error {
 	// Validate the dest
 	valueOfDest := reflect.ValueOf(dest)

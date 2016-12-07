@@ -28,7 +28,7 @@ func TestTransactionReal(t *testing.T) {
 	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, person.Id, id)
+	assert.Equal(t, person.ID, id)
 	assert.Equal(t, person.Name, "Barack")
 	assert.Equal(t, person.Email.Valid, true)
 	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")

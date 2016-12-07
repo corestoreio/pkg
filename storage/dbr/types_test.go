@@ -73,7 +73,7 @@ func TestNullTypeScanning(t *testing.T) {
 
 	tests := []nullTypeScanningTest{
 		{
-			record: &nullTypedRecord{Id: 1},
+			record: &nullTypedRecord{ID: 1},
 			valid:  false,
 		},
 		{
@@ -116,11 +116,11 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 	tests := []nullTypeJSONTest{
 		{
 			record:       &nullTypedRecord{},
-			expectedJSON: []byte(`{"Id":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`),
+			expectedJSON: []byte(`{"ID":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`),
 		},
 		{
 			record:       newNullTypedRecordWithData(),
-			expectedJSON: []byte(`{"Id":2,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`),
+			expectedJSON: []byte(`{"ID":2,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`),
 		},
 	}
 
@@ -140,7 +140,7 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
-		Id:         2,
+		ID:         2,
 		StringVal:  null.String{sql.NullString{String: "wow", Valid: true}},
 		Int64Val:   null.Int64{sql.NullInt64{Int64: 42, Valid: true}},
 		Float64Val: null.Float64{sql.NullFloat64{Float64: 1.618, Valid: true}},

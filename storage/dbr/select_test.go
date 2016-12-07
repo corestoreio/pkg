@@ -249,8 +249,8 @@ func TestSelectLoadStructs(t *testing.T) {
 	if len(people) == 2 {
 		// Make sure that the Ids are set. It's possible (maybe?) that different DBs set ids differently so
 		// don't assume they're 1 and 2.
-		assert.True(t, people[0].Id > 0)
-		assert.True(t, people[1].Id > people[0].Id)
+		assert.True(t, people[0].ID > 0)
+		assert.True(t, people[1].ID > people[0].ID)
 
 		assert.Equal(t, people[0].Name, "Jonathan")
 		assert.True(t, people[0].Email.Valid)
@@ -270,7 +270,7 @@ func TestSelectLoadStruct(t *testing.T) {
 	var person dbrPerson
 	err := s.Select("id", "name", "email").From("dbr_people").Where(ConditionRaw("email = ?", "jonathan@uservoice.com")).LoadStruct(&person)
 	assert.NoError(t, err)
-	assert.True(t, person.Id > 0)
+	assert.True(t, person.ID > 0)
 	assert.Equal(t, person.Name, "Jonathan")
 	assert.True(t, person.Email.Valid)
 	assert.Equal(t, person.Email.String, "jonathan@uservoice.com")
@@ -291,7 +291,7 @@ func TestSelectBySQLLoadStructs(t *testing.T) {
 	assert.Equal(t, count, 1)
 	if len(people) == 1 {
 		assert.Equal(t, people[0].Name, "Jonathan")
-		assert.Equal(t, people[0].Id, int64(0))       // not set
+		assert.Equal(t, people[0].ID, int64(0))       // not set
 		assert.Equal(t, people[0].Email.Valid, false) // not set
 		assert.Equal(t, people[0].Email.String, "")   // not set
 	}
@@ -406,22 +406,29 @@ func TestSelectJoin(t *testing.T) {
 
 }
 
-func TestSelect_AddAtomicHooks(t *testing.T) {
+func TestSelect_Events(t *testing.T) {
+	t.Parallel()
+
 	s := NewSelect("tableA", "tA")
 
 	s.Columns = []string{"a", "b"}
-	s.OrderBy("col2")
-	s.AddBeforeToSQL(func(s2 *Select) {
+	s.OrderBy("col3")
+	s.Events.AddBeforeToSQLOnce(func(s2 *Select) {
+		s2.Where(ConditionRaw("a=?", 3.14159))
 		s2.OrderDir("col1", false)
+	})
+	s.Events.AddBeforeToSQL(func(s2 *Select) {
+		s2.OrderDir("col2", false)
+		s2.Where(ConditionRaw("b=?", "a"))
 	})
 
 	sql, args, err := s.ToSQL()
 	assert.NoError(t, err)
-	assert.Nil(t, args)
-	assert.NotEmpty(t, sql)
+	assert.Exactly(t, []interface{}{3.14159, "a"}, args)
+	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` WHERE (a=?) AND (b=?) ORDER BY col3, col1 DESC, col2 DESC", sql)
 
 	sql, args, err = s.ToSQL()
 	assert.NoError(t, err)
-	assert.Nil(t, args)
-	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` ORDER BY col2, col1 DESC", sql)
+	assert.Exactly(t, []interface{}{3.14159, "a", "a"}, args)
+	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` WHERE (a=?) AND (b=?) AND (b=?) ORDER BY col3, col1 DESC, col2 DESC, col2 DESC", sql)
 }

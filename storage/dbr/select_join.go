@@ -46,7 +46,7 @@ func (b *Select) LeftJoin(table, columns []string, onConditions ...ConditionArg)
 	return b.join("LEFT", table, columns, onConditions...)
 }
 
-// LeftJoin creates a join construct with the onConditions glued together with AND
+// RightJoin creates a join construct with the onConditions glued together with AND
 func (b *Select) RightJoin(table, columns []string, onConditions ...ConditionArg) *Select {
 	return b.join("RIGHT", table, columns, onConditions...)
 }

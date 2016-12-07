@@ -125,7 +125,7 @@ func TestUpdateReal(t *testing.T) {
 	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, person.Id, id)
+	assert.Equal(t, person.ID, id)
 	assert.Equal(t, person.Name, "Barack")
 	assert.Equal(t, person.Email.Valid, true)
 	assert.Equal(t, person.Email.String, "barack@whitehouse.gov")
@@ -156,23 +156,29 @@ func TestUpdate_Prepare(t *testing.T) {
 	})
 }
 
-func TestUpdate_AddHookBeforeToSQLOnce(t *testing.T) {
-	up := NewUpdate("tableA", "tA")
+func TestUpdate_Events(t *testing.T) {
+	t.Parallel()
 
+	up := NewUpdate("tableA", "tA")
 	up.Set("a", 1).Set("b", true)
 
-	up.AddBeforeToSQL(func(u2 *Update) {
-		u2.Set("c", 3.14159)
-		u2.OrderBy("a ASC")
+	up.Events.AddBeforeToSQLOnce(func(u *Update) {
+		u.Set("c", 3.14159)
+	}, func(u *Update) {
+		u.Set("d", "d")
+	})
+
+	up.Events.AddBeforeToSQL(func(u *Update) {
+		u.Set("e", "e")
 	})
 
 	sql, args, err := up.ToSQL()
 	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, true, 3.14159}, args)
-	assert.NotEmpty(t, sql)
+	assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e"}, args)
+	assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?", sql)
 
 	sql, args, err = up.ToSQL()
 	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, true, 3.14159}, args)
-	assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ? ORDER BY a ASC", sql)
+	assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e", "e"}, args)
+	assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?, `e` = ?", sql)
 }

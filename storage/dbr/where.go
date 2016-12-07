@@ -37,7 +37,7 @@ type whereFragment struct {
 // WhereFragments provides a list where clauses
 type WhereFragments []*whereFragment
 
-// ConditionArg
+// ConditionArg used as argument in Where()
 type ConditionArg func(*whereFragment)
 
 // ConditionRaw adds a condition and checks values if they implement driver.Valuer.
@@ -51,6 +51,8 @@ func ConditionRaw(raw string, values ...interface{}) ConditionArg {
 	}
 }
 
+// ConditionMap adds a string->interface{} map as AND statements to the WHERE
+// clause.
 func ConditionMap(eq Eq) ConditionArg {
 	return func(wf *whereFragment) {
 		// todo add argsValuer

@@ -22,9 +22,9 @@ type Insert struct {
 	Recs []interface{}
 	Maps map[string]interface{}
 
-	// InsertEvents allows to dispatch certain functions in different
-	// situations. Default Events are nil.
-	*InsertEvents
+	// Events allows to dispatch certain functions in different
+	// situations.
+	Events InsertEvents
 }
 
 // NewInsert creates a new object with a black hole logger.
@@ -78,7 +78,7 @@ func (b *Insert) Record(record interface{}) *Insert {
 	return b
 }
 
-// Record pulls in values to match Columns from the record. Calling multiple
+// Map pulls in values to match Columns from the record. Calling multiple
 // times will add new map entries to the Insert map.
 func (b *Insert) Map(m map[string]interface{}) *Insert {
 	if b.Maps == nil {
@@ -117,7 +117,7 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
 
-	b.InsertEvents.dispatch(eventToSQLBefore, b)
+	b.Events.dispatch(eventToSQLBefore, b)
 
 	if len(b.Into) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)
