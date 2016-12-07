@@ -54,41 +54,32 @@ type (
 	}
 )
 
-// Events a type for embedding to define events for manipulating the SQL.
-type Events struct {
+// EventContainer a type for embedding into other structs to define events for
+// manipulating the SQL. Not an interface because interfaces are named with
+// verbs ;-) Not yet thread safe.
+type EventContainer struct {
 	Select SelectEvents
 	Insert InsertEvents
 	Update UpdateEvents
 	Delete DeleteEvents
 }
 
-// NewEvents creates a new set of events for data manipulation language.
-func NewEvents() *Events {
-	return &Events{}
+// Merge merges other events into the current event container.
+func (e *EventContainer) Merge(events ...EventContainer) *EventContainer {
+	for _, et := range events {
+		e.Select.Merge(et.Select)
+		e.Insert.Merge(et.Insert)
+		e.Update.Merge(et.Update)
+		e.Delete.Merge(et.Delete)
+	}
+	return e
 }
 
-// Merge merges other events into the current event container.
-func (e *Events) Merge(events ...*Events) *Events {
-	for _, et := range events {
-		for idx, recs := range et.Select.receivers {
-			if eventType(idx) < maxEventTypes {
-				e.Select.receivers[idx] = append(e.Select.receivers[idx], recs...)
-			}
-		}
-		for idx, recs := range et.Insert.receivers {
-			if eventType(idx) < maxEventTypes {
-				e.Insert.receivers[idx] = append(e.Insert.receivers[idx], recs...)
-			}
-		}
-		for idx, recs := range et.Update.receivers {
-			if eventType(idx) < maxEventTypes {
-				e.Update.receivers[idx] = append(e.Update.receivers[idx], recs...)
-			}
-		}
-		for idx, recs := range et.Delete.receivers {
-			if eventType(idx) < maxEventTypes {
-				e.Delete.receivers[idx] = append(e.Delete.receivers[idx], recs...)
-			}
+// Merge merges other Select events into the current event object.
+func (e *SelectEvents) Merge(ses ...SelectEvents) *SelectEvents {
+	for _, ev := range ses {
+		for idx, recs := range ev.receivers {
+			e.receivers[idx] = append(e.receivers[idx], recs...)
 		}
 	}
 	return e
@@ -121,6 +112,16 @@ func (e SelectEvents) dispatch(et eventType, b *Select) {
 	}
 }
 
+// Merge merges other Insert events into the current event object.
+func (e *InsertEvents) Merge(events ...InsertEvents) *InsertEvents {
+	for _, ev := range events {
+		for idx, recs := range ev.receivers {
+			e.receivers[idx] = append(e.receivers[idx], recs...)
+		}
+	}
+	return e
+}
+
 // AddBeforeToSQL dispatches the events every time the ToSQL function gets
 // called.
 func (e *InsertEvents) AddBeforeToSQL(fns ...InsertReceiverFn) *InsertEvents {
@@ -148,6 +149,16 @@ func (e InsertEvents) dispatch(et eventType, b *Insert) {
 	}
 }
 
+// Merge merges other Update events into the current event object.
+func (e *UpdateEvents) Merge(events ...UpdateEvents) *UpdateEvents {
+	for _, ev := range events {
+		for idx, recs := range ev.receivers {
+			e.receivers[idx] = append(e.receivers[idx], recs...)
+		}
+	}
+	return e
+}
+
 // AddBeforeToSQL dispatches the events every time the ToSQL function gets
 // called.
 func (e *UpdateEvents) AddBeforeToSQL(fns ...UpdateReceiverFn) *UpdateEvents {
@@ -173,6 +184,16 @@ func (e UpdateEvents) dispatch(et eventType, b *Update) {
 	for _, e := range e.receivers[et] {
 		e(b)
 	}
+}
+
+// Merge merges other Delete events into the current event object.
+func (e *DeleteEvents) Merge(events ...DeleteEvents) *DeleteEvents {
+	for _, ev := range events {
+		for idx, recs := range ev.receivers {
+			e.receivers[idx] = append(e.receivers[idx], recs...)
+		}
+	}
+	return e
 }
 
 // AddBeforeToSQL dispatches the events every time the ToSQL function gets
