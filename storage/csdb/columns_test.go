@@ -405,7 +405,7 @@ var adminUserColumns = csdb.Columns{
 }
 
 func TestColumnsSort(t *testing.T) {
-	t.Parallel()
+	//t.Parallel() a slice is not thread safe ;-)
 	//sort.Reverse(adminUserColumns) doesn't work and not yet needed
 	sort.Sort(adminUserColumns)
 	assert.Exactly(t, `user_id`, adminUserColumns.First().Field)

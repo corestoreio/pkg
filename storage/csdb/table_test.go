@@ -81,7 +81,7 @@ func init() {
 		),
 	)
 
-	tableMap.Insert(table3, csdb.NewTable(
+	tableMap.Upsert(table3, csdb.NewTable(
 		"catalog_category_anc_products_index_idx",
 		&csdb.Column{
 			Field:      ("category_id"),
@@ -105,7 +105,7 @@ func init() {
 		},
 	),
 	)
-	tableMap.Insert(table4, csdb.NewTable(
+	tableMap.Upsert(table4, csdb.NewTable(
 		"admin_user",
 		&csdb.Column{
 			Field:      ("user_id"),

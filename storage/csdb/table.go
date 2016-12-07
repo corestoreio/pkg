@@ -19,7 +19,7 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
-// Table represents a table from a database.
+// Table represents a table from a specific database.
 type Table struct {
 	// Schema represents the name of the database. Might be empty.
 	Schema string
@@ -31,6 +31,9 @@ type Table struct {
 	CountPK int
 	// CountUnique number of unique keys. Auto updated.
 	CountUnique int
+	// Events specific pre defined events which gets applied to each DML statement
+	// (SELECT, INSERT, UPDATE or DELETE).
+	dbr.EventContainer
 
 	// internal caches
 	fieldsPK  []string // all PK column field
@@ -119,16 +122,16 @@ func (t *Table) In(n string) bool {
 // Select generates a SELECT * FROM tableName statement.
 func (t *Table) Select() *dbr.Select {
 	var sb = new(dbr.Select)
-	*sb = *t.selectAllCache // shallow copy, buggy, copies slice header ...
+	*sb = *t.selectAllCache // shallow copy, buggy, copies slice header ... can panic
 	return sb
 }
 
 // LoadSlice performs a SELECT * FROM `tableName` query and puts the results
 // into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
 // and an error. The variadic third arguments can modify the SQL query.
-func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, cbs ...dbr.SelectHook) (int, error) {
+func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, events ...dbr.SelectEvents) (int, error) {
 	sb := t.Select()
 	sb.Querier = db
-	sb.AddHookBeforeToSQLOnce(cbs...)
+	sb.Events.Merge(events...)
 	return sb.LoadStructs(dest)
 }

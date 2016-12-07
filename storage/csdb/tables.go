@@ -26,6 +26,7 @@ const (
 	MainTable       = "main_table"
 	AdditionalTable = "additional_table"
 	ScopeTable      = "scope_table"
+	ghostTableName  = "PendingTableName"
 )
 
 // TableOption applies options to the Tables struct.
@@ -59,7 +60,7 @@ func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 			return errors.Wrap(err, "[csdb] WithNewTable.IsValidIdentifier")
 		}
 
-		if err := tm.Insert(idx, NewTable(tableName, cols...)); err != nil {
+		if err := tm.Upsert(idx, NewTable(tableName, cols...)); err != nil {
 			return errors.Wrap(err, "[csdb] WithNewTable.Tables.Insert")
 		}
 		return nil
@@ -84,7 +85,7 @@ func WithTableLoadColumns(db dbr.Querier, idx int, tableName string) TableOption
 			return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
 		}
 
-		if err := tm.Insert(idx, t); err != nil {
+		if err := tm.Upsert(idx, t); err != nil {
 			return errors.Wrap(err, "[csdb] Tables.Insert")
 		}
 		return nil
@@ -92,7 +93,7 @@ func WithTableLoadColumns(db dbr.Querier, idx int, tableName string) TableOption
 }
 
 // WithTableNames creates for each table name and its index a new table pointer.
-// You should call afterwars the functional option WithLoadColumnDefinitions.
+// You should call afterwards the functional option WithLoadColumnDefinitions.
 // This function returns an error if a table index already exists.
 func WithTableNames(idx []int, tableName []string) TableOption {
 	return func(tm *Tables) error {
@@ -105,7 +106,7 @@ func WithTableNames(idx []int, tableName []string) TableOption {
 		}
 
 		for i, tn := range tableName {
-			if err := tm.Insert(idx[i], NewTable(tn)); err != nil {
+			if err := tm.Upsert(idx[i], NewTable(tn)); err != nil {
 				return errors.Wrapf(err, "[csdb] Tables.Insert %q", tn)
 			}
 		}
@@ -121,11 +122,30 @@ func WithLoadColumnDefinitions(db dbr.Querier) TableOption {
 		defer tm.mu.Unlock()
 
 		for _, table := range tm.ts {
-			// could be refactored to fire only one query ... but later.
+			// TODO(CyS) could be refactored to fire only one query ... but later.
 			if err := table.LoadColumns(db); err != nil {
 				return errors.Wrap(err, "[csdb] table.LoadColumns")
 			}
 		}
+		return nil
+	}
+}
+
+// WithTableEvent adds events to a table object. It doesn't matter if the table
+// has already been set. If the table object gets set later, the events will be
+// copied to the new object.
+func WithTableEvent(idx int, events ...dbr.EventContainer) TableOption {
+	return func(tm *Tables) error {
+		tm.mu.Lock()
+		defer tm.mu.Unlock()
+
+		t, ok := tm.ts[idx]
+		if !ok || t == nil {
+			t = NewTable(ghostTableName)
+		}
+		t.EventContainer.Merge(events...)
+		tm.ts[idx] = t
+
 		return nil
 	}
 }
@@ -145,6 +165,26 @@ func NewTables(opts ...TableOption) (*Tables, error) {
 func MustNewTables(opts ...TableOption) *Tables {
 	ts, err := NewTables(opts...)
 	if err != nil {
+		panic(err)
+	}
+	return ts
+}
+
+// MustInitTables helper function in init() statements to initialize the global
+// table collection variable independent of knowing when this variable is nil.
+// We cannot assume the correct order, how all init() invocations are executed,
+// at least they don't run in parallel during packet initialization. Yes ... bad
+// practice to rely on init ... but for now it works very well.
+// TODO(CyS) rethink and refactor maybe.
+func MustInitTables(ts *Tables, opts ...TableOption) *Tables {
+	if ts == nil {
+		var err error
+		ts, err = NewTables()
+		if err != nil {
+			panic(err)
+		}
+	}
+	if err := ts.Options(opts...); err != nil {
 		panic(err)
 	}
 	return ts
@@ -202,26 +242,25 @@ func (tm *Tables) Len() int {
 	return len(tm.ts)
 }
 
-// Insert adds a new table into the map. If an entry already exists, it will
-// return an AlreadyExists error behaviour.
-func (tm *Tables) Insert(i int, ts *Table) error {
-	_ = ts.Name // let it panic if ts is nil
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
-	if _, ok := tm.ts[i]; ok {
-		return errors.NewAlreadyExistsf("[csdb] TableService Index %d already exists for table %q. Use Update() function.", i, ts.Name)
-	}
-	tm.ts[i] = ts
-	return nil
-}
+// Upsert adds or updates a new table into the internal cache. *Table cannot be nil.
+func (tm *Tables) Upsert(i int, tNew *Table) error {
+	_ = tNew.Name // let it panic as early as possible if *Table is nil
 
-// Update sets a new table for a given index. Overrides silently existing
-// entries.
-func (tm *Tables) Update(i int, ts *Table) error {
-	_ = ts.Name // let it panic if ts is nil
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
-	tm.ts[i] = ts
+
+	tOld, ok := tm.ts[i]
+	if tOld == nil || !ok {
+		tm.ts[i] = tNew
+		return nil
+	}
+
+	if tOld.Name == ghostTableName {
+		// for now copy only the events from the existing table
+		tNew.EventContainer.Merge(tOld.EventContainer)
+	}
+
+	tm.ts[i] = tNew
 	return nil
 }
 

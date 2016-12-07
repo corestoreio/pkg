@@ -20,6 +20,7 @@ import (
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,4 +64,33 @@ func TestShowMasterStatus(t *testing.T) {
 	assert.Exactly(t, "mysql-bin.000001", v.File)
 	assert.Exactly(t, uint(3581378), v.Position)
 	assert.Exactly(t, "123-456-789", v.ExecutedGTIDSet)
+}
+
+func TestMasterStatus_FromString(t *testing.T) {
+	tests := []struct {
+		in           string
+		wantFile     string
+		wantPosition uint
+		wantErr      errors.BehaviourFunc
+		wantString   string
+	}{
+		{"mysql-bin.000004;545460", "mysql-bin.000004", 545460, nil, "mysql-bin.000004;545460"},
+		{"mysql-bin.000004;", "", 0, errors.IsNotValid, ""},
+		{"mysql-bin.000004", "", 0, errors.IsNotFound, ""},
+	}
+	for i, test := range tests {
+		var haveMS = &csdb.MasterStatus{}
+		haveErr := haveMS.FromString(test.in)
+		if test.wantErr != nil {
+			assert.True(t, test.wantErr(haveErr), "Index %d: %+v", i, haveErr)
+			assert.Empty(t, haveMS.File, "Index %d", i)
+			assert.Empty(t, haveMS.Position, "Index %d", i)
+			assert.Empty(t, haveMS.String(), "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "Index %d", i)
+		assert.Exactly(t, test.wantFile, haveMS.File, "Index %d", i)
+		assert.Exactly(t, test.wantPosition, haveMS.Position, "Index %d", i)
+		assert.Exactly(t, test.wantString, haveMS.String())
+	}
 }

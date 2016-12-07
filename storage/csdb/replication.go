@@ -69,6 +69,9 @@ func (ms MasterStatus) Compare(other MasterStatus) int {
 // String converts the file name and the position to a string, separated by a
 // semi-colon.
 func (ms MasterStatus) String() string {
+	if ms.File == "" {
+		return ""
+	}
 	return ms.File + ";" + strconv.FormatUint(uint64(ms.Position), 10)
 }
 
@@ -76,11 +79,15 @@ func (ms MasterStatus) String() string {
 // filename;position.
 func (ms *MasterStatus) FromString(str string) error {
 	c := strings.IndexByte(str, ';')
-	ms.File = str[:c]
+	if c < 1 {
+		return errors.NewNotFoundf("[csdb] MasterStatus FromString: Delimiter semi-colon not found.")
+	}
+
 	pos, err := strconv.ParseUint(str[c+1:], 10, 32)
 	if err != nil {
-		return errors.Wrap(err, "[binlogsync] FromString.ParseUint")
+		return errors.NewNotValidf("[csdb] MasterStatus FromString: %s", err)
 	}
+	ms.File = str[:c]
 	ms.Position = uint(pos)
 	return nil
 }
