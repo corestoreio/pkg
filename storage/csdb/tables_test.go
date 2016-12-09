@@ -198,21 +198,29 @@ func TestMustInitTables(t *testing.T) {
 	})
 }
 
-func TestWithTableEvent(t *testing.T) {
+func TestWithTableDMLListeners(t *testing.T) {
 	t.Parallel()
 
 	counter := 0
-	ev := dbr.EventContainer{}
-	ev.Select.
-		AddBeforeToSQL(func(_ *dbr.Select) { counter++ }).
-		AddBeforeToSQL(func(_ *dbr.Select) { counter++ })
+	ev := dbr.MustNewListenerBucket(
+		dbr.Listen{
+			Name:       "l1",
+			EventType:  dbr.OnBeforeToSQL,
+			SelectFunc: func(_ *dbr.Select) { counter++ },
+		},
+		dbr.Listen{
+			Name:       "l2",
+			EventType:  dbr.OnBeforeToSQL,
+			SelectFunc: func(_ *dbr.Select) { counter++ },
+		},
+	)
 
 	t.Run("Nil Table / No-WithTable", func(*testing.T) {
-		ts := csdb.MustNewTables(csdb.WithTableEvent(33, ev, ev)) // +=2
+		ts := csdb.MustNewTables(csdb.WithTableDMLListeners(33, ev, ev)) // +=2
 		tbl := ts.MustTable(33)
 		sel := dbr.NewSelect("tableA")
 
-		sel.Events.Merge(tbl.EventContainer.Select) // +=2
+		sel.SelectListeners.Merge(tbl.ListenerBucket.Select) // +=2
 
 		sel.Columns = []string{"a", "b"}
 		assert.Exactly(t, "SELECT a, b FROM `tableA`", sel.String())
@@ -222,14 +230,14 @@ func TestWithTableEvent(t *testing.T) {
 	t.Run("Non Nil Table", func(*testing.T) {
 		ts := csdb.MustNewTables(
 			csdb.WithTable(33, "TeschtT", &csdb.Column{Field: "col1"}),
-			csdb.WithTableEvent(33, ev, ev),
+			csdb.WithTableDMLListeners(33, ev, ev),
 		) // +=2
 		tbl := ts.MustTable(33)
 		require.Exactly(t, "TeschtT", tbl.Name)
 
 		sel := tbl.Select()
 		require.NotNil(t, sel)
-		sel.Events.Merge(tbl.EventContainer.Select) // +=2
+		sel.SelectListeners.Merge(tbl.ListenerBucket.Select) // +=2
 
 		assert.Exactly(t, "SELECT `main_table`.`col1` FROM `TeschtT` AS `main_table`", sel.String())
 		assert.Exactly(t, 8, counter)
@@ -237,7 +245,7 @@ func TestWithTableEvent(t *testing.T) {
 
 	t.Run("Nil Table and after WithTable call", func(*testing.T) {
 		ts := csdb.MustNewTables(
-			csdb.WithTableEvent(33, ev, ev),
+			csdb.WithTableDMLListeners(33, ev, ev),
 			csdb.WithTable(33, "TeschtU", &csdb.Column{Field: "col1"}),
 		) // +=2
 		tbl := ts.MustTable(33)
@@ -245,7 +253,7 @@ func TestWithTableEvent(t *testing.T) {
 
 		sel := tbl.Select()
 		require.NotNil(t, sel)
-		sel.Events.Merge(tbl.EventContainer.Select) // +=2
+		sel.SelectListeners.Merge(tbl.ListenerBucket.Select) // +=2
 
 		assert.Exactly(t, "SELECT `main_table`.`col1` FROM `TeschtU` AS `main_table`", sel.String())
 		assert.Exactly(t, 12, counter)

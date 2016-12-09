@@ -31,9 +31,9 @@ type Table struct {
 	CountPK int
 	// CountUnique number of unique keys. Auto updated.
 	CountUnique int
-	// Events specific pre defined events which gets applied to each DML statement
-	// (SELECT, INSERT, UPDATE or DELETE).
-	dbr.EventContainer
+	// ListenerBucket specific pre defined listeners which gets dispatches to
+	// each DML statement (SELECT, INSERT, UPDATE or DELETE).
+	dbr.ListenerBucket
 
 	// internal caches
 	fieldsPK  []string // all PK column field
@@ -129,9 +129,10 @@ func (t *Table) Select() *dbr.Select {
 // LoadSlice performs a SELECT * FROM `tableName` query and puts the results
 // into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
 // and an error. The variadic third arguments can modify the SQL query.
-func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, events ...dbr.SelectEvents) (int, error) {
+func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
 	sb := t.Select()
 	sb.Querier = db
-	sb.Events.Merge(events...)
+	sb.SelectListeners.Merge(t.ListenerBucket.Select)
+	sb.SelectListeners.Add(listeners...)
 	return sb.LoadStructs(dest)
 }

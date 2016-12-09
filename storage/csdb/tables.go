@@ -131,10 +131,10 @@ func WithLoadColumnDefinitions(db dbr.Querier) TableOption {
 	}
 }
 
-// WithTableEvent adds events to a table object. It doesn't matter if the table
-// has already been set. If the table object gets set later, the events will be
-// copied to the new object.
-func WithTableEvent(idx int, events ...dbr.EventContainer) TableOption {
+// WithTableDMLListeners adds event listeners to a table object. It doesn't
+// matter if the table has already been set. If the table object gets set later,
+// the events will be copied to the new object.
+func WithTableDMLListeners(idx int, events ...*dbr.ListenerBucket) TableOption {
 	return func(tm *Tables) error {
 		tm.mu.Lock()
 		defer tm.mu.Unlock()
@@ -143,7 +143,7 @@ func WithTableEvent(idx int, events ...dbr.EventContainer) TableOption {
 		if !ok || t == nil {
 			t = NewTable(ghostTableName)
 		}
-		t.EventContainer.Merge(events...)
+		t.ListenerBucket.Merge(events...)
 		tm.ts[idx] = t
 
 		return nil
@@ -257,7 +257,7 @@ func (tm *Tables) Upsert(i int, tNew *Table) error {
 
 	if tOld.Name == ghostTableName {
 		// for now copy only the events from the existing table
-		tNew.EventContainer.Merge(tOld.EventContainer)
+		tNew.ListenerBucket.Merge(&tOld.ListenerBucket)
 	}
 
 	tm.ts[i] = tNew
