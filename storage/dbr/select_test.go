@@ -409,26 +409,59 @@ func TestSelectJoin(t *testing.T) {
 func TestSelect_Events(t *testing.T) {
 	t.Parallel()
 
-	s := NewSelect("tableA", "tA")
+	t.Run("Missing EventType", func(t *testing.T) {
+		s := NewSelect("tableA", "tA")
 
-	s.Columns = []string{"a", "b"}
-	s.OrderBy("col3")
-	s.Events.AddBeforeToSQLOnce(func(s2 *Select) {
-		s2.Where(ConditionRaw("a=?", 3.14159))
-		s2.OrderDir("col1", false)
+		s.Columns = []string{"a", "b"}
+		s.OrderBy("col3")
+		s.SelectListeners.Add(Listen{
+			Name: "a col1",
+			SelectFunc: func(s2 *Select) {
+				s2.Where(ConditionRaw("a=?", 3.14159))
+				s2.OrderDir("col1", false)
+			},
+		})
+
+		sql, args, err := s.ToSQL()
+		assert.Empty(t, sql)
+		assert.Nil(t, args)
+		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
-	s.Events.AddBeforeToSQL(func(s2 *Select) {
-		s2.OrderDir("col2", false)
-		s2.Where(ConditionRaw("b=?", "a"))
+
+	t.Run("Should Dispatch", func(t *testing.T) {
+		s := NewSelect("tableA", "tA")
+
+		s.Columns = []string{"a", "b"}
+		s.OrderBy("col3")
+		s.SelectListeners.Add(Listen{
+			Name:      "a col1",
+			Once:      true,
+			EventType: OnBeforeToSQL,
+			SelectFunc: func(s2 *Select) {
+				s2.Where(ConditionRaw("a=?", 3.14159))
+				s2.OrderDir("col1", false)
+			},
+		})
+		s.SelectListeners.Add(Listen{
+			Name:      "b col2",
+			EventType: OnBeforeToSQL,
+			SelectFunc: func(s2 *Select) {
+				s2.OrderDir("col2", false)
+				s2.Where(ConditionRaw("b=?", "a"))
+			},
+		})
+
+		sql, args, err := s.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{3.14159, "a"}, args)
+		assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` WHERE (a=?) AND (b=?) ORDER BY col3, col1 DESC, col2 DESC", sql)
+
+		sql, args, err = s.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{3.14159, "a", "a"}, args)
+		assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` WHERE (a=?) AND (b=?) AND (b=?) ORDER BY col3, col1 DESC, col2 DESC, col2 DESC", sql)
+
+		assert.Exactly(t, `a col1; b col2`, s.SelectListeners.String())
 	})
 
-	sql, args, err := s.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{3.14159, "a"}, args)
-	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` WHERE (a=?) AND (b=?) ORDER BY col3, col1 DESC, col2 DESC", sql)
-
-	sql, args, err = s.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{3.14159, "a", "a"}, args)
-	assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` WHERE (a=?) AND (b=?) AND (b=?) ORDER BY col3, col1 DESC, col2 DESC, col2 DESC", sql)
 }

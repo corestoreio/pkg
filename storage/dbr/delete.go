@@ -23,9 +23,9 @@ type Delete struct {
 	OffsetCount uint64
 	OffsetValid bool
 
-	// Events allows to dispatch certain functions in different
+	// DeleteListeners allows to dispatch certain functions in different
 	// situations.
-	Events DeleteEvents
+	DeleteListeners
 }
 
 // NewDelete creates a new object with a black hole logger.
@@ -100,7 +100,9 @@ func (b *Delete) Offset(offset uint64) *Delete {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, []interface{}, error) {
 
-	b.Events.dispatch(eventToSQLBefore, b)
+	if err := b.DeleteListeners.dispatch(OnBeforeToSQL, b); err != nil {
+		return "", nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
+	}
 
 	if len(b.From.Expression) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)

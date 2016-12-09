@@ -14,211 +14,420 @@
 
 package dbr
 
-import "sync"
+import (
+	"bytes"
+	"sync"
 
-type eventType uint8
+	"github.com/corestoreio/csfw/util/errors"
+)
 
+// EventType defines where and when an event gets dispatched.
+type EventType byte
+
+func (et EventType) String() string {
+	return string(et)
+}
+
+// List of possible dispatched events.
 const (
-	eventToSQLBefore eventType = iota
-	maxEventTypes
+	OnBeforeToSQL EventType = iota + 65
 )
 
-type (
-	// SelectReceiverFn receives the Select object pointer for modification
-	SelectReceiverFn func(*Select)
-	// SelectEvents event object containing a list of different event types
-	// which gets dispatched in different situations.
-	SelectEvents struct {
-		receivers [maxEventTypes][]SelectReceiverFn
-	}
-	// InsertReceiverFn receives the Select object pointer for modification
-	InsertReceiverFn func(*Insert)
-	// InsertEvents event object containing a list of different event types
-	// which gets dispatched in different situations.
-	InsertEvents struct {
-		receivers [maxEventTypes][]InsertReceiverFn
-	}
-	// UpdateReceiverFn receives the Select object pointer for modification
-	UpdateReceiverFn func(*Update)
-	// UpdateEvents event object containing a list of different event types
-	// which gets dispatched in different situations.
-	UpdateEvents struct {
-		receivers [maxEventTypes][]UpdateReceiverFn
-	}
-	// DeleteReceiverFn receives the Select object pointer for modification
-	DeleteReceiverFn func(*Delete)
-	// DeleteEvents event object containing a list of different event types
-	// which gets dispatched in different situations.
-	DeleteEvents struct {
-		receivers [maxEventTypes][]DeleteReceiverFn
-	}
-)
-
-// EventContainer a type for embedding into other structs to define events for
+// ListenerBucket a type for embedding into other structs to define events for
 // manipulating the SQL. Not an interface because interfaces are named with
 // verbs ;-) Not yet thread safe.
-type EventContainer struct {
-	Select SelectEvents
-	Insert InsertEvents
-	Update UpdateEvents
-	Delete DeleteEvents
+type ListenerBucket struct {
+	Select SelectListeners
+	Insert InsertListeners
+	Update UpdateListeners
+	Delete DeleteListeners
+}
+
+// NewListenerBucket creates a new event container to which multiple listeners
+// can be added to.
+func NewListenerBucket(listeners ...Listen) (*ListenerBucket, error) {
+	ec := new(ListenerBucket)
+	ec.Select.Add(listeners...)
+	ec.Insert.Add(listeners...)
+	ec.Update.Add(listeners...)
+	ec.Delete.Add(listeners...)
+
+	for i, ls := range ec.Select {
+		if ls.error != nil {
+			return nil, errors.Wrapf(ls.error, "[dbr] NewListenerBucket Select Index %d", i)
+		}
+	}
+	for i, ls := range ec.Insert {
+		if ls.error != nil {
+			return nil, errors.Wrapf(ls.error, "[dbr] NewListenerBucket Insert Index %d", i)
+		}
+	}
+	for i, ls := range ec.Update {
+		if ls.error != nil {
+			return nil, errors.Wrapf(ls.error, "[dbr] NewListenerBucket Update Index %d", i)
+		}
+	}
+	for i, ls := range ec.Delete {
+		if ls.error != nil {
+			return nil, errors.Wrapf(ls.error, "[dbr] NewListenerBucket Delete Index %d", i)
+		}
+	}
+	return ec, nil
+}
+
+// MustNewListenerBucket same as NewListenerBucket but panics on error.
+func MustNewListenerBucket(listeners ...Listen) *ListenerBucket {
+	ec, err := NewListenerBucket(listeners...)
+	if err != nil {
+		panic(err)
+	}
+	return ec
 }
 
 // Merge merges other events into the current event container.
-func (e *EventContainer) Merge(events ...EventContainer) *EventContainer {
-	for _, et := range events {
-		e.Select.Merge(et.Select)
-		e.Insert.Merge(et.Insert)
-		e.Update.Merge(et.Update)
-		e.Delete.Merge(et.Delete)
+func (lb *ListenerBucket) Merge(buckets ...*ListenerBucket) *ListenerBucket {
+	for _, b := range buckets {
+		lb.Select = append(lb.Select, b.Select...)
+		lb.Insert = append(lb.Insert, b.Insert...)
+		lb.Update = append(lb.Update, b.Update...)
+		lb.Delete = append(lb.Delete, b.Delete...)
 	}
-	return e
+	return lb
 }
 
-// Merge merges other Select events into the current event object.
-func (e *SelectEvents) Merge(ses ...SelectEvents) *SelectEvents {
-	for _, ev := range ses {
-		for idx, recs := range ev.receivers {
-			e.receivers[idx] = append(e.receivers[idx], recs...)
+// Listen an argument to create a new listener when an event gets dispatched by
+// a "Select, Insert, Update, Delete" type. Implements Listener interface.
+type Listen struct {
+	// Name optionally set internal name to identify multiple different listeners.
+	Name string
+	// Once set to true to execute a listener only once per object
+	Once bool
+	// EventType defines when a listener gets called. Mandatory.
+	EventType
+
+	// Listeners. Set at least one listener.
+	SelectFunc
+	InsertFunc
+	UpdateFunc
+	DeleteFunc
+}
+
+// <COPY>
+
+// SelectFunc receives the Select object pointer for modification.
+type SelectFunc func(*Select)
+
+// selectListen wrapper struct because we might wrap the SelectReceiverFn from
+// the SelectListen struct.
+type selectListen struct {
+	name string
+	EventType
+	SelectFunc
+	error
+}
+
+func makeSelectListen(idx int, sl Listen) selectListen {
+	nsl := selectListen{
+		name:      sl.Name,
+		EventType: sl.EventType,
+	}
+	if nsl.EventType == 0 {
+		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+	}
+
+	nsl.SelectFunc = sl.SelectFunc
+	if sl.Once {
+		var onesie sync.Once
+		nsl.SelectFunc = func(b *Select) {
+			onesie.Do(func() {
+				sl.SelectFunc(b)
+			})
 		}
 	}
-	return e
+	return nsl
 }
 
-// AddBeforeToSQL dispatches the events every time the ToSQL function gets
-// called.
-func (e *SelectEvents) AddBeforeToSQL(fns ...SelectReceiverFn) *SelectEvents {
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
-	return e
-}
+// SelectListeners contains multiple select event listener
+type SelectListeners []selectListen
 
-// AddBeforeToSQLOnce dispatches the events only once before ToSQL gets called.
-// Subsequent calls to ToSQL do not trigger the ReceiverFn closures.
-func (e *SelectEvents) AddBeforeToSQLOnce(fns ...SelectReceiverFn) *SelectEvents {
-	newFns := make([]SelectReceiverFn, len(fns))
-	for i, fn := range fns {
-		fn := fn // catch variables because of the closure
-		i := i
-		var onesie sync.Once
-		newFns[i] = func(b *Select) { onesie.Do(func() { fn(b) }) }
-	}
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], newFns...)
-	return e
-}
-
-func (e SelectEvents) dispatch(et eventType, b *Select) {
-	for _, e := range e.receivers[et] {
-		e(b)
-	}
-}
-
-// Merge merges other Insert events into the current event object.
-func (e *InsertEvents) Merge(events ...InsertEvents) *InsertEvents {
-	for _, ev := range events {
-		for idx, recs := range ev.receivers {
-			e.receivers[idx] = append(e.receivers[idx], recs...)
+// Add adds multiple listener to the listener stack and transforms the listener
+// functions according to the configuration.
+func (se *SelectListeners) Add(sls ...Listen) SelectListeners {
+	for idx, sl := range sls {
+		if sl.SelectFunc != nil {
+			*se = append(*se, makeSelectListen(idx, sl))
 		}
 	}
-	return e
+	return *se
 }
 
-// AddBeforeToSQL dispatches the events every time the ToSQL function gets
-// called.
-func (e *InsertEvents) AddBeforeToSQL(fns ...InsertReceiverFn) *InsertEvents {
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
-	return e
-}
-
-// AddBeforeToSQLOnce dispatches the events only once before ToSQL gets called.
-// Subsequent calls to ToSQL do not trigger the ReceiverFn closures.
-func (e *InsertEvents) AddBeforeToSQLOnce(fns ...InsertReceiverFn) *InsertEvents {
-	newFns := make([]InsertReceiverFn, len(fns))
-	for i, fn := range fns {
-		fn := fn // catch variables because of the closure
-		i := i
-		var onesie sync.Once
-		newFns[i] = func(b *Insert) { onesie.Do(func() { fn(b) }) }
+// Merge merges other SelectListeners into the current listeners.
+func (se *SelectListeners) Merge(sls ...SelectListeners) SelectListeners {
+	for _, sl := range sls {
+		*se = append(*se, sl...)
 	}
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], newFns...)
-	return e
+	return *se
 }
 
-func (e InsertEvents) dispatch(et eventType, b *Insert) {
-	for _, e := range e.receivers[et] {
-		e(b)
-	}
-}
-
-// Merge merges other Update events into the current event object.
-func (e *UpdateEvents) Merge(events ...UpdateEvents) *UpdateEvents {
-	for _, ev := range events {
-		for idx, recs := range ev.receivers {
-			e.receivers[idx] = append(e.receivers[idx], recs...)
+func (se SelectListeners) dispatch(et EventType, b *Select) error {
+	for i, s := range se {
+		if s.error != nil {
+			return errors.Wrapf(s.error, "[dbr] SelectListeners.dispatch Index %d EventType: %s", i, et)
+		}
+		if s.EventType == et {
+			s.SelectFunc(b)
 		}
 	}
-	return e
+	return nil
 }
 
-// AddBeforeToSQL dispatches the events every time the ToSQL function gets
-// called.
-func (e *UpdateEvents) AddBeforeToSQL(fns ...UpdateReceiverFn) *UpdateEvents {
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
-	return e
-}
-
-// AddBeforeToSQLOnce dispatches the events only once before ToSQL gets called.
-// Subsequent calls to ToSQL do not trigger the ReceiverFn closures.
-func (e *UpdateEvents) AddBeforeToSQLOnce(fns ...UpdateReceiverFn) *UpdateEvents {
-	newFns := make([]UpdateReceiverFn, len(fns))
-	for i, fn := range fns {
-		fn := fn // catch variables because of the closure
-		i := i
-		var onesie sync.Once
-		newFns[i] = func(b *Update) { onesie.Do(func() { fn(b) }) }
-	}
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], newFns...)
-	return e
-}
-
-func (e UpdateEvents) dispatch(et eventType, b *Update) {
-	for _, e := range e.receivers[et] {
-		e(b)
-	}
-}
-
-// Merge merges other Delete events into the current event object.
-func (e *DeleteEvents) Merge(events ...DeleteEvents) *DeleteEvents {
-	for _, ev := range events {
-		for idx, recs := range ev.receivers {
-			e.receivers[idx] = append(e.receivers[idx], recs...)
+// String returns a list of all named event listeners.
+func (se SelectListeners) String() string {
+	var buf bytes.Buffer
+	for i, li := range se {
+		_, _ = buf.WriteString(li.name)
+		if i < len(se)-1 {
+			_, _ = buf.WriteString("; ")
 		}
 	}
-	return e
+	return buf.String()
 }
 
-// AddBeforeToSQL dispatches the events every time the ToSQL function gets
-// called.
-func (e *DeleteEvents) AddBeforeToSQL(fns ...DeleteReceiverFn) *DeleteEvents {
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], fns...)
-	return e
+// </COPY>
+
+// InsertFunc receives the Insert object pointer for modification.
+type InsertFunc func(*Insert)
+
+// insertListen wrapper struct because we might wrap the InsertReceiverFn from
+// the InsertListen struct.
+type insertListen struct {
+	name string
+	EventType
+	InsertFunc
+	error
 }
 
-// AddBeforeToSQLOnce dispatches the events only once before ToSQL gets called.
-// Subsequent calls to ToSQL do not trigger the ReceiverFn closures.
-func (e *DeleteEvents) AddBeforeToSQLOnce(fns ...DeleteReceiverFn) *DeleteEvents {
-	newFns := make([]DeleteReceiverFn, len(fns))
-	for i, fn := range fns {
-		fn := fn // catch variables because of the closure
-		i := i
+func makeInsertListen(idx int, sl Listen) insertListen {
+	nsl := insertListen{
+		name:      sl.Name,
+		EventType: sl.EventType,
+	}
+	if nsl.EventType == 0 {
+		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+	}
+
+	nsl.InsertFunc = sl.InsertFunc
+	if sl.Once {
 		var onesie sync.Once
-		newFns[i] = func(b *Delete) { onesie.Do(func() { fn(b) }) }
+		nsl.InsertFunc = func(b *Insert) {
+			onesie.Do(func() {
+				sl.InsertFunc(b)
+			})
+		}
 	}
-	e.receivers[eventToSQLBefore] = append(e.receivers[eventToSQLBefore], newFns...)
-	return e
+	return nsl
 }
 
-func (e DeleteEvents) dispatch(et eventType, b *Delete) {
-	for _, e := range e.receivers[et] {
-		e(b)
+// InsertListeners contains multiple insert event listener
+type InsertListeners []insertListen
+
+// Add adds multiple listener to the listener stack and transforms the listener
+// functions according to the configuration.
+func (se *InsertListeners) Add(sls ...Listen) InsertListeners {
+	for idx, sl := range sls {
+		if sl.InsertFunc != nil {
+			*se = append(*se, makeInsertListen(idx, sl))
+		}
 	}
+	return *se
+}
+
+// Merge merges other InsertListeners into the current listeners.
+func (se *InsertListeners) Merge(sls ...InsertListeners) InsertListeners {
+	for _, sl := range sls {
+		*se = append(*se, sl...)
+	}
+	return *se
+}
+
+func (se InsertListeners) dispatch(et EventType, b *Insert) error {
+	for i, s := range se {
+		if s.error != nil {
+			return errors.Wrapf(s.error, "[dbr] InsertListeners.dispatch Index %d EventType: %s", i, et)
+		}
+		if s.EventType == et {
+			s.InsertFunc(b)
+		}
+	}
+	return nil
+}
+
+// String returns a list of all named event listeners.
+func (se InsertListeners) String() string {
+	var buf bytes.Buffer
+	for i, li := range se {
+		_, _ = buf.WriteString(li.name)
+		if i < len(se)-1 {
+			_, _ = buf.WriteString("; ")
+		}
+	}
+	return buf.String()
+}
+
+// UpdateFunc receives the Update object pointer for modification.
+type UpdateFunc func(*Update)
+
+// updateListen wrapper struct because we might wrap the UpdateReceiverFn from
+// the UpdateListen struct.
+type updateListen struct {
+	name string
+	EventType
+	UpdateFunc
+	error
+}
+
+func makeUpdateListen(idx int, sl Listen) updateListen {
+	nsl := updateListen{
+		name:      sl.Name,
+		EventType: sl.EventType,
+	}
+	if nsl.EventType == 0 {
+		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+	}
+
+	nsl.UpdateFunc = sl.UpdateFunc
+	if sl.Once {
+		var onesie sync.Once
+		nsl.UpdateFunc = func(b *Update) {
+			onesie.Do(func() {
+				sl.UpdateFunc(b)
+			})
+		}
+	}
+	return nsl
+}
+
+// UpdateListeners contains multiple update event listener
+type UpdateListeners []updateListen
+
+// Add adds multiple listener to the listener stack and transforms the listener
+// functions according to the configuration.
+func (se *UpdateListeners) Add(sls ...Listen) UpdateListeners {
+	for idx, sl := range sls {
+		if sl.UpdateFunc != nil {
+			*se = append(*se, makeUpdateListen(idx, sl))
+		}
+	}
+	return *se
+}
+
+// Merge merges other UpdateListeners into the current listeners.
+func (se *UpdateListeners) Merge(sls ...UpdateListeners) UpdateListeners {
+	for _, sl := range sls {
+		*se = append(*se, sl...)
+	}
+	return *se
+}
+
+func (se UpdateListeners) dispatch(et EventType, b *Update) error {
+	for i, s := range se {
+		if s.error != nil {
+			return errors.Wrapf(s.error, "[dbr] UpdateListeners.dispatch Index %d EventType: %s", i, et)
+		}
+		if s.EventType == et {
+			s.UpdateFunc(b)
+		}
+	}
+	return nil
+}
+
+// String returns a list of all named event listeners.
+func (se UpdateListeners) String() string {
+	var buf bytes.Buffer
+	for i, li := range se {
+		_, _ = buf.WriteString(li.name)
+		if i < len(se)-1 {
+			_, _ = buf.WriteString("; ")
+		}
+	}
+	return buf.String()
+}
+
+// DeleteFunc receives the Delete object pointer for modification.
+type DeleteFunc func(*Delete)
+
+// deleteListen wrapper struct because we might wrap the DeleteReceiverFn from
+// the DeleteListen struct.
+type deleteListen struct {
+	name string
+	EventType
+	DeleteFunc
+	error
+}
+
+func makeDeleteListen(idx int, sl Listen) deleteListen {
+	nsl := deleteListen{
+		name:      sl.Name,
+		EventType: sl.EventType,
+	}
+	if nsl.EventType == 0 {
+		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+	}
+
+	nsl.DeleteFunc = sl.DeleteFunc
+	if sl.Once {
+		var onesie sync.Once
+		nsl.DeleteFunc = func(b *Delete) {
+			onesie.Do(func() {
+				sl.DeleteFunc(b)
+			})
+		}
+	}
+	return nsl
+}
+
+// DeleteListeners contains multiple delete event listener
+type DeleteListeners []deleteListen
+
+// Add adds multiple listener to the listener stack and transforms the listener
+// functions according to the configuration.
+func (se *DeleteListeners) Add(sls ...Listen) DeleteListeners {
+	for idx, sl := range sls {
+		if sl.DeleteFunc != nil {
+			*se = append(*se, makeDeleteListen(idx, sl))
+		}
+	}
+	return *se
+}
+
+// Merge merges other DeleteListeners into the current listeners.
+func (se *DeleteListeners) Merge(sls ...DeleteListeners) DeleteListeners {
+	for _, sl := range sls {
+		*se = append(*se, sl...)
+	}
+	return *se
+}
+
+func (se DeleteListeners) dispatch(et EventType, b *Delete) error {
+	for i, s := range se {
+		if s.error != nil {
+			return errors.Wrapf(s.error, "[dbr] DeleteListeners.dispatch Index %d EventType: %s", i, et)
+		}
+		if s.EventType == et {
+			s.DeleteFunc(b)
+		}
+	}
+	return nil
+}
+
+// String returns a list of all named event listeners.
+func (se DeleteListeners) String() string {
+	var buf bytes.Buffer
+	for i, li := range se {
+		_, _ = buf.WriteString(li.name)
+		if i < len(se)-1 {
+			_, _ = buf.WriteString("; ")
+		}
+	}
+	return buf.String()
 }

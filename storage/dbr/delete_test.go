@@ -110,26 +110,71 @@ func TestDelete_Prepare(t *testing.T) {
 
 func TestDelete_Events(t *testing.T) {
 	t.Parallel()
-	d := NewDelete("tableA", "main_table")
 
-	d.OrderBy("col2")
-	d.Events.AddBeforeToSQLOnce(func(s2 *Delete) {
-		s2.OrderDir("col1", false)
-	}, func(s3 *Delete) {
-		s3.Where(ConditionRaw("store_id=?", 1))
+	t.Run("Missing EventType", func(t *testing.T) {
+		d := NewDelete("tableA", "main_table")
+
+		d.OrderBy("col2")
+		d.DeleteListeners.Add(
+			Listen{
+				Name: "col1",
+				DeleteFunc: func(b *Delete) {
+					b.OrderDir("col1", false)
+				},
+			},
+		)
+
+		sql, args, err := d.ToSQL()
+		assert.Empty(t, sql)
+		assert.Nil(t, args)
+		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
 
-	d.Events.AddBeforeToSQL(func(b *Delete) {
-		b.Where(ConditionRaw("repetitive=?", 3))
+	t.Run("Should Dispatch", func(t *testing.T) {
+
+		d := NewDelete("tableA", "main_table")
+
+		d.OrderBy("col2")
+		d.DeleteListeners.Add(
+			Listen{
+				Name:      "col1",
+				Once:      true,
+				EventType: OnBeforeToSQL,
+				DeleteFunc: func(b *Delete) {
+					b.OrderDir("col1", false)
+				},
+			},
+			Listen{
+				Name:      "storeid",
+				Once:      true,
+				EventType: OnBeforeToSQL,
+				DeleteFunc: func(b *Delete) {
+					b.Where(ConditionRaw("store_id=?", 1))
+				},
+			},
+		)
+
+		d.DeleteListeners.Add(
+			Listen{
+				Name:      "repetitive",
+				EventType: OnBeforeToSQL,
+				DeleteFunc: func(b *Delete) {
+					b.Where(ConditionRaw("repetitive=?", 3))
+				},
+			},
+		)
+
+		sql, args, err := d.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{1, 3}, args)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
+
+		sql, args, err = d.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{1, 3, 3}, args)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
+
+		assert.Exactly(t, `col1; storeid; repetitive`, d.DeleteListeners.String())
 	})
 
-	sql, args, err := d.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, 3}, args)
-	assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
-
-	sql, args, err = d.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, 3, 3}, args)
-	assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
 }

@@ -157,27 +157,69 @@ func TestInsert_Prepare(t *testing.T) {
 func TestInsert_Events(t *testing.T) {
 	t.Parallel()
 
-	ins := NewInsert("tableA")
+	t.Run("Missing EventType", func(t *testing.T) {
+		ins := NewInsert("tableA")
+		ins.Columns("a", "b").Values(1, true)
 
-	ins.Columns("a", "b").Values(1, true)
-
-	ins.Events.AddBeforeToSQLOnce(func(i *Insert) {
-		i.Pair("colA", 3.14159)
-	}, func(i *Insert) {
-		i.Pair("colB", 2.7182)
+		ins.InsertListeners.Add(
+			Listen{
+				Name: "colC",
+				InsertFunc: func(i *Insert) {
+					i.Pair("colC", "X1")
+				},
+			},
+		)
+		sql, args, err := ins.ToSQL()
+		assert.Empty(t, sql)
+		assert.Nil(t, args)
+		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
 
-	ins.Events.AddBeforeToSQL(func(i *Insert) {
-		i.Pair("colC", "X1")
+	t.Run("Should Dispatch", func(t *testing.T) {
+		ins := NewInsert("tableA")
+
+		ins.Columns("a", "b").Values(1, true)
+
+		ins.InsertListeners.Add(
+			Listen{
+				EventType: OnBeforeToSQL,
+				Name:      "colA",
+				Once:      true,
+				InsertFunc: func(i *Insert) {
+					i.Pair("colA", 3.14159)
+				},
+			},
+			Listen{
+				EventType: OnBeforeToSQL,
+				Name:      "colB",
+				Once:      true,
+				InsertFunc: func(i *Insert) {
+					i.Pair("colB", 2.7182)
+				},
+			},
+		)
+
+		ins.InsertListeners.Add(
+			Listen{
+				EventType: OnBeforeToSQL,
+				Name:      "colC",
+				InsertFunc: func(i *Insert) {
+					i.Pair("colC", "X1")
+				},
+			},
+		)
+
+		sql, args, err := ins.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1"}, args)
+		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
+
+		sql, args, err = ins.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1", "X1"}, args)
+		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`,`colC`) VALUES (?,?,?,?,?,?)", sql)
+
+		assert.Exactly(t, `colA; colB; colC`, ins.InsertListeners.String())
 	})
 
-	sql, args, err := ins.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1"}, args)
-	assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
-
-	sql, args, err = ins.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1", "X1"}, args)
-	assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`,`colC`) VALUES (?,?,?,?,?,?)", sql)
 }

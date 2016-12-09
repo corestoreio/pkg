@@ -159,26 +159,67 @@ func TestUpdate_Prepare(t *testing.T) {
 func TestUpdate_Events(t *testing.T) {
 	t.Parallel()
 
-	up := NewUpdate("tableA", "tA")
-	up.Set("a", 1).Set("b", true)
+	t.Run("Missing EventType", func(t *testing.T) {
+		up := NewUpdate("tableA", "tA")
+		up.Set("a", 1).Set("b", true)
 
-	up.Events.AddBeforeToSQLOnce(func(u *Update) {
-		u.Set("c", 3.14159)
-	}, func(u *Update) {
-		u.Set("d", "d")
+		up.UpdateListeners.Add(
+			Listen{
+				Name: "c=pi",
+				Once: true,
+				UpdateFunc: func(u *Update) {
+					u.Set("c", 3.14159)
+				},
+			},
+		)
+		sql, args, err := up.ToSQL()
+		assert.Empty(t, sql)
+		assert.Nil(t, args)
+		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
 
-	up.Events.AddBeforeToSQL(func(u *Update) {
-		u.Set("e", "e")
+	t.Run("Should Dispatch", func(t *testing.T) {
+		up := NewUpdate("tableA", "tA")
+		up.Set("a", 1).Set("b", true)
+
+		up.UpdateListeners.Add(
+			Listen{
+				Name:      "c=pi",
+				Once:      true,
+				EventType: OnBeforeToSQL,
+				UpdateFunc: func(u *Update) {
+					u.Set("c", 3.14159)
+				},
+			},
+			Listen{
+				Name:      "d=d",
+				Once:      true,
+				EventType: OnBeforeToSQL,
+				UpdateFunc: func(u *Update) {
+					u.Set("d", "d")
+				},
+			},
+		)
+
+		up.UpdateListeners.Add(Listen{
+			Name:      "e",
+			EventType: OnBeforeToSQL,
+			UpdateFunc: func(u *Update) {
+				u.Set("e", "e")
+			},
+		})
+
+		sql, args, err := up.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e"}, args)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?", sql)
+
+		sql, args, err = up.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e", "e"}, args)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?, `e` = ?", sql)
+
+		assert.Exactly(t, `c=pi; d=d; e`, up.UpdateListeners.String())
 	})
 
-	sql, args, err := up.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e"}, args)
-	assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?", sql)
-
-	sql, args, err = up.ToSQL()
-	assert.NoError(t, err)
-	assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e", "e"}, args)
-	assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?, `e` = ?", sql)
 }
