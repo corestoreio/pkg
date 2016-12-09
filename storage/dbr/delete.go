@@ -26,6 +26,14 @@ type Delete struct {
 	// DeleteListeners allows to dispatch certain functions in different
 	// situations.
 	DeleteListeners
+	// PropagationStopped set to true if you would like to interrupt the
+	// listener chain. Once set to true all sub sequent calls of the next
+	// listeners will be suppressed.
+	PropagationStopped bool
+	// propagationStoppedAt position in the slice where the stopped propagation
+	// has been requested. for every new iteration the propagation must stop at
+	// this position.
+	propagationStoppedAt int
 }
 
 // NewDelete creates a new object with a black hole logger.
@@ -100,7 +108,7 @@ func (b *Delete) Offset(offset uint64) *Delete {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, []interface{}, error) {
 
-	if err := b.DeleteListeners.dispatch(OnBeforeToSQL, b); err != nil {
+	if err := b.DeleteListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
 	}
 

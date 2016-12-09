@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,7 +65,6 @@ func TestNewListenerBucket(t *testing.T) {
 		assert.Exactly(t, `Update`, lbNew.Update.String())
 		assert.Exactly(t, `Delete`, lbNew.Delete.String())
 	})
-
 	t.Run("Merge One", func(t *testing.T) {
 		lbOld := MustNewListenerBucket(
 			Listen{
@@ -88,7 +88,6 @@ func TestNewListenerBucket(t *testing.T) {
 		assert.Exactly(t, `Logger`, lbNew.Update.String())
 		assert.Exactly(t, `Logger`, lbNew.Delete.String())
 	})
-
 	t.Run("panic", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
@@ -108,7 +107,6 @@ func TestNewListenerBucket(t *testing.T) {
 		assert.Nil(t, lb)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
-
 	t.Run("Error Insert", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			InsertFunc: func(*Insert) {},
@@ -116,7 +114,6 @@ func TestNewListenerBucket(t *testing.T) {
 		assert.Nil(t, lb)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
-
 	t.Run("Error Update", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			UpdateFunc: func(*Update) {},
@@ -124,7 +121,6 @@ func TestNewListenerBucket(t *testing.T) {
 		assert.Nil(t, lb)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
-
 	t.Run("Error Delete", func(t *testing.T) {
 		lb, err := NewListenerBucket(Listen{
 			DeleteFunc: func(*Delete) {},
@@ -132,18 +128,16 @@ func TestNewListenerBucket(t *testing.T) {
 		assert.Nil(t, lb)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
-
 	t.Run("Select Only", func(t *testing.T) {
 		called := 0
 		lb := MustNewListenerBucket(Listen{
 			Name:      "Select",
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(b *Select) {
-				assert.Nil(t, b)
 				called++
 			},
 		})
-		err := lb.Select.dispatch(OnBeforeToSQL, nil)
+		err := lb.Select.dispatch(log.BlackHole{}, OnBeforeToSQL, &Select{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 
@@ -157,11 +151,10 @@ func TestNewListenerBucket(t *testing.T) {
 			Name:      "Insert",
 			EventType: OnBeforeToSQL,
 			InsertFunc: func(b *Insert) {
-				assert.Nil(t, b)
 				called++
 			},
 		})
-		err := lb.Insert.dispatch(OnBeforeToSQL, nil)
+		err := lb.Insert.dispatch(log.BlackHole{}, OnBeforeToSQL, &Insert{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 
@@ -175,12 +168,11 @@ func TestNewListenerBucket(t *testing.T) {
 			Name:      "Update",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(b *Update) {
-				assert.Nil(t, b)
 				called++
 			},
 		})
 		assert.NoError(t, err)
-		err = lb.Update.dispatch(OnBeforeToSQL, nil)
+		err = lb.Update.dispatch(log.BlackHole{}, OnBeforeToSQL, &Update{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 
@@ -194,12 +186,11 @@ func TestNewListenerBucket(t *testing.T) {
 			Name:      "Delete",
 			EventType: OnBeforeToSQL,
 			DeleteFunc: func(b *Delete) {
-				assert.Nil(t, b)
 				called++
 			},
 		})
 		assert.NoError(t, err)
-		err = lb.Delete.dispatch(OnBeforeToSQL, nil)
+		err = lb.Delete.dispatch(log.BlackHole{}, OnBeforeToSQL, &Delete{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 

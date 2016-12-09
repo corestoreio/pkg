@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 )
 
@@ -112,7 +113,7 @@ type Listen struct {
 	DeleteFunc
 }
 
-// <COPY>
+// <-------------------------COPY------------------------->
 
 // SelectFunc receives the Select object pointer for modification.
 type SelectFunc func(*Select)
@@ -169,13 +170,23 @@ func (se *SelectListeners) Merge(sls ...SelectListeners) SelectListeners {
 	return *se
 }
 
-func (se SelectListeners) dispatch(et EventType, b *Select) error {
+func (se SelectListeners) dispatch(l log.Logger, et EventType, b *Select) error {
 	for i, s := range se {
-		if s.error != nil {
+		switch {
+		case s.error != nil:
 			return errors.Wrapf(s.error, "[dbr] SelectListeners.dispatch Index %d EventType: %s", i, et)
-		}
-		if s.EventType == et {
+		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
 			s.SelectFunc(b)
+			if b.propagationStoppedAt == 0 && b.PropagationStopped {
+				b.propagationStoppedAt = i
+			}
+		case s.EventType == et:
+			if l.IsDebug() {
+				b.Debug("dbr.SelectListeners.Dispatch.PropagationStopped",
+					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
+					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
+				)
+			}
 		}
 	}
 	return nil
@@ -193,7 +204,7 @@ func (se SelectListeners) String() string {
 	return buf.String()
 }
 
-// </COPY>
+// <-------------------------/COPY------------------------->
 
 // InsertFunc receives the Insert object pointer for modification.
 type InsertFunc func(*Insert)
@@ -250,13 +261,23 @@ func (se *InsertListeners) Merge(sls ...InsertListeners) InsertListeners {
 	return *se
 }
 
-func (se InsertListeners) dispatch(et EventType, b *Insert) error {
+func (se InsertListeners) dispatch(l log.Logger, et EventType, b *Insert) error {
 	for i, s := range se {
-		if s.error != nil {
+		switch {
+		case s.error != nil:
 			return errors.Wrapf(s.error, "[dbr] InsertListeners.dispatch Index %d EventType: %s", i, et)
-		}
-		if s.EventType == et {
+		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
 			s.InsertFunc(b)
+			if b.propagationStoppedAt == 0 && b.PropagationStopped {
+				b.propagationStoppedAt = i
+			}
+		case s.EventType == et:
+			if l.IsDebug() {
+				b.Debug("dbr.InsertListeners.Dispatch.PropagationStopped",
+					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
+					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
+				)
+			}
 		}
 	}
 	return nil
@@ -329,13 +350,23 @@ func (se *UpdateListeners) Merge(sls ...UpdateListeners) UpdateListeners {
 	return *se
 }
 
-func (se UpdateListeners) dispatch(et EventType, b *Update) error {
+func (se UpdateListeners) dispatch(l log.Logger, et EventType, b *Update) error {
 	for i, s := range se {
-		if s.error != nil {
+		switch {
+		case s.error != nil:
 			return errors.Wrapf(s.error, "[dbr] UpdateListeners.dispatch Index %d EventType: %s", i, et)
-		}
-		if s.EventType == et {
+		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
 			s.UpdateFunc(b)
+			if b.propagationStoppedAt == 0 && b.PropagationStopped {
+				b.propagationStoppedAt = i
+			}
+		case s.EventType == et:
+			if l.IsDebug() {
+				b.Debug("dbr.UpdateListeners.Dispatch.PropagationStopped",
+					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
+					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
+				)
+			}
 		}
 	}
 	return nil
@@ -408,13 +439,23 @@ func (se *DeleteListeners) Merge(sls ...DeleteListeners) DeleteListeners {
 	return *se
 }
 
-func (se DeleteListeners) dispatch(et EventType, b *Delete) error {
+func (se DeleteListeners) dispatch(l log.Logger, et EventType, b *Delete) error {
 	for i, s := range se {
-		if s.error != nil {
+		switch {
+		case s.error != nil:
 			return errors.Wrapf(s.error, "[dbr] DeleteListeners.dispatch Index %d EventType: %s", i, et)
-		}
-		if s.EventType == et {
+		case s.EventType == et && !(b.PropagationStopped && i > b.propagationStoppedAt):
 			s.DeleteFunc(b)
+			if b.propagationStoppedAt == 0 && b.PropagationStopped {
+				b.propagationStoppedAt = i
+			}
+		case s.EventType == et:
+			if l.IsDebug() {
+				b.Debug("dbr.DeleteListeners.Dispatch.PropagationStopped",
+					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
+					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
+				)
+			}
 		}
 	}
 	return nil

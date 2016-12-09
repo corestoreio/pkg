@@ -36,6 +36,14 @@ type Select struct {
 	// SelectListeners allows to dispatch certain functions in different
 	// situations.
 	SelectListeners
+	// PropagationStopped set to true if you would like to interrupt the
+	// listener chain. Once set to true all sub sequent calls of the next
+	// listeners will be suppressed.
+	PropagationStopped bool
+	// propagationStoppedAt position in the slice where the stopped propagation
+	// has been requested. for every new iteration the propagation must stop at
+	// this position.
+	propagationStoppedAt int
 }
 
 // NewSelect creates a new object with a black hole logger.
@@ -166,7 +174,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) ToSQL() (string, []interface{}, error) {
 
-	if err := b.SelectListeners.dispatch(OnBeforeToSQL, b); err != nil {
+	if err := b.SelectListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
 

@@ -25,6 +25,14 @@ type Insert struct {
 	// InsertListeners allows to dispatch certain functions in different
 	// situations.
 	InsertListeners
+	// PropagationStopped set to true if you would like to interrupt the
+	// listener chain. Once set to true all sub sequent calls of the next
+	// listeners will be suppressed.
+	PropagationStopped bool
+	// propagationStoppedAt position in the slice where the stopped propagation
+	// has been requested. for every new iteration the propagation must stop at
+	// this position.
+	propagationStoppedAt int
 }
 
 // NewInsert creates a new object with a black hole logger.
@@ -117,7 +125,7 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
 
-	if err := b.InsertListeners.dispatch(OnBeforeToSQL, b); err != nil {
+	if err := b.InsertListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
 	}
 

@@ -3,6 +3,7 @@ package dbr
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -408,6 +409,45 @@ func TestSelectJoin(t *testing.T) {
 
 func TestSelect_Events(t *testing.T) {
 	t.Parallel()
+
+	t.Run("Stop Propagation", func(t *testing.T) {
+		d := NewSelect("tableA", "tA")
+		d.Columns = []string{"a", "b"}
+		d.OrderBy("col3")
+
+		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.SelectListeners.Add(
+			Listen{
+				Name:      "listener1",
+				EventType: OnBeforeToSQL,
+				SelectFunc: func(b *Select) {
+					b.OrderDir("col1", false)
+				},
+			},
+			Listen{
+				Name:      "listener2",
+				EventType: OnBeforeToSQL,
+				SelectFunc: func(b *Select) {
+					b.OrderDir("col2", false)
+					b.PropagationStopped = true
+				},
+			},
+			Listen{
+				Name:      "listener3",
+				EventType: OnBeforeToSQL,
+				SelectFunc: func(b *Select) {
+					panic("Should not get called")
+				},
+			},
+		)
+		sql, _, err := d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` ORDER BY col3, col1 DESC, col2 DESC", sql)
+
+		sql, _, err = d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` ORDER BY col3, col1 DESC, col2 DESC, col1 DESC, col2 DESC", sql)
+	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		s := NewSelect("tableA", "tA")

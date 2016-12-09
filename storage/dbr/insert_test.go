@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -156,6 +157,44 @@ func TestInsert_Prepare(t *testing.T) {
 
 func TestInsert_Events(t *testing.T) {
 	t.Parallel()
+
+	t.Run("Stop Propagation", func(t *testing.T) {
+		d := NewInsert("tableA")
+		d.Columns("a", "b").Values(1, true)
+
+		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.InsertListeners.Add(
+			Listen{
+				Name:      "listener1",
+				EventType: OnBeforeToSQL,
+				InsertFunc: func(b *Insert) {
+					b.Pair("col1", "X1")
+				},
+			},
+			Listen{
+				Name:      "listener2",
+				EventType: OnBeforeToSQL,
+				InsertFunc: func(b *Insert) {
+					b.Pair("col2", "X2")
+					b.PropagationStopped = true
+				},
+			},
+			Listen{
+				Name:      "listener3",
+				EventType: OnBeforeToSQL,
+				InsertFunc: func(b *Insert) {
+					panic("Should not get called")
+				},
+			},
+		)
+		sql, _, err := d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
+
+		sql, _, err = d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`col1`,`col2`,`col1`,`col2`) VALUES (?,?,?,?,?,?)", sql)
+	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		ins := NewInsert("tableA")

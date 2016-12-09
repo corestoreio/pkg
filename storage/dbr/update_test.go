@@ -3,6 +3,7 @@ package dbr
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -158,6 +159,44 @@ func TestUpdate_Prepare(t *testing.T) {
 
 func TestUpdate_Events(t *testing.T) {
 	t.Parallel()
+
+	t.Run("Stop Propagation", func(t *testing.T) {
+		d := NewUpdate("tableA", "tA")
+		d.Set("y", 25).Set("z", 26)
+
+		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.UpdateListeners.Add(
+			Listen{
+				Name:      "listener1",
+				EventType: OnBeforeToSQL,
+				UpdateFunc: func(b *Update) {
+					b.Set("a", 1)
+				},
+			},
+			Listen{
+				Name:      "listener2",
+				EventType: OnBeforeToSQL,
+				UpdateFunc: func(b *Update) {
+					b.Set("b", 2)
+					b.PropagationStopped = true
+				},
+			},
+			Listen{
+				Name:      "listener3",
+				EventType: OnBeforeToSQL,
+				UpdateFunc: func(b *Update) {
+					panic("Should not get called")
+				},
+			},
+		)
+		sql, _, err := d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `y` = ?, `z` = ?, `a` = ?, `b` = ?", sql)
+
+		sql, _, err = d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `y` = ?, `z` = ?, `a` = ?, `b` = ?, `a` = ?, `b` = ?", sql)
+	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		up := NewUpdate("tableA", "tA")

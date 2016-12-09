@@ -3,6 +3,7 @@ package dbr
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -110,6 +111,43 @@ func TestDelete_Prepare(t *testing.T) {
 
 func TestDelete_Events(t *testing.T) {
 	t.Parallel()
+
+	t.Run("Stop Propagation", func(t *testing.T) {
+		d := NewDelete("tableA", "main_table")
+		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.DeleteListeners.Add(
+			Listen{
+				Name:      "listener1",
+				EventType: OnBeforeToSQL,
+				DeleteFunc: func(b *Delete) {
+					b.OrderDir("col1", false)
+				},
+			},
+			Listen{
+				Name:      "listener2",
+				EventType: OnBeforeToSQL,
+				DeleteFunc: func(b *Delete) {
+					b.OrderDir("col2", false)
+					b.PropagationStopped = true
+				},
+			},
+			Listen{
+				Name:      "listener3",
+				EventType: OnBeforeToSQL,
+				DeleteFunc: func(b *Delete) {
+					panic("Should not get called")
+				},
+			},
+		)
+		sql, _, err := d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY col1 DESC, col2 DESC", sql)
+
+		sql, _, err = d.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY col1 DESC, col2 DESC, col1 DESC, col2 DESC", sql)
+
+	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		d := NewDelete("tableA", "main_table")
