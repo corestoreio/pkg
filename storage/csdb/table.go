@@ -31,9 +31,9 @@ type Table struct {
 	CountPK int
 	// CountUnique number of unique keys. Auto updated.
 	CountUnique int
-	// ListenerBucket specific pre defined listeners which gets dispatches to
-	// each DML statement (SELECT, INSERT, UPDATE or DELETE).
-	dbr.ListenerBucket
+	// Listeners specific pre defined listeners which gets dispatches to each
+	// DML statement (SELECT, INSERT, UPDATE or DELETE).
+	Listeners dbr.ListenerBucket
 
 	// internal caches
 	fieldsPK  []string // all PK column field
@@ -132,7 +132,7 @@ func (t *Table) Select() *dbr.Select {
 func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
 	sb := t.Select()
 	sb.Querier = db
-	sb.SelectListeners.Merge(t.ListenerBucket.Select)
+	sb.SelectListeners.Merge(t.Listeners.Select)
 	sb.SelectListeners.Add(listeners...)
 	return sb.LoadStructs(dest)
 }

@@ -220,7 +220,7 @@ func TestWithTableDMLListeners(t *testing.T) {
 		tbl := ts.MustTable(33)
 		sel := dbr.NewSelect("tableA")
 
-		sel.SelectListeners.Merge(tbl.ListenerBucket.Select) // +=2
+		sel.SelectListeners.Merge(tbl.Listeners.Select) // +=2
 
 		sel.Columns = []string{"a", "b"}
 		assert.Exactly(t, "SELECT a, b FROM `tableA`", sel.String())
@@ -237,7 +237,7 @@ func TestWithTableDMLListeners(t *testing.T) {
 
 		sel := tbl.Select()
 		require.NotNil(t, sel)
-		sel.SelectListeners.Merge(tbl.ListenerBucket.Select) // +=2
+		sel.SelectListeners.Merge(tbl.Listeners.Select) // +=2
 
 		assert.Exactly(t, "SELECT `main_table`.`col1` FROM `TeschtT` AS `main_table`", sel.String())
 		assert.Exactly(t, 8, counter)
@@ -253,7 +253,7 @@ func TestWithTableDMLListeners(t *testing.T) {
 
 		sel := tbl.Select()
 		require.NotNil(t, sel)
-		sel.SelectListeners.Merge(tbl.ListenerBucket.Select) // +=2
+		sel.SelectListeners.Merge(tbl.Listeners.Select) // +=2
 
 		assert.Exactly(t, "SELECT `main_table`.`col1` FROM `TeschtU` AS `main_table`", sel.String())
 		assert.Exactly(t, 12, counter)

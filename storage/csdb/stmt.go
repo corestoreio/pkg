@@ -24,6 +24,10 @@ import (
 	"github.com/corestoreio/csfw/util/errors"
 )
 
+// TODO(CyS) consider: http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_max_prepared_stmt_count
+// TODO(CyS) analyze: Prepared Stmt and Query Cache http://dev.mysql.com/doc/refman/5.7/en/query-cache-operation.html
+// TODO(CyS) implement to handle multiple statements, identified by a returned unique ID, so that you can grab that stmt.
+
 // DefaultResurrectStmtIdleTime is the global idle time when you create a new
 // PersistentStmt. If no query will be executed within this idle time the
 // statement gets closed.

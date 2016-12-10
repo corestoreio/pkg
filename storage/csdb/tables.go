@@ -143,7 +143,7 @@ func WithTableDMLListeners(idx int, events ...*dbr.ListenerBucket) TableOption {
 		if !ok || t == nil {
 			t = NewTable(ghostTableName)
 		}
-		t.ListenerBucket.Merge(events...)
+		t.Listeners.Merge(events...)
 		tm.ts[idx] = t
 
 		return nil
@@ -175,6 +175,10 @@ func MustNewTables(opts ...TableOption) *Tables {
 // We cannot assume the correct order, how all init() invocations are executed,
 // at least they don't run in parallel during packet initialization. Yes ... bad
 // practice to rely on init ... but for now it works very well.
+//
+//		func init() {
+//			TableCollection = csdb.MustInitTables(TableCollection,[Options])
+// 		}
 // TODO(CyS) rethink and refactor maybe.
 func MustInitTables(ts *Tables, opts ...TableOption) *Tables {
 	if ts == nil {
@@ -242,7 +246,11 @@ func (tm *Tables) Len() int {
 	return len(tm.ts)
 }
 
-// Upsert adds or updates a new table into the internal cache. *Table cannot be nil.
+// Upsert adds or updates a new table into the internal cache. If a table
+// already exists, then the new table gets applied. The ListenerBuckets gets
+// merged from the existing table to the new table, they will be appended to the
+// new table buckets. Empty fields in the new table gets updated from the
+// existing table.
 func (tm *Tables) Upsert(i int, tNew *Table) error {
 	_ = tNew.Name // let it panic as early as possible if *Table is nil
 
@@ -255,12 +263,20 @@ func (tm *Tables) Upsert(i int, tNew *Table) error {
 		return nil
 	}
 
-	if tOld.Name == ghostTableName {
-		// for now copy only the events from the existing table
-		tNew.ListenerBucket.Merge(&tOld.ListenerBucket)
+	// for now copy only the events from the existing table
+	tNew.Listeners.Merge(&tOld.Listeners)
+
+	if tNew.Schema == "" {
+		tNew.Schema = tOld.Schema
+	}
+	if tNew.Name == "" {
+		tNew.Name = tOld.Name
+	}
+	if len(tNew.Columns) == 0 {
+		tNew.Columns = tOld.Columns
 	}
 
-	tm.ts[i] = tNew
+	tm.ts[i] = tNew.update()
 	return nil
 }
 
