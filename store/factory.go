@@ -19,7 +19,6 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -163,7 +162,7 @@ func (f *factory) Store(id int64) (Store, error) {
 // Stores creates a new store slice with all of its new Group and new Website
 // pointers. Can return an error when the website or the group cannot be found.
 func (f *factory) Stores() (StoreSlice, error) {
-	stores := make(StoreSlice, len(f.stores), len(f.stores))
+	stores := make(StoreSlice, len(f.stores))
 	for i, s := range f.stores {
 		var err error
 		if stores[i], err = f.Store(s.StoreID); err != nil {
@@ -189,29 +188,25 @@ func (f *factory) DefaultStoreID() (int64, error) {
 	return 0, errors.NewNotFoundf(errStoreIDDefaultNotFound)
 }
 
-// LoadFromDB reloads all websites, groups and stores concurrently from the
-// database. On error  all internal slices will be reset to nil.
-func (f *factory) LoadFromDB(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
+// LoadFromResource reloads all websites, groups and stores concurrently from a
+// resource. On error  all internal slices will be reset to nil.
+func (f *factory) LoadFromResource(twr TableWebsitesResourcer, tgr TableGroupsResourcer, tsr TableStoresResourcer) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	// todo investigate how to use ctx to cancel the DB query and under which condition
-	ctx := context.Background()
-	eg, _ := errgroup.WithContext(ctx)
+	eg, _ := errgroup.WithContext(context.Background())
 
-	eg.Go(func() error {
-		f.websites = nil
-		_, err := f.websites.SQLSelect(dbrSess, cbs...)
+	eg.Go(func() (err error) {
+		f.websites, err = twr.Select()
 		return errors.Wrap(err, "[store] SQLSelect Websites")
 	})
-	eg.Go(func() error {
-		f.groups = nil
-		_, err := f.groups.SQLSelect(dbrSess, cbs...)
+	eg.Go(func() (err error) {
+		f.groups, err = tgr.Select()
 		return errors.Wrap(err, "[store] SQLSelect Groups")
 	})
-	eg.Go(func() error {
-		f.stores = nil
-		_, err := f.stores.SQLSelect(dbrSess, cbs...)
+	eg.Go(func() (err error) {
+		f.stores, err = tsr.Select()
 		return errors.Wrap(err, "[store] SQLSelect Stores")
 	})
 

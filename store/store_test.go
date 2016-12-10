@@ -24,7 +24,6 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
@@ -136,31 +135,6 @@ var testStores = store.TableStoreSlice{
 	&store.TableStore{StoreID: 2, Code: null.StringFrom("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
 	&store.TableStore{StoreID: 6, Code: null.StringFrom("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 	&store.TableStore{StoreID: 3, Code: null.StringFrom("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
-}
-
-func TestTableStoreSliceLoad(t *testing.T) {
-
-	dbrCon, dbMock := cstesting.MockDB(t)
-	dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnRows(
-		cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_view.csv")),
-	)
-
-	// store.TableCollection already initialized
-
-	var stores store.TableStoreSlice
-	rows, err := stores.SQLSelect(dbrCon.NewSession())
-	assert.NoError(t, err)
-
-	if err := dbMock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("%+v", err)
-	}
-
-	assert.Exactly(t, 16, rows)
-
-	assert.Len(t, stores, 16)
-	for _, s := range stores {
-		assert.True(t, len(s.Name) > 1)
-	}
 }
 
 func TestTableStoreSliceFindByID(t *testing.T) {

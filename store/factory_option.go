@@ -36,7 +36,7 @@ func WithTableGroups(tgs ...*TableGroup) Option {
 // WithTableStores appends the data from the DB table store to the service.
 func WithTableStores(tss ...*TableStore) Option {
 	return func(s *factory) error {
-		s.stores = append(s.stores, tss...)
+		s.stores.Append(tss...)
 		return nil
 	}
 }

@@ -15,13 +15,17 @@
 package store_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/null"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
-	store.TableCollection = csdb.MustNewTables(
+	store.TableCollection = csdb.MustInitTables(store.TableCollection,
 		csdb.WithTable(
 			store.TableIndexStore,
 			"store",
@@ -53,4 +57,37 @@ func init() {
 			&csdb.Column{Field: (`is_default`), ColumnType: (`smallint(5) unsigned`), Null: (`YES`), Key: (``), Default: null.StringFrom(`0`), Extra: (``)},
 		),
 	)
+}
+
+func TestNewTableStoreResource_Select(t *testing.T) {
+
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnRows(
+		cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_view.csv")),
+	)
+
+	// store.TableCollection already initialized
+
+	tsr := store.NewTableStoreResource(dbc.DB)
+
+	tss, err := tsr.Select()
+	assert.NoError(t, err)
+
+	if err := dbMock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Len(t, tss, 16)
+
+	for _, s := range tss {
+		//t.Logf("%#v", s)
+		assert.True(t, len(s.Name) > 1)
+	}
 }

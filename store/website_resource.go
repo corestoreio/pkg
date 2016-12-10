@@ -14,23 +14,21 @@
 
 package store
 
-import "github.com/corestoreio/csfw/storage/dbr"
-
 /*
 	TableWebsite and TableWebsiteSlice method receivers
 */
 
-// SQLSelect uses a dbr session to load all data from the core_website table into the current slice.
-// The variadic 2nd argument can be a call back function to manipulate the select.
-// Additional columns or joins cannot be added. This method receiver should only be used in development.
-// @see app/code/Magento/Store/Model/Resource/Website/Collection.php::Load()
-func (s *TableWebsiteSlice) SQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return s.parentSQLSelect(dbrSess, append(append([]dbr.SelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
-		return sb.OrderBy("main_table.sort_order ASC").OrderBy("main_table.name ASC")
-	}), cbs...)...)
-}
-
-// @todo review Magento code because of column is_default
-//func (s TableWebsite) IsDefault() bool {
-//	return s.WebsiteID == DefaultWebsiteId
+//// SQLSelect uses a dbr session to load all data from the core_website table into the current slice.
+//// The variadic 2nd argument can be a call back function to manipulate the select.
+//// Additional columns or joins cannot be added. This method receiver should only be used in development.
+//// @see app/code/Magento/Store/Model/Resource/Website/Collection.php::Load()
+//func (s *TableWebsiteSlice) SQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectEvent) (int, error) {
+//	return s.parentSQLSelect(dbrSess, append(append([]dbr.SelectEvent{nil}, func(sb *dbr.Select) *dbr.Select {
+//		return sb.OrderBy("main_table.sort_order ASC").OrderBy("main_table.name ASC")
+//	}), cbs...)...)
 //}
+//
+//// @todo review Magento code because of column is_default
+////func (s TableWebsite) IsDefault() bool {
+////	return s.WebsiteID == DefaultWebsiteId
+////}

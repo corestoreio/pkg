@@ -16,14 +16,19 @@
 
 // Only include this file IF no specific build tag for mage has been set
 
-package store
+// PROTOTYPING for new code generation
 
-// Auto generated via tableToStruct
+package store
 
 import (
 	"sort"
 
+	"database/sql"
+
+	"github.com/corestoreio/csfw/log"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 )
 
@@ -39,22 +44,162 @@ const (
 
 // will be initialized in tables_fallback_test.go
 //
-//func init() {
-//	TableCollection = csdb.MustNewTableService(
-//		csdb.WithTable(TableIndexStore, "store"),
-//		csdb.WithTable(TableIndexGroup, "store_group"),
-//		csdb.WithTable(TableIndexWebsite, "store_website"),
-//	)
-//	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
+func init() {
+	TableCollection = csdb.MustInitTables(TableCollection,
+		csdb.WithTable(TableIndexStore, "store"),
+		csdb.WithTable(TableIndexGroup, "store_group"),
+		csdb.WithTable(TableIndexWebsite, "store_website"),
+	)
+	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
+}
+
+// TableStoresResourcer can load a single item or a collection from a backend
+// service aka. MySQL. Each implementation must be thread safe.
+type TableStoresResourcer interface {
+	PrepareSelect() error
+	Select(args ...interface{}) (TableStoreSlice, error)
+	Insert(TableStoreSlice) (lastInsertID int, err error)
+	Update(TableStoreSlice) (affectedRows int, err error)
+	Delete(TableStoreSlice) (affectedRows int, err error)
+	Close() error
+}
+
+//// TableStoresMock used to testing. Satisfies interface TableStoresDBer
+//type TableStoresMock struct {
+//	SelectFn func() (TableStoreSlice, error)
+//	InsertFn func(TableStoreSlice) (lastInsertID int, err error)
+//	UpdateFn func(TableStoreSlice) (affectedRows int, err error)
+//	DeleteFn func(TableStoreSlice) (affectedRows int, err error)
+//}
+//
+//func (tsm TableStoresMock) Select() (TableStoreSlice, error) {
+//	return tsm.SelectFn()
+//}
+//
+//func (tsm TableStoresMock) Insert(ts TableStoreSlice) (lastInsertID int, err error) {
+//	return tsm.InsertFn(ts)
+//}
+//
+//func (tsm TableStoresMock) Update(ts TableStoreSlice) (affectedRows int, err error) {
+//	return tsm.UpdateFn(ts)
+//}
+//
+//func (tsm TableStoresMock) Delete(ts TableStoreSlice) (affectedRows int, err error) {
+//	return tsm.DeleteFn(ts)
 //}
 
-// TableStoreSlice represents a collection type for DB table store
+// NewTableStoreResource creates a new resource for CRUD operations for table
+// `store`. Default logger: Blackhole.
+func NewTableStoreResource(db dbr.DBer) *tableStoreResource {
+	// accept interfaces but return structs
+	t := new(csdb.Table)
+	*t = *(TableCollection.MustTable(TableIndexStore)) // shallow copy
+	ts := &tableStoreResource{
+		Log:   log.BlackHole{},
+		DB:    db,
+		Table: t,
+	}
+	return ts
+}
+
+// tableStoreResource provides CRUD to the MySQL database
 // Generated via tableToStruct.
+type tableStoreResource struct {
+	Log log.Logger
+	DB  dbr.DBer
+	// Table contains a shallow copy from the table in TableCollection
+	Table *csdb.Table
+	// Listeners custom listeners which get applied after the global listeners
+	// from TableCollection.
+	Listeners dbr.ListenerBucket
+	// SliceCap capacity of the TableStoreSlice. Default 10.
+	SliceCap int
+	stmt     *sql.Stmt
+	// Idea: ResurrectPreparer; handles different queries
+}
+
+func (ts *tableStoreResource) Close() error {
+	if ts.stmt != nil {
+		return ts.stmt.Close()
+	}
+	return nil
+}
+
+func (ts *tableStoreResource) PrepareSelect() error {
+	sb := &dbr.Select{
+		Logger:    ts.Log,
+		Preparer:  ts.DB,
+		Columns:   dbr.Quoter.TableColumnAlias(csdb.MainTable, "store_id", "code", "website_id", "group_id", "name", "sort_order", "is_active"),
+		FromTable: dbr.MakeAlias(ts.Table.Name, csdb.MainTable),
+	}
+	sb.SelectListeners.Merge(ts.Table.ListenerBucket.Select) // global listeners
+	sb.SelectListeners.Merge(ts.Listeners.Select)            // custom listeners
+
+	var err error
+	ts.stmt, err = sb.Prepare()
+	return errors.Wrap(err, "[store] ....todo")
+}
+
+// Select creates a prepared long lived statement.
+// Generated via tableToStruct.
+func (ts *tableStoreResource) Select(args ...interface{}) (TableStoreSlice, error) {
+	if ts.stmt == nil {
+		// run normal query without prepare
+	}
+
+	rows, err := ts.stmt.Query()
+	if err != nil {
+		return nil, errors.Wrap(err, "[store] TableStores.LoadAll.Rows")
+	}
+	defer rows.Close()
+
+	sCap := 10
+	if ts.SliceCap > 0 {
+		sCap = ts.SliceCap
+	}
+	tss := make(TableStoreSlice, 0, sCap)
+
+	for rows.Next() {
+		ts := new(TableStore)
+		if err := rows.Scan(&ts.StoreID, &ts.Code, &ts.WebsiteID, &ts.GroupID, &ts.Name, &ts.SortOrder, &ts.IsActive); err != nil {
+			return nil, errors.Wrap(err, "[store] TableStores.LoadAll.Rows.Scan")
+		}
+		tss = append(tss, ts)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "[store] TableStores.LoadAll.Rows.Err")
+	}
+
+	return tss, nil
+}
+
+// SQLInsert inserts all records into the database @todo.
+// Generated via tableToStruct.
+func (s *tableStoreResource) Insert(tss TableStoreSlice) (int, error) {
+	return 0, errors.NewNotSupportedf("[store] Missing implementation")
+}
+
+// SQLUpdate updates all record in the database @todo.
+// Generated via tableToStruct.
+func (s *tableStoreResource) Update(tss TableStoreSlice) (int, error) {
+	return 0, errors.NewNotSupportedf("[store] Missing implementation")
+}
+
+// SQLDelete deletes all record from the database @todo.
+// Generated via tableToStruct.
+func (s *tableStoreResource) Delete(tss TableStoreSlice) (int, error) {
+	return 0, errors.NewNotSupportedf("[store] Missing implementation")
+}
+
+// TableStoreSlice represents a collection of TableStore entities
 type TableStoreSlice []*TableStore
 
 // TableStore represents a type for DB table store
 // Generated via tableToStruct.
 type TableStore struct {
+	DB      dbr.DBer            `json:"omit"`
+	HookDML *dbr.ListenerBucket `json:"omit"`
+
 	StoreID   int64       `db:"store_id" json:",omitempty"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment
 	Code      null.String `db:"code" json:",omitempty"`       // code varchar(32) NULL UNI
 	WebsiteID int64       `db:"website_id" json:",omitempty"` // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
@@ -62,30 +207,6 @@ type TableStore struct {
 	Name      string      `db:"name" json:",omitempty"`       // name varchar(255) NOT NULL
 	SortOrder int64       `db:"sort_order" json:",omitempty"` // sort_order smallint(5) unsigned NOT NULL  DEFAULT '0'
 	IsActive  bool        `db:"is_active" json:",omitempty"`  // is_active smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-}
-
-// parentSQLSelect fills this slice with data from the database.
-// Generated via tableToStruct.
-func (s *TableStoreSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexStore, &(*s), cbs...)
-}
-
-// SQLInsert inserts all records into the database @todo.
-// Generated via tableToStruct.
-func (s *TableStoreSlice) SQLInsert(dbrSess dbr.SessionRunner, cbs ...dbr.InsertCb) (int, error) {
-	return 0, nil
-}
-
-// SQLUpdate updates all record in the database @todo.
-// Generated via tableToStruct.
-func (s *TableStoreSlice) SQLUpdate(dbrSess dbr.SessionRunner, cbs ...dbr.UpdateCb) (int, error) {
-	return 0, nil
-}
-
-// SQLDelete deletes all record from the database @todo.
-// Generated via tableToStruct.
-func (s *TableStoreSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.DeleteCb) (int, error) {
-	return 0, nil
 }
 
 // FindByStoreID searches the primary keys and returns a
@@ -311,6 +432,15 @@ func (s TableStoreSlice) Extract() ExtractStore {
 	}
 }
 
+// TableGroupsResourcer can load a single item or a collection from a backend
+// service aka. MySQL. Each implementation must be thread safe.
+type TableGroupsResourcer interface {
+	Select() (TableGroupSlice, error)
+	Insert(TableGroupSlice) (lastInsertID int, err error)
+	Update(TableGroupSlice) (affectedRows int, err error)
+	Delete(TableGroupSlice) (affectedRows int, err error)
+}
+
 // TableGroupSlice represents a collection type for DB table store_group
 // Generated via tableToStruct.
 type TableGroupSlice []*TableGroup
@@ -325,29 +455,30 @@ type TableGroup struct {
 	DefaultStoreID int64  `db:"default_store_id" json:",omitempty"` // default_store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
 }
 
-// parentSQLSelect fills this slice with data from the database.
-// Generated via tableToStruct.
-func (s *TableGroupSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(*s), cbs...)
-}
-
-// SQLInsert inserts all records into the database @todo.
-// Generated via tableToStruct.
-func (s *TableGroupSlice) SQLInsert(dbrSess dbr.SessionRunner, cbs ...dbr.InsertCb) (int, error) {
-	return 0, nil
-}
-
-// SQLUpdate updates all record in the database @todo.
-// Generated via tableToStruct.
-func (s *TableGroupSlice) SQLUpdate(dbrSess dbr.SessionRunner, cbs ...dbr.UpdateCb) (int, error) {
-	return 0, nil
-}
-
-// SQLDelete deletes all record from the database @todo.
-// Generated via tableToStruct.
-func (s *TableGroupSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.DeleteCb) (int, error) {
-	return 0, nil
-}
+//
+//// parentSQLSelect fills this slice with data from the database.
+//// Generated via tableToStruct.
+//func (s *TableGroupSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectEvent) (int, error) {
+//	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(*s), cbs...)
+//}
+//
+//// SQLInsert inserts all records into the database @todo.
+//// Generated via tableToStruct.
+//func (s *TableGroupSlice) SQLInsert(dbrSess dbr.SessionRunner, cbs ...dbr.InsertEvent) (int, error) {
+//	return 0, nil
+//}
+//
+//// SQLUpdate updates all record in the database @todo.
+//// Generated via tableToStruct.
+//func (s *TableGroupSlice) SQLUpdate(dbrSess dbr.SessionRunner, cbs ...dbr.UpdateEvent) (int, error) {
+//	return 0, nil
+//}
+//
+//// SQLDelete deletes all record from the database @todo.
+//// Generated via tableToStruct.
+//func (s *TableGroupSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.DeleteEvent) (int, error) {
+//	return 0, nil
+//}
 
 // FindByGroupID searches the primary keys and returns a
 // *TableGroup if found or nil and false.
@@ -542,6 +673,15 @@ func (s TableGroupSlice) Extract() ExtractGroup {
 	}
 }
 
+// TableGroupsResourcer can load a single item or a collection from a backend
+// service aka. MySQL. Each implementation must be thread safe.
+type TableWebsitesResourcer interface {
+	Select() (TableWebsiteSlice, error)
+	Insert(TableWebsiteSlice) (lastInsertID int, err error)
+	Update(TableWebsiteSlice) (affectedRows int, err error)
+	Delete(TableWebsiteSlice) (affectedRows int, err error)
+}
+
 // TableWebsiteSlice represents a collection type for DB table store_website
 // Generated via tableToStruct.
 type TableWebsiteSlice []*TableWebsite
@@ -557,29 +697,29 @@ type TableWebsite struct {
 	IsDefault      null.Bool   `db:"is_default" json:",omitempty"`       // is_default smallint(5) unsigned NULL  DEFAULT '0'
 }
 
-// parentSQLSelect fills this slice with data from the database.
-// Generated via tableToStruct.
-func (s *TableWebsiteSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(*s), cbs...)
-}
-
-// SQLInsert inserts all records into the database @todo.
-// Generated via tableToStruct.
-func (s *TableWebsiteSlice) SQLInsert(dbrSess dbr.SessionRunner, cbs ...dbr.InsertCb) (int, error) {
-	return 0, nil
-}
-
-// SQLUpdate updates all record in the database @todo.
-// Generated via tableToStruct.
-func (s *TableWebsiteSlice) SQLUpdate(dbrSess dbr.SessionRunner, cbs ...dbr.UpdateCb) (int, error) {
-	return 0, nil
-}
-
-// SQLDelete deletes all record from the database @todo.
-// Generated via tableToStruct.
-func (s *TableWebsiteSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.DeleteCb) (int, error) {
-	return 0, nil
-}
+//// parentSQLSelect fills this slice with data from the database.
+//// Generated via tableToStruct.
+//func (s *TableWebsiteSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectEvent) (int, error) {
+//	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(*s), cbs...)
+//}
+//
+//// SQLInsert inserts all records into the database @todo.
+//// Generated via tableToStruct.
+//func (s *TableWebsiteSlice) SQLInsert(dbrSess dbr.SessionRunner, cbs ...dbr.InsertEvent) (int, error) {
+//	return 0, nil
+//}
+//
+//// SQLUpdate updates all record in the database @todo.
+//// Generated via tableToStruct.
+//func (s *TableWebsiteSlice) SQLUpdate(dbrSess dbr.SessionRunner, cbs ...dbr.UpdateEvent) (int, error) {
+//	return 0, nil
+//}
+//
+//// SQLDelete deletes all record from the database @todo.
+//// Generated via tableToStruct.
+//func (s *TableWebsiteSlice) SQLDelete(dbrSess dbr.SessionRunner, cbs ...dbr.DeleteEvent) (int, error) {
+//	return 0, nil
+//}
 
 // FindByWebsiteID searches the primary keys and returns a
 // *TableWebsite if found or nil and false.

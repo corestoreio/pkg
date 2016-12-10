@@ -20,7 +20,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/errors"
 )
@@ -70,7 +69,7 @@ type Service struct {
 	// package.
 	defaultStoreID int64
 
-	// mu protects the following fields
+	// mu protects the following fields ... maybe use more mutexes
 	mu sync.RWMutex
 	// in general these caches can be optimized
 	websites WebsiteSlice
@@ -480,9 +479,9 @@ func (s *Service) DefaultStoreView() (Store, error) {
 
 // LoadFromDB reloads the website, store group and store view data from the database.
 // After reloading internal cache will be cleared if there are no errors.
-func (s *Service) LoadFromDB(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
+func (s *Service) LoadFromResource(twr TableWebsitesResourcer, tgr TableGroupsResourcer, tsr TableStoresResourcer) error {
 
-	if err := s.backend.LoadFromDB(dbrSess, cbs...); err != nil {
+	if err := s.backend.LoadFromResource(twr, tgr, tsr); err != nil {
 		return errors.Wrap(err, "[store] LoadFromDB.Backend")
 	}
 

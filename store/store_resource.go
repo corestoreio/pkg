@@ -14,28 +14,38 @@
 
 package store
 
-import "github.com/corestoreio/csfw/storage/dbr"
+import (
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
+)
 
-/*
-	TableStore and TableStoreSlice method receivers
-*/
+func init() {
+	TableCollection = csdb.MustInitTables(TableCollection,
+		csdb.WithTableDMLListeners(TableIndexStore,
+			dbr.MustNewListenerBucket(
+				dbr.Listen{
+					Name:      "admin store on top",
+					EventType: dbr.OnBeforeToSQL,
+					SelectFunc: func(sb *dbr.Select) {
+						sb.OrderBy("CASE WHEN main_table.store_id = 0 THEN 0 ELSE 1 END ASC")
+						sb.OrderBy("main_table.sort_order ASC")
+						sb.OrderBy("main_table.name ASC")
+					},
+				},
+				dbr.Listen{
+					EventType: dbr.OnBeforeToSQL,
+					InsertFunc: func(ib *dbr.Insert) {
+						// todo ... ?
+					},
+				},
+			),
+		),
+	)
+}
 
 // IsDefault returns true if the current store is the default store.
 func (s TableStore) IsDefault() bool {
 	return s.StoreID == DefaultStoreID
-}
-
-// SQLSelect uses a dbr session to load all data from the core_store table into the current slice.
-// The variadic 2nd argument can be a call back function to manipulate the select.
-// Additional columns or joins cannot be added. This method receiver should only be used in development.
-// @see https://github.com/magento/magento2/blob/0.74.0-beta7/app%2Fcode%2FMagento%2FStore%2FModel%2FResource%2FStore%2FCollection.php#L147
-// regarding the sort order.
-func (s *TableStoreSlice) SQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return s.parentSQLSelect(dbrSess, append(append([]dbr.SelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
-		sb.OrderBy("CASE WHEN main_table.store_id = 0 THEN 0 ELSE 1 END ASC")
-		sb.OrderBy("main_table.sort_order ASC")
-		return sb.OrderBy("main_table.name ASC")
-	}), cbs...)...)
 }
 
 // FilterByGroupID returns a new slice with all TableStores belonging to a group id

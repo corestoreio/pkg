@@ -14,8 +14,6 @@
 
 package store
 
-import "github.com/corestoreio/csfw/storage/dbr"
-
 /*
 	TableGroup and TableGroupSlice method receivers
 */
@@ -24,8 +22,8 @@ import "github.com/corestoreio/csfw/storage/dbr"
 // The variadic 2nd argument can be a call back function to manipulate the select.
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
 // @see app/code/Magento/Store/Model/Resource/Group/Collection.php::_beforeLoad()
-func (s *TableGroupSlice) SQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return s.parentSQLSelect(dbrSess, append(append([]dbr.SelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
-		return sb.OrderBy("main_table.name ASC")
-	}), cbs...)...)
-}
+//func (s *TableGroupSlice) SQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectEvent) (int, error) {
+//	return s.parentSQLSelect(dbrSess, append(append([]dbr.SelectEvent{nil}, func(sb *dbr.Select) {
+//		sb.OrderBy("main_table.name ASC")
+//	}), cbs...)...)
+//}
