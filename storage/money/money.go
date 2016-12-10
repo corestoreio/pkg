@@ -22,6 +22,8 @@ package money
 	- https://github.com/golang/go/issues/12127 decimal type coming to math/big package
 	- github.com/shopspring/decimal -> get inspiration
 	- github.com/EricLagergren/decimal -> get inspiration
+	- https://github.com/moneyphp/money
+	- http://verraes.net/2016/02/type-safety-and-money/
 */
 
 import (

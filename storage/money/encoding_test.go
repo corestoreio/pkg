@@ -19,10 +19,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/money"
 	"github.com/corestoreio/csfw/util/errors"
@@ -250,25 +248,25 @@ type TableProductEntityDecimal struct {
 
 type TableProductEntityDecimalSlice []*TableProductEntityDecimal
 
-func off_TestLoadFromDb(t *testing.T) {
-	//for hacking testing added :-)
-	conn := csdb.MustConnectTest()
-	defer conn.Close()
-	dbrSess := conn.NewSession()
-
-	sel := dbrSess.SelectBySql("SELECT * FROM `catalog_product_entity_decimal`")
-	var peds TableProductEntityDecimalSlice
-
-	if rows, err := sel.LoadStructs(&peds); err != nil {
-		t.Error(err)
-	} else if rows == 0 {
-		t.Error("0 rows loaded")
-	}
-
-	for _, ped := range peds {
-		fmt.Printf("%#v\n", ped)
-	}
-}
+//func off_TestLoadFromDb(t *testing.T) {
+//	//for hacking testing added :-)
+//	conn := csdb.MustConnectTest()
+//	defer conn.Close()
+//	dbrSess := conn.NewSession()
+//
+//	sel := dbrSess.SelectBySql("SELECT * FROM `catalog_product_entity_decimal`")
+//	var peds TableProductEntityDecimalSlice
+//
+//	if rows, err := sel.LoadStructs(&peds); err != nil {
+//		t.Error(err)
+//	} else if rows == 0 {
+//		t.Error("0 rows loaded")
+//	}
+//
+//	for _, ped := range peds {
+//		fmt.Printf("%#v\n", ped)
+//	}
+//}
 
 //func TestSaveToDb(t *testing.T) {
 //for hacking testing added :-)
@@ -305,20 +303,16 @@ func off_TestLoadFromDb(t *testing.T) {
 
 func TestValue(t *testing.T) {
 
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
-		t.Skip(err)
-	}
-	dbrSess := csdb.MustConnectTest().NewSession()
-
 	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(7779933)}
 	tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(8889933)}
-	ib := dbrSess.InsertInto("catalog_product_entity_decimal")
+	ib := dbr.NewInsert("catalog_product_entity_decimal")
+
 	ib.Columns("attribute_id", "store_id", "entity_id", "value")
 
 	ib.Values(tuple.AttributeID, tuple.StoreID, tuple.EntityID, tuple.Value)
 	ib.Values(tuple2.AttributeID, tuple2.StoreID, tuple2.EntityID, &tuple2.Value)
 
-	sql, args, err := ib.ToSql()
+	sql, args, err := ib.ToSQL()
 	assert.NoError(t, err)
 	fullSql, err := dbr.Preprocess(sql, args)
 	assert.NoError(t, err)
