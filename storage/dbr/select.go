@@ -177,6 +177,8 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 	if err := b.SelectListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
+	// TODO(CyS) implement SQL string cache. If cache set to true, then the finalized query will be written
+	// in the empty RawFullSQL field. if cache has been set to false, then query gets regenerated.
 
 	if b.RawFullSQL != "" {
 		return b.RawFullSQL, b.RawArguments, nil
