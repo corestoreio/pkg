@@ -1,0 +1,143 @@
+store-structure:
+    websites:
+        es:
+            code: es
+            name: Spanish
+            groups:
+                pos_us:
+                    code: pos_us
+                    name: POS United States
+                    root-category: POS Catalog
+                    stores:
+                        es_us:
+                            code: pos_es_us
+                            name: POS Estados Unidos ES US
+                pos_es:
+                    code: pos_es
+                    name: POS España
+                    root-category: POS Catalog
+                    stores:
+                        es_es:
+                            code: pos_es_es
+                            name: POS España ES ES
+                        es_ca:
+                            code: pos_es_ca
+                            name: POS Català ES CA
+        en:
+            code: en
+            name: English
+            groups:
+                pos_us:
+                    code: pos_us
+                    name: POS United States
+                    root-category: POS Catalog
+                    stores:
+                        en_us:
+                            code: pos_en_us
+                            name: POS United States EN US
+                pos_gb:
+                    code: pos_gb
+                    name: POS United Kingdom
+                    root-category: POS Catalog
+                    stores:
+                        en_gb:
+                            code: pos_en_gb
+                            name: POS United Kingdom EN GB
+                        en_gd:
+                            code: pos_en_gd
+                            name: POS Scotland EN GD (Scottish Gaelic)
+                pos_ch:
+                    code: pos_ch
+                    name: POS Switzerland
+                    root-category: POS Catalog
+                    stores:
+                        en_ch:
+                            code: pos_en_ch
+                            name: POS Switzerland EN
+                pos_de:
+                    code: pos_de
+                    name: POS Germany
+                    root-category: POS Catalog
+                    stores:
+                        en_de:
+                            code: pos_en_de
+                            name: POS Germany EN
+                pos_at:
+                    code: pos_at
+                    name: POS Austria
+                    root-category: POS Catalog
+                    stores:
+                        en_at:
+                            code: pos_en_at
+                            name: POS Austria EN
+                pos_it:
+                    code: pos_it
+                    name: POS Italy
+                    root-category: POS Catalog
+                    stores:
+                        en_it:
+                            code: pos_en_it
+                            name: POS Italy EN
+        fr:
+            code: fr
+            name: French
+            groups:
+                pos_ch:
+                    code: pos_ch
+                    name: POS Switzerland
+                    root-category: POS Catalog
+                    stores:
+                        fr_ch:
+                            code: pos_fr_ch
+                            name: POS Switzerland FR
+                pos_fr:
+                    code: pos_fr
+                    name: POS France
+                    root-category: POS Catalog
+                    stores:
+                        fr_fr:
+                            code: pos_fr_fr
+                            name: POS France FR
+        de:
+            code: de
+            name: German
+            groups:
+                pos_ch:
+                    code: pos_ch
+                    name: POS Switzerland
+                    root-category: POS Catalog
+                    stores:
+                        de_ch:
+                            code: pos_de_ch
+                            name: POS Switzerland DE
+                pos_de:
+                    code: pos_de
+                    name: POS Germany
+                    root-category: POS Catalog
+                    stores:
+                        de_de:
+                            code: pos_de_de
+                            name: POS Germany DE
+                        de_de_b2b:
+                            code: pos_de_de_b2b
+                            name: POS Germany DE B2B
+                pos_at:
+                    code: pos_at
+                    name: POS Austria
+                    root-category: POS Catalog
+                    stores:
+                        de_at:
+                            code: pos_de_at
+                            name: POS Austria DE
+        it:
+            code: it
+            name: Italian
+            groups:
+                pos_it:
+                    code: pos_it
+                    name: POS Italy
+                    root-category: POS Catalog
+                    stores:
+                        it_it:
+                            code: pos_it_it
+                            name: POS Italy IT

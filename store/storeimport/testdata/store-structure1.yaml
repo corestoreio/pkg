@@ -1,0 +1,500 @@
+store-structure:
+    websites:
+        al:
+            code: al
+            name: Albania
+            stores:
+                pos_al:
+                    code: pos_al
+                    name: POS Albania
+                    root-category: POS Catalog
+                    store-views:
+                        al_en:
+                            code: pos_al_en
+                            name: POS Albania EN
+        dz:
+            code: dz
+            name: Algeria
+            stores:
+                pos_dz:
+                    code: pos_dz
+                    name: POS Algeria
+                    root-category: POS Catalog
+                    store-views:
+                        dz_en:
+                            code: pos_dz_en
+                            name: POS Algeria EN
+        am:
+            code: am
+            name: Armenia
+            stores:
+                pos_am:
+                    code: pos_am
+                    name: POS Armenia
+                    root-category: POS Catalog
+                    store-views:
+                        am_en:
+                            code: pos_am_en
+                            name: POS Armenia EN
+        az:
+            code: az
+            name: Azerbaijan
+            stores:
+                pos_az:
+                    code: pos_az
+                    name: POS Azerbaijan
+                    root-category: POS Catalog
+                    store-views:
+                        az_en:
+                            code: pos_az_en
+                            name: POS Azerbaijan EN
+        by:
+            code: by
+            name: Belarus
+            stores:
+                pos_by:
+                    code: pos_by
+                    name: POS Belarus
+                    root-category: POS Catalog
+                    store-views:
+                        by_en:
+                            code: pos_by_en
+                            name: POS Belarus EN
+        cn:
+            code: cn
+            name: China
+            stores:
+                pos_cn:
+                    code: pos_cn
+                    name: POS China
+                    root-category: POS Catalog
+                    store-views:
+                        cn_en:
+                            code: pos_cn_en
+                            name: POS China EN
+        eg:
+            code: eg
+            name: Egypt
+            stores:
+                pos_eg:
+                    code: pos_eg
+                    name: POS Egypt
+                    root-category: POS Catalog
+                    store-views:
+                        eg_en:
+                            code: pos_eg_en
+                            name: POS Egypt EN
+        et:
+            code: et
+            name: Ethiopia
+            stores:
+                pos_et:
+                    code: pos_et
+                    name: POS Ethiopia
+                    root-category: POS Catalog
+                    store-views:
+                        et_en:
+                            code: pos_et_en
+                            name: POS Ethiopia EN
+        fr:
+            code: fr
+            name: France
+            stores:
+                pos_fr:
+                    code: pos_fr
+                    name: POS France
+                    root-category: POS Catalog
+                    store-views:
+                        fr_en:
+                            code: pos_fr_en
+                            name: POS France EN
+        ga:
+            code: ga
+            name: Gabon
+            stores:
+                pos_ga:
+                    code: pos_ga
+                    name: POS Gabon
+                    root-category: POS Catalog
+                    store-views:
+                        ga_en:
+                            code: pos_ga_en
+                            name: POS Gabon EN
+        ge:
+            code: ge
+            name: Georgia
+            stores:
+                pos_ge:
+                    code: pos_ge
+                    name: POS Georgia
+                    root-category: POS Catalog
+                    store-views:
+                        ge_en:
+                            code: pos_ge_en
+                            name: POS Georgia EN
+        de:
+            code: de
+            name: Germany
+            stores:
+                pos_de:
+                    code: pos_de
+                    name: POS Germany
+                    root-category: POS Catalog
+                    store-views:
+                        de_en:
+                            code: pos_de_en
+                            name: POS Germany EN
+        gh:
+            code: gh
+            name: Ghana
+            stores:
+                pos_gh:
+                    code: pos_gh
+                    name: POS Ghana
+                    root-category: POS Catalog
+                    store-views:
+                        gh_en:
+                            code: pos_gh_en
+                            name: POS Ghana EN
+        id:
+            code: id
+            name: Indonesia
+            stores:
+                pos_id:
+                    code: pos_id
+                    name: POS Indonesia
+                    root-category: POS Catalog
+                    store-views:
+                        id_en:
+                            code: pos_id_en
+                            name: POS Indonesia EN
+        iq:
+            code: iq
+            name: Iraq
+            stores:
+                pos_iq:
+                    code: pos_iq
+                    name: POS Iraq
+                    root-category: POS Catalog
+                    store-views:
+                        iq_en:
+                            code: pos_iq_en
+                            name: POS Iraq EN
+        ie:
+            code: ie
+            name: Ireland
+            stores:
+                pos_ie:
+                    code: pos_ie
+                    name: POS Ireland
+                    root-category: POS Catalog
+                    store-views:
+                        ie_en:
+                            code: pos_ie_en
+                            name: POS Ireland EN
+        it:
+            code: it
+            name: Italy
+            stores:
+                pos_it:
+                    code: pos_it
+                    name: POS Italy
+                    root-category: POS Catalog
+                    store-views:
+                        it_en:
+                            code: pos_it_en
+                            name: POS Italy EN
+        jo:
+            code: jo
+            name: Jordan
+            stores:
+                pos_jo:
+                    code: pos_jo
+                    name: POS Jordan
+                    root-category: POS Catalog
+                    store-views:
+                        jo_en:
+                            code: pos_jo_en
+                            name: POS Jordan EN
+        kz:
+            code: kz
+            name: Kazakhstan
+            stores:
+                pos_kz:
+                    code: pos_kz
+                    name: POS Kazakhstan
+                    root-category: POS Catalog
+                    store-views:
+                        kz_en:
+                            code: pos_kz_en
+                            name: POS Kazakhstan EN
+        ke:
+            code: ke
+            name: Kenya
+            stores:
+                pos_ke:
+                    code: pos_ke
+                    name: POS Kenya
+                    root-category: POS Catalog
+                    store-views:
+                        ke_en:
+                            code: pos_ke_en
+                            name: POS Kenya EN
+        lb:
+            code: lb
+            name: Lebanon
+            stores:
+                pos_lb:
+                    code: pos_lb
+                    name: POS Lebanon
+                    root-category: POS Catalog
+                    store-views:
+                        lb_en:
+                            code: pos_lb_en
+                            name: POS Lebanon EN
+        ly:
+            code: ly
+            name: Libya
+            stores:
+                pos_ly:
+                    code: pos_ly
+                    name: POS Libya
+                    root-category: POS Catalog
+                    store-views:
+                        ly_en:
+                            code: pos_ly_en
+                            name: POS Libya EN
+        mg:
+            code: mg
+            name: Madagascar
+            stores:
+                pos_mg:
+                    code: pos_mg
+                    name: POS Madagascar
+                    root-category: POS Catalog
+                    store-views:
+                        mg_en:
+                            code: pos_mg_en
+                            name: POS Madagascar EN
+        ma:
+            code: ma
+            name: Morocco
+            stores:
+                pos_ma:
+                    code: pos_ma
+                    name: POS Morocco
+                    root-category: POS Catalog
+                    store-views:
+                        ma_en:
+                            code: pos_ma_en
+                            name: POS Morocco EN
+        ng:
+            code: ng
+            name: Nigeria
+            stores:
+                pos_ng:
+                    code: pos_ng
+                    name: POS Nigeria
+                    root-category: POS Catalog
+                    store-views:
+                        ng_en:
+                            code: pos_ng_en
+                            name: POS Nigeria EN
+        ph:
+            code: ph
+            name: Philipines
+            stores:
+                pos_ph:
+                    code: pos_ph
+                    name: POS Philipines
+                    root-category: POS Catalog
+                    store-views:
+                        ph_en:
+                            code: pos_ph_en
+                            name: POS Philipines EN
+        ru:
+            code: ru
+            name: Russia
+            stores:
+                pos_ru:
+                    code: pos_ru
+                    name: POS Russia
+                    root-category: POS Catalog
+                    store-views:
+                        ru_en:
+                            code: pos_ru_en
+                            name: POS Russia EN
+        rs:
+            code: rs
+            name: Serbia
+            stores:
+                pos_rs:
+                    code: pos_rs
+                    name: POS Serbia
+                    root-category: POS Catalog
+                    store-views:
+                        rs_en:
+                            code: pos_rs_en
+                            name: POS Serbia EN
+        za:
+            code: za
+            name: South Africa
+            stores:
+                pos_za:
+                    code: pos_za
+                    name: POS South Africa
+                    root-category: POS Catalog
+                    store-views:
+                        za_en:
+                            code: pos_za_en
+                            name: POS South Africa EN
+        es:
+            code: es
+            name: Spain
+            stores:
+                pos_es:
+                    code: pos_es
+                    name: POS Spain
+                    root-category: POS Catalog
+                    store-views:
+                        es_en:
+                            code: pos_es_en
+                            name: POS Spain EN
+        ch:
+            code: ch
+            name: Switzerland
+            stores:
+                pos_ch:
+                    code: pos_ch
+                    name: POS Switzerland
+                    root-category: POS Catalog
+                    store-views:
+                        ch_en:
+                            code: pos_ch_en
+                            name: POS Switzerland EN
+                        ch_de:
+                            code: pos_ch_de
+                            name: POS Switzerland DE
+                        cf_fr:
+                            code: pos_ch_fr
+                            name: POS Switzerland FR
+        tz:
+            code: tz
+            name: Tanzania
+            stores:
+                pos_tz:
+                    code: pos_tz
+                    name: POS Tanzania
+                    root-category: POS Catalog
+                    store-views:
+                        tz_en:
+                            code: pos_tz_en
+                            name: POS Tanzania EN
+        th:
+            code: th
+            name: Thailand
+            stores:
+                pos_th:
+                    code: pos_th
+                    name: POS Thailand
+                    root-category: POS Catalog
+                    store-views:
+                        th_en:
+                            code: pos_th_en
+                            name: POS Thailand EN
+        tn:
+            code: tn
+            name: Tunisia
+            stores:
+                pos_tn:
+                    code: pos_tn
+                    name: POS Tunisia
+                    root-category: POS Catalog
+                    store-views:
+                        tn_en:
+                            code: pos_tn_en
+                            name: POS Tunisia EN
+        tr:
+            code: tr
+            name: Turkey
+            stores:
+                pos_tr:
+                    code: pos_tr
+                    name: POS Turkey
+                    root-category: POS Catalog
+                    store-views:
+                        tr_en:
+                            code: pos_tr_en
+                            name: POS Turkey EN
+        ae:
+            code: ae
+            name: United Arab Emirates
+            stores:
+                pos_ae:
+                    code: pos_ae
+                    name: POS United Arab Emirates
+                    root-category: POS Catalog
+                    store-views:
+                        ae_en:
+                            code: pos_ae_en
+                            name: POS United Arab Emirates EN
+        ug:
+            code: ug
+            name: Uganda
+            stores:
+                pos_ug:
+                    code: pos_ug
+                    name: POS Uganda
+                    root-category: POS Catalog
+                    store-views:
+                        ug_en:
+                            code: pos_ug_en
+                            name: POS Uganda EN
+        ua:
+            code: ua
+            name: Ukraine
+            stores:
+                pos_ua:
+                    code: pos_ua
+                    name: POS Ukraine
+                    root-category: POS Catalog
+                    store-views:
+                        ua_en:
+                            code: pos_ua_en
+                            name: POS Ukraine EN
+        gb:
+            code: gb
+            name: United Kingdom
+            stores:
+                pos_gb:
+                    code: pos_gb
+                    name: POS United Kingdom
+                    root-category: POS Catalog
+                    store-views:
+                        gb_en:
+                            code: pos_gb_en
+                            name: POS United Kingdom EN
+        vn:
+            code: vn
+            name: Vietnam
+            stores:
+                pos_vn:
+                    code: pos_vn
+                    name: POS Vietnam
+                    root-category: POS Catalog
+                    store-views:
+                        vn_en:
+                            code: pos_vn_en
+                            name: POS Vietnam EN
+        zw:
+            code: zw
+            name: Zimbabwe
+            stores:
+                pos_zw:
+                    code: pos_zw
+                    name: POS Zimbabwe
+                    root-category: POS Catalog
+                    store-views:
+                        zw_en:
+                            code: pos_zw_en
+                            name: POS Zimbabwe EN
