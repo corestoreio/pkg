@@ -404,7 +404,54 @@ func TestSelectJoin(t *testing.T) {
 		"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
 		sql,
 	)
+}
 
+func TestSelect_Join(t *testing.T) {
+
+	const want = "SELECT IFNULL(`manufacturerStore`.`value`,IFNULL(`manufacturerGroup`.`value`,IFNULL(`manufacturerWebsite`.`value`,IFNULL(`manufacturerDefault`.`value`,'')))) AS `manufacturer`, cpe.* FROM `catalog_product_entity` AS `cpe` LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerDefault` ON (manufacturerDefault.scope = 0) AND (manufacturerDefault.scope_id = 0) AND (manufacturerDefault.attribute_id = 83) AND (manufacturerDefault.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerWebsite` ON (manufacturerWebsite.scope = 1) AND (manufacturerWebsite.scope_id = 10) AND (manufacturerWebsite.attribute_id = 83) AND (manufacturerWebsite.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerGroup` ON (manufacturerGroup.scope = 2) AND (manufacturerGroup.scope_id = 20) AND (manufacturerGroup.attribute_id = 83) AND (manufacturerGroup.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerStore` ON (manufacturerStore.scope = 2) AND (manufacturerStore.scope_id = 20) AND (manufacturerStore.attribute_id = 83) AND (manufacturerStore.value IS NOT NULL)"
+
+	s := NewSelect("catalog_product_entity", "cpe").
+		LeftJoin(
+			JoinTable("catalog_product_entity_varchar", "manufacturerDefault"),
+			JoinColumns("cpe.*"),
+			ConditionRaw("manufacturerDefault.scope = 0"),
+			ConditionRaw("manufacturerDefault.scope_id = 0"),
+			ConditionRaw("manufacturerDefault.attribute_id = 83"),
+			ConditionRaw("manufacturerDefault.value IS NOT NULL"),
+		).
+		LeftJoin(
+			JoinTable("catalog_product_entity_varchar", "manufacturerWebsite"),
+			JoinColumns(),
+			ConditionRaw("manufacturerWebsite.scope = 1"),
+			ConditionRaw("manufacturerWebsite.scope_id = 10"),
+			ConditionRaw("manufacturerWebsite.attribute_id = 83"),
+			ConditionRaw("manufacturerWebsite.value IS NOT NULL"),
+		).
+		LeftJoin(
+			JoinTable("catalog_product_entity_varchar", "manufacturerGroup"),
+			JoinColumns(),
+			ConditionRaw("manufacturerGroup.scope = 2"),
+			ConditionRaw("manufacturerGroup.scope_id = 20"),
+			ConditionRaw("manufacturerGroup.attribute_id = 83"),
+			ConditionRaw("manufacturerGroup.value IS NOT NULL"),
+		).
+		LeftJoin(
+			JoinTable("catalog_product_entity_varchar", "manufacturerStore"),
+			JoinColumns(),
+			ConditionRaw("manufacturerStore.scope = 2"),
+			ConditionRaw("manufacturerStore.scope_id = 20"),
+			ConditionRaw("manufacturerStore.attribute_id = 83"),
+			ConditionRaw("manufacturerStore.value IS NOT NULL"),
+		)
+
+	s.Columns = []string{EAVIfNull("manufacturer", "value", "''")}
+
+	sql, _, err := s.ToSQL()
+	assert.NoError(t, err)
+	assert.Equal(t,
+		want,
+		sql,
+	)
 }
 
 func TestSelect_Events(t *testing.T) {
