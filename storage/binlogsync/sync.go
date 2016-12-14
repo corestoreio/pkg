@@ -73,10 +73,10 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 		case
 			*myreplicator.TableMapEvent,
 			*myreplicator.FormatDescriptionEvent:
+			// maybe add: *replication.XIDEvent
 			// don't update Master with file and position
+		default:
 			continue
-			//default:
-			//	fmt.Printf("%#v\n\n", e)
 		}
 
 		c.masterUpdate(pos.File, pos.Position)

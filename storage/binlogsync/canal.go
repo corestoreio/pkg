@@ -13,6 +13,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/myreplicator"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
@@ -26,12 +27,6 @@ const (
 	MySQLFlavor   = "mysql"
 	MariaDBFlavor = "mariadb"
 )
-
-type DBer interface {
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
-	Close() error
-}
 
 // Canal can sync your MySQL data. MySQL must use the binlog format ROW.
 type Canal struct {
@@ -55,7 +50,7 @@ type Canal struct {
 	rsMu       sync.RWMutex
 	rsHandlers []RowsEventHandler
 
-	db DBer
+	db *sql.DB
 
 	// Tables contains the overall SQL table cache. If a table gets modified
 	// during runtime of this program then somehow we must clear the cache to
@@ -109,9 +104,12 @@ func WithConfigurationWriter(w config.Writer) Option {
 	}
 }
 
+// TODO(CyS) add a WithContext() option function or just only a parameter for a time out.
+
 func withUpdateBinlogStart(c *Canal) error {
+	ctx := context.Background()
 	var ms csdb.MasterStatus
-	if err := ms.Load(context.TODO(), c.db); err != nil {
+	if err := ms.Load(dbr.WrapDBContext(ctx, c.db)); err != nil {
 		return errors.Wrap(err, "[binlogsync] ShowMasterStatus Load")
 	}
 
@@ -152,8 +150,9 @@ func withPrepareSyncer(c *Canal) error {
 }
 
 func withCheckBinlogRowFormat(c *Canal) error {
+	ctx := context.Background()
 	v := csdb.Variable{}
-	if err := v.LoadOne(context.TODO(), c.db, "binlog_format"); err != nil {
+	if err := v.LoadOne(dbr.WrapDBContext(ctx, c.db), "binlog_format"); err != nil {
 		return errors.Wrap(err, "[binlogsync] checkBinlogRowFormat row.Scan")
 	}
 	if !strings.EqualFold(v.Value, "ROW") {
@@ -310,7 +309,7 @@ func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (csdb.T
 	}
 
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
-		if err := c.tables.Options(csdb.WithTableLoadColumns(ctx, c.db, id, tableName)); err != nil {
+		if err := c.tables.Options(csdb.WithTableLoadColumns(dbr.WrapDBContext(ctx, c.db), id, tableName)); err != nil {
 			return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
 		}
 
@@ -334,7 +333,7 @@ func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 	// now only log
 	if c.flavor() == MySQLFlavor {
 		var v csdb.Variable
-		if err := v.LoadOne(ctx, c.db, "binlog_row_image"); err != nil {
+		if err := v.LoadOne(dbr.WrapDBContext(ctx, c.db), "binlog_row_image"); err != nil {
 			return errors.Wrap(err, "[binlogsync] CheckBinlogRowImage LoadOne")
 		}
 
