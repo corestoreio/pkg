@@ -119,3 +119,25 @@ func TestInt64Unique(t *testing.T) {
 	l := slices.Int64{30, 2, 4, 30, 2, 22}
 	assert.EqualValues(t, []int64{30, 2, 4, 22}, l.Unique().ToInt64())
 }
+
+// 100	  23609788 ns/op	       0 B/op	       0 allocs/op old with O(n^2) with 10k elements with 2 slices
+// 1000	   1696117 ns/op	  383012 B/op	     624 allocs/op without len() as 2nd param in make
+// 2000	    937479 ns/op	  176523 B/op	     135 allocs/op with len() as 2nd param in make map
+func BenchmarkInt64_Unique(b *testing.B) {
+	const size = 10000
+	input := make(slices.Int64, size)
+	for i := range input {
+		input[i] = int64(i)
+	}
+	input[size/2] = size/2 - 1
+	var have slices.Int64
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		have = input.Unique()
+	}
+	if have, want := size-1, len(have); have != want {
+		b.Errorf("Have: %v Want: %v", have, want)
+	}
+
+}

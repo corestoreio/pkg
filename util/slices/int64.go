@@ -137,19 +137,14 @@ func (l Int64) Sum() int64 {
 	return s
 }
 
-// Unique removes duplicate entries.
+// Unique removes duplicate entries in O(n)
 func (l *Int64) Unique() Int64 {
+	seen := make(map[int64]struct{}, len(*l))
 	unique := (*l)[:0]
 	for _, p := range *l {
-		found := false
-		for _, u := range unique {
-			if u == p {
-				found = true
-				break
-			}
-		}
-		if false == found {
+		if _, ok := seen[p]; !ok {
 			unique = append(unique, p)
+			seen[p] = struct{}{}
 		}
 	}
 	*l = unique
