@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null/convert"
+	"github.com/corestoreio/errors"
 )
 
 // NullUint16 is a replica of sql.NullInt64 for uint16 types.

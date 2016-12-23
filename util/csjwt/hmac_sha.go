@@ -4,7 +4,7 @@ import (
 	"crypto"
 	"crypto/hmac"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // SigningMethodHMAC implements the HMAC-SHA family of signing methods signing

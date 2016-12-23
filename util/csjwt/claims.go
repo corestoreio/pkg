@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Claimer for a type to be a Claims object

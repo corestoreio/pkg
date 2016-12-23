@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing

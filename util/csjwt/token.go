@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // ContentTypeJWT defines the content type of a token. At the moment only JWT is

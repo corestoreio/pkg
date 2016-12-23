@@ -19,7 +19,7 @@ import (
 	"hash"
 	"sync"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Copyright 2011 The Go Authors. All rights reserved.

@@ -20,7 +20,7 @@ import (
 	"hash/fnv"
 	"testing"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

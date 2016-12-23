@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null/convert"
+	"github.com/corestoreio/errors"
 )
 
 // NullFloat32 is a replica of sql.NullFloat64 for float32 types.

@@ -18,8 +18,8 @@ import (
 	"crypto/hmac"
 	"hash"
 
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/corestoreio/errors"
 	"github.com/minio/blake2b-simd"
 )
 

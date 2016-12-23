@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"unicode"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // HTTPHeaderAuthorization identifies the bearer token in this header key

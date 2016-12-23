@@ -1,6 +1,6 @@
 package jwtclaim
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/errors"
 
 //go:generate ffjson $GOFILE
 

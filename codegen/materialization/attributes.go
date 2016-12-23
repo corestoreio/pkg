@@ -27,7 +27,6 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/juju/errgo"
 )
 
 // materializeAttributes ...
@@ -108,7 +107,7 @@ func attrGetter(ctx *context, data map[string]interface{}) ([]byte, error) {
 func getAttributeValuesForWebsites(ctx *context) map[string][]codegen.StringEntities {
 
 	var tws store.TableWebsiteSlice
-	tws.Load(ctx.dbc.NewSession(nil), func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+	tws.Load(ctx.dbc.NewSession(nil), func(sb *dbr.Select) *dbr.Select {
 		return sb.Where("website_id > 0")
 	})
 
@@ -127,7 +126,7 @@ func getAttributeValuesForWebsites(ctx *context) map[string][]codegen.StringEnti
 					}
 					aws[aid] = append(aws[aid], row)
 				} else {
-					codegen.LogFatal(errgo.Newf("Column attribute_id not found in collection %#v\n", aCollection))
+					codegen.LogFatal(errors.Newf("Column attribute_id not found in collection %#v\n", aCollection))
 				}
 			}
 		}
@@ -179,7 +178,7 @@ func attrCollection(ctx *context, data map[string]interface{}) ([]byte, error) {
 	return codegen.GenerateCode("", tplAttrCollection, data, funcMap)
 }
 
-func getAttrSelect(ctx *context, websiteID int64) *dbr.SelectBuilder {
+func getAttrSelect(ctx *context, websiteID int64) *dbr.Select {
 
 	dbrSelect, err := eav.GetAttributeSelectSql(
 		ctx.dbc.NewSession(nil),

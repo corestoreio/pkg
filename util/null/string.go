@@ -7,8 +7,9 @@ package null
 import (
 	"database/sql"
 	"encoding/json"
-	"github.com/corestoreio/csfw/util/errors"
 	"strings"
+
+	"github.com/corestoreio/errors"
 )
 
 // String is a nullable string. It supports SQL and JSON serialization.

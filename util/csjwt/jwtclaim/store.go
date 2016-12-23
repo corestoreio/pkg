@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 //go:generate ffjson $GOFILE

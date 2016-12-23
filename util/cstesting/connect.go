@@ -21,8 +21,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/magento"
+	"github.com/corestoreio/errors"
 )
 
 // EnvDSN is the name of the environment variable

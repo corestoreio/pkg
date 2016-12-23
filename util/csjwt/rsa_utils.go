@@ -19,7 +19,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Parse PEM encoded PKCS1 or PKCS8 private key. Provide optionally a password

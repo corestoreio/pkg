@@ -17,7 +17,7 @@ package csjwt
 import (
 	"bytes"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Signer interface to add new methods for signing or verifying tokens.

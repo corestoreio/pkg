@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package errors
+package dbh_test
 
 import "testing"
 
-func TestError(t *testing.T) {
-	const anErr Error = ""
-	if have, want := anErr.Error(), ""; have != want {
-		t.Errorf("Have: %v Want: %v", have, want)
-	}
+func TestStrings_Scan(t *testing.T) {
+	t.Skip("todo")
+}
+
+func TestStrings_Value(t *testing.T) {
+	t.Skip("todo")
 }

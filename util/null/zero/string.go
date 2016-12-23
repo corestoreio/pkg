@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // String is a nullable string.

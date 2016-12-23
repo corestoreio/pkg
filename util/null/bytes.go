@@ -3,6 +3,7 @@ package null
 import (
 	"database/sql/driver"
 	"fmt"
+
 	"github.com/corestoreio/csfw/util/null/convert"
 )
 

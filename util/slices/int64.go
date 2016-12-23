@@ -17,7 +17,7 @@ package slices
 import (
 	"sort"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 var errOutOfRange = errors.NewFatalf("[slices] Index out of range")

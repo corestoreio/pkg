@@ -20,7 +20,7 @@ import (
 	"crypto/rsa"
 	"io/ioutil"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // PrivateKeyBits used when auto generating a private key

@@ -25,7 +25,7 @@ import (
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/suspend"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 const hashCount = 10

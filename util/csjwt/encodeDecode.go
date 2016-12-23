@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Deserializer provides an interface for providing custom deserializers.

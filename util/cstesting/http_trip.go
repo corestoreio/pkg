@@ -22,7 +22,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // HTTPTrip used for mocking the Transport field in http.Client.

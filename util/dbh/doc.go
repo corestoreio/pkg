@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package zapw provides a wrapper (w) to github.com/uber-go/zap.
-package zapw
+// Package dbh provides database helper functions for the database/sql package.
+package dbh
