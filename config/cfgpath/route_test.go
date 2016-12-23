@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/corestoreio/csfw/util/naughtystrings"

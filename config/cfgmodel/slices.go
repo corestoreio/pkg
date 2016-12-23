@@ -24,8 +24,8 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/errors"
 )
 
 // CSVComma separates CSV values. Default value.

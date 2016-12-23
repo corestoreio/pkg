@@ -14,7 +14,7 @@
 
 package cfgpath
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/errors"
 
 // private errors. Use the behaviour checks in package util/errors.
 

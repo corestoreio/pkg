@@ -17,7 +17,7 @@ package config
 import (
 	"net/url"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.

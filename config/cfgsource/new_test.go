@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgsource"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 func TestMustNewByString(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"github.com/allegro/bigcache"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 var errKeyNotFound = errors.NewNotFoundf(`[cfgbigcache] Key not found`)

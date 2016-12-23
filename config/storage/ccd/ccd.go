@@ -24,8 +24,8 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
+	"github.com/corestoreio/errors"
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go
@@ -135,23 +135,23 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 
 	valStr, err := conv.ToStringE(value)
 	if err != nil {
-		return errors.Wrapf(err, "[ccd] Set.conv.ToStringE. SQL: %q Key: %q Value: %v", dbs.Write.SQL, key, value)
+		return errors.Wrapf(err, "[ccd] Set.conv.ToStringE. SQL: %q Key: %q Value: %v", dbs.Write.sqlRaw, key, value)
 	}
 
 	stmt, err := dbs.Write.Stmt(context.TODO())
 	if err != nil {
-		return errors.Wrapf(err, "[ccd] Set.Write.Stmt. SQL: %q Key: %q", dbs.Write.SQL, key)
+		return errors.Wrapf(err, "[ccd] Set.Write.Stmt. SQL: %q Key: %q", dbs.Write.sqlRaw, key)
 	}
 
 	pathLeveled, err := key.Level(-1)
 	if err != nil {
-		return errors.Wrapf(err, "[ccd] Set.key.Level. SQL: %q Key: %q", dbs.Write.SQL, key)
+		return errors.Wrapf(err, "[ccd] Set.key.Level. SQL: %q Key: %q", dbs.Write.sqlRaw, key)
 	}
 
 	scp, id := key.ScopeID.Unpack()
 	result, err := stmt.Exec(scp.StrType(), id, pathLeveled, valStr, valStr)
 	if err != nil {
-		return errors.Wrapf(err, "[ccd] Set.stmt.Exec. SQL: %q KeyID: %d Scope: %q Path: %q Value: %q", dbs.Write.SQL, id, scp, pathLeveled, valStr)
+		return errors.Wrapf(err, "[ccd] Set.stmt.Exec. SQL: %q KeyID: %d Scope: %q Path: %q Value: %q", dbs.Write.sqlRaw, id, scp, pathLeveled, valStr)
 	}
 	if dbs.log.IsDebug() {
 		li, err1 := result.LastInsertId()
@@ -162,7 +162,7 @@ func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 			log.ErrWithKey("lastInsertIDErr", err1),
 			log.Int64("rowsAffected", ra),
 			log.ErrWithKey("rowsAffectedErr", err2),
-			log.String("SQL", dbs.Write.SQL),
+			log.String("SQL", dbs.Write.sqlRaw),
 			log.Stringer("key", key),
 			log.Object("value", value),
 		)
@@ -182,19 +182,19 @@ func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 
 	stmt, err := dbs.Read.Stmt(context.TODO())
 	if err != nil {
-		return nil, errors.Wrapf(err, "[ccd] Get.Read.Stmt. SQL: %q Key: %q", dbs.Read.SQL, key)
+		return nil, errors.Wrapf(err, "[ccd] Get.Read.Stmt. SQL: %q Key: %q", dbs.Read.sqlRaw, key)
 	}
 
 	pl, err := key.Level(-1)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[ccd] Get.key.Level. SQL: %q Key: %q", dbs.Read.SQL, key)
+		return nil, errors.Wrapf(err, "[ccd] Get.key.Level. SQL: %q Key: %q", dbs.Read.sqlRaw, key)
 	}
 
 	var data null.String
 	scp, id := key.ScopeID.Unpack()
 	err = stmt.QueryRow(scp.StrType(), id, pl).Scan(&data)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[ccd] Get.QueryRow. SQL: %q Key: %q PathLevel: %q", dbs.Read.SQL, key, pl)
+		return nil, errors.Wrapf(err, "[ccd] Get.QueryRow. SQL: %q Key: %q PathLevel: %q", dbs.Read.sqlRaw, key, pl)
 	}
 	if data.Valid {
 		return data.String, nil
@@ -214,12 +214,12 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 
 	stmt, err := dbs.All.Stmt(context.TODO())
 	if err != nil {
-		return nil, errors.Wrapf(err, "[ccd] AllKeys.All.Stmt. SQL: %q", dbs.All.SQL)
+		return nil, errors.Wrapf(err, "[ccd] AllKeys.All.Stmt. SQL: %q", dbs.All.sqlRaw)
 	}
 
 	rows, err := stmt.Query()
 	if err != nil {
-		return nil, errors.Wrapf(err, "[ccd] AllKeys.All.Query. SQL: %q", dbs.All.SQL)
+		return nil, errors.Wrapf(err, "[ccd] AllKeys.All.Query. SQL: %q", dbs.All.sqlRaw)
 	}
 	defer rows.Close()
 
@@ -231,12 +231,12 @@ func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 
 	for rows.Next() {
 		if err := rows.Scan(&sqlScope, &sqlScopeID, &sqlPath); err != nil {
-			return nil, errors.Wrapf(err, "[ccd] AllKeys.rows.Scan. SQL: %q", dbs.All.SQL)
+			return nil, errors.Wrapf(err, "[ccd] AllKeys.rows.Scan. SQL: %q", dbs.All.sqlRaw)
 		}
 		if sqlPath.Valid {
 			p, err := cfgpath.NewByParts(sqlPath.String)
 			if err != nil {
-				return ret, errors.Wrapf(err, "[ccd] AllKeys.rows.cfgpath.NewByParts. SQL: %q: Path: %q", dbs.All.SQL, sqlPath.String)
+				return ret, errors.Wrapf(err, "[ccd] AllKeys.rows.cfgpath.NewByParts. SQL: %q: Path: %q", dbs.All.sqlRaw, sqlPath.String)
 			}
 			ret = append(ret, p.Bind(scope.FromString(sqlScope.String).Pack(sqlScopeID.Int64)))
 		}

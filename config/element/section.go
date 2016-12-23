@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // SectionSlice contains a set of Sections. Some nifty helper functions exists.

@@ -21,8 +21,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
+	"github.com/corestoreio/errors"
 )
 
 // Config Service, the Default storage engine with build-in in-memory map. The

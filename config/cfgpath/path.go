@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Levels defines how many parts are at least in a path.

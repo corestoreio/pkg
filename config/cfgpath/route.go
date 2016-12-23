@@ -20,7 +20,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/storage/text"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Route consists of at least three parts each of them separated by a slash

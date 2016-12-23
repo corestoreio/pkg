@@ -17,7 +17,7 @@ package cfgmodel
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // todo implement compatible type for both interfaces like in the example ExampleNewGCM_encrypt() and ExampleNewGCM_decrypt of the std lib cipher package.

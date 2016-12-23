@@ -14,7 +14,7 @@
 
 package cfgsource
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/errors"
 
 // NewByString creates a new ValueLabelSlice (VLS) from key,value list.
 // It panics when arguments are imbalanced. Example:

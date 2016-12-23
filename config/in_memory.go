@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 type keyVal struct {

@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage/cfgbigcache"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

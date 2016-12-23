@@ -22,8 +22,8 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/naughtystrings"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

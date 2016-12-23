@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to

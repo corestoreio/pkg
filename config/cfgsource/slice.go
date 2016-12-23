@@ -20,7 +20,7 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Optioner defines how to retrieve all Options values. Mostly used for

@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // MessageReceiver allows you to listen to write actions. The order of calling

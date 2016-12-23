@@ -16,7 +16,7 @@ package cfgmodel
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // MapIntResolver maps an integer value into a string value. The passed

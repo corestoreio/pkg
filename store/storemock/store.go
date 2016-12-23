@@ -19,8 +19,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
+	"github.com/corestoreio/errors"
 )
 
 // NewStoreAU creates a new Store with an attached config.

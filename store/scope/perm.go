@@ -16,7 +16,7 @@ package scope
 
 import (
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Perm is a bit set and used for permissions depending on the scope.Type.

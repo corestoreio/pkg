@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // WithCoreConfigData reads the table core_config_data into the Service and
