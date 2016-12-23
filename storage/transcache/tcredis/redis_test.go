@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/redis.v3"
 )

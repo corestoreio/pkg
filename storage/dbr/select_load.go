@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Rows executes a query and returns many rows. Does no interpolation.

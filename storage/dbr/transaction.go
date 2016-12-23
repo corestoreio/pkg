@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Tx is a transaction for the given Session

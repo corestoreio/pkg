@@ -18,7 +18,7 @@ import (
 	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util/conv"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"gopkg.in/redis.v3"
 )
 

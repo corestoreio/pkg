@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 type BinlogParser struct {

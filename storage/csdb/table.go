@@ -16,7 +16,7 @@ package csdb
 
 import (
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Table represents a table from a specific database.

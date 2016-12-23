@@ -18,7 +18,7 @@ import (
 	"io"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Cacher defines a custom cache type to be used as underlying storage of the

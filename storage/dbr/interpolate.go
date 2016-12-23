@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 func isUint(k reflect.Kind) bool {

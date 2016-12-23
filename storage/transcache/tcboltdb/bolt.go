@@ -19,7 +19,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/corestoreio/csfw/storage/transcache"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // BucketName global bucket name for all entries

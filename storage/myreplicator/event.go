@@ -9,7 +9,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/mysql"
 )

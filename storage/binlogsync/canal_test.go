@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/csfw/storage/binlogsync"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 )

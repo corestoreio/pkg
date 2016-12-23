@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // StartBackup enables, like the mysqlbinlog command line tool, a remote raw

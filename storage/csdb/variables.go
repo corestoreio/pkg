@@ -18,7 +18,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Variables contains multiple MySQL configurations.

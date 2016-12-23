@@ -24,9 +24,9 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/errors"
 )
 
 // Helper constants to detect certain features of a table and or column.

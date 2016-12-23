@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/siddontang/go-mysql/mysql"
 )
 

@@ -15,7 +15,7 @@
 package csdb
 
 import (
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // IsValidIdentifier checks the permissible syntax for identifiers. Certain

@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // MasterStatus This statement provides status information about the binary log

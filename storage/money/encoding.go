@@ -17,7 +17,7 @@ package money
 import (
 	"database/sql/driver"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 var (

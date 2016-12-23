@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 var destDummy interface{}
