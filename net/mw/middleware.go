@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/corestoreio/csfw/log"
-	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 )
 
 // Middleware is a wrapper for the interface http.Handler to create

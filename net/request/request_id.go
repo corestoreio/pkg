@@ -26,9 +26,9 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/corestoreio/csfw/log"
-	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 )
 
 // HeaderIDKeyName defines the name of the header used to transmit the request

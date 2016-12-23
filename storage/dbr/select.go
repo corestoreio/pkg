@@ -3,9 +3,9 @@ package dbr
 import (
 	"strconv"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Select contains the clauses for a SELECT statement

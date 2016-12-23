@@ -19,12 +19,12 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	"github.com/corestoreio/log/logw"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.

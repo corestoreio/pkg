@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

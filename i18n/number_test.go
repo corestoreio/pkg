@@ -23,7 +23,7 @@ import (
 	"runtime"
 
 	"github.com/corestoreio/csfw/i18n"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

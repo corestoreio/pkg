@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/myreplicator"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Action constants to figure out the type of an event. Those constants will be

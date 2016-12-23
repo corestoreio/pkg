@@ -18,10 +18,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/corestoreio/csfw/log"
-	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/request"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 )
 
 // CountryByIP searches a country by an IP address and returns the found

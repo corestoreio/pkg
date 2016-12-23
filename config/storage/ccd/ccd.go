@@ -20,12 +20,12 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go

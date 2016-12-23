@@ -21,11 +21,11 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/runmode"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/log"
 )
 
 func BenchmarkWithRunMode(b *testing.B) {

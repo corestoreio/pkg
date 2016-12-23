@@ -24,9 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/accesslog"
 	"github.com/corestoreio/csfw/net/mw"
+	"github.com/corestoreio/log/logw"
 	"github.com/rs/xstats"
 	"github.com/stretchr/testify/assert"
 )

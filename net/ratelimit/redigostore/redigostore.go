@@ -19,11 +19,11 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/garyburd/redigo/redis"
 	throttledRedis "gopkg.in/throttled/throttled.v2/store/redigostore"
 )

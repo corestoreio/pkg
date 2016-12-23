@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/request"
+	"github.com/corestoreio/log"
 	"github.com/rs/xstats"
 	"github.com/zenazn/goji/web/mutil"
 )

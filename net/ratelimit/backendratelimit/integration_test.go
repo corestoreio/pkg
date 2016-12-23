@@ -23,13 +23,13 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/net/ratelimit/memstore"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/throttled/throttled.v2"
 )

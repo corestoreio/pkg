@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/mysql"
 )

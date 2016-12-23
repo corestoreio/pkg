@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/siddontang/go-mysql/mysql"
 )
 

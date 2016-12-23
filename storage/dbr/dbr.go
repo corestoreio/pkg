@@ -3,8 +3,8 @@ package dbr
 import (
 	"database/sql"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/go-sql-driver/mysql"
 )
 

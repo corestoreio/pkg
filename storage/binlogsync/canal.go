@@ -11,7 +11,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/myreplicator"
@@ -19,6 +18,7 @@ import (
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/go-sql-driver/mysql"
 )
 

@@ -17,9 +17,9 @@ package cors
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/log"
-	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 )
 
 // WithCORS to be used as a middleware. This middleware expects to find a

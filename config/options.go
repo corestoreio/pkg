@@ -15,8 +15,8 @@
 package config
 
 import (
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Option applies options to the NewService function. Used mainly by external

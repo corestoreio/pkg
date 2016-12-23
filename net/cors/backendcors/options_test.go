@@ -22,13 +22,13 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/cors"
 	corstest "github.com/corestoreio/csfw/net/cors/internal"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 )
 

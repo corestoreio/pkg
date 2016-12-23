@@ -21,12 +21,12 @@ import (
 	"path/filepath"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/backendgeoip"
 	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/log"
 )
 
 func ExampleService_WithIsCountryAllowedByIP() {

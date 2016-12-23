@@ -17,10 +17,10 @@ package memstore
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
 

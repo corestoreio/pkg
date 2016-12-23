@@ -18,9 +18,9 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/log"
 )
 
 // IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is

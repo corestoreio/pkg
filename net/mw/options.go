@@ -14,7 +14,7 @@
 
 package mw
 
-import "github.com/corestoreio/csfw/log"
+import "github.com/corestoreio/log"
 
 type optionBox struct {
 	log                   log.Logger

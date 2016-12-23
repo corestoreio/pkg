@@ -24,7 +24,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/csmath"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // DefaultNumber default formatter for default locale en-US

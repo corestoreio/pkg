@@ -38,9 +38,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // ScopedConfig scoped based configuration and should not be embedded into your

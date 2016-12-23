@@ -3,8 +3,8 @@ package myreplicator
 import (
 	"context"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 var (

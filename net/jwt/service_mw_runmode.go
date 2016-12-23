@@ -17,13 +17,13 @@ package jwt
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/log"
-	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 )
 
 // SetHeaderAuthorization convenience function to set the Authorization Bearer

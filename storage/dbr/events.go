@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // EventType defines where and when an event gets dispatched.

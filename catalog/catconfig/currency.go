@@ -3,7 +3,7 @@ package catconfig
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // BaseCurrency returns the base currency code of a website.

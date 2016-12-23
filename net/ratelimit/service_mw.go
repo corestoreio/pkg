@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/corestoreio/csfw/log"
-	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 	"gopkg.in/throttled/throttled.v2"
 )
 

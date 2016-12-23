@@ -3,8 +3,8 @@ package dbr
 import (
 	"database/sql"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Tx is a transaction for the given Session

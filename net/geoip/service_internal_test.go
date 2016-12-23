@@ -23,12 +23,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
 	"github.com/corestoreio/csfw/net/geoip/maxmindwebservice"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 )
 

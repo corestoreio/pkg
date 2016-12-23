@@ -5,9 +5,9 @@ import (
 	"database/sql/driver"
 	"reflect"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Insert contains the clauses for an INSERT statement

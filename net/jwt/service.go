@@ -15,10 +15,10 @@
 package jwt
 
 import (
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 //go:generate go run ../internal/scopedservice/main_copy.go "$GOPACKAGE"

@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // TODO(CyS) consider: http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_max_prepared_stmt_count

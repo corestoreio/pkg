@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"strconv"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Delete contains the clauses for a DELETE statement

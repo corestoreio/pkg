@@ -17,9 +17,9 @@ package jwt
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/log"
-	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	loghttp "github.com/corestoreio/log/http"
 )
 
 // WithToken parses and validates a token depending on the scope. A check to the

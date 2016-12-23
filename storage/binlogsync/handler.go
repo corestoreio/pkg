@@ -3,9 +3,9 @@ package binlogsync
 import (
 	"context"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -19,7 +19,7 @@ import (
 	"io"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"golang.org/x/text/currency"
 )
 
