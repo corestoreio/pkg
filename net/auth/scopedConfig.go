@@ -20,7 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // TriggerFunc defines the condition if the ProviderFunc

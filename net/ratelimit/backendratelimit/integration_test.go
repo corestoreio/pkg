@@ -29,7 +29,7 @@ import (
 	"github.com/corestoreio/csfw/net/ratelimit/memstore"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/throttled/throttled.v2"
 )

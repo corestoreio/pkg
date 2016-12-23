@@ -19,7 +19,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/jwt"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // todo add blake2 hash

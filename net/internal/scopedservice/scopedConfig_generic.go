@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/mw"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Auto generated: Do not edit. See net/internal/scopedService package for more details.

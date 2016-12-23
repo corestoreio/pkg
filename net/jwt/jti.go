@@ -17,8 +17,8 @@ package jwt
 import (
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/shortid"
+	"github.com/corestoreio/errors"
 )
 
 // IDGenerator represents the interface to generate a new UUID aka JWT ID.

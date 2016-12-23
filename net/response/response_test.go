@@ -23,7 +23,7 @@ import (
 
 	csnet "github.com/corestoreio/csfw/net"
 	"github.com/corestoreio/csfw/net/response"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )

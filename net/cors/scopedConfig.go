@@ -40,7 +40,7 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // ScopedConfig scoped based configuration and should not be embedded into your

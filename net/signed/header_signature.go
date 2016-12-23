@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 const signatureDefaultSeparator = ','

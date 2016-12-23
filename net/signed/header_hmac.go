@@ -20,7 +20,7 @@ import (
 
 	"encoding/hex"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // ContentHMAC writes a simple Content-HMAC header. It can additionally parse a request

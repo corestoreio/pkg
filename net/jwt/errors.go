@@ -14,7 +14,7 @@
 
 package jwt
 
-import "github.com/corestoreio/csfw/util/errors"
+import "github.com/corestoreio/errors"
 
 const (
 	errServiceUnsupportedScope         = "[jwt] Service does not support this: %s. Only default or website scope are allowed."

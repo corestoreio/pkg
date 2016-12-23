@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"gopkg.in/throttled/throttled.v2"
 )
 

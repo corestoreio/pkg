@@ -18,7 +18,7 @@ package cors
 
 import (
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 const methodOptions = "OPTIONS"

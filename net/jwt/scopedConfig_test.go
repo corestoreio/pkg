@@ -22,8 +22,8 @@ import (
 	"github.com/corestoreio/csfw/storage/containable"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/shortid"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

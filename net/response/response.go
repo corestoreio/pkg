@@ -46,7 +46,7 @@ import (
 
 	csnet "github.com/corestoreio/csfw/net"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 const indexFile = "index.html"

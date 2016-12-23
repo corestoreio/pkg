@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	loghttp "github.com/corestoreio/csfw/log/http"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // WithAuthentication to be used as a middleware for net.Handler. The applied

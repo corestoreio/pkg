@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/url"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 func TestParseRedis(t *testing.T) {

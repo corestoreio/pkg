@@ -31,7 +31,7 @@ import (
 	"github.com/corestoreio/csfw/net/geoip/maxmindfile"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/log"
 	loghttp "github.com/corestoreio/csfw/log/http"
 	"github.com/corestoreio/csfw/net/request"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // CountryByIP searches a country by an IP address and returns the found

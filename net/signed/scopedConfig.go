@@ -26,8 +26,8 @@ import (
 	"github.com/corestoreio/csfw/net/responseproxy"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/hashpool"
+	"github.com/corestoreio/errors"
 )
 
 // DefaultHashName identifies the default hash when creating a new scoped

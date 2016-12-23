@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/net/ratelimit"
 	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/garyburd/redigo/redis"
 	throttledRedis "gopkg.in/throttled/throttled.v2/store/redigostore"
 )

@@ -19,7 +19,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // todo: refactor

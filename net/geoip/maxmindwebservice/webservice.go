@@ -24,7 +24,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/sync/singleflight"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // TransCacher transcodes Go objects. It knows how to encode and cache any Go

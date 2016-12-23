@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/net/ratelimit/backendratelimit"
 	"github.com/corestoreio/csfw/net/ratelimit/redigostore"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

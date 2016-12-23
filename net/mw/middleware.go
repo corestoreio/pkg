@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	loghttp "github.com/corestoreio/csfw/log/http"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Middleware is a wrapper for the interface http.Handler to create

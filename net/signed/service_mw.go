@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	loghttp "github.com/corestoreio/csfw/log/http"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // WithResponseSignature hashes the data written to http.ResponseWriter and adds

@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/log"
 	loghttp "github.com/corestoreio/csfw/log/http"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // WithToken parses and validates a token depending on the scope. A check to the

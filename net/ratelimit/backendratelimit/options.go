@@ -17,7 +17,7 @@ package backendratelimit
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ratelimit"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // PrepareOptionFactory creates a closure around the type Backend. The closure will be

@@ -18,7 +18,7 @@ import (
 	"net"
 
 	"github.com/corestoreio/csfw/net/geoip"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"github.com/oschwald/geoip2-golang"
 )
 
