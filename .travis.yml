@@ -1,7 +1,7 @@
 sudo: false
 language: go
 go:
-  - 1.5
+  - 1.8beta2
   - tip
 os:
   - linux
@@ -9,8 +9,10 @@ os:
 git:
   submodules: false
 matrix:
-  allow_failures:
-    - go: tip
+  # failure is not an option
+  # allow_failures:
+  #  - go: tip
+  fast_finish: true
 script:
   - make testnodb
 install:
