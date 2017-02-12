@@ -13,15 +13,19 @@
 // limitations under the License.
 
 /*
-Package locale provides locale specific services like formatting or translating.
-
-Contains logic to handle currency and number formatting based on locale.
-Provides access to locale information translated into given languages.
-Manages locale information for a store instance.
-
-@todo namespace Magento\Framework\Locale
-@todo https://github.com/iafan/Plurr for pluralization
-@todo better => https://github.com/go-playground/universal-translator
-@todo better => https://github.com/go-playground/locales
+namespace Magento\Framework\Locale
+https://github.com/iafan/Plurr for pluralization
+better => https://github.com/go-playground/universal-translator
+better => https://github.com/go-playground/locales
+review https://github.com/qor/i18n
+https://github.com/theplant/cldr
+https://github.com/vube/i18n
 */
+
+//Package locale provides locale specific services like formatting or
+//translating.
+//
+//Contains logic to handle currency and number formatting based on locale.
+//Provides access to locale information translated into given languages. Manages
+//locale information for a store instance.
 package locale

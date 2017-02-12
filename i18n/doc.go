@@ -79,5 +79,7 @@ Currency Format
 
 The currency symbol ¤ specifies where the currency sign will be placed.
 
+https://github.com/theplant/cldr
+https://github.com/vube/i18n
 */
 package i18n
