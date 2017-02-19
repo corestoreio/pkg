@@ -109,16 +109,16 @@ func TestDetail_Validate(t *testing.T) {
 }
 
 func TestDetail_JSON(t *testing.T) {
+	t.Parallel()
 
-	d := problem.MustNewDetail("A title", problem.WithExtensionString("key1", "value1", "key2", "value2"))
+	d := problem.MustNewDetail("A title", problem.WithExtensionString("ke\x00y1", "val\"ue1", "ky\n2", "valu€2"))
 	d.Status = 505
 	d.Detail = "I could freak out!"
 	d.Instance = "https://news.ycombinator.com/item?id=13679499"
 
-	const wantJSON = `{"type":"about:blank","title":"A title","status":505,"detail":"I could freak out!","instance":"https://news.ycombinator.com/item?id=13679499","extension":["key1","value1","key2","value2"]}`
+	const wantJSON = `{"type":"about:blank","title":"A title","status":505,"detail":"I could freak out!","instance":"https://news.ycombinator.com/item?id=13679499","extension":{"ke\u0000y1":"val\"ue1","ky\n2":"valu€2"}}`
 
 	t.Run("Marshal", func(t *testing.T) {
-
 		j, err := d.MarshalJSON()
 		assert.NoError(t, err)
 		if s := string(j); wantJSON != s {

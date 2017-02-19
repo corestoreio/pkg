@@ -49,21 +49,21 @@ func easyjson1f631ffDecodeGithubComCorestoreioCsfwNetProblem(in *jlexer.Lexer, o
 		case "extension":
 			if in.IsNull() {
 				in.Skip()
-				out.Extension = nil
 			} else {
-				in.Delim('[')
-				if !in.IsDelim(']') {
+				in.Delim('{')
+				if !in.IsDelim('}') {
 					out.Extension = make([]string, 0, 4)
 				} else {
-					out.Extension = []string{}
+					out.Extension = nil
 				}
-				for !in.IsDelim(']') {
-					var v1 string
-					v1 = string(in.String())
-					out.Extension = append(out.Extension, v1)
+				for !in.IsDelim('}') {
+					key := string(in.String())
+					in.WantColon()
+					v1 := string(in.String())
+					out.Extension = append(out.Extension, key, v1)
 					in.WantComma()
 				}
-				in.Delim(']')
+				in.Delim('}')
 			}
 		default:
 			in.SkipRecursive()
@@ -140,14 +140,18 @@ func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer
 		if in.Extension == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
-			out.RawByte('[')
-			for v2, v3 := range in.Extension {
-				if v2 > 0 {
+			out.RawByte('{')
+			le := len(in.Extension)
+			for i := 0; i < le; i = i + 2 {
+				j := i + 1
+				out.String(in.Extension[i])
+				out.RawByte(':')
+				out.String(in.Extension[j])
+				if j < le-1 {
 					out.RawByte(',')
 				}
-				out.String(string(v3))
 			}
-			out.RawByte(']')
+			out.RawByte('}')
 		}
 	}
 	out.RawByte('}')

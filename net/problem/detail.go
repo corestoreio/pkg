@@ -23,7 +23,8 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-//go:generate easyjson -snake_case -omit_empty detail.go
+// Generated code has been changed ;-) to transform a balanced slice into a JSON map.
+//go_generate easyjson -snake_case -omit_empty detail.go
 
 const (
 	// MediaType specifies the default media type for a Detail response
