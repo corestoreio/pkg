@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eav
-
-import "github.com/corestoreio/csfw/util/log"
-
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// Package problem implements the RFC7807 Details for HTTP APIs.
+//
+// Further reading https://tools.ietf.org/html/rfc7807
+package problem
