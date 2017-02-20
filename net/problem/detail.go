@@ -169,6 +169,8 @@ func WithExtensionString(keyValues ...string) Option {
 	}
 }
 
+// More functional options can be added later ...
+
 // WithExtensionInt adds an int to the Extension field.
 func WithExtensionInt(key string, value int) Option {
 	return func(d *Detail) error {
@@ -178,9 +180,33 @@ func WithExtensionInt(key string, value int) Option {
 }
 
 // WithExtensionUint adds an uint to the Extension field.
-func WithExtensionUint(key string, value uint) Option {
+func WithExtensionUint(key string, value uint64) Option {
 	return func(d *Detail) error {
-		d.Extension = append(d.Extension, key, strconv.FormatUint(uint64(value), 10))
+		d.Extension = append(d.Extension, key, strconv.FormatUint(value, 10))
+		return nil
+	}
+}
+
+// WithExtensionMapString adds a string only map to the Extension field.
+func WithExtensionMapString(m map[string]string) Option {
+	return func(d *Detail) error {
+		for k, v := range m {
+			d.Extension = append(d.Extension, k, v)
+		}
+		return nil
+	}
+}
+
+// WithExtensionMapStringSlice adds a special map to the Extension field. This
+// kind of map gets implemented by url.Values, http.Header, mail.Header and
+// textproto.MIMEHeader.
+func WithExtensionMapStringSlice(m map[string][]string) Option {
+	return func(d *Detail) error {
+		for k, sl := range m {
+			for _, s := range sl {
+				d.Extension = append(d.Extension, k, s)
+			}
+		}
 		return nil
 	}
 }

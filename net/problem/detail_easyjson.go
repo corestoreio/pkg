@@ -27,15 +27,15 @@ func easyjson1f631ffDecodeGithubComCorestoreioCsfwNetProblem(in *jlexer.Lexer, o
 		}
 		switch key {
 		case "type":
-			out.Type = string(in.String())
+			out.Type = in.String()
 		case "title":
-			out.Title = string(in.String())
+			out.Title = in.String()
 		case "status":
-			out.Status = int(in.Int())
+			out.Status = in.Int()
 		case "detail":
-			out.Detail = string(in.String())
+			out.Detail = in.String()
 		case "instance":
-			out.Instance = string(in.String())
+			out.Instance = in.String()
 		case "cause":
 			if in.IsNull() {
 				in.Skip()
@@ -57,9 +57,9 @@ func easyjson1f631ffDecodeGithubComCorestoreioCsfwNetProblem(in *jlexer.Lexer, o
 					out.Extension = nil
 				}
 				for !in.IsDelim('}') {
-					key := string(in.String())
+					key := in.String()
 					in.WantColon()
-					v1 := string(in.String())
+					v1 := in.String()
 					out.Extension = append(out.Extension, key, v1)
 					in.WantComma()
 				}
@@ -85,7 +85,7 @@ func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer
 		}
 		first = false
 		out.RawString("\"type\":")
-		out.String(string(in.Type))
+		out.String(in.Type)
 	}
 	if in.Title != "" {
 		if !first {
@@ -93,7 +93,7 @@ func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer
 		}
 		first = false
 		out.RawString("\"title\":")
-		out.String(string(in.Title))
+		out.String(in.Title)
 	}
 	if in.Status != 0 {
 		if !first {
@@ -101,7 +101,7 @@ func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer
 		}
 		first = false
 		out.RawString("\"status\":")
-		out.Int(int(in.Status))
+		out.Int(in.Status)
 	}
 	if in.Detail != "" {
 		if !first {
@@ -109,7 +109,7 @@ func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer
 		}
 		first = false
 		out.RawString("\"detail\":")
-		out.String(string(in.Detail))
+		out.String(in.Detail)
 	}
 	if in.Instance != "" {
 		if !first {
@@ -117,7 +117,7 @@ func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer
 		}
 		first = false
 		out.RawString("\"instance\":")
-		out.String(string(in.Instance))
+		out.String(in.Instance)
 	}
 	if in.Cause != nil {
 		if !first {
@@ -135,7 +135,6 @@ func easyjson1f631ffEncodeGithubComCorestoreioCsfwNetProblem(out *jwriter.Writer
 		if !first {
 			out.RawByte(',')
 		}
-		first = false
 		out.RawString("\"extension\":")
 		if in.Extension == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")

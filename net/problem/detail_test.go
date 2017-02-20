@@ -16,6 +16,11 @@ package problem_test
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/mail"
+	"net/textproto"
+	"net/url"
+	"sort"
 	"testing"
 
 	"github.com/corestoreio/csfw/net/problem"
@@ -72,6 +77,25 @@ func TestDetail(t *testing.T) {
 		)
 		assert.NoError(t, err)
 		assert.Exactly(t, []string{"key", "4242"}, d.Cause.Extension)
+	})
+	t.Run("WithExtensionMapString", func(t *testing.T) {
+		d, err := problem.NewDetail("test",
+			problem.WithExtensionMapString(map[string]string{"key3": "val3"}),
+		)
+		assert.NoError(t, err)
+		sort.Strings(d.Extension)
+		assert.Exactly(t, []string{"key3", "val3"}, d.Extension)
+	})
+	t.Run("WithExtensionMapStringSlice", func(t *testing.T) {
+		d, err := problem.NewDetail("test",
+			problem.WithExtensionMapStringSlice(url.Values{"key4": []string{"val4a", "val4b"}}),
+			problem.WithExtensionMapStringSlice(http.Header{"key5": []string{"val5a", "val5b"}}),
+			problem.WithExtensionMapStringSlice(mail.Header{"key6": []string{"val6a", "val6b"}}),
+			problem.WithExtensionMapStringSlice(textproto.MIMEHeader{"key7": []string{"val7a", "val7b"}}),
+		)
+		assert.NoError(t, err)
+		sort.Strings(d.Extension)
+		assert.Exactly(t, []string{"key4", "key4", "key5", "key5", "key6", "key6", "key7", "key7", "val4a", "val4b", "val5a", "val5b", "val6a", "val6b", "val7a", "val7b"}, d.Extension)
 	})
 }
 
