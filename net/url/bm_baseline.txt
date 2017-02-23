@@ -1,0 +1,12 @@
+BenchmarkParseConnection-4   	  500000	      2915 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2907 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2897 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2916 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2898 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2923 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2914 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2923 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2946 ns/op	     784 B/op	      14 allocs/op
+BenchmarkParseConnection-4   	  500000	      2984 ns/op	     784 B/op	      14 allocs/op
+PASS
+ok  	github.com/corestoreio/csfw/net/url	14.937s
