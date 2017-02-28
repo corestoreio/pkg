@@ -15,101 +15,164 @@
 package tcredis
 
 import (
+	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/corestoreio/csfw/net/url"
 	"github.com/corestoreio/csfw/storage/transcache"
-	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/errors"
-	"gopkg.in/redis.v3"
+	"github.com/garyburd/redigo/redis"
 )
-
-// I'm happy to replace the redis client with another as long as the other works
-// in concurrent situations without race conditions and have the same benchmark perf.
 
 // WithClient connects to the Redis server. Set ping to true to check if the
 // connection works correctly.
 //
 // For options see: https://godoc.org/gopkg.in/redis.v3#Options
-func WithClient(opt *redis.Options, ping ...bool) transcache.Option {
+func WithClient(pool *redis.Pool) transcache.Option {
 	return func(p *transcache.Processor) error {
-		c := redis.NewClient(opt)
-		if len(ping) > 0 && ping[0] {
-			if _, err := c.Ping().Result(); err != nil {
-				return errors.NewFatalf("[tcredis] WithClient Ping: %s", err)
-			}
+		var ping bool
+		if p2, ok := p.Cache.(wrapper); ok {
+			ping = p2.ping
 		}
-		p.Cache = wrapper{
-			Client: c,
+		w := wrapper{
+			Pool: pool,
+			ping: ping,
 		}
-		return nil
+		p.Cache = w
+		return doPing(w)
 	}
 }
 
-// WithURL connects to a Redis server at the given URL using the Redis
-// URI scheme. URLs should follow the draft IANA specification for the
-// scheme (https://www.iana.org/assignments/uri-schemes/prov/redis).
-// This option function sets the connection as cache backend to the Processor.
+// WithURL connects to a Redis server at the given URL using the Redis URI
+// scheme. URLs should follow the draft IANA specification for the scheme
+// (https://www.iana.org/assignments/uri-schemes/prov/redis). This option
+// function sets the connection as cache backend to the Processor.
 //
-// For redis.Options see: https://godoc.org/gopkg.in/redis.v3#Options
-// They can be nil. If not nil, the rawURL will overwrite network,
-// address, password and DB.
+// On error, while parsing the rawURL, this function will leak sensitive data,
+// for now.
 //
-// For example: redis://localhost:6379/3
-func WithURL(rawurl string, opt *redis.Options, ping ...bool) transcache.Option {
+// For example:
+// 		redis://localhost:6379/3
+// 		redis://localhost:6379/?max_active=50&max_idle=5&idle_timeout=10s
+func WithURL(rawURL string) transcache.Option {
 	return func(p *transcache.Processor) error {
 
-		address, password, db, err := url.ParseRedis(rawurl)
+		addr, _, pw, params, err := url.ParseConnection(rawURL)
 		if err != nil {
-			return errors.Wrap(err, "[tcredis] url.RedisParseURL")
+			return errors.Wrapf(err, "[backend] Redis error parsing URL %q", rawURL)
+		}
+		maxActive, err := strconv.Atoi(params.Get("max_active"))
+		if err != nil {
+			return errors.Wrapf(err, "[backend] NewRedis.ParseNoSQLURL. Parameter max_active not valid in %q", rawURL)
+		}
+		maxIdle, err := strconv.Atoi(params.Get("max_idle"))
+		if err != nil {
+			return errors.NewNotValid(err, "[backend] NewRedis.ParseNoSQLURL. Parameter max_idle not valid in %q", rawURL)
+		}
+		idleTimeout, err := time.ParseDuration(params.Get("idle_timeout"))
+		if err != nil {
+			return errors.NewNotValid(err, "[backend] NewRedis.ParseNoSQLURL. Parameter idle_timeout not valid in %q", rawURL)
 		}
 
-		myOpt := &redis.Options{
-			Network:  "tcp",
-			Addr:     address,
-			Password: password,
-			DB:       db,
+		pool := &redis.Pool{
+			MaxActive:   maxActive,
+			MaxIdle:     maxIdle,
+			IdleTimeout: idleTimeout,
+			Dial: func() (redis.Conn, error) {
+				c, err := redis.Dial("tcp", addr)
+				if err != nil {
+					return nil, errors.NewFatal(err, "[backend] Redis Dial failed")
+				}
+				if pw != "" {
+					if _, err := c.Do("AUTH", pw); err != nil {
+						c.Close()
+						return nil, errors.NewUnauthorized(err, "[backend] Redis AUTH failed")
+					}
+				}
+				if _, err := c.Do("SELECT", params.Get("db")); err != nil {
+					c.Close()
+					return nil, errors.NewFatal(err, "[backend] Redis DB select failed")
+				}
+				return c, nil
+			},
 		}
-		if opt != nil {
-			opt.Network = myOpt.Network
-			opt.Addr = myOpt.Addr
-			opt.Password = myOpt.Password
-			opt.DB = myOpt.DB
-		} else {
-			opt = myOpt
-		}
-		return WithClient(opt, ping...)(p)
+
+		return WithClient(pool)(p)
 	}
+}
+
+// WithPing pings the redis database and checks if the connection parameters are
+// valid.
+func WithPing() transcache.Option {
+	return func(p *transcache.Processor) error {
+		var pool *redis.Pool
+		if w, ok := p.Cache.(wrapper); ok && w.Pool != nil {
+			pool = w.Pool
+		}
+		w := wrapper{
+			Pool: pool,
+			ping: true,
+		}
+		p.Cache = w
+		return doPing(w)
+	}
+}
+
+func doPing(w wrapper) error {
+	if !w.ping || w.Pool == nil {
+		return nil
+	}
+	conn := w.Pool.Get()
+	defer conn.Close()
+
+	pong, err := redis.String(conn.Do("PING"))
+	if err != nil && err != redis.ErrNil {
+		return errors.NewFatalf("[backend] Redis Ping failed: %s", err)
+	}
+	if pong != "PONG" {
+		return errors.NewFatalf("[backend] Redis Ping not Pong: %#v", pong)
+	}
+	return nil
 }
 
 type wrapper struct {
-	*redis.Client
+	*redis.Pool
+	ping bool
 }
 
 func (w wrapper) Set(key []byte, value []byte) error {
-	cmd := redis.NewStatusCmd("SET", key, value)
-	w.Client.Process(cmd)
-	if err := cmd.Err(); err != nil {
+	conn := w.Pool.Get()
+	defer conn.Close()
+
+	if _, err := conn.Do("SET", key, value); err != nil {
 		return errors.NewFatalf("[tcredis] wrapper.Set.NewStatusCmd: %s", err)
 	}
 	return nil
 }
 
-var errKeyNotFound = errors.NewNotFoundf(`[tcredis] Key not found`)
-
 func (w wrapper) Get(key []byte) ([]byte, error) {
+	conn := w.Pool.Get()
+	defer conn.Close()
 
-	cmd := redis.NewCmd("GET", key)
-	w.Client.Process(cmd)
-
-	if cmd.Err() != nil {
-		if cmd.Err().Error() != "redis: nil" { // wow that is ugly, how to do better?
-			return nil, errors.NewFatalf("[tcredis] wrapper.Get.Cmd: %s", cmd.Err())
-		}
-		return nil, errKeyNotFound
-	}
-
-	raw, err := conv.ToByteE(cmd.Val())
+	raw, err := redis.Bytes(conn.Do("GET", key))
 	if err != nil {
-		return nil, errors.NewFatalf("[tcredis] wrapper.Get.conv.ToByte: %s", err)
+		if err != redis.ErrNil {
+			return nil, errors.NewFatalf("[tcredis] wrapper.Get.Cmd: %s", err)
+		}
+		return nil, keyNotFound{key: key}
 	}
 	return raw, nil
+}
+
+type keyNotFound struct {
+	key []byte
+}
+
+func (k keyNotFound) Error() string {
+	return fmt.Sprintf("[tcredis] The key %q has not been found.", k.key)
+}
+
+func (k keyNotFound) NotFound() bool {
+	return true
 }

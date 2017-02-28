@@ -16,28 +16,34 @@ package tcredis
 
 import (
 	"math"
-	"os"
 	"testing"
 
+	"github.com/alicebob/miniredis"
 	"github.com/corestoreio/csfw/storage/transcache"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/errors"
+	"github.com/garyburd/redigo/redis"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/redis.v3"
 )
 
 var _ transcache.Cacher = (*wrapper)(nil)
 
+func TestKeyNotFound(t *testing.T) {
+	t.Parallel()
+	assert.True(t, errors.IsNotFound(keyNotFound{}), "error type keyNotFound should have behaviour NotFound")
+}
+
 func TestWithDial_SetGet_Success_Live(t *testing.T) {
+	t.Parallel()
 
-	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
-	if redConURL == "" {
-		t.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
-	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
-		`)
+	mr := miniredis.NewMiniRedis()
+	if err := mr.Start(); err != nil {
+		t.Fatal(err)
 	}
+	defer mr.Close()
+	redConURL := "redis://" + mr.Addr()
 
-	p, err := transcache.NewProcessor(WithURL(redConURL, nil), transcache.WithEncoder(transcache.XMLCodec{}))
+	p, err := transcache.NewProcessor(WithURL(redConURL), WithPing(), transcache.WithEncoder(transcache.XMLCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,15 +66,16 @@ func TestWithDial_SetGet_Success_Live(t *testing.T) {
 }
 
 func TestWithDial_Get_NotFound_Live(t *testing.T) {
+	t.Parallel()
 
-	redConURL := os.Getenv("CS_REDIS_TEST") // redis://127.0.0.1:6379/3
-	if redConURL == "" {
-		t.Skip(`Skipping live test because environment CS_REDIS_TEST variable not found.
-	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
-		`)
+	mr := miniredis.NewMiniRedis()
+	if err := mr.Start(); err != nil {
+		t.Fatal(err)
 	}
+	defer mr.Close()
+	redConURL := "redis://" + mr.Addr()
 
-	p, err := transcache.NewProcessor(WithURL(redConURL, nil), transcache.WithEncoder(transcache.XMLCodec{}))
+	p, err := transcache.NewProcessor(WithPing(), WithURL(redConURL), transcache.WithEncoder(transcache.XMLCodec{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +89,7 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 
 	var newVal float64
 	err = p.Get(key, &newVal)
-	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.True(t, errors.IsNotFound(err), "%+v", err)
 	assert.Empty(t, newVal)
 }
 
@@ -158,15 +165,17 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 //}
 
 func TestWithDial_ConFailure(t *testing.T) {
-	p, err := transcache.NewProcessor(WithClient(&redis.Options{
-		Network: "tcp",
-		Addr:    "127.0.0.1:3344", // random port
-	}, true), transcache.WithEncoder(transcache.JSONCodec{}))
+	t.Parallel()
+
+	p, err := transcache.NewProcessor(WithPing(), WithClient(&redis.Pool{
+		Dial: func() (redis.Conn, error) { return redis.Dial("tcp", "127.0.0.1:3344") }, // random port
+	}), transcache.WithEncoder(transcache.JSONCodec{}))
 	assert.True(t, errors.IsFatal(err), "Error: %s", err)
 	assert.True(t, p == nil, "p is not nil")
 }
 
 func TestWithDialURL_ConFailure(t *testing.T) {
+	t.Parallel()
 
 	var dialErrors = []struct {
 		rawurl string
@@ -174,7 +183,7 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 	}{
 		{
 			"localhost",
-			errors.IsNotValid, // "invalid redis URL scheme",
+			errors.IsNotSupported, // "invalid redis URL scheme",
 		},
 		// The error message for invalid hosts is different in different
 		// versions of Go, so just check that there is an error message.
@@ -184,21 +193,21 @@ func TestWithDialURL_ConFailure(t *testing.T) {
 		},
 		{
 			"redis://foo:bar:baz",
-			errors.IsNotValid,
+			errors.IsFatal,
 		},
 		{
 			"http://www.google.com",
-			errors.IsNotValid, // "invalid redis URL scheme: http",
+			errors.IsNotSupported, // "invalid redis URL scheme: http",
 		},
 		{
-			"redis://localhost:6379/abc123",
-			errors.IsNotValid, // "invalid database: abc123",
+			"redis://localhost:6379?db=",
+			errors.IsFatal, // "invalid database: abc123",
 		},
 	}
 	for i, test := range dialErrors {
-		p, err := transcache.NewProcessor(WithURL(test.rawurl, &redis.Options{Network: "udp"}), transcache.WithEncoder(transcache.JSONCodec{}))
+		p, err := transcache.NewProcessor(WithURL(test.rawurl), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
 		if test.errBhf != nil {
-			assert.True(t, test.errBhf(err), "Index %d Error %s", i, err)
+			assert.True(t, test.errBhf(err), "Index %d Error %+v", i, err)
 			assert.Nil(t, p, "Index %d", i)
 		} else {
 			assert.NoError(t, err, "Index %d", i)
