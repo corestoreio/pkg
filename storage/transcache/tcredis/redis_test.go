@@ -93,76 +93,91 @@ func TestWithDial_Get_NotFound_Live(t *testing.T) {
 	assert.Empty(t, newVal)
 }
 
-// refactor   and use a mock to not rely on a real redis instance
+func TestWithURL_SetGet_Success_Mock(t *testing.T) {
+	t.Parallel()
 
-//func TestWithDial_SetGet_Success_Mock(t *testing.T) {
-//	c := redigomock.NewConn()
-//
-//	p, err := transcache.NewProcessor(WithCon(c))
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	defer func() {
-//		if err := p.Cache.Close(); err != nil {
-//			t.Fatal(err)
-//		}
-//	}()
-//
-//	var key = []byte(util.RandAlnum(30))
-//	c.Command("SET", key, []uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40}).Expect([]uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40})
-//	if err := p.Set(key, math.Pi); err != nil {
-//		t.Fatalf("Key %q Error: %s", key, err)
-//	}
-//
-//	var newVal float64
-//	c.Command("GET", key).Expect([]uint8{0xb, 0x8, 0x0, 0xf8, 0x18, 0x2d, 0x44, 0x54, 0xfb, 0x21, 0x9, 0x40})
-//	if err := p.Get(key, &newVal); err != nil {
-//		t.Fatalf("Key %q Error: %s", key, err)
-//	}
-//	assert.Exactly(t, math.Pi, newVal)
-//}
-//
-//func TestWithDial_Get_NotFound_Mock(t *testing.T) {
-//
-//	c := redigomock.NewConn()
-//	p, err := transcache.NewProcessor(WithCon(c))
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	defer func() {
-//		if err := p.Cache.Close(); err != nil {
-//			t.Fatal(err)
-//		}
-//	}()
-//
-//	var key = []byte(util.RandAlnum(30))
-//	c.Command("GET", key).Expect(nil)
-//	var newVal float64
-//	err = p.Get(key, &newVal)
-//	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
-//	assert.Empty(t, newVal)
-//}
-//
-//func TestWithDial_Get_Fatal_Mock(t *testing.T) {
-//
-//	c := redigomock.NewConn()
-//	p, err := transcache.NewProcessor(WithCon(c))
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	defer func() {
-//		if err := p.Cache.Close(); err != nil {
-//			t.Fatal(err)
-//		}
-//	}()
-//
-//	var key = []byte(util.RandAlnum(30))
-//	c.Command("GET", key).ExpectError(errors.New("Some Error"))
-//	var newVal float64
-//	err = p.Get(key, &newVal)
-//	assert.True(t, errors.IsFatal(err), "Error: %s", err)
-//	assert.Empty(t, newVal)
-//}
+	mr := miniredis.NewMiniRedis()
+	if err := mr.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer mr.Close()
+
+	p, err := transcache.NewProcessor(WithURL("redis://"+mr.Addr()), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := p.Cache.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var key = []byte(util.RandAlnum(30))
+
+	if err := p.Set(key, math.Pi); err != nil {
+		t.Fatalf("Key %q Error: %s", key, err)
+	}
+
+	var newVal float64
+	if err := p.Get(key, &newVal); err != nil {
+		t.Fatalf("Key %q Error: %s", key, err)
+	}
+	assert.Exactly(t, math.Pi, newVal)
+}
+
+func TestWithDial_Get_NotFound_Mock(t *testing.T) {
+	t.Parallel()
+
+	mr := miniredis.NewMiniRedis()
+	if err := mr.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer mr.Close()
+
+	p, err := transcache.NewProcessor(WithURL("redis://"+mr.Addr()), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := p.Cache.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var key = []byte(util.RandAlnum(30))
+
+	var newVal float64
+	err = p.Get(key, &newVal)
+	assert.True(t, errors.IsNotFound(err), "Error: %s", err)
+	assert.Empty(t, newVal)
+}
+
+func TestWithDial_Get_Fatal_Mock(t *testing.T) {
+	t.Parallel()
+
+	mr := miniredis.NewMiniRedis()
+	if err := mr.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer mr.Close()
+
+	p, err := transcache.NewProcessor(WithURL("redis://"+mr.Addr()), WithPing(), transcache.WithEncoder(transcache.JSONCodec{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := p.Cache.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var key = []byte(util.RandAlnum(30))
+
+	var newVal float64
+	err = p.Get(key, &newVal)
+	assert.True(t, errors.IsNotFound(err), "Error: %+v", err)
+	assert.Empty(t, newVal)
+}
 
 func TestWithDial_ConFailure(t *testing.T) {
 	t.Parallel()
