@@ -51,12 +51,12 @@ var defaultPoolConnectionParameters = [...]string{
 func ParseConnection(raw string) (address, username, password string, params url.Values, err error) {
 	u, err := url.Parse(raw)
 	if err != nil {
-		return "", "", "", nil, errors.NewFatal(err, "[backend] url.ParseConnection")
+		return "", "", "", nil, errors.NewFatalf("[backend] url.Parse: %s", err)
 	}
 
 	host, port, err := net.SplitHostPort(u.Host)
 	if sErr, ok := err.(*net.AddrError); ok && sErr != nil && sErr.Err == "too many colons in address" {
-		return "", "", "", nil, errors.NewFatal(err, "[backend] SplitHostPort")
+		return "", "", "", nil, errors.NewFatalf("[backend] net.SplitHostPort: %s", err)
 	}
 	if err != nil {
 		// assume port is missing
