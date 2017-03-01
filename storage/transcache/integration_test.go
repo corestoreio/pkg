@@ -46,7 +46,7 @@ func TestProcessor_Parallel_GetSet_Redis(t *testing.T) {
 	}
 	defer mr.Close()
 	redConURL := fmt.Sprintf("redis://%s/2", mr.Addr())
-	newTestNewProcessor(t, tcredis.WithURL(redConURL, nil))
+	newTestNewProcessor(t, tcredis.WithURL(redConURL))
 }
 
 func newTestNewProcessor(t *testing.T, opts ...transcache.Option) {

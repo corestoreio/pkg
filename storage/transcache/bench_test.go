@@ -151,10 +151,10 @@ func Benchmark_Redis_Gob(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
-	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
-	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
-	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
+	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
+	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL), transcache.WithPooledEncoder(transcache.GobCodec{}, Country{})))
+	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
+	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL), transcache.WithPooledEncoder(transcache.GobCodec{}, TableStoreSlice{})))
 }
 
 func Benchmark_Redis_MsgPack(b *testing.B) {
@@ -164,10 +164,10 @@ func Benchmark_Redis_MsgPack(b *testing.B) {
 	export CS_REDIS_TEST="redis://127.0.0.1:6379/3"
 		`)
 	}
-	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
-	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
-	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
-	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL, nil), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Country_1x", benchmark_country_enc(1, tcredis.WithURL(redConURL), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Country_2x", benchmark_country_enc(2, tcredis.WithURL(redConURL), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Stores_1x", benchmark_stores_enc(1, tcredis.WithURL(redConURL), transcache.WithEncoder(newMsgPackCodec())))
+	b.Run("Stores_2x", benchmark_stores_enc(2, tcredis.WithURL(redConURL), transcache.WithEncoder(newMsgPackCodec())))
 }
 
 var ugmsgPackHandle codec.MsgpackHandle
