@@ -19,9 +19,9 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -178,7 +178,7 @@ func TestTableWebsiteSliceLoad(t *testing.T) {
 
 	//dbrCon, dbMock := cstesting.MockDB(t)
 	//dbMock.ExpectQuery("SELECT (.+) FROM `store_website`(.+) ORDER BY(.+)").WillReturnRows(
-	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "core_website_view.csv")),
+	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_website_view.csv")),
 	//)
 	//
 	//// store.TableCollection already initialized

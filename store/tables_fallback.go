@@ -21,15 +21,14 @@
 package store
 
 import (
+	"database/sql"
 	"sort"
 
-	"database/sql"
-
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // TableIndex... is the index to a table. These constants are guaranteed

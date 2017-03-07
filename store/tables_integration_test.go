@@ -17,11 +17,11 @@ package store_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/log"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/magento"
+	"github.com/corestoreio/log"
 )
 
 // BenchmarkIntegration_TableStoreSlice_Native-4   	   10000	    259183 ns/op	    8501 B/op	     306 allocs/op <= no prepare; Rows()

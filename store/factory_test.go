@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 

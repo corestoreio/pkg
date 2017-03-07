@@ -18,7 +18,7 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // WebsiteSlice contains pointer to Website struct and some nifty method receivers.

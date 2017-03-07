@@ -21,12 +21,12 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/log"
-	"github.com/corestoreio/csfw/log/logw"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 )
 

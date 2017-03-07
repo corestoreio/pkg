@@ -71,7 +71,7 @@ func TestNewTableStoreResource_Select(t *testing.T) {
 	}()
 
 	dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnRows(
-		cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_view.csv")),
+		cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_store_view.csv")),
 	)
 
 	// store.TableCollection already initialized

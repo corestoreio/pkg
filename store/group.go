@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Group defines the root category id and default store id for a set of stores.

@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Website represents the overall parent structure of its children Group and

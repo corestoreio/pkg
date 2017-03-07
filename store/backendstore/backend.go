@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgsource"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 )
 
 // Configuration just exported for the sake of documentation. See fields for

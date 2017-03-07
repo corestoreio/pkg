@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
 	"golang.org/x/sync/errgroup"
 )
 

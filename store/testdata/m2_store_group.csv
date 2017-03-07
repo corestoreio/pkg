@@ -1,0 +1,10 @@
+group_id,website_id,"name",root_category_id,default_store_id
+0,0,"Default",0,0
+1,2,"POS United States",2,4
+2,1,"POS España",2,2
+3,2,"POS United Kingdom",2,5
+4,4,"POS Switzerland",2,13
+5,4,"POS Germany",2,14
+6,4,"POS Austria",2,16
+7,5,"POS Italy",2,17
+8,3,"POS France",2,12

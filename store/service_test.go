@@ -26,8 +26,8 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/util/errors"
 	"github.com/corestoreio/csfw/util/null"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -564,13 +564,13 @@ func TestService_LoadFromDB_OK(t *testing.T) {
 	//dbrCon, dbMock := cstesting.MockDB(t)
 	//
 	//dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnRows(
-	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_view.csv")),
+	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_store_view.csv")),
 	//)
 	//dbMock.ExpectQuery("SELECT (.+) FROM `store_website`(.+) ORDER BY(.+)").WillReturnRows(
-	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "core_website_view.csv")),
+	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_website_view.csv")),
 	//)
 	//dbMock.ExpectQuery("SELECT (.+) FROM `store_group`(.+) ORDER BY main_table(.+)").WillReturnRows(
-	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_group_view.csv")),
+	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_store_group_view.csv")),
 	//)
 	//dbMock.MatchExpectationsInOrder(false) // we're using goroutines!
 	//
@@ -604,10 +604,10 @@ func TestService_LoadFromDB_NOK_Store(t *testing.T) {
 	//wsErr := errors.NewAlreadyClosedf("DB Already closed")
 	//dbMock.ExpectQuery("SELECT (.+) FROM `store`(.+) ORDER BY CASE WHEN(.+)").WillReturnError(wsErr)
 	//dbMock.ExpectQuery("SELECT (.+) FROM `store_website`(.+) ORDER BY(.+)").WillReturnRows(
-	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "core_website_view.csv")),
+	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_website_view.csv")),
 	//)
 	//dbMock.ExpectQuery("SELECT (.+) FROM `store_group`(.+) ORDER BY main_table(.+)").WillReturnRows(
-	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "core_store_group_view.csv")),
+	//	cstesting.MustMockRows(cstesting.WithFile("testdata", "m1_core_store_group_view.csv")),
 	//)
 	//dbMock.MatchExpectationsInOrder(false) // we're using goroutines!
 	//
