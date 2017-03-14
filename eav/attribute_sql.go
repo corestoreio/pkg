@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,44 +17,35 @@ package eav
 import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/slices"
+	"github.com/corestoreio/errors"
 )
 
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
 // Implements the scope on a SQL query basis so that attribute functions does not need to deal with it.
 // Tests see the tools package
 // @see magento2/app/code/Magento/Eav/Model/Resource/Attribute/Collection.php::_initSelect()
-func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteID int64) (*dbr.SelectBuilder, error) {
+func GetAttributeSelectSql(dbrSess dbr.Session, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteID int64) (*dbr.Select, error) {
 
 	ta, err := TableCollection.Structure(TableIndexAttribute)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("eav.GetAttributeSelectSql.TableCollection.Structure", "err", err, "entityTypeID", entityTypeID, "websiteID", websiteID)
-		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "")
 	}
 	taa, err := aat.TableAdditionalAttribute()
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("eav.GetAttributeSelectSql.TableAdditionalAttribute", "err", err, "ta", ta, "entityTypeID", entityTypeID, "websiteID", websiteID)
-		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "")
 	}
 	tew, err := aat.TableEavWebsite()
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("eav.GetAttributeSelectSql.TableEavWebsite", "err", err, "ta", ta, "taa", taa, "entityTypeID", entityTypeID, "websiteID", websiteID)
-		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Wrap(err, "")
 	}
 	// tew table can now contains columns names which can occur in table eav_attribute and
 	// or [catalog|customer|entity]_eav_attribute
 	var (
 		ifNull           []string
 		tewAddedCols     []string
-		taColumnsQuoted  = util.StringSlice(ta.AllColumnAliasQuote(csdb.MainTable))
-		taaColumnsQuoted = util.StringSlice(taa.ColumnAliasQuote(csdb.AdditionalTable))
+		taColumnsQuoted  = slices.String(ta.AllColumnAliasQuote(csdb.MainTable))
+		taaColumnsQuoted = slices.String(taa.ColumnAliasQuote(csdb.AdditionalTable))
 	)
 
 	if tew != nil {
@@ -69,10 +60,7 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 				t = csdb.AdditionalTable
 				break
 			default:
-				err := errgo.Newf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name)
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("eav.GetAttributeSelectSql.Columns.FieldNames.default", "err", err, "ta", ta, "taa", taa, "entityTypeID", entityTypeID, "websiteID", websiteID)
-				}
+				err := errors.Errorf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name)
 				return nil, err
 			}
 			ifNull[i] = dbr.IfNullAs(csdb.ScopeTable, tewC, t, tewC, tewC)

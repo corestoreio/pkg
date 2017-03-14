@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,13 +13,6 @@
 // limitations under the License.
 
 package eav
-
-import "errors"
-
-var (
-	ErrAttributeNotFound = errors.New("Attribute not found")
-	ErrCollectionEmpty   = errors.New("Attribute collection is empty")
-)
 
 const (
 	// TypeStatic use to check if an attribute is static, means part of the eav prefix table
@@ -118,8 +111,8 @@ type (
 	AttributeSliceGetter interface {
 		Index(i AttributeIndex) interface{}
 		Len() int
-		ByID(g AttributeGetter, id int64) (interface{}, error)
-		ByCode(g AttributeGetter, code string) (interface{}, error)
+		ByID(g AttributeGetter, id int64) (interface{}, bool)
+		ByCode(g AttributeGetter, code string) (interface{}, bool)
 	}
 )
 
@@ -150,22 +143,23 @@ type AttributeMapGet struct {
 }
 
 // ByID returns an attribute index by the id from the database table
-func (si *AttributeMapGet) ByID(id int64) (AttributeIndex, error) {
+func (si *AttributeMapGet) ByID(id int64) (_ AttributeIndex, ok bool) {
 	if i, ok := si.i[id]; ok {
-		return i, nil
+		return i, ok
 	}
-	return AttributeIndex(0), ErrAttributeNotFound
+	return AttributeIndex(0), false
 }
 
 // ByCode returns an attribute index
-func (si *AttributeMapGet) ByCode(code string) (AttributeIndex, error) {
+func (si *AttributeMapGet) ByCode(code string) (_ AttributeIndex, ok bool) {
 	if c, ok := si.c[code]; ok {
-		return c, nil
+		return c, ok
 	}
-	return AttributeIndex(0), ErrAttributeNotFound
+	return AttributeIndex(0), false
 }
 
 // NewAttribute only for use in auto generated code. Looks terrible 8-)
+// TODO: Use functional options because only a few fields are required.
 func NewAttribute(
 	wa WSASlice,
 	websiteID int64,
@@ -343,39 +337,39 @@ func (h *Handler) New() interface{} {
 
 // Get uses an AttributeIndex to return an attribute or an error.
 // Use type assertion to convert to Attributer.
-func (h *Handler) Get(i AttributeIndex) (interface{}, error) {
+func (h *Handler) Get(i AttributeIndex) (_ interface{}, ok bool) {
 	if h.C != nil && int(i) < h.C.Len() {
-		return h.C.Index(i), nil
+		return h.C.Index(i), true
 	}
-	return nil, ErrAttributeNotFound
+	return nil, true
 }
 
 // MustGet returns an attribute by AttributeIndex. Panics if not found.
 // Use type assertion to convert to Attributer.
 func (h *Handler) MustGet(i AttributeIndex) interface{} {
-	a, err := h.Get(i)
-	if err != nil {
-		panic(err)
+	a, ok := h.Get(i)
+	if !ok {
+		panic("Not found: fix me AttributeIndex")
 	}
 	return a
 }
 
 // GetByID returns an address attribute by its id
 // Use type assertion to convert to Attributer.
-func (h *Handler) GetByID(id int64) (interface{}, error) {
+func (h *Handler) GetByID(id int64) (_ interface{}, ok bool) {
 	if h.C != nil {
 		return h.C.ByID(h.G, id)
 	}
-	return nil, ErrCollectionEmpty
+	return nil, false
 }
 
 // GetByCode returns an address attribute by its code
 // Use type assertion to convert to Attributer.
-func (h *Handler) GetByCode(code string) (interface{}, error) {
+func (h *Handler) GetByCode(code string) (_ interface{}, ok bool) {
 	if h.C != nil {
 		return h.C.ByCode(h.G, code)
 	}
-	return nil, ErrCollectionEmpty
+	return nil, false
 }
 
 // Collection returns the full attribute collection AttributeSlice.

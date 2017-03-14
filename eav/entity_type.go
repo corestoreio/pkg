@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
 package eav
 
 import (
-	"errors"
-
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
+
+	"github.com/corestoreio/errors"
 )
 
 const (
@@ -103,7 +102,6 @@ type (
 )
 
 var (
-	ErrEntityTypeValueNotFound = errors.New("Unknown entity type value")
 	// csEntityTypeCollection contains all entity types mapped to their Go types/interfaces
 	csEntityTypeCollection CSEntityTypeSlice
 )
@@ -131,16 +129,16 @@ func SetEntityTypeCollection(sc CSEntityTypeSlice) {
 	csEntityTypeCollection = sc
 }
 
-func (et *TableEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...dbr.SelectCb) error {
+func (et *TableEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...dbr.SelectEvent) error {
 	s, err := TableCollection.Structure(TableIndexEntityType)
 	if err != nil {
-		return errgo.Mask(err)
+		return errors.Wrap(err, "TODO")
 	}
 	sb := dbrSess.Select(s.AllColumnAliasQuote(csdb.MainTable)...).From(s.Name, csdb.MainTable).Where(dbr.ConditionRaw("entity_type_code = ?", code))
 	for _, cb := range cbs {
 		sb = cb(sb)
 	}
-	return errgo.Mask(sb.LoadStruct(et))
+	return errors.Wrap( sb.LoadStruct(et),"todo")
 }
 
 // IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
@@ -156,7 +154,7 @@ func (es TableEntityTypeSlice) GetByCode(code string) (*TableEntityType, error) 
 			return e, nil
 		}
 	}
-	return nil, errgo.Newf("Entity Code %s not found", code)
+	return nil, errors.NewNotFoundf("Entity Code %s not found", code)
 }
 
 // GetByCode returns a CSEntityType using the entity code
@@ -166,7 +164,7 @@ func (es CSEntityTypeSlice) GetByCode(code string) (*CSEntityType, error) {
 			return e, nil
 		}
 	}
-	return nil, errgo.Newf("Entity Code %s not found", code)
+	return nil, errors.NewNotFoundf("Entity Code %s not found", code)
 }
 
 // GetByID returns a CSEntityType using the entity id
@@ -176,7 +174,7 @@ func (es CSEntityTypeSlice) GetByID(id int64) (*CSEntityType, error) {
 			return e, nil
 		}
 	}
-	return nil, errgo.Newf("Entity ID %d not found", id)
+	return nil, errors.NewNotFoundf("Entity ID %d not found", id)
 }
 
 // EntityTablePrefix eav table name prefix

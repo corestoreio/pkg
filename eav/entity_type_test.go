@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ func TestEntityType(t *testing.T) {
 	et.LoadByCode(
 		dbrSess,
 		"catalog_product",
-		func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+		func(sb *dbr.Select) *dbr.Select {
 			sb.OrderBy("entity_type_id")
 			return sb
 		},

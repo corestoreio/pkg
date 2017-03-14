@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ func TestGetAttributeSelectSql(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sql, _, err := dbrSelect.ToSql()
+	sql, _, err := dbrSelect.ToSQL()
 	assert.NoError(t, err)
 
 	_, err = sqlbeautifier.FromString(sql) // check for syntax errors
