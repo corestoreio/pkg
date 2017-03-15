@@ -114,6 +114,45 @@ func WithTableNames(idx []int, tableName []string) TableOption {
 	}
 }
 
+// WithLoadTableNames executes a query to load all available table in the
+// current database. Argument sql will be either appended to the SHOW TABLES
+// statement or if it starts with SELECT then it replaces the SHOW TABLES
+// statement.
+func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption {
+	qry := "SHOW TABLES"
+	if len(sql) > 0 && sql[0] != "" {
+		if false == dbr.Stmt.IsSelect(sql[0]) {
+			qry = qry + " LIKE '" + sql[0] + "'"
+		} else {
+			qry = sql[0]
+		}
+	}
+
+	return func(tm *Tables) error {
+		rows, err := querier.Query(qry)
+		if err != nil {
+			return errors.Wrapf(err, "[csdb] Query %q failed", qry)
+		}
+		var tableName string
+
+		i := 0
+		for rows.Next() {
+			if err := rows.Scan(&tableName); err != nil {
+				return errors.Wrapf(err, "Scan Query %q", qry)
+			}
+			if err := tm.Upsert(i, NewTable(tableName)); err != nil {
+				return errors.Wrapf(err, "[csdb] Tables.Insert Index %d with name %q", i, tableName)
+			}
+			i++
+		}
+
+		if err = rows.Err(); err != nil {
+			return errors.Wrapf(err, "[csdb] Rows with query %q", qry)
+		}
+		return nil
+	}
+}
+
 // WithLoadColumnDefinitions loads the column definitions from the database for each
 // table in the internal map. Thread safe.
 func WithLoadColumnDefinitions(db dbr.Querier) TableOption {

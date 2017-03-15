@@ -258,5 +258,8 @@ func TestWithTableDMLListeners(t *testing.T) {
 		assert.Exactly(t, "SELECT `main_table`.`col1` FROM `TeschtU` AS `main_table`", sel.String())
 		assert.Exactly(t, 12, counter)
 	})
+}
 
+func TestWithLoadTableNames(t *testing.T) {
+	t.Skip("TODO WithLoadTableNames")
 }
