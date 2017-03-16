@@ -161,7 +161,7 @@ func parseCol(c *config, s string) driver.Value {
 
 // MockRows same as LoadCSV() but creates a fully functional driver.Rows
 // interface from a CSV file.
-func MockRows(opts ...csvOptions) (sqlmock.Rows, error) {
+func MockRows(opts ...csvOptions) (*sqlmock.Rows, error) {
 	csvHead, csvRows, err := LoadCSV(opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "[cstesting] LoadCSV")
@@ -174,7 +174,7 @@ func MockRows(opts ...csvOptions) (sqlmock.Rows, error) {
 }
 
 // MustMockRows same as MockRows but panics on error
-func MustMockRows(opts ...csvOptions) sqlmock.Rows {
+func MustMockRows(opts ...csvOptions) *sqlmock.Rows {
 	r, err := MockRows(opts...)
 	if err != nil {
 		panic(err)
