@@ -12,7 +12,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	s := createFakeSession()
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq := ConditionMap(Eq{"a": []int{1, 2, 3}})
+	argEq := (Eq{"a": []int{1, 2, 3}})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -30,9 +30,9 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	s := createFakeSession()
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq1 := ConditionMap(Eq{"f": 2, "x": "hi"})
-	argEq2 := ConditionMap(Eq{"g": 3})
-	argEq3 := ConditionMap(Eq{"h": []int{1, 2, 3}})
+	argEq1 := (Eq{"f": 2, "x": "hi"})
+	argEq2 := (Eq{"g": 3})
+	argEq3 := (Eq{"h": []int{1, 2, 3}})
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -75,8 +75,8 @@ func TestSelectFullToSQL(t *testing.T) {
 	sel := s.Select("a", "b").
 		Distinct().
 		From("c", "cc").
-		Where(ConditionRaw("d = ? OR e = ?", 1, "wat"), ConditionMap(Eq{"f": 2}), ConditionMap(Eq{"g": 3})).
-		Where(ConditionMap(Eq{"h": []int{4, 5, 6}})).
+		Where(ConditionRaw("d = ? OR e = ?", 1, "wat"), Eq{"f": 2}, Eq{"g": 3}).
+		Where(Eq{"h": []int{4, 5, 6}}).
 		GroupBy("i").
 		Having(ConditionRaw("j = k")).
 		OrderBy("l").
@@ -144,12 +144,12 @@ func TestSelectMultiOrderSQL(t *testing.T) {
 func TestSelectWhereMapSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1})).ToSQL()
+	sql, args, err := s.Select("a").From("b").Where(Eq{"a": 1}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": true})).ToSQL()
+	sql, args, err = s.Select("a").From("b").Where(Eq{"a": 1, "b": true}).ToSQL()
 	assert.NoError(t, err)
 	if sql == "SELECT a FROM `b` WHERE (`a` = ?) AND (`b` = ?)" {
 		assert.Equal(t, args, []interface{}{1, true})
@@ -158,36 +158,36 @@ func TestSelectWhereMapSQL(t *testing.T) {
 		assert.Equal(t, args, []interface{}{true, 1})
 	}
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": nil})).ToSQL()
+	sql, args, err = s.Select("a").From("b").Where(Eq{"a": nil}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1, 2, 3}})).ToSQL()
+	sql, args, err = s.Select("a").From("b").Where(Eq{"a": []int{1, 2, 3}}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IN ?)")
 	assert.Equal(t, args, []interface{}{[]int{1, 2, 3}})
 
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1}})).ToSQL()
+	sql, args, err = s.Select("a").From("b").Where(Eq{"a": []int{1}}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
 	// NOTE: a has no valid values, we want a query that returns nothing
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{}})).ToSQL()
+	sql, args, err = s.Select("a").From("b").Where(Eq{"a": []int{}}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (1=0)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	var aval []int
-	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": aval})).ToSQL()
+	sql, args, err = s.Select("a").From("b").Where(Eq{"a": aval}).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	sql, args, err = s.Select("a").From("b").
-		Where(ConditionMap(Eq{"a": []int(nil)})).
-		Where(ConditionMap(Eq{"b": false})).
+		Where(Eq{"a": nil}).
+		Where(Eq{"b": false}).
 		ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL) AND (`b` = ?)")
@@ -197,7 +197,7 @@ func TestSelectWhereMapSQL(t *testing.T) {
 func TestSelectWhereEqSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": []int64{1, 2, 3}})).ToSQL()
+	sql, args, err := s.Select("a").From("b").Where(Eq{"a": 1, "b": []int64{1, 2, 3}}).ToSQL()
 	assert.NoError(t, err)
 	if sql == "SELECT a FROM `b` WHERE (`a` = ?) AND (`b` IN ?)" {
 		assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})

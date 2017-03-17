@@ -2,31 +2,24 @@ package dbr
 
 import (
 	"reflect"
+
+	"github.com/corestoreio/errors"
 )
 
-// todo for maybe later the sync.Pool code
-//var wfPool = &sync.Pool{
-//	New: func() interface{} {
-//		return &whereFragment{}
-//	},
-//}
-//
-//// Get returns a buffer from the pool.
-//func wfGet() *whereFragment {
-//	return wfPool.Get().(*whereFragment)
-//}
-//
-//// Put returns a buffer to the pool.
-//// The buffer is reset before it is put back into circulation.
-//func wfPut(wfs WhereFragments) {
-//		wf.Condition = ""
-//		wf.Values = nil
-//		wf.EqualityMap = nil
-//		wfPool.Put(wf)
-//}
-
-// Eq is a map column -> value pairs which must be matched in a query
+// Eq is a map Expression -> value pairs which must be matched in a query.
+// Joined as AND statements to the WHERE clause. Implements ConditionArg
+// interface.
 type Eq map[string]interface{}
+
+func (eq Eq) newWhereFragment() (*whereFragment, error) {
+	// todo add argsValuer
+	//if err := argsValuer(&values); err != nil {
+	//	panic(err)
+	//}
+	return &whereFragment{
+		EqualityMap: eq,
+	}, nil
+}
 
 type whereFragment struct {
 	Condition   string
@@ -38,33 +31,38 @@ type whereFragment struct {
 type WhereFragments []*whereFragment
 
 // ConditionArg used as argument in Where()
-type ConditionArg func(*whereFragment)
+type ConditionArg interface {
+	newWhereFragment() (*whereFragment, error)
+}
+
+// implements ConditionArg interface ;-)
+type conditionArgFunc func() (*whereFragment, error)
+
+func (f conditionArgFunc) newWhereFragment() (*whereFragment, error) {
+	return f()
+}
 
 // ConditionRaw adds a condition and checks values if they implement driver.Valuer.
 func ConditionRaw(raw string, values ...interface{}) ConditionArg {
-	if err := argsValuer(&values); err != nil {
-		panic(err) // todo remove panic
-	}
-	return func(wf *whereFragment) {
-		wf.Condition = raw
-		wf.Values = values
-	}
-}
-
-// ConditionMap adds a string->interface{} map as AND statements to the WHERE
-// clause.
-func ConditionMap(eq Eq) ConditionArg {
-	return func(wf *whereFragment) {
-		// todo add argsValuer
-		wf.EqualityMap = eq
-	}
+	return conditionArgFunc(func() (*whereFragment, error) {
+		if err := argsValuer(&values); err != nil {
+			return nil, errors.Wrapf(err, "[dbr] Raw: %q; Values %v", raw, values)
+		}
+		return &whereFragment{
+			Condition: raw,
+			Values:    values,
+		}, nil
+	})
 }
 
 func newWhereFragments(wargs ...ConditionArg) WhereFragments {
 	ret := make(WhereFragments, len(wargs))
 	for i, warg := range wargs {
-		ret[i] = new(whereFragment)
-		warg(ret[i])
+		wf, err := warg.newWhereFragment()
+		if err != nil {
+			panic(err) // damn it ... TODO remove panic
+		}
+		ret[i] = wf
 	}
 	return ret
 }

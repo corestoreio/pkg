@@ -90,7 +90,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(ConditionMap(Eq{"key": "6"})).Exec()
+	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(Eq{"key": "6"}).Exec()
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -99,7 +99,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionMap(Eq{"email": "ben@whitehouse.gov"})).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(Eq{"email": "ben@whitehouse.gov"}).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Name, "Benjamin")
