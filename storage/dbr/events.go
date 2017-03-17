@@ -170,7 +170,7 @@ func (se *SelectListeners) Merge(sls ...SelectListeners) SelectListeners {
 	return *se
 }
 
-func (se SelectListeners) dispatch(l log.Logger, et EventType, b *Select) error {
+func (se SelectListeners) dispatch(et EventType, b *Select) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
@@ -181,8 +181,8 @@ func (se SelectListeners) dispatch(l log.Logger, et EventType, b *Select) error 
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if l.IsDebug() {
-				b.Debug("dbr.SelectListeners.Dispatch.PropagationStopped",
+			if b.Log.IsDebug() {
+				b.Log.Debug("dbr.SelectListeners.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)
@@ -261,7 +261,7 @@ func (se *InsertListeners) Merge(sls ...InsertListeners) InsertListeners {
 	return *se
 }
 
-func (se InsertListeners) dispatch(l log.Logger, et EventType, b *Insert) error {
+func (se InsertListeners) dispatch(et EventType, b *Insert) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
@@ -272,8 +272,8 @@ func (se InsertListeners) dispatch(l log.Logger, et EventType, b *Insert) error 
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if l.IsDebug() {
-				b.Debug("dbr.InsertListeners.Dispatch.PropagationStopped",
+			if b.Log.IsDebug() {
+				b.Log.Debug("dbr.InsertListeners.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)
@@ -350,7 +350,7 @@ func (se *UpdateListeners) Merge(sls ...UpdateListeners) UpdateListeners {
 	return *se
 }
 
-func (se UpdateListeners) dispatch(l log.Logger, et EventType, b *Update) error {
+func (se UpdateListeners) dispatch(et EventType, b *Update) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
@@ -361,8 +361,8 @@ func (se UpdateListeners) dispatch(l log.Logger, et EventType, b *Update) error 
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if l.IsDebug() {
-				b.Debug("dbr.UpdateListeners.Dispatch.PropagationStopped",
+			if b.Log.IsDebug() {
+				b.Log.Debug("dbr.UpdateListeners.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)
@@ -439,7 +439,7 @@ func (se *DeleteListeners) Merge(sls ...DeleteListeners) DeleteListeners {
 	return *se
 }
 
-func (se DeleteListeners) dispatch(l log.Logger, et EventType, b *Delete) error {
+func (se DeleteListeners) dispatch(et EventType, b *Delete) error {
 	for i, s := range se {
 		switch {
 		case s.error != nil:
@@ -450,8 +450,8 @@ func (se DeleteListeners) dispatch(l log.Logger, et EventType, b *Delete) error 
 				b.propagationStoppedAt = i
 			}
 		case s.EventType == et:
-			if l.IsDebug() {
-				b.Debug("dbr.DeleteListeners.Dispatch.PropagationStopped",
+			if b.Log.IsDebug() {
+				b.Log.Debug("dbr.DeleteListeners.Dispatch.PropagationStopped",
 					log.String("listener_name", s.name), log.Err(s.error), log.Stringer("event_type", s.EventType),
 					log.Bool("propagation_stopped", b.PropagationStopped), log.Int("propagation_stopped_at", b.propagationStoppedAt),
 				)

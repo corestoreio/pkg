@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -137,7 +136,7 @@ func TestNewListenerBucket(t *testing.T) {
 				called++
 			},
 		})
-		err := lb.Select.dispatch(log.BlackHole{}, OnBeforeToSQL, &Select{})
+		err := lb.Select.dispatch(OnBeforeToSQL, &Select{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 
@@ -154,7 +153,7 @@ func TestNewListenerBucket(t *testing.T) {
 				called++
 			},
 		})
-		err := lb.Insert.dispatch(log.BlackHole{}, OnBeforeToSQL, &Insert{})
+		err := lb.Insert.dispatch(OnBeforeToSQL, &Insert{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 
@@ -172,7 +171,7 @@ func TestNewListenerBucket(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		err = lb.Update.dispatch(log.BlackHole{}, OnBeforeToSQL, &Update{})
+		err = lb.Update.dispatch(OnBeforeToSQL, &Update{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 
@@ -190,7 +189,7 @@ func TestNewListenerBucket(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		err = lb.Delete.dispatch(log.BlackHole{}, OnBeforeToSQL, &Delete{})
+		err = lb.Delete.dispatch(OnBeforeToSQL, &Delete{})
 		assert.NoError(t, err)
 		assert.Exactly(t, 1, called)
 

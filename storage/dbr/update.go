@@ -22,7 +22,7 @@ func Expr(sql string, values ...interface{}) *expr {
 
 // Update contains the clauses for an UPDATE statement
 type Update struct {
-	log.Logger
+	Log log.Logger
 	Execer
 	Preparer
 
@@ -38,9 +38,9 @@ type Update struct {
 	OffsetCount    uint64
 	OffsetValid    bool
 
-	// UpdateListeners allows to dispatch certain functions in different
+	// Listeners allows to dispatch certain functions in different
 	// situations.
-	UpdateListeners
+	Listeners UpdateListeners
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -54,8 +54,8 @@ type Update struct {
 // NewUpdate creates a new object with a black hole logger.
 func NewUpdate(table ...string) *Update {
 	return &Update{
-		Logger: log.BlackHole{},
-		Table:  MakeAlias(table...),
+		Log:   log.BlackHole{},
+		Table: MakeAlias(table...),
 	}
 }
 
@@ -67,7 +67,7 @@ type setClause struct {
 // Update creates a new Update for the given table
 func (sess *Session) Update(table ...string) *Update {
 	return &Update{
-		Logger: sess.Logger,
+		Log:    sess.Logger,
 		Execer: sess.cxn.DB,
 		Table:  MakeAlias(table...),
 	}
@@ -80,7 +80,7 @@ func (sess *Session) UpdateBySQL(sql string, args ...interface{}) *Update {
 		panic(err) // todo remove panic
 	}
 	return &Update{
-		Logger:       sess.Logger,
+		Log:          sess.Logger,
 		Execer:       sess.cxn.DB,
 		RawFullSQL:   sql,
 		RawArguments: args,
@@ -90,7 +90,7 @@ func (sess *Session) UpdateBySQL(sql string, args ...interface{}) *Update {
 // Update creates a new Update for the given table bound to a transaction
 func (tx *Tx) Update(table ...string) *Update {
 	return &Update{
-		Logger: tx.Logger,
+		Log:    tx.Logger,
 		Execer: tx.Tx,
 		Table:  MakeAlias(table...),
 	}
@@ -103,7 +103,7 @@ func (tx *Tx) UpdateBySQL(sql string, args ...interface{}) *Update {
 		panic(err) // todo remove panic
 	}
 	return &Update{
-		Logger:       tx.Logger,
+		Log:          tx.Logger,
 		Execer:       tx.Tx,
 		RawFullSQL:   sql,
 		RawArguments: args,
@@ -171,7 +171,7 @@ func (b *Update) Offset(offset uint64) *Update {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) ToSQL() (string, []interface{}, error) {
 
-	if err := b.UpdateListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
+	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
 	}
 
@@ -254,8 +254,8 @@ func (b *Update) Exec() (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.Preprocess")
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Update.Exec.Timing", log.String("sql", fullSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Update.Exec.Timing", log.String("sql", fullSQL))
 	}
 
 	result, err := b.Execer.Exec(fullSQL)
@@ -274,8 +274,8 @@ func (b *Update) Prepare() (*sql.Stmt, error) {
 		return nil, errors.Wrap(err, "[dbr] Update.Prepare.ToSQL")
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Update.Prepare.Timing", log.String("sql", rawSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", rawSQL))
 	}
 
 	stmt, err := b.Preparer.Prepare(rawSQL)

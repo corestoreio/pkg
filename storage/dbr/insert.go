@@ -12,7 +12,7 @@ import (
 
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
-	log.Logger // optional
+	Log log.Logger // Log optional logger
 	Execer
 	Preparer
 
@@ -22,9 +22,9 @@ type Insert struct {
 	Recs []interface{}
 	Maps map[string]interface{}
 
-	// InsertListeners allows to dispatch certain functions in different
+	// Listeners allows to dispatch certain functions in different
 	// situations.
-	InsertListeners
+	Listeners InsertListeners
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -38,15 +38,15 @@ type Insert struct {
 // NewInsert creates a new object with a black hole logger.
 func NewInsert(into string) *Insert {
 	return &Insert{
-		Logger: log.BlackHole{},
-		Into:   into,
+		Log:  log.BlackHole{},
+		Into: into,
 	}
 }
 
 // InsertInto instantiates a Insert for the given table
 func (sess *Session) InsertInto(into string) *Insert {
 	return &Insert{
-		Logger:   sess.Logger,
+		Log:      sess.Logger,
 		Execer:   sess.cxn.DB,
 		Preparer: sess.cxn.DB,
 		Into:     into,
@@ -56,7 +56,7 @@ func (sess *Session) InsertInto(into string) *Insert {
 // InsertInto instantiates a Insert for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *Insert {
 	return &Insert{
-		Logger:   tx.Logger,
+		Log:      tx.Logger,
 		Execer:   tx.Tx,
 		Preparer: tx.Tx,
 		Into:     into,
@@ -125,7 +125,7 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
 
-	if err := b.InsertListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
+	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
 	}
 
@@ -260,8 +260,8 @@ func (b *Insert) Exec() (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.Preprocess")
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSQL))
 	}
 
 	result, err := b.Execer.Exec(fullSQL)
@@ -279,8 +279,8 @@ func (b *Insert) Prepare() (*sql.Stmt, error) {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Insert.Prepare.Timing", log.String("sql", rawSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Insert.Prepare.Timing", log.String("sql", rawSQL))
 	}
 
 	stmt, err := b.Preparer.Prepare(rawSQL)

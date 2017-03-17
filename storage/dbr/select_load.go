@@ -16,9 +16,9 @@ func (b *Select) Rows() (*sql.Rows, error) {
 		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
+	if b.Log != nil && b.Log.IsInfo() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Logger).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
 	}
 
 	rows, err := b.Querier.Query(sqlStr, args...)
@@ -107,9 +107,9 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 
 	numberOfRowsReturned := 0
 
-	if b.Logger != nil && b.Logger.IsInfo() {
+	if b.Log != nil && b.Log.IsInfo() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadStructs.QueryContext.timing", log.String("sql", tSQL))
+		defer log.WhenDone(b.Log).Info("dbr.Select.LoadStructs.QueryContext.timing", log.String("sql", tSQL))
 	}
 
 	// Run the query:
@@ -198,8 +198,8 @@ func (b *Select) LoadStruct(dest interface{}) error {
 		return err
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadStruct.ExecContext.timing", log.String("sql", fullSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Select.LoadStruct.ExecContext.timing", log.String("sql", fullSQL))
 	}
 
 	// Run the query:
@@ -292,8 +292,8 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 
 	numberOfRowsReturned := 0
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValues.QueryContext.timing", log.String("sql", fullSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Select.LoadValues.QueryContext.timing", log.String("sql", fullSQL))
 	}
 
 	// Run the query:
@@ -353,8 +353,8 @@ func (b *Select) LoadValue(dest interface{}) error {
 		return err
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Select.LoadValue.QueryContext.timing", log.String("sql", fullSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Select.LoadValue.QueryContext.timing", log.String("sql", fullSQL))
 	}
 
 	// Run the query:

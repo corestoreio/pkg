@@ -164,8 +164,8 @@ func TestUpdate_Events(t *testing.T) {
 		d := NewUpdate("tableA", "tA")
 		d.Set("y", 25).Set("z", 26)
 
-		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
-		d.UpdateListeners.Add(
+		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.Listeners.Add(
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
@@ -202,7 +202,7 @@ func TestUpdate_Events(t *testing.T) {
 		up := NewUpdate("tableA", "tA")
 		up.Set("a", 1).Set("b", true)
 
-		up.UpdateListeners.Add(
+		up.Listeners.Add(
 			Listen{
 				Name: "c=pi",
 				Once: true,
@@ -221,7 +221,7 @@ func TestUpdate_Events(t *testing.T) {
 		up := NewUpdate("tableA", "tA")
 		up.Set("a", 1).Set("b", true)
 
-		up.UpdateListeners.Add(
+		up.Listeners.Add(
 			Listen{
 				Name:      "c=pi",
 				Once:      true,
@@ -240,7 +240,7 @@ func TestUpdate_Events(t *testing.T) {
 			},
 		)
 
-		up.UpdateListeners.Add(Listen{
+		up.Listeners.Add(Listen{
 			Name:      "e",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(u *Update) {
@@ -258,7 +258,7 @@ func TestUpdate_Events(t *testing.T) {
 		assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e", "e"}, args)
 		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?, `e` = ?", sql)
 
-		assert.Exactly(t, `c=pi; d=d; e`, up.UpdateListeners.String())
+		assert.Exactly(t, `c=pi; d=d; e`, up.Listeners.String())
 	})
 
 }

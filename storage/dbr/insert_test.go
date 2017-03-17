@@ -162,8 +162,8 @@ func TestInsert_Events(t *testing.T) {
 		d := NewInsert("tableA")
 		d.Columns("a", "b").Values(1, true)
 
-		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
-		d.InsertListeners.Add(
+		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.Listeners.Add(
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
@@ -200,7 +200,7 @@ func TestInsert_Events(t *testing.T) {
 		ins := NewInsert("tableA")
 		ins.Columns("a", "b").Values(1, true)
 
-		ins.InsertListeners.Add(
+		ins.Listeners.Add(
 			Listen{
 				Name: "colC",
 				InsertFunc: func(i *Insert) {
@@ -219,7 +219,7 @@ func TestInsert_Events(t *testing.T) {
 
 		ins.Columns("a", "b").Values(1, true)
 
-		ins.InsertListeners.Add(
+		ins.Listeners.Add(
 			Listen{
 				EventType: OnBeforeToSQL,
 				Name:      "colA",
@@ -238,7 +238,7 @@ func TestInsert_Events(t *testing.T) {
 			},
 		)
 
-		ins.InsertListeners.Add(
+		ins.Listeners.Add(
 			Listen{
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
@@ -258,7 +258,7 @@ func TestInsert_Events(t *testing.T) {
 		assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1", "X1"}, args)
 		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`,`colC`) VALUES (?,?,?,?,?,?)", sql)
 
-		assert.Exactly(t, `colA; colB; colC`, ins.InsertListeners.String())
+		assert.Exactly(t, `colA; colB; colC`, ins.Listeners.String())
 	})
 
 }

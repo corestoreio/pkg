@@ -407,7 +407,7 @@ func TestSelectJoin(t *testing.T) {
 }
 
 func TestSelect_Join(t *testing.T) {
-
+	t.Parallel()
 	const want = "SELECT IFNULL(`manufacturerStore`.`value`,IFNULL(`manufacturerGroup`.`value`,IFNULL(`manufacturerWebsite`.`value`,IFNULL(`manufacturerDefault`.`value`,'')))) AS `manufacturer`, cpe.* FROM `catalog_product_entity` AS `cpe` LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerDefault` ON (manufacturerDefault.scope = 0) AND (manufacturerDefault.scope_id = 0) AND (manufacturerDefault.attribute_id = 83) AND (manufacturerDefault.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerWebsite` ON (manufacturerWebsite.scope = 1) AND (manufacturerWebsite.scope_id = 10) AND (manufacturerWebsite.attribute_id = 83) AND (manufacturerWebsite.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerGroup` ON (manufacturerGroup.scope = 2) AND (manufacturerGroup.scope_id = 20) AND (manufacturerGroup.attribute_id = 83) AND (manufacturerGroup.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerStore` ON (manufacturerStore.scope = 2) AND (manufacturerStore.scope_id = 20) AND (manufacturerStore.attribute_id = 83) AND (manufacturerStore.value IS NOT NULL)"
 
 	s := NewSelect("catalog_product_entity", "cpe").
@@ -462,8 +462,8 @@ func TestSelect_Events(t *testing.T) {
 		d.Columns = []string{"a", "b"}
 		d.OrderBy("col3")
 
-		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
-		d.SelectListeners.Add(
+		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.Listeners.Add(
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
@@ -501,7 +501,7 @@ func TestSelect_Events(t *testing.T) {
 
 		s.Columns = []string{"a", "b"}
 		s.OrderBy("col3")
-		s.SelectListeners.Add(Listen{
+		s.Listeners.Add(Listen{
 			Name: "a col1",
 			SelectFunc: func(s2 *Select) {
 				s2.Where(ConditionRaw("a=?", 3.14159))
@@ -520,7 +520,7 @@ func TestSelect_Events(t *testing.T) {
 
 		s.Columns = []string{"a", "b"}
 		s.OrderBy("col3")
-		s.SelectListeners.Add(Listen{
+		s.Listeners.Add(Listen{
 			Name:      "a col1",
 			Once:      true,
 			EventType: OnBeforeToSQL,
@@ -529,7 +529,7 @@ func TestSelect_Events(t *testing.T) {
 				s2.OrderDir("col1", false)
 			},
 		})
-		s.SelectListeners.Add(Listen{
+		s.Listeners.Add(Listen{
 			Name:      "b col2",
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(s2 *Select) {
@@ -548,7 +548,17 @@ func TestSelect_Events(t *testing.T) {
 		assert.Exactly(t, []interface{}{3.14159, "a", "a"}, args)
 		assert.Exactly(t, "SELECT a, b FROM `tableA` AS `tA` WHERE (a=?) AND (b=?) AND (b=?) ORDER BY col3, col1 DESC, col2 DESC, col2 DESC", sql)
 
-		assert.Exactly(t, `a col1; b col2`, s.SelectListeners.String())
+		assert.Exactly(t, `a col1; b col2`, s.Listeners.String())
 	})
+}
 
+func TestSelect_AddColumns(t *testing.T) {
+	t.Parallel()
+	s := NewSelect("tableA", "tA")
+	s.AddColumns("a", "b", "c")
+	s.AddColumns("d,e,f", "should not get added!")
+	s.AddColumnsAliases("x", "u", "y", "v")
+	sql, _, err := s.ToSQL()
+	assert.NoError(t, err, "%+v", err)
+	assert.Exactly(t, "SELECT a, b, c, d, e, f, x AS `u`, y AS `v` FROM `tableA` AS `tA`", sql)
 }

@@ -11,7 +11,7 @@ import (
 
 // Delete contains the clauses for a DELETE statement
 type Delete struct {
-	log.Logger // optional
+	Log log.Logger // Log optional logger
 	Execer
 	Preparer
 
@@ -23,9 +23,9 @@ type Delete struct {
 	OffsetCount uint64
 	OffsetValid bool
 
-	// DeleteListeners allows to dispatch certain functions in different
+	// Listeners allows to dispatch certain functions in different
 	// situations.
-	DeleteListeners
+	Listeners DeleteListeners
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -39,15 +39,15 @@ type Delete struct {
 // NewDelete creates a new object with a black hole logger.
 func NewDelete(from ...string) *Delete {
 	return &Delete{
-		Logger: log.BlackHole{},
-		From:   MakeAlias(from...),
+		Log:  log.BlackHole{},
+		From: MakeAlias(from...),
 	}
 }
 
 // DeleteFrom creates a new Delete for the given table
 func (sess *Session) DeleteFrom(from ...string) *Delete {
 	return &Delete{
-		Logger:         sess.Logger,
+		Log:            sess.Logger,
 		Execer:         sess.cxn.DB,
 		Preparer:       sess.cxn.DB,
 		From:           MakeAlias(from...),
@@ -59,7 +59,7 @@ func (sess *Session) DeleteFrom(from ...string) *Delete {
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from ...string) *Delete {
 	return &Delete{
-		Logger:         tx.Logger,
+		Log:            tx.Logger,
 		Execer:         tx.Tx,
 		Preparer:       tx.Tx,
 		From:           MakeAlias(from...),
@@ -108,7 +108,7 @@ func (b *Delete) Offset(offset uint64) *Delete {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, []interface{}, error) {
 
-	if err := b.DeleteListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
+	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
 	}
 
@@ -165,8 +165,8 @@ func (b *Delete) Exec() (sql.Result, error) {
 		return nil, errors.Wrapf(err, "[dbr] Delete.Exec.Preprocess: %q", fullSQL)
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Delete.Exec.Timing", log.String("sql", fullSQL))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Delete.Exec.Timing", log.String("sql", fullSQL))
 	}
 
 	result, err := b.Execer.Exec(fullSQL)
@@ -186,8 +186,8 @@ func (b *Delete) Prepare() (*sql.Stmt, error) {
 		return nil, errors.Wrap(err, "[dbr] Delete.Prepare.ToSQL")
 	}
 
-	if b.Logger != nil && b.Logger.IsInfo() {
-		defer log.WhenDone(b.Logger).Info("dbr.Delete.Prepare.Timing", log.String("sql", sqlStr))
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.Delete.Prepare.Timing", log.String("sql", sqlStr))
 	}
 
 	stmt, err := b.Preparer.Prepare(sqlStr)

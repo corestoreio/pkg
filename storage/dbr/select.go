@@ -2,6 +2,7 @@ package dbr
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -10,7 +11,7 @@ import (
 
 // Select contains the clauses for a SELECT statement
 type Select struct {
-	log.Logger // optional
+	Log log.Logger // Log optional logger
 	// The next three fields depend on which method receiver you would like to
 	// execute. Leaving them empty results in a panic.
 	Querier
@@ -33,9 +34,9 @@ type Select struct {
 	OffsetCount     uint64
 	OffsetValid     bool
 
-	// SelectListeners allows to dispatch certain functions in different
+	// Listeners allows to dispatch certain functions in different
 	// situations.
-	SelectListeners
+	Listeners SelectListeners
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -49,7 +50,7 @@ type Select struct {
 // NewSelect creates a new object with a black hole logger.
 func NewSelect(from ...string) *Select {
 	return &Select{
-		Logger:    log.BlackHole{},
+		Log:       log.BlackHole{},
 		FromTable: MakeAlias(from...),
 	}
 }
@@ -57,7 +58,7 @@ func NewSelect(from ...string) *Select {
 // Select creates a new Select that select that given columns
 func (sess *Session) Select(cols ...string) *Select {
 	return &Select{
-		Logger:     sess.Logger,
+		Log:        sess.Logger,
 		Querier:    sess.cxn.DB,
 		QueryRower: sess.cxn.DB,
 		Preparer:   sess.cxn.DB,
@@ -68,7 +69,7 @@ func (sess *Session) Select(cols ...string) *Select {
 // SelectBySQL creates a new Select for the given SQL string and arguments
 func (sess *Session) SelectBySQL(sql string, args ...interface{}) *Select {
 	return &Select{
-		Logger:       sess.Logger,
+		Log:          sess.Logger,
 		Querier:      sess.cxn.DB,
 		QueryRower:   sess.cxn.DB,
 		Preparer:     sess.cxn.DB,
@@ -80,7 +81,7 @@ func (sess *Session) SelectBySQL(sql string, args ...interface{}) *Select {
 // Select creates a new Select that select that given columns bound to the transaction
 func (tx *Tx) Select(cols ...string) *Select {
 	return &Select{
-		Logger:     tx.Logger,
+		Log:        tx.Logger,
 		QueryRower: tx.Tx,
 		Querier:    tx.Tx,
 		Preparer:   tx.Tx,
@@ -91,7 +92,7 @@ func (tx *Tx) Select(cols ...string) *Select {
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySQL(sql string, args ...interface{}) *Select {
 	return &Select{
-		Logger:       tx.Logger,
+		Log:          tx.Logger,
 		QueryRower:   tx.Tx,
 		Querier:      tx.Tx,
 		Preparer:     tx.Tx,
@@ -106,10 +107,33 @@ func (b *Select) Distinct() *Select {
 	return b
 }
 
-// From sets the table to SELECT FROM. If second argument will be provided this is
-// then considered as the alias. SELECT ... FROM table AS alias.
+// From sets the table to SELECT FROM. If second argument will be provided this
+// is then considered as the alias. SELECT ... FROM table AS alias.
 func (b *Select) From(from ...string) *Select {
 	b.FromTable = MakeAlias(from...)
+	return b
+}
+
+// AddColumns appends more columns to the Columns slice. If a single string gets
+// passed with comma separated values, this string gets split by the command and
+// its values appended to the Columns slice.
+func (b *Select) AddColumns(cols ...string) *Select {
+	if len(cols) > 0 && strings.IndexByte(cols[0], ',') > 0 {
+		cols = strings.Split(cols[0], ",")
+		for i, c := range cols {
+			cols[i] = strings.TrimSpace(c)
+		}
+	}
+	b.Columns = append(b.Columns, cols...)
+	return b
+}
+
+// AddColumnsAliases expects a balanced slice of ColumnName, AliasName and adds
+// both concatenated and quoted to the Columns slice.
+func (b *Select) AddColumnsAliases(colsAlias ...string) *Select {
+	for i := 0; i < len(colsAlias); i = i + 2 {
+		b.Columns = append(b.Columns, Quoter.Alias(colsAlias[i], colsAlias[i+1]))
+	}
 	return b
 }
 
@@ -174,7 +198,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) ToSQL() (string, []interface{}, error) {
 
-	if err := b.SelectListeners.dispatch(b.Logger, OnBeforeToSQL, b); err != nil {
+	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
 	// TODO(CyS) implement SQL string cache. If cache set to true, then the finalized query will be written

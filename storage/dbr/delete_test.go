@@ -114,8 +114,8 @@ func TestDelete_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewDelete("tableA", "main_table")
-		d.Logger = log.BlackHole{EnableInfo: true, EnableDebug: true}
-		d.DeleteListeners.Add(
+		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
+		d.Listeners.Add(
 			Listen{
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
@@ -153,7 +153,7 @@ func TestDelete_Events(t *testing.T) {
 		d := NewDelete("tableA", "main_table")
 
 		d.OrderBy("col2")
-		d.DeleteListeners.Add(
+		d.Listeners.Add(
 			Listen{
 				Name: "col1",
 				DeleteFunc: func(b *Delete) {
@@ -173,7 +173,7 @@ func TestDelete_Events(t *testing.T) {
 		d := NewDelete("tableA", "main_table")
 
 		d.OrderBy("col2")
-		d.DeleteListeners.Add(
+		d.Listeners.Add(
 			Listen{
 				Name:      "col1",
 				Once:      true,
@@ -192,7 +192,7 @@ func TestDelete_Events(t *testing.T) {
 			},
 		)
 
-		d.DeleteListeners.Add(
+		d.Listeners.Add(
 			Listen{
 				Name:      "repetitive",
 				EventType: OnBeforeToSQL,
@@ -212,7 +212,7 @@ func TestDelete_Events(t *testing.T) {
 		assert.Exactly(t, []interface{}{1, 3, 3}, args)
 		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
 
-		assert.Exactly(t, `col1; storeid; repetitive`, d.DeleteListeners.String())
+		assert.Exactly(t, `col1; storeid; repetitive`, d.Listeners.String())
 	})
 
 }
