@@ -143,15 +143,14 @@ func TestUpdate_Prepare(t *testing.T) {
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
-		in := &Update{
-			Preparer: dbMock{
-				error: errors.NewAlreadyClosedf("Who closed myself?"),
-			},
+		u := &Update{}
+		u.DB.Preparer = dbMock{
+			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		in.Table = MakeAlias("tableY")
-		in.Set("a", 1)
+		u.Table = MakeAlias("tableY")
+		u.Set("a", 1)
 
-		stmt, err := in.Prepare()
+		stmt, err := u.Prepare()
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})

@@ -21,7 +21,7 @@ func (b *Select) Rows() (*sql.Rows, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.Querier.Query(sqlStr, args...)
+	rows, err := b.DB.Query(sqlStr, args...)
 	return rows, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
@@ -35,7 +35,7 @@ func (b *Select) Row() *sql.Row {
 		panic(err) // todo remove panic and log error .... ?
 		// return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
-	return b.QueryRower.QueryRow(sqlStr, args...)
+	return b.DB.QueryRow(sqlStr, args...)
 }
 
 // Prepare prepares a SQL statement.
@@ -45,7 +45,7 @@ func (b *Select) Prepare() (*sql.Stmt, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
-	stmt, err := b.Preparer.Prepare(sqlStr)
+	stmt, err := b.DB.Prepare(sqlStr)
 	return stmt, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
@@ -113,7 +113,7 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 	}
 
 	// Run the query:
-	rows, err := b.Querier.Query(fullSQL)
+	rows, err := b.DB.Query(fullSQL)
 	if err != nil {
 		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
 	}
@@ -203,7 +203,7 @@ func (b *Select) LoadStruct(dest interface{}) error {
 	}
 
 	// Run the query:
-	rows, err := b.Query(fullSQL)
+	rows, err := b.DB.Query(fullSQL)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] Select.load_one.query")
 	}
@@ -297,7 +297,7 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 	}
 
 	// Run the query:
-	rows, err := b.Query(fullSQL)
+	rows, err := b.DB.Query(fullSQL)
 	if err != nil {
 		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.query")
 	}
@@ -358,7 +358,7 @@ func (b *Select) LoadValue(dest interface{}) error {
 	}
 
 	// Run the query:
-	rows, err := b.Query(fullSQL)
+	rows, err := b.DB.Query(fullSQL)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] Select.LoadValue.Query")
 	}

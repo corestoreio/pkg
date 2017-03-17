@@ -143,9 +143,9 @@ func TestInsert_Prepare(t *testing.T) {
 	t.Run("Prepare Error", func(t *testing.T) {
 		in := &Insert{
 			Into: "table",
-			Preparer: dbMock{
-				error: errors.NewAlreadyClosedf("Who closed myself?"),
-			},
+		}
+		in.DB.Preparer = dbMock{
+			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		in.Columns("a", "b").Values(1, true)
 

@@ -12,8 +12,10 @@ import (
 // Delete contains the clauses for a DELETE statement
 type Delete struct {
 	Log log.Logger // Log optional logger
-	Execer
-	Preparer
+	DB  struct {
+		Preparer
+		Execer
+	}
 
 	From alias
 	WhereFragments
@@ -46,25 +48,27 @@ func NewDelete(from ...string) *Delete {
 
 // DeleteFrom creates a new Delete for the given table
 func (sess *Session) DeleteFrom(from ...string) *Delete {
-	return &Delete{
+	d := &Delete{
 		Log:            sess.Logger,
-		Execer:         sess.cxn.DB,
-		Preparer:       sess.cxn.DB,
 		From:           MakeAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
+	d.DB.Execer = sess.cxn.DB
+	d.DB.Preparer = sess.cxn.DB
+	return d
 }
 
 // DeleteFrom creates a new Delete for the given table
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from ...string) *Delete {
-	return &Delete{
+	d := &Delete{
 		Log:            tx.Logger,
-		Execer:         tx.Tx,
-		Preparer:       tx.Tx,
 		From:           MakeAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
+	d.DB.Execer = tx.Tx
+	d.DB.Preparer = tx.Tx
+	return d
 }
 
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a
@@ -169,7 +173,7 @@ func (b *Delete) Exec() (sql.Result, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Delete.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.Execer.Exec(fullSQL)
+	result, err := b.DB.Exec(fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] delete.exec.Exec")
 	}
@@ -190,6 +194,6 @@ func (b *Delete) Prepare() (*sql.Stmt, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Delete.Prepare.Timing", log.String("sql", sqlStr))
 	}
 
-	stmt, err := b.Preparer.Prepare(sqlStr)
+	stmt, err := b.DB.Prepare(sqlStr)
 	return stmt, errors.Wrap(err, "[dbr] Delete.Prepare.Prepare")
 }

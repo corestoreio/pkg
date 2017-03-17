@@ -98,9 +98,9 @@ func TestDelete_Prepare(t *testing.T) {
 	t.Run("Prepare Error", func(t *testing.T) {
 		d := &Delete{
 			From: MakeAlias("table"),
-			Preparer: dbMock{
-				error: errors.NewAlreadyClosedf("Who closed myself?"),
-			},
+		}
+		d.DB.Preparer = dbMock{
+			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		d.Where(ConditionRaw("a", 1))
 		stmt, err := d.Prepare()

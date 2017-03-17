@@ -23,8 +23,10 @@ func Expr(sql string, values ...interface{}) *expr {
 // Update contains the clauses for an UPDATE statement
 type Update struct {
 	Log log.Logger
-	Execer
-	Preparer
+	DB  struct {
+		Preparer
+		Execer
+	}
 
 	RawFullSQL   string
 	RawArguments []interface{}
@@ -49,6 +51,8 @@ type Update struct {
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
+	// previousError any error occurred during construction the SQL statement
+	previousError error
 }
 
 // NewUpdate creates a new object with a black hole logger.
@@ -66,57 +70,68 @@ type setClause struct {
 
 // Update creates a new Update for the given table
 func (sess *Session) Update(table ...string) *Update {
-	return &Update{
-		Log:    sess.Logger,
-		Execer: sess.cxn.DB,
-		Table:  MakeAlias(table...),
+	u := &Update{
+		Log:   sess.Logger,
+		Table: MakeAlias(table...),
 	}
+	u.DB.Execer = sess.cxn.DB
+	return u
 }
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments
 func (sess *Session) UpdateBySQL(sql string, args ...interface{}) *Update {
 	if err := argsValuer(&args); err != nil {
-		//sess.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
-		panic(err) // todo remove panic
+		return &Update{
+			previousError: errors.Wrapf(err, "[dbr] SQL %q Args: %v", sql, args),
+		}
 	}
-	return &Update{
+	u := &Update{
 		Log:          sess.Logger,
-		Execer:       sess.cxn.DB,
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
+	u.DB.Execer = sess.cxn.DB
+	return u
 }
 
 // Update creates a new Update for the given table bound to a transaction
 func (tx *Tx) Update(table ...string) *Update {
-	return &Update{
-		Log:    tx.Logger,
-		Execer: tx.Tx,
-		Table:  MakeAlias(table...),
+	u := &Update{
+		Log:   tx.Logger,
+		Table: MakeAlias(table...),
 	}
+	u.DB.Execer = tx.Tx
+	return u
 }
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments bound to a transaction
 func (tx *Tx) UpdateBySQL(sql string, args ...interface{}) *Update {
 	if err := argsValuer(&args); err != nil {
-		// tx.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
-		panic(err) // todo remove panic
+		return &Update{
+			previousError: errors.Wrapf(err, "[dbr] SQL %q Args: %v", sql, args),
+		}
 	}
-	return &Update{
+	u := &Update{
 		Log:          tx.Logger,
-		Execer:       tx.Tx,
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
+	u.DB.Execer = tx.Tx
+	return u
 }
 
 // Set appends a column/value pair for the statement
 func (b *Update) Set(column string, value interface{}) *Update {
+	if b.previousError != nil {
+		return b
+	}
 	if dbVal, ok := value.(driver.Valuer); ok {
 		if val, err := dbVal.Value(); err == nil {
 			value = val
 		} else {
-			panic(err)
+			return &Update{
+				previousError: errors.Wrapf(err, "[dbr] Update.Set %q Args: %v", column, value),
+			}
 		}
 	}
 	b.SetClauses = append(b.SetClauses, &setClause{column: column, value: value})
@@ -170,6 +185,9 @@ func (b *Update) Offset(offset uint64) *Update {
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) ToSQL() (string, []interface{}, error) {
+	if b.previousError != nil {
+		return "", nil, errors.Wrap(b.previousError, "[dbr] Update.ToSQL")
+	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
@@ -258,7 +276,7 @@ func (b *Update) Exec() (sql.Result, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Update.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.Execer.Exec(fullSQL)
+	result, err := b.DB.Exec(fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Update.Exec.Exec")
 	}
@@ -278,6 +296,6 @@ func (b *Update) Prepare() (*sql.Stmt, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", rawSQL))
 	}
 
-	stmt, err := b.Preparer.Prepare(rawSQL)
+	stmt, err := b.DB.Prepare(rawSQL)
 	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
 }

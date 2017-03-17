@@ -12,11 +12,12 @@ import (
 // Select contains the clauses for a SELECT statement
 type Select struct {
 	Log log.Logger // Log optional logger
-	// The next three fields depend on which method receiver you would like to
-	// execute. Leaving them empty results in a panic.
-	Querier
-	QueryRower
-	Preparer
+	// DB gets required once the Load*() functions will be used.
+	DB struct {
+		Querier
+		QueryRower
+		Preparer
+	}
 
 	RawFullSQL   string
 	RawArguments []interface{}
@@ -57,48 +58,52 @@ func NewSelect(from ...string) *Select {
 
 // Select creates a new Select that select that given columns
 func (sess *Session) Select(cols ...string) *Select {
-	return &Select{
-		Log:        sess.Logger,
-		Querier:    sess.cxn.DB,
-		QueryRower: sess.cxn.DB,
-		Preparer:   sess.cxn.DB,
-		Columns:    cols,
+	s := &Select{
+		Log:     sess.Logger,
+		Columns: cols,
 	}
+	s.DB.Querier = sess.cxn.DB
+	s.DB.QueryRower = sess.cxn.DB
+	s.DB.Preparer = sess.cxn.DB
+	return s
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments
 func (sess *Session) SelectBySQL(sql string, args ...interface{}) *Select {
-	return &Select{
+	s := &Select{
 		Log:          sess.Logger,
-		Querier:      sess.cxn.DB,
-		QueryRower:   sess.cxn.DB,
-		Preparer:     sess.cxn.DB,
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
+	s.DB.Querier = sess.cxn.DB
+	s.DB.QueryRower = sess.cxn.DB
+	s.DB.Preparer = sess.cxn.DB
+	return s
 }
 
 // Select creates a new Select that select that given columns bound to the transaction
 func (tx *Tx) Select(cols ...string) *Select {
-	return &Select{
-		Log:        tx.Logger,
-		QueryRower: tx.Tx,
-		Querier:    tx.Tx,
-		Preparer:   tx.Tx,
-		Columns:    cols,
+	s := &Select{
+		Log:     tx.Logger,
+		Columns: cols,
 	}
+	s.DB.Querier = tx.Tx
+	s.DB.QueryRower = tx.Tx
+	s.DB.Preparer = tx.Tx
+	return s
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySQL(sql string, args ...interface{}) *Select {
-	return &Select{
+	s := &Select{
 		Log:          tx.Logger,
-		QueryRower:   tx.Tx,
-		Querier:      tx.Tx,
-		Preparer:     tx.Tx,
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
+	s.DB.Querier = tx.Tx
+	s.DB.QueryRower = tx.Tx
+	s.DB.Preparer = tx.Tx
+	return s
 }
 
 // Distinct marks the statement as a DISTINCT SELECT

@@ -13,8 +13,10 @@ import (
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	Log log.Logger // Log optional logger
-	Execer
-	Preparer
+	DB  struct {
+		Preparer
+		Execer
+	}
 
 	Into string
 	Cols []string
@@ -33,6 +35,8 @@ type Insert struct {
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
+	// previousError any error occurred during construction the SQL statement
+	previousError error
 }
 
 // NewInsert creates a new object with a black hole logger.
@@ -45,22 +49,24 @@ func NewInsert(into string) *Insert {
 
 // InsertInto instantiates a Insert for the given table
 func (sess *Session) InsertInto(into string) *Insert {
-	return &Insert{
-		Log:      sess.Logger,
-		Execer:   sess.cxn.DB,
-		Preparer: sess.cxn.DB,
-		Into:     into,
+	i := &Insert{
+		Log:  sess.Logger,
+		Into: into,
 	}
+	i.DB.Execer = sess.cxn.DB
+	i.DB.Preparer = sess.cxn.DB
+	return i
 }
 
 // InsertInto instantiates a Insert for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *Insert {
-	return &Insert{
-		Log:      tx.Logger,
-		Execer:   tx.Tx,
-		Preparer: tx.Tx,
-		Into:     into,
+	i := &Insert{
+		Log:  tx.Logger,
+		Into: into,
 	}
+	i.DB.Execer = tx.Tx
+	i.DB.Preparer = tx.Tx
+	return i
 }
 
 // Columns appends columns to insert in the statement.
@@ -74,7 +80,9 @@ func (b *Insert) Columns(columns ...string) *Insert {
 // driver.Valuer interface when you pass a pointer to the value.
 func (b *Insert) Values(vals ...interface{}) *Insert {
 	if err := argsValuer(&vals); err != nil {
-		panic(err) // todo remove panic
+		return &Insert{
+			previousError: errors.Wrapf(err, "[dbr] Insert Valus: %v", vals),
+		}
 	}
 	b.Vals = append(b.Vals, vals)
 	return b
@@ -104,7 +112,9 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 		if val, err := dbVal.Value(); err == nil {
 			value = val // overrides the current value ...
 		} else {
-			panic(err) // todo remove panic
+			return &Insert{
+				previousError: errors.Wrapf(err, "[dbr] Insert Column %q Val %v", column, val),
+			}
 		}
 	}
 
@@ -116,7 +126,9 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 	} else if lenVals == 1 {
 		b.Vals[0] = append(b.Vals[0], value)
 	} else {
-		panic("pair only allows you to specify 1 record to insret") // todo remove panic
+		return &Insert{
+			previousError: errors.NewNotValidf("[dbr] pair only allows you to specify 1 record to insert"),
+		}
 	}
 	return b
 }
@@ -124,6 +136,9 @@ func (b *Insert) Pair(column string, value interface{}) *Insert {
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
+	if b.previousError != nil {
+		return "", nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
+	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
@@ -204,6 +219,9 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) MapToSQL(w QueryWriter) (string, []interface{}, error) {
+	if b.previousError != nil {
+		return "", nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
+	}
 
 	keys := make([]string, len(b.Maps))
 	vals := make([]interface{}, len(b.Maps))
@@ -264,7 +282,7 @@ func (b *Insert) Exec() (sql.Result, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.Execer.Exec(fullSQL)
+	result, err := b.DB.Exec(fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Insert.Exec.Exec")
 	}
@@ -283,6 +301,6 @@ func (b *Insert) Prepare() (*sql.Stmt, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Insert.Prepare.Timing", log.String("sql", rawSQL))
 	}
 
-	stmt, err := b.Preparer.Prepare(rawSQL)
+	stmt, err := b.DB.Prepare(rawSQL)
 	return stmt, errors.Wrap(err, "[dbr] Insert.Prepare.Prepare")
 }

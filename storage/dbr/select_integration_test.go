@@ -37,9 +37,9 @@ func TestSelect_Rows(t *testing.T) {
 		sel := &dbr.Select{
 			FromTable: dbr.MakeAlias("tableX"),
 			Columns:   []string{"a", "b"},
-			Querier: dbMock{
-				error: errors.NewAlreadyClosedf("Who closed myself?"),
-			},
+		}
+		sel.DB.Querier = dbMock{
+			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 
 		rows, err := sel.Rows()
@@ -61,10 +61,10 @@ func TestSelect_Row(t *testing.T) {
 	dbMock.ExpectQuery("SELECT a, b FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
 	sel := &dbr.Select{
-		FromTable:  dbr.MakeAlias("tableX"),
-		Columns:    []string{"a", "b"},
-		QueryRower: dbc.DB,
+		FromTable: dbr.MakeAlias("tableX"),
+		Columns:   []string{"a", "b"},
 	}
+	sel.DB.QueryRower = dbc.DB
 	row := sel.Row()
 	var x string
 	err := row.Scan(&x)
@@ -95,8 +95,8 @@ func TestSelect_Prepare(t *testing.T) {
 		sel := &dbr.Select{
 			FromTable: dbr.MakeAlias("tableX"),
 			Columns:   []string{"a", "b"},
-			Preparer:  dbc.DB,
 		}
+		sel.DB.Preparer = dbc.DB
 		stmt, err := sel.Prepare()
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
