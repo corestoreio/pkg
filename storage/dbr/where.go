@@ -21,6 +21,24 @@ func (eq Eq) newWhereFragment() (*whereFragment, error) {
 	}, nil
 }
 
+// ConditionIsNull checks if expression is null.
+type ConditionIsNull string
+
+func (n ConditionIsNull) newWhereFragment() (*whereFragment, error) {
+	return &whereFragment{
+		Condition: string(n) + " IS NULL",
+	}, nil
+}
+
+// ConditionNotNull checks if expression is not null.
+type ConditionNotNull string
+
+func (n ConditionNotNull) newWhereFragment() (*whereFragment, error) {
+	return &whereFragment{
+		Condition: string(n) + " IS NOT NULL",
+	}, nil
+}
+
 type whereFragment struct {
 	Condition   string
 	Values      []interface{}
@@ -89,10 +107,10 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, sql QueryWriter, args *[
 	}
 }
 
-func writeEqualityMapToSQL(eq map[string]interface{}, sql QueryWriter, args *[]interface{}, anyConditions bool) bool {
+func writeEqualityMapToSQL(eq map[string]interface{}, w QueryWriter, args *[]interface{}, anyConditions bool) bool {
 	for k, v := range eq {
 		if v == nil {
-			anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
+			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
 			continue
 		}
 
@@ -102,23 +120,23 @@ func writeEqualityMapToSQL(eq map[string]interface{}, sql QueryWriter, args *[]i
 			vValLen := vVal.Len()
 			if vValLen == 0 {
 				if vVal.IsNil() {
-					anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
+					anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
 				} else {
 					if anyConditions {
-						_, _ = sql.WriteString(" AND (1=0)")
+						_, _ = w.WriteString(" AND (1=0)")
 					} else {
-						_, _ = sql.WriteString("(1=0)")
+						_, _ = w.WriteString("(1=0)")
 					}
 				}
 			} else if vValLen == 1 {
-				anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+				anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
 				*args = append(*args, vVal.Index(0).Interface())
 			} else {
-				anyConditions = writeWhereCondition(sql, k, " IN ?", anyConditions)
+				anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
 				*args = append(*args, v)
 			}
 		} else {
-			anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+			anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
 			*args = append(*args, v)
 		}
 
@@ -127,16 +145,16 @@ func writeEqualityMapToSQL(eq map[string]interface{}, sql QueryWriter, args *[]i
 	return anyConditions
 }
 
-func writeWhereCondition(sql QueryWriter, k string, pred string, anyConditions bool) bool {
+func writeWhereCondition(w QueryWriter, k string, pred string, anyConditions bool) bool {
 	if anyConditions {
-		_, _ = sql.WriteString(" AND (")
+		_, _ = w.WriteString(" AND (")
 	} else {
-		_, _ = sql.WriteRune('(')
+		_, _ = w.WriteRune('(')
 		anyConditions = true
 	}
-	Quoter.writeQuotedColumn(k, sql)
-	_, _ = sql.WriteString(pred)
-	_, _ = sql.WriteRune(')')
+	Quoter.writeQuotedColumn(k, w)
+	_, _ = w.WriteString(pred)
+	_, _ = w.WriteRune(')')
 
 	return anyConditions
 }

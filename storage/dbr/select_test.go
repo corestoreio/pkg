@@ -141,6 +141,20 @@ func TestSelectMultiOrderSQL(t *testing.T) {
 	assert.Equal(t, args, []interface{}(nil))
 }
 
+func TestSelect_Condition_Null(t *testing.T) {
+	s := createFakeSession()
+
+	sql, args, err := s.Select("a", "b").From("c").Where(ConditionIsNull("r")).ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, "SELECT a, b FROM `c` WHERE (r IS NULL)", sql)
+	assert.Exactly(t, []interface{}(nil), args)
+
+	sql, args, err = s.Select("a", "b").From("c").Where(ConditionIsNull("r"), ConditionRaw("d = ?", 3), ConditionIsNull("s"), ConditionNotNull("w")).ToSQL()
+	assert.NoError(t, err)
+	assert.Exactly(t, "SELECT a, b FROM `c` WHERE (r IS NULL) AND (d = ?) AND (s IS NULL) AND (w IS NOT NULL)", sql)
+	assert.Exactly(t, []interface{}{3}, args)
+}
+
 func TestSelectWhereMapSQL(t *testing.T) {
 	s := createFakeSession()
 
