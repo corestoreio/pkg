@@ -36,19 +36,27 @@ func (q MysqlQuoter) QuoteAs(exprAlias ...string) string {
 	return q.quoteAs(exprAlias...)
 }
 
-func (q MysqlQuoter) Alias(expression, as string) string {
-	return expression + " AS " + quote + q.unQuote(as) + quote
+// Alias appends the the aliasName to the expression, e.g.: (e.price*x.tax) as `final_price`
+func (q MysqlQuoter) Alias(expression, aliasName string) string {
+	return expression + " AS " + quote + q.unQuote(aliasName) + quote
 }
 
-// Quote returns a string like: `database`.`table`
+// Quote returns a string like: `database`.`table` or `table` if prefix is empty
 func (q MysqlQuoter) Quote(prefix, name string) string {
 	// way faster than fmt or buffer ...
+	if prefix == "" {
+		return quote + q.unQuote(name) + quote
+	}
 	return quote + q.unQuote(prefix) + quote + "." + quote + q.unQuote(name) + quote
 }
 
 func (q MysqlQuoter) quoteAs(parts ...string) string {
 
 	lp := len(parts)
+	if lp == 2 && parts[1] == "" {
+		lp = 1
+		parts = parts[:1]
+	}
 
 	hasQuote0 := strings.ContainsRune(parts[0], quoteRune)
 	hasDot0 := strings.ContainsRune(parts[0], '.')

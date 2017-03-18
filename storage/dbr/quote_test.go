@@ -13,6 +13,7 @@ func TestQuoteAs(t *testing.T) {
 	}{
 		{[]string{"a"}, "`a`"},
 		{[]string{"a", "b"}, "`a` AS `b`"},
+		{[]string{"a", ""}, "`a`"},
 		{[]string{"`c`"}, "`c`"},
 		{[]string{"d.e"}, "`d`.`e`"},
 		{[]string{"`d`.`e`"}, "`d`.`e`"},
@@ -71,6 +72,7 @@ func BenchmarkQuoteQuote(b *testing.B) {
 }
 
 func TestMysqlQuoter_Quote(t *testing.T) {
+	assert.Exactly(t, "`tableName`", Quoter.Quote("", "tableName"))
 	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.Quote("databaseName", "tableName"))
 	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.Quote("database`Name", "table`Name"))
 }
