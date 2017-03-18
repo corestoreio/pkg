@@ -4,12 +4,17 @@ import "strings"
 
 const quote string = "`"
 const quoteRune rune = '`'
+const quoteByte byte = '`'
 
-// Quoter is the quoter to use for quoting text; use Mysql quoting by default
-var Quoter = MysqlQuoter{}
+// Quoter is the quoter to use for quoting text; use Mysql quoting by default.
+var Quoter = MysqlQuoter{
+	replacer: strings.NewReplacer(quote, ""),
+}
 
 // MysqlQuoter implements Mysql-specific quoting
-type MysqlQuoter struct{}
+type MysqlQuoter struct {
+	replacer *strings.Replacer
+}
 
 func (q MysqlQuoter) writeQuotedColumn(column string, sql QueryWriter) {
 	_, _ = sql.WriteRune(quoteRune)
@@ -18,20 +23,27 @@ func (q MysqlQuoter) writeQuotedColumn(column string, sql QueryWriter) {
 }
 
 func (q MysqlQuoter) unQuote(s string) string {
-	if !strings.ContainsRune(s, quoteRune) {
+	if strings.IndexByte(s, quoteByte) == -1 {
 		return s
 	}
-	return strings.Replace(s, quote, "", -1)
+	return q.replacer.Replace(s)
 }
 
 // QuoteAs quotes a with back ticks. First argument table or column name and
-// second argument can be an alias. Both parts will get quoted.
+// second argument can be an alias. Both parts will get quoted. If providing
+// only one part, then the AS parts get skipped.
 func (q MysqlQuoter) QuoteAs(exprAlias ...string) string {
 	return q.quoteAs(exprAlias...)
 }
 
 func (q MysqlQuoter) Alias(expression, as string) string {
 	return expression + " AS " + quote + q.unQuote(as) + quote
+}
+
+// Quote returns a string like: `database`.`table`
+func (q MysqlQuoter) Quote(prefix, name string) string {
+	// way faster than fmt or buffer ...
+	return quote + q.unQuote(prefix) + quote + "." + quote + q.unQuote(name) + quote
 }
 
 func (q MysqlQuoter) quoteAs(parts ...string) string {
