@@ -24,6 +24,7 @@ import (
 )
 
 func TestIsValidIdentifier(t *testing.T) {
+	t.Parallel()
 	const errDummy = errors.Error("Dummy")
 	tests := []struct {
 		have string

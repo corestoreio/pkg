@@ -15,11 +15,15 @@
 package csdb_test
 
 import (
+	"regexp"
+	"sort"
 	"testing"
 
+	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/magento"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -138,14 +142,86 @@ func TestWithTableNames(t *testing.T) {
 	})
 }
 
-func TestIntegration_WithLoadColumnDefinitions(t *testing.T) {
+func TestWithLoadTableNames(t *testing.T) {
 	t.Parallel()
 
-	dbc, _ := cstesting.MustConnectDB()
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	rows := sqlmock.NewRows([]string{"Tables_in_magento2"}).FromCSVString(`admin_passwords
+admin_system_messages
+admin_user
+admin_user_session
+adminnotification_inbox
+authorization_role
+authorization_rule`)
+	dbMock.ExpectQuery("SHOW TABLES LIKE 'catalog_product%'").WillReturnRows(rows)
+
+	tbls, err := csdb.NewTables(csdb.WithLoadTableNames(dbc.DB, "catalog_'product%"))
+	assert.NoError(t, err, "%+v", err)
+
+	want := []string{"admin_passwords", "admin_system_messages", "admin_user", "admin_user_session", "adminnotification_inbox", "authorization_role", "authorization_rule"}
+	sort.Strings(want)
+	have := tbls.Tables()
+	sort.Strings(have)
+
+	assert.Exactly(t, want, have)
+}
+
+func TestWithLoadColumnDefinitions_Integration(t *testing.T) {
+	t.Parallel()
+
+	dbc, mv := cstesting.MustConnectDB()
 	if dbc == nil {
 		t.Skip("Environment DB DSN not found")
 	}
 	defer dbc.Close()
+	if mv != magento.Version2 {
+		t.Skip("Requirement")
+	}
+
+	i := 4711
+	tm0 := csdb.MustNewTables(
+		csdb.WithLoadColumnDefinitions(dbc.DB),
+		csdb.WithTable(i, "admin_user"),
+	)
+
+	table, err2 := tm0.Table(i)
+	assert.NoError(t, err2)
+	assert.Equal(t, 1, table.CountPK)
+	assert.Equal(t, 1, table.CountUnique)
+	assert.True(t, len(table.Columns.FieldNames()) >= 15)
+	// t.Logf("%+v", table.Columns)
+}
+
+func TestWithLoadColumnDefinitions2(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+		assert.NoError(t, dbc.Close())
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	rows := sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
+		FromCSVString(
+			`"admin_user","user_id",1,0,"NO","int",0,10,0,"int(10) unsigned","PRI","auto_increment","User ID"
+"admin_user","firsname",2,NULL,"YES","varchar",32,0,0,"varchar(32)","","","User First Name"
+"admin_user","modified",8,"CURRENT_TIMESTAMP","NO","timestamp",0,0,0,"timestamp","","on update CURRENT_TIMESTAMP","User Modified Time"
+`)
+
+	dbMock.ExpectQuery(regexp.QuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
+		WithArgs("admin_user").
+		WillReturnRows(rows)
 
 	i := 4711
 	tm0 := csdb.MustNewTables(
@@ -156,9 +232,9 @@ func TestIntegration_WithLoadColumnDefinitions(t *testing.T) {
 	table, err2 := tm0.Table(i)
 	assert.NoError(t, err2)
 	assert.Equal(t, 1, table.CountPK)
-	assert.Equal(t, 1, table.CountUnique)
-	assert.True(t, len(table.Columns.FieldNames()) >= 15)
-	//t.Logf("%+v", table.Columns)
+	assert.Equal(t, 0, table.CountUnique)
+	assert.Exactly(t, []string{"user_id", "firsname", "modified"}, table.Columns.FieldNames())
+	//t.Log(table.Columns.GoString())
 }
 
 func TestMustInitTables(t *testing.T) {
@@ -216,11 +292,14 @@ func TestWithTableDMLListeners(t *testing.T) {
 	)
 
 	t.Run("Nil Table / No-WithTable", func(*testing.T) {
-		ts := csdb.MustNewTables(csdb.WithTableDMLListeners(33, ev, ev)) // +=2
+		ts := csdb.MustNewTables(
+			csdb.WithTableDMLListeners(33, ev, ev),
+			csdb.WithTable(33, "tableA"),
+		) // +=2
 		tbl := ts.MustTable(33)
 		sel := dbr.NewSelect("tableA")
 
-		sel.SelectListeners.Merge(tbl.Listeners.Select) // +=2
+		sel.Listeners.Merge(tbl.Listeners.Select) // +=2
 
 		sel.Columns = []string{"a", "b"}
 		assert.Exactly(t, "SELECT a, b FROM `tableA`", sel.String())
@@ -237,7 +316,7 @@ func TestWithTableDMLListeners(t *testing.T) {
 
 		sel := tbl.Select()
 		require.NotNil(t, sel)
-		sel.SelectListeners.Merge(tbl.Listeners.Select) // +=2
+		sel.Listeners.Merge(tbl.Listeners.Select) // +=2
 
 		assert.Exactly(t, "SELECT `main_table`.`col1` FROM `TeschtT` AS `main_table`", sel.String())
 		assert.Exactly(t, 8, counter)
@@ -253,13 +332,52 @@ func TestWithTableDMLListeners(t *testing.T) {
 
 		sel := tbl.Select()
 		require.NotNil(t, sel)
-		sel.SelectListeners.Merge(tbl.Listeners.Select) // +=2
+		sel.Listeners.Merge(tbl.Listeners.Select) // +=2
 
 		assert.Exactly(t, "SELECT `main_table`.`col1` FROM `TeschtU` AS `main_table`", sel.String())
 		assert.Exactly(t, 12, counter)
 	})
 }
 
-func TestWithLoadTableNames(t *testing.T) {
-	t.Skip("TODO WithLoadTableNames")
+func TestWithTableLoadColumns(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Invalid Identifier", func(t *testing.T) {
+		tbls, err := csdb.NewTables(csdb.WithTableLoadColumns(nil, 0, "H€llo"))
+		assert.Nil(t, tbls)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+	})
+
+	t.Run("Ok", func(t *testing.T) {
+
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+
+		rows := sqlmock.NewRows([]string{"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE", "DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE", "COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT"}).
+			FromCSVString(
+				`"admin_user","user_id",1,0,"NO","int",0,10,0,"int(10) unsigned","PRI","auto_increment","User ID"
+	"admin_user","firsname",2,NULL,"YES","varchar",32,0,0,"varchar(32)","","","User First Name"
+	"admin_user","modified",8,"CURRENT_TIMESTAMP","NO","timestamp",0,0,0,"timestamp","","on update CURRENT_TIMESTAMP","User Modified Time"
+	`)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
+			WithArgs("admin_user").
+			WillReturnRows(rows)
+
+		i := 4711
+		tm0 := csdb.MustNewTables(
+			csdb.WithTableLoadColumns(dbc.DB, i, "admin_user"),
+		)
+
+		table, err2 := tm0.Table(i)
+		assert.NoError(t, err2)
+		assert.Equal(t, 1, table.CountPK)
+		assert.Equal(t, 0, table.CountUnique)
+	})
 }

@@ -70,39 +70,53 @@ type Column struct {
 
 // DMLLoadColumns specifies the data manipulation language for retrieving all
 // columns in the current database for a specific table.
-const DMLLoadColumns = `SELECT
-		 COLUMN_NAME,ORDINAL_POSITION,COLUMN_DEFAULT,
-		 IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,
-		 NUMERIC_SCALE,COLUMN_TYPE,COLUMN_KEY,EXTRA,COLUMN_COMMENT
-	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?`
+//const DMLLoadColumns = `SELECT
+//	 FROM information_schema.COLUMNS WHERE  AND TABLE_NAME IN (?)`
 
-// LoadColumns returns all columns from a table in the current database. For now
-// MySQL DSN must have set interpolateParams to true.
-func LoadColumns(db dbr.Querier, table string) (Columns, error) {
+// LoadColumns returns all columns from a list of tables in the current
+// database. For now MySQL DSN must have set interpolateParams to true. Map key
+// contains the table name.
+func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 
-	rows, err := db.Query(DMLLoadColumns, table)
+	sel := dbr.NewSelect("information_schema.COLUMNS").AddColumns(
+		`TABLE_NAME,COLUMN_NAME,ORDINAL_POSITION,COLUMN_DEFAULT,
+		IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,
+		NUMERIC_SCALE,COLUMN_TYPE,COLUMN_KEY,EXTRA,COLUMN_COMMENT`).
+		Where(dbr.ConditionRaw(`TABLE_SCHEMA=DATABASE()`))
+	sel.DB.Querier = db
+	if len(tables) > 0 {
+		args := make([]interface{}, len(tables))
+		for i, t := range tables {
+			args[i] = t
+		}
+		sel.Where(dbr.ConditionRaw("TABLE_NAME IN (?)", args...))
+	}
+
+	rows, err := sel.Rows()
 	if err != nil {
-		return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for table %q", table)
+		return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
 	}
 	defer rows.Close()
 
-	var cs = make(Columns, 0, 10)
+	tc := make(map[string]Columns)
+
+	var tn string
 	for rows.Next() {
 		c := new(Column)
-		if err := rows.Scan(&c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.ColumnType, &c.Key, &c.Extra, &c.Comment); err != nil {
+		if err := rows.Scan(&tn, &c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.ColumnType, &c.Key, &c.Extra, &c.Comment); err != nil {
 			return nil, errors.Wrap(err, "[csdb] Scan Query")
 		}
+
+		if _, ok := tc[tn]; !ok {
+			tc[tn] = make(Columns, 0, 10)
+		}
 		c.DataType = strings.ToLower(c.DataType)
-		cs = append(cs, c)
+		tc[tn] = append(tc[tn], c)
 	}
-	err = rows.Err()
-	if err != nil {
-		return nil, errors.Wrapf(err, "[csdb] rows.Err Query ")
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrapf(err, "[csdb] rows.Err Query")
 	}
-	if len(cs) == 0 {
-		return nil, errors.NewNotFoundf("[csdb] Table %q not found in current database connection.", table)
-	}
-	return cs, nil
+	return tc, nil
 }
 
 // Hash calculates a non-cryptographic, fast and efficient hash value from all

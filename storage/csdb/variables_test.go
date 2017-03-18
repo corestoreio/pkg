@@ -28,6 +28,7 @@ import (
 var _ sort.Interface = (*Variables)(nil)
 
 func TestIsValidVarName(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name         string
 		allowPercent bool
@@ -55,6 +56,7 @@ func TestIsValidVarName(t *testing.T) {
 }
 
 func TestVariables_FindOne(t *testing.T) {
+	t.Parallel()
 	vs := Variables{
 		&Variable{Name: "a", Value: "1"},
 		&Variable{Name: "b", Value: "2"},
@@ -65,6 +67,7 @@ func TestVariables_FindOne(t *testing.T) {
 }
 
 func TestVariables_Sort(t *testing.T) {
+	t.Parallel()
 	vs := Variables{
 		&Variable{Name: "d", Value: "4"},
 		&Variable{Name: "a", Value: "1"},
@@ -78,6 +81,7 @@ func TestVariables_Sort(t *testing.T) {
 }
 
 func TestVariable_LoadOne(t *testing.T) {
+	t.Parallel()
 	dbc, dbMock := cstesting.MockDB(t)
 	defer func() {
 		dbMock.ExpectClose()
@@ -107,6 +111,7 @@ func TestVariable_LoadOne(t *testing.T) {
 }
 
 func TestVariables_AppendFiltered(t *testing.T) {
+	t.Parallel()
 	dbc, dbMock := cstesting.MockDB(t)
 
 	t.Run("One", func(t *testing.T) {

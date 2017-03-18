@@ -15,6 +15,8 @@
 package csdb
 
 import (
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -26,11 +28,16 @@ const (
 	MainTable       = "main_table"
 	AdditionalTable = "additional_table"
 	ScopeTable      = "scope_table"
-	ghostTableName  = "PendingTableName"
 )
 
-// TableOption applies options to the Tables struct.
-type TableOption func(*Tables) error
+// TableOption applies options and helper functions when creating a new table.
+// For example loading column definitions.
+type TableOption struct {
+	// priority takes care that the options gets applied in the correct order.
+	// e.g. column loading can only happen when a table is present.
+	priority uint8
+	fn       func(*Tables) error
+}
 
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
@@ -55,15 +62,17 @@ type Tables struct {
 // guarantee that the generated index constant will always stay the same but the
 // name of the table differs.
 func WithTable(idx int, tableName string, cols ...*Column) TableOption {
-	return func(tm *Tables) error {
-		if err := IsValidIdentifier(tableName); err != nil {
-			return errors.Wrap(err, "[csdb] WithNewTable.IsValidIdentifier")
-		}
+	return TableOption{
+		fn: func(tm *Tables) error {
+			if err := IsValidIdentifier(tableName); err != nil {
+				return errors.Wrap(err, "[csdb] WithNewTable.IsValidIdentifier")
+			}
 
-		if err := tm.Upsert(idx, NewTable(tableName, cols...)); err != nil {
-			return errors.Wrap(err, "[csdb] WithNewTable.Tables.Insert")
-		}
-		return nil
+			if err := tm.Upsert(idx, NewTable(tableName, cols...)); err != nil {
+				return errors.Wrap(err, "[csdb] WithNewTable.Tables.Insert")
+			}
+			return nil
+		},
 	}
 }
 
@@ -74,21 +83,23 @@ func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 // generated index constant will always stay the same but the name of the table
 // differs.
 func WithTableLoadColumns(db dbr.Querier, idx int, tableName string) TableOption {
-	return func(tm *Tables) error {
-		if err := IsValidIdentifier(tableName); err != nil {
-			return errors.Wrap(err, "[csdb] WithTableLoadColumns.IsValidIdentifier")
-		}
+	return TableOption{
+		fn: func(tm *Tables) error {
+			if err := IsValidIdentifier(tableName); err != nil {
+				return errors.Wrap(err, "[csdb] WithTableLoadColumns.IsValidIdentifier")
+			}
 
-		t := NewTable(tableName)
-		t.Schema = tm.Schema
-		if err := t.LoadColumns(db); err != nil {
-			return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
-		}
+			t := NewTable(tableName)
+			t.Schema = tm.Schema
+			if err := t.LoadColumns(db); err != nil {
+				return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
+			}
 
-		if err := tm.Upsert(idx, t); err != nil {
-			return errors.Wrap(err, "[csdb] Tables.Insert")
-		}
-		return nil
+			if err := tm.Upsert(idx, t); err != nil {
+				return errors.Wrap(err, "[csdb] Tables.Insert")
+			}
+			return nil
+		},
 	}
 }
 
@@ -96,25 +107,27 @@ func WithTableLoadColumns(db dbr.Querier, idx int, tableName string) TableOption
 // You should call afterwards the functional option WithLoadColumnDefinitions.
 // This function returns an error if a table index already exists.
 func WithTableNames(idx []int, tableName []string) TableOption {
-	return func(tm *Tables) error {
-		if len(idx) != len(tableName) {
-			return errors.NewNotValidf("[csdb] Length of the index must be equal to the length of the table names: %d != %d", len(idx), len(tableName))
-		}
-
-		if err := IsValidIdentifier(tableName...); err != nil {
-			return errors.Wrap(err, "[csdb] WithTable.IsValidIdentifier")
-		}
-
-		for i, tn := range tableName {
-			if err := tm.Upsert(idx[i], NewTable(tn)); err != nil {
-				return errors.Wrapf(err, "[csdb] Tables.Insert %q", tn)
+	return TableOption{
+		fn: func(tm *Tables) error {
+			if len(idx) != len(tableName) {
+				return errors.NewNotValidf("[csdb] Length of the index must be equal to the length of the table names: %d != %d", len(idx), len(tableName))
 			}
-		}
-		return nil
+
+			if err := IsValidIdentifier(tableName...); err != nil {
+				return errors.Wrap(err, "[csdb] WithTable.IsValidIdentifier")
+			}
+
+			for i, tn := range tableName {
+				if err := tm.Upsert(idx[i], NewTable(tn)); err != nil {
+					return errors.Wrapf(err, "[csdb] Tables.Insert %q", tn)
+				}
+			}
+			return nil
+		},
 	}
 }
 
-// WithLoadTableNames executes a query to load all available table in the
+// WithLoadTableNames executes a query to load all available tables in the
 // current database. Argument sql will be either appended to the SHOW TABLES
 // statement or if it starts with SELECT then it replaces the SHOW TABLES
 // statement.
@@ -122,51 +135,61 @@ func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption {
 	qry := "SHOW TABLES"
 	if len(sql) > 0 && sql[0] != "" {
 		if false == dbr.Stmt.IsSelect(sql[0]) {
-			qry = qry + " LIKE '" + sql[0] + "'"
+			qry = qry + " LIKE '" + strings.Replace(sql[0], "'", "", -1) + "'"
 		} else {
 			qry = sql[0]
 		}
 	}
-
-	return func(tm *Tables) error {
-		rows, err := querier.Query(qry)
-		if err != nil {
-			return errors.Wrapf(err, "[csdb] Query %q failed", qry)
-		}
-		var tableName string
-
-		i := 0
-		for rows.Next() {
-			if err := rows.Scan(&tableName); err != nil {
-				return errors.Wrapf(err, "Scan Query %q", qry)
+	return TableOption{
+		fn: func(tm *Tables) error {
+			rows, err := querier.Query(qry)
+			if err != nil {
+				return errors.Wrapf(err, "[csdb] Query %q failed", qry)
 			}
-			if err := tm.Upsert(i, NewTable(tableName)); err != nil {
-				return errors.Wrapf(err, "[csdb] Tables.Insert Index %d with name %q", i, tableName)
-			}
-			i++
-		}
+			var tableName string
 
-		if err = rows.Err(); err != nil {
-			return errors.Wrapf(err, "[csdb] Rows with query %q", qry)
-		}
-		return nil
+			i := 0
+			for rows.Next() {
+				if err := rows.Scan(&tableName); err != nil {
+					return errors.Wrapf(err, "Scan Query %q", qry)
+				}
+				if err := tm.Upsert(i, NewTable(tableName)); err != nil {
+					return errors.Wrapf(err, "[csdb] Tables.Insert Index %d with name %q", i, tableName)
+				}
+				i++
+			}
+
+			if err = rows.Err(); err != nil {
+				return errors.Wrapf(err, "[csdb] Rows with query %q", qry)
+			}
+			return nil
+		},
 	}
 }
 
 // WithLoadColumnDefinitions loads the column definitions from the database for each
 // table in the internal map. Thread safe.
 func WithLoadColumnDefinitions(db dbr.Querier) TableOption {
-	return func(tm *Tables) error {
-		tm.mu.Lock()
-		defer tm.mu.Unlock()
+	return TableOption{
+		priority: 255, // must be the last element
+		fn: func(tm *Tables) error {
 
-		for _, table := range tm.ts {
-			// TODO(CyS) could be refactored to fire only one query ... but later.
-			if err := table.LoadColumns(db); err != nil {
+			tc, err := LoadColumns(db, tm.Tables()...)
+			if err != nil {
 				return errors.Wrap(err, "[csdb] table.LoadColumns")
 			}
-		}
-		return nil
+
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+			for _, t := range tm.ts {
+				if c, ok := tc[t.Name]; ok {
+					t.Columns = c
+					t.update()
+				}
+			}
+
+			return nil
+		},
 	}
 }
 
@@ -174,18 +197,21 @@ func WithLoadColumnDefinitions(db dbr.Querier) TableOption {
 // matter if the table has already been set. If the table object gets set later,
 // the events will be copied to the new object.
 func WithTableDMLListeners(idx int, events ...*dbr.ListenerBucket) TableOption {
-	return func(tm *Tables) error {
-		tm.mu.Lock()
-		defer tm.mu.Unlock()
+	return TableOption{
+		priority: 254,
+		fn: func(tm *Tables) error {
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
 
-		t, ok := tm.ts[idx]
-		if !ok || t == nil {
-			t = NewTable(ghostTableName)
-		}
-		t.Listeners.Merge(events...)
-		tm.ts[idx] = t
+			t, ok := tm.ts[idx]
+			if !ok {
+				return errors.NewNotFoundf("[csdb] Table at index %d not found", idx)
+			}
+			t.Listeners.Merge(events...)
+			tm.ts[idx] = t
 
-		return nil
+			return nil
+		},
 	}
 }
 
@@ -235,8 +261,15 @@ func MustInitTables(ts *Tables, opts ...TableOption) *Tables {
 
 // Options applies options to the Tables service.
 func (tm *Tables) Options(opts ...TableOption) error {
-	for _, o := range opts {
-		if err := o(tm); err != nil {
+
+	// SliceStable must be stable to maintain the order of all options where
+	// priority is zero.
+	sort.SliceStable(opts, func(i, j int) bool {
+		return opts[i].priority < opts[j].priority
+	})
+
+	for _, to := range opts {
+		if err := to.fn(tm); err != nil {
 			return errors.Wrap(err, "[csdb] Applied option error")
 		}
 	}
@@ -255,6 +288,19 @@ func (tm *Tables) Table(i int) (*Table, error) {
 		return t, nil
 	}
 	return nil, errors.NewNotFoundf("[csdb] Table at index %d not found.", i)
+}
+
+// Tables returns a list of all available table names.
+func (tm *Tables) Tables() []string {
+	// todo maybe use internal cache
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+
+	ts := make([]string, 0, len(tm.ts))
+	for _, table := range tm.ts {
+		ts = append(ts, tm.Prefix+table.Name)
+	}
+	return ts
 }
 
 // MustTable same as Table function but panics when the table cannot be found or

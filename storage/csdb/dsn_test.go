@@ -25,6 +25,7 @@ import (
 )
 
 func TestGetDSN(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		env        string
 		envContent string
@@ -54,6 +55,7 @@ func TestGetDSN(t *testing.T) {
 
 // This test is flaky because FormatDSN has params as a map
 func TestGetParsedDSN(t *testing.T) {
+	t.Parallel()
 	currentDSN := os.Getenv(EnvDSN)
 	defer func() {
 		if currentDSN != "" {

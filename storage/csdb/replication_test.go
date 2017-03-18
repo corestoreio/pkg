@@ -25,6 +25,7 @@ import (
 )
 
 func TestMasterStatus_Compare(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		left, right csdb.MasterStatus
 		want        int
@@ -42,6 +43,8 @@ func TestMasterStatus_Compare(t *testing.T) {
 }
 
 func TestShowMasterStatus(t *testing.T) {
+	t.Parallel()
+
 	dbc, dbMock := cstesting.MockDB(t)
 	defer func() {
 		dbMock.ExpectClose()
@@ -67,6 +70,7 @@ func TestShowMasterStatus(t *testing.T) {
 }
 
 func TestMasterStatus_FromString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		in           string
 		wantFile     string

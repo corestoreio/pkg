@@ -70,7 +70,8 @@ func TestGetColumnsMage19(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		cols1, err := csdb.LoadColumns(dbc.DB, test.table)
+		tc, err := csdb.LoadColumns(dbc.DB, test.table)
+		cols1 := tc[test.table]
 		if test.wantErr != nil {
 			assert.Error(t, err, "Index %d => %+v", i, err)
 			assert.True(t, test.wantErr(err), "Index %d", i)
@@ -429,11 +430,12 @@ func TestColumn_IsCurrentTimestamp(t *testing.T) {
 	assert.False(t, adminUserColumns.ByName("reload_acl_flag").IsCurrentTimestamp())
 }
 
-var benchmarkGetColumns csdb.Columns
+var benchmarkGetColumns map[string]csdb.Columns
 var benchmarkGetColumnsHashWant = []byte{0x3b, 0x2d, 0xdd, 0xf4, 0x4e, 0x2b, 0x3a, 0xd0}
 
 // BenchmarkGetColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
 func BenchmarkGetColumns(b *testing.B) {
+	const tn = "eav_attribute"
 	dbc, _ := cstesting.MustConnectDB()
 	if dbc == nil {
 		b.Skip("Environment DB DSN not found")
@@ -443,12 +445,12 @@ func BenchmarkGetColumns(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkGetColumns, err = csdb.LoadColumns(dbc.DB, "eav_attribute")
+		benchmarkGetColumns, err = csdb.LoadColumns(dbc.DB, tn)
 		if err != nil {
 			b.Error(err)
 		}
 	}
-	hashHave, err := benchmarkGetColumns.Hash()
+	hashHave, err := benchmarkGetColumns[tn].Hash()
 	if err != nil {
 		b.Error(err)
 	}

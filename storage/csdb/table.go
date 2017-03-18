@@ -15,8 +15,14 @@
 package csdb
 
 import (
+	"bytes"
+	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Table represents a table from a specific database.
@@ -72,10 +78,15 @@ func (t *Table) update() *Table {
 }
 
 // LoadColumns reads the column information from the DB.
-func (t *Table) LoadColumns(db dbr.Querier) (err error) {
-	t.Columns, err = LoadColumns(db, t.Name)
+func (t *Table) LoadColumns(db dbr.Querier) error {
+	tc, err := LoadColumns(db, t.Name)
+	if err != nil {
+		return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", t.Name)
+	}
+	t.Columns = tc[t.Name]
+	tc = nil
 	t.update()
-	return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", t.Name)
+	return nil
 }
 
 // TableAliasQuote returns a table name with the alias. catalog_product_entity
@@ -119,6 +130,47 @@ func (t *Table) In(n string) bool {
 	return false
 }
 
+// Truncate truncates the tables. Removes all rows and sets the auto increment
+// to zero. Just like a CREATE TABLE statement.
+func (t *Table) Truncate(execer dbr.Execer) error {
+	ddl := "TRUNCATE TABLE " + dbr.Quoter.QuoteAs(t.Name)
+	_, err := execer.Exec(ddl)
+	return errors.Wrapf(err, "[csdb] failed to truncate table %q", ddl)
+}
+
+// Rename renames the current table to the new table name. Renaming is an atomic
+// operation in the database. As long as two databases are on the same file
+// system, you can use RENAME TABLE to move a table from one database to
+// another. RENAME TABLE also works for views, as long as you do not try to
+// rename a view into a different database.
+func (t *Table) Rename(execer dbr.Execer, new string) error {
+	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(new)
+	_, err := execer.Exec(ddl)
+	return errors.Wrapf(err, "[csdb] failed to rename table %q", ddl)
+}
+
+// Swap swaps the current table with the other table of the same structure.
+// Renaming is an atomic operation in the database. Note: indexes won't get
+// swapped! As long as two databases are on the same file system, you can use
+// RENAME TABLE to move a table from one database to another.
+func (t *Table) Swap(execer dbr.Execer, other string) error {
+	tmp := t.Name + "_swap_" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	if len(tmp) > 64 { // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+		tmp = tmp[:64]
+	}
+	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(tmp) + ", " +
+		dbr.Quoter.QuoteAs(other) + " TO " + dbr.Quoter.QuoteAs(t.Name) + "," +
+		dbr.Quoter.QuoteAs(tmp) + " TO " + dbr.Quoter.QuoteAs(other)
+	_, err := execer.Exec(ddl)
+	return errors.Wrapf(err, "[csdb] failed to swap table %q", ddl)
+}
+
+// Drop, if exists, drops the table.
+func (t *Table) Drop(execer dbr.Execer) error {
+	_, err := execer.Exec("DROP TABLE IF EXISTS " + dbr.Quoter.QuoteAs(t.Name))
+	return errors.Wrapf(err, "[csdb] failed to drop table %q", t.Name)
+}
+
 // Select generates a SELECT * FROM tableName statement.
 func (t *Table) Select() *dbr.Select {
 	var sb = new(dbr.Select)
@@ -131,8 +183,171 @@ func (t *Table) Select() *dbr.Select {
 // and an error. The variadic third arguments can modify the SQL query.
 func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
 	sb := t.Select()
-	sb.Querier = db
-	sb.SelectListeners.Merge(t.Listeners.Select)
-	sb.SelectListeners.Add(listeners...)
+	sb.DB.Querier = db
+	sb.Listeners.Merge(t.Listeners.Select)
+	sb.Listeners.Add(listeners...)
 	return sb.LoadStructs(dest)
+}
+
+// InfileOptions provides options for the function LoadDataInfile. Some fields
+// are self-describing.
+type InfileOptions struct {
+	// IsNotLocal disables LOCAL load file. If LOCAL is specified, the file is read
+	// by the client program on the client host and sent to the server. If LOCAL
+	// is not specified, the file must be located on the server host and is read
+	// directly by the server.
+	// See security issues in https://dev.mysql.com/doc/refman/5.7/en/load-data-local.html
+	IsNotLocal bool
+	// Replace, input rows replace existing rows. In other words, rows that have
+	// the same value for a primary key or unique index as an existing row.
+	Replace bool
+	// Ignore, rows that duplicate an existing row on a unique key value are
+	// discarded.
+	Ignore             bool
+	FieldsTerminatedBy string
+	// FieldsOptionallyEnclosedBy set true if not all columns are enclosed.
+	FieldsOptionallyEnclosedBy bool
+	FieldsEnclosedBy           rune
+	FieldsEscapedBy            rune
+	LinesTerminatedBy          string
+	// LinesStartingBy: If all the lines you want to read in have a common
+	// prefix that you want to ignore, you can use LINES STARTING BY
+	// 'prefix_string' to skip over the prefix, and anything before it. If a
+	// line does not include the prefix, the entire line is skipped.
+	LinesStartingBy string
+	// IgnoreLinesAtStart can be used to ignore lines at the start of the file.
+	// For example, you can use IGNORE 1 LINES to skip over an initial header
+	// line containing column names.
+	IgnoreLinesAtStart int
+	// Set must be a balanced key,value slice. The column list (field Columns)
+	// can contain either column names or user variables. With user variables,
+	// the SET clause enables you to perform transformations on their values
+	// before assigning the result to columns. The SET clause can be used to
+	// supply values not derived from the input file. e.g. SET column3 =
+	// CURRENT_TIMESTAMP For more details please read
+	// https://dev.mysql.com/doc/refman/5.7/en/load-data.html
+	Set []string
+	// Columns optional custom columns if the default columns of the table
+	// differs from the CSV file. Column names get automatically quoted.
+	Columns []string
+	// Log optional logger for debugging purposes
+	Log log.Logger
+}
+
+// LoadDataInfile loads a local CSV file into a MySQL table. For more details
+// please read https://dev.mysql.com/doc/refman/5.7/en/load-data.html Files must
+// be whitelisted by registering them with mysql.RegisterLocalFile(filepath)
+// (recommended) or the Whitelist check must be deactivated by using the DSN
+// parameter allowAllFiles=true (Might be insecure!). For more details
+// https://godoc.org/github.com/go-sql-driver/mysql#RegisterLocalFile. To ignore
+// foreign key constraints during the load operation, issue a SET
+// foreign_key_checks = 0 statement before executing LOAD DATA.
+func (t *Table) LoadDataInfile(execer dbr.Execer, filePath string, o InfileOptions) error {
+	if o.Log == nil {
+		o.Log = log.BlackHole{}
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("LOAD DATA ")
+	if !o.IsNotLocal {
+		buf.WriteString("LOCAL")
+	}
+	buf.WriteString(" INFILE '")
+	buf.WriteString(filePath)
+	buf.WriteRune('\'')
+	switch {
+	case o.Replace:
+		buf.WriteString(" REPLACE ")
+	case o.Ignore:
+		buf.WriteString(" IGNORE ")
+	}
+	buf.WriteString(" INTO TABLE ")
+	buf.WriteString(dbr.Quoter.Quote(t.Schema, t.Name))
+
+	var hasFields bool
+	if o.FieldsEscapedBy > 0 || o.FieldsTerminatedBy != "" || o.FieldsEnclosedBy > 0 {
+		buf.WriteString(" FIELDS ")
+		hasFields = true
+	}
+	if o.FieldsTerminatedBy != "" {
+		buf.WriteString("TERMINATED BY '")
+		buf.WriteString(o.FieldsTerminatedBy) // todo fix if it contains a single quote
+		buf.WriteRune('\'')
+	}
+	if o.FieldsEnclosedBy > 0 {
+		if o.FieldsOptionallyEnclosedBy {
+			buf.WriteString(" OPTIONALLY ")
+		}
+		buf.WriteString(" ENCLOSED BY '")
+		buf.WriteRune(o.FieldsEnclosedBy) // todo fix if it contains a single quote
+		buf.WriteRune('\'')
+	}
+	if o.FieldsEscapedBy > 0 {
+		buf.WriteString(" ESCAPED BY '")
+		buf.WriteRune(o.FieldsEscapedBy) // todo fix if it contains a single quote
+		buf.WriteRune('\'')
+	}
+	if hasFields {
+		buf.WriteRune('\n')
+	}
+
+	var hasLines bool
+	if o.LinesTerminatedBy != "" || o.LinesStartingBy != "" {
+		buf.WriteString(" LINES ")
+		hasLines = true
+	}
+
+	if o.LinesTerminatedBy != "" {
+		buf.WriteString(" TERMINATED BY '")
+		buf.WriteString(o.LinesTerminatedBy) // todo fix if it contains a single quote
+		buf.WriteRune('\'')
+	}
+	if o.LinesStartingBy != "" {
+		buf.WriteString(" STARTING BY '")
+		buf.WriteString(o.LinesStartingBy) // todo fix if it contains a single quote
+		buf.WriteRune('\'')
+	}
+	if hasLines {
+		buf.WriteRune('\n')
+	}
+
+	if o.IgnoreLinesAtStart > 0 {
+		fmt.Fprintf(&buf, "IGNORE %d LINES\n", o.IgnoreLinesAtStart)
+	}
+
+	// write COLUMNS
+	buf.WriteString(" (")
+	if len(o.Columns) == 0 {
+		o.Columns = t.Columns.FieldNames()
+	}
+	for i, c := range o.Columns {
+		if c != "" {
+			buf.WriteString(c) // do not quote because custom columns or variables
+		}
+		if i < len(t.Columns)-1 {
+			buf.WriteRune(',')
+		}
+	}
+	buf.WriteString(")\n")
+
+	if ls := len(o.Set); ls > 0 && ls%2 == 0 {
+		buf.WriteString("SET ")
+		for i := 0; i < ls; i = i + 2 {
+			buf.WriteString(o.Set[i])
+			buf.WriteRune('=')
+			buf.WriteString(o.Set[i+1])
+			if i+1 < ls-1 {
+				buf.WriteRune(',')
+				buf.WriteRune('\n')
+			}
+		}
+	}
+	buf.WriteRune(';')
+
+	if o.Log.IsDebug() {
+		o.Log.Debug("csdb.Table.Infile.SQL", log.String("sql", buf.String()))
+	}
+
+	_, err := execer.Exec(buf.String())
+	return errors.NewFatal(err, "[csb] Infile for table %q failed with query: %q", t.Name, buf.String())
 }
