@@ -116,15 +116,15 @@ func TestColumns(t *testing.T) {
 		assert.Equal(t, test.wantS, test.haveS, "Index %d", i)
 	}
 
-	tsN := mustStructure(table4).Columns.ByName("user_id_not_found")
+	tsN := mustStructure(table4).Columns.ByField("user_id_not_found")
 	assert.NotNil(t, tsN)
 	assert.Empty(t, tsN.Field)
 
-	ts4 := mustStructure(table4).Columns.ByName("user_id")
+	ts4 := mustStructure(table4).Columns.ByField("user_id")
 	assert.NotEmpty(t, ts4.Field)
 	assert.True(t, ts4.IsAutoIncrement())
 
-	ts4b := mustStructure(table4).Columns.ByName("email")
+	ts4b := mustStructure(table4).Columns.ByField("email")
 	assert.NotEmpty(t, ts4b.Field)
 	assert.True(t, ts4b.IsNull())
 
@@ -412,22 +412,30 @@ func TestColumnsSort(t *testing.T) {
 	assert.Exactly(t, `user_id`, adminUserColumns.First().Field)
 }
 
+func TestColumn_GoComment(t *testing.T) {
+	assert.Exactly(t, "// user_id int(10) unsigned NOT NULL PRI  auto_increment \"User ID\"",
+		adminUserColumns.First().GoComment())
+	assert.Exactly(t, "// firstname varchar(32) NULL    \"User First Name\"",
+		adminUserColumns.ByField("firstname").GoComment())
+
+}
+
 func TestColumn_IsUnsigned(t *testing.T) {
 	t.Parallel()
-	assert.True(t, adminUserColumns.ByName("lognum").IsUnsigned())
-	assert.False(t, adminUserColumns.ByName("reload_acl_flag").IsUnsigned())
+	assert.True(t, adminUserColumns.ByField("lognum").IsUnsigned())
+	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsUnsigned())
 }
 
 func TestColumn_DataTypeSimple(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "date", adminUserColumns.ByName("logdate").DataTypeSimple())
-	assert.Exactly(t, "int", adminUserColumns.ByName("reload_acl_flag").DataTypeSimple())
+	assert.Exactly(t, "date", adminUserColumns.ByField("logdate").DataTypeSimple())
+	assert.Exactly(t, "int", adminUserColumns.ByField("reload_acl_flag").DataTypeSimple())
 }
 
 func TestColumn_IsCurrentTimestamp(t *testing.T) {
 	t.Parallel()
-	assert.True(t, adminUserColumns.ByName("modified").IsCurrentTimestamp())
-	assert.False(t, adminUserColumns.ByName("reload_acl_flag").IsCurrentTimestamp())
+	assert.True(t, adminUserColumns.ByField("modified").IsCurrentTimestamp())
+	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsCurrentTimestamp())
 }
 
 var benchmarkGetColumns map[string]csdb.Columns

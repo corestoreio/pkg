@@ -221,9 +221,9 @@ func (cs Columns) Less(i, j int) bool { return cs[i].Pos < cs[j].Pos }
 // Swap changes the position
 func (cs Columns) Swap(i, j int) { cs[i], cs[j] = cs[j], cs[i] }
 
-// ByName finds a column by its name. Case sensitive. Guaranteed to a non-nil
-// return value.
-func (cs Columns) ByName(fieldName string) *Column {
+// ByField finds a column by its field name. Case sensitive. Guaranteed to
+// return a non-nil return value.
+func (cs Columns) ByField(fieldName string) *Column {
 	for _, c := range cs {
 		if c.Field == fieldName {
 			return c
@@ -267,6 +267,21 @@ func (cs Columns) JoinFields(sep ...string) string {
 		aSep = sep[0]
 	}
 	return strings.Join(cs.FieldNames(), aSep)
+}
+
+// GoComment creates a comment from a database column to be used in Go code
+func (c *Column) GoComment() string {
+	sqlNull := "NOT NULL"
+	if c.IsNull() {
+		sqlNull = "NULL"
+	}
+	sqlDefault := ""
+	if c.Default.Valid {
+		sqlDefault = "DEFAULT '" + c.Default.String + "'"
+	}
+	return fmt.Sprintf("// %s %s %s %s %s %s %q",
+		c.Field, c.ColumnType, sqlNull, c.Key, sqlDefault, c.Extra, c.Comment,
+	)
 }
 
 // GoString returns the Go types representation. See interface fmt.GoStringer
