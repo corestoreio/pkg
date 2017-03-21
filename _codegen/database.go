@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
+	"github.com/corestoreio/errors"
 )
 
 const (
@@ -73,47 +71,47 @@ func (m TypeCodeValueTable) Empty() bool {
 	return len(m) < 1 || ok
 }
 
-// GetTables returns all tables from a database. AndWhere can be optionally applied.
-// Only first index (0) will be added.
-func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
-
-	qry := "SHOW TABLES"
-	if len(sql) > 0 && sql[0] != "" {
-		if false == dbr.Stmt.IsSelect(sql[0]) {
-			qry = qry + " LIKE '" + sql[0] + "'"
-		} else {
-			qry = sql[0]
-		}
-	}
-	if PkgLog.IsDebug() { // this if reduces 9 allocs ...
-		defer log.WhenDone(PkgLog).Debug("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
-	}
-
-	sb := dbrSess.SelectBySql(qry)
-	query, args, err := sb.ToSql()
-	if err != nil {
-		return nil, errors.Wrap(err, "ToSql")
-	}
-	rows, err := sb.Query(query, args...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Query %q", query)
-	}
-	defer rows.Close()
-
-	var tableName string
-	var tableNames = make([]string, 0, 200)
-	for rows.Next() {
-		if err := rows.Scan(&tableName); err != nil {
-			return nil, errors.Wrapf(err, "Scan Query %q", query)
-		}
-		tableNames = append(tableNames, tableName)
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "Rows")
-	}
-	return tableNames, nil
-}
+//// GetTables returns all tables from a database. AndWhere can be optionally applied.
+//// Only first index (0) will be added.
+//func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
+//
+//	qry := "SHOW TABLES"
+//	if len(sql) > 0 && sql[0] != "" {
+//		if false == dbr.Stmt.IsSelect(sql[0]) {
+//			qry = qry + " LIKE '" + sql[0] + "'"
+//		} else {
+//			qry = sql[0]
+//		}
+//	}
+//	if PkgLog.IsDebug() { // this if reduces 9 allocs ...
+//		defer log.WhenDone(PkgLog).Debug("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
+//	}
+//
+//	sb := dbrSess.SelectBySql(qry)
+//	query, args, err := sb.ToSql()
+//	if err != nil {
+//		return nil, errors.Wrap(err, "ToSql")
+//	}
+//	rows, err := sb.Query(query, args...)
+//	if err != nil {
+//		return nil, errors.Wrapf(err, "Query %q", query)
+//	}
+//	defer rows.Close()
+//
+//	var tableName string
+//	var tableNames = make([]string, 0, 200)
+//	for rows.Next() {
+//		if err := rows.Scan(&tableName); err != nil {
+//			return nil, errors.Wrapf(err, "Scan Query %q", query)
+//		}
+//		tableNames = append(tableNames, tableName)
+//	}
+//
+//	if err = rows.Err(); err != nil {
+//		return nil, errors.Wrap(err, "Rows")
+//	}
+//	return tableNames, nil
+//}
 
 // GetEavValueTables returns a map of all custom and default EAV value tables for entity type codes.
 // Despite value_table_prefix can have in Magento a different table name we treat it here
@@ -176,43 +174,30 @@ type (
 	}
 )
 
-// Comment creates a comment from a database column to be used in Go code
-func (c column) Comment() string {
-	sqlNull := "NOT NULL"
-	if c.IsNull() {
-		sqlNull = "NULL"
-	}
-	sqlDefault := ""
-	if c.Default.String != "" {
-		sqlDefault = "DEFAULT '" + c.Default.String + "'"
-	}
-	return "// " + c.Name() + " " + c.TypeRaw.String + " " + sqlNull + " " + c.Key.String + " " + sqlDefault + " " + c.Extra.String
-}
+//func (c column) updateGoPrimitive(useSQL bool) column {
+//	c.GoName = util.UnderscoreCamelize(c.Field.String)
+//	c.GoType = c.GoPrimitive(useSQL)
+//	return c
+//}
 
-func (c column) updateGoPrimitive(useSQL bool) column {
-	c.GoName = util.UnderscoreCamelize(c.Field.String)
-	c.GoType = c.GetGoPrimitive(useSQL)
-	return c
-}
-
-// CopyToCSDB copies the underlying slice to a csdb columns type
-func (cc Columns) CopyToCSDB() csdb.Columns {
-	ret := make(csdb.Columns, len(cc))
-	for i, c := range cc {
-		ret[i] = c.Column
-	}
-	return ret
-}
-
-// GetByName returns a column from Columns slice by a give name
-func (cc Columns) GetByName(name string) column {
-	for _, c := range cc {
-		if c.Field.String == name {
-			return c
-		}
-	}
-	return column{}
-}
+//// CopyToCSDB copies the underlying slice to a csdb columns type
+//func (cc Columns) CopyToCSDB() csdb.Columns {
+//	ret := make(csdb.Columns, len(cc))
+//	for i, c := range cc {
+//		ret[i] = c.Column
+//	}
+//	return ret
+//}
+//
+//// GetByName returns a column from Columns slice by a give name
+//func (cc Columns) GetByName(name string) column {
+//	for _, c := range cc {
+//		if c.Field.String == name {
+//			return c
+//		}
+//	}
+//	return column{}
+//}
 
 // MapSQLToGoDBRType takes a slice of Columns and sets the fields GoType and GoName to the correct value
 // to create a Go struct. These generated structs are mainly used in a result from a SQL query. The field GoType
@@ -224,9 +209,10 @@ func (cc Columns) MapSQLToGoDBRType() error {
 	return nil
 }
 
-// MapSQLToGoType maps a column to a GoType. This GoType is not a dbr.Null* struct. This function only updates
-// the fields GoType and GoName of column struct. The 2nd argument ifm interface map replaces the primitive type
-// with an interface type, the column name must be found as a key in the map.
+// MapSQLToGoType maps a column to a GoType. This GoType is not a dbr.Null*
+// struct. This function only updates the fields GoType and GoName of column
+// struct. The 2nd argument ifm interface map replaces the primitive type with
+// an interface type, the column name must be found as a key in the map.
 func (cc Columns) MapSQLToGoType(ifm map[string]string) error {
 	for i, col := range cc {
 		cc[i] = col.updateGoPrimitive(false)
@@ -237,23 +223,24 @@ func (cc Columns) MapSQLToGoType(ifm map[string]string) error {
 	return nil
 }
 
-// GetFieldNames returns from a Columns slice the column names. If pkOnly is true then only the
-// primary key columns will be returned.
-func (cc Columns) GetFieldNames(pkOnly bool) []string {
-	ret := make([]string, 0, len(cc))
-	for _, col := range cc {
-		isPk := col.Key.String == "PRI"
-		if pkOnly && isPk {
-			ret = append(ret, col.Field.String)
-		}
-		if !pkOnly && !isPk {
-			ret = append(ret, col.Field.String)
-		}
-	}
-	return ret
-}
+//// GetFieldNames returns from a Columns slice the column names. If pkOnly is true then only the
+//// primary key columns will be returned.
+//func (cc Columns) GetFieldNames(pkOnly bool) []string {
+//	ret := make([]string, 0, len(cc))
+//	for _, col := range cc {
+//		isPk := col.Key.String == "PRI"
+//		if pkOnly && isPk {
+//			ret = append(ret, col.Field.String)
+//		}
+//		if !pkOnly && !isPk {
+//			ret = append(ret, col.Field.String)
+//		}
+//	}
+//	return ret
+//}
 
 // isIgnoredColumn Drop unused column entity_type_id in customer__* and catalog_* tables
+// Deprecated use csdb.Columns.Filter
 func isIgnoredColumn(table, column string) bool {
 	const etid = "entity_type_id"
 	switch {
@@ -267,31 +254,31 @@ func isIgnoredColumn(table, column string) bool {
 	return false
 }
 
-// GetColumns returns all columns from a table. It discards the column
-// entity_type_id from some entity tables. The column attribute_model will also
-// be dropped from table eav_attribute
-func GetColumns(db *sql.DB, table string) (Columns, error) {
-	var cols = make(Columns, 0, 200)
-	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
-	if err != nil {
-		return nil, errors.Wrapf(err, "Query Table %q", table)
-	}
-	defer rows.Close()
-
-	col := column{}
-	for rows.Next() {
-
-		err := rows.Scan(&col.Field, &col.TypeRaw, &col.Null, &col.Key, &col.Default, &col.Extra)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Query Scan Table %q", table)
-		}
-		if isIgnoredColumn(table, col.Field.String) {
-			continue
-		}
-		cols = append(cols, col)
-	}
-	return cols, errors.Wrapf(rows.Err(), "Rows Error Table %q", table)
-}
+//// GetColumns returns all columns from a table. It discards the column
+//// entity_type_id from some entity tables. The column attribute_model will also
+//// be dropped from table eav_attribute
+//func GetColumns(db *sql.DB, table string) (Columns, error) {
+//	var cols = make(Columns, 0, 200)
+//	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
+//	if err != nil {
+//		return nil, errors.Wrapf(err, "Query Table %q", table)
+//	}
+//	defer rows.Close()
+//
+//	col := column{}
+//	for rows.Next() {
+//
+//		err := rows.Scan(&col.Field, &col.ColumnType, &col.Null, &col.Key, &col.Default, &col.Extra)
+//		if err != nil {
+//			return nil, errors.Wrapf(err, "Query Scan Table %q", table)
+//		}
+//		if isIgnoredColumn(table, col.Field.String) {
+//			continue
+//		}
+//		cols = append(cols, col)
+//	}
+//	return cols, errors.Wrapf(rows.Err(), "Rows Error Table %q", table)
+//}
 
 const tplQueryDBRStruct = `
 type (
@@ -303,37 +290,6 @@ type (
         {{ end }} }
 )
 `
-
-// SQLQueryToColumns generates from a SQL query an array containing all the column properties.
-// dbSelect argument can be nil but then you must provide query strings which will be joined to the final query.
-func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string) (Columns, error) {
-
-	tableName := "tmp_" + randSeq(20)
-	dropTable := func() {
-		_, err := db.Exec("DROP TABLE IF EXISTS `" + tableName + "`")
-		if err != nil {
-			panic(err)
-		}
-	}
-	dropTable()
-	defer dropTable()
-
-	qry := strings.Join(query, " ")
-	var args []interface{}
-	if qry == "" && dbSelect != nil {
-		var err error
-		qry, args, err = dbSelect.ToSql()
-		if err != nil {
-			return nil, errors.Wrap(err, "dbSelect.ToSql")
-		}
-	}
-	_, err := db.Exec("CREATE TABLE `"+tableName+"` AS "+qry, args...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Create Table %q", tableName)
-	}
-
-	return GetColumns(db, tableName)
-}
 
 // ColumnsToStructCode generates Go code from a name and a slice of columns.
 // Make sure that the fields GoType and GoName has been setup
@@ -357,9 +313,9 @@ func ColumnsToStructCode(tplData map[string]interface{}, name string, cols Colum
 }
 
 // LoadStringEntities executes a SELECT query and returns a slice containing columns names and its string values
-func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder) ([]StringEntities, error) {
+func LoadStringEntities(db *sql.DB, dbSelect *dbr.Select) ([]StringEntities, error) {
 
-	qry, args, err := dbSelect.ToSql()
+	qry, args, err := dbSelect.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "ToSQL")
 	}

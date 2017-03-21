@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,20 +20,8 @@ import (
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/errors"
-	"github.com/corestoreio/csfw/util/log"
+	"github.com/corestoreio/errors"
 )
-
-// PkgLog global package based logger
-var PkgLog log.Logger = log.NewStdLog(
-	log.WithStdLevel(log.StdLevelFatal),
-	//log.SetStdLevel(log.StdLevelDebug),
-)
-
-func init() {
-	codegen.PkgLog = PkgLog
-	log.PkgLog = PkgLog
-}
 
 // Connect creates a new database connection from a DSN stored in an
 // environment variable CS_DSN.
@@ -49,7 +37,7 @@ func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
 }
 
 func main() {
-	defer log.WhenDone(PkgLog).Info("Stats")
+
 	dbc, err := Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()
@@ -62,10 +50,4 @@ func main() {
 	}
 
 	wg.Wait()
-
-	//	for _, ts := range codegen.ConfigTableToStruct {
-	//		// due to a race condition the codec generator must run after the newGenerator() calls
-	//		// TODO(cs) fix https://github.com/ugorji/go/issues/92#issuecomment-140410732
-	//		runCodec(ts.Package, ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
-	//	}
 }

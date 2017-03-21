@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,12 +25,13 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/errors"
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 var (
 	letters   = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	Copyright = []byte(`// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+	Copyright = []byte(`// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -137,7 +138,7 @@ func LogFatal(err error) {
 	if err == nil {
 		return
 	}
-	PkgLog.Fatal(errors.PrintLoc(err))
+	PkgLog.Fatal("ERROR", log.String("The_Error", fmt.Sprintf("%+v", err)), log.Err(err))
 }
 
 // randSeq returns a random string with a defined length n.

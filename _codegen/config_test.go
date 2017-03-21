@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,14 +22,4 @@ import (
 
 func TestEntityTypeMapKeys(t *testing.T) {
 	assert.Len(t, ConfigEntityType.Keys(), len(ConfigEntityType))
-}
-
-var benchmarkEntityTypeMapKeys []string
-
-// BenchmarkEntityTypeMapKeys	 5000000	       328 ns/op	      64 B/op	       1 allocs/op
-func BenchmarkEntityTypeMapKeys(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		benchmarkEntityTypeMapKeys = ConfigEntityType.Keys()
-	}
 }

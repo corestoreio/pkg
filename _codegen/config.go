@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
 package codegen
 
 import (
+	"go/build"
+
 	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
-	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/corestoreio/csfw/util/slices"
 )
 
 type (
@@ -39,18 +40,20 @@ type (
 		// EntityTypeCodes If provided then eav_entity_type.value_table_prefix
 		// will be evaluated for further tables.
 		EntityTypeCodes []string
-		// GenericsWhiteList config option as a SQL query to select all tables for which
-		// it should generate the generic functions. If empty nothing gets generated.
-		// If GenericsWhiteList contains the word SQLQuery then the query will be
-		// copied from SQLQuery field and all tables receive the generated functions.
+		// GenericsWhiteList config option as a SQL query to select all tables
+		// for which it should generate the generic functions. If empty nothing
+		// gets generated. If GenericsWhiteList contains the word SQLQuery then
+		// the query will be copied from SQLQuery field and all tables receive
+		// the generated functions.
 		GenericsWhiteList string
-		// GenericsFunctions specify which functions you need in the whole package
+		// GenericsFunctions specify which functions you need in the whole
+		// package
 		GenericsFunctions tpl.Generics
 	}
 
-	// AttributeToStructMap is a map which points to the AttributeToStruct
-	// configuration. Default entries can be overriden by your configuration.
-	AttributeToStructMap map[string]AttributeToStruct
+	// AttributeToStructMap contains as key the name of the EAV entity and points to
+	// its configuration.
+	AttributeToStructMap map[string]*AttributeToStruct
 	// AttributeToStruct contains the configuration to materialize all
 	// attributes belonging to one EAV model
 	AttributeToStruct struct {
@@ -60,79 +63,94 @@ type (
 		// FuncCollection specifies the name of the SetAttributeCollection
 		// function name within the AttrPkgImp.
 		FuncCollection string
-		// FuncGetter specifies the name of the SetAttributeGetter function
-		// name within the AttrPkgImp.
+		// FuncGetter specifies the name of the SetAttributeGetter function name
+		// within the AttrPkgImp.
 		FuncGetter string
 		// Package defines the name of the target package, must be external.
-		// Default is {{.AttrPkgImp}}_test but for your project you must
-		// provide your package name.
+		// Default is {{.AttrPkgImp}}_test but for your project you must provide
+		// your package name.
 		Package string
-		// AttrStruct defines the name of the attribute struct in an EAV package like catattr or custattr.
-		// This struct will have the prefix of AttrPkgImp and will be embedded the newly generated struct
-		// which wraps additional project specific columns.
+		// AttrStruct defines the name of the attribute struct in an EAV package
+		// like catattr or custattr. This struct will have the prefix of
+		// AttrPkgImp and will be embedded the newly generated struct which
+		// wraps additional project specific columns.
 		AttrStruct string
 		// MyStruct is the optional name of your struct from your package. @todo review
 		MyStruct string
-		// OutputFile specifies the full path where to write the newly generated code
+		// OutputFile specifies the full path where to write the newly generated
+		// code
 		OutputFile string
 	}
 
-	// EntityTypeMap uses a string key as easy identifier, which must also exists in the table eav_EntityTable,
-	// for maybe later manipulation in config_user.go
-	// and as value a pointer to a EntityType struct. Developers can later use the init() func in config_user.go to change
-	// the value of variable ConfigEntityType.
-	// The values of EntityType will be uses for materialization in Go code of the eav_entity_type table data.
+	// EntityTypeMap uses a string key as for the EAV entity type, which must
+	// also exists in the table eav_EntityTable, for maybe later manipulation in
+	// config_user.go and as value a pointer to a EntityType struct. Developers
+	// can later use the init() func in config_user.go to change the value of
+	// variable ConfigEntityType. The values of EntityType will be uses for
+	// materialization in Go code of the eav_entity_type table data.
 	EntityTypeMap map[string]*EntityType
-	// EntityType is configuration struct which maps the PHP classes to Go types, interfaces and table names.
-	// Each struct field has a special import path with function to make easier to specify different packages
+
+	// EntityType is configuration struct which maps the PHP classes to Go
+	// types, interfaces and table names. Each struct field has a special import
+	// path with a function to make it easier to specify different packages.
 	EntityType struct {
-		// EntityModel Go type which implements eav.EntityTypeModeller.
-		// Will be used as template so you can access the current entity_type from the database.
+		// EntityModel Go type which implements eav.EntityTypeModeller. Will be
+		// used as template so you can access the current entity_type from the
+		// database.
 		EntityModel string
-		// AttributeModel Go type which implements eav.EntityTypeAttributeModeller
-		// Will be used as template so you can access the current entity_type from the database.
+		// AttributeModel Go type which implements
+		// eav.EntityTypeAttributeModeller Will be used as template so you can
+		// access the current entity_type from the database.
 		AttributeModel string
-		// EntityTable Go type which implements eav.EntityTypeTabler
-		// Will be used as template so you can access the current entity_type from the database.
+		// EntityTable Go type which implements eav.EntityTypeTabler Will be
+		// used as template so you can access the current entity_type from the
+		// database.
 		EntityTable string
-		// IncrementModel Go type which implements eav.EntityTypeIncrementModeller
-		// Will be used as template so you can access the current entity_type from the database.
+		// IncrementModel Go type which implements
+		// eav.EntityTypeIncrementModeller Will be used as template so you can
+		// access the current entity_type from the database.
 		IncrementModel string
-		// AdditionalAttributeTable Go type which implements eav.EntityTypeAdditionalAttributeTabler
-		// Will be used as template so you can access the current entity_type from the database.
+		// AdditionalAttributeTable Go type which implements
+		// eav.EntityTypeAdditionalAttributeTabler Will be used as template so
+		// you can access the current entity_type from the database.
 		AdditionalAttributeTable string
-		// EntityAttributeCollection Go type which implements eav.EntityTypeAttributeCollectioner
-		// Will be used as template so you can access the current entity_type from the database.
+		// EntityAttributeCollection Go type which implements
+		// eav.EntityTypeAttributeCollectioner Will be used as template so you
+		// can access the current entity_type from the database.
 		EntityAttributeCollection string
 
-		// TempAdditionalAttributeTable string which defines the existing table name
-		// and specifies more attribute configuration options besides eav_attribute table.
-		// This table name is used in a DB query while materializing attribute configuration to Go code.
+		// TempAdditionalAttributeTable string which defines the existing table
+		// name and specifies more attribute configuration options besides
+		// eav_attribute table. This table name is used in a DB query while
+		// materializing attribute configuration to Go code.
 		// Mage_Eav_Model_Resource_Attribute_Collection::_initSelect()
 		TempAdditionalAttributeTable string
 
-		// TempAdditionalAttributeTableWebsite string which defines the existing table name
-		// and stores website-dependent attribute parameters.
-		// If an EAV model doesn't demand this functionality, let this string empty.
-		// This table name is used in a DB query while materializing attribute configuration to Go code.
+		// TempAdditionalAttributeTableWebsite string which defines the existing
+		// table name and stores website-dependent attribute parameters. If an
+		// EAV model doesn't demand this functionality, let this string empty.
+		// This table name is used in a DB query while materializing attribute
+		// configuration to Go code.
 		// Mage_Customer_Model_Resource_Attribute::_getEavWebsiteTable()
 		// Mage_Eav_Model_Resource_Attribute_Collection::_getEavWebsiteTable()
 		TempAdditionalAttributeTableWebsite string
 
-		AttributeCoreColumns util.StringSlice
+		AttributeCoreColumns slices.String
 	}
 
 	// AttributeModelDefMap contains data to map the three eav_attribute columns
-	// (backend | frontend | source | data)_model to the correct Go function and package.
-	// It contains mappings for Magento 1 & 2. A developer has the option to to change/extend the value
-	// using the file config_user.go with the init() func.
-	// Def for Definition to avoid a naming conflict :-( Better name?
+	// (backend | frontend | source | data)_model to the correct Go function and
+	// package. It contains mappings for Magento 1 & 2. A developer has the
+	// option to change/extend the value using the file config_user.go with the
+	// init() func. Def for Definition to avoid a naming conflict :-( Better
+	// name?
 	AttributeModelDefMap map[string]*AttributeModelDef
 	// AttributeModelDef defines which Go type/func has which import path
 	AttributeModelDef struct {
-		// GoFunc is a function string which implements, when later executed, one of the n interfaces
-		// for (backend|frontend|source|data)_model. The GoFunc expects the fully qualified import path to the
-		// final method, e.g.: github.com/corestoreio/csfw/customer.Customer()
+		// GoFunc is a function string which implements, when later executed,
+		// one of the n interfaces for (backend|frontend|source|data)_model. The
+		// GoFunc expects the fully qualified import path to the final method,
+		// e.g.: github.com/corestoreio/csfw/customer.Customer()
 		GoFunc string
 		// i cached import path
 		i string
@@ -176,7 +194,8 @@ func (m EntityTypeMap) Keys() []string {
 	return ret
 }
 
-var BasePath = NewOFile(cstesting.RootPath)
+// BasePath now a hack but should also consider if it has been vendored.
+var BasePath = NewOFile(build.Default.GOPATH, "github.com/corestoreio/csfw")
 
 // EavAttributeColumnNameToInterface mapping column name to Go interface name. Do not add attribute_model
 // as this column is unused in Magento 1+2. If you have custom column then add it here.
@@ -311,9 +330,10 @@ var ConfigTableToStruct = TableToStructMap{
 	},
 }
 
-// ConfigMaterializationEntityType configuration for materializeEntityType() to write the materialized entity types
-// into a folder. Other fields of the struct TableToStruct are ignored. Use the file config_user.go with the
-// func init() to change/extend it.
+// ConfigMaterializationEntityType configuration for materializeEntityType() to
+// write the materialized entity types into a folder. Other fields of the struct
+// TableToStruct are ignored. Use the file config_user.go with the func init()
+// to change/extend it.
 var ConfigMaterializationEntityType = TableToStruct{
 	Package:    "testgen",
 	OutputFile: BasePath.AppendDir("testgen", "generated_entity_type_test"),
@@ -323,19 +343,20 @@ var ConfigMaterializationEntityType = TableToStruct{
 var ConfigLocalization = struct {
 	Package       string
 	OutputFile    string
-	EnabledLocale util.StringSlice
+	EnabledLocale slices.String
 }{
 	Package:       "i18n_test",
 	OutputFile:    BasePath.AppendDir("i18n", "generated_translation_test").String(),
-	EnabledLocale: util.StringSlice{"en", "fr", "de", "de_CH", "nl", "ca_FR"},
+	EnabledLocale: slices.String{"en", "fr", "de", "de_CH", "nl", "ca_FR"},
 }
 
 var (
-	// EAVAttributeCoreColumns defines the minimal required columns for table eav_attribute.
-	// Developers can extend the table eav_attribute with additional columns but these additional
-	// columns with its method receivers must get generated in the attribute materialize function.
-	// These core columns are already defined below.
-	EAVAttributeCoreColumns = util.StringSlice{
+	// EAVAttributeCoreColumns defines the minimal required columns for table
+	// eav_attribute. Developers can extend the table eav_attribute with
+	// additional columns but these additional columns with its method receivers
+	// must get generated in the attribute materialize function. These core
+	// columns are already defined below.
+	EAVAttributeCoreColumns = slices.String{
 		"attribute_id",
 		"entity_type_id",
 		"attribute_code",
@@ -355,11 +376,12 @@ var (
 		"note",
 	}
 
-	// customerAttributeCoreColumns defines the minimal required columns for table customer_eav_attribute.
-	// Developers can extend the table customer_eav_attribute with additional columns but these additional
-	// columns with its method receivers must get generated in the attribute materialize function.
-	// These core columns are already defined below.
-	customerAttributeCoreColumns = util.StringSlice{
+	// customerAttributeCoreColumns defines the minimal required columns for
+	// table customer_eav_attribute. Developers can extend the table
+	// customer_eav_attribute with additional columns but these additional
+	// columns with its method receivers must get generated in the attribute
+	// materialize function. These core columns are already defined below.
+	customerAttributeCoreColumns = slices.String{
 		"is_visible",
 		"input_filter",
 		"multiline_count",
@@ -369,11 +391,12 @@ var (
 		"data_model",
 	}
 
-	// catalogAttributeCoreColumns defines the minimal required columns for table catalog_eav_attribute.
-	// Developers can extend the table customer_eav_attribute with additional columns but these additional
-	// columns with its method receivers must get generated in the attribute materialize function.
-	// These core columns are already defined below.
-	catalogAttributeCoreColumns = util.StringSlice{
+	// catalogAttributeCoreColumns defines the minimal required columns for
+	// table catalog_eav_attribute. Developers can extend the table
+	// customer_eav_attribute with additional columns but these additional
+	// columns with its method receivers must get generated in the attribute
+	// materialize function. These core columns are already defined below.
+	catalogAttributeCoreColumns = slices.String{
 		"frontend_input_renderer",
 		"is_global",
 		"is_visible",
@@ -396,8 +419,8 @@ var (
 	}
 )
 
-// ConfigEntityType contains default configuration to materialize the entity types.
-// Use the file config_user.go with the func init() to change/extend it.
+// ConfigEntityType contains default configuration to materialize the entity
+// types. Use the file config_user.go with the func init() to change/extend it.
 // Needed in materializeEntityType()
 var ConfigEntityType = EntityTypeMap{
 	"customer": &EntityType{
@@ -442,10 +465,10 @@ var ConfigEntityType = EntityTypeMap{
 	// @todo extend for all sales entities
 }
 
-// ConfigMaterializationAttributes contains the configuration to materialize all attributes for the defined
-// EAV entity types.
+// ConfigMaterializationAttributes contains the configuration to materialize all
+// attributes for the defined EAV entity types.
 var ConfigMaterializationAttributes = AttributeToStructMap{
-	"customer": AttributeToStruct{
+	"customer": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/customer/custattr",
 		FuncCollection: "SetCustomerCollection",
 		FuncGetter:     "SetCustomerGetter",
@@ -454,7 +477,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		Package:        "testgen", // external package name
 		OutputFile:     BasePath.AppendDir("testgen", "generated_customer_attribute_test").String(),
 	},
-	"customer_address": AttributeToStruct{
+	"customer_address": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/customer/custattr",
 		FuncCollection: "SetAddressCollection",
 		FuncGetter:     "SetAddressGetter",
@@ -463,7 +486,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		Package:        "testgen",
 		OutputFile:     BasePath.AppendDir("testgen", "generated_address_attribute_test").String(),
 	},
-	"catalog_product": AttributeToStruct{
+	"catalog_product": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
 		FuncCollection: "SetProductCollection",
 		FuncGetter:     "SetProductGetter",
@@ -472,7 +495,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		Package:        "testgen",
 		OutputFile:     BasePath.AppendDir("testgen", "generated_product_attribute_test.go").String(),
 	},
-	"catalog_category": AttributeToStruct{
+	"catalog_category": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
 		FuncCollection: "SetCategoryCollection",
 		FuncGetter:     "SetCategoryGetter",
@@ -484,7 +507,8 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 	// extend here for other EAV attributes (not sales* types)
 }
 
-// ConfigAttributeModel contains default configuration. Use the file config_user.go with the func init() to change/extend it.
+// ConfigAttributeModel contains default configuration. Use the file
+// config_user.go with the func init() to change/extend it.
 var ConfigAttributeModel = AttributeModelDefMap{
 	"catalog/product_attribute_frontend_image":                                        NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductFrontendImage().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))"),
 	"Magento\\Catalog\\Model\\Product\\Attribute\\Frontend\\Image":                    NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductFrontendImage().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))"),

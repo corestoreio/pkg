@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,16 +15,13 @@
 package main
 
 import (
-	"fmt"
-	"regexp"
 	"sync"
 
 	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/codegen/tableToStruct/codecgen"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
-	"github.com/corestoreio/csfw/util/log"
+	"github.com/corestoreio/csfw/util/magento"
 )
 
 const MethodRecvPrefix = "parent"
@@ -76,24 +73,6 @@ func (dc *duplicateChecker) debug() string {
 	return ret
 }
 
-// runCodec generates the codecs to be used later in JSON or msgpack or etc
-func runCodec(pkg, outfile, readfile string) {
-	defer log.WhenDone(PkgLog).Info("Stats", "Package", pkg, "Step", "runCodec")
-	if err := codecgen.Generate(
-		outfile, // outfile
-		"",      // buildTag
-		codecgen.GenCodecPath,
-		false, // use unsafe
-		"",
-		regexp.MustCompile(TypePrefix+".*"), // Prefix of generated structs and slices
-		true,     // delete temp files
-		readfile, // read from file
-	); err != nil {
-		fmt.Println("codecgen.Generate Error:")
-		codegen.LogFatal(err)
-	}
-}
-
 // isDuplicate slow duplicate checker ...
 func isDuplicate(sl []string, st string) bool {
 	for _, s := range sl {
@@ -104,11 +83,11 @@ func isDuplicate(sl []string, st string) bool {
 	return false
 }
 
-func detectMagentoVersion(dbrSess dbr.SessionRunner) (version int) {
-	defer log.WhenDone(PkgLog).Info("Stats", "Package", "DetectMagentoVersion")
+func detectMagentoVersion(dbrSess dbr.SessionRunner) (v magento.Version) {
+
 	allTables, err := codegen.GetTables(dbrSess)
 	codegen.LogFatal(err)
-	version = util.MagentoVersion(codegen.TablePrefix, allTables)
+	v = magento.DetectVersion(codegen.TablePrefix, allTables)
 	return
 }
 
@@ -127,7 +106,7 @@ func dbrType(c csdb.Column) string {
 		return ".Bool" // dbr.NullBool
 	case c.IsString():
 		return ".String" // dbr.NullString
-	case c.IsMoney():
+	case c.isMoney():
 		return "" // money.Money
 	case c.IsFloat():
 		return ".Float64" // dbr.NullFloat64

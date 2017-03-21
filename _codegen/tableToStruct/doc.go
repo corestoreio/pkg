@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package codegen
-
-import "github.com/corestoreio/csfw/util/log"
-
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// package main generates Go structs, slices and function receivers from SQL tables.
+//
+// TODO: Analyze SQL code generation tools
+// TODO: https://github.com/knq/xo
+// TODO: https://bitbucket.org/jatone/genieql
+package main

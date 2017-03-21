@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build mage2
+// +build mage1
 
 package codegen
 
@@ -27,8 +27,8 @@ func getDataGetEavValueTables() []dataGetEavValueTables {
 		{
 			haveETC: []string{"customer_address", "customer"},
 			wantErr: false,
-			wantCVMap: TypeCodeValueTable{"customer_address": map[string]string{"customer_address_entity_varchar": "varchar", "customer_address_entity_datetime": "datetime", "customer_address_entity_decimal": "decimal", "customer_address_entity_int": "int", "customer_address_entity_text": "text"},
-				"customer": map[string]string{"customer_entity_datetime": "datetime", "customer_entity_decimal": "decimal", "customer_entity_int": "int", "customer_entity_text": "text", "customer_entity_varchar": "varchar"}},
+			wantCVMap: TypeCodeValueTable{"customer_address": map[string]string{"customer_address_entity_text": "text", "customer_address_entity_varchar": "varchar", "customer_address_entity_datetime": "datetime", "customer_address_entity_decimal": "decimal", "customer_address_entity_int": "int"},
+				"customer": map[string]string{"csCustomer_value_decimal": "decimal", "csCustomer_value_int": "int", "csCustomer_value_text": "text", "csCustomer_value_varchar": "varchar", "csCustomer_value_datetime": "datetime"}},
 		},
 		{
 			haveETC:   []string{"catalog_address"},

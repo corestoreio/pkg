@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,9 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package main generates Go structs, slices and function receivers from SQL tables.
-//
-// TODO: Analyze SQL code generation tools
-// TODO: https://github.com/knq/xo
-// TODO: https://bitbucket.org/jatone/genieql
-package main
+package store
+
+import "github.com/corestoreio/csfw/storage/csdb"
+
+var TableCollection *csdb.Tables
+
+const (
+	TableIndexStore = iota
+)
+
+func init() {
+	TableCollection = csdb.MustInitTables(TableCollection,
+		csdb.WithTable(TableIndexStore, "store"),
+	)
+	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
+}
