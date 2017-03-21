@@ -18,6 +18,9 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+// maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+const maxIdentifierLength = 64
+
 // IsValidIdentifier checks the permissible syntax for identifiers. Certain
 // objects within MySQL, including database, table, index, column, alias, view,
 // stored procedure, partition, tablespace, and other object names are known as
@@ -26,8 +29,11 @@ import (
 //
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 func IsValidIdentifier(names ...string) error {
+	if len(names) == 0 {
+		return errors.NewNotValidf("[csdb] No arguments provided")
+	}
 	for _, name := range names {
-		if len(name) > 63 || name == "" {
+		if len(name) >= maxIdentifierLength || name == "" {
 			return errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
 		}
 
