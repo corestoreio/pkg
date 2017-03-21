@@ -381,3 +381,7 @@ func TestWithTableLoadColumns(t *testing.T) {
 		assert.Equal(t, 0, table.CountUnique)
 	})
 }
+
+func TestWithViewFromQuery(t *testing.T) {
+	t.Skip("TODO")
+}

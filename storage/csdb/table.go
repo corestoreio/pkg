@@ -40,12 +40,14 @@ type Table struct {
 	// Listeners specific pre defined listeners which gets dispatches to each
 	// DML statement (SELECT, INSERT, UPDATE or DELETE).
 	Listeners dbr.ListenerBucket
-
+	// isView set to true to mark if the table is a view
+	isView bool
 	// internal caches
 	fieldsPK  []string // all PK column field
 	fieldsUNI []string // all unique key column field
 	fields    []string // all other non-pk column field
 
+	// selectAllCache no quite sure about this one .... maybe remove it
 	selectAllCache *dbr.Select
 }
 
@@ -115,6 +117,11 @@ func (t *Table) AllColumnAliasQuote(alias string) []string {
 	return dbr.Quoter.TableColumnAlias(alias, sl...)
 }
 
+// IsView identifies if a table is a view
+func (t *Table) IsView() bool {
+	return t.isView
+}
+
 // In checks if column name n is a column of this table. Case sensitive.
 func (t *Table) In(n string) bool {
 	for _, c := range t.fieldsPK {
@@ -133,6 +140,9 @@ func (t *Table) In(n string) bool {
 // Truncate truncates the tables. Removes all rows and sets the auto increment
 // to zero. Just like a CREATE TABLE statement.
 func (t *Table) Truncate(execer dbr.Execer) error {
+	if t.isView {
+		return nil
+	}
 	ddl := "TRUNCATE TABLE " + dbr.Quoter.QuoteAs(t.Name)
 	_, err := execer.Exec(ddl)
 	return errors.Wrapf(err, "[csdb] failed to truncate table %q", ddl)
@@ -165,9 +175,13 @@ func (t *Table) Swap(execer dbr.Execer, other string) error {
 	return errors.Wrapf(err, "[csdb] failed to swap table %q", ddl)
 }
 
-// Drop, if exists, drops the table.
+// Drop, if exists, drops the table or the view.
 func (t *Table) Drop(execer dbr.Execer) error {
-	_, err := execer.Exec("DROP TABLE IF EXISTS " + dbr.Quoter.QuoteAs(t.Name))
+	typ := "TABLE"
+	if t.isView {
+		typ = "VIEW"
+	}
+	_, err := execer.Exec("DROP " + typ + " IF EXISTS " + dbr.Quoter.QuoteAs(t.Name))
 	return errors.Wrapf(err, "[csdb] failed to drop table %q", t.Name)
 }
 
@@ -243,6 +257,9 @@ type InfileOptions struct {
 // foreign key constraints during the load operation, issue a SET
 // foreign_key_checks = 0 statement before executing LOAD DATA.
 func (t *Table) LoadDataInfile(execer dbr.Execer, filePath string, o InfileOptions) error {
+	if t.isView {
+		return nil
+	}
 	if o.Log == nil {
 		o.Log = log.BlackHole{}
 	}

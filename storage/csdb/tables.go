@@ -55,6 +55,46 @@ type Tables struct {
 	ts map[int]*Table
 }
 
+// WithViewFromQuery drops the viewName and then creates the new view from the
+// SELECT query and adds it to the internal table manager including all loaded
+// column definitions.
+func WithViewFromQuery(db interface {
+	dbr.Execer
+	dbr.Querier
+}, idx int, viewName string, query string) TableOption {
+	return TableOption{
+		priority: 10,
+		fn: func(tm *Tables) error {
+
+			tnq := dbr.Quoter.Quote("", viewName)
+
+			if _, err := db.Exec("DROP VIEW IF EXISTS " + tnq); err != nil {
+				return errors.Wrapf(err, "[csdb] Drop view failed %q", viewName)
+			}
+
+			_, err := db.Exec("CREATE VIEW " + tnq + " AS " + query)
+			if err != nil {
+				return errors.Wrapf(err, "[csdb] Create view %q failed", viewName)
+			}
+
+			tc, err := LoadColumns(db, viewName)
+			if err != nil {
+				return errors.Wrapf(err, "[csdb] Load columns failed for %q", viewName)
+			}
+
+			if err := WithTable(idx, viewName, tc[viewName]...).fn(tm); err != nil {
+				return errors.Wrapf(err, "[csdb] Failed to add new table %q", viewName)
+			}
+
+			tm.mu.Lock()
+			defer tm.mu.Unlock()
+			tm.ts[idx].isView = true
+
+			return nil
+		},
+	}
+}
+
 // WithTable inserts a new table to the Tables struct, identified by its index.
 // You can optionally specify the columns. What is the reason to use int as the
 // table index and not a name? Because table names between M1 and M2 get renamed
