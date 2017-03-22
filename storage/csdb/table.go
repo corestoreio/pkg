@@ -40,8 +40,8 @@ type Table struct {
 	// Listeners specific pre defined listeners which gets dispatches to each
 	// DML statement (SELECT, INSERT, UPDATE or DELETE).
 	Listeners dbr.ListenerBucket
-	// isView set to true to mark if the table is a view
-	isView bool
+	// IsView set to true to mark if the table is a view
+	IsView bool
 	// internal caches
 	fieldsPK  []string // all PK column field
 	fieldsUNI []string // all unique key column field
@@ -117,11 +117,6 @@ func (t *Table) AllColumnAliasQuote(alias string) []string {
 	return dbr.Quoter.TableColumnAlias(alias, sl...)
 }
 
-// IsView identifies if a table is a view
-func (t *Table) IsView() bool {
-	return t.isView
-}
-
 // In checks if column name n is a column of this table. Case sensitive.
 func (t *Table) In(n string) bool {
 	for _, c := range t.fieldsPK {
@@ -140,8 +135,11 @@ func (t *Table) In(n string) bool {
 // Truncate truncates the tables. Removes all rows and sets the auto increment
 // to zero. Just like a CREATE TABLE statement.
 func (t *Table) Truncate(execer dbr.Execer) error {
-	if t.isView {
+	if t.IsView {
 		return nil
+	}
+	if err := IsValidIdentifier(t.Name); err != nil {
+		return errors.Wrap(err, "[csdb] Truncate table name")
 	}
 	ddl := "TRUNCATE TABLE " + dbr.Quoter.QuoteAs(t.Name)
 	_, err := execer.Exec(ddl)
@@ -154,6 +152,9 @@ func (t *Table) Truncate(execer dbr.Execer) error {
 // another. RENAME TABLE also works for views, as long as you do not try to
 // rename a view into a different database.
 func (t *Table) Rename(execer dbr.Execer, new string) error {
+	if err := IsValidIdentifier(t.Name, new); err != nil {
+		return errors.Wrap(err, "[csdb] Rename table name")
+	}
 	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(new)
 	_, err := execer.Exec(ddl)
 	return errors.Wrapf(err, "[csdb] failed to rename table %q", ddl)
@@ -165,9 +166,14 @@ func (t *Table) Rename(execer dbr.Execer, new string) error {
 // RENAME TABLE to move a table from one database to another.
 func (t *Table) Swap(execer dbr.Execer, other string) error {
 	tmp := t.Name + "_swap_" + strconv.FormatInt(time.Now().UnixNano(), 10)
-	if len(tmp) > 64 { // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-		tmp = tmp[:64]
+
+	if len(tmp) >= maxIdentifierLength { // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+		tmp = tmp[:maxIdentifierLength]
 	}
+	if err := IsValidIdentifier(t.Name, tmp, other); err != nil {
+		return errors.Wrap(err, "[csdb] Swap table name")
+	}
+
 	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(tmp) + ", " +
 		dbr.Quoter.QuoteAs(other) + " TO " + dbr.Quoter.QuoteAs(t.Name) + "," +
 		dbr.Quoter.QuoteAs(tmp) + " TO " + dbr.Quoter.QuoteAs(other)
@@ -178,8 +184,11 @@ func (t *Table) Swap(execer dbr.Execer, other string) error {
 // Drop, if exists, drops the table or the view.
 func (t *Table) Drop(execer dbr.Execer) error {
 	typ := "TABLE"
-	if t.isView {
+	if t.IsView {
 		typ = "VIEW"
+	}
+	if err := IsValidIdentifier(t.Name); err != nil {
+		return errors.Wrap(err, "[csdb] Drop table name")
 	}
 	_, err := execer.Exec("DROP " + typ + " IF EXISTS " + dbr.Quoter.QuoteAs(t.Name))
 	return errors.Wrapf(err, "[csdb] failed to drop table %q", t.Name)
@@ -257,7 +266,7 @@ type InfileOptions struct {
 // foreign key constraints during the load operation, issue a SET
 // foreign_key_checks = 0 statement before executing LOAD DATA.
 func (t *Table) LoadDataInfile(execer dbr.Execer, filePath string, o InfileOptions) error {
-	if t.isView {
+	if t.IsView {
 		return nil
 	}
 	if o.Log == nil {
