@@ -84,8 +84,6 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			c.Log.Info("[binlogsync] startSyncBinlog: Failed to save master position", log.Err(err), log.Stringer("position", pos))
 		}
 	}
-
-	return nil
 }
 
 func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent) error {

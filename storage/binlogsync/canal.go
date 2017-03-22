@@ -205,46 +205,50 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	return c, nil
 }
 
-func (m *Canal) masterSave() error {
+func (c *Canal) masterSave() error {
 
 	n := time.Now()
-	if n.Sub(m.masterLastSaveTime) < time.Second {
+	if n.Sub(c.masterLastSaveTime) < time.Second {
 		return nil
 	}
-	m.masterMu.Lock()
-	defer m.masterMu.Unlock()
+	c.masterMu.Lock()
+	defer c.masterMu.Unlock()
 
-	if m.cfgw == nil {
-		if m.Log.IsDebug() {
-			m.Log.Debug("[binlogsync] Master Status cannot be saved because config.Writer is nil",
-				log.String("database", m.DSN.DBName), log.Stringer("master_status", m.masterStatus))
+	if c.cfgw == nil {
+		if c.Log.IsDebug() {
+			c.Log.Debug("[binlogsync] Master Status cannot be saved because config.Writer is nil",
+				log.String("database", c.DSN.DBName), log.Stringer("master_status", c.masterStatus))
 		}
 		return nil
 	}
 
 	// todo refactor to find a different way by not importing package config and scope
-	if err := m.BackendPosition.Write(m.cfgw, m.masterStatus.String(), scope.DefaultTypeID); err != nil {
+	if err := c.BackendPosition.Write(c.cfgw, c.masterStatus.String(), scope.DefaultTypeID); err != nil {
 		return errors.Wrap(err, "[binlogsync] failed to write into config")
 	}
 
-	m.masterLastSaveTime = n
+	c.masterLastSaveTime = n
 
 	return nil
 }
 
-func (m *Canal) masterUpdate(fileName string, pos uint) {
-	m.masterMu.Lock()
-	defer m.masterMu.Unlock()
-	m.masterStatus.File = fileName
-	m.masterStatus.Position = pos
+func (c *Canal) masterUpdate(fileName string, pos uint) {
+	c.masterMu.Lock()
+	defer c.masterMu.Unlock()
+	c.masterStatus.File = fileName
+	c.masterStatus.Position = pos
 }
 
-func (m *Canal) SyncedPosition() csdb.MasterStatus {
-	m.masterMu.RLock()
-	defer m.masterMu.RUnlock()
-	return m.masterStatus
+// SyncedPosition returns the current synced position as retrieved from the SQl
+// server.
+func (c *Canal) SyncedPosition() csdb.MasterStatus {
+	c.masterMu.RLock()
+	defer c.masterMu.RUnlock()
+	return c.masterStatus
 }
 
+// Start starts the sync process in the background as a goroutine. You can stop
+// the goroutine via the context.
 func (c *Canal) Start(ctx context.Context) error {
 	c.wg.Add(1)
 	go c.run(ctx)

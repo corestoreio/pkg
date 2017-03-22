@@ -206,7 +206,7 @@ func TestCanal_FindTable(t *testing.T) {
 	c, dbMock, deferred := newTestCanal(t)
 	defer deferred()
 
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta(csdb.DMLLoadColumns)).
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
 		WithArgs("core_config_data").
 		WillReturnRows(
 			cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
@@ -245,7 +245,7 @@ func TestCanal_FindTable_Error(t *testing.T) {
 	defer deferred()
 
 	wantErr := errors.NewUnauthorizedf("Du kommst da nicht rein")
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta(csdb.DMLLoadColumns)).
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
 		WithArgs("core_config_data").
 		WillReturnError(wantErr)
 
