@@ -15,7 +15,6 @@
 package csdb_test
 
 import (
-	"regexp"
 	"sort"
 	"testing"
 
@@ -219,7 +218,7 @@ func TestWithLoadColumnDefinitions2(t *testing.T) {
 "admin_user","modified",8,"CURRENT_TIMESTAMP","NO","timestamp",0,0,0,"timestamp","","on update CURRENT_TIMESTAMP","User Modified Time"
 `)
 
-	dbMock.ExpectQuery(regexp.QuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
 		WithArgs("admin_user").
 		WillReturnRows(rows)
 
@@ -366,7 +365,7 @@ func TestWithTableLoadColumns(t *testing.T) {
 	"admin_user","modified",8,"CURRENT_TIMESTAMP","NO","timestamp",0,0,0,"timestamp","","on update CURRENT_TIMESTAMP","User Modified Time"
 	`)
 
-		dbMock.ExpectQuery(regexp.QuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
+		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
 			WithArgs("admin_user").
 			WillReturnRows(rows)
 
@@ -382,6 +381,12 @@ func TestWithTableLoadColumns(t *testing.T) {
 	})
 }
 
-func TestWithViewFromQuery(t *testing.T) {
+func TestWithObjectFromQuery(t *testing.T) {
 	t.Skip("TODO")
+
+	t.Run("Invalid type", func(t *testing.T) {
+		tbls, err := csdb.NewTables(csdb.WithObjectFromQuery(nil, "proc", 0, "asdasd", "SELECT * from"))
+		assert.Nil(t, tbls)
+		assert.True(t, errors.IsUnavailable(err), "%+v", err)
+	})
 }

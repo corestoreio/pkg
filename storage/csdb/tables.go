@@ -55,24 +55,37 @@ type Tables struct {
 	ts map[int]*Table
 }
 
-// WithViewFromQuery drops the viewName and then creates the new view from the
-// SELECT query and adds it to the internal table manager including all loaded
-// column definitions.
-func WithViewFromQuery(db interface {
+// WithObjectFromQuery creates the new view or table from the SELECT query and
+// adds it to the internal table manager including all loaded column
+// definitions. If providing true in the argument "dropIfExists" the view or
+// table gets first dropped, if exists, and then created. Argument typ can be
+// only `table` or `view`.
+func WithObjectFromQuery(db interface {
 	dbr.Execer
 	dbr.Querier
-}, idx int, viewName string, query string) TableOption {
+}, typ string, idx int, viewName string, query string, dropIfExists ...bool) TableOption {
 	return TableOption{
 		priority: 10,
 		fn: func(tm *Tables) error {
 
-			tnq := dbr.Quoter.Quote("", viewName)
-
-			if _, err := db.Exec("DROP VIEW IF EXISTS " + tnq); err != nil {
-				return errors.Wrapf(err, "[csdb] Drop view failed %q", viewName)
+			var viewOrTable string
+			switch typ {
+			case "view":
+				viewOrTable = "VIEW"
+			case "table":
+				viewOrTable = "TABLE"
+			default:
+				return errors.NewUnavailablef("[csdb] Option %q for variable typ not available. Only `view` or `table`", typ)
 			}
 
-			_, err := db.Exec("CREATE VIEW " + tnq + " AS " + query)
+			vnq := dbr.Quoter.Quote("", viewName)
+			if len(dropIfExists) > 0 && dropIfExists[0] {
+				if _, err := db.Exec("DROP " + viewOrTable + " IF EXISTS " + vnq); err != nil {
+					return errors.Wrapf(err, "[csdb] Drop view failed %q", viewName)
+				}
+			}
+
+			_, err := db.Exec("CREATE " + viewOrTable + " " + vnq + " AS " + query)
 			if err != nil {
 				return errors.Wrapf(err, "[csdb] Create view %q failed", viewName)
 			}
@@ -88,7 +101,7 @@ func WithViewFromQuery(db interface {
 
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
-			tm.ts[idx].isView = true
+			tm.ts[idx].IsView = viewOrTable == "VIEW"
 
 			return nil
 		},
