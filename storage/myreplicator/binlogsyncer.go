@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"crypto/tls"
+
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -46,6 +48,9 @@ type BinlogSyncerConfig struct {
 	RawModeEanbled bool
 
 	Log log.Logger
+	// TLSConfig if not nil, use the provided tls.Config to connect to the
+	// database using TLS/SSL.
+	TLSConfig *tls.Config
 }
 
 // BinlogSyncer syncs binlog event from server.
@@ -148,7 +153,9 @@ func (b *BinlogSyncer) registerSlave() error {
 		b.cfg.Log.Info("BinlogSyncer.registerSlave.new", log.String("slave_host", b.cfg.Host), log.Uint("slave_port", uint(b.cfg.Port)), log.Object("config", b.cfg))
 	}
 	var err error
-	b.con, err = client.Connect(fmt.Sprintf("%s:%d", b.cfg.Host, b.cfg.Port), b.cfg.User, b.cfg.Password, "")
+	b.con, err = client.Connect(fmt.Sprintf("%s:%d", b.cfg.Host, b.cfg.Port), b.cfg.User, b.cfg.Password, "", func(c *client.Conn) {
+		c.TLSConfig = b.cfg.TLSConfig
+	})
 	if err != nil {
 		return errors.Wrap(err, "[myreplicator] registerSlave failed to create new client connection")
 	}
