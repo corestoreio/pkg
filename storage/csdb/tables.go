@@ -63,10 +63,14 @@ type Tables struct {
 func WithObjectFromQuery(db interface {
 	dbr.Execer
 	dbr.Querier
-}, typ string, idx int, viewName string, query string, dropIfExists ...bool) TableOption {
+}, typ string, idx int, objectName string, query string, dropIfExists ...bool) TableOption {
 	return TableOption{
 		priority: 10,
 		fn: func(tm *Tables) error {
+
+			if err := IsValidIdentifier(objectName); err != nil {
+				return errors.Wrapf(err, "[csdb] WithObjectFromQuery.IsValidIdentifier")
+			}
 
 			var viewOrTable string
 			switch typ {
@@ -78,25 +82,25 @@ func WithObjectFromQuery(db interface {
 				return errors.NewUnavailablef("[csdb] Option %q for variable typ not available. Only `view` or `table`", typ)
 			}
 
-			vnq := dbr.Quoter.Quote("", viewName)
+			vnq := dbr.Quoter.Quote("", objectName)
 			if len(dropIfExists) > 0 && dropIfExists[0] {
 				if _, err := db.Exec("DROP " + viewOrTable + " IF EXISTS " + vnq); err != nil {
-					return errors.Wrapf(err, "[csdb] Drop view failed %q", viewName)
+					return errors.Wrapf(err, "[csdb] Drop view failed %q", objectName)
 				}
 			}
 
 			_, err := db.Exec("CREATE " + viewOrTable + " " + vnq + " AS " + query)
 			if err != nil {
-				return errors.Wrapf(err, "[csdb] Create view %q failed", viewName)
+				return errors.Wrapf(err, "[csdb] Create view %q failed", objectName)
 			}
 
-			tc, err := LoadColumns(db, viewName)
+			tc, err := LoadColumns(db, objectName)
 			if err != nil {
-				return errors.Wrapf(err, "[csdb] Load columns failed for %q", viewName)
+				return errors.Wrapf(err, "[csdb] Load columns failed for %q", objectName)
 			}
 
-			if err := WithTable(idx, viewName, tc[viewName]...).fn(tm); err != nil {
-				return errors.Wrapf(err, "[csdb] Failed to add new table %q", viewName)
+			if err := WithTable(idx, objectName, tc[objectName]...).fn(tm); err != nil {
+				return errors.Wrapf(err, "[csdb] Failed to add new table %q", objectName)
 			}
 
 			tm.mu.Lock()

@@ -251,7 +251,7 @@ type InfileOptions struct {
 	// https://dev.mysql.com/doc/refman/5.7/en/load-data.html
 	Set []string
 	// Columns optional custom columns if the default columns of the table
-	// differs from the CSV file. Column names get automatically quoted.
+	// differs from the CSV file. Column names do NOT get automatically quoted.
 	Columns []string
 	// Log optional logger for debugging purposes
 	Log log.Logger

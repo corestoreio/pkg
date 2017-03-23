@@ -382,11 +382,102 @@ func TestWithTableLoadColumns(t *testing.T) {
 }
 
 func TestWithObjectFromQuery(t *testing.T) {
-	t.Skip("TODO")
 
 	t.Run("Invalid type", func(t *testing.T) {
 		tbls, err := csdb.NewTables(csdb.WithObjectFromQuery(nil, "proc", 0, "asdasd", "SELECT * from"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsUnavailable(err), "%+v", err)
 	})
+
+	t.Run("Invalid object name", func(t *testing.T) {
+		tbls, err := csdb.NewTables(csdb.WithObjectFromQuery(nil, "proc", 0, "asdasd", "SELECT * from"))
+		assert.Nil(t, tbls)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+	})
+
+	t.Run("drop table fails", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+
+		xErr := errors.NewAlreadyClosedf("Connection already closed")
+		dbMock.ExpectExec("DROP TABLE IF EXISTS `testTable`").WillReturnError(xErr)
+
+		tbls, err := csdb.NewTables(csdb.WithObjectFromQuery(dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", true))
+		assert.Nil(t, tbls)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
+
+	t.Run("create table fails", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+
+		xErr := errors.NewAlreadyClosedf("Connection already closed")
+		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).WillReturnError(xErr)
+
+		tbls, err := csdb.NewTables(csdb.WithObjectFromQuery(dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", false))
+		assert.Nil(t, tbls)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
+
+	t.Run("load columns fails", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+
+		xErr := errors.NewAlreadyClosedf("Connection already closed")
+		dbMock.
+			ExpectExec(cstesting.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		dbMock.ExpectQuery("SELEC.+ FROM\\s+`information_schema`\\.`COLUMNS`").WillReturnError(xErr)
+
+		tbls, err := csdb.NewTables(csdb.WithObjectFromQuery(dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", false))
+		assert.Nil(t, tbls)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
+
+	t.Run("create view", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+
+		dbMock.
+			ExpectExec(cstesting.SQLMockQuoteMeta("CREATE VIEW `testTable` AS SELECT * FROM core_config_data")).
+			WillReturnResult(sqlmock.NewResult(0, 0))
+
+		dbMock.ExpectQuery("SELECT.+FROM `information_schema`.`COLUMNS` WHERE").
+			WithArgs("testTable").
+			WillReturnRows(
+				cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
+
+		tbls, err := csdb.NewTables(csdb.WithObjectFromQuery(dbc.DB, "view", 10, "testTable", "SELECT * FROM core_config_data", false))
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+		assert.Exactly(t, "testTable", tbls.MustTable(10).Name)
+		assert.True(t, tbls.MustTable(10).IsView, "Table should be a view")
+	})
+
 }
