@@ -63,12 +63,18 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 			}
 
 		case *myreplicator.RowsEvent:
-			// we only focus row based event
+			// we only focus row based event.
+			// NotFound errors get ignores. For example table has been deleted
+			// and an old event pops in.
 			if err = c.handleRowsEvent(ctxArg, ev); err != nil {
+				isNotFound := errors.IsNotFound(err)
 				if c.Log.IsInfo() {
-					c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos))
+					c.Log.Info("[binlogsync] Rotate binlog to a new position", log.Err(err), log.Stringer("position", pos), log.Bool("ignore_not_found_error", isNotFound))
 				}
-				return errors.Wrap(err, "[binlogsync] handleRowsEvent")
+				if !isNotFound {
+					return errors.Wrap(err, "[binlogsync] handleRowsEvent")
+				}
+				continue
 			}
 		case
 			*myreplicator.TableMapEvent,
@@ -86,6 +92,8 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 	}
 }
 
+// handleRowsEvent handles an event on the rows and calls all registered rows
+// event handler. can return different error behaviours.
 func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent) error {
 	ev, ok := e.Event.(*myreplicator.RowsEvent)
 	if !ok {
