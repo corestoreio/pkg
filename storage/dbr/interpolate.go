@@ -1,8 +1,6 @@
 package dbr
 
 import (
-	// "fmt"
-
 	"database/sql/driver"
 	"reflect"
 	"strconv"
@@ -13,6 +11,49 @@ import (
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
+
+// Repeater takes a SQL string and repeats the masked question marks with the
+// provided repetitions. If the amount of repetitions does not match the number
+// of masked questions marks, a Mismatch error gets returned.
+//		SELECT * FROM table WHERE id IN (?...)
+// Gets
+func Repeater(sql string, repetitions ...int) (string, error) {
+	const qMarkDots = `?...`
+
+	markCount := strings.Count(sql, qMarkDots)
+	if want := len(repetitions); markCount != want || want == 0 {
+		return "", errors.NewMismatchf("[dbr] Repeater: Number of %s:%d do not match the number of repetitions: %d", qMarkDots, markCount, want)
+	}
+	for i, r := range repetitions {
+		if r < 1 {
+			return "", errors.NewNotValidf("[dbr] Repeater: repetitions argument at index %d is not valid: %d", i, r)
+		}
+	}
+	if markCount == 1 && len(repetitions) == 1 && repetitions[0] == 1 {
+		return strings.Replace(sql, qMarkDots, "?", 1), nil
+	}
+	if markCount == 1 {
+		reps := strings.Repeat("?,", repetitions[0])
+		return strings.Replace(sql, qMarkDots, reps[:len(reps)-1], 1), nil
+	}
+
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	for idx, part := range strings.SplitN(sql, qMarkDots, markCount+1) {
+		buf.WriteString(part)
+		if idx < len(repetitions) {
+			reps := repetitions[idx]
+			for r := 0; r < reps; r++ {
+				buf.WriteByte('?')
+				if r < reps-1 {
+					buf.WriteByte(',')
+				}
+			}
+		}
+	}
+	return buf.String(), nil
+}
 
 func isUint(k reflect.Kind) bool {
 	return (k == reflect.Uint) ||

@@ -8,6 +8,49 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRepeater(t *testing.T) {
+	t.Run("MisMatch", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN(?...)")
+		assert.Empty(t, s)
+		assert.True(t, errors.IsMismatch(err), "%+v", err)
+	})
+	t.Run("MisMatch length reps", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN(?...)", 4, 5, 6)
+		assert.Empty(t, s)
+		assert.True(t, errors.IsMismatch(err), "%+v", err)
+	})
+	t.Run("MisMatch qMarks", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN(?..)", 4)
+		assert.Empty(t, s)
+		assert.True(t, errors.IsMismatch(err), "%+v", err)
+	})
+	t.Run("Repetition is zero", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN(?...)", 0)
+		assert.Empty(t, s)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+	})
+	t.Run("single replacement", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN(?...)", 1)
+		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN(?)", s)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("five times replacement", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN(?...)", 5)
+		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN(?,?,?,?,?)", s)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("multi 3,5 times replacement", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN (?...) AND name IN (?...)", 3, 5)
+		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
+		assert.NoError(t, err, "%+v", err)
+	})
+	t.Run("multi 4,3,1 times replacement", func(t *testing.T) {
+		s, err := Repeater("SELECT * FROM `table` WHERE id IN (?...) AND name IN (?...) AND status IN (?...)", 4, 3, 1)
+		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?) AND status IN (?)", s)
+		assert.NoError(t, err, "%+v", err)
+	})
+}
+
 func TestInterpolateNil(t *testing.T) {
 	args := []interface{}{nil}
 
