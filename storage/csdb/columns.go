@@ -75,7 +75,7 @@ type Column struct {
 
 // LoadColumns returns all columns from a list of tables in the current
 // database. For now MySQL DSN must have set interpolateParams to true. Map key
-// contains the table name.
+// contains the table name. Returns a NotFound error if the table is not available.
 func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 
 	sel := dbr.NewSelect("information_schema.COLUMNS").AddColumns(
@@ -115,6 +115,9 @@ func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrapf(err, "[csdb] rows.Err Query")
+	}
+	if len(tc) == 0 {
+		return nil, errors.NewNotFoundf("[csdb] Tables %v not found", tables)
 	}
 	return tc, nil
 }

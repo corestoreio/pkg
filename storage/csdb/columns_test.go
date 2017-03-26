@@ -34,7 +34,7 @@ var _ fmt.GoStringer = (*csdb.Columns)(nil)
 var _ fmt.GoStringer = (*csdb.Column)(nil)
 var _ sort.Interface = (*csdb.Columns)(nil)
 
-func TestGetColumnsMage19(t *testing.T) {
+func TestLoadColumns_Mage21(t *testing.T) {
 	t.Parallel()
 
 	dbc, version := cstesting.MustConnectDB()
@@ -42,8 +42,8 @@ func TestGetColumnsMage19(t *testing.T) {
 		t.Skip("Environment DB DSN not found")
 	}
 	defer func() { assert.NoError(t, dbc.Close()) }()
-	if version != magento.Version1 {
-		t.Skip("Environment DB DSN should refer to a Magento1 database")
+	if version != magento.Version2 {
+		t.Skip("Environment DB DSN should refer to a Magento2 database")
 	}
 
 	tests := []struct {
@@ -58,11 +58,11 @@ func TestGetColumnsMage19(t *testing.T) {
 			"config_id_scope_scope_id_path_value",
 		},
 		{"catalog_category_product",
-			"csdb.Columns{\n&csdb.Column{Field: \"category_id\", Pos: 1, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Category ID\", },\n&csdb.Column{Field: \"product_id\", Pos: 2, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Product ID\", },\n&csdb.Column{Field: \"position\", Pos: 3, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(11)\", Comment: \"Position\", },\n}\n",
+			"csdb.Columns{\n&csdb.Column{Field: \"entity_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(11)\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Entity ID\", },\n&csdb.Column{Field: \"category_id\", Pos: 2, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Category ID\", },\n&csdb.Column{Field: \"product_id\", Pos: 3, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Product ID\", },\n&csdb.Column{Field: \"position\", Pos: 4, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(11)\", Comment: \"Position\", },\n}\n",
 			nil,
-			"category_id_product_id_position",
+			"entity_id_category_id_product_id_position",
 		},
-		{"non_existent",
+		{"non_existent_table",
 			"",
 			errors.IsNotFound,
 			"",
