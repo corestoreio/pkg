@@ -165,15 +165,11 @@ func (t *Table) Rename(execer dbr.Execer, new string) error {
 // swapped! As long as two databases are on the same file system, you can use
 // RENAME TABLE to move a table from one database to another.
 func (t *Table) Swap(execer dbr.Execer, other string) error {
-	tmp := t.Name + "_swap_" + strconv.FormatInt(time.Now().UnixNano(), 10)
-
-	if len(tmp) >= maxIdentifierLength { // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-		tmp = tmp[:maxIdentifierLength]
-	}
-	if err := IsValidIdentifier(t.Name, tmp, other); err != nil {
+	if err := IsValidIdentifier(t.Name, other); err != nil {
 		return errors.Wrap(err, "[csdb] Swap table name")
 	}
 
+	tmp := TableName("", t.Name, strconv.FormatInt(time.Now().UnixNano(), 10))
 	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(tmp) + ", " +
 		dbr.Quoter.QuoteAs(other) + " TO " + dbr.Quoter.QuoteAs(t.Name) + "," +
 		dbr.Quoter.QuoteAs(tmp) + " TO " + dbr.Quoter.QuoteAs(other)

@@ -43,7 +43,7 @@ type TableOption struct {
 type Tables struct {
 	// Schema represents the name of the database. Might be empty.
 	Schema string
-	// Prefix will be put in front of each table name. TODO implement table prefix.
+	// Prefix will be put in front of each table name.
 	Prefix string
 	mu     sync.RWMutex
 	// ts uses int as the table index.
@@ -376,7 +376,7 @@ func (tm *Tables) Name(i int) string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 	if ts, ok := tm.ts[i]; ok && ts != nil {
-		return ts.Name
+		return tm.Prefix + ts.Name
 	}
 	return ""
 }
@@ -422,15 +422,20 @@ func (tm *Tables) Upsert(i int, tNew *Table) error {
 	return nil
 }
 
-// Delete removes tables by their given indexes. If no index has been passed
+// DeleteFromCache removes tables by their given indexes. If no index has been passed
 // then all entries get removed and the map reinitialized.
-func (tm *Tables) Delete(idxs ...int) {
+func (tm *Tables) DeleteFromCache(idxs ...int) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	for _, idx := range idxs {
 		delete(tm.ts, idx)
 	}
-	if len(idxs) == 0 {
-		tm.ts = make(map[int]*Table)
-	}
+}
+
+// DeleteAllFromCache clears the internal table cache and resets the map.
+func (tm *Tables) DeleteAllFromCache() {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+	// maybe clear each pointer in the Table struct to avoid a memory leak
+	tm.ts = make(map[int]*Table)
 }

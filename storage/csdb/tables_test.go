@@ -75,18 +75,27 @@ func TestTables_Upsert_Insert(t *testing.T) {
 	})
 }
 
-func TestTables_Delete(t *testing.T) {
+func TestTables_DeleteFromCache(t *testing.T) {
 	t.Parallel()
 
 	ts := csdb.MustNewTables(csdb.WithTableNames([]int{3, 5, 7}, []string{"a3", "b5", "c7"}))
 	t.Run("Delete One", func(t *testing.T) {
-		ts.Delete(5)
+		ts.DeleteFromCache(5)
 		assert.Exactly(t, 2, ts.Len())
 	})
-	t.Run("Delete All", func(t *testing.T) {
-		ts.Delete()
-		assert.Exactly(t, 0, ts.Len())
+	t.Run("Delete All does nothing", func(t *testing.T) {
+		ts.DeleteFromCache()
+		assert.Exactly(t, 2, ts.Len())
 	})
+}
+
+func TestTables_DeleteAllFromCache(t *testing.T) {
+	t.Parallel()
+
+	ts := csdb.MustNewTables(csdb.WithTableNames([]int{3, 5, 7}, []string{"a3", "b5", "c7"}))
+	ts.DeleteAllFromCache()
+	assert.Exactly(t, 0, ts.Len())
+
 }
 
 func TestTables_Upsert_Update(t *testing.T) {
