@@ -15,6 +15,7 @@
 package csdb
 
 import (
+	"bytes"
 	"crypto/md5"
 	"fmt"
 	"strings"
@@ -77,12 +78,12 @@ func mapAlNumUpper(r rune) rune {
 
 // cleanIdentifier removes all invalid characters
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-func cleanIdentifier(upper bool, name string) string {
+func cleanIdentifier(upper bool, name []byte) string {
 	fn := mapAlNum
 	if upper {
 		fn = mapAlNumUpper
 	}
-	return strings.Map(fn, name)
+	return string(bytes.Map(fn, name))
 }
 
 // TableName generates a table name, shortens it, if necessary, and removes all
@@ -91,7 +92,7 @@ func cleanIdentifier(upper bool, name string) string {
 // table name.
 func TableName(prefix, name string, suffix ...string) string {
 	if prefix == "" && len(suffix) == 0 && len(name) <= maxIdentifierLength {
-		return cleanIdentifier(false, name)
+		return strings.Map(mapAlNum, name)
 	}
 
 	var buf = make([]byte, 0, maxIdentifierLength)
@@ -162,16 +163,16 @@ func ForeignKeyName(priTableName, priColumnName, refTableName, refColumnName str
 }
 
 // TODO: micro optimize later 8-) to reduce allocations
-func shortenEntityName(name []byte, prefix string) string {
+func shortenEntityName(name []byte, prefix string) []byte {
 	if len(name) < maxIdentifierLength {
-		return string(name)
+		return name
 	}
 	name2 := name[:0]
 	name2 = append(name2, translatedAbbreviations.Replace(string(name))...)
 	if len(name2) > maxIdentifierLength {
-		return fmt.Sprintf("%s%x", prefix, md5.Sum(name2))
+		return []byte(fmt.Sprintf("%s%x", prefix, md5.Sum(name2))) // worse worse case
 	}
-	return string(name2)
+	return name2
 }
 
 // translatedAbbreviations contains a list of names which gets translated to their abbreviation if an MySQL identifier has more
