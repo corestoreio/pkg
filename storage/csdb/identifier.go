@@ -18,6 +18,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/corestoreio/errors"
 )
@@ -42,16 +43,7 @@ func IsValidIdentifier(names ...string) error {
 		}
 
 		for _, r := range name {
-			var ok bool
-			switch {
-			case '0' <= r && r <= '9':
-				ok = true
-			case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
-				ok = true
-			case r == '$', r == '_':
-				ok = true
-			}
-			if !ok {
+			if mapAlNum(r) != r {
 				return errors.NewNotValidf("[csdb] Invalid character %q in name %q", string(r), name)
 			}
 		}
@@ -59,24 +51,38 @@ func IsValidIdentifier(names ...string) error {
 	return nil
 }
 
+func mapAlNum(r rune) rune {
+	var ok bool
+	switch {
+	case '0' <= r && r <= '9':
+		ok = true
+	case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
+		ok = true
+	case r == '$', r == '_':
+		ok = true
+	}
+	if !ok {
+		return -1
+	}
+	return r
+}
+
+func mapAlNumUpper(r rune) rune {
+	r = mapAlNum(r)
+	if r < 0 {
+		return r
+	}
+	return unicode.ToUpper(r)
+}
+
 // cleanIdentifier removes all invalid characters
 // https://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-func cleanIdentifier(name string) string {
-	return strings.Map(func(r rune) rune {
-		var ok bool
-		switch {
-		case '0' <= r && r <= '9':
-			ok = true
-		case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
-			ok = true
-		case r == '$', r == '_':
-			ok = true
-		}
-		if !ok {
-			return -1
-		}
-		return r
-	}, name)
+func cleanIdentifier(upper bool, name string) string {
+	fn := mapAlNum
+	if upper {
+		fn = mapAlNumUpper
+	}
+	return strings.Map(fn, name)
 }
 
 // TableName generates a table name, shortens it, if necessary, and removes all
@@ -84,6 +90,10 @@ func cleanIdentifier(name string) string {
 // with their abbreviations and in the second round creating a MD5 hash of the
 // table name.
 func TableName(prefix, name string, suffix ...string) string {
+	if prefix == "" && len(suffix) == 0 && len(name) <= maxIdentifierLength {
+		return cleanIdentifier(false, name)
+	}
+
 	var buf = make([]byte, 0, maxIdentifierLength)
 	if !strings.HasPrefix(name, prefix) {
 		buf = append(buf, prefix...)
@@ -93,7 +103,7 @@ func TableName(prefix, name string, suffix ...string) string {
 		buf = append(buf, '_')
 		buf = append(buf, suffix[0]...)
 	}
-	return cleanIdentifier(shortenEntityName(buf, "t_"))
+	return cleanIdentifier(false, shortenEntityName(buf, "t_"))
 }
 
 // IndexName creates a new valid index name. IndexType can only be one of the
@@ -120,7 +130,7 @@ func IndexName(indexType, tableName string, fields ...string) string {
 			buf = append(buf, '_')
 		}
 	}
-	return strings.ToUpper(cleanIdentifier(shortenEntityName(buf, prefix)))
+	return cleanIdentifier(true, shortenEntityName(buf, prefix))
 }
 
 // TriggerName creates a new trigger name. The returned string represents a
@@ -134,7 +144,7 @@ func TriggerName(tableName, time, event string) string {
 	buf = append(buf, time...)
 	buf = append(buf, '_')
 	buf = append(buf, event...)
-	return cleanIdentifier(shortenEntityName(buf, "trg_"))
+	return cleanIdentifier(false, shortenEntityName(buf, "trg_"))
 }
 
 // ForeignKeyName creates a new foreign key name. The returned string represents
@@ -148,9 +158,10 @@ func ForeignKeyName(priTableName, priColumnName, refTableName, refColumnName str
 	buf = append(buf, refTableName...)
 	buf = append(buf, '_')
 	buf = append(buf, refColumnName...)
-	return strings.ToUpper(cleanIdentifier(shortenEntityName(buf, "FK_")))
+	return cleanIdentifier(true, shortenEntityName(buf, "FK_"))
 }
 
+// TODO: micro optimize later 8-) to reduce allocations
 func shortenEntityName(name []byte, prefix string) string {
 	if len(name) < maxIdentifierLength {
 		return string(name)
