@@ -43,8 +43,6 @@ type TableOption struct {
 type Tables struct {
 	// Schema represents the name of the database. Might be empty.
 	Schema string
-	// Prefix will be put in front of each table name.
-	Prefix string
 	mu     sync.RWMutex
 	// ts uses int as the table index.
 	// What is the reason to use int as the table index and not a name? Because
@@ -53,6 +51,8 @@ type Tables struct {
 	// index constant will always stay the same but the name of the table
 	// differs.
 	ts map[int]*Table
+	// tn for faster access we use tn and also because ts might get removed
+	tn map[string]*Table
 }
 
 // WithObjectFromQuery creates the new view or table from the SELECT query and
@@ -347,6 +347,18 @@ func (tm *Tables) Table(i int) (*Table, error) {
 	return nil, errors.NewNotFoundf("[csdb] Table at index %d not found.", i)
 }
 
+// TableByName returns a table object via its table name. Case sensitive.
+func (tm *Tables) TableByName(name string) (*Table, error) {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+	for _, t := range tm.ts {
+		if t.Name == name {
+			return t, nil
+		}
+	}
+	return nil, errors.NewNotFoundf("[csdb] Table %q not found.", name)
+}
+
 // Tables returns a list of all available table names.
 func (tm *Tables) Tables() []string {
 	// todo maybe use internal cache
@@ -355,7 +367,7 @@ func (tm *Tables) Tables() []string {
 
 	ts := make([]string, 0, len(tm.ts))
 	for _, table := range tm.ts {
-		ts = append(ts, tm.Prefix+table.Name)
+		ts = append(ts, table.Name)
 	}
 	return ts
 }
@@ -376,7 +388,7 @@ func (tm *Tables) Name(i int) string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 	if ts, ok := tm.ts[i]; ok && ts != nil {
-		return tm.Prefix + ts.Name
+		return ts.Name
 	}
 	return ""
 }

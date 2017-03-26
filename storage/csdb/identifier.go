@@ -90,8 +90,8 @@ func cleanIdentifier(upper bool, name []byte) string {
 // invalid characters. First round of shortening goes by replacing common words
 // with their abbreviations and in the second round creating a MD5 hash of the
 // table name.
-func TableName(prefix, name string, suffix ...string) string {
-	if prefix == "" && len(suffix) == 0 && len(name) <= maxIdentifierLength {
+func TableName(prefix, name string, suffixes ...string) string {
+	if prefix == "" && len(suffixes) == 0 && len(name) <= maxIdentifierLength {
 		return strings.Map(mapAlNum, name)
 	}
 
@@ -100,9 +100,9 @@ func TableName(prefix, name string, suffix ...string) string {
 		buf = append(buf, prefix...)
 	}
 	buf = append(buf, name...)
-	if len(suffix) == 1 {
+	for _, s := range suffixes {
 		buf = append(buf, '_')
-		buf = append(buf, suffix[0]...)
+		buf = append(buf, s...)
 	}
 	return cleanIdentifier(false, shortenEntityName(buf, "t_"))
 }

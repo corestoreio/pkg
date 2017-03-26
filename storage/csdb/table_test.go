@@ -311,7 +311,7 @@ func TestTable_Swap(t *testing.T) {
 			}
 		}()
 
-		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs_index_tmp_swap_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_swap_[0-9]+` TO `catalog_category_anc_categs_NEW`").
+		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs_index_tmp_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_[0-9]+` TO `catalog_category_anc_categs_NEW`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
 		err := tableMap.MustTable(table2).Swap(dbc.DB, "catalog_category_anc_categs_NEW")
 		assert.NoError(t, err, "%+v", err)
