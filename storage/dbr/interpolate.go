@@ -12,27 +12,138 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// Repeat takes a SQL string and repeats the masked question marks with the
-// provided repetitions. If the amount of repetitions does not match the number
-// of masked questions marks, a Mismatch error gets returned.
-//		Repeat("SELECT * FROM table WHERE id IN (?...) AND status IN (?...)",2,3)
-// Gets converted to:
-//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
-func Repeat(sql string, repetitions ...int) (string, error) {
-	const qMarkDots = `?...`
+type fieldType uint8
 
-	markCount := strings.Count(sql, qMarkDots)
-	if want := len(repetitions); markCount != want || want == 0 {
-		return "", errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", qMarkDots, markCount, want)
+// Type* constants define all available types which a field can contain.
+const (
+	typeBool fieldType = iota + 1
+	typeBools
+	typeInt64
+	typeInt64s
+	typeFloat64
+	typeFloat64s
+	typeString
+	typeStrings
+	typeByte
+	typeTime
+	typeInterfaces
+	typeFields
+)
+
+// Argument transforms your value or values into an interface slice. This
+// interface slice gets used in the database query functions as an argument. The
+// underlying type in the interface must be one of driver.Value allowed types.
+type Argument interface {
+	appendTo(*[]interface{})
+}
+
+type arg struct {
+	// fieldType specifies the used type. If 0 this struct is empty
+	fieldType
+
+	int64
+	int64s []int64
+	float64
+	float64s []float64
+	bool
+	bools []bool
+	string
+	strings []string
+	bytes   []byte
+	time    time.Time
+	// already converted
+	ifaces []interface{}
+}
+
+func (a arg) appendTo(args *[]interface{}) {
+
+	switch a.fieldType {
+	case typeBool:
+		*args = append(*args, a.bool)
+	case typeBools:
+		for _, v := range a.bools {
+			*args = append(*args, v)
+		}
+	case typeInt64:
+		*args = append(*args, a.int64)
+	case typeInt64s:
+		for _, v := range a.int64s {
+			*args = append(*args, v)
+		}
+	case typeFloat64:
+		*args = append(*args, a.float64)
+	case typeFloat64s:
+		for _, v := range a.float64s {
+			*args = append(*args, v)
+		}
+	case typeString:
+		*args = append(*args, a.string)
+	case typeStrings:
+		for _, v := range a.strings {
+			*args = append(*args, v)
+		}
+	case typeByte:
+		*args = append(*args, a.bytes)
+	case typeTime:
+		*args = append(*args, a.time)
+	case typeInterfaces:
+		*args = append(*args, a.ifaces...)
 	}
-	for i, r := range repetitions {
-		if r < 1 {
-			return "", errors.NewNotValidf("[dbr] Repeat: repetitions argument at index %d is not valid: %d", i, r)
+}
+
+// ArgString adds a string or a slice of strings to the argument list.
+func ArgString(args ...string) Argument {
+	if len(args) == 1 {
+		return arg{
+			fieldType: typeString,
+			string:    args[0],
 		}
 	}
-	if markCount == 1 && len(repetitions) == 1 && repetitions[0] == 1 {
-		return strings.Replace(sql, qMarkDots, "?", 1), nil
+	return arg{
+		fieldType: typeStrings,
+		strings:   args,
 	}
+}
+
+// ArgInt adds an integer or a slice of integers to the argument list.
+func ArgInt(args ...int) Argument {
+	if len(args) == 1 {
+		return arg{
+			fieldType: typeInt64,
+			int64:     int64(args[0]),
+		}
+	}
+	args2 := make([]interface{}, len(args))
+	for i, a := range args {
+		args2[i] = int64(a)
+	}
+	return arg{
+		fieldType: typeInterfaces,
+		ifaces:    args2,
+	}
+}
+
+// Repeat takes a SQL string and repeats the question marks with the provided
+// arguments. If the amount of arguments does not match the number of questions
+// marks, a Mismatch error gets returned. The arguments are getting converted to
+// an interface slice to easy passing into the db.Query/db.Exec/etc functions as
+// an argument.
+//		Repeat("SELECT * FROM table WHERE id IN (?) AND status IN (?)", ArgInt(myIntSlice...), ArgString(myStrSlice...))
+// Gets converted to:
+//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
+// The questions marks are of course depending on the values in the Arg*
+// functions. This function should be generally used when dealing with prepared
+// statements.
+func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
+	const qMarkStr = `?`
+	const qMarkRne = '?'
+
+	markCount := strings.Count(sql, qMarkStr)
+	if want := len(args); markCount != want || want == 0 {
+		return "", nil, errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", qMarkStr, markCount, want)
+	}
+
+	retArgs := make([]interface{}, 0, len(args)*2)
 
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
@@ -40,26 +151,28 @@ func Repeat(sql string, repetitions ...int) (string, error) {
 	n := markCount
 	i := 0
 	for i < n {
-		m := strings.Index(sql, qMarkDots)
+		m := strings.Index(sql, qMarkStr)
 		if m < 0 {
 			break
 		}
 		buf.WriteString(sql[:m])
 
-		if i < len(repetitions) {
-			reps := repetitions[i]
+		if i < len(args) {
+			prevLen := len(retArgs)
+			args[i].appendTo(&retArgs)
+			reps := len(retArgs) - prevLen
 			for r := 0; r < reps; r++ {
-				buf.WriteByte('?')
+				buf.WriteByte(qMarkRne)
 				if r < reps-1 {
 					buf.WriteByte(',')
 				}
 			}
 		}
-		sql = sql[m+len(qMarkDots):]
+		sql = sql[m+len(qMarkStr):]
 		i++
 	}
 	buf.WriteString(sql)
-	return buf.String(), nil
+	return buf.String(), retArgs, nil
 }
 
 func isUint(k reflect.Kind) bool {

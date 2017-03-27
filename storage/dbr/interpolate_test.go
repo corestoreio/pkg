@@ -10,60 +10,68 @@ import (
 
 func TestRepeat(t *testing.T) {
 	t.Run("MisMatch", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN(?...)")
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)")
 		assert.Empty(t, s)
+		assert.Nil(t, args)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN(?...)", 4, 5, 6)
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(1, 2), ArgString("d", "3"))
 		assert.Empty(t, s)
+		assert.Nil(t, args)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 	t.Run("MisMatch qMarks", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN(?..)", 4)
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN(!)", ArgInt(3))
 		assert.Empty(t, s)
+		assert.Nil(t, args)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
-	t.Run("Repetition is zero", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN(?...)", 0)
-		assert.Empty(t, s)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
-	})
-	t.Run("single replacement", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN(?...)", 1)
-		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN(?)", s)
+	t.Run("one arg with one value", func(t *testing.T) {
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(1))
+		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?)", s)
+		assert.Exactly(t, []interface{}{int64(1)}, args)
 		assert.NoError(t, err, "%+v", err)
 	})
-	t.Run("five times replacement", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN(?...)", 5)
-		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN(?,?,?,?,?)", s)
+	t.Run("one arg with three values", func(t *testing.T) {
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(11, 3, 5))
+		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?)", s)
+		assert.Exactly(t, []interface{}{int64(11), int64(3), int64(5)}, args)
 		assert.NoError(t, err, "%+v", err)
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN (?...) AND name IN (?...)", 3, 5)
+		sl := []string{"a", "b", "c", "d", "e"}
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)",
+			ArgInt(5, 7, 9), ArgString(sl...))
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
-		assert.NoError(t, err, "%+v", err)
-	})
-	t.Run("multi 4,3,1 times replacement", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN (?...) AND name IN (?...) AND status IN (?...)", 4, 3, 1)
-		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?) AND status IN (?)", s)
+		assert.Exactly(t, []interface{}{int64(5), int64(7), int64(9), "a", "b", "c", "d", "e"}, args)
 		assert.NoError(t, err, "%+v", err)
 	})
 }
 
-//BenchmarkRepeat/multi-4         	 3000000	       492 ns/op	      96 B/op	       1 allocs/op
-//BenchmarkRepeat/single-4        	 5000000	       311 ns/op	      48 B/op	       1 allocs/op
+//BenchmarkRepeat/multi-4         	 3000000	       492 ns/op	      96 B/op	       1 allocs/op no iFace wrapping
+//BenchmarkRepeat/single-4        	 5000000	       311 ns/op	      48 B/op	       1 allocs/op no iFace wrapping
+
+//BenchmarkRepeat/multi-4         	 1000000	      1753 ns/op	    1192 B/op	      19 allocs/op
+//BenchmarkRepeat/single-4        	 2000000	       899 ns/op	     448 B/op	      11 allocs/op
+
 func BenchmarkRepeat(b *testing.B) {
 
 	b.Run("multi", func(b *testing.B) {
-		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?) AND status IN (?)"
+		sl := []string{"a", "b", "c", "d", "e"}
+		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, err := Repeat("SELECT * FROM `table` WHERE id IN (?...) AND name IN (?...) AND status IN (?...)", 4, 3, 1)
+			s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)",
+				ArgInt(5, 7, 9, 11), ArgString(sl...), ArgInt(22))
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if s != want {
 				b.Fatalf("\nHave: %q\nWant: %q", s, want)
+			}
+			if len(args) == 0 {
+				b.Fatal("Args cannot be empty")
 			}
 		}
 	})
@@ -71,16 +79,18 @@ func BenchmarkRepeat(b *testing.B) {
 	b.Run("single", func(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
 		for i := 0; i < b.N; i++ {
-			s, err := Repeat("SELECT * FROM `table` WHERE id IN (?...)", 4)
+			s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(9, 8, 7, 6))
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if s != want {
 				b.Fatalf("\nHave: %q\nWant: %q", s, want)
 			}
+			if len(args) == 0 {
+				b.Fatal("Args cannot be empty")
+			}
 		}
 	})
-
 }
 
 func TestInterpolateNil(t *testing.T) {
