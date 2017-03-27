@@ -12,38 +12,42 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// Repeater takes a SQL string and repeats the masked question marks with the
+// Repeat takes a SQL string and repeats the masked question marks with the
 // provided repetitions. If the amount of repetitions does not match the number
 // of masked questions marks, a Mismatch error gets returned.
-//		SELECT * FROM table WHERE id IN (?...)
-// Gets
-func Repeater(sql string, repetitions ...int) (string, error) {
+//		Repeat("SELECT * FROM table WHERE id IN (?...) AND status IN (?...)",2,3)
+// Gets converted to:
+//		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
+func Repeat(sql string, repetitions ...int) (string, error) {
 	const qMarkDots = `?...`
 
 	markCount := strings.Count(sql, qMarkDots)
 	if want := len(repetitions); markCount != want || want == 0 {
-		return "", errors.NewMismatchf("[dbr] Repeater: Number of %s:%d do not match the number of repetitions: %d", qMarkDots, markCount, want)
+		return "", errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", qMarkDots, markCount, want)
 	}
 	for i, r := range repetitions {
 		if r < 1 {
-			return "", errors.NewNotValidf("[dbr] Repeater: repetitions argument at index %d is not valid: %d", i, r)
+			return "", errors.NewNotValidf("[dbr] Repeat: repetitions argument at index %d is not valid: %d", i, r)
 		}
 	}
 	if markCount == 1 && len(repetitions) == 1 && repetitions[0] == 1 {
 		return strings.Replace(sql, qMarkDots, "?", 1), nil
 	}
-	if markCount == 1 {
-		reps := strings.Repeat("?,", repetitions[0])
-		return strings.Replace(sql, qMarkDots, reps[:len(reps)-1], 1), nil
-	}
 
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	for idx, part := range strings.SplitN(sql, qMarkDots, markCount+1) {
-		buf.WriteString(part)
-		if idx < len(repetitions) {
-			reps := repetitions[idx]
+	n := markCount
+	i := 0
+	for i < n {
+		m := strings.Index(sql, qMarkDots)
+		if m < 0 {
+			break
+		}
+		buf.WriteString(sql[:m])
+
+		if i < len(repetitions) {
+			reps := repetitions[i]
 			for r := 0; r < reps; r++ {
 				buf.WriteByte('?')
 				if r < reps-1 {
@@ -51,7 +55,10 @@ func Repeater(sql string, repetitions ...int) (string, error) {
 				}
 			}
 		}
+		sql = sql[m+len(qMarkDots):]
+		i++
 	}
+	buf.WriteString(sql)
 	return buf.String(), nil
 }
 
