@@ -16,6 +16,7 @@ package csdb
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"hash/fnv"
 	"strconv"
@@ -70,29 +71,51 @@ type Column struct {
 
 // DMLLoadColumns specifies the data manipulation language for retrieving all
 // columns in the current database for a specific table.
-//const DMLLoadColumns = `SELECT
-//	 FROM information_schema.COLUMNS WHERE  AND TABLE_NAME IN (?)`
+const selTablesColumns = `SELECT
+	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
+		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
+		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT	
+	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN (?)
+	 ORDER BY TABLE_NAME, ORDINAL_POSITION`
 
-// LoadColumns returns all columns from a list of tables in the current
+const selAllTablesColumns = `SELECT
+	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
+		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
+		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT
+	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME, ORDINAL_POSITION`
+
+// LoadColumns returns all columns from a list of table names in the current
 // database. For now MySQL DSN must have set interpolateParams to true. Map key
-// contains the table name. Returns a NotFound error if the table is not available.
+// contains the table name. Returns a NotFound error if the table is not
+// available. All columns from all tables gets selected when you don't provide
+// the argument `tables`.
 func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 
-	sel := dbr.NewSelect("information_schema.COLUMNS").AddColumns(
-		`TABLE_NAME,COLUMN_NAME,ORDINAL_POSITION,COLUMN_DEFAULT,
-		IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,
-		NUMERIC_SCALE,COLUMN_TYPE,COLUMN_KEY,EXTRA,COLUMN_COMMENT`).
-		Where(dbr.ConditionRaw(`TABLE_SCHEMA=DATABASE()`))
-	sel.DB.Querier = db
-	if len(tables) > 0 {
-		args := make([]interface{}, len(tables))
-		for i, t := range tables {
-			args[i] = t
-		}
-		sel.Where(dbr.ConditionRaw("TABLE_NAME IN (?)", args...))
-	}
+	//sel := dbr.NewSelect("information_schema.COLUMNS").AddColumns(
+	//	"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
+	//	"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
+	//	"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").
+	//	Where(dbr.ConditionRaw(`TABLE_SCHEMA=DATABASE()`))
+	//sel.DB.Querier = db
+	//if len(tables) > 0 {
+	//	args := make([]interface{}, len(tables))
+	//	for i, t := range tables {
+	//		args[i] = t
+	//	}
+	//	sel.Where(dbr.ConditionRaw("TABLE_NAME IN (?)", args...))
+	//}
 
-	rows, err := sel.Rows()
+	var rows *sql.Rows
+	var err error
+	if len(tables) == 0 {
+		rows, err = db.Query(selAllTablesColumns)
+	} else {
+		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.ArgString(tables...))
+		if err != nil {
+			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
+		}
+		rows, err = db.Query(sqlStr, args...)
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
 	}
@@ -112,6 +135,7 @@ func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 		}
 		c.DataType = strings.ToLower(c.DataType)
 		tc[tn] = append(tc[tn], c)
+		tn = ""
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrapf(err, "[csdb] rows.Err Query")

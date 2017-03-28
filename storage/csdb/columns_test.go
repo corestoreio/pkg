@@ -438,11 +438,12 @@ func TestColumn_IsCurrentTimestamp(t *testing.T) {
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsCurrentTimestamp())
 }
 
-var benchmarkGetColumns map[string]csdb.Columns
-var benchmarkGetColumnsHashWant = []byte{0x3b, 0x2d, 0xdd, 0xf4, 0x4e, 0x2b, 0x3a, 0xd0}
+var benchmarkLoadColumns map[string]csdb.Columns
+var benchmarkLoadColumnsHashWant = []byte{0x66, 0x73, 0x3c, 0x93, 0x11, 0x65, 0xbc, 0xcf}
 
-// BenchmarkGetColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
-func BenchmarkGetColumns(b *testing.B) {
+// BenchmarkLoadColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
+// BenchmarkLoadColumns-4   	    2000	    748079 ns/op	   14364 B/op	     363 allocs/op
+func BenchmarkLoadColumns(b *testing.B) {
 	const tn = "eav_attribute"
 	dbc, _ := cstesting.MustConnectDB()
 	if dbc == nil {
@@ -453,19 +454,19 @@ func BenchmarkGetColumns(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkGetColumns, err = csdb.LoadColumns(dbc.DB, tn)
+		benchmarkLoadColumns, err = csdb.LoadColumns(dbc.DB, tn)
 		if err != nil {
 			b.Error(err)
 		}
 	}
-	hashHave, err := benchmarkGetColumns[tn].Hash()
+	hashHave, err := benchmarkLoadColumns[tn].Hash()
 	if err != nil {
 		b.Error(err)
 	}
-	if 0 != bytes.Compare(hashHave, benchmarkGetColumnsHashWant) {
-		b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkGetColumnsHashWant)
+	if 0 != bytes.Compare(hashHave, benchmarkLoadColumnsHashWant) {
+		b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkLoadColumnsHashWant)
 	}
-	//	b.Log(benchmarkGetColumns.GoString())
+	b.Log(benchmarkLoadColumns[tn].GoString())
 }
 
 var benchmarkColumnsJoinFields string
