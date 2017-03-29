@@ -13,4 +13,18 @@
 // limitations under the License.
 
 // Package mview adds materialized views via events on the MySQL binary log.
+//
+//
+// https://de.slideshare.net/MySQLGeek/flexviews-materialized-views-for-my-sql
+// https://github.com/greenlion/swanhart-tools
+//
+// https://hashrocket.com/blog/posts/materialized-view-strategies-using-postgresql
+// Queries returning aggregate, summary, and computed data are frequently used
+// in application development. Sometimes these queries are not fast enough.
+// Caching query results using Memcached or Redis is a common approach for
+// resolving these performance issues. However, these bring their own
+// challenges. Before reaching for an external tool it is worth examining what
+// techniques PostgreSQL offers for caching query results.
+//
+// http://www.eschrade.com/page/indexing-in-magento-or-the-wonderful-world-of-materialized-views/
 package mview
