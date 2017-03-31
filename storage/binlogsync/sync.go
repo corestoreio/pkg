@@ -17,6 +17,21 @@ const (
 	DeleteAction = "delete"
 )
 
+func (c *Canal) clearTableCacheOnAlterTableStatement(schema, query []byte) {
+	if mb := c.expAlterTable.FindSubmatch(query); mb != nil {
+		if len(mb[1]) == 0 {
+			mb[1] = schema
+		}
+		scma := string(mb[1])
+		tbl := string(mb[2])
+		c.ClearTableCache(scma, tbl)
+		if c.Log.IsInfo() {
+			c.Log.Info("[binlogsync] Table structure changed, clear table cache",
+				log.String("database", scma), log.String("table", tbl))
+		}
+	}
+}
+
 func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 	pos := c.masterStatus
 
@@ -76,6 +91,12 @@ func (c *Canal) startSyncBinlog(ctxArg context.Context) error {
 				}
 				continue
 			}
+		case *myreplicator.XIDEvent:
+			// try to save the position later
+		case *myreplicator.QueryEvent:
+			// handle alert table query
+			c.clearTableCacheOnAlterTableStatement(e.Schema, e.Query)
+			// save master position, so no continue
 		case
 			*myreplicator.TableMapEvent,
 			*myreplicator.FormatDescriptionEvent:

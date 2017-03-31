@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net"
+	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -45,7 +46,10 @@ type Canal struct {
 	masterStatus       csdb.MasterStatus
 	masterLastSaveTime time.Time
 
-	syncer *myreplicator.BinlogSyncer
+	// expAlterTable defines the regex to be used to detect ALTER TABLE
+	// statements to reinitialize the internal table structure cache.
+	expAlterTable *regexp.Regexp
+	syncer        *myreplicator.BinlogSyncer
 
 	rsMu       sync.RWMutex
 	rsHandlers []RowsEventHandler
@@ -171,6 +175,7 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	c.DSN = dsn
 	c.closed = new(int32)
 	atomic.StoreInt32(c.closed, 0)
+	c.expAlterTable = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
 
 	c.BackendPosition = cfgmodel.NewStr("storage/binlogsync/position")
 
@@ -331,7 +336,16 @@ func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (csdb.T
 	return val.(csdb.Table), nil
 }
 
-// Check MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB
+// ClearTableCache clear table cache
+func (c *Canal) ClearTableCache(db string, table string) {
+	c.tables.Delete()
+	//key := fmt.Sprintf("%s.%s", db, table)
+	//c.tableLock.Lock()
+	//delete(c.tables, key)
+	//c.tableLock.Unlock()
+}
+
+// CheckBinlogRowImage checks MySQL binlog row image, must be in FULL, MINIMAL, NOBLOB
 func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 	// need to check MySQL binlog row image? full, minimal or noblob?
 	// now only log
