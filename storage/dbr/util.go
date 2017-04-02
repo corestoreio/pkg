@@ -9,7 +9,7 @@ import (
 
 // argsValuer checks if an argument implements driver.Valuer interface. If so
 // uses the Value() function to get the correct value.
-func argsValuer(args *[]interface{}) error {
+func off_argsValuer(args *[]interface{}) error {
 	for i, v := range *args {
 		if dbVal, ok := v.(driver.Valuer); ok {
 			if val, err := dbVal.Value(); err == nil {

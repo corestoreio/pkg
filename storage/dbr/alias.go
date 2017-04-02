@@ -31,8 +31,8 @@ func (t alias) QuoteAs() string {
 var DefaultScopeNames = [...]string{"Store", "Group", "Website", "Default"}
 
 // EAVIfNull creates a nested IFNULL SQL statement when a scope based fall back
-// hierarchy is required. Alias argument will be used as prefix for the alias
-// table name and as the final alias.
+// hierarchy is required. Alias argument will be used at prefix for the alias
+// table name and at the final alias.
 func EAVIfNull(alias, columnName, defaultVal string, scopeNames ...string) string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)

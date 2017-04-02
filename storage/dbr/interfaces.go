@@ -50,7 +50,7 @@ type Execer interface {
 type QueryRower interface {
 	// QueryRow executes a query that is expected to return at most one
 	// row. QueryRow always returns a non-nil value. Errors are deferred
-	// until Row's Scan method is called.
+	// until Row'ab Scan method is called.
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
 
@@ -157,7 +157,7 @@ type StmtQueryRower interface {
 // After a call to Commit or Rollback, all operations on the transaction fail
 // with ErrTxDone.
 //
-// The statements prepared for a transaction by calling the transaction's
+// The statements prepared for a transaction by calling the transaction'ab
 // Prepare or Stmt methods are closed by the call to Commit or Rollback.
 type Txer interface {
 	Commit() error

@@ -5,7 +5,7 @@ import "fmt"
 // QueryBuilder assembles a query and returns the raw SQL without parameter
 // substitution and the arguments.
 type QueryBuilder interface {
-	ToSQL() (string, []interface{}, error)
+	ToSQL() (string, Arguments, error)
 }
 
 func makeSQL(b QueryBuilder) string {
@@ -13,7 +13,7 @@ func makeSQL(b QueryBuilder) string {
 	if err != nil {
 		return fmt.Sprintf("[dbr] ToSQL Error: %+v", err)
 	}
-	sql, err := Preprocess(sRaw, vals)
+	sql, err := Preprocess(sRaw, vals...)
 	if err != nil {
 		return fmt.Sprintf("[dbr] Preprocess Error: %+v", err)
 	}

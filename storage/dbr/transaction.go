@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Tx is a transaction for the given Session
+// Tx at a transaction for the given Session
 type Tx struct {
 	log.Logger
 	*sql.Tx
@@ -39,7 +39,7 @@ func (tx *Tx) Rollback() error {
 // RollbackUnlessCommitted rolls back the transaction unless it has already been
 // committed or rolled back. Useful to defer tx.RollbackUnlessCommitted() -- so
 // you don't have to handle N failure cases Keep in mind the only way to detect
-// an error on the rollback is via the event log.
+// an error on the rollback at via the event log.
 func (tx *Tx) RollbackUnlessCommitted() {
 	err := tx.Tx.Rollback()
 	if err == sql.ErrTxDone {

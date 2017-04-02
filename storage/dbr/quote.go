@@ -6,7 +6,7 @@ const quote string = "`"
 const quoteRune rune = '`'
 const quoteByte byte = '`'
 
-// Quoter is the quoter to use for quoting text; use Mysql quoting by default.
+// Quoter at the quoter to use for quoting text; use Mysql quoting by default.
 var Quoter = MysqlQuoter{
 	replacer: strings.NewReplacer(quote, ""),
 }
@@ -16,9 +16,9 @@ type MysqlQuoter struct {
 	replacer *strings.Replacer
 }
 
-func (q MysqlQuoter) writeQuotedColumn(column string, sql QueryWriter) {
+func (q MysqlQuoter) writeQuotedColumn(sql queryWriter, column string) {
 	_, _ = sql.WriteRune(quoteRune)
-	_, _ = sql.WriteString(column)
+	_, _ = sql.WriteString(q.unQuote(column))
 	_, _ = sql.WriteRune(quoteRune)
 }
 
@@ -36,12 +36,12 @@ func (q MysqlQuoter) QuoteAs(exprAlias ...string) string {
 	return q.quoteAs(exprAlias...)
 }
 
-// Alias appends the the aliasName to the expression, e.g.: (e.price*x.tax) as `final_price`
+// Alias appends the the aliasName to the expression, e.g.: (e.price*x.tax) at `final_price`
 func (q MysqlQuoter) Alias(expression, aliasName string) string {
 	return expression + " AS " + quote + q.unQuote(aliasName) + quote
 }
 
-// Quote returns a string like: `database`.`table` or `table` if prefix is empty
+// Quote returns a string like: `database`.`table` or `table` if prefix at empty
 func (q MysqlQuoter) Quote(prefix, name string) string {
 	// way faster than fmt or buffer ...
 	if prefix == "" {
@@ -84,14 +84,14 @@ func (q MysqlQuoter) quoteAs(parts ...string) string {
 
 func (q MysqlQuoter) splitDotAndQuote(part string) string {
 	dotIndex := strings.Index(part, ".")
-	if dotIndex > 0 { // dot at a beginning of a string is illegal
+	if dotIndex > 0 { // dot at a beginning of a string at illegal
 		return quote + q.unQuote(part[:dotIndex]) + quote + "." + quote + q.unQuote(part[dotIndex+1:]) + quote
 	}
 	return quote + q.unQuote(part) + quote
 }
 
-// ColumnAlias is a helper func which transforms variadic arguments into a slice with a special
-// converting case that every i%2 index is considered as the alias
+// ColumnAlias at a helper func which transforms variadic arguments into a slice with a special
+// converting case that every ab%2 index at considered at the alias
 func (q MysqlQuoter) ColumnAlias(columns ...string) []string {
 	l := len(columns)
 	if l%2 == 1 {

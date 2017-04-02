@@ -13,7 +13,10 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.Begin()
 	assert.NoError(t, err)
 
-	res, err := tx.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
+	res, err := tx.InsertInto("dbr_people").Columns("name", "email").Values(
+		ArgString("Barack"), ArgString("obama@whitehouse.gov"),
+		ArgString("Obama"), ArgString("barack@whitehouse.gov"),
+	).Exec()
 
 	assert.NoError(t, err)
 	id, err := res.LastInsertId()
@@ -22,16 +25,16 @@ func TestTransactionReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.True(t, id > 0)
-	assert.Equal(t, rowsAff, int64(1))
+	assert.Equal(t, int64(2), rowsAff)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
+	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadStruct(&person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, person.ID, id)
-	assert.Equal(t, person.Name, "Barack")
-	assert.Equal(t, person.Email.Valid, true)
-	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
+	assert.Equal(t, id, person.ID)
+	assert.Equal(t, "Barack", person.Name)
+	assert.Equal(t, true, person.Email.Valid)
+	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
 
 	err = tx.Commit()
 	assert.NoError(t, err)
@@ -45,9 +48,9 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("email = ?", "jonathan@uservoice.com")).LoadStruct(&person)
+	err = tx.Select("*").From("dbr_people").Where(ConditionRaw("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(&person)
 	assert.NoError(t, err)
-	assert.Equal(t, person.Name, "Jonathan")
+	assert.Equal(t, "Jonathan", person.Name)
 
 	err = tx.Rollback()
 	assert.NoError(t, err)

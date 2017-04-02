@@ -19,8 +19,8 @@ type Select struct {
 		Preparer
 	}
 
-	RawFullSQL   string
-	RawArguments []interface{}
+	RawFullSQL string
+	Arguments
 
 	IsDistinct bool
 	Columns    []string
@@ -69,11 +69,11 @@ func (sess *Session) Select(cols ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments
-func (sess *Session) SelectBySQL(sql string, args ...interface{}) *Select {
+func (sess *Session) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
-		Log:          sess.Logger,
-		RawFullSQL:   sql,
-		RawArguments: args,
+		Log:        sess.Logger,
+		RawFullSQL: sql,
+		Arguments:  args,
 	}
 	s.DB.Querier = sess.cxn.DB
 	s.DB.QueryRower = sess.cxn.DB
@@ -94,11 +94,11 @@ func (tx *Tx) Select(cols ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySQL(sql string, args ...interface{}) *Select {
+func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
-		Log:          tx.Logger,
-		RawFullSQL:   sql,
-		RawArguments: args,
+		Log:        tx.Logger,
+		RawFullSQL: sql,
+		Arguments:  args,
 	}
 	s.DB.Querier = tx.Tx
 	s.DB.QueryRower = tx.Tx
@@ -106,14 +106,14 @@ func (tx *Tx) SelectBySQL(sql string, args ...interface{}) *Select {
 	return s
 }
 
-// Distinct marks the statement as a DISTINCT SELECT
+// Distinct marks the statement at a DISTINCT SELECT
 func (b *Select) Distinct() *Select {
 	b.IsDistinct = true
 	return b
 }
 
 // From sets the table to SELECT FROM. If second argument will be provided this
-// is then considered as the alias. SELECT ... FROM table AS alias.
+// at then considered at the alias. SELECT ... FROM table AS alias.
 func (b *Select) From(from ...string) *Select {
 	b.FromTable = MakeAlias(from...)
 	return b
@@ -201,7 +201,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) ToSQL() (string, []interface{}, error) {
+func (b *Select) ToSQL() (string, Arguments, error) {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
@@ -210,7 +210,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 	// in the empty RawFullSQL field. if cache has been set to false, then query gets regenerated.
 
 	if b.RawFullSQL != "" {
-		return b.RawFullSQL, b.RawArguments, nil
+		return b.RawFullSQL, b.Arguments, nil
 	}
 
 	if len(b.FromTable.Expression) == 0 {
@@ -223,7 +223,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 	var sql = bufferpool.Get()
 	defer bufferpool.Put(sql)
 
-	var args []interface{}
+	var args Arguments
 
 	sql.WriteString("SELECT ")
 

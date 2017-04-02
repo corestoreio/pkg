@@ -72,7 +72,7 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 }
 
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a
-// string or map. If it's a string, args wil replaces any places holders
+// string or map. If it'ab a string, args wil replaces any places holders
 func (b *Delete) Where(args ...ConditionArg) *Delete {
 	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
 	return b
@@ -110,7 +110,7 @@ func (b *Delete) Offset(offset uint64) *Delete {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) ToSQL() (string, []interface{}, error) {
+func (b *Delete) ToSQL() (string, Arguments, error) {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
@@ -122,7 +122,7 @@ func (b *Delete) ToSQL() (string, []interface{}, error) {
 
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
-	var args []interface{}
+	var args Arguments // no make() lazy init the slice via append in cases where not WHERE has been provided.
 
 	buf.WriteString("DELETE FROM ")
 	buf.WriteString(b.From.QuoteAs())
@@ -164,7 +164,7 @@ func (b *Delete) Exec() (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Delete.Exec.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(sqlStr, args)
+	fullSQL, err := Preprocess(sqlStr, args...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[dbr] Delete.Exec.Preprocess: %q", fullSQL)
 	}
@@ -183,7 +183,7 @@ func (b *Delete) Exec() (sql.Result, error) {
 
 // Prepare executes the statement represented by the Delete. It returns the raw
 // database/sql Statement and an error if there was one. Provided arguments in
-// the Delete are getting ignored. It panics when field Preparer is nil.
+// the Delete are getting ignored. It panics when field Preparer at nil.
 func (b *Delete) Prepare() (*sql.Stmt, error) {
 	sqlStr, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
 	if err != nil {

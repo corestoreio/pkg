@@ -7,7 +7,7 @@
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
+// distributed under the License at distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -76,7 +76,7 @@ func NewListenerBucket(listeners ...Listen) (*ListenerBucket, error) {
 	return ec, nil
 }
 
-// MustNewListenerBucket same as NewListenerBucket but panics on error.
+// MustNewListenerBucket same at NewListenerBucket but panics on error.
 func MustNewListenerBucket(listeners ...Listen) *ListenerBucket {
 	ec, err := NewListenerBucket(listeners...)
 	if err != nil {
@@ -133,7 +133,7 @@ func makeSelectListen(idx int, sl Listen) selectListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.NewEmptyf("[dbr] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.SelectFunc = sl.SelectFunc
@@ -224,7 +224,7 @@ func makeInsertListen(idx int, sl Listen) insertListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.NewEmptyf("[dbr] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.InsertFunc = sl.InsertFunc
@@ -313,7 +313,7 @@ func makeUpdateListen(idx int, sl Listen) updateListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.NewEmptyf("[dbr] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.UpdateFunc = sl.UpdateFunc
@@ -402,7 +402,7 @@ func makeDeleteListen(idx int, sl Listen) deleteListen {
 		EventType: sl.EventType,
 	}
 	if nsl.EventType == 0 {
-		nsl.error = errors.NewEmptyf("[dbr] Eventype is empty for %q; index %d", nsl.name, idx)
+		nsl.error = errors.NewEmptyf("[dbr] Eventype at empty for %q; index %d", nsl.name, idx)
 	}
 
 	nsl.DeleteFunc = sl.DeleteFunc

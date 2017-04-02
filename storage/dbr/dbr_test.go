@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/corestoreio/csfw/util/null"
+	"github.com/corestoreio/errors"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -60,6 +61,25 @@ type dbrPerson struct {
 	Key   null.String
 }
 
+func (p *dbrPerson) Record(columns ...string) (Arguments, error) {
+	args := make(Arguments, 0, 4) // 4 == number of fields in the struct
+	for _, c := range columns {
+		switch c {
+		case "id":
+			args = append(args, ArgInt64(p.ID))
+		case "name":
+			args = append(args, ArgString(p.Name))
+		case "email":
+			args = append(args, ArgStringNull(p.Email))
+		case "key":
+			args = append(args, ArgStringNull(p.Key))
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+	}
+	return args, nil
+}
+
 type nullTypedRecord struct {
 	ID         int64 `db:"id"`
 	StringVal  null.String
@@ -67,6 +87,45 @@ type nullTypedRecord struct {
 	Float64Val null.Float64
 	TimeVal    null.Time
 	BoolVal    null.Bool
+}
+
+func (p *nullTypedRecord) Record(columns ...string) (Arguments, error) {
+	args := make(Arguments, 0, 6) // 6 == number of fields in the struct
+	for _, c := range columns {
+		switch c {
+		case "id":
+			args = append(args, ArgInt64(p.ID))
+		case "string_val":
+			args = append(args, ArgStringNull(p.StringVal))
+		case "int64_val":
+			if p.Int64Val.Valid {
+				args = append(args, ArgInt64(p.Int64Val.Int64))
+			} else {
+				args = append(args, ArgNull())
+			}
+		case "float64_val":
+			if p.Float64Val.Valid {
+				args = append(args, ArgFloat64(p.Float64Val.Float64))
+			} else {
+				args = append(args, ArgNull())
+			}
+		case "time_val":
+			if p.TimeVal.Valid {
+				args = append(args, ArgTime(p.TimeVal.Time))
+			} else {
+				args = append(args, ArgNull())
+			}
+		case "bool_val":
+			if p.BoolVal.Valid {
+				args = append(args, ArgBool(p.BoolVal.Bool))
+			} else {
+				args = append(args, ArgNull())
+			}
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+	}
+	return args, nil
 }
 
 func installFixtures(db *sql.DB) {

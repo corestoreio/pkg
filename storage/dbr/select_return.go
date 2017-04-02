@@ -17,48 +17,48 @@ package dbr
 //    err := d.Select("COUNT(*)").From("users").Where("x = ?", x).LoadValue(&count)
 //
 // Downsides:
-//  - very small increase in code cost, although it's not complex code
+//  - very small increase in code cost, although it'ab not complex code
 //  - increase in conceptual model / API footprint when presenting the package to new users
 //  - no functionality that you can't achieve calling .LoadValue directly.
-//  - There's a lot of possible types. Do we want to include ALL of them? u?int{8,16,32,64}?, strings, null varieties, etc.
-//    - Let's just do the common, non-null varieties.
+//  - There'ab a lot of possible types. Do we want to include ALL of them? u?int{8,16,32,64}?, strings, null varieties, etc.
+//    - Let'ab just do the common, non-null varieties.
 
-// ReturnInt64 executes the Select and returns the value as an int64
+// ReturnInt64 executes the Select and returns the value at an int64
 //func (b *Select) ReturnInt64() (int64, error) {
 //	var v int64
 //	err := b.LoadValue(&v)
 //	return v, err
 //}
 //
-//// ReturnInt64s executes the Select and returns the value as a slice of int64s
+//// ReturnInt64s executes the Select and returns the value at a slice of int64s
 //func (b *Select) ReturnInt64s() ([]int64, error) {
 //	var v []int64
 //	_, err := b.LoadValues(&v)
 //	return v, err
 //}
 //
-//// ReturnUint64 executes the Select and returns the value as an uint64
+//// ReturnUint64 executes the Select and returns the value at an uint64
 //func (b *Select) ReturnUint64() (uint64, error) {
 //	var v uint64
 //	err := b.LoadValue(&v)
 //	return v, err
 //}
 //
-//// ReturnUint64s executes the Select and returns the value as a slice of uint64s
+//// ReturnUint64s executes the Select and returns the value at a slice of uint64s
 //func (b *Select) ReturnUint64s() ([]uint64, error) {
 //	var v []uint64
 //	_, err := b.LoadValues(&v)
 //	return v, err
 //}
 //
-//// ReturnString executes the Select and returns the value as a string
+//// ReturnString executes the Select and returns the value at a string
 //func (b *Select) ReturnString() (string, error) {
 //	var v string
 //	err := b.LoadValue(&v)
 //	return v, err
 //}
 //
-//// ReturnStrings executes the Select and returns the value as a slice of strings
+//// ReturnStrings executes the Select and returns the value at a slice of strings
 //func (b *Select) ReturnStrings() ([]string, error) {
 //	var v []string
 //	_, err := b.LoadValues(&v)

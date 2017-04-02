@@ -8,135 +8,156 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var benchmarkUpdateValuesSQL Arguments
+
 func BenchmarkUpdateValuesSQL(b *testing.B) {
 	s := createFakeSession()
-
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
-		s.Update("alpha").Set("something_id", 1).Where(ConditionRaw("id", 1)).ToSQL()
+		_, args, err := s.Update("alpha").Set("something_id", ArgInt64(1)).Where(ConditionRaw("id", ArgInt64(1))).ToSQL()
+		if err != nil {
+			b.Fatalf("%+v", err)
+		}
+		benchmarkUpdateValuesSQL = args
 	}
 }
 
 func BenchmarkUpdateValueMapSQL(b *testing.B) {
 	s := createFakeSession()
-
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
-		s.Update("alpha").Set("something_id", 1).SetMap(map[string]interface{}{"b": 1, "c": 2}).Where(ConditionRaw("id", 1)).ToSQL()
+		_, args, err := s.Update("alpha").
+			Set("something_id", ArgInt64(1)).
+			SetMap(map[string]Argument{
+				"b": ArgInt64(2),
+				"c": ArgInt64(3),
+			}).
+			Where(ConditionRaw("id", ArgInt(1))).
+			ToSQL()
+		if err != nil {
+			b.Fatalf("%+v", err)
+		}
+		benchmarkUpdateValuesSQL = args
 	}
 }
 
 func TestUpdateAllToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).ToSQL()
+	sql, args, err := s.Update("a").Set("b", ArgInt64(1)).Set("c", ArgInt(2)).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "UPDATE `a` SET `b` = ?, `c` = ?")
-	assert.Equal(t, args, []interface{}{1, 2})
+	assert.Equal(t, "UPDATE `a` SET `b` = ?, `c` = ?", sql)
+	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
 }
 
 func TestUpdateSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", 1).Set("c", 2).Where(ConditionRaw("id = ?", 1)).ToSQL()
+	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(ConditionRaw("id = ?", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)")
-	assert.Equal(t, args, []interface{}{1, 2, 1})
+	assert.Equal(t, "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)", sql)
+	assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
 }
 
 func TestUpdateSetMapToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where(ConditionRaw("id = ?", 1)).ToSQL()
+	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": ArgInt64(1), "c": ArgInt64(2)}).Where(ConditionRaw("id = ?", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)" {
-		assert.Equal(t, args, []interface{}{1, 2, 1})
+		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
 	} else {
-		assert.Equal(t, sql, "UPDATE `a` SET `c` = ?, `b` = ? WHERE (id = ?)")
-		assert.Equal(t, args, []interface{}{2, 1, 1})
+		assert.Equal(t, "UPDATE `a` SET `c` = ?, `b` = ? WHERE (id = ?)", sql)
+		assert.Equal(t, []interface{}{int64(2), int64(1), int64(1)}, args.Interfaces())
 	}
 }
 
 func TestUpdateSetExprToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(ConditionRaw("id = ?", 9)).ToSQL()
+	sql, args, err := s.Update("a").
+		Set("foo", ArgInt(1)).
+		Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(ConditionRaw("id = ?", ArgInt(9))).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE (id = ?)")
-	assert.Equal(t, args, []interface{}{1, 9})
+	assert.Equal(t, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE (id = ?)", sql)
+	assert.Equal(t, []interface{}{int64(1), int64(9)}, args.Interfaces())
 
-	sql, args, err = s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + ?", 2)).Where(ConditionRaw("id = ?", 9)).ToSQL()
+	sql, args, err = s.Update("a").
+		Set("foo", ArgInt(1)).
+		Set("bar", Expr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(ConditionRaw("id = ?", ArgInt(9))).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE (id = ?)")
-	assert.Equal(t, args, []interface{}{1, 2, 9})
+	assert.Equal(t, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE (id = ?)", sql)
+	assert.Equal(t, []interface{}{int64(1), int64(2), int64(9)}, args.Interfaces())
 }
 
 func TestUpdateTenStaringFromTwentyToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", 1).Limit(10).Offset(20).ToSQL()
+	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Limit(10).Offset(20).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "UPDATE `a` SET `b` = ? LIMIT 10 OFFSET 20")
-	assert.Equal(t, args, []interface{}{1})
+	assert.Equal(t, "UPDATE `a` SET `b` = ? LIMIT 10 OFFSET 20", sql)
+	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 }
 
 func TestUpdateKeywordColumnName(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a user with a key
-	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").Values("Benjamin", "ben@whitehouse.gov", "6").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").
+		Values(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec()
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(Eq{"key": "6"}).Exec()
+	res, err = s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Eq{"key": ArgString("6")}).Exec()
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
 	rowsAff, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, rowsAff, int64(1))
+	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Eq{"email": "ben@whitehouse.gov"}).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).LoadStruct(&person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, person.Name, "Benjamin")
-	assert.Equal(t, person.Key.String, "6-revoked")
+	assert.Equal(t, "Benjamin", person.Name)
+	assert.Equal(t, "6-revoked", person.Key.String)
 }
 
 func TestUpdateReal(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a George
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("George", "george@whitehouse.gov").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").
+		Values(ArgString("George"), ArgString("george@whitehouse.gov")).Exec()
 	assert.NoError(t, err)
 
-	// Get George's ID
+	// Get George'ab ID
 	id, err := res.LastInsertId()
 	assert.NoError(t, err)
 
 	// Rename our George to Barack
-	res, err = s.Update("dbr_people").SetMap(map[string]interface{}{"name": "Barack", "email": "barack@whitehouse.gov"}).Where(ConditionRaw("id = ?", id)).Exec()
+	res, err = s.Update("dbr_people").
+		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
+		Where(ConditionRaw("id = ?", ArgInt64(id))).Exec()
 
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadStruct(&person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, person.ID, id)
-	assert.Equal(t, person.Name, "Barack")
-	assert.Equal(t, person.Email.Valid, true)
-	assert.Equal(t, person.Email.String, "barack@whitehouse.gov")
+	assert.Equal(t, id, person.ID)
+	assert.Equal(t, "Barack", person.Name)
+	assert.Equal(t, true, person.Email.Valid)
+	assert.Equal(t, "barack@whitehouse.gov", person.Email.String)
 }
 
 func TestUpdate_Prepare(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
-		in.Set("a", 1)
+		in.Set("a", ArgInt(1))
 		stmt, err := in.Prepare()
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -148,7 +169,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		u.Table = MakeAlias("tableY")
-		u.Set("a", 1)
+		u.Set("a", ArgInt(1))
 
 		stmt, err := u.Prepare()
 		assert.Nil(t, stmt)
@@ -161,7 +182,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewUpdate("tableA", "tA")
-		d.Set("y", 25).Set("z", 26)
+		d.Set("y", ArgInt(25)).Set("z", ArgInt(26))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -169,14 +190,14 @@ func TestUpdate_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("a", 1)
+					b.Set("a", ArgInt(1))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("b", 2)
+					b.Set("b", ArgInt(1))
 					b.PropagationStopped = true
 				},
 			},
@@ -199,14 +220,14 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		up := NewUpdate("tableA", "tA")
-		up.Set("a", 1).Set("b", true)
+		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
 
 		up.Listeners.Add(
 			Listen{
 				Name: "c=pi",
 				Once: true,
 				UpdateFunc: func(u *Update) {
-					u.Set("c", 3.14159)
+					u.Set("c", ArgFloat64(3.14159))
 				},
 			},
 		)
@@ -218,7 +239,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Should Dispatch", func(t *testing.T) {
 		up := NewUpdate("tableA", "tA")
-		up.Set("a", 1).Set("b", true)
+		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
 
 		up.Listeners.Add(
 			Listen{
@@ -226,7 +247,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("c", 3.14159)
+					u.Set("c", ArgFloat64(3.14159))
 				},
 			},
 			Listen{
@@ -234,7 +255,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("d", "d")
+					u.Set("d", ArgString("d"))
 				},
 			},
 		)
@@ -243,18 +264,18 @@ func TestUpdate_Events(t *testing.T) {
 			Name:      "e",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(u *Update) {
-				u.Set("e", "e")
+				u.Set("e", ArgString("e"))
 			},
 		})
 
 		sql, args, err := up.ToSQL()
 		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e"}, args)
+		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, "d", "e"}, args.Interfaces())
 		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?", sql)
 
 		sql, args, err = up.ToSQL()
 		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{1, true, 3.14159, "d", "e", "e"}, args)
+		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, "d", "e", "e"}, args.Interfaces())
 		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?, `e` = ?", sql)
 
 		assert.Exactly(t, `c=pi; d=d; e`, up.Listeners.String())

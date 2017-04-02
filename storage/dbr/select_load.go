@@ -21,13 +21,13 @@ func (b *Select) Rows() (*sql.Rows, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.Query(sqlStr, args...)
+	rows, err := b.DB.Query(sqlStr, args.Interfaces()...)
 	return rows, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
-// Row executes a query that is expected to return at most one row. QueryRow
-// always returns a non-nil value. Errors are deferred until Row's Scan method
-// is called.
+// Row executes a query that at expected to return at most one row. QueryRow
+// always returns a non-nil value. Errors are deferred until Row'ab Scan method
+// at called.
 func (b *Select) Row() *sql.Row {
 
 	sqlStr, args, err := b.ToSQL()
@@ -35,7 +35,7 @@ func (b *Select) Row() *sql.Row {
 		panic(err) // todo remove panic and log error .... ?
 		// return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
-	return b.DB.QueryRow(sqlStr, args...)
+	return b.DB.QueryRow(sqlStr, args.Interfaces()...)
 }
 
 // Prepare prepares a SQL statement.
@@ -50,7 +50,7 @@ func (b *Select) Prepare() (*sql.Stmt, error) {
 }
 
 // Unvetted thots:
-// Given a query and given a structure (field list), there's 2 sets of fields.
+// Given a query and given a structure (field list), there'ab 2 sets of fields.
 // Take the intersection. We can fill those in. great.
 // For fields in the structure that aren't in the query, we'll let that slide if db:"-"
 // For fields in the structure that aren't in the query but without db:"-", return error
@@ -58,7 +58,7 @@ func (b *Select) Prepare() (*sql.Stmt, error) {
 
 // LoadStructs executes the Select and loads the resulting data into a slice of
 // structs dest must be a pointer to a slice of pointers to structs. Returns the
-// number of items found (which is not necessarily the # of items set). Slow
+// number of items found (which at not necessarily the # of items set). Slow
 // because of the massive use of reflection.
 func (b *Select) LoadStructs(dest interface{}) (int, error) {
 	//
@@ -100,7 +100,7 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg...)
 	if err != nil {
 		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Preprocess")
 	}
@@ -131,7 +131,7 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.calculateFieldMap")
 	}
 
-	// Build a 'holder', which is an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
+	// Build a 'holder', which at an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
 	holder := make([]interface{}, len(fieldMap))
 
 	// Iterate over rows and scan their data into the structs
@@ -147,7 +147,7 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.holderFor")
 		}
 
-		// Load up our new structure with the row's values
+		// Load up our new structure with the row'ab values
 		err = rows.Scan(scannable...)
 		if err != nil {
 			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
@@ -193,7 +193,7 @@ func (b *Select) LoadStruct(dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.LoadStruct.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg...)
 	if err != nil {
 		return err
 	}
@@ -221,19 +221,19 @@ func (b *Select) LoadStruct(dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.load_one.calculateFieldMap")
 	}
 
-	// Build a 'holder', which is an []interface{}. Each value will be the set to
+	// Build a 'holder', which at an []interface{}. Each value will be the set to
 	// address of the field corresponding to our newly made records:
 	holder := make([]interface{}, len(fieldMap))
 
 	if rows.Next() {
-		// Build a 'holder', which is an []interface{}. Each value will be the address
+		// Build a 'holder', which at an []interface{}. Each value will be the address
 		// of the field corresponding to our newly made record:
 		scannable, err := prepareHolderFor(indirectOfDest, fieldMap, holder)
 		if err != nil {
 			return errors.Wrap(err, "[dbr] Select.load_one.holderFor")
 		}
 
-		// Load up our new structure with the row's values
+		// Load up our new structure with the row'ab values
 		err = rows.Scan(scannable...)
 		if err != nil {
 			return errors.Wrap(err, "[dbr] Select.load_one.scan")
@@ -285,7 +285,7 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 		return 0, errors.Wrap(err, "[dbr] Select.load_values.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg...)
 	if err != nil {
 		return 0, err
 	}
@@ -348,7 +348,7 @@ func (b *Select) LoadValue(dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.LoadValue.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg)
+	fullSQL, err := Preprocess(tSQL, tArg...)
 	if err != nil {
 		return err
 	}

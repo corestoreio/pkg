@@ -11,60 +11,99 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var _ RecordGenerater = (*someRecord)(nil)
+
 type someRecord struct {
-	SomethingID int   `db:"something_id"`
-	UserID      int64 `db:"user_id"`
+	SomethingID int
+	UserID      int64
 	Other       bool
 }
 
+func (sr someRecord) Record(columns ...string) (Arguments, error) {
+	args := make(Arguments, 0, 3) // 3 == number of fields in the struct
+	for _, c := range columns {
+		switch c {
+		case "something_id":
+			args = append(args, ArgInt(sr.SomethingID))
+		case "user_id":
+			args = append(args, ArgInt64(sr.UserID))
+		case "other":
+			args = append(args, ArgBool(sr.Other))
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+	}
+	return args, nil
+}
+
+var benchmarkInsertValuesSQLArgs Arguments
+
 func BenchmarkInsertValuesSQL(b *testing.B) {
 	s := createFakeSession()
-
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
-		s.InsertInto("alpha").Columns("something_id", "user_id", "other").Values(1, 2, true).ToSQL()
+		_, args, err := s.InsertInto("alpha").Columns("something_id", "user_id", "other").Values(
+			ArgInt(1), ArgInt(2), ArgBool(true),
+		).ToSQL()
+		if err != nil {
+			b.Fatal(err)
+		}
+		benchmarkInsertValuesSQLArgs = args
 	}
 }
 
 func BenchmarkInsertRecordsSQL(b *testing.B) {
 	s := createFakeSession()
-	obj := someRecord{1, 99, false}
+	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
 
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
-		s.InsertInto("alpha").Columns("something_id", "user_id", "other").Record(obj).ToSQL()
+		_, args, err := s.InsertInto("alpha").
+			Columns("something_id", "user_id", "other").
+			Record(obj).
+			ToSQL()
+		if err != nil {
+			b.Fatal(err)
+		}
+		benchmarkInsertValuesSQLArgs = args
+		// ifaces = args.Interfaces()
 	}
 }
 
 func TestInsertSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.InsertInto("a").Columns("b", "c").Values(1, 2).ToSQL()
+	sStr, args, err := s.InsertInto("a").Columns("b", "c").Values(ArgInt(1), ArgInt(2)).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "INSERT INTO a (`b`,`c`) VALUES (?,?)")
-	assert.Equal(t, args, []interface{}{1, 2})
+	assert.Equal(t, "INSERT INTO a (`b`,`c`) VALUES (?,?)", sStr)
+	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
 }
 
 func TestInsertMultipleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.InsertInto("a").Columns("b", "c").Values(1, 2).Values(3, 4).ToSQL()
+	sStr, args, err := s.InsertInto("a").Columns("b", "c").
+		Values(
+			ArgInt(1), ArgInt(2),
+			ArgInt(3), ArgInt(4),
+		).
+		Values(
+			ArgInt(5), ArgInt(6),
+		).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "INSERT INTO a (`b`,`c`) VALUES (?,?),(?,?)")
-	assert.Equal(t, args, []interface{}{1, 2, 3, 4})
+	assert.Equal(t, "INSERT INTO a (`b`,`c`) VALUES (?,?),(?,?),(?,?)", sStr)
+	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
 }
 
 func TestInsertRecordsToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	objs := []someRecord{{1, 88, false}, {2, 99, true}}
-	sql, args, err := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSQL()
+	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
+	sql, args, err := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1], objs[2]).ToSQL()
 	require.NoError(t, err)
-	assert.Equal(t, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)", sql)
+	assert.Equal(t, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?)", sql)
 	// without fmt.Sprint we have an error despite objects are equal ...
-	assert.Equal(t, fmt.Sprint([]interface{}{1, 88, false, 2, 99, true}), fmt.Sprint(args))
+	assert.Equal(t, fmt.Sprint([]interface{}{1, 88, false, 2, 99, true, 3, 101, true}), fmt.Sprint(args.Interfaces()))
 }
 
 func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
@@ -80,7 +119,7 @@ func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values("Barack", "44").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values(ArgString("Barack"), ArgString("44")).Exec()
 	assert.NoError(t, err)
 
 	rowsAff, err := res.RowsAffected()
@@ -91,7 +130,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values(ArgString("Barack"), ArgString("obama@whitehouse.gov")).Exec()
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
@@ -99,17 +138,19 @@ func TestInsertReal(t *testing.T) {
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
-	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(&person).Exec()
-	validateInsertingBarack(t, s, res, err)
-
-	// Insert by specifying a record (struct)
-	s = createRealSessionWithFixtures()
-	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(person).Exec()
+	ib := s.InsertInto("dbr_people").Columns("name", "email").Record(&person)
+	res, err = ib.Exec()
+	if err != nil {
+		t.Errorf("%s: %s", err, ib.String())
+	}
 	validateInsertingBarack(t, s, res, err)
 }
 
 func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error) {
 	assert.NoError(t, err)
+	if res == nil {
+		t.Fatal("result at nit but should not")
+	}
 	id, err := res.LastInsertId()
 	assert.NoError(t, err)
 	rowsAff, err := res.RowsAffected()
@@ -119,13 +160,13 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadStruct(&person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, person.ID, id)
-	assert.Equal(t, person.Name, "Barack")
-	assert.Equal(t, person.Email.Valid, true)
-	assert.Equal(t, person.Email.String, "obama@whitehouse.gov")
+	assert.Equal(t, id, person.ID)
+	assert.Equal(t, "Barack", person.Name)
+	assert.Equal(t, true, person.Email.Valid)
+	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
 }
 
 // TODO: do a real test inserting multiple records
@@ -147,7 +188,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.DB.Preparer = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		in.Columns("a", "b").Values(1, true)
+		in.Columns("a", "b").Values(ArgInt(1), ArgBool(true))
 
 		stmt, err := in.Prepare()
 		assert.Nil(t, stmt)
@@ -160,7 +201,7 @@ func TestInsert_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewInsert("tableA")
-		d.Columns("a", "b").Values(1, true)
+		d.Columns("a", "b").Values(ArgInt(1), ArgBool(true))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -168,14 +209,14 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col1", "X1")
+					b.Pair("col1", ArgString("X1"))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col2", "X2")
+					b.Pair("col2", ArgString("X2"))
 					b.PropagationStopped = true
 				},
 			},
@@ -193,18 +234,18 @@ func TestInsert_Events(t *testing.T) {
 
 		sql, _, err = d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`col1`,`col2`,`col1`,`col2`) VALUES (?,?,?,?,?,?)", sql)
+		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		ins := NewInsert("tableA")
-		ins.Columns("a", "b").Values(1, true)
+		ins.Columns("a", "b").Values(ArgInt(1), ArgBool(true))
 
 		ins.Listeners.Add(
 			Listen{
 				Name: "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", "X1")
+					i.Pair("colC", ArgString("X1"))
 				},
 			},
 		)
@@ -217,7 +258,7 @@ func TestInsert_Events(t *testing.T) {
 	t.Run("Should Dispatch", func(t *testing.T) {
 		ins := NewInsert("tableA")
 
-		ins.Columns("a", "b").Values(1, true)
+		ins.Columns("a", "b").Values(ArgInt(1), ArgBool(true))
 
 		ins.Listeners.Add(
 			Listen{
@@ -225,7 +266,7 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "colA",
 				Once:      true,
 				InsertFunc: func(i *Insert) {
-					i.Pair("colA", 3.14159)
+					i.Pair("colA", ArgFloat64(3.14159))
 				},
 			},
 			Listen{
@@ -233,7 +274,7 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "colB",
 				Once:      true,
 				InsertFunc: func(i *Insert) {
-					i.Pair("colB", 2.7182)
+					i.Pair("colB", ArgFloat64(2.7182))
 				},
 			},
 		)
@@ -243,20 +284,20 @@ func TestInsert_Events(t *testing.T) {
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", "X1")
+					i.Pair("colC", ArgString("X1"))
 				},
 			},
 		)
 
 		sql, args, err := ins.ToSQL()
 		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1"}, args)
+		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, 2.7182, "X1"}, args.Interfaces())
 		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
 
 		sql, args, err = ins.ToSQL()
 		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{1, true, 3.14159, 2.7182, "X1", "X1"}, args)
-		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`,`colC`) VALUES (?,?,?,?,?,?)", sql)
+		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, 2.7182, "X1"}, args.Interfaces())
+		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
 
 		assert.Exactly(t, `colA; colB; colC`, ins.Listeners.String())
 	})

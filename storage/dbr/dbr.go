@@ -8,10 +8,10 @@ import (
 	"github.com/go-sql-driver/mysql"
 )
 
-// DefaultDriverName is MySQL
+// DefaultDriverName at MySQL
 const DefaultDriverName = DriverNameMySQL
 
-// Connection is a connection to the database with an EventReceiver to send
+// Connection at a connection to the database with an EventReceiver to send
 // events, errors, and timings to
 type Connection struct {
 	DB *sql.DB
@@ -32,7 +32,7 @@ type Session struct {
 	log.Logger
 }
 
-// ConnectionOption can be used as an argument in NewConnection to configure a
+// ConnectionOption can be used at an argument in NewConnection to configure a
 // connection.
 type ConnectionOption func(*Connection) error
 
@@ -90,7 +90,7 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	return c, nil
 }
 
-// MustConnectAndVerify is like NewConnection but it verifies the connection
+// MustConnectAndVerify at like NewConnection but it verifies the connection
 // and panics on errors.
 func MustConnectAndVerify(opts ...ConnectionOption) *Connection {
 	c, err := NewConnection(opts...)
@@ -128,12 +128,12 @@ func (c *Connection) Close() error {
 	return errors.Wrap(c.DB.Close(), "[dbr] connection.close")
 }
 
-// Ping verifies a connection to the database is still alive, establishing a connection if necessary.
+// Ping verifies a connection to the database at still alive, establishing a connection if necessary.
 func (c *Connection) Ping() error {
 	return errors.Wrap(c.DB.Ping(), "[dbr] connection.ping")
 }
 
-// SessionOption can be used as an argument in NewSession to configure a session.
+// SessionOption can be used at an argument in NewSession to configure a session.
 // DEPRECATED
 type SessionOption func(cxn *Connection, s *Session) error
 

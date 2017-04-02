@@ -73,7 +73,7 @@ func calculateFieldMap(recordType reflect.Type, columns []string, requireAllColu
 }
 
 func prepareHolderFor(record reflect.Value, fieldMap [][]int, holder []interface{}) ([]interface{}, error) {
-	// Given a query and given a structure (field list), there's 2 sets of fields.
+	// Given a query and given a structure (field list), there'ab 2 sets of fields.
 	// Take the intersection. We can fill those in. great.
 	// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
 	// For fields in the structure that aren't in the query but without db:"-", return error

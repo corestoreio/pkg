@@ -2,8 +2,6 @@ package dbr
 
 import (
 	"database/sql"
-	"database/sql/driver"
-	"reflect"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -20,9 +18,10 @@ type Insert struct {
 
 	Into string
 	Cols []string
-	Vals [][]interface{}
-	Recs []interface{}
-	Maps map[string]interface{}
+	Vals Arguments
+
+	Recs []RecordGenerater
+	Maps map[string]Argument
 
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -78,27 +77,24 @@ func (b *Insert) Columns(columns ...string) *Insert {
 // Values appends a set of values to the statement. Pro Tip: Use Values() and
 // not Record() to avoid reflection. Only this function will consider the
 // driver.Valuer interface when you pass a pointer to the value.
-func (b *Insert) Values(vals ...interface{}) *Insert {
-	if err := argsValuer(&vals); err != nil {
-		return &Insert{
-			previousError: errors.Wrapf(err, "[dbr] Insert Valus: %v", vals),
-		}
-	}
-	b.Vals = append(b.Vals, vals)
+// Values must be balanced to the number of columns. You can even provide more values, like records.
+// see BenchmarkInsertValuesSQL
+func (b *Insert) Values(vals ...Argument) *Insert {
+	b.Vals = append(b.Vals, vals...)
 	return b
 }
 
-// Record pulls in values to match Columns from the record. Uses reflection.
-func (b *Insert) Record(record interface{}) *Insert {
-	b.Recs = append(b.Recs, record)
+// Record pulls in values to match Columns from the record. Think about a vector on how to use this.
+func (b *Insert) Record(recs ...RecordGenerater) *Insert {
+	b.Recs = append(b.Recs, recs...)
 	return b
 }
 
 // Map pulls in values to match Columns from the record. Calling multiple
 // times will add new map entries to the Insert map.
-func (b *Insert) Map(m map[string]interface{}) *Insert {
+func (b *Insert) Map(m map[string]Argument) *Insert {
 	if b.Maps == nil {
-		b.Maps = make(map[string]interface{})
+		b.Maps = make(map[string]Argument)
 	}
 	for col, val := range m {
 		b.Maps[col] = val
@@ -106,36 +102,25 @@ func (b *Insert) Map(m map[string]interface{}) *Insert {
 	return b
 }
 
-// Pair adds a key/value pair to the statement. Uses not reflection.
-func (b *Insert) Pair(column string, value interface{}) *Insert {
-	if dbVal, ok := value.(driver.Valuer); ok {
-		if val, err := dbVal.Value(); err == nil {
-			value = val // overrides the current value ...
-		} else {
-			return &Insert{
-				previousError: errors.Wrapf(err, "[dbr] Insert Column %q Val %v", column, val),
-			}
+// Pair adds a key/value pair to the statement.
+func (b *Insert) Pair(column string, arg Argument) *Insert {
+	if b.previousError != nil {
+		return b
+	}
+	for _, c := range b.Cols {
+		if c == column {
+			b.previousError = errors.NewAlreadyExistsf("[dbr] Column %q has already been added", c)
+			return b
 		}
 	}
-
 	b.Cols = append(b.Cols, column)
-	lenVals := len(b.Vals)
-	if lenVals == 0 {
-		args := []interface{}{value}
-		b.Vals = [][]interface{}{args}
-	} else if lenVals == 1 {
-		b.Vals[0] = append(b.Vals[0], value)
-	} else {
-		return &Insert{
-			previousError: errors.NewNotValidf("[dbr] pair only allows you to specify 1 record to insert"),
-		}
-	}
+	b.Vals = append(b.Vals, arg)
 	return b
 }
 
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Insert) ToSQL() (string, []interface{}, error) {
+func (b *Insert) ToSQL() (string, Arguments, error) {
 	if b.previousError != nil {
 		return "", nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
 	}
@@ -166,80 +151,91 @@ func (b *Insert) ToSQL() (string, []interface{}, error) {
 	buf.WriteString(" (")
 
 	if len(b.Maps) != 0 {
-		return b.MapToSQL(buf)
+		args, err := b.mapToSQL(buf)
+		return buf.String(), args, err
 	}
 
-	var args []interface{}
-	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
-	defer bufferpool.Put(placeholder)
+	var ph = bufferpool.Get() // Build the ph like "(?,?,?)"
 
-	// Simultaneously write the cols to the sql buffer, and build a placeholder
-	placeholder.WriteRune('(')
+	// Simultaneously write the cols to the sql buffer, and build a ph
+	ph.WriteRune('(')
 	for i, c := range b.Cols {
 		if i > 0 {
 			buf.WriteRune(',')
-			placeholder.WriteRune(',')
+			ph.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(c, buf)
-		placeholder.WriteRune('?')
+		Quoter.writeQuotedColumn(buf, c)
+		ph.WriteRune('?')
 	}
 	buf.WriteString(") VALUES ")
-	placeholder.WriteRune(')')
-	placeholderStr := placeholder.String()
+	ph.WriteRune(')')
+	placeholderStr := ph.String()
+	bufferpool.Put(ph)
 
 	// Go thru each value we want to insert. Write the placeholders, and collect args
-	for i, row := range b.Vals {
+	for i := 0; i < len(b.Vals); i = i + len(b.Cols) {
 		if i > 0 {
 			buf.WriteRune(',')
 		}
 		buf.WriteString(placeholderStr)
-		args = append(args, row...)
 	}
-	anyVals := len(b.Vals) > 0
 
-	// Go thru the records. Write the placeholders, and do reflection on the records to extract args
+	if b.Recs == nil {
+		return buf.String(), b.Vals, nil
+	}
+
+	args := make(Arguments, len(b.Vals), len(b.Vals)+len(b.Recs)) // sneaky ;-)
+	copy(args, b.Vals)
+
 	for i, rec := range b.Recs {
-		if i > 0 || anyVals {
+		a2, err := rec.Record(b.Cols...)
+		if err != nil {
+			return "", nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
+		}
+
+		args = append(args, a2...)
+		if i > 0 {
 			buf.WriteRune(',')
 		}
 		buf.WriteString(placeholderStr)
-
-		ind := reflect.Indirect(reflect.ValueOf(rec))
-		vals, err := valuesFor(ind.Type(), ind, b.Cols)
-		if err != nil {
-			return "", nil, errors.Wrap(err, "[dbr] valuesFor")
-		}
-		args = append(args, vals...)
 	}
+
+	//anyVals := len(b.Vals) > 0
+	// Go thru the records. Write the placeholders, and do reflection on the records to extract args
+	//for ab, rec := range b.Recs {
+	//	if ab > 0 || anyVals {
+	//		buf.WriteRune(',')
+	//	}
+	//	buf.WriteString(placeholderStr)
+	//
+	//	ind := reflect.Indirect(reflect.ValueOf(rec))
+	//	vals, err := valuesFor(ind.Type(), ind, b.Cols)
+	//	if err != nil {
+	//		return "", nil, errors.Wrap(err, "[dbr] valuesFor")
+	//	}
+	//	args = append(args, vals...)
+	//}
 
 	return buf.String(), args, nil
 }
 
-// MapToSQL serialized the Insert to a SQL string
+// mapToSQL serialized the Insert to a SQL string
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Insert) MapToSQL(w QueryWriter) (string, []interface{}, error) {
+func (b *Insert) mapToSQL(w queryWriter) (Arguments, error) {
 	if b.previousError != nil {
-		return "", nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
+		return nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
 	}
 
 	keys := make([]string, len(b.Maps))
-	vals := make([]interface{}, len(b.Maps))
+	vals := make(Arguments, len(b.Maps))
 	i := 0
 	for k, v := range b.Maps {
 		keys[i] = k
-		if dbVal, ok := v.(driver.Valuer); ok {
-			if val, err := dbVal.Value(); err == nil {
-				vals[i] = val
-			} else {
-				return "", nil, errors.Wrap(err, "[dbr] MapToSQL -> driver.Valuer")
-			}
-		} else {
-			vals[i] = v
-		}
+		vals[i] = v
 		i++
 	}
-	var args []interface{}
+	var args Arguments
 	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
 	defer bufferpool.Put(placeholder)
 
@@ -249,7 +245,7 @@ func (b *Insert) MapToSQL(w QueryWriter) (string, []interface{}, error) {
 			w.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(c, w)
+		Quoter.writeQuotedColumn(w, c)
 		placeholder.WriteRune('?')
 	}
 	w.WriteString(") VALUES ")
@@ -258,14 +254,14 @@ func (b *Insert) MapToSQL(w QueryWriter) (string, []interface{}, error) {
 
 	args = append(args, vals...)
 
-	return w.String(), args, nil
+	return args, nil
 }
 
 // Exec executes the statement represented by the Insert
 // It returns the raw database/sql Result and an error if there was one.
 // Regarding LastInsertID(): If you insert multiple rows using a single
 // INSERT statement, LAST_INSERT_ID() returns the value generated for
-// the first inserted row only. The reason for this is to make it possible to
+// the first inserted row only. The reason for this at to make it possible to
 // reproduce easily the same INSERT statement against some other server.
 func (b *Insert) Exec() (sql.Result, error) {
 	sql, args, err := b.ToSQL()
@@ -273,7 +269,7 @@ func (b *Insert) Exec() (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(sql, args)
+	fullSQL, err := Preprocess(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.Preprocess")
 	}

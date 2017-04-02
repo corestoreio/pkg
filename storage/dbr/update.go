@@ -2,23 +2,12 @@ package dbr
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
-
-type expr struct {
-	SQL    string
-	Values []interface{}
-}
-
-// Expr is a SQL fragment with placeholders, and a slice of args to replace them with
-func Expr(sql string, values ...interface{}) *expr {
-	return &expr{SQL: sql, Values: values}
-}
 
 // Update contains the clauses for an UPDATE statement
 type Update struct {
@@ -28,8 +17,8 @@ type Update struct {
 		Execer
 	}
 
-	RawFullSQL   string
-	RawArguments []interface{}
+	RawFullSQL string
+	Arguments
 
 	Table          alias
 	SetClauses     []*setClause
@@ -64,8 +53,8 @@ func NewUpdate(table ...string) *Update {
 }
 
 type setClause struct {
-	column string
-	value  interface{}
+	Column string
+	Argument
 }
 
 // Update creates a new Update for the given table
@@ -79,16 +68,11 @@ func (sess *Session) Update(table ...string) *Update {
 }
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments
-func (sess *Session) UpdateBySQL(sql string, args ...interface{}) *Update {
-	if err := argsValuer(&args); err != nil {
-		return &Update{
-			previousError: errors.Wrapf(err, "[dbr] SQL %q Args: %v", sql, args),
-		}
-	}
+func (sess *Session) UpdateBySQL(sql string, args ...Argument) *Update {
 	u := &Update{
-		Log:          sess.Logger,
-		RawFullSQL:   sql,
-		RawArguments: args,
+		Log:        sess.Logger,
+		RawFullSQL: sql,
+		Arguments:  args,
 	}
 	u.DB.Execer = sess.cxn.DB
 	return u
@@ -104,50 +88,44 @@ func (tx *Tx) Update(table ...string) *Update {
 	return u
 }
 
-// UpdateBySQL creates a new Update for the given SQL string and arguments bound to a transaction
-func (tx *Tx) UpdateBySQL(sql string, args ...interface{}) *Update {
-	if err := argsValuer(&args); err != nil {
-		return &Update{
-			previousError: errors.Wrapf(err, "[dbr] SQL %q Args: %v", sql, args),
-		}
-	}
+// UpdateBySQL creates a new Update for the given SQL string and arguments bound
+// to a transaction
+func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
 	u := &Update{
-		Log:          tx.Logger,
-		RawFullSQL:   sql,
-		RawArguments: args,
+		Log:        tx.Logger,
+		RawFullSQL: sql,
+		Arguments:  args,
 	}
 	u.DB.Execer = tx.Tx
 	return u
 }
 
 // Set appends a column/value pair for the statement
-func (b *Update) Set(column string, value interface{}) *Update {
+func (b *Update) Set(column string, value Argument) *Update {
 	if b.previousError != nil {
 		return b
 	}
-	if dbVal, ok := value.(driver.Valuer); ok {
-		if val, err := dbVal.Value(); err == nil {
-			value = val
-		} else {
-			return &Update{
-				previousError: errors.Wrapf(err, "[dbr] Update.Set %q Args: %v", column, value),
-			}
-		}
-	}
-	b.SetClauses = append(b.SetClauses, &setClause{column: column, value: value})
+	b.SetClauses = append(b.SetClauses, &setClause{Column: column, Argument: value})
 	return b
 }
 
-// SetMap appends the elements of the map as column/value pairs for the statement
-func (b *Update) SetMap(clauses map[string]interface{}) *Update {
+// SetMap appends the elements of the map at column/value pairs for the
+// statement.
+func (b *Update) SetMap(clauses map[string]Argument) *Update {
+	if b.previousError != nil {
+		return b
+	}
 	for col, val := range clauses {
-		b = b.Set(col, val)
+		b.Set(col, val)
 	}
 	return b
 }
 
 // Where appends a WHERE clause to the statement
 func (b *Update) Where(args ...ConditionArg) *Update {
+	if b.previousError != nil {
+		return b
+	}
 	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
 	return b
 }
@@ -184,7 +162,7 @@ func (b *Update) Offset(offset uint64) *Update {
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) ToSQL() (string, []interface{}, error) {
+func (b *Update) ToSQL() (string, Arguments, error) {
 	if b.previousError != nil {
 		return "", nil, errors.Wrap(b.previousError, "[dbr] Update.ToSQL")
 	}
@@ -194,11 +172,11 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 	}
 
 	if b.RawFullSQL != "" {
-		return b.RawFullSQL, b.RawArguments, nil
+		return b.RawFullSQL, b.Arguments, nil
 	}
 
 	if len(b.Table.Expression) == 0 {
-		return "", nil, errors.NewEmptyf("[dbr] Update: Table is empty")
+		return "", nil, errors.NewEmptyf("[dbr] Update: Table at empty")
 	}
 	if len(b.SetClauses) == 0 {
 		return "", nil, errors.NewEmptyf("[dbr] Update: SetClauses are empty")
@@ -207,7 +185,7 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	var args = make([]interface{}, 0, len(b.SetClauses))
+	var args = make(Arguments, 0, len(b.SetClauses))
 
 	buf.WriteString("UPDATE ")
 	buf.WriteString(b.Table.QuoteAs())
@@ -218,14 +196,15 @@ func (b *Update) ToSQL() (string, []interface{}, error) {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		Quoter.writeQuotedColumn(c.column, buf)
-		if e, ok := c.value.(*expr); ok {
+		Quoter.writeQuotedColumn(buf, c.Column)
+		// TODO fix expr
+		if e, ok := c.Argument.(*expr); ok {
 			buf.WriteString(" = ")
 			buf.WriteString(e.SQL)
-			args = append(args, e.Values...)
+			args = append(args, e.Arguments...)
 		} else {
 			buf.WriteString(" = ?")
-			args = append(args, c.value)
+			args = append(args, c.Argument)
 		}
 	}
 
@@ -267,7 +246,7 @@ func (b *Update) Exec() (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(rawSQL, args)
+	fullSQL, err := Preprocess(rawSQL, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.Preprocess")
 	}

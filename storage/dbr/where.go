@@ -1,54 +1,28 @@
 package dbr
 
-import (
-	"reflect"
-
-	"github.com/corestoreio/errors"
-)
+import "github.com/corestoreio/csfw/util/bufferpool"
 
 // Eq is a map Expression -> value pairs which must be matched in a query.
-// Joined as AND statements to the WHERE clause. Implements ConditionArg
-// interface.
-type Eq map[string]interface{}
+// Joined at AND statements to the WHERE clause. Implements ConditionArg
+// interface. Eq = EqualityMap.
+type Eq map[string]Argument
 
 func (eq Eq) newWhereFragment() (*whereFragment, error) {
-	// todo add argsValuer
-	//if err := argsValuer(&values); err != nil {
-	//	panic(err)
-	//}
 	return &whereFragment{
 		EqualityMap: eq,
 	}, nil
 }
 
-// ConditionIsNull checks if expression is null.
-type ConditionIsNull string
-
-func (n ConditionIsNull) newWhereFragment() (*whereFragment, error) {
-	return &whereFragment{
-		Condition: string(n) + " IS NULL",
-	}, nil
-}
-
-// ConditionNotNull checks if expression is not null.
-type ConditionNotNull string
-
-func (n ConditionNotNull) newWhereFragment() (*whereFragment, error) {
-	return &whereFragment{
-		Condition: string(n) + " IS NOT NULL",
-	}, nil
-}
-
 type whereFragment struct {
-	Condition   string
-	Values      []interface{}
-	EqualityMap map[string]interface{}
+	Condition string
+	Arguments
+	EqualityMap Eq
 }
 
 // WhereFragments provides a list where clauses
 type WhereFragments []*whereFragment
 
-// ConditionArg used as argument in Where()
+// ConditionArg used at argument in Where()
 type ConditionArg interface {
 	newWhereFragment() (*whereFragment, error)
 }
@@ -60,15 +34,41 @@ func (f conditionArgFunc) newWhereFragment() (*whereFragment, error) {
 	return f()
 }
 
-// ConditionRaw adds a condition and checks values if they implement driver.Valuer.
-func ConditionRaw(raw string, values ...interface{}) ConditionArg {
+// ConditionColumn TODO
+func ConditionColumn(column string, arg Argument) ConditionArg {
 	return conditionArgFunc(func() (*whereFragment, error) {
-		if err := argsValuer(&values); err != nil {
-			return nil, errors.Wrapf(err, "[dbr] Raw: %q; Values %v", raw, values)
+		buf := bufferpool.Get()
+		defer bufferpool.Put(buf)
+
+		Quoter.writeQuotedColumn(buf, column)
+
+		var args Arguments
+		switch arg.options() {
+		case argOptionNull:
+			buf.WriteString(" IS NULL")
+		case argOptionNotNull:
+			buf.WriteString(" IS NOT NULL")
+		case argOptionIsIN:
+			buf.WriteString(" IN ?")
+			args = Arguments{arg}
+		default:
+			buf.WriteString(" = ?")
+			args = Arguments{arg}
 		}
+
+		return &whereFragment{
+			Condition: buf.String(),
+			Arguments: args,
+		}, nil
+	})
+}
+
+// ConditionRaw adds a condition and checks values if they implement driver.Valuer.
+func ConditionRaw(raw string, arg ...Argument) ConditionArg {
+	return conditionArgFunc(func() (*whereFragment, error) {
 		return &whereFragment{
 			Condition: raw,
-			Values:    values,
+			Arguments: arg,
 		}, nil
 	})
 }
@@ -86,7 +86,7 @@ func newWhereFragments(wargs ...ConditionArg) WhereFragments {
 }
 
 // Invariant: only called when len(fragments) > 0
-func writeWhereFragmentsToSQL(fragments WhereFragments, sql QueryWriter, args *[]interface{}) {
+func writeWhereFragmentsToSQL(fragments WhereFragments, sql queryWriter, args *Arguments) {
 	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {
@@ -98,8 +98,8 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, sql QueryWriter, args *[
 			}
 			_, _ = sql.WriteString(f.Condition)
 			_, _ = sql.WriteRune(')')
-			if len(f.Values) > 0 {
-				*args = append(*args, f.Values...)
+			if f.Arguments != nil {
+				*args = append(*args, f.Arguments...)
 			}
 		} else if f.EqualityMap != nil {
 			anyConditions = writeEqualityMapToSQL(f.EqualityMap, sql, args, anyConditions)
@@ -107,52 +107,37 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, sql QueryWriter, args *[
 	}
 }
 
-func writeEqualityMapToSQL(eq map[string]interface{}, w QueryWriter, args *[]interface{}, anyConditions bool) bool {
-	for k, v := range eq {
-		if v == nil {
+func writeEqualityMapToSQL(eq map[string]Argument, w queryWriter, args *Arguments, anyConditions bool) bool {
+	for k, arg := range eq {
+		if arg == nil || arg.options() == argOptionNull {
 			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
 			continue
 		}
-
-		vVal := reflect.ValueOf(v)
-
-		if vVal.Kind() == reflect.Array || vVal.Kind() == reflect.Slice {
-			vValLen := vVal.Len()
-			if vValLen == 0 {
-				if vVal.IsNil() {
-					anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
-				} else {
-					if anyConditions {
-						_, _ = w.WriteString(" AND (1=0)")
-					} else {
-						_, _ = w.WriteString("(1=0)")
-					}
-				}
-			} else if vValLen == 1 {
-				anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
-				*args = append(*args, vVal.Index(0).Interface())
-			} else {
-				anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
-				*args = append(*args, v)
-			}
-		} else {
-			anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
-			*args = append(*args, v)
+		if arg.options() == argOptionNotNull {
+			anyConditions = writeWhereCondition(w, k, " IS NOT NULL", anyConditions)
+			continue
 		}
 
+		if arg.len() > 1 {
+			anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
+			*args = append(*args, arg)
+		} else {
+			anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
+			*args = append(*args, arg)
+		}
 	}
 
 	return anyConditions
 }
 
-func writeWhereCondition(w QueryWriter, k string, pred string, anyConditions bool) bool {
+func writeWhereCondition(w queryWriter, column string, pred string, anyConditions bool) bool {
 	if anyConditions {
 		_, _ = w.WriteString(" AND (")
 	} else {
 		_, _ = w.WriteRune('(')
 		anyConditions = true
 	}
-	Quoter.writeQuotedColumn(k, w)
+	Quoter.writeQuotedColumn(w, column)
 	_, _ = w.WriteString(pred)
 	_, _ = w.WriteRune(')')
 
