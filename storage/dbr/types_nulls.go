@@ -45,17 +45,17 @@ func (a argStringNull) writeTo(w queryWriter, _ int) error {
 	return nil
 }
 
-func (a argStringNull) len() int     { return 1 }
-func (a argStringNull) IN() Argument { return a }
-func (a argStringNull) options() uint {
+func (a argStringNull) len() int                   { return 1 }
+func (a argStringNull) Operator(opt byte) Argument { return a }
+func (a argStringNull) operator() byte {
 	if a.str.Valid {
 		return 0
 	}
-	return argOptionNull
+	return OperatorNull
 }
 
 type argStringNulls struct {
-	opts uint
+	opt  byte
 	data []null.String
 }
 
@@ -70,7 +70,7 @@ func (a argStringNulls) toIFace(args *[]interface{}) {
 }
 
 func (a argStringNulls) writeTo(w queryWriter, pos int) error {
-	if a.options() == 0 {
+	if a.operator() != OperatorIn && a.operator() != OperatorNotIn {
 		if s := a.data[pos]; s.Valid {
 			if !utf8.ValidString(s.String) {
 				return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
@@ -101,18 +101,18 @@ func (a argStringNulls) writeTo(w queryWriter, pos int) error {
 }
 
 func (a argStringNulls) len() int {
-	if a.options() == 0 {
+	if isNotIn(a.operator()) {
 		return len(a.data)
 	}
 	return 1
 }
 
-func (a argStringNulls) IN() Argument {
-	a.opts = argOptionIN
+func (a argStringNulls) Operator(opt byte) Argument {
+	a.opt = opt
 	return a
 }
 
-func (a argStringNulls) options() uint { return a.opts }
+func (a argStringNulls) operator() byte { return a.opt }
 
 // ArgStringNull adds a nullable string or a slice of nullable strings to the
 // argument list. Providing no arguments returns a NULL type. All arguments mut

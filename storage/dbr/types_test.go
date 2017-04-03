@@ -10,6 +10,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var _ Argument = argInt(0)
+var _ Argument = argInt64(0)
+var _ Argument = argFloat64(0)
+var _ Argument = argBool(true)
+var _ Argument = (*argBytes)(nil)
+var _ Argument = (*argInts)(nil)
+var _ Argument = (*argInt64s)(nil)
+var _ Argument = (*argFloat64s)(nil)
+var _ Argument = (*argTime)(nil)
+var _ Argument = (*argTimes)(nil)
+var _ Argument = (*argBools)(nil)
+
 func TestNullStringFrom(t *testing.T) {
 	assert.Equal(t, "product", null.StringFrom("product").String)
 	assert.True(t, null.StringFrom("product").Valid)

@@ -43,16 +43,22 @@ func ConditionColumn(column string, arg Argument) ConditionArg {
 		Quoter.writeQuotedColumn(buf, column)
 
 		var args Arguments
-		switch arg.options() {
-		case argOptionNull:
+		switch arg.operator() {
+		case OperatorNull:
 			buf.WriteString(" IS NULL")
-		case argOptionNotNull:
+		case OperatorNotNull:
 			buf.WriteString(" IS NOT NULL")
-		case argOptionIN:
+		case OperatorIn:
 			buf.WriteString(" IN ?")
 			args = Arguments{arg}
-		case argOptionBetween:
+		case OperatorNotIn:
+			buf.WriteString(" NOT IN ?")
+			args = Arguments{arg}
+		case OperatorBetween:
 			buf.WriteString(" BETWEEN ? AND ?")
+			args = Arguments{arg}
+		case OperatorNotBetween:
+			buf.WriteString(" NOT BETWEEN ? AND ?")
 			args = Arguments{arg}
 		default:
 			buf.WriteString(" = ?")
@@ -112,11 +118,11 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, sql queryWriter, args *A
 
 func writeEqualityMapToSQL(eq map[string]Argument, w queryWriter, args *Arguments, anyConditions bool) bool {
 	for k, arg := range eq {
-		if arg == nil || arg.options() == argOptionNull {
+		if arg == nil || arg.operator() == OperatorNull {
 			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
 			continue
 		}
-		if arg.options() == argOptionNotNull {
+		if arg.operator() == OperatorNotNull {
 			anyConditions = writeWhereCondition(w, k, " IS NOT NULL", anyConditions)
 			continue
 		}

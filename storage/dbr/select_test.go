@@ -169,7 +169,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{int64(33)},
 	))
 	t.Run("IN int64", runner(
-		ArgInt64(33, 44).IN(),
+		ArgInt64(33, 44).Operator(OperatorIn),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{int64(33), int64(44)},
 	))
@@ -179,7 +179,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{float64(33)},
 	))
 	t.Run("IN float64", runner(
-		ArgFloat64(33, 44).IN(),
+		ArgFloat64(33, 44).Operator(OperatorIn),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{float64(33), float64(44)},
 	))
@@ -189,7 +189,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{int64(33)},
 	))
 	t.Run("IN int", runner(
-		ArgInt(33, 44).IN(),
+		ArgInt(33, 44).Operator(OperatorIn),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{int64(33), int64(44)},
 	))
@@ -199,7 +199,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{"w"},
 	))
 	t.Run("IN string", runner(
-		ArgString("x", "y").IN(),
+		ArgString("x", "y").Operator(OperatorIn),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{"x", "y"},
 	))
