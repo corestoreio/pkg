@@ -17,11 +17,14 @@ type Update struct {
 		Execer
 	}
 
-	RawFullSQL string
-	Arguments
+	RawFullSQL   string
+	RawArguments Arguments
 
-	Table          alias
-	SetClauses     []*setClause
+	Table      alias
+	SetClauses struct {
+		Columns []string
+		Arguments
+	}
 	WhereFragments []*whereFragment
 	OrderBys       []string
 	LimitCount     uint64
@@ -52,29 +55,24 @@ func NewUpdate(table ...string) *Update {
 	}
 }
 
-type setClause struct {
-	Column string
-	Argument
-}
-
 // Update creates a new Update for the given table
-func (sess *Session) Update(table ...string) *Update {
+func (c *Connection) Update(table ...string) *Update {
 	u := &Update{
-		Log:   sess.Logger,
+		Log:   c.Log,
 		Table: MakeAlias(table...),
 	}
-	u.DB.Execer = sess.cxn.DB
+	u.DB.Execer = c.DB
 	return u
 }
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments
-func (sess *Session) UpdateBySQL(sql string, args ...Argument) *Update {
+func (c *Connection) UpdateBySQL(sql string, args ...Argument) *Update {
 	u := &Update{
-		Log:        sess.Logger,
-		RawFullSQL: sql,
-		Arguments:  args,
+		Log:          c.Log,
+		RawFullSQL:   sql,
+		RawArguments: args,
 	}
-	u.DB.Execer = sess.cxn.DB
+	u.DB.Execer = c.DB
 	return u
 }
 
@@ -92,9 +90,9 @@ func (tx *Tx) Update(table ...string) *Update {
 // to a transaction
 func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
 	u := &Update{
-		Log:        tx.Logger,
-		RawFullSQL: sql,
-		Arguments:  args,
+		Log:          tx.Logger,
+		RawFullSQL:   sql,
+		RawArguments: args,
 	}
 	u.DB.Execer = tx.Tx
 	return u
@@ -105,7 +103,8 @@ func (b *Update) Set(column string, value Argument) *Update {
 	if b.previousError != nil {
 		return b
 	}
-	b.SetClauses = append(b.SetClauses, &setClause{Column: column, Argument: value})
+	b.SetClauses.Columns = append(b.SetClauses.Columns, column)
+	b.SetClauses.Arguments = append(b.SetClauses.Arguments, value)
 	return b
 }
 
@@ -172,39 +171,40 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	}
 
 	if b.RawFullSQL != "" {
-		return b.RawFullSQL, b.Arguments, nil
+		return b.RawFullSQL, b.RawArguments, nil
 	}
 
 	if len(b.Table.Expression) == 0 {
 		return "", nil, errors.NewEmptyf("[dbr] Update: Table at empty")
 	}
-	if len(b.SetClauses) == 0 {
+	if len(b.SetClauses.Columns) == 0 {
 		return "", nil, errors.NewEmptyf("[dbr] Update: SetClauses are empty")
 	}
 
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	var args = make(Arguments, 0, len(b.SetClauses))
+	var args = make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
 
 	buf.WriteString("UPDATE ")
 	buf.WriteString(b.Table.QuoteAs())
 	buf.WriteString(" SET ")
 
 	// Build SET clause SQL with placeholders and add values to args
-	for i, c := range b.SetClauses {
+	for i, c := range b.SetClauses.Columns {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		Quoter.writeQuotedColumn(buf, c.Column)
-		// TODO fix expr
-		if e, ok := c.Argument.(*expr); ok {
+		Quoter.writeQuotedColumn(buf, c)
+		// TODO fix expr ?
+		arg := b.SetClauses.Arguments[i]
+		if e, ok := arg.(*expr); ok {
 			buf.WriteString(" = ")
 			buf.WriteString(e.SQL)
 			args = append(args, e.Arguments...)
 		} else {
 			buf.WriteString(" = ?")
-			args = append(args, c.Argument)
+			args = append(args, arg)
 		}
 	}
 
@@ -277,4 +277,33 @@ func (b *Update) Prepare() (*sql.Stmt, error) {
 
 	stmt, err := b.DB.Prepare(rawSQL)
 	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
+}
+
+// UpdateMulti TODO creates one update statement for multiple records. Uses a
+// transaction and a prepared statement.
+type UpdateMulti struct {
+	Parent Update
+	// Records
+	Records struct {
+		Columns []string
+		Objects []RecordGenerater
+	}
+}
+
+// Columns sets the columns which gets used for each record. Take care to avoid
+// duplicate names.
+func (b *UpdateMulti) Columns(cols ...string) *UpdateMulti {
+	b.Records.Columns = append(b.Records.Columns, cols...)
+	return b
+}
+
+// Record pulls in values to match Columns from the record. Think about a vector on how to use this.
+func (b *UpdateMulti) Record(recs ...RecordGenerater) *UpdateMulti {
+	b.Records.Objects = append(b.Records.Objects, recs...)
+	return b
+}
+
+func (b *UpdateMulti) Exec() ([]sql.Result, error) {
+	// TODO imlement
+	return nil, nil
 }

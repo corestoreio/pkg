@@ -47,13 +47,13 @@ func NewInsert(into string) *Insert {
 }
 
 // InsertInto instantiates a Insert for the given table
-func (sess *Session) InsertInto(into string) *Insert {
+func (c *Connection) InsertInto(into string) *Insert {
 	i := &Insert{
-		Log:  sess.Logger,
+		Log:  c.Log,
 		Into: into,
 	}
-	i.DB.Execer = sess.cxn.DB
-	i.DB.Preparer = sess.cxn.DB
+	i.DB.Execer = c.DB
+	i.DB.Preparer = c.DB
 	return i
 }
 
@@ -76,15 +76,16 @@ func (b *Insert) Columns(columns ...string) *Insert {
 
 // Values appends a set of values to the statement. Pro Tip: Use Values() and
 // not Record() to avoid reflection. Only this function will consider the
-// driver.Valuer interface when you pass a pointer to the value.
-// Values must be balanced to the number of columns. You can even provide more values, like records.
-// see BenchmarkInsertValuesSQL
+// driver.Valuer interface when you pass a pointer to the value. Values must be
+// balanced to the number of columns. You can even provide more values, like
+// records. see BenchmarkInsertValuesSQL
 func (b *Insert) Values(vals ...Argument) *Insert {
 	b.Vals = append(b.Vals, vals...)
 	return b
 }
 
-// Record pulls in values to match Columns from the record. Think about a vector on how to use this.
+// Record pulls in values to match Columns from the record. Think about a vector
+// on how to use this.
 func (b *Insert) Record(recs ...RecordGenerater) *Insert {
 	b.Recs = append(b.Recs, recs...)
 	return b

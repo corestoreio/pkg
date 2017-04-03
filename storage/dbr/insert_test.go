@@ -146,7 +146,7 @@ func TestInsertReal(t *testing.T) {
 	validateInsertingBarack(t, s, res, err)
 }
 
-func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error) {
+func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err error) {
 	assert.NoError(t, err)
 	if res == nil {
 		t.Fatal("result at nit but should not")
@@ -160,7 +160,7 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadStruct(&person)
+	err = c.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)

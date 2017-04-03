@@ -16,15 +16,15 @@ import (
 //
 
 // Returns a session that's not backed by a database
-func createFakeSession() *Session {
+func createFakeSession() *Connection {
 	cxn, err := NewConnection()
 	if err != nil {
 		panic(err)
 	}
-	return cxn.NewSession()
+	return cxn
 }
 
-func createRealSession() *Session {
+func createRealSession() *Connection {
 	_, dsn := realDb()
 	cxn, err := NewConnection(
 		WithDSN(dsn),
@@ -32,12 +32,12 @@ func createRealSession() *Session {
 	if err != nil {
 		panic(err)
 	}
-	return cxn.NewSession()
+	return cxn
 }
 
-func createRealSessionWithFixtures() *Session {
+func createRealSessionWithFixtures() *Connection {
 	sess := createRealSession()
-	installFixtures(sess.cxn.DB)
+	installFixtures(sess.DB)
 	return sess
 }
 

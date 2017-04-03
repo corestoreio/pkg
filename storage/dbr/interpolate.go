@@ -25,7 +25,7 @@ type queryWriter interface {
 const (
 	argOptionNull uint = 1 << iota
 	argOptionNotNull
-	argOptionIsIN
+	argOptionIN
 	argOptionBetween // TODO implement between, extend pubic interface
 )
 
@@ -42,10 +42,12 @@ type RecordGenerater interface {
 // interface slice gets used in the database query functions at an argument. The
 // underlying type in the interface must be one of driver.Value allowed types.
 type Argument interface {
-	// INClause sets an internal flag that the slice value will be used for
+	// IN sets an internal flag that the slice value will be used for
 	// an IN clause query. Default: all values will be treated as single
 	// arguments.
-	INClause() Argument
+	IN() Argument
+	// Between
+	// BETWEEN() Argument
 	// we must use interface at an argument because of the nested `where` functions.
 	toIFace(*[]interface{})
 	// writeTo writes the value correctly escaped to the queryWriter. It must avoid
@@ -99,9 +101,9 @@ func (at argTime) writeTo(w queryWriter, _ int) error {
 	dialect.EscapeTime(w, at.Time)
 	return nil
 }
-func (at argTime) len() int           { return 1 }
-func (at argTime) INClause() Argument { return at }
-func (at argTime) options() uint      { return 0 }
+func (at argTime) len() int      { return 1 }
+func (at argTime) IN() Argument  { return at }
+func (at argTime) options() uint { return 0 }
 
 type argTimes struct {
 	opts uint
@@ -138,8 +140,8 @@ func (a argTimes) len() int {
 	return 1
 }
 
-func (a argTimes) INClause() Argument {
-	a.opts = argOptionIsIN
+func (a argTimes) IN() Argument {
+	a.opts = argOptionIN
 	return a
 }
 
@@ -165,9 +167,9 @@ func (a argBytes) writeTo(w queryWriter, _ int) error {
 	return nil
 }
 
-func (a argBytes) len() int           { return 1 }
-func (a argBytes) INClause() Argument { return a }
-func (a argBytes) options() uint      { return 0 }
+func (a argBytes) len() int      { return 1 }
+func (a argBytes) IN() Argument  { return a }
+func (a argBytes) options() uint { return 0 }
 
 // ArgBytes adds a byte slice to the argument list.
 // Providing a nil argument returns a NULL type.
@@ -190,8 +192,8 @@ func (i argNull) writeTo(w queryWriter, _ int) error {
 	return err
 }
 
-func (i argNull) len() int           { return 1 }
-func (i argNull) INClause() Argument { return i }
+func (i argNull) len() int     { return 1 }
+func (i argNull) IN() Argument { return i }
 func (i argNull) options() uint {
 	switch i {
 	case 10:
@@ -228,9 +230,9 @@ func (a argString) writeTo(w queryWriter, _ int) error {
 	return nil
 }
 
-func (s argString) len() int           { return 1 }
-func (s argString) INClause() Argument { return s }
-func (s argString) options() uint      { return 0 }
+func (s argString) len() int      { return 1 }
+func (s argString) IN() Argument  { return s }
+func (s argString) options() uint { return 0 }
 
 type argStrings struct {
 	opts uint
@@ -273,8 +275,8 @@ func (a argStrings) len() int {
 	return 1
 }
 
-func (a argStrings) INClause() Argument {
-	a.opts = argOptionIsIN
+func (a argStrings) IN() Argument {
+	a.opts = argOptionIN
 	return a
 }
 func (a argStrings) options() uint { return a.opts }
@@ -299,9 +301,9 @@ func (a argBool) writeTo(w queryWriter, _ int) error {
 	dialect.EscapeBool(w, a == true)
 	return nil
 }
-func (a argBool) len() int           { return 1 }
-func (a argBool) INClause() Argument { return a }
-func (a argBool) options() uint      { return 0 }
+func (a argBool) len() int      { return 1 }
+func (a argBool) IN() Argument  { return a }
+func (a argBool) options() uint { return 0 }
 
 type argBools struct {
 	opts uint
@@ -338,8 +340,8 @@ func (a argBools) len() int {
 	return 1
 }
 
-func (a argBools) INClause() Argument {
-	a.opts = argOptionIsIN
+func (a argBools) IN() Argument {
+	a.opts = argOptionIN
 	return a
 }
 func (a argBools) options() uint { return a.opts }
@@ -363,9 +365,9 @@ func (a argInt) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
 	return err
 }
-func (a argInt) len() int           { return 1 }
-func (a argInt) INClause() Argument { return a }
-func (a argInt) options() uint      { return 0 }
+func (a argInt) len() int      { return 1 }
+func (a argInt) IN() Argument  { return a }
+func (a argInt) options() uint { return 0 }
 
 type argInts struct {
 	opts uint
@@ -402,8 +404,8 @@ func (a argInts) len() int {
 	return 1
 }
 
-func (a argInts) INClause() Argument {
-	a.opts = argOptionIsIN
+func (a argInts) IN() Argument {
+	a.opts = argOptionIN
 	return a
 }
 
@@ -428,9 +430,9 @@ func (a argInt64) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
 	return err
 }
-func (a argInt64) len() int           { return 1 }
-func (a argInt64) INClause() Argument { return a }
-func (a argInt64) options() uint      { return 0 }
+func (a argInt64) len() int      { return 1 }
+func (a argInt64) IN() Argument  { return a }
+func (a argInt64) options() uint { return 0 }
 
 type argInt64s struct {
 	opts uint
@@ -467,8 +469,8 @@ func (a argInt64s) len() int {
 	return 1
 }
 
-func (a argInt64s) INClause() Argument {
-	a.opts = argOptionIsIN
+func (a argInt64s) IN() Argument {
+	a.opts = argOptionIN
 	return a
 }
 
@@ -493,9 +495,9 @@ func (a argFloat64) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatFloat(float64(a), 'f', -1, 64))
 	return err
 }
-func (a argFloat64) len() int           { return 1 }
-func (a argFloat64) INClause() Argument { return a }
-func (a argFloat64) options() uint      { return 0 }
+func (a argFloat64) len() int      { return 1 }
+func (a argFloat64) IN() Argument  { return a }
+func (a argFloat64) options() uint { return 0 }
 
 type argFloat64s struct {
 	opts uint
@@ -532,8 +534,8 @@ func (a argFloat64s) len() int {
 	return 1
 }
 
-func (a argFloat64s) INClause() Argument {
-	a.opts = argOptionIsIN
+func (a argFloat64s) IN() Argument {
+	a.opts = argOptionIN
 	return a
 }
 
@@ -567,7 +569,7 @@ func (e *expr) toIFace(args *[]interface{}) {
 
 func (e *expr) writeTo(w queryWriter, _ int) error { return nil }
 func (e *expr) len() int                           { return 1 }
-func (e *expr) INClause() Argument                 { return e }
+func (e *expr) IN() Argument                       { return e }
 func (e *expr) options() uint                      { return 0 }
 
 // Repeat takes a SQL string and repeats the question marks with the provided

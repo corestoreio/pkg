@@ -45,8 +45,8 @@ func (a argStringNull) writeTo(w queryWriter, _ int) error {
 	return nil
 }
 
-func (a argStringNull) len() int           { return 1 }
-func (a argStringNull) INClause() Argument { return a }
+func (a argStringNull) len() int     { return 1 }
+func (a argStringNull) IN() Argument { return a }
 func (a argStringNull) options() uint {
 	if a.str.Valid {
 		return 0
@@ -107,8 +107,8 @@ func (a argStringNulls) len() int {
 	return 1
 }
 
-func (a argStringNulls) INClause() Argument {
-	a.opts = argOptionIsIN
+func (a argStringNulls) IN() Argument {
+	a.opts = argOptionIN
 	return a
 }
 

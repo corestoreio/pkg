@@ -34,7 +34,7 @@ func (f conditionArgFunc) newWhereFragment() (*whereFragment, error) {
 	return f()
 }
 
-// ConditionColumn TODO
+// ConditionColumn adds a column to a WHERE statement
 func ConditionColumn(column string, arg Argument) ConditionArg {
 	return conditionArgFunc(func() (*whereFragment, error) {
 		buf := bufferpool.Get()
@@ -48,8 +48,11 @@ func ConditionColumn(column string, arg Argument) ConditionArg {
 			buf.WriteString(" IS NULL")
 		case argOptionNotNull:
 			buf.WriteString(" IS NOT NULL")
-		case argOptionIsIN:
+		case argOptionIN:
 			buf.WriteString(" IN ?")
+			args = Arguments{arg}
+		case argOptionBetween:
+			buf.WriteString(" BETWEEN ? AND ?")
 			args = Arguments{arg}
 		default:
 			buf.WriteString(" = ?")

@@ -47,14 +47,14 @@ func NewDelete(from ...string) *Delete {
 }
 
 // DeleteFrom creates a new Delete for the given table
-func (sess *Session) DeleteFrom(from ...string) *Delete {
+func (c *Connection) DeleteFrom(from ...string) *Delete {
 	d := &Delete{
-		Log:            sess.Logger,
+		Log:            c.Log,
 		From:           MakeAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
-	d.DB.Execer = sess.cxn.DB
-	d.DB.Preparer = sess.cxn.DB
+	d.DB.Execer = c.DB
+	d.DB.Preparer = c.DB
 	return d
 }
 

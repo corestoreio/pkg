@@ -57,27 +57,27 @@ func NewSelect(from ...string) *Select {
 }
 
 // Select creates a new Select that select that given columns
-func (sess *Session) Select(cols ...string) *Select {
+func (c *Connection) Select(cols ...string) *Select {
 	s := &Select{
-		Log:     sess.Logger,
+		Log:     c.Log,
 		Columns: cols,
 	}
-	s.DB.Querier = sess.cxn.DB
-	s.DB.QueryRower = sess.cxn.DB
-	s.DB.Preparer = sess.cxn.DB
+	s.DB.Querier = c.DB
+	s.DB.QueryRower = c.DB
+	s.DB.Preparer = c.DB
 	return s
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments
-func (sess *Session) SelectBySQL(sql string, args ...Argument) *Select {
+func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
-		Log:        sess.Logger,
+		Log:        c.Log,
 		RawFullSQL: sql,
 		Arguments:  args,
 	}
-	s.DB.Querier = sess.cxn.DB
-	s.DB.QueryRower = sess.cxn.DB
-	s.DB.Preparer = sess.cxn.DB
+	s.DB.Querier = c.DB
+	s.DB.QueryRower = c.DB
+	s.DB.Preparer = c.DB
 	return s
 }
 

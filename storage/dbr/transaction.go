@@ -14,14 +14,13 @@ type Tx struct {
 }
 
 // Begin creates a transaction for the given session
-func (sess *Session) Begin() (*Tx, error) {
-	tx, err := sess.cxn.DB.Begin()
+func (c *Connection) Begin() (*Tx, error) {
+	tx, err := c.DB.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] transaction.begin.error")
 	}
-
 	return &Tx{
-		Logger: sess.Logger,
+		Logger: c.Log.With(log.Bool("transaction", true)),
 		Tx:     tx,
 	}, nil
 }
