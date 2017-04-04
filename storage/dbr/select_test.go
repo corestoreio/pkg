@@ -153,6 +153,8 @@ func TestSelectMultiOrderSQL(t *testing.T) {
 }
 
 func TestSelect_ConditionColumn(t *testing.T) {
+	// TODO rewrite test to use every type which implements interface Argument and every operator
+
 	s := createFakeSession()
 	runner := func(arg Argument, wantSQL string, wantVal []interface{}) func(*testing.T) {
 		return func(t *testing.T) {
@@ -179,8 +181,13 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{float64(33)},
 	))
 	t.Run("IN float64", runner(
-		ArgFloat64(33, 44).Operator(OperatorIn),
+		ArgFloat64(33, 44).Operator('i'),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
+		[]interface{}{float64(33), float64(44)},
+	))
+	t.Run("NOT IN float64", runner(
+		ArgFloat64(33, 44).Operator('I'),
+		"SELECT a, b FROM `c` WHERE (`d` NOT IN ?)",
 		[]interface{}{float64(33), float64(44)},
 	))
 	t.Run("single int", runner(
@@ -203,6 +210,29 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{"x", "y"},
 	))
+
+	t.Run("BETWEEN int64", runner(
+		ArgInt64(5, 6).Operator(OperatorBetween),
+		"SELECT a, b FROM `c` WHERE (`d` BETWEEN ? AND ?)",
+		[]interface{}{int64(5), int64(6)},
+	))
+	t.Run("NOT BETWEEN int64", runner(
+		ArgInt64(5, 6).Operator(OperatorNotBetween),
+		"SELECT a, b FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)",
+		[]interface{}{int64(5), int64(6)},
+	))
+
+	t.Run("LIKE string", runner(
+		ArgString("x%").Operator(OperatorLike),
+		"SELECT a, b FROM `c` WHERE (`d` LIKE ?)",
+		[]interface{}{"x%"},
+	))
+	t.Run("NOT LIKE string", runner(
+		ArgString("x%").Operator(OperatorNotLike),
+		"SELECT a, b FROM `c` WHERE (`d` NOT LIKE ?)",
+		[]interface{}{"x%"},
+	))
+
 }
 
 func TestSelect_Null(t *testing.T) {

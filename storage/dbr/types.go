@@ -30,6 +30,8 @@ const (
 	OperatorNotLike    byte = 'L' // NOT LIKE ?
 	OperatorGreatest   byte = 'g' // GREATEST(?,?,?)
 	OperatorLeast      byte = 'e' // LEAST(?,?,?)
+	OperatorEqual      byte = '=' // = ?
+	OperatorNotEqual   byte = '!' // != ?
 )
 
 // RecordGenerater knows how to generate a record for one database row.
@@ -100,22 +102,6 @@ func isNotIn(o byte) bool {
 //
 //}
 
-type argTime struct {
-	time.Time
-}
-
-func (at argTime) toIFace(args *[]interface{}) {
-	*args = append(*args, at.Time)
-}
-
-func (at argTime) writeTo(w queryWriter, _ int) error {
-	dialect.EscapeTime(w, at.Time)
-	return nil
-}
-func (at argTime) len() int                 { return 1 }
-func (at argTime) Operator(_ byte) Argument { return at }
-func (at argTime) operator() byte           { return 0 }
-
 type argTimes struct {
 	opt  byte
 	data []time.Time
@@ -161,9 +147,6 @@ func (a argTimes) operator() byte { return a.opt }
 // ArgTime adds a time.Time or a slice of times to the argument list.
 // Providing no arguments returns a NULL type.
 func ArgTime(args ...time.Time) Argument {
-	if len(args) == 1 {
-		return argTime{Time: args[0]}
-	}
 	return argTimes{data: args}
 }
 
@@ -227,23 +210,24 @@ func ArgNotNull() Argument {
 	return argNull(20)
 }
 
-type argString string
-
-func (a argString) toIFace(args *[]interface{}) {
-	*args = append(*args, string(a))
-}
-
-func (a argString) writeTo(w queryWriter, _ int) error {
-	if !utf8.ValidString(string(a)) {
-		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
-	}
-	dialect.EscapeString(w, string(a))
-	return nil
-}
-
-func (s argString) len() int                 { return 1 }
-func (s argString) Operator(_ byte) Argument { return s }
-func (s argString) operator() byte           { return 0 }
+// does not allocate when using as a argument but does neither support the Operator function.
+//type argString string
+//
+//func (a argString) toIFace(args *[]interface{}) {
+//	*args = append(*args, string(a))
+//}
+//
+//func (a argString) writeTo(w queryWriter, _ int) error {
+//	if !utf8.ValidString(string(a)) {
+//		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
+//	}
+//	dialect.EscapeString(w, string(a))
+//	return nil
+//}
+//
+//func (a argString) len() int                 { return 1 }
+//func (a argString) Operator(_ byte) Argument { return a }
+//func (a argString) operator() byte           { return 0 }
 
 type argStrings struct {
 	opt  byte
@@ -296,9 +280,9 @@ func (a argStrings) operator() byte { return a.opt }
 // Providing no arguments returns a NULL type.
 // All arguments mut be a valid utf-8 string.
 func ArgString(args ...string) Argument {
-	if len(args) == 1 {
-		return argString(args[0])
-	}
+	//if len(args) == 1 {
+	//	return argString(args[0])
+	//}
 	return argStrings{data: args}
 }
 

@@ -1,7 +1,5 @@
 package dbr
 
-import "github.com/corestoreio/csfw/util/bufferpool"
-
 // Eq is a map Expression -> value pairs which must be matched in a query.
 // Joined at AND statements to the WHERE clause. Implements ConditionArg
 // interface. Eq = EqualityMap.
@@ -14,6 +12,7 @@ func (eq Eq) newWhereFragment() (*whereFragment, error) {
 }
 
 type whereFragment struct {
+	Column    string
 	Condition string
 	Arguments
 	EqualityMap Eq
@@ -37,37 +36,9 @@ func (f conditionArgFunc) newWhereFragment() (*whereFragment, error) {
 // ConditionColumn adds a column to a WHERE statement
 func ConditionColumn(column string, arg Argument) ConditionArg {
 	return conditionArgFunc(func() (*whereFragment, error) {
-		buf := bufferpool.Get()
-		defer bufferpool.Put(buf)
-
-		Quoter.writeQuotedColumn(buf, column)
-
-		var args Arguments
-		switch arg.operator() {
-		case OperatorNull:
-			buf.WriteString(" IS NULL")
-		case OperatorNotNull:
-			buf.WriteString(" IS NOT NULL")
-		case OperatorIn:
-			buf.WriteString(" IN ?")
-			args = Arguments{arg}
-		case OperatorNotIn:
-			buf.WriteString(" NOT IN ?")
-			args = Arguments{arg}
-		case OperatorBetween:
-			buf.WriteString(" BETWEEN ? AND ?")
-			args = Arguments{arg}
-		case OperatorNotBetween:
-			buf.WriteString(" NOT BETWEEN ? AND ?")
-			args = Arguments{arg}
-		default:
-			buf.WriteString(" = ?")
-			args = Arguments{arg}
-		}
-
 		return &whereFragment{
-			Condition: buf.String(),
-			Arguments: args,
+			Column:    column,
+			Arguments: Arguments{arg},
 		}, nil
 	})
 }
@@ -95,24 +66,74 @@ func newWhereFragments(wargs ...ConditionArg) WhereFragments {
 }
 
 // Invariant: only called when len(fragments) > 0
-func writeWhereFragmentsToSQL(fragments WhereFragments, sql queryWriter, args *Arguments) {
+func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arguments) {
 	anyConditions := false
 	for _, f := range fragments {
-		if f.Condition != "" {
-			if anyConditions {
-				_, _ = sql.WriteString(" AND (")
-			} else {
-				_, _ = sql.WriteRune('(')
-				anyConditions = true
-			}
-			_, _ = sql.WriteString(f.Condition)
-			_, _ = sql.WriteRune(')')
-			if f.Arguments != nil {
-				*args = append(*args, f.Arguments...)
-			}
-		} else if f.EqualityMap != nil {
-			anyConditions = writeEqualityMapToSQL(f.EqualityMap, sql, args, anyConditions)
+		if f.EqualityMap != nil {
+			anyConditions = writeEqualityMapToSQL(f.EqualityMap, w, args, anyConditions)
+			continue
 		}
+
+		if anyConditions {
+			_, _ = w.WriteString(" AND (")
+		} else {
+			_, _ = w.WriteRune('(')
+			anyConditions = true
+		}
+
+		addArg := false
+		if f.Condition != "" {
+			_, _ = w.WriteString(f.Condition)
+			addArg = true
+		} else {
+			Quoter.writeQuotedColumn(w, f.Column)
+			// a column only supports one argument. If not provided we panic with an index out of bounds error.
+			arg := f.Arguments[0]
+			switch arg.operator() {
+			case OperatorNull:
+				w.WriteString(" IS NULL")
+			case OperatorNotNull:
+				w.WriteString(" IS NOT NULL")
+			case OperatorIn:
+				w.WriteString(" IN ?")
+				addArg = true
+			case OperatorNotIn:
+				w.WriteString(" NOT IN ?")
+				addArg = true
+			case OperatorLike:
+				w.WriteString(" LIKE ?")
+				addArg = true
+			case OperatorNotLike:
+				w.WriteString(" NOT LIKE ?")
+				addArg = true
+			case OperatorBetween:
+				w.WriteString(" BETWEEN ? AND ?")
+				addArg = true
+			case OperatorNotBetween:
+				w.WriteString(" NOT BETWEEN ? AND ?")
+				addArg = true
+			case OperatorGreatest:
+				w.WriteString(" GREATEST ?")
+				addArg = true
+			case OperatorLeast:
+				w.WriteString(" LEAST ?")
+				addArg = true
+			case OperatorEqual:
+				w.WriteString(" = ?")
+				addArg = true
+			case OperatorNotEqual:
+				w.WriteString(" != ?")
+				addArg = true
+			default:
+				w.WriteString(" = ?")
+				addArg = true
+			}
+		}
+		_, _ = w.WriteRune(')')
+		if addArg {
+			*args = append(*args, f.Arguments...)
+		}
+
 	}
 }
 

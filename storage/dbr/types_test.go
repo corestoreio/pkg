@@ -18,9 +18,9 @@ var _ Argument = (*argBytes)(nil)
 var _ Argument = (*argInts)(nil)
 var _ Argument = (*argInt64s)(nil)
 var _ Argument = (*argFloat64s)(nil)
-var _ Argument = (*argTime)(nil)
 var _ Argument = (*argTimes)(nil)
 var _ Argument = (*argBools)(nil)
+var _ Argument = (*argStrings)(nil)
 
 func TestNullStringFrom(t *testing.T) {
 	assert.Equal(t, "product", null.StringFrom("product").String)
