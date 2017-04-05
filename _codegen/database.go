@@ -125,7 +125,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 		vtp, err := dbrConn.NewSession().
 			Select("`value_table_prefix`").
 			From(TablePrefix+TableEavEntityType).
-			Where(dbr.ConditionRaw("`value_table_prefix` IS NOT NULL"), dbr.ConditionRaw("`entity_type_code` = ?", typeCode)).
+			Where(dbr.Condition("`value_table_prefix` IS NOT NULL"), dbr.Condition("`entity_type_code` = ?", typeCode)).
 			ReturnString()
 
 		if err != nil && err != dbr.ErrNotFound {

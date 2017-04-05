@@ -95,14 +95,14 @@ func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 	//	"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 	//	"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 	//	"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").
-	//	Where(dbr.ConditionRaw(`TABLE_SCHEMA=DATABASE()`))
+	//	Where(dbr.Condition(`TABLE_SCHEMA=DATABASE()`))
 	//sel.DB.Querier = db
 	//if len(tables) > 0 {
 	//	args := make([]interface{}, len(tables))
 	//	for i, t := range tables {
 	//		args[i] = t
 	//	}
-	//	sel.Where(dbr.ConditionRaw("TABLE_NAME IN (?)", args...))
+	//	sel.Where(dbr.Condition("TABLE_NAME IN (?)", args...))
 	//}
 
 	var rows *sql.Rows

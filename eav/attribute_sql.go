@@ -76,8 +76,8 @@ func GetAttributeSelectSql(dbrSess dbr.Session, aat EntityTypeAdditionalAttribut
 		Join(
 			dbr.JoinTable(taa.Name, csdb.AdditionalTable),
 			taaColumnsQuoted,
-			dbr.ConditionRaw(csdb.AdditionalTable+".attribute_id = "+csdb.MainTable+".attribute_id"),
-			dbr.ConditionRaw(csdb.MainTable+".entity_type_id = ?", entityTypeID),
+			dbr.Condition(csdb.AdditionalTable+".attribute_id = "+csdb.MainTable+".attribute_id"),
+			dbr.Condition(csdb.MainTable+".entity_type_id = ?", entityTypeID),
 		)
 
 	if len(tewAddedCols) > 0 {
@@ -85,8 +85,8 @@ func GetAttributeSelectSql(dbrSess dbr.Session, aat EntityTypeAdditionalAttribut
 			LeftJoin(
 				dbr.JoinTable(tew.Name, csdb.ScopeTable),
 				ifNull,
-				dbr.ConditionRaw(csdb.ScopeTable+"."+"attribute_id"+" = "+csdb.MainTable+"."+"attribute_id"),
-				dbr.ConditionRaw(csdb.ScopeTable+"."+"website_id"+" = ?", websiteID),
+				dbr.Condition(csdb.ScopeTable+"."+"attribute_id"+" = "+csdb.MainTable+"."+"attribute_id"),
+				dbr.Condition(csdb.ScopeTable+"."+"website_id"+" = ?", websiteID),
 			)
 	}
 	return selectSql, nil

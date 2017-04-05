@@ -62,7 +62,7 @@ func TestIntegrationSQLType(t *testing.T) {
 	var ccds TableCoreConfigDataSlice
 	tbl := tableCollection.MustTable(tableIndexCoreConfigData)
 	rows, err := tbl.LoadSlice(dbCon.NewSession(), &ccds, func(sb *dbr.Select) *dbr.Select {
-		sb.Where(dbr.ConditionRaw("config_id=?", id))
+		sb.Where(dbr.Condition("config_id=?", id))
 		return sb
 	})
 
