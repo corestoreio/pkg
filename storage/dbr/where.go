@@ -121,44 +121,6 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 	}
 }
 
-//func writeEqualityMapToSQL(eq map[string]Argument, w queryWriter, args *Arguments, anyConditions bool) bool {
-//	// todo refactor
-//	for k, arg := range eq {
-//		if arg == nil || arg.operator() == OperatorNull {
-//			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
-//			continue
-//		}
-//		if arg.operator() == OperatorNotNull {
-//			anyConditions = writeWhereCondition(w, k, " IS NOT NULL", anyConditions)
-//			continue
-//		}
-//
-//		if arg.len() > 1 {
-//			anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
-//			*args = append(*args, arg)
-//		} else {
-//			anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
-//			*args = append(*args, arg)
-//		}
-//	}
-//
-//	return anyConditions
-//}
-
-//func writeWhereCondition(w queryWriter, column string, pred string, anyConditions bool) bool {
-//	if anyConditions {
-//		_, _ = w.WriteString(" AND (")
-//	} else {
-//		_, _ = w.WriteRune('(')
-//		anyConditions = true
-//	}
-//	w.WriteString(Quoter.quoteAs(column))
-//	_, _ = w.WriteString(pred)
-//	_, _ = w.WriteRune(')')
-//
-//	return anyConditions
-//}
-
 // maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 const maxIdentifierLength = 64
 

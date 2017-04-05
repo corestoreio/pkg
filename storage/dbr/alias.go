@@ -26,6 +26,11 @@ func (t alias) QuoteAs() string {
 	return Quoter.QuoteAs(t.Expression, t.Alias)
 }
 
+// QuoteAsWriter writes the quote table and its maybe alias into w.
+func (t alias) QuoteAsWriter(w queryWriter) {
+	Quoter.quoteAs(w, t.Expression, t.Alias)
+}
+
 // DefaultScopeNames specifies the name of the scopes used in all EAV* function
 // to generate scope based hierarchical fall backs.
 var DefaultScopeNames = [...]string{"Store", "Group", "Website", "Default"}

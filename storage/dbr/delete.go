@@ -124,7 +124,7 @@ func (b *Delete) ToSQL() (string, Arguments, error) {
 	var args Arguments // no make() lazy init the slice via append in cases where not WHERE has been provided.
 
 	buf.WriteString("DELETE FROM ")
-	buf.WriteString(b.From.QuoteAs())
+	b.From.QuoteAsWriter(buf)
 
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {

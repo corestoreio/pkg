@@ -248,14 +248,14 @@ func (b *Select) ToSQL() (string, Arguments, error) {
 	}
 
 	sql.WriteString(" FROM ")
-	sql.WriteString(b.FromTable.QuoteAs())
+	b.FromTable.QuoteAsWriter(sql)
 
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
 			sql.WriteRune(' ')
 			sql.WriteString(f.JoinType)
 			sql.WriteString(" JOIN ")
-			sql.WriteString(f.Table.QuoteAs())
+			f.Table.QuoteAsWriter(sql)
 			sql.WriteString(" ON ")
 			writeWhereFragmentsToSQL(f.OnConditions, sql, &args)
 		}
