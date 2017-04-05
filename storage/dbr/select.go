@@ -145,7 +145,7 @@ func (b *Select) AddColumnsAliases(colsAlias ...string) *Select {
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs
 func (b *Select) Where(args ...ConditionArg) *Select {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
+	appendConditions(&b.WhereFragments, args...)
 	return b
 }
 
@@ -157,7 +157,7 @@ func (b *Select) GroupBy(group string) *Select {
 
 // Having appends a HAVING clause to the statement
 func (b *Select) Having(args ...ConditionArg) *Select {
-	b.HavingFragments = append(b.HavingFragments, newWhereFragments(args...)...)
+	appendConditions(&b.HavingFragments, args...)
 	return b
 }
 

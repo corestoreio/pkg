@@ -1,6 +1,10 @@
 package dbr
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
+)
 
 const quote string = "`"
 const quoteRune rune = '`'
@@ -16,12 +20,6 @@ type MysqlQuoter struct {
 	replacer *strings.Replacer
 }
 
-func (q MysqlQuoter) writeQuotedColumn(sql queryWriter, column string) {
-	_, _ = sql.WriteRune(quoteRune)
-	_, _ = sql.WriteString(q.unQuote(column))
-	_, _ = sql.WriteRune(quoteRune)
-}
-
 func (q MysqlQuoter) unQuote(s string) string {
 	if strings.IndexByte(s, quoteByte) == -1 {
 		return s
@@ -29,11 +27,21 @@ func (q MysqlQuoter) unQuote(s string) string {
 	return q.replacer.Replace(s)
 }
 
+func (q MysqlQuoter) quote(w queryWriter, name string) {
+	w.WriteRune(quoteRune)
+	w.WriteString(q.unQuote(name))
+	w.WriteRune(quoteRune)
+}
+
 // QuoteAs quotes a with back ticks. First argument table or column name and
 // second argument can be an alias. Both parts will get quoted. If providing
 // only one part, then the AS parts get skipped.
 func (q MysqlQuoter) QuoteAs(exprAlias ...string) string {
-	return q.quoteAs(exprAlias...)
+	buf := bufferpool.Get()
+	q.quoteAs(buf, exprAlias...)
+	x := buf.String()
+	bufferpool.Put(buf)
+	return x
 }
 
 // Alias appends the the aliasName to the expression, e.g.: (e.price*x.tax) at `final_price`
@@ -50,7 +58,7 @@ func (q MysqlQuoter) Quote(prefix, name string) string {
 	return quote + q.unQuote(prefix) + quote + "." + quote + q.unQuote(name) + quote
 }
 
-func (q MysqlQuoter) quoteAs(parts ...string) string {
+func (q MysqlQuoter) quoteAs(w queryWriter, parts ...string) {
 
 	lp := len(parts)
 	if lp == 2 && parts[1] == "" {
@@ -63,31 +71,41 @@ func (q MysqlQuoter) quoteAs(parts ...string) string {
 
 	switch {
 	case lp == 1 && hasQuote0:
-		return parts[0] // already quoted
+		// already quoted
+		w.WriteString(parts[0])
+		return
 	case lp > 1 && parts[1] == "" && !hasQuote0 && !hasDot0:
-		return quote + q.unQuote(parts[0]) + quote // must be quoted
+		// must be quoted
+		q.quote(w, parts[0])
+		return
 	case lp == 1 && !hasQuote0 && hasDot0:
-		return q.splitDotAndQuote(parts[0])
+		q.splitDotAndQuote(w, parts[0])
+		return
 	}
 
-	n := q.splitDotAndQuote(parts[0])
-
+	q.splitDotAndQuote(w, parts[0])
 	switch lp {
 	case 1:
-		return n
+		// do nothing
 	case 2:
-		return n + " AS " + quote + q.unQuote(parts[1]) + quote
+		w.WriteString(" AS ")
+		q.quote(w, parts[1])
 	default:
-		return n + " AS " + quote + q.unQuote(strings.Join(parts[1:], "_")) + quote
+		w.WriteString(" AS ")
+		q.quote(w, strings.Join(parts[1:], "_"))
 	}
+	return
 }
 
-func (q MysqlQuoter) splitDotAndQuote(part string) string {
+func (q MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {
 	dotIndex := strings.Index(part, ".")
 	if dotIndex > 0 { // dot at a beginning of a string at illegal
-		return quote + q.unQuote(part[:dotIndex]) + quote + "." + quote + q.unQuote(part[dotIndex+1:]) + quote
+		q.quote(w, part[:dotIndex])
+		w.WriteRune('.')
+		q.quote(w, part[dotIndex+1:])
+		return
 	}
-	return quote + q.unQuote(part) + quote
+	q.quote(w, part)
 }
 
 // ColumnAlias at a helper func which transforms variadic arguments into a slice with a special
@@ -97,13 +115,16 @@ func (q MysqlQuoter) ColumnAlias(columns ...string) []string {
 	if l%2 == 1 {
 		panic("Amount of columns must be even and not odd.")
 	}
-	cols := make([]string, l/2)
-	j := 0
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
 	for i := 0; i < l; i = i + 2 {
-		cols[j] = q.quoteAs(columns[i], columns[i+1])
-		j++
+		q.quoteAs(buf, columns[i], columns[i+1])
+		if i+1 < l-1 {
+			buf.WriteByte('~')
+		}
 	}
-	return cols
+	return strings.Split(buf.String(), "~")
 }
 
 // TableColumnAlias prefixes all columns with a table name/alias and puts quotes around them.

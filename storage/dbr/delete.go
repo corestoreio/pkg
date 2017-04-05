@@ -62,9 +62,8 @@ func (c *Connection) DeleteFrom(from ...string) *Delete {
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from ...string) *Delete {
 	d := &Delete{
-		Log:            tx.Logger,
-		From:           MakeAlias(from...),
-		WhereFragments: make(WhereFragments, 0, 2),
+		Log:  tx.Logger,
+		From: MakeAlias(from...),
 	}
 	d.DB.Execer = tx.Tx
 	d.DB.Preparer = tx.Tx
@@ -74,7 +73,7 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a
 // string or map. If it'ab a string, args wil replaces any places holders
 func (b *Delete) Where(args ...ConditionArg) *Delete {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
+	appendConditions(&b.WhereFragments, args...)
 	return b
 }
 

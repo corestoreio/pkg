@@ -165,7 +165,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 			buf.WriteRune(',')
 			ph.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(buf, c)
+		Quoter.quoteAs(buf, c)
 		ph.WriteRune('?')
 	}
 	buf.WriteString(") VALUES ")
@@ -246,7 +246,7 @@ func (b *Insert) mapToSQL(w queryWriter) (Arguments, error) {
 			w.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(w, c)
+		Quoter.quoteAs(w, c)
 		placeholder.WriteRune('?')
 	}
 	w.WriteString(") VALUES ")

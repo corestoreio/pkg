@@ -12,7 +12,7 @@ type (
 		// contains all column names from the joined table
 		Columns []string
 		// join on condition
-		OnConditions []*whereFragment // slice is joined via AND
+		OnConditions WhereFragments
 	}
 )
 
@@ -27,12 +27,13 @@ func JoinColumns(columns ...string) []string {
 }
 
 func (b *Select) join(j string, t, c []string, on ...ConditionArg) *Select {
-	b.JoinFragments = append(b.JoinFragments, &joinFragment{
-		JoinType:     j,
-		Table:        MakeAlias(t...),
-		Columns:      c,
-		OnConditions: newWhereFragments(on...),
-	})
+	jf := &joinFragment{
+		JoinType: j,
+		Table:    MakeAlias(t...),
+		Columns:  c,
+	}
+	appendConditions(&jf.OnConditions, on...)
+	b.JoinFragments = append(b.JoinFragments, jf)
 	return b
 }
 

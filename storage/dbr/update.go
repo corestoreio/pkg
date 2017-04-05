@@ -16,6 +16,7 @@ type Update struct {
 		Preparer
 		Execer
 	}
+	// TODO: add UPDATE JOINS
 
 	RawFullSQL   string
 	RawArguments Arguments
@@ -25,12 +26,12 @@ type Update struct {
 		Columns []string
 		Arguments
 	}
-	WhereFragments []*whereFragment
-	OrderBys       []string
-	LimitCount     uint64
-	LimitValid     bool
-	OffsetCount    uint64
-	OffsetValid    bool
+	WhereFragments
+	OrderBys    []string
+	LimitCount  uint64
+	LimitValid  bool
+	OffsetCount uint64
+	OffsetValid bool
 
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -125,7 +126,7 @@ func (b *Update) Where(args ...ConditionArg) *Update {
 	if b.previousError != nil {
 		return b
 	}
-	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
+	appendConditions(&b.WhereFragments, args...)
 	return b
 }
 
@@ -195,7 +196,7 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		Quoter.writeQuotedColumn(buf, c)
+		Quoter.quoteAs(buf, c)
 		// TODO fix expr ?
 		arg := b.SetClauses.Arguments[i]
 		if e, ok := arg.(*expr); ok {

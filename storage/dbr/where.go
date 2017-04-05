@@ -1,21 +1,34 @@
 package dbr
 
+import "strings"
+
 // Eq is a map Expression -> value pairs which must be matched in a query.
 // Joined at AND statements to the WHERE clause. Implements ConditionArg
 // interface. Eq = EqualityMap.
 type Eq map[string]Argument
 
-func (eq Eq) newWhereFragment() (*whereFragment, error) {
-	return &whereFragment{
-		EqualityMap: eq,
-	}, nil
+func (eq Eq) appendConditions(wfs *WhereFragments) {
+	for c, arg := range eq {
+		if arg == nil {
+			arg = ArgNull()
+		}
+		*wfs = append(*wfs, &whereFragment{
+			Condition: c,
+			Arguments: Arguments{arg},
+		})
+	}
 }
 
 type whereFragment struct {
-	Column    string
+	// Condition can contain either a column name in the form of table.column or
+	// just column. Or Condition can contain an expression. Whenever a condition
+	// is not a valid identifier we treat it as an expression.
 	Condition string
-	Arguments
-	EqualityMap Eq
+	Arguments Arguments
+}
+
+func (wf *whereFragment) appendConditions(wfs *WhereFragments) {
+	*wfs = append(*wfs, wf)
 }
 
 // WhereFragments provides a list where clauses
@@ -23,56 +36,35 @@ type WhereFragments []*whereFragment
 
 // ConditionArg used at argument in Where()
 type ConditionArg interface {
-	newWhereFragment() (*whereFragment, error)
-}
-
-// implements ConditionArg interface ;-)
-type conditionArgFunc func() (*whereFragment, error)
-
-func (f conditionArgFunc) newWhereFragment() (*whereFragment, error) {
-	return f()
+	appendConditions(*WhereFragments)
 }
 
 // ConditionColumn adds a column to a WHERE statement
 func ConditionColumn(column string, arg Argument) ConditionArg {
-	return conditionArgFunc(func() (*whereFragment, error) {
-		return &whereFragment{
-			Column:    column,
-			Arguments: Arguments{arg},
-		}, nil
-	})
+	return &whereFragment{
+		Condition: column,
+		Arguments: Arguments{arg},
+	}
 }
 
 // ConditionRaw adds a condition and checks values if they implement driver.Valuer.
 func ConditionRaw(raw string, arg ...Argument) ConditionArg {
-	return conditionArgFunc(func() (*whereFragment, error) {
-		return &whereFragment{
-			Condition: raw,
-			Arguments: arg,
-		}, nil
-	})
+	return &whereFragment{
+		Condition: raw,
+		Arguments: arg,
+	}
 }
 
-func newWhereFragments(wargs ...ConditionArg) WhereFragments {
-	ret := make(WhereFragments, len(wargs))
-	for i, warg := range wargs {
-		wf, err := warg.newWhereFragment()
-		if err != nil {
-			panic(err) // damn it ... TODO remove panic
-		}
-		ret[i] = wf
+func appendConditions(wf *WhereFragments, wargs ...ConditionArg) {
+	for _, warg := range wargs {
+		warg.appendConditions(wf)
 	}
-	return ret
 }
 
 // Invariant: only called when len(fragments) > 0
 func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arguments) {
 	anyConditions := false
 	for _, f := range fragments {
-		if f.EqualityMap != nil {
-			anyConditions = writeEqualityMapToSQL(f.EqualityMap, w, args, anyConditions)
-			continue
-		}
 
 		if anyConditions {
 			_, _ = w.WriteString(" AND (")
@@ -82,11 +74,11 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 		}
 
 		addArg := false
-		if f.Condition != "" {
+		if isValidIdentifier(f.Condition) > 0 {
 			_, _ = w.WriteString(f.Condition)
 			addArg = true
 		} else {
-			Quoter.writeQuotedColumn(w, f.Column)
+			Quoter.quoteAs(w, f.Condition)
 			// a column only supports one argument. If not provided we panic with an index out of bounds error.
 			arg := f.Arguments[0]
 			switch arg.operator() {
@@ -137,39 +129,86 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 	}
 }
 
-func writeEqualityMapToSQL(eq map[string]Argument, w queryWriter, args *Arguments, anyConditions bool) bool {
-	for k, arg := range eq {
-		if arg == nil || arg.operator() == OperatorNull {
-			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
-			continue
-		}
-		if arg.operator() == OperatorNotNull {
-			anyConditions = writeWhereCondition(w, k, " IS NOT NULL", anyConditions)
-			continue
+//func writeEqualityMapToSQL(eq map[string]Argument, w queryWriter, args *Arguments, anyConditions bool) bool {
+//	// todo refactor
+//	for k, arg := range eq {
+//		if arg == nil || arg.operator() == OperatorNull {
+//			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
+//			continue
+//		}
+//		if arg.operator() == OperatorNotNull {
+//			anyConditions = writeWhereCondition(w, k, " IS NOT NULL", anyConditions)
+//			continue
+//		}
+//
+//		if arg.len() > 1 {
+//			anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
+//			*args = append(*args, arg)
+//		} else {
+//			anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
+//			*args = append(*args, arg)
+//		}
+//	}
+//
+//	return anyConditions
+//}
+
+//func writeWhereCondition(w queryWriter, column string, pred string, anyConditions bool) bool {
+//	if anyConditions {
+//		_, _ = w.WriteString(" AND (")
+//	} else {
+//		_, _ = w.WriteRune('(')
+//		anyConditions = true
+//	}
+//	w.WriteString(Quoter.quoteAs(column))
+//	_, _ = w.WriteString(pred)
+//	_, _ = w.WriteRune(')')
+//
+//	return anyConditions
+//}
+
+// maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+const maxIdentifierLength = 64
+
+// IsValidIdentifier checks the permissible syntax for identifiers. Certain
+// objects within MySQL, including database, table, index, column, alias, view,
+// stored procedure, partition, tablespace, and other object names are known as
+// identifiers. ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar,
+// underscore) Max length 63 characters. Returns errors.NotValid
+//
+// http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+func isValidIdentifier(objectName string) int8 {
+
+	qualifier := "z" // just a dummy value, can be optimized later
+	if i := strings.IndexByte(objectName, '.'); i >= 0 {
+		qualifier = objectName[:i]
+		objectName = objectName[i+1:]
+	}
+
+	for _, name := range [2]string{qualifier, objectName} {
+		if len(name) > maxIdentifierLength || name == "" {
+			return 1 //errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
 		}
 
-		if arg.len() > 1 {
-			anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
-			*args = append(*args, arg)
-		} else {
-			anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
-			*args = append(*args, arg)
+		for i := 0; i < len(name); i++ {
+			if !mapAlNum(name[i]) {
+				return 2 // errors.NewNotValidf("[csdb] Invalid character in name %q", name)
+			}
 		}
 	}
 
-	return anyConditions
+	return 0
 }
 
-func writeWhereCondition(w queryWriter, column string, pred string, anyConditions bool) bool {
-	if anyConditions {
-		_, _ = w.WriteString(" AND (")
-	} else {
-		_, _ = w.WriteRune('(')
-		anyConditions = true
+func mapAlNum(r byte) bool {
+	var ok bool
+	switch {
+	case '0' <= r && r <= '9':
+		ok = true
+	case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
+		ok = true
+	case r == '$', r == '_':
+		ok = true
 	}
-	Quoter.writeQuotedColumn(w, column)
-	_, _ = w.WriteString(pred)
-	_, _ = w.WriteRune(')')
-
-	return anyConditions
+	return ok
 }
