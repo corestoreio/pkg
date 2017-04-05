@@ -148,7 +148,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	defer bufferpool.Put(buf)
 
 	buf.WriteString("INSERT INTO ")
-	buf.WriteString(b.Into)
+	Quoter.quote(buf, b.Into)
 	buf.WriteString(" (")
 
 	if len(b.Maps) != 0 {
@@ -200,22 +200,6 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 		}
 		buf.WriteString(placeholderStr)
 	}
-
-	//anyVals := len(b.Vals) > 0
-	// Go thru the records. Write the placeholders, and do reflection on the records to extract args
-	//for ab, rec := range b.Recs {
-	//	if ab > 0 || anyVals {
-	//		buf.WriteRune(',')
-	//	}
-	//	buf.WriteString(placeholderStr)
-	//
-	//	ind := reflect.Indirect(reflect.ValueOf(rec))
-	//	vals, err := valuesFor(ind.Type(), ind, b.Cols)
-	//	if err != nil {
-	//		return "", nil, errors.Wrap(err, "[dbr] valuesFor")
-	//	}
-	//	args = append(args, vals...)
-	//}
 
 	return buf.String(), args, nil
 }

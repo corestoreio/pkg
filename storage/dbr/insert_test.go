@@ -75,7 +75,7 @@ func TestInsertSingleToSQL(t *testing.T) {
 
 	sStr, args, err := s.InsertInto("a").Columns("b", "c").Values(ArgInt(1), ArgInt(2)).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "INSERT INTO a (`b`,`c`) VALUES (?,?)", sStr)
+	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (?,?)", sStr)
 	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
 }
 
@@ -91,7 +91,7 @@ func TestInsertMultipleToSQL(t *testing.T) {
 			ArgInt(5), ArgInt(6),
 		).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "INSERT INTO a (`b`,`c`) VALUES (?,?),(?,?),(?,?)", sStr)
+	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?)", sStr)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
 }
 
@@ -101,7 +101,7 @@ func TestInsertRecordsToSQL(t *testing.T) {
 	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
 	sql, args, err := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1], objs[2]).ToSQL()
 	require.NoError(t, err)
-	assert.Equal(t, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?)", sql)
+	assert.Equal(t, "INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?)", sql)
 	// without fmt.Sprint we have an error despite objects are equal ...
 	assert.Equal(t, fmt.Sprint([]interface{}{1, 88, false, 2, 99, true, 3, 101, true}), fmt.Sprint(args.Interfaces()))
 }
@@ -230,11 +230,11 @@ func TestInsert_Events(t *testing.T) {
 		)
 		sql, _, err := d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
+		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
 
 		sql, _, err = d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
+		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
@@ -292,12 +292,12 @@ func TestInsert_Events(t *testing.T) {
 		sql, args, err := ins.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, 2.7182, "X1"}, args.Interfaces())
-		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
+		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
 
 		sql, args, err = ins.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, 2.7182, "X1"}, args.Interfaces())
-		assert.Exactly(t, "INSERT INTO tableA (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
+		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
 
 		assert.Exactly(t, `colA; colB; colC`, ins.Listeners.String())
 	})
