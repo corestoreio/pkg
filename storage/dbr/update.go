@@ -21,7 +21,8 @@ type Update struct {
 	RawFullSQL   string
 	RawArguments Arguments
 
-	Table      alias
+	Table alias
+	// SetClauses contains the column/argument association. For each column there must be one argument.
 	SetClauses struct {
 		Columns []string
 		Arguments
@@ -185,10 +186,10 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	var args = make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
+	var args = make(Arguments, 0, len(b.SetClauses.Arguments)+len(b.WhereFragments))
 
 	buf.WriteString("UPDATE ")
-	buf.WriteString(b.Table.QuoteAs())
+	b.Table.QuoteAsWriter(buf)
 	buf.WriteString(" SET ")
 
 	// Build SET clause SQL with placeholders and add values to args
@@ -197,15 +198,18 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 			buf.WriteString(", ")
 		}
 		Quoter.quoteAs(buf, c)
-		// TODO fix expr ?
-		arg := b.SetClauses.Arguments[i]
-		if e, ok := arg.(*expr); ok {
-			buf.WriteString(" = ")
-			buf.WriteString(e.SQL)
-			args = append(args, e.Arguments...)
+		if i < len(b.SetClauses.Arguments) {
+			arg := b.SetClauses.Arguments[i]
+			if e, ok := arg.(*expr); ok {
+				buf.WriteString(" = ")
+				buf.WriteString(e.SQL)
+				args = append(args, e.Arguments...)
+			} else {
+				buf.WriteString(" = ?")
+				args = append(args, arg)
+			}
 		} else {
 			buf.WriteString(" = ?")
-			args = append(args, arg)
 		}
 	}
 
@@ -283,6 +287,7 @@ func (b *Update) Prepare() (*sql.Stmt, error) {
 // UpdateMulti TODO creates one update statement for multiple records. Uses a
 // transaction and a prepared statement.
 type UpdateMulti struct {
+	sql.IsolationLevel
 	Parent Update
 	// Records
 	Records struct {
@@ -304,6 +309,7 @@ func (b *UpdateMulti) Record(recs ...RecordGenerater) *UpdateMulti {
 	return b
 }
 
+// Exec creates a transaction
 func (b *UpdateMulti) Exec() ([]sql.Result, error) {
 	// TODO imlement
 	return nil, nil

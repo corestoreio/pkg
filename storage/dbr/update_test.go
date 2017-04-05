@@ -177,6 +177,19 @@ func TestUpdate_Prepare(t *testing.T) {
 	})
 }
 
+func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
+	u := NewUpdate("catalog_product_entity", "cpe")
+	u.SetClauses.Columns = []string{"sku", "updated_at"}
+	u.Where(Condition("entity_id", ArgInt64(1, 2, 3).Operator('i')))
+
+	sqlStr, args, err := u.ToSQL()
+	assert.NoError(t, err, "%+v", err)
+	assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
+	assert.Exactly(t,
+		"UPDATE `catalog_product_entity` AS `cpe` SET `sku` = ?, `updated_at` = ? WHERE (`entity_id` IN ?)",
+		sqlStr)
+}
+
 func TestUpdate_Events(t *testing.T) {
 	t.Parallel()
 
