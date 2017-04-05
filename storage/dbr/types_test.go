@@ -104,7 +104,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		err = s.Select("*").From("null_types").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadStruct(nullTypeSet)
+		err = s.Select("*").From("null_types").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(nullTypeSet)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)

@@ -14,7 +14,7 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 	s := createFakeSession()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, args, err := s.Update("alpha").Set("something_id", ArgInt64(1)).Where(ConditionRaw("id", ArgInt64(1))).ToSQL()
+		_, args, err := s.Update("alpha").Set("something_id", ArgInt64(1)).Where(Condition("id", ArgInt64(1))).ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -32,7 +32,7 @@ func BenchmarkUpdateValueMapSQL(b *testing.B) {
 				"b": ArgInt64(2),
 				"c": ArgInt64(3),
 			}).
-			Where(ConditionRaw("id", ArgInt(1))).
+			Where(Condition("id", ArgInt(1))).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -53,7 +53,7 @@ func TestUpdateAllToSQL(t *testing.T) {
 func TestUpdateSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(ConditionRaw("id = ?", ArgInt(1))).ToSQL()
+	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(Condition("id = ?", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
@@ -62,7 +62,7 @@ func TestUpdateSingleToSQL(t *testing.T) {
 func TestUpdateSetMapToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": ArgInt64(1), "c": ArgInt64(2)}).Where(ConditionRaw("id = ?", ArgInt(1))).ToSQL()
+	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": ArgInt64(1), "c": ArgInt64(2)}).Where(Condition("id = ?", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
@@ -77,14 +77,14 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 
 	sql, args, err := s.Update("a").
 		Set("foo", ArgInt(1)).
-		Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(ConditionRaw("id = ?", ArgInt(9))).ToSQL()
+		Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(Condition("id = ?", ArgInt(9))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(9)}, args.Interfaces())
 
 	sql, args, err = s.Update("a").
 		Set("foo", ArgInt(1)).
-		Set("bar", Expr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(ConditionRaw("id = ?", ArgInt(9))).ToSQL()
+		Set("bar", Expr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Condition("id = ?", ArgInt(9))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(9)}, args.Interfaces())
@@ -139,12 +139,12 @@ func TestUpdateReal(t *testing.T) {
 	// Rename our George to Barack
 	res, err = s.Update("dbr_people").
 		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
-		Where(ConditionRaw("id = ?", ArgInt64(id))).Exec()
+		Where(Condition("id = ?", ArgInt64(id))).Exec()
 
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)

@@ -15,7 +15,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(ConditionRaw("a", ArgString("b"))).Limit(1).OrderDir("id", true).ToSQL()
+		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgString("b"))).Limit(1).OrderDir("id", true).ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -37,7 +37,7 @@ func TestDeleteAllToSQL(t *testing.T) {
 func TestDeleteSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	del := s.DeleteFrom("a").Where(ConditionRaw("id = ?", ArgInt(1)))
+	del := s.DeleteFrom("a").Where(Condition("id = ?", ArgInt(1)))
 	sql, args, err := del.ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "DELETE FROM `a` WHERE (id = ?)")
@@ -76,7 +76,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).Exec()
+	res, err = s.DeleteFrom("dbr_people").Where(Condition("id", ArgInt64(id))).Exec()
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -85,7 +85,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
 	var count int64
-	err = s.Select("count(*)").From("dbr_people").Where(ConditionRaw("id = ?", ArgInt64(id))).LoadValue(&count)
+	err = s.Select("count(*)").From("dbr_people").Where(Condition("id", ArgInt64(id))).LoadValue(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
 }
@@ -94,7 +94,7 @@ func TestDelete_Prepare(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		d := &Delete{}
-		d.Where(ConditionRaw("a", ArgInt64(1)))
+		d.Where(Condition("a", ArgInt64(1)))
 		stmt, err := d.Prepare()
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -107,7 +107,7 @@ func TestDelete_Prepare(t *testing.T) {
 		d.DB.Preparer = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		d.Where(ConditionRaw("a", ArgInt(1)))
+		d.Where(Condition("a", ArgInt(1)))
 		stmt, err := d.Prepare()
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
@@ -192,7 +192,7 @@ func TestDelete_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(ConditionRaw("store_id=?", ArgInt64(1)))
+					b.Where(Condition("store_id=?", ArgInt64(1)))
 				},
 			},
 		)
@@ -202,7 +202,7 @@ func TestDelete_Events(t *testing.T) {
 				Name:      "repetitive",
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(ConditionRaw("repetitive=?", ArgInt(3)))
+					b.Where(Condition("repetitive=?", ArgInt(3)))
 				},
 			},
 		)

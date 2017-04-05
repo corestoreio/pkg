@@ -39,18 +39,10 @@ type ConditionArg interface {
 	appendConditions(*WhereFragments)
 }
 
-// ConditionColumn adds a column to a WHERE statement
-func ConditionColumn(column string, arg Argument) ConditionArg {
+// Condition adds a condition and checks values if they implement driver.Valuer.
+func Condition(rawStatementOrColumnName string, arg ...Argument) ConditionArg {
 	return &whereFragment{
-		Condition: column,
-		Arguments: Arguments{arg},
-	}
-}
-
-// ConditionRaw adds a condition and checks values if they implement driver.Valuer.
-func ConditionRaw(raw string, arg ...Argument) ConditionArg {
-	return &whereFragment{
-		Condition: raw,
+		Condition: rawStatementOrColumnName,
 		Arguments: arg,
 	}
 }

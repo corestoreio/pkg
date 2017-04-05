@@ -21,7 +21,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := s.Select("something_id", "user_id", "other").
 			From("some_table").
-			Where(ConditionRaw("d = ? OR e = ?", args...)).
+			Where(Condition("d = ? OR e = ?", args...)).
 			Where(argEq).
 			OrderDir("id", false).
 			Paginate(1, 20).
@@ -48,15 +48,15 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		s.Select("a", "b", "z", "y", "x").
 			Distinct().
 			From("c").
-			Where(ConditionRaw("d = ? OR e = ?", args...)).
+			Where(Condition("d = ? OR e = ?", args...)).
 			Where(argEq1).
 			Where(argEq2).
 			Where(argEq3).
 			GroupBy("ab").
 			GroupBy("ii").
 			GroupBy("iii").
-			Having(ConditionRaw("j = k"), ConditionRaw("jj = ?", ArgInt64(1))).
-			Having(ConditionRaw("jjj = ?", ArgInt64(2))).
+			Having(Condition("j = k"), Condition("jj = ?", ArgInt64(1))).
+			Having(Condition("jjj = ?", ArgInt64(2))).
 			OrderBy("l").
 			OrderBy("l").
 			OrderBy("l").
@@ -69,7 +69,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 func TestSelectBasicToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sel := s.Select("a", "b").From("c").Where(ConditionRaw("id = ?", ArgInt(1)))
+	sel := s.Select("a", "b").From("c").Where(Condition("id = ?", ArgInt(1)))
 	sql, args, err := sel.ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT a, b FROM `c` WHERE (id = ?)", sql)
@@ -82,13 +82,13 @@ func TestSelectFullToSQL(t *testing.T) {
 	sel := s.Select("a", "b").
 		Distinct().
 		From("c", "cc").
-		Where(ConditionRaw("d = ? OR e = ?",
+		Where(Condition("d = ? OR e = ?",
 			ArgInt(1), ArgString("wat")),
 			Eq{"f": ArgInt(2)}, Eq{"g": ArgInt(3)},
 		).
 		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(OperatorIn)}).
 		GroupBy("ab").
-		Having(ConditionRaw("j = k")).
+		Having(Condition("j = k")).
 		OrderBy("l").
 		Limit(7).
 		Offset(8)
@@ -104,7 +104,7 @@ func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 
 	sql, args, err := s.Select("a", "b").
 		From("c").
-		Where(ConditionRaw("d = ?", ArgInt(1))).
+		Where(Condition("d = ?", ArgInt(1))).
 		Paginate(1, 20).
 		OrderDir("id", false).
 		ToSQL()
@@ -114,7 +114,7 @@ func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 
 	sql, args, err = s.Select("a", "b").
 		From("c").
-		Where(ConditionRaw("d = ?", ArgInt(1))).
+		Where(Condition("d = ?", ArgInt(1))).
 		Paginate(3, 30).
 		OrderDir("id", true).
 		ToSQL()
@@ -136,8 +136,8 @@ func TestSelectMultiHavingSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").From("c").
-		Where(ConditionRaw("p = ?", ArgInt(1))).
-		GroupBy("z").Having(ConditionRaw("z = ?", ArgInt(2)), ConditionRaw("y = ?", ArgInt(3))).ToSQL()
+		Where(Condition("p = ?", ArgInt(1))).
+		GroupBy("z").Having(Condition("z = ?", ArgInt(2)), Condition("y = ?", ArgInt(3))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT a, b FROM `c` WHERE (p = ?) GROUP BY z HAVING (z = ?) AND (y = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
@@ -158,7 +158,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	s := createFakeSession()
 	runner := func(arg Argument, wantSQL string, wantVal []interface{}) func(*testing.T) {
 		return func(t *testing.T) {
-			sql, args, err := s.Select("a", "b").From("c").Where(ConditionColumn("d", arg)).ToSQL()
+			sql, args, err := s.Select("a", "b").From("c").Where(Condition("d", arg)).ToSQL()
 			assert.NoError(t, err)
 			assert.Exactly(t, wantSQL, sql)
 			assert.Exactly(t, wantVal, args.Interfaces())
@@ -239,14 +239,14 @@ func TestSelect_Null(t *testing.T) {
 	s := createFakeSession()
 
 	t.Run("col is null", func(t *testing.T) {
-		sql, args, err := s.Select("a", "b").From("c").Where(ConditionColumn("r", ArgNull())).ToSQL()
+		sql, args, err := s.Select("a", "b").From("c").Where(Condition("r", ArgNull())).ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT a, b FROM `c` WHERE (`r` IS NULL)", sql)
 		assert.Exactly(t, []interface{}(nil), args.Interfaces())
 	})
 
 	t.Run("col is not null", func(t *testing.T) {
-		sql, args, err := s.Select("a", "b").From("c").Where(ConditionColumn("r", ArgNotNull())).ToSQL()
+		sql, args, err := s.Select("a", "b").From("c").Where(Condition("r", ArgNotNull())).ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT a, b FROM `c` WHERE (`r` IS NOT NULL)", sql)
 		assert.Exactly(t, []interface{}(nil), args.Interfaces())
@@ -255,10 +255,10 @@ func TestSelect_Null(t *testing.T) {
 	t.Run("complex", func(t *testing.T) {
 		sql, args, err := s.Select("a", "b").From("c").
 			Where(
-				ConditionColumn("r", ArgNull()),
-				ConditionRaw("d = ?", ArgInt(3)),
-				ConditionColumn("ab", ArgNull()),
-				ConditionColumn("w", ArgNotNull()),
+				Condition("r", ArgNull()),
+				Condition("d = ?", ArgInt(3)),
+				Condition("ab", ArgNull()),
+				Condition("w", ArgNotNull()),
 			).ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT a, b FROM `c` WHERE (`r` IS NULL) AND (d = ?) AND (`ab` IS NULL) AND (`w` IS NOT NULL)", sql)
@@ -408,7 +408,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Found:
 	var person dbrPerson
-	err := s.Select("id", "name", "email").From("dbr_people").Where(ConditionRaw("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(&person)
+	err := s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(&person)
 	assert.NoError(t, err)
 	assert.True(t, person.ID > 0)
 	assert.Equal(t, "Jonathan", person.Name)
@@ -417,7 +417,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Not found:
 	var person2 dbrPerson
-	err = s.Select("id", "name", "email").From("dbr_people").Where(ConditionRaw("email = ?", ArgString("dontexist@uservoice.com"))).LoadStruct(&person2)
+	err = s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("dontexist@uservoice.com"))).LoadStruct(&person2)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 }
 
@@ -441,7 +441,7 @@ func TestSelectLoadValue(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var name string
-	err := s.Select("name").From("dbr_people").Where(ConditionRaw("email = 'jonathan@uservoice.com'")).LoadValue(&name)
+	err := s.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).LoadValue(&name)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "Jonathan", name)
@@ -474,7 +474,7 @@ func TestSelectLoadValues(t *testing.T) {
 //func TestSelectReturn(t *testing.T) {
 //	ab := createRealSessionWithFixtures()
 //
-//	name, err := ab.Select("name").From("dbr_people").Where(ConditionRaw("email = 'jonathan@uservoice.com'")).ReturnString()
+//	name, err := ab.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).ReturnString()
 //	assert.NoError(t, err)
 //	assert.Equal(t, name, "Jonathan")
 //
@@ -482,7 +482,7 @@ func TestSelectLoadValues(t *testing.T) {
 //	assert.NoError(t, err)
 //	assert.Equal(t, count, int64(2))
 //
-//	names, err := ab.Select("name").From("dbr_people").Where(ConditionRaw("email = 'jonathan@uservoice.com'")).ReturnStrings()
+//	names, err := ab.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).ReturnStrings()
 //	assert.NoError(t, err)
 //	assert.Equal(t, names, []string{"Jonathan"})
 //
@@ -500,8 +500,8 @@ func TestSelectJoin(t *testing.T) {
 		Join(
 			JoinTable("dbr_people", "p2"),
 			JoinColumns(),
-			ConditionRaw("`p2`.`id` = `p1`.`id`"),
-			ConditionColumn("p1.id", ArgInt(42)),
+			Condition("`p2`.`id` = `p1`.`id`"),
+			Condition("p1.id", ArgInt(42)),
 		)
 
 	sql, _, err := sqlObj.ToSQL()
@@ -517,8 +517,8 @@ func TestSelectJoin(t *testing.T) {
 		LeftJoin(
 			JoinTable("dbr_people", "p2"),
 			JoinColumns("p2.name"),
-			ConditionRaw("`p2`.`id` = `p1`.`id`"),
-			ConditionColumn("p1.id", ArgInt(42)),
+			Condition("`p2`.`id` = `p1`.`id`"),
+			Condition("p1.id", ArgInt(42)),
 		)
 
 	sql, _, err = sqlObj.ToSQL()
@@ -534,7 +534,7 @@ func TestSelectJoin(t *testing.T) {
 		RightJoin(
 			JoinTable("dbr_people", "p2"),
 			Quoter.ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
-			ConditionRaw("`p2`.`id` = `p1`.`id`"),
+			Condition("`p2`.`id` = `p1`.`id`"),
 		)
 
 	sql, _, err = sqlObj.ToSQL()
@@ -553,34 +553,34 @@ func TestSelect_Join(t *testing.T) {
 		LeftJoin(
 			JoinTable("catalog_product_entity_varchar", "manufacturerDefault"),
 			JoinColumns("cpe.*"),
-			ConditionRaw("manufacturerDefault.scope = 0"),
-			ConditionRaw("manufacturerDefault.scope_id = 0"),
-			ConditionRaw("manufacturerDefault.attribute_id = 83"),
-			ConditionRaw("manufacturerDefault.value IS NOT NULL"),
+			Condition("manufacturerDefault.scope = 0"),
+			Condition("manufacturerDefault.scope_id = 0"),
+			Condition("manufacturerDefault.attribute_id = 83"),
+			Condition("manufacturerDefault.value IS NOT NULL"),
 		).
 		LeftJoin(
 			JoinTable("catalog_product_entity_varchar", "manufacturerWebsite"),
 			JoinColumns(),
-			ConditionRaw("manufacturerWebsite.scope = 1"),
-			ConditionRaw("manufacturerWebsite.scope_id = 10"),
-			ConditionRaw("manufacturerWebsite.attribute_id = 83"),
-			ConditionRaw("manufacturerWebsite.value IS NOT NULL"),
+			Condition("manufacturerWebsite.scope = 1"),
+			Condition("manufacturerWebsite.scope_id = 10"),
+			Condition("manufacturerWebsite.attribute_id = 83"),
+			Condition("manufacturerWebsite.value IS NOT NULL"),
 		).
 		LeftJoin(
 			JoinTable("catalog_product_entity_varchar", "manufacturerGroup"),
 			JoinColumns(),
-			ConditionRaw("manufacturerGroup.scope = 2"),
-			ConditionRaw("manufacturerGroup.scope_id = 20"),
-			ConditionRaw("manufacturerGroup.attribute_id = 83"),
-			ConditionRaw("manufacturerGroup.value IS NOT NULL"),
+			Condition("manufacturerGroup.scope = 2"),
+			Condition("manufacturerGroup.scope_id = 20"),
+			Condition("manufacturerGroup.attribute_id = 83"),
+			Condition("manufacturerGroup.value IS NOT NULL"),
 		).
 		LeftJoin(
 			JoinTable("catalog_product_entity_varchar", "manufacturerStore"),
 			JoinColumns(),
-			ConditionRaw("manufacturerStore.scope = 2"),
-			ConditionRaw("manufacturerStore.scope_id = 20"),
-			ConditionRaw("manufacturerStore.attribute_id = 83"),
-			ConditionRaw("manufacturerStore.value IS NOT NULL"),
+			Condition("manufacturerStore.scope = 2"),
+			Condition("manufacturerStore.scope_id = 20"),
+			Condition("manufacturerStore.attribute_id = 83"),
+			Condition("manufacturerStore.value IS NOT NULL"),
 		)
 
 	s.Columns = []string{EAVIfNull("manufacturer", "value", "''")}
@@ -643,7 +643,7 @@ func TestSelect_Events(t *testing.T) {
 		s.Listeners.Add(Listen{
 			Name: "a col1",
 			SelectFunc: func(s2 *Select) {
-				s2.Where(ConditionRaw("a=?", ArgFloat64(3.14159)))
+				s2.Where(Condition("a=?", ArgFloat64(3.14159)))
 				s2.OrderDir("col1", false)
 			},
 		})
@@ -664,7 +664,7 @@ func TestSelect_Events(t *testing.T) {
 			Once:      true,
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(s2 *Select) {
-				s2.Where(ConditionRaw("a=?", ArgFloat64(3.14159)))
+				s2.Where(Condition("a=?", ArgFloat64(3.14159)))
 				s2.OrderDir("col1", false)
 			},
 		})
@@ -673,7 +673,7 @@ func TestSelect_Events(t *testing.T) {
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(s2 *Select) {
 				s2.OrderDir("col2", false)
-				s2.Where(ConditionRaw("b=?", ArgString("a")))
+				s2.Where(Condition("b=?", ArgString("a")))
 			},
 		})
 

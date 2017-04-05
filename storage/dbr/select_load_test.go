@@ -39,10 +39,10 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 			"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").
-			Where(dbr.ConditionRaw(`TABLE_SCHEMA=DATABASE()`))
+			Where(dbr.Condition(`TABLE_SCHEMA=DATABASE()`))
 		sel.DB.Querier = benchMockQuerier{}
 		if len(tables) > 0 {
-			sel.Where(dbr.ConditionRaw("TABLE_NAME IN ?", dbr.ArgString(tables...)))
+			sel.Where(dbr.Condition("TABLE_NAME IN ?", dbr.ArgString(tables...)))
 		}
 
 		rows, err := sel.Rows()
