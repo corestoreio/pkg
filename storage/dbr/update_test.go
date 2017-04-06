@@ -154,7 +154,7 @@ func TestUpdateReal(t *testing.T) {
 }
 
 func TestUpdate_Prepare(t *testing.T) {
-
+	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
 		in.Set("a", ArgInt(1))
@@ -178,16 +178,46 @@ func TestUpdate_Prepare(t *testing.T) {
 }
 
 func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
-	u := NewUpdate("catalog_product_entity", "cpe")
-	u.SetClauses.Columns = []string{"sku", "updated_at"}
-	u.Where(Condition("entity_id", ArgInt64(1, 2, 3).Operator('i')))
+	t.Parallel()
+	t.Run("with condition values", func(t *testing.T) {
+		u := NewUpdate("catalog_product_entity", "cpe")
+		u.SetClauses.Columns = []string{"sku", "updated_at"}
+		u.Where(Condition("entity_id", ArgInt64(1, 2, 3).Operator('i')))
 
-	sqlStr, args, err := u.ToSQL()
-	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
-	assert.Exactly(t,
-		"UPDATE `catalog_product_entity` AS `cpe` SET `sku` = ?, `updated_at` = ? WHERE (`entity_id` IN ?)",
-		sqlStr)
+		sqlStr, args, err := u.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
+		assert.Exactly(t,
+			"UPDATE `catalog_product_entity` AS `cpe` SET `sku` = ?, `updated_at` = ? WHERE (`entity_id` IN ?)",
+			sqlStr)
+	})
+	t.Run("without condition values", func(t *testing.T) {
+		u := NewUpdate("catalog_product_entity", "cpe")
+		u.SetClauses.Columns = []string{"sku", "updated_at"}
+		u.Where(Condition("entity_id", ArgInt64().Operator('i')))
+
+		sqlStr, args, err := u.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, []interface{}{}, args.Interfaces())
+		assert.Exactly(t,
+			"UPDATE `catalog_product_entity` AS `cpe` SET `sku` = ?, `updated_at` = ? WHERE (`entity_id` IN ?)",
+			sqlStr)
+	})
+}
+
+func TestUpdateMulti_Exec(t *testing.T) {
+
+	//mu := NewUpdateMulti("catalog_product_entity", "cpe")
+	//mu.Stmt.SetClauses.Columns = []string{"sku", "updated_at"}
+	//mu.Stmt.Where(Condition("entity_id", ArgInt64().Operator('i'))) // ArgInt64 must be without arguments
+
+	t.Run("no columns provided", func(t *testing.T) {
+		mu := NewUpdateMulti("catalog_product_entity", "cpe")
+		mu.Stmt.Where(Condition("entity_id", ArgInt64().Operator('i'))) // ArgInt64 must be without arguments
+		res, err := mu.Exec()
+		assert.Nil(t, res)
+		assert.True(t, errors.IsEmpty(err), "%+v", err)
+	})
 }
 
 func TestUpdate_Events(t *testing.T) {

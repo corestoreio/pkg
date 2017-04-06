@@ -284,33 +284,79 @@ func (b *Update) Prepare() (*sql.Stmt, error) {
 	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
 }
 
-// UpdateMulti TODO creates one update statement for multiple records. Uses a
-// transaction and a prepared statement.
+// UpdateMulti allows to run an UPDATE statement multiple times with different
+// values either in a transaction or as a preprocessed SQL string. Create one
+// update statement without the SET arguments but with empty WHERE arguments.
+// The empty WHERE arguments trigger the placeholder and the correct operator.
+// The values itself will be provided either through the Records slice or via
+// RecordChan.
 type UpdateMulti struct {
+	// UsePreprocess if true, disables transaction and preprocesses the SQL
+	// statement with the provided arguments. The placeholders gets replaced
+	// with the current values.
+	UsePreprocess bool
+	// IsolationLevel defines the transaction isolation level.
 	sql.IsolationLevel
-	Parent Update
-	// Records
-	Records struct {
-		Columns []string
-		Objects []RecordGenerater
+	Stmt *Update
+
+	// Alias provides a special feature that instead of the column name, the alias
+	// will be passed to the RecordGenerater.Record function. If the alias slice
+	// is empty the column names get passed. Otherwise the alias slice must have
+	// the same length as the columns slice.
+	Alias   []string
+	Records []RecordGenerater
+	// RecordChan waits for incoming records to send them to the prepared
+	// statement. If the channel gets closed the transaction gets terminated and
+	// the UPDATE statement removed.
+	RecordChan <-chan RecordGenerater
+}
+
+// NewUpdateMulti creates new UPDATE statement which runs multiple times for a
+// specific table.
+func NewUpdateMulti(table ...string) *UpdateMulti {
+	return &UpdateMulti{
+		Stmt: NewUpdate(table...),
 	}
 }
 
-// Columns sets the columns which gets used for each record. Take care to avoid
-// duplicate names.
-func (b *UpdateMulti) Columns(cols ...string) *UpdateMulti {
-	b.Records.Columns = append(b.Records.Columns, cols...)
+// AddRecords pulls in values to match Columns from the record. Think about a vector on how to use this.
+func (b *UpdateMulti) AddRecords(recs ...RecordGenerater) *UpdateMulti {
+	b.Records = append(b.Records, recs...)
 	return b
 }
 
-// Record pulls in values to match Columns from the record. Think about a vector on how to use this.
-func (b *UpdateMulti) Record(recs ...RecordGenerater) *UpdateMulti {
-	b.Records.Objects = append(b.Records.Objects, recs...)
-	return b
+func (b *UpdateMulti) validate() error {
+	if len(b.Stmt.SetClauses.Columns) == 0 {
+		return errors.NewEmptyf("[dbr] UpdateMulti: Columns are empty")
+	}
+	if len(b.Alias) > 0 && len(b.Alias) != len(b.Stmt.SetClauses.Columns) {
+		return errors.NewMismatchf("[dbr] UpdateMulti: Alias slice and Columns slice must have the same length")
+	}
+	if len(b.Records) == 0 && b.RecordChan == nil {
+		return errors.NewEmptyf("[dbr] UpdateMulti: Records empty or RecordChan is nil")
+	}
+	return nil
 }
 
 // Exec creates a transaction
 func (b *UpdateMulti) Exec() ([]sql.Result, error) {
-	// TODO imlement
+	if err := b.validate(); err != nil {
+		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec")
+	}
+	// TODO implement
 	return nil, nil
+}
+
+// ExecChan executes incoming Records and writes the output into the provided
+// channels. It closes the channels once the queries have been sent.
+func (b *UpdateMulti) ExecChan(resChan chan<- sql.Result, errChan chan<- error) {
+	defer close(resChan)
+	defer close(errChan)
+	if err := b.validate(); err != nil {
+		errChan <- errors.Wrap(err, "[dbr] UpdateMulti.Exec")
+		return
+	}
+
+	// TODO implement
+
 }
