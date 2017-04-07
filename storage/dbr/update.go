@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"strconv"
 
@@ -291,45 +292,52 @@ func (b *Update) Prepare() (*sql.Stmt, error) {
 // The values itself will be provided either through the Records slice or via
 // RecordChan.
 type UpdateMulti struct {
-	// UsePreprocess if true, disables transaction and preprocesses the SQL
-	// statement with the provided arguments. The placeholders gets replaced
-	// with the current values.
+	// UsePreprocess if true, preprocesses the SQL statement with the provided
+	// arguments. The placeholders gets replaced with the current values. SQL
+	// injections cannot not be possible *cough* *cough*.
 	UsePreprocess bool
+	// UseTransaction set to true to enable running the UPDATE queries in a
+	// transaction.
+	UseTransaction bool
 	// IsolationLevel defines the transaction isolation level.
 	sql.IsolationLevel
-	Stmt *Update
+	// Tx knows how to start a transaction. Must be set if transactions hasn't
+	// been disabled.
+	Tx TxBeginner
+	// Update represents the main UPDATE statement
+	Update *Update
 
-	// Alias provides a special feature that instead of the column name, the alias
-	// will be passed to the RecordGenerater.Record function. If the alias slice
-	// is empty the column names get passed. Otherwise the alias slice must have
-	// the same length as the columns slice.
+	// Alias provides a special feature that instead of the column name, the
+	// alias will be passed to the ArgumentGenerater.Record function. If the alias
+	// slice is empty the column names get passed. Otherwise the alias slice
+	// must have the same length as the columns slice.
 	Alias   []string
-	Records []RecordGenerater
+	Records []ArgumentGenerater
 	// RecordChan waits for incoming records to send them to the prepared
 	// statement. If the channel gets closed the transaction gets terminated and
 	// the UPDATE statement removed.
-	RecordChan <-chan RecordGenerater
+	RecordChan <-chan ArgumentGenerater
 }
 
 // NewUpdateMulti creates new UPDATE statement which runs multiple times for a
 // specific table.
 func NewUpdateMulti(table ...string) *UpdateMulti {
 	return &UpdateMulti{
-		Stmt: NewUpdate(table...),
+		Update: NewUpdate(table...),
 	}
 }
 
-// AddRecords pulls in values to match Columns from the record. Think about a vector on how to use this.
-func (b *UpdateMulti) AddRecords(recs ...RecordGenerater) *UpdateMulti {
+// AddRecords pulls in values to match Columns from the record.
+func (b *UpdateMulti) AddRecords(recs ...ArgumentGenerater) *UpdateMulti {
 	b.Records = append(b.Records, recs...)
 	return b
 }
 
 func (b *UpdateMulti) validate() error {
-	if len(b.Stmt.SetClauses.Columns) == 0 {
+	if len(b.Update.SetClauses.Columns) == 0 {
 		return errors.NewEmptyf("[dbr] UpdateMulti: Columns are empty")
 	}
-	if len(b.Alias) > 0 && len(b.Alias) != len(b.Stmt.SetClauses.Columns) {
+	if len(b.Alias) > 0 && len(b.Alias) != len(b.Update.SetClauses.Columns) {
 		return errors.NewMismatchf("[dbr] UpdateMulti: Alias slice and Columns slice must have the same length")
 	}
 	if len(b.Records) == 0 && b.RecordChan == nil {
@@ -338,13 +346,94 @@ func (b *UpdateMulti) validate() error {
 	return nil
 }
 
+func txUpdateMultiRollback(tx Txer, previousErr error, msg string, args ...interface{}) ([]sql.Result, error) {
+	if err := tx.Rollback(); err != nil {
+		eArg := []interface{}{previousErr}
+		return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Tx.Rollback. Previous Error: %s. "+msg, append(eArg, args...)...)
+	}
+	return nil, errors.Wrapf(previousErr, msg, args...)
+}
+
 // Exec creates a transaction
 func (b *UpdateMulti) Exec() ([]sql.Result, error) {
 	if err := b.validate(); err != nil {
 		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec")
 	}
-	// TODO implement
-	return nil, nil
+
+	rawSQL, _, err := b.Update.ToSQL()
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec.ToSQL")
+	}
+
+	if b.Update.Log != nil && b.Update.Log.IsInfo() {
+		defer log.WhenDone(b.Update.Log).Info("dbr.UpdateMulti.Exec.Timing",
+			log.String("sql", rawSQL), log.Int("records", len(b.Records)))
+	}
+
+	exec := b.Update.DB.Execer
+	prep := b.Update.DB.Preparer
+	var tx Txer = txMock{}
+	if b.UseTransaction {
+		// TODO fix context and make it set-able via outside
+		tx, err = b.Tx.BeginTx(context.Background(), &sql.TxOptions{
+			Isolation: b.IsolationLevel,
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Exec.Tx.BeginTx. with Query: %q", rawSQL)
+		}
+		exec = tx
+		prep = tx
+	}
+
+	var stmt *sql.Stmt
+	if !b.UsePreprocess {
+		var err error
+		stmt, err = prep.Prepare(rawSQL)
+		if err != nil {
+			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Prepare. with Query: %q", rawSQL)
+		}
+	}
+
+	where := make([]string, len(b.Update.WhereFragments))
+	for i, w := range b.Update.WhereFragments {
+		where[i] = w.Condition
+	}
+
+	var results = make([]sql.Result, len(b.Records))
+	for i, rec := range b.Records {
+		cols := b.Update.SetClauses.Columns
+		if len(b.Alias) > 0 {
+			cols = b.Alias
+		}
+
+		args, err := rec.GenerateArguments(StatementTypeUpdate, cols, where)
+		if err != nil {
+			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
+		}
+
+		if b.UsePreprocess {
+			fullSQL, err := Preprocess(rawSQL, args...)
+			if err != nil {
+				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Preprocess. Index %d with Query: %q", i, rawSQL)
+			}
+
+			results[i], err = exec.Exec(fullSQL)
+			if err != nil {
+				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Exec. Index %d with Query: %q", i, rawSQL)
+			}
+		} else {
+			results[i], err = stmt.Exec(args.Interfaces()...)
+			if err != nil {
+				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Stmt.Exec. Index %d with Query: %q", i, rawSQL)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Tx.Commit. Query: %q", rawSQL)
+	}
+
+	return results, nil
 }
 
 // ExecChan executes incoming Records and writes the output into the provided
@@ -357,6 +446,6 @@ func (b *UpdateMulti) ExecChan(resChan chan<- sql.Result, errChan chan<- error) 
 		return
 	}
 
-	// TODO implement
+	panic("TODO(CyS) implement")
 
 }

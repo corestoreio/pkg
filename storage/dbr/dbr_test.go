@@ -54,6 +54,9 @@ func realDb() (driver string, dsn string) {
 	return
 }
 
+var _ ArgumentGenerater = (*dbrPerson)(nil)
+var _ ArgumentGenerater = (*nullTypedRecord)(nil)
+
 type dbrPerson struct {
 	ID    int64 `db:"id"`
 	Name  string
@@ -61,12 +64,14 @@ type dbrPerson struct {
 	Key   null.String
 }
 
-func (p *dbrPerson) Record(columns ...string) (Arguments, error) {
+func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []string) (Arguments, error) {
 	args := make(Arguments, 0, 4) // 4 == number of fields in the struct
 	for _, c := range columns {
 		switch c {
 		case "id":
-			args = append(args, ArgInt64(p.ID))
+			if statementType == StatementTypeInsert {
+				args = append(args, ArgInt64(p.ID))
+			}
 		case "name":
 			args = append(args, ArgString(p.Name))
 		case "email":
@@ -75,6 +80,17 @@ func (p *dbrPerson) Record(columns ...string) (Arguments, error) {
 			args = append(args, ArgStringNull(p.Key))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+	}
+	switch statementType {
+	case StatementTypeUpdate:
+		for _, c := range condition {
+			switch c {
+			case "id":
+				args = append(args, ArgInt64(p.ID))
+			default:
+				return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+			}
 		}
 	}
 	return args, nil
@@ -89,7 +105,7 @@ type nullTypedRecord struct {
 	BoolVal    null.Bool
 }
 
-func (p *nullTypedRecord) Record(columns ...string) (Arguments, error) {
+func (p *nullTypedRecord) GenerateArguments(statementType byte, columns, condition []string) (Arguments, error) {
 	args := make(Arguments, 0, 6) // 6 == number of fields in the struct
 	for _, c := range columns {
 		switch c {

@@ -150,6 +150,11 @@ type StmtQueryRower interface {
 	QueryRow(args ...interface{}) *sql.Row
 }
 
+// TxBeginner starts a transaction
+type TxBeginner interface {
+	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
+}
+
 // Txer is an in-progress database transaction.
 //
 // A transaction must end with a call to Commit or Rollback.
@@ -165,3 +170,16 @@ type Txer interface {
 	Stmt(stmt *sql.Stmt) *sql.Stmt
 	DBer
 }
+
+var _ Txer = (*txMock)(nil)
+
+// txMock does nothing and returns always nil
+type txMock struct{}
+
+func (txMock) Commit() error                                              { return nil }
+func (txMock) Rollback() error                                            { return nil }
+func (txMock) Stmt(stmt *sql.Stmt) *sql.Stmt                              { return nil }
+func (txMock) Prepare(query string) (*sql.Stmt, error)                    { return nil, nil }
+func (txMock) Query(query string, args ...interface{}) (*sql.Rows, error) { return nil, nil }
+func (txMock) Exec(query string, args ...interface{}) (sql.Result, error) { return nil, nil }
+func (txMock) QueryRow(query string, args ...interface{}) *sql.Row        { return nil }

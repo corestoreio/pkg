@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ RecordGenerater = (*someRecord)(nil)
+var _ ArgumentGenerater = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -19,7 +19,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) Record(columns ...string) (Arguments, error) {
+func (sr someRecord) GenerateArguments(statementType byte, columns, condition []string) (Arguments, error) {
 	args := make(Arguments, 0, 3) // 3 == number of fields in the struct
 	for _, c := range columns {
 		switch c {

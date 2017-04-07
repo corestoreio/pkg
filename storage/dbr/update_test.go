@@ -205,21 +205,6 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	})
 }
 
-func TestUpdateMulti_Exec(t *testing.T) {
-
-	//mu := NewUpdateMulti("catalog_product_entity", "cpe")
-	//mu.Stmt.SetClauses.Columns = []string{"sku", "updated_at"}
-	//mu.Stmt.Where(Condition("entity_id", ArgInt64().Operator('i'))) // ArgInt64 must be without arguments
-
-	t.Run("no columns provided", func(t *testing.T) {
-		mu := NewUpdateMulti("catalog_product_entity", "cpe")
-		mu.Stmt.Where(Condition("entity_id", ArgInt64().Operator('i'))) // ArgInt64 must be without arguments
-		res, err := mu.Exec()
-		assert.Nil(t, res)
-		assert.True(t, errors.IsEmpty(err), "%+v", err)
-	})
-}
-
 func TestUpdate_Events(t *testing.T) {
 	t.Parallel()
 

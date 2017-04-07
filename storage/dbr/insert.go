@@ -20,7 +20,7 @@ type Insert struct {
 	Cols []string
 	Vals Arguments
 
-	Recs []RecordGenerater
+	Recs []ArgumentGenerater
 	Maps map[string]Argument
 
 	// Listeners allows to dispatch certain functions in different
@@ -86,7 +86,7 @@ func (b *Insert) Values(vals ...Argument) *Insert {
 
 // Record pulls in values to match Columns from the record. Think about a vector
 // on how to use this.
-func (b *Insert) Record(recs ...RecordGenerater) *Insert {
+func (b *Insert) Record(recs ...ArgumentGenerater) *Insert {
 	b.Recs = append(b.Recs, recs...)
 	return b
 }
@@ -189,7 +189,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	copy(args, b.Vals)
 
 	for i, rec := range b.Recs {
-		a2, err := rec.Record(b.Cols...)
+		a2, err := rec.GenerateArguments(StatementTypeInsert, b.Cols, nil)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
 		}

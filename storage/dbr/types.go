@@ -16,7 +16,7 @@ type queryWriter interface {
 	WriteRune(r rune) (n int, err error)
 }
 
-// ArgOptions describe several comparison operators. The upper case letter
+// Operators describe all available comparison operators. The upper case letter
 // always negates.
 // https://dev.mysql.com/doc/refman/5.7/en/comparison-operators.html
 const (
@@ -34,13 +34,28 @@ const (
 	OperatorNotEqual   byte = '!' // != ?
 )
 
-// RecordGenerater knows how to generate a record for one database row.
-type RecordGenerater interface {
-	// Record creates a single new database record depending on the requested
-	// column names. Each Argument gets mapped to the column name. E.g. first
-	// column name at "id" then the first returned Argument in the slice must be
-	// an integer.
-	Record(columns ...string) (Arguments, error)
+// StatementTypes identifies in the ArgumentGenerater interface what kind of
+// operation requests the arguments.
+const (
+	StatementTypeDelete byte = 'd'
+	StatementTypeInsert byte = 'i'
+	StatementTypeSelect byte = 's'
+	StatementTypeUpdate byte = 'u'
+)
+
+// ArgumentGenerater knows how to generate a record for one table row.
+type ArgumentGenerater interface {
+	// GenerateArguments generates a single new database record depending
+	// on the requested column names. Each Argument gets mapped to the column
+	// name. E.g. first column name at "id" then the first returned Argument in
+	// the slice must be an integer.
+	// GenerateUpdateArguments generates an argument set to be used in the SET
+	// clause columns and in the WHERE statement. The `columns` argument
+	// contains the name of the columns which are used in the SET clause. The
+	// `where` argument contains a list of column names or even expressions
+	// which get used in the WHERE statement. These names allows to filter and
+	// generate the needed arguments.
+	GenerateArguments(statementType byte, columns, condition []string) (Arguments, error)
 }
 
 // Argument transforms your value or values into an interface slice. This
@@ -51,15 +66,12 @@ type Argument interface {
 	// Operator* for the different flags. An underscore in the argument list of
 	// a type indicates that no operator is yet supported.
 	Operator(opt byte) Argument
-	// Between
-	// BETWEEN() Argument
-	// we must use interface at an argument because of the nested `where` functions.
 	toIFace(*[]interface{})
-	// writeTo writes the value correctly escaped to the queryWriter. It must avoid
-	// SQL injections.
+	// writeTo writes the value correctly escaped to the queryWriter. It must
+	// avoid SQL injections.
 	writeTo(w queryWriter, position int) error
-	// len returns the length of the available values. If the IN clause has been activated
-	// then len returns 1.
+	// len returns the length of the available values. If the IN clause has been
+	// activated then len returns 1.
 	len() int
 	operator() byte
 }
