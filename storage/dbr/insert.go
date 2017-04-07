@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -248,7 +249,7 @@ func (b *Insert) mapToSQL(w queryWriter) (Arguments, error) {
 // INSERT statement, LAST_INSERT_ID() returns the value generated for
 // the first inserted row only. The reason for this at to make it possible to
 // reproduce easily the same INSERT statement against some other server.
-func (b *Insert) Exec() (sql.Result, error) {
+func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 	sql, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
@@ -263,7 +264,7 @@ func (b *Insert) Exec() (sql.Result, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.DB.Exec(fullSQL)
+	result, err := b.DB.ExecContext(ctx, fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Insert.Exec.Exec")
 	}
@@ -272,7 +273,7 @@ func (b *Insert) Exec() (sql.Result, error) {
 }
 
 // Prepare creates a prepared statement
-func (b *Insert) Prepare() (*sql.Stmt, error) {
+func (b *Insert) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	rawSQL, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
@@ -282,6 +283,6 @@ func (b *Insert) Prepare() (*sql.Stmt, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Insert.Prepare.Timing", log.String("sql", rawSQL))
 	}
 
-	stmt, err := b.DB.Prepare(rawSQL)
+	stmt, err := b.DB.PrepareContext(ctx, rawSQL)
 	return stmt, errors.Wrap(err, "[dbr] Insert.Prepare.Prepare")
 }

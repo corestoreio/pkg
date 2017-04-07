@@ -1,7 +1,7 @@
 package dbr
 
 import (
-	// "database/sql"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ func TestTransactionReal(t *testing.T) {
 	res, err := tx.InsertInto("dbr_people").Columns("name", "email").Values(
 		ArgString("Barack"), ArgString("obama@whitehouse.gov"),
 		ArgString("Obama"), ArgString("barack@whitehouse.gov"),
-	).Exec()
+	).Exec(context.TODO())
 
 	assert.NoError(t, err)
 	id, err := res.LastInsertId()
@@ -28,7 +28,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.Equal(t, int64(2), rowsAff)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(&person)
+	err = tx.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)
@@ -48,7 +48,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(&person)
+	err = tx.Select("*").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 	assert.Equal(t, "Jonathan", person.Name)
 

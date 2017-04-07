@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"reflect"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // Rows executes a query and returns many rows. Does no interpolation.
-func (b *Select) Rows() (*sql.Rows, error) {
+func (b *Select) Rows(ctx context.Context) (*sql.Rows, error) {
 
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
@@ -21,31 +22,31 @@ func (b *Select) Rows() (*sql.Rows, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.Query(sqlStr, args.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args.Interfaces()...)
 	return rows, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
 // Row executes a query that at expected to return at most one row. QueryRow
 // always returns a non-nil value. Errors are deferred until Row'ab Scan method
 // at called.
-func (b *Select) Row() *sql.Row {
+func (b *Select) Row(ctx context.Context) *sql.Row {
 
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		panic(err) // todo remove panic and log error .... ?
 		// return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
-	return b.DB.QueryRow(sqlStr, args.Interfaces()...)
+	return b.DB.QueryRowContext(ctx, sqlStr, args.Interfaces()...)
 }
 
 // Prepare prepares a SQL statement.
-func (b *Select) Prepare() (*sql.Stmt, error) {
+func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
 
 	sqlStr, _, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
-	stmt, err := b.DB.Prepare(sqlStr)
+	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
 	return stmt, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
@@ -60,7 +61,7 @@ func (b *Select) Prepare() (*sql.Stmt, error) {
 // structs dest must be a pointer to a slice of pointers to structs. Returns the
 // number of items found (which at not necessarily the # of items set). Slow
 // because of the massive use of reflection.
-func (b *Select) LoadStructs(dest interface{}) (int, error) {
+func (b *Select) LoadStructs(ctx context.Context, dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -113,7 +114,7 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 	}
 
 	// Run the query:
-	rows, err := b.DB.Query(fullSQL)
+	rows, err := b.DB.QueryContext(ctx, fullSQL)
 	if err != nil {
 		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
 	}
@@ -171,7 +172,7 @@ func (b *Select) LoadStructs(dest interface{}) (int, error) {
 // LoadStruct executes the Select and loads the resulting data into a struct
 // dest must be a pointer to a struct Returns ErrNotFound behaviour. Slow
 // because of the massive use of reflection.
-func (b *Select) LoadStruct(dest interface{}) error {
+func (b *Select) LoadStruct(ctx context.Context, dest interface{}) error {
 	//
 	// Validate the dest, and extract the reflection values we need.
 	//
@@ -203,7 +204,7 @@ func (b *Select) LoadStruct(dest interface{}) error {
 	}
 
 	// Run the query:
-	rows, err := b.DB.Query(fullSQL)
+	rows, err := b.DB.QueryContext(ctx, fullSQL)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] Select.load_one.query")
 	}
@@ -251,7 +252,7 @@ func (b *Select) LoadStruct(dest interface{}) error {
 // LoadValues executes the Select and loads the resulting data into a slice of
 // primitive values Returns ErrNotFound behaviour if no value was found, and it
 // was therefore not set. Slow because of the massive use of reflection.
-func (b *Select) LoadValues(dest interface{}) (int, error) {
+func (b *Select) LoadValues(ctx context.Context, dest interface{}) (int, error) {
 	// Validate the dest and reflection values we need
 
 	// This must be a pointer to a slice
@@ -297,7 +298,7 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 	}
 
 	// Run the query:
-	rows, err := b.DB.Query(fullSQL)
+	rows, err := b.DB.QueryContext(ctx, fullSQL)
 	if err != nil {
 		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.query")
 	}
@@ -331,7 +332,7 @@ func (b *Select) LoadValues(dest interface{}) (int, error) {
 // LoadValue executes the Select and loads the resulting data into a primitive
 // value Returns ErrNotFound if no value was found, and it was therefore not
 // set. Slow because of the massive use of reflection.
-func (b *Select) LoadValue(dest interface{}) error {
+func (b *Select) LoadValue(ctx context.Context, dest interface{}) error {
 	// Validate the dest
 	valueOfDest := reflect.ValueOf(dest)
 	kindOfDest := valueOfDest.Kind()
@@ -358,7 +359,7 @@ func (b *Select) LoadValue(dest interface{}) error {
 	}
 
 	// Run the query:
-	rows, err := b.DB.Query(fullSQL)
+	rows, err := b.DB.QueryContext(ctx, fullSQL)
 	if err != nil {
 		return errors.Wrap(err, "[dbr] Select.LoadValue.Query")
 	}

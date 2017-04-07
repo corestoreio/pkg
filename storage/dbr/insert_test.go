@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -119,7 +120,7 @@ func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values(ArgString("Barack"), ArgString("44")).Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values(ArgString("Barack"), ArgString("44")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	rowsAff, err := res.RowsAffected()
@@ -130,7 +131,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values(ArgString("Barack"), ArgString("obama@whitehouse.gov")).Exec()
+	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values(ArgString("Barack"), ArgString("obama@whitehouse.gov")).Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
@@ -139,7 +140,7 @@ func TestInsertReal(t *testing.T) {
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
 	ib := s.InsertInto("dbr_people").Columns("name", "email").Record(&person)
-	res, err = ib.Exec()
+	res, err = ib.Exec(context.TODO())
 	if err != nil {
 		t.Errorf("%s: %s", err, ib.String())
 	}
@@ -160,7 +161,7 @@ func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err er
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = c.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(&person)
+	err = c.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)
@@ -176,7 +177,7 @@ func TestInsert_Prepare(t *testing.T) {
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Insert{}
 		in.Columns("a", "b")
-		stmt, err := in.Prepare()
+		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
 	})
@@ -190,7 +191,7 @@ func TestInsert_Prepare(t *testing.T) {
 		}
 		in.Columns("a", "b").Values(ArgInt(1), ArgBool(true))
 
-		stmt, err := in.Prepare()
+		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})

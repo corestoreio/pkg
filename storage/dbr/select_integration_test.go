@@ -15,6 +15,7 @@
 package dbr_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -28,7 +29,7 @@ func TestSelect_Rows(t *testing.T) {
 	t.Run("ToSQL Error", func(t *testing.T) {
 		sel := &dbr.Select{}
 		sel.Columns = []string{"a", "b"}
-		rows, err := sel.Rows()
+		rows, err := sel.Rows(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.IsEmpty(err))
 	})
@@ -42,7 +43,7 @@ func TestSelect_Rows(t *testing.T) {
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 
-		rows, err := sel.Rows()
+		rows, err := sel.Rows(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -65,7 +66,7 @@ func TestSelect_Row(t *testing.T) {
 		Columns:   []string{"a", "b"},
 	}
 	sel.DB.QueryRower = dbc.DB
-	row := sel.Row()
+	row := sel.Row(context.TODO())
 	var x string
 	err := row.Scan(&x)
 	assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
@@ -76,7 +77,7 @@ func TestSelect_Prepare(t *testing.T) {
 	t.Run("ToSQL Error", func(t *testing.T) {
 		sel := &dbr.Select{}
 		sel.Columns = []string{"a", "b"}
-		stmt, err := sel.Prepare()
+		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
 	})
@@ -97,7 +98,7 @@ func TestSelect_Prepare(t *testing.T) {
 			Columns:   []string{"a", "b"},
 		}
 		sel.DB.Preparer = dbc.DB
-		stmt, err := sel.Prepare()
+		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})

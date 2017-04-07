@@ -246,7 +246,7 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 
 // Exec executes the statement represented by the Update object. It returns the
 // raw database/sql Result and an error if there was one.
-func (b *Update) Exec() (sql.Result, error) {
+func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 	rawSQL, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.ToSQL")
@@ -261,7 +261,7 @@ func (b *Update) Exec() (sql.Result, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Update.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.DB.Exec(fullSQL)
+	result, err := b.DB.ExecContext(ctx, fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Update.Exec.Exec")
 	}
@@ -271,7 +271,7 @@ func (b *Update) Exec() (sql.Result, error) {
 
 // Prepare creates a new prepared statement represented by the Update object. It
 // returns the raw database/sql Stmt and an error if there was one.
-func (b *Update) Prepare() (*sql.Stmt, error) {
+func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	rawSQL, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.Prepare.ToSQL")
@@ -281,7 +281,7 @@ func (b *Update) Prepare() (*sql.Stmt, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", rawSQL))
 	}
 
-	stmt, err := b.DB.Prepare(rawSQL)
+	stmt, err := b.DB.PrepareContext(ctx, rawSQL)
 	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
 }
 
@@ -355,7 +355,7 @@ func txUpdateMultiRollback(tx Txer, previousErr error, msg string, args ...inter
 }
 
 // Exec creates a transaction
-func (b *UpdateMulti) Exec() ([]sql.Result, error) {
+func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 	if err := b.validate(); err != nil {
 		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec")
 	}
@@ -375,7 +375,7 @@ func (b *UpdateMulti) Exec() ([]sql.Result, error) {
 	var tx Txer = txMock{}
 	if b.UseTransaction {
 		// TODO fix context and make it set-able via outside
-		tx, err = b.Tx.BeginTx(context.Background(), &sql.TxOptions{
+		tx, err = b.Tx.BeginTx(context.TODO(), &sql.TxOptions{
 			Isolation: b.IsolationLevel,
 		})
 		if err != nil {
@@ -388,10 +388,11 @@ func (b *UpdateMulti) Exec() ([]sql.Result, error) {
 	var stmt *sql.Stmt
 	if !b.UsePreprocess {
 		var err error
-		stmt, err = prep.Prepare(rawSQL)
+		stmt, err = prep.PrepareContext(ctx, rawSQL)
 		if err != nil {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Prepare. with Query: %q", rawSQL)
 		}
+		defer stmt.Close()
 	}
 
 	where := make([]string, len(b.Update.WhereFragments))
@@ -417,12 +418,12 @@ func (b *UpdateMulti) Exec() ([]sql.Result, error) {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Preprocess. Index %d with Query: %q", i, rawSQL)
 			}
 
-			results[i], err = exec.Exec(fullSQL)
+			results[i], err = exec.ExecContext(ctx, fullSQL)
 			if err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Exec. Index %d with Query: %q", i, rawSQL)
 			}
 		} else {
-			results[i], err = stmt.Exec(args.Interfaces()...)
+			results[i], err = stmt.ExecContext(ctx, args.Interfaces()...)
 			if err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Stmt.Exec. Index %d with Query: %q", i, rawSQL)
 			}

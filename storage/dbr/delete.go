@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"strconv"
 
@@ -157,7 +158,7 @@ func (b *Delete) ToSQL() (string, Arguments, error) {
 
 // Exec executes the statement represented by the Delete
 // It returns the raw database/sql Result and an error if there was one
-func (b *Delete) Exec() (sql.Result, error) {
+func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.Exec.ToSQL")
@@ -172,7 +173,7 @@ func (b *Delete) Exec() (sql.Result, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Delete.Exec.Timing", log.String("sql", fullSQL))
 	}
 
-	result, err := b.DB.Exec(fullSQL)
+	result, err := b.DB.ExecContext(ctx, fullSQL)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] delete.exec.Exec")
 	}
@@ -183,7 +184,7 @@ func (b *Delete) Exec() (sql.Result, error) {
 // Prepare executes the statement represented by the Delete. It returns the raw
 // database/sql Statement and an error if there was one. Provided arguments in
 // the Delete are getting ignored. It panics when field Preparer at nil.
-func (b *Delete) Prepare() (*sql.Stmt, error) {
+func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	sqlStr, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.Prepare.ToSQL")
@@ -193,6 +194,6 @@ func (b *Delete) Prepare() (*sql.Stmt, error) {
 		defer log.WhenDone(b.Log).Info("dbr.Delete.Prepare.Timing", log.String("sql", sqlStr))
 	}
 
-	stmt, err := b.DB.Prepare(sqlStr)
+	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
 	return stmt, errors.Wrap(err, "[dbr] Delete.Prepare.Prepare")
 }

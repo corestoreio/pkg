@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -192,21 +193,21 @@ type dbMock struct {
 	prepareFn func(query string) (*sql.Stmt, error)
 }
 
-func (pm dbMock) Prepare(query string) (*sql.Stmt, error) {
+func (pm dbMock) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
 	if pm.error != nil {
 		return nil, pm.error
 	}
 	return pm.prepareFn(query)
 }
 
-func (pm dbMock) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (pm dbMock) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	if pm.error != nil {
 		return nil, pm.error
 	}
 	return nil, nil
 }
 
-func (pm dbMock) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	if pm.error != nil {
 		return nil, pm.error
 	}

@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"testing"
@@ -96,7 +97,7 @@ func TestNullTypeScanning(t *testing.T) {
 
 	for _, test := range tests {
 		// Create the record in the db
-		res, err := s.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.record).Exec()
+		res, err := s.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.record).Exec(context.TODO())
 		assert.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)
@@ -104,7 +105,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		err = s.Select("*").From("null_types").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(nullTypeSet)
+		err = s.Select("*").From("null_types").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(context.TODO(), nullTypeSet)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)

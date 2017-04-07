@@ -2,6 +2,7 @@ package dbr
 
 import (
 	"testing"
+	"context"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -380,7 +381,7 @@ func TestSelectLoadStructs(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").LoadStructs(&people)
+	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").LoadStructs(context.TODO(), &people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
@@ -408,7 +409,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Found:
 	var person dbrPerson
-	err := s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(&person)
+	err := s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 	assert.True(t, person.ID > 0)
 	assert.Equal(t, "Jonathan", person.Name)
@@ -417,7 +418,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Not found:
 	var person2 dbrPerson
-	err = s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("dontexist@uservoice.com"))).LoadStruct(&person2)
+	err = s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("dontexist@uservoice.com"))).LoadStruct(context.TODO(), &person2)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 }
 
@@ -425,7 +426,7 @@ func TestSelectBySQLLoadStructs(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).LoadStructs(&people)
+	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).LoadStructs(context.TODO(), &people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)
@@ -441,13 +442,13 @@ func TestSelectLoadValue(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var name string
-	err := s.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).LoadValue(&name)
+	err := s.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).LoadValue(context.TODO(), &name)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "Jonathan", name)
 
 	var id int64
-	err = s.Select("id").From("dbr_people").Limit(1).LoadValue(&id)
+	err = s.Select("id").From("dbr_people").Limit(1).LoadValue(context.TODO(), &id)
 
 	assert.NoError(t, err)
 	assert.True(t, id > 0)
@@ -457,14 +458,14 @@ func TestSelectLoadValues(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var names []string
-	count, err := s.Select("name").From("dbr_people").LoadValues(&names)
+	count, err := s.Select("name").From("dbr_people").LoadValues(context.TODO(), &names)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 2, count)
 	assert.Equal(t, []string{"Jonathan", "Dmitri"}, names)
 
 	var ids []int64
-	count, err = s.Select("id").From("dbr_people").Limit(1).LoadValues(&ids)
+	count, err = s.Select("id").From("dbr_people").Limit(1).LoadValues(context.TODO(), &ids)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)

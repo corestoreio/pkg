@@ -15,15 +15,18 @@
 package dbr_test
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 )
 
+var _ dbr.Querier = (*benchMockQuerier)(nil)
+
 type benchMockQuerier struct{}
 
-func (benchMockQuerier) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return new(sql.Rows), nil
 }
 
@@ -32,7 +35,8 @@ func (benchMockQuerier) Query(query string, args ...interface{}) (*sql.Rows, err
 func BenchmarkSelect_Rows(b *testing.B) {
 
 	tables := []string{"eav_attribute"}
-
+	ctx := context.TODO()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
 		sel := dbr.NewSelect("information_schema.COLUMNS").AddColumns(
@@ -45,7 +49,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			sel.Where(dbr.Condition("TABLE_NAME IN ?", dbr.ArgString(tables...)))
 		}
 
-		rows, err := sel.Rows()
+		rows, err := sel.Rows(ctx)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}

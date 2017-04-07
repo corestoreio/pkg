@@ -15,6 +15,7 @@
 package dbr_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -32,7 +33,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	t.Run("no columns provided", func(t *testing.T) {
 		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe")
 		mu.Update.Where(dbr.Condition("entity_id", dbr.ArgInt64().Operator('i'))) // ArgInt64 must be without arguments
-		res, err := mu.Exec()
+		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
@@ -41,7 +42,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.SetClauses.Columns = []string{"sku", "updated_at"}
 		mu.Update.Where(dbr.Condition("entity_id", dbr.ArgInt64().Operator('i'))) // ArgInt64 must be without arguments
 		mu.Alias = []string{"update_sku"}
-		res, err := mu.Exec()
+		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
@@ -49,7 +50,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe")
 		mu.Update.SetClauses.Columns = []string{"sku", "updated_at"}
 		mu.Update.Where(dbr.Condition("entity_id", dbr.ArgInt64().Operator('i'))) // ArgInt64 must be without arguments
-		res, err := mu.Exec()
+		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
@@ -101,7 +102,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.DB.Execer = dbc.DB
 		mu.Update.DB.Preparer = nil
 
-		results, err := mu.Exec()
+		results, err := mu.Exec(context.TODO())
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -131,7 +132,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.DB.Execer = nil
 		mu.Update.DB.Preparer = dbc.DB
 
-		results, err := mu.Exec()
+		results, err := mu.Exec(context.TODO())
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -165,7 +166,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.DB.Execer = nil
 		mu.Update.DB.Preparer = dbc.DB
 
-		results, err := mu.Exec()
+		results, err := mu.Exec(context.TODO())
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -199,7 +200,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.DB.Execer = nil
 		mu.Update.DB.Preparer = dbc.DB
 
-		results, err := mu.Exec()
+		results, err := mu.Exec(context.TODO())
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}

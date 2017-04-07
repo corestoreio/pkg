@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -65,7 +66,7 @@ func TestDeleteReal(t *testing.T) {
 
 	// Insert a Barack
 	res, err := s.InsertInto("dbr_people").Columns("name", "email").
-		Values(ArgString("Barack"), ArgString("barack@whitehouse.gov")).Exec()
+		Values(ArgString("Barack"), ArgString("barack@whitehouse.gov")).Exec(context.TODO())
 	assert.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")
@@ -76,7 +77,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where(Condition("id", ArgInt64(id))).Exec()
+	res, err = s.DeleteFrom("dbr_people").Where(Condition("id", ArgInt64(id))).Exec(context.TODO())
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -85,7 +86,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
 	var count int64
-	err = s.Select("count(*)").From("dbr_people").Where(Condition("id", ArgInt64(id))).LoadValue(&count)
+	err = s.Select("count(*)").From("dbr_people").Where(Condition("id", ArgInt64(id))).LoadValue(context.TODO(), &count)
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
 }
@@ -95,7 +96,7 @@ func TestDelete_Prepare(t *testing.T) {
 	t.Run("ToSQL Error", func(t *testing.T) {
 		d := &Delete{}
 		d.Where(Condition("a", ArgInt64(1)))
-		stmt, err := d.Prepare()
+		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
 	})
@@ -108,7 +109,7 @@ func TestDelete_Prepare(t *testing.T) {
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		d.Where(Condition("a", ArgInt(1)))
-		stmt, err := d.Prepare()
+		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})

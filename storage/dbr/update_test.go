@@ -1,6 +1,7 @@
 package dbr
 
 import (
+	"context"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -104,11 +105,11 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 
 	// Insert a user with a key
 	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").
-		Values(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec()
+		Values(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Eq{"key": ArgString("6")}).Exec()
+	res, err = s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Eq{"key": ArgString("6")}).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -117,7 +118,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)
@@ -129,7 +130,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Insert a George
 	res, err := s.InsertInto("dbr_people").Columns("name", "email").
-		Values(ArgString("George"), ArgString("george@whitehouse.gov")).Exec()
+		Values(ArgString("George"), ArgString("george@whitehouse.gov")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Get George'ab ID
@@ -139,12 +140,12 @@ func TestUpdateReal(t *testing.T) {
 	// Rename our George to Barack
 	res, err = s.Update("dbr_people").
 		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
-		Where(Condition("id = ?", ArgInt64(id))).Exec()
+		Where(Condition("id = ?", ArgInt64(id))).Exec(context.TODO())
 
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)
@@ -158,7 +159,7 @@ func TestUpdate_Prepare(t *testing.T) {
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
 		in.Set("a", ArgInt(1))
-		stmt, err := in.Prepare()
+		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
 	})
@@ -171,7 +172,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		u.Table = MakeAlias("tableY")
 		u.Set("a", ArgInt(1))
 
-		stmt, err := u.Prepare()
+		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
