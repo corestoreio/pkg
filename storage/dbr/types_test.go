@@ -22,13 +22,14 @@ var _ Argument = (*argFloat64s)(nil)
 var _ Argument = (*argTimes)(nil)
 var _ Argument = (*argBools)(nil)
 var _ Argument = (*argStrings)(nil)
+var _ Argument = (*NullString)(nil)
 
 func TestNullStringFrom(t *testing.T) {
-	assert.Equal(t, "product", null.StringFrom("product").String)
-	assert.True(t, null.StringFrom("product").Valid)
-	assert.False(t, null.StringFromPtr(nil).Valid)
-	assert.True(t, null.StringFrom("").Valid)
-	v, err := null.StringFrom("product").Value()
+	assert.Equal(t, "product", MakeNullString("product").String)
+	assert.True(t, MakeNullString("product").Valid)
+	//assert.False(t, NullStringFromPtr(nil).Valid)
+	assert.True(t, MakeNullString("").Valid)
+	v, err := MakeNullString("product").Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "product", v)
 }
@@ -154,7 +155,7 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
 		ID:         2,
-		StringVal:  null.String{sql.NullString{String: "wow", Valid: true}},
+		StringVal:  NullString{NullString: sql.NullString{String: "wow", Valid: true}},
 		Int64Val:   null.Int64{sql.NullInt64{Int64: 42, Valid: true}},
 		Float64Val: null.Float64{sql.NullFloat64{Float64: 1.618, Valid: true}},
 		TimeVal:    null.Time{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},

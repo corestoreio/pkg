@@ -115,7 +115,8 @@ type Listen struct {
 
 // <-------------------------COPY------------------------->
 
-// SelectFunc receives the Select object pointer for modification.
+// SelectFunc receives the Select object pointer for modification when an event
+// gets dispatched.
 type SelectFunc func(*Select)
 
 // selectListen wrapper struct because we might wrap the SelectReceiverFn from
@@ -206,7 +207,8 @@ func (se SelectListeners) String() string {
 
 // <-------------------------/COPY------------------------->
 
-// InsertFunc receives the Insert object pointer for modification.
+// InsertFunc receives the Insert object pointer for modification when an event
+// gets dispatched.
 type InsertFunc func(*Insert)
 
 // insertListen wrapper struct because we might wrap the InsertReceiverFn from
@@ -295,7 +297,8 @@ func (se InsertListeners) String() string {
 	return buf.String()
 }
 
-// UpdateFunc receives the Update object pointer for modification.
+// UpdateFunc receives the Update object pointer for modification when an event
+// gets dispatched.
 type UpdateFunc func(*Update)
 
 // updateListen wrapper struct because we might wrap the UpdateReceiverFn from
@@ -384,7 +387,8 @@ func (se UpdateListeners) String() string {
 	return buf.String()
 }
 
-// DeleteFunc receives the Delete object pointer for modification.
+// DeleteFunc receives the Delete object pointer for modification when an event
+// gets dispatched.
 type DeleteFunc func(*Delete)
 
 // deleteListen wrapper struct because we might wrap the DeleteReceiverFn from

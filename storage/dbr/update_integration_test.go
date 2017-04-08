@@ -21,7 +21,6 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -59,12 +58,12 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		&dbrPerson{
 			ID:    1,
 			Name:  "Alf",
-			Email: null.StringFrom("alf@m') -- el.mac"),
+			Email: dbr.MakeNullString("alf@m') -- el.mac"),
 		},
 		&dbrPerson{
 			ID:    2,
 			Name:  "John",
-			Email: null.StringFrom("john@doe.com"),
+			Email: dbr.MakeNullString("john@doe.com"),
 		},
 	}
 

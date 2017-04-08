@@ -87,10 +87,10 @@ func (as Arguments) len() (l int) {
 	return
 }
 
-// Interfaces conerts the underlying concrete types into an interface slice.
+// Interfaces converts the underlying concrete types into an interface slice.
 // Each entry in the interface is guaranteed to be one of the following values:
-// []byte, bool, float64, int64, string or time.Time.
-// Use driver.IsValue() for a check.
+// []byte, bool, float64, int64, string or time.Time. Use driver.IsValue() for a
+// check.
 func (as Arguments) Interfaces() []interface{} {
 	if len(as) == 0 {
 		return nil
@@ -110,8 +110,42 @@ func isNotIn(o byte) bool {
 	return true
 }
 
-//func ArgValuer(args ...driver.Valuer) Argument {
-//
+//func ArgValuer(args ...driver.Valuer) (Argument, error) {
+//	if len(args) == 1 {
+//		dv, err := args[0].Value()
+//		if err != nil {
+//			return nil, errors.Wrap(err, "[dbr] args[0].Value")
+//		}
+//		switch v := dv.(type) {
+//		case int64:
+//			return ArgInt64(v), nil
+//		case []int64:
+//			return ArgInt64(v...), nil
+//		case float64:
+//			return ArgFloat64(v), nil
+//		case []float64:
+//			return ArgFloat64(v...), nil
+//		case bool:
+//			return ArgBool(v), nil
+//		case []bool:
+//			return ArgBool(v...), nil
+//		case []byte:
+//			return ArgBytes(v), nil
+//		case string:
+//			return ArgString(v), nil
+//		case []string:
+//			return ArgString(v...), nil
+//		case time.Time:
+//			return ArgTime(v), nil
+//		case []time.Time:
+//			return ArgTime(v...), nil
+//		case nil:
+//			return ArgNull(), nil
+//		default:
+//			return nil, errors.NewNotSupportedf("[dbr] Argument %#v not supported", dv)
+//		}
+//	}
+//	return nil, nil
 //}
 
 type argTimes struct {

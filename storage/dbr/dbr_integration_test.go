@@ -16,7 +16,6 @@ package dbr_test
 
 import (
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/errors"
 )
 
@@ -25,8 +24,8 @@ var _ dbr.ArgumentGenerater = (*dbrPerson)(nil)
 type dbrPerson struct {
 	ID    int64 `db:"id"`
 	Name  string
-	Email null.String
-	Key   null.String
+	Email dbr.NullString
+	Key   dbr.NullString
 }
 
 func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []string) (dbr.Arguments, error) {
@@ -40,9 +39,9 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 		case "name":
 			args = append(args, dbr.ArgString(p.Name))
 		case "email":
-			args = append(args, dbr.ArgStringNull(p.Email))
+			args = append(args, dbr.ArgNullString(p.Email))
 		case "key":
-			args = append(args, dbr.ArgStringNull(p.Key))
+			args = append(args, dbr.ArgNullString(p.Key))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}

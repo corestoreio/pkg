@@ -61,8 +61,8 @@ var _ ArgumentGenerater = (*nullTypedRecord)(nil)
 type dbrPerson struct {
 	ID    int64 `db:"id"`
 	Name  string
-	Email null.String
-	Key   null.String
+	Email NullString
+	Key   NullString
 }
 
 func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []string) (Arguments, error) {
@@ -76,9 +76,9 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 		case "name":
 			args = append(args, ArgString(p.Name))
 		case "email":
-			args = append(args, ArgStringNull(p.Email))
+			args = append(args, ArgNullString(p.Email))
 		case "key":
-			args = append(args, ArgStringNull(p.Key))
+			args = append(args, ArgNullString(p.Key))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
@@ -99,7 +99,7 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 
 type nullTypedRecord struct {
 	ID         int64 `db:"id"`
-	StringVal  null.String
+	StringVal  NullString
 	Int64Val   null.Int64
 	Float64Val null.Float64
 	TimeVal    null.Time
@@ -113,7 +113,7 @@ func (p *nullTypedRecord) GenerateArguments(statementType byte, columns, conditi
 		case "id":
 			args = append(args, ArgInt64(p.ID))
 		case "string_val":
-			args = append(args, ArgStringNull(p.StringVal))
+			args = append(args, ArgNullString(p.StringVal))
 		case "int64_val":
 			if p.Int64Val.Valid {
 				args = append(args, ArgInt64(p.Int64Val.Int64))
