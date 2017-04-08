@@ -15,6 +15,7 @@
 package cstesting
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sync"
@@ -111,7 +112,7 @@ func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 // showTables executes the query SHOW TABLES and returns all tables within the
 // current database.
 func showTables(db dbr.Querier) ([]string, error) {
-	rows, err := db.Query("SHOW TABLES")
+	rows, err := db.QueryContext(context.Background(), "SHOW TABLES")
 	if err != nil {
 		return nil, errors.Wrap(err, "[csdb] ShowTables: SHOW TABLES failed")
 	}
