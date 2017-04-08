@@ -101,7 +101,7 @@ type nullTypedRecord struct {
 	ID         int64 `db:"id"`
 	StringVal  NullString
 	Int64Val   null.Int64
-	Float64Val null.Float64
+	Float64Val NullFloat64
 	TimeVal    null.Time
 	BoolVal    null.Bool
 }

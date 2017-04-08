@@ -1,8 +1,8 @@
 package dbr
 
 import (
-	"testing"
 	"context"
+	"testing"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"

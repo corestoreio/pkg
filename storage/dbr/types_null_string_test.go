@@ -21,11 +21,6 @@ var (
 	invalidJSON = []byte(`:)`)
 )
 
-func init() {
-	dbr.JSONMarshalFn = json.Marshal
-	dbr.JSONUnMarshalFn = json.Unmarshal
-}
-
 type stringInStruct struct {
 	Test dbr.NullString `json:"test,omitempty"`
 }
@@ -107,14 +102,6 @@ func TestMarshalString(t *testing.T) {
 	data, err = zero.MarshalText()
 	maybePanic(err)
 	assertJSONEquals(t, data, "", "string marshal text")
-
-	//null := dbr.NullStringFromPtr(nil)
-	//data, err = json.Marshal(null)
-	//maybePanic(err)
-	//assertJSONEquals(t, data, `null`, "null json marshal")
-	//data, err = null.MarshalText()
-	//maybePanic(err)
-	//assertJSONEquals(t, data, "", "string marshal text")
 }
 
 func TestStringPointer(t *testing.T) {
@@ -146,11 +133,6 @@ func TestStringIsZero(t *testing.T) {
 	if empty.IsZero() {
 		t.Errorf("IsZero() should be false")
 	}
-
-	//null := StringFromPtr(nil)
-	//if !null.IsZero() {
-	//	t.Errorf("IsZero() should be true")
-	//}
 }
 
 func TestStringSetValid(t *testing.T) {

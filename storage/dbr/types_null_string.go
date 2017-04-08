@@ -114,7 +114,7 @@ func (s *NullString) UnmarshalJSON(data []byte) error {
 		s.Valid = false
 		return nil
 	default:
-		err = errors.NewNotValidf("[null] json: cannot unmarshal %#v into Go value of type dbr.NullString", v)
+		err = errors.NewNotValidf("[dbr] json: cannot unmarshal %#v into Go value of type dbr.NullString", v)
 	}
 	s.Valid = err == nil
 	return err
@@ -229,7 +229,7 @@ func (a argNullStrings) Operator(opt byte) Argument {
 func (a argNullStrings) operator() byte { return a.opt }
 
 // ArgNullString adds a nullable string or a slice of nullable strings to the
-// argument list. Providing no arguments returns a NULL type. All arguments mut
+// argument list. Providing no arguments returns a NULL type. All arguments must
 // be a valid utf-8 string.
 func ArgNullString(args ...NullString) Argument {
 	if len(args) == 1 {
