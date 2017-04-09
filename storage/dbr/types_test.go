@@ -26,6 +26,7 @@ var _ Argument = (*NullString)(nil)
 var _ Argument = (*argNullStrings)(nil)
 var _ Argument = (*NullFloat64)(nil)
 var _ Argument = (*argNullFloat64s)(nil)
+var _ Argument = (*NullBytes)(nil)
 
 func TestNullStringFrom(t *testing.T) {
 	assert.Equal(t, "product", MakeNullString("product").String)

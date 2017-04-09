@@ -22,7 +22,7 @@ import (
 )
 
 // NullFloat64 is a nullable float64. It does not consider zero values to be null.
-// It will decode to null, not zero, if null. NullString implements interface
+// It will decode to null, not zero, if null. NullFloat64 implements interface
 // Argument.
 type NullFloat64 struct {
 	opt byte
