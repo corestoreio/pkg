@@ -18,7 +18,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"github.com/corestoreio/csfw/util/null/convert"
+	"github.com/corestoreio/csfw/storage/convert"
 )
 
 // NullBytes is a nullable byte slice. JSON marshals to zero if null. Considered
