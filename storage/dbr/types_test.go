@@ -28,6 +28,9 @@ var _ Argument = (*NullFloat64)(nil)
 var _ Argument = (*argNullFloat64s)(nil)
 var _ Argument = (*NullBytes)(nil)
 var _ Argument = (*NullTime)(nil)
+var _ Argument = (*argNullTimes)(nil)
+var _ Argument = (*NullInt64)(nil)
+var _ Argument = (*argNullInt64s)(nil)
 
 func TestNullStringFrom(t *testing.T) {
 	t.Parallel()
@@ -42,11 +45,10 @@ func TestNullStringFrom(t *testing.T) {
 
 func TestNewNullInt64(t *testing.T) {
 	t.Parallel()
-	assert.EqualValues(t, 1257894000, null.Int64From(1257894000).Int64)
-	assert.True(t, null.Int64From(1257894000).Valid)
-	assert.True(t, null.Int64From(0).Valid)
-	assert.False(t, null.Int64FromPtr(nil).Valid)
-	v, err := null.Int64From(1257894000).Value()
+	assert.EqualValues(t, 1257894000, MakeNullInt64(1257894000).Int64)
+	assert.True(t, MakeNullInt64(1257894000).Valid)
+	assert.True(t, MakeNullInt64(0).Valid)
+	v, err := MakeNullInt64(1257894000).Value()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1257894000, v)
 }
@@ -166,7 +168,7 @@ func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
 		ID:         2,
 		StringVal:  NullString{NullString: sql.NullString{String: "wow", Valid: true}},
-		Int64Val:   null.Int64{sql.NullInt64{Int64: 42, Valid: true}},
+		Int64Val:   NullInt64{NullInt64: sql.NullInt64{Int64: 42, Valid: true}},
 		Float64Val: NullFloat64{NullFloat64: sql.NullFloat64{Float64: 1.618, Valid: true}},
 		TimeVal:    NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
 		BoolVal:    null.Bool{sql.NullBool{Bool: true, Valid: true}},

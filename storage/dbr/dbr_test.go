@@ -100,7 +100,7 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 type nullTypedRecord struct {
 	ID         int64 `db:"id"`
 	StringVal  NullString
-	Int64Val   null.Int64
+	Int64Val   NullInt64
 	Float64Val NullFloat64
 	TimeVal    NullTime
 	BoolVal    null.Bool
