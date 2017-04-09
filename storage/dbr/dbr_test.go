@@ -102,7 +102,7 @@ type nullTypedRecord struct {
 	StringVal  NullString
 	Int64Val   null.Int64
 	Float64Val NullFloat64
-	TimeVal    null.Time
+	TimeVal    NullTime
 	BoolVal    null.Bool
 }
 

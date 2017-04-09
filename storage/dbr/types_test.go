@@ -27,8 +27,10 @@ var _ Argument = (*argNullStrings)(nil)
 var _ Argument = (*NullFloat64)(nil)
 var _ Argument = (*argNullFloat64s)(nil)
 var _ Argument = (*NullBytes)(nil)
+var _ Argument = (*NullTime)(nil)
 
 func TestNullStringFrom(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, "product", MakeNullString("product").String)
 	assert.True(t, MakeNullString("product").Valid)
 	//assert.False(t, NullStringFromPtr(nil).Valid)
@@ -39,6 +41,7 @@ func TestNullStringFrom(t *testing.T) {
 }
 
 func TestNewNullInt64(t *testing.T) {
+	t.Parallel()
 	assert.EqualValues(t, 1257894000, null.Int64From(1257894000).Int64)
 	assert.True(t, null.Int64From(1257894000).Valid)
 	assert.True(t, null.Int64From(0).Valid)
@@ -49,6 +52,7 @@ func TestNewNullInt64(t *testing.T) {
 }
 
 func TestNewNullFloat64(t *testing.T) {
+	t.Parallel()
 	var test = 1257894000.93445000001
 	assert.Equal(t, test, MakeNullFloat64(test).Float64)
 	assert.True(t, MakeNullFloat64(test).Valid)
@@ -59,17 +63,19 @@ func TestNewNullFloat64(t *testing.T) {
 }
 
 func TestNewNullTime(t *testing.T) {
+	t.Parallel()
 	var test = time.Now()
-	assert.Equal(t, test, null.TimeFrom(test).Time)
-	assert.True(t, null.TimeFrom(test).Valid)
-	assert.True(t, null.TimeFrom(time.Time{}).Valid)
-	assert.False(t, null.TimeFromPtr(nil).Valid)
-	v, err := null.TimeFrom(test).Value()
+	assert.Equal(t, test, MakeNullTime(test).Time)
+	assert.True(t, MakeNullTime(test).Valid)
+	assert.True(t, MakeNullTime(time.Time{}).Valid)
+
+	v, err := MakeNullTime(test).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, test, v)
 }
 
 func TestNewNullBool(t *testing.T) {
+	t.Parallel()
 
 	assert.Equal(t, true, null.BoolFrom(true).Bool)
 	assert.True(t, null.BoolFrom(true).Valid)
@@ -125,6 +131,7 @@ func TestNullTypeScanning(t *testing.T) {
 }
 
 func TestNullTypeJSONMarshal(t *testing.T) {
+	t.Parallel()
 	type nullTypeJSONTest struct {
 		record       *nullTypedRecord
 		expectedJSON []byte
@@ -161,7 +168,7 @@ func newNullTypedRecordWithData() *nullTypedRecord {
 		StringVal:  NullString{NullString: sql.NullString{String: "wow", Valid: true}},
 		Int64Val:   null.Int64{sql.NullInt64{Int64: 42, Valid: true}},
 		Float64Val: NullFloat64{NullFloat64: sql.NullFloat64{Float64: 1.618, Valid: true}},
-		TimeVal:    null.Time{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
+		TimeVal:    NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
 		BoolVal:    null.Bool{sql.NullBool{Bool: true, Valid: true}},
 	}
 }
