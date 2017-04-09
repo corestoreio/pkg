@@ -183,11 +183,11 @@ func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
 	for i, v := range a.data {
 		if v.Valid {
 			w.WriteString(strconv.FormatFloat(v.Float64, 'f', -1, 64))
-			if i < l {
-				w.WriteRune(',')
-			}
 		} else {
 			w.WriteString("NULL")
+		}
+		if i < l {
+			w.WriteRune(',')
 		}
 	}
 	_, err := w.WriteRune(')')

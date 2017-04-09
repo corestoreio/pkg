@@ -203,11 +203,11 @@ func (a argNullStrings) writeTo(w queryWriter, pos int) error {
 				return errors.NewNotValidf("[dbr] Argument.WriteTo: StringNull is not UTF-8: %q", v.String)
 			}
 			dialect.EscapeString(w, v.String)
-			if i < l {
-				w.WriteRune(',')
-			}
 		} else {
 			w.WriteString("NULL")
+		}
+		if i < l {
+			w.WriteRune(',')
 		}
 	}
 	_, err := w.WriteRune(')')
