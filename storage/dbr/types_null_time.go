@@ -15,7 +15,6 @@
 package dbr
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -75,7 +74,7 @@ func (t NullTime) MarshalJSON() ([]byte, error) {
 func (t *NullTime) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
-	if err = json.Unmarshal(data, &v); err != nil {
+	if err = JSONUnMarshalFn(data, &v); err != nil {
 		return err
 	}
 	switch x := v.(type) {
