@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/errors"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -103,7 +102,7 @@ type nullTypedRecord struct {
 	Int64Val   NullInt64
 	Float64Val NullFloat64
 	TimeVal    NullTime
-	BoolVal    null.Bool
+	BoolVal    NullBool
 }
 
 func (p *nullTypedRecord) GenerateArguments(statementType byte, columns, condition []string) (Arguments, error) {

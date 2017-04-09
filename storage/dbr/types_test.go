@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/util/null"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,6 +30,7 @@ var _ Argument = (*NullTime)(nil)
 var _ Argument = (*argNullTimes)(nil)
 var _ Argument = (*NullInt64)(nil)
 var _ Argument = (*argNullInt64s)(nil)
+var _ Argument = (*NullBool)(nil)
 
 func TestNullStringFrom(t *testing.T) {
 	t.Parallel()
@@ -79,11 +79,10 @@ func TestNewNullTime(t *testing.T) {
 func TestNewNullBool(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, true, null.BoolFrom(true).Bool)
-	assert.True(t, null.BoolFrom(true).Valid)
-	assert.True(t, null.BoolFrom(false).Valid)
-	assert.False(t, null.BoolFromPtr(nil).Valid)
-	v, err := null.BoolFrom(true).Value()
+	assert.Equal(t, true, MakeNullBool(true).Bool)
+	assert.True(t, MakeNullBool(true).Valid)
+	assert.True(t, MakeNullBool(false).Valid)
+	v, err := MakeNullBool(true).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, true, v)
 }
@@ -171,6 +170,6 @@ func newNullTypedRecordWithData() *nullTypedRecord {
 		Int64Val:   NullInt64{NullInt64: sql.NullInt64{Int64: 42, Valid: true}},
 		Float64Val: NullFloat64{NullFloat64: sql.NullFloat64{Float64: 1.618, Valid: true}},
 		TimeVal:    NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true},
-		BoolVal:    null.Bool{sql.NullBool{Bool: true, Valid: true}},
+		BoolVal:    NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}},
 	}
 }

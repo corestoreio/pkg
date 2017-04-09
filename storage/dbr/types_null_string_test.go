@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	boolJSON        = []byte(`true`)
 	stringJSON      = []byte(`"test"`)
 	blankStringJSON = []byte(`""`)
 	nullStringJSON  = []byte(`{"NullString":"test","Valid":true}`)
