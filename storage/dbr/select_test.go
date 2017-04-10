@@ -15,7 +15,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	s := createFakeSession()
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq := Eq{"a": ArgInt64(1, 2, 3)}
+	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(OperatorIn)}
 	args := Arguments{ArgInt64(1), ArgString("wat")}
 
 	b.ResetTimer()

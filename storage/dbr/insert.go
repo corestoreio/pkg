@@ -120,6 +120,37 @@ func (b *Insert) Pair(column string, arg Argument) *Insert {
 	return b
 }
 
+// FromSelect creates an "INSERT INTO `table` SELECT ..." statement from a
+// previously created SELECT statement.
+func (b *Insert) FromSelect(s *Select) (string, Arguments, error) {
+	if b.previousError != nil {
+		return "", nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
+	}
+
+	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
+		return "", nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
+	}
+
+	if len(b.Into) == 0 {
+		return "", nil, errors.NewEmptyf(errTableMissing)
+	}
+
+	sSQL, sArgs, err := s.ToSQL()
+	if err != nil {
+		return "", nil, errors.Wrap(err, "[dbr] Insert.FromSelect")
+	}
+
+	var buf = bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	buf.WriteString("INSERT INTO ")
+	Quoter.quote(buf, b.Into)
+	buf.WriteByte(' ')
+	buf.WriteString(sSQL)
+
+	return buf.String(), sArgs, nil
+}
+
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, Arguments, error) {

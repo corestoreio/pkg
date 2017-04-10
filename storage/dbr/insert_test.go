@@ -302,5 +302,26 @@ func TestInsert_Events(t *testing.T) {
 
 		assert.Exactly(t, `colA; colB; colC`, ins.Listeners.String())
 	})
+}
+
+func TestInsert_FromSelect(t *testing.T) {
+	ins := NewInsert("tableA")
+	// columns and args just to check that they get ignored
+	ins.Columns("a", "b").Values(ArgInt(1), ArgBool(true))
+
+	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(OperatorIn)}
+	args := Arguments{ArgInt64(1), ArgString("wat")}
+
+	iSQL, args, err := ins.FromSelect(NewSelect("some_table").
+		AddColumns("something_id", "user_id", "other").
+		Where(Condition("d = ? OR e = ?", args...)).
+		Where(argEq).
+		OrderDir("id", false).
+		Paginate(1, 20))
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Exactly(t, "INSERT INTO `tableA` SELECT something_id, user_id, other FROM `some_table` WHERE (d = ? OR e = ?) AND (`a` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0", iSQL)
+	assert.Exactly(t, []interface{}{int64(1), "wat", int64(1), int64(2), int64(3)}, args.Interfaces())
 
 }
