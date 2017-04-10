@@ -9,64 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var benchmarkSelectBasicSQL Arguments
-
-func BenchmarkSelectBasicSQL(b *testing.B) {
-	s := createFakeSession()
-
-	// Do some allocations outside the loop so they don't affect the results
-	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(OperatorIn)}
-	args := Arguments{ArgInt64(1), ArgString("wat")}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, args, err := s.Select("something_id", "user_id", "other").
-			From("some_table").
-			Where(Condition("d = ? OR e = ?", args...)).
-			Where(argEq).
-			OrderDir("id", false).
-			Paginate(1, 20).
-			ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
-		}
-		benchmarkSelectBasicSQL = args
-	}
-}
-
-func BenchmarkSelectFullSQL(b *testing.B) {
-	s := createFakeSession()
-
-	// Do some allocations outside the loop so they don't affect the results
-	argEq1 := Eq{"f": ArgInt64(2), "x": ArgString("hi")}
-	argEq2 := Eq{"g": ArgInt64(3)}
-	argEq3 := Eq{"h": ArgInt(1, 2, 3)}
-	args := Arguments{ArgInt64(1), ArgString("wat")}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		s.Select("a", "b", "z", "y", "x").
-			Distinct().
-			From("c").
-			Where(Condition("d = ? OR e = ?", args...)).
-			Where(argEq1).
-			Where(argEq2).
-			Where(argEq3).
-			GroupBy("ab").
-			GroupBy("ii").
-			GroupBy("iii").
-			Having(Condition("j = k"), Condition("jj = ?", ArgInt64(1))).
-			Having(Condition("jjj = ?", ArgInt64(2))).
-			OrderBy("l").
-			OrderBy("l").
-			OrderBy("l").
-			Limit(7).
-			Offset(8).
-			ToSQL()
-	}
-}
-
 func TestSelectBasicToSQL(t *testing.T) {
 	s := createFakeSession()
 
