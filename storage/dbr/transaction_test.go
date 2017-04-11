@@ -13,7 +13,7 @@ func TestTransactionReal(t *testing.T) {
 	tx, err := s.Begin()
 	assert.NoError(t, err)
 
-	res, err := tx.InsertInto("dbr_people").Columns("name", "email").Values(
+	res, err := tx.InsertInto("dbr_people").AddColumns("name", "email").AddValues(
 		ArgString("Barack"), ArgString("obama@whitehouse.gov"),
 		ArgString("Obama"), ArgString("barack@whitehouse.gov"),
 	).Exec(context.TODO())

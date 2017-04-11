@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"bytes"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
@@ -104,8 +106,8 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a user with a key
-	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").
-		Values(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
+		AddValues(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key
@@ -129,8 +131,8 @@ func TestUpdateReal(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a George
-	res, err := s.InsertInto("dbr_people").Columns("name", "email").
-		Values(ArgString("George"), ArgString("george@whitehouse.gov")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
+		AddValues(ArgString("George"), ArgString("george@whitehouse.gov")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Get George'ab ID
@@ -309,5 +311,85 @@ func TestUpdate_Events(t *testing.T) {
 
 		assert.Exactly(t, `c=pi; d=d; e`, up.Listeners.String())
 	})
+}
 
+func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
+	t.Run("empty columns does nothing", func(t *testing.T) {
+		uc := UpdatedColumns{}
+		buf := new(bytes.Buffer)
+		args := make(Arguments, 0, 2)
+		err := uc.writeOnDuplicateKey(buf, &args)
+		assert.NoError(t, err, "%+v", err)
+		assert.Empty(t, buf.String())
+		assert.Empty(t, args)
+	})
+
+	t.Run("col=VALUES(col) and no arguments", func(t *testing.T) {
+		uc := UpdatedColumns{
+			Columns: []string{"sku", "name", "stock"},
+		}
+		buf := new(bytes.Buffer)
+		args := make(Arguments, 0, 2)
+		err := uc.writeOnDuplicateKey(buf, &args)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `sku`=VALUES(`sku`), `name`=VALUES(`name`), `stock`=VALUES(`stock`)", buf.String())
+		assert.Empty(t, args)
+	})
+
+	t.Run("col=? and with arguments", func(t *testing.T) {
+		uc := UpdatedColumns{
+			Columns:   []string{"name", "stock"},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgInt64(12)},
+		}
+		buf := new(bytes.Buffer)
+		args := make(Arguments, 0, 2)
+		err := uc.writeOnDuplicateKey(buf, &args)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=?", buf.String())
+		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(12)}, args.Interfaces())
+	})
+
+	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
+		uc := UpdatedColumns{
+			Columns:   []string{"name", "stock"},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), Expr("VALUES(`stock`)+?", ArgInt64(13))},
+		}
+		buf := new(bytes.Buffer)
+		args := make(Arguments, 0, 2)
+		err := uc.writeOnDuplicateKey(buf, &args)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=VALUES(`stock`)+?", buf.String())
+		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(13)}, args.Interfaces())
+	})
+
+	t.Run("col=VALUES(val) and with arguments and nil", func(t *testing.T) {
+		uc := UpdatedColumns{
+			Columns:   []string{"name", "sku", "stock"},
+			Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
+		}
+		buf := new(bytes.Buffer)
+		args := make(Arguments, 0, 2)
+		err := uc.writeOnDuplicateKey(buf, &args)
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `sku`=VALUES(`sku`), `stock`=?", buf.String())
+		assert.Exactly(t, []interface{}{"E0S 5D Mark III", int64(14)}, args.Interfaces())
+	})
+}
+
+// BenchmarkUpdatedColumns_writeOnDuplicateKey-4   	 5000000	       337 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
+	buf := new(bytes.Buffer)
+	args := make(Arguments, 0, 2)
+	uc := UpdatedColumns{
+		Columns:   []string{"name", "sku", "stock"},
+		Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := uc.writeOnDuplicateKey(buf, &args); err != nil {
+			b.Fatalf("%+v", err)
+		}
+		buf.Reset()
+		args = args[:0]
+	}
 }

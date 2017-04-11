@@ -17,12 +17,17 @@ type Insert struct {
 		Execer
 	}
 
-	Into string
-	Cols []string
-	Vals Arguments
+	Into    string
+	Columns []string
+	Values  Arguments
 
-	Recs []ArgumentGenerater
-	Maps map[string]Argument
+	Records []ArgumentGenerater
+	Maps    map[string]Argument
+
+	// OnDuplicateKey updates the referenced columns. See documentation for type
+	// `UpdatedColumns`. For more details
+	// https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
+	OnDuplicateKey UpdatedColumns
 
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -69,26 +74,35 @@ func (tx *Tx) InsertInto(into string) *Insert {
 	return i
 }
 
-// Columns appends columns to insert in the statement.
-func (b *Insert) Columns(columns ...string) *Insert {
-	b.Cols = append(b.Cols, columns...)
+// AddColumns appends columns to insert in the statement.
+func (b *Insert) AddColumns(columns ...string) *Insert {
+	b.Columns = append(b.Columns, columns...)
 	return b
 }
 
-// Values appends a set of values to the statement. Pro Tip: Use Values() and
+// AddValues appends a set of values to the statement. Pro Tip: Use Values() and
 // not Record() to avoid reflection. Only this function will consider the
 // driver.Valuer interface when you pass a pointer to the value. Values must be
 // balanced to the number of columns. You can even provide more values, like
 // records. see BenchmarkInsertValuesSQL
-func (b *Insert) Values(vals ...Argument) *Insert {
-	b.Vals = append(b.Vals, vals...)
+func (b *Insert) AddValues(vals ...Argument) *Insert {
+	b.Values = append(b.Values, vals...)
 	return b
 }
 
-// Record pulls in values to match Columns from the record. Think about a vector
-// on how to use this.
-func (b *Insert) Record(recs ...ArgumentGenerater) *Insert {
-	b.Recs = append(b.Recs, recs...)
+// AddRecords pulls in values to match Columns from the record generator.
+func (b *Insert) AddRecords(recs ...ArgumentGenerater) *Insert {
+	b.Records = append(b.Records, recs...)
+	return b
+}
+
+// AddOnDuplicateKey has some hidden features for best flexibility. You can only
+// set the Columns itself to allow the following SQL construct:
+//		`columnA`=VALUES(`columnA`)
+// Means columnA gets automatically mapped to the VALUES column name.
+func (b *Insert) AddOnDuplicateKey(column string, arg Argument) *Insert {
+	b.OnDuplicateKey.Columns = append(b.OnDuplicateKey.Columns, column)
+	b.OnDuplicateKey.Arguments = append(b.OnDuplicateKey.Arguments, arg)
 	return b
 }
 
@@ -109,14 +123,14 @@ func (b *Insert) Pair(column string, arg Argument) *Insert {
 	if b.previousError != nil {
 		return b
 	}
-	for _, c := range b.Cols {
+	for _, c := range b.Columns {
 		if c == column {
 			b.previousError = errors.NewAlreadyExistsf("[dbr] Column %q has already been added", c)
 			return b
 		}
 	}
-	b.Cols = append(b.Cols, column)
-	b.Vals = append(b.Vals, arg)
+	b.Columns = append(b.Columns, column)
+	b.Values = append(b.Values, arg)
 	return b
 }
 
@@ -165,13 +179,13 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	if len(b.Into) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)
 	}
-	if len(b.Cols) == 0 && len(b.Maps) == 0 {
+	if len(b.Columns) == 0 && len(b.Maps) == 0 {
 		return "", nil, errors.NewEmptyf(errColumnsMissing)
 	} else if len(b.Maps) == 0 {
-		if len(b.Vals) == 0 && len(b.Recs) == 0 {
+		if len(b.Values) == 0 && len(b.Records) == 0 {
 			return "", nil, errors.NewEmptyf(errRecordsMissing)
 		}
-		if len(b.Cols) == 0 && (len(b.Vals) > 0 || len(b.Recs) > 0) {
+		if len(b.Columns) == 0 && (len(b.Values) > 0 || len(b.Records) > 0) {
 			return "", nil, errors.NewEmptyf(errColumnsMissing)
 		}
 	}
@@ -192,7 +206,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 
 	// Simultaneously write the cols to the sql buffer, and build a ph
 	ph.WriteRune('(')
-	for i, c := range b.Cols {
+	for i, c := range b.Columns {
 		if i > 0 {
 			buf.WriteRune(',')
 			ph.WriteRune(',')
@@ -206,22 +220,25 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	bufferpool.Put(ph)
 
 	// Go thru each value we want to insert. Write the placeholders, and collect args
-	for i := 0; i < len(b.Vals); i = i + len(b.Cols) {
+	for i := 0; i < len(b.Values); i = i + len(b.Columns) {
 		if i > 0 {
 			buf.WriteRune(',')
 		}
 		buf.WriteString(placeholderStr)
 	}
 
-	if b.Recs == nil {
-		return buf.String(), b.Vals, nil
+	args := make(Arguments, len(b.Values), len(b.Values)+len(b.Records)) // sneaky ;-)
+	copy(args, b.Values)
+
+	if b.Records == nil {
+		if err := b.OnDuplicateKey.writeOnDuplicateKey(buf, &args); err != nil {
+			return "", nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
+		}
+		return buf.String(), args, nil
 	}
 
-	args := make(Arguments, len(b.Vals), len(b.Vals)+len(b.Recs)) // sneaky ;-)
-	copy(args, b.Vals)
-
-	for i, rec := range b.Recs {
-		a2, err := rec.GenerateArguments(StatementTypeInsert, b.Cols, nil)
+	for i, rec := range b.Records {
+		a2, err := rec.GenerateArguments(StatementTypeInsert, b.Columns, nil)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
 		}
@@ -231,6 +248,10 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 			buf.WriteRune(',')
 		}
 		buf.WriteString(placeholderStr)
+	}
+
+	if err := b.OnDuplicateKey.writeOnDuplicateKey(buf, &args); err != nil {
+		return "", nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
 	}
 
 	return buf.String(), args, nil

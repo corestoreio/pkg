@@ -23,11 +23,9 @@ type Update struct {
 	RawArguments Arguments
 
 	Table alias
-	// SetClauses contains the column/argument association. For each column there must be one argument.
-	SetClauses struct {
-		Columns []string
-		Arguments
-	}
+	// SetClauses contains the column/argument association. For each column
+	// there must be one argument.
+	SetClauses UpdatedColumns
 	WhereFragments
 	OrderBys    []string
 	LimitCount  uint64
@@ -102,12 +100,12 @@ func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
 }
 
 // Set appends a column/value pair for the statement
-func (b *Update) Set(column string, value Argument) *Update {
+func (b *Update) Set(column string, arg Argument) *Update {
 	if b.previousError != nil {
 		return b
 	}
 	b.SetClauses.Columns = append(b.SetClauses.Columns, column)
-	b.SetClauses.Arguments = append(b.SetClauses.Arguments, value)
+	b.SetClauses.Arguments = append(b.SetClauses.Arguments, arg)
 	return b
 }
 
@@ -283,6 +281,71 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 
 	stmt, err := b.DB.PrepareContext(ctx, rawSQL)
 	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
+}
+
+// UpdatedColumns contains the column/argument association for either the SET
+// clause in an UPDATE statement or to be used in an INSERT ... ON DUPLICATE KEY
+// statement. For each column there must be one argument which can either be nil
+// or has an actual value.
+//
+// When using the ON DUPLICATE KEY feature in the Insert builder:
+//
+// The function dbr.Expr is supported and allows SQL
+// constructs like:
+// 		`columnA`=VALUES(`columnB`)+2
+// by writing the Go code:
+//		ib.AddOnDuplicateKey("columnA", Expr("VALUES(`columnB`)+?", ArgInt(2)))
+// Omitting the argument and using the keyword nil will turn this Go code:
+//		ib.AddOnDuplicateKey("columnA", nil)
+// into that SQL:
+// 		`columnA`=VALUES(`columnA`)
+// Same applies as when the columns gets only assigned without any arguments:
+//		ib.OnDuplicateKey.Columns = []string{"name","sku"}
+// will turn into:
+// 		`name`=VALUES(`name`), `sku`=VALUES(`sku`)
+// Type `UpdatedColumns` gets used in type `Update` with field
+// `SetClauses` and in type `Insert` with field OnDuplicateKey.
+type UpdatedColumns struct {
+	Columns   []string
+	Arguments Arguments
+}
+
+func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args *Arguments) error {
+	if len(uc.Columns) == 0 {
+		return nil
+	}
+
+	useArgs := len(uc.Arguments) == len(uc.Columns)
+
+	w.WriteString(" ON DUPLICATE KEY UPDATE ")
+	for i, c := range uc.Columns {
+		if i > 0 {
+			w.WriteString(", ")
+		}
+		Quoter.quote(w, c)
+		w.WriteRune('=')
+		if useArgs {
+			// todo remove continue
+			if e, ok := uc.Arguments[i].(*expr); ok {
+				w.WriteString(e.SQL)
+				*args = append(*args, uc.Arguments[i])
+				continue
+			}
+			if uc.Arguments[i] == nil {
+				w.WriteString("VALUES(")
+				Quoter.quote(w, c)
+				w.WriteRune(')')
+				continue
+			}
+			w.WriteRune('?')
+			*args = append(*args, uc.Arguments[i])
+		} else {
+			w.WriteString("VALUES(")
+			Quoter.quote(w, c)
+			w.WriteRune(')')
+		}
+	}
+	return nil
 }
 
 // UpdateMulti allows to run an UPDATE statement multiple times with different
