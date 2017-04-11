@@ -608,7 +608,10 @@ func (e *expr) toIFace(args *[]interface{}) {
 	}
 }
 
-func (e *expr) writeTo(w queryWriter, _ int) error { return nil }
-func (e *expr) len() int                           { return 1 }
-func (e *expr) Operator(_ byte) Argument           { return e }
-func (e *expr) operator() byte                     { return 0 }
+func (e *expr) writeTo(w queryWriter, _ int) error {
+	w.WriteString(e.SQL)
+	return nil
+}
+func (e *expr) len() int                 { return 1 }
+func (e *expr) Operator(_ byte) Argument { return e }
+func (e *expr) operator() byte           { return 0 }
