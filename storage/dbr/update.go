@@ -197,18 +197,18 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 			buf.WriteString(", ")
 		}
 		Quoter.quoteAs(buf, c)
+		buf.WriteByte('=')
 		if i < len(b.SetClauses.Arguments) {
 			arg := b.SetClauses.Arguments[i]
 			if e, ok := arg.(*expr); ok {
-				buf.WriteString(" = ")
-				buf.WriteString(e.SQL)
+				e.writeTo(buf, 0)
 				args = append(args, e.Arguments...)
 			} else {
-				buf.WriteString(" = ?")
+				buf.WriteByte('?')
 				args = append(args, arg)
 			}
 		} else {
-			buf.WriteString(" = ?")
+			buf.WriteByte('?')
 		}
 	}
 
@@ -327,7 +327,7 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args *Arguments) err
 		if useArgs {
 			// todo remove continue
 			if e, ok := uc.Arguments[i].(*expr); ok {
-				w.WriteString(e.SQL)
+				_ = e.writeTo(w, 0)
 				*args = append(*args, uc.Arguments[i])
 				continue
 			}

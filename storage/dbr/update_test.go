@@ -49,7 +49,7 @@ func TestUpdateAllToSQL(t *testing.T) {
 
 	sql, args, err := s.Update("a").Set("b", ArgInt64(1)).Set("c", ArgInt(2)).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `b` = ?, `c` = ?", sql)
+	assert.Equal(t, "UPDATE `a` SET `b`=?, `c`=?", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
 }
 
@@ -58,7 +58,7 @@ func TestUpdateSingleToSQL(t *testing.T) {
 
 	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(Condition("id = ?", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)", sql)
+	assert.Equal(t, "UPDATE `a` SET `b`=?, `c`=? WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
 }
 
@@ -67,10 +67,10 @@ func TestUpdateSetMapToSQL(t *testing.T) {
 
 	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": ArgInt64(1), "c": ArgInt64(2)}).Where(Condition("id = ?", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
-	if sql == "UPDATE `a` SET `b` = ?, `c` = ? WHERE (id = ?)" {
+	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (id = ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
 	} else {
-		assert.Equal(t, "UPDATE `a` SET `c` = ?, `b` = ? WHERE (id = ?)", sql)
+		assert.Equal(t, "UPDATE `a` SET `c`=?, `b`=? WHERE (id = ?)", sql)
 		assert.Equal(t, []interface{}{int64(2), int64(1), int64(1)}, args.Interfaces())
 	}
 }
@@ -82,14 +82,14 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 		Set("foo", ArgInt(1)).
 		Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(Condition("id = ?", ArgInt(9))).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE (id = ?)", sql)
+	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(9)}, args.Interfaces())
 
 	sql, args, err = s.Update("a").
 		Set("foo", ArgInt(1)).
 		Set("bar", Expr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Condition("id = ?", ArgInt(9))).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE (id = ?)", sql)
+	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(9)}, args.Interfaces())
 }
 
@@ -98,7 +98,7 @@ func TestUpdateTenStaringFromTwentyToSQL(t *testing.T) {
 
 	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Limit(10).Offset(20).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `b` = ? LIMIT 10 OFFSET 20", sql)
+	assert.Equal(t, "UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 }
 
@@ -191,7 +191,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
 		assert.Exactly(t,
-			"UPDATE `catalog_product_entity` AS `cpe` SET `sku` = ?, `updated_at` = ? WHERE (`entity_id` IN ?)",
+			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)",
 			sqlStr)
 	})
 	t.Run("without condition values", func(t *testing.T) {
@@ -203,7 +203,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{}, args.Interfaces())
 		assert.Exactly(t,
-			"UPDATE `catalog_product_entity` AS `cpe` SET `sku` = ?, `updated_at` = ? WHERE (`entity_id` IN ?)",
+			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)",
 			sqlStr)
 	})
 }
@@ -242,11 +242,11 @@ func TestUpdate_Events(t *testing.T) {
 		)
 		sql, _, err := d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `y` = ?, `z` = ?, `a` = ?, `b` = ?", sql)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `y`=?, `z`=?, `a`=?, `b`=?", sql)
 
 		sql, _, err = d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `y` = ?, `z` = ?, `a` = ?, `b` = ?, `a` = ?, `b` = ?", sql)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `y`=?, `z`=?, `a`=?, `b`=?, `a`=?, `b`=?", sql)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
@@ -302,12 +302,12 @@ func TestUpdate_Events(t *testing.T) {
 		sql, args, err := up.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, "d", "e"}, args.Interfaces())
-		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?", sql)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a`=?, `b`=?, `c`=?, `d`=?, `e`=?", sql)
 
 		sql, args, err = up.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, "d", "e", "e"}, args.Interfaces())
-		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a` = ?, `b` = ?, `c` = ?, `d` = ?, `e` = ?, `e` = ?", sql)
+		assert.Exactly(t, "UPDATE `tableA` AS `tA` SET `a`=?, `b`=?, `c`=?, `d`=?, `e`=?, `e`=?", sql)
 
 		assert.Exactly(t, `c=pi; d=d; e`, up.Listeners.String())
 	})

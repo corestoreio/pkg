@@ -75,13 +75,13 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	mu.Records = append(mu.Records, records...)
 
 	setSMPreProcess := func(m sqlmock.Sqlmock) {
-		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name` = 'Alf', `email` = 'alf@m\\') -- el.mac' WHERE (`id` = 1)")).
+		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`='Alf', `email`='alf@m\\') -- el.mac' WHERE (`id` = 1)")).
 			WillReturnResult(sqlmock.NewResult(0, 1))
-		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name` = 'John', `email` = 'john@doe.com' WHERE (`id` = 2)")).
+		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`='John', `email`='john@doe.com' WHERE (`id` = 2)")).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 	}
 	setSMPrepared := func(m sqlmock.Sqlmock) {
-		prep := m.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name` = ?, `email` = ? WHERE (`id` = ?)"))
+		prep := m.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Alf", "alf@m') -- el.mac", 1).WillReturnResult(sqlmock.NewResult(0, 1))
 		prep.ExpectExec().WithArgs("John", "john@doe.com", 2).WillReturnResult(sqlmock.NewResult(0, 1))
 	}

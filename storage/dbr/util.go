@@ -1,26 +1,6 @@
 package dbr
 
-import (
-	"database/sql/driver"
-	"strings"
-
-	"github.com/corestoreio/errors"
-)
-
-// argsValuer checks if an argument implements driver.Valuer interface. If so
-// uses the Value() function to get the correct value.
-func off_argsValuer(args *[]interface{}) error {
-	for i, v := range *args {
-		if dbVal, ok := v.(driver.Valuer); ok {
-			if val, err := dbVal.Value(); err == nil {
-				(*args)[i] = val
-			} else {
-				return errors.Wrap(err, "[dbr] Error by driver.Valuer")
-			}
-		}
-	}
-	return nil
-}
+import "strings"
 
 // Stmt is helper for various method to check statements
 var Stmt = stmtChecker{}
