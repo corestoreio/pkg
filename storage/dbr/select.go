@@ -140,7 +140,7 @@ func (b *Select) From(from ...string) *Select {
 
 // AddColumns appends more columns to the Columns slice. If a single string gets
 // passed with comma separated values, this string gets split by the command and
-// its values appended to the Columns slice.
+// its values appended to the Columns slice. Columns won't get quoted.
 func (b *Select) AddColumns(cols ...string) *Select {
 	if len(cols) > 0 && strings.IndexByte(cols[0], ',') > 0 {
 		cols = strings.Split(cols[0], ",")
@@ -152,23 +152,29 @@ func (b *Select) AddColumns(cols ...string) *Select {
 	return b
 }
 
-// todo
-//func (b *Select) AddColumnsQuoted(cols ...string) *Select {
-//	if len(cols) > 0 && strings.IndexByte(cols[0], ',') > 0 {
-//		cols = strings.Split(cols[0], ",")
-//		for i, c := range cols {
-//			cols[i] = strings.TrimSpace(c)
-//		}
-//	}
-//	b.Columns = append(b.Columns, cols...)
-//	return b
-//}
+// AddColumnsQuoted appends more columns to the Columns slice and quotes them.
+// Give "t1.name" gets translated to "`t1`.`name`". Comma separated input is
+// supported:
+//		"t1.name,t1.sku" => []string{"`t1`.`name`", "`t1`.`sku`"}
+func (b *Select) AddColumnsQuoted(cols ...string) *Select {
+	if len(cols) > 0 && strings.IndexByte(cols[0], ',') > 0 {
+		cols = strings.Split(cols[0], ",")
+		for i, c := range cols {
+			cols[i] = strings.TrimSpace(c)
+		}
+	}
+	for i, c := range cols {
+		cols[i] = Quoter.QuoteAs(c)
+	}
+	b.Columns = append(b.Columns, cols...)
+	return b
+}
 
 // AddColumnsAliases expects a balanced slice of ColumnName, AliasName and adds
 // both concatenated and quoted to the Columns slice.
-func (b *Select) AddColumnsAliases(colsAlias ...string) *Select {
-	for i := 0; i < len(colsAlias); i = i + 2 {
-		b.Columns = append(b.Columns, Quoter.Alias(colsAlias[i], colsAlias[i+1]))
+func (b *Select) AddColumnsAliases(expressionAlias ...string) *Select {
+	for i := 0; i < len(expressionAlias); i = i + 2 {
+		b.Columns = append(b.Columns, Quoter.Alias(expressionAlias[i], expressionAlias[i+1]))
 	}
 	return b
 }

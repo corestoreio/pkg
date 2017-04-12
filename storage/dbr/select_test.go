@@ -645,6 +645,16 @@ func TestSelect_AddColumns(t *testing.T) {
 	assert.Exactly(t, "SELECT a, b, c, d, e, f, x AS `u`, y AS `v` FROM `tableA` AS `tA`", sql)
 }
 
+func TestSelect_AddColumnsQuoted(t *testing.T) {
+	s := NewSelect("t3").
+		AddColumnsQuoted("t3.name", "sku").
+		AddColumnsAliases("SUM(price)", "total_price")
+
+	sSQL, _, err := s.ToSQL()
+	assert.NoError(t, err, "%+v", err)
+	assert.Exactly(t, "SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`", sSQL)
+}
+
 func TestSelect_Subselect(t *testing.T) {
 	/* Something like:
 	   SELECT
@@ -685,6 +695,36 @@ func TestSelect_Subselect(t *testing.T) {
 			AddColumnsAliases("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
 			GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
 			OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC")
+
+		sel2 := NewSelectFromSub(sel3, "t2").
+			AddColumns("`t2`.`period`,`t2`.`store_id`,`t2`.`product_id`,`t2`.`product_name`,`t2`.`avg_price`").
+			AddColumnsAliases("`t2`.`total_qty`", "`qty_ordered`")
+
+		sel1 := NewSelectFromSub(sel2, "t1").
+			AddColumns("`t1`.`period`,`t1`.`store_id`,`t1`.`product_id`,`t1`.`product_name`,`t1`.`avg_price`,`t1`.`qty_ordered`").
+			OrderBy("`t1`.period", "`t1`.product_id")
+
+		sSQL, args, err := sel1.ToSQL()
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+		assert.Exactly(t, []interface{}(nil), args.Interfaces())
+		//println(sSQL)
+		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`, `t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.period, `t1`.product_id"
+		if sSQL != wantSQL {
+			t.Errorf("\nHave: %q\nWant: %q", sSQL, wantSQL)
+		}
+	})
+
+	t.Run("with args", func(t *testing.T) {
+		sel3 := NewSelect("sales_bestsellers_aggregated_daily", "t3").
+			AddColumnsAliases("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
+			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
+			AddColumnsAliases("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
+			GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
+			Having(Condition("COUNT(*)>?", ArgInt(3))).
+			OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC").
+			Where(Condition("t3.store_id", ArgInt64(2, 3, 4).Operator(OperatorIn)))
 
 		sel2 := NewSelectFromSub(sel3, "t2").
 			AddColumns("`t2`.`period`,`t2`.`store_id`,`t2`.`product_id`,`t2`.`product_name`,`t2`.`avg_price`").
