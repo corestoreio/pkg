@@ -24,7 +24,10 @@ type Select struct {
 
 	IsDistinct bool
 	Columns    []string
-	FromTable  alias
+
+	// FromTable table name and optional alias name to SELECT from.
+	FromTable alias
+
 	WhereFragments
 	JoinFragments
 	GroupBys        []string
@@ -54,6 +57,22 @@ func NewSelect(from ...string) *Select {
 		Log:       log.BlackHole{},
 		FromTable: MakeAlias(from...),
 	}
+}
+
+// NewSelectFromSub creates a new SELECT pointer using the provided sub-select
+// in the FROM part together with an alias name. Appends the arguments of the
+// sub-select to the parent *Select pointer arguments list. SQL result may look
+// like:
+//		SELECT a,b FROM (SELECT x,y FROM `product` AS `p`) AS `t`
+func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
+	s := &Select{
+		Log: log.BlackHole{},
+		FromTable: alias{
+			Select: subSelect,
+			Alias:  aliasName,
+		},
+	}
+	return s
 }
 
 // Select creates a new Select that select that given columns
@@ -133,6 +152,18 @@ func (b *Select) AddColumns(cols ...string) *Select {
 	return b
 }
 
+// todo
+//func (b *Select) AddColumnsQuoted(cols ...string) *Select {
+//	if len(cols) > 0 && strings.IndexByte(cols[0], ',') > 0 {
+//		cols = strings.Split(cols[0], ",")
+//		for i, c := range cols {
+//			cols[i] = strings.TrimSpace(c)
+//		}
+//	}
+//	b.Columns = append(b.Columns, cols...)
+//	return b
+//}
+
 // AddColumnsAliases expects a balanced slice of ColumnName, AliasName and adds
 // both concatenated and quoted to the Columns slice.
 func (b *Select) AddColumnsAliases(colsAlias ...string) *Select {
@@ -144,26 +175,26 @@ func (b *Select) AddColumnsAliases(colsAlias ...string) *Select {
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs
-func (b *Select) Where(args ...ConditionArg) *Select {
-	appendConditions(&b.WhereFragments, args...)
+func (b *Select) Where(c ...ConditionArg) *Select {
+	appendConditions(&b.WhereFragments, c...)
 	return b
 }
 
-// GroupBy appends a column to group the statement
-func (b *Select) GroupBy(group string) *Select {
-	b.GroupBys = append(b.GroupBys, group)
+// GroupBy appends a column or an expression to group the statement.
+func (b *Select) GroupBy(groups ...string) *Select {
+	b.GroupBys = append(b.GroupBys, groups...)
 	return b
 }
 
 // Having appends a HAVING clause to the statement
-func (b *Select) Having(args ...ConditionArg) *Select {
-	appendConditions(&b.HavingFragments, args...)
+func (b *Select) Having(c ...ConditionArg) *Select {
+	appendConditions(&b.HavingFragments, c...)
 	return b
 }
 
-// OrderBy appends a column to ORDER the statement by
-func (b *Select) OrderBy(ord string) *Select {
-	b.OrderBys = append(b.OrderBys, ord)
+// OrderBy appends a column or an expression to ORDER the statement by
+func (b *Select) OrderBy(ord ...string) *Select {
+	b.OrderBys = append(b.OrderBys, ord...)
 	return b
 }
 
@@ -199,106 +230,119 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 	return b
 }
 
+func (b *Select) ToSQL() (string, Arguments, error) {
+	var w = bufferpool.Get()
+	defer bufferpool.Put(w)
+	args, err := b.toSQL(w)
+	return w.String(), args, err
+}
+
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) ToSQL() (string, Arguments, error) {
+func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
+		return nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
-	// TODO(CyS) implement SQL string cache. If cache set to true, then the finalized query will be written
-	// in the empty RawFullSQL field. if cache has been set to false, then query gets regenerated.
+	// TODO(CyS) implement SQL string cache. If cache set to true, then the
+	// finalized query will be written in the empty RawFullSQL field. if cache
+	// has been set to false, then query gets regenerated.
 
 	if b.RawFullSQL != "" {
-		return b.RawFullSQL, b.Arguments, nil
+		w.WriteString(b.RawFullSQL)
+		return b.Arguments, nil
 	}
 
-	if len(b.FromTable.Expression) == 0 {
-		return "", nil, errors.NewEmptyf(errTableMissing)
+	if b.FromTable.Expression == "" && b.FromTable.Select == nil {
+		return nil, errors.NewEmptyf(errTableMissing)
 	}
 	if len(b.Columns) == 0 {
-		return "", nil, errors.NewEmptyf(errColumnsMissing)
+		return nil, errors.NewEmptyf(errColumnsMissing)
 	}
 
-	var sql = bufferpool.Get()
-	defer bufferpool.Put(sql)
+	// not sure if copying is necessary but leaves at least b.Arguments in pristine
+	// condition
+	var args = make(Arguments, len(b.Arguments), len(b.Arguments)+len(b.JoinFragments)+len(b.WhereFragments))
+	copy(args, b.Arguments)
 
-	var args Arguments
-
-	sql.WriteString("SELECT ")
+	w.WriteString("SELECT ")
 
 	if b.IsDistinct {
-		sql.WriteString("DISTINCT ")
+		w.WriteString("DISTINCT ")
 	}
 
 	for i, s := range b.Columns {
 		if i > 0 {
-			sql.WriteString(", ")
+			w.WriteString(", ")
 		}
-		sql.WriteString(s)
+		w.WriteString(s)
 	}
 
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
 			for _, c := range f.Columns {
-				sql.WriteString(", ")
-				sql.WriteString(c)
+				w.WriteString(", ")
+				w.WriteString(c)
 			}
 		}
 	}
 
-	sql.WriteString(" FROM ")
-	b.FromTable.QuoteAsWriter(sql)
+	w.WriteString(" FROM ")
+	tArgs, err := b.FromTable.QuoteAsWriter(w)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Selec.toSQL.FromTable.QuoteAsWriter")
+	}
+	args = append(args, tArgs...)
 
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
-			sql.WriteRune(' ')
-			sql.WriteString(f.JoinType)
-			sql.WriteString(" JOIN ")
-			f.Table.QuoteAsWriter(sql)
-			sql.WriteString(" ON ")
-			writeWhereFragmentsToSQL(f.OnConditions, sql, &args)
+			w.WriteRune(' ')
+			w.WriteString(f.JoinType)
+			w.WriteString(" JOIN ")
+			f.Table.QuoteAsWriter(w)
+			w.WriteString(" ON ")
+			writeWhereFragmentsToSQL(f.OnConditions, w, &args)
 		}
 	}
 
 	if len(b.WhereFragments) > 0 {
-		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSQL(b.WhereFragments, sql, &args)
+		w.WriteString(" WHERE ")
+		writeWhereFragmentsToSQL(b.WhereFragments, w, &args)
 	}
 
 	if len(b.GroupBys) > 0 {
-		sql.WriteString(" GROUP BY ")
+		w.WriteString(" GROUP BY ")
 		for i, s := range b.GroupBys {
 			if i > 0 {
-				sql.WriteString(", ")
+				w.WriteString(", ")
 			}
-			sql.WriteString(s)
+			w.WriteString(s)
 		}
 	}
 
 	if len(b.HavingFragments) > 0 {
-		sql.WriteString(" HAVING ")
-		writeWhereFragmentsToSQL(b.HavingFragments, sql, &args)
+		w.WriteString(" HAVING ")
+		writeWhereFragmentsToSQL(b.HavingFragments, w, &args)
 	}
 
 	if len(b.OrderBys) > 0 {
-		sql.WriteString(" ORDER BY ")
+		w.WriteString(" ORDER BY ")
 		for i, s := range b.OrderBys {
 			if i > 0 {
-				sql.WriteString(", ")
+				w.WriteString(", ")
 			}
-			sql.WriteString(s)
+			w.WriteString(s)
 		}
 	}
 
 	if b.LimitValid {
-		sql.WriteString(" LIMIT ")
-		sql.WriteString(strconv.FormatUint(b.LimitCount, 10))
+		w.WriteString(" LIMIT ")
+		w.WriteString(strconv.FormatUint(b.LimitCount, 10))
 	}
 
 	if b.OffsetValid {
-		sql.WriteString(" OFFSET ")
-		sql.WriteString(strconv.FormatUint(b.OffsetCount, 10))
+		w.WriteString(" OFFSET ")
+		w.WriteString(strconv.FormatUint(b.OffsetCount, 10))
 	}
-	return sql.String(), args, nil
+	return args, nil
 }

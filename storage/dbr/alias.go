@@ -1,8 +1,12 @@
 package dbr
 
-import "github.com/corestoreio/csfw/util/bufferpool"
+import (
+	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/errors"
+)
 
 type alias struct {
+	Select     *Select
 	Expression string
 	Alias      string
 }
@@ -27,8 +31,17 @@ func (t alias) QuoteAs() string {
 }
 
 // QuoteAsWriter writes the quote table and its maybe alias into w.
-func (t alias) QuoteAsWriter(w queryWriter) {
+func (t alias) QuoteAsWriter(w queryWriter) (Arguments, error) {
+	if t.Select != nil {
+		w.WriteRune('(')
+		args, err := t.Select.toSQL(w)
+		w.WriteRune(')')
+		w.WriteString(" AS ")
+		Quoter.quote(w, t.Alias)
+		return args, errors.Wrap(err, "[dbr] QuoteAsWriter.SubSelect")
+	}
 	Quoter.quoteAs(w, t.Expression, t.Alias)
+	return nil, nil
 }
 
 // DefaultScopeNames specifies the name of the scopes used in all EAV* function
