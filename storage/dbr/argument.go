@@ -34,6 +34,66 @@ const (
 	OperatorNotEqual   byte = '!' // != ?
 )
 
+func writeOperator(w queryWriter, operator byte, hasArg bool) (addArg bool) {
+	// hasArg argument only used in case we have in the parent caller function a
+	// sub-select. sub-selects do not need a place holder.
+	switch operator {
+	case OperatorNull:
+		w.WriteString(" IS NULL")
+	case OperatorNotNull:
+		w.WriteString(" IS NOT NULL")
+	case OperatorIn:
+		w.WriteString(" IN ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	case OperatorNotIn:
+		w.WriteString(" NOT IN ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	case OperatorLike:
+		w.WriteString(" LIKE ?")
+		addArg = true
+	case OperatorNotLike:
+		w.WriteString(" NOT LIKE ?")
+		addArg = true
+	case OperatorBetween:
+		w.WriteString(" BETWEEN ? AND ?")
+		addArg = true
+	case OperatorNotBetween:
+		w.WriteString(" NOT BETWEEN ? AND ?")
+		addArg = true
+	case OperatorGreatest:
+		w.WriteString(" GREATEST (?)")
+		addArg = true
+	case OperatorLeast:
+		w.WriteString(" LEAST (?)")
+		addArg = true
+	case OperatorEqual:
+		w.WriteString(" = ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	case OperatorNotEqual:
+		w.WriteString(" != ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	default:
+		w.WriteString(" = ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	}
+	return
+}
+
 // StatementTypes identifies in the ArgumentGenerater interface what kind of
 // operation requests the arguments.
 const (
@@ -541,7 +601,7 @@ func (a argFloat64) Operator(_ byte) Argument { return a }
 func (a argFloat64) operator() byte           { return 0 }
 
 type argFloat64s struct {
-	opt  byte
+	op   byte
 	data []float64
 }
 
@@ -576,11 +636,11 @@ func (a argFloat64s) len() int {
 }
 
 func (a argFloat64s) Operator(opt byte) Argument {
-	a.opt = opt
+	a.op = opt
 	return a
 }
 
-func (a argFloat64s) operator() byte { return a.opt }
+func (a argFloat64s) operator() byte { return a.op }
 
 // ArgFloat64 adds a float64 or a slice of floats to the argument list.
 // Providing no arguments returns a NULL type.

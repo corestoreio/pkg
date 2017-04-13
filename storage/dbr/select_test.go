@@ -646,6 +646,7 @@ func TestSelect_AddColumns(t *testing.T) {
 }
 
 func TestSelect_AddColumnsQuoted(t *testing.T) {
+	t.Parallel()
 	s := NewSelect("t3").
 		AddColumnsQuoted("t3.name", "sku").
 		AddColumnsAliases("SUM(price)", "total_price")
@@ -653,6 +654,33 @@ func TestSelect_AddColumnsQuoted(t *testing.T) {
 	sSQL, _, err := s.ToSQL()
 	assert.NoError(t, err, "%+v", err)
 	assert.Exactly(t, "SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`", sSQL)
+}
+
+func TestSubSelect(t *testing.T) {
+	sub := NewSelect("catalog_category_product").
+		AddColumnsQuoted("entity_id").Where(Condition("category_id", ArgInt64(234)))
+
+	t.Run("IN", func(t *testing.T) {
+		s := NewSelect("catalog_product_entity").
+			AddColumns("*").
+			Where(SubSelect("entity_id", OperatorIn, sub))
+
+		sStr, args, err := s.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{int64(234)}, args.Interfaces())
+		assert.Exactly(t, "SELECT * FROM `catalog_product_entity` WHERE (`entity_id` IN (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))", sStr)
+	})
+
+	t.Run("not equal", func(t *testing.T) {
+		s := NewSelect("catalog_product_entity").
+			AddColumns("*").
+			Where(SubSelect("entity_id", OperatorNotEqual, sub))
+
+		sStr, args, err := s.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{int64(234)}, args.Interfaces())
+		assert.Exactly(t, "SELECT * FROM `catalog_product_entity` WHERE (`entity_id` != (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))", sStr)
+	})
 }
 
 func TestSelect_Subselect(t *testing.T) {
@@ -738,9 +766,9 @@ func TestSelect_Subselect(t *testing.T) {
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
-		assert.Exactly(t, []interface{}(nil), args.Interfaces())
+		assert.Exactly(t, []interface{}{int64(2), int64(3), int64(4), int64(3)}, args.Interfaces())
 		//println(sSQL)
-		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`, `t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.period, `t1`.product_id"
+		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`, `t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.period, `t1`.product_id"
 		if sSQL != wantSQL {
 			t.Errorf("\nHave: %q\nWant: %q", sSQL, wantSQL)
 		}

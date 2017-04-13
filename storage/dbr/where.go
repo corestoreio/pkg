@@ -1,6 +1,10 @@
 package dbr
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/corestoreio/errors"
+)
 
 // Eq is a map Expression -> value pairs which must be matched in a query.
 // Joined at AND statements to the WHERE clause. Implements ConditionArg
@@ -25,6 +29,13 @@ type whereFragment struct {
 	// is not a valid identifier we treat it as an expression.
 	Condition string
 	Arguments Arguments
+	Sub       struct {
+		// Select adds a sub-select to the where statement. Condition must be either
+		// a column name or anything else which can handle the result of a
+		// sub-select.
+		Select   *Select
+		Operator byte
+	}
 }
 
 func (wf *whereFragment) appendConditions(wfs *WhereFragments) {
@@ -37,6 +48,15 @@ type WhereFragments []*whereFragment
 // ConditionArg used at argument in Where()
 type ConditionArg interface {
 	appendConditions(*WhereFragments)
+}
+
+func SubSelect(rawStatementOrColumnName string, operator byte, s *Select) ConditionArg {
+	wf := &whereFragment{
+		Condition: rawStatementOrColumnName,
+	}
+	wf.Sub.Select = s
+	wf.Sub.Operator = operator
+	return wf
 }
 
 // Condition adds a condition and checks values if they implement driver.Valuer.
@@ -54,7 +74,7 @@ func appendConditions(wf *WhereFragments, wargs ...ConditionArg) {
 }
 
 // Invariant: only called when len(fragments) > 0
-func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arguments) {
+func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arguments) error {
 	anyConditions := false
 	for _, f := range fragments {
 
@@ -66,59 +86,34 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 		}
 
 		addArg := false
-		if isValidIdentifier(f.Condition) > 0 {
+
+		if isValidIdentifier(f.Condition) > 0 { // must be an expression
 			_, _ = w.WriteString(f.Condition)
 			addArg = true
 		} else {
 			Quoter.quoteAs(w, f.Condition)
-			// a column only supports one argument. If not provided we panic with an index out of bounds error.
-			arg := f.Arguments[0]
-			switch arg.operator() {
-			case OperatorNull:
-				w.WriteString(" IS NULL")
-			case OperatorNotNull:
-				w.WriteString(" IS NOT NULL")
-			case OperatorIn:
-				w.WriteString(" IN ?")
-				addArg = true
-			case OperatorNotIn:
-				w.WriteString(" NOT IN ?")
-				addArg = true
-			case OperatorLike:
-				w.WriteString(" LIKE ?")
-				addArg = true
-			case OperatorNotLike:
-				w.WriteString(" NOT LIKE ?")
-				addArg = true
-			case OperatorBetween:
-				w.WriteString(" BETWEEN ? AND ?")
-				addArg = true
-			case OperatorNotBetween:
-				w.WriteString(" NOT BETWEEN ? AND ?")
-				addArg = true
-			case OperatorGreatest:
-				w.WriteString(" GREATEST ?")
-				addArg = true
-			case OperatorLeast:
-				w.WriteString(" LEAST ?")
-				addArg = true
-			case OperatorEqual:
-				w.WriteString(" = ?")
-				addArg = true
-			case OperatorNotEqual:
-				w.WriteString(" != ?")
-				addArg = true
-			default:
-				w.WriteString(" = ?")
-				addArg = true
+
+			if f.Sub.Select != nil {
+				writeOperator(w, f.Sub.Operator, false)
+				w.WriteRune('(')
+				subArgs, err := f.Sub.Select.toSQL(w)
+				w.WriteRune(')')
+				if err != nil {
+					return errors.Wrapf(err, "[dbr] writeWhereFragmentsToSQL failed SubSelect for table: %q", f.Sub.Select.FromTable.String())
+				}
+				*args = append(*args, subArgs...)
+			} else {
+				// a column only supports one argument. If not provided we panic
+				// with an index out of bounds error.
+				addArg = writeOperator(w, f.Arguments[0].operator(), true)
 			}
 		}
 		_, _ = w.WriteRune(')')
 		if addArg {
 			*args = append(*args, f.Arguments...)
 		}
-
 	}
+	return nil
 }
 
 // maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
@@ -128,7 +123,9 @@ const maxIdentifierLength = 64
 // objects within MySQL, including database, table, index, column, alias, view,
 // stored procedure, partition, tablespace, and other object names are known as
 // identifiers. ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar,
-// underscore) Max length 63 characters. Returns errors.NotValid
+// underscore) Max length 63 characters.
+//
+// Returns 0 if the identifier is valid.
 //
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 func isValidIdentifier(objectName string) int8 {
