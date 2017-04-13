@@ -307,13 +307,17 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 			w.WriteString(" JOIN ")
 			f.Table.QuoteAsWriter(w)
 			w.WriteString(" ON ")
-			writeWhereFragmentsToSQL(f.OnConditions, w, &args)
+			if err := writeWhereFragmentsToSQL(f.OnConditions, w, &args); err != nil {
+				return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
+			}
 		}
 	}
 
 	if len(b.WhereFragments) > 0 {
 		w.WriteString(" WHERE ")
-		writeWhereFragmentsToSQL(b.WhereFragments, w, &args)
+		if err := writeWhereFragmentsToSQL(b.WhereFragments, w, &args); err != nil {
+			return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
+		}
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -328,7 +332,9 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	if len(b.HavingFragments) > 0 {
 		w.WriteString(" HAVING ")
-		writeWhereFragmentsToSQL(b.HavingFragments, w, &args)
+		if err := writeWhereFragmentsToSQL(b.HavingFragments, w, &args); err != nil {
+			return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
+		}
 	}
 
 	if len(b.OrderBys) > 0 {

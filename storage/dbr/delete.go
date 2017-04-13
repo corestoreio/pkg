@@ -130,7 +130,9 @@ func (b *Delete) ToSQL() (string, Arguments, error) {
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {
 		buf.WriteString(" WHERE ")
-		writeWhereFragmentsToSQL(b.WhereFragments, buf, &args)
+		if err := writeWhereFragmentsToSQL(b.WhereFragments, buf, &args); err != nil {
+			return "", nil, errors.Wrap(err, "[dbr] Delete.ToSQL.writeWhereFragmentsToSQL")
+		}
 	}
 
 	// Ordering and limiting
