@@ -17,22 +17,20 @@ type Delete struct {
 		Preparer
 		Execer
 	}
-
 	From alias
 	WhereFragments
 	OrderBys    []string
 	LimitCount  uint64
-	LimitValid  bool
 	OffsetCount uint64
+	LimitValid  bool
 	OffsetValid bool
-
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners DeleteListeners
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
+	// Listeners allows to dispatch certain functions in different
+	// situations.
+	Listeners DeleteListeners
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.

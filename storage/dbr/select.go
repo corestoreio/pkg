@@ -22,8 +22,7 @@ type Select struct {
 	RawFullSQL string
 	Arguments
 
-	IsDistinct bool
-	Columns    []string
+	Columns []string
 
 	// Table table name and optional alias name to SELECT from.
 	Table alias
@@ -34,17 +33,17 @@ type Select struct {
 	HavingFragments WhereFragments
 	OrderBys        []string
 	LimitCount      uint64
-	LimitValid      bool
 	OffsetCount     uint64
+	LimitValid      bool
 	OffsetValid     bool
-
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners SelectListeners
+	IsDistinct      bool
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
+	// Listeners allows to dispatch certain functions in different
+	// situations.
+	Listeners SelectListeners
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
@@ -256,6 +255,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 	return b
 }
 
+// ToSQL converts the select statement into a string and returns its arguments.
 func (b *Select) ToSQL() (string, Arguments, error) {
 	var w = bufferpool.Get()
 	defer bufferpool.Put(w)

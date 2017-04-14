@@ -25,8 +25,8 @@ import (
 // It will decode to null, not zero, if null. NullInt64 implements interface
 // Argument.
 type NullInt64 struct {
-	opt byte
 	sql.NullInt64
+	opt byte
 }
 
 func (a NullInt64) toIFace(args *[]interface{}) {

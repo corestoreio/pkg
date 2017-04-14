@@ -26,8 +26,8 @@ import (
 // It will marshal to null if null. Blank string input will be considered null.
 // NullString implements interface Argument.
 type NullString struct {
-	opt byte
 	sql.NullString
+	opt byte
 }
 
 func (a NullString) toIFace(args *[]interface{}) {

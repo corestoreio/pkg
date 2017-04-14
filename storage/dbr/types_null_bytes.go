@@ -24,8 +24,8 @@ import (
 // NullBytes is a nullable byte slice. JSON marshals to zero if null. Considered
 // null to SQL if zero. NullBytes implements interface Argument.
 type NullBytes struct {
-	opt   byte
 	Bytes []byte
+	opt   byte
 	Valid bool
 }
 
