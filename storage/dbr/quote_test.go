@@ -43,7 +43,7 @@ func BenchmarkQuoteAlias(b *testing.B) {
 	const want = "(e.price * a.tax * e.weee) AS `final_price`"
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if have := Quoter.Alias("(e.price * a.tax * e.weee)", "final_price"); have != want {
+		if have := Quoter.ExprAlias("(e.price * a.tax * e.weee)", "final_price"); have != want {
 			b.Fatalf("Have %s\nWant %s\n", have, want)
 		}
 	}
@@ -73,7 +73,7 @@ func BenchmarkQuoteQuote(b *testing.B) {
 }
 
 func TestMysqlQuoter_Quote(t *testing.T) {
-	assert.Exactly(t, "`tableName`", Quoter.Quote("", "tableName"))
+	assert.Exactly(t, "`tableName`", Quoter.Quote("tableName"))
 	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.Quote("databaseName", "tableName"))
 	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.Quote("database`Name", "table`Name"))
 }

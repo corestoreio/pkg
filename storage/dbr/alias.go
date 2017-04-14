@@ -23,7 +23,7 @@ func MakeAlias(as ...string) alias {
 }
 
 func (t alias) String() string {
-	return Quoter.Alias(t.Expression, t.Alias)
+	return Quoter.ExprAlias(t.Expression, t.Alias)
 }
 
 func (t alias) QuoteAs() string {
@@ -38,7 +38,7 @@ func (t alias) QuoteAsWriter(w queryWriter) (Arguments, error) {
 		w.WriteRune(')')
 		w.WriteString(" AS ")
 		Quoter.quote(w, t.Alias)
-		return args, errors.Wrap(err, "[dbr] QuoteAsWriter.SubSelect")
+		return args, errors.Wrap( err,"[dbr] QuoteAsWriter.SubSelect")
 	}
 	Quoter.quoteAs(w, t.Expression, t.Alias)
 	return nil, nil
@@ -49,8 +49,8 @@ func (t alias) QuoteAsWriter(w queryWriter) (Arguments, error) {
 var DefaultScopeNames = [...]string{"Store", "Group", "Website", "Default"}
 
 // EAVIfNull creates a nested IFNULL SQL statement when a scope based fall back
-// hierarchy is required. Alias argument will be used at prefix for the alias
-// table name and at the final alias.
+// hierarchy is required. Alias argument will be used as a prefix for the alias
+// table name and as the final alias name.
 func EAVIfNull(alias, columnName, defaultVal string, scopeNames ...string) string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)

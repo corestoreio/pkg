@@ -99,7 +99,7 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 				subArgs, err := f.Sub.Select.toSQL(w)
 				w.WriteRune(')')
 				if err != nil {
-					return errors.Wrapf(err, "[dbr] writeWhereFragmentsToSQL failed SubSelect for table: %q", f.Sub.Select.FromTable.String())
+					return errors.Wrapf(err, "[dbr] writeWhereFragmentsToSQL failed SubSelect for table: %q", f.Sub.Select.Table.String())
 				}
 				*args = append(*args, subArgs...)
 			} else {

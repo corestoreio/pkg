@@ -364,8 +364,8 @@ func TestInsert_FromSelect(t *testing.T) {
 	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(OperatorIn)}
 	args := Arguments{ArgInt64(1), ArgString("wat")}
 
-	iSQL, args, err := ins.FromSelect(NewSelect("some_table").
-		AddColumns("something_id", "user_id", "other").
+	iSQL, args, err := ins.FromSelect(NewSelect("something_id", "user_id", "other").
+		From("some_table").
 		Where(Condition("d = ? OR e = ?", args...)).
 		Where(argEq).
 		OrderDir("id", false).

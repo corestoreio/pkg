@@ -25,8 +25,8 @@ type Select struct {
 	IsDistinct bool
 	Columns    []string
 
-	// FromTable table name and optional alias name to SELECT from.
-	FromTable alias
+	// Table table name and optional alias name to SELECT from.
+	Table alias
 
 	WhereFragments
 	JoinFragments
@@ -51,11 +51,12 @@ type Select struct {
 	propagationStoppedAt int
 }
 
-// NewSelect creates a new object with a black hole logger.
-func NewSelect(from ...string) *Select {
+// NewSelect creates a new Select object with a black hole logger and selecting
+// from the specified columns. The provided columns won't get quoted.
+func NewSelect(columns ...string) *Select {
 	return &Select{
-		Log:       log.BlackHole{},
-		FromTable: MakeAlias(from...),
+		Log:     log.BlackHole{},
+		Columns: columns,
 	}
 }
 
@@ -67,7 +68,7 @@ func NewSelect(from ...string) *Select {
 func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 	s := &Select{
 		Log: log.BlackHole{},
-		FromTable: alias{
+		Table: alias{
 			Select: subSelect,
 			Alias:  aliasName,
 		},
@@ -75,11 +76,12 @@ func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 	return s
 }
 
-// Select creates a new Select that select that given columns
-func (c *Connection) Select(cols ...string) *Select {
+// Select creates a new Select which selects from the provided columns.
+// Columns won't get quoted.
+func (c *Connection) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     c.Log,
-		Columns: cols,
+		Columns: columns,
 	}
 	s.DB.Querier = c.DB
 	s.DB.QueryRower = c.DB
@@ -101,10 +103,10 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 }
 
 // Select creates a new Select that select that given columns bound to the transaction
-func (tx *Tx) Select(cols ...string) *Select {
+func (tx *Tx) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     tx.Logger,
-		Columns: cols,
+		Columns: columns,
 	}
 	s.DB.Querier = tx.Tx
 	s.DB.QueryRower = tx.Tx
@@ -134,53 +136,71 @@ func (b *Select) Distinct() *Select {
 // From sets the table to SELECT FROM. If second argument will be provided this
 // at then considered at the alias. SELECT ... FROM table AS alias.
 func (b *Select) From(from ...string) *Select {
-	b.FromTable = MakeAlias(from...)
+	b.Table = MakeAlias(from...)
 	return b
 }
 
-// AddColumns appends more columns to the Columns slice. If a single string gets
-// passed with comma separated values, this string gets split by the command and
-// its values appended to the Columns slice. Columns won't get quoted.
-func (b *Select) AddColumns(cols ...string) *Select {
-	if len(cols) > 0 && strings.IndexByte(cols[0], ',') > 0 {
-		cols = strings.Split(cols[0], ",")
-		for i, c := range cols {
-			cols[i] = strings.TrimSpace(c)
+func splitColumns(cols []string) []string {
+	for i := 0; i < len(cols); i++ {
+		if c := cols[i]; strings.IndexByte(c, ',') > 0 {
+			cs := strings.Split(c, ",")
+			for j, c2 := range cs {
+				cs[j] = strings.TrimSpace(c2)
+			}
+			cols = append(cols[:i], append(cs, cols[i+1:]...)...)
 		}
 	}
-	b.Columns = append(b.Columns, cols...)
+	return cols
+}
+
+// AddColumns appends more columns to the Columns slice. If a single string gets
+// passed with comma separated values, this string gets split by the comma and
+// its values appended to the Columns slice. Columns won't get quoted.
+// 		AddColumns("a","b") 		// []string{"a","b"}
+// 		AddColumns("a,b","z","c,d")	// []string{"a","b","z","c","d"}
+func (b *Select) AddColumns(cols ...string) *Select {
+	b.Columns = append(b.Columns, splitColumns(cols)...)
 	return b
 }
 
 // AddColumnsQuoted appends more columns to the Columns slice and quotes them.
 // Give "t1.name" gets translated to "`t1`.`name`". Comma separated input is
-// supported:
-//		"t1.name,t1.sku" => []string{"`t1`.`name`", "`t1`.`sku`"}
+// supported for each slice item:
+//		AddColumnsQuoted("t1.name","t1.sku","price") // []string{"`t1`.`name`", "`t1`.`sku`","`price`"}
+//		AddColumnsQuoted("t1.name,t1.sku")	// []string{"`t1`.`name`", "`t1`.`sku`"}
 func (b *Select) AddColumnsQuoted(cols ...string) *Select {
-	if len(cols) > 0 && strings.IndexByte(cols[0], ',') > 0 {
-		cols = strings.Split(cols[0], ",")
-		for i, c := range cols {
-			cols[i] = strings.TrimSpace(c)
-		}
-	}
-	for i, c := range cols {
+	for i, c := range splitColumns(cols) {
 		cols[i] = Quoter.QuoteAs(c)
 	}
 	b.Columns = append(b.Columns, cols...)
 	return b
 }
 
-// AddColumnsAliases expects a balanced slice of ColumnName, AliasName and adds
-// both concatenated and quoted to the Columns slice.
-func (b *Select) AddColumnsAliases(expressionAlias ...string) *Select {
-	for i := 0; i < len(expressionAlias); i = i + 2 {
-		b.Columns = append(b.Columns, Quoter.Alias(expressionAlias[i], expressionAlias[i+1]))
+// AddColumnsQuotedAlias expects a balanced slice of "ColumnName, AliasName" and
+// adds both concatenated and quoted to the Columns slice. It panics when the
+// provided `columnAliases` seems not be balanced.
+//		AddColumnsQuotedAlias("t1.name","t1Name","t1.sku","t1SKU") // []string{"`t1`.`name` AS `t1Name`", "`t1`.`sku` AS `t1SKU`"}
+func (b *Select) AddColumnsQuotedAlias(columnAliases ...string) *Select {
+	columnAliases = splitColumns(columnAliases)
+	for i := 0; i < len(columnAliases); i = i + 2 {
+		b.Columns = append(b.Columns, Quoter.QuoteAs(columnAliases[i], columnAliases[i+1]))
+	}
+	return b
+}
+
+// AddColumnsExprAlias expects a balanced slice of "expression, AliasName" and
+// adds both concatenated and quoted to the Columns slice. It panics when the
+// provided `expressionAlias` seems not be balanced.
+// 		AddColumnsExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
+func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
+	for i := 0; i < len(expressionAliases); i = i + 2 {
+		b.Columns = append(b.Columns, Quoter.ExprAlias(expressionAliases[i], expressionAliases[i+1]))
 	}
 	return b
 }
 
 // Where appends a WHERE clause to the statement for the given string and args
-// or map of column/value pairs
+// or map of column/value pairs.
 func (b *Select) Where(c ...ConditionArg) *Select {
 	appendConditions(&b.WhereFragments, c...)
 	return b
@@ -259,7 +279,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		return b.Arguments, nil
 	}
 
-	if b.FromTable.Expression == "" && b.FromTable.Select == nil {
+	if b.Table.Expression == "" && b.Table.Select == nil {
 		return nil, errors.NewEmptyf(errTableMissing)
 	}
 	if len(b.Columns) == 0 {
@@ -284,19 +304,10 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		w.WriteString(s)
 	}
 
-	if len(b.JoinFragments) > 0 {
-		for _, f := range b.JoinFragments {
-			for _, c := range f.Columns {
-				w.WriteString(", ")
-				w.WriteString(c)
-			}
-		}
-	}
-
 	w.WriteString(" FROM ")
-	tArgs, err := b.FromTable.QuoteAsWriter(w)
+	tArgs, err := b.Table.QuoteAsWriter(w)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Selec.toSQL.FromTable.QuoteAsWriter")
+		return nil, errors.Wrap(err, "[dbr] Selec.toSQL.Table.QuoteAsWriter")
 	}
 	args = append(args, tArgs...)
 

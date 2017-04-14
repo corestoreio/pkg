@@ -3,51 +3,51 @@ package dbr
 // JoinFragments defines multiple join conditions.
 type JoinFragments []*joinFragment
 
-type (
-	joinFragment struct {
-		// left, right, inner, middle, upper, lower ...
-		JoinType string
-		// table name/alias which should be joined
-		Table alias
-		// contains all column names from the joined table
-		Columns []string
-		// join on condition
-		OnConditions WhereFragments
-	}
-)
-
-// JoinTable is a helper func which transforms variadic arguments into a slice
-func JoinTable(tableAlias ...string) []string {
-	return tableAlias
+type joinFragment struct {
+	// JoinType can be LEFT, RIGHT, INNER, OUTER or CROSS
+	JoinType string
+	// Table name and alias of the table
+	Table alias
+	// OnConditions join on those conditions
+	OnConditions WhereFragments
 }
 
-// JoinColumns is a helper func which transforms variadic arguments into a slice
-func JoinColumns(columns ...string) []string {
-	return columns
-}
-
-func (b *Select) join(j string, t, c []string, on ...ConditionArg) *Select {
+func (b *Select) join(j string, t alias, on ...ConditionArg) *Select {
 	jf := &joinFragment{
 		JoinType: j,
-		Table:    MakeAlias(t...),
-		Columns:  c,
+		Table:    t,
 	}
 	appendConditions(&jf.OnConditions, on...)
 	b.JoinFragments = append(b.JoinFragments, jf)
 	return b
 }
 
-// Join creates a join construct with the onConditions glued together with AND
-func (b *Select) Join(table, columns []string, onConditions ...ConditionArg) *Select {
-	return b.join("INNER", table, columns, onConditions...)
+// Join creates an INNER join construct. By default, the onConditions are glued
+// together with AND.
+func (b *Select) Join(table alias, onConditions ...ConditionArg) *Select {
+	return b.join("INNER", table, onConditions...)
 }
 
-// LeftJoin creates a join construct with the onConditions glued together with AND
-func (b *Select) LeftJoin(table, columns []string, onConditions ...ConditionArg) *Select {
-	return b.join("LEFT", table, columns, onConditions...)
+// LeftJoin creates a LEFT join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Select) LeftJoin(table alias, onConditions ...ConditionArg) *Select {
+	return b.join("LEFT", table, onConditions...)
 }
 
-// RightJoin creates a join construct with the onConditions glued together with AND
-func (b *Select) RightJoin(table, columns []string, onConditions ...ConditionArg) *Select {
-	return b.join("RIGHT", table, columns, onConditions...)
+// RightJoin creates a RIGHT join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Select) RightJoin(table alias, onConditions ...ConditionArg) *Select {
+	return b.join("RIGHT", table, onConditions...)
+}
+
+// OuterJoin creates an OUTER join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Select) OuterJoin(table alias, onConditions ...ConditionArg) *Select {
+	return b.join("OUTER", table, onConditions...)
+}
+
+// CrossJoin creates a CROSS join construct. By default, the onConditions are
+// glued together with AND.
+func (b *Select) CrossJoin(table alias, onConditions ...ConditionArg) *Select {
+	return b.join("CROSS", table, onConditions...)
 }

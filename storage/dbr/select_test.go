@@ -437,96 +437,94 @@ func TestSelectLoadValues(t *testing.T) {
 func TestSelectJoin(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
-	sqlObj := s.
-		Select("p1.*", "p2.*").
-		From("dbr_people", "p1").
-		Join(
-			JoinTable("dbr_people", "p2"),
-			JoinColumns(),
-			Condition("`p2`.`id` = `p1`.`id`"),
-			Condition("p1.id", ArgInt(42)),
+	t.Run("inner", func(t *testing.T) {
+		sqlObj := s.
+			Select("p1.*", "p2.*").
+			From("dbr_people", "p1").
+			Join(
+				MakeAlias("dbr_people", "p2"),
+				Condition("`p2`.`id` = `p1`.`id`"),
+				Condition("p1.id", ArgInt(42)),
+			)
+
+		sql, _, err := sqlObj.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t,
+			"SELECT p1.*, p2.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+			sql,
 		)
+	})
 
-	sql, _, err := sqlObj.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t,
-		"SELECT p1.*, p2.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
-		sql,
-	)
-
-	sqlObj = s.
-		Select("p1.*").
-		From("dbr_people", "p1").
-		LeftJoin(
-			JoinTable("dbr_people", "p2"),
-			JoinColumns("p2.name"),
-			Condition("`p2`.`id` = `p1`.`id`"),
-			Condition("p1.id", ArgInt(42)),
+	t.Run("left", func(t *testing.T) {
+		sqlObj := s.
+			Select("p1.*", "p2.name").
+			From("dbr_people", "p1").
+			LeftJoin(
+				MakeAlias("dbr_people", "p2"),
+				Condition("`p2`.`id` = `p1`.`id`"),
+				Condition("p1.id", ArgInt(42)),
+			)
+		sql, _, err := sqlObj.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t,
+			"SELECT p1.*, p2.name FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+			sql,
 		)
+	})
 
-	sql, _, err = sqlObj.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t,
-		"SELECT p1.*, p2.name FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
-		sql,
-	)
+	t.Run("right", func(t *testing.T) {
+		sqlObj := s.
+			Select("p1.*").
+			AddColumnsQuotedAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID").
+			From("dbr_people", "p1").
+			RightJoin(
+				MakeAlias("dbr_people", "p2"),
+				Condition("`p2`.`id` = `p1`.`id`"),
+			)
 
-	sqlObj = s.
-		Select("p1.*").
-		From("dbr_people", "p1").
-		RightJoin(
-			JoinTable("dbr_people", "p2"),
-			Quoter.ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
-			Condition("`p2`.`id` = `p1`.`id`"),
+		sql, _, err := sqlObj.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t,
+			"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
+			sql,
 		)
-
-	sql, _, err = sqlObj.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t,
-		"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
-		sql,
-	)
+	})
 }
 
 func TestSelect_Join(t *testing.T) {
 	t.Parallel()
 	const want = "SELECT IFNULL(`manufacturerStore`.`value`,IFNULL(`manufacturerGroup`.`value`,IFNULL(`manufacturerWebsite`.`value`,IFNULL(`manufacturerDefault`.`value`,'')))) AS `manufacturer`, cpe.* FROM `catalog_product_entity` AS `cpe` LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerDefault` ON (manufacturerDefault.scope = 0) AND (manufacturerDefault.scope_id = 0) AND (manufacturerDefault.attribute_id = 83) AND (manufacturerDefault.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerWebsite` ON (manufacturerWebsite.scope = 1) AND (manufacturerWebsite.scope_id = 10) AND (manufacturerWebsite.attribute_id = 83) AND (manufacturerWebsite.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerGroup` ON (manufacturerGroup.scope = 2) AND (manufacturerGroup.scope_id = 20) AND (manufacturerGroup.attribute_id = 83) AND (manufacturerGroup.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerStore` ON (manufacturerStore.scope = 2) AND (manufacturerStore.scope_id = 20) AND (manufacturerStore.attribute_id = 83) AND (manufacturerStore.value IS NOT NULL)"
 
-	s := NewSelect("catalog_product_entity", "cpe").
+	s := NewSelect(EAVIfNull("manufacturer", "value", "''"), "cpe.*").
+		From("catalog_product_entity", "cpe").
 		LeftJoin(
-			JoinTable("catalog_product_entity_varchar", "manufacturerDefault"),
-			JoinColumns("cpe.*"),
+			MakeAlias("catalog_product_entity_varchar", "manufacturerDefault"),
 			Condition("manufacturerDefault.scope = 0"),
 			Condition("manufacturerDefault.scope_id = 0"),
 			Condition("manufacturerDefault.attribute_id = 83"),
 			Condition("manufacturerDefault.value IS NOT NULL"),
 		).
 		LeftJoin(
-			JoinTable("catalog_product_entity_varchar", "manufacturerWebsite"),
-			JoinColumns(),
+			MakeAlias("catalog_product_entity_varchar", "manufacturerWebsite"),
 			Condition("manufacturerWebsite.scope = 1"),
 			Condition("manufacturerWebsite.scope_id = 10"),
 			Condition("manufacturerWebsite.attribute_id = 83"),
 			Condition("manufacturerWebsite.value IS NOT NULL"),
 		).
 		LeftJoin(
-			JoinTable("catalog_product_entity_varchar", "manufacturerGroup"),
-			JoinColumns(),
+			MakeAlias("catalog_product_entity_varchar", "manufacturerGroup"),
 			Condition("manufacturerGroup.scope = 2"),
 			Condition("manufacturerGroup.scope_id = 20"),
 			Condition("manufacturerGroup.attribute_id = 83"),
 			Condition("manufacturerGroup.value IS NOT NULL"),
 		).
 		LeftJoin(
-			JoinTable("catalog_product_entity_varchar", "manufacturerStore"),
-			JoinColumns(),
+			MakeAlias("catalog_product_entity_varchar", "manufacturerStore"),
 			Condition("manufacturerStore.scope = 2"),
 			Condition("manufacturerStore.scope_id = 20"),
 			Condition("manufacturerStore.attribute_id = 83"),
 			Condition("manufacturerStore.value IS NOT NULL"),
 		)
-
-	s.Columns = []string{EAVIfNull("manufacturer", "value", "''")}
 
 	sql, _, err := s.ToSQL()
 	assert.NoError(t, err)
@@ -540,8 +538,7 @@ func TestSelect_Events(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewSelect("tableA", "tA")
-		d.Columns = []string{"a", "b"}
+		d := NewSelect("a", "b").From("tableA", "tA")
 		d.OrderBy("col3")
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
@@ -579,9 +576,7 @@ func TestSelect_Events(t *testing.T) {
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
-		s := NewSelect("tableA", "tA")
-
-		s.Columns = []string{"a", "b"}
+		s := NewSelect("a", "b").From("tableA", "tA")
 		s.OrderBy("col3")
 		s.Listeners.Add(Listen{
 			Name: "a col1",
@@ -598,9 +593,7 @@ func TestSelect_Events(t *testing.T) {
 	})
 
 	t.Run("Should Dispatch", func(t *testing.T) {
-		s := NewSelect("tableA", "tA")
-
-		s.Columns = []string{"a", "b"}
+		s := NewSelect("a", "b").From("tableA", "tA")
 		s.OrderBy("col3")
 		s.Listeners.Add(Listen{
 			Name:      "a col1",
@@ -634,35 +627,73 @@ func TestSelect_Events(t *testing.T) {
 	})
 }
 
-func TestSelect_AddColumns(t *testing.T) {
+func TestSplitColumns(t *testing.T) {
 	t.Parallel()
-	s := NewSelect("tableA", "tA")
-	s.AddColumns("a", "b", "c")
-	s.AddColumns("d,e,f", "should not get added!")
-	s.AddColumnsAliases("x", "u", "y", "v")
-	sql, _, err := s.ToSQL()
-	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, "SELECT a, b, c, d, e, f, x AS `u`, y AS `v` FROM `tableA` AS `tA`", sql)
+	assert.Exactly(t,
+		[]string{"a", "b", "c"},
+		splitColumns([]string{"a , b ,   c  "}),
+	)
+	assert.Exactly(t,
+		[]string{"a", "b", "c", "d", "e", "f"},
+		splitColumns([]string{"a, b, c", "d, e , f"}),
+	)
+	assert.Exactly(t,
+		[]string{"a", "b", "c", "z", "d", "e", "f"},
+		splitColumns([]string{" a, b , c ", "z", "d,e,f"}),
+	)
 }
 
-func TestSelect_AddColumnsQuoted(t *testing.T) {
+func TestSelect_Columns(t *testing.T) {
 	t.Parallel()
-	s := NewSelect("t3").
-		AddColumnsQuoted("t3.name", "sku").
-		AddColumnsAliases("SUM(price)", "total_price")
-
-	sSQL, _, err := s.ToSQL()
-	assert.NoError(t, err, "%+v", err)
-	assert.Exactly(t, "SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`", sSQL)
+	t.Run("AddColumns, multiple args", func(t *testing.T) {
+		s := NewSelect("a", "b")
+		s.From("tableA", "tA")
+		s.AddColumns("d,e, f", "g", "h", "i,j ,k")
+		sql, _, err := s.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT a, b, d, e, f, g, h, i, j, k FROM `tableA` AS `tA`", sql)
+	})
+	t.Run("AddColumns, each column itself", func(t *testing.T) {
+		s := NewSelect("a", "b")
+		s.From("tableA", "tA")
+		s.AddColumns("d", "e", "f")
+		sql, _, err := s.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT a, b, d, e, f FROM `tableA` AS `tA`", sql)
+	})
+	t.Run("AddColumnsExprAlias", func(t *testing.T) {
+		s := NewSelect().From("t3").
+			AddColumnsExprAlias("x", "u", "y", "v").
+			AddColumnsExprAlias("SUM(price)", "total_price")
+		sSQL, _, err := s.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT x AS `u`, y AS `v`, SUM(price) AS `total_price` FROM `t3`", sSQL)
+	})
+	t.Run("AddColumnsQuoted", func(t *testing.T) {
+		s := NewSelect().From("t3").
+			AddColumnsQuoted("t3.name", "sku").
+			AddColumnsExprAlias("SUM(price)", "total_price")
+		sSQL, _, err := s.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`", sSQL)
+	})
+	t.Run("AddColumnsQuotedAlias", func(t *testing.T) {
+		s := NewSelect().From("t3").
+			AddColumnsQuotedAlias("t3.name", "t3Name", "t3.sku,t3SKU")
+		sSQL, _, err := s.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`", sSQL)
+	})
 }
 
 func TestSubSelect(t *testing.T) {
-	sub := NewSelect("catalog_category_product").
+	t.Parallel()
+	sub := NewSelect().From("catalog_category_product").
 		AddColumnsQuoted("entity_id").Where(Condition("category_id", ArgInt64(234)))
 
 	t.Run("IN", func(t *testing.T) {
-		s := NewSelect("catalog_product_entity").
-			AddColumns("*").
+		s := NewSelect("*").
+			From("catalog_product_entity").
 			Where(SubSelect("entity_id", OperatorIn, sub))
 
 		sStr, args, err := s.ToSQL()
@@ -672,8 +703,8 @@ func TestSubSelect(t *testing.T) {
 	})
 
 	t.Run("not equal", func(t *testing.T) {
-		s := NewSelect("catalog_product_entity").
-			AddColumns("*").
+		s := NewSelect("*").
+			From("catalog_product_entity").
 			Where(SubSelect("entity_id", OperatorNotEqual, sub))
 
 		sStr, args, err := s.ToSQL()
@@ -684,6 +715,7 @@ func TestSubSelect(t *testing.T) {
 }
 
 func TestSelect_Subselect(t *testing.T) {
+	t.Parallel()
 	/* Something like:
 	   SELECT
 	     `t1`.`store_id`,
@@ -717,16 +749,16 @@ func TestSelect_Subselect(t *testing.T) {
 	*/
 
 	t.Run("without args", func(t *testing.T) {
-		sel3 := NewSelect("sales_bestsellers_aggregated_daily", "t3").
-			AddColumnsAliases("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
+		sel3 := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
-			AddColumnsAliases("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
+			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
 			GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
 			OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC")
 
 		sel2 := NewSelectFromSub(sel3, "t2").
 			AddColumns("`t2`.`period`,`t2`.`store_id`,`t2`.`product_id`,`t2`.`product_name`,`t2`.`avg_price`").
-			AddColumnsAliases("`t2`.`total_qty`", "`qty_ordered`")
+			AddColumnsExprAlias("`t2`.`total_qty`", "`qty_ordered`")
 
 		sel1 := NewSelectFromSub(sel2, "t1").
 			AddColumns("`t1`.`period`,`t1`.`store_id`,`t1`.`product_id`,`t1`.`product_name`,`t1`.`avg_price`,`t1`.`qty_ordered`").
@@ -745,10 +777,10 @@ func TestSelect_Subselect(t *testing.T) {
 	})
 
 	t.Run("with args", func(t *testing.T) {
-		sel3 := NewSelect("sales_bestsellers_aggregated_daily", "t3").
-			AddColumnsAliases("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
+		sel3 := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
-			AddColumnsAliases("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
+			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
 			GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
 			Having(Condition("COUNT(*)>?", ArgInt(3))).
 			OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC").
@@ -756,7 +788,7 @@ func TestSelect_Subselect(t *testing.T) {
 
 		sel2 := NewSelectFromSub(sel3, "t2").
 			AddColumns("`t2`.`period`,`t2`.`store_id`,`t2`.`product_id`,`t2`.`product_name`,`t2`.`avg_price`").
-			AddColumnsAliases("`t2`.`total_qty`", "`qty_ordered`")
+			AddColumnsExprAlias("`t2`.`total_qty`", "`qty_ordered`")
 
 		sel1 := NewSelectFromSub(sel2, "t1").
 			AddColumns("`t1`.`period`,`t1`.`store_id`,`t1`.`product_id`,`t1`.`product_name`,`t1`.`avg_price`,`t1`.`qty_ordered`").

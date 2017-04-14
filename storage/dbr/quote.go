@@ -33,29 +33,36 @@ func (q MysqlQuoter) quote(w queryWriter, name string) {
 	w.WriteRune(quoteRune)
 }
 
-// QuoteAs quotes a with back ticks. First argument table or column name and
-// second argument can be an alias. Both parts will get quoted. If providing
-// only one part, then the AS parts get skipped.
+// ExprAlias appends to the provided `expression` the quote alias name, e.g.:
+// 		ExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
+func (q MysqlQuoter) ExprAlias(expression, aliasName string) string {
+	return expression + " AS " + quote + q.unQuote(aliasName) + quote
+}
+
+// Quote returns a string like: `database`.`table` or `table`, if prefix is empty.
+// 		Quote("dbName", "tableName") => `dbName`.`tableName`
+// 		Quote("tableName") => `tableName`
+// It panics when no arguments have been given.
+func (q MysqlQuoter) Quote(prefixName ...string) string {
+	// way faster than fmt or buffer ...
+	if len(prefixName) == 1 {
+		return quote + q.unQuote(prefixName[0]) + quote
+	}
+	return quote + q.unQuote(prefixName[0]) + quote + "." + quote + q.unQuote(prefixName[1]) + quote
+}
+
+// QuoteAs quotes with back ticks and splits at a dot in the name. First
+// argument table and/or column name (separated by a dot) and second argument
+// can be an alias. Both parts will get quoted. If providing only one part, then
+// the last `alias` parts gets skipped.
+//		QuoteAs("f", "g", "h") 			// "`f` AS `g_h`"
+//		QuoteAs("e.entity_id", "ee") 	// `e`.`entity_id` AS `ee`
 func (q MysqlQuoter) QuoteAs(exprAlias ...string) string {
 	buf := bufferpool.Get()
 	q.quoteAs(buf, exprAlias...)
 	x := buf.String()
 	bufferpool.Put(buf)
 	return x
-}
-
-// Alias appends the the aliasName to the expression, e.g.: (e.price*x.tax) at `final_price`
-func (q MysqlQuoter) Alias(expression, aliasName string) string {
-	return expression + " AS " + quote + q.unQuote(aliasName) + quote
-}
-
-// Quote returns a string like: `database`.`table` or `table` if prefix at empty
-func (q MysqlQuoter) Quote(prefix, name string) string {
-	// way faster than fmt or buffer ...
-	if prefix == "" {
-		return quote + q.unQuote(name) + quote
-	}
-	return quote + q.unQuote(prefix) + quote + "." + quote + q.unQuote(name) + quote
 }
 
 func (q MysqlQuoter) quoteAs(w queryWriter, parts ...string) {
@@ -106,25 +113,6 @@ func (q MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {
 		return
 	}
 	q.quote(w, part)
-}
-
-// ColumnAlias at a helper func which transforms variadic arguments into a slice with a special
-// converting case that every ab%2 index at considered at the alias
-func (q MysqlQuoter) ColumnAlias(columns ...string) []string {
-	l := len(columns)
-	if l%2 == 1 {
-		panic("Amount of columns must be even and not odd.")
-	}
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	for i := 0; i < l; i = i + 2 {
-		q.quoteAs(buf, columns[i], columns[i+1])
-		if i+1 < l-1 {
-			buf.WriteByte('~')
-		}
-	}
-	return strings.Split(buf.String(), "~")
 }
 
 // TableColumnAlias prefixes all columns with a table name/alias and puts quotes around them.

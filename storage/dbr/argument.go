@@ -125,7 +125,7 @@ type Argument interface {
 	// Operator sets a comparison or logical operator. Please see the constants
 	// Operator* for the different flags. An underscore in the argument list of
 	// a type indicates that no operator is yet supported.
-	Operator(opt byte) Argument
+	Operator(byte) Argument
 	toIFace(*[]interface{})
 	// writeTo writes the value correctly escaped to the queryWriter. It must
 	// avoid SQL injections.
@@ -209,7 +209,7 @@ func isNotIn(o byte) bool {
 //}
 
 type argTimes struct {
-	opt  byte
+	op   byte
 	data []time.Time
 }
 
@@ -243,12 +243,12 @@ func (a argTimes) len() int {
 	return 1
 }
 
-func (a argTimes) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argTimes) Operator(op byte) Argument {
+	a.op = op
 	return a
 }
 
-func (a argTimes) operator() byte { return a.opt }
+func (a argTimes) operator() byte { return a.op }
 
 // ArgTime adds a time.Time or a slice of times to the argument list.
 // Providing no arguments returns a NULL type.
@@ -336,7 +336,7 @@ func ArgNotNull() Argument {
 //func (a argString) operator() byte           { return 0 }
 
 type argStrings struct {
-	opt  byte
+	op   byte
 	data []string
 }
 
@@ -376,11 +376,11 @@ func (a argStrings) len() int {
 	return 1
 }
 
-func (a argStrings) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argStrings) Operator(op byte) Argument {
+	a.op = op
 	return a
 }
-func (a argStrings) operator() byte { return a.opt }
+func (a argStrings) operator() byte { return a.op }
 
 // ArgString adds a string or a slice of strings to the argument list.
 // Providing no arguments returns a NULL type.
@@ -407,7 +407,7 @@ func (a argBool) Operator(_ byte) Argument { return a }
 func (a argBool) operator() byte           { return 0 }
 
 type argBools struct {
-	opt  byte
+	op   byte
 	data []bool
 }
 
@@ -441,11 +441,11 @@ func (a argBools) len() int {
 	return 1
 }
 
-func (a argBools) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argBools) Operator(op byte) Argument {
+	a.op = op
 	return a
 }
-func (a argBools) operator() byte { return a.opt }
+func (a argBools) operator() byte { return a.op }
 
 // ArgBool adds a string or a slice of bools to the argument list.
 // Providing no arguments returns a NULL type.
@@ -471,7 +471,7 @@ func (a argInt) Operator(_ byte) Argument { return a }
 func (a argInt) operator() byte           { return 0 }
 
 type argInts struct {
-	opt  byte
+	op   byte
 	data []int
 }
 
@@ -505,12 +505,12 @@ func (a argInts) len() int {
 	return 1
 }
 
-func (a argInts) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argInts) Operator(op byte) Argument {
+	a.op = op
 	return a
 }
 
-func (a argInts) operator() byte { return a.opt }
+func (a argInts) operator() byte { return a.op }
 
 // ArgInt adds an integer or a slice of integers to the argument list.
 // Providing no arguments returns a NULL type.
@@ -536,7 +536,7 @@ func (a argInt64) Operator(_ byte) Argument { return a }
 func (a argInt64) operator() byte           { return 0 }
 
 type argInt64s struct {
-	opt  byte
+	op   byte
 	data []int64
 }
 
@@ -570,12 +570,12 @@ func (a argInt64s) len() int {
 	return 1
 }
 
-func (a argInt64s) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argInt64s) Operator(op byte) Argument {
+	a.op = op
 	return a
 }
 
-func (a argInt64s) operator() byte { return a.opt }
+func (a argInt64s) operator() byte { return a.op }
 
 // ArgInt64 adds an integer or a slice of integers to the argument list.
 // Providing no arguments returns a NULL type.
@@ -635,8 +635,8 @@ func (a argFloat64s) len() int {
 	return 1
 }
 
-func (a argFloat64s) Operator(opt byte) Argument {
-	a.op = opt
+func (a argFloat64s) Operator(op byte) Argument {
+	a.op = op
 	return a
 }
 
