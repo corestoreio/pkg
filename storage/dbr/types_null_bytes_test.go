@@ -52,6 +52,7 @@ func TestUnmarshalBytes(t *testing.T) {
 
 	var ni NullBytes
 	err = ni.UnmarshalJSON([]byte{})
+	maybePanic(err)
 	if ni.Valid == false {
 		t.Errorf("expected Valid to be true, got false")
 	}
@@ -61,6 +62,7 @@ func TestUnmarshalBytes(t *testing.T) {
 
 	var null NullBytes
 	err = null.UnmarshalJSON(nil)
+	maybePanic(err)
 	if null.Valid == false {
 		t.Errorf("expected Valid to be true, got false")
 	}

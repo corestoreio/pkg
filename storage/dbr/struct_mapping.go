@@ -91,20 +91,20 @@ func prepareHolderFor(record reflect.Value, fieldMap [][]int, holder []interface
 	return holder, nil
 }
 
-func valuesFor(recordType reflect.Type, record reflect.Value, columns []string) ([]interface{}, error) {
-	fieldMap, err := calculateFieldMap(recordType, columns, true)
-	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] valuesFor.calculateFieldMap")
-	}
-
-	values := make([]interface{}, len(columns))
-	for i, fieldIndex := range fieldMap {
-		if fieldIndex == nil {
-			return nil, errors.NewEmptyf("[dbr] fieldIndex is nil: %#v", fieldMap)
-		}
-		field := record.FieldByIndex(fieldIndex)
-		values[i] = field.Interface()
-	}
-
-	return values, nil
-}
+//func valuesFor(recordType reflect.Type, record reflect.Value, columns []string) ([]interface{}, error) {
+//	fieldMap, err := calculateFieldMap(recordType, columns, true)
+//	if err != nil {
+//		return nil, errors.Wrap(err, "[dbr] valuesFor.calculateFieldMap")
+//	}
+//
+//	values := make([]interface{}, len(columns))
+//	for i, fieldIndex := range fieldMap {
+//		if fieldIndex == nil {
+//			return nil, errors.NewEmptyf("[dbr] fieldIndex is nil: %#v", fieldMap)
+//		}
+//		field := record.FieldByIndex(fieldIndex)
+//		values[i] = field.Interface()
+//	}
+//
+//	return values, nil
+//}

@@ -128,7 +128,7 @@ func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues(ArgString("Barack"), ArgString("44")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues(ArgStrings("Barack"), ArgStrings("44")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	rowsAff, err := res.RowsAffected()
@@ -139,7 +139,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues(ArgString("Barack"), ArgString("obama@whitehouse.gov")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues(ArgStrings("Barack"), ArgStrings("obama@whitehouse.gov")).Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
@@ -183,7 +183,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	s := createRealSessionWithFixtures()
 	res, err := s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(ArgInt64(678), ArgString("Pike"), ArgString("pikes@peak.co")).Exec(context.TODO())
+		AddValues(ArgInt64(678), ArgStrings("Pike"), ArgStrings("pikes@peak.co")).Exec(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -200,8 +200,8 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	}
 	res, err = s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(ArgInt64(inID), ArgString(""), ArgString("pikes@peak.com")).
-		AddOnDuplicateKey("name", ArgString("Pik3")).
+		AddValues(ArgInt64(inID), ArgStrings(""), ArgStrings("pikes@peak.com")).
+		AddOnDuplicateKey("name", ArgStrings("Pik3")).
 		AddOnDuplicateKey("email", nil).
 		Exec(context.TODO())
 	if err != nil {
@@ -262,14 +262,14 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col1", ArgString("X1"))
+					b.Pair("col1", ArgStrings("X1"))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col2", ArgString("X2"))
+					b.Pair("col2", ArgStrings("X2"))
 					b.PropagationStopped = true
 				},
 			},
@@ -298,7 +298,7 @@ func TestInsert_Events(t *testing.T) {
 			Listen{
 				Name: "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", ArgString("X1"))
+					i.Pair("colC", ArgStrings("X1"))
 				},
 			},
 		)
@@ -337,7 +337,7 @@ func TestInsert_Events(t *testing.T) {
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", ArgString("X1"))
+					i.Pair("colC", ArgStrings("X1"))
 				},
 			},
 		)
@@ -362,7 +362,7 @@ func TestInsert_FromSelect(t *testing.T) {
 	ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
 
 	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(OperatorIn)}
-	args := Arguments{ArgInt64(1), ArgString("wat")}
+	args := Arguments{ArgInt64(1), ArgStrings("wat")}
 
 	iSQL, args, err := ins.FromSelect(NewSelect("something_id", "user_id", "other").
 		From("some_table").

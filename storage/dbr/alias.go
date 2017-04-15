@@ -38,7 +38,7 @@ func (t alias) QuoteAsWriter(w queryWriter) (Arguments, error) {
 		w.WriteRune(')')
 		w.WriteString(" AS ")
 		Quoter.quote(w, t.Alias)
-		return args, errors.Wrap( err,"[dbr] QuoteAsWriter.SubSelect")
+		return args, errors.Wrap(err, "[dbr] QuoteAsWriter.SubSelect")
 	}
 	Quoter.quoteAs(w, t.Expression, t.Alias)
 	return nil, nil

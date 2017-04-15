@@ -16,7 +16,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgString("b"))).Limit(1).OrderDir("id", true).ToSQL()
+		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgStrings("b"))).Limit(1).OrderDir("id", true).ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -66,7 +66,7 @@ func TestDeleteReal(t *testing.T) {
 
 	// Insert a Barack
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
-		AddValues(ArgString("Barack"), ArgString("barack@whitehouse.gov")).Exec(context.TODO())
+		AddValues(ArgStrings("Barack"), ArgStrings("barack@whitehouse.gov")).Exec(context.TODO())
 	assert.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")

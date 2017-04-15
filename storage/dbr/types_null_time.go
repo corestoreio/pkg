@@ -33,11 +33,14 @@ func (a NullTime) writeTo(w queryWriter, _ int) error {
 		dialect.EscapeTime(w, a.Time)
 		return nil
 	}
-	_, err := w.WriteString("NULL")
+	_, err := w.WriteString(sqlStrNull)
 	return err
 }
 
 func (a NullTime) len() int { return 1 }
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a NullTime) Operator(opt byte) Argument {
 	a.opt = opt
 	return a
@@ -61,17 +64,17 @@ func MakeNullTime(t time.Time, valid ...bool) NullTime {
 
 // MarshalJSON implements json.Marshaler.
 // It will encode null if this time is null.
-func (t NullTime) MarshalJSON() ([]byte, error) {
-	if !t.Valid {
+func (a NullTime) MarshalJSON() ([]byte, error) {
+	if !a.Valid {
 		return []byte("null"), nil
 	}
-	return t.Time.MarshalJSON()
+	return a.Time.MarshalJSON()
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 // It supports string, object (e.g. pq.NullTime and friends)
 // and null input.
-func (t *NullTime) UnmarshalJSON(data []byte) error {
+func (a *NullTime) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 	if err = JSONUnMarshalFn(data, &v); err != nil {
@@ -79,58 +82,58 @@ func (t *NullTime) UnmarshalJSON(data []byte) error {
 	}
 	switch x := v.(type) {
 	case string:
-		err = t.Time.UnmarshalJSON(data)
+		err = a.Time.UnmarshalJSON(data)
 	case map[string]interface{}:
 		ti, tiOK := x["Time"].(string)
 		valid, validOK := x["Valid"].(bool)
 		if !tiOK || !validOK {
 			return errors.NewNotValidf(`[dbr] json: unmarshalling object into Go value of type dbr.NullTime requires key "Time" to be of type string and key "Valid" to be of type bool; found %T and %T, respectively`, x["Time"], x["Valid"])
 		}
-		err = t.Time.UnmarshalText([]byte(ti))
-		t.Valid = valid
+		err = a.Time.UnmarshalText([]byte(ti))
+		a.Valid = valid
 		return err
 	case nil:
-		t.Valid = false
+		a.Valid = false
 		return nil
 	default:
 		err = errors.NewNotValidf("[dbr] json: cannot unmarshal %#v into Go value of type dbr.NullTime", v)
 	}
-	t.Valid = err == nil
+	a.Valid = err == nil
 	return err
 }
 
-func (t NullTime) MarshalText() ([]byte, error) {
-	if !t.Valid {
+func (a NullTime) MarshalText() ([]byte, error) {
+	if !a.Valid {
 		return []byte("null"), nil
 	}
-	return t.Time.MarshalText()
+	return a.Time.MarshalText()
 }
 
-func (t *NullTime) UnmarshalText(text []byte) error {
+func (a *NullTime) UnmarshalText(text []byte) error {
 	str := string(text)
 	if str == "" || str == "null" {
-		t.Valid = false
+		a.Valid = false
 		return nil
 	}
-	if err := t.Time.UnmarshalText(text); err != nil {
+	if err := a.Time.UnmarshalText(text); err != nil {
 		return err
 	}
-	t.Valid = true
+	a.Valid = true
 	return nil
 }
 
 // SetValid changes this Time's value and sets it to be non-null.
-func (t *NullTime) SetValid(v time.Time) {
-	t.Time = v
-	t.Valid = true
+func (a *NullTime) SetValid(v time.Time) {
+	a.Time = v
+	a.Valid = true
 }
 
 // Ptr returns a pointer to this Time's value, or a nil pointer if this Time is null.
-func (t NullTime) Ptr() *time.Time {
-	if !t.Valid {
+func (a NullTime) Ptr() *time.Time {
+	if !a.Valid {
 		return nil
 	}
-	return &t.Time
+	return &a.Time
 }
 
 type argNullTimes struct {
@@ -154,7 +157,7 @@ func (a argNullTimes) writeTo(w queryWriter, pos int) error {
 			dialect.EscapeTime(w, s.Time)
 			return nil
 		}
-		_, err := w.WriteString("NULL")
+		_, err := w.WriteString(sqlStrNull)
 		return err
 	}
 	l := len(a.data) - 1
@@ -163,7 +166,7 @@ func (a argNullTimes) writeTo(w queryWriter, pos int) error {
 		if v.Valid {
 			dialect.EscapeTime(w, v.Time)
 		} else {
-			w.WriteString("NULL")
+			w.WriteString(sqlStrNull)
 		}
 		if i < l {
 			w.WriteRune(',')
@@ -180,6 +183,8 @@ func (a argNullTimes) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argNullTimes) Operator(opt byte) Argument {
 	a.opt = opt
 	return a

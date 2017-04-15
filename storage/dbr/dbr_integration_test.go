@@ -37,7 +37,7 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 	for _, c := range columns {
 		switch c {
 		case "name":
-			args = append(args, dbr.ArgString(p.Name))
+			args = append(args, dbr.ArgStrings(p.Name))
 		case "email":
 			args = append(args, dbr.ArgNullString(p.Email))
 		case "key":

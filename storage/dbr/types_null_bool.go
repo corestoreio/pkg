@@ -41,11 +41,14 @@ func (a NullBool) writeTo(w queryWriter, _ int) error {
 		dialect.EscapeBool(w, a.Bool)
 		return nil
 	}
-	_, err := w.WriteString("NULL")
+	_, err := w.WriteString(sqlStrNull)
 	return err
 }
 
 func (a NullBool) len() int { return 1 }
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a NullBool) Operator(opt byte) Argument {
 	a.opt = opt
 	return a
@@ -70,7 +73,7 @@ func MakeNullBool(b bool, valid ...bool) NullBool {
 // UnmarshalJSON implements json.Unmarshaler. It supports number and null input.
 // 0 will not be considered a null NullBool. It also supports unmarshalling a
 // sql.NullBool.
-func (b *NullBool) UnmarshalJSON(data []byte) error {
+func (a *NullBool) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 	if err = JSONUnMarshalFn(data, &v); err != nil {
@@ -78,53 +81,53 @@ func (b *NullBool) UnmarshalJSON(data []byte) error {
 	}
 	switch x := v.(type) {
 	case bool:
-		b.Bool = x
+		a.Bool = x
 	case map[string]interface{}:
 		dto := &struct {
 			NullBool bool
 			Valid    bool
 		}{}
 		err = JSONUnMarshalFn(data, dto)
-		b.Bool = dto.NullBool
-		b.Valid = dto.Valid
+		a.Bool = dto.NullBool
+		a.Valid = dto.Valid
 	case nil:
-		b.Valid = false
+		a.Valid = false
 		return nil
 	default:
 		err = errors.NewNotValidf("[dbr] json: cannot unmarshal %#v into Go value of type null.NullBool", v)
 	}
-	b.Valid = err == nil
+	a.Valid = err == nil
 	return err
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler. It will unmarshal to a
 // null NullBool if the input is a blank or not an integer. It will return an
 // error if the input is not an integer, blank, or "null".
-func (b *NullBool) UnmarshalText(text []byte) error {
+func (a *NullBool) UnmarshalText(text []byte) error {
 	str := string(text)
 	switch str {
 	case "", "null":
-		b.Valid = false
+		a.Valid = false
 		return nil
 	case "true":
-		b.Bool = true
+		a.Bool = true
 	case "false":
-		b.Bool = false
+		a.Bool = false
 	default:
-		b.Valid = false
+		a.Valid = false
 		return errors.NewNotValidf("[dbr] NullBool invalid input: %q", str)
 	}
-	b.Valid = true
+	a.Valid = true
 	return nil
 }
 
 // MarshalJSON implements json.Marshaler.
 // It will encode null if this NullBool is null.
-func (b NullBool) MarshalJSON() ([]byte, error) {
-	if !b.Valid {
+func (a NullBool) MarshalJSON() ([]byte, error) {
+	if !a.Valid {
 		return []byte("null"), nil
 	}
-	if !b.Bool {
+	if !a.Bool {
 		return []byte("false"), nil
 	}
 	return []byte("true"), nil
@@ -132,33 +135,33 @@ func (b NullBool) MarshalJSON() ([]byte, error) {
 
 // MarshalText implements encoding.TextMarshaler.
 // It will encode a blank string if this NullBool is null.
-func (b NullBool) MarshalText() ([]byte, error) {
-	if !b.Valid {
+func (a NullBool) MarshalText() ([]byte, error) {
+	if !a.Valid {
 		return []byte{}, nil
 	}
-	if !b.Bool {
+	if !a.Bool {
 		return []byte("false"), nil
 	}
 	return []byte("true"), nil
 }
 
 // SetValid changes this NullBool's value and also sets it to be non-null.
-func (b *NullBool) SetValid(v bool) {
-	b.Bool = v
-	b.Valid = true
+func (a *NullBool) SetValid(v bool) {
+	a.Bool = v
+	a.Valid = true
 }
 
 // Ptr returns a pointer to this NullBool's value, or a nil pointer if this
 // NullBool is null.
-func (b NullBool) Ptr() *bool {
-	if !b.Valid {
+func (a NullBool) Ptr() *bool {
+	if !a.Valid {
 		return nil
 	}
-	return &b.Bool
+	return &a.Bool
 }
 
 // IsZero returns true for invalid Bools, for future omitempty support (Go 1.4?)
 // A non-null NullBool with a 0 value will not be considered zero.
-func (b NullBool) IsZero() bool {
-	return !b.Valid
+func (a NullBool) IsZero() bool {
+	return !a.Valid
 }

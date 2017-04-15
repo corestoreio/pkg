@@ -42,11 +42,14 @@ func (a NullFloat64) writeTo(w queryWriter, _ int) error {
 		_, err := w.WriteString(strconv.FormatFloat(a.NullFloat64.Float64, 'f', -1, 64))
 		return err
 	}
-	_, err := w.WriteString("NULL")
+	_, err := w.WriteString(sqlStrNull)
 	return err
 }
 
 func (a NullFloat64) len() int { return 1 }
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a NullFloat64) Operator(opt byte) Argument {
 	a.opt = opt
 	return a
@@ -74,7 +77,7 @@ func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
 // It supports number and null input.
 // 0 will not be considered a null NullFloat64.
 // It also supports unmarshalling a sql.NullFloat64.
-func (f *NullFloat64) UnmarshalJSON(data []byte) error {
+func (a *NullFloat64) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 	if err = JSONUnMarshalFn(data, &v); err != nil {
@@ -82,76 +85,76 @@ func (f *NullFloat64) UnmarshalJSON(data []byte) error {
 	}
 	switch x := v.(type) {
 	case float64:
-		f.Float64 = float64(x)
+		a.Float64 = float64(x)
 	case map[string]interface{}:
 		dto := &struct {
 			NullFloat64 float64
 			Valid       bool
 		}{}
 		err = JSONUnMarshalFn(data, dto)
-		f.Float64 = dto.NullFloat64
-		f.Valid = dto.Valid
+		a.Float64 = dto.NullFloat64
+		a.Valid = dto.Valid
 	case nil:
-		f.Valid = false
+		a.Valid = false
 		return nil
 	default:
 		err = errors.NewNotValidf("[dbr] json: cannot unmarshal %#v into Go value of type null.NullFloat64", v)
 	}
-	f.Valid = err == nil
+	a.Valid = err == nil
 	return err
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 // It will unmarshal to a null NullFloat64 if the input is a blank or not an integer.
 // It will return an error if the input is not an integer, blank, or "null".
-func (f *NullFloat64) UnmarshalText(text []byte) error {
+func (a *NullFloat64) UnmarshalText(text []byte) error {
 	str := string(text)
 	if str == "" || str == "null" {
-		f.Valid = false
+		a.Valid = false
 		return nil
 	}
 	var err error
-	f.Float64, err = strconv.ParseFloat(string(text), 64)
-	f.Valid = err == nil
+	a.Float64, err = strconv.ParseFloat(string(text), 64)
+	a.Valid = err == nil
 	return err
 }
 
 // MarshalJSON implements json.Marshaler.
 // It will encode null if this NullFloat64 is null.
-func (f NullFloat64) MarshalJSON() ([]byte, error) {
-	if !f.Valid {
+func (a NullFloat64) MarshalJSON() ([]byte, error) {
+	if !a.Valid {
 		return []byte("null"), nil
 	}
-	return strconv.AppendFloat([]byte{}, f.Float64, 'f', -1, 64), nil
+	return strconv.AppendFloat([]byte{}, a.Float64, 'f', -1, 64), nil
 }
 
 // MarshalText implements encoding.TextMarshaler.
 // It will encode a blank string if this NullFloat64 is null.
-func (f NullFloat64) MarshalText() ([]byte, error) {
-	if !f.Valid {
+func (a NullFloat64) MarshalText() ([]byte, error) {
+	if !a.Valid {
 		return []byte{}, nil
 	}
-	return strconv.AppendFloat([]byte{}, f.Float64, 'f', -1, 64), nil
+	return strconv.AppendFloat([]byte{}, a.Float64, 'f', -1, 64), nil
 }
 
 // SetValid changes this NullFloat64's value and also sets it to be non-null.
-func (f *NullFloat64) SetValid(n float64) {
-	f.Float64 = n
-	f.Valid = true
+func (a *NullFloat64) SetValid(n float64) {
+	a.Float64 = n
+	a.Valid = true
 }
 
 // Ptr returns a pointer to this NullFloat64's value, or a nil pointer if this NullFloat64 is null.
-func (f NullFloat64) Ptr() *float64 {
-	if !f.Valid {
+func (a NullFloat64) Ptr() *float64 {
+	if !a.Valid {
 		return nil
 	}
-	return &f.Float64
+	return &a.Float64
 }
 
 // IsZero returns true for invalid Float64s, for future omitempty support (Go 1.4?)
 // A non-null NullFloat64 with a 0 value will not be considered zero.
-func (f NullFloat64) IsZero() bool {
-	return !f.Valid
+func (a NullFloat64) IsZero() bool {
+	return !a.Valid
 }
 
 type argNullFloat64s struct {
@@ -175,7 +178,7 @@ func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
 			_, err := w.WriteString(strconv.FormatFloat(s.Float64, 'f', -1, 64))
 			return err
 		}
-		_, err := w.WriteString("NULL")
+		_, err := w.WriteString(sqlStrNull)
 		return err
 	}
 	l := len(a.data) - 1
@@ -184,7 +187,7 @@ func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
 		if v.Valid {
 			w.WriteString(strconv.FormatFloat(v.Float64, 'f', -1, 64))
 		} else {
-			w.WriteString("NULL")
+			w.WriteString(sqlStrNull)
 		}
 		if i < l {
 			w.WriteRune(',')
@@ -201,6 +204,8 @@ func (a argNullFloat64s) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argNullFloat64s) Operator(opt byte) Argument {
 	a.opt = opt
 	return a

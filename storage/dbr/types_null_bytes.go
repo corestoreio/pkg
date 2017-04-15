@@ -42,11 +42,14 @@ func (a NullBytes) writeTo(w queryWriter, _ int) error {
 		dialect.EscapeBinary(w, a.Bytes)
 		return nil
 	}
-	_, err := w.WriteString("NULL")
+	_, err := w.WriteString(sqlStrNull)
 	return err
 }
 
 func (a NullBytes) len() int { return 1 }
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a NullBytes) Operator(opt byte) Argument {
 	a.opt = opt
 	return a
@@ -71,93 +74,91 @@ func MakeNullBytes(b []byte, valid ...bool) NullBytes {
 }
 
 // GoString prints an optimized Go representation.
-func (b NullBytes) GoString() string {
-	if !b.Valid {
+func (a NullBytes) GoString() string {
+	if !a.Valid {
 		return "dbr.NullBytes{}"
 	}
-	return fmt.Sprintf("dbr.MakeNullBytes(%#v)", b.Bytes)
+	return fmt.Sprintf("dbr.MakeNullBytes(%#v)", a.Bytes)
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 // If data is len 0 or nil, it will unmarshal to JSON null.
 // If not, it will copy your data slice into NullBytes.
-func (b *NullBytes) UnmarshalJSON(data []byte) error {
-	if data == nil || len(data) == 0 {
-		b.Bytes = []byte("null")
+func (a *NullBytes) UnmarshalJSON(data []byte) error {
+	if len(data) == 0 {
+		a.Bytes = []byte("null")
 	} else {
-		b.Bytes = append(b.Bytes[0:0], data...)
+		a.Bytes = append(a.Bytes[0:0], data...)
 	}
 
-	b.Valid = true
-
+	a.Valid = true
 	return nil
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 // It will unmarshal to nil if the text is nil or len 0.
-func (b *NullBytes) UnmarshalText(text []byte) error {
-	if text == nil || len(text) == 0 {
-		b.Bytes = nil
-		b.Valid = false
+func (a *NullBytes) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		a.Bytes = nil
+		a.Valid = false
 	} else {
-		b.Bytes = append(b.Bytes[0:0], text...)
-		b.Valid = true
+		a.Bytes = append(a.Bytes[0:0], text...)
+		a.Valid = true
 	}
-
 	return nil
 }
 
 // MarshalJSON implements json.Marshaler.
 // It will encode null if the NullBytes is nil.
-func (b NullBytes) MarshalJSON() ([]byte, error) {
-	if len(b.Bytes) == 0 || b.Bytes == nil {
+func (a NullBytes) MarshalJSON() ([]byte, error) {
+	if len(a.Bytes) == 0 || a.Bytes == nil {
 		return []byte("null"), nil
 	}
-	return b.Bytes, nil
+	return a.Bytes, nil
 }
 
 // MarshalText implements encoding.TextMarshaler.
 // It will encode nil if the NullBytes is invalid.
-func (b NullBytes) MarshalText() ([]byte, error) {
-	if !b.Valid {
+func (a NullBytes) MarshalText() ([]byte, error) {
+	if !a.Valid {
 		return nil, nil
 	}
-	return b.Bytes, nil
+	return a.Bytes, nil
 }
 
 // SetValid changes this NullBytes's value and also sets it to be non-null.
-func (b *NullBytes) SetValid(n []byte) {
-	b.Bytes = n
-	b.Valid = true
+func (a *NullBytes) SetValid(n []byte) {
+	a.Bytes = n
+	a.Valid = true
 }
 
 // Ptr returns a pointer to this NullBytes's value, or a nil pointer if this NullBytes is null.
-func (b NullBytes) Ptr() *[]byte {
-	if !b.Valid {
+func (a NullBytes) Ptr() *[]byte {
+	if !a.Valid {
 		return nil
 	}
-	return &b.Bytes
+	return &a.Bytes
 }
 
 // IsZero returns true for null or zero NullBytes's, for future omitempty support (Go 1.4?)
-func (b NullBytes) IsZero() bool {
-	return !b.Valid
+func (a NullBytes) IsZero() bool {
+	return !a.Valid
 }
 
 // Scan implements the Scanner interface.
-func (n *NullBytes) Scan(value interface{}) error {
+func (a *NullBytes) Scan(value interface{}) error {
 	if value == nil {
-		n.Bytes, n.Valid = []byte{}, false
+		a.Bytes, a.Valid = []byte{}, false
 		return nil
 	}
-	n.Valid = true
-	return convert.ConvertAssign(&n.Bytes, value)
+	a.Valid = true
+	return convert.ConvertAssign(&a.Bytes, value)
 }
 
 // Value implements the driver Valuer interface.
-func (n NullBytes) Value() (driver.Value, error) {
-	if !n.Valid {
+func (a NullBytes) Value() (driver.Value, error) {
+	if !a.Valid {
 		return nil, nil
 	}
-	return n.Bytes, nil
+	return a.Bytes, nil
 }

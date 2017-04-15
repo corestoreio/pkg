@@ -132,7 +132,7 @@ func TestBoolPointer(t *testing.T) {
 
 	b := MakeNullBool(true)
 	ptr := b.Ptr()
-	if *ptr != true {
+	if !*ptr {
 		t.Errorf("bad %s bool: %#v ≠ %v\n", "pointer", ptr, true)
 	}
 
@@ -186,7 +186,7 @@ func TestBoolScan(t *testing.T) {
 }
 
 func assertBool(t *testing.T, b NullBool, from string) {
-	if b.Bool != true {
+	if !b.Bool {
 		t.Errorf("bad %s bool: %v ≠ %v\n", from, b.Bool, true)
 	}
 	if !b.Valid {
@@ -195,7 +195,7 @@ func assertBool(t *testing.T, b NullBool, from string) {
 }
 
 func assertFalseBool(t *testing.T, b NullBool, from string) {
-	if b.Bool != false {
+	if b.Bool {
 		t.Errorf("bad %s bool: %v ≠ %v\n", from, b.Bool, false)
 	}
 	if !b.Valid {

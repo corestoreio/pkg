@@ -34,6 +34,10 @@ const (
 	OperatorNotEqual   byte = '!' // != ?
 )
 
+const (
+	sqlStrNull = "NULL"
+)
+
 func writeOperator(w queryWriter, operator byte, hasArg bool) (addArg bool) {
 	// hasArg argument only used in case we have in the parent caller function a
 	// sub-select. sub-selects do not need a place holder.
@@ -192,9 +196,9 @@ func isNotIn(o byte) bool {
 //		case []byte:
 //			return ArgBytes(v), nil
 //		case string:
-//			return ArgString(v), nil
+//			return ArgStrings(v), nil
 //		case []string:
-//			return ArgString(v...), nil
+//			return ArgStrings(v...), nil
 //		case time.Time:
 //			return ArgTime(v), nil
 //		case []time.Time:
@@ -243,6 +247,8 @@ func (a argTimes) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argTimes) Operator(op byte) Argument {
 	a.op = op
 	return a
@@ -267,7 +273,9 @@ func (a argBytes) writeTo(w queryWriter, _ int) error {
 	return nil
 }
 
-func (a argBytes) len() int                 { return 1 }
+func (a argBytes) len() int { return 1 }
+
+// Operator not supported
 func (a argBytes) Operator(_ byte) Argument { return a }
 func (a argBytes) operator() byte           { return 0 }
 
@@ -292,7 +300,9 @@ func (i argNull) writeTo(w queryWriter, _ int) error {
 	return err
 }
 
-func (i argNull) len() int                 { return 1 }
+func (i argNull) len() int { return 1 }
+
+// Operator not supported
 func (i argNull) Operator(_ byte) Argument { return i }
 func (i argNull) operator() byte {
 	switch i {
@@ -316,28 +326,36 @@ func ArgNotNull() Argument {
 	return argNull(20)
 }
 
-// does not allocate when using as a argument but does neither support the Operator function.
-//type argString string
-//
-//func (a argString) toIFace(args *[]interface{}) {
-//	*args = append(*args, string(a))
-//}
-//
-//func (a argString) writeTo(w queryWriter, _ int) error {
-//	if !utf8.ValidString(string(a)) {
-//		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
-//	}
-//	dialect.EscapeString(w, string(a))
-//	return nil
-//}
-//
-//func (a argString) len() int                 { return 1 }
-//func (a argString) Operator(_ byte) Argument { return a }
-//func (a argString) operator() byte           { return 0 }
+// ArgString implements interface Argument but does not allocate.
+type ArgString string
+
+func (a ArgString) toIFace(args *[]interface{}) {
+	*args = append(*args, string(a))
+}
+
+func (a ArgString) writeTo(w queryWriter, _ int) error {
+	if !utf8.ValidString(string(a)) {
+		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
+	}
+	dialect.EscapeString(w, string(a))
+	return nil
+}
+
+func (a ArgString) len() int { return 1 }
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
+func (a ArgString) Operator(op byte) Argument {
+	return argStrings{
+		data: []string{string(a)},
+		op:   op,
+	}
+}
+func (a ArgString) operator() byte { return 0 }
 
 type argStrings struct {
-	op   byte
 	data []string
+	op   byte
 }
 
 func (a argStrings) toIFace(args *[]interface{}) {
@@ -376,19 +394,21 @@ func (a argStrings) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argStrings) Operator(op byte) Argument {
 	a.op = op
 	return a
 }
 func (a argStrings) operator() byte { return a.op }
 
-// ArgString adds a string or a slice of strings to the argument list.
+// ArgStrings adds a string or a slice of strings to the argument list.
 // Providing no arguments returns a NULL type.
 // All arguments mut be a valid utf-8 string.
-func ArgString(args ...string) Argument {
-	//if len(args) == 1 {
-	//	return argString(args[0])
-	//}
+func ArgStrings(args ...string) Argument {
+	if len(args) == 1 {
+		return ArgString(args[0])
+	}
 	return argStrings{data: args}
 }
 
@@ -402,7 +422,9 @@ func (a argBool) writeTo(w queryWriter, _ int) error {
 	dialect.EscapeBool(w, a == true)
 	return nil
 }
-func (a argBool) len() int                 { return 1 }
+func (a argBool) len() int { return 1 }
+
+// Operator not supported
 func (a argBool) Operator(_ byte) Argument { return a }
 func (a argBool) operator() byte           { return 0 }
 
@@ -441,6 +463,8 @@ func (a argBools) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argBools) Operator(op byte) Argument {
 	a.op = op
 	return a
@@ -466,7 +490,9 @@ func (a argInt) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
 	return err
 }
-func (a argInt) len() int                 { return 1 }
+func (a argInt) len() int { return 1 }
+
+// Operator not supported
 func (a argInt) Operator(_ byte) Argument { return a }
 func (a argInt) operator() byte           { return 0 }
 
@@ -483,13 +509,13 @@ func (a argInts) toIFace(args *[]interface{}) {
 
 func (a argInts) writeTo(w queryWriter, pos int) error {
 	if isNotIn(a.operator()) {
-		_, err := w.WriteString(strconv.FormatInt(int64(a.data[pos]), 10))
+		_, err := w.WriteString(strconv.Itoa(a.data[pos]))
 		return err
 	}
 	l := len(a.data) - 1
 	w.WriteRune('(')
 	for i, v := range a.data {
-		w.WriteString(strconv.FormatInt(int64(v), 10))
+		w.WriteString(strconv.Itoa(v))
 		if i < l {
 			w.WriteRune(',')
 		}
@@ -505,6 +531,8 @@ func (a argInts) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argInts) Operator(op byte) Argument {
 	a.op = op
 	return a
@@ -531,7 +559,9 @@ func (a argInt64) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
 	return err
 }
-func (a argInt64) len() int                 { return 1 }
+func (a argInt64) len() int { return 1 }
+
+// Operator not supported
 func (a argInt64) Operator(_ byte) Argument { return a }
 func (a argInt64) operator() byte           { return 0 }
 
@@ -570,6 +600,8 @@ func (a argInt64s) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argInt64s) Operator(op byte) Argument {
 	a.op = op
 	return a
@@ -596,7 +628,9 @@ func (a argFloat64) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatFloat(float64(a), 'f', -1, 64))
 	return err
 }
-func (a argFloat64) len() int                 { return 1 }
+func (a argFloat64) len() int { return 1 }
+
+// Operator not supported
 func (a argFloat64) Operator(_ byte) Argument { return a }
 func (a argFloat64) operator() byte           { return 0 }
 
@@ -635,6 +669,8 @@ func (a argFloat64s) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argFloat64s) Operator(op byte) Argument {
 	a.op = op
 	return a
@@ -672,6 +708,8 @@ func (e *expr) writeTo(w queryWriter, _ int) error {
 	w.WriteString(e.SQL)
 	return nil
 }
-func (e *expr) len() int                 { return 1 }
+func (e *expr) len() int { return 1 }
+
+// Operator not supported
 func (e *expr) Operator(_ byte) Argument { return e }
 func (e *expr) operator() byte           { return 0 }

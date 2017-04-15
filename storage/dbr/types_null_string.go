@@ -45,12 +45,15 @@ func (a NullString) writeTo(w queryWriter, _ int) error {
 		}
 		dialect.EscapeString(w, a.NullString.String)
 	} else {
-		w.WriteString("NULL")
+		w.WriteString(sqlStrNull)
 	}
 	return nil
 }
 
 func (a NullString) len() int { return 1 }
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a NullString) Operator(opt byte) Argument {
 	a.opt = opt
 	return a
@@ -76,22 +79,22 @@ func MakeNullString(s string, valid ...bool) NullString {
 
 // GoString prints an optimized Go representation. Takes are of backticks.
 // Looses the information of the private operator. That might get fixed.
-func (ns NullString) GoString() string {
-	if ns.Valid && strings.ContainsRune(ns.String, '`') {
+func (a NullString) GoString() string {
+	if a.Valid && strings.ContainsRune(a.String, '`') {
 		// `This is my`string`
-		ns.String = strings.Join(strings.Split(ns.String, "`"), "`+\"`\"+`")
+		a.String = strings.Join(strings.Split(a.String, "`"), "`+\"`\"+`")
 		// `This is my`+"`"+`string`
 	}
-	if !ns.Valid {
+	if !a.Valid {
 		return "dbr.NullString{}"
 	}
-	return "dbr.MakeNullString(`" + ns.String + "`)"
+	return "dbr.MakeNullString(`" + a.String + "`)"
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 // It supports string and null input. Blank string input does not produce a null NullString.
 // It also supports unmarshalling a sql.NullString.
-func (s *NullString) UnmarshalJSON(data []byte) error {
+func (a *NullString) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 
@@ -101,71 +104,71 @@ func (s *NullString) UnmarshalJSON(data []byte) error {
 
 	switch x := v.(type) {
 	case string:
-		s.String = x
+		a.String = x
 	case map[string]interface{}:
 		dto := &struct {
 			NullString string
 			Valid      bool
 		}{}
 		err = JSONUnMarshalFn(data, dto)
-		s.String = dto.NullString
-		s.Valid = dto.Valid
+		a.String = dto.NullString
+		a.Valid = dto.Valid
 	case nil:
-		s.Valid = false
+		a.Valid = false
 		return nil
 	default:
 		err = errors.NewNotValidf("[dbr] json: cannot unmarshal %#v into Go value of type dbr.NullString", v)
 	}
-	s.Valid = err == nil
+	a.Valid = err == nil
 	return err
 }
 
 // MarshalJSON implements json.Marshaler.
 // It will encode null if this NullString is dbr.
-func (s NullString) MarshalJSON() ([]byte, error) {
-	if !s.Valid {
+func (a NullString) MarshalJSON() ([]byte, error) {
+	if !a.Valid {
 		return []byte("null"), nil
 	}
-	return JSONMarshalFn(s.String)
+	return JSONMarshalFn(a.String)
 }
 
 // MarshalText implements encoding.TextMarshaler.
 // It will encode a blank string when this NullString is dbr.
-func (s NullString) MarshalText() ([]byte, error) {
-	if !s.Valid {
+func (a NullString) MarshalText() ([]byte, error) {
+	if !a.Valid {
 		return []byte{}, nil
 	}
-	return []byte(s.String), nil
+	return []byte(a.String), nil
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 // It will unmarshal to a null NullString if the input is a blank string.
-func (s *NullString) UnmarshalText(text []byte) error {
+func (a *NullString) UnmarshalText(text []byte) error {
 	if !utf8.Valid(text) {
 		return errors.NewNotValidf("[dbr] Input bytes are not valid UTF-8 encoded.")
 	}
-	s.String = string(text)
-	s.Valid = s.String != ""
+	a.String = string(text)
+	a.Valid = a.String != ""
 	return nil
 }
 
 // SetValid changes this NullString's value and also sets it to be non-dbr.
-func (s *NullString) SetValid(v string) {
-	s.String = v
-	s.Valid = true
+func (a *NullString) SetValid(v string) {
+	a.String = v
+	a.Valid = true
 }
 
 // Ptr returns a pointer to this NullString's value, or a nil pointer if this NullString is dbr.
-func (s NullString) Ptr() *string {
-	if !s.Valid {
+func (a NullString) Ptr() *string {
+	if !a.Valid {
 		return nil
 	}
-	return &s.String
+	return &a.String
 }
 
 // IsZero returns true for null strings, for potential future omitempty support.
-func (s NullString) IsZero() bool {
-	return !s.Valid
+func (a NullString) IsZero() bool {
+	return !a.Valid
 }
 
 type argNullStrings struct {
@@ -192,7 +195,7 @@ func (a argNullStrings) writeTo(w queryWriter, pos int) error {
 			dialect.EscapeString(w, s.String)
 			return nil
 		}
-		_, err := w.WriteString("NULL")
+		_, err := w.WriteString(sqlStrNull)
 		return err
 	}
 	l := len(a.data) - 1
@@ -204,7 +207,7 @@ func (a argNullStrings) writeTo(w queryWriter, pos int) error {
 			}
 			dialect.EscapeString(w, v.String)
 		} else {
-			w.WriteString("NULL")
+			w.WriteString(sqlStrNull)
 		}
 		if i < l {
 			w.WriteRune(',')
@@ -221,6 +224,8 @@ func (a argNullStrings) len() int {
 	return 1
 }
 
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
 func (a argNullStrings) Operator(opt byte) Argument {
 	a.opt = opt
 	return a

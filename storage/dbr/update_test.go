@@ -107,11 +107,11 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 
 	// Insert a user with a key
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
-		AddValues(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec(context.TODO())
+		AddValues(ArgStrings("Benjamin"), ArgStrings("ben@whitehouse.gov"), ArgStrings("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Eq{"key": ArgString("6")}).Exec(context.TODO())
+	res, err = s.Update("dbr_people").Set("key", ArgStrings("6-revoked")).Where(Eq{"key": ArgStrings("6")}).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -120,7 +120,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).LoadStruct(context.TODO(), &person)
+	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgStrings("ben@whitehouse.gov")}).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)
@@ -132,7 +132,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Insert a George
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
-		AddValues(ArgString("George"), ArgString("george@whitehouse.gov")).Exec(context.TODO())
+		AddValues(ArgStrings("George"), ArgStrings("george@whitehouse.gov")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Get George'ab ID
@@ -141,7 +141,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Rename our George to Barack
 	res, err = s.Update("dbr_people").
-		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
+		SetMap(map[string]Argument{"name": ArgStrings("Barack"), "email": ArgStrings("barack@whitehouse.gov")}).
 		Where(Condition("id = ?", ArgInt64(id))).Exec(context.TODO())
 
 	assert.NoError(t, err)
@@ -286,7 +286,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("d", ArgString("d"))
+					u.Set("d", ArgStrings("d"))
 				},
 			},
 		)
@@ -295,7 +295,7 @@ func TestUpdate_Events(t *testing.T) {
 			Name:      "e",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(u *Update) {
-				u.Set("e", ArgString("e"))
+				u.Set("e", ArgStrings("e"))
 			},
 		})
 
@@ -339,7 +339,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgInt64(12)},
+			Arguments: Arguments{ArgStrings("E0S 5D Mark II"), ArgInt64(12)},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -352,7 +352,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), Expr("VALUES(`stock`)+?", ArgInt64(13))},
+			Arguments: Arguments{ArgStrings("E0S 5D Mark II"), Expr("VALUES(`stock`)+?", ArgInt64(13))},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -365,7 +365,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val) and with arguments and nil", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "sku", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
+			Arguments: Arguments{ArgStrings("E0S 5D Mark III"), nil, ArgInt64(14)},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -382,7 +382,7 @@ func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 	args := make(Arguments, 0, 2)
 	uc := UpdatedColumns{
 		Columns:   []string{"name", "sku", "stock"},
-		Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
+		Arguments: Arguments{ArgStrings("E0S 5D Mark III"), nil, ArgInt64(14)},
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

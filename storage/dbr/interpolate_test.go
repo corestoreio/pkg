@@ -16,7 +16,7 @@ func TestRepeat(t *testing.T) {
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
-		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(1, 2), ArgString("d", "3"))
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(1, 2), ArgStrings("d", "3"))
 		assert.Empty(t, s)
 		assert.Nil(t, args)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
@@ -42,7 +42,7 @@ func TestRepeat(t *testing.T) {
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
 		sl := []string{"a", "b", "c", "d", "e"}
 		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)",
-			ArgInt(5, 7, 9), ArgString(sl...))
+			ArgInt(5, 7, 9), ArgStrings(sl...))
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
 		assert.Exactly(t, []interface{}{int64(5), int64(7), int64(9), "a", "b", "c", "d", "e"}, args)
 		assert.NoError(t, err, "%+v", err)
@@ -63,7 +63,7 @@ func BenchmarkRepeat(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)",
-				ArgInt(5, 7, 9, 11), ArgString(sl...), ArgInt(22))
+				ArgInt(5, 7, 9, 11), ArgStrings(sl...), ArgInt(22))
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -103,7 +103,7 @@ func TestInterpolateNil(t *testing.T) {
 func TestInterpolateErrors(t *testing.T) {
 	t.Parallel()
 	t.Run("non utf8", func(t *testing.T) {
-		_, err := Preprocess("SELECT * FROM x WHERE a = ?", ArgString(string([]byte{0x34, 0xFF, 0xFE})))
+		_, err := Preprocess("SELECT * FROM x WHERE a = ?", ArgStrings(string([]byte{0x34, 0xFF, 0xFE})))
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 	t.Run("too few qmarks", func(t *testing.T) {
@@ -180,7 +180,7 @@ func BenchmarkPreprocess(b *testing.B) {
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	args := Arguments{
 		ArgInt64(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
-		ArgString("Hello"),
+		ArgStrings("Hello"),
 		ArgBool(true),
 	}
 	b.ReportAllocs()
@@ -245,20 +245,20 @@ func TestInterpolateFloats(t *testing.T) {
 func TestInterpolateStrings(t *testing.T) {
 	t.Parallel()
 	t.Run("single args", func(t *testing.T) {
-		str, err := Preprocess("SELECT * FROM x WHERE a = ? AND b = ? AND c = ?", ArgString("a'b", "c`d"), ArgString("\"hello's \\ world\" \n\r\x00\x1a"))
+		str, err := Preprocess("SELECT * FROM x WHERE a = ? AND b = ? AND c = ?", ArgStrings("a'b", "c`d"), ArgStrings("\"hello's \\ world\" \n\r\x00\x1a"))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM x WHERE a = 'a\\'b' AND b = 'c`d' AND c = '\\\"hello\\'s \\\\ world\\\" \\n\\r\\x00\\x1a'", str)
 	})
 	t.Run("IN args", func(t *testing.T) {
 		str, err := Preprocess("SELECT * FROM x WHERE a IN ? AND b = ?",
-			ArgString("a'b", "c`d").Operator(OperatorIn), ArgString("1' or '1' = '1'))/*"))
+			ArgStrings("a'b", "c`d").Operator(OperatorIn), ArgStrings("1' or '1' = '1'))/*"))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM x WHERE a IN ('a\\'b','c`d') AND b = '1\\' or \\'1\\' = \\'1\\'))/*'", str)
 	})
 	t.Run("empty args", func(t *testing.T) {
 		var fl = make([]string, 0, 2)
 		str, err := Preprocess("SELECT * FROM x WHERE a IN ? AND b = ? OR c = ?",
-			ArgString("a", "b").Operator(OperatorIn), ArgString("c"), ArgString(fl...))
+			ArgStrings("a", "b").Operator(OperatorIn), ArgStrings("c"), ArgStrings(fl...))
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 		assert.Empty(t, str)
 	})
@@ -271,7 +271,7 @@ func TestInterpolateSlices(t *testing.T) {
 		ArgInt(1).Operator(OperatorIn),
 		ArgInt(1, 2, 3).Operator(OperatorIn),
 		ArgInt64(5, 6, 7).Operator(OperatorIn),
-		ArgString("wat", "ok").Operator(OperatorIn),
+		ArgStrings("wat", "ok").Operator(OperatorIn),
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", str)
@@ -331,14 +331,14 @@ func TestPreprocess(t *testing.T) {
 		{
 			`SELECT * FROM x WHERE a = ?
 			AND b = ?`,
-			Arguments{ArgString("hello", "\"hello's \\ world\" \n\r\x00\x1a")},
+			Arguments{ArgStrings("hello", "\"hello's \\ world\" \n\r\x00\x1a")},
 			`SELECT * FROM x WHERE a = 'hello'
 			AND b = '\"hello\'s \\ world\" \n\r\x00\x1a'`, nil,
 		},
 
 		// slices
 		{"SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ?",
-			Arguments{ArgInt(1), ArgInt(1, 2, 3).Operator(OperatorIn), ArgInt(5, 6, 7).Operator(OperatorIn), ArgString("wat", "ok").Operator(OperatorIn)},
+			Arguments{ArgInt(1), ArgInt(1, 2, 3).Operator(OperatorIn), ArgInt(5, 6, 7).Operator(OperatorIn), ArgStrings("wat", "ok").Operator(OperatorIn)},
 			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", nil},
 
 		//// TODO valuers
@@ -353,23 +353,23 @@ func TestPreprocess(t *testing.T) {
 		{"SELECT * FROM x WHERE", Arguments{ArgInt(1)},
 			"", errors.IsNotValid},
 
-		{"SELECT * FROM x WHERE a = ?", Arguments{ArgString(string([]byte{0x34, 0xFF, 0xFE}))},
+		{"SELECT * FROM x WHERE a = ?", Arguments{ArgStrings(string([]byte{0x34, 0xFF, 0xFE}))},
 			"", errors.IsNotValid},
 
-		// ArgString() without arguments is equal to empty interface in the previous version.
-		{"SELECT 'hello", Arguments{ArgString()}, "", errors.IsNotValid},
-		{`SELECT "hello`, Arguments{ArgString()}, "", errors.IsNotValid},
+		// ArgStrings() without arguments is equal to empty interface in the previous version.
+		{"SELECT 'hello", Arguments{ArgStrings()}, "", errors.IsNotValid},
+		{`SELECT "hello`, Arguments{ArgStrings()}, "", errors.IsNotValid},
 
 		// preprocessing
-		{"SELECT '?'", Arguments{ArgString()}, "SELECT '?'", nil},
-		{"SELECT `?`", Arguments{ArgString()}, "SELECT `?`", nil},
-		{"SELECT [?]", Arguments{ArgString()}, "SELECT `?`", nil},
-		{"SELECT [name] FROM [user]", Arguments{ArgString()}, "SELECT `name` FROM `user`", nil},
-		{"SELECT [u.name] FROM [user] [u]", Arguments{ArgString()}, "SELECT `u`.`name` FROM `user` `u`", nil},
-		{"SELECT [u.na`me] FROM [user] [u]", Arguments{ArgString()}, "SELECT `u`.`na``me` FROM `user` `u`", nil},
-		{"SELECT * FROM [user] WHERE [name] = '[nick]'", Arguments{ArgString()},
+		{"SELECT '?'", Arguments{ArgStrings()}, "SELECT '?'", nil},
+		{"SELECT `?`", Arguments{ArgStrings()}, "SELECT `?`", nil},
+		{"SELECT [?]", Arguments{ArgStrings()}, "SELECT `?`", nil},
+		{"SELECT [name] FROM [user]", Arguments{ArgStrings()}, "SELECT `name` FROM `user`", nil},
+		{"SELECT [u.name] FROM [user] [u]", Arguments{ArgStrings()}, "SELECT `u`.`name` FROM `user` `u`", nil},
+		{"SELECT [u.na`me] FROM [user] [u]", Arguments{ArgStrings()}, "SELECT `u`.`na``me` FROM `user` `u`", nil},
+		{"SELECT * FROM [user] WHERE [name] = '[nick]'", Arguments{ArgStrings()},
 			"SELECT * FROM `user` WHERE `name` = '[nick]'", nil},
-		{`SELECT * FROM [user] WHERE [name] = "nick[]"`, Arguments{ArgString()},
+		{`SELECT * FROM [user] WHERE [name] = "nick[]"`, Arguments{ArgStrings()},
 			"SELECT * FROM `user` WHERE `name` = 'nick[]'", nil},
 	}
 

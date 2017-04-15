@@ -26,7 +26,7 @@ func TestSelectFullToSQL(t *testing.T) {
 		Distinct().
 		From("c", "cc").
 		Where(Condition("d = ? OR e = ?",
-			ArgInt(1), ArgString("wat")),
+			ArgInt(1), ArgStrings("wat")),
 			Eq{"f": ArgInt(2)}, Eq{"g": ArgInt(3)},
 		).
 		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(OperatorIn)}).
@@ -144,12 +144,12 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{int64(33), int64(44)},
 	))
 	t.Run("single string", runner(
-		ArgString("w"),
+		ArgStrings("w"),
 		"SELECT a, b FROM `c` WHERE (`d` = ?)",
 		[]interface{}{"w"},
 	))
 	t.Run("IN string", runner(
-		ArgString("x", "y").Operator(OperatorIn),
+		ArgStrings("x", "y").Operator(OperatorIn),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{"x", "y"},
 	))
@@ -166,12 +166,12 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	))
 
 	t.Run("LIKE string", runner(
-		ArgString("x%").Operator(OperatorLike),
+		ArgStrings("x%").Operator(OperatorLike),
 		"SELECT a, b FROM `c` WHERE (`d` LIKE ?)",
 		[]interface{}{"x%"},
 	))
 	t.Run("NOT LIKE string", runner(
-		ArgString("x%").Operator(OperatorNotLike),
+		ArgStrings("x%").Operator(OperatorNotLike),
 		"SELECT a, b FROM `c` WHERE (`d` NOT LIKE ?)",
 		[]interface{}{"x%"},
 	))
@@ -351,7 +351,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Found:
 	var person dbrPerson
-	err := s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(context.TODO(), &person)
+	err := s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgStrings("jonathan@uservoice.com"))).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 	assert.True(t, person.ID > 0)
 	assert.Equal(t, "Jonathan", person.Name)
@@ -360,7 +360,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Not found:
 	var person2 dbrPerson
-	err = s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("dontexist@uservoice.com"))).LoadStruct(context.TODO(), &person2)
+	err = s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgStrings("dontexist@uservoice.com"))).LoadStruct(context.TODO(), &person2)
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 }
 
@@ -368,7 +368,7 @@ func TestSelectBySQLLoadStructs(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).LoadStructs(context.TODO(), &people)
+	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgStrings("jonathan@uservoice.com")).LoadStructs(context.TODO(), &people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)
@@ -609,7 +609,7 @@ func TestSelect_Events(t *testing.T) {
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(s2 *Select) {
 				s2.OrderDir("col2", false)
-				s2.Where(Condition("b=?", ArgString("a")))
+				s2.Where(Condition("b=?", ArgStrings("a")))
 			},
 		})
 
