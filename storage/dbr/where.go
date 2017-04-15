@@ -36,6 +36,7 @@ type whereFragment struct {
 		Select   *Select
 		Operator byte
 	}
+	Using []string
 }
 
 func (wf *whereFragment) appendConditions(wfs *WhereFragments) {
@@ -48,6 +49,18 @@ type WhereFragments []*whereFragment
 // ConditionArg used at argument in Where()
 type ConditionArg interface {
 	appendConditions(*WhereFragments)
+}
+
+// Using add syntactic sugar to a JOIN statement: The USING(column_list) clause
+// names a list of columns that must exist in both tables. If tables a and b
+// both contain columns c1, c2, and c3, the following join compares
+// corresponding columns from the two tables:
+//	a LEFT JOIN b USING (c1, c2, c3)
+// The columns list gets quoted while writing the query string.
+func Using(columns ...string) ConditionArg {
+	return &whereFragment{
+		Using: columns, // gets quoted during writing the query in ToSQL
+	}
 }
 
 // SubSelect creates a condition for a WHERE or JOIN statement to compare the
@@ -77,19 +90,44 @@ func appendConditions(wf *WhereFragments, wargs ...ConditionArg) {
 }
 
 // Invariant: only called when len(fragments) > 0
-func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arguments) error {
+// stmtType enum of j=join, w=where, h=having
+func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arguments, stmtType byte) error {
+
+	switch stmtType {
+	case 'w':
+		w.WriteString(" WHERE ")
+	case 'h':
+		w.WriteString(" HAVING ")
+	}
+
 	anyConditions := false
-	for _, f := range fragments {
+	for i, f := range fragments {
+
+		if stmtType == 'j' {
+			if len(f.Using) > 0 {
+				w.WriteString(" USING (")
+				for i, c := range f.Using {
+					if i > 0 {
+						w.WriteRune(',')
+					}
+					Quoter.quote(w, c)
+				}
+				w.WriteRune(')')
+				return nil // done, only one using allowed
+			}
+			if i == 0 {
+				w.WriteString(" ON ")
+			}
+		}
 
 		if anyConditions {
-			_, _ = w.WriteString(" AND (")
+			w.WriteString(" AND (")
 		} else {
-			_, _ = w.WriteRune('(')
+			w.WriteRune('(')
 			anyConditions = true
 		}
 
 		addArg := false
-
 		if isValidIdentifier(f.Condition) > 0 { // must be an expression
 			_, _ = w.WriteString(f.Condition)
 			addArg = true

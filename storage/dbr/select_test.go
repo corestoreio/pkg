@@ -508,6 +508,24 @@ func TestSelectJoin(t *testing.T) {
 			sql,
 		)
 	})
+
+	t.Run("using", func(t *testing.T) {
+		sqlObj := s.
+			Select("p1.*").
+			AddColumnsQuotedAlias("p2.name", "p2Name", "p2.email", "p2Email").
+			From("dbr_people", "p1").
+			RightJoin(
+				MakeAlias("dbr_people", "p2"),
+				Using("id", "email"),
+			)
+
+		sql, _, err := sqlObj.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t,
+			"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` USING (`id`,`email`)",
+			sql,
+		)
+	})
 }
 
 func TestSelect_Join_EAVIfNull(t *testing.T) {
