@@ -437,6 +437,25 @@ func TestSelectLoadValues(t *testing.T) {
 func TestSelectJoin(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
+	t.Run("inner, distinct, no cache, high proi", func(t *testing.T) {
+		sqlObj := s.
+			Select("p1.*", "p2.*").
+			Distinct().StraightJoin().SQLNoCache().
+			From("dbr_people", "p1").
+			Join(
+				MakeAlias("dbr_people", "p2"),
+				Condition("`p2`.`id` = `p1`.`id`"),
+				Condition("p1.id", ArgInt(42)),
+			)
+
+		sql, _, err := sqlObj.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t,
+			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE p1.*, p2.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+			sql,
+		)
+	})
+
 	t.Run("inner", func(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*", "p2.*").
@@ -491,7 +510,7 @@ func TestSelectJoin(t *testing.T) {
 	})
 }
 
-func TestSelect_Join(t *testing.T) {
+func TestSelect_Join_EAVIfNull(t *testing.T) {
 	t.Parallel()
 	const want = "SELECT IFNULL(`manufacturerStore`.`value`,IFNULL(`manufacturerGroup`.`value`,IFNULL(`manufacturerWebsite`.`value`,IFNULL(`manufacturerDefault`.`value`,'')))) AS `manufacturer`, cpe.* FROM `catalog_product_entity` AS `cpe` LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerDefault` ON (manufacturerDefault.scope = 0) AND (manufacturerDefault.scope_id = 0) AND (manufacturerDefault.attribute_id = 83) AND (manufacturerDefault.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerWebsite` ON (manufacturerWebsite.scope = 1) AND (manufacturerWebsite.scope_id = 10) AND (manufacturerWebsite.attribute_id = 83) AND (manufacturerWebsite.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerGroup` ON (manufacturerGroup.scope = 2) AND (manufacturerGroup.scope_id = 20) AND (manufacturerGroup.attribute_id = 83) AND (manufacturerGroup.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerStore` ON (manufacturerStore.scope = 2) AND (manufacturerStore.scope_id = 20) AND (manufacturerStore.attribute_id = 83) AND (manufacturerStore.value IS NOT NULL)"
 

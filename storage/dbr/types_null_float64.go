@@ -85,7 +85,7 @@ func (a *NullFloat64) UnmarshalJSON(data []byte) error {
 	}
 	switch x := v.(type) {
 	case float64:
-		a.Float64 = float64(x)
+		a.Float64 = x
 	case map[string]interface{}:
 		dto := &struct {
 			NullFloat64 float64

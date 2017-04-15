@@ -36,7 +36,9 @@ type Select struct {
 	OffsetCount     uint64
 	LimitValid      bool
 	OffsetValid     bool
-	IsDistinct      bool
+	IsDistinct      bool // See Distinct()
+	IsStraightJoin  bool // See StraightJoin()
+	IsSQLNoCache    bool // See IsSQLNoCache()
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -126,9 +128,26 @@ func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 	return s
 }
 
-// Distinct marks the statement at a DISTINCT SELECT
+// Distinct marks the statement at a DISTINCT SELECT. It specifies removal of
+// duplicate rows from the result set.
 func (b *Select) Distinct() *Select {
 	b.IsDistinct = true
+	return b
+}
+
+// StraightJoin forces the optimizer to join the tables in the order in which
+// they are listed in the FROM clause. You can use this to speed up a query if
+// the optimizer joins the tables in nonoptimal order.
+func (b *Select) StraightJoin() *Select {
+	b.IsStraightJoin = true
+	return b
+}
+
+// SQLNoCache tells the server that it does not use the query cache. It neither
+// checks the query cache to see whether the result is already cached, nor does
+// it cache the query result.
+func (b *Select) SQLNoCache() *Select {
+	b.IsSQLNoCache = true
 	return b
 }
 
@@ -295,6 +314,12 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	if b.IsDistinct {
 		w.WriteString("DISTINCT ")
+	}
+	if b.IsStraightJoin {
+		w.WriteString("STRAIGHT_JOIN ")
+	}
+	if b.IsSQLNoCache {
+		w.WriteString("SQL_NO_CACHE ")
 	}
 
 	for i, s := range b.Columns {

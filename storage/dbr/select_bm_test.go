@@ -169,5 +169,16 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 	}
 	_ = haveSQL
 	//b.Logf("%s", haveSQL)
-	// SELECT entity_id, value, `cpev`.`entity_type_id`, `cpev`.`attribute_id`, (cpev.id*3) AS `weirdID`, `cpev`.`value` AS `value2nd` FROM `catalog_product_entity_varchar` AS `cpev` WHERE (`entity_type_id` = ?) AND (`attribute_id` IN ?) AND (`store_id` = ?)
+	/*
+		SELECT entity_id,
+		       value,
+		       `cpev`.`entity_type_id`,
+		       `cpev`.`attribute_id`,
+		       ( cpev.id * 3 ) AS `weirdID`,
+		       `cpev`.`value`  AS `value2nd`
+		FROM   `catalog_product_entity_varchar` AS `cpev`
+		WHERE  ( `entity_type_id` = ? )
+		       AND ( `attribute_id` IN ? )
+		       AND ( `store_id` = ? )
+	*/
 }

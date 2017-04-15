@@ -50,6 +50,9 @@ type ConditionArg interface {
 	appendConditions(*WhereFragments)
 }
 
+// SubSelect creates a condition for a WHERE or JOIN statement to compare the
+// data in `rawStatementOrColumnName` with the returned value/s of the
+// sub-select.
 func SubSelect(rawStatementOrColumnName string, operator byte, s *Select) ConditionArg {
 	wf := &whereFragment{
 		Condition: rawStatementOrColumnName,

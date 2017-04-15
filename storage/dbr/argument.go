@@ -572,7 +572,7 @@ type argInt64s struct {
 
 func (a argInt64s) toIFace(args *[]interface{}) {
 	for _, v := range a.data {
-		*args = append(*args, int64(v))
+		*args = append(*args, v)
 	}
 }
 
@@ -584,7 +584,7 @@ func (a argInt64s) writeTo(w queryWriter, pos int) error {
 	l := len(a.data) - 1
 	w.WriteRune('(')
 	for i, v := range a.data {
-		w.WriteString(strconv.FormatInt(int64(v), 10))
+		w.WriteString(strconv.FormatInt(v, 10))
 		if i < l {
 			w.WriteRune(',')
 		}
@@ -641,7 +641,7 @@ type argFloat64s struct {
 
 func (a argFloat64s) toIFace(args *[]interface{}) {
 	for _, v := range a.data {
-		*args = append(*args, float64(v))
+		*args = append(*args, v)
 	}
 }
 

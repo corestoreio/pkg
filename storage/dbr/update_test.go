@@ -106,12 +106,12 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	// Insert a user with a key
-	res, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
+	_, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
 		AddValues(ArgStrings("Benjamin"), ArgStrings("ben@whitehouse.gov"), ArgStrings("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", ArgStrings("6-revoked")).Where(Eq{"key": ArgStrings("6")}).Exec(context.TODO())
+	res, err := s.Update("dbr_people").Set("key", ArgStrings("6-revoked")).Where(Eq{"key": ArgStrings("6")}).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -140,7 +140,7 @@ func TestUpdateReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Rename our George to Barack
-	res, err = s.Update("dbr_people").
+	_, err = s.Update("dbr_people").
 		SetMap(map[string]Argument{"name": ArgStrings("Barack"), "email": ArgStrings("barack@whitehouse.gov")}).
 		Where(Condition("id = ?", ArgInt64(id))).Exec(context.TODO())
 
