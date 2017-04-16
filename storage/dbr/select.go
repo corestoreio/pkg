@@ -187,7 +187,8 @@ func (b *Select) AddColumns(cols ...string) *Select {
 //		AddColumnsQuoted("t1.name","t1.sku","price") // []string{"`t1`.`name`", "`t1`.`sku`","`price`"}
 //		AddColumnsQuoted("t1.name,t1.sku")	// []string{"`t1`.`name`", "`t1`.`sku`"}
 func (b *Select) AddColumnsQuoted(cols ...string) *Select {
-	for i, c := range splitColumns(cols) {
+	cols = splitColumns(cols)
+	for i, c := range cols {
 		cols[i] = Quoter.QuoteAs(c)
 	}
 	b.Columns = append(b.Columns, cols...)
