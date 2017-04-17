@@ -181,7 +181,7 @@ func TestNewUnionTemplate(t *testing.T) {
 
 var benchmarkGlobalArgs dbr.Arguments
 
-// BenchmarkUnion_AllOptions-4           	   10000	   1207331 ns/op	  950890 B/op	      20 allocs/op
+// BenchmarkUnion_AllOptions-4           	  300000	      5345 ns/op	    1680 B/op	       8 allocs/op
 func BenchmarkUnion_AllOptions(b *testing.B) {
 
 	u := dbr.NewUnion(
@@ -211,7 +211,7 @@ func BenchmarkUnion_AllOptions(b *testing.B) {
 	}
 }
 
-// BenchmarkUnionTemplate_AllOptions-4   	  100000	     15432 ns/op	    7793 B/op	      59 allocs/op
+// BenchmarkUnionTemplate_AllOptions-4   	  300000	      6068 ns/op	    1712 B/op	       4 allocs/op
 func BenchmarkUnionTemplate_AllOptions(b *testing.B) {
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").

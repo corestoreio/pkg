@@ -28,10 +28,6 @@ type Union struct {
 	Selects  []*Select
 	OrderBys []string
 	IsAll    bool
-	// IsPreserveResultSet enables the correct ordering of the result set from
-	// the Select statements. Setting this field to true will modify the Select
-	// pointers.
-	IsPreserveResultSet bool
 }
 
 // NewUnion creates a new Union object.
@@ -60,7 +56,10 @@ func (u *Union) All() *Union {
 // SELECT one after the other, select an additional column in each SELECT to use
 // as a sort column and add an ORDER BY following the last SELECT.
 func (u *Union) PreserveResultSet() *Union {
-	u.IsPreserveResultSet = true
+	for i, s := range u.Selects {
+		s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
+	}
+	u.OrderBys = append([]string{"`_preserve_result_set`"}, u.OrderBys...)
 	return u
 }
 
@@ -80,7 +79,8 @@ func (u *Union) OrderDir(ord string, isAsc bool) *Union {
 	return u
 }
 
-// ToSQL renders the UNION into a string and returns its arguments.
+// ToSQL renders the UNION into a string and returns its arguments. This
+// function is idempotent.
 func (u *Union) ToSQL() (string, Arguments, error) {
 	var w = bufferpool.Get()
 	defer bufferpool.Put(w)
@@ -96,10 +96,6 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 		}
 		w.WriteRune('(')
 
-		if u.IsPreserveResultSet {
-			s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
-		}
-
 		sArgs, err := s.toSQL(w)
 		if err != nil {
 			return "", nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
@@ -108,9 +104,6 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 		args = append(args, sArgs...)
 	}
 
-	if u.IsPreserveResultSet {
-		u.OrderBys = append([]string{"`_preserve_result_set`"}, u.OrderBys...)
-	}
 	if len(u.OrderBys) > 0 {
 		w.WriteString(" ORDER BY ")
 		for i, s := range u.OrderBys {
@@ -127,10 +120,9 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 // UnionTemplate builds multiple select statements joined by UNION and all based
 // on a common template.
 type UnionTemplate struct {
-	Select *Select
-	//tplRendered string
-	//tplArgs     Arguments
+	Select        *Select
 	oldNew        [][]string
+	repls         []*strings.Replacer
 	stmtCount     int
 	OrderBys      []string
 	IsAll         bool
@@ -193,6 +185,7 @@ func (ut *UnionTemplate) StringReplace(key string, values ...string) *UnionTempl
 	if ut.stmtCount == 0 {
 		ut.stmtCount = len(values)
 		ut.oldNew = make([][]string, ut.stmtCount)
+		ut.repls = make([]*strings.Replacer, ut.stmtCount)
 	}
 	if len(values) != ut.stmtCount {
 		ut.previousError = errors.NewNotValidf("[dbr] UnionTemplate.StringReplace: Argument count for values too short. Have %d Want %d", len(values), ut.stmtCount)
@@ -235,6 +228,11 @@ func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
 	defer bufferpool.Put(wu)
 
 	for i := 0; i < ut.stmtCount; i++ {
+		repl := ut.repls[i]
+		if repl == nil {
+			repl = strings.NewReplacer(ut.oldNew[i]...)
+			ut.repls[i] = repl
+		}
 		if i > 0 {
 			wu.WriteString(" UNION ")
 			if ut.IsAll {
@@ -242,7 +240,7 @@ func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
 			}
 		}
 		wu.WriteRune('(')
-		strings.NewReplacer(ut.oldNew[i]...).WriteString(wu, selStr)
+		repl.WriteString(wu, selStr)
 		wu.WriteRune(')')
 	}
 	if len(ut.OrderBys) > 0 {
