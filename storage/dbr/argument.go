@@ -29,9 +29,11 @@ const (
 	OperatorLike       byte = 'l' // LIKE ?
 	OperatorNotLike    byte = 'L' // NOT LIKE ?
 	OperatorGreatest   byte = 'g' // GREATEST(?,?,?)
-	OperatorLeast      byte = 'e' // LEAST(?,?,?)
+	OperatorLeast      byte = 'a' // LEAST(?,?,?)
 	OperatorEqual      byte = '=' // = ?
 	OperatorNotEqual   byte = '!' // != ?
+	OperatorExists     byte = 'e' // EXISTS(subquery)
+	OperatorNotExists  byte = 'E' // NOT EXISTS(subquery)
 )
 
 const (
@@ -75,6 +77,12 @@ func writeOperator(w queryWriter, operator byte, hasArg bool) (addArg bool) {
 		addArg = true
 	case OperatorLeast:
 		w.WriteString(" LEAST (?)")
+		addArg = true
+	case OperatorExists:
+		w.WriteString(" EXISTS ")
+		addArg = true
+	case OperatorNotExists:
+		w.WriteString(" NOT EXISTS ")
 		addArg = true
 	case OperatorEqual:
 		w.WriteString(" = ")
@@ -713,3 +721,5 @@ func (e *expr) len() int { return 1 }
 // Operator not supported
 func (e *expr) Operator(_ byte) Argument { return e }
 func (e *expr) operator() byte           { return 0 }
+
+// for type subQuery see function SubSelect

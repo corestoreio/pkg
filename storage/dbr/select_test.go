@@ -728,27 +728,33 @@ func TestSubSelect(t *testing.T) {
 	sub := NewSelect().From("catalog_category_product").
 		AddColumnsQuoted("entity_id").Where(Condition("category_id", ArgInt64(234)))
 
-	t.Run("IN", func(t *testing.T) {
-		s := NewSelect("*").
-			From("catalog_product_entity").
-			Where(SubSelect("entity_id", OperatorIn, sub))
+	runner := func(op byte, wantSQL string) func(*testing.T) {
+		return func(t *testing.T) {
+			s := NewSelect("*").
+				From("catalog_product_entity").
+				Where(SubSelect("entity_id", op, sub))
 
-		sStr, args, err := s.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(234)}, args.Interfaces())
-		assert.Exactly(t, "SELECT * FROM `catalog_product_entity` WHERE (`entity_id` IN (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))", sStr)
-	})
-
-	t.Run("not equal", func(t *testing.T) {
-		s := NewSelect("*").
-			From("catalog_product_entity").
-			Where(SubSelect("entity_id", OperatorNotEqual, sub))
-
-		sStr, args, err := s.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(234)}, args.Interfaces())
-		assert.Exactly(t, "SELECT * FROM `catalog_product_entity` WHERE (`entity_id` != (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))", sStr)
-	})
+			sStr, args, err := s.ToSQL()
+			assert.NoError(t, err)
+			assert.Exactly(t, []interface{}{int64(234)}, args.Interfaces())
+			assert.Exactly(t, wantSQL, sStr)
+		}
+	}
+	t.Run("IN", runner(OperatorIn,
+		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` IN (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
+	))
+	t.Run("EXISTS", runner(OperatorExists,
+		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` EXISTS (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
+	))
+	t.Run("NOT EXISTS", runner(OperatorNotExists,
+		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` NOT EXISTS (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
+	))
+	t.Run("NOT EQUAL", runner(OperatorNotEqual,
+		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` != (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
+	))
+	t.Run("NOT EQUAL", runner(OperatorEqual,
+		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` = (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
+	))
 }
 
 func TestSelect_Subselect(t *testing.T) {

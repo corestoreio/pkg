@@ -61,11 +61,12 @@ func NewSelect(columns ...string) *Select {
 	}
 }
 
-// NewSelectFromSub creates a new SELECT pointer using the provided sub-select
-// in the FROM part together with an alias name. Appends the arguments of the
-// sub-select to the parent *Select pointer arguments list. SQL result may look
-// like:
+// NewSelectFromSub creates a new derived table (Subquery in the FROM Clause)
+// using the provided sub-select in the FROM part together with an alias name.
+// Appends the arguments of the sub-select to the parent *Select pointer
+// arguments list. SQL result may look like:
 //		SELECT a,b FROM (SELECT x,y FROM `product` AS `p`) AS `t`
+// https://dev.mysql.com/doc/refman/5.7/en/derived-tables.html
 func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 	s := &Select{
 		Log: log.BlackHole{},
