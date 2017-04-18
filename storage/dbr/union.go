@@ -63,18 +63,17 @@ func (u *Union) PreserveResultSet() *Union {
 	return u
 }
 
-// OrderBy appends a column or an expression to ORDER the statement by
+// OrderBy appends a column or an expression to ORDER the statement ascending.
 func (u *Union) OrderBy(ord ...string) *Union {
 	u.OrderBys = append(u.OrderBys, ord...)
 	return u
 }
 
-// OrderDir appends a column to ORDER the statement uy with a given direction
-func (u *Union) OrderDir(ord string, isAsc bool) *Union {
-	if isAsc {
-		u.OrderBys = append(u.OrderBys, ord+" ASC")
-	} else {
-		u.OrderBys = append(u.OrderBys, ord+" DESC")
+// OrderByDesc appends a column or an expression to ORDER the statement
+// descending.
+func (u *Union) OrderByDesc(ord ...string) *Union {
+	for _, o := range ord {
+		u.OrderBys = append(u.OrderBys, o+" DESC")
 	}
 	return u
 }
@@ -160,18 +159,17 @@ func (ut *UnionTemplate) PreserveResultSet() *UnionTemplate {
 	return ut
 }
 
-// OrderBy appends a column or an expression to ORDER the statement by
+// OrderBy appends a column or an expression to ORDER the statement ascending.
 func (ut *UnionTemplate) OrderBy(ord ...string) *UnionTemplate {
 	ut.OrderBys = append(ut.OrderBys, ord...)
 	return ut
 }
 
-// OrderDir appends a column to ORDER the statement uy with a given direction
-func (ut *UnionTemplate) OrderDir(ord string, isAsc bool) *UnionTemplate {
-	if isAsc {
-		ut.OrderBys = append(ut.OrderBys, ord+" ASC")
-	} else {
-		ut.OrderBys = append(ut.OrderBys, ord+" DESC")
+// OrderByDesc appends a column or an expression to ORDER the statement
+// descending.
+func (ut *UnionTemplate) OrderByDesc(ord ...string) *UnionTemplate {
+	for _, o := range ord {
+		ut.OrderBys = append(ut.OrderBys, o+" DESC")
 	}
 	return ut
 }
@@ -207,6 +205,16 @@ func (ut *UnionTemplate) MultiplyArguments(args ...Argument) Arguments {
 		copy(ret[i*lArgs:], args)
 	}
 	return ret
+}
+
+// Preprocess wrapper function which calls ToSQL and then Preprocess.
+func (ut *UnionTemplate) Preprocess() (string, error) {
+	sStr, args, err := ut.ToSQL()
+	if err != nil {
+		return "", errors.Wrap(err, "[dbr] UnionTemplate.Preprocess.ToSQL")
+	}
+	sStr, err = Preprocess(sStr, args...)
+	return sStr, errors.Wrap(err, "[dbr] UnionTemplate.Preprocess.Preprocess")
 }
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are

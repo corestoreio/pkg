@@ -72,7 +72,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 			From("some_table").
 			Where(dbr.Condition("d = ? OR e = ?", args...)).
 			Where(argEq).
-			OrderDir("id", false).
+			OrderByDesc("id").
 			Paginate(1, 20).
 			ToSQL()
 		if err != nil {

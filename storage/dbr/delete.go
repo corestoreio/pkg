@@ -76,18 +76,17 @@ func (b *Delete) Where(args ...ConditionArg) *Delete {
 	return b
 }
 
-// OrderBy appends an ORDER BY clause to the statement
-func (b *Delete) OrderBy(ord string) *Delete {
-	b.OrderBys = append(b.OrderBys, ord)
+// OrderBy appends a column or an expression to ORDER the statement ascending.
+func (b *Delete) OrderBy(ord ...string) *Delete {
+	b.OrderBys = append(b.OrderBys, ord...)
 	return b
 }
 
-// OrderDir appends an ORDER BY clause with a direction to the statement
-func (b *Delete) OrderDir(ord string, isAsc bool) *Delete {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, ord+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, ord+" DESC")
+// OrderByDesc appends a column or an expression to ORDER the statement
+// descending.
+func (b *Delete) OrderByDesc(ord ...string) *Delete {
+	for _, o := range ord {
+		b.OrderBys = append(b.OrderBys, o+" DESC")
 	}
 	return b
 }

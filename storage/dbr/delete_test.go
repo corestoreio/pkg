@@ -16,7 +16,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgStrings("b"))).Limit(1).OrderDir("id", true).ToSQL()
+		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgStrings("b"))).Limit(1).OrderBy("id").ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -126,14 +126,14 @@ func TestDelete_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.OrderDir("col1", false)
+					b.OrderByDesc("col1")
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.OrderDir("col2", false)
+					b.OrderByDesc("col2")
 					b.PropagationStopped = true
 				},
 			},
@@ -163,7 +163,7 @@ func TestDelete_Events(t *testing.T) {
 			Listen{
 				Name: "col1",
 				DeleteFunc: func(b *Delete) {
-					b.OrderDir("col1", false)
+					b.OrderByDesc("col1")
 				},
 			},
 		)
@@ -185,7 +185,7 @@ func TestDelete_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.OrderDir("col1", false)
+					b.OrderByDesc("col1")
 				},
 			},
 			Listen{

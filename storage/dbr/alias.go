@@ -6,9 +6,12 @@ import (
 )
 
 type alias struct {
-	Select     *Select
+	// Select used in cases where a sub-select is required.
+	Select *Select
+	// Expression can be any kind of SQL expression or a valid identifier.
 	Expression string
-	Alias      string
+	// Alias must be a valid identifier allowed for alias usage.
+	Alias string
 }
 
 // MakeAlias creates a new alias expression

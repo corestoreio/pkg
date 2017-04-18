@@ -129,18 +129,17 @@ func (b *Update) Where(args ...ConditionArg) *Update {
 	return b
 }
 
-// OrderBy appends a column to ORDER the statement by
-func (b *Update) OrderBy(ord string) *Update {
-	b.OrderBys = append(b.OrderBys, ord)
+// OrderBy appends a column or an expression to ORDER the statement ascending.
+func (b *Update) OrderBy(ord ...string) *Update {
+	b.OrderBys = append(b.OrderBys, ord...)
 	return b
 }
 
-// OrderDir appends a column to ORDER the statement by with a given direction
-func (b *Update) OrderDir(ord string, isAsc bool) *Update {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, ord+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, ord+" DESC")
+// OrderByDesc appends a column or an expression to ORDER the statement
+// descending.
+func (b *Update) OrderByDesc(ord ...string) *Update {
+	for _, o := range ord {
+		b.OrderBys = append(b.OrderBys, o+" DESC")
 	}
 	return b
 }

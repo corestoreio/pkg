@@ -49,7 +49,7 @@ func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 		From("c").
 		Where(Condition("d = ?", ArgInt(1))).
 		Paginate(1, 20).
-		OrderDir("id", false).
+		OrderByDesc("id").
 		ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT a, b FROM `c` WHERE (d = ?) ORDER BY id DESC LIMIT 20 OFFSET 0", sql)
@@ -59,10 +59,10 @@ func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 		From("c").
 		Where(Condition("d = ?", ArgInt(1))).
 		Paginate(3, 30).
-		OrderDir("id", true).
+		OrderBy("id").
 		ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT a, b FROM `c` WHERE (d = ?) ORDER BY id ASC LIMIT 30 OFFSET 60", sql)
+	assert.Equal(t, "SELECT a, b FROM `c` WHERE (d = ?) ORDER BY id LIMIT 30 OFFSET 60", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 }
 
@@ -584,14 +584,14 @@ func TestSelect_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				SelectFunc: func(b *Select) {
-					b.OrderDir("col1", false)
+					b.OrderByDesc("col1")
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				SelectFunc: func(b *Select) {
-					b.OrderDir("col2", false)
+					b.OrderByDesc("col2")
 					b.PropagationStopped = true
 				},
 			},
@@ -619,7 +619,7 @@ func TestSelect_Events(t *testing.T) {
 			Name: "a col1",
 			SelectFunc: func(s2 *Select) {
 				s2.Where(Condition("a=?", ArgFloat64(3.14159)))
-				s2.OrderDir("col1", false)
+				s2.OrderByDesc("col1")
 			},
 		})
 
@@ -638,15 +638,15 @@ func TestSelect_Events(t *testing.T) {
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(s2 *Select) {
 				s2.Where(Condition("a=?", ArgFloat64(3.14159)))
-				s2.OrderDir("col1", false)
+				s2.OrderByDesc("col1")
 			},
 		})
 		s.Listeners.Add(Listen{
 			Name:      "b col2",
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(s2 *Select) {
-				s2.OrderDir("col2", false)
-				s2.Where(Condition("b=?", ArgStrings("a")))
+				s2.OrderByDesc("col2").
+					Where(Condition("b=?", ArgStrings("a")))
 			},
 		})
 

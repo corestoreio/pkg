@@ -58,7 +58,7 @@ func TestUnion(t *testing.T) {
 		u := dbr.NewUnion(
 			dbr.NewSelect("a").AddColumnsQuotedAlias("d", "b").From("tableAD").Where(dbr.Condition("d", dbr.ArgString("f"))),
 			dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Condition("a", dbr.ArgInt64(3))),
-		).All().OrderBy("a").OrderDir("b", false)
+		).All().OrderBy("a").OrderByDesc("b")
 
 		uStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
@@ -72,7 +72,7 @@ func TestUnion(t *testing.T) {
 		u := dbr.NewUnion(
 			dbr.NewSelect("a").AddColumnsQuotedAlias("d", "b").From("tableAD"),
 			dbr.NewSelect("a", "b").From("tableAB"),
-		).All().OrderBy("a").OrderDir("b", false).PreserveResultSet()
+		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
@@ -128,13 +128,13 @@ func TestNewUnionTemplate(t *testing.T) {
 		u := dbr.NewUnionTemplate(
 			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
 				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
-				OrderDir("t.{column}_store_id", false),
+				OrderByDesc("t.{column}_store_id"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX").
 			PreserveResultSet().
 			All().
-			OrderDir("col_type", false)
+			OrderByDesc("col_type")
 
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
@@ -177,6 +177,41 @@ func TestNewUnionTemplate(t *testing.T) {
 		assert.Empty(t, uStr)
 		assert.True(t, errors.IsNotValid(err), "%+v")
 	})
+
+	t.Run("Preprocessed", func(t *testing.T) {
+		// Hint(CyS): We use the following query all over this file. This EAV
+		// query gets generated here:
+		// app/code/Magento/Eav/Model/ResourceModel/ReadHandler.php::execute but
+		// the ORDER BY clause in each SELECT gets ignored so the final UNION
+		// query over all EAV attribute tables does not have any sorting. This
+		// bug gets not discovered because the scoped values for each entity
+		// gets inserted into the database table after the default scope has
+		// been inserted. Usually MySQL sorts the data how they are inserted
+		// into the table ... if a row gets deleted MySQL might insert new data
+		// into the space of the old row and if you even delete the default
+		// scoped data and then recreate it the bug would bite you in your a**.
+		// The EAV UNION has been fixed with our statement that you first sort
+		// by attribute_id ASC and then by store_id ASC. If in the original
+		// buggy query of M1/M2 the sorting would be really DESC then you would
+		// never see the scoped data because the default data overwrites
+		// everything when loading the PHP array.
+
+		u := dbr.NewUnionTemplate(
+			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
+				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))),
+		).
+			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
+			PreserveResultSet().
+			All().OrderBy("attribute_id", "store_id")
+
+		sqlStr, err := u.Preprocess()
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+		assert.Exactly(t,
+			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)) ORDER BY t.store_id DESC) UNION ALL (SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)) ORDER BY t.store_id DESC) UNION ALL (SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)) ORDER BY t.store_id DESC) UNION ALL (SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)) ORDER BY t.store_id DESC) UNION ALL (SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)) ORDER BY t.store_id DESC) ORDER BY `_preserve_result_set`, attribute_id",
+			sqlStr)
+	})
 }
 
 var benchmarkGlobalArgs dbr.Arguments
@@ -187,20 +222,20 @@ func BenchmarkUnion_AllOptions(b *testing.B) {
 	u := dbr.NewUnion(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.varchar AS `col_type`").From("catalog_product_entity_varchar", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
-			OrderDir("t.varchar_store_id", false),
+			OrderByDesc("t.varchar_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.int AS `col_type`").From("catalog_product_entity_int", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
-			OrderDir("t.int_store_id", false),
+			OrderByDesc("t.int_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.decimal AS `col_type`").From("catalog_product_entity_decimal", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
-			OrderDir("t.decimal_store_id", false),
+			OrderByDesc("t.decimal_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.datetime AS `col_type`").From("catalog_product_entity_datetime", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
-			OrderDir("t.datetime_store_id", false),
+			OrderByDesc("t.datetime_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.text AS `col_type`").From("catalog_product_entity_text", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
-			OrderDir("t.text_store_id", false),
-	).All().OrderBy("a").OrderDir("b", false).PreserveResultSet()
+			OrderByDesc("t.text_store_id"),
+	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
 	for i := 0; i < b.N; i++ {
 		_, args, err := u.ToSQL()
@@ -216,13 +251,13 @@ func BenchmarkUnionTemplate_AllOptions(b *testing.B) {
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
-			OrderDir("t.{column}_store_id", false),
+			OrderByDesc("t.{column}_store_id"),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX").
 		PreserveResultSet().
 		All().
-		OrderDir("col_type", false)
+		OrderByDesc("col_type")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

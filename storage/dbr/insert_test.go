@@ -368,7 +368,7 @@ func TestInsert_FromSelect(t *testing.T) {
 		From("some_table").
 		Where(Condition("d = ? OR e = ?", args...)).
 		Where(argEq).
-		OrderDir("id", false).
+		OrderByDesc("id").
 		Paginate(1, 20))
 	if err != nil {
 		t.Fatalf("%+v", err)
