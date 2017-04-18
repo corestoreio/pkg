@@ -1,7 +1,6 @@
 package dbr
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -247,9 +246,7 @@ func (b *Select) OrderBy(ord ...string) *Select {
 // OrderByDesc appends a column or an expression to ORDER the statement
 // descending.
 func (b *Select) OrderByDesc(ord ...string) *Select {
-	for _, o := range ord {
-		b.OrderBys = append(b.OrderBys, o+" DESC")
-	}
+	b.OrderBys = orderByDesc(b.OrderBys, ord)
 	return b
 }
 
@@ -371,24 +368,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		}
 	}
 
-	if len(b.OrderBys) > 0 {
-		w.WriteString(" ORDER BY ")
-		for i, s := range b.OrderBys {
-			if i > 0 {
-				w.WriteString(", ")
-			}
-			w.WriteString(s)
-		}
-	}
-
-	if b.LimitValid {
-		w.WriteString(" LIMIT ")
-		w.WriteString(strconv.FormatUint(b.LimitCount, 10))
-	}
-
-	if b.OffsetValid {
-		w.WriteString(" OFFSET ")
-		w.WriteString(strconv.FormatUint(b.OffsetCount, 10))
-	}
+	sqlWriteOrderBy(w, b.OrderBys, false)
+	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
 	return args, nil
 }

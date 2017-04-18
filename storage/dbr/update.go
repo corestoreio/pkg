@@ -3,7 +3,6 @@ package dbr
 import (
 	"context"
 	"database/sql"
-	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -138,9 +137,7 @@ func (b *Update) OrderBy(ord ...string) *Update {
 // OrderByDesc appends a column or an expression to ORDER the statement
 // descending.
 func (b *Update) OrderByDesc(ord ...string) *Update {
-	for _, o := range ord {
-		b.OrderBys = append(b.OrderBys, o+" DESC")
-	}
+	b.OrderBys = orderByDesc(b.OrderBys, ord)
 	return b
 }
 
@@ -216,28 +213,8 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 			return "", nil, errors.Wrap(err, "[dbr] Update.ToSQL.writeWhereFragmentsToSQL")
 		}
 	}
-
-	// Ordering and limiting
-	if len(b.OrderBys) > 0 {
-		buf.WriteString(" ORDER BY ")
-		for i, s := range b.OrderBys {
-			if i > 0 {
-				buf.WriteString(", ")
-			}
-			buf.WriteString(s)
-		}
-	}
-
-	if b.LimitValid {
-		buf.WriteString(" LIMIT ")
-		buf.WriteString(strconv.FormatUint(b.LimitCount, 10))
-	}
-
-	if b.OffsetValid {
-		buf.WriteString(" OFFSET ")
-		buf.WriteString(strconv.FormatUint(b.OffsetCount, 10))
-	}
-
+	sqlWriteOrderBy(buf, b.OrderBys, false)
+	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
 	return buf.String(), args, nil
 }
 

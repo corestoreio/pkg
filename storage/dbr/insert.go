@@ -157,8 +157,7 @@ func (b *Insert) FromSelect(s *Select) (string, Arguments, error) {
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	buf.WriteString("INSERT INTO ")
-	Quoter.quote(buf, b.Into)
+	sqlWriteInsertInto(buf, b.Into)
 	buf.WriteByte(' ')
 	buf.WriteString(sSQL)
 
@@ -193,8 +192,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	buf.WriteString("INSERT INTO ")
-	Quoter.quote(buf, b.Into)
+	sqlWriteInsertInto(buf, b.Into)
 	buf.WriteString(" (")
 
 	if len(b.Maps) != 0 {

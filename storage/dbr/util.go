@@ -32,3 +32,10 @@ func (sc stmtChecker) IsDelete(sql string) bool {
 func (sc stmtChecker) IsInsert(sql string) bool {
 	return sc.startContain(sql, "insert", " ")
 }
+
+func orderByDesc(orderBys, ord []string) []string {
+	for _, o := range ord {
+		orderBys = append(orderBys, o+" DESC")
+	}
+	return orderBys
+}

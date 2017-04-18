@@ -3,7 +3,6 @@ package dbr
 import (
 	"context"
 	"database/sql"
-	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -85,9 +84,7 @@ func (b *Delete) OrderBy(ord ...string) *Delete {
 // OrderByDesc appends a column or an expression to ORDER the statement
 // descending.
 func (b *Delete) OrderByDesc(ord ...string) *Delete {
-	for _, o := range ord {
-		b.OrderBys = append(b.OrderBys, o+" DESC")
-	}
+	b.OrderBys = orderByDesc(b.OrderBys, ord)
 	return b
 }
 
@@ -131,26 +128,8 @@ func (b *Delete) ToSQL() (string, Arguments, error) {
 		}
 	}
 
-	// Ordering and limiting
-	if len(b.OrderBys) > 0 {
-		buf.WriteString(" ORDER BY ")
-		for i, s := range b.OrderBys {
-			if i > 0 {
-				buf.WriteString(", ")
-			}
-			buf.WriteString(s)
-		}
-	}
-
-	if b.LimitValid {
-		buf.WriteString(" LIMIT ")
-		buf.WriteString(strconv.FormatUint(b.LimitCount, 10))
-	}
-
-	if b.OffsetValid {
-		buf.WriteString(" OFFSET ")
-		buf.WriteString(strconv.FormatUint(b.OffsetCount, 10))
-	}
+	sqlWriteOrderBy(buf, b.OrderBys, false)
+	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
 	return buf.String(), args, nil
 }
 

@@ -64,17 +64,18 @@ func (u *Union) PreserveResultSet() *Union {
 }
 
 // OrderBy appends a column or an expression to ORDER the statement ascending.
+// MySQL will order the result set in a temporary table, which is slow.
+// https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
 func (u *Union) OrderBy(ord ...string) *Union {
 	u.OrderBys = append(u.OrderBys, ord...)
 	return u
 }
 
 // OrderByDesc appends a column or an expression to ORDER the statement
-// descending.
+// descending. MySQL will order the result set in a temporary table, which is
+// slow.
 func (u *Union) OrderByDesc(ord ...string) *Union {
-	for _, o := range ord {
-		u.OrderBys = append(u.OrderBys, o+" DESC")
-	}
+	u.OrderBys = orderByDesc(u.OrderBys, ord)
 	return u
 }
 
@@ -88,13 +89,9 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 	for i, s := range u.Selects {
 
 		if i > 0 {
-			w.WriteString(" UNION ")
-			if u.IsAll {
-				w.WriteString("ALL ")
-			}
+			sqlWriteUnionAll(w, u.IsAll)
 		}
 		w.WriteRune('(')
-
 		sArgs, err := s.toSQL(w)
 		if err != nil {
 			return "", nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
@@ -102,17 +99,7 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 		w.WriteRune(')')
 		args = append(args, sArgs...)
 	}
-
-	if len(u.OrderBys) > 0 {
-		w.WriteString(" ORDER BY ")
-		for i, s := range u.OrderBys {
-			if i > 0 {
-				w.WriteString(", ")
-			}
-			w.WriteString(s)
-		}
-	}
-
+	sqlWriteOrderBy(w, u.OrderBys, true)
 	return w.String(), args, nil
 }
 
@@ -160,17 +147,18 @@ func (ut *UnionTemplate) PreserveResultSet() *UnionTemplate {
 }
 
 // OrderBy appends a column or an expression to ORDER the statement ascending.
+// MySQL will order the result set in a temporary table, which is slow.
+// https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
 func (ut *UnionTemplate) OrderBy(ord ...string) *UnionTemplate {
 	ut.OrderBys = append(ut.OrderBys, ord...)
 	return ut
 }
 
 // OrderByDesc appends a column or an expression to ORDER the statement
-// descending.
+// descending. MySQL will order the result set in a temporary table, which is
+// slow.
 func (ut *UnionTemplate) OrderByDesc(ord ...string) *UnionTemplate {
-	for _, o := range ord {
-		ut.OrderBys = append(ut.OrderBys, o+" DESC")
-	}
+	ut.OrderBys = orderByDesc(ut.OrderBys, ord)
 	return ut
 }
 
@@ -242,24 +230,12 @@ func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
 			ut.repls[i] = repl
 		}
 		if i > 0 {
-			wu.WriteString(" UNION ")
-			if ut.IsAll {
-				wu.WriteString("ALL ")
-			}
+			sqlWriteUnionAll(wu, ut.IsAll)
 		}
 		wu.WriteRune('(')
 		repl.WriteString(wu, selStr)
 		wu.WriteRune(')')
 	}
-	if len(ut.OrderBys) > 0 {
-		wu.WriteString(" ORDER BY ")
-		for i, s := range ut.OrderBys {
-			if i > 0 {
-				wu.WriteString(", ")
-			}
-			wu.WriteString(s)
-		}
-	}
-
+	sqlWriteOrderBy(wu, ut.OrderBys, true)
 	return wu.String(), ut.MultiplyArguments(tplArgs...), nil
 }
