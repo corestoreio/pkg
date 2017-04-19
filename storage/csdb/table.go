@@ -72,8 +72,8 @@ func (t *Table) update() *Table {
 	t.CountUnique = t.Columns.UniqueKeys().Len()
 
 	t.selectAllCache = &dbr.Select{
-		Columns:   t.AllColumnAliasQuote(MainTable),
-		FromTable: dbr.MakeAlias(t.Name, MainTable),
+		Columns: t.AllColumnAliasQuote(MainTable),
+		Table:   dbr.MakeAlias(t.Name, MainTable),
 	}
 
 	return t

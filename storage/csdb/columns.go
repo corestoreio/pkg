@@ -110,7 +110,7 @@ func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 	if len(tables) == 0 {
 		rows, err = db.Query(selAllTablesColumns)
 	} else {
-		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.ArgString(tables...))
+		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.ArgStrings(tables...))
 		if err != nil {
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
 		}

@@ -82,7 +82,7 @@ func WithObjectFromQuery(db interface {
 				return errors.NewUnavailablef("[csdb] Option %q for variable typ not available. Only `view` or `table`", typ)
 			}
 
-			vnq := dbr.Quoter.Quote("", objectName)
+			vnq := dbr.Quoter.Quote(objectName)
 			if len(dropIfExists) > 0 && dropIfExists[0] {
 				if _, err := db.Exec("DROP " + viewOrTable + " IF EXISTS " + vnq); err != nil {
 					return errors.Wrapf(err, "[csdb] Drop view failed %q", objectName)
