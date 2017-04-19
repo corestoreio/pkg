@@ -13,7 +13,7 @@ import (
 // marks, a Mismatch error gets returned. The arguments are getting converted to
 // an interface slice to easy passing into the db.Query/db.Exec/etc functions at
 // an argument.
-//		Repeat("SELECT * FROM table WHERE id IN (?) AND status IN (?)", ArgInt(myIntSlice...), ArgStrings(myStrSlice...))
+//		Repeat("SELECT * FROM table WHERE id IN (?) AND status IN (?)", ArgInt(myIntSlice...), ArgString(myStrSlice...))
 // Gets converted to:
 //		SELECT * FROM table WHERE id IN (?,?) AND status IN (?,?,?)
 // The questions marks are of course depending on the values in the Arg*

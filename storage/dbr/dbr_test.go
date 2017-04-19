@@ -73,7 +73,7 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 				args = append(args, ArgInt64(p.ID))
 			}
 		case "name":
-			args = append(args, ArgStrings(p.Name))
+			args = append(args, ArgString(p.Name))
 		case "email":
 			args = append(args, ArgNullString(p.Email))
 		case "key":

@@ -16,7 +16,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgStrings("b"))).Limit(1).OrderBy("id").ToSQL()
+		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgString("b"))).Limit(1).OrderBy("id").ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -38,7 +38,7 @@ func TestDeleteAllToSQL(t *testing.T) {
 func TestDeleteSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	del := s.DeleteFrom("a").Where(Condition("id = ?", ArgInt(1)))
+	del := s.DeleteFrom("a").Where(Condition("id = ?", argInt(1)))
 	sql, args, err := del.ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, sql, "DELETE FROM `a` WHERE (id = ?)")
@@ -66,7 +66,7 @@ func TestDeleteReal(t *testing.T) {
 
 	// Insert a Barack
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
-		AddValues(ArgStrings("Barack"), ArgStrings("barack@whitehouse.gov")).Exec(context.TODO())
+		AddValues(ArgString("Barack"), ArgString("barack@whitehouse.gov")).Exec(context.TODO())
 	assert.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")
@@ -95,7 +95,7 @@ func TestDelete_Prepare(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		d := &Delete{}
-		d.Where(Condition("a", ArgInt64(1)))
+		d.Where(Condition("a", argInt64(1)))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -108,7 +108,7 @@ func TestDelete_Prepare(t *testing.T) {
 		d.DB.Preparer = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		d.Where(Condition("a", ArgInt(1)))
+		d.Where(Condition("a", argInt(1)))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
@@ -203,7 +203,7 @@ func TestDelete_Events(t *testing.T) {
 				Name:      "repetitive",
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(Condition("repetitive=?", ArgInt(3)))
+					b.Where(Condition("repetitive=?", argInt(3)))
 				},
 			},
 		)

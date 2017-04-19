@@ -14,8 +14,8 @@ func TestTransactionReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	res, err := tx.InsertInto("dbr_people").AddColumns("name", "email").AddValues(
-		ArgStrings("Barack"), ArgStrings("obama@whitehouse.gov"),
-		ArgStrings("Obama"), ArgStrings("barack@whitehouse.gov"),
+		ArgString("Barack"), ArgString("obama@whitehouse.gov"),
+		ArgString("Obama"), ArgString("barack@whitehouse.gov"),
 	).Exec(context.TODO())
 
 	assert.NoError(t, err)
@@ -48,7 +48,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = tx.Select("*").From("dbr_people").Where(Condition("email = ?", ArgStrings("jonathan@uservoice.com"))).LoadStruct(context.TODO(), &person)
+	err = tx.Select("*").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 	assert.Equal(t, "Jonathan", person.Name)
 

@@ -44,7 +44,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, args, err := s.InsertInto("alpha").AddColumns("something_id", "user_id", "other").AddValues(
-			ArgInt(1), ArgInt(2), ArgBool(true),
+			argInt(1), argInt(2), ArgBool(true),
 		).ToSQL()
 		if err != nil {
 			b.Fatal(err)
@@ -74,7 +74,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 func TestInsertSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sStr, args, err := s.InsertInto("a").AddColumns("b", "c").AddValues(ArgInt(1), ArgInt(2)).ToSQL()
+	sStr, args, err := s.InsertInto("a").AddColumns("b", "c").AddValues(argInt(1), argInt(2)).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (?,?)", sStr)
 	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
@@ -85,11 +85,11 @@ func TestInsertMultipleToSQL(t *testing.T) {
 
 	sStr, args, err := s.InsertInto("a").AddColumns("b", "c").
 		AddValues(
-			ArgInt(1), ArgInt(2),
-			ArgInt(3), ArgInt(4),
+			argInt(1), argInt(2),
+			argInt(3), argInt(4),
 		).
 		AddValues(
-			ArgInt(5), ArgInt(6),
+			argInt(5), argInt(6),
 		).
 		AddOnDuplicateKey("b", nil).
 		AddOnDuplicateKey("c", nil).
@@ -106,7 +106,7 @@ func TestInsertRecordsToSQL(t *testing.T) {
 	sql, args, err := s.InsertInto("a").
 		AddColumns("something_id", "user_id", "other").
 		AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
-		AddOnDuplicateKey("something_id", ArgInt64(99)).
+		AddOnDuplicateKey("something_id", argInt64(99)).
 		AddOnDuplicateKey("user_id", nil).
 		ToSQL()
 	require.NoError(t, err)
@@ -128,7 +128,7 @@ func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues(ArgStrings("Barack"), ArgStrings("44")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues(ArgString("Barack"), ArgString("44")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	rowsAff, err := res.RowsAffected()
@@ -139,7 +139,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues(ArgStrings("Barack"), ArgStrings("obama@whitehouse.gov")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues(ArgString("Barack"), ArgString("obama@whitehouse.gov")).Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
@@ -183,7 +183,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	s := createRealSessionWithFixtures()
 	res, err := s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(ArgInt64(678), ArgStrings("Pike"), ArgStrings("pikes@peak.co")).Exec(context.TODO())
+		AddValues(ArgInt64(678), ArgString("Pike"), ArgString("pikes@peak.co")).Exec(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -200,8 +200,8 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	}
 	res, err = s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(ArgInt64(inID), ArgStrings(""), ArgStrings("pikes@peak.com")).
-		AddOnDuplicateKey("name", ArgStrings("Pik3")).
+		AddValues(ArgInt64(inID), ArgString(""), ArgString("pikes@peak.com")).
+		AddOnDuplicateKey("name", ArgString("Pik3")).
 		AddOnDuplicateKey("email", nil).
 		Exec(context.TODO())
 	if err != nil {
@@ -241,7 +241,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.DB.Preparer = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		in.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		in.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -254,7 +254,7 @@ func TestInsert_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewInsert("tableA")
-		d.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		d.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -262,14 +262,14 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col1", ArgStrings("X1"))
+					b.Pair("col1", ArgString("X1"))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col2", ArgStrings("X2"))
+					b.Pair("col2", ArgString("X2"))
 					b.PropagationStopped = true
 				},
 			},
@@ -292,13 +292,13 @@ func TestInsert_Events(t *testing.T) {
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		ins := NewInsert("tableA")
-		ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
 		ins.Listeners.Add(
 			Listen{
 				Name: "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", ArgStrings("X1"))
+					i.Pair("colC", ArgString("X1"))
 				},
 			},
 		)
@@ -311,7 +311,7 @@ func TestInsert_Events(t *testing.T) {
 	t.Run("Should Dispatch", func(t *testing.T) {
 		ins := NewInsert("tableA")
 
-		ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
 		ins.Listeners.Add(
 			Listen{
@@ -337,7 +337,7 @@ func TestInsert_Events(t *testing.T) {
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", ArgStrings("X1"))
+					i.Pair("colC", ArgString("X1"))
 				},
 			},
 		)
@@ -359,10 +359,10 @@ func TestInsert_Events(t *testing.T) {
 func TestInsert_FromSelect(t *testing.T) {
 	ins := NewInsert("tableA")
 	// columns and args just to check that they get ignored
-	ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+	ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
 	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(OperatorIn)}
-	args := Arguments{ArgInt64(1), ArgStrings("wat")}
+	args := Arguments{argInt64(1), ArgString("wat")}
 
 	iSQL, args, err := ins.FromSelect(NewSelect("something_id", "user_id", "other").
 		From("some_table").

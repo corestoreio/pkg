@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ Argument = argInt(0)
+//var _ Argument = argInt(0)
 var _ Argument = argInt64(0)
 var _ Argument = argFloat64(0)
 var _ Argument = argBool(true)

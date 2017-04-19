@@ -39,8 +39,8 @@ func ExampleNewInsert() {
 func ExampleInsert_AddOnDuplicateKey() {
 	sqlStr, args, err := dbr.NewInsert("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(dbr.ArgInt64(1), dbr.ArgStrings("Pik'e"), dbr.ArgStrings("pikes@peak.com")).
-		AddOnDuplicateKey("name", dbr.ArgStrings("Pik3")).
+		AddValues(dbr.ArgInt64(1), dbr.ArgString("Pik'e"), dbr.ArgString("pikes@peak.com")).
+		AddOnDuplicateKey("name", dbr.ArgString("Pik3")).
 		AddOnDuplicateKey("email", nil).
 		ToSQL()
 	if err != nil {
@@ -68,7 +68,7 @@ func ExampleInsert_FromSelect() {
 
 	sqlStr, args, err := ins.FromSelect(dbr.NewSelect().AddColumnsQuoted("something_id,user_id,other").
 		From("some_table").
-		Where(dbr.Condition("int64A = ? OR string = ?", dbr.ArgInt64(1), dbr.ArgStrings("wat"))).
+		Where(dbr.Condition("int64A = ? OR string = ?", dbr.ArgInt64(1), dbr.ArgString("wat"))).
 		Where(argEq).
 		OrderByDesc("id").
 		Paginate(1, 20))
@@ -92,7 +92,7 @@ func ExampleInsert_FromSelect() {
 
 func ExampleNewDelete() {
 	sqlStr, args, err := dbr.NewDelete("tableA").Where(
-		dbr.Condition("a", dbr.ArgStrings("b'%").Operator(dbr.OperatorLike)),
+		dbr.Condition("a", dbr.ArgString("b'%").Operator(dbr.OperatorLike)),
 		dbr.Condition("b", dbr.ArgInt(3, 4, 5, 6).Operator(dbr.OperatorIn)),
 	).
 		Limit(1).OrderBy("id").
@@ -225,7 +225,7 @@ func ExamplePreprocess() {
 		dbr.ArgInt(1).Operator(dbr.OperatorIn),
 		dbr.ArgInt(1, 2, 3).Operator(dbr.OperatorIn),
 		dbr.ArgInt64(5, 6, 7).Operator(dbr.OperatorIn),
-		dbr.ArgStrings("wat", "ok").Operator(dbr.OperatorBetween),
+		dbr.ArgString("wat", "ok").Operator(dbr.OperatorBetween),
 	)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -233,14 +233,14 @@ func ExamplePreprocess() {
 	}
 	fmt.Printf("%s\n", sqlStr)
 	// Output:
-	// SELECT * FROM x WHERE a IN 1 AND b IN (1,2,3) AND c NOT IN (5,6,7) AND d BETWEEN 'wat' AND 'ok'
+	// SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND c NOT IN (5,6,7) AND d BETWEEN 'wat' AND 'ok'
 }
 
 func ExampleRepeat() {
 	sl := []string{"a", "b", "c", "d", "e"}
 
 	sqlStr, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)",
-		dbr.ArgInt(5, 7, 9), dbr.ArgStrings(sl...))
+		dbr.ArgInt(5, 7, 9), dbr.ArgString(sl...))
 
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -260,37 +260,49 @@ func ExampleCondition() {
 		if err != nil {
 			fmt.Printf("%+v\n", err)
 		} else {
-			fmt.Printf("%s\n", sqlStr)
+			fmt.Printf("%q", sqlStr)
 			if len(args) > 0 {
-				fmt.Printf("Arguments: %v\n", args)
+				fmt.Printf(" Arguments: %v", args.Interfaces())
 			}
+			fmt.Print("\n")
 		}
 	}
 
-	//OperatorNull       byte = 'n' // IS NULL
-	//OperatorNotNull    byte = 'N' // IS NOT NULL
-	//OperatorIn         byte = 'i' // IN ?
-	//OperatorNotIn      byte = 'I' // NOT IN ?
-	//OperatorBetween    byte = 'b' // BETWEEN ? AND ?
-	//OperatorNotBetween byte = 'B' // NOT BETWEEN ? AND ?
-	//OperatorLike       byte = 'l' // LIKE ?
-	//OperatorNotLike    byte = 'L' // NOT LIKE ?
-	//OperatorGreatest   byte = 'g' // GREATEST(?,?,?)
-	//OperatorLeast      byte = 'a' // LEAST(?,?,?)
-	//OperatorEqual      byte = '=' // = ?
-	//OperatorNotEqual   byte = '!' // != ?
-	//OperatorExists     byte = 'e' // EXISTS(subquery)
-	//OperatorNotExists  byte = 'E' // NOT EXISTS(subquery)
-
 	argPrinter(dbr.ArgNull())
 	argPrinter(dbr.ArgNotNull())
-
+	argPrinter(dbr.ArgInt(2))
 	argPrinter(dbr.ArgInt(3).Operator(dbr.OperatorNull))
 	argPrinter(dbr.ArgInt(4).Operator(dbr.OperatorNotNull))
-	argPrinter(dbr.ArgInt(5).Operator(dbr.OperatorEqual))
-	argPrinter(dbr.ArgInt(6).Operator(dbr.OperatorNotEqual))
+	argPrinter(dbr.ArgInt(7, 8, 9).Operator(dbr.OperatorIn))
+	argPrinter(dbr.ArgInt(10, 11, 12).Operator(dbr.OperatorNotIn))
+	argPrinter(dbr.ArgInt(13, 14).Operator(dbr.OperatorBetween))
+	argPrinter(dbr.ArgInt(15, 16).Operator(dbr.OperatorNotBetween))
+	argPrinter(dbr.ArgInt(17, 18, 19).Operator(dbr.OperatorGreatest))
+	argPrinter(dbr.ArgInt(20, 21, 22).Operator(dbr.OperatorLeast))
+	argPrinter(dbr.ArgInt(30).Operator(dbr.OperatorEqual))
+	argPrinter(dbr.ArgInt(31).Operator(dbr.OperatorNotEqual))
 
-	// Output:
-	// SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)
-	// SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)
+	argPrinter(dbr.ArgString("Goph%").Operator(dbr.OperatorLike))
+	argPrinter(dbr.ArgString("Cat%").Operator(dbr.OperatorNotLike))
+
+	//Output:
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN ?)" Arguments: [7 8 9]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN ?)" Arguments: [10 11 12]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?))" Arguments: [17 18 19]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?))" Arguments: [20 21 22]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+}
+
+func ExampleSubSelect() {
+
 }

@@ -1,10 +1,9 @@
 package dbr
 
 import (
+	"bytes"
 	"context"
 	"testing"
-
-	"bytes"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -17,7 +16,7 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 	s := createFakeSession()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, args, err := s.Update("alpha").Set("something_id", ArgInt64(1)).Where(Condition("id", ArgInt64(1))).ToSQL()
+		_, args, err := s.Update("alpha").Set("something_id", argInt64(1)).Where(Condition("id", argInt64(1))).ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -30,12 +29,12 @@ func BenchmarkUpdateValueMapSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, args, err := s.Update("alpha").
-			Set("something_id", ArgInt64(1)).
+			Set("something_id", argInt64(1)).
 			SetMap(map[string]Argument{
-				"b": ArgInt64(2),
-				"c": ArgInt64(3),
+				"b": argInt64(2),
+				"c": argInt64(3),
 			}).
-			Where(Condition("id", ArgInt(1))).
+			Where(Condition("id", argInt(1))).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -47,7 +46,7 @@ func BenchmarkUpdateValueMapSQL(b *testing.B) {
 func TestUpdateAllToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", ArgInt64(1)).Set("c", ArgInt(2)).ToSQL()
+	sql, args, err := s.Update("a").Set("b", argInt64(1)).Set("c", argInt(2)).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `b`=?, `c`=?", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
@@ -56,7 +55,7 @@ func TestUpdateAllToSQL(t *testing.T) {
 func TestUpdateSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(Condition("id = ?", ArgInt(1))).ToSQL()
+	sql, args, err := s.Update("a").Set("b", argInt(1)).Set("c", argInt(2)).Where(Condition("id = ?", argInt(1))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `b`=?, `c`=? WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
@@ -65,7 +64,7 @@ func TestUpdateSingleToSQL(t *testing.T) {
 func TestUpdateSetMapToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": ArgInt64(1), "c": ArgInt64(2)}).Where(Condition("id = ?", ArgInt(1))).ToSQL()
+	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": argInt64(1), "c": ArgInt64(2)}).Where(Condition("id = ?", argInt(1))).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (id = ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
@@ -79,15 +78,15 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	sql, args, err := s.Update("a").
-		Set("foo", ArgInt(1)).
-		Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(Condition("id = ?", ArgInt(9))).ToSQL()
+		Set("foo", argInt(1)).
+		Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(Condition("id = ?", argInt(9))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(9)}, args.Interfaces())
 
 	sql, args, err = s.Update("a").
-		Set("foo", ArgInt(1)).
-		Set("bar", Expr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Condition("id = ?", ArgInt(9))).ToSQL()
+		Set("foo", argInt(1)).
+		Set("bar", Expr("COALESCE(bar, 0) + ?", argInt(2))).Where(Condition("id = ?", argInt(9))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(9)}, args.Interfaces())
@@ -96,7 +95,7 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 func TestUpdateTenStaringFromTwentyToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").Set("b", ArgInt(1)).Limit(10).Offset(20).ToSQL()
+	sql, args, err := s.Update("a").Set("b", argInt(1)).Limit(10).Offset(20).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
@@ -107,11 +106,11 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 
 	// Insert a user with a key
 	_, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
-		AddValues(ArgStrings("Benjamin"), ArgStrings("ben@whitehouse.gov"), ArgStrings("6")).Exec(context.TODO())
+		AddValues(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err := s.Update("dbr_people").Set("key", ArgStrings("6-revoked")).Where(Eq{"key": ArgStrings("6")}).Exec(context.TODO())
+	res, err := s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Eq{"key": ArgString("6")}).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -120,7 +119,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgStrings("ben@whitehouse.gov")}).LoadStruct(context.TODO(), &person)
+	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).LoadStruct(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)
@@ -132,7 +131,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Insert a George
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
-		AddValues(ArgStrings("George"), ArgStrings("george@whitehouse.gov")).Exec(context.TODO())
+		AddValues(ArgString("George"), ArgString("george@whitehouse.gov")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Get George'ab ID
@@ -141,7 +140,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Rename our George to Barack
 	_, err = s.Update("dbr_people").
-		SetMap(map[string]Argument{"name": ArgStrings("Barack"), "email": ArgStrings("barack@whitehouse.gov")}).
+		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
 		Where(Condition("id = ?", ArgInt64(id))).Exec(context.TODO())
 
 	assert.NoError(t, err)
@@ -160,7 +159,7 @@ func TestUpdate_Prepare(t *testing.T) {
 	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
-		in.Set("a", ArgInt(1))
+		in.Set("a", argInt(1))
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -172,7 +171,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		u.Table = MakeAlias("tableY")
-		u.Set("a", ArgInt(1))
+		u.Set("a", argInt(1))
 
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -213,7 +212,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewUpdate("tableA", "tA")
-		d.Set("y", ArgInt(25)).Set("z", ArgInt(26))
+		d.Set("y", argInt(25)).Set("z", argInt(26))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -221,14 +220,14 @@ func TestUpdate_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("a", ArgInt(1))
+					b.Set("a", argInt(1))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("b", ArgInt(1))
+					b.Set("b", argInt(1))
 					b.PropagationStopped = true
 				},
 			},
@@ -251,7 +250,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		up := NewUpdate("tableA", "tA")
-		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
+		up.Set("a", argInt(1)).Set("b", ArgBool(true))
 
 		up.Listeners.Add(
 			Listen{
@@ -270,7 +269,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Should Dispatch", func(t *testing.T) {
 		up := NewUpdate("tableA", "tA")
-		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
+		up.Set("a", argInt(1)).Set("b", ArgBool(true))
 
 		up.Listeners.Add(
 			Listen{
@@ -286,7 +285,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("d", ArgStrings("d"))
+					u.Set("d", ArgString("d"))
 				},
 			},
 		)
@@ -295,7 +294,7 @@ func TestUpdate_Events(t *testing.T) {
 			Name:      "e",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(u *Update) {
-				u.Set("e", ArgStrings("e"))
+				u.Set("e", ArgString("e"))
 			},
 		})
 
@@ -339,7 +338,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgStrings("E0S 5D Mark II"), ArgInt64(12)},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), argInt64(12)},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -352,7 +351,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgStrings("E0S 5D Mark II"), Expr("VALUES(`stock`)+?", ArgInt64(13))},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), Expr("VALUES(`stock`)+?", argInt64(13))},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -365,7 +364,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val) and with arguments and nil", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "sku", "stock"},
-			Arguments: Arguments{ArgStrings("E0S 5D Mark III"), nil, ArgInt64(14)},
+			Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, argInt64(14)},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -382,7 +381,7 @@ func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 	args := make(Arguments, 0, 2)
 	uc := UpdatedColumns{
 		Columns:   []string{"name", "sku", "stock"},
-		Arguments: Arguments{ArgStrings("E0S 5D Mark III"), nil, ArgInt64(14)},
+		Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, argInt64(14)},
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

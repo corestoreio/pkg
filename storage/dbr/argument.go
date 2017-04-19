@@ -130,7 +130,8 @@ type ArgumentGenerater interface {
 	GenerateArguments(statementType byte, columns, condition []string) (Arguments, error)
 }
 
-// Argument transforms your value or values into an interface slice. This
+// Argument transforms your value or values into an interface slice or encodes
+// them into textual representation to be used directly in a SQL query. This
 // interface slice gets used in the database query functions at an argument. The
 // underlying type in the interface must be one of driver.Value allowed types.
 type Argument interface {
@@ -204,9 +205,9 @@ func isNotIn(o byte) bool {
 //		case []byte:
 //			return ArgBytes(v), nil
 //		case string:
-//			return ArgStrings(v), nil
+//			return ArgString(v), nil
 //		case []string:
-//			return ArgStrings(v...), nil
+//			return ArgString(v...), nil
 //		case time.Time:
 //			return ArgTime(v), nil
 //		case []time.Time:
@@ -334,14 +335,14 @@ func ArgNotNull() Argument {
 	return argNull(20)
 }
 
-// ArgString implements interface Argument but does not allocate.
-type ArgString string
+// argString implements interface Argument but does not allocate.
+type argString string
 
-func (a ArgString) toIFace(args *[]interface{}) {
+func (a argString) toIFace(args *[]interface{}) {
 	*args = append(*args, string(a))
 }
 
-func (a ArgString) writeTo(w queryWriter, _ int) error {
+func (a argString) writeTo(w queryWriter, _ int) error {
 	if !utf8.ValidString(string(a)) {
 		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
 	}
@@ -349,17 +350,17 @@ func (a ArgString) writeTo(w queryWriter, _ int) error {
 	return nil
 }
 
-func (a ArgString) len() int { return 1 }
+func (a argString) len() int { return 1 }
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a ArgString) Operator(op byte) Argument {
+func (a argString) Operator(op byte) Argument {
 	return argStrings{
 		data: []string{string(a)},
 		op:   op,
 	}
 }
-func (a ArgString) operator() byte { return 0 }
+func (a argString) operator() byte { return 0 }
 
 type argStrings struct {
 	data []string
@@ -410,12 +411,12 @@ func (a argStrings) Operator(op byte) Argument {
 }
 func (a argStrings) operator() byte { return a.op }
 
-// ArgStrings adds a string or a slice of strings to the argument list.
+// ArgString adds a string or a slice of strings to the argument list.
 // Providing no arguments returns a NULL type.
 // All arguments mut be a valid utf-8 string.
-func ArgStrings(args ...string) Argument {
+func ArgString(args ...string) Argument {
 	if len(args) == 1 {
-		return ArgString(args[0])
+		return argString(args[0])
 	}
 	return argStrings{data: args}
 }
@@ -488,6 +489,7 @@ func ArgBool(args ...bool) Argument {
 	return argBools{data: args}
 }
 
+// argInt implements interface Argument but does not allocate.
 type argInt int
 
 func (a argInt) toIFace(args *[]interface{}) {
@@ -500,9 +502,15 @@ func (a argInt) writeTo(w queryWriter, _ int) error {
 }
 func (a argInt) len() int { return 1 }
 
-// Operator not supported
-func (a argInt) Operator(_ byte) Argument { return a }
-func (a argInt) operator() byte           { return 0 }
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
+func (a argInt) Operator(op byte) Argument {
+	return argInts{
+		op:   op,
+		data: []int{int(a)},
+	}
+}
+func (a argInt) operator() byte { return 0 }
 
 type argInts struct {
 	op   byte
@@ -557,6 +565,7 @@ func ArgInt(args ...int) Argument {
 	return argInts{data: args}
 }
 
+// argInt64 implements interface Argument but does not allocate.
 type argInt64 int64
 
 func (a argInt64) toIFace(args *[]interface{}) {
@@ -569,9 +578,15 @@ func (a argInt64) writeTo(w queryWriter, _ int) error {
 }
 func (a argInt64) len() int { return 1 }
 
-// Operator not supported
-func (a argInt64) Operator(_ byte) Argument { return a }
-func (a argInt64) operator() byte           { return 0 }
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
+func (a argInt64) Operator(op byte) Argument {
+	return argInt64s{
+		op:   op,
+		data: []int64{int64(a)},
+	}
+}
+func (a argInt64) operator() byte { return 0 }
 
 type argInt64s struct {
 	op   byte
@@ -638,9 +653,15 @@ func (a argFloat64) writeTo(w queryWriter, _ int) error {
 }
 func (a argFloat64) len() int { return 1 }
 
-// Operator not supported
-func (a argFloat64) Operator(_ byte) Argument { return a }
-func (a argFloat64) operator() byte           { return 0 }
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
+func (a argFloat64) Operator(op byte) Argument {
+	return argFloat64s{
+		op:   op,
+		data: []float64{float64(a)},
+	}
+}
+func (a argFloat64) operator() byte { return 0 }
 
 type argFloat64s struct {
 	op   byte

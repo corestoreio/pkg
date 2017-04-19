@@ -45,7 +45,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			Where(dbr.Condition(`TABLE_SCHEMA=DATABASE()`))
 		sel.DB.Querier = benchMockQuerier{}
 		if len(tables) > 0 {
-			sel.Where(dbr.Condition("TABLE_NAME IN ?", dbr.ArgStrings(tables...)))
+			sel.Where(dbr.Condition("TABLE_NAME IN ?", dbr.ArgString(tables...)))
 		}
 
 		rows, err := sel.Rows(ctx)
@@ -64,7 +64,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
 	argEq := dbr.Eq{"a": dbr.ArgInt64(1, 2, 3).Operator(dbr.OperatorIn)}
-	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgStrings("wat")}
+	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -85,10 +85,10 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 func BenchmarkSelectFullSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq1 := dbr.Eq{"f": dbr.ArgInt64(2), "x": dbr.ArgStrings("hi")}
+	argEq1 := dbr.Eq{"f": dbr.ArgInt64(2), "x": dbr.ArgString("hi")}
 	argEq2 := dbr.Eq{"g": dbr.ArgInt64(3)}
 	argEq3 := dbr.Eq{"h": dbr.ArgInt(1, 2, 3)}
-	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgStrings("wat")}
+	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
 	b.ReportAllocs()
