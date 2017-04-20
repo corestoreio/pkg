@@ -548,6 +548,30 @@ func TestSelectJoin(t *testing.T) {
 		)
 	})
 }
+func TestSelect_Locks(t *testing.T) {
+	t.Run("LOCK IN SHARE MODE", func(t *testing.T) {
+		s := NewSelect("p1.*").
+			AddColumnsQuotedAlias("p2.name", "p2Name", "p2.email", "p2Email").
+			From("dbr_people", "p1").LockInShareMode()
+		sql, _, err := s.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t,
+			"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` LOCK IN SHARE MODE",
+			sql,
+		)
+	})
+	t.Run("FOR UPDATE", func(t *testing.T) {
+		s := NewSelect("p1.*").
+			AddColumnsQuotedAlias("p2.name", "p2Name", "p2.email", "p2Email").
+			From("dbr_people", "p1").ForUpdate()
+		sql, _, err := s.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t,
+			"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` FOR UPDATE",
+			sql,
+		)
+	})
+}
 
 func TestSelect_Join_EAVIfNull(t *testing.T) {
 	t.Parallel()

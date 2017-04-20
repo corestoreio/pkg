@@ -28,16 +28,18 @@ type Select struct {
 
 	WhereFragments
 	JoinFragments
-	GroupBys        []string
-	HavingFragments WhereFragments
-	OrderBys        []string
-	LimitCount      uint64
-	OffsetCount     uint64
-	LimitValid      bool
-	OffsetValid     bool
-	IsDistinct      bool // See Distinct()
-	IsStraightJoin  bool // See StraightJoin()
-	IsSQLNoCache    bool // See IsSQLNoCache()
+	GroupBys          []string
+	HavingFragments   WhereFragments
+	OrderBys          []string
+	LimitCount        uint64
+	OffsetCount       uint64
+	LimitValid        bool
+	OffsetValid       bool
+	IsDistinct        bool // See Distinct()
+	IsStraightJoin    bool // See StraightJoin()
+	IsSQLNoCache      bool // See SQLNoCache()
+	IsForUpdate       bool // See ForUpdate()
+	IsLockInShareMode bool // See LockInShareMode()
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -148,6 +150,35 @@ func (b *Select) StraightJoin() *Select {
 // it cache the query result.
 func (b *Select) SQLNoCache() *Select {
 	b.IsSQLNoCache = true
+	return b
+}
+
+// ForUpdate sets for index records the search encounters, locks the rows and
+// any associated index entries, the same as if you issued an UPDATE statement
+// for those rows. Other transactions are blocked from updating those rows, from
+// doing SELECT ... LOCK IN SHARE MODE, or from reading the data in certain
+// transaction isolation levels. Consistent reads ignore any locks set on the
+// records that exist in the read view. (Old versions of a record cannot be
+// locked; they are reconstructed by applying undo logs on an in-memory copy of
+// the record.)
+// Note: Locking of rows for update using SELECT FOR UPDATE only applies when
+// autocommit is disabled (either by beginning transaction with START
+// TRANSACTION or by setting autocommit to 0. If autocommit is enabled, the rows
+// matching the specification are not locked.
+// https://dev.mysql.com/doc/refman/5.5/en/innodb-locking-reads.html
+func (b *Select) ForUpdate() *Select {
+	b.IsForUpdate = true
+	return b
+}
+
+// LockInShareMode sets a shared mode lock on any rows that are read. Other
+// sessions can read the rows, but cannot modify them until your transaction
+// commits. If any of these rows were changed by another transaction that has
+// not yet committed, your query waits until that transaction ends and then uses
+// the latest values.
+// https://dev.mysql.com/doc/refman/5.5/en/innodb-locking-reads.html
+func (b *Select) LockInShareMode() *Select {
+	b.IsLockInShareMode = true
 	return b
 }
 
@@ -370,5 +401,11 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	sqlWriteOrderBy(w, b.OrderBys, false)
 	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
+	switch {
+	case b.IsLockInShareMode:
+		w.WriteString(" LOCK IN SHARE MODE")
+	case b.IsForUpdate:
+		w.WriteString(" FOR UPDATE")
+	}
 	return args, nil
 }
