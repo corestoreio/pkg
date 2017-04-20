@@ -361,7 +361,7 @@ func TestInsert_FromSelect(t *testing.T) {
 	// columns and args just to check that they get ignored
 	ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
-	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(OperatorIn)}
+	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(In)}
 	args := Arguments{argInt64(1), ArgString("wat")}
 
 	iSQL, args, err := ins.FromSelect(NewSelect("something_id", "user_id", "other").

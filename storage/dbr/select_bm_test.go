@@ -63,7 +63,7 @@ var benchmarkSelectBasicSQL dbr.Arguments
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq := dbr.Eq{"a": dbr.ArgInt64(1, 2, 3).Operator(dbr.OperatorIn)}
+	argEq := dbr.Eq{"a": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
 	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
@@ -133,8 +133,8 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 		_, args, err := dbr.NewSelect("entity_id", "attribute_id", "value").
 			From("catalog_product_entity_varchar").
 			Where(dbr.Condition("entity_type_id", dbr.ArgInt64(4))).
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(entityIDs...).Operator(dbr.OperatorIn))).
-			Where(dbr.Condition("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(entityIDs...).Operator(dbr.In))).
+			Where(dbr.Condition("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
 			Where(dbr.Condition("store_id", dbr.ArgInt64(0))).
 			ToSQL()
 		if err != nil {
@@ -159,7 +159,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 			AddColumnsQuotedAlias("cpev.value", "value2nd").
 			From("catalog_product_entity_varchar", "cpev").
 			Where(dbr.Condition("entity_type_id", dbr.ArgInt64(4))).
-			Where(dbr.Condition("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
 			Where(dbr.Condition("store_id", dbr.ArgInt64(0))).
 			ToSQL()
 		if err != nil {

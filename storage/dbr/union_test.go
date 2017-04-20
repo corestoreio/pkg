@@ -127,7 +127,7 @@ func TestNewUnionTemplate(t *testing.T) {
 	t.Run("full statement EAV", func(t *testing.T) {
 		u := dbr.NewUnionTemplate(
 			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
-				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
+				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 				OrderByDesc("t.{column}_store_id"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -198,7 +198,7 @@ func TestNewUnionTemplate(t *testing.T) {
 
 		u := dbr.NewUnionTemplate(
 			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
-				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))),
+				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			PreserveResultSet().
@@ -221,19 +221,19 @@ func BenchmarkUnion_AllOptions(b *testing.B) {
 
 	u := dbr.NewUnion(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.varchar AS `col_type`").From("catalog_product_entity_varchar", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.varchar_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.int AS `col_type`").From("catalog_product_entity_int", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.int_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.decimal AS `col_type`").From("catalog_product_entity_decimal", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.decimal_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.datetime AS `col_type`").From("catalog_product_entity_datetime", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.datetime_store_id"),
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.text AS `col_type`").From("catalog_product_entity_text", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.text_store_id"),
 	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
@@ -250,7 +250,7 @@ func BenchmarkUnion_AllOptions(b *testing.B) {
 func BenchmarkUnionTemplate_AllOptions(b *testing.B) {
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))).
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.{column}_store_id"),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").

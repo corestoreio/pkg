@@ -152,7 +152,7 @@ func (a argNullTimes) toIFace(args *[]interface{}) {
 }
 
 func (a argNullTimes) writeTo(w queryWriter, pos int) error {
-	if a.operator() != OperatorIn && a.operator() != OperatorNotIn {
+	if a.operator() != In && a.operator() != NotIn {
 		if s := a.data[pos]; s.Valid {
 			dialect.EscapeTime(w, s.Time)
 			return nil

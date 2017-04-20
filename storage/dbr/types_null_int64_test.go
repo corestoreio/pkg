@@ -253,8 +253,8 @@ func TestNullInt64_Argument(t *testing.T) {
 		ns.toIFace(&args)
 		ns.writeTo(&buf, i)
 
-		arg := ns.Operator(OperatorNotBetween)
-		assert.Exactly(t, OperatorNotBetween, arg.operator(), "Index %d", i)
+		arg := ns.Operator(NotBetween)
+		assert.Exactly(t, NotBetween, arg.operator(), "Index %d", i)
 		assert.Exactly(t, 1, arg.len(), "Length must be always one")
 	}
 	assert.Exactly(t, []interface{}{interface{}(nil), int64(987653)}, args)
@@ -266,11 +266,11 @@ func TestArgNullInt64(t *testing.T) {
 
 	args := ArgNullInt64(MakeNullInt64(987651), MakeNullInt64(987652, false), MakeNullInt64(987653))
 	assert.Exactly(t, 3, args.len())
-	args = args.Operator(OperatorNotIn)
+	args = args.Operator(NotIn)
 	assert.Exactly(t, 1, args.len())
 
 	t.Run("IN operator", func(t *testing.T) {
-		args = args.Operator(OperatorIn)
+		args = args.Operator(In)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		if err := args.writeTo(&buf, 0); err != nil {
@@ -282,7 +282,7 @@ func TestArgNullInt64(t *testing.T) {
 	})
 
 	t.Run("Not Equal operator", func(t *testing.T) {
-		args = args.Operator(OperatorNotEqual)
+		args = args.Operator(NotEqual)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		for i := 0; i < args.len(); i++ {
@@ -297,7 +297,7 @@ func TestArgNullInt64(t *testing.T) {
 
 	t.Run("single arg", func(t *testing.T) {
 		args = ArgNullInt64(MakeNullInt64(1234567))
-		args = args.Operator(OperatorNotEqual)
+		args = args.Operator(NotEqual)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		for i := 0; i < args.len(); i++ {

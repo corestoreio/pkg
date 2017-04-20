@@ -20,20 +20,24 @@ type queryWriter interface {
 // always negates.
 // https://dev.mysql.com/doc/refman/5.7/en/comparison-operators.html
 const (
-	OperatorNull       byte = 'n' // IS NULL
-	OperatorNotNull    byte = 'N' // IS NOT NULL
-	OperatorIn         byte = 'i' // IN ?
-	OperatorNotIn      byte = 'I' // NOT IN ?
-	OperatorBetween    byte = 'b' // BETWEEN ? AND ?
-	OperatorNotBetween byte = 'B' // NOT BETWEEN ? AND ?
-	OperatorLike       byte = 'l' // LIKE ?
-	OperatorNotLike    byte = 'L' // NOT LIKE ?
-	OperatorGreatest   byte = 'g' // GREATEST(?,?,?)
-	OperatorLeast      byte = 'a' // LEAST(?,?,?)
-	OperatorEqual      byte = '=' // = ?
-	OperatorNotEqual   byte = '!' // != ?
-	OperatorExists     byte = 'e' // EXISTS(subquery)
-	OperatorNotExists  byte = 'E' // NOT EXISTS(subquery)
+	Null           byte = 'n' // IS NULL
+	NotNull        byte = 'N' // IS NOT NULL
+	In             byte = 'i' // IN ?
+	NotIn          byte = 'I' // NOT IN ?
+	Between        byte = 'b' // BETWEEN ? AND ?
+	NotBetween     byte = 'B' // NOT BETWEEN ? AND ?
+	Like           byte = 'l' // LIKE ?
+	NotLike        byte = 'L' // NOT LIKE ?
+	Greatest       byte = 'g' // GREATEST(?,?,?)
+	Least          byte = 'a' // LEAST(?,?,?)
+	Equal          byte = '=' // = ?
+	NotEqual       byte = '!' // != ?
+	Exists         byte = 'e' // EXISTS(subquery)
+	NotExists      byte = 'E' // NOT EXISTS(subquery)
+	Less           byte = '<' // <
+	Greater        byte = '>' // >
+	LessOrEqual    byte = '{' // <=
+	GreaterOrEqual byte = '}' // >=
 )
 
 const (
@@ -44,54 +48,78 @@ func writeOperator(w queryWriter, operator byte, hasArg bool) (addArg bool) {
 	// hasArg argument only used in case we have in the parent caller function a
 	// sub-select. sub-selects do not need a place holder.
 	switch operator {
-	case OperatorNull:
+	case Null:
 		w.WriteString(" IS NULL")
-	case OperatorNotNull:
+	case NotNull:
 		w.WriteString(" IS NOT NULL")
-	case OperatorIn:
+	case In:
 		w.WriteString(" IN ")
 		if hasArg {
 			w.WriteRune('?')
 			addArg = true
 		}
-	case OperatorNotIn:
+	case NotIn:
 		w.WriteString(" NOT IN ")
 		if hasArg {
 			w.WriteRune('?')
 			addArg = true
 		}
-	case OperatorLike:
+	case Like:
 		w.WriteString(" LIKE ?")
 		addArg = true
-	case OperatorNotLike:
+	case NotLike:
 		w.WriteString(" NOT LIKE ?")
 		addArg = true
-	case OperatorBetween:
+	case Between:
 		w.WriteString(" BETWEEN ? AND ?")
 		addArg = true
-	case OperatorNotBetween:
+	case NotBetween:
 		w.WriteString(" NOT BETWEEN ? AND ?")
 		addArg = true
-	case OperatorGreatest:
+	case Greatest:
 		w.WriteString(" GREATEST (?)")
 		addArg = true
-	case OperatorLeast:
+	case Least:
 		w.WriteString(" LEAST (?)")
 		addArg = true
-	case OperatorExists:
+	case Exists:
 		w.WriteString(" EXISTS ")
 		addArg = true
-	case OperatorNotExists:
+	case NotExists:
 		w.WriteString(" NOT EXISTS ")
 		addArg = true
-	case OperatorEqual:
+	case Equal:
 		w.WriteString(" = ")
 		if hasArg {
 			w.WriteRune('?')
 			addArg = true
 		}
-	case OperatorNotEqual:
+	case NotEqual:
 		w.WriteString(" != ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	case Less:
+		w.WriteString(" < ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	case Greater:
+		w.WriteString(" > ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	case LessOrEqual:
+		w.WriteString(" <= ")
+		if hasArg {
+			w.WriteRune('?')
+			addArg = true
+		}
+	case GreaterOrEqual:
+		w.WriteString(" >= ")
 		if hasArg {
 			w.WriteRune('?')
 			addArg = true
@@ -177,7 +205,7 @@ func (as Arguments) Interfaces() []interface{} {
 
 func isNotIn(o byte) bool {
 	switch o {
-	case OperatorIn, OperatorNotIn, OperatorGreatest, OperatorLeast:
+	case In, NotIn, Greatest, Least:
 		return false
 	}
 	return true
@@ -316,9 +344,9 @@ func (i argNull) Operator(_ byte) Argument { return i }
 func (i argNull) operator() byte {
 	switch i {
 	case 10:
-		return OperatorNull
+		return Null
 	case 20:
-		return OperatorNotNull
+		return NotNull
 	}
 	return 0
 }

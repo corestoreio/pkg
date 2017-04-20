@@ -173,7 +173,7 @@ func (a argNullFloat64s) toIFace(args *[]interface{}) {
 }
 
 func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
-	if a.operator() != OperatorIn && a.operator() != OperatorNotIn {
+	if a.operator() != In && a.operator() != NotIn {
 		if s := a.data[pos]; s.Valid {
 			_, err := w.WriteString(strconv.FormatFloat(s.Float64, 'f', -1, 64))
 			return err

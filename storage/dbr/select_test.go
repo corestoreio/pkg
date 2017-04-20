@@ -29,7 +29,7 @@ func TestSelectFullToSQL(t *testing.T) {
 			argInt(1), ArgString("wat")),
 			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
 		).
-		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(OperatorIn)}).
+		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(In)}).
 		GroupBy("ab").
 		Having(Condition("j = k")).
 		OrderBy("l").
@@ -114,7 +114,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{int64(33)},
 	))
 	t.Run("IN int64", runner(
-		ArgInt64(33, 44).Operator(OperatorIn),
+		ArgInt64(33, 44).Operator(In),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{int64(33), int64(44)},
 	))
@@ -139,7 +139,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{int64(33)},
 	))
 	t.Run("IN int", runner(
-		ArgInt(33, 44).Operator(OperatorIn),
+		ArgInt(33, 44).Operator(In),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{int64(33), int64(44)},
 	))
@@ -149,31 +149,52 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{"w"},
 	))
 	t.Run("IN string", runner(
-		ArgString("x", "y").Operator(OperatorIn),
+		ArgString("x", "y").Operator(In),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{"x", "y"},
 	))
 
 	t.Run("BETWEEN int64", runner(
-		ArgInt64(5, 6).Operator(OperatorBetween),
+		ArgInt64(5, 6).Operator(Between),
 		"SELECT a, b FROM `c` WHERE (`d` BETWEEN ? AND ?)",
 		[]interface{}{int64(5), int64(6)},
 	))
 	t.Run("NOT BETWEEN int64", runner(
-		ArgInt64(5, 6).Operator(OperatorNotBetween),
+		ArgInt64(5, 6).Operator(NotBetween),
 		"SELECT a, b FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)",
 		[]interface{}{int64(5), int64(6)},
 	))
 
 	t.Run("LIKE string", runner(
-		ArgString("x%").Operator(OperatorLike),
+		ArgString("x%").Operator(Like),
 		"SELECT a, b FROM `c` WHERE (`d` LIKE ?)",
 		[]interface{}{"x%"},
 	))
 	t.Run("NOT LIKE string", runner(
-		ArgString("x%").Operator(OperatorNotLike),
+		ArgString("x%").Operator(NotLike),
 		"SELECT a, b FROM `c` WHERE (`d` NOT LIKE ?)",
 		[]interface{}{"x%"},
+	))
+
+	t.Run("Less float64", runner(
+		ArgFloat64(5.1).Operator(Less),
+		"SELECT a, b FROM `c` WHERE (`d` < ?)",
+		[]interface{}{float64(5.1)},
+	))
+	t.Run("Greater float64", runner(
+		ArgFloat64(5.1).Operator(Greater),
+		"SELECT a, b FROM `c` WHERE (`d` > ?)",
+		[]interface{}{float64(5.1)},
+	))
+	t.Run("LessOrEqual float64", runner(
+		ArgFloat64(5.1).Operator(LessOrEqual),
+		"SELECT a, b FROM `c` WHERE (`d` <= ?)",
+		[]interface{}{float64(5.1)},
+	))
+	t.Run("GreaterOrEqual float64", runner(
+		ArgFloat64(5.1).Operator(GreaterOrEqual),
+		"SELECT a, b FROM `c` WHERE (`d` >= ?)",
+		[]interface{}{float64(5.1)},
 	))
 
 }
@@ -238,7 +259,7 @@ func TestSelectWhereMapSQL(t *testing.T) {
 	})
 
 	t.Run("one IN", func(t *testing.T) {
-		sql, args, err := s.Select("a").From("b").Where(Eq{"a": ArgInt(1, 2, 3).Operator(OperatorIn)}).ToSQL()
+		sql, args, err := s.Select("a").From("b").Where(Eq{"a": ArgInt(1, 2, 3).Operator(In)}).ToSQL()
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT a FROM `b` WHERE (`a` IN ?)", sql)
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
@@ -279,7 +300,7 @@ func TestSelectWhereMapSQL(t *testing.T) {
 func TestSelectWhereEqSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a").From("b").Where(Eq{"a": argInt(1), "b": ArgInt64(1, 2, 3).Operator(OperatorIn)}).ToSQL()
+	sql, args, err := s.Select("a").From("b").Where(Eq{"a": argInt(1), "b": ArgInt64(1, 2, 3).Operator(In)}).ToSQL()
 	assert.NoError(t, err)
 	if sql == "SELECT a FROM `b` WHERE (`a` = ?) AND (`b` IN ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(1), int64(2), int64(3)}, args.Interfaces())
@@ -740,19 +761,19 @@ func TestSubSelect(t *testing.T) {
 			assert.Exactly(t, wantSQL, sStr)
 		}
 	}
-	t.Run("IN", runner(OperatorIn,
+	t.Run("IN", runner(In,
 		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` IN (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
 	))
-	t.Run("EXISTS", runner(OperatorExists,
+	t.Run("EXISTS", runner(Exists,
 		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` EXISTS (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
 	))
-	t.Run("NOT EXISTS", runner(OperatorNotExists,
+	t.Run("NOT EXISTS", runner(NotExists,
 		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` NOT EXISTS (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
 	))
-	t.Run("NOT EQUAL", runner(OperatorNotEqual,
+	t.Run("NOT EQUAL", runner(NotEqual,
 		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` != (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
 	))
-	t.Run("NOT EQUAL", runner(OperatorEqual,
+	t.Run("NOT EQUAL", runner(Equal,
 		"SELECT * FROM `catalog_product_entity` WHERE (`entity_id` = (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))",
 	))
 }
@@ -827,7 +848,7 @@ func TestSelect_Subselect(t *testing.T) {
 			GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
 			Having(Condition("COUNT(*)>?", argInt(3))).
 			OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC").
-			Where(Condition("t3.store_id", ArgInt64(2, 3, 4).Operator(OperatorIn)))
+			Where(Condition("t3.store_id", ArgInt64(2, 3, 4).Operator(In)))
 
 		sel2 := NewSelectFromSub(sel3, "t2").
 			AddColumns("`t2`.`period`,`t2`.`store_id`,`t2`.`product_id`,`t2`.`product_name`,`t2`.`avg_price`").

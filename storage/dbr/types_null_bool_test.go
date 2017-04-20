@@ -231,8 +231,8 @@ func TestNullBool_Argument(t *testing.T) {
 		ns.toIFace(&args)
 		ns.writeTo(&buf, i)
 
-		arg := ns.Operator(OperatorNotBetween)
-		assert.Exactly(t, OperatorNotBetween, arg.operator(), "Index %d", i)
+		arg := ns.Operator(NotBetween)
+		assert.Exactly(t, NotBetween, arg.operator(), "Index %d", i)
 		assert.Exactly(t, 1, arg.len(), "Length must be always one")
 	}
 	assert.Exactly(t, []interface{}{interface{}(nil), true}, args)

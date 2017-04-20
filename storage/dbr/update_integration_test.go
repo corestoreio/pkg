@@ -69,7 +69,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	mu := dbr.NewUpdateMulti("customer_entity", "ce")
 	mu.Update.SetClauses.Columns = []string{"name", "email"}
-	mu.Update.Where(dbr.Condition("id", dbr.ArgInt64().Operator(dbr.OperatorEqual))) // ArgInt64 must be without arguments
+	mu.Update.Where(dbr.Condition("id", dbr.ArgInt64().Operator(dbr.Equal))) // ArgInt64 must be without arguments
 	mu.UsePreprocess = true
 
 	mu.Records = append(mu.Records, records...)

@@ -187,7 +187,7 @@ func (a argNullStrings) toIFace(args *[]interface{}) {
 }
 
 func (a argNullStrings) writeTo(w queryWriter, pos int) error {
-	if a.operator() != OperatorIn && a.operator() != OperatorNotIn {
+	if a.operator() != In && a.operator() != NotIn {
 		if s := a.data[pos]; s.Valid {
 			if !utf8.ValidString(s.String) {
 				return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)

@@ -64,7 +64,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 func ExampleInsert_FromSelect() {
 	ins := dbr.NewInsert("tableA")
 
-	argEq := dbr.Eq{"int64B": dbr.ArgInt64(1, 2, 3).Operator(dbr.OperatorIn)}
+	argEq := dbr.Eq{"int64B": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
 
 	sqlStr, args, err := ins.FromSelect(dbr.NewSelect().AddColumnsQuoted("something_id,user_id,other").
 		From("some_table").
@@ -92,8 +92,8 @@ func ExampleInsert_FromSelect() {
 
 func ExampleNewDelete() {
 	sqlStr, args, err := dbr.NewDelete("tableA").Where(
-		dbr.Condition("a", dbr.ArgString("b'%").Operator(dbr.OperatorLike)),
-		dbr.Condition("b", dbr.ArgInt(3, 4, 5, 6).Operator(dbr.OperatorIn)),
+		dbr.Condition("a", dbr.ArgString("b'%").Operator(dbr.Like)),
+		dbr.Condition("b", dbr.ArgInt(3, 4, 5, 6).Operator(dbr.In)),
 	).
 		Limit(1).OrderBy("id").
 		ToSQL()
@@ -157,7 +157,7 @@ func ExampleNewUnionTemplate() {
 
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))),
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
@@ -194,7 +194,7 @@ func ExampleUnionTemplate_Preprocess() {
 
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.OperatorIn))),
+			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
@@ -222,10 +222,10 @@ func ExampleUnionTemplate_Preprocess() {
 
 func ExamplePreprocess() {
 	sqlStr, err := dbr.Preprocess("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?",
-		dbr.ArgInt(1).Operator(dbr.OperatorIn),
-		dbr.ArgInt(1, 2, 3).Operator(dbr.OperatorIn),
-		dbr.ArgInt64(5, 6, 7).Operator(dbr.OperatorIn),
-		dbr.ArgString("wat", "ok").Operator(dbr.OperatorBetween),
+		dbr.ArgInt(1).Operator(dbr.In),
+		dbr.ArgInt(1, 2, 3).Operator(dbr.In),
+		dbr.ArgInt64(5, 6, 7).Operator(dbr.In),
+		dbr.ArgString("wat", "ok").Operator(dbr.Between),
 	)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -271,19 +271,24 @@ func ExampleCondition() {
 	argPrinter(dbr.ArgNull())
 	argPrinter(dbr.ArgNotNull())
 	argPrinter(dbr.ArgInt(2))
-	argPrinter(dbr.ArgInt(3).Operator(dbr.OperatorNull))
-	argPrinter(dbr.ArgInt(4).Operator(dbr.OperatorNotNull))
-	argPrinter(dbr.ArgInt(7, 8, 9).Operator(dbr.OperatorIn))
-	argPrinter(dbr.ArgInt(10, 11, 12).Operator(dbr.OperatorNotIn))
-	argPrinter(dbr.ArgInt(13, 14).Operator(dbr.OperatorBetween))
-	argPrinter(dbr.ArgInt(15, 16).Operator(dbr.OperatorNotBetween))
-	argPrinter(dbr.ArgInt(17, 18, 19).Operator(dbr.OperatorGreatest))
-	argPrinter(dbr.ArgInt(20, 21, 22).Operator(dbr.OperatorLeast))
-	argPrinter(dbr.ArgInt(30).Operator(dbr.OperatorEqual))
-	argPrinter(dbr.ArgInt(31).Operator(dbr.OperatorNotEqual))
+	argPrinter(dbr.ArgInt(3).Operator(dbr.Null))
+	argPrinter(dbr.ArgInt(4).Operator(dbr.NotNull))
+	argPrinter(dbr.ArgInt(7, 8, 9).Operator(dbr.In))
+	argPrinter(dbr.ArgInt(10, 11, 12).Operator(dbr.NotIn))
+	argPrinter(dbr.ArgInt(13, 14).Operator(dbr.Between))
+	argPrinter(dbr.ArgInt(15, 16).Operator(dbr.NotBetween))
+	argPrinter(dbr.ArgInt(17, 18, 19).Operator(dbr.Greatest))
+	argPrinter(dbr.ArgInt(20, 21, 22).Operator(dbr.Least))
+	argPrinter(dbr.ArgInt(30).Operator(dbr.Equal))
+	argPrinter(dbr.ArgInt(31).Operator(dbr.NotEqual))
 
-	argPrinter(dbr.ArgString("Goph%").Operator(dbr.OperatorLike))
-	argPrinter(dbr.ArgString("Cat%").Operator(dbr.OperatorNotLike))
+	argPrinter(dbr.ArgInt(32).Operator(dbr.Less))
+	argPrinter(dbr.ArgInt(33).Operator(dbr.Greater))
+	argPrinter(dbr.ArgInt(34).Operator(dbr.LessOrEqual))
+	argPrinter(dbr.ArgInt(35).Operator(dbr.GreaterOrEqual))
+
+	argPrinter(dbr.ArgString("Goph%").Operator(dbr.Like))
+	argPrinter(dbr.ArgString("Cat%").Operator(dbr.NotLike))
 
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
@@ -299,8 +304,13 @@ func ExampleCondition() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?))" Arguments: [20 21 22]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+
 }
 
 func ExampleSubSelect() {
