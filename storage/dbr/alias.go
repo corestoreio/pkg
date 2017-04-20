@@ -47,6 +47,16 @@ func (t alias) QuoteAsWriter(w queryWriter) (Arguments, error) {
 	return nil, nil
 }
 
+// TODO(CyS) if we need to distinguish between table name and the column or even need
+// a sub select in the column list, then we can implement type aliases and replace
+// all []string with type aliases. This costs some allocs but for modifying queries
+// in dispatched events, it's getting easier ...
+//type aliases []alias
+//
+//func makeAliasesFromStrings(columns ...string) aliases {
+//
+//}
+
 // DefaultScopeNames specifies the name of the scopes used in all EAV* function
 // to generate scope based hierarchical fall backs.
 var DefaultScopeNames = [...]string{"Store", "Group", "Website", "Default"}
