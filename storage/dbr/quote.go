@@ -27,10 +27,15 @@ func (q MysqlQuoter) unQuote(s string) string {
 	return q.replacer.Replace(s)
 }
 
-func (q MysqlQuoter) quote(w queryWriter, name string) {
-	w.WriteRune(quoteRune)
-	w.WriteString(q.unQuote(name))
-	w.WriteRune(quoteRune)
+func (q MysqlQuoter) quote(w queryWriter, qualifierName ...string) {
+	for i, qn := range qualifierName {
+		if i > 0 {
+			w.WriteRune('.')
+		}
+		w.WriteRune(quoteRune)
+		w.WriteString(q.unQuote(qn))
+		w.WriteRune(quoteRune)
+	}
 }
 
 // ExprAlias appends to the provided `expression` the quote alias name, e.g.:
@@ -39,16 +44,18 @@ func (q MysqlQuoter) ExprAlias(expression, aliasName string) string {
 	return expression + " AS " + quote + q.unQuote(aliasName) + quote
 }
 
-// Quote returns a string like: `database`.`table` or `table`, if prefix is empty.
+// Quote quotes an optional qualifier and its required name. Returns a string
+// like: `database`.`table` or `table`, if qualifier has been omitted.
 // 		Quote("dbName", "tableName") => `dbName`.`tableName`
 // 		Quote("tableName") => `tableName`
 // It panics when no arguments have been given.
-func (q MysqlQuoter) Quote(prefixName ...string) string {
+// https://dev.mysql.com/doc/refman/5.7/en/identifier-qualifiers.html
+func (q MysqlQuoter) Quote(qualifierName ...string) string {
 	// way faster than fmt or buffer ...
-	if len(prefixName) == 1 {
-		return quote + q.unQuote(prefixName[0]) + quote
+	if len(qualifierName) == 1 {
+		return quote + q.unQuote(qualifierName[0]) + quote
 	}
-	return quote + q.unQuote(prefixName[0]) + quote + "." + quote + q.unQuote(prefixName[1]) + quote
+	return quote + q.unQuote(qualifierName[0]) + quote + "." + quote + q.unQuote(qualifierName[1]) + quote
 }
 
 // QuoteAs quotes with back ticks and splits at a dot in the name. First

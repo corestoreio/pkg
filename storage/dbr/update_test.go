@@ -79,14 +79,14 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 
 	sql, args, err := s.Update("a").
 		Set("foo", argInt(1)).
-		Set("bar", Expr("COALESCE(bar, 0) + 1")).Where(Condition("id = ?", argInt(9))).ToSQL()
+		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Condition("id = ?", argInt(9))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(9)}, args.Interfaces())
 
 	sql, args, err = s.Update("a").
 		Set("foo", argInt(1)).
-		Set("bar", Expr("COALESCE(bar, 0) + ?", argInt(2))).Where(Condition("id = ?", argInt(9))).ToSQL()
+		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", argInt(2))).Where(Condition("id = ?", argInt(9))).ToSQL()
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(9)}, args.Interfaces())
@@ -351,7 +351,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), Expr("VALUES(`stock`)+?", argInt64(13))},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgExpr("VALUES(`stock`)+?", argInt64(13))},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)

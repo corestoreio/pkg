@@ -1,8 +1,23 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
 	"fmt"
 	"strconv"
+	"unicode/utf8"
 )
 
 // QueryBuilder assembles a query and returns the raw SQL without parameter
@@ -10,6 +25,17 @@ import (
 type QueryBuilder interface {
 	ToSQL() (string, Arguments, error)
 }
+
+// queryWriter at used to generate a query.
+type queryWriter interface {
+	WriteString(s string) (n int, err error)
+	WriteRune(r rune) (n int, err error)
+}
+
+type blackHoleWriter struct{}
+
+func (blackHoleWriter) WriteString(s string) (n int, err error) { return len(s), nil }
+func (blackHoleWriter) WriteRune(r rune) (n int, err error)     { return utf8.RuneLen(r), nil }
 
 func makeSQL(b QueryBuilder) string {
 	sRaw, vals, err := b.ToSQL()

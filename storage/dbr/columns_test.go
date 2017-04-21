@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbr
+package dbr_test
 
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTableColumnQuote(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		haveT string
 		haveC []string
@@ -49,12 +51,119 @@ func TestTableColumnQuote(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		actC := Quoter.TableColumnAlias(test.haveT, test.haveC...)
+		actC := dbr.Quoter.TableColumnAlias(test.haveT, test.haveC...)
 		assert.Equal(t, test.want, actC, "Index %d", i)
 	}
 }
 
 func TestIfNullAs(t *testing.T) {
-	s := IfNullAs("t1", "c1", "t2", "c2", "alias")
-	assert.Equal(t, "IFNULL(`t1`.`c1`, `t2`.`c2`) AS `alias`", s)
+	t.Parallel()
+	runner := func(want string, have ...string) func(*testing.T) {
+		return func(t *testing.T) {
+			assert.Equal(t, want, dbr.IfNull(have...))
+		}
+	}
+	t.Run("1 args expression", runner(
+		"IFNULL((1/0),(NULL ))",
+		"1/0",
+	))
+	t.Run("1 args no qualifier", runner(
+		"IFNULL(`c1`,(NULL ))",
+		"c1",
+	))
+	t.Run("1 args with qualifier", runner(
+		"IFNULL(`t1`.`c1`,(NULL ))",
+		"t1.c1",
+	))
+
+	t.Run("2 args expression left", runner(
+		"IFNULL((1/0),`c2`)",
+		"1/0", "c2",
+	))
+	t.Run("2 args expression right", runner(
+		"IFNULL(`c2`,(1/0))",
+		"c2", "1/0",
+	))
+	t.Run("2 args no qualifier", runner(
+		"IFNULL(`c1`,`c2`)",
+		"c1", "c2",
+	))
+	t.Run("2 args with qualifier", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`)",
+		"t1.c1", "t2.c2",
+	))
+
+	t.Run("3 args expression left", runner(
+		"IFNULL((1/0),`c2`) AS `alias`",
+		"1/0", "c2", "alias",
+	))
+	t.Run("3 args expression right", runner(
+		"IFNULL(`c2`,(1/0)) AS `alias`",
+		"c2", "1/0", "alias",
+	))
+	t.Run("3 args no qualifier", runner(
+		"IFNULL(`c1`,`c2`) AS `alias`",
+		"c1", "c2", "alias",
+	))
+	t.Run("3 args with qualifier", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
+		"t1.c1", "t2.c2", "alias",
+	))
+
+	t.Run("4 args", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`)",
+		"t1", "c1", "t2", "c2",
+	))
+	t.Run("5 args", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
+		"t1", "c1", "t2", "c2", "alias",
+	))
+	t.Run("6 args", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x`",
+		"t1", "c1", "t2", "c2", "alias", "x",
+	))
+	t.Run("7 args", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x_y`",
+		"t1", "c1", "t2", "c2", "alias", "x", "y",
+	))
+}
+
+func BenchmarkIfNull(b *testing.B) {
+	runner := func(want string, have ...string) func(*testing.B) {
+		return func(b *testing.B) {
+			var result string
+			for i := 0; i < b.N; i++ {
+				result = dbr.IfNull(have...)
+			}
+			if result != want {
+				b.Fatalf("\nHave: %q\nWant: %q", result, want)
+			}
+		}
+	}
+	b.Run("3 args expression right", runner(
+		"IFNULL(`c2`,(1/0)) AS `alias`",
+		"c2", "1/0", "alias",
+	))
+	b.Run("3 args no qualifier", runner(
+		"IFNULL(`c1`,`c2`) AS `alias`",
+		"c1", "c2", "alias",
+	))
+	b.Run("3 args with qualifier", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
+		"t1.c1", "t2.c2", "alias",
+	))
+
+	b.Run("4 args", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`)",
+		"t1", "c1", "t2", "c2",
+	))
+	b.Run("5 args", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
+		"t1", "c1", "t2", "c2", "alias",
+	))
+	b.Run("6 args", runner(
+		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x`",
+		"t1", "c1", "t2", "c2", "alias", "x",
+	))
+
 }

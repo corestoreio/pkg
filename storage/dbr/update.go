@@ -266,11 +266,11 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 //
 // When using the ON DUPLICATE KEY feature in the Insert builder:
 //
-// The function dbr.Expr is supported and allows SQL
+// The function dbr.ArgExpr is supported and allows SQL
 // constructs like:
 // 		`columnA`=VALUES(`columnB`)+2
 // by writing the Go code:
-//		ib.AddOnDuplicateKey("columnA", Expr("VALUES(`columnB`)+?", ArgInt(2)))
+//		ib.AddOnDuplicateKey("columnA", ArgExpr("VALUES(`columnB`)+?", ArgInt(2)))
 // Omitting the argument and using the keyword nil will turn this Go code:
 //		ib.AddOnDuplicateKey("columnA", nil)
 // into that SQL:

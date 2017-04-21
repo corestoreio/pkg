@@ -573,49 +573,6 @@ func TestSelect_Locks(t *testing.T) {
 	})
 }
 
-func TestSelect_Join_EAVIfNull(t *testing.T) {
-	t.Parallel()
-	const want = "SELECT IFNULL(`manufacturerStore`.`value`,IFNULL(`manufacturerGroup`.`value`,IFNULL(`manufacturerWebsite`.`value`,IFNULL(`manufacturerDefault`.`value`,'')))) AS `manufacturer`, cpe.* FROM `catalog_product_entity` AS `cpe` LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerDefault` ON (manufacturerDefault.scope = 0) AND (manufacturerDefault.scope_id = 0) AND (manufacturerDefault.attribute_id = 83) AND (manufacturerDefault.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerWebsite` ON (manufacturerWebsite.scope = 1) AND (manufacturerWebsite.scope_id = 10) AND (manufacturerWebsite.attribute_id = 83) AND (manufacturerWebsite.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerGroup` ON (manufacturerGroup.scope = 2) AND (manufacturerGroup.scope_id = 20) AND (manufacturerGroup.attribute_id = 83) AND (manufacturerGroup.value IS NOT NULL) LEFT JOIN `catalog_product_entity_varchar` AS `manufacturerStore` ON (manufacturerStore.scope = 2) AND (manufacturerStore.scope_id = 20) AND (manufacturerStore.attribute_id = 83) AND (manufacturerStore.value IS NOT NULL)"
-
-	s := NewSelect(EAVIfNull("manufacturer", "value", "''"), "cpe.*").
-		From("catalog_product_entity", "cpe").
-		LeftJoin(
-			MakeAlias("catalog_product_entity_varchar", "manufacturerDefault"),
-			Condition("manufacturerDefault.scope = 0"),
-			Condition("manufacturerDefault.scope_id = 0"),
-			Condition("manufacturerDefault.attribute_id = 83"),
-			Condition("manufacturerDefault.value IS NOT NULL"),
-		).
-		LeftJoin(
-			MakeAlias("catalog_product_entity_varchar", "manufacturerWebsite"),
-			Condition("manufacturerWebsite.scope = 1"),
-			Condition("manufacturerWebsite.scope_id = 10"),
-			Condition("manufacturerWebsite.attribute_id = 83"),
-			Condition("manufacturerWebsite.value IS NOT NULL"),
-		).
-		LeftJoin(
-			MakeAlias("catalog_product_entity_varchar", "manufacturerGroup"),
-			Condition("manufacturerGroup.scope = 2"),
-			Condition("manufacturerGroup.scope_id = 20"),
-			Condition("manufacturerGroup.attribute_id = 83"),
-			Condition("manufacturerGroup.value IS NOT NULL"),
-		).
-		LeftJoin(
-			MakeAlias("catalog_product_entity_varchar", "manufacturerStore"),
-			Condition("manufacturerStore.scope = 2"),
-			Condition("manufacturerStore.scope_id = 20"),
-			Condition("manufacturerStore.attribute_id = 83"),
-			Condition("manufacturerStore.value IS NOT NULL"),
-		)
-
-	sql, _, err := s.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t,
-		want,
-		sql,
-	)
-}
-
 func TestSelect_Events(t *testing.T) {
 	t.Parallel()
 

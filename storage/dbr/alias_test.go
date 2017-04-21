@@ -13,31 +13,3 @@
 // limitations under the License.
 
 package dbr_test
-
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestStackIfNull(t *testing.T) {
-	tests := []struct {
-		alias      string
-		columnName string
-		defaultVal string
-		want       string
-	}{
-		{
-			"manufacturer", "value", "",
-			"IFNULL(`manufacturerStore`.`value`,IFNULL(`manufacturerGroup`.`value`,IFNULL(`manufacturerWebsite`.`value`,IFNULL(`manufacturerDefault`.`value`,'')))) AS `manufacturer`",
-		},
-		{
-			"manufacturer", "value", "0",
-			"IFNULL(`manufacturerStore`.`value`,IFNULL(`manufacturerGroup`.`value`,IFNULL(`manufacturerWebsite`.`value`,IFNULL(`manufacturerDefault`.`value`,0)))) AS `manufacturer`",
-		},
-	}
-	for i, test := range tests {
-		assert.Exactly(t, test.want, dbr.EAVIfNull(test.alias, test.columnName, test.defaultVal), "Index %d", i)
-	}
-}

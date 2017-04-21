@@ -314,5 +314,77 @@ func ExampleCondition() {
 }
 
 func ExampleSubSelect() {
+	s := dbr.NewSelect("*").
+		From("catalog_product_entity").
+		Where(dbr.SubSelect(
+			"entity_id", dbr.In,
+			dbr.NewSelect().From("catalog_category_product").
+				AddColumnsQuoted("entity_id").Where(dbr.Condition("category_id", dbr.ArgInt64(234))),
+		))
 
+	sqlStr, args, err := s.ToSQL()
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		return
+	}
+	fmt.Printf("%s\nArguments: %v\n", sqlStr, args)
+	// Output:
+	//SELECT * FROM `catalog_product_entity` WHERE (`entity_id` IN (SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))
+	//Arguments: [234]
+}
+
+func ExampleNewSelectFromSub() {
+	sel3 := dbr.NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+		AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
+		AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
+		AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
+		Where(dbr.Condition("product_name", dbr.ArgString("Canon%"))).
+		GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
+		OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC")
+
+	sel1 := dbr.NewSelectFromSub(sel3, "t1").
+		AddColumns("`t1`.`period`,`t1`.`store_id`,`t1`.`product_id`,`t1`.`product_name`,`t1`.`avg_price`,`t1`.`qty_ordered`").
+		Where(dbr.Condition("product_name", dbr.ArgString("Sony%"))).
+		OrderBy("`t1`.period", "`t1`.product_id")
+
+	sqlStr, args, err := sel1.ToSQL()
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		return
+	}
+	// To see the correct SQL in a nicely formatted way use an online SQL formatter ;-)
+	fmt.Printf("%s\nArguments: %v\n", sqlStr, args)
+	// Output:
+	//SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`, `t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`product_name` = ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t1` WHERE (`product_name` = ?) ORDER BY `t1`.period, `t1`.product_id
+	//Arguments: [Canon% Sony%]
+}
+
+func ExampleIfNull() {
+	fmt.Println(dbr.IfNull("column1"))
+	fmt.Println(dbr.IfNull("table1.column1"))
+	fmt.Println(dbr.IfNull("column1", "column2"))
+	fmt.Println(dbr.IfNull("table1.column1", "table2.column2"))
+	fmt.Println(dbr.IfNull("column2", "1/0", "alias"))
+	fmt.Println(dbr.IfNull("SELECT * FROM x", "8", "alias"))
+	fmt.Println(dbr.IfNull("SELECT * FROM x", "9 ", "alias"))
+	fmt.Println(dbr.IfNull("column1", "column2", "alias"))
+	fmt.Println(dbr.IfNull("table1.column1", "table2.column2", "alias"))
+	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2"))
+	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2", "alias"))
+	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2", "alias", "x"))
+	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2", "alias", "x", "y"))
+	//Output:
+	//IFNULL(`column1`,(NULL ))
+	//IFNULL(`table1`.`column1`,(NULL ))
+	//IFNULL(`column1`,`column2`)
+	//IFNULL(`table1`.`column1`,`table2`.`column2`)
+	//IFNULL(`column2`,(1/0)) AS `alias`
+	//IFNULL((SELECT * FROM x),`8`) AS `alias`
+	//IFNULL((SELECT * FROM x),(9 )) AS `alias`
+	//IFNULL(`column1`,`column2`) AS `alias`
+	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`
+	//IFNULL(`table1`.`column1`,`table2`.`column2`)
+	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`
+	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias_x`
+	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias_x_y`
 }
