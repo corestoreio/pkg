@@ -83,7 +83,7 @@ func TestWrapString(t *testing.T) {
 	}
 
 	for i, tc := range cases {
-		actual := WrapString(tc.Input, tc.Lim)
+		actual := String(tc.Input, tc.Lim)
 		if actual != tc.Output {
 			t.Fatalf("Case %d Input:\n\n`%s`\n\nActual Output:\n\n`%s`", i, tc.Input, actual)
 		}
@@ -95,6 +95,6 @@ var benchmarkWrapString string
 // BenchmarkWrapString-4   	 1000000	      1984 ns/op	     448 B/op	       5 allocs/op
 func BenchmarkWrapString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		benchmarkWrapString = WrapString(" This is a list: \n\n\t* foo\n\t* bar\n\n\n\t* baz  \nBAM    ", 6)
+		benchmarkWrapString = String(" This is a list: \n\n\t* foo\n\t* bar\n\n\n\t* baz  \nBAM    ", 6)
 	}
 }
