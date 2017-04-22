@@ -65,13 +65,15 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
 	argEq := dbr.Eq{"a": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
-	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
-			Where(dbr.Condition("d = ? OR e = ?", args...)).
+			Where(
+				dbr.Condition("d", dbr.ArgInt64(1)),
+				dbr.Condition("e", dbr.ArgString("wat")),
+			).
 			Where(argEq).
 			OrderByDesc("id").
 			Paginate(1, 20).
@@ -89,22 +91,24 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	argEq1 := dbr.Eq{"f": dbr.ArgInt64(2), "x": dbr.ArgString("hi")}
 	argEq2 := dbr.Eq{"g": dbr.ArgInt64(3)}
 	argEq3 := dbr.Eq{"h": dbr.ArgInt(1, 2, 3)}
-	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(dbr.Condition("d = ? OR e = ?", args...)).
+			Where(
+				dbr.Condition("d", dbr.ArgInt64(1)),
+				dbr.Condition("e", dbr.ArgString("wat")),
+			).
 			Where(argEq1).
 			Where(argEq2).
 			Where(argEq3).
 			GroupBy("ab").
 			GroupBy("ii").
 			GroupBy("iii").
-			Having(dbr.Condition("j = k"), dbr.Condition("jj = ?", dbr.ArgInt64(1))).
-			Having(dbr.Condition("jjj = ?", dbr.ArgInt64(2))).
+			Having(dbr.Condition("j = k"), dbr.Condition("jj", dbr.ArgInt64(1))).
+			Having(dbr.Condition("jjj", dbr.ArgInt64(2))).
 			OrderBy("l").
 			OrderBy("l").
 			OrderBy("l").

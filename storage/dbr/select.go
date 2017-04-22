@@ -57,7 +57,6 @@ type Select struct {
 // from the specified columns. The provided columns won't get quoted.
 func NewSelect(columns ...string) *Select {
 	return &Select{
-		Log:     log.BlackHole{},
 		Columns: columns,
 	}
 }
@@ -70,7 +69,6 @@ func NewSelect(columns ...string) *Select {
 // https://dev.mysql.com/doc/refman/5.7/en/derived-tables.html
 func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 	s := &Select{
-		Log: log.BlackHole{},
 		Table: alias{
 			Select: subSelect,
 			Alias:  aliasName,

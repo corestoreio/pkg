@@ -47,7 +47,6 @@ type Insert struct {
 // NewInsert creates a new object with a black hole logger.
 func NewInsert(into string) *Insert {
 	return &Insert{
-		Log:  log.BlackHole{},
 		Into: into,
 	}
 }

@@ -39,7 +39,6 @@ type Delete struct {
 // NewDelete creates a new object with a black hole logger.
 func NewDelete(from ...string) *Delete {
 	return &Delete{
-		Log:  log.BlackHole{},
 		From: MakeAlias(from...),
 	}
 }

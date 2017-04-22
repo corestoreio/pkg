@@ -49,7 +49,6 @@ type Update struct {
 // NewUpdate creates a new object with a black hole logger.
 func NewUpdate(table ...string) *Update {
 	return &Update{
-		Log:   log.BlackHole{},
 		Table: MakeAlias(table...),
 	}
 }

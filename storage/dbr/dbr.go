@@ -54,8 +54,7 @@ func WithDSN(dsn string) ConnectionOption {
 // returned. You can either apply a DSN or a pre configured *sql.DB type.
 func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	c := &Connection{
-		dn:  DriverNameMySQL,
-		Log: log.BlackHole{},
+		dn: DriverNameMySQL,
 	}
 	if err := c.Options(opts...); err != nil {
 		return nil, errors.Wrap(err, "[dbr] NewConnection.ApplyOpts")

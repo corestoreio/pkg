@@ -15,14 +15,17 @@ type Tx struct {
 
 // Begin creates a transaction for the given session
 func (c *Connection) Begin() (*Tx, error) {
-	tx, err := c.DB.Begin()
+	dbTx, err := c.DB.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] transaction.begin.error")
 	}
-	return &Tx{
-		Logger: c.Log.With(log.Bool("transaction", true)),
-		Tx:     tx,
-	}, nil
+	tx := &Tx{
+		Tx: dbTx,
+	}
+	if c.Log != nil {
+		tx.Logger = c.Log.With(log.Bool("transaction", true))
+	}
+	return tx, nil
 }
 
 // Commit finishes the transaction
