@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -23,7 +37,27 @@ func (eq Eq) appendConditions(wfs *WhereFragments) {
 	}
 }
 
+// And sets the logical AND operator. Default case.
+func (eq Eq) And() ConditionArg {
+	return eq
+}
+
+// Or not supported
+func (eq Eq) Or() ConditionArg {
+	return eq
+}
+
+const (
+	logicalAnd byte = 'a'
+	logicalOr  byte = 'o'
+	logicalXor byte = 'x'
+	logicalNot byte = 'n'
+)
+
 type whereFragment struct {
+	// Logical states how multiple where statements will be connected.
+	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
+	Logical byte
 	// Condition can contain either a column name in the form of table.column or
 	// just column. Or Condition can contain an expression. Whenever a condition
 	// is not a valid identifier we treat it as an expression.
@@ -43,12 +77,26 @@ func (wf *whereFragment) appendConditions(wfs *WhereFragments) {
 	*wfs = append(*wfs, wf)
 }
 
+// And sets the logical AND operator
+func (wf *whereFragment) And() ConditionArg {
+	wf.Logical = logicalAnd
+	return wf
+}
+
+// Or sets the logical OR operator
+func (wf *whereFragment) Or() ConditionArg {
+	wf.Logical = logicalOr
+	return wf
+}
+
 // WhereFragments provides a list where clauses
 type WhereFragments []*whereFragment
 
 // ConditionArg used at argument in Where()
 type ConditionArg interface {
 	appendConditions(*WhereFragments)
+	And() ConditionArg // And connects next condition via AND
+	Or() ConditionArg  // Or connects next condition via OR
 }
 
 // Using add syntactic sugar to a JOIN statement: The USING(column_list) clause
@@ -77,9 +125,28 @@ func SubSelect(rawStatementOrColumnName string, operator byte, s *Select) Condit
 
 // Condition adds a condition and checks values if they implement driver.Valuer.
 func Condition(rawStatementOrColumnName string, arg ...Argument) ConditionArg {
+	if len(arg) > 1 {
+		panic(arg)
+	}
 	return &whereFragment{
 		Condition: rawStatementOrColumnName,
 		Arguments: arg,
+	}
+}
+
+// ConditionOpen sets an open parenthesis "(". Mostly used for OR conditions in
+// combination with AND conditions.
+func ConditionOpen() ConditionArg {
+	return &whereFragment{
+		Condition: "(",
+	}
+}
+
+// ConditionClose sets a closing parenthesis ")". Mostly used for OR conditions in
+// combination with AND conditions.
+func ConditionClose() ConditionArg {
+	return &whereFragment{
+		Condition: ")",
 	}
 }
 
@@ -100,14 +167,14 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 		w.WriteString(" HAVING ")
 	}
 
-	anyConditions := false
-	for i, f := range fragments {
+	i := 0
+	for _, f := range fragments {
 
 		if stmtType == 'j' {
 			if len(f.Using) > 0 {
 				w.WriteString(" USING (")
-				for i, c := range f.Using {
-					if i > 0 {
+				for j, c := range f.Using {
+					if j > 0 {
 						w.WriteRune(',')
 					}
 					Quoter.quote(w, c)
@@ -120,17 +187,36 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 			}
 		}
 
-		if anyConditions {
-			w.WriteString(" AND (")
-		} else {
-			w.WriteRune('(')
-			anyConditions = true
+		if f.Condition == "(" || f.Condition == ")" {
+			w.WriteString(f.Condition)
+			continue
 		}
+
+		if i > 0 {
+			// How the WHERE conditions are connected
+			switch f.Logical {
+			case logicalAnd:
+				w.WriteString(" AND ")
+			case logicalOr:
+				w.WriteString(" OR ")
+			case logicalXor:
+				w.WriteString(" XOR ")
+			case logicalNot:
+				w.WriteString(" NOT ")
+			default:
+				w.WriteString(" AND ")
+			}
+		}
+
+		w.WriteRune('(')
 
 		addArg := false
 		if isValidIdentifier(f.Condition) > 0 { // must be an expression
 			_, _ = w.WriteString(f.Condition)
 			addArg = true
+			if len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
+				writeOperator(w, f.Arguments[0].operator(), true)
+			}
 		} else {
 			Quoter.quoteAs(w, f.Condition)
 
@@ -149,10 +235,13 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 				addArg = writeOperator(w, f.Arguments[0].operator(), true)
 			}
 		}
-		_, _ = w.WriteRune(')')
+
+		w.WriteRune(')')
+
 		if addArg {
 			*args = append(*args, f.Arguments...)
 		}
+		i++
 	}
 	return nil
 }

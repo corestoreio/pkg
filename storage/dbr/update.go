@@ -108,7 +108,7 @@ func (b *Update) Set(column string, arg Argument) *Update {
 }
 
 // SetMap appends the elements of the map at column/value pairs for the
-// statement.
+// statement. Calls internally the `Set` function.
 func (b *Update) SetMap(clauses map[string]Argument) *Update {
 	if b.previousError != nil {
 		return b
@@ -267,7 +267,7 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 // When using the ON DUPLICATE KEY feature in the Insert builder:
 //
 // The function dbr.ArgExpr is supported and allows SQL
-// constructs like:
+// constructs like (ib == InsertBuilder builds INSERT statements):
 // 		`columnA`=VALUES(`columnB`)+2
 // by writing the Go code:
 //		ib.AddOnDuplicateKey("columnA", ArgExpr("VALUES(`columnB`)+?", ArgInt(2)))

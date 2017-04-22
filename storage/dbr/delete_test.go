@@ -41,14 +41,14 @@ func TestDeleteSingleToSQL(t *testing.T) {
 	del := s.DeleteFrom("a").Where(Condition("id = ?", argInt(1)))
 	sql, args, err := del.ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "DELETE FROM `a` WHERE (id = ?)")
+	assert.Equal(t, "DELETE FROM `a` WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 
 	// once where was a sync.Pool for the whereFragments with which it was
 	// not possible to run ToSQL() twice.
 	sql, args, err = del.ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "DELETE FROM `a` WHERE (id = ?)")
+	assert.Equal(t, "DELETE FROM `a` WHERE (id = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 
 }
@@ -58,7 +58,7 @@ func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
 
 	sql, _, err := s.DeleteFrom("a").Limit(10).Offset(20).OrderBy("id").ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "DELETE FROM `a` ORDER BY id LIMIT 10 OFFSET 20")
+	assert.Equal(t, "DELETE FROM `a` ORDER BY id LIMIT 10 OFFSET 20", sql)
 }
 
 func TestDeleteReal(t *testing.T) {

@@ -20,26 +20,34 @@ func TestSelectBasicToSQL(t *testing.T) {
 }
 
 func TestSelectFullToSQL(t *testing.T) {
-	s := createFakeSession()
 
-	sel := s.Select("a", "b").
+	sel := NewSelect("a", "b").
 		Distinct().
 		From("c", "cc").
-		Where(Condition("d = ? OR e = ?",
-			argInt(1), ArgString("wat")),
+		Where(
+			ConditionOpen(),
+			Condition("d", argInt(1)),
+			Condition("e", ArgString("wat")).Or(),
+			ConditionClose(),
 			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
 		).
 		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(In)}).
 		GroupBy("ab").
-		Having(Condition("j = k")).
+		Having(
+			ConditionOpen(),
+			Condition("m", argInt(33)),
+			Condition("n", ArgString("wh3r3")).Or(),
+			ConditionClose(),
+			Condition("j = k"),
+		).
 		OrderBy("l").
 		Limit(7).
 		Offset(8)
 
 	sql, args, err := sel.ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT DISTINCT a, b FROM `c` AS `cc` WHERE (d = ? OR e = ?) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY ab HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8", sql)
-	assert.Equal(t, []interface{}{int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
+	assert.Equal(t, "SELECT DISTINCT a, b FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY ab HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY l LIMIT 7 OFFSET 8", sql)
+	assert.Equal(t, []interface{}{int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3"}, args.Interfaces())
 }
 
 func TestSelectPaginateOrderDirToSQL(t *testing.T) {

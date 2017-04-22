@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 )
@@ -148,7 +149,6 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 
 	var haveSQL string
 	b.ResetTimer()
-	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var args dbr.Arguments
 		var err error
@@ -181,4 +181,35 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 		       AND ( `attribute_id` IN ? )
 		       AND ( `store_id` = ? )
 	*/
+}
+
+// BenchmarkSelect_SQLCase-4   	  300000	      3932 ns/op	    1688 B/op	      22 allocs/op
+func BenchmarkSelect_SQLCase(b *testing.B) {
+	start := dbr.ArgTime(time.Unix(1257894000, 0))
+	end := dbr.ArgTime(time.Unix(1257980400, 0))
+	var haveSQL string
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var args dbr.Arguments
+		var err error
+		haveSQL, args, err = dbr.NewSelect().
+			AddColumnsQuoted("price,sku,name,title,description").
+			AddColumnsExprAlias(
+				dbr.SQLCase("", "`closed`",
+					"date_start <= ? AND date_end >= ?", "`open`",
+					"date_start > ? AND date_end > ?", "`upcoming`",
+				),
+				"is_on_sale",
+			).
+			AddArguments(start, end, start, end).
+			From("catalog_promotions").Where(
+			dbr.Condition("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn))).
+			ToSQL()
+		if err != nil {
+			b.Fatalf("%+v", err)
+		}
+		benchmarkSelectBasicSQL = args
+	}
+	_ = haveSQL
 }

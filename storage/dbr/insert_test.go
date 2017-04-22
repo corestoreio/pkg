@@ -362,18 +362,22 @@ func TestInsert_FromSelect(t *testing.T) {
 	ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
 	argEq := Eq{"a": ArgInt64(1, 2, 3).Operator(In)}
-	args := Arguments{argInt64(1), ArgString("wat")}
 
 	iSQL, args, err := ins.FromSelect(NewSelect("something_id", "user_id", "other").
 		From("some_table").
-		Where(Condition("d = ? OR e = ?", args...)).
+		Where(
+			ConditionOpen(),
+			Condition("d", argInt64(1)),
+			Condition("e", ArgString("wat")).Or(),
+			ConditionClose(),
+		).
 		Where(argEq).
 		OrderByDesc("id").
 		Paginate(1, 20))
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Exactly(t, "INSERT INTO `tableA` SELECT something_id, user_id, other FROM `some_table` WHERE (d = ? OR e = ?) AND (`a` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0", iSQL)
+	assert.Exactly(t, "INSERT INTO `tableA` SELECT something_id, user_id, other FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0", iSQL)
 	assert.Exactly(t, []interface{}{int64(1), "wat", int64(1), int64(2), int64(3)}, args.Interfaces())
 
 }

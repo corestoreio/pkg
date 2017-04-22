@@ -10,13 +10,7 @@ import (
 
 // https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
 
-// queryWriter at used to generate a query.
-type queryWriter interface {
-	WriteString(s string) (n int, err error)
-	WriteRune(r rune) (n int, err error)
-}
-
-// Operators describe all available comparison operators. The upper case letter
+// Comparions functions and operators describe all available possibilities. The upper case letter
 // always negates.
 // https://dev.mysql.com/doc/refman/5.7/en/comparison-operators.html
 const (
@@ -38,6 +32,9 @@ const (
 	Greater        byte = '>' // >
 	LessOrEqual    byte = '{' // <=
 	GreaterOrEqual byte = '}' // >=
+	Regexp         byte = 'r' // REGEXP ?
+	NotRegexp      byte = 'R' // NOT REGEXP ?
+	Xor            byte = 'o' // XOR ?
 )
 
 const (
@@ -70,6 +67,12 @@ func writeOperator(w queryWriter, operator byte, hasArg bool) (addArg bool) {
 	case NotLike:
 		w.WriteString(" NOT LIKE ?")
 		addArg = true
+	case Regexp:
+		w.WriteString(" REGEXP ?")
+		addArg = true
+	case NotRegexp:
+		w.WriteString(" NOT REGEXP ?")
+		addArg = true
 	case Between:
 		w.WriteString(" BETWEEN ? AND ?")
 		addArg = true
@@ -81,6 +84,9 @@ func writeOperator(w queryWriter, operator byte, hasArg bool) (addArg bool) {
 		addArg = true
 	case Least:
 		w.WriteString(" LEAST (?)")
+		addArg = true
+	case Xor:
+		w.WriteString(" XOR ?")
 		addArg = true
 	case Exists:
 		w.WriteString(" EXISTS ")
@@ -747,11 +753,12 @@ func ArgFloat64(args ...float64) Argument {
 type expr struct {
 	SQL string
 	Arguments
+	op byte
 }
 
-// Expr at a SQL fragment with placeholders, and a slice of args to replace them
+// ArgExpr at a SQL fragment with placeholders, and a slice of args to replace them
 // with. Mostly used in UPDATE statements.
-func Expr(sql string, args ...Argument) Argument {
+func ArgExpr(sql string, args ...Argument) Argument {
 	return &expr{SQL: sql, Arguments: args}
 }
 
@@ -767,8 +774,51 @@ func (e *expr) writeTo(w queryWriter, _ int) error {
 }
 func (e *expr) len() int { return 1 }
 
-// Operator not supported
-func (e *expr) Operator(_ byte) Argument { return e }
-func (e *expr) operator() byte           { return 0 }
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
+func (e *expr) Operator(op byte) Argument {
+	e.op = op
+	return e
+}
+
+func (e *expr) operator() byte { return e.op }
 
 // for type subQuery see function SubSelect
+
+type argSubSelect struct {
+	s  *Select
+	op byte
+}
+
+// ArgSubSelect uses a Select as an argument.
+// The written sub-select gets wrapped in parenthesis: (SELECT ...)
+func ArgSubSelect(s *Select) Argument {
+	return argSubSelect{s: s}
+}
+
+func (e argSubSelect) toIFace(args *[]interface{}) {
+	hArgs, err := e.s.toSQL(blackHoleWriter{}) // can be optimized later
+	if err != nil {
+		*args = append(*args, err) // not that optimal :-(
+	} else {
+		for _, a := range hArgs {
+			a.toIFace(args)
+		}
+	}
+}
+
+func (e argSubSelect) writeTo(w queryWriter, _ int) error {
+	w.WriteRune('(')
+	_, err := e.s.toSQL(w)
+	w.WriteRune(')')
+	return errors.Wrap(err, "[dbr] argSubSelect.writeTo")
+}
+func (e argSubSelect) len() int { return 1 }
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
+func (e argSubSelect) Operator(op byte) Argument {
+	e.op = op
+	return e
+}
+func (e argSubSelect) operator() byte { return e.op }

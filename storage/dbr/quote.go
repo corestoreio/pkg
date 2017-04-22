@@ -95,6 +95,9 @@ func (q MysqlQuoter) quoteAs(w queryWriter, parts ...string) {
 	case lp == 1 && !hasQuote0 && hasDot0:
 		q.splitDotAndQuote(w, parts[0])
 		return
+	case lp == 1 && parts[0] == "":
+		// just an empty string
+		return
 	}
 
 	q.splitDotAndQuote(w, parts[0])

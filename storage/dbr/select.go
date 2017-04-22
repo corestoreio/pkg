@@ -249,6 +249,14 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	return b
 }
 
+// AddArguments adds more arguments to the Argument field of the Select type.
+// You must call this function directly after you have used e.g.
+// AddColumnsExprAlias with place holders.
+func (b *Select) AddArguments(args ...Argument) *Select {
+	b.Arguments = append(b.Arguments, args...)
+	return b
+}
+
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs.
 func (b *Select) Where(c ...ConditionArg) *Select {

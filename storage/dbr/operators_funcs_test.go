@@ -56,11 +56,11 @@ func TestTableColumnQuote(t *testing.T) {
 	}
 }
 
-func TestIfNullAs(t *testing.T) {
+func TestSQLIfNull(t *testing.T) {
 	t.Parallel()
 	runner := func(want string, have ...string) func(*testing.T) {
 		return func(t *testing.T) {
-			assert.Equal(t, want, dbr.IfNull(have...))
+			assert.Equal(t, want, dbr.SQLIfNull(have...))
 		}
 	}
 	t.Run("1 args expression", runner(
@@ -133,7 +133,7 @@ func BenchmarkIfNull(b *testing.B) {
 		return func(b *testing.B) {
 			var result string
 			for i := 0; i < b.N; i++ {
-				result = dbr.IfNull(have...)
+				result = dbr.SQLIfNull(have...)
 			}
 			if result != want {
 				b.Fatalf("\nHave: %q\nWant: %q", result, want)
@@ -165,5 +165,102 @@ func BenchmarkIfNull(b *testing.B) {
 		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x`",
 		"t1", "c1", "t2", "c2", "alias", "x",
 	))
+}
 
+func TestSQLIf(t *testing.T) {
+	assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value"))
+
+	s := dbr.NewSelect().AddColumnsQuoted("a", "b", "c").
+		From("table1").Where(
+		dbr.Condition(
+			dbr.SQLIf("a > 0", "b", "c"),
+			dbr.ArgInt(4711).Operator(dbr.Greater),
+		))
+
+	sqlStr, args, err := s.ToSQL()
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	assert.Exactly(t, []interface{}{int64(4711)}, args.Interfaces())
+	assert.Exactly(t, "SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)", sqlStr)
+}
+
+func TestSQLCase(t *testing.T) {
+	t.Run("UPDATE in columns with args", func(t *testing.T) {
+		/*
+					UPDATE `cataloginventory_stock_item`
+					SET    `qty` = CASE product_id
+								 WHEN 23434 THEN qty + 3
+								 WHEN 23435 THEN qty + 2
+								 WHEN 23436 THEN qty + 4
+							 ELSE qty
+						   end
+					WHERE  ( product_id IN ( 23434, 23435, 23436 ) )
+			       AND ( website_id = 4 )
+		*/
+
+		u := dbr.NewUpdate("cataloginventory_stock_item").
+			Set("qty", dbr.ArgExpr(dbr.SQLCase("`product_id`", "qty",
+				"3456", "qty+?",
+				"3457", "qty+?",
+				"3458", "qty+?",
+			), dbr.ArgInt(3, 4, 5))).
+			Where(
+				dbr.Condition("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
+				dbr.Condition("website_id", dbr.ArgInt64(6)),
+			)
+
+		sqlStr, args, err := u.ToSQL()
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+		assert.Exactly(t, []interface{}{int64(3), int64(4), int64(5), int64(345), int64(567), int64(897), int64(6)}, args.Interfaces())
+		assert.Exactly(t, "UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`product_id` IN ?) AND (`website_id` = ?)", sqlStr)
+
+		sqlStr, err = dbr.Preprocess(sqlStr, args...)
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+		assert.Exactly(t, "UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id` IN (345,567,897)) AND (`website_id` = 6)", sqlStr)
+	})
+
+	t.Run("cases", func(t *testing.T) {
+		assert.Exactly(t,
+			"CASE `product_id` WHEN 3456 THEN qty+1 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty-3 ELSE qty END",
+			dbr.SQLCase("`product_id`", "qty",
+				"3456", "qty+1",
+				"3457", "qty+4",
+				"3458", "qty-3",
+			),
+		)
+		assert.Exactly(t,
+			"(CASE `product_id` WHEN 3456 THEN qty WHEN 3457 THEN qty ELSE qty END) AS `product_qty`",
+			dbr.SQLCase("`product_id`", "qty",
+				"3456", "qty",
+				"3457", "qty",
+				"product_qty",
+			),
+		)
+		assert.Exactly(t,
+			"CASE `product_id` WHEN 3456 THEN qty+1 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty-3 END",
+			dbr.SQLCase("`product_id`", "",
+				"3456", "qty+1",
+				"3457", "qty+4",
+				"3458", "qty-3",
+			),
+		)
+		assert.Exactly(t,
+			"CASE  WHEN 1=1 THEN 2 WHEN 3=2 THEN 4 END",
+			dbr.SQLCase("", "",
+				"1=1", "2",
+				"3=2", "4",
+			),
+		)
+		assert.Exactly(t,
+			"<SQLCase error len(compareResult) == 1>",
+			dbr.SQLCase("", "",
+				"1=1",
+			),
+		)
+	})
 }

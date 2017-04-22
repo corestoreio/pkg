@@ -16,9 +16,35 @@ package dbr_test
 
 import (
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/wordwrap"
 )
+
+func writeToSqlAndPreprocess(qb dbr.QueryBuilder) {
+	sqlStr, args, err := qb.ToSQL()
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		return
+	}
+	fmt.Println("Prepared Statement:")
+	wordwrap.Fstring(os.Stdout, sqlStr, 80)
+	if len(args) > 0 {
+		fmt.Printf("\nArguments: %v\n\n", args.Interfaces())
+	} else {
+		fmt.Print("\n")
+	}
+
+	sqlStr, err = dbr.Preprocess(sqlStr, args...)
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		return
+	}
+	fmt.Println("Preprocessed Statement:")
+	wordwrap.Fstring(os.Stdout, sqlStr, 80)
+}
 
 func ExampleNewInsert() {
 	sqlStr, args, err := dbr.NewInsert("tableA").
@@ -66,9 +92,15 @@ func ExampleInsert_FromSelect() {
 
 	argEq := dbr.Eq{"int64B": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
 
-	sqlStr, args, err := ins.FromSelect(dbr.NewSelect().AddColumnsQuoted("something_id,user_id,other").
+	sqlStr, args, err := ins.FromSelect(dbr.NewSelect().AddColumnsQuoted("something_id,user_id").
+		AddColumnsQuoted("other").
 		From("some_table").
-		Where(dbr.Condition("int64A = ? OR string = ?", dbr.ArgInt64(1), dbr.ArgString("wat"))).
+		Where(
+			dbr.ConditionOpen(),
+			dbr.Condition("int64A", dbr.ArgInt64(1).Operator(dbr.GreaterOrEqual)),
+			dbr.Condition("string", dbr.ArgString("wat")).Or(),
+			dbr.ConditionClose(),
+		).
 		Where(argEq).
 		OrderByDesc("id").
 		Paginate(1, 20))
@@ -85,9 +117,9 @@ func ExampleInsert_FromSelect() {
 
 	fmt.Printf("%s\nArguments: %v\nProcessed: %s\n", sqlStr, args.Interfaces(), sqlPre)
 	// Output:
-	// INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE (int64A = ? OR string = ?) AND (`int64B` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0
-	// Arguments: [1 wat 1 2 3]
-	// Processed: INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE (int64A = 1 OR string = 'wat') AND (`int64B` IN (1,2,3)) ORDER BY id DESC LIMIT 20 OFFSET 0
+	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`int64A` >= ?) OR (`string` = ?)) AND (`int64B` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0
+	//Arguments: [1 wat 1 2 3]
+	//Processed: INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`int64A` >= 1) OR (`string` = 'wat')) AND (`int64B` IN (1,2,3)) ORDER BY id DESC LIMIT 20 OFFSET 0
 }
 
 func ExampleNewDelete() {
@@ -359,20 +391,20 @@ func ExampleNewSelectFromSub() {
 	//Arguments: [Canon% Sony%]
 }
 
-func ExampleIfNull() {
-	fmt.Println(dbr.IfNull("column1"))
-	fmt.Println(dbr.IfNull("table1.column1"))
-	fmt.Println(dbr.IfNull("column1", "column2"))
-	fmt.Println(dbr.IfNull("table1.column1", "table2.column2"))
-	fmt.Println(dbr.IfNull("column2", "1/0", "alias"))
-	fmt.Println(dbr.IfNull("SELECT * FROM x", "8", "alias"))
-	fmt.Println(dbr.IfNull("SELECT * FROM x", "9 ", "alias"))
-	fmt.Println(dbr.IfNull("column1", "column2", "alias"))
-	fmt.Println(dbr.IfNull("table1.column1", "table2.column2", "alias"))
-	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2"))
-	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2", "alias"))
-	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2", "alias", "x"))
-	fmt.Println(dbr.IfNull("table1", "column1", "table2", "column2", "alias", "x", "y"))
+func ExampleSQLIfNull() {
+	fmt.Println(dbr.SQLIfNull("column1"))
+	fmt.Println(dbr.SQLIfNull("table1.column1"))
+	fmt.Println(dbr.SQLIfNull("column1", "column2"))
+	fmt.Println(dbr.SQLIfNull("table1.column1", "table2.column2"))
+	fmt.Println(dbr.SQLIfNull("column2", "1/0", "alias"))
+	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "8", "alias"))
+	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "9 ", "alias"))
+	fmt.Println(dbr.SQLIfNull("column1", "column2", "alias"))
+	fmt.Println(dbr.SQLIfNull("table1.column1", "table2.column2", "alias"))
+	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2"))
+	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2", "alias"))
+	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2", "alias", "x"))
+	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2", "alias", "x", "y"))
 	//Output:
 	//IFNULL(`column1`,(NULL ))
 	//IFNULL(`table1`.`column1`,(NULL ))
@@ -387,4 +419,115 @@ func ExampleIfNull() {
 	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`
 	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias_x`
 	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias_x_y`
+}
+
+func ExampleSQLIf() {
+	s := dbr.NewSelect().AddColumnsQuoted("a", "b", "c").
+		From("table1").Where(
+		dbr.Condition(
+			dbr.SQLIf("a > 0", "b", "c"),
+			dbr.ArgInt(4711).Operator(dbr.Greater),
+		))
+	writeToSqlAndPreprocess(s)
+
+	// Output:
+	//Prepared Statement:
+	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)
+	//Arguments: [4711]
+	//
+	//Preprocessed Statement:
+	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)
+}
+
+func ExampleSQLCase_update() {
+	u := dbr.NewUpdate("cataloginventory_stock_item").
+		Set("qty", dbr.ArgExpr(dbr.SQLCase("`product_id`", "qty",
+			"3456", "qty+?",
+			"3457", "qty+?",
+			"3458", "qty+?",
+		), dbr.ArgInt(3, 4, 5))).
+		Where(
+			dbr.Condition("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
+			dbr.Condition("website_id", dbr.ArgInt64(6)),
+		)
+	writeToSqlAndPreprocess(u)
+
+	// Output:
+	//Prepared Statement:
+	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
+	//qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`product_id`
+	//IN ?) AND (`website_id` = ?)
+	//Arguments: [3 4 5 345 567 897 6]
+	//
+	//Preprocessed Statement:
+	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
+	//qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id`
+	//IN (345,567,897)) AND (`website_id` = 6)
+}
+
+func ExampleSQLCase_select() {
+	// time stamp has no special meaning ;-)
+	start := dbr.ArgTime(time.Unix(1257894000, 0))
+	end := dbr.ArgTime(time.Unix(1257980400, 0))
+	s := dbr.NewSelect().AddColumnsQuoted("price,sku,name,title,description").
+		AddColumnsExprAlias(
+			dbr.SQLCase("", "`closed`",
+				"date_start <= ? AND date_end >= ?", "`open`",
+				"date_start > ? AND date_end > ?", "`upcoming`",
+			),
+			"is_on_sale",
+		).
+		AddArguments(start, end, start, end).
+		From("catalog_promotions").Where(
+		dbr.Condition("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
+	writeToSqlAndPreprocess(s)
+
+	// Output:
+	//Prepared Statement:
+	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
+	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
+	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
+	//(`promotion_id` NOT IN ?)
+	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
+	//
+	//Preprocessed Statement:
+	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
+	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
+	//date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
+	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
+	//(`promotion_id` NOT IN (4711,815,42))
+}
+
+// duplicate of ExampleSQLCase_select
+func ExampleSelect_AddArguments() {
+	// time stamp has no special meaning ;-)
+	start := dbr.ArgTime(time.Unix(1257894000, 0))
+	end := dbr.ArgTime(time.Unix(1257980400, 0))
+	s := dbr.NewSelect().AddColumnsQuoted("price,sku,name,title,description").
+		AddColumnsExprAlias(
+			dbr.SQLCase("", "`closed`",
+				"date_start <= ? AND date_end >= ?", "`open`",
+				"date_start > ? AND date_end > ?", "`upcoming`",
+			),
+			"is_on_sale",
+		).
+		AddArguments(start, end, start, end).
+		From("catalog_promotions").Where(
+		dbr.Condition("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
+	writeToSqlAndPreprocess(s)
+
+	// Output:
+	//Prepared Statement:
+	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
+	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
+	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
+	//(`promotion_id` NOT IN ?)
+	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
+	//
+	//Preprocessed Statement:
+	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
+	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
+	//date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
+	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
+	//(`promotion_id` NOT IN (4711,815,42))
 }
