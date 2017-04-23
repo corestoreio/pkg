@@ -120,7 +120,6 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	}
 }
 
-// BenchmarkSelect_Large_IN-4   	  500000	      2807 ns/op	    1216 B/op	      27 allocs/op
 func BenchmarkSelect_Large_IN(b *testing.B) {
 
 	// This tests simulates selecting many varchar attribute values for specific products.
