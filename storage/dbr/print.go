@@ -17,7 +17,6 @@ package dbr
 import (
 	"fmt"
 	"strconv"
-	"unicode/utf8"
 )
 
 // QueryBuilder assembles a query and returns the raw SQL without parameter
@@ -31,11 +30,6 @@ type queryWriter interface {
 	WriteString(s string) (n int, err error)
 	WriteRune(r rune) (n int, err error)
 }
-
-type blackHoleWriter struct{}
-
-func (blackHoleWriter) WriteString(s string) (n int, err error) { return len(s), nil }
-func (blackHoleWriter) WriteRune(r rune) (n int, err error)     { return utf8.RuneLen(r), nil }
 
 func makeSQL(b QueryBuilder) string {
 	sRaw, vals, err := b.ToSQL()

@@ -785,40 +785,64 @@ func (e *expr) operator() byte { return e.op }
 
 // for type subQuery see function SubSelect
 
-type argSubSelect struct {
-	s  *Select
-	op byte
-}
+//type argSubSelect struct {
+//	// buf contains the cached SQL string
+//	buf *bytes.Buffer
+//	// args contains the arguments after calling ToSQL
+//	args Arguments
+//	s    *Select
+//	op   byte
+//}
 
-// ArgSubSelect uses a Select as an argument.
-// The written sub-select gets wrapped in parenthesis: (SELECT ...)
-func ArgSubSelect(s *Select) Argument {
-	return argSubSelect{s: s}
-}
-
-func (e argSubSelect) toIFace(args *[]interface{}) {
-	hArgs, err := e.s.toSQL(blackHoleWriter{}) // can be optimized later
-	if err != nil {
-		*args = append(*args, err) // not that optimal :-(
-	} else {
-		for _, a := range hArgs {
-			a.toIFace(args)
-		}
-	}
-}
-
-func (e argSubSelect) writeTo(w queryWriter, _ int) error {
-	w.WriteRune('(')
-	_, err := e.s.toSQL(w)
-	w.WriteRune(')')
-	return errors.Wrap(err, "[dbr] argSubSelect.writeTo")
-}
-func (e argSubSelect) len() int { return 1 }
-
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (e argSubSelect) Operator(op byte) Argument {
-	e.op = op
-	return e
-}
-func (e argSubSelect) operator() byte { return e.op }
+// I don't know anymore where I would have needed this ... but once the idea
+// and a real world use case pops up, I'm gonna implement it. Until then use the function
+// SubSelect(rawStatementOrColumnName string, operator byte, s *Select) ConditionArg
+//// ArgSubSelect
+//// The written sub-select gets wrapped in parenthesis: (SELECT ...)
+//func ArgSubSelect(s *Select) Argument {
+//	return &argSubSelect{s: s}
+//}
+//
+//func (e *argSubSelect) toIFace(args *[]interface{}) {
+//
+//	if e.buf == nil {
+//		e.buf = new(bytes.Buffer)
+//		var err error
+//		e.args, err = e.s.toSQL(e.buf) // can be optimized later
+//		if err != nil {
+//			*args = append(*args, err) // not that optimal :-(
+//		} else {
+//			for _, a := range e.args {
+//				a.toIFace(args)
+//			}
+//		}
+//		return
+//	}
+//	for _, a := range e.args {
+//		a.toIFace(args)
+//	}
+//}
+//
+//func (e *argSubSelect) writeTo(w queryWriter, _ int) (err error) {
+//	if e.buf == nil {
+//		e.buf = new(bytes.Buffer)
+//		e.buf.WriteRune('(')
+//		e.args, err = e.s.toSQL(e.buf)
+//		if err != nil {
+//			return errors.Wrap(err, "[dbr] argSubSelect.writeTo")
+//		}
+//		e.buf.WriteRune(')')
+//	}
+//	_, err = w.WriteString(e.buf.String())
+//	return err
+//}
+//
+//func (e *argSubSelect) len() int { return 1 }
+//
+//// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+//// the constants Operator*.
+//func (e *argSubSelect) Operator(op byte) Argument {
+//	e.op = op
+//	return e
+//}
+//func (e *argSubSelect) operator() byte { return e.op }

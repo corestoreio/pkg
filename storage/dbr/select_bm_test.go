@@ -187,10 +187,11 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 	*/
 }
 
-// BenchmarkSelect_SQLCase-4   	  300000	      3932 ns/op	    1688 B/op	      22 allocs/op
 func BenchmarkSelect_SQLCase(b *testing.B) {
 	start := dbr.ArgTime(time.Unix(1257894000, 0))
 	end := dbr.ArgTime(time.Unix(1257980400, 0))
+	pid := dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)
+
 	var haveSQL string
 
 	b.ResetTimer()
@@ -208,7 +209,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 			).
 			AddArguments(start, end, start, end).
 			From("catalog_promotions").Where(
-			dbr.Condition("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn))).
+			dbr.Condition("promotion_id", pid)).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)

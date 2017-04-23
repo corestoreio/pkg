@@ -188,6 +188,7 @@ func (b *Select) From(from ...string) *Select {
 }
 
 func splitColumns(cols []string) []string {
+	// cannot be improved any more
 	for i := 0; i < len(cols); i++ {
 		if c := cols[i]; strings.IndexByte(c, ',') > 0 {
 			cs := strings.Split(c, ",")

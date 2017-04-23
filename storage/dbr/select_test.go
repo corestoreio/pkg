@@ -706,6 +706,7 @@ func TestSplitColumns(t *testing.T) {
 
 func TestSelect_Columns(t *testing.T) {
 	t.Parallel()
+
 	t.Run("AddColumns, multiple args", func(t *testing.T) {
 		s := NewSelect("a", "b")
 		s.From("tableA", "tA")
@@ -738,9 +739,24 @@ func TestSelect_Columns(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, "SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`", sSQL)
 	})
-	t.Run("AddColumnsQuotedAlias", func(t *testing.T) {
+
+	t.Run("AddColumnsQuotedAlias multi", func(t *testing.T) {
 		s := NewSelect().From("t3").
 			AddColumnsQuotedAlias("t3.name", "t3Name", "t3.sku,t3SKU")
+		sSQL, _, err := s.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`", sSQL)
+	})
+	t.Run("AddColumnsQuotedAlias middle", func(t *testing.T) {
+		s := NewSelect().From("t3").
+			AddColumnsQuotedAlias("t3.name", "t3Name,t3.sku", "t3SKU")
+		sSQL, _, err := s.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, "SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`", sSQL)
+	})
+	t.Run("AddColumnsQuotedAlias one", func(t *testing.T) {
+		s := NewSelect().From("t3").
+			AddColumnsQuotedAlias("t3.name,t3Name,t3.sku,t3SKU")
 		sSQL, _, err := s.ToSQL()
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, "SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`", sSQL)
@@ -951,5 +967,4 @@ func TestParenthesisOpen_Close(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT a, b FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)", sql)
 	})
-
 }
