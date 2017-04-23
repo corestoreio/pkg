@@ -123,7 +123,7 @@ func SubSelect(rawStatementOrColumnName string, operator byte, s *Select) Condit
 	return wf
 }
 
-// Condition adds a condition and checks values if they implement driver.Valuer.
+// Condition adds a condition to a WHERE or HAVING statement.
 func Condition(rawStatementOrColumnName string, arg ...Argument) ConditionArg {
 	if len(arg) > 1 {
 		panic(arg)
@@ -134,17 +134,17 @@ func Condition(rawStatementOrColumnName string, arg ...Argument) ConditionArg {
 	}
 }
 
-// ConditionOpen sets an open parenthesis "(". Mostly used for OR conditions in
-// combination with AND conditions.
-func ConditionOpen() ConditionArg {
+// ParenthesisOpen sets an open parenthesis "(". Mostly used for OR conditions
+// in combination with AND conditions.
+func ParenthesisOpen() ConditionArg { // TODO add examples
 	return &whereFragment{
 		Condition: "(",
 	}
 }
 
-// ConditionClose sets a closing parenthesis ")". Mostly used for OR conditions in
-// combination with AND conditions.
-func ConditionClose() ConditionArg {
+// ParenthesisClose sets a closing parenthesis ")". Mostly used for OR
+// conditions in combination with AND conditions.
+func ParenthesisClose() ConditionArg {
 	return &whereFragment{
 		Condition: ")",
 	}

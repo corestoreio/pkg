@@ -366,10 +366,10 @@ func TestInsert_FromSelect(t *testing.T) {
 	iSQL, args, err := ins.FromSelect(NewSelect("something_id", "user_id", "other").
 		From("some_table").
 		Where(
-			ConditionOpen(),
+			ParenthesisOpen(),
 			Condition("d", argInt64(1)),
 			Condition("e", ArgString("wat")).Or(),
-			ConditionClose(),
+			ParenthesisClose(),
 		).
 		Where(argEq).
 		OrderByDesc("id").

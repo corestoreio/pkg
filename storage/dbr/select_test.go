@@ -25,19 +25,19 @@ func TestSelectFullToSQL(t *testing.T) {
 		Distinct().
 		From("c", "cc").
 		Where(
-			ConditionOpen(),
+			ParenthesisOpen(),
 			Condition("d", argInt(1)),
 			Condition("e", ArgString("wat")).Or(),
-			ConditionClose(),
+			ParenthesisClose(),
 			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
 		).
 		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(In)}).
 		GroupBy("ab").
 		Having(
-			ConditionOpen(),
+			ParenthesisOpen(),
 			Condition("m", argInt(33)),
 			Condition("n", ArgString("wh3r3")).Or(),
-			ConditionClose(),
+			ParenthesisClose(),
 			Condition("j = k"),
 		).
 		OrderBy("l").
