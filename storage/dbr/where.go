@@ -54,6 +54,9 @@ const (
 	logicalNot byte = 'n'
 )
 
+// WhereFragments provides a list where clauses
+type WhereFragments []*whereFragment
+
 type whereFragment struct {
 	// Logical states how multiple where statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
@@ -89,9 +92,6 @@ func (wf *whereFragment) Or() ConditionArg {
 	return wf
 }
 
-// WhereFragments provides a list where clauses
-type WhereFragments []*whereFragment
-
 // ConditionArg used at argument in Where()
 type ConditionArg interface {
 	appendConditions(*WhereFragments)
@@ -125,9 +125,6 @@ func SubSelect(rawStatementOrColumnName string, operator byte, s *Select) Condit
 
 // Condition adds a condition to a WHERE or HAVING statement.
 func Condition(rawStatementOrColumnName string, arg ...Argument) ConditionArg {
-	if len(arg) > 1 {
-		panic(arg)
-	}
 	return &whereFragment{
 		Condition: rawStatementOrColumnName,
 		Arguments: arg,

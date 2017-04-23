@@ -65,15 +65,13 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
 	argEq := dbr.Eq{"a": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
+	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
-			Where(
-				dbr.Condition("d", dbr.ArgInt64(1)),
-				dbr.Condition("e", dbr.ArgString("wat")),
-			).
+			Where(dbr.Condition("d = ? OR e = ?", args...)).
 			Where(argEq).
 			OrderByDesc("id").
 			Paginate(1, 20).
