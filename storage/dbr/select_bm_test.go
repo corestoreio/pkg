@@ -89,16 +89,14 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	argEq1 := dbr.Eq{"f": dbr.ArgInt64(2), "x": dbr.ArgString("hi")}
 	argEq2 := dbr.Eq{"g": dbr.ArgInt64(3)}
 	argEq3 := dbr.Eq{"h": dbr.ArgInt(1, 2, 3)}
+	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(
-				dbr.Condition("d", dbr.ArgInt64(1)),
-				dbr.Condition("e", dbr.ArgString("wat")),
-			).
+			Where(dbr.Condition("(d = ? OR e = ?)", args...)).
 			Where(argEq1).
 			Where(argEq2).
 			Where(argEq3).
