@@ -680,11 +680,11 @@ func ExampleParenthesisOpen() {
 		).
 		GroupBy("ab").
 		Having(
+			dbr.Condition("j = k"),
 			dbr.ParenthesisOpen(),
 			dbr.Condition("m", dbr.ArgInt(33)),
 			dbr.Condition("n", dbr.ArgString("wh3r3")).Or(),
 			dbr.ParenthesisClose(),
-			dbr.Condition("j = k"),
 		).
 		OrderBy("l").
 		Limit(7).
@@ -694,12 +694,12 @@ func ExampleParenthesisOpen() {
 	// Output:
 	//Prepared Statement:
 	//SELECT DISTINCT a, b FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` =
-	//?) AND (`g` = ?) GROUP BY ab HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER
+	//?) AND (`g` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?)) ORDER
 	//BY l LIMIT 7 OFFSET 8
 	//Arguments: [1 wat 2 3 33 wh3r3]
 	//
 	//Preprocessed Statement:
 	//SELECT DISTINCT a, b FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND
-	//(`f` = 2) AND (`g` = 3) GROUP BY ab HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND
-	//(j = k) ORDER BY l LIMIT 7 OFFSET 8
+	//(`f` = 2) AND (`g` = 3) GROUP BY ab HAVING (j = k) AND ((`m` = 33) OR (`n` =
+	//'wh3r3')) ORDER BY l LIMIT 7 OFFSET 8
 }

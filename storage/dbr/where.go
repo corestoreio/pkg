@@ -136,7 +136,7 @@ func Condition(rawStatementOrColumnName string, arg ...Argument) ConditionArg {
 
 // ParenthesisOpen sets an open parenthesis "(". Mostly used for OR conditions
 // in combination with AND conditions.
-func ParenthesisOpen() ConditionArg { // TODO add examples
+func ParenthesisOpen() ConditionArg {
 	return &whereFragment{
 		Condition: "(",
 	}
@@ -187,7 +187,7 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 			}
 		}
 
-		if f.Condition == "(" || f.Condition == ")" {
+		if f.Condition == ")" {
 			w.WriteString(f.Condition)
 			continue
 		}
@@ -208,8 +208,13 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 			}
 		}
 
-		w.WriteRune('(')
+		if f.Condition == "(" {
+			i = 0
+			w.WriteString(f.Condition)
+			continue
+		}
 
+		w.WriteRune('(')
 		addArg := false
 		if isValidIdentifier(f.Condition) > 0 { // must be an expression
 			_, _ = w.WriteString(f.Condition)
@@ -235,7 +240,6 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 				addArg = writeOperator(w, f.Arguments[0].operator(), true)
 			}
 		}
-
 		w.WriteRune(')')
 
 		if addArg {

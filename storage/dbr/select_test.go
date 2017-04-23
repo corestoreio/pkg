@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -857,6 +871,85 @@ func TestSelect_Subselect(t *testing.T) {
 		if sSQL != wantSQL {
 			t.Errorf("\nHave: %q\nWant: %q", sSQL, wantSQL)
 		}
+	})
+}
+
+func TestParenthesisOpen_Close(t *testing.T) {
+	t.Parallel()
+	t.Run("beginning of WHERE", func(t *testing.T) {
+
+		sel := NewSelect("a", "b").
+			From("c", "cc").
+			Where(
+				ParenthesisOpen(),
+				Condition("d", argInt(1)),
+				Condition("e", ArgString("wat")).Or(),
+				ParenthesisClose(),
+				Condition("f", ArgFloat64(2.7182)),
+			).
+			GroupBy("ab").
+			Having(
+				ParenthesisOpen(),
+				Condition("m", argInt(33)),
+				Condition("n", ArgString("wh3r3")).Or(),
+				ParenthesisClose(),
+				Condition("j = k"),
+			)
+
+		sql, args, err := sel.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT a, b FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY ab HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k)", sql)
+		assert.Equal(t, []interface{}{int64(1), "wat", 2.7182, int64(33), "wh3r3"}, args.Interfaces())
+	})
+
+	t.Run("end of WHERE", func(t *testing.T) {
+		sel := NewSelect("a", "b").
+			From("c", "cc").
+			Where(
+				Condition("f", ArgFloat64(2.7182)),
+				ParenthesisOpen(),
+				Condition("d", argInt(1)),
+				Condition("e", ArgString("wat")).Or(),
+				ParenthesisClose(),
+			).
+			GroupBy("ab").
+			Having(
+				Condition("j = k"),
+				ParenthesisOpen(),
+				Condition("m", argInt(33)),
+				Condition("n", ArgString("wh3r3")).Or(),
+				ParenthesisClose(),
+			)
+
+		sql, _, err := sel.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT a, b FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?))", sql)
+	})
+
+	t.Run("middle of WHERE", func(t *testing.T) {
+		sel := NewSelect("a", "b").
+			From("c", "cc").
+			Where(
+				Condition("f", ArgFloat64(2.7182)),
+				ParenthesisOpen(),
+				Condition("d", argInt(1)),
+				Condition("e", ArgString("wat")).Or(),
+				ParenthesisClose(),
+				Condition("p", ArgFloat64(3.141592)),
+			).
+			GroupBy("ab").
+			Having(
+				Condition("j = k"),
+				ParenthesisOpen(),
+				Condition("m", argInt(33)),
+				Condition("n", ArgString("wh3r3")).Or(),
+				ParenthesisClose(),
+				Condition("q", ArgNotNull()),
+			)
+
+		sql, _, err := sel.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT a, b FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)", sql)
 	})
 
 }
