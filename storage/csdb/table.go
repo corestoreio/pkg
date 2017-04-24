@@ -16,11 +16,13 @@ package csdb
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -134,7 +136,7 @@ func (t *Table) In(n string) bool {
 
 // Truncate truncates the tables. Removes all rows and sets the auto increment
 // to zero. Just like a CREATE TABLE statement.
-func (t *Table) Truncate(execer dbr.Execer) error {
+func (t *Table) Truncate(ctx context.Context, execer dbr.Execer) error {
 	if t.IsView {
 		return nil
 	}
@@ -142,7 +144,7 @@ func (t *Table) Truncate(execer dbr.Execer) error {
 		return errors.Wrap(err, "[csdb] Truncate table name")
 	}
 	ddl := "TRUNCATE TABLE " + dbr.Quoter.QuoteAs(t.Name)
-	_, err := execer.Exec(ddl)
+	_, err := execer.ExecContext(ctx, ddl)
 	return errors.Wrapf(err, "[csdb] failed to truncate table %q", ddl)
 }
 
@@ -151,12 +153,12 @@ func (t *Table) Truncate(execer dbr.Execer) error {
 // system, you can use RENAME TABLE to move a table from one database to
 // another. RENAME TABLE also works for views, as long as you do not try to
 // rename a view into a different database.
-func (t *Table) Rename(execer dbr.Execer, new string) error {
+func (t *Table) Rename(ctx context.Context, execer dbr.Execer, new string) error {
 	if err := IsValidIdentifier(t.Name, new); err != nil {
 		return errors.Wrap(err, "[csdb] Rename table name")
 	}
 	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(new)
-	_, err := execer.Exec(ddl)
+	_, err := execer.ExecContext(ctx, ddl)
 	return errors.Wrapf(err, "[csdb] failed to rename table %q", ddl)
 }
 
@@ -164,21 +166,37 @@ func (t *Table) Rename(execer dbr.Execer, new string) error {
 // Renaming is an atomic operation in the database. Note: indexes won't get
 // swapped! As long as two databases are on the same file system, you can use
 // RENAME TABLE to move a table from one database to another.
-func (t *Table) Swap(execer dbr.Execer, other string) error {
+func (t *Table) Swap(ctx context.Context, execer dbr.Execer, other string) error {
 	if err := IsValidIdentifier(t.Name, other); err != nil {
 		return errors.Wrap(err, "[csdb] Swap table name")
 	}
 
 	tmp := TableName("", t.Name, strconv.FormatInt(time.Now().UnixNano(), 10))
-	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(tmp) + ", " +
-		dbr.Quoter.QuoteAs(other) + " TO " + dbr.Quoter.QuoteAs(t.Name) + "," +
-		dbr.Quoter.QuoteAs(tmp) + " TO " + dbr.Quoter.QuoteAs(other)
-	_, err := execer.Exec(ddl)
-	return errors.Wrapf(err, "[csdb] failed to swap table %q", ddl)
+
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	buf.WriteString("RENAME TABLE ")
+	dbr.Quoter.FquoteAs(buf, t.Name)
+	buf.WriteString(" TO ")
+	dbr.Quoter.FquoteAs(buf, tmp)
+	buf.WriteString(", ")
+	dbr.Quoter.FquoteAs(buf, other)
+	buf.WriteString(" TO ")
+	dbr.Quoter.FquoteAs(buf, t.Name)
+	buf.WriteByte(',')
+	dbr.Quoter.FquoteAs(buf, tmp)
+	buf.WriteString(" TO ")
+	dbr.Quoter.FquoteAs(buf, other)
+
+	if _, err := execer.ExecContext(ctx, buf.String()); err != nil {
+		// only allocs in case of an error ;-)
+		return errors.Wrapf(err, "[csdb] Failed to swap table %q", buf.String())
+	}
+	return nil
 }
 
 // Drop, if exists, drops the table or the view.
-func (t *Table) Drop(execer dbr.Execer) error {
+func (t *Table) Drop(ctx context.Context, execer dbr.Execer) error {
 	typ := "TABLE"
 	if t.IsView {
 		typ = "VIEW"
@@ -186,7 +204,7 @@ func (t *Table) Drop(execer dbr.Execer) error {
 	if err := IsValidIdentifier(t.Name); err != nil {
 		return errors.Wrap(err, "[csdb] Drop table name")
 	}
-	_, err := execer.Exec("DROP " + typ + " IF EXISTS " + dbr.Quoter.QuoteAs(t.Name))
+	_, err := execer.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dbr.Quoter.QuoteAs(t.Name))
 	return errors.Wrapf(err, "[csdb] failed to drop table %q", t.Name)
 }
 
@@ -200,12 +218,12 @@ func (t *Table) Select() *dbr.Select {
 // LoadSlice performs a SELECT * FROM `tableName` query and puts the results
 // into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
 // and an error. The variadic third arguments can modify the SQL query.
-func (t *Table) LoadSlice(db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
+func (t *Table) LoadSlice(ctx context.Context, db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
 	sb := t.Select()
 	sb.DB.Querier = db
 	sb.Listeners.Merge(t.Listeners.Select)
 	sb.Listeners.Add(listeners...)
-	return sb.LoadStructs(dest)
+	return sb.LoadStructs(ctx, dest)
 }
 
 // InfileOptions provides options for the function LoadDataInfile. Some fields
@@ -261,7 +279,7 @@ type InfileOptions struct {
 // https://godoc.org/github.com/go-sql-driver/mysql#RegisterLocalFile. To ignore
 // foreign key constraints during the load operation, issue a SET
 // foreign_key_checks = 0 statement before executing LOAD DATA.
-func (t *Table) LoadDataInfile(execer dbr.Execer, filePath string, o InfileOptions) error {
+func (t *Table) LoadDataInfile(ctx context.Context, execer dbr.Execer, filePath string, o InfileOptions) error {
 	if t.IsView {
 		return nil
 	}
@@ -370,6 +388,6 @@ func (t *Table) LoadDataInfile(execer dbr.Execer, filePath string, o InfileOptio
 		o.Log.Debug("csdb.Table.Infile.SQL", log.String("sql", buf.String()))
 	}
 
-	_, err := execer.Exec(buf.String())
+	_, err := execer.ExecContext(ctx, buf.String())
 	return errors.NewFatal(err, "[csb] Infile for table %q failed with query: %q", t.Name, buf.String())
 }

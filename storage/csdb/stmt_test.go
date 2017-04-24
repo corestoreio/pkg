@@ -15,6 +15,7 @@
 package csdb_test
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	golog "log"
@@ -232,7 +233,7 @@ func TestResurrectStmtRealDB(t *testing.T) {
 	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Close SQL: "REPLACE INTO`))
 	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Prepare SQL: "REPLACE INTO`))
 
-	res, err := dbc.NewSession().DeleteFrom("core_config_data").Where(dbr.Condition("path like \"RSgopher%\"")).Exec()
+	res, err := dbc.DeleteFrom("core_config_data").Where(dbr.Condition("path like \"RSgopher%\"")).Exec(context.TODO())
 	assert.NoError(t, err)
 	ar, err := res.RowsAffected()
 	assert.NoError(t, err)

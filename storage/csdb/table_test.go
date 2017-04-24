@@ -17,11 +17,12 @@ package csdb_test
 import (
 	"testing"
 
+	"context"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,15 +37,6 @@ const (
 
 var tableMap *csdb.Tables
 
-// Returns a session that's not backed by a database
-func createFakeSession() *dbr.Session {
-	cxn, err := dbr.NewConnection()
-	if err != nil {
-		panic(err)
-	}
-	return cxn.NewSession()
-}
-
 func init() {
 	tableMap = csdb.MustNewTables(
 		csdb.WithTable(
@@ -54,7 +46,7 @@ func init() {
 				Field:      ("category_id"),
 				ColumnType: ("int(10) unsigned"),
 				Key:        ("MUL"),
-				Default:    null.StringFrom("0"),
+				Default:    dbr.MakeNullString("0"),
 				Extra:      (""),
 			},
 			&csdb.Column{
@@ -72,7 +64,7 @@ func init() {
 				Field:      ("category_id"),
 				ColumnType: ("int(10) unsigned"),
 				Key:        ("PRI"),
-				Default:    null.StringFrom("0"),
+				Default:    dbr.MakeNullString("0"),
 				Extra:      (""),
 			},
 			&csdb.Column{
@@ -89,14 +81,14 @@ func init() {
 		&csdb.Column{
 			Field:      ("category_id"),
 			ColumnType: ("int(10) unsigned"),
-			Default:    null.StringFrom("0"),
+			Default:    dbr.MakeNullString("0"),
 			Extra:      (""),
 		},
 		&csdb.Column{
 			Field:      ("product_id"),
 			ColumnType: ("int(10) unsigned"),
 			Key:        (""),
-			Default:    null.StringFrom("0"),
+			Default:    dbr.MakeNullString("0"),
 			Extra:      (""),
 		},
 		&csdb.Column{
@@ -260,14 +252,14 @@ func TestTable_Truncate(t *testing.T) {
 		}()
 
 		dbMock.ExpectExec("TRUNCATE TABLE `catalog_category_anc_categs_index_tmp`").WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Truncate(dbc.DB)
+		err := tableMap.MustTable(table2).Truncate(context.TODO(), dbc.DB)
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := csdb.NewTable("product")
 		tbl.IsView = true
-		err := tbl.Rename(nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Rename(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 }
@@ -286,14 +278,14 @@ func TestTable_Rename(t *testing.T) {
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Rename(dbc.DB, "catalog_category_anc_categs")
+		err := tableMap.MustTable(table2).Rename(context.TODO(), dbc.DB, "catalog_category_anc_categs")
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := csdb.NewTable("product")
 		tbl.IsView = true
-		err := tbl.Rename(nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Rename(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 }
@@ -313,14 +305,14 @@ func TestTable_Swap(t *testing.T) {
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs_index_tmp_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_[0-9]+` TO `catalog_category_anc_categs_NEW`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Swap(dbc.DB, "catalog_category_anc_categs_NEW")
+		err := tableMap.MustTable(table2).Swap(context.TODO(), dbc.DB, "catalog_category_anc_categs_NEW")
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := csdb.NewTable("product")
 		tbl.IsView = true
-		err := tbl.Swap(nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
+		err := tbl.Swap(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 }
@@ -339,13 +331,13 @@ func TestTable_Drop(t *testing.T) {
 
 		dbMock.ExpectExec("DROP TABLE IF EXISTS `catalog_category_anc_categs_index_tmp`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Drop(dbc.DB)
+		err := tableMap.MustTable(table2).Drop(context.TODO(), dbc.DB)
 		assert.NoError(t, err, "%+v", err)
 	})
 	t.Run("Invalid table Name", func(t *testing.T) {
 		tbl := csdb.NewTable("produ™€ct")
 		tbl.IsView = true
-		err := tbl.Drop(nil)
+		err := tbl.Drop(context.TODO(), nil)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 }
@@ -365,7 +357,8 @@ func TestTable_LoadDataInfile(t *testing.T) {
 
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' INTO TABLE `admin_user` (user_id,email,username) ;")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table4).LoadDataInfile(dbc.DB, "non-existent.csv", csdb.InfileOptions{})
+
+		err := tableMap.MustTable(table4).LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{})
 		assert.NoError(t, err, "%+v", err)
 	})
 
@@ -381,7 +374,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' REPLACE  INTO TABLE `admin_user` FIELDS TERMINATED BY '|' OPTIONALLY  ENCLOSED BY '+' ESCAPED BY '\"'\n LINES  TERMINATED BY '\r\n' STARTING BY '###'\nIGNORE 1 LINES\n (user_id,@email,@username)\nSET username=UPPER(@username),\nemail=UPPER(@email);")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table4).LoadDataInfile(dbc.DB, "non-existent.csv", csdb.InfileOptions{
+		err := tableMap.MustTable(table4).LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{
 			Replace:                    true,
 			FieldsTerminatedBy:         "|",
 			FieldsOptionallyEnclosedBy: true,

@@ -21,9 +21,9 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/magento"
-	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,12 +53,12 @@ func TestLoadColumns_Mage21(t *testing.T) {
 		wantJoinFields string
 	}{
 		{"core_config_data",
-			"csdb.Columns{\n&csdb.Column{Field: \"config_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Config Id\", },\n&csdb.Column{Field: \"scope\", Pos: 2, Default: null.StringFrom(\"default\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: null.Int64From(8), ColumnType: \"varchar(8)\", Key: \"MUL\", Comment: \"Config Scope\", },\n&csdb.Column{Field: \"scope_id\", Pos: 3, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(11)\", Comment: \"Config Scope Id\", },\n&csdb.Column{Field: \"path\", Pos: 4, Default: null.StringFrom(\"general\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: null.Int64From(255), ColumnType: \"varchar(255)\", Comment: \"Config Path\", },\n&csdb.Column{Field: \"value\", Pos: 5, Null: \"YES\", DataType: \"text\", CharMaxLength: null.Int64From(65535), ColumnType: \"text\", Comment: \"Config Value\", },\n}\n",
+			"csdb.Columns{\n&csdb.Column{Field: \"config_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: dbr.MakeNullInt64(10), Scale: dbr.MakeNullInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Config Id\", },\n&csdb.Column{Field: \"scope\", Pos: 2, Default: dbr.MakeNullString(\"default\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: dbr.MakeNullInt64(8), ColumnType: \"varchar(8)\", Key: \"MUL\", Comment: \"Config Scope\", },\n&csdb.Column{Field: \"scope_id\", Pos: 3, Default: dbr.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dbr.MakeNullInt64(10), Scale: dbr.MakeNullInt64(0), ColumnType: \"int(11)\", Comment: \"Config Scope Id\", },\n&csdb.Column{Field: \"path\", Pos: 4, Default: dbr.MakeNullString(\"general\"), Null: \"NO\", DataType: \"varchar\", CharMaxLength: dbr.MakeNullInt64(255), ColumnType: \"varchar(255)\", Comment: \"Config Path\", },\n&csdb.Column{Field: \"value\", Pos: 5, Null: \"YES\", DataType: \"text\", CharMaxLength: dbr.MakeNullInt64(65535), ColumnType: \"text\", Comment: \"Config Value\", },\n}\n",
 			nil,
 			"config_id_scope_scope_id_path_value",
 		},
 		{"catalog_category_product",
-			"csdb.Columns{\n&csdb.Column{Field: \"entity_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(11)\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Entity ID\", },\n&csdb.Column{Field: \"category_id\", Pos: 2, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Category ID\", },\n&csdb.Column{Field: \"product_id\", Pos: 3, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Product ID\", },\n&csdb.Column{Field: \"position\", Pos: 4, Default: null.StringFrom(\"0\"), Null: \"NO\", DataType: \"int\", Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: \"int(11)\", Comment: \"Position\", },\n}\n",
+			"csdb.Columns{\n&csdb.Column{Field: \"entity_id\", Pos: 1, Null: \"NO\", DataType: \"int\", Precision: dbr.MakeNullInt64(10), Scale: dbr.MakeNullInt64(0), ColumnType: \"int(11)\", Key: \"PRI\", Extra: \"auto_increment\", Comment: \"Entity ID\", },\n&csdb.Column{Field: \"category_id\", Pos: 2, Default: dbr.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dbr.MakeNullInt64(10), Scale: dbr.MakeNullInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Category ID\", },\n&csdb.Column{Field: \"product_id\", Pos: 3, Default: dbr.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dbr.MakeNullInt64(10), Scale: dbr.MakeNullInt64(0), ColumnType: \"int(10) unsigned\", Key: \"PRI\", Comment: \"Product ID\", },\n&csdb.Column{Field: \"position\", Pos: 4, Default: dbr.MakeNullString(\"0\"), Null: \"NO\", DataType: \"int\", Precision: dbr.MakeNullInt64(10), Scale: dbr.MakeNullInt64(0), ColumnType: \"int(11)\", Comment: \"Position\", },\n}\n",
 			nil,
 			"entity_id_category_id_product_id_position",
 		},
@@ -95,13 +95,13 @@ func TestColumns(t *testing.T) {
 			mustStructure(table1).Columns.PrimaryKeys().Len(),
 			0,
 			mustStructure(table1).Columns.GoString(),
-			"csdb.Columns{\n&csdb.Column{Field: \"category_id\", Default: null.StringFrom(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"MUL\", },\n&csdb.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", Key: \"MUL\", },\n}",
+			"csdb.Columns{\n&csdb.Column{Field: \"category_id\", Default: dbr.MakeNullString(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"MUL\", },\n&csdb.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", Key: \"MUL\", },\n}",
 		},
 		{
 			mustStructure(table2).Columns.PrimaryKeys().Len(),
 			1,
 			mustStructure(table2).Columns.GoString(),
-			"csdb.Columns{\n&csdb.Column{Field: \"category_id\", Default: null.StringFrom(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"PRI\", },\n&csdb.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", },\n}",
+			"csdb.Columns{\n&csdb.Column{Field: \"category_id\", Default: dbr.MakeNullString(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"PRI\", },\n&csdb.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", },\n}",
 		},
 		{
 			mustStructure(table4).Columns.UniqueKeys().Len(), 1,
@@ -144,7 +144,7 @@ func TestColumnsMap(t *testing.T) {
 			Field:      (`category_id131`),
 			ColumnType: (`int(10) unsigned`),
 			Key:        (`PRI`),
-			Default:    null.StringFrom(`0`),
+			Default:    dbr.MakeNullString(`0`),
 			Extra:      (``),
 		},
 		&csdb.Column{
@@ -152,7 +152,7 @@ func TestColumnsMap(t *testing.T) {
 			ColumnType: (`smallint(2) unsigned`),
 			Null:       "YES",
 			Key:        (``),
-			Default:    null.StringFrom(`0`),
+			Default:    dbr.MakeNullString(`0`),
 			Extra:      (``),
 		},
 	}
@@ -164,10 +164,10 @@ func TestColumnsMap(t *testing.T) {
 	colsWant := csdb.Columns{
 		&csdb.Column{Field: (`category_id1312`),
 			ColumnType: (`int(10) unsigned`), Key: (`PRI`),
-			Default: null.StringFrom(`0`), Extra: (``)},
+			Default: dbr.MakeNullString(`0`), Extra: (``)},
 		&csdb.Column{Field: (`is_root_category1802`),
 			ColumnType: (`smallint(2) unsigned`), Null: "YES",
-			Key: (``), Default: null.StringFrom(`0`), Extra: (``)},
+			Key: (``), Default: dbr.MakeNullString(`0`), Extra: (``)},
 	}
 
 	assert.Exactly(t, colsWant, colsHave)
@@ -180,7 +180,7 @@ func TestColumnsFilter(t *testing.T) {
 			Field:      (`category_id131`),
 			ColumnType: (`int(10) unsigned`),
 			Key:        (`PRI`),
-			Default:    null.StringFrom(`0`),
+			Default:    dbr.MakeNullString(`0`),
 			Extra:      (``),
 		},
 		&csdb.Column{
@@ -188,7 +188,7 @@ func TestColumnsFilter(t *testing.T) {
 			ColumnType: (`smallint(2) unsigned`),
 			Null:       "YES",
 			Key:        (``),
-			Default:    null.StringFrom(`0`),
+			Default:    dbr.MakeNullString(`0`),
 			Extra:      (``),
 		},
 	}
@@ -196,7 +196,7 @@ func TestColumnsFilter(t *testing.T) {
 		return c.Field == "is_root_category180"
 	})
 	colsWant := csdb.Columns{
-		&csdb.Column{Field: (`is_root_category180`), ColumnType: (`smallint(2) unsigned`), Null: "YES", Key: (``), Default: null.StringFrom(`0`), Extra: (``)},
+		&csdb.Column{Field: (`is_root_category180`), ColumnType: (`smallint(2) unsigned`), Null: "YES", Key: (``), Default: dbr.MakeNullString(`0`), Extra: (``)},
 	}
 
 	assert.Exactly(t, colsWant, colsHave)
@@ -214,7 +214,7 @@ func TestGetGoPrimitive(t *testing.T) {
 				Field:    (`category_id131`),
 				DataType: `int`,
 				Key:      (`PRI`),
-				Default:  null.StringFrom(`0`),
+				Default:  dbr.MakeNullString(`0`),
 				Extra:    (``),
 			},
 			false,
@@ -226,7 +226,7 @@ func TestGetGoPrimitive(t *testing.T) {
 				DataType: (`int`),
 				Null:     "YES",
 				Key:      (`PRI`),
-				Default:  null.StringFrom(`0`),
+				Default:  dbr.MakeNullString(`0`),
 				Extra:    (``),
 			},
 			false,
@@ -238,11 +238,11 @@ func TestGetGoPrimitive(t *testing.T) {
 				DataType: (`int`),
 				Null:     "YES",
 				Key:      (`PRI`),
-				Default:  null.StringFrom(`0`),
+				Default:  dbr.MakeNullString(`0`),
 				Extra:    (``),
 			},
 			true,
-			"null.Int64",
+			"dbr.NullInt64",
 		},
 
 		{
@@ -251,7 +251,7 @@ func TestGetGoPrimitive(t *testing.T) {
 				DataType: (`smallint`),
 				Null:     "YES",
 				Key:      (``),
-				Default:  null.StringFrom(`0`),
+				Default:  dbr.MakeNullString(`0`),
 				Extra:    (``),
 			},
 			false,
@@ -263,11 +263,11 @@ func TestGetGoPrimitive(t *testing.T) {
 				DataType: (`smallint`),
 				Null:     "YES",
 				Key:      (``),
-				Default:  null.StringFrom(`0`),
+				Default:  dbr.MakeNullString(`0`),
 				Extra:    (``),
 			},
 			true,
-			"null.Bool",
+			"dbr.NullBool",
 		},
 
 		{
@@ -276,11 +276,11 @@ func TestGetGoPrimitive(t *testing.T) {
 				DataType: (`varchar`),
 				Null:     "YES",
 				Key:      (``),
-				Default:  null.StringFrom(`0`),
+				Default:  dbr.MakeNullString(`0`),
 				Extra:    (``),
 			},
 			true,
-			"null.String",
+			"dbr.NullString",
 		},
 		{
 			csdb.Column{
@@ -323,7 +323,7 @@ func TestGetGoPrimitive(t *testing.T) {
 			csdb.Column{
 				Field:    (`some_currencies_242`),
 				DataType: (`decimal`),
-				Default:  null.StringFrom(`0.0000`),
+				Default:  dbr.MakeNullString(`0.0000`),
 			},
 			true,
 			"money.Money",
@@ -334,17 +334,17 @@ func TestGetGoPrimitive(t *testing.T) {
 				Field:    (`weight_252`),
 				DataType: (`decimal`),
 				Null:     "YES",
-				Default:  null.StringFrom(`0.0000`),
+				Default:  dbr.MakeNullString(`0.0000`),
 			},
 			true,
-			"null.Float64",
+			"dbr.NullFloat64",
 		},
 		{
 			csdb.Column{
 				Field:    (`weight_263`),
 				DataType: (`double`),
 				Null:     "YES",
-				Default:  null.StringFrom(`0.0000`),
+				Default:  dbr.MakeNullString(`0.0000`),
 			},
 			false,
 			"float64",
@@ -355,7 +355,7 @@ func TestGetGoPrimitive(t *testing.T) {
 				Field:    (`created_at_274`),
 				DataType: (`date`),
 				Null:     "YES",
-				Default:  null.StringFrom(`0000-00-00`),
+				Default:  dbr.MakeNullString(`0000-00-00`),
 			},
 			false,
 			"time.Time",
@@ -365,10 +365,10 @@ func TestGetGoPrimitive(t *testing.T) {
 				Field:    (`created_at_274`),
 				DataType: (`date`),
 				Null:     "YES",
-				Default:  null.StringFrom(`0000-00-00`),
+				Default:  dbr.MakeNullString(`0000-00-00`),
 			},
 			true,
-			"null.Time",
+			"dbr.NullTime",
 		},
 	}
 
@@ -384,25 +384,25 @@ func TestGetGoPrimitive(t *testing.T) {
 }
 
 var adminUserColumns = csdb.Columns{
-	&csdb.Column{Field: "user_id", Pos: 1, Default: null.String{}, Null: "NO", DataType: "int", CharMaxLength: null.Int64{}, Precision: null.Int64From(10), Scale: null.Int64From(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "User ID"},
-	&csdb.Column{Field: "firstname", Pos: 2, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.Int64From(32), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(32)", Key: "", Extra: "", Comment: "User First Name"},
-	&csdb.Column{Field: "lastname", Pos: 3, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.Int64From(32), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(32)", Key: "", Extra: "", Comment: "User Last Name"},
-	&csdb.Column{Field: "email", Pos: 4, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.Int64From(128), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(128)", Key: "", Extra: "", Comment: "User Email"},
-	&csdb.Column{Field: "username", Pos: 5, Default: null.String{}, Null: "YES", DataType: "varchar", CharMaxLength: null.Int64From(40), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(40)", Key: "UNI", Extra: "", Comment: "User Login"},
-	&csdb.Column{Field: "password", Pos: 6, Default: null.String{}, Null: "NO", DataType: "varchar", CharMaxLength: null.Int64From(255), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(255)", Key: "", Extra: "", Comment: "User Password"},
-	&csdb.Column{Field: "created", Pos: 7, Default: null.StringFrom(`0000-00-00 00:00:00`), Null: "NO", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "User Created Time"},
-	&csdb.Column{Field: "modified", Pos: 8, Default: null.StringFrom(`CURRENT_TIMESTAMP`), Null: "NO", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "on update CURRENT_TIMESTAMP", Comment: "User Modified Time"},
-	&csdb.Column{Field: "logdate", Pos: 9, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "User Last Login Time"},
-	&csdb.Column{Field: "lognum", Pos: 10, Default: null.StringFrom(`0`), Null: "NO", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.Int64From(5), Scale: null.Int64From(0), ColumnType: "smallint(5) unsigned", Key: "", Extra: "", Comment: "User Login Number"},
-	&csdb.Column{Field: "reload_acl_flag", Pos: 11, Default: null.StringFrom(`0`), Null: "NO", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.Int64From(5), Scale: null.Int64From(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "Reload ACL"},
-	&csdb.Column{Field: "is_active", Pos: 12, Default: null.StringFrom(`1`), Null: "NO", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.Int64From(5), Scale: null.Int64From(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "User Is Active"},
-	&csdb.Column{Field: "extra", Pos: 13, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.Int64From(65535), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "text", Key: "", Extra: "", Comment: "User Extra Data"},
-	&csdb.Column{Field: "rp_token", Pos: 14, Default: null.String{}, Null: "YES", DataType: "text", CharMaxLength: null.Int64From(65535), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "text", Key: "", Extra: "", Comment: "Reset Password Link Token"},
-	&csdb.Column{Field: "rp_token_created_at", Pos: 15, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "Reset Password Link Token Creation Date"},
-	&csdb.Column{Field: "interface_locale", Pos: 16, Default: null.StringFrom(`en_US`), Null: "NO", DataType: "varchar", CharMaxLength: null.Int64From(16), Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "varchar(16)", Key: "", Extra: "", Comment: "Backend interface locale"},
-	&csdb.Column{Field: "failures_num", Pos: 17, Default: null.StringFrom(`0`), Null: "YES", DataType: "smallint", CharMaxLength: null.Int64{}, Precision: null.Int64From(5), Scale: null.Int64From(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "Failure Number"},
-	&csdb.Column{Field: "first_failure", Pos: 18, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "First Failure"},
-	&csdb.Column{Field: "lock_expires", Pos: 19, Default: null.String{}, Null: "YES", DataType: "timestamp", CharMaxLength: null.Int64{}, Precision: null.Int64{}, Scale: null.Int64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "Expiration Lock Dates"},
+	&csdb.Column{Field: "user_id", Pos: 1, Default: dbr.NullString{}, Null: "NO", DataType: "int", CharMaxLength: dbr.NullInt64{}, Precision: dbr.MakeNullInt64(10), Scale: dbr.MakeNullInt64(0), ColumnType: "int(10) unsigned", Key: "PRI", Extra: "auto_increment", Comment: "User ID"},
+	&csdb.Column{Field: "firstname", Pos: 2, Default: dbr.NullString{}, Null: "YES", DataType: "varchar", CharMaxLength: dbr.MakeNullInt64(32), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "varchar(32)", Key: "", Extra: "", Comment: "User First Name"},
+	&csdb.Column{Field: "lastname", Pos: 3, Default: dbr.NullString{}, Null: "YES", DataType: "varchar", CharMaxLength: dbr.MakeNullInt64(32), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "varchar(32)", Key: "", Extra: "", Comment: "User Last Name"},
+	&csdb.Column{Field: "email", Pos: 4, Default: dbr.NullString{}, Null: "YES", DataType: "varchar", CharMaxLength: dbr.MakeNullInt64(128), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "varchar(128)", Key: "", Extra: "", Comment: "User Email"},
+	&csdb.Column{Field: "username", Pos: 5, Default: dbr.NullString{}, Null: "YES", DataType: "varchar", CharMaxLength: dbr.MakeNullInt64(40), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "varchar(40)", Key: "UNI", Extra: "", Comment: "User Login"},
+	&csdb.Column{Field: "password", Pos: 6, Default: dbr.NullString{}, Null: "NO", DataType: "varchar", CharMaxLength: dbr.MakeNullInt64(255), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "varchar(255)", Key: "", Extra: "", Comment: "User Password"},
+	&csdb.Column{Field: "created", Pos: 7, Default: dbr.MakeNullString(`0000-00-00 00:00:00`), Null: "NO", DataType: "timestamp", CharMaxLength: dbr.NullInt64{}, Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "User Created Time"},
+	&csdb.Column{Field: "modified", Pos: 8, Default: dbr.MakeNullString(`CURRENT_TIMESTAMP`), Null: "NO", DataType: "timestamp", CharMaxLength: dbr.NullInt64{}, Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "on update CURRENT_TIMESTAMP", Comment: "User Modified Time"},
+	&csdb.Column{Field: "logdate", Pos: 9, Default: dbr.NullString{}, Null: "YES", DataType: "timestamp", CharMaxLength: dbr.NullInt64{}, Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "User Last Login Time"},
+	&csdb.Column{Field: "lognum", Pos: 10, Default: dbr.MakeNullString(`0`), Null: "NO", DataType: "smallint", CharMaxLength: dbr.NullInt64{}, Precision: dbr.MakeNullInt64(5), Scale: dbr.MakeNullInt64(0), ColumnType: "smallint(5) unsigned", Key: "", Extra: "", Comment: "User Login Number"},
+	&csdb.Column{Field: "reload_acl_flag", Pos: 11, Default: dbr.MakeNullString(`0`), Null: "NO", DataType: "smallint", CharMaxLength: dbr.NullInt64{}, Precision: dbr.MakeNullInt64(5), Scale: dbr.MakeNullInt64(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "Reload ACL"},
+	&csdb.Column{Field: "is_active", Pos: 12, Default: dbr.MakeNullString(`1`), Null: "NO", DataType: "smallint", CharMaxLength: dbr.NullInt64{}, Precision: dbr.MakeNullInt64(5), Scale: dbr.MakeNullInt64(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "User Is Active"},
+	&csdb.Column{Field: "extra", Pos: 13, Default: dbr.NullString{}, Null: "YES", DataType: "text", CharMaxLength: dbr.MakeNullInt64(65535), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "text", Key: "", Extra: "", Comment: "User Extra Data"},
+	&csdb.Column{Field: "rp_token", Pos: 14, Default: dbr.NullString{}, Null: "YES", DataType: "text", CharMaxLength: dbr.MakeNullInt64(65535), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "text", Key: "", Extra: "", Comment: "Reset Password Link Token"},
+	&csdb.Column{Field: "rp_token_created_at", Pos: 15, Default: dbr.NullString{}, Null: "YES", DataType: "timestamp", CharMaxLength: dbr.NullInt64{}, Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "Reset Password Link Token Creation Date"},
+	&csdb.Column{Field: "interface_locale", Pos: 16, Default: dbr.MakeNullString(`en_US`), Null: "NO", DataType: "varchar", CharMaxLength: dbr.MakeNullInt64(16), Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "varchar(16)", Key: "", Extra: "", Comment: "Backend interface locale"},
+	&csdb.Column{Field: "failures_num", Pos: 17, Default: dbr.MakeNullString(`0`), Null: "YES", DataType: "smallint", CharMaxLength: dbr.NullInt64{}, Precision: dbr.MakeNullInt64(5), Scale: dbr.MakeNullInt64(0), ColumnType: "smallint(6)", Key: "", Extra: "", Comment: "Failure Number"},
+	&csdb.Column{Field: "first_failure", Pos: 18, Default: dbr.NullString{}, Null: "YES", DataType: "timestamp", CharMaxLength: dbr.NullInt64{}, Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "First Failure"},
+	&csdb.Column{Field: "lock_expires", Pos: 19, Default: dbr.NullString{}, Null: "YES", DataType: "timestamp", CharMaxLength: dbr.NullInt64{}, Precision: dbr.NullInt64{}, Scale: dbr.NullInt64{}, ColumnType: "timestamp", Key: "", Extra: "", Comment: "Expiration Lock Dates"},
 }
 
 func TestColumnsSort(t *testing.T) {
@@ -476,14 +476,14 @@ var benchmarkColumnsJoinFieldsData = csdb.Columns{
 		Field:      "category_id",
 		ColumnType: ("int(10) unsigned"),
 		Key:        "",
-		Default:    null.StringFrom("0"),
+		Default:    dbr.MakeNullString("0"),
 		Extra:      (""),
 	},
 	&csdb.Column{
 		Field:      "product_id",
 		ColumnType: ("int(10) unsigned"),
 		Key:        (""),
-		Default:    null.StringFrom("0"),
+		Default:    dbr.MakeNullString("0"),
 		Extra:      (""),
 	},
 	&csdb.Column{

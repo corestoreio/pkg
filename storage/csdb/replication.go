@@ -15,6 +15,7 @@
 package csdb
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -41,7 +42,7 @@ type MasterStatus struct {
 // Load retrieves the current master status from the database and puts it into
 // variable ms.
 func (ms *MasterStatus) Load(db dbr.QueryRower) error {
-	row := db.QueryRow("SHOW MASTER STATUS")
+	row := db.QueryRowContext(context.Background(), "SHOW MASTER STATUS")
 	if err := row.Scan(&ms.File, &ms.Position, &ms.BinlogDoDB, &ms.BinlogIgnoreDB, &ms.ExecutedGTIDSet); err != nil {
 		return errors.Wrap(err, "[csdb] ShowMasterStatus")
 	}

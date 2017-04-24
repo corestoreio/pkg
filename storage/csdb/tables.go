@@ -15,6 +15,7 @@
 package csdb
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"sync"
@@ -55,21 +56,22 @@ type Tables struct {
 	tn map[string]*Table
 }
 
-// WithObjectFromQuery creates the new view or table from the SELECT query and
+// WithTableOrViewFromQuery creates the new view or table from the SELECT query and
 // adds it to the internal table manager including all loaded column
 // definitions. If providing true in the argument "dropIfExists" the view or
 // table gets first dropped, if exists, and then created. Argument typ can be
 // only `table` or `view`.
-func WithObjectFromQuery(db interface {
+func WithTableOrViewFromQuery(db interface {
 	dbr.Execer
 	dbr.Querier
 }, typ string, idx int, objectName string, query string, dropIfExists ...bool) TableOption {
+	ctx := context.Background()
 	return TableOption{
 		priority: 10,
 		fn: func(tm *Tables) error {
 
 			if err := IsValidIdentifier(objectName); err != nil {
-				return errors.Wrapf(err, "[csdb] WithObjectFromQuery.IsValidIdentifier")
+				return errors.Wrapf(err, "[csdb] WithTableOrViewFromQuery.IsValidIdentifier")
 			}
 
 			var viewOrTable string
@@ -84,12 +86,12 @@ func WithObjectFromQuery(db interface {
 
 			vnq := dbr.Quoter.Quote(objectName)
 			if len(dropIfExists) > 0 && dropIfExists[0] {
-				if _, err := db.Exec("DROP " + viewOrTable + " IF EXISTS " + vnq); err != nil {
+				if _, err := db.ExecContext(ctx, "DROP "+viewOrTable+" IF EXISTS "+vnq); err != nil {
 					return errors.Wrapf(err, "[csdb] Drop view failed %q", objectName)
 				}
 			}
 
-			_, err := db.Exec("CREATE " + viewOrTable + " " + vnq + " AS " + query)
+			_, err := db.ExecContext(ctx, "CREATE "+viewOrTable+" "+vnq+" AS "+query)
 			if err != nil {
 				return errors.Wrapf(err, "[csdb] Create view %q failed", objectName)
 			}
@@ -199,7 +201,7 @@ func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption {
 	}
 	return TableOption{
 		fn: func(tm *Tables) error {
-			rows, err := querier.Query(qry)
+			rows, err := querier.QueryContext(context.Background(), qry)
 			if err != nil {
 				return errors.Wrapf(err, "[csdb] Query %q failed", qry)
 			}

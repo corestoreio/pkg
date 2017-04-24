@@ -15,6 +15,7 @@
 package csdb
 
 import (
+	"context"
 	"database/sql"
 	"sync"
 	"time"
@@ -164,7 +165,7 @@ func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 	}
 
 	var err error
-	su.stmt, err = su.db.Prepare(su.sqlRaw)
+	su.stmt, err = su.db.PrepareContext(context.Background(), su.sqlRaw)
 	if err != nil {
 		return nil, errors.Wrapf(err, "[csdb] DB.Prepare %q", su.sqlRaw)
 	}

@@ -16,6 +16,7 @@ package csdb
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"hash/fnv"
@@ -25,7 +26,6 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/corestoreio/csfw/util/null"
 	"github.com/corestoreio/csfw/util/slices"
 	"github.com/corestoreio/errors"
 )
@@ -46,16 +46,16 @@ type Columns []*Column
 // Column contains information about one database table column retrieved from
 // information_schema.COLUMNS
 type Column struct {
-	Field   string      `db:"COLUMN_NAME"`      //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
-	Pos     int64       `db:"ORDINAL_POSITION"` //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
-	Default null.String `db:"COLUMN_DEFAULT"`   //`COLUMN_DEFAULT` longtext,
-	Null    string      `db:"IS_NULLABLE"`      //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
+	Field   string         `db:"COLUMN_NAME"`      //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
+	Pos     int64          `db:"ORDINAL_POSITION"` //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
+	Default dbr.NullString `db:"COLUMN_DEFAULT"`   //`COLUMN_DEFAULT` longtext,
+	Null    string         `db:"IS_NULLABLE"`      //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
 	// DataType contains the basic type of a column like smallint, int, mediumblob,
 	// float, double, etc... but always transformed to lower case.
-	DataType      string     `db:"DATA_TYPE"`                //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
-	CharMaxLength null.Int64 `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
-	Precision     null.Int64 `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
-	Scale         null.Int64 `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
+	DataType      string        `db:"DATA_TYPE"`                //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
+	CharMaxLength dbr.NullInt64 `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
+	Precision     dbr.NullInt64 `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
+	Scale         dbr.NullInt64 `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
 	// ColumnType full SQL string of the column type
 	ColumnType string `db:"COLUMN_TYPE"` //`COLUMN_TYPE` longtext NOT NULL,
 	// Key primary or unique or ...
@@ -91,33 +91,24 @@ const selAllTablesColumns = `SELECT
 // the argument `tables`.
 func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
 
-	//sel := dbr.NewSelect("information_schema.COLUMNS").AddColumns(
-	//	"TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
-	//	"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
-	//	"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").
-	//	Where(dbr.Condition(`TABLE_SCHEMA=DATABASE()`))
-	//sel.DB.Querier = db
-	//if len(tables) > 0 {
-	//	args := make([]interface{}, len(tables))
-	//	for i, t := range tables {
-	//		args[i] = t
-	//	}
-	//	sel.Where(dbr.Condition("TABLE_NAME IN (?)", args...))
-	//}
-
+	ctx := context.Background()
 	var rows *sql.Rows
-	var err error
+
 	if len(tables) == 0 {
-		rows, err = db.Query(selAllTablesColumns)
+		var err error
+		rows, err = db.QueryContext(ctx, selAllTablesColumns)
+		if err != nil {
+			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
+		}
 	} else {
-		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.ArgStrings(tables...))
+		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.ArgString(tables...))
 		if err != nil {
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
 		}
-		rows, err = db.Query(sqlStr, args...)
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
+		rows, err = db.QueryContext(ctx, sqlStr, args...)
+		if err != nil {
+			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
+		}
 	}
 	defer rows.Close()
 
@@ -323,7 +314,7 @@ func (c *Column) GoString() string {
 		fmt.Fprintf(buf, "Pos: %d, ", c.Pos)
 	}
 	if c.Default.Valid {
-		fmt.Fprintf(buf, "Default: null.StringFrom(%q), ", c.Default.String)
+		fmt.Fprintf(buf, "Default: dbr.MakeNullString(%q), ", c.Default.String)
 	}
 	if c.Null != "" {
 		fmt.Fprintf(buf, "Null: %q, ", c.Null)
@@ -332,13 +323,13 @@ func (c *Column) GoString() string {
 		fmt.Fprintf(buf, "DataType: %q, ", c.DataType)
 	}
 	if c.CharMaxLength.Valid {
-		fmt.Fprintf(buf, "CharMaxLength: null.Int64From(%d), ", c.CharMaxLength.Int64)
+		fmt.Fprintf(buf, "CharMaxLength: dbr.MakeNullInt64(%d), ", c.CharMaxLength.Int64)
 	}
 	if c.Precision.Valid {
-		fmt.Fprintf(buf, "Precision: null.Int64From(%d), ", c.Precision.Int64)
+		fmt.Fprintf(buf, "Precision: dbr.MakeNullInt64(%d), ", c.Precision.Int64)
 	}
 	if c.Scale.Valid {
-		fmt.Fprintf(buf, "Scale: null.Int64From(%d), ", c.Scale.Int64)
+		fmt.Fprintf(buf, "Scale: dbr.MakeNullInt64(%d), ", c.Scale.Int64)
 	}
 	if c.ColumnType != "" {
 		fmt.Fprintf(buf, "ColumnType: %q, ", c.ColumnType)
@@ -476,32 +467,32 @@ func (c *Column) goPrimitive(useNullType bool) string {
 	case colTypeBool:
 		goType = "bool"
 		if isNull {
-			goType = "null.Bool"
+			goType = "dbr.NullBool"
 		}
 	case colTypeInt:
 		goType = "int64"
 		if isNull {
-			goType = "null.Int64"
+			goType = "dbr.NullInt64"
 		}
 	case colTypeString:
 		goType = "string"
 		if isNull {
-			goType = "null.String"
+			goType = "dbr.NullString"
 		}
 	case colTypeFloat:
 		goType = "float64"
 		if isNull {
-			goType = "null.Float64"
+			goType = "dbr.NullFloat64"
 		}
 	case colTypeDate:
 		goType = "time.Time"
 		if isNull {
-			goType = "null.Time"
+			goType = "dbr.NullTime"
 		}
 	case colTypeTime:
 		goType = "time.Time"
 		if isNull {
-			goType = "null.Time"
+			goType = "dbr.NullTime"
 		}
 	case colTypeMoney:
 		goType = "money.Money"

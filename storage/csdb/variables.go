@@ -17,6 +17,8 @@ package csdb
 import (
 	"database/sql"
 
+	"context"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 )
@@ -60,7 +62,7 @@ func (v *Variable) LoadOne(db dbr.QueryRower, name string) error {
 	if err := isValidVarName(name, false); err != nil {
 		return errors.Wrap(err, "[csdb] Variable.ShowVariable")
 	}
-	row := db.QueryRow("SHOW SESSION VARIABLES LIKE ?", name)
+	row := db.QueryRowContext(context.Background(), "SHOW SESSION VARIABLES LIKE ?", name)
 	if err := row.Scan(&v.Name, &v.Value); err != nil {
 		return errors.Wrap(err, "[csdb] ShowVariable")
 	}
@@ -75,12 +77,13 @@ func (vs *Variables) AppendFiltered(db dbr.Querier, name string) error {
 		return errors.Wrap(err, "[csdb] Variables.isValidVarName")
 	}
 
+	ctx := context.Background()
 	var err error
 	var rows *sql.Rows
 	if name != "" {
-		rows, err = db.Query("SHOW SESSION VARIABLES LIKE ?", name)
+		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES LIKE ?", name)
 	} else {
-		rows, err = db.Query("SHOW SESSION VARIABLES")
+		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES")
 	}
 	if err != nil {
 		return errors.Wrap(err, "[csdb] csdb.QueryContext")
