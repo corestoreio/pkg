@@ -52,8 +52,13 @@ func (q MysqlQuoter) ExprAlias(expression, aliasName string) string {
 // https://dev.mysql.com/doc/refman/5.7/en/identifier-qualifiers.html
 func (q MysqlQuoter) Quote(qualifierName ...string) string {
 	// way faster than fmt or buffer ...
-	if len(qualifierName) == 1 {
-		return quote + q.unQuote(qualifierName[0]) + quote
+	l := len(qualifierName)
+	idx1 := 0
+	if l == 2 && qualifierName[idx1] == "" {
+		idx1++
+	}
+	if l == 1 || idx1 == 1 {
+		return quote + q.unQuote(qualifierName[idx1]) + quote
 	}
 	return quote + q.unQuote(qualifierName[0]) + quote + "." + quote + q.unQuote(qualifierName[1]) + quote
 }
