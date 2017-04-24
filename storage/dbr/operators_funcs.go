@@ -73,7 +73,7 @@ func SQLIfNull(expressionAlias ...string) string {
 func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
 	w.WriteString("IFNULL(")
 	if isValidIdentifier(expressionAlias[0]) == 0 {
-		Quoter.quoteAs(w, expressionAlias[0])
+		Quoter.FquoteAs(w, expressionAlias[0])
 	} else {
 		w.WriteRune('(')
 		w.WriteString(expressionAlias[0])
@@ -81,7 +81,7 @@ func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
 	}
 	w.WriteRune(',')
 	if isValidIdentifier(expressionAlias[1]) == 0 {
-		Quoter.quoteAs(w, expressionAlias[1])
+		Quoter.FquoteAs(w, expressionAlias[1])
 	} else {
 		w.WriteRune('(')
 		w.WriteString(expressionAlias[1])

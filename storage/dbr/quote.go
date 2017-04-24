@@ -64,52 +64,53 @@ func (q MysqlQuoter) Quote(qualifierName ...string) string {
 // the last `alias` parts gets skipped.
 //		QuoteAs("f", "g", "h") 			// "`f` AS `g_h`"
 //		QuoteAs("e.entity_id", "ee") 	// `e`.`entity_id` AS `ee`
-func (q MysqlQuoter) QuoteAs(exprAlias ...string) string {
+func (q MysqlQuoter) QuoteAs(expressionAlias ...string) string {
 	buf := bufferpool.Get()
-	q.quoteAs(buf, exprAlias...)
+	q.FquoteAs(buf, expressionAlias...)
 	x := buf.String()
 	bufferpool.Put(buf)
 	return x
 }
 
-func (q MysqlQuoter) quoteAs(w queryWriter, parts ...string) {
+// FquoteAs same as QuoteAs but writes into w which is a bytes.Buffer.
+func (q MysqlQuoter) FquoteAs(w queryWriter, expressionAlias ...string) {
 
-	lp := len(parts)
-	if lp == 2 && parts[1] == "" {
+	lp := len(expressionAlias)
+	if lp == 2 && expressionAlias[1] == "" {
 		lp = 1
-		parts = parts[:1]
+		expressionAlias = expressionAlias[:1]
 	}
 
-	hasQuote0 := strings.ContainsRune(parts[0], quoteRune)
-	hasDot0 := strings.ContainsRune(parts[0], '.')
+	hasQuote0 := strings.ContainsRune(expressionAlias[0], quoteRune)
+	hasDot0 := strings.ContainsRune(expressionAlias[0], '.')
 
 	switch {
 	case lp == 1 && hasQuote0:
 		// already quoted
-		w.WriteString(parts[0])
+		w.WriteString(expressionAlias[0])
 		return
-	case lp > 1 && parts[1] == "" && !hasQuote0 && !hasDot0:
+	case lp > 1 && expressionAlias[1] == "" && !hasQuote0 && !hasDot0:
 		// must be quoted
-		q.quote(w, parts[0])
+		q.quote(w, expressionAlias[0])
 		return
 	case lp == 1 && !hasQuote0 && hasDot0:
-		q.splitDotAndQuote(w, parts[0])
+		q.splitDotAndQuote(w, expressionAlias[0])
 		return
-	case lp == 1 && parts[0] == "":
+	case lp == 1 && expressionAlias[0] == "":
 		// just an empty string
 		return
 	}
 
-	q.splitDotAndQuote(w, parts[0])
+	q.splitDotAndQuote(w, expressionAlias[0])
 	switch lp {
 	case 1:
 		// do nothing
 	case 2:
 		w.WriteString(" AS ")
-		q.quote(w, parts[1])
+		q.quote(w, expressionAlias[1])
 	default:
 		w.WriteString(" AS ")
-		q.quote(w, strings.Join(parts[1:], "_"))
+		q.quote(w, strings.Join(expressionAlias[1:], "_"))
 	}
 	return
 }

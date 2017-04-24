@@ -366,9 +366,9 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	}
 
 	w.WriteString(" FROM ")
-	tArgs, err := b.Table.QuoteAsWriter(w)
+	tArgs, err := b.Table.FquoteAs(w)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Selec.toSQL.Table.QuoteAsWriter")
+		return nil, errors.Wrap(err, "[dbr] Selec.toSQL.Table.FquoteAs")
 	}
 	args = append(args, tArgs...)
 
@@ -377,7 +377,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 			w.WriteRune(' ')
 			w.WriteString(f.JoinType)
 			w.WriteString(" JOIN ")
-			f.Table.QuoteAsWriter(w)
+			f.Table.FquoteAs(w)
 			if err := writeWhereFragmentsToSQL(f.OnConditions, w, &args, 'j'); err != nil {
 				return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
 			}

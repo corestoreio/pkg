@@ -220,7 +220,7 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 				writeOperator(w, f.Arguments[0].operator(), true)
 			}
 		} else {
-			Quoter.quoteAs(w, f.Condition)
+			Quoter.FquoteAs(w, f.Condition)
 
 			if f.Sub.Select != nil {
 				writeOperator(w, f.Sub.Operator, false)

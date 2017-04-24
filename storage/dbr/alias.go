@@ -30,17 +30,17 @@ func (t alias) QuoteAs() string {
 	return Quoter.QuoteAs(t.Expression, t.Alias)
 }
 
-// QuoteAsWriter writes the quote table and its maybe alias into w.
-func (t alias) QuoteAsWriter(w queryWriter) (Arguments, error) {
+// FquoteAs writes the quoted table and its maybe alias into w.
+func (t alias) FquoteAs(w queryWriter) (Arguments, error) {
 	if t.Select != nil {
 		w.WriteRune('(')
 		args, err := t.Select.toSQL(w)
 		w.WriteRune(')')
 		w.WriteString(" AS ")
 		Quoter.quote(w, t.Alias)
-		return args, errors.Wrap(err, "[dbr] QuoteAsWriter.SubSelect")
+		return args, errors.Wrap(err, "[dbr] FquoteAs.SubSelect")
 	}
-	Quoter.quoteAs(w, t.Expression, t.Alias)
+	Quoter.FquoteAs(w, t.Expression, t.Alias)
 	return nil, nil
 }
 

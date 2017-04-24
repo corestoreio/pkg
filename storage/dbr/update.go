@@ -182,7 +182,7 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	var args = make(Arguments, 0, len(b.SetClauses.Arguments)+len(b.WhereFragments))
 
 	buf.WriteString("UPDATE ")
-	b.Table.QuoteAsWriter(buf)
+	b.Table.FquoteAs(buf)
 	buf.WriteString(" SET ")
 
 	// Build SET clause SQL with placeholders and add values to args
@@ -190,7 +190,7 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		Quoter.quoteAs(buf, c)
+		Quoter.FquoteAs(buf, c)
 		buf.WriteByte('=')
 		if i < len(b.SetClauses.Arguments) {
 			arg := b.SetClauses.Arguments[i]
