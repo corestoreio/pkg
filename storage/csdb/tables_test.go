@@ -18,6 +18,8 @@ import (
 	"sort"
 	"testing"
 
+	"context"
+
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -196,7 +198,7 @@ func TestWithLoadColumnDefinitions_Integration(t *testing.T) {
 
 	i := 4711
 	tm0 := csdb.MustNewTables(
-		csdb.WithLoadColumnDefinitions(dbc.DB),
+		csdb.WithLoadColumnDefinitions(context.TODO(), dbc.DB),
 		csdb.WithTable(i, "admin_user"),
 	)
 
@@ -234,7 +236,7 @@ func TestWithLoadColumnDefinitions2(t *testing.T) {
 	i := 4711
 	tm0 := csdb.MustNewTables(
 		csdb.WithTable(i, "admin_user"),
-		csdb.WithLoadColumnDefinitions(dbc.DB),
+		csdb.WithLoadColumnDefinitions(context.TODO(), dbc.DB),
 	)
 
 	table, err2 := tm0.Table(i)
@@ -350,7 +352,7 @@ func TestWithTableLoadColumns(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Invalid Identifier", func(t *testing.T) {
-		tbls, err := csdb.NewTables(csdb.WithTableLoadColumns(nil, 0, "H€llo"))
+		tbls, err := csdb.NewTables(csdb.WithTableLoadColumns(context.TODO(), nil, 0, "H€llo"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
@@ -379,7 +381,7 @@ func TestWithTableLoadColumns(t *testing.T) {
 
 		i := 4711
 		tm0 := csdb.MustNewTables(
-			csdb.WithTableLoadColumns(dbc.DB, i, "admin_user"),
+			csdb.WithTableLoadColumns(context.TODO(), dbc.DB, i, "admin_user"),
 		)
 
 		table, err2 := tm0.Table(i)
@@ -392,13 +394,13 @@ func TestWithTableLoadColumns(t *testing.T) {
 func TestWithObjectFromQuery(t *testing.T) {
 
 	t.Run("Invalid type", func(t *testing.T) {
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(nil, "proc", 0, "asdasd", "SELECT * from"))
+		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), nil, "proc", 0, "asdasd", "SELECT * from"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsUnavailable(err), "%+v", err)
 	})
 
 	t.Run("Invalid object name", func(t *testing.T) {
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(nil, "proc", 0, "asdasd", "SELECT * from"))
+		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), nil, "proc", 0, "asdasd", "SELECT * from"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
@@ -416,7 +418,7 @@ func TestWithObjectFromQuery(t *testing.T) {
 		xErr := errors.NewAlreadyClosedf("Connection already closed")
 		dbMock.ExpectExec("DROP TABLE IF EXISTS `testTable`").WillReturnError(xErr)
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", true))
+		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", true))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -434,7 +436,7 @@ func TestWithObjectFromQuery(t *testing.T) {
 		xErr := errors.NewAlreadyClosedf("Connection already closed")
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).WillReturnError(xErr)
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", false))
+		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", false))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -456,7 +458,7 @@ func TestWithObjectFromQuery(t *testing.T) {
 
 		dbMock.ExpectQuery("SELEC.+\\s+FROM\\s+information_schema\\.COLUMNS").WillReturnError(xErr)
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", false))
+		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", 0, "testTable", "SELECT * FROM catalog_product_entity", false))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -480,7 +482,7 @@ func TestWithObjectFromQuery(t *testing.T) {
 			WillReturnRows(
 				cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(dbc.DB, "view", 10, "testTable", "SELECT * FROM core_config_data", false))
+		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "view", 10, "testTable", "SELECT * FROM core_config_data", false))
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}

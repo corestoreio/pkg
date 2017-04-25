@@ -20,6 +20,8 @@ import (
 	"sort"
 	"testing"
 
+	"context"
+
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -70,7 +72,7 @@ func TestLoadColumns_Mage21(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		tc, err := csdb.LoadColumns(dbc.DB, test.table)
+		tc, err := csdb.LoadColumns(context.TODO(), dbc.DB, test.table)
 		cols1 := tc[test.table]
 		if test.wantErr != nil {
 			assert.Error(t, err, "Index %d => %+v", i, err)
@@ -443,8 +445,10 @@ var benchmarkLoadColumnsHashWant = []byte{0x66, 0x73, 0x3c, 0x93, 0x11, 0x65, 0x
 
 // BenchmarkLoadColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
 // BenchmarkLoadColumns-4   	    2000	    748079 ns/op	   14364 B/op	     363 allocs/op
+// BenchmarkLoadColumns-4   	    2000	    782965 ns/op	   14241 B/op	     350 allocs/op
 func BenchmarkLoadColumns(b *testing.B) {
 	const tn = "eav_attribute"
+	ctx := context.TODO()
 	dbc, _ := cstesting.MustConnectDB()
 	if dbc == nil {
 		b.Skip("Environment DB DSN not found")
@@ -454,7 +458,7 @@ func BenchmarkLoadColumns(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkLoadColumns, err = csdb.LoadColumns(dbc.DB, tn)
+		benchmarkLoadColumns, err = csdb.LoadColumns(ctx, dbc.DB, tn)
 		if err != nil {
 			b.Error(err)
 		}
@@ -466,7 +470,7 @@ func BenchmarkLoadColumns(b *testing.B) {
 	if 0 != bytes.Compare(hashHave, benchmarkLoadColumnsHashWant) {
 		b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkLoadColumnsHashWant)
 	}
-	b.Log(benchmarkLoadColumns[tn].GoString())
+	//b.Log(benchmarkLoadColumns[tn].GoString())
 }
 
 var benchmarkColumnsJoinFields string

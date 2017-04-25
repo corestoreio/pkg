@@ -61,11 +61,10 @@ type Tables struct {
 // definitions. If providing true in the argument "dropIfExists" the view or
 // table gets first dropped, if exists, and then created. Argument typ can be
 // only `table` or `view`.
-func WithTableOrViewFromQuery(db interface {
+func WithTableOrViewFromQuery(ctx context.Context, db interface {
 	dbr.Execer
 	dbr.Querier
 }, typ string, idx int, objectName string, query string, dropIfExists ...bool) TableOption {
-	ctx := context.Background()
 	return TableOption{
 		priority: 10,
 		fn: func(tm *Tables) error {
@@ -96,7 +95,7 @@ func WithTableOrViewFromQuery(db interface {
 				return errors.Wrapf(err, "[csdb] Create view %q failed", objectName)
 			}
 
-			tc, err := LoadColumns(db, objectName)
+			tc, err := LoadColumns(ctx, db, objectName)
 			if err != nil {
 				return errors.Wrapf(err, "[csdb] Load columns failed for %q", objectName)
 			}
@@ -141,7 +140,7 @@ func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 // generator script of the CoreStore project, we can guarantee that the
 // generated index constant will always stay the same but the name of the table
 // differs.
-func WithTableLoadColumns(db dbr.Querier, idx int, tableName string) TableOption {
+func WithTableLoadColumns(ctx context.Context, db dbr.Querier, idx int, tableName string) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
 			if err := IsValidIdentifier(tableName); err != nil {
@@ -150,7 +149,7 @@ func WithTableLoadColumns(db dbr.Querier, idx int, tableName string) TableOption
 
 			t := NewTable(tableName)
 			t.Schema = tm.Schema
-			if err := t.LoadColumns(db); err != nil {
+			if err := t.LoadColumns(ctx, db); err != nil {
 				return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
 			}
 
@@ -228,12 +227,12 @@ func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption {
 
 // WithLoadColumnDefinitions loads the column definitions from the database for each
 // table in the internal map. Thread safe.
-func WithLoadColumnDefinitions(db dbr.Querier) TableOption {
+func WithLoadColumnDefinitions(ctx context.Context, db dbr.Querier) TableOption {
 	return TableOption{
 		priority: 255, // must be the last element
 		fn: func(tm *Tables) error {
 
-			tc, err := LoadColumns(db, tm.Tables()...)
+			tc, err := LoadColumns(ctx, db, tm.Tables()...)
 			if err != nil {
 				return errors.Wrap(err, "[csdb] table.LoadColumns")
 			}

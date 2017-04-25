@@ -89,9 +89,7 @@ const selAllTablesColumns = `SELECT
 // contains the table name. Returns a NotFound error if the table is not
 // available. All columns from all tables gets selected when you don't provide
 // the argument `tables`.
-func LoadColumns(db dbr.Querier, tables ...string) (map[string]Columns, error) {
-
-	ctx := context.Background()
+func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[string]Columns, error) {
 	var rows *sql.Rows
 
 	if len(tables) == 0 {

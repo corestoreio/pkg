@@ -82,8 +82,8 @@ func (t *Table) update() *Table {
 }
 
 // LoadColumns reads the column information from the DB.
-func (t *Table) LoadColumns(db dbr.Querier) error {
-	tc, err := LoadColumns(db, t.Name)
+func (t *Table) LoadColumns(ctx context.Context, db dbr.Querier) error {
+	tc, err := LoadColumns(ctx, db, t.Name)
 	if err != nil {
 		return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", t.Name)
 	}
