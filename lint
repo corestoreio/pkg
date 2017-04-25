@@ -20,4 +20,4 @@ gometalinter \
 	--disable=gotype \
 	--cyclo-over=20 \
 	--tests \
-	--deadline=10s
+	--deadline=30s
