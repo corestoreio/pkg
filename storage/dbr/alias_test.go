@@ -12,4 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbr_test
+package dbr
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestMakeAlias(t *testing.T) {
+	assert.Exactly(t, "`table1`", MakeAlias("table1").String())
+	assert.Exactly(t, "`table0` AS `table1`", MakeAlias("table0", "table1").String())
+	assert.Exactly(t, "(table1)", MakeAlias("(table1)").String())
+	assert.Exactly(t, "(table1) AS `table2`", MakeAlias("(table1)", "table2").String())
+	assert.Exactly(t, "(table1)", MakeAlias("(table1)", "").String())
+	assert.Exactly(t, "`table1`", MakeAlias("table1", "").String())
+}

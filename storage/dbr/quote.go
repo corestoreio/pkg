@@ -41,6 +41,9 @@ func (q MysqlQuoter) quote(w queryWriter, qualifierName ...string) {
 // ExprAlias appends to the provided `expression` the quote alias name, e.g.:
 // 		ExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
 func (q MysqlQuoter) ExprAlias(expression, aliasName string) string {
+	if aliasName == "" {
+		return expression
+	}
 	return expression + " AS " + quote + q.unQuote(aliasName) + quote
 }
 

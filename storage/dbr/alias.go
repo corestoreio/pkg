@@ -11,19 +11,23 @@ type alias struct {
 	Alias string
 }
 
-// MakeAlias creates a new alias expression
-func MakeAlias(as ...string) alias {
+// MakeAlias creates a new alias expression. Supports two arguments.
+// 1. a qualifier or an expression and 2. an alias.
+func MakeAlias(expressionAlias ...string) alias {
 	a := alias{
-		Expression: as[0],
+		Expression: expressionAlias[0],
 	}
-	if len(as) > 1 {
-		a.Alias = as[1]
+	if len(expressionAlias) > 1 {
+		a.Alias = expressionAlias[1]
 	}
 	return a
 }
 
 func (t alias) String() string {
-	return Quoter.ExprAlias(t.Expression, t.Alias)
+	if isValidIdentifier(t.Expression) > 0 {
+		return Quoter.ExprAlias(t.Expression, t.Alias)
+	}
+	return t.QuoteAs()
 }
 
 func (t alias) QuoteAs() string {
