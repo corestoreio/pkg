@@ -100,7 +100,7 @@ func benchmark_stores_enc(iterationsSetGet int, opts ...transcache.Option) func(
 					if err := p.Get(key, &newTS); err != nil {
 						b.Fatal(err)
 					}
-					if have := newTS[5].Code.String; have != wantStoreCode {
+					if have := newTS[5].Code; have != wantStoreCode {
 						b.Fatalf("Store Code in slice position 5 must be %q, Have %q", wantStoreCode, have)
 					}
 				}
