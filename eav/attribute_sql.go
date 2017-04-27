@@ -63,7 +63,7 @@ func GetAttributeSelectSql(dbrSess dbr.Session, aat EntityTypeAdditionalAttribut
 				err := errors.Errorf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name)
 				return nil, err
 			}
-			ifNull[i] = dbr.IfNull(csdb.ScopeTable, tewC, t, tewC, tewC)
+			ifNull[i] = dbr.SQLIfNull(csdb.ScopeTable, tewC, t, tewC, tewC)
 			tewAddedCols = append(tewAddedCols, tewC)
 		}
 		taColumnsQuoted.ReduceContains(tewAddedCols...)
