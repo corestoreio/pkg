@@ -25,6 +25,7 @@ type Update struct {
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
 	SetClauses UpdatedColumns
+	Record     UpdateArgProducer
 	WhereFragments
 	OrderBys    []string
 	LimitCount  uint64
@@ -103,6 +104,15 @@ func (b *Update) Set(column string, arg Argument) *Update {
 	}
 	b.SetClauses.Columns = append(b.SetClauses.Columns, column)
 	b.SetClauses.Arguments = append(b.SetClauses.Arguments, arg)
+	return b
+}
+
+// SetRecords sets a new argument generator type.
+func (b *Update) SetRecord(rec UpdateArgProducer) *Update {
+	if b.previousError != nil {
+		return b
+	}
+	b.Record = rec
 	return b
 }
 
@@ -185,6 +195,11 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	b.Table.FquoteAs(buf)
 	buf.WriteString(" SET ")
 
+	if b.Record != nil {
+		// args, err := rec.GenerateArguments(StatementTypeUpdate, cols, where)
+		// todo
+	}
+
 	// Build SET clause SQL with placeholders and add values to args
 	for i, c := range b.SetClauses.Columns {
 		if i > 0 {
@@ -225,9 +240,9 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(rawSQL, args...)
+	fullSQL, err := Interpolate(rawSQL, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Exec.Preprocess")
+		return nil, errors.Wrap(err, "[dbr] Update.Exec.Interpolate")
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
@@ -350,11 +365,11 @@ type UpdateMulti struct {
 	// slice is empty the column names get passed. Otherwise the alias slice
 	// must have the same length as the columns slice.
 	Alias   []string
-	Records []ArgumentGenerater
+	Records []UpdateArgProducer
 	// RecordChan waits for incoming records to send them to the prepared
 	// statement. If the channel gets closed the transaction gets terminated and
 	// the UPDATE statement removed.
-	RecordChan <-chan ArgumentGenerater
+	RecordChan <-chan UpdateArgProducer
 }
 
 // NewUpdateMulti creates new UPDATE statement which runs multiple times for a
@@ -366,7 +381,7 @@ func NewUpdateMulti(table ...string) *UpdateMulti {
 }
 
 // AddRecords pulls in values to match Columns from the record.
-func (b *UpdateMulti) AddRecords(recs ...ArgumentGenerater) *UpdateMulti {
+func (b *UpdateMulti) AddRecords(recs ...UpdateArgProducer) *UpdateMulti {
 	b.Records = append(b.Records, recs...)
 	return b
 }
@@ -433,27 +448,28 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 		defer stmt.Close()
 	}
 
-	where := make([]string, len(b.Update.WhereFragments))
+	where := make([]string, len(b.Update.WhereFragments)) // todo cache this but only the size and on each ToSQL call overwrite the content.
 	for i, w := range b.Update.WhereFragments {
 		where[i] = w.Condition
 	}
 
-	var results = make([]sql.Result, len(b.Records))
+	results := make([]sql.Result, len(b.Records))
+	args := make(Arguments, 0, len(b.Records)+len(where))
 	for i, rec := range b.Records {
 		cols := b.Update.SetClauses.Columns
 		if len(b.Alias) > 0 {
 			cols = b.Alias
 		}
-
-		args, err := rec.GenerateArguments(StatementTypeUpdate, cols, where)
+		var err error
+		args, err = rec.ProduceUpdateArgs(args, cols, where)
 		if err != nil {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
 		}
 
 		if b.UsePreprocess {
-			fullSQL, err := Preprocess(rawSQL, args...)
+			fullSQL, err := Interpolate(rawSQL, args...)
 			if err != nil {
-				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Preprocess. Index %d with Query: %q", i, rawSQL)
+				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, rawSQL)
 			}
 
 			results[i], err = exec.ExecContext(ctx, fullSQL)
@@ -466,6 +482,7 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Stmt.Exec. Index %d with Query: %q", i, rawSQL)
 			}
 		}
+		args = args[:0] // reset for reusage
 	}
 
 	if err := tx.Commit(); err != nil {

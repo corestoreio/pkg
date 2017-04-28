@@ -21,7 +21,7 @@ type Insert struct {
 	Columns []string
 	Values  Arguments
 
-	Records []ArgumentGenerater
+	Records []InsertArgProducer
 	Maps    map[string]Argument
 
 	// OnDuplicateKey updates the referenced columns. See documentation for type
@@ -90,7 +90,7 @@ func (b *Insert) AddValues(vals ...Argument) *Insert {
 }
 
 // AddRecords pulls in values to match Columns from the record generator.
-func (b *Insert) AddRecords(recs ...ArgumentGenerater) *Insert {
+func (b *Insert) AddRecords(recs ...InsertArgProducer) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
@@ -178,7 +178,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 		return "", nil, errors.NewEmptyf(errTableMissing)
 	}
 	if len(b.Columns) == 0 && len(b.Maps) == 0 {
-		return "", nil, errors.NewEmptyf(errColumnsMissing)
+		// return "", nil, errors.NewEmptyf(errColumnsMissing)
 	} else if len(b.Maps) == 0 {
 		if len(b.Values) == 0 && len(b.Records) == 0 {
 			return "", nil, errors.NewEmptyf(errRecordsMissing)
@@ -235,12 +235,11 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	}
 
 	for i, rec := range b.Records {
-		a2, err := rec.GenerateArguments(StatementTypeInsert, b.Columns, nil)
+		var err error
+		args, err = rec.ProduceInsertArgs(args, b.Columns)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
 		}
-
-		args = append(args, a2...)
 		if i > 0 {
 			buf.WriteRune(',')
 		}
@@ -304,9 +303,9 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(sql, args...)
+	fullSQL, err := Interpolate(sql, args...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.Exec.Preprocess")
+		return nil, errors.Wrap(err, "[dbr] Insert.Exec.Interpolate")
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {

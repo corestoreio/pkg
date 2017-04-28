@@ -204,7 +204,7 @@ func TestNewUnionTemplate(t *testing.T) {
 			PreserveResultSet().
 			All().OrderBy("attribute_id", "store_id")
 
-		sqlStr, err := u.Preprocess()
+		sqlStr, err := u.Interpolate()
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}

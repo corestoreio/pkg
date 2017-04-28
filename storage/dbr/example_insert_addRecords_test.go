@@ -15,67 +15,73 @@
 package dbr_test
 
 import (
-	"fmt"
-
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 )
 
-// Make sure that type exampleInsertRecord implements interface
-// dbr.ArgumentGenerater.
-var _ dbr.ArgumentGenerater = (*exampleInsertRecord)(nil)
+// Make sure that type productEntity implements interface
+// dbr.InsertArgProducer.
+var _ dbr.InsertArgProducer = (*productEntity)(nil)
 
-// exampleInsertRecord represents just a demo record but can be Products,
-// Categories, Sales Orders, etc ...
-type exampleInsertRecord struct {
-	SomethingID int
-	UserID      int64
-	Other       bool
+// productEntity represents just a demo record.
+type productEntity struct {
+	EntityID       int64 // Auto Increment
+	AttributeSetID int64
+	TypeID         string
+	SKU            dbr.NullString
+	HasOptions     bool
 }
 
-func (sr exampleInsertRecord) GenerateArguments(statementType byte, columns, condition []string) (dbr.Arguments, error) {
-	args := make(dbr.Arguments, 0, 3) // 3 == number of fields in the struct
-	// statementType lets you know in which circumstances your function gets
-	// called so can return the most suitable arguments. You need to write this
-	// boiler plate code only once or let it generate.
-	if statementType == dbr.StatementTypeInsert {
-		for _, c := range columns {
-			switch c {
-			case "something_id":
-				args = append(args, dbr.ArgInt(sr.SomethingID))
-			case "user_id":
-				args = append(args, dbr.ArgInt64(sr.UserID))
-			case "other":
-				args = append(args, dbr.ArgBool(sr.Other))
-			default:
-				return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-			}
+func (pe productEntity) ProduceInsertArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	for _, c := range columns {
+		switch c {
+		case "attribute_set_id":
+			args = append(args, dbr.ArgInt64(pe.AttributeSetID))
+		case "type_id":
+			args = append(args, dbr.ArgString(pe.TypeID))
+		case "sku":
+			args = append(args, pe.SKU)
+		case "has_options":
+			args = append(args, dbr.ArgBool(pe.HasOptions))
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
+	}
+	if len(columns) == 0 {
+		args = append(args,
+			dbr.ArgInt64(pe.EntityID),
+			dbr.ArgInt64(pe.AttributeSetID),
+			dbr.ArgString(pe.TypeID),
+			pe.SKU,
+			dbr.ArgBool(pe.HasOptions),
+		)
 	}
 	return args, nil
 }
 
 func ExampleInsert_AddRecords() {
 
-	objs := []exampleInsertRecord{{1, 88, false}, {2, 99, true}}
-
-	sqlStr, args, err := dbr.NewInsert("a").AddColumns("something_id", "user_id", "other").
-		AddRecords(objs[0]).AddRecords(objs[1]).
-		ToSQL()
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
+	objs := []productEntity{
+		{1, 5, "simple", dbr.MakeNullString("SOA9"), false},
+		{2, 5, "virtual", dbr.NullString{}, true},
 	}
 
-	sqlPre, err := dbr.Preprocess(sqlStr, args...)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
-	}
+	i := dbr.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").
+		AddRecords(objs[0]).AddRecords(objs[1])
+	writeToSqlAndPreprocess(i)
+	// the next code does not yet work
+	//fmt.Print("\n")
+	//i = dbr.NewInsert("catalog_product_entity").AddRecords(objs[0]).AddRecords(objs[1])
+	//writeToSqlAndPreprocess(i)
 
-	fmt.Printf("%s\nArguments: %v\nProcessed: %s\n", sqlStr, args.Interfaces(), sqlPre)
 	// Output:
-	// INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)
-	// Arguments: [1 88 false 2 99 true]
-	// Processed: INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1)
+	//Prepared Statement:
+	//INSERT INTO `catalog_product_entity`
+	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES (?,?,?,?),(?,?,?,?)
+	//Arguments: [5 simple SOA9 false 5 virtual <nil> true]
+	//
+	//Preprocessed Statement:
+	//INSERT INTO `catalog_product_entity`
+	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES
+	//(5,'simple','SOA9',0),(5,'virtual',NULL,1)
 }

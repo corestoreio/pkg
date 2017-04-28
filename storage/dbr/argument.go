@@ -140,28 +140,24 @@ func writeOperator(w queryWriter, operator byte, hasArg bool) (addArg bool) {
 	return
 }
 
-// StatementTypes identifies in the ArgumentGenerater interface what kind of
-// operation requests the arguments.
-const (
-	StatementTypeDelete byte = 'd'
-	StatementTypeInsert byte = 'i'
-	StatementTypeSelect byte = 's'
-	StatementTypeUpdate byte = 'u'
-)
+// InsertArgProducer produces arguments for a SQL INSERT statement. Any new
+// arguments must be append to variable `args` and then returned. Variable
+// `columns` contains the name of the requested columns. E.g. if the first
+// requested column names `id` then the first appended argument must be an
+// integer. An empty or nil `columns` variable must append all requested columns
+// to the `args` variable.
+type InsertArgProducer interface {
+	ProduceInsertArgs(args Arguments, columns []string) (Arguments, error)
+}
 
-// ArgumentGenerater knows how to generate a record for one table row.
-type ArgumentGenerater interface {
-	// GenerateArguments generates a single new database record depending
-	// on the requested column names. Each Argument gets mapped to the column
-	// name. E.g. first column name at "id" then the first returned Argument in
-	// the slice must be an integer.
-	// GenerateUpdateArguments generates an argument set to be used in the SET
-	// clause columns and in the WHERE statement. The `columns` argument
-	// contains the name of the columns which are used in the SET clause. The
-	// `where` argument contains a list of column names or even expressions
-	// which get used in the WHERE statement. These names allows to filter and
-	// generate the needed arguments.
-	GenerateArguments(statementType byte, columns, condition []string) (Arguments, error)
+// UpdateArgProducer produces arguments for a SQL UPDATE statement. Any new
+// arguments must be append to variable `args` and then returned. Variable
+// `columns` contains the name of the requested columns. E.g. if the first
+// requested column names `id` then the first appended argument must be an
+// integer. Vairable `condition` contains the names and/or expressions used in
+// the WHERE or ON clause.
+type UpdateArgProducer interface {
+	ProduceUpdateArgs(args Arguments, columns, condition []string) (Arguments, error)
 }
 
 // Argument transforms your value or values into an interface slice or encodes

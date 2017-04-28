@@ -101,9 +101,9 @@ func (b *Select) LoadStructs(ctx context.Context, dest interface{}) (int, error)
 		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg...)
+	fullSQL, err := Interpolate(tSQL, tArg...)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Preprocess")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Interpolate")
 	}
 
 	numberOfRowsReturned := 0
@@ -194,7 +194,7 @@ func (b *Select) LoadStruct(ctx context.Context, dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.LoadStruct.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg...)
+	fullSQL, err := Interpolate(tSQL, tArg...)
 	if err != nil {
 		return err
 	}
@@ -286,7 +286,7 @@ func (b *Select) LoadValues(ctx context.Context, dest interface{}) (int, error) 
 		return 0, errors.Wrap(err, "[dbr] Select.load_values.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg...)
+	fullSQL, err := Interpolate(tSQL, tArg...)
 	if err != nil {
 		return 0, err
 	}
@@ -349,7 +349,7 @@ func (b *Select) LoadValue(ctx context.Context, dest interface{}) error {
 		return errors.Wrap(err, "[dbr] Select.LoadValue.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(tSQL, tArg...)
+	fullSQL, err := Interpolate(tSQL, tArg...)
 	if err != nil {
 		return err
 	}

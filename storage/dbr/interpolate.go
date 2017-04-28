@@ -60,10 +60,10 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	return buf.String(), retArgs, nil
 }
 
-// Preprocess takes an SQL string with placeholders and a list of arguments to
+// Interpolate takes an SQL string with placeholders and a list of arguments to
 // replace them with. It returns a blank string and error if the number of placeholders
 // does not match the number of arguments.
-func Preprocess(sql string, args ...Argument) (string, error) {
+func Interpolate(sql string, args ...Argument) (string, error) {
 	// Get the number of arguments to add to this query
 	if sql == "" {
 		if len(args) != 0 {
@@ -108,14 +108,14 @@ func Preprocess(sql string, args ...Argument) (string, error) {
 			}
 
 			if err := args[argIndex].writeTo(buf, qCount); err != nil {
-				return "", errors.Wrap(err, "[dbr] Preprocess writeTo arguments")
+				return "", errors.Wrap(err, "[dbr] Interpolate writeTo arguments")
 			}
 
 			qCountTotal++
 		case r == '`', r == '\'', r == '"':
 			p := strings.IndexRune(sql[pos:], r)
 			if p == -1 {
-				return "", errors.NewNotValidf("[dbr] Preprocess: Invalid syntax")
+				return "", errors.NewNotValidf("[dbr] Interpolate: Invalid syntax")
 			}
 			if r == '"' {
 				r = '\''

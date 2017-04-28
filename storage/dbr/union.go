@@ -195,14 +195,14 @@ func (ut *UnionTemplate) MultiplyArguments(args ...Argument) Arguments {
 	return ret
 }
 
-// Preprocess wrapper function which calls ToSQL and then Preprocess.
-func (ut *UnionTemplate) Preprocess() (string, error) {
+// Interpolate wrapper function which calls ToSQL and then Interpolate.
+func (ut *UnionTemplate) Interpolate() (string, error) {
 	sStr, args, err := ut.ToSQL()
 	if err != nil {
-		return "", errors.Wrap(err, "[dbr] UnionTemplate.Preprocess.ToSQL")
+		return "", errors.Wrap(err, "[dbr] UnionTemplate.Interpolate.ToSQL")
 	}
-	sStr, err = Preprocess(sStr, args...)
-	return sStr, errors.Wrap(err, "[dbr] UnionTemplate.Preprocess.Preprocess")
+	sStr, err = Interpolate(sStr, args...)
+	return sStr, errors.Wrap(err, "[dbr] UnionTemplate.Interpolate.Interpolate")
 }
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are

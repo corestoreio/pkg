@@ -19,7 +19,7 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-var _ dbr.ArgumentGenerater = (*dbrPerson)(nil)
+var _ dbr.InsertArgProducer = (*dbrPerson)(nil)
 
 type dbrPerson struct {
 	ID    int64 `db:"id"`
@@ -28,12 +28,7 @@ type dbrPerson struct {
 	Key   dbr.NullString
 }
 
-func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []string) (dbr.Arguments, error) {
-	if statementType != dbr.StatementTypeUpdate {
-		return nil, errors.NewNotSupportedf("[dbr] Statement Type %q not yet supported", statementType)
-	}
-
-	args := make(dbr.Arguments, 0, 4) // 4 == number of fields in the struct
+func (p *dbrPerson) ProduceUpdateArgs(args dbr.Arguments, columns, condition []string) (_ dbr.Arguments, err error) {
 	for _, c := range columns {
 		switch c {
 		case "name":
@@ -50,6 +45,22 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 		switch c {
 		case "id":
 			args = append(args, dbr.ArgInt64(p.ID))
+		}
+	}
+	return args, nil
+}
+
+func (p *dbrPerson) ProduceInsertArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	for _, c := range columns {
+		switch c {
+		case "name":
+			args = append(args, dbr.ArgString(p.Name))
+		case "email":
+			args = append(args, dbr.ArgNullString(p.Email))
+		case "key":
+			args = append(args, dbr.ArgNullString(p.Key))
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
 	return args, nil

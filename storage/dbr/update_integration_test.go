@@ -54,7 +54,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
 
-	records := []dbr.ArgumentGenerater{
+	records := []dbr.UpdateArgProducer{
 		&dbrPerson{
 			ID:    1,
 			Name:  "Alf",
@@ -74,6 +74,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	mu.Records = append(mu.Records, records...)
 
+	// SM = SQL Mock
 	setSMPreProcess := func(m sqlmock.Sqlmock) {
 		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`='Alf', `email`='alf@m\\') -- el.mac' WHERE (`id` = 1)")).
 			WillReturnResult(sqlmock.NewResult(0, 1))

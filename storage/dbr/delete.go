@@ -140,9 +140,9 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Delete.Exec.ToSQL")
 	}
 
-	fullSQL, err := Preprocess(sqlStr, args...)
+	fullSQL, err := Interpolate(sqlStr, args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "[dbr] Delete.Exec.Preprocess: %q", fullSQL)
+		return nil, errors.Wrapf(err, "[dbr] Delete.Exec.Interpolate: %q", fullSQL)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {

@@ -37,7 +37,7 @@ func writeToSqlAndPreprocess(qb dbr.QueryBuilder) {
 		fmt.Print("\n")
 	}
 
-	sqlStr, err = dbr.Preprocess(sqlStr, args...)
+	sqlStr, err = dbr.Interpolate(sqlStr, args...)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
@@ -106,7 +106,7 @@ func ExampleInsert_FromSelect() {
 		return
 	}
 
-	sqlPre, err := dbr.Preprocess(sqlStr, args...)
+	sqlPre, err := dbr.Interpolate(sqlStr, args...)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
@@ -313,7 +313,7 @@ func ExampleUnionTemplate_Preprocess() {
 }
 
 func ExamplePreprocess() {
-	sqlStr, err := dbr.Preprocess("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?",
+	sqlStr, err := dbr.Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?",
 		dbr.ArgInt(1).Operator(dbr.In),
 		dbr.ArgInt(1, 2, 3).Operator(dbr.In),
 		dbr.ArgInt64(5, 6, 7).Operator(dbr.In),
@@ -668,15 +668,15 @@ func ExampleSelect_AddArguments() {
 }
 
 func ExampleParenthesisOpen() {
-	s := dbr.NewSelect("a", "b").
+	s := dbr.NewSelect("columnA", "columnB").
 		Distinct().
-		From("c", "cc").
+		From("tableC", "ccc").
 		Where(
 			dbr.ParenthesisOpen(),
 			dbr.Condition("d", dbr.ArgInt(1)),
 			dbr.Condition("e", dbr.ArgString("wat")).Or(),
 			dbr.ParenthesisClose(),
-			dbr.Eq{"f": dbr.ArgInt(2), "g": dbr.ArgInt(3)},
+			dbr.Eq{"f": dbr.ArgInt(2)},
 		).
 		GroupBy("ab").
 		Having(
@@ -693,13 +693,13 @@ func ExampleParenthesisOpen() {
 
 	// Output:
 	//Prepared Statement:
-	//SELECT DISTINCT a, b FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` =
-	//?) AND (`g` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?)) ORDER
-	//BY l LIMIT 7 OFFSET 8
-	//Arguments: [1 wat 2 3 33 wh3r3]
+	//SELECT DISTINCT columnA, columnB FROM `tableC` AS `ccc` WHERE ((`d` = ?) OR (`e`
+	//= ?)) AND (`f` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?))
+	//ORDER BY l LIMIT 7 OFFSET 8
+	//Arguments: [1 wat 2 33 wh3r3]
 	//
 	//Preprocessed Statement:
-	//SELECT DISTINCT a, b FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND
-	//(`f` = 2) AND (`g` = 3) GROUP BY ab HAVING (j = k) AND ((`m` = 33) OR (`n` =
+	//SELECT DISTINCT columnA, columnB FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR (`e`
+	//= 'wat')) AND (`f` = 2) GROUP BY ab HAVING (j = k) AND ((`m` = 33) OR (`n` =
 	//'wh3r3')) ORDER BY l LIMIT 7 OFFSET 8
 }

@@ -36,9 +36,9 @@ func makeSQL(b QueryBuilder) string {
 	if err != nil {
 		return fmt.Sprintf("[dbr] ToSQL Error: %+v", err)
 	}
-	sql, err := Preprocess(sRaw, vals...)
+	sql, err := Interpolate(sRaw, vals...)
 	if err != nil {
-		return fmt.Sprintf("[dbr] Preprocess Error: %+v", err)
+		return fmt.Sprintf("[dbr] Interpolate Error: %+v", err)
 	}
 	return sql
 }

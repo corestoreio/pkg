@@ -54,8 +54,11 @@ func realDb() (driver string, dsn string) {
 	return
 }
 
-var _ ArgumentGenerater = (*dbrPerson)(nil)
-var _ ArgumentGenerater = (*nullTypedRecord)(nil)
+var _ InsertArgProducer = (*dbrPerson)(nil)
+var _ InsertArgProducer = (*nullTypedRecord)(nil)
+var _ UpdateArgProducer = (*dbrPerson)(nil)
+
+//var _ UpdateArgProducer = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
 	ID    int64 `db:"id"`
@@ -64,12 +67,11 @@ type dbrPerson struct {
 	Key   NullString
 }
 
-func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []string) (Arguments, error) {
-	args := make(Arguments, 0, 4) // 4 == number of fields in the struct
+func (p *dbrPerson) columnToArg(t byte, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
-			if statementType == StatementTypeInsert {
+			if t == 'i' {
 				args = append(args, ArgInt64(p.ID))
 			}
 		case "name":
@@ -82,18 +84,24 @@ func (p *dbrPerson) GenerateArguments(statementType byte, columns, condition []s
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	switch statementType {
-	case StatementTypeUpdate:
-		for _, c := range condition {
-			switch c {
-			case "id":
-				args = append(args, ArgInt64(p.ID))
-			default:
-				return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-			}
+	return args, nil
+}
+
+func (p *dbrPerson) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
+	return p.columnToArg('i', args, columns)
+}
+
+func (p *dbrPerson) ProduceUpdateArgs(args Arguments, columns, condition []string) (_ Arguments, err error) {
+	args, err = p.columnToArg('u', args, columns)
+	for _, c := range condition {
+		switch c {
+		case "id":
+			args = append(args, ArgInt64(p.ID))
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	return args, nil
+	return args, err
 }
 
 type nullTypedRecord struct {
@@ -105,8 +113,7 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func (p *nullTypedRecord) GenerateArguments(statementType byte, columns, condition []string) (Arguments, error) {
-	args := make(Arguments, 0, 6) // 6 == number of fields in the struct
+func (p *nullTypedRecord) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
