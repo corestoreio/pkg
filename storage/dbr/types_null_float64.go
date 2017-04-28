@@ -26,7 +26,7 @@ import (
 // Argument.
 type NullFloat64 struct {
 	sql.NullFloat64
-	opt byte
+	op rune
 }
 
 func (a NullFloat64) toIFace(args []interface{}) []interface{} {
@@ -49,12 +49,12 @@ func (a NullFloat64) len() int { return 1 }
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a NullFloat64) Operator(opt byte) Argument {
-	a.opt = opt
+func (a NullFloat64) Operator(op rune) Argument {
+	a.op = op
 	return a
 }
 
-func (a NullFloat64) operator() byte { return a.opt }
+func (a NullFloat64) operator() rune { return a.op }
 
 // MakeNullFloat64 creates a new NullFloat64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullFloat64
@@ -157,7 +157,7 @@ func (a NullFloat64) IsZero() bool {
 }
 
 type argNullFloat64s struct {
-	opt  byte
+	op   rune
 	data []NullFloat64
 }
 
@@ -206,12 +206,12 @@ func (a argNullFloat64s) len() int {
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a argNullFloat64s) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argNullFloat64s) Operator(op rune) Argument {
+	a.op = op
 	return a
 }
 
-func (a argNullFloat64s) operator() byte { return a.opt }
+func (a argNullFloat64s) operator() rune { return a.op }
 
 // ArgNullFloat64 adds a nullable float64 or a slice of nullable float64s to the
 // argument list. Providing no arguments returns a NULL type.

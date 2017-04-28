@@ -24,7 +24,7 @@ import (
 // will decode to null, not false, if null. NullBool implements interface
 // Argument.
 type NullBool struct {
-	opt byte
+	op rune
 	sql.NullBool
 }
 
@@ -48,12 +48,12 @@ func (a NullBool) len() int { return 1 }
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a NullBool) Operator(opt byte) Argument {
-	a.opt = opt
+func (a NullBool) Operator(op rune) Argument {
+	a.op = op
 	return a
 }
 
-func (a NullBool) operator() byte { return a.opt }
+func (a NullBool) operator() rune { return a.op }
 
 // MakeNullBool creates a new NullBool. Implements interface Argument.
 func MakeNullBool(b bool, valid ...bool) NullBool {

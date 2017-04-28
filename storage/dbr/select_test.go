@@ -146,12 +146,12 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{float64(33)},
 	))
 	t.Run("IN float64", runner(
-		ArgFloat64(33, 44).Operator('i'),
+		ArgFloat64(33, 44).Operator(In),
 		"SELECT a, b FROM `c` WHERE (`d` IN ?)",
 		[]interface{}{float64(33), float64(44)},
 	))
 	t.Run("NOT IN float64", runner(
-		ArgFloat64(33, 44).Operator('I'),
+		ArgFloat64(33, 44).Operator(NotIn),
 		"SELECT a, b FROM `c` WHERE (`d` NOT IN ?)",
 		[]interface{}{float64(33), float64(44)},
 	))
@@ -768,7 +768,7 @@ func TestSubSelect(t *testing.T) {
 	sub := NewSelect().From("catalog_category_product").
 		AddColumnsQuoted("entity_id").Where(Condition("category_id", ArgInt64(234)))
 
-	runner := func(op byte, wantSQL string) func(*testing.T) {
+	runner := func(op rune, wantSQL string) func(*testing.T) {
 		return func(t *testing.T) {
 			s := NewSelect("*").
 				From("catalog_product_entity").

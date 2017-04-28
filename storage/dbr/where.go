@@ -71,7 +71,7 @@ type whereFragment struct {
 		// a column name or anything else which can handle the result of a
 		// sub-select.
 		Select   *Select
-		Operator byte
+		Operator rune
 	}
 	Using []string
 }
@@ -114,7 +114,7 @@ func Using(columns ...string) ConditionArg {
 // SubSelect creates a condition for a WHERE or JOIN statement to compare the
 // data in `rawStatementOrColumnName` with the returned value/s of the
 // sub-select.
-func SubSelect(rawStatementOrColumnName string, operator byte, s *Select) ConditionArg {
+func SubSelect(rawStatementOrColumnName string, operator rune, s *Select) ConditionArg {
 	wf := &whereFragment{
 		Condition: rawStatementOrColumnName,
 	}

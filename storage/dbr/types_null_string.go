@@ -27,7 +27,7 @@ import (
 // NullString implements interface Argument.
 type NullString struct {
 	sql.NullString
-	opt byte
+	op rune
 }
 
 func (a NullString) toIFace(args []interface{}) []interface{} {
@@ -53,12 +53,12 @@ func (a NullString) len() int { return 1 }
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a NullString) Operator(opt byte) Argument {
-	a.opt = opt
+func (a NullString) Operator(op rune) Argument {
+	a.op = op
 	return a
 }
 
-func (a NullString) operator() byte { return a.opt }
+func (a NullString) operator() rune { return a.op }
 
 // MakeNullString creates a new NullString. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullString
@@ -171,7 +171,7 @@ func (a NullString) IsZero() bool {
 }
 
 type argNullStrings struct {
-	opt  byte
+	op   rune
 	data []NullString
 }
 
@@ -226,12 +226,12 @@ func (a argNullStrings) len() int {
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a argNullStrings) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argNullStrings) Operator(op rune) Argument {
+	a.op = op
 	return a
 }
 
-func (a argNullStrings) operator() byte { return a.opt }
+func (a argNullStrings) operator() rune { return a.op }
 
 // ArgNullString adds a nullable string or a slice of nullable strings to the
 // argument list. Providing no arguments returns a NULL type. All arguments must

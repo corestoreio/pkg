@@ -40,12 +40,12 @@ func (a NullTime) len() int { return 1 }
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a NullTime) Operator(opt byte) Argument {
-	a.opt = opt
+func (a NullTime) Operator(op rune) Argument {
+	a.op = op
 	return a
 }
 
-func (a NullTime) operator() byte { return a.opt }
+func (a NullTime) operator() rune { return a.op }
 
 // MakeNullTime creates a new NullTime. Setting the second optional argument to
 // false, the string will not be valid anymore, hence NULL. NullTime implements
@@ -136,7 +136,7 @@ func (a NullTime) Ptr() *time.Time {
 }
 
 type argNullTimes struct {
-	opt  byte
+	op   rune
 	data []NullTime
 }
 
@@ -185,12 +185,12 @@ func (a argNullTimes) len() int {
 
 // Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Operator*.
-func (a argNullTimes) Operator(opt byte) Argument {
-	a.opt = opt
+func (a argNullTimes) Operator(op rune) Argument {
+	a.op = op
 	return a
 }
 
-func (a argNullTimes) operator() byte { return a.opt }
+func (a argNullTimes) operator() rune { return a.op }
 
 // ArgNullTime adds a nullable Time or a slice of nullable Timess to the
 // argument list. Providing no arguments returns a NULL type.

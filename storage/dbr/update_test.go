@@ -184,7 +184,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("with condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity", "cpe")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
-		u.Where(Condition("entity_id", ArgInt64(1, 2, 3).Operator('i')))
+		u.Where(Condition("entity_id", ArgInt64(1, 2, 3).Operator(In)))
 
 		sqlStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
@@ -196,7 +196,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("without condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity", "cpe")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
-		u.Where(Condition("entity_id", ArgInt64().Operator('i')))
+		u.Where(Condition("entity_id", ArgInt64().Operator(In)))
 
 		sqlStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
