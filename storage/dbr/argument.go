@@ -154,7 +154,7 @@ type InsertArgProducer interface {
 // arguments must be append to variable `args` and then returned. Variable
 // `columns` contains the name of the requested columns. E.g. if the first
 // requested column names `id` then the first appended argument must be an
-// integer. Vairable `condition` contains the names and/or expressions used in
+// integer. Variable `condition` contains the names and/or expressions used in
 // the WHERE or ON clause.
 type UpdateArgProducer interface {
 	ProduceUpdateArgs(args Arguments, columns, condition []string) (Arguments, error)

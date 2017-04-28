@@ -25,7 +25,6 @@ type Update struct {
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
 	SetClauses UpdatedColumns
-	Record     UpdateArgProducer
 	WhereFragments
 	OrderBys    []string
 	LimitCount  uint64
@@ -108,11 +107,12 @@ func (b *Update) Set(column string, arg Argument) *Update {
 }
 
 // SetRecords sets a new argument generator type.
-func (b *Update) SetRecord(rec UpdateArgProducer) *Update {
+func (b *Update) SetRecord(columns []string, rec UpdateArgProducer) *Update {
 	if b.previousError != nil {
 		return b
 	}
-	b.Record = rec
+	b.SetClauses.Columns = append(b.SetClauses.Columns, columns...)
+	b.SetClauses.Record = rec
 	return b
 }
 
@@ -189,15 +189,18 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	var args = make(Arguments, 0, len(b.SetClauses.Arguments)+len(b.WhereFragments))
+	args := make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
 
 	buf.WriteString("UPDATE ")
 	b.Table.FquoteAs(buf)
 	buf.WriteString(" SET ")
 
-	if b.Record != nil {
-		// args, err := rec.GenerateArguments(StatementTypeUpdate, cols, where)
-		// todo
+	if b.SetClauses.Record != nil {
+		var err error
+		args, err = b.SetClauses.Record.ProduceUpdateArgs(args, b.SetClauses.Columns, b.WhereFragments.Conditions())
+		if err != nil {
+			return "", nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.ProduceUpdateArgs")
+		}
 	}
 
 	// Build SET clause SQL with placeholders and add values to args
@@ -232,8 +235,8 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	return buf.String(), args, nil
 }
 
-// Exec executes the statement represented by the Update object. It returns the
-// raw database/sql Result and an error if there was one.
+// Exec interpolates and executes the statement represented by the Update
+// object. It returns the raw database/sql Result and an error if there was one.
 func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 	rawSQL, args, err := b.ToSQL()
 	if err != nil {
@@ -298,6 +301,7 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 type UpdatedColumns struct {
 	Columns   []string
 	Arguments Arguments
+	Record    UpdateArgProducer
 }
 
 func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args *Arguments) error {
@@ -448,10 +452,7 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 		defer stmt.Close()
 	}
 
-	where := make([]string, len(b.Update.WhereFragments)) // todo cache this but only the size and on each ToSQL call overwrite the content.
-	for i, w := range b.Update.WhereFragments {
-		where[i] = w.Condition
-	}
+	where := b.Update.WhereFragments.Conditions()
 
 	results := make([]sql.Result, len(b.Records))
 	args := make(Arguments, 0, len(b.Records)+len(where))

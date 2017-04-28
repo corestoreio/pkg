@@ -54,9 +54,6 @@ const (
 	logicalNot byte = 'n'
 )
 
-// WhereFragments provides a list where clauses
-type WhereFragments []*whereFragment
-
 type whereFragment struct {
 	// Logical states how multiple where statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
@@ -90,6 +87,19 @@ func (wf *whereFragment) And() ConditionArg {
 func (wf *whereFragment) Or() ConditionArg {
 	wf.Logical = logicalOr
 	return wf
+}
+
+// WhereFragments provides a list WHERE resp. ON clauses.
+type WhereFragments []*whereFragment
+
+// Conditions iterates over each WHERE fragment and assembles all conditions
+// into a new slice.
+func (wfs WhereFragments) Conditions() []string {
+	c := make([]string, len(wfs))
+	for i, w := range wfs {
+		c[i] = w.Condition
+	}
+	return c
 }
 
 // ConditionArg used at argument in Where()

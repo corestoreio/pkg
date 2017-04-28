@@ -392,3 +392,49 @@ func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 		args = args[:0]
 	}
 }
+
+func TestUpdate_SetRecord(t *testing.T) {
+	t.Parallel()
+
+	pRec := &dbrPerson{
+		ID:    12345,
+		Name:  "Gopher",
+		Email: MakeNullString("gopher@g00gle.c0m"),
+	}
+
+	t.Run("without where", func(t *testing.T) {
+
+		u := NewUpdate("dbr_person").SetRecord([]string{"name", "email"}, pRec)
+
+		sqlStr, args, err := u.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, []interface{}{"Gopher", "gopher@g00gle.c0m"}, args.Interfaces())
+		assert.Exactly(t,
+			"UPDATE `dbr_person` SET `name`=?, `email`=?",
+			sqlStr)
+	})
+	t.Run("with where", func(t *testing.T) {
+
+		u := NewUpdate("dbr_person").SetRecord([]string{"name", "email"}, pRec).
+			Where(Condition("id", ArgInt().Operator(Equal)))
+
+		sqlStr, args, err := u.ToSQL()
+		assert.NoError(t, err, "%+v", err)
+		assert.Exactly(t, []interface{}{"Gopher", "gopher@g00gle.c0m", int64(12345)}, args.Interfaces())
+		assert.Exactly(t,
+			"UPDATE `dbr_person` SET `name`=?, `email`=? WHERE (`id` = ?)",
+			sqlStr)
+	})
+
+	t.Run("fails column not in entity object", func(t *testing.T) {
+		u := NewUpdate("dbr_person").SetRecord([]string{"name", "email"}, pRec).
+			Set("key", ArgString("JustAKey")).
+			Where(Condition("id", ArgInt().Operator(Equal)))
+
+		sqlStr, args, err := u.ToSQL()
+		assert.Empty(t, sqlStr)
+		assert.Nil(t, args)
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+	})
+
+}

@@ -55,8 +55,8 @@ func realDb() (driver string, dsn string) {
 }
 
 var _ InsertArgProducer = (*dbrPerson)(nil)
-var _ InsertArgProducer = (*nullTypedRecord)(nil)
 var _ UpdateArgProducer = (*dbrPerson)(nil)
+var _ InsertArgProducer = (*nullTypedRecord)(nil)
 
 //var _ UpdateArgProducer = (*nullTypedRecord)(nil)
 
@@ -78,8 +78,8 @@ func (p *dbrPerson) columnToArg(t byte, args Arguments, columns []string) (Argum
 			args = append(args, ArgString(p.Name))
 		case "email":
 			args = append(args, ArgNullString(p.Email))
-		case "key":
-			args = append(args, ArgNullString(p.Key))
+		//case "key":
+		//	args = append(args, ArgNullString(p.Key))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
