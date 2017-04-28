@@ -28,12 +28,11 @@ type NullBool struct {
 	sql.NullBool
 }
 
-func (a NullBool) toIFace(args *[]interface{}) {
+func (a NullBool) toIFace(args []interface{}) []interface{} {
 	if a.NullBool.Valid {
-		*args = append(*args, a.NullBool.Bool)
-	} else {
-		*args = append(*args, nil)
+		return append(args, a.NullBool.Bool)
 	}
+	return append(args, nil)
 }
 
 func (a NullBool) writeTo(w queryWriter, _ int) error {

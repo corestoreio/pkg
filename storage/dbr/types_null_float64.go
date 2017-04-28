@@ -29,12 +29,11 @@ type NullFloat64 struct {
 	opt byte
 }
 
-func (a NullFloat64) toIFace(args *[]interface{}) {
+func (a NullFloat64) toIFace(args []interface{}) []interface{} {
 	if a.NullFloat64.Valid {
-		*args = append(*args, a.NullFloat64.Float64)
-	} else {
-		*args = append(*args, nil)
+		return append(args, a.NullFloat64.Float64)
 	}
+	return append(args, nil)
 }
 
 func (a NullFloat64) writeTo(w queryWriter, _ int) error {
@@ -162,14 +161,15 @@ type argNullFloat64s struct {
 	data []NullFloat64
 }
 
-func (a argNullFloat64s) toIFace(args *[]interface{}) {
+func (a argNullFloat64s) toIFace(args []interface{}) []interface{} {
 	for _, s := range a.data {
 		if s.Valid {
-			*args = append(*args, s.Float64)
+			args = append(args, s.Float64)
 		} else {
-			*args = append(*args, nil)
+			args = append(args, nil)
 		}
 	}
+	return args
 }
 
 func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {

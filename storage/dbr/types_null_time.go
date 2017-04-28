@@ -20,12 +20,11 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-func (a NullTime) toIFace(args *[]interface{}) {
+func (a NullTime) toIFace(args []interface{}) []interface{} {
 	if a.Valid {
-		*args = append(*args, a.Time)
-	} else {
-		*args = append(*args, nil)
+		return append(args, a.Time)
 	}
+	return append(args, nil)
 }
 
 func (a NullTime) writeTo(w queryWriter, _ int) error {
@@ -141,14 +140,15 @@ type argNullTimes struct {
 	data []NullTime
 }
 
-func (a argNullTimes) toIFace(args *[]interface{}) {
+func (a argNullTimes) toIFace(args []interface{}) []interface{} {
 	for _, s := range a.data {
 		if s.Valid {
-			*args = append(*args, s.Time)
+			args = append(args, s.Time)
 		} else {
-			*args = append(*args, nil)
+			args = append(args, nil)
 		}
 	}
+	return args
 }
 
 func (a argNullTimes) writeTo(w queryWriter, pos int) error {

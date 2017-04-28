@@ -13,7 +13,7 @@ import (
 // Comparions functions and operators describe all available possibilities. The upper case letter
 // always negates.
 // https://dev.mysql.com/doc/refman/5.7/en/comparison-operators.html
-const (
+const ( // TODO(CyS) use rune and special UTF8 codes
 	Null           byte = 'n' // IS NULL
 	NotNull        byte = 'N' // IS NOT NULL
 	In             byte = 'i' // IN ?
@@ -169,7 +169,8 @@ type Argument interface {
 	// Operator* for the different flags. An underscore in the argument list of
 	// a type indicates that no operator is yet supported.
 	Operator(byte) Argument
-	toIFace(*[]interface{})
+	// toIFace appends the value or values to interface slice and returns it.
+	toIFace([]interface{}) []interface{}
 	// writeTo writes the value correctly escaped to the queryWriter. It must
 	// avoid SQL injections.
 	writeTo(w queryWriter, position int) error
@@ -200,7 +201,7 @@ func (as Arguments) Interfaces() []interface{} {
 	}
 	ret := make([]interface{}, 0, len(as))
 	for _, a := range as {
-		a.toIFace(&ret)
+		ret = a.toIFace(ret)
 	}
 	return ret
 }
@@ -256,10 +257,11 @@ type argTimes struct {
 	data []time.Time
 }
 
-func (a *argTimes) toIFace(args *[]interface{}) {
+func (a *argTimes) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
-		*args = append(*args, v)
+		args = append(args, v)
 	}
+	return args
 }
 
 func (a *argTimes) writeTo(w queryWriter, pos int) error {
@@ -303,8 +305,8 @@ func ArgTime(args ...time.Time) Argument {
 
 type argBytes []byte
 
-func (a argBytes) toIFace(args *[]interface{}) {
-	*args = append(*args, []byte(a))
+func (a argBytes) toIFace(args []interface{}) []interface{} {
+	return append(args, []byte(a))
 }
 
 func (a argBytes) writeTo(w queryWriter, _ int) error {
@@ -330,8 +332,8 @@ func ArgBytes(p []byte) Argument {
 
 type argNull uint8
 
-func (i argNull) toIFace(args *[]interface{}) {
-	*args = append(*args, nil)
+func (i argNull) toIFace(args []interface{}) []interface{} {
+	return append(args, nil)
 }
 
 func (i argNull) writeTo(w queryWriter, _ int) error {
@@ -368,8 +370,8 @@ func ArgNotNull() Argument {
 // argString implements interface Argument but does not allocate.
 type argString string
 
-func (a argString) toIFace(args *[]interface{}) {
-	*args = append(*args, string(a))
+func (a argString) toIFace(args []interface{}) []interface{} {
+	return append(args, string(a))
 }
 
 func (a argString) writeTo(w queryWriter, _ int) error {
@@ -397,10 +399,11 @@ type argStrings struct {
 	op   byte
 }
 
-func (a *argStrings) toIFace(args *[]interface{}) {
+func (a *argStrings) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
-		*args = append(*args, v)
+		args = append(args, v)
 	}
+	return args
 }
 
 func (a *argStrings) writeTo(w queryWriter, pos int) error {
@@ -453,8 +456,8 @@ func ArgString(args ...string) Argument {
 
 type argBool bool
 
-func (a argBool) toIFace(args *[]interface{}) {
-	*args = append(*args, a == true)
+func (a argBool) toIFace(args []interface{}) []interface{} {
+	return append(args, a == true)
 }
 
 func (a argBool) writeTo(w queryWriter, _ int) error {
@@ -472,10 +475,11 @@ type argBools struct {
 	data []bool
 }
 
-func (a *argBools) toIFace(args *[]interface{}) {
+func (a *argBools) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
-		*args = append(*args, v == true)
+		args = append(args, v == true)
 	}
+	return args
 }
 
 func (a *argBools) writeTo(w queryWriter, pos int) error {
@@ -522,8 +526,8 @@ func ArgBool(args ...bool) Argument {
 // argInt implements interface Argument but does not allocate.
 type argInt int
 
-func (a argInt) toIFace(args *[]interface{}) {
-	*args = append(*args, int64(a))
+func (a argInt) toIFace(args []interface{}) []interface{} {
+	return append(args, int64(a))
 }
 
 func (a argInt) writeTo(w queryWriter, _ int) error {
@@ -547,10 +551,11 @@ type argInts struct {
 	data []int
 }
 
-func (a *argInts) toIFace(args *[]interface{}) {
+func (a *argInts) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
-		*args = append(*args, int64(v))
+		args = append(args, int64(v))
 	}
+	return args
 }
 
 func (a *argInts) writeTo(w queryWriter, pos int) error {
@@ -598,8 +603,8 @@ func ArgInt(args ...int) Argument {
 // argInt64 implements interface Argument but does not allocate.
 type argInt64 int64
 
-func (a argInt64) toIFace(args *[]interface{}) {
-	*args = append(*args, int64(a))
+func (a argInt64) toIFace(args []interface{}) []interface{} {
+	return append(args, int64(a))
 }
 
 func (a argInt64) writeTo(w queryWriter, _ int) error {
@@ -623,10 +628,11 @@ type argInt64s struct {
 	data []int64
 }
 
-func (a *argInt64s) toIFace(args *[]interface{}) {
+func (a *argInt64s) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
-		*args = append(*args, v)
+		args = append(args, v)
 	}
+	return args
 }
 
 func (a *argInt64s) writeTo(w queryWriter, pos int) error {
@@ -673,8 +679,8 @@ func ArgInt64(args ...int64) Argument {
 
 type argFloat64 float64
 
-func (a argFloat64) toIFace(args *[]interface{}) {
-	*args = append(*args, float64(a))
+func (a argFloat64) toIFace(args []interface{}) []interface{} {
+	return append(args, float64(a))
 }
 
 func (a argFloat64) writeTo(w queryWriter, _ int) error {
@@ -698,10 +704,11 @@ type argFloat64s struct {
 	data []float64
 }
 
-func (a *argFloat64s) toIFace(args *[]interface{}) {
+func (a *argFloat64s) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
-		*args = append(*args, v)
+		args = append(args, v)
 	}
+	return args
 }
 
 func (a *argFloat64s) writeTo(w queryWriter, pos int) error {
@@ -758,10 +765,11 @@ func ArgExpr(sql string, args ...Argument) Argument {
 	return &expr{SQL: sql, Arguments: args}
 }
 
-func (e *expr) toIFace(args *[]interface{}) {
+func (e *expr) toIFace(args []interface{}) []interface{} {
 	for _, a := range e.Arguments {
-		a.toIFace(args)
+		args = a.toIFace(args)
 	}
+	return args
 }
 
 func (e *expr) writeTo(w queryWriter, _ int) error {
@@ -799,14 +807,14 @@ func (e *expr) operator() byte { return e.op }
 //	return &argSubSelect{s: s}
 //}
 //
-//func (e *argSubSelect) toIFace(args *[]interface{}) {
+//func (e *argSubSelect) toIFace(args []interface{}) []interface{} {
 //
 //	if e.buf == nil {
 //		e.buf = new(bytes.Buffer)
 //		var err error
 //		e.args, err = e.s.toSQL(e.buf) // can be optimized later
 //		if err != nil {
-//			*args = append(*args, err) // not that optimal :-(
+//			args = append(args, err) // not that optimal :-(
 //		} else {
 //			for _, a := range e.args {
 //				a.toIFace(args)

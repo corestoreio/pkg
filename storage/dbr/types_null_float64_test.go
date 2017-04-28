@@ -182,7 +182,7 @@ func TestNullFloat64_Argument(t *testing.T) {
 	var buf bytes.Buffer
 	args := make([]interface{}, 0, 2)
 	for i, ns := range nss {
-		ns.toIFace(&args)
+		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
 
 		arg := ns.Operator(NotBetween)
@@ -208,7 +208,7 @@ func TestArgNullFloat64(t *testing.T) {
 		if err := args.writeTo(&buf, 0); err != nil {
 			t.Fatalf("%+v", err)
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{math.Phi, interface{}(nil), math.SqrtE}, argIF)
 		assert.Exactly(t, "(1.618033988749895,NULL,1.6487212707001282)", buf.String())
 	})
@@ -222,7 +222,7 @@ func TestArgNullFloat64(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{math.Phi, interface{}(nil), math.SqrtE}, argIF)
 		assert.Exactly(t, "1.618033988749895NULL1.6487212707001282", buf.String())
 	})
@@ -237,7 +237,7 @@ func TestArgNullFloat64(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{1.4142135623730951}, argIF)
 		assert.Exactly(t, "1.4142135623730951", buf.String())
 	})

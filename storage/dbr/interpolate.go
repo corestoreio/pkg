@@ -36,7 +36,7 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	n := markCount
 	i := 0
 	for i < n {
-		m := strings.Index(sql, qMarkStr)
+		m := strings.IndexByte(sql, qMarkRne)
 		if m < 0 {
 			break
 		}
@@ -44,7 +44,7 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 
 		if i < len(args) {
 			prevLen := len(retArgs)
-			args[i].toIFace(&retArgs)
+			retArgs = args[i].toIFace(retArgs)
 			reps := len(retArgs) - prevLen
 			for r := 0; r < reps; r++ {
 				buf.WriteByte(qMarkRne)

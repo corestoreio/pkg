@@ -250,7 +250,7 @@ func TestNullInt64_Argument(t *testing.T) {
 	var buf bytes.Buffer
 	args := make([]interface{}, 0, 2)
 	for i, ns := range nss {
-		ns.toIFace(&args)
+		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
 
 		arg := ns.Operator(NotBetween)
@@ -276,7 +276,7 @@ func TestArgNullInt64(t *testing.T) {
 		if err := args.writeTo(&buf, 0); err != nil {
 			t.Fatalf("%+v", err)
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{int64(987651), interface{}(nil), int64(987653)}, argIF)
 		assert.Exactly(t, "(987651,NULL,987653)", buf.String())
 	})
@@ -290,7 +290,7 @@ func TestArgNullInt64(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{int64(987651), interface{}(nil), int64(987653)}, argIF)
 		assert.Exactly(t, "987651NULL987653", buf.String())
 	})
@@ -305,7 +305,7 @@ func TestArgNullInt64(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{int64(1234567)}, argIF)
 		assert.Exactly(t, "1234567", buf.String())
 	})

@@ -228,7 +228,7 @@ func TestNullBool_Argument(t *testing.T) {
 	var buf bytes.Buffer
 	args := make([]interface{}, 0, 2)
 	for i, ns := range nss {
-		ns.toIFace(&args)
+		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
 
 		arg := ns.Operator(NotBetween)

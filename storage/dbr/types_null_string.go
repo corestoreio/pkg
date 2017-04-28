@@ -30,12 +30,11 @@ type NullString struct {
 	opt byte
 }
 
-func (a NullString) toIFace(args *[]interface{}) {
+func (a NullString) toIFace(args []interface{}) []interface{} {
 	if a.NullString.Valid {
-		*args = append(*args, a.NullString.String)
-	} else {
-		*args = append(*args, nil)
+		return append(args, a.NullString.String)
 	}
+	return append(args, nil)
 }
 
 func (a NullString) writeTo(w queryWriter, _ int) error {
@@ -176,14 +175,15 @@ type argNullStrings struct {
 	data []NullString
 }
 
-func (a argNullStrings) toIFace(args *[]interface{}) {
+func (a argNullStrings) toIFace(args []interface{}) []interface{} {
 	for _, s := range a.data {
 		if s.Valid {
-			*args = append(*args, s.String)
+			args = append(args, s.String)
 		} else {
-			*args = append(*args, nil)
+			args = append(args, nil)
 		}
 	}
+	return args
 }
 
 func (a argNullStrings) writeTo(w queryWriter, pos int) error {

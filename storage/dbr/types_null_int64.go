@@ -29,12 +29,11 @@ type NullInt64 struct {
 	opt byte
 }
 
-func (a NullInt64) toIFace(args *[]interface{}) {
+func (a NullInt64) toIFace(args []interface{}) []interface{} {
 	if a.NullInt64.Valid {
-		*args = append(*args, a.NullInt64.Int64)
-	} else {
-		*args = append(*args, nil)
+		return append(args, a.NullInt64.Int64)
 	}
+	return append(args, nil)
 }
 
 func (a NullInt64) writeTo(w queryWriter, _ int) error {
@@ -170,14 +169,15 @@ type argNullInt64s struct {
 	data []NullInt64
 }
 
-func (a argNullInt64s) toIFace(args *[]interface{}) {
+func (a argNullInt64s) toIFace(args []interface{}) []interface{} {
 	for _, s := range a.data {
 		if s.Valid {
-			*args = append(*args, s.Int64)
+			args = append(args, s.Int64)
 		} else {
-			*args = append(*args, nil)
+			args = append(args, nil)
 		}
 	}
+	return args
 }
 
 func (a argNullInt64s) writeTo(w queryWriter, pos int) error {

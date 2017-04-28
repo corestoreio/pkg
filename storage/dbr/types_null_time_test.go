@@ -193,7 +193,7 @@ func TestNullTime_Argument(t *testing.T) {
 	var buf bytes.Buffer
 	args := make([]interface{}, 0, 2)
 	for i, ns := range nss {
-		ns.toIFace(&args)
+		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
 
 		arg := ns.Operator(NotBetween)
@@ -219,7 +219,7 @@ func TestArgNullTime(t *testing.T) {
 		if err := args.writeTo(&buf, 0); err != nil {
 			t.Fatalf("%+v", err)
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{timeValue, interface{}(nil), timeValue}, argIF)
 		assert.Exactly(t, "('1977-05-25 20:21:21',NULL,'1977-05-25 20:21:21')", buf.String())
 	})
@@ -233,7 +233,7 @@ func TestArgNullTime(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{timeValue, interface{}(nil), timeValue}, argIF)
 		assert.Exactly(t, "'1977-05-25 20:21:21'NULL'1977-05-25 20:21:21'", buf.String())
 	})
@@ -248,7 +248,7 @@ func TestArgNullTime(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{timeValue}, argIF)
 		assert.Exactly(t, "'1977-05-25 20:21:21'", buf.String())
 	})

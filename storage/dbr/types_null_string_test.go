@@ -229,7 +229,7 @@ func TestNullString_Argument(t *testing.T) {
 	var buf bytes.Buffer
 	args := make([]interface{}, 0, 2)
 	for i, ns := range nss {
-		ns.toIFace(&args)
+		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
 
 		arg := ns.Operator(NotBetween)
@@ -255,7 +255,7 @@ func TestArgNullString(t *testing.T) {
 		if err := args.writeTo(&buf, 0); err != nil {
 			t.Fatalf("%+v", err)
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{"1'; DROP TABLE users-- 1", interface{}(nil), "Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗"}, argIF)
 		assert.Exactly(t, "('1\\'; DROP TABLE users-- 1',NULL,'Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗')", buf.String())
 	})
@@ -269,7 +269,7 @@ func TestArgNullString(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{"1'; DROP TABLE users-- 1", interface{}(nil), "Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗"}, argIF)
 		assert.Exactly(t, "'1\\'; DROP TABLE users-- 1'NULL'Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗'", buf.String())
 	})
@@ -302,7 +302,7 @@ func TestArgNullString(t *testing.T) {
 				t.Fatalf("%+v", err)
 			}
 		}
-		args.toIFace(&argIF)
+		argIF = args.toIFace(argIF)
 		assert.Exactly(t, []interface{}{"1';"}, argIF)
 		assert.Exactly(t, "'1\\';'", buf.String())
 	})

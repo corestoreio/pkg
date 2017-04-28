@@ -29,12 +29,11 @@ type NullBytes struct {
 	Valid bool
 }
 
-func (a NullBytes) toIFace(args *[]interface{}) {
+func (a NullBytes) toIFace(args []interface{}) []interface{} {
 	if a.Valid {
-		*args = append(*args, a.Bytes)
-	} else {
-		*args = append(*args, nil)
+		return append(args, a.Bytes)
 	}
+	return append(args, nil)
 }
 
 func (a NullBytes) writeTo(w queryWriter, _ int) error {
