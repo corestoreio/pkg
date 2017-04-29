@@ -25,16 +25,17 @@ import (
 // interface. Eq = EqualityMap.
 type Eq map[string]Argument
 
-func (eq Eq) appendConditions(wfs *WhereFragments) {
+func (eq Eq) appendConditions(wfs WhereFragments) WhereFragments {
 	for c, arg := range eq {
 		if arg == nil {
 			arg = ArgNull()
 		}
-		*wfs = append(*wfs, &whereFragment{
+		wfs = append(wfs, &whereFragment{
 			Condition: c,
 			Arguments: Arguments{arg},
 		})
 	}
+	return wfs
 }
 
 // And sets the logical AND operator. Default case.
@@ -73,8 +74,8 @@ type whereFragment struct {
 	Using []string
 }
 
-func (wf *whereFragment) appendConditions(wfs *WhereFragments) {
-	*wfs = append(*wfs, wf)
+func (wf *whereFragment) appendConditions(wfs WhereFragments) WhereFragments {
+	return append(wfs, wf)
 }
 
 // And sets the logical AND operator
@@ -104,7 +105,7 @@ func (wfs WhereFragments) Conditions() []string {
 
 // ConditionArg used at argument in Where()
 type ConditionArg interface {
-	appendConditions(*WhereFragments)
+	appendConditions(WhereFragments) WhereFragments
 	And() ConditionArg // And connects next condition via AND
 	Or() ConditionArg  // Or connects next condition via OR
 }
@@ -157,15 +158,18 @@ func ParenthesisClose() ConditionArg {
 	}
 }
 
-func appendConditions(wf *WhereFragments, wargs ...ConditionArg) {
+func appendConditions(wf WhereFragments, wargs ...ConditionArg) WhereFragments {
 	for _, warg := range wargs {
-		warg.appendConditions(wf)
+		wf = warg.appendConditions(wf)
 	}
+	return wf
 }
 
-// Invariant: only called when len(fragments) > 0
 // stmtType enum of j=join, w=where, h=having
-func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arguments, stmtType byte) error {
+func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, stmtType byte) (Arguments, error) {
+	if len(wf) == 0 {
+		return args, nil
+	}
 
 	switch stmtType {
 	case 'w':
@@ -175,7 +179,7 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 	}
 
 	i := 0
-	for _, f := range fragments {
+	for _, f := range wf {
 
 		if stmtType == 'j' {
 			if len(f.Using) > 0 {
@@ -187,7 +191,7 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 					Quoter.quote(w, c)
 				}
 				w.WriteRune(')')
-				return nil // done, only one using allowed
+				return args, nil // done, only one using allowed
 			}
 			if i == 0 {
 				w.WriteString(" ON ")
@@ -238,9 +242,9 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 				subArgs, err := f.Sub.Select.toSQL(w)
 				w.WriteRune(')')
 				if err != nil {
-					return errors.Wrapf(err, "[dbr] writeWhereFragmentsToSQL failed SubSelect for table: %q", f.Sub.Select.Table.String())
+					return nil, errors.Wrapf(err, "[dbr] writeWhereFragmentsToSQL failed SubSelect for table: %q", f.Sub.Select.Table.String())
 				}
-				*args = append(*args, subArgs...)
+				args = append(args, subArgs...)
 			} else {
 				// a column only supports one argument. If not provided we panic
 				// with an index out of bounds error.
@@ -250,11 +254,11 @@ func writeWhereFragmentsToSQL(fragments WhereFragments, w queryWriter, args *Arg
 		w.WriteRune(')')
 
 		if addArg {
-			*args = append(*args, f.Arguments...)
+			args = append(args, f.Arguments...)
 		}
 		i++
 	}
-	return nil
+	return args, nil
 }
 
 // maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html

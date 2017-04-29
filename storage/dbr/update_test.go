@@ -317,7 +317,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		uc := UpdatedColumns{}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf, &args)
+		args, err := uc.writeOnDuplicateKey(buf, args)
 		assert.NoError(t, err, "%+v", err)
 		assert.Empty(t, buf.String())
 		assert.Empty(t, args)
@@ -329,7 +329,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf, &args)
+		args, err := uc.writeOnDuplicateKey(buf, args)
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `sku`=VALUES(`sku`), `name`=VALUES(`name`), `stock`=VALUES(`stock`)", buf.String())
 		assert.Empty(t, args)
@@ -342,7 +342,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf, &args)
+		args, err := uc.writeOnDuplicateKey(buf, args)
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=?", buf.String())
 		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(12)}, args.Interfaces())
@@ -355,7 +355,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf, &args)
+		args, err := uc.writeOnDuplicateKey(buf, args)
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=VALUES(`stock`)+?", buf.String())
 		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(13)}, args.Interfaces())
@@ -368,7 +368,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf, &args)
+		args, err := uc.writeOnDuplicateKey(buf, args)
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `sku`=VALUES(`sku`), `stock`=?", buf.String())
 		assert.Exactly(t, []interface{}{"E0S 5D Mark III", int64(14)}, args.Interfaces())
@@ -385,7 +385,8 @@ func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := uc.writeOnDuplicateKey(buf, &args); err != nil {
+		var err error
+		if args, err = uc.writeOnDuplicateKey(buf, args); err != nil {
 			b.Fatalf("%+v", err)
 		}
 		buf.Reset()

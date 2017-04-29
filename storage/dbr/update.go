@@ -133,7 +133,7 @@ func (b *Update) Where(args ...ConditionArg) *Update {
 	if b.previousError != nil {
 		return b
 	}
-	appendConditions(&b.WhereFragments, args...)
+	b.WhereFragments = appendConditions(b.WhereFragments, args...)
 	return b
 }
 
@@ -224,12 +224,12 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 		}
 	}
 
+	var err error
 	// Write WHERE clause if we have any fragments
-	if len(b.WhereFragments) > 0 {
-		if err := writeWhereFragmentsToSQL(b.WhereFragments, buf, &args, 'w'); err != nil {
-			return "", nil, errors.Wrap(err, "[dbr] Update.ToSQL.writeWhereFragmentsToSQL")
-		}
+	if args, err = writeWhereFragmentsToSQL(b.WhereFragments, buf, args, 'w'); err != nil {
+		return "", nil, errors.Wrap(err, "[dbr] Update.ToSQL.writeWhereFragmentsToSQL")
 	}
+
 	sqlWriteOrderBy(buf, b.OrderBys, false)
 	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
 	return buf.String(), args, nil
@@ -304,9 +304,11 @@ type UpdatedColumns struct {
 	Record    UpdateArgProducer
 }
 
-func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args *Arguments) error {
+// writeOnDuplicateKey writes the columns to `w` and appends the arguments to
+// `args` and returns `args`.
+func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arguments, error) {
 	if len(uc.Columns) == 0 {
-		return nil
+		return args, nil
 	}
 
 	useArgs := len(uc.Arguments) == len(uc.Columns)
@@ -322,7 +324,7 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args *Arguments) err
 			// todo remove continue
 			if e, ok := uc.Arguments[i].(*expr); ok {
 				_ = e.writeTo(w, 0)
-				*args = append(*args, uc.Arguments[i])
+				args = append(args, uc.Arguments[i])
 				continue
 			}
 			if uc.Arguments[i] == nil {
@@ -332,14 +334,14 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args *Arguments) err
 				continue
 			}
 			w.WriteRune('?')
-			*args = append(*args, uc.Arguments[i])
+			args = append(args, uc.Arguments[i])
 		} else {
 			w.WriteString("VALUES(")
 			Quoter.quote(w, c)
 			w.WriteRune(')')
 		}
 	}
-	return nil
+	return args, nil
 }
 
 // UpdateMulti allows to run an UPDATE statement multiple times with different

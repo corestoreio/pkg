@@ -17,7 +17,7 @@ func (b *Select) join(j string, t alias, on ...ConditionArg) *Select {
 		JoinType: j,
 		Table:    t,
 	}
-	appendConditions(&jf.OnConditions, on...)
+	jf.OnConditions = appendConditions(jf.OnConditions, on...)
 	b.JoinFragments = append(b.JoinFragments, jf)
 	return b
 }

@@ -259,7 +259,7 @@ func (b *Select) AddArguments(args ...Argument) *Select {
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs.
 func (b *Select) Where(c ...ConditionArg) *Select {
-	appendConditions(&b.WhereFragments, c...)
+	b.WhereFragments = appendConditions(b.WhereFragments, c...)
 	return b
 }
 
@@ -271,7 +271,7 @@ func (b *Select) GroupBy(groups ...string) *Select {
 
 // Having appends a HAVING clause to the statement
 func (b *Select) Having(c ...ConditionArg) *Select {
-	appendConditions(&b.HavingFragments, c...)
+	b.HavingFragments = appendConditions(b.HavingFragments, c...)
 	return b
 }
 
@@ -378,16 +378,14 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 			w.WriteString(f.JoinType)
 			w.WriteString(" JOIN ")
 			f.Table.FquoteAs(w)
-			if err := writeWhereFragmentsToSQL(f.OnConditions, w, &args, 'j'); err != nil {
+			if args, err = writeWhereFragmentsToSQL(f.OnConditions, w, args, 'j'); err != nil {
 				return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
 			}
 		}
 	}
 
-	if len(b.WhereFragments) > 0 {
-		if err := writeWhereFragmentsToSQL(b.WhereFragments, w, &args, 'w'); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
-		}
+	if args, err = writeWhereFragmentsToSQL(b.WhereFragments, w, args, 'w'); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -400,10 +398,8 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		}
 	}
 
-	if len(b.HavingFragments) > 0 {
-		if err := writeWhereFragmentsToSQL(b.HavingFragments, w, &args, 'h'); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
-		}
+	if args, err = writeWhereFragmentsToSQL(b.HavingFragments, w, args, 'h'); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.writeWhereFragmentsToSQL")
 	}
 
 	sqlWriteOrderBy(w, b.OrderBys, false)

@@ -227,15 +227,15 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	args := make(Arguments, len(b.Values), len(b.Values)+len(b.Records)) // sneaky ;-)
 	copy(args, b.Values)
 
+	var err error
 	if b.Records == nil {
-		if err := b.OnDuplicateKey.writeOnDuplicateKey(buf, &args); err != nil {
+		if args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args); err != nil {
 			return "", nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
 		}
 		return buf.String(), args, nil
 	}
 
 	for i, rec := range b.Records {
-		var err error
 		args, err = rec.ProduceInsertArgs(args, b.Columns)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
@@ -246,7 +246,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 		buf.WriteString(placeholderStr)
 	}
 
-	if err := b.OnDuplicateKey.writeOnDuplicateKey(buf, &args); err != nil {
+	if args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
 	}
 
