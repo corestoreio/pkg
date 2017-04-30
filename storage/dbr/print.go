@@ -93,11 +93,6 @@ func sqlWriteOrderBy(w queryWriter, orderBys []string, br bool) {
 	}
 }
 
-func sqlWriteInsertInto(w queryWriter, into string) {
-	w.WriteString("INSERT INTO ")
-	Quoter.quote(w, into)
-}
-
 func sqlWriteLimitOffset(w queryWriter, limitValid bool, limitCount uint64, offsetValid bool, offsetCount uint64) {
 	if limitValid {
 		w.WriteString(" LIMIT ")

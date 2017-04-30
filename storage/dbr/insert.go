@@ -19,15 +19,21 @@ type Insert struct {
 
 	Into    string
 	Columns []string
-	Values  Arguments
+	Values  []Arguments
 
 	Records []InsertArgProducer
-	Maps    map[string]Argument
+	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
+	Select *Select
+	Maps   map[string]Argument
 
 	// OnDuplicateKey updates the referenced columns. See documentation for type
 	// `UpdatedColumns`. For more details
 	// https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
 	OnDuplicateKey UpdatedColumns
+	// IsReplace uses the REPLACE syntax. See function Replace().
+	IsReplace bool
+	// IsIgnore ignores error. See function Ignore().
+	IsIgnore bool
 
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -73,19 +79,46 @@ func (tx *Tx) InsertInto(into string) *Insert {
 	return i
 }
 
+// Ignore modifier enables errors that occur while executing the INSERT
+// statement are getting ignored. For example, without IGNORE, a row that
+// duplicates an existing UNIQUE index or PRIMARY KEY value in the table causes
+// a duplicate-key error and the statement is aborted. With IGNORE, the row is
+// discarded and no error occurs. Ignored errors generate warnings instead.
+// https://dev.mysql.com/doc/refman/5.7/en/insert.html
+func (b *Insert) Ignore() *Insert {
+	b.IsIgnore = true
+	return b
+}
+
+// Replace instead of INSERT to overwrite old rows. REPLACE is the counterpart
+// to INSERT IGNORE in the treatment of new rows that contain unique key values
+// that duplicate old rows: The new rows are used to replace the old rows rather
+// than being discarded.
+// https://dev.mysql.com/doc/refman/5.7/en/replace.html
+func (b *Insert) Replace() *Insert {
+	b.IsReplace = true
+	return b
+}
+
 // AddColumns appends columns to insert in the statement.
 func (b *Insert) AddColumns(columns ...string) *Insert {
 	b.Columns = append(b.Columns, columns...)
 	return b
 }
 
-// AddValues appends a set of values to the statement. Pro Tip: Use Values() and
-// not Record() to avoid reflection. Only this function will consider the
-// driver.Valuer interface when you pass a pointer to the value. Values must be
-// balanced to the number of columns. You can even provide more values, like
-// records. see BenchmarkInsertValuesSQL
+// AddValues appends a set of values to the statement. Each call of AddValues
+// creates a new set of values.
 func (b *Insert) AddValues(vals ...Argument) *Insert {
-	b.Values = append(b.Values, vals...)
+	if lv, mod := len(vals), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
+		// now we have more arguments than columns and we can assume that more
+		// rows gets inserted.
+		for i := 0; i < len(vals); i = i + mod {
+			b.Values = append(b.Values, vals[i:i+mod])
+		}
+	} else {
+		// each call to AddValues equals one row in a table.
+		b.Values = append(b.Values, vals)
+	}
 	return b
 }
 
@@ -128,39 +161,21 @@ func (b *Insert) Pair(column string, arg Argument) *Insert {
 			return b
 		}
 	}
+
 	b.Columns = append(b.Columns, column)
-	b.Values = append(b.Values, arg)
+	if len(b.Values) == 0 {
+		b.Values = make([]Arguments, 1, 5)
+	}
+	b.Values[0] = append(b.Values[0], arg)
+
 	return b
 }
 
 // FromSelect creates an "INSERT INTO `table` SELECT ..." statement from a
 // previously created SELECT statement.
-func (b *Insert) FromSelect(s *Select) (string, Arguments, error) {
-	if b.previousError != nil {
-		return "", nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
-	}
-
-	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
-	}
-
-	if len(b.Into) == 0 {
-		return "", nil, errors.NewEmptyf(errTableMissing)
-	}
-
-	sSQL, sArgs, err := s.ToSQL()
-	if err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Insert.FromSelect")
-	}
-
-	var buf = bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	sqlWriteInsertInto(buf, b.Into)
-	buf.WriteByte(' ')
-	buf.WriteString(sSQL)
-
-	return buf.String(), sArgs, nil
+func (b *Insert) FromSelect(s *Select) *Insert {
+	b.Select = s
+	return b
 }
 
 // ToSQL serialized the Insert to a SQL string
@@ -177,55 +192,85 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	if len(b.Into) == 0 {
 		return "", nil, errors.NewEmptyf(errTableMissing)
 	}
-	if len(b.Columns) == 0 && len(b.Maps) == 0 {
-		// return "", nil, errors.NewEmptyf(errColumnsMissing)
-	} else if len(b.Maps) == 0 {
-		if len(b.Values) == 0 && len(b.Records) == 0 {
-			return "", nil, errors.NewEmptyf(errRecordsMissing)
-		}
-		if len(b.Columns) == 0 && (len(b.Values) > 0 || len(b.Records) > 0) {
-			return "", nil, errors.NewEmptyf(errColumnsMissing)
-		}
-	}
 
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	sqlWriteInsertInto(buf, b.Into)
-	buf.WriteString(" (")
+	ior := "INSERT "
+	if b.IsReplace {
+		ior = "REPLACE "
+	}
+	buf.WriteString(ior)
+	if b.IsIgnore {
+		buf.WriteString("IGNORE ")
+	}
 
-	if len(b.Maps) != 0 {
+	buf.WriteString("INTO ")
+	Quoter.quote(buf, b.Into)
+	buf.WriteByte(' ')
+
+	if b.Select != nil {
+		sArgs, err := b.Select.toSQL(buf)
+		if err != nil {
+			return "", nil, errors.Wrap(err, "[dbr] Insert.FromSelect")
+		}
+		return buf.String(), sArgs, nil
+	}
+
+	if len(b.Maps) > 0 {
 		args, err := b.mapToSQL(buf)
 		return buf.String(), args, err
 	}
 
+	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
+		return "", nil, errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
+	}
+
 	var ph = bufferpool.Get() // Build the ph like "(?,?,?)"
 
-	// Simultaneously write the cols to the sql buffer, and build a ph
-	ph.WriteRune('(')
-	for i, c := range b.Columns {
-		if i > 0 {
-			buf.WriteRune(',')
-			ph.WriteRune(',')
+	if len(b.Columns) > 0 {
+		ph.WriteByte('(')
+		buf.WriteByte('(')
+		for i, c := range b.Columns {
+			if i > 0 {
+				buf.WriteByte(',')
+				ph.WriteByte(',')
+			}
+			Quoter.FquoteAs(buf, c)
+			ph.WriteByte('?')
 		}
-		Quoter.FquoteAs(buf, c)
-		ph.WriteRune('?')
+		ph.WriteByte(')')
+		buf.WriteByte(')')
+		buf.WriteByte(' ')
+	} else {
+		// no columns provided so build the place holders.
+		ph.WriteRune('(')
+		for i := range b.Values[0] {
+			if i > 0 {
+				ph.WriteByte(',')
+			}
+			ph.WriteByte('?')
+		}
+		ph.WriteByte(')')
 	}
-	buf.WriteString(") VALUES ")
-	ph.WriteRune(')')
+	buf.WriteString("VALUES ")
+
 	placeholderStr := ph.String()
 	bufferpool.Put(ph)
 
-	// Go thru each value we want to insert. Write the placeholders, and collect args
-	for i := 0; i < len(b.Values); i = i + len(b.Columns) {
+	var argCount0 int
+	if len(b.Values) > 0 {
+		argCount0 = len(b.Values[0])
+	}
+	totalArgCount := len(b.Values) * argCount0
+	args := make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
+	for i, v := range b.Values {
 		if i > 0 {
 			buf.WriteRune(',')
 		}
 		buf.WriteString(placeholderStr)
+		args = append(args, v...)
 	}
-
-	args := make(Arguments, len(b.Values), len(b.Values)+len(b.Records)) // sneaky ;-)
-	copy(args, b.Values)
 
 	var err error
 	if b.Records == nil {

@@ -94,6 +94,7 @@ func TestInsertMultipleToSQL(t *testing.T) {
 		AddOnDuplicateKey("b", nil).
 		AddOnDuplicateKey("c", nil).
 		ToSQL()
+
 	assert.NoError(t, err)
 	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", sStr)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
@@ -373,11 +374,67 @@ func TestInsert_FromSelect(t *testing.T) {
 		).
 		Where(argEq).
 		OrderByDesc("id").
-		Paginate(1, 20))
+		Paginate(1, 20)).ToSQL()
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 	assert.Exactly(t, "INSERT INTO `tableA` SELECT something_id, user_id, other FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0", iSQL)
 	assert.Exactly(t, []interface{}{int64(1), "wat", int64(1), int64(2), int64(3)}, args.Interfaces())
+}
 
+func TestInsert_Replace_Ignore(t *testing.T) {
+
+	// this generated statement does not comply the SQL standard
+	sStr, args, err := NewInsert("a").
+		Replace().Ignore().
+		AddColumns("b", "c").
+		AddValues(argInt(1), argInt(2)).
+		AddValues(argInt64(3), argInt64(4)).
+		ToSQL()
+	assert.NoError(t, err)
+	assert.Equal(t, "REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (?,?),(?,?)", sStr)
+	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4)}, args.Interfaces())
+}
+
+func TestInsert_WithoutColumns(t *testing.T) {
+
+	t.Run("each column in its own Arg", func(t *testing.T) {
+		ins := NewInsert("catalog_product_link").
+			AddValues(ArgInt64(2046), ArgInt64(33), ArgInt64(3)).
+			AddValues(ArgInt64(2046), ArgInt64(34), ArgInt64(3)).
+			AddValues(ArgInt64(2046), ArgInt64(35), ArgInt64(3))
+
+		sStr, args, err := ins.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{int64(2046), int64(33), int64(3), int64(2046), int64(34), int64(3), int64(2046), int64(35), int64(3)}, args.Interfaces())
+		assert.Exactly(t, "INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)", sStr)
+	})
+}
+
+func TestInsert_Pair(t *testing.T) {
+	t.Run("one row", func(t *testing.T) {
+		ins := NewInsert("catalog_product_link").
+			Pair("product_id", ArgInt64(2046)).
+			Pair("linked_product_id", ArgInt64(33)).
+			Pair("link_type_id", ArgInt64(3))
+		sStr, args, err := ins.ToSQL()
+		assert.NoError(t, err)
+		assert.Exactly(t, []interface{}{int64(2046), int64(33), int64(3)}, args.Interfaces())
+		assert.Exactly(t, "INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?)", sStr)
+	})
+	t.Run("multiple rows triggers error", func(t *testing.T) {
+		ins := NewInsert("catalog_product_link").
+			Pair("product_id", ArgInt64(2046)).
+			Pair("linked_product_id", ArgInt64(33)).
+			Pair("link_type_id", ArgInt64(3)).
+			// next row
+			Pair("product_id", ArgInt64(2046)).
+			Pair("linked_product_id", ArgInt64(34)).
+			Pair("link_type_id", ArgInt64(3))
+
+		sStr, args, err := ins.ToSQL()
+		assert.Empty(t, sStr)
+		assert.Nil(t, args)
+		assert.True(t, errors.IsAlreadyExists(err), "%+v", err)
+	})
 }

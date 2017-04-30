@@ -63,6 +63,62 @@ func ExampleNewInsert() {
 	//(1,2,'Three',NULL),(5,6,'Seven',3.14156)
 }
 
+func ExampleNewInsert_withoutColumns() {
+	i := dbr.NewInsert("catalog_product_link").
+		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(33), dbr.ArgInt64(3)).
+		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(34), dbr.ArgInt64(3)).
+		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(35), dbr.ArgInt64(3))
+	writeToSqlAndPreprocess(i)
+
+	// Output:
+	//Prepared Statement:
+	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
+	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	//
+	//Preprocessed Statement:
+	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
+}
+
+func ExampleInsert_AddValues() {
+	// Without any columns you must for each row call AddValues. Here we insert
+	// three rows at once.
+	i := dbr.NewInsert("catalog_product_link").
+		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(33), dbr.ArgInt64(3)).
+		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(34), dbr.ArgInt64(3)).
+		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(35), dbr.ArgInt64(3))
+	writeToSqlAndPreprocess(i)
+	fmt.Print("\n\n")
+
+	// Specifying columns allows to call only one time AddValues but inserting
+	// three rows at once. Of course you can also insert only one row ;-)
+	i = dbr.NewInsert("catalog_product_link").
+		AddColumns("product_id", "linked_product_id", "link_type_id").
+		AddValues(
+			dbr.ArgInt64(2046), dbr.ArgInt64(33), dbr.ArgInt64(3),
+			dbr.ArgInt64(2046), dbr.ArgInt64(34), dbr.ArgInt64(3),
+			dbr.ArgInt64(2046), dbr.ArgInt64(35), dbr.ArgInt64(3),
+		)
+	writeToSqlAndPreprocess(i)
+
+	// Output:
+	//Prepared Statement:
+	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
+	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	//
+	//Preprocessed Statement:
+	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
+	//
+	//Prepared Statement:
+	//INSERT INTO `catalog_product_link`
+	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?),(?,?,?)
+	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	//
+	//Preprocessed Statement:
+	//INSERT INTO `catalog_product_link`
+	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES
+	//(2046,33,3),(2046,34,3),(2046,35,3)
+}
+
 func ExampleInsert_AddOnDuplicateKey() {
 	i := dbr.NewInsert("dbr_people").
 		AddColumns("id", "name", "email").
@@ -100,7 +156,9 @@ func ExampleInsert_FromSelect() {
 			).
 			Where(argEq).
 			OrderByDesc("id").
-			Paginate(1, 20))
+			Paginate(1, 20),
+	).
+		ToSQL()
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
