@@ -232,7 +232,7 @@ func TestSelect_Null(t *testing.T) {
 	})
 
 	t.Run("col is not null", func(t *testing.T) {
-		sql, args, err := s.Select("a", "b").From("c").Where(Condition("r", ArgNotNull())).ToSQL()
+		sql, args, err := s.Select("a", "b").From("c").Where(Condition("r", ArgNull().Operator(NotNull))).ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT a, b FROM `c` WHERE (`r` IS NOT NULL)", sql)
 		assert.Exactly(t, []interface{}(nil), args.Interfaces())
@@ -244,7 +244,7 @@ func TestSelect_Null(t *testing.T) {
 				Condition("r", ArgNull()),
 				Condition("d = ?", argInt(3)),
 				Condition("ab", ArgNull()),
-				Condition("w", ArgNotNull()),
+				Condition("w", ArgNull().Operator(NotNull)),
 			).ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, "SELECT a, b FROM `c` WHERE (`r` IS NULL) AND (d = ?) AND (`ab` IS NULL) AND (`w` IS NOT NULL)", sql)
@@ -311,7 +311,7 @@ func TestSelectWhereMapSQL(t *testing.T) {
 			Where(Eq{"a": nil}).
 			Where(Eq{"b": ArgBool(false)}).
 			Where(Eq{"c": ArgNull()}).
-			Where(Eq{"d": ArgNotNull()}).
+			Where(Eq{"d": ArgNull().Operator(NotNull)}).
 			ToSQL()
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT a FROM `b` WHERE (`a` IS NULL) AND (`b` = ?) AND (`c` IS NULL) AND (`d` IS NOT NULL)", sql)
@@ -960,7 +960,7 @@ func TestParenthesisOpen_Close(t *testing.T) {
 				Condition("m", argInt(33)),
 				Condition("n", ArgString("wh3r3")).Or(),
 				ParenthesisClose(),
-				Condition("q", ArgNotNull()),
+				Condition("q", ArgNull().Operator(NotNull)),
 			)
 
 		sql, _, err := sel.ToSQL()

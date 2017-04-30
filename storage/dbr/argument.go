@@ -1,6 +1,21 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
+	"database/sql/driver"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -214,43 +229,92 @@ func isNotIn(o rune) bool {
 	return true
 }
 
-//func ArgValuer(args ...driver.Valuer) (Argument, error) {
-//	if len(args) == 1 {
-//		dv, err := args[0].Value()
-//		if err != nil {
-//			return nil, errors.Wrap(err, "[dbr] args[0].Value")
-//		}
-//		switch v := dv.(type) {
-//		case int64:
-//			return ArgInt64(v), nil
-//		case []int64:
-//			return ArgInt64(v...), nil
-//		case float64:
-//			return ArgFloat64(v), nil
-//		case []float64:
-//			return ArgFloat64(v...), nil
-//		case bool:
-//			return ArgBool(v), nil
-//		case []bool:
-//			return ArgBool(v...), nil
-//		case []byte:
-//			return ArgBytes(v), nil
-//		case string:
-//			return ArgString(v), nil
-//		case []string:
-//			return ArgString(v...), nil
-//		case time.Time:
-//			return ArgTime(v), nil
-//		case []time.Time:
-//			return ArgTime(v...), nil
-//		case nil:
-//			return ArgNull(), nil
-//		default:
-//			return nil, errors.NewNotSupportedf("[dbr] Argument %#v not supported", dv)
-//		}
-//	}
-//	return nil, nil
-//}
+type argValue struct {
+	op   rune
+	data []driver.Valuer
+}
+
+func (a *argValue) toIFace(args []interface{}) []interface{} {
+	for _, v := range a.data {
+		args = append(args, v)
+	}
+	return args
+}
+
+func writeDriverValuer(w queryWriter, value driver.Valuer) error {
+	if value == nil {
+		_, err := w.WriteString("NULL")
+		return err
+	}
+	val, err := value.Value()
+	if err != nil {
+		return errors.Wrapf(err, "[dbr] argValue.WriteTo: %#v", value)
+	}
+	switch t := val.(type) {
+	case nil:
+		_, err = w.WriteString("NULL")
+	case int:
+		_, err = w.WriteString(strconv.Itoa(t))
+	case int64:
+		_, err = w.WriteString(strconv.FormatInt(t, 10))
+	case float64:
+		_, err = w.WriteString(strconv.FormatFloat(t, 'f', -1, 64))
+	case string:
+		dialect.EscapeString(w, t)
+	case bool:
+		dialect.EscapeBool(w, t)
+	case time.Time:
+		dialect.EscapeTime(w, t)
+	case []byte:
+		dialect.EscapeBinary(w, t)
+	default:
+		return errors.NewNotSupportedf("[dbr] argValue.WriteTo Type not yet supported: %#v", value)
+	}
+	return err
+}
+
+func (a *argValue) writeTo(w queryWriter, pos int) error {
+	if isNotIn(a.operator()) {
+		return writeDriverValuer(w, a.data[pos])
+	}
+
+	l := len(a.data) - 1
+	w.WriteRune('(')
+	for i, value := range a.data {
+		if err := writeDriverValuer(w, value); err != nil {
+			return err
+		}
+		//dialect.EscapeTime(w, v)
+		if i < l {
+			w.WriteRune(',')
+		}
+	}
+	w.WriteRune(')')
+	return nil
+}
+
+func (a *argValue) len() int {
+	if isNotIn(a.operator()) {
+		return len(a.data)
+	}
+	return 1
+}
+
+// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Operator*.
+func (a *argValue) Operator(op rune) Argument {
+	a.op = op
+	return a
+}
+
+func (a *argValue) operator() rune { return a.op }
+
+// ArgValue allows to use any type which implements driver.Valuer interface.
+func ArgValue(args ...driver.Valuer) Argument {
+	return &argValue{
+		data: args,
+	}
+}
 
 type argTimes struct {
 	op   rune
@@ -330,7 +394,7 @@ func ArgBytes(p []byte) Argument {
 	return argBytes(p)
 }
 
-type argNull uint8
+type argNull rune
 
 func (i argNull) toIFace(args []interface{}) []interface{} {
 	return append(args, nil)
@@ -344,27 +408,18 @@ func (i argNull) writeTo(w queryWriter, _ int) error {
 func (i argNull) len() int { return 1 }
 
 // Operator not supported
-func (i argNull) Operator(_ rune) Argument { return i }
+func (i argNull) Operator(op rune) Argument { return argNull(op) }
 func (i argNull) operator() rune {
-	switch i {
-	case 10:
-		return Null
-	case 20:
-		return NotNull
+	if i != 0 {
+		return rune(i)
 	}
-	return 0
+	return Null
 }
 
 // ArgNull treats the argument as a SQL `IS NULL` or `NULL`.
 // IN clause not supported.
 func ArgNull() Argument {
-	return argNull(10)
-}
-
-// ArgNotNull treats the argument as a SQL `IS NOT NULL`.
-// IN clause not supported.
-func ArgNotNull() Argument {
-	return argNull(20)
+	return argNull(0)
 }
 
 // argString implements interface Argument but does not allocate.

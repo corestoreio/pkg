@@ -1,6 +1,21 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
+	"database/sql/driver"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -48,12 +63,6 @@ func TestRepeat(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 	})
 }
-
-//BenchmarkRepeat/multi-4         	 3000000	       492 ns/op	      96 B/op	       1 allocs/op no iFace wrapping
-//BenchmarkRepeat/single-4        	 5000000	       311 ns/op	      48 B/op	       1 allocs/op no iFace wrapping
-
-//BenchmarkRepeat/multi-4         	 1000000	      1753 ns/op	    1192 B/op	      19 allocs/op
-//BenchmarkRepeat/single-4        	 2000000	       899 ns/op	     448 B/op	      11 allocs/op
 
 func BenchmarkRepeat(b *testing.B) {
 
@@ -130,9 +139,66 @@ func TestInterpolateErrors(t *testing.T) {
 	})
 }
 
+type argValUint16 uint16
+
+func (u argValUint16) Value() (driver.Value, error) {
+	if u > 0 {
+		return nil, errors.NewAbortedf("Not in the mood today")
+	}
+	return uint16(0), nil
+}
+
+func TestInterpolate_ArgValue(t *testing.T) {
+	t.Parallel()
+
+	aInt := MakeNullInt64(4711)
+	aStr := MakeNullString("Goph'er")
+	aFlo := MakeNullFloat64(2.7182818)
+	aTim := MakeNullTime(Now.UTC())
+	aBoo := MakeNullBool(true)
+	aByt := MakeNullBytes([]byte(`BytyGophe'r`))
+	var aNil NullBytes
+
+	t.Run("equal", func(t *testing.T) {
+		str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ?",
+			ArgValue(aInt), ArgValue(aStr), ArgValue(aFlo),
+			ArgValue(aTim), ArgValue(aBoo), ArgValue(aByt),
+			ArgValue(nil), ArgValue(aNil),
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM x WHERE a = 4711 AND b = 'Goph\\'er' AND c = 2.7182818 AND d = '2006-01-02 15:04:12' AND e = 1 AND f = 0x42797479476f7068652772 AND g = NULL AND h = NULL",
+			str)
+	})
+	t.Run("in", func(t *testing.T) {
+		str, err := Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c IN ? AND d IN ? AND e IN ? AND f IN ?",
+			ArgValue(aInt, aInt).Operator(In), ArgValue(aStr, aStr).Operator(In), ArgValue(aFlo, aFlo).Operator(In),
+			ArgValue(aTim, aTim).Operator(In), ArgValue(aBoo, aBoo).Operator(In), ArgValue(aByt, aByt).Operator(In),
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM x WHERE a IN (4711,4711) AND b IN ('Goph\\'er','Goph\\'er') AND c IN (2.7182818,2.7182818) AND d IN ('2006-01-02 15:04:12','2006-01-02 15:04:12') AND e IN (1,1) AND f IN (0x42797479476f7068652772,0x42797479476f7068652772)",
+			str)
+	})
+	t.Run("type not supported", func(t *testing.T) {
+		str, err := Interpolate("SELECT * FROM x WHERE a = ?",
+			ArgValue(argValUint16(0)),
+		)
+		assert.True(t, errors.IsNotSupported(err), "%+v", err)
+		assert.Empty(t, str)
+	})
+	t.Run("valuer error", func(t *testing.T) {
+		str, err := Interpolate("SELECT * FROM x WHERE a = ?",
+			ArgValue(argValUint16(1)),
+		)
+		assert.True(t, errors.IsAborted(err), "%+v", err)
+		assert.Empty(t, str)
+	})
+
+}
+
 func TestInterpolateInt64(t *testing.T) {
 	t.Parallel()
-	t.Run("each", func(t *testing.T) {
+
+	t.Run("equal", func(t *testing.T) {
 		str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND ab = ? AND j = ?",
 			ArgInt64(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
 		)
@@ -148,7 +214,7 @@ func TestInterpolateInt64(t *testing.T) {
 			"SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)",
 			str)
 	})
-	t.Run("in and each", func(t *testing.T) {
+	t.Run("in and equal", func(t *testing.T) {
 		str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND h = ? AND i = ? AND j = ? AND k = ? AND m IN ? OR n = ?",
 			ArgInt64(1, -2, 3, 4, 5, 6),
 			argInt64(11),
@@ -174,9 +240,9 @@ func TestInterpolateInt64(t *testing.T) {
 
 var preprocessSink string
 
-// BenchmarkPreprocess-4   	  500000	      4013 ns/op	     174 B/op	      11 allocs/op with reflection
-// BenchmarkPreprocess-4   	  500000	      3591 ns/op	     174 B/op	      11 allocs/op
-func BenchmarkPreprocess(b *testing.B) {
+// BenchmarkInterpolate-4   	  500000	      4013 ns/op	     174 B/op	      11 allocs/op with reflection
+// BenchmarkInterpolate-4   	  500000	      3591 ns/op	     174 B/op	      11 allocs/op
+func BenchmarkInterpolate(b *testing.B) {
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	args := Arguments{
 		ArgInt64(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
@@ -262,7 +328,6 @@ func TestInterpolateStrings(t *testing.T) {
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 		assert.Empty(t, str)
 	})
-
 }
 
 func TestInterpolateSlices(t *testing.T) {
@@ -278,28 +343,7 @@ func TestInterpolateSlices(t *testing.T) {
 	assert.Equal(t, "SELECT * FROM x WHERE a = (1) AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok') AND e = 8", str)
 }
 
-// TODO driver.Valuer
-//type myString struct {
-//	Present bool
-//	Val     string
-//}
-//
-//func (m myString) Value() (driver.Value, error) {
-//	if m.Present {
-//		return m.Val, nil
-//	}
-//	return nil, nil
-//}
-//
-//func TestIntepolatingValuers(t *testing.T) {
-//	args := []interface{}{myString{true, "wat"}, myString{false, "fry"}}
-//
-//	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ?", args)
-//	assert.NoError(t, err)
-//	assert.Equal(t, str, "SELECT * FROM x WHERE a = 'wat' AND b = NULL")
-//}
-
-func TestPreprocess(t *testing.T) {
+func TestInterpolate(t *testing.T) {
 
 	tests := []struct {
 		sql string
