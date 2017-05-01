@@ -1,0 +1,8 @@
+"config_id","scope","scope_id","path","value"
+2,"default",0,"web/unsecure/base_url","http://mgeto2.local/"
+3,"website",11,"general/locale/code","en_US"
+4,"default",0,"general/locale/timezone","Europe/Berlin"
+5,"default",0,"currency/options/base","EUR"
+15,"store",33,"design/head/includes","<link  rel=""stylesheet"" type=""text/css"" href=""{{MEDIA_URL}}styles.css"" />"
+16,"default",0,"admin/security/use_case_sensitive_login",NULL
+17,"default",0,"admin/security/session_lifetime","90000"

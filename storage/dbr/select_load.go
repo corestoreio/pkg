@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -48,6 +62,58 @@ func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	}
 	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
 	return stmt, errors.Wrap(err, "[store] Select.Rows.QueryContext")
+}
+
+// Loader experimental interface which can load data from a database.
+type Loader interface {
+	// ScanArgs gets called before the call to rows.Next to get a list for
+	// scanable types. Each index in the `columns` slice must be mapped to a
+	// returned primitive pointer in the interface slice.
+	ScanArgs(columns []string) []interface{}
+	// Row gets called within the for-loop. `idx` indicates the current index.
+	// The provided values are the primitive pointers for the ScanArgs function.
+	// Row must itself map the value index to its own internal types.
+	Row(idx int64, values []interface{}) error
+}
+
+// LoadX experimental interface which can load data from a data
+func (b *Select) LoadX(ctx context.Context, ldr Loader) (int64, error) {
+	tSQL, tArg, err := b.ToSQL()
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
+	}
+
+	fullSQL, err := Interpolate(tSQL, tArg...)
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Interpolate")
+	}
+
+	rows, err := b.DB.QueryContext(ctx, fullSQL)
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.load_one.rows.Columns")
+	}
+
+	var rowCount int64
+	scanArgs := ldr.ScanArgs(columns)
+	for rows.Next() {
+		if err := rows.Scan(scanArgs...); err != nil {
+			return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
+		}
+		if err := ldr.Row(rowCount, scanArgs); err != nil {
+			return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
+		}
+		rowCount++
+	}
+	if err = rows.Err(); err != nil {
+		return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.rows_err")
+	}
+	return rowCount, nil
 }
 
 // Unvetted thots:

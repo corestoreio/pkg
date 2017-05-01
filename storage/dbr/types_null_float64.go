@@ -158,7 +158,7 @@ func (a NullFloat64) IsZero() bool {
 
 type argNullFloat64s struct {
 	op   rune
-	data []NullFloat64
+	data []NullFloat64 // maybe use sql.NullFloat
 }
 
 func (a argNullFloat64s) toIFace(args []interface{}) []interface{} {
