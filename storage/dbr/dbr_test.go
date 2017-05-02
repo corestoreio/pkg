@@ -25,7 +25,7 @@ func createFakeSession() *Connection {
 }
 
 func createRealSession() *Connection {
-	_, dsn := realDb()
+	dsn := os.Getenv("CS_DSN")
 	cxn, err := NewConnection(
 		WithDSN(dsn),
 	)
@@ -39,19 +39,6 @@ func createRealSessionWithFixtures() *Connection {
 	sess := createRealSession()
 	installFixtures(sess.DB)
 	return sess
-}
-
-func realDb() (driver string, dsn string) {
-	driver = os.Getenv("DBR_TEST_DRIVER")
-	if driver == "" {
-		driver = DefaultDriverName
-	}
-
-	dsn = os.Getenv("CS_DSN")
-	if dsn == "" {
-		dsn = "root:unprotected@unix(/tmp/mysql.sock)/uservoice_development?charset=utf8&parseTime=true"
-	}
-	return
 }
 
 var _ InsertArgProducer = (*dbrPerson)(nil)

@@ -457,26 +457,6 @@ func TestSelectLoadValues(t *testing.T) {
 	assert.Equal(t, ids, []int64{1})
 }
 
-//func TestSelectReturn(t *testing.T) {
-//	ab := createRealSessionWithFixtures()
-//
-//	name, err := ab.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).ReturnString()
-//	assert.NoError(t, err)
-//	assert.Equal(t, name, "Jonathan")
-//
-//	count, err := ab.Select("COUNT(*)").From("dbr_people").ReturnInt64()
-//	assert.NoError(t, err)
-//	assert.Equal(t, count, int64(2))
-//
-//	names, err := ab.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).ReturnStrings()
-//	assert.NoError(t, err)
-//	assert.Equal(t, names, []string{"Jonathan"})
-//
-//	counts, err := ab.Select("COUNT(*)").From("dbr_people").ReturnInt64s()
-//	assert.NoError(t, err)
-//	assert.Equal(t, counts, []int64{2})
-//}
-
 func TestSelectJoin(t *testing.T) {
 	s := createRealSessionWithFixtures()
 

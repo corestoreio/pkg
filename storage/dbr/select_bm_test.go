@@ -213,3 +213,50 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 	}
 	_ = haveSQL
 }
+
+const coreConfigDataRowCount = 2007
+
+// core_config_data with 2007 rows, from a real customer
+// BenchmarkSelect_Integration_LoadX-4         	     500	   3190194 ns/op	  752296 B/op	   21883 allocs/op
+// BenchmarkSelect_Integration_LoadStructs-4   	     300	   3995130 ns/op	  839604 B/op	   23915 allocs/op
+
+func BenchmarkSelect_Integration_LoadX(b *testing.B) {
+	c, ok := createRealSession()
+	if !ok {
+		b.Skip("Skipping because DSN not set")
+	}
+
+	s := c.Select("*").From("core_config_data112")
+	ctx := context.TODO()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var ccd TableCoreConfigDatas
+		if _, err := s.LoadX(ctx, &ccd); err != nil {
+			b.Fatalf("%+v", err)
+		}
+		if len(ccd.Data) != coreConfigDataRowCount {
+			b.Fatalf("%#v", ccd)
+		}
+	}
+}
+
+func BenchmarkSelect_Integration_LoadStructs(b *testing.B) {
+	c, ok := createRealSession()
+	if !ok {
+		b.Skip("Skipping because DSN not set")
+	}
+
+	s := c.Select("*").From("core_config_data112")
+	ctx := context.TODO()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var ccd TableCoreConfigDataSlice
+		if _, err := s.LoadStructs(ctx, &ccd); err != nil {
+			b.Fatalf("%+v", err)
+		}
+		if len(ccd) != coreConfigDataRowCount {
+			b.Fatalf("%#v", ccd)
+		}
+	}
+}

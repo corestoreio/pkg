@@ -15,6 +15,8 @@
 package dbr_test
 
 import (
+	"os"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 )
@@ -64,4 +66,18 @@ func (p *dbrPerson) ProduceInsertArgs(args dbr.Arguments, columns []string) (dbr
 		}
 	}
 	return args, nil
+}
+
+func createRealSession() (*dbr.Connection, bool) {
+	dsn := os.Getenv("CS_DSN")
+	if dsn == "" {
+		return "", false
+	}
+	cxn, err := dbr.NewConnection(
+		dbr.WithDSN(dsn),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return cxn, true
 }
