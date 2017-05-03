@@ -17,6 +17,7 @@ package dbr
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
 	"testing"
 	"time"
@@ -46,6 +47,20 @@ var _ Argument = (*NullInt64)(nil)
 var _ Argument = (*argNullInt64s)(nil)
 var _ Argument = (*NullBool)(nil)
 var _ Argument = (*argValue)(nil)
+var _ driver.Value = (*Arguments)(nil)
+
+func TestArguments_DriverValues(t *testing.T) {
+	args := Arguments{
+		ArgInt64(1),
+		ArgInt(2),
+		ArgString("BlackForest"),
+		ArgFloat64(3.14159),
+		ArgBool(true),
+	}
+	assert.Exactly(t,
+		[]driver.Value{int64(1), int64(2), "BlackForest", 3.14159, true},
+		args.DriverValues())
+}
 
 func TestNullStringFrom(t *testing.T) {
 	t.Parallel()

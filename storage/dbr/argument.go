@@ -221,6 +221,21 @@ func (as Arguments) Interfaces() []interface{} {
 	return ret
 }
 
+// DriverValues converts the []interfaces to driver.Value.
+func (as Arguments) DriverValues() []driver.Value {
+	if len(as) == 0 {
+		return nil
+	}
+	// TODO Optimize this function to reduce allocations. Maybe change the internal interface function.
+	iFaces := as.Interfaces()
+	dv := make([]driver.Value, len(iFaces))
+
+	for i, r := range iFaces {
+		dv[i] = driver.Value(r)
+	}
+	return dv
+}
+
 func isNotIn(o rune) bool {
 	switch o {
 	case In, NotIn, Greatest, Least:
