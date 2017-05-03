@@ -71,7 +71,7 @@ func (p *dbrPerson) ProduceInsertArgs(args dbr.Arguments, columns []string) (dbr
 func createRealSession() (*dbr.Connection, bool) {
 	dsn := os.Getenv("CS_DSN")
 	if dsn == "" {
-		return "", false
+		return nil, false
 	}
 	cxn, err := dbr.NewConnection(
 		dbr.WithDSN(dsn),
