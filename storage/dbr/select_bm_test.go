@@ -17,9 +17,11 @@ package dbr_test
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/SchumacherFM/csmysql"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/pubnative/mysqldriver-go"
 )
@@ -220,6 +222,7 @@ const coreConfigDataRowCount = 2007
 // table with 2007 rows and 5 columns
 // BenchmarkSelect_Integration_LoadStructs-4   	     300	   3995130 ns/op	  839604 B/op	   23915 allocs/op <- Reflection with struct tags
 // BenchmarkSelect_Integration_LoadX-4         	     500	   3190194 ns/op	  752296 B/op	   21883 allocs/op <- "No Reflection"
+// BenchmarkSelect_Integration_LoadGoSQLDriver-4   	 500	   2975945 ns/op	  738824 B/op	   17859 allocs/op
 // BenchmarkSelect_Integration_LoadPubNative-4       500	   2826601 ns/op	  669699 B/op	   11966 allocs/op <- no database/sql
 
 func BenchmarkSelect_Integration_LoadPubNative(b *testing.B) {
@@ -241,6 +244,35 @@ func BenchmarkSelect_Integration_LoadPubNative(b *testing.B) {
 		if len(ccd.Data) != coreConfigDataRowCount {
 			b.Fatal("Length mismatch")
 		}
+	}
+}
+
+func BenchmarkSelect_Integration_LoadGoSQLDriver(b *testing.B) {
+	env := os.Getenv("CS_DSN")
+	if env == "" {
+		b.Skip("env CS_DSN not set")
+	}
+	dbPool := csmysql.NewDB(env, 5)
+	defer dbPool.Close()
+	conn, err := dbPool.GetConn()
+	if err != nil {
+		b.Fatalf("%+v", err)
+	}
+
+	ctx := context.TODO()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ccd := newTableCoreConfigDatas()
+		if _, err := ccd.LoadGoSQLDriverMySQL(ctx, conn); err != nil {
+			b.Fatalf("%+v", err)
+		}
+		if len(ccd.Data) != coreConfigDataRowCount {
+			b.Fatal("Length mismatch")
+		}
+	}
+	if err := dbPool.PutConn(conn); err != nil {
+		b.Fatalf("%+v", err)
 	}
 }
 

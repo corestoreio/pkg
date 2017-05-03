@@ -17,9 +17,12 @@ package dbr_test
 import (
 	"bytes"
 	"context"
+	"database/sql/driver"
 	"encoding/json"
+	"io"
 	"testing"
 
+	"github.com/SchumacherFM/csmysql"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
@@ -135,6 +138,57 @@ type TableCoreConfigData struct {
 	Value    dbr.NullString `db:"value" json:",omitempty"`     // value text NULL
 }
 
+// treats string value as unsigned integer representation
+func stringToInt(b []byte) int64 {
+	var val int64
+	for i := range b {
+		val *= 10
+		val += int64(b[i] - 0x30)
+	}
+	return val
+}
+
+func (s *TableCoreConfigDatas) LoadGoSQLDriverMySQL(ctx context.Context, dbc *csmysql.MysqlConn) (rowCount int64, _ error) {
+	tSQL, tArg, err := s.sel.ToSQL()
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
+	}
+
+	fullSQL, err := dbr.Interpolate(tSQL, tArg...)
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Interpolate")
+	}
+
+	rows, err := dbc.Query(fullSQL, nil)
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
+	}
+
+	s.Data = make([]*TableCoreConfigData, 0, 10)
+	vals := make([]driver.Value, len(rows.Columns()))
+	err = rows.Next(vals)
+	for err == nil {
+		c := &TableCoreConfigData{
+			ConfigID: stringToInt(vals[0].([]byte)),
+			Scope:    string(vals[1].([]byte)),
+			ScopeID:  stringToInt(vals[2].([]byte)),
+			Path:     string(vals[3].([]byte)),
+		}
+		if v := vals[4]; v != nil {
+			c.Value = dbr.MakeNullString(string(vals[4].([]byte)))
+		}
+
+		s.Data = append(s.Data, c)
+		rowCount++
+		err = rows.Next(vals)
+	}
+
+	if err != nil && err != io.EOF {
+		return rowCount, errors.Wrap(err, "[dbr] Select.LoadGoSQLDriverMySQL.rows_err")
+	}
+	return rowCount, nil
+}
+
 func (s *TableCoreConfigDatas) LoadPubNative(ctx context.Context, dbc *mysqldriver.Conn) (rowCount int64, _ error) {
 	tSQL, tArg, err := s.sel.ToSQL()
 	if err != nil {
@@ -169,7 +223,7 @@ func (s *TableCoreConfigDatas) LoadPubNative(ctx context.Context, dbc *mysqldriv
 	}
 
 	if err = rows.LastError(); err != nil {
-		return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.rows_err")
+		return rowCount, errors.Wrap(err, "[dbr] Select.LoadPubNative.rows_err")
 	}
 	return rowCount, nil
 }
