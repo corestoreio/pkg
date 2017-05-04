@@ -17,16 +17,12 @@ package dbr_test
 import (
 	"bytes"
 	"context"
-	"database/sql/driver"
 	"encoding/json"
-	"io"
 	"testing"
 
-	"github.com/SchumacherFM/csmysql"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
-	"github.com/pubnative/mysqldriver-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -117,14 +113,13 @@ type TableCoreConfigDataSlice []*TableCoreConfigData
 // TableCoreConfigDatas represents a collection type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigDatas struct {
-	columns []string
-	Data    []*TableCoreConfigData
-	sel     *dbr.Select
+	Data []*TableCoreConfigData
+	sel  *dbr.Select
 }
 
 func newTableCoreConfigDatas() *TableCoreConfigDatas {
 	return &TableCoreConfigDatas{
-		sel: dbr.NewSelect("*").From("core_config_data112"),
+		sel: dbr.NewSelect("*").From("core_config_data"),
 	}
 }
 
@@ -138,107 +133,15 @@ type TableCoreConfigData struct {
 	Value    dbr.NullString `db:"value" json:",omitempty"`     // value text NULL
 }
 
-// treats string value as unsigned integer representation
-func stringToInt(b []byte) int64 {
-	var val int64
-	for i := range b {
-		val *= 10
-		val += int64(b[i] - 0x30)
-	}
-	return val
-}
-
-func (s *TableCoreConfigDatas) LoadGoSQLDriverMySQL(ctx context.Context, dbc *csmysql.MysqlConn) (rowCount int64, _ error) {
-	tSQL, tArg, err := s.sel.ToSQL()
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
-	}
-
-	fullSQL, err := dbr.Interpolate(tSQL, tArg...)
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Interpolate")
-	}
-
-	rows, err := dbc.Query(fullSQL, nil)
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
-	}
-
-	s.Data = make([]*TableCoreConfigData, 0, 10)
-	vals := make([]driver.Value, len(rows.Columns()))
-	err = rows.Next(vals)
-	for err == nil {
-		c := &TableCoreConfigData{
-			ConfigID: stringToInt(vals[0].([]byte)),
-			Scope:    string(vals[1].([]byte)),
-			ScopeID:  stringToInt(vals[2].([]byte)),
-			Path:     string(vals[3].([]byte)),
-		}
-		if v := vals[4]; v != nil {
-			c.Value = dbr.MakeNullString(string(vals[4].([]byte)))
-		}
-
-		s.Data = append(s.Data, c)
-		rowCount++
-		err = rows.Next(vals)
-	}
-
-	if err != nil && err != io.EOF {
-		return rowCount, errors.Wrap(err, "[dbr] Select.LoadGoSQLDriverMySQL.rows_err")
-	}
-	return rowCount, nil
-}
-
-func (s *TableCoreConfigDatas) LoadPubNative(ctx context.Context, dbc *mysqldriver.Conn) (rowCount int64, _ error) {
-	tSQL, tArg, err := s.sel.ToSQL()
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
-	}
-
-	fullSQL, err := dbr.Interpolate(tSQL, tArg...)
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Interpolate")
-	}
-
-	rows, err := dbc.Query(fullSQL)
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
-	}
-
-	s.Data = make([]*TableCoreConfigData, 0, 10)
-	for rows.Next() {
-		c := &TableCoreConfigData{
-			ConfigID: rows.Int64(),
-			Scope:    rows.String(),
-			ScopeID:  rows.Int64(),
-			Path:     rows.String(),
-		}
-		if s, ok := rows.NullString(); !ok {
-			c.Value.String = s
-			c.Value.Valid = true
-		}
-
-		s.Data = append(s.Data, c)
-		rowCount++
-	}
-
-	if err = rows.LastError(); err != nil {
-		return rowCount, errors.Wrap(err, "[dbr] Select.LoadPubNative.rows_err")
-	}
-	return rowCount, nil
-}
-
 // ScanArgs implement Loader interface
 func (s *TableCoreConfigDatas) ScanArgs(columns []string) []interface{} {
 	s.Data = make([]*TableCoreConfigData, 0, 10)
-	s.columns = columns
 	var c TableCoreConfigData
 	return []interface{}{&c.ConfigID, &c.Scope, &c.ScopeID, &c.Path, &c.Value}
 }
 
 // Row implement Loader interface
 func (s *TableCoreConfigDatas) Row(idx int64, values []interface{}) error {
-
 	c := &TableCoreConfigData{}
 	if v, ok := values[0].(*int64); ok {
 		c.ConfigID = *v
@@ -271,7 +174,7 @@ func (s *TableCoreConfigDatas) Row(idx int64, values []interface{}) error {
 	return nil
 }
 
-func TestSelect_LoadX(t *testing.T) {
+func TestSelect_Load(t *testing.T) {
 
 	dbc, dbMock := cstesting.MockDB(t)
 	defer func() {
@@ -288,7 +191,7 @@ func TestSelect_LoadX(t *testing.T) {
 
 	ccd := &TableCoreConfigDatas{}
 
-	_, err := s.LoadX(context.TODO(), ccd)
+	_, err := s.Load(context.TODO(), ccd)
 	assert.NoError(t, err, "%+v", err)
 
 	buf := new(bytes.Buffer)
