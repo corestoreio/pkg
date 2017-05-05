@@ -119,7 +119,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).LoadStruct(context.TODO(), &person)
+	_, err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)
@@ -146,7 +146,7 @@ func TestUpdateReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).LoadStruct(context.TODO(), &person)
+	_, err = s.Select("*").From("dbr_people").Where(Condition("id = ?", ArgInt64(id))).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)

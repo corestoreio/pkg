@@ -20,10 +20,12 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSelect_Rows(t *testing.T) {
@@ -49,29 +51,40 @@ func TestSelect_Rows(t *testing.T) {
 		assert.Nil(t, rows)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
-}
 
-func TestSelect_Row(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+		smr := sqlmock.NewRows([]string{"a"}).AddRow("row1").AddRow("row2")
+		dbMock.ExpectQuery("SELECT a FROM `tableX`").WillReturnRows(smr)
 
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
+		sel := &dbr.Select{
+			Table:   dbr.MakeAlias("tableX"),
+			Columns: []string{"a"},
 		}
-	}()
-	dbMock.ExpectQuery("SELECT a, b FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+		sel.DB.Querier = dbc.DB
+		rows, err := sel.Rows(context.TODO())
+		assert.NoError(t, err, "%+v", err)
+		defer func() {
+			if err := rows.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
 
-	sel := &dbr.Select{
-		Table:   dbr.MakeAlias("tableX"),
-		Columns: []string{"a", "b"},
-	}
-	sel.DB.QueryRower = dbc.DB
-	row := sel.Row(context.TODO())
-	var x string
-	err := row.Scan(&x)
-	assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+		var xx []string
+		for rows.Next() {
+			var x string
+			require.NoError(t, rows.Scan(&x))
+			xx = append(xx, x)
+		}
+		assert.Exactly(t, []string{"row1", "row2"}, xx)
+	})
 }
 
 func TestSelect_Prepare(t *testing.T) {
@@ -114,64 +127,46 @@ type TableCoreConfigDataSlice []*TableCoreConfigData
 // Generated via tableToStruct.
 type TableCoreConfigDatas struct {
 	Data []*TableCoreConfigData
-	sel  *dbr.Select
-}
-
-func newTableCoreConfigDatas() *TableCoreConfigDatas {
-	return &TableCoreConfigDatas{
-		sel: dbr.NewSelect("*").From("core_config_data"),
-	}
+	dto  []interface{}
 }
 
 // TableCoreConfigData represents a type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigData struct {
-	ConfigID int64          `db:"config_id" json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
-	Scope    string         `db:"scope" json:",omitempty"`     // scope varchar(8) NOT NULL MUL DEFAULT 'default'
-	ScopeID  int64          `db:"scope_id" json:",omitempty"`  // scope_id int(11) NOT NULL  DEFAULT '0'
-	Path     string         `db:"path" json:",omitempty"`      // path varchar(255) NOT NULL  DEFAULT 'general'
-	Value    dbr.NullString `db:"value" json:",omitempty"`     // value text NULL
+	ConfigID int64          `json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Scope    string         `json:",omitempty"` // scope varchar(8) NOT NULL MUL DEFAULT 'default'
+	ScopeID  int64          `json:",omitempty"` // scope_id int(11) NOT NULL  DEFAULT '0'
+	Path     string         `json:",omitempty"` // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value    dbr.NullString `json:",omitempty"` // value text NULL
 }
 
-// ScanArgs implement Loader interface
-func (s *TableCoreConfigDatas) ScanArgs(columns []string) []interface{} {
-	s.Data = make([]*TableCoreConfigData, 0, 10)
-	var c TableCoreConfigData
-	return []interface{}{&c.ConfigID, &c.Scope, &c.ScopeID, &c.Path, &c.Value}
-}
-
-// Row implement Loader interface
-func (s *TableCoreConfigDatas) Row(idx int64, values []interface{}) error {
-	c := &TableCoreConfigData{}
-	if v, ok := values[0].(*int64); ok {
-		c.ConfigID = *v
-	} else {
-		return errors.NewNotValidf("[pkg] Field ConfigID. Failed to assert to *int64. Got: %#v", values[0])
+func (ps *TableCoreConfigDatas) RowScan(idx int, columns []string) ([]interface{}, error) {
+	if idx == 0 {
+		ps.Data = make([]*TableCoreConfigData, 0, 10)
+		ps.dto = make([]interface{}, 0, 5) // vp == valuePointers | 5 == number of struct fields
 	}
-	if v, ok := values[1].(*string); ok {
-		c.Scope = *v
-	} else {
-		return errors.NewNotValidf("[pkg] Field Scope. Failed to assert to *string. Got: %#v", values[1])
+	ps.dto = ps.dto[:0]
+	ccd := new(TableCoreConfigData)
+	for _, c := range columns {
+		switch c {
+		case "*": // TODO: would be cool if this works
+			fallthrough
+		case "config_id":
+			ps.dto = append(ps.dto, &ccd.ConfigID)
+		case "scope":
+			ps.dto = append(ps.dto, &ccd.Scope)
+		case "scope_id":
+			ps.dto = append(ps.dto, &ccd.ScopeID)
+		case "path":
+			ps.dto = append(ps.dto, &ccd.Path)
+		case "value":
+			ps.dto = append(ps.dto, &ccd.Value)
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
 	}
-	if v, ok := values[2].(*int64); ok {
-		c.ScopeID = *v
-	} else {
-		return errors.NewNotValidf("[pkg] Field ConfigID. Failed to assert to *int64. Got: %#v", values[2])
-	}
-	if v, ok := values[3].(*string); ok {
-		c.Path = *v
-	} else {
-		return errors.NewNotValidf("[pkg] Field Path. Failed to assert to *string. Got: %#v", values[3])
-	}
-	if v, ok := values[4].(*dbr.NullString); ok {
-		c.Value = *v
-	} else {
-		return errors.NewNotValidf("[pkg] Field Path. Failed to assert to *NullString. Got: %#v", values[4])
-	}
-
-	s.Data = append(s.Data, c)
-
-	return nil
+	ps.Data = append(ps.Data, ccd)
+	return ps.dto, nil
 }
 
 func TestSelect_Load(t *testing.T) {

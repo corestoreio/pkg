@@ -17,13 +17,10 @@ package dbr_test
 import (
 	"context"
 	"database/sql"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/SchumacherFM/csmysql"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/pubnative/mysqldriver-go"
 )
 
 var _ dbr.Querier = (*benchMockQuerier)(nil)
@@ -225,58 +222,12 @@ const coreConfigDataRowCount = 2007
 // BenchmarkSelect_Integration_LoadGoSQLDriver-4   	 500	   2975945 ns/op	  738824 B/op	   17859 allocs/op
 // BenchmarkSelect_Integration_LoadPubNative-4       500	   2826601 ns/op	  669699 B/op	   11966 allocs/op <- no database/sql
 
-func BenchmarkSelect_Integration_LoadPubNative(b *testing.B) {
-	c, err := mysqldriver.NewConn("magento2", "magento2", "tcp", "localhost:3306", "magento22")
-	if err != nil {
-		b.Skipf("Skipping because %s", err)
-	}
+// BenchmarkSelect_Integration_Load-4   	     500	   3393616 ns/op	  752254 B/op	   21882 allocs/op <- if/else orgie
+// BenchmarkSelect_Integration_Load-4   	     500	   3461720 ns/op	  752234 B/op	   21882 allocs/op <- switch
 
-	defer c.Close()
+// BenchmarkSelect_Integration_LScanner-4   	     500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
 
-	ctx := context.TODO()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ccd := newTableCoreConfigDatas()
-		if _, err := ccd.LoadPubNative(ctx, c); err != nil {
-			b.Fatalf("%+v", err)
-		}
-		if len(ccd.Data) != coreConfigDataRowCount {
-			b.Fatal("Length mismatch")
-		}
-	}
-}
-
-func BenchmarkSelect_Integration_LoadGoSQLDriver(b *testing.B) {
-	env := os.Getenv("CS_DSN")
-	if env == "" {
-		b.Skip("env CS_DSN not set")
-	}
-	dbPool := csmysql.NewDB(env, 5)
-	defer dbPool.Close()
-	conn, err := dbPool.GetConn()
-	if err != nil {
-		b.Fatalf("%+v", err)
-	}
-
-	ctx := context.TODO()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ccd := newTableCoreConfigDatas()
-		if _, err := ccd.LoadGoSQLDriverMySQL(ctx, conn); err != nil {
-			b.Fatalf("%+v", err)
-		}
-		if len(ccd.Data) != coreConfigDataRowCount {
-			b.Fatal("Length mismatch")
-		}
-	}
-	if err := dbPool.PutConn(conn); err != nil {
-		b.Fatalf("%+v", err)
-	}
-}
-
-func BenchmarkSelect_Integration_LoadX(b *testing.B) {
+func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 	c, ok := createRealSession()
 	if !ok {
 		b.Skip("Skipping because DSN not set")
@@ -288,32 +239,10 @@ func BenchmarkSelect_Integration_LoadX(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var ccd TableCoreConfigDatas
-		if _, err := s.LoadX(ctx, &ccd); err != nil {
+		if _, err := s.Load(ctx, &ccd); err != nil {
 			b.Fatalf("%+v", err)
 		}
 		if len(ccd.Data) != coreConfigDataRowCount {
-			b.Fatal("Length mismatch")
-		}
-	}
-}
-
-func BenchmarkSelect_Integration_LoadStructs(b *testing.B) {
-	c, ok := createRealSession()
-	if !ok {
-		b.Skip("Skipping because DSN not set")
-	}
-	defer c.Close()
-
-	s := c.Select("*").From("core_config_data112")
-	ctx := context.TODO()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var ccd TableCoreConfigDataSlice
-		if _, err := s.LoadStructs(ctx, &ccd); err != nil {
-			b.Fatalf("%+v", err)
-		}
-		if len(ccd) != coreConfigDataRowCount {
 			b.Fatal("Length mismatch")
 		}
 	}

@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSelectBasicToSQL(t *testing.T) {
@@ -362,99 +363,127 @@ func TestSelectVarieties(t *testing.T) {
 	assert.Equal(t, sql, sql2)
 }
 
-func TestSelectLoadStructs(t *testing.T) {
+func TestSelect_Load_Slice_Loader(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
-	var people []*dbrPerson
-	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").LoadStructs(context.TODO(), &people)
+	var people dbrPersons
+	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").Load(context.TODO(), &people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 
-	assert.Equal(t, len(people), 2)
-	if len(people) == 2 {
+	assert.Equal(t, len(people.Data), 2)
+	if len(people.Data) == 2 {
 		// Make sure that the Ids are set. It'ab possible (maybe?) that different DBs set ids differently so
 		// don't assume they're 1 and 2.
-		assert.True(t, people[0].ID > 0)
-		assert.True(t, people[1].ID > people[0].ID)
+		assert.True(t, people.Data[0].ID > 0)
+		assert.True(t, people.Data[1].ID > people.Data[0].ID)
 
-		assert.Equal(t, "Jonathan", people[0].Name)
-		assert.True(t, people[0].Email.Valid)
-		assert.Equal(t, "jonathan@uservoice.com", people[0].Email.String)
-		assert.Equal(t, "Dmitri", people[1].Name)
-		assert.True(t, people[1].Email.Valid)
-		assert.Equal(t, "zavorotni@jadius.com", people[1].Email.String)
-	}
-
-	// TODO: test map
-}
-
-func TestSelectLoadStruct(t *testing.T) {
-	s := createRealSessionWithFixtures()
-
-	// Found:
-	var person dbrPerson
-	err := s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).LoadStruct(context.TODO(), &person)
-	assert.NoError(t, err)
-	assert.True(t, person.ID > 0)
-	assert.Equal(t, "Jonathan", person.Name)
-	assert.True(t, person.Email.Valid)
-	assert.Equal(t, "jonathan@uservoice.com", person.Email.String)
-
-	// Not found:
-	var person2 dbrPerson
-	err = s.Select("id", "name", "email").From("dbr_people").Where(Condition("email = ?", ArgString("dontexist@uservoice.com"))).LoadStruct(context.TODO(), &person2)
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
-}
-
-func TestSelectBySQLLoadStructs(t *testing.T) {
-	s := createRealSessionWithFixtures()
-
-	var people []*dbrPerson
-	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).LoadStructs(context.TODO(), &people)
-
-	assert.NoError(t, err)
-	assert.Equal(t, count, 1)
-	if len(people) == 1 {
-		assert.Equal(t, "Jonathan", people[0].Name)
-		assert.Equal(t, int64(0), people[0].ID)       // not set
-		assert.Equal(t, false, people[0].Email.Valid) // not set
-		assert.Equal(t, "", people[0].Email.String)   // not set
+		assert.Equal(t, "Jonathan", people.Data[0].Name)
+		assert.True(t, people.Data[0].Email.Valid)
+		assert.Equal(t, "jonathan@uservoice.com", people.Data[0].Email.String)
+		assert.Equal(t, "Dmitri", people.Data[1].Name)
+		assert.True(t, people.Data[1].Email.Valid)
+		assert.Equal(t, "zavorotni@jadius.com", people.Data[1].Email.String)
 	}
 }
 
-func TestSelectLoadValue(t *testing.T) {
+func TestSelect_Load_Single(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
-	var name string
-	err := s.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).LoadValue(context.TODO(), &name)
+	t.Run("found", func(t *testing.T) {
+		var person dbrPerson
+		_, err := s.Select("id", "name", "email").From("dbr_people").
+			Where(Condition("email = ?", ArgString("jonathan@uservoice.com"))).Load(context.TODO(), &person)
+		assert.NoError(t, err)
+		assert.True(t, person.ID > 0)
+		assert.Equal(t, "Jonathan", person.Name)
+		assert.True(t, person.Email.Valid)
+		assert.Equal(t, "jonathan@uservoice.com", person.Email.String)
+	})
 
-	assert.NoError(t, err)
-	assert.Equal(t, "Jonathan", name)
+	t.Run("not found", func(t *testing.T) {
+		var person2 dbrPerson
+		count, err := s.Select("id", "name", "email").From("dbr_people").
+			Where(Condition("email = ?", ArgString("dontexist@uservoice.com"))).Load(context.TODO(), &person2)
 
-	var id int64
-	err = s.Select("id").From("dbr_people").Limit(1).LoadValue(context.TODO(), &id)
+		require.NoError(t, err, "%+v", err)
+		assert.Exactly(t, dbrPerson{}, person2)
+		assert.Empty(t, count, "Should have no rows loaded")
+	})
 
-	assert.NoError(t, err)
-	assert.True(t, id > 0)
 }
 
-func TestSelectLoadValues(t *testing.T) {
+func TestSelectBySQL_Load_Slice(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
-	var names []string
-	count, err := s.Select("name").From("dbr_people").LoadValues(context.TODO(), &names)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 2, count)
-	assert.Equal(t, []string{"Jonathan", "Dmitri"}, names)
-
-	var ids []int64
-	count, err = s.Select("id").From("dbr_people").Limit(1).LoadValues(context.TODO(), &ids)
+	var people dbrPersons
+	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).Load(context.TODO(), &people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)
-	assert.Equal(t, ids, []int64{1})
+	if len(people.Data) == 1 {
+		assert.Equal(t, "Jonathan", people.Data[0].Name)
+		assert.Equal(t, int64(0), people.Data[0].ID)       // not set
+		assert.Equal(t, false, people.Data[0].Email.Valid) // not set
+		assert.Equal(t, "", people.Data[0].Email.String)   // not set
+	}
+}
+
+func TestSelect_LoadType_Single(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	t.Run("LoadString", func(t *testing.T) {
+		name, err := s.Select("name").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).LoadString(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, "Jonathan", name)
+	})
+	t.Run("LoadString too many columns", func(t *testing.T) {
+		name, err := s.Select("name", "email").From("dbr_people").Where(Condition("email = 'jonathan@uservoice.com'")).LoadString(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Empty(t, name)
+	})
+	t.Run("LoadString not found", func(t *testing.T) {
+		name, err := s.Select("name").From("dbr_people").Where(Condition("email = 'notfound@example.com'")).LoadString(context.TODO())
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.Empty(t, name)
+	})
+
+	t.Run("LoadInt64", func(t *testing.T) {
+		id, err := s.Select("id").From("dbr_people").Limit(1).LoadInt64(context.TODO())
+		assert.NoError(t, err)
+		assert.True(t, id > 0)
+	})
+	t.Run("LoadInt64 too many columns", func(t *testing.T) {
+		id, err := s.Select("id", "email").From("dbr_people").Limit(1).LoadInt64(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Empty(t, id)
+	})
+	t.Run("LoadInt64 not found", func(t *testing.T) {
+		id, err := s.Select("id").From("dbr_people").Where(Condition("id=236478326")).LoadInt64(context.TODO())
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.Empty(t, id)
+	})
+}
+
+func TestSelect_LoadType_Slices(t *testing.T) {
+	s := createRealSessionWithFixtures()
+
+	t.Run("LoadStrings", func(t *testing.T) {
+		names, err := s.Select("name").From("dbr_people").LoadStrings(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"Jonathan", "Dmitri"}, names)
+	})
+	t.Run("LoadStrings not found", func(t *testing.T) {
+		names, err := s.Select("name").From("dbr_people").Where(Condition("name ='jdhsjdf'")).LoadStrings(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, []string{}, names)
+	})
+	t.Run("LoadInt64s", func(t *testing.T) {
+		ids, err := s.Select("id").From("dbr_people").Limit(1).LoadInt64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, ids, []int64{1})
+	})
 }
 
 func TestSelectJoin(t *testing.T) {

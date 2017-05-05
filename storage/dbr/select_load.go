@@ -17,22 +17,29 @@ package dbr
 import (
 	"context"
 	"database/sql"
-	"reflect"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
 
+// Scanner allows a type to load data from database query. It's used in the
+// rows.Scan() function.
+type Scanner interface {
+	// RowScan returns a list of pointers to be scanned into. Each index in
+	// the `columns` slice must be mapped to a returned primitive pointer in the
+	// interface slice. `idx` defines the current iteration.
+	RowScan(idx int, columns []string) (valuePointers []interface{}, _ error)
+}
+
 // Rows executes a query and returns many rows. Does no interpolation.
 func (b *Select) Rows(ctx context.Context) (*sql.Rows, error) {
-
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
-		// do not use fullSQL because we might log sensitive data
+		// we might log sensitive data
 		defer log.WhenDone(b.Log).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
 	}
 
@@ -40,22 +47,9 @@ func (b *Select) Rows(ctx context.Context) (*sql.Rows, error) {
 	return rows, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
-// Row executes a query that at expected to return at most one row. QueryRow
-// always returns a non-nil value. Errors are deferred until Row'ab Scan method
-// at called.
-func (b *Select) Row(ctx context.Context) *sql.Row {
-
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		panic(err) // todo remove panic and log error .... ?
-		// return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
-	}
-	return b.DB.QueryRowContext(ctx, sqlStr, args.Interfaces()...)
-}
-
-// Prepare prepares a SQL statement.
+// Prepare prepares a SQL statement. Sets IsInterpolate to false.
 func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
-
+	b.IsInterpolate = false
 	sqlStr, _, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
@@ -64,31 +58,19 @@ func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	return stmt, errors.Wrap(err, "[store] Select.Rows.QueryContext")
 }
 
-// Loader experimental interface which can load data from a database.
-type Loader interface {
-	// ScanArgs gets called before the call to rows.Next to get a list for
-	// scanable types. Each index in the `columns` slice must be mapped to a
-	// returned primitive pointer in the interface slice.
-	ScanArgs(columns []string) []interface{}
-	// Row gets called within the for-loop. `idx` indicates the current index.
-	// The provided values are the primitive pointers for the ScanArgs function.
-	// Row must itself map the value index to its own internal types.
-	Row(idx int64, values []interface{}) error
-}
-
-// LoadX experimental interface which can load data from a data
-func (b *Select) LoadX(ctx context.Context, ldr Loader) (int64, error) {
-	tSQL, tArg, err := b.ToSQL()
+// Load loads data from a query into an object. You must set DB.QueryContext on
+// the Select object or it just panics. Load can load a single row or n-rows.
+func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
+	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
 	}
-
-	fullSQL, err := Interpolate(tSQL, tArg...)
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Interpolate")
+	if b.Log != nil && b.Log.IsInfo() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Info("dbr.Select.Load.Timing", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, fullSQL)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
 		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
 	}
@@ -99,13 +81,13 @@ func (b *Select) LoadX(ctx context.Context, ldr Loader) (int64, error) {
 		return 0, errors.Wrap(err, "[dbr] Select.load_one.rows.Columns")
 	}
 
-	var rowCount int64
-	scanArgs := ldr.ScanArgs(columns)
+	var rowCount int
 	for rows.Next() {
-		if err := rows.Scan(scanArgs...); err != nil {
-			return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
+		scanArgs, err := scnr.RowScan(rowCount, columns)
+		if err != nil {
+			return 0, errors.Wrap(err, "[dbr] Select.Loader.ScanArgs")
 		}
-		if err := ldr.Row(rowCount, scanArgs); err != nil {
+		if err := rows.Scan(scanArgs...); err != nil {
 			return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
 		}
 		rowCount++
@@ -116,328 +98,277 @@ func (b *Select) LoadX(ctx context.Context, ldr Loader) (int64, error) {
 	return rowCount, nil
 }
 
-// Unvetted thots:
-// Given a query and given a structure (field list), there'ab 2 sets of fields.
-// Take the intersection. We can fill those in. great.
-// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
-// For fields in the structure that aren't in the query but without db:"-", return error
-// For fields in the query that aren't in the structure, we'll ignore them.
+// The partially duplicated code in the Load[a-z0-9]+ functions can be optimized
+// later. The Scanner interface should not be used for loading primitive types
+// as the Scanner interface shall only be used with larger structs, means
+// structs with at least two fields.
 
-// LoadStructs executes the Select and loads the resulting data into a slice of
-// structs dest must be a pointer to a slice of pointers to structs. Returns the
-// number of items found (which at not necessarily the # of items set). Slow
-// because of the massive use of reflection.
-func (b *Select) LoadStructs(ctx context.Context, dest interface{}) (int, error) {
-	//
-	// Validate the dest, and extract the reflection values we need.
-	//
+// IDEA:
+//func (b *Select) LoadPairInt64(ctx context.Context) (col1 []int64,col2 []int64,err error) {
+//
+//}
 
-	// This must be a pointer to a slice
-	valueOfDest := reflect.ValueOf(dest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr {
-		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadStructs. Need a pointer to a slice")
-	}
-
-	// This must a slice
-	valueOfDest = reflect.Indirect(valueOfDest)
-	kindOfDest = valueOfDest.Kind()
-
-	if kindOfDest != reflect.Slice {
-		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadStructs. Need a pointer to a slice")
-	}
-
-	// The slice elements must be pointers to structures
-	recordType := valueOfDest.Type().Elem()
-	if recordType.Kind() != reflect.Ptr {
-		return 0, errors.NewNotValidf("[dbr] Elements need to be pointers to structures")
-	}
-
-	recordType = recordType.Elem()
-	if recordType.Kind() != reflect.Struct {
-		return 0, errors.NewNotValidf("[dbr] Elements need to be pointers to structures")
-	}
-
-	//
-	// Get full SQL
-	//
-	tSQL, tArg, err := b.ToSQL()
+// LoadInt64 executes the Select and returns the value at an int64. It returns a
+// NotFound error if the query returns nothing.
+func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
+	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.ToSQL")
 	}
-
-	fullSQL, err := Interpolate(tSQL, tArg...)
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.Interpolate")
-	}
-
-	numberOfRowsReturned := 0
-
-	if b.Log != nil && b.Log.IsInfo() {
+	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Info("dbr.Select.LoadStructs.QueryContext.timing", log.String("sql", tSQL))
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64", log.String("sql", sqlStr))
 	}
 
-	// Run the query:
-	rows, err := b.DB.QueryContext(ctx, fullSQL)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.QueryContext")
 	}
 	defer rows.Close()
 
-	// Get the columns returned
-	columns, err := rows.Columns()
-	if err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.load_one.rows.Columns")
-	}
-
-	// Create a map of this result set to the struct fields
-	fieldMap, err := calculateFieldMap(recordType, columns, false)
-	if err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.calculateFieldMap")
-	}
-
-	// Build a 'holder', which at an []interface{}. Each value will be the set to address of the field corresponding to our newly made records:
-	holder := make([]interface{}, len(fieldMap))
-
-	// Iterate over rows and scan their data into the structs
-	sliceValue := valueOfDest
+	var value int64
+	found := false
 	for rows.Next() {
-		// Create a new record to store our row:
-		pointerToNewRecord := reflect.New(recordType)
-		newRecord := reflect.Indirect(pointerToNewRecord)
-
-		// Prepare the holder for this record
-		scannable, err := prepareHolderFor(newRecord, fieldMap, holder)
-		if err != nil {
-			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.holderFor")
+		if err := rows.Scan(&value); err != nil {
+			return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.scan")
 		}
-
-		// Load up our new structure with the row'ab values
-		err = rows.Scan(scannable...)
-		if err != nil {
-			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
-		}
-
-		// Append our new record to the slice:
-		sliceValue = reflect.Append(sliceValue, pointerToNewRecord)
-
-		numberOfRowsReturned++
+		found = true
 	}
-	valueOfDest.Set(sliceValue)
-
-	// Check for errors at the end. Supposedly these are error that can happen during iteration.
 	if err = rows.Err(); err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadStructs.rows_err")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.rows_err")
 	}
-
-	return numberOfRowsReturned, nil
+	if !found {
+		err = errors.NewNotFoundf("[dbr] LoadInt64 value not found")
+	}
+	return value, err
 }
 
-// LoadStruct executes the Select and loads the resulting data into a struct
-// dest must be a pointer to a struct Returns ErrNotFound behaviour. Slow
-// because of the massive use of reflection.
-func (b *Select) LoadStruct(ctx context.Context, dest interface{}) error {
-	//
-	// Validate the dest, and extract the reflection values we need.
-	//
-	valueOfDest := reflect.ValueOf(dest)
-	indirectOfDest := reflect.Indirect(valueOfDest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr || indirectOfDest.Kind() != reflect.Struct {
-		return errors.NewNotValidf("[dbr] you need to pass in the address of a struct")
-	}
-
-	recordType := indirectOfDest.Type()
-
-	//
-	// Get full SQL
-	//
-	tSQL, tArg, err := b.ToSQL()
+// LoadInt64s executes the Select and returns the value as a slice of int64s.
+func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
+	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return errors.Wrap(err, "[dbr] Select.LoadStruct.ToSQL")
+		return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.ToSQL")
+	}
+	if b.Log != nil && b.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64s", log.String("sql", sqlStr))
 	}
 
-	fullSQL, err := Interpolate(tSQL, tArg...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return err
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Select.LoadStruct.ExecContext.timing", log.String("sql", fullSQL))
-	}
-
-	// Run the query:
-	rows, err := b.DB.QueryContext(ctx, fullSQL)
-	if err != nil {
-		return errors.Wrap(err, "[dbr] Select.load_one.query")
+		return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.QueryContext")
 	}
 	defer rows.Close()
 
-	// Get the columns of this result set
-	columns, err := rows.Columns()
-	if err != nil {
-		return errors.Wrap(err, "[dbr] Select.load_one.rows.Columns")
-	}
-
-	// Create a map of this result set to the struct columns
-	fieldMap, err := calculateFieldMap(recordType, columns, false)
-	if err != nil {
-		return errors.Wrap(err, "[dbr] Select.load_one.calculateFieldMap")
-	}
-
-	// Build a 'holder', which at an []interface{}. Each value will be the set to
-	// address of the field corresponding to our newly made records:
-	holder := make([]interface{}, len(fieldMap))
-
-	if rows.Next() {
-		// Build a 'holder', which at an []interface{}. Each value will be the address
-		// of the field corresponding to our newly made record:
-		scannable, err := prepareHolderFor(indirectOfDest, fieldMap, holder)
-		if err != nil {
-			return errors.Wrap(err, "[dbr] Select.load_one.holderFor")
-		}
-
-		// Load up our new structure with the row'ab values
-		err = rows.Scan(scannable...)
-		if err != nil {
-			return errors.Wrap(err, "[dbr] Select.load_one.scan")
-		}
-		return nil
-	}
-
-	if err := rows.Err(); err != nil {
-		return errors.Wrap(err, "[dbr] Select.load_one.rows_err")
-	}
-
-	return errors.NewNotFoundf("[dbr] Entry not found")
-}
-
-// LoadValues executes the Select and loads the resulting data into a slice of
-// primitive values Returns ErrNotFound behaviour if no value was found, and it
-// was therefore not set. Slow because of the massive use of reflection.
-func (b *Select) LoadValues(ctx context.Context, dest interface{}) (int, error) {
-	// Validate the dest and reflection values we need
-
-	// This must be a pointer to a slice
-	valueOfDest := reflect.ValueOf(dest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr {
-		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadValues. Need a pointer to a slice")
-	}
-
-	// This must a slice
-	valueOfDest = reflect.Indirect(valueOfDest)
-	kindOfDest = valueOfDest.Kind()
-
-	if kindOfDest != reflect.Slice {
-		return 0, errors.NewNotValidf("[dbr] invalid type passed to LoadValues. Need a pointer to a slice")
-	}
-
-	recordType := valueOfDest.Type().Elem()
-
-	recordTypeIsPtr := recordType.Kind() == reflect.Ptr
-	if recordTypeIsPtr {
-		reflect.ValueOf(dest)
-	}
-
-	//
-	// Get full SQL
-	//
-	tSQL, tArg, err := b.ToSQL()
-	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.load_values.ToSQL")
-	}
-
-	fullSQL, err := Interpolate(tSQL, tArg...)
-	if err != nil {
-		return 0, err
-	}
-
-	numberOfRowsReturned := 0
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Select.LoadValues.QueryContext.timing", log.String("sql", fullSQL))
-	}
-
-	// Run the query:
-	rows, err := b.DB.QueryContext(ctx, fullSQL)
-	if err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.query")
-	}
-	defer rows.Close()
-
-	sliceValue := valueOfDest
+	values := make([]int64, 0, 10)
 	for rows.Next() {
-		// Create a new value to store our row:
-		pointerToNewValue := reflect.New(recordType)
-		newValue := reflect.Indirect(pointerToNewValue)
-
-		err = rows.Scan(pointerToNewValue.Interface())
-		if err != nil {
-			return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.scan")
+		var value int64
+		if err := rows.Scan(&value); err != nil {
+			return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.scan")
 		}
-
-		// Append our new value to the slice:
-		sliceValue = reflect.Append(sliceValue, newValue)
-
-		numberOfRowsReturned++
+		values = append(values, value)
 	}
-	valueOfDest.Set(sliceValue)
-
-	if err := rows.Err(); err != nil {
-		return numberOfRowsReturned, errors.Wrap(err, "[dbr] Select.LoadValues.rows_err")
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.rows_err")
 	}
-
-	return numberOfRowsReturned, nil
+	return values, nil
 }
 
-// LoadValue executes the Select and loads the resulting data into a primitive
-// value Returns ErrNotFound if no value was found, and it was therefore not
-// set. Slow because of the massive use of reflection.
-func (b *Select) LoadValue(ctx context.Context, dest interface{}) error {
-	// Validate the dest
-	valueOfDest := reflect.ValueOf(dest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr {
-		return errors.NewNotValidf("[dbr] Destination must be a pointer")
-	}
-
-	//
-	// Get full SQL
-	//
-	tSQL, tArg, err := b.ToSQL()
+// LoadUint64 executes the Select and returns the value at an uint64. It returns
+// a NotFound error if the query returns nothing. This function comes in handy
+// when performing a COUNT(*) query. See function `Select.Count`.
+func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
+	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return errors.Wrap(err, "[dbr] Select.LoadValue.ToSQL")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.ToSQL")
+	}
+	if b.Log != nil && b.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadUint64", log.String("sql", sqlStr))
 	}
 
-	fullSQL, err := Interpolate(tSQL, tArg...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return err
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Select.LoadValue.QueryContext.timing", log.String("sql", fullSQL))
-	}
-
-	// Run the query:
-	rows, err := b.DB.QueryContext(ctx, fullSQL)
-	if err != nil {
-		return errors.Wrap(err, "[dbr] Select.LoadValue.Query")
+		return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.QueryContext")
 	}
 	defer rows.Close()
 
-	if rows.Next() {
-		return errors.Wrap(rows.Scan(dest), "[dbr] Select.LoadValue.Scan")
+	var value uint64
+	found := false
+	for rows.Next() {
+		if err := rows.Scan(&value); err != nil {
+			return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.scan")
+		}
+		found = true
+	}
+	if err = rows.Err(); err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.rows_err")
+	}
+	if !found {
+		err = errors.NewNotFoundf("[dbr] LoadUint64 value not found")
+	}
+	return value, err
+}
+
+// LoadUint64s executes the Select and returns the value at a slice of uint64s.
+func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
+	sqlStr, tArg, err := b.ToSQL()
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.ToSQL")
+	}
+	if b.Log != nil && b.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadUint64s", log.String("sql", sqlStr))
 	}
 
-	if err := rows.Err(); err != nil {
-		return errors.Wrap(err, "[dbr] Select.LoadValue.Rows_err")
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.QueryContext")
+	}
+	defer rows.Close()
+
+	values := make([]uint64, 0, 10)
+	for rows.Next() {
+		var value uint64
+		if err := rows.Scan(&value); err != nil {
+			return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.scan")
+		}
+		values = append(values, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.rows_err")
+	}
+	return values, nil
+}
+
+// LoadFloat64 executes the Select and returns the value at an float64. It
+// returns a NotFound error if the query returns nothing.
+func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
+	sqlStr, tArg, err := b.ToSQL()
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.ToSQL")
+	}
+	if b.Log != nil && b.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadFloat64", log.String("sql", sqlStr))
 	}
 
-	return errors.NewNotFoundf("[dbr] Entry not found")
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	if err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.QueryContext")
+	}
+	defer rows.Close()
+
+	var value float64
+	found := false
+	for rows.Next() {
+		if err := rows.Scan(&value); err != nil {
+			return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.scan")
+		}
+		found = true
+	}
+	if err = rows.Err(); err != nil {
+		return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.rows_err")
+	}
+	if !found {
+		err = errors.NewNotFoundf("[dbr] LoadFloat64 value not found")
+	}
+	return value, err
+}
+
+// LoadFloat64s executes the Select and returns the value at a slice of float64s.
+func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
+	sqlStr, tArg, err := b.ToSQL()
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.ToSQL")
+	}
+	if b.Log != nil && b.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadFloat64s", log.String("sql", sqlStr))
+	}
+
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.QueryContext")
+	}
+	defer rows.Close()
+
+	values := make([]float64, 0, 10)
+	for rows.Next() {
+		var value float64
+		if err := rows.Scan(&value); err != nil {
+			return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.scan")
+		}
+		values = append(values, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.rows_err")
+	}
+	return values, nil
+}
+
+// LoadString executes the Select and returns the value as a string. It
+// returns a NotFound error if the row amount is not equal one.
+func (b *Select) LoadString(ctx context.Context) (string, error) {
+	sqlStr, tArg, err := b.ToSQL()
+	if err != nil {
+		return "", errors.Wrap(err, "[dbr] Select.LoadInt64.ToSQL")
+	}
+	if b.Log != nil && b.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64", log.String("sql", sqlStr))
+	}
+
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	if err != nil {
+		return "", errors.Wrap(err, "[dbr] Select.LoadInt64.QueryContext")
+	}
+	defer rows.Close()
+
+	var value string
+	found := false
+	for rows.Next() {
+		if err := rows.Scan(&value); err != nil {
+			return "", errors.Wrap(err, "[dbr] Select.LoadInt64.scan")
+		}
+		found = true
+	}
+	if err = rows.Err(); err != nil {
+		return "", errors.Wrap(err, "[dbr] Select.LoadInt64.rows_err")
+	}
+	if !found {
+		err = errors.NewNotFoundf("[dbr] LoadInt64 value not found")
+	}
+	return value, err
+}
+
+// LoadStrings executes the Select and returns a slice of strings.
+func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
+	sqlStr, tArg, err := b.ToSQL()
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.ToSQL")
+	}
+	if b.Log != nil && b.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadStrings", log.String("sql", sqlStr))
+	}
+
+	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.QueryContext")
+	}
+	defer rows.Close()
+
+	values := make([]string, 0, 10)
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.scan")
+		}
+		values = append(values, value)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.rows_err")
+	}
+	return values, nil
 }

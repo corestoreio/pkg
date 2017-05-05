@@ -10,18 +10,28 @@ import (
 
 // Select contains the clauses for a SELECT statement
 type Select struct {
+	// ID of the SELECT statement. Used in logging and during performance
+	// monitoring. If empty the generated SQL string gets used which can might
+	// contain sensitive information which should not get logged.
+	// TODO implement
+	ID  string
 	Log log.Logger // Log optional logger
 	// DB gets required once the Load*() functions will be used.
 	DB struct {
 		Querier
-		QueryRower
 		Preparer
 	}
 
 	RawFullSQL string
 	Arguments
 
+	// TODO: remove the functions AddColumns quote/alias/expression
+	// use a slice with 2 dim: 0 for the expression and 1 for the alias.
 	Columns []string
+
+	//TODO: create a possibility of the Select type which has a half-pre-rendered
+	// SQL statement where a developer can only modify or append WHERE clauses.
+	// especially useful during code generation
 
 	// Table table name and optional alias name to SELECT from.
 	Table alias
@@ -40,6 +50,7 @@ type Select struct {
 	IsSQLNoCache      bool // See SQLNoCache()
 	IsForUpdate       bool // See ForUpdate()
 	IsLockInShareMode bool // See LockInShareMode()
+	IsInterpolate     bool // See Interpolate()
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -85,7 +96,6 @@ func (c *Connection) Select(columns ...string) *Select {
 		Columns: columns,
 	}
 	s.DB.Querier = c.DB
-	s.DB.QueryRower = c.DB
 	s.DB.Preparer = c.DB
 	return s
 }
@@ -98,7 +108,6 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 		Arguments:  args,
 	}
 	s.DB.Querier = c.DB
-	s.DB.QueryRower = c.DB
 	s.DB.Preparer = c.DB
 	return s
 }
@@ -110,7 +119,6 @@ func (tx *Tx) Select(columns ...string) *Select {
 		Columns: columns,
 	}
 	s.DB.Querier = tx.Tx
-	s.DB.QueryRower = tx.Tx
 	s.DB.Preparer = tx.Tx
 	return s
 }
@@ -123,7 +131,6 @@ func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 		Arguments:  args,
 	}
 	s.DB.Querier = tx.Tx
-	s.DB.QueryRower = tx.Tx
 	s.DB.Preparer = tx.Tx
 	return s
 }
@@ -177,6 +184,12 @@ func (b *Select) ForUpdate() *Select {
 // https://dev.mysql.com/doc/refman/5.5/en/innodb-locking-reads.html
 func (b *Select) LockInShareMode() *Select {
 	b.IsLockInShareMode = true
+	return b
+}
+
+// Count resets the columns to COUNT(*) as `counted`
+func (b *Select) Count() *Select {
+	//b.IsCount = true
 	return b
 }
 
@@ -307,6 +320,14 @@ func (b *Select) Offset(offset uint64) *Select {
 func (b *Select) Paginate(page, perPage uint64) *Select {
 	b.Limit(perPage)
 	b.Offset((page - 1) * perPage)
+	return b
+}
+
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. TODO implement
+func (b *Select) Interpolate() *Select {
+	b.IsInterpolate = true
 	return b
 }
 

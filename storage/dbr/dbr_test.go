@@ -43,35 +43,43 @@ func createRealSessionWithFixtures() *Connection {
 
 var _ InsertArgProducer = (*dbrPerson)(nil)
 var _ UpdateArgProducer = (*dbrPerson)(nil)
+var _ Scanner = (*dbrPerson)(nil)
+var _ Scanner = (*dbrPersons)(nil)
 var _ InsertArgProducer = (*nullTypedRecord)(nil)
+var _ Scanner = (*nullTypedRecord)(nil)
 
 //var _ UpdateArgProducer = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
-	ID    int64 `db:"id"`
+	ID    int64
 	Name  string
 	Email NullString
 	Key   NullString
 }
 
-func (p *dbrPerson) columnToArg(t byte, args Arguments, columns []string) (Arguments, error) {
+// RowScan loads a single row from a SELECT statement returning only one row
+func (ps *dbrPerson) RowScan(idx int, columns []string) ([]interface{}, error) {
+	if idx > 0 {
+		return nil, errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
+	}
+	vp := make([]interface{}, 0, 4) // vp == valuePointers
 	for _, c := range columns {
 		switch c {
+		case "*":
+			fallthrough
 		case "id":
-			if t == 'i' {
-				args = append(args, ArgInt64(p.ID))
-			}
+			vp = append(vp, &ps.ID)
 		case "name":
-			args = append(args, ArgString(p.Name))
+			vp = append(vp, &ps.Name)
 		case "email":
-			args = append(args, ArgNullString(p.Email))
-		//case "key":
-		//	args = append(args, ArgNullString(p.Key))
+			vp = append(vp, &ps.Email)
+		case "key":
+			vp = append(vp, &ps.Key)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	return args, nil
+	return vp, nil
 }
 
 func (p *dbrPerson) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
@@ -91,13 +99,72 @@ func (p *dbrPerson) ProduceUpdateArgs(args Arguments, columns, condition []strin
 	return args, err
 }
 
+func (p *dbrPerson) columnToArg(t byte, args Arguments, columns []string) (Arguments, error) {
+	for _, c := range columns {
+		switch c {
+		case "id":
+			if t == 'i' {
+				args = append(args, ArgInt64(p.ID))
+			}
+		case "name":
+			args = append(args, ArgString(p.Name))
+		case "email":
+			args = append(args, ArgNullString(p.Email))
+		// case "key": don't add key, it triggers a test failure condition
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+	}
+	return args, nil
+}
+
+type dbrPersons struct {
+	Data    []*dbrPerson
+	columns []string
+	dto     []interface{}
+}
+
+func (ps *dbrPersons) RowScan(idx int, columns []string) ([]interface{}, error) {
+	if idx == 0 {
+		ps.Data = make([]*dbrPerson, 0, 5)
+		ps.dto = make([]interface{}, 0, 4) // four fields in the struct
+	}
+	ps.dto = ps.dto[:0]
+	p := new(dbrPerson)
+	for _, c := range columns {
+		switch c {
+		case "*":
+			fallthrough
+		case "id":
+			ps.dto = append(ps.dto, &p.ID)
+		case "name":
+			ps.dto = append(ps.dto, &p.Name)
+		case "email":
+			ps.dto = append(ps.dto, &p.Email)
+		case "key":
+			ps.dto = append(ps.dto, &p.Key)
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+	}
+	ps.Data = append(ps.Data, p)
+	return ps.dto, nil
+}
+
 type nullTypedRecord struct {
-	ID         int64 `db:"id"`
+	ID         int64
 	StringVal  NullString
 	Int64Val   NullInt64
 	Float64Val NullFloat64
 	TimeVal    NullTime
 	BoolVal    NullBool
+}
+
+func (p *nullTypedRecord) RowScan(idx int, columns []string) ([]interface{}, error) {
+	if idx > 0 {
+		return nil, errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
+	}
+	return []interface{}{&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal}, nil
 }
 
 func (p *nullTypedRecord) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
