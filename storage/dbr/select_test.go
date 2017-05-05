@@ -464,6 +464,38 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, id)
 	})
+
+	t.Run("LoadUint64", func(t *testing.T) {
+		id, err := s.Select("id").From("dbr_people").Limit(1).LoadUint64(context.TODO())
+		assert.NoError(t, err)
+		assert.True(t, id > 0)
+	})
+	t.Run("LoadUint64 too many columns", func(t *testing.T) {
+		id, err := s.Select("id", "email").From("dbr_people").Limit(1).LoadUint64(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Empty(t, id)
+	})
+	t.Run("LoadUint64 not found", func(t *testing.T) {
+		id, err := s.Select("id").From("dbr_people").Where(Condition("id=236478326")).LoadUint64(context.TODO())
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.Empty(t, id)
+	})
+
+	t.Run("LoadFloat64", func(t *testing.T) {
+		id, err := s.Select("id").From("dbr_people").Limit(1).LoadFloat64(context.TODO())
+		assert.NoError(t, err)
+		assert.True(t, id > 0)
+	})
+	t.Run("LoadFloat64 too many columns", func(t *testing.T) {
+		id, err := s.Select("id", "email").From("dbr_people").Limit(1).LoadFloat64(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Empty(t, id)
+	})
+	t.Run("LoadFloat64 not found", func(t *testing.T) {
+		id, err := s.Select("id").From("dbr_people").Where(Condition("id=236478326")).LoadFloat64(context.TODO())
+		assert.True(t, errors.IsNotFound(err), "%+v", err)
+		assert.Empty(t, id)
+	})
 }
 
 func TestSelect_LoadType_Slices(t *testing.T) {
@@ -474,16 +506,65 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"Jonathan", "Dmitri"}, names)
 	})
+	t.Run("LoadStrings too many columns", func(t *testing.T) {
+		vals, err := s.Select("name", "email").From("dbr_people").LoadStrings(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Exactly(t, []string(nil), vals)
+	})
 	t.Run("LoadStrings not found", func(t *testing.T) {
 		names, err := s.Select("name").From("dbr_people").Where(Condition("name ='jdhsjdf'")).LoadStrings(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, []string{}, names)
 	})
+
 	t.Run("LoadInt64s", func(t *testing.T) {
-		ids, err := s.Select("id").From("dbr_people").Limit(1).LoadInt64s(context.TODO())
+		names, err := s.Select("id").From("dbr_people").LoadInt64s(context.TODO())
 		assert.NoError(t, err)
-		assert.Equal(t, ids, []int64{1})
+		assert.Equal(t, []int64{1, 2}, names)
 	})
+	t.Run("LoadInt64s too many columns", func(t *testing.T) {
+		vals, err := s.Select("id", "email").From("dbr_people").LoadInt64s(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Exactly(t, []int64(nil), vals)
+	})
+	t.Run("LoadInt64s not found", func(t *testing.T) {
+		names, err := s.Select("id").From("dbr_people").Where(Condition("name ='jdhsjdf'")).LoadInt64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, []int64{}, names)
+	})
+
+	t.Run("LoadUint64s", func(t *testing.T) {
+		names, err := s.Select("id").From("dbr_people").LoadUint64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, []uint64{1, 2}, names)
+	})
+	t.Run("LoadUint64s too many columns", func(t *testing.T) {
+		vals, err := s.Select("id", "email").From("dbr_people").LoadUint64s(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Exactly(t, []uint64(nil), vals)
+	})
+	t.Run("LoadUint64s not found", func(t *testing.T) {
+		names, err := s.Select("id").From("dbr_people").Where(Condition("name ='jdhsjdf'")).LoadUint64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, []uint64{}, names)
+	})
+
+	t.Run("LoadFloat64s", func(t *testing.T) {
+		names, err := s.Select("id").From("dbr_people").LoadFloat64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, []float64{1, 2}, names)
+	})
+	t.Run("LoadFloat64s too many columns", func(t *testing.T) {
+		vals, err := s.Select("id", "email").From("dbr_people").LoadFloat64s(context.TODO())
+		assert.Error(t, err, "%+v", err)
+		assert.Exactly(t, []float64(nil), vals)
+	})
+	t.Run("LoadFloat64s not found", func(t *testing.T) {
+		names, err := s.Select("id").From("dbr_people").Where(Condition("name ='jdhsjdf'")).LoadFloat64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Equal(t, []float64{}, names)
+	})
+
 }
 
 func TestSelectJoin(t *testing.T) {
