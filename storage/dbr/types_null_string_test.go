@@ -277,18 +277,18 @@ func TestArgNullString(t *testing.T) {
 	t.Run("invalid UTF-8", func(t *testing.T) {
 		var buf bytes.Buffer
 
-		args := ArgNullString(MakeNullString("\x00\xff"))
-		err := args.writeTo(&buf, 0)
+		args2 := ArgNullString(MakeNullString("\x00\xff"))
+		err := args2.writeTo(&buf, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		buf.Reset()
 
-		args = ArgNullString(MakeNullString("\x00\xff"), MakeNullString("2nd"))
-		err = args.writeTo(&buf, 0)
+		args2 = ArgNullString(MakeNullString("\x00\xff"), MakeNullString("2nd"))
+		err = args2.writeTo(&buf, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		buf.Reset()
 
-		args = args.Operator(In)
-		err = args.writeTo(&buf, -1)
+		args2 = args2.Operator(In)
+		err = args2.writeTo(&buf, -1)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 

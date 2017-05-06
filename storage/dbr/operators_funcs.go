@@ -125,7 +125,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) string {
 
 	lcr := len(compareResult)
 	if useAlias {
-		lcr -= 1
+		lcr--
 		buf.WriteByte('(')
 	}
 	buf.WriteString("CASE ")

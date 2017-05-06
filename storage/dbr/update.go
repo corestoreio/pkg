@@ -96,7 +96,7 @@ func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
 	return u
 }
 
-// Set appends a column/value pair for the statement
+// Set appends a column/value pair for the statement.
 func (b *Update) Set(column string, arg Argument) *Update {
 	if b.previousError != nil {
 		return b
@@ -106,7 +106,8 @@ func (b *Update) Set(column string, arg Argument) *Update {
 	return b
 }
 
-// SetRecords sets a new argument generator type.
+// SetRecord sets a new argument generator type. See the example for more
+// details.
 func (b *Update) SetRecord(columns []string, rec UpdateArgProducer) *Update {
 	if b.previousError != nil {
 		return b

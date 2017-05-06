@@ -101,6 +101,7 @@ func (a *NullTime) UnmarshalJSON(data []byte) error {
 	return err
 }
 
+// MarshalText transforms the time type into a byte slice.
 func (a NullTime) MarshalText() ([]byte, error) {
 	if !a.Valid {
 		return []byte("null"), nil
@@ -108,6 +109,7 @@ func (a NullTime) MarshalText() ([]byte, error) {
 	return a.Time.MarshalText()
 }
 
+// UnmarshalText parses the byte slice to create a time type.
 func (a *NullTime) UnmarshalText(text []byte) error {
 	str := string(text)
 	if str == "" || str == "null" {

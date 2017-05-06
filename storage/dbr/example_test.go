@@ -313,7 +313,7 @@ func ExampleNewUnionTemplate() {
 // round trip the query and its arguments directly to the database server. If
 // you execute a query multiple times within a short time you should use
 // prepared statements.
-func ExampleUnionTemplate_Preprocess() {
+func ExampleUnionTemplate_Interpolate() {
 
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
@@ -370,7 +370,7 @@ func ExampleUnionTemplate_Preprocess() {
 	//ORDER BY `_preserve_result_set`, attribute_id, store_id
 }
 
-func ExamplePreprocess() {
+func ExampleInterpolate() {
 	sqlStr, err := dbr.Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?",
 		dbr.ArgInt(1).Operator(dbr.In),
 		dbr.ArgInt(1, 2, 3).Operator(dbr.In),

@@ -58,7 +58,7 @@ type dbrPerson struct {
 }
 
 // RowScan loads a single row from a SELECT statement returning only one row
-func (ps *dbrPerson) RowScan(idx int, columns []string) ([]interface{}, error) {
+func (p *dbrPerson) RowScan(idx int, columns []string) ([]interface{}, error) {
 	if idx > 0 {
 		return nil, errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}
@@ -68,13 +68,13 @@ func (ps *dbrPerson) RowScan(idx int, columns []string) ([]interface{}, error) {
 		case "*":
 			fallthrough
 		case "id":
-			vp = append(vp, &ps.ID)
+			vp = append(vp, &p.ID)
 		case "name":
-			vp = append(vp, &ps.Name)
+			vp = append(vp, &p.Name)
 		case "email":
-			vp = append(vp, &ps.Email)
+			vp = append(vp, &p.Email)
 		case "key":
-			vp = append(vp, &ps.Key)
+			vp = append(vp, &p.Key)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
@@ -119,9 +119,8 @@ func (p *dbrPerson) columnToArg(t byte, args Arguments, columns []string) (Argum
 }
 
 type dbrPersons struct {
-	Data    []*dbrPerson
-	columns []string
-	dto     []interface{}
+	Data []*dbrPerson
+	dto  []interface{}
 }
 
 func (ps *dbrPersons) RowScan(idx int, columns []string) ([]interface{}, error) {
