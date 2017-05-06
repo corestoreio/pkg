@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -35,6 +34,7 @@ type Update struct {
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
+	IsInterpolate      bool // See Interpolate()
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners UpdateListeners
@@ -164,30 +164,41 @@ func (b *Update) Offset(offset uint64) *Update {
 	return b
 }
 
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+func (b *Update) Interpolate() *Update {
+	b.IsInterpolate = true
+	return b
+}
+
+// ToSQL converts the select statement into a string and returns its arguments.
+func (b *Update) ToSQL() (string, Arguments, error) {
+	return toSQL(b, b.IsInterpolate)
+}
+
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) ToSQL() (string, Arguments, error) {
+func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 	if b.previousError != nil {
-		return "", nil, errors.Wrap(b.previousError, "[dbr] Update.ToSQL")
+		return nil, errors.Wrap(b.previousError, "[dbr] Update.ToSQL")
 	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
+		return nil, errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
 	}
 
 	if b.RawFullSQL != "" {
-		return b.RawFullSQL, b.RawArguments, nil
+		buf.WriteString(b.RawFullSQL)
+		return b.RawArguments, nil
 	}
 
 	if len(b.Table.Expression) == 0 {
-		return "", nil, errors.NewEmptyf("[dbr] Update: Table at empty")
+		return nil, errors.NewEmptyf("[dbr] Update: Table at empty")
 	}
 	if len(b.SetClauses.Columns) == 0 {
-		return "", nil, errors.NewEmptyf("[dbr] Update: SetClauses are empty")
+		return nil, errors.NewEmptyf("[dbr] Update: SetClauses are empty")
 	}
-
-	var buf = bufferpool.Get()
-	defer bufferpool.Put(buf)
 
 	args := make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
 
@@ -199,7 +210,7 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 		var err error
 		args, err = b.SetClauses.Record.ProduceUpdateArgs(args, b.SetClauses.Columns, b.WhereFragments.Conditions())
 		if err != nil {
-			return "", nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.ProduceUpdateArgs")
+			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.ProduceUpdateArgs")
 		}
 	}
 
@@ -227,34 +238,29 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	var err error
 	// Write WHERE clause if we have any fragments
 	if args, err = writeWhereFragmentsToSQL(b.WhereFragments, buf, args, 'w'); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Update.ToSQL.writeWhereFragmentsToSQL")
+		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.writeWhereFragmentsToSQL")
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
 	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
-	return buf.String(), args, nil
+	return args, nil
 }
 
 // Exec interpolates and executes the statement represented by the Update
 // object. It returns the raw database/sql Result and an error if there was one.
 func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
-	rawSQL, args, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.ToSQL")
 	}
 
-	fullSQL, err := Interpolate(rawSQL, args...)
-	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Exec.Interpolate")
-	}
-
 	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Update.Exec.Timing", log.String("sql", fullSQL))
+		defer log.WhenDone(b.Log).Info("dbr.Update.Exec.Timing", log.String("sql", sqlStr))
 	}
 
-	result, err := b.DB.ExecContext(ctx, fullSQL)
+	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
-		return result, errors.Wrap(err, "[dbr] Update.Exec.Exec")
+		return nil, errors.Wrap(err, "[dbr] Update.Exec.Exec")
 	}
 
 	return result, nil
@@ -319,7 +325,7 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arg
 			w.WriteString(", ")
 		}
 		Quoter.quote(w, c)
-		w.WriteRune('=')
+		w.WriteByte('=')
 		if useArgs {
 			// todo remove continue
 			if e, ok := uc.Arguments[i].(*expr); ok {
@@ -330,15 +336,15 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arg
 			if uc.Arguments[i] == nil {
 				w.WriteString("VALUES(")
 				Quoter.quote(w, c)
-				w.WriteRune(')')
+				w.WriteByte(')')
 				continue
 			}
-			w.WriteRune('?')
+			w.WriteByte('?')
 			args = append(args, uc.Arguments[i])
 		} else {
 			w.WriteString("VALUES(")
 			Quoter.quote(w, c)
-			w.WriteRune(')')
+			w.WriteByte(')')
 		}
 	}
 	return args, nil
@@ -354,7 +360,7 @@ type UpdateMulti struct {
 	// UsePreprocess if true, preprocesses the SQL statement with the provided
 	// arguments. The placeholders gets replaced with the current values. SQL
 	// injections cannot not be possible *cough* *cough*.
-	UsePreprocess bool
+	UsePreprocess bool // TODO maybe remove that because interpolate now implement in statements
 	// UseTransaction set to true to enable running the UPDATE queries in a
 	// transaction.
 	UseTransaction bool

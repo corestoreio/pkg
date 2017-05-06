@@ -30,17 +30,17 @@ const DriverNameMySQL = "mysql"
 type mysqlDialect struct{}
 
 func (mysqlDialect) EscapeIdent(w queryWriter, ident string) {
-	w.WriteRune('`')
+	w.WriteByte('`')
 	r := strings.NewReplacer("`", "``", ".", "`.`")
 	w.WriteString(r.Replace(ident))
-	w.WriteRune('`')
+	w.WriteByte('`')
 }
 
 func (mysqlDialect) EscapeBool(w queryWriter, b bool) {
 	if b {
-		w.WriteRune('1')
+		w.WriteByte('1')
 	} else {
-		w.WriteRune('0')
+		w.WriteByte('0')
 	}
 }
 
@@ -53,7 +53,7 @@ func (mysqlDialect) EscapeBinary(w queryWriter, b []byte) {
 // EscapeString. Need to turn \x00, \n, \r, \, ', " and \x1a.
 // Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''".
 func (mysqlDialect) EscapeString(w queryWriter, s string) {
-	w.WriteRune('\'')
+	w.WriteByte('\'')
 	for _, char := range s {
 		// for each case, don't use write rune 8-)
 		switch char {
@@ -75,7 +75,7 @@ func (mysqlDialect) EscapeString(w queryWriter, s string) {
 			w.WriteRune(char)
 		}
 	}
-	w.WriteRune('\'')
+	w.WriteByte('\'')
 }
 
 func (d mysqlDialect) EscapeTime(w queryWriter, t time.Time) {

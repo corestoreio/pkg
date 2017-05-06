@@ -75,27 +75,27 @@ func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
 	if isValidIdentifier(expressionAlias[0]) == 0 {
 		Quoter.FquoteAs(w, expressionAlias[0])
 	} else {
-		w.WriteRune('(')
+		w.WriteByte('(')
 		w.WriteString(expressionAlias[0])
-		w.WriteRune(')')
+		w.WriteByte(')')
 	}
-	w.WriteRune(',')
+	w.WriteByte(',')
 	if isValidIdentifier(expressionAlias[1]) == 0 {
 		Quoter.FquoteAs(w, expressionAlias[1])
 	} else {
-		w.WriteRune('(')
+		w.WriteByte('(')
 		w.WriteString(expressionAlias[1])
-		w.WriteRune(')')
+		w.WriteByte(')')
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 }
 
 func sqlIfNullQuote4(w queryWriter, expressionAlias ...string) {
 	w.WriteString("IFNULL(")
 	Quoter.quote(w, expressionAlias[:2]...)
-	w.WriteRune(',')
+	w.WriteByte(',')
 	Quoter.quote(w, expressionAlias[2:4]...)
-	w.WriteRune(')')
+	w.WriteByte(')')
 }
 
 // SQLIf writes a SQL IF() expression.
@@ -126,7 +126,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) string {
 	lcr := len(compareResult)
 	if useAlias {
 		lcr -= 1
-		buf.WriteRune('(')
+		buf.WriteByte('(')
 	}
 	buf.WriteString("CASE ")
 	buf.WriteString(value)
@@ -142,7 +142,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) string {
 	}
 	buf.WriteString(" END")
 	if useAlias {
-		buf.WriteRune(')')
+		buf.WriteByte(')')
 		buf.WriteString(" AS ")
 		Quoter.quote(buf, compareResult[len(compareResult)-1])
 	}

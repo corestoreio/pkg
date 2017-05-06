@@ -61,6 +61,20 @@ func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
 	assert.Equal(t, "DELETE FROM `a` ORDER BY id LIMIT 10 OFFSET 20", sql)
 }
 
+func TestDelete_Interpolate(t *testing.T) {
+	sql, _, err := NewDelete("tableA").
+		Where(
+			Condition("colA", ArgFloat64(3.14159).Operator(GreaterOrEqual)),
+			Condition("colB", ArgInt(1, 2, 3, 45).Operator(In)),
+			Condition("colC", ArgString("He'l`lo")),
+		).
+		Limit(10).Offset(20).OrderBy("id").
+		Interpolate().
+		ToSQL()
+	assert.NoError(t, err)
+	assert.Equal(t, "DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY id LIMIT 10 OFFSET 20", sql)
+}
+
 func TestDeleteReal(t *testing.T) {
 	s := createRealSessionWithFixtures()
 

@@ -67,13 +67,13 @@ func writeOperator(w queryWriter, operator rune, hasArg bool) (addArg bool) {
 	case In:
 		w.WriteString(" IN ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	case NotIn:
 		w.WriteString(" NOT IN ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	case Like:
@@ -112,43 +112,43 @@ func writeOperator(w queryWriter, operator rune, hasArg bool) (addArg bool) {
 	case Equal:
 		w.WriteString(" = ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	case NotEqual:
 		w.WriteString(" != ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	case Less:
 		w.WriteString(" < ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	case Greater:
 		w.WriteString(" > ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	case LessOrEqual:
 		w.WriteString(" <= ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	case GreaterOrEqual:
 		w.WriteString(" >= ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	default:
 		w.WriteString(" = ")
 		if hasArg {
-			w.WriteRune('?')
+			w.WriteByte('?')
 			addArg = true
 		}
 	}
@@ -294,17 +294,17 @@ func (a *argValue) writeTo(w queryWriter, pos int) error {
 	}
 
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, value := range a.data {
 		if err := writeDriverValuer(w, value); err != nil {
 			return err
 		}
 		//dialect.EscapeTime(w, v)
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 	return nil
 }
 
@@ -349,14 +349,14 @@ func (a *argTimes) writeTo(w queryWriter, pos int) error {
 		return nil
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		dialect.EscapeTime(w, v)
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 	return nil
 }
 
@@ -485,17 +485,17 @@ func (a *argStrings) writeTo(w queryWriter, pos int) error {
 		return nil
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		if !utf8.ValidString(v) {
 			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", v)
 		}
 		dialect.EscapeString(w, v)
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 	return nil
 }
 
@@ -558,14 +558,14 @@ func (a *argBools) writeTo(w queryWriter, pos int) error {
 		return nil
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		dialect.EscapeBool(w, v == true)
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 	return nil
 }
 
@@ -634,14 +634,14 @@ func (a *argInts) writeTo(w queryWriter, pos int) error {
 		return err
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		w.WriteString(strconv.Itoa(v))
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 	return nil
 }
 
@@ -711,14 +711,14 @@ func (a *argInt64s) writeTo(w queryWriter, pos int) error {
 		return err
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		w.WriteString(strconv.FormatInt(v, 10))
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 	return nil
 }
 
@@ -787,14 +787,14 @@ func (a *argFloat64s) writeTo(w queryWriter, pos int) error {
 		return err
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		w.WriteString(strconv.FormatFloat(v, 'f', -1, 64))
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	w.WriteRune(')')
+	w.WriteByte(')')
 	return nil
 }
 
@@ -900,12 +900,12 @@ func (e *expr) operator() rune { return e.op }
 //func (e *argSubSelect) writeTo(w queryWriter, _ int) (err error) {
 //	if e.buf == nil {
 //		e.buf = new(bytes.Buffer)
-//		e.buf.WriteRune('(')
+//		e.buf.WriteByte('(')
 //		e.args, err = e.s.toSQL(e.buf)
 //		if err != nil {
 //			return errors.Wrap(err, "[dbr] argSubSelect.writeTo")
 //		}
-//		e.buf.WriteRune(')')
+//		e.buf.WriteByte(')')
 //	}
 //	_, err = w.WriteString(e.buf.String())
 //	return err

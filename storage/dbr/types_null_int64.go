@@ -190,7 +190,7 @@ func (a argNullInt64s) writeTo(w queryWriter, pos int) error {
 		return err
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		if v.Valid {
 			w.WriteString(strconv.FormatInt(v.Int64, 10))
@@ -198,11 +198,10 @@ func (a argNullInt64s) writeTo(w queryWriter, pos int) error {
 			w.WriteString(sqlStrNull)
 		}
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	_, err := w.WriteRune(')')
-	return err
+	return w.WriteByte(')')
 }
 
 func (a argNullInt64s) len() int {

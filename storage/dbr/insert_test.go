@@ -100,6 +100,25 @@ func TestInsertMultipleToSQL(t *testing.T) {
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
 }
 
+func TestInsert_Interpolate(t *testing.T) {
+	sStr, args, err := NewInsert("a").AddColumns("b", "c").
+		AddValues(
+			argInt(1), argInt(2),
+			argInt(3), argInt(4),
+		).
+		AddValues(
+			argInt(5), argInt(6),
+		).
+		AddOnDuplicateKey("b", nil).
+		AddOnDuplicateKey("c", nil).
+		Interpolate().
+		ToSQL()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", sStr)
+	assert.Nil(t, args)
+}
+
 func TestInsertRecordsToSQL(t *testing.T) {
 	s := createFakeSession()
 

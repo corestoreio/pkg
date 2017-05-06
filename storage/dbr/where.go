@@ -186,11 +186,11 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 				w.WriteString(" USING (")
 				for j, c := range f.Using {
 					if j > 0 {
-						w.WriteRune(',')
+						w.WriteByte(',')
 					}
 					Quoter.quote(w, c)
 				}
-				w.WriteRune(')')
+				w.WriteByte(')')
 				return args, nil // done, only one using allowed
 			}
 			if i == 0 {
@@ -225,7 +225,7 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 			continue
 		}
 
-		w.WriteRune('(')
+		w.WriteByte('(')
 		addArg := false
 		if isValidIdentifier(f.Condition) > 0 { // must be an expression
 			_, _ = w.WriteString(f.Condition)
@@ -238,9 +238,9 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 
 			if f.Sub.Select != nil {
 				writeOperator(w, f.Sub.Operator, false)
-				w.WriteRune('(')
+				w.WriteByte('(')
 				subArgs, err := f.Sub.Select.toSQL(w)
-				w.WriteRune(')')
+				w.WriteByte(')')
 				if err != nil {
 					return nil, errors.Wrapf(err, "[dbr] writeWhereFragmentsToSQL failed SubSelect for table: %q", f.Sub.Select.Table.String())
 				}
@@ -251,7 +251,7 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 				addArg = writeOperator(w, f.Arguments[0].operator(), true)
 			}
 		}
-		w.WriteRune(')')
+		w.WriteByte(')')
 
 		if addArg {
 			args = append(args, f.Arguments...)

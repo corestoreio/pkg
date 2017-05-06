@@ -37,9 +37,9 @@ func (t alias) QuoteAs() string {
 // FquoteAs writes the quoted table and its maybe alias into w.
 func (t alias) FquoteAs(w queryWriter) (Arguments, error) {
 	if t.Select != nil {
-		w.WriteRune('(')
+		w.WriteByte('(')
 		args, err := t.Select.toSQL(w)
-		w.WriteRune(')')
+		w.WriteByte(')')
 		w.WriteString(" AS ")
 		Quoter.quote(w, t.Alias)
 		return args, errors.Wrap(err, "[dbr] FquoteAs.SubSelect")

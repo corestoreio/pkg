@@ -91,12 +91,12 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 		if i > 0 {
 			sqlWriteUnionAll(w, u.IsAll)
 		}
-		w.WriteRune('(')
+		w.WriteByte('(')
 		sArgs, err := s.toSQL(w)
 		if err != nil {
 			return "", nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
 		}
-		w.WriteRune(')')
+		w.WriteByte(')')
 		args = append(args, sArgs...)
 	}
 	sqlWriteOrderBy(w, u.OrderBys, true)
@@ -232,9 +232,9 @@ func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
 		if i > 0 {
 			sqlWriteUnionAll(wu, ut.IsAll)
 		}
-		wu.WriteRune('(')
+		wu.WriteByte('(')
 		repl.WriteString(wu, selStr)
-		wu.WriteRune(')')
+		wu.WriteByte(')')
 	}
 	sqlWriteOrderBy(wu, ut.OrderBys, true)
 	return wu.String(), ut.MultiplyArguments(tplArgs...), nil

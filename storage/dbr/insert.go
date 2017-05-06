@@ -42,6 +42,7 @@ type Insert struct {
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
+	IsInterpolate      bool // See Interpolate()
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
@@ -178,23 +179,32 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 	return b
 }
 
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+func (b *Insert) Interpolate() *Insert {
+	b.IsInterpolate = true
+	return b
+}
+
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, Arguments, error) {
+	return toSQL(b, b.IsInterpolate)
+}
+
+func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 	if b.previousError != nil {
-		return "", nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
+		return nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
 	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
+		return nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
 	}
 
 	if len(b.Into) == 0 {
-		return "", nil, errors.NewEmptyf(errTableMissing)
+		return nil, errors.NewEmptyf(errTableMissing)
 	}
-
-	var buf = bufferpool.Get()
-	defer bufferpool.Put(buf)
 
 	ior := "INSERT "
 	if b.IsReplace {
@@ -211,19 +221,16 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 
 	if b.Select != nil {
 		sArgs, err := b.Select.toSQL(buf)
-		if err != nil {
-			return "", nil, errors.Wrap(err, "[dbr] Insert.FromSelect")
-		}
-		return buf.String(), sArgs, nil
+		return sArgs, errors.Wrap(err, "[dbr] Insert.FromSelect")
 	}
 
 	if len(b.Maps) > 0 {
 		args, err := b.mapToSQL(buf)
-		return buf.String(), args, err
+		return args, errors.Wrap(err, "[dbr] Insert.mapToSQL")
 	}
 
 	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
-		return "", nil, errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
+		return nil, errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
 	}
 
 	var ph = bufferpool.Get() // Build the ph like "(?,?,?)"
@@ -244,7 +251,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 		buf.WriteByte(' ')
 	} else {
 		// no columns provided so build the place holders.
-		ph.WriteRune('(')
+		ph.WriteByte('(')
 		for i := range b.Values[0] {
 			if i > 0 {
 				ph.WriteByte(',')
@@ -266,7 +273,7 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	args := make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
 	for i, v := range b.Values {
 		if i > 0 {
-			buf.WriteRune(',')
+			buf.WriteByte(',')
 		}
 		buf.WriteString(placeholderStr)
 		args = append(args, v...)
@@ -274,28 +281,25 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 
 	var err error
 	if b.Records == nil {
-		if args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args); err != nil {
-			return "", nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
-		}
-		return buf.String(), args, nil
+		args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args)
+		return args, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
 	}
 
 	for i, rec := range b.Records {
 		args, err = rec.ProduceInsertArgs(args, b.Columns)
 		if err != nil {
-			return "", nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
+			return nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
 		}
 		if i > 0 {
-			buf.WriteRune(',')
+			buf.WriteByte(',')
 		}
 		buf.WriteString(placeholderStr)
 	}
 
 	if args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
+		return nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
 	}
-
-	return buf.String(), args, nil
+	return args, nil
 }
 
 // mapToSQL serialized the Insert to a SQL string
@@ -318,17 +322,17 @@ func (b *Insert) mapToSQL(w queryWriter) (Arguments, error) {
 	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
 	defer bufferpool.Put(placeholder)
 
-	placeholder.WriteRune('(')
+	placeholder.WriteByte('(')
 	for i, c := range keys {
 		if i > 0 {
-			w.WriteRune(',')
-			placeholder.WriteRune(',')
+			w.WriteByte(',')
+			placeholder.WriteByte(',')
 		}
 		Quoter.FquoteAs(w, c)
-		placeholder.WriteRune('?')
+		placeholder.WriteByte('?')
 	}
 	w.WriteString(") VALUES ")
-	placeholder.WriteRune(')')
+	placeholder.WriteByte(')')
 	w.WriteString(placeholder.String())
 
 	args = append(args, vals...)
@@ -343,21 +347,16 @@ func (b *Insert) mapToSQL(w queryWriter) (Arguments, error) {
 // the first inserted row only. The reason for this at to make it possible to
 // reproduce easily the same INSERT statement against some other server.
 func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
-	sql, args, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
 	}
 
-	fullSQL, err := Interpolate(sql, args...)
-	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.Exec.Interpolate")
-	}
-
 	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Insert.Exec.Timing", log.String("sql", fullSQL))
+		defer log.WhenDone(b.Log).Info("dbr.Insert.Exec.Timing", log.String("sqlStr", sqlStr))
 	}
 
-	result, err := b.DB.ExecContext(ctx, fullSQL)
+	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Insert.Exec.Exec")
 	}

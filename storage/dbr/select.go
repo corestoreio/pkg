@@ -3,7 +3,6 @@ package dbr
 import (
 	"strings"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -325,7 +324,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. TODO implement
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
 func (b *Select) Interpolate() *Select {
 	b.IsInterpolate = true
 	return b
@@ -333,10 +332,7 @@ func (b *Select) Interpolate() *Select {
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Select) ToSQL() (string, Arguments, error) {
-	var w = bufferpool.Get()
-	defer bufferpool.Put(w)
-	args, err := b.toSQL(w)
-	return w.String(), args, err
+	return toSQL(b, b.IsInterpolate)
 }
 
 // ToSQL serialized the Select to a SQL string
@@ -395,7 +391,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
-			w.WriteRune(' ')
+			w.WriteByte(' ')
 			w.WriteString(f.JoinType)
 			w.WriteString(" JOIN ")
 			f.Table.FquoteAs(w)

@@ -65,6 +65,38 @@ func TestSelectFullToSQL(t *testing.T) {
 	assert.Equal(t, []interface{}{int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3"}, args.Interfaces())
 }
 
+func TestSelect_Interpolate(t *testing.T) {
+
+	sql, args, err := NewSelect("a", "b").
+		Distinct().
+		From("c", "cc").
+		Where(
+			ParenthesisOpen(),
+			Condition("d", argInt(1)),
+			Condition("e", ArgString("wat")).Or(),
+			ParenthesisClose(),
+			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
+		).
+		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(In)}).
+		GroupBy("ab").
+		Having(
+			ParenthesisOpen(),
+			Condition("m", argInt(33)),
+			Condition("n", ArgString("wh3r3")).Or(),
+			ParenthesisClose(),
+			Condition("j = k"),
+		).
+		OrderBy("l").
+		Limit(7).
+		Offset(8).
+		Interpolate().
+		ToSQL()
+
+	require.NoError(t, err)
+	assert.Equal(t, "SELECT DISTINCT a, b FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY ab HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY l LIMIT 7 OFFSET 8", sql)
+	assert.Nil(t, args)
+}
+
 func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 	s := createFakeSession()
 

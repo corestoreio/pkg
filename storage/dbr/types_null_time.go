@@ -161,7 +161,7 @@ func (a argNullTimes) writeTo(w queryWriter, pos int) error {
 		return err
 	}
 	l := len(a.data) - 1
-	w.WriteRune('(')
+	w.WriteByte('(')
 	for i, v := range a.data {
 		if v.Valid {
 			dialect.EscapeTime(w, v.Time)
@@ -169,11 +169,10 @@ func (a argNullTimes) writeTo(w queryWriter, pos int) error {
 			w.WriteString(sqlStrNull)
 		}
 		if i < l {
-			w.WriteRune(',')
+			w.WriteByte(',')
 		}
 	}
-	_, err := w.WriteRune(')')
-	return err
+	return w.WriteByte(')')
 }
 
 func (a argNullTimes) len() int {

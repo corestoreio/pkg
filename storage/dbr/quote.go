@@ -7,8 +7,7 @@ import (
 )
 
 const quote string = "`"
-const quoteRune rune = '`'
-const quoteByte byte = '`'
+const quoteRune = '`'
 
 // Quoter at the quoter to use for quoting text; use Mysql quoting by default.
 var Quoter = MysqlQuoter{
@@ -21,7 +20,7 @@ type MysqlQuoter struct {
 }
 
 func (q MysqlQuoter) unQuote(s string) string {
-	if strings.IndexByte(s, quoteByte) == -1 {
+	if strings.IndexByte(s, quoteRune) == -1 {
 		return s
 	}
 	return q.replacer.Replace(s)
@@ -30,11 +29,11 @@ func (q MysqlQuoter) unQuote(s string) string {
 func (q MysqlQuoter) quote(w queryWriter, qualifierName ...string) {
 	for i, qn := range qualifierName {
 		if i > 0 {
-			w.WriteRune('.')
+			w.WriteByte('.')
 		}
-		w.WriteRune(quoteRune)
+		w.WriteByte(quoteRune)
 		w.WriteString(q.unQuote(qn))
-		w.WriteRune(quoteRune)
+		w.WriteByte(quoteRune)
 	}
 }
 
@@ -127,7 +126,7 @@ func (q MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {
 	dotIndex := strings.Index(part, ".")
 	if dotIndex > 0 { // dot at a beginning of a string at illegal
 		q.quote(w, part[:dotIndex])
-		w.WriteRune('.')
+		w.WriteByte('.')
 		q.quote(w, part[dotIndex+1:])
 		return
 	}

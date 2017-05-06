@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -27,6 +26,7 @@ type Delete struct {
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
+	IsInterpolate      bool // See Interpolate()
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners DeleteListeners
@@ -101,20 +101,32 @@ func (b *Delete) Offset(offset uint64) *Delete {
 	return b
 }
 
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+func (b *Delete) Interpolate() *Delete {
+	b.IsInterpolate = true
+	return b
+}
+
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, Arguments, error) {
+	return toSQL(b, b.IsInterpolate)
+}
+
+// ToSQL serialized the Delete to a SQL string
+// It returns the string with placeholders and a slice of query arguments
+func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
+		return nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
 	}
 
 	if len(b.From.Expression) == 0 {
-		return "", nil, errors.NewEmptyf(errTableMissing)
+		return nil, errors.NewEmptyf(errTableMissing)
 	}
 
-	var buf = bufferpool.Get()
-	defer bufferpool.Put(buf)
 	var args Arguments // no make() lazy init the slice via append in cases where not WHERE has been provided.
 
 	buf.WriteString("DELETE FROM ")
@@ -123,12 +135,13 @@ func (b *Delete) ToSQL() (string, Arguments, error) {
 	// Write WHERE clause if we have any fragments
 	var err error
 	if args, err = writeWhereFragmentsToSQL(b.WhereFragments, buf, args, 'w'); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Delete.ToSQL.writeWhereFragmentsToSQL")
+		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.writeWhereFragmentsToSQL")
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
 	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
-	return buf.String(), args, nil
+
+	return args, nil
 }
 
 // Exec executes the statement represented by the Delete
@@ -139,16 +152,11 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] Delete.Exec.ToSQL")
 	}
 
-	fullSQL, err := Interpolate(sqlStr, args...)
-	if err != nil {
-		return nil, errors.Wrapf(err, "[dbr] Delete.Exec.Interpolate: %q", fullSQL)
-	}
-
 	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Delete.Exec.Timing", log.String("sql", fullSQL))
+		defer log.WhenDone(b.Log).Info("dbr.Delete.Exec.Timing", log.String("sql", sqlStr))
 	}
 
-	result, err := b.DB.ExecContext(ctx, fullSQL)
+	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] delete.exec.Exec")
 	}
