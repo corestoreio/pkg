@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -33,16 +47,15 @@ type Insert struct {
 	// IsReplace uses the REPLACE syntax. See function Replace().
 	IsReplace bool
 	// IsIgnore ignores error. See function Ignore().
-	IsIgnore bool
-
-	// Listeners allows to dispatch certain functions in different
-	// situations.
-	Listeners InsertListeners
+	IsIgnore      bool
+	IsInterpolate bool // See Interpolate()
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
-	IsInterpolate      bool // See Interpolate()
+	// Listeners allows to dispatch certain functions in different
+	// situations.
+	Listeners InsertListeners
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.

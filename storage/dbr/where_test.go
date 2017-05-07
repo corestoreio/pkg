@@ -25,17 +25,26 @@ func TestIsValidIdentifier(t *testing.T) {
 		have string
 		want int8
 	}{
+		{"*", 0},
+		{"table.*", 0},
+		{"*.*", 2},
+		{"table.p*", 2},
+		{"`table`.*", 2},     // not valid because of backticks
+		{"`table`.`col`", 2}, // not valid because of backticks
 		{"", 1},
 		{"a", 0},
 		{"a.", 1},
 		{"a.b", 0},
 		{".b", 1},
 		{"", 2},
+		{"花间一壶酒，独酌无相亲。", 2}, // no idea what this means but found it in x/text pkg
+		{"独酌无相", 2},         // no idea what this means but found it in x/text pkg
 		{"Goooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher", 1},
 		{"Gooooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher", 0},
 		{"Gooooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher.Gooooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher", 0},
 		{"Gooooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher.Goooooooooooooooooooooooooooooooooooooooooooooooooooooooooo0opher", 1},
 		{"Goooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher.Gooooooooooooooooooooooooooooooooooooooooooooooooooooooo0oph€r", 2},
+		{"DATE_FORMAT(t3.period, '%Y-%m-01')", 2},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, isValidIdentifier(test.have), "Index %d with %q", i, test.have)
@@ -45,6 +54,7 @@ func TestIsValidIdentifier(t *testing.T) {
 var benchmarkIsValidIdentifier int8
 
 // BenchmarkIsValidIdentifier-4   	20000000	        92.0 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsValidIdentifier-4   	 5000000	       280 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkIsValidIdentifier(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		benchmarkIsValidIdentifier = isValidIdentifier(`store_owner.catalog_product_entity_varchar`)

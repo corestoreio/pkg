@@ -145,8 +145,8 @@ func ExampleInsert_FromSelect() {
 	argEq := dbr.Eq{"int64B": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
 
 	sqlStr, args, err := ins.FromSelect(
-		dbr.NewSelect().AddColumnsQuoted("something_id,user_id").
-			AddColumnsQuoted("other").
+		dbr.NewSelect().AddColumns("something_id", "user_id").
+			AddColumns("other").
 			From("some_table").
 			Where(
 				dbr.ParenthesisOpen(),
@@ -208,14 +208,14 @@ func ExampleNewDelete() {
 func ExampleNewUnion() {
 
 	u := dbr.NewUnion(
-		dbr.NewSelect().AddColumnsQuotedAlias("a1", "A", "a2", "B").From("tableA").Where(dbr.Condition("a1", dbr.ArgInt64(3))),
-		dbr.NewSelect().AddColumnsQuotedAlias("b1", "A", "b2", "B").From("tableB").Where(dbr.Condition("b1", dbr.ArgInt64(4))),
+		dbr.NewSelect().AddColumnsAlias("a1", "A", "a2", "B").From("tableA").Where(dbr.Condition("a1", dbr.ArgInt64(3))),
+		dbr.NewSelect().AddColumnsAlias("b1", "A", "b2", "B").From("tableB").Where(dbr.Condition("b1", dbr.ArgInt64(4))),
 	)
 	// Maybe more of your code ...
 	u.Append(
 		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
 			AddArguments(dbr.ArgString("-")).
-			AddColumnsQuotedAlias("c2", "B").
+			AddColumnsAlias("c2", "B").
 			From("tableC").Where(dbr.Condition("c2", dbr.ArgString("ArgForC2"))),
 	).
 		OrderBy("A").       // Ascending by A
@@ -253,7 +253,7 @@ func ExampleNewUnion() {
 func ExampleNewUnionTemplate() {
 
 	u := dbr.NewUnionTemplate(
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
+		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -307,7 +307,7 @@ func ExampleNewUnionTemplate() {
 	//ORDER BY `_preserve_result_set`, attribute_id, store_id
 }
 
-// ExampleUnionTemplate_Preprocess interpolates the SQL string with its
+// ExampleUnionTemplate_Interpolate interpolates the SQL string with its
 // placeholders and puts for each placeholder the correct encoded and escaped
 // value into it. Eliminates the need for prepared statements by sending in one
 // round trip the query and its arguments directly to the database server. If
@@ -316,7 +316,7 @@ func ExampleNewUnionTemplate() {
 func ExampleUnionTemplate_Interpolate() {
 
 	u := dbr.NewUnionTemplate(
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
+		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -407,7 +407,7 @@ func ExampleRepeat() {
 func ExampleArgument() {
 
 	argPrinter := func(arg ...dbr.Argument) {
-		sqlStr, args, err := dbr.NewSelect().AddColumnsQuoted("a", "b").
+		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
 			From("c").Where(dbr.Condition("d", arg...)).ToSQL()
 		if err != nil {
 			fmt.Printf("%+v\n", err)
@@ -467,7 +467,7 @@ func ExampleArgument() {
 // ExampleCondition is a duplicate of ExampleArgument
 func ExampleCondition() {
 	argPrinter := func(arg ...dbr.Argument) {
-		sqlStr, args, err := dbr.NewSelect().AddColumnsQuoted("a", "b").
+		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
 			From("c").Where(dbr.Condition("d", arg...)).ToSQL()
 		if err != nil {
 			fmt.Printf("%+v\n", err)
@@ -525,36 +525,37 @@ func ExampleCondition() {
 }
 
 func ExampleSubSelect() {
-	s := dbr.NewSelect("*").
+	s := dbr.NewSelect("sku", "type_id").
 		From("catalog_product_entity").
 		Where(dbr.SubSelect(
 			"entity_id", dbr.In,
 			dbr.NewSelect().From("catalog_category_product").
-				AddColumnsQuoted("entity_id").Where(dbr.Condition("category_id", dbr.ArgInt64(234))),
+				AddColumns("entity_id").Where(dbr.Condition("category_id", dbr.ArgInt64(234))),
 		))
 	writeToSqlAndPreprocess(s)
 	// Output:
 	//Prepared Statement:
-	//SELECT * FROM `catalog_product_entity` WHERE (`entity_id` IN (SELECT `entity_id`
-	//FROM `catalog_category_product` WHERE (`category_id` = ?)))
+	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
+	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))
 	//Arguments: [234]
 	//
 	//Preprocessed Statement:
-	//SELECT * FROM `catalog_product_entity` WHERE (`entity_id` IN (SELECT `entity_id`
-	//FROM `catalog_category_product` WHERE (`category_id` = 234)))
+	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
+	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` =
+	//234)))
 }
 
 func ExampleNewSelectFromSub() {
 	sel3 := dbr.NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
 		AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
-		AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
+		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
 		AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
 		Where(dbr.Condition("product_name", dbr.ArgString("Canon%"))).
 		GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
 		OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC")
 
 	sel1 := dbr.NewSelectFromSub(sel3, "t1").
-		AddColumns("`t1`.`period`,`t1`.`store_id`,`t1`.`product_id`,`t1`.`product_name`,`t1`.`avg_price`,`t1`.`qty_ordered`").
+		AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 		Where(dbr.Condition("product_name", dbr.ArgString("Sony%"))).
 		OrderBy("`t1`.period", "`t1`.product_id")
 	writeToSqlAndPreprocess(sel1)
@@ -614,7 +615,7 @@ func ExampleSQLIfNull() {
 }
 
 func ExampleSQLIf() {
-	s := dbr.NewSelect().AddColumnsQuoted("a", "b", "c").
+	s := dbr.NewSelect().AddColumns("a", "b", "c").
 		From("table1").Where(
 		dbr.Condition(
 			dbr.SQLIf("a > 0", "b", "c"),
@@ -662,7 +663,7 @@ func ExampleSQLCase_select() {
 	// time stamp has no special meaning ;-)
 	start := dbr.ArgTime(time.Unix(1257894000, 0))
 	end := dbr.ArgTime(time.Unix(1257980400, 0))
-	s := dbr.NewSelect().AddColumnsQuoted("price,sku,name,title,description").
+	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnsExprAlias(
 			dbr.SQLCase("", "`closed`",
 				"date_start <= ? AND date_end >= ?", "`open`",
@@ -696,7 +697,7 @@ func ExampleSelect_AddArguments() {
 	// time stamp has no special meaning ;-)
 	start := dbr.ArgTime(time.Unix(1257894000, 0))
 	end := dbr.ArgTime(time.Unix(1257980400, 0))
-	s := dbr.NewSelect().AddColumnsQuoted("price,sku,name,title,description").
+	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnsExprAlias(
 			dbr.SQLCase("", "`closed`",
 				"date_start <= ? AND date_end >= ?", "`open`",
@@ -751,13 +752,13 @@ func ExampleParenthesisOpen() {
 
 	// Output:
 	//Prepared Statement:
-	//SELECT DISTINCT columnA, columnB FROM `tableC` AS `ccc` WHERE ((`d` = ?) OR (`e`
-	//= ?)) AND (`f` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?))
+	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = ?) OR
+	//(`e` = ?)) AND (`f` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?))
 	//ORDER BY l LIMIT 7 OFFSET 8
 	//Arguments: [1 wat 2 33 wh3r3]
 	//
 	//Preprocessed Statement:
-	//SELECT DISTINCT columnA, columnB FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR (`e`
-	//= 'wat')) AND (`f` = 2) GROUP BY ab HAVING (j = k) AND ((`m` = 33) OR (`n` =
-	//'wh3r3')) ORDER BY l LIMIT 7 OFFSET 8
+	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
+	//(`e` = 'wat')) AND (`f` = 2) GROUP BY ab HAVING (j = k) AND ((`m` = 33) OR (`n`
+	//= 'wh3r3')) ORDER BY l LIMIT 7 OFFSET 8
 }

@@ -36,7 +36,7 @@ func TestUnion(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{int64(3), "e"}, args.Interfaces())
 		assert.Exactly(t,
-			"(SELECT a, b FROM `tableAB` WHERE (`a` = ?))\nUNION\n(SELECT c, d FROM `tableCD` WHERE (`d` = ?))",
+			"(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))\nUNION\n(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = ?))",
 			uStr)
 	})
 
@@ -50,13 +50,13 @@ func TestUnion(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{"e", int64(3)}, args.Interfaces())
 		assert.Exactly(t,
-			"(SELECT c, d FROM `tableCD` WHERE (`d` = ?))\nUNION ALL\n(SELECT a, b FROM `tableAB` WHERE (`a` = ?))",
+			"(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))",
 			uStr)
 	})
 
 	t.Run("order by", func(t *testing.T) {
 		u := dbr.NewUnion(
-			dbr.NewSelect("a").AddColumnsQuotedAlias("d", "b").From("tableAD").Where(dbr.Condition("d", dbr.ArgString("f"))),
+			dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD").Where(dbr.Condition("d", dbr.ArgString("f"))),
 			dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Condition("a", dbr.ArgInt64(3))),
 		).All().OrderBy("a").OrderByDesc("b")
 
@@ -64,13 +64,13 @@ func TestUnion(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{"f", int64(3)}, args.Interfaces())
 		assert.Exactly(t,
-			"(SELECT a, `d` AS `b` FROM `tableAD` WHERE (`d` = ?))\nUNION ALL\n(SELECT a, b FROM `tableAB` WHERE (`a` = ?))\nORDER BY a, b DESC",
+			"(SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`d` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))\nORDER BY a, b DESC",
 			uStr)
 	})
 
 	t.Run("preserve result set", func(t *testing.T) {
 		u := dbr.NewUnion(
-			dbr.NewSelect("a").AddColumnsQuotedAlias("d", "b").From("tableAD"),
+			dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
 			dbr.NewSelect("a", "b").From("tableAB"),
 		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
@@ -80,7 +80,7 @@ func TestUnion(t *testing.T) {
 			assert.NoError(t, err, "%+v", err)
 			assert.True(t, args.Interfaces() == nil)
 			assert.Exactly(t,
-				"(SELECT a, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT a, b, 1 AS `_preserve_result_set` FROM `tableAB`)\nORDER BY `_preserve_result_set`, a, b DESC",
+				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB`)\nORDER BY `_preserve_result_set`, a, b DESC",
 				uStr)
 		}
 	})
@@ -126,7 +126,8 @@ func TestNewUnionTemplate(t *testing.T) {
 
 	t.Run("full statement EAV", func(t *testing.T) {
 		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
+				From("catalog_product_entity_{type}", "t").
 				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 				OrderByDesc("t.{column}_store_id"),
 		).
@@ -149,13 +150,13 @@ func TestNewUnionTemplate(t *testing.T) {
 			assert.Exactly(t, wantArg, haveArg[3:6])
 			assert.Len(t, haveArg, 15)
 			assert.Exactly(t,
-				"(SELECT `t`.`value`, `t`.`attribute_id`, t.varcharX AS `col_type`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.varcharX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, t.intX AS `col_type`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.intX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, t.decimalX AS `col_type`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.decimalX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, t.datetimeX AS `col_type`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.datetimeX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, t.textX AS `col_type`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.textX_store_id DESC)\nORDER BY `_preserve_result_set`, col_type DESC",
+				"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`varcharX` AS `col_type`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.varcharX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`intX` AS `col_type`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.intX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`decimalX` AS `col_type`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.decimalX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`datetimeX` AS `col_type`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.datetimeX_store_id DESC)\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`textX` AS `col_type`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?) ORDER BY t.textX_store_id DESC)\nORDER BY `_preserve_result_set`, col_type DESC",
 				uStr)
 		}
 	})
 	t.Run("StringReplace 2nd call fewer values", func(t *testing.T) {
 		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
+			dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX")
@@ -167,7 +168,7 @@ func TestNewUnionTemplate(t *testing.T) {
 	})
 	t.Run("StringReplace 2nd call too many values", func(t *testing.T) {
 		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
+			dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX", "bytesX")
@@ -197,7 +198,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		// everything when loading the PHP array.
 
 		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.store_id").From("catalog_product_entity_{type}", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
 				Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -220,19 +221,19 @@ var benchmarkGlobalArgs dbr.Arguments
 func BenchmarkUnion_AllOptions(b *testing.B) {
 
 	u := dbr.NewUnion(
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.varchar AS `col_type`").From("catalog_product_entity_varchar", "t").
+		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.varchar AS `col_type`").From("catalog_product_entity_varchar", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.varchar_store_id"),
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.int AS `col_type`").From("catalog_product_entity_int", "t").
+		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.int AS `col_type`").From("catalog_product_entity_int", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.int_store_id"),
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.decimal AS `col_type`").From("catalog_product_entity_decimal", "t").
+		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.decimal AS `col_type`").From("catalog_product_entity_decimal", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.decimal_store_id"),
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.datetime AS `col_type`").From("catalog_product_entity_datetime", "t").
+		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.datetime AS `col_type`").From("catalog_product_entity_datetime", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.datetime_store_id"),
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.text AS `col_type`").From("catalog_product_entity_text", "t").
+		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.text AS `col_type`").From("catalog_product_entity_text", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.text_store_id"),
 	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
@@ -249,7 +250,7 @@ func BenchmarkUnion_AllOptions(b *testing.B) {
 // BenchmarkUnionTemplate_AllOptions-4   	  300000	      6068 ns/op	    1712 B/op	       4 allocs/op
 func BenchmarkUnionTemplate_AllOptions(b *testing.B) {
 	u := dbr.NewUnionTemplate(
-		dbr.NewSelect().AddColumnsQuoted("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
+		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
 			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
 			OrderByDesc("t.{column}_store_id"),
 	).

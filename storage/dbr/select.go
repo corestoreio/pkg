@@ -1,8 +1,20 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
-	"strings"
-
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -24,9 +36,10 @@ type Select struct {
 	RawFullSQL string
 	Arguments
 
-	// TODO: remove the functions AddColumns quote/alias/expression
-	// use a slice with 2 dim: 0 for the expression and 1 for the alias.
-	Columns []string
+	// Columns represents a slice of aliases. An alias contains of three
+	// exported fields: Select, Expression and Alias. The Select can be a
+	// sub-select.
+	Columns aliases
 
 	//TODO: create a possibility of the Select type which has a half-pre-rendered
 	// SQL statement where a developer can only modify or append WHERE clauses.
@@ -37,9 +50,9 @@ type Select struct {
 
 	WhereFragments
 	JoinFragments
-	GroupBys          []string
+	GroupBys          []string // TODO use aliases
 	HavingFragments   WhereFragments
-	OrderBys          []string
+	OrderBys          []string // TODO use aliases
 	LimitCount        uint64
 	OffsetCount       uint64
 	LimitValid        bool
@@ -61,13 +74,14 @@ type Select struct {
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
+	// previousError any error occurred during construction the SQL statement
+	previousError error
 }
 
-// NewSelect creates a new Select object with a black hole logger and selecting
-// from the specified columns. The provided columns won't get quoted.
+// NewSelect creates a new Select object.
 func NewSelect(columns ...string) *Select {
 	return &Select{
-		Columns: columns,
+		Columns: appendColumns(nil, columns),
 	}
 }
 
@@ -92,7 +106,7 @@ func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 func (c *Connection) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     c.Log,
-		Columns: columns,
+		Columns: appendColumns(nil, columns),
 	}
 	s.DB.Querier = c.DB
 	s.DB.Preparer = c.DB
@@ -115,7 +129,7 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 func (tx *Tx) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     tx.Logger,
-		Columns: columns,
+		Columns: appendColumns(nil, columns),
 	}
 	s.DB.Querier = tx.Tx
 	s.DB.Preparer = tx.Tx
@@ -188,7 +202,9 @@ func (b *Select) LockInShareMode() *Select {
 
 // Count resets the columns to COUNT(*) as `counted`
 func (b *Select) Count() *Select {
-	//b.IsCount = true
+	b.Columns = aliases{
+		MakeAliasExpr("COUNT(*)", "counted"),
+	}
 	return b
 }
 
@@ -199,63 +215,38 @@ func (b *Select) From(from ...string) *Select {
 	return b
 }
 
-func splitColumns(cols []string) []string {
-	// cannot be improved any more
-	for i := 0; i < len(cols); i++ {
-		if c := cols[i]; strings.IndexByte(c, ',') > 0 {
-			cs := strings.Split(c, ",")
-			for j, c2 := range cs {
-				cs[j] = strings.TrimSpace(c2)
-			}
-			cols = append(cols[:i], append(cs, cols[i+1:]...)...)
-		}
-	}
-	return cols
-}
-
 // AddColumns appends more columns to the Columns slice. If a single string gets
 // passed with comma separated values, this string gets split by the comma and
 // its values appended to the Columns slice. Columns won't get quoted.
-// 		AddColumns("a","b") 		// []string{"a","b"}
-// 		AddColumns("a,b","z","c,d")	// []string{"a","b","z","c","d"}
+// 		AddColumns("a","b") 		// `a`,`b`
+// 		AddColumns("a,b","z","c,d")	// `a,b`,`z`,`c,d` <- invalid SQL!
+//		AddColumns("t1.name","t1.sku","price") // `t1`.`name`, `t1`.`sku`,`price`
 func (b *Select) AddColumns(cols ...string) *Select {
-	b.Columns = append(b.Columns, splitColumns(cols)...)
+	b.Columns = appendColumns(b.Columns, cols)
 	return b
 }
 
-// AddColumnsQuoted appends more columns to the Columns slice and quotes them.
-// Give "t1.name" gets translated to "`t1`.`name`". Comma separated input is
-// supported for each slice item:
-//		AddColumnsQuoted("t1.name","t1.sku","price") // []string{"`t1`.`name`", "`t1`.`sku`","`price`"}
-//		AddColumnsQuoted("t1.name,t1.sku")	// []string{"`t1`.`name`", "`t1`.`sku`"}
-func (b *Select) AddColumnsQuoted(cols ...string) *Select {
-	cols = splitColumns(cols)
-	for i, c := range cols {
-		cols[i] = Quoter.QuoteAs(c)
-	}
-	b.Columns = append(b.Columns, cols...)
-	return b
-}
-
-// AddColumnsQuotedAlias expects a balanced slice of "ColumnName, AliasName" and
-// adds both concatenated and quoted to the Columns slice. It panics when the
-// provided `columnAliases` seems not be balanced.
-//		AddColumnsQuotedAlias("t1.name","t1Name","t1.sku","t1SKU") // []string{"`t1`.`name` AS `t1Name`", "`t1`.`sku` AS `t1SKU`"}
-func (b *Select) AddColumnsQuotedAlias(columnAliases ...string) *Select {
-	columnAliases = splitColumns(columnAliases)
-	for i := 0; i < len(columnAliases); i = i + 2 {
-		b.Columns = append(b.Columns, Quoter.QuoteAs(columnAliases[i], columnAliases[i+1]))
+// AddColumnsAlias expects a balanced slice of "Column1, Alias1, Column2,
+// Alias2" and adds both to the Columns slice.
+//		AddColumnsAlias("t1.name","t1Name","t1.sku","t1SKU") // `t1`.`name` AS `t1Name`, `t1`.`sku` AS `t1SKU`
+// 		AddColumnsAlias("(e.price*x.tax*t.weee)", "final_price") // `(e.price*x.tax*t.weee)` AS `final_price`
+func (b *Select) AddColumnsAlias(columnAliases ...string) *Select {
+	if (len(columnAliases) % 2) == 1 {
+		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columnAliases)
+	} else {
+		b.Columns = appendColumnsAliases(b.Columns, columnAliases, false)
 	}
 	return b
 }
 
 // AddColumnsExprAlias expects a balanced slice of "expression, AliasName" and
-// adds both concatenated and quoted to the Columns slice. It panics when the
-// provided `expressionAlias` seems not be balanced.
+// adds both concatenated and quoted to the Columns slice.
 // 		AddColumnsExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
 func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
-	for i := 0; i < len(expressionAliases); i = i + 2 {
-		b.Columns = append(b.Columns, Quoter.ExprAlias(expressionAliases[i], expressionAliases[i+1]))
+	if (len(expressionAliases) % 2) == 1 {
+		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", expressionAliases)
+	} else {
+		b.Columns = appendColumnsAliases(b.Columns, expressionAliases, true)
 	}
 	return b
 }
@@ -338,7 +329,9 @@ func (b *Select) ToSQL() (string, Arguments, error) {
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) toSQL(w queryWriter) (Arguments, error) {
-
+	if b.previousError != nil {
+		return nil, errors.Wrap(b.previousError, "[dbr] Select.toSQL")
+	}
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
@@ -351,7 +344,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		return b.Arguments, nil
 	}
 
-	if b.Table.Expression == "" && b.Table.Select == nil {
+	if b.Table.Name == "" && b.Table.Select == nil {
 		return nil, errors.NewEmptyf(errTableMissing)
 	}
 	if len(b.Columns) == 0 {
@@ -374,12 +367,11 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	if b.IsSQLNoCache {
 		w.WriteString("SQL_NO_CACHE ")
 	}
-
-	for i, s := range b.Columns {
-		if i > 0 {
-			w.WriteString(", ")
+	{
+		var err error
+		if args, err = b.Columns.fQuoteAs(w, args); err != nil {
+			return nil, errors.Wrap(err, "[dbr] Selec.toSQL.Columns.fQuoteAs")
 		}
-		w.WriteString(s)
 	}
 
 	w.WriteString(" FROM ")

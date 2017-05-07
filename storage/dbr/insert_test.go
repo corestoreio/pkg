@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -397,7 +411,7 @@ func TestInsert_FromSelect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Exactly(t, "INSERT INTO `tableA` SELECT something_id, user_id, other FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0", iSQL)
+	assert.Exactly(t, "INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0", iSQL)
 	assert.Exactly(t, []interface{}{int64(1), "wat", int64(1), int64(2), int64(3)}, args.Interfaces())
 }
 

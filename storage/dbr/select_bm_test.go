@@ -153,9 +153,9 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 		var err error
 		haveSQL, args, err = dbr.NewSelect().
 			AddColumns(" entity_id ,   value").
-			AddColumnsQuoted("cpev.entity_type_id", "cpev.attribute_id").
-			AddColumnsExprAlias("(cpev.id*3)", "weirdID").
-			AddColumnsQuotedAlias("cpev.value", "value2nd").
+			AddColumns("cpev.entity_type_id", "cpev.attribute_id").
+			AddColumnsAlias("(cpev.id*3)", "weirdID").
+			AddColumnsAlias("cpev.value", "value2nd").
 			From("catalog_product_entity_varchar", "cpev").
 			Where(dbr.Condition("entity_type_id", dbr.ArgInt64(4))).
 			Where(dbr.Condition("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
@@ -194,8 +194,8 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 		var args dbr.Arguments
 		var err error
 		haveSQL, args, err = dbr.NewSelect().
-			AddColumnsQuoted("price,sku,name,title,description").
-			AddColumnsExprAlias(
+			AddColumns("price,sku,name,title,description").
+			AddColumnsAlias(
 				dbr.SQLCase("", "`closed`",
 					"date_start <= ? AND date_end >= ?", "`open`",
 					"date_start > ? AND date_end > ?", "`upcoming`",

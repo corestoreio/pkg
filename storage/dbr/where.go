@@ -17,6 +17,8 @@ package dbr
 import (
 	"strings"
 
+	"unicode/utf8"
+
 	"github.com/corestoreio/errors"
 )
 
@@ -56,9 +58,6 @@ const (
 )
 
 type whereFragment struct {
-	// Logical states how multiple where statements will be connected.
-	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
-	Logical byte
 	// Condition can contain either a column name in the form of table.column or
 	// just column. Or Condition can contain an expression. Whenever a condition
 	// is not a valid identifier we treat it as an expression.
@@ -71,7 +70,10 @@ type whereFragment struct {
 		Select   *Select
 		Operator rune
 	}
-	Using []string
+	// Logical states how multiple where statements will be connected.
+	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
+	Logical byte
+	Using   []string
 }
 
 func (wf *whereFragment) appendConditions(wfs WhereFragments) WhereFragments {
@@ -263,6 +265,7 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 
 // maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 const maxIdentifierLength = 64
+const dummyQualifier = "X" // just a dummy value, can be optimized later
 
 // IsValidIdentifier checks the permissible syntax for identifiers. Certain
 // objects within MySQL, including database, table, index, column, alias, view,
@@ -274,29 +277,48 @@ const maxIdentifierLength = 64
 //
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 func isValidIdentifier(objectName string) int8 {
-
-	qualifier := "z" // just a dummy value, can be optimized later
+	if objectName == sqlStar {
+		return 0
+	}
+	qualifier := dummyQualifier
 	if i := strings.IndexByte(objectName, '.'); i >= 0 {
 		qualifier = objectName[:i]
 		objectName = objectName[i+1:]
 	}
 
-	for _, name := range [2]string{qualifier, objectName} {
-		if len(name) > maxIdentifierLength || name == "" {
-			return 1 //errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
-		}
+	validQualifier := isNameValid(qualifier)
+	if validQualifier == 0 && objectName == sqlStar {
+		return 0
+	}
+	if validQualifier > 0 {
+		return validQualifier
+	}
+	return isNameValid(objectName)
+}
 
-		for i := 0; i < len(name); i++ {
-			if !mapAlNum(name[i]) {
-				return 2 // errors.NewNotValidf("[csdb] Invalid character in name %q", name)
-			}
-		}
+// isNameValid returns 0 if the name is valid or an error number identifying
+// where the name becomes invalid.
+func isNameValid(name string) int8 {
+	if name == dummyQualifier {
+		return 0
 	}
 
+	ln := len(name)
+	if ln > maxIdentifierLength || name == "" {
+		return 1 //errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
+	}
+	pos := 0
+	for pos < ln {
+		r, w := utf8.DecodeRuneInString(name[pos:])
+		pos += w
+		if !mapAlNum(r) {
+			return 2 // errors.NewNotValidf("[csdb] Invalid character in name %q", name)
+		}
+	}
 	return 0
 }
 
-func mapAlNum(r byte) bool {
+func mapAlNum(r rune) bool {
 	var ok bool
 	switch {
 	case '0' <= r && r <= '9':

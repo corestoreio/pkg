@@ -32,7 +32,7 @@ func TestSelect_Rows(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		sel := &dbr.Select{}
-		sel.Columns = []string{"a", "b"}
+		sel.AddColumns("a", "b")
 		rows, err := sel.Rows(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.IsEmpty(err))
@@ -40,9 +40,9 @@ func TestSelect_Rows(t *testing.T) {
 
 	t.Run("Query Error", func(t *testing.T) {
 		sel := &dbr.Select{
-			Table:   dbr.MakeAlias("tableX"),
-			Columns: []string{"a", "b"},
+			Table: dbr.MakeAlias("tableX"),
 		}
+		sel.AddColumns("a", "b")
 		sel.DB.Querier = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
@@ -62,15 +62,12 @@ func TestSelect_Rows(t *testing.T) {
 			}
 		}()
 		smr := sqlmock.NewRows([]string{"a"}).AddRow("row1").AddRow("row2")
-		dbMock.ExpectQuery("SELECT a FROM `tableX`").WillReturnRows(smr)
+		dbMock.ExpectQuery("SELECT `a` FROM `tableX`").WillReturnRows(smr)
 
-		sel := &dbr.Select{
-			Table:   dbr.MakeAlias("tableX"),
-			Columns: []string{"a"},
-		}
+		sel := dbr.NewSelect("a").From("tableX")
 		sel.DB.Querier = dbc.DB
 		rows, err := sel.Rows(context.TODO())
-		assert.NoError(t, err, "%+v", err)
+		require.NoError(t, err, "%+v", err)
 		defer func() {
 			if err := rows.Close(); err != nil {
 				t.Fatal(err)
@@ -90,8 +87,7 @@ func TestSelect_Rows(t *testing.T) {
 func TestSelect_Prepare(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
-		sel := &dbr.Select{}
-		sel.Columns = []string{"a", "b"}
+		sel := dbr.NewSelect("a", "b")
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -106,12 +102,9 @@ func TestSelect_Prepare(t *testing.T) {
 				t.Error("there were unfulfilled expections", err)
 			}
 		}()
-		dbMock.ExpectPrepare("SELECT a, b FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
-		sel := &dbr.Select{
-			Table:   dbr.MakeAlias("tableX"),
-			Columns: []string{"a", "b"},
-		}
+		sel := dbr.NewSelect("a", "b").From("tableX")
 		sel.DB.Preparer = dbc.DB
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -149,8 +142,6 @@ func (ps *TableCoreConfigDatas) RowScan(idx int, columns []string) ([]interface{
 	ccd := new(TableCoreConfigData)
 	for _, c := range columns {
 		switch c {
-		case "*": // TODO: would be cool if this works
-			fallthrough
 		case "config_id":
 			ps.dto = append(ps.dto, &ccd.ConfigID)
 		case "scope":

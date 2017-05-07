@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -37,9 +51,9 @@ func (q MysqlQuoter) quote(w queryWriter, qualifierName ...string) {
 	}
 }
 
-// ExprAlias appends to the provided `expression` the quote alias name, e.g.:
-// 		ExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
-func (q MysqlQuoter) ExprAlias(expression, aliasName string) string {
+// exprAlias appends to the provided `expression` the quote alias name, e.g.:
+// 		exprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
+func (q MysqlQuoter) exprAlias(expression, aliasName string) string {
 	if aliasName == "" {
 		return expression
 	}
@@ -78,8 +92,15 @@ func (q MysqlQuoter) QuoteAs(expressionAlias ...string) string {
 	bufferpool.Put(buf)
 	return x
 }
+func (q MysqlQuoter) FquoteExprAs(w queryWriter, expressionAlias ...string) {
+	w.WriteString(expressionAlias[0])
+	if len(expressionAlias) > 1 {
+		w.WriteString(" AS ")
+		q.quote(w, expressionAlias[1])
+	}
+}
 
-// FquoteAs same as QuoteAs but writes into w which is a bytes.Buffer.
+// FquoteAs same as QuoteAs but writes into w which is a bytes.Buffer. It quotes always and each part.
 func (q MysqlQuoter) FquoteAs(w queryWriter, expressionAlias ...string) {
 
 	lp := len(expressionAlias)
@@ -87,28 +108,32 @@ func (q MysqlQuoter) FquoteAs(w queryWriter, expressionAlias ...string) {
 		lp = 1
 		expressionAlias = expressionAlias[:1]
 	}
+	expr := expressionAlias[0]
 
-	hasQuote0 := strings.ContainsRune(expressionAlias[0], quoteRune)
-	hasDot0 := strings.ContainsRune(expressionAlias[0], '.')
+	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
+	hasQuote0 := strings.HasPrefix(expr, quote) && strings.HasSuffix(expr, quote)
+	hasDot0 := strings.IndexByte(expr, '.') >= 0
+
+	//fmt.Printf("lp %d expr %q hasQuote0 %t hasDot0 %t | %#v\n", lp, expr, hasQuote0, hasDot0, expressionAlias)
 
 	switch {
 	case lp == 1 && hasQuote0:
 		// already quoted
-		w.WriteString(expressionAlias[0])
+		w.WriteString(expr)
 		return
 	case lp > 1 && expressionAlias[1] == "" && !hasQuote0 && !hasDot0:
 		// must be quoted
-		q.quote(w, expressionAlias[0])
+		q.quote(w, expr)
 		return
 	case lp == 1 && !hasQuote0 && hasDot0:
-		q.splitDotAndQuote(w, expressionAlias[0])
+		q.splitDotAndQuote(w, expr)
 		return
-	case lp == 1 && expressionAlias[0] == "":
+	case lp == 1 && expr == "":
 		// just an empty string
 		return
 	}
 
-	q.splitDotAndQuote(w, expressionAlias[0])
+	q.splitDotAndQuote(w, expr)
 	switch lp {
 	case 1:
 		// do nothing
@@ -123,11 +148,15 @@ func (q MysqlQuoter) FquoteAs(w queryWriter, expressionAlias ...string) {
 }
 
 func (q MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {
-	dotIndex := strings.Index(part, ".")
+	dotIndex := strings.IndexByte(part, '.')
 	if dotIndex > 0 { // dot at a beginning of a string at illegal
 		q.quote(w, part[:dotIndex])
 		w.WriteByte('.')
-		q.quote(w, part[dotIndex+1:])
+		if a := part[dotIndex+1:]; a == sqlStar {
+			w.WriteByte('*')
+		} else {
+			q.quote(w, part[dotIndex+1:])
+		}
 		return
 	}
 	q.quote(w, part)

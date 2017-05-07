@@ -170,7 +170,7 @@ func BenchmarkIfNull(b *testing.B) {
 func TestSQLIf(t *testing.T) {
 	assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value"))
 
-	s := dbr.NewSelect().AddColumnsQuoted("a", "b", "c").
+	s := dbr.NewSelect().AddColumns("a", "b", "c").
 		From("table1").Where(
 		dbr.Condition(
 			dbr.SQLIf("a > 0", "b", "c"),

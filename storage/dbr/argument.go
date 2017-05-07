@@ -54,6 +54,7 @@ const (
 
 const (
 	sqlStrNull = "NULL"
+	sqlStar    = "*"
 )
 
 func writeOperator(w queryWriter, operator rune, hasArg bool) (addArg bool) {
