@@ -30,7 +30,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Condition("a", ArgString("b"))).Limit(1).OrderBy("id").ToSQL()
+		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Column("a", ArgString("b"))).Limit(1).OrderBy("id").ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
@@ -52,17 +52,16 @@ func TestDeleteAllToSQL(t *testing.T) {
 func TestDeleteSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
-	del := s.DeleteFrom("a").Where(Condition("id = ?", argInt(1)))
+	del := s.DeleteFrom("a").Where(Column("id", argInt(1)))
 	sql, args, err := del.ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `a` WHERE (id = ?)", sql)
+	assert.Equal(t, "DELETE FROM `a` WHERE (`id` = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 
-	// once where was a sync.Pool for the whereFragments with which it was
-	// not possible to run ToSQL() twice.
+	// test for being idempotent
 	sql, args, err = del.ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `a` WHERE (id = ?)", sql)
+	assert.Equal(t, "DELETE FROM `a` WHERE (`id` = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 
 }
@@ -78,9 +77,9 @@ func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
 func TestDelete_Interpolate(t *testing.T) {
 	sql, _, err := NewDelete("tableA").
 		Where(
-			Condition("colA", ArgFloat64(3.14159).Operator(GreaterOrEqual)),
-			Condition("colB", ArgInt(1, 2, 3, 45).Operator(In)),
-			Condition("colC", ArgString("He'l`lo")),
+			Column("colA", ArgFloat64(3.14159).Operator(GreaterOrEqual)),
+			Column("colB", ArgInt(1, 2, 3, 45).Operator(In)),
+			Column("colC", ArgString("He'l`lo")),
 		).
 		Limit(10).Offset(20).OrderBy("id").
 		Interpolate().
@@ -105,7 +104,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where(Condition("id", ArgInt64(id))).Exec(context.TODO())
+	res, err = s.DeleteFrom("dbr_people").Where(Column("id", ArgInt64(id))).Exec(context.TODO())
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -113,7 +112,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
-	count, err := s.Select().Count().From("dbr_people").Where(Condition("id", ArgInt64(id))).LoadInt64(context.TODO())
+	count, err := s.Select().Count().From("dbr_people").Where(Column("id", ArgInt64(id))).LoadInt64(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
 }
@@ -122,7 +121,7 @@ func TestDelete_Prepare(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		d := &Delete{}
-		d.Where(Condition("a", argInt64(1)))
+		d.Where(Column("a", argInt64(1)))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -135,7 +134,7 @@ func TestDelete_Prepare(t *testing.T) {
 		d.DB.Preparer = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		d.Where(Condition("a", argInt(1)))
+		d.Where(Column("a", argInt(1)))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
@@ -220,7 +219,7 @@ func TestDelete_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(Condition("store_id=?", ArgInt64(1)))
+					b.Where(Column("store_id", ArgInt64(1)))
 				},
 			},
 		)
@@ -230,7 +229,7 @@ func TestDelete_Events(t *testing.T) {
 				Name:      "repetitive",
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(Condition("repetitive=?", argInt(3)))
+					b.Where(Column("repetitive", argInt(3)))
 				},
 			},
 		)
@@ -238,12 +237,12 @@ func TestDelete_Events(t *testing.T) {
 		sql, args, err := d.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) ORDER BY col2, col1 DESC", sql)
 
 		sql, args, err = d.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), int64(3), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (store_id=?) AND (repetitive=?) AND (repetitive=?) ORDER BY col2, col1 DESC", sql)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) AND (`repetitive` = ?) ORDER BY col2, col1 DESC", sql)
 
 		assert.Exactly(t, `col1; storeid; repetitive`, d.Listeners.String())
 	})

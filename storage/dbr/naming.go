@@ -16,8 +16,10 @@ package dbr
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/errors"
 )
 
 const quote string = "`"
@@ -26,6 +28,120 @@ const quoteRune = '`'
 // Quoter at the quoter to use for quoting text; use Mysql quoting by default.
 var Quoter = MysqlQuoter{
 	replacer: strings.NewReplacer(quote, ""),
+}
+
+type alias struct {
+	// Select used in cases where a sub-select is required.
+	Select *Select
+	// IsExpression if true the field `Name` will be treated as an expression and
+	// won't get quoted when generating the SQL.
+	IsExpression bool
+	// Name can be any kind of SQL expression or a valid identifier. It gets
+	// quoted when `IsExpression` is false.
+	Name string
+	// Alias must be a valid identifier allowed for alias usage.
+	Alias string
+}
+
+// MakeAlias creates a new name with an optional alias. Supports two arguments.
+// 1. a qualifier name and 2. an alias.
+func MakeAlias(nameAlias ...string) alias {
+	a := alias{
+		Name: nameAlias[0],
+	}
+	if len(nameAlias) > 1 {
+		a.Alias = nameAlias[1]
+	}
+	return a
+}
+
+// MakeAliasExpr creates a new expression with an optional alias. Supports two
+// arguments. 1. an expression and 2. an alias.
+func MakeAliasExpr(expressionAlias ...string) alias {
+	a := alias{
+		IsExpression: true,
+		Name:         expressionAlias[0],
+	}
+	if len(expressionAlias) > 1 {
+		a.Alias = expressionAlias[1]
+	}
+	return a
+}
+
+// String returns the correct stringyfied statement.
+func (a alias) String() string {
+	if a.IsExpression {
+		return Quoter.exprAlias(a.Name, a.Alias)
+	}
+	return a.QuoteAs()
+}
+
+// QuoteAs always quuotes the name and the alias
+func (a alias) QuoteAs() string {
+	return Quoter.QuoteAs(a.Name, a.Alias)
+}
+
+// FquoteAs writes the quoted table and its maybe alias into w.
+func (a alias) FquoteAs(w queryWriter) (Arguments, error) {
+	if a.Select != nil {
+		w.WriteByte('(')
+		args, err := a.Select.toSQL(w)
+		w.WriteByte(')')
+		w.WriteString(" AS ")
+		Quoter.quote(w, a.Alias)
+		return args, errors.Wrap(err, "[dbr] FquoteAs.SubSelect")
+	}
+
+	if a.IsExpression {
+		Quoter.FquoteExprAs(w, a.Name, a.Alias)
+	} else {
+		Quoter.FquoteAs(w, a.Name, a.Alias)
+	}
+
+	return nil, nil
+}
+
+// TODO(CyS) if we need to distinguish between table name and the column or even need
+// a sub select in the column list, then we can implement type aliases and replace
+// all []string with type aliases. This costs some allocs but for modifying queries
+// in dispatched events, it's getting easier ...
+type aliases []alias
+
+func (as aliases) fQuoteAs(w queryWriter, args Arguments) (Arguments, error) {
+	for i, a := range as {
+		if i > 0 {
+			w.WriteString(", ")
+		}
+		args2, err := a.FquoteAs(w)
+		if err != nil {
+			return nil, errors.Wrapf(err, "[dbr] aliases.fQuoteAs")
+		}
+		if args2 != nil {
+			args = append(args, args2...)
+		}
+	}
+	return args, nil
+}
+
+func appendColumns(as aliases, columns []string) aliases {
+	if len(as) == 0 {
+		as = make(aliases, 0, len(columns))
+	}
+	for _, c := range columns {
+		as = append(as, alias{Name: c})
+	}
+	return as
+}
+
+// columns must be balanced slice. i=column name, i+1=alias name
+func appendColumnsAliases(as aliases, columns []string, isExpression bool) aliases {
+	if len(as) == 0 {
+		as = make(aliases, 0, len(columns)/2)
+	}
+	for i := 0; i < len(columns); i = i + 2 {
+		as = append(as, alias{Name: columns[i], Alias: columns[i+1], IsExpression: isExpression})
+	}
+	return as
 }
 
 // MysqlQuoter implements Mysql-specific quoting
@@ -176,4 +292,72 @@ func (q MysqlQuoter) TableColumnAlias(t string, cols ...string) []string {
 		}
 	}
 	return cols
+}
+
+// maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+const maxIdentifierLength = 64
+const dummyQualifier = "X" // just a dummy value, can be optimized later
+
+// IsValidIdentifier checks the permissible syntax for identifiers. Certain
+// objects within MySQL, including database, table, index, column, alias, view,
+// stored procedure, partition, tablespace, and other object names are known as
+// identifiers. ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar,
+// underscore) Max length 63 characters.
+//
+// Returns 0 if the identifier is valid.
+//
+// http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+func isValidIdentifier(objectName string) int8 {
+	if objectName == sqlStar {
+		return 0
+	}
+	qualifier := dummyQualifier
+	if i := strings.IndexByte(objectName, '.'); i >= 0 {
+		qualifier = objectName[:i]
+		objectName = objectName[i+1:]
+	}
+
+	validQualifier := isNameValid(qualifier)
+	if validQualifier == 0 && objectName == sqlStar {
+		return 0
+	}
+	if validQualifier > 0 {
+		return validQualifier
+	}
+	return isNameValid(objectName)
+}
+
+// isNameValid returns 0 if the name is valid or an error number identifying
+// where the name becomes invalid.
+func isNameValid(name string) int8 {
+	if name == dummyQualifier {
+		return 0
+	}
+
+	ln := len(name)
+	if ln > maxIdentifierLength || name == "" {
+		return 1 //errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
+	}
+	pos := 0
+	for pos < ln {
+		r, w := utf8.DecodeRuneInString(name[pos:])
+		pos += w
+		if !mapAlNum(r) {
+			return 2 // errors.NewNotValidf("[csdb] Invalid character in name %q", name)
+		}
+	}
+	return 0
+}
+
+func mapAlNum(r rune) bool {
+	var ok bool
+	switch {
+	case '0' <= r && r <= '9':
+		ok = true
+	case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
+		ok = true
+	case r == '$', r == '_':
+		ok = true
+	}
+	return ok
 }

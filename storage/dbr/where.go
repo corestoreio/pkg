@@ -14,13 +14,7 @@
 
 package dbr
 
-import (
-	"strings"
-
-	"unicode/utf8"
-
-	"github.com/corestoreio/errors"
-)
+import "github.com/corestoreio/errors"
 
 // Eq is a map Expression -> value pairs which must be matched in a query.
 // Joined at AND statements to the WHERE clause. Implements ConditionArg
@@ -58,13 +52,12 @@ const (
 )
 
 type whereFragment struct {
-	// Condition can contain either a column name in the form of table.column or
-	// just column. Or Condition can contain an expression. Whenever a condition
-	// is not a valid identifier we treat it as an expression.
+	// Condition can contain either a valid identifier or an expression. Set
+	// field `IsExpression` to true to avoid quoting of the `Column` field.
 	Condition string
 	Arguments Arguments
 	Sub       struct {
-		// Select adds a sub-select to the where statement. Condition must be either
+		// Select adds a sub-select to the where statement. Column must be either
 		// a column name or anything else which can handle the result of a
 		// sub-select.
 		Select   *Select
@@ -73,7 +66,12 @@ type whereFragment struct {
 	// Logical states how multiple where statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
 	Logical byte
-	Using   []string
+	// IsExpression set to true if the Column contains an expression.
+	// Otherwise the `Column` gets always quoted.
+	IsExpression bool
+	// Using a list of column names which get quoted during SQL statement
+	// creation.
+	Using []string
 }
 
 func (wf *whereFragment) appendConditions(wfs WhereFragments) WhereFragments {
@@ -127,20 +125,29 @@ func Using(columns ...string) ConditionArg {
 // SubSelect creates a condition for a WHERE or JOIN statement to compare the
 // data in `rawStatementOrColumnName` with the returned value/s of the
 // sub-select.
-func SubSelect(rawStatementOrColumnName string, operator rune, s *Select) ConditionArg {
+func SubSelect(columnName string, operator rune, s *Select) ConditionArg {
 	wf := &whereFragment{
-		Condition: rawStatementOrColumnName,
+		Condition: columnName,
 	}
 	wf.Sub.Select = s
 	wf.Sub.Operator = operator
 	return wf
 }
 
-// Condition adds a condition to a WHERE or HAVING statement.
-func Condition(rawStatementOrColumnName string, arg ...Argument) ConditionArg {
+// Column adds a condition to a WHERE or HAVING statement.
+func Column(columnName string, arg ...Argument) ConditionArg {
 	return &whereFragment{
-		Condition: rawStatementOrColumnName,
+		Condition: columnName,
 		Arguments: arg,
+	}
+}
+
+// Expression adds an unquoted SQL expression to a WHERE or HAVING statement.
+func Expression(expression string, arg ...Argument) ConditionArg {
+	return &whereFragment{
+		IsExpression: true,
+		Condition:    expression,
+		Arguments:    arg,
 	}
 }
 
@@ -229,7 +236,7 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 
 		w.WriteByte('(')
 		addArg := false
-		if isValidIdentifier(f.Condition) > 0 { // must be an expression
+		if f.IsExpression {
 			_, _ = w.WriteString(f.Condition)
 			addArg = true
 			if len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
@@ -248,9 +255,10 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 				}
 				args = append(args, subArgs...)
 			} else {
-				// a column only supports one argument. If not provided we panic
-				// with an index out of bounds error.
-				addArg = writeOperator(w, f.Arguments[0].operator(), true)
+				// a column only supports one argument.
+				if len(f.Arguments) == 1 {
+					addArg = writeOperator(w, f.Arguments[0].operator(), true)
+				}
 			}
 		}
 		w.WriteByte(')')
@@ -261,72 +269,4 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 		i++
 	}
 	return args, nil
-}
-
-// maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-const maxIdentifierLength = 64
-const dummyQualifier = "X" // just a dummy value, can be optimized later
-
-// IsValidIdentifier checks the permissible syntax for identifiers. Certain
-// objects within MySQL, including database, table, index, column, alias, view,
-// stored procedure, partition, tablespace, and other object names are known as
-// identifiers. ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar,
-// underscore) Max length 63 characters.
-//
-// Returns 0 if the identifier is valid.
-//
-// http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-func isValidIdentifier(objectName string) int8 {
-	if objectName == sqlStar {
-		return 0
-	}
-	qualifier := dummyQualifier
-	if i := strings.IndexByte(objectName, '.'); i >= 0 {
-		qualifier = objectName[:i]
-		objectName = objectName[i+1:]
-	}
-
-	validQualifier := isNameValid(qualifier)
-	if validQualifier == 0 && objectName == sqlStar {
-		return 0
-	}
-	if validQualifier > 0 {
-		return validQualifier
-	}
-	return isNameValid(objectName)
-}
-
-// isNameValid returns 0 if the name is valid or an error number identifying
-// where the name becomes invalid.
-func isNameValid(name string) int8 {
-	if name == dummyQualifier {
-		return 0
-	}
-
-	ln := len(name)
-	if ln > maxIdentifierLength || name == "" {
-		return 1 //errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
-	}
-	pos := 0
-	for pos < ln {
-		r, w := utf8.DecodeRuneInString(name[pos:])
-		pos += w
-		if !mapAlNum(r) {
-			return 2 // errors.NewNotValidf("[csdb] Invalid character in name %q", name)
-		}
-	}
-	return 0
-}
-
-func mapAlNum(r rune) bool {
-	var ok bool
-	switch {
-	case '0' <= r && r <= '9':
-		ok = true
-	case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
-		ok = true
-	case r == '$', r == '_':
-		ok = true
-	}
-	return ok
 }

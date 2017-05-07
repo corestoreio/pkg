@@ -150,8 +150,8 @@ func ExampleInsert_FromSelect() {
 			From("some_table").
 			Where(
 				dbr.ParenthesisOpen(),
-				dbr.Condition("int64A", dbr.ArgInt64(1).Operator(dbr.GreaterOrEqual)),
-				dbr.Condition("string", dbr.ArgString("wat")).Or(),
+				dbr.Column("int64A", dbr.ArgInt64(1).Operator(dbr.GreaterOrEqual)),
+				dbr.Column("string", dbr.ArgString("wat")).Or(),
 				dbr.ParenthesisClose(),
 			).
 			Where(argEq).
@@ -187,8 +187,8 @@ func ExampleInsert_FromSelect() {
 
 func ExampleNewDelete() {
 	d := dbr.NewDelete("tableA").Where(
-		dbr.Condition("a", dbr.ArgString("b'%").Operator(dbr.Like)),
-		dbr.Condition("b", dbr.ArgInt(3, 4, 5, 6).Operator(dbr.In)),
+		dbr.Column("a", dbr.ArgString("b'%").Operator(dbr.Like)),
+		dbr.Column("b", dbr.ArgInt(3, 4, 5, 6).Operator(dbr.In)),
 	).
 		Limit(1).OrderBy("id")
 	writeToSqlAndPreprocess(d)
@@ -208,15 +208,15 @@ func ExampleNewDelete() {
 func ExampleNewUnion() {
 
 	u := dbr.NewUnion(
-		dbr.NewSelect().AddColumnsAlias("a1", "A", "a2", "B").From("tableA").Where(dbr.Condition("a1", dbr.ArgInt64(3))),
-		dbr.NewSelect().AddColumnsAlias("b1", "A", "b2", "B").From("tableB").Where(dbr.Condition("b1", dbr.ArgInt64(4))),
+		dbr.NewSelect().AddColumnsAlias("a1", "A", "a2", "B").From("tableA").Where(dbr.Column("a1", dbr.ArgInt64(3))),
+		dbr.NewSelect().AddColumnsAlias("b1", "A", "b2", "B").From("tableB").Where(dbr.Column("b1", dbr.ArgInt64(4))),
 	)
 	// Maybe more of your code ...
 	u.Append(
 		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
 			AddArguments(dbr.ArgString("-")).
 			AddColumnsAlias("c2", "B").
-			From("tableC").Where(dbr.Condition("c2", dbr.ArgString("ArgForC2"))),
+			From("tableC").Where(dbr.Column("c2", dbr.ArgString("ArgForC2"))),
 	).
 		OrderBy("A").       // Ascending by A
 		OrderByDesc("B").   // Descending by B
@@ -254,7 +254,7 @@ func ExampleNewUnionTemplate() {
 
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
@@ -317,7 +317,7 @@ func ExampleUnionTemplate_Interpolate() {
 
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(1561)), dbr.Condition("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
@@ -408,7 +408,7 @@ func ExampleArgument() {
 
 	argPrinter := func(arg ...dbr.Argument) {
 		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
-			From("c").Where(dbr.Condition("d", arg...)).ToSQL()
+			From("c").Where(dbr.Column("d", arg...)).ToSQL()
 		if err != nil {
 			fmt.Printf("%+v\n", err)
 		} else {
@@ -468,7 +468,7 @@ func ExampleArgument() {
 func ExampleCondition() {
 	argPrinter := func(arg ...dbr.Argument) {
 		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
-			From("c").Where(dbr.Condition("d", arg...)).ToSQL()
+			From("c").Where(dbr.Column("d", arg...)).ToSQL()
 		if err != nil {
 			fmt.Printf("%+v\n", err)
 		} else {
@@ -530,7 +530,7 @@ func ExampleSubSelect() {
 		Where(dbr.SubSelect(
 			"entity_id", dbr.In,
 			dbr.NewSelect().From("catalog_category_product").
-				AddColumns("entity_id").Where(dbr.Condition("category_id", dbr.ArgInt64(234))),
+				AddColumns("entity_id").Where(dbr.Column("category_id", dbr.ArgInt64(234))),
 		))
 	writeToSqlAndPreprocess(s)
 	// Output:
@@ -550,13 +550,13 @@ func ExampleNewSelectFromSub() {
 		AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
 		AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
-		Where(dbr.Condition("product_name", dbr.ArgString("Canon%"))).
+		Where(dbr.Column("product_name", dbr.ArgString("Canon%"))).
 		GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
 		OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC")
 
 	sel1 := dbr.NewSelectFromSub(sel3, "t1").
 		AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
-		Where(dbr.Condition("product_name", dbr.ArgString("Sony%"))).
+		Where(dbr.Column("product_name", dbr.ArgString("Sony%"))).
 		OrderBy("`t1`.period", "`t1`.product_id")
 	writeToSqlAndPreprocess(sel1)
 	// Output:
@@ -617,7 +617,7 @@ func ExampleSQLIfNull() {
 func ExampleSQLIf() {
 	s := dbr.NewSelect().AddColumns("a", "b", "c").
 		From("table1").Where(
-		dbr.Condition(
+		dbr.Expression(
 			dbr.SQLIf("a > 0", "b", "c"),
 			dbr.ArgInt(4711).Operator(dbr.Greater),
 		))
@@ -640,8 +640,8 @@ func ExampleSQLCase_update() {
 			"3458", "qty+?",
 		), dbr.ArgInt(3, 4, 5))).
 		Where(
-			dbr.Condition("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
-			dbr.Condition("website_id", dbr.ArgInt64(6)),
+			dbr.Column("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
+			dbr.Column("website_id", dbr.ArgInt64(6)),
 		)
 	writeToSqlAndPreprocess(u)
 
@@ -673,7 +673,7 @@ func ExampleSQLCase_select() {
 		).
 		AddArguments(start, end, start, end).
 		From("catalog_promotions").Where(
-		dbr.Condition("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
+		dbr.Column("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
 	writeToSqlAndPreprocess(s)
 
 	// Output:
@@ -707,7 +707,7 @@ func ExampleSelect_AddArguments() {
 		).
 		AddArguments(start, end, start, end).
 		From("catalog_promotions").Where(
-		dbr.Condition("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
+		dbr.Column("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
 	writeToSqlAndPreprocess(s)
 
 	// Output:
@@ -732,17 +732,17 @@ func ExampleParenthesisOpen() {
 		From("tableC", "ccc").
 		Where(
 			dbr.ParenthesisOpen(),
-			dbr.Condition("d", dbr.ArgInt(1)),
-			dbr.Condition("e", dbr.ArgString("wat")).Or(),
+			dbr.Column("d", dbr.ArgInt(1)),
+			dbr.Column("e", dbr.ArgString("wat")).Or(),
 			dbr.ParenthesisClose(),
 			dbr.Eq{"f": dbr.ArgInt(2)},
 		).
 		GroupBy("ab").
 		Having(
-			dbr.Condition("j = k"),
+			dbr.Expression("j = k"),
 			dbr.ParenthesisOpen(),
-			dbr.Condition("m", dbr.ArgInt(33)),
-			dbr.Condition("n", dbr.ArgString("wh3r3")).Or(),
+			dbr.Column("m", dbr.ArgInt(33)),
+			dbr.Column("n", dbr.ArgString("wh3r3")).Or(),
 			dbr.ParenthesisClose(),
 		).
 		OrderBy("l").

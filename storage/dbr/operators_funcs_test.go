@@ -172,7 +172,7 @@ func TestSQLIf(t *testing.T) {
 
 	s := dbr.NewSelect().AddColumns("a", "b", "c").
 		From("table1").Where(
-		dbr.Condition(
+		dbr.Expression(
 			dbr.SQLIf("a > 0", "b", "c"),
 			dbr.ArgInt(4711).Operator(dbr.Greater),
 		))
@@ -206,8 +206,8 @@ func TestSQLCase(t *testing.T) {
 				"3458", "qty+?",
 			), dbr.ArgInt(3, 4, 5))).
 			Where(
-				dbr.Condition("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
-				dbr.Condition("website_id", dbr.ArgInt64(6)),
+				dbr.Column("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
+				dbr.Column("website_id", dbr.ArgInt64(6)),
 			)
 
 		sqlStr, args, err := u.ToSQL()

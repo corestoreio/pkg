@@ -43,10 +43,10 @@ func BenchmarkSelect_Rows(b *testing.B) {
 		sel := dbr.NewSelect("TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 			"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").From("information_schema.COLUMNS").
-			Where(dbr.Condition(`TABLE_SCHEMA=DATABASE()`))
+			Where(dbr.Column(`TABLE_SCHEMA=DATABASE()`))
 		sel.DB.Querier = benchMockQuerier{}
 		if len(tables) > 0 {
-			sel.Where(dbr.Condition("TABLE_NAME IN ?", dbr.ArgString(tables...)))
+			sel.Where(dbr.Column("TABLE_NAME IN ?", dbr.ArgString(tables...)))
 		}
 
 		rows, err := sel.Rows(ctx)
@@ -71,7 +71,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
-			Where(dbr.Condition("d = ? OR e = ?", args...)).
+			Where(dbr.Column("d = ? OR e = ?", args...)).
 			Where(argEq).
 			OrderByDesc("id").
 			Paginate(1, 20).
@@ -96,15 +96,15 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(dbr.Condition("(d = ? OR e = ?)", args...)).
+			Where(dbr.Column("(d = ? OR e = ?)", args...)).
 			Where(argEq1).
 			Where(argEq2).
 			Where(argEq3).
 			GroupBy("ab").
 			GroupBy("ii").
 			GroupBy("iii").
-			Having(dbr.Condition("j = k"), dbr.Condition("jj", dbr.ArgInt64(1))).
-			Having(dbr.Condition("jjj", dbr.ArgInt64(2))).
+			Having(dbr.Column("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
+			Having(dbr.Column("jjj", dbr.ArgInt64(2))).
 			OrderBy("l").
 			OrderBy("l").
 			OrderBy("l").
@@ -132,10 +132,10 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("entity_id", "attribute_id", "value").
 			From("catalog_product_entity_varchar").
-			Where(dbr.Condition("entity_type_id", dbr.ArgInt64(4))).
-			Where(dbr.Condition("entity_id", dbr.ArgInt64(entityIDs...).Operator(dbr.In))).
-			Where(dbr.Condition("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
-			Where(dbr.Condition("store_id", dbr.ArgInt64(0))).
+			Where(dbr.Column("entity_type_id", dbr.ArgInt64(4))).
+			Where(dbr.Column("entity_id", dbr.ArgInt64(entityIDs...).Operator(dbr.In))).
+			Where(dbr.Column("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
+			Where(dbr.Column("store_id", dbr.ArgInt64(0))).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -157,9 +157,9 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 			AddColumnsAlias("(cpev.id*3)", "weirdID").
 			AddColumnsAlias("cpev.value", "value2nd").
 			From("catalog_product_entity_varchar", "cpev").
-			Where(dbr.Condition("entity_type_id", dbr.ArgInt64(4))).
-			Where(dbr.Condition("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
-			Where(dbr.Condition("store_id", dbr.ArgInt64(0))).
+			Where(dbr.Column("entity_type_id", dbr.ArgInt64(4))).
+			Where(dbr.Column("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
+			Where(dbr.Column("store_id", dbr.ArgInt64(0))).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -204,7 +204,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 			).
 			AddArguments(start, end, start, end).
 			From("catalog_promotions").Where(
-			dbr.Condition("promotion_id", pid)).
+			dbr.Column("promotion_id", pid)).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -227,7 +227,7 @@ const coreConfigDataRowCount = 2007
 
 // BenchmarkSelect_Integration_LScanner-4   	     500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
 
-func BenchmarkSelect_Integration_Scanner(b *testing.B) {
+func xxxBenchmarkSelect_Integration_Scanner(b *testing.B) {
 	c, ok := createRealSession()
 	if !ok {
 		b.Skip("Skipping because DSN not set")

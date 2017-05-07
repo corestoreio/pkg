@@ -19,7 +19,9 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Select contains the clauses for a SELECT statement
+// Select contains the clauses for a SELECT statement. Wildcard `SELECT *`
+// statements are not really supported.
+// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
 type Select struct {
 	// ID of the SELECT statement. Used in logging and during performance
 	// monitoring. If empty the generated SQL string gets used which can might
@@ -36,9 +38,9 @@ type Select struct {
 	RawFullSQL string
 	Arguments
 
-	// Columns represents a slice of aliases. An alias contains of three
-	// exported fields: Select, Expression and Alias. The Select can be a
-	// sub-select.
+	// Columns represents a slice of names and its optional aliases. Wildcard
+	// `SELECT *` statements are not really supported:
+	// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
 	Columns aliases
 
 	//TODO: create a possibility of the Select type which has a half-pre-rendered
