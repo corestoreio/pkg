@@ -197,11 +197,11 @@ func TestDelete_Events(t *testing.T) {
 		)
 		sql, _, err := d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY col1 DESC, col2 DESC", sql)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC", sql)
 
 		sql, _, err = d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY col1 DESC, col2 DESC, col1 DESC, col2 DESC", sql)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC, `col1` DESC, `col2` DESC", sql)
 
 	})
 
@@ -261,12 +261,12 @@ func TestDelete_Events(t *testing.T) {
 		sql, args, err := d.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) ORDER BY col2, col1 DESC", sql)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) ORDER BY `col2`, `col1` DESC", sql)
 
 		sql, args, err = d.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{int64(1), int64(3), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) AND (`repetitive` = ?) ORDER BY col2, col1 DESC", sql)
+		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) AND (`repetitive` = ?) ORDER BY `col2`, `col1` DESC", sql)
 
 		assert.Exactly(t, `col1; storeid; repetitive`, d.Listeners.String())
 	})

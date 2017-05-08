@@ -25,6 +25,7 @@ import (
 )
 
 func TestSelectBasicToSQL(t *testing.T) {
+	t.Parallel()
 	s := createFakeSession()
 
 	sel := s.Select("a", "b").From("c").Where(Column("id", argInt(1)))
@@ -35,6 +36,7 @@ func TestSelectBasicToSQL(t *testing.T) {
 }
 
 func TestSelectFullToSQL(t *testing.T) {
+	t.Parallel()
 
 	sel := NewSelect("a", "b").
 		Distinct().
@@ -66,6 +68,7 @@ func TestSelectFullToSQL(t *testing.T) {
 }
 
 func TestSelect_Interpolate(t *testing.T) {
+	t.Parallel()
 
 	sql, args, err := NewSelect("a", "b").
 		Distinct().
@@ -98,6 +101,7 @@ func TestSelect_Interpolate(t *testing.T) {
 }
 
 func TestSelectPaginateOrderDirToSQL(t *testing.T) {
+	t.Parallel()
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").
@@ -122,6 +126,7 @@ func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 }
 
 func TestSelectNoWhereSQL(t *testing.T) {
+	t.Parallel()
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").From("c").ToSQL()
@@ -131,6 +136,7 @@ func TestSelectNoWhereSQL(t *testing.T) {
 }
 
 func TestSelectMultiHavingSQL(t *testing.T) {
+	t.Parallel()
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").From("c").
@@ -142,6 +148,7 @@ func TestSelectMultiHavingSQL(t *testing.T) {
 }
 
 func TestSelectMultiOrderSQL(t *testing.T) {
+	t.Parallel()
 	s := createFakeSession()
 
 	sql, args, err := s.Select("a", "b").From("c").OrderBy("name").OrderByDesc("id").ToSQL()
@@ -150,7 +157,17 @@ func TestSelectMultiOrderSQL(t *testing.T) {
 	assert.Equal(t, []interface{}(nil), args.Interfaces())
 }
 
+func TestSelect_OrderByDeactivated(t *testing.T) {
+	t.Parallel()
+
+	sql, args, err := NewSelect("a", "b").From("c").OrderBy("name").OrderByDeactivated().ToSQL()
+	assert.NoError(t, err)
+	assert.Equal(t, "SELECT `a`, `b` FROM `c` ORDER BY NULL", sql)
+	assert.Exactly(t, Arguments{}, args)
+}
+
 func TestSelect_ConditionColumn(t *testing.T) {
+	t.Parallel()
 	// TODO rewrite test to use every type which implements interface Argument and every operator
 
 	s := createFakeSession()
@@ -962,8 +979,12 @@ func TestSelect_Subselect(t *testing.T) {
 			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
 			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
-			GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
-			OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC")
+			GroupBy("t3.store_id").
+			GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			GroupBy("t3.product_id", "t3.product_name").
+			OrderBy("t3.store_id").
+			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			OrderByDesc("total_qty")
 
 		sel2 := NewSelectFromSub(sel3, "t2").
 			AddColumns("t2.period", "t2.store_id", "t2.product_id", "t2.product_name", "t2.avg_price").
@@ -979,7 +1000,7 @@ func TestSelect_Subselect(t *testing.T) {
 		}
 		assert.Exactly(t, []interface{}(nil), args.Interfaces())
 		//println(sSQL)
-		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.period, `t1`.product_id"
+		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`"
 		if sSQL != wantSQL {
 			t.Errorf("\nHave: %q\nWant: %q", sSQL, wantSQL)
 		}
@@ -990,9 +1011,13 @@ func TestSelect_Subselect(t *testing.T) {
 			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
 			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
-			GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
+			GroupBy("t3.store_id").
+			GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			GroupBy("t3.product_id", "t3.product_name").
 			Having(Expression("COUNT(*)>?", argInt(3))).
-			OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC").
+			OrderBy("t3.store_id").
+			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			OrderByDesc("total_qty DESC").
 			Where(Column("t3.store_id", ArgInt64(2, 3, 4).Operator(In)))
 
 		sel2 := NewSelectFromSub(sel3, "t2").
@@ -1009,7 +1034,7 @@ func TestSelect_Subselect(t *testing.T) {
 		}
 		assert.Exactly(t, []interface{}{int64(2), int64(3), int64(4), int64(3)}, args.Interfaces())
 		//println(sSQL)
-		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.period, `t1`.product_id"
+		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`"
 		if sSQL != wantSQL {
 			t.Errorf("\nHave: %q\nWant: %q", sSQL, wantSQL)
 		}
@@ -1040,7 +1065,7 @@ func TestParenthesisOpen_Close(t *testing.T) {
 
 		sql, args, err := sel.ToSQL()
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY ab HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`)", sql)
+		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`)", sql)
 		assert.Equal(t, []interface{}{int64(1), "wat", 2.7182, int64(33), "wh3r3"}, args.Interfaces())
 	})
 
@@ -1065,7 +1090,7 @@ func TestParenthesisOpen_Close(t *testing.T) {
 
 		sql, _, err := sel.ToSQL()
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) GROUP BY ab HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?))", sql)
+		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?))", sql)
 	})
 
 	t.Run("middle of WHERE", func(t *testing.T) {
@@ -1091,7 +1116,7 @@ func TestParenthesisOpen_Close(t *testing.T) {
 
 		sql, _, err := sel.ToSQL()
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY ab HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)", sql)
+		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)", sql)
 	})
 }
 

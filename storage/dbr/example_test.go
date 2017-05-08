@@ -144,7 +144,7 @@ func ExampleInsert_FromSelect() {
 
 	argEq := dbr.Eq{"int64B": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
 
-	sqlStr, args, err := ins.FromSelect(
+	ins.FromSelect(
 		dbr.NewSelect().AddColumns("something_id", "user_id").
 			AddColumns("other").
 			From("some_table").
@@ -157,32 +157,19 @@ func ExampleInsert_FromSelect() {
 			Where(argEq).
 			OrderByDesc("id").
 			Paginate(1, 20),
-	).
-		ToSQL()
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
-	}
-
-	sqlPre, err := dbr.Interpolate(sqlStr, args...)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
-	}
-
-	fmt.Printf("Prepared Statement:\n%s\nArguments: %v\n\nPreprocessed Statement:\n%s\n",
-		wordwrap.String(sqlStr, 80), args.Interfaces(), wordwrap.String(sqlPre, 80))
+	)
+	writeToSqlAndPreprocess(ins)
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
-	//WHERE ((`int64A` >= ?) OR (`string` = ?)) AND (`int64B` IN ?) ORDER BY id DESC
+	//WHERE ((`int64A` >= ?) OR (`string` = ?)) AND (`int64B` IN ?) ORDER BY `id` DESC
 	//LIMIT 20 OFFSET 0
 	//Arguments: [1 wat 1 2 3]
 	//
 	//Preprocessed Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
 	//WHERE ((`int64A` >= 1) OR (`string` = 'wat')) AND (`int64B` IN (1,2,3)) ORDER BY
-	//id DESC LIMIT 20 OFFSET 0
+	//`id` DESC LIMIT 20 OFFSET 0
 }
 
 func ExampleNewDelete() {
@@ -194,12 +181,12 @@ func ExampleNewDelete() {
 	writeToSqlAndPreprocess(d)
 	// Output:
 	//Prepared Statement:
-	//DELETE FROM `tableA` WHERE (`a` LIKE ?) AND (`b` IN ?) ORDER BY id LIMIT 1
+	//DELETE FROM `tableA` WHERE (`a` LIKE ?) AND (`b` IN ?) ORDER BY `id` LIMIT 1
 	//Arguments: [b'% 3 4 5 6]
 	//
 	//Preprocessed Statement:
-	//DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY id
-	//LIMIT 1
+	//DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY
+	//`id` LIMIT 1
 }
 
 // ExampleNewUnion constructs a UNION with three SELECTs. It preserves the
@@ -235,7 +222,7 @@ func ExampleNewUnion() {
 	//UNION ALL
 	//(SELECT concat(c1,?,c2) AS `A`, `c2` AS `B`, 2 AS `_preserve_result_set` FROM
 	//`tableC` WHERE (`c2` = ?))
-	//ORDER BY `_preserve_result_set`, A, B DESC
+	//ORDER BY `_preserve_result_set`, `A` ASC, `B` DESC
 	//Arguments: [3 4 - ArgForC2]
 	//
 	//Preprocessed Statement:
@@ -247,7 +234,7 @@ func ExampleNewUnion() {
 	//UNION ALL
 	//(SELECT concat(c1,'-',c2) AS `A`, `c2` AS `B`, 2 AS `_preserve_result_set` FROM
 	//`tableC` WHERE (`c2` = 'ArgForC2'))
-	//ORDER BY `_preserve_result_set`, A, B DESC
+	//ORDER BY `_preserve_result_set`, `A` ASC, `B` DESC
 }
 
 func ExampleNewUnionTemplate() {
@@ -281,7 +268,7 @@ func ExampleNewUnionTemplate() {
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = ?) AND (`store_id` IN ?))
-	//ORDER BY `_preserve_result_set`, attribute_id, store_id
+	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
 	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
 	//
 	//Preprocessed Statement:
@@ -304,7 +291,7 @@ func ExampleNewUnionTemplate() {
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//ORDER BY `_preserve_result_set`, attribute_id, store_id
+	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
 }
 
 // ExampleUnionTemplate_Interpolate interpolates the SQL string with its
@@ -344,7 +331,7 @@ func ExampleUnionTemplate_Interpolate() {
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = ?) AND (`store_id` IN ?))
-	//ORDER BY `_preserve_result_set`, attribute_id, store_id
+	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
 	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
 	//
 	//Preprocessed Statement:
@@ -367,7 +354,7 @@ func ExampleUnionTemplate_Interpolate() {
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//ORDER BY `_preserve_result_set`, attribute_id, store_id
+	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
 }
 
 func ExampleInterpolate() {
@@ -551,13 +538,17 @@ func ExampleNewSelectFromSub() {
 		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
 		AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
 		Where(dbr.Column("product_name", dbr.ArgString("Canon%"))).
-		GroupBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`t3`.`product_id`", "`t3`.`product_name`").
-		OrderBy("`t3`.`store_id`", "DATE_FORMAT(t3.period, '%Y-%m-01')", "`total_qty` DESC")
+		GroupBy("t3.store_id").
+		GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+		GroupBy("t3.product_id", "t3.product_name").
+		OrderBy("t3.store_id").
+		OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+		OrderByDesc("total_qty")
 
 	sel1 := dbr.NewSelectFromSub(sel3, "t1").
 		AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 		Where(dbr.Column("product_name", dbr.ArgString("Sony%"))).
-		OrderBy("`t1`.period", "`t1`.product_id")
+		OrderBy("t1.period", "t1.product_id")
 	writeToSqlAndPreprocess(sel1)
 	// Output:
 	//Prepared Statement:
@@ -569,7 +560,7 @@ func ExampleNewSelectFromSub() {
 	//`t3` WHERE (`product_name` = ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period,
 	//'%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`,
 	//DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t1` WHERE
-	//(`product_name` = ?) ORDER BY `t1`.period, `t1`.product_id
+	//(`product_name` = ?) ORDER BY `t1`.`period`, `t1`.`product_id`
 	//Arguments: [Canon% Sony%]
 	//
 	//Preprocessed Statement:
@@ -581,7 +572,7 @@ func ExampleNewSelectFromSub() {
 	//`t3` WHERE (`product_name` = 'Canon%') GROUP BY `t3`.`store_id`,
 	//DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER
 	//BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS
-	//`t1` WHERE (`product_name` = 'Sony%') ORDER BY `t1`.period, `t1`.product_id
+	//`t1` WHERE (`product_name` = 'Sony%') ORDER BY `t1`.`period`, `t1`.`product_id`
 }
 
 func ExampleSQLIfNull() {
@@ -753,12 +744,12 @@ func ExampleParenthesisOpen() {
 	// Output:
 	//Prepared Statement:
 	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = ?) OR
-	//(`e` = ?)) AND (`f` = ?) GROUP BY ab HAVING (j = k) AND ((`m` = ?) OR (`n` = ?))
-	//ORDER BY l LIMIT 7 OFFSET 8
+	//(`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING (j = k) AND ((`m` = ?) OR (`n` =
+	//?)) ORDER BY `l` LIMIT 7 OFFSET 8
 	//Arguments: [1 wat 2 33 wh3r3]
 	//
 	//Preprocessed Statement:
 	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
-	//(`e` = 'wat')) AND (`f` = 2) GROUP BY ab HAVING (j = k) AND ((`m` = 33) OR (`n`
-	//= 'wh3r3')) ORDER BY l LIMIT 7 OFFSET 8
+	//(`e` = 'wat')) AND (`f` = 2) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR
+	//(`n` = 'wh3r3')) ORDER BY `l` LIMIT 7 OFFSET 8
 }

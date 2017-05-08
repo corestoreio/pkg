@@ -271,7 +271,7 @@ func (b *Select) Where(c ...ConditionArg) *Select {
 // GroupBy appends columns to group the statement. The column gets always
 // quoted. MySQL does not sort the results set. To avoid the overhead of sorting
 // that GROUP BY produces this function should add an ORDER BY NULL with
-// function `OrderByDisabled`.
+// function `OrderByDeactivated`.
 func (b *Select) GroupBy(columns ...string) *Select {
 	b.GroupBys = appendColumns(b.GroupBys, columns, false)
 	return b
@@ -308,11 +308,9 @@ func (b *Select) Having(c ...ConditionArg) *Select {
 	return b
 }
 
-// OrderBy appends columns to the ORDER BY statement for ascending sorting.
-// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a SELECT, the server sorts values using only the initial number of
-// bytes indicated by the max_sort_length system variable.
-func (b *Select) OrderByDisabled() *Select {
+// OrderByDeactivated deactivates ordering of the result set by applying ORDER
+// BY NULL to the SELECT statement. Very useful for GROUP BY queries.
+func (b *Select) OrderByDeactivated() *Select {
 	b.OrderBys = aliases{MakeAliasExpr("NULL")}
 	return b
 }
