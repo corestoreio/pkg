@@ -63,7 +63,31 @@ func TestDeleteSingleToSQL(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "DELETE FROM `a` WHERE (`id` = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
+}
 
+func TestDelete_OrderBy(t *testing.T) {
+	s := createFakeSession()
+	t.Run("expr", func(t *testing.T) {
+		del := s.DeleteFrom("a").OrderByExpr("b=c").OrderByDesc("d").Interpolate()
+		sql, args, err := del.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE FROM `a` ORDER BY b=c, `d` DESC", sql)
+		assert.Nil(t, args, "Args should be nil")
+	})
+	t.Run("asc", func(t *testing.T) {
+		del := s.DeleteFrom("a").OrderBy("b").OrderBy("c").Interpolate()
+		sql, args, err := del.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE FROM `a` ORDER BY `b`, `c`", sql)
+		assert.Nil(t, args, "Args should be nil")
+	})
+	t.Run("desc", func(t *testing.T) {
+		del := s.DeleteFrom("a").OrderBy("b").OrderByDesc("c").OrderBy("d").OrderByDesc("e", "f").OrderBy("g").Interpolate()
+		sql, args, err := del.ToSQL()
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE FROM `a` ORDER BY `b`, `c` DESC, `d`, `e` DESC, `f` DESC, `g`", sql)
+		assert.Nil(t, args, "Args should be nil")
+	})
 }
 
 func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
@@ -71,7 +95,7 @@ func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
 
 	sql, _, err := s.DeleteFrom("a").Limit(10).Offset(20).OrderBy("id").ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `a` ORDER BY id LIMIT 10 OFFSET 20", sql)
+	assert.Equal(t, "DELETE FROM `a` ORDER BY `id` LIMIT 10 OFFSET 20", sql)
 }
 
 func TestDelete_Interpolate(t *testing.T) {
@@ -85,7 +109,7 @@ func TestDelete_Interpolate(t *testing.T) {
 		Interpolate().
 		ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY id LIMIT 10 OFFSET 20", sql)
+	assert.Equal(t, "DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY `id` LIMIT 10 OFFSET 20", sql)
 }
 
 func TestDeleteReal(t *testing.T) {

@@ -31,7 +31,8 @@ var Quoter = MysqlQuoter{
 }
 
 type alias struct {
-	// Select used in cases where a sub-select is required.
+	// Select used in cases where a sub-select is required. Ignored in any other
+	// cases.
 	Select *Select
 	// IsExpression if true the field `Name` will be treated as an expression and
 	// won't get quoted when generating the SQL.
@@ -41,7 +42,15 @@ type alias struct {
 	Name string
 	// Alias must be a valid identifier allowed for alias usage.
 	Alias string
+	// Sort applies only to GROUP BY and ORDER BY clauses. 'd'=descending,
+	// 0=default or nothing; 'a'=ascending.
+	Sort byte
 }
+
+const (
+	sortDescending byte = 'd'
+	sortAscending  byte = 'a'
+)
 
 // MakeAlias creates a new name with an optional alias. Supports two arguments.
 // 1. a qualifier name and 2. an alias.
@@ -92,12 +101,18 @@ func (a alias) FquoteAs(w queryWriter) (Arguments, error) {
 		return args, errors.Wrap(err, "[dbr] FquoteAs.SubSelect")
 	}
 
+	qf := Quoter.FquoteAs
 	if a.IsExpression {
-		Quoter.FquoteExprAs(w, a.Name, a.Alias)
-	} else {
-		Quoter.FquoteAs(w, a.Name, a.Alias)
+		qf = Quoter.FquoteExprAs
 	}
+	qf(w, a.Name, a.Alias)
 
+	if a.Sort == sortAscending {
+		w.WriteString(" ASC")
+	}
+	if a.Sort == sortDescending {
+		w.WriteString(" DESC")
+	}
 	return nil, nil
 }
 
@@ -123,12 +138,24 @@ func (as aliases) fQuoteAs(w queryWriter, args Arguments) (Arguments, error) {
 	return args, nil
 }
 
-func appendColumns(as aliases, columns []string) aliases {
+// setSort applies to last n items the sort order `sort` in reverse iteration.
+// Usuallay `lastNindexes` is len(object) because we decrement 1 from
+// `lastNindexes`. This function panics when lastNindexes does not match the
+// length of `aliases`.
+func (as aliases) applySort(lastNindexes int, sort byte) aliases {
+	to := len(as) - lastNindexes
+	for i := len(as) - 1; i >= to; i-- {
+		as[i].Sort = sort
+	}
+	return as
+}
+
+func appendColumns(as aliases, columns []string, isExpression bool) aliases {
 	if len(as) == 0 {
 		as = make(aliases, 0, len(columns))
 	}
 	for _, c := range columns {
-		as = append(as, alias{Name: c})
+		as = append(as, alias{Name: c, IsExpression: isExpression})
 	}
 	return as
 }
@@ -210,7 +237,7 @@ func (q MysqlQuoter) QuoteAs(expressionAlias ...string) string {
 }
 func (q MysqlQuoter) FquoteExprAs(w queryWriter, expressionAlias ...string) {
 	w.WriteString(expressionAlias[0])
-	if len(expressionAlias) > 1 {
+	if len(expressionAlias) > 1 && expressionAlias[1] != "" {
 		w.WriteString(" AS ")
 		q.quote(w, expressionAlias[1])
 	}

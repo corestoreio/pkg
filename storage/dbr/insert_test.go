@@ -411,7 +411,7 @@ func TestInsert_FromSelect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Exactly(t, "INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY id DESC LIMIT 20 OFFSET 0", iSQL)
+	assert.Exactly(t, "INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY `id` DESC LIMIT 20 OFFSET 0", iSQL)
 	assert.Exactly(t, []interface{}{int64(1), "wat", int64(1), int64(2), int64(3)}, args.Interfaces())
 }
 

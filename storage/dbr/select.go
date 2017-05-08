@@ -52,9 +52,9 @@ type Select struct {
 
 	WhereFragments
 	JoinFragments
-	GroupBys          []string // TODO use aliases
+	GroupBys          aliases
 	HavingFragments   WhereFragments
-	OrderBys          []string // TODO use aliases
+	OrderBys          aliases
 	LimitCount        uint64
 	OffsetCount       uint64
 	LimitValid        bool
@@ -83,7 +83,7 @@ type Select struct {
 // NewSelect creates a new Select object.
 func NewSelect(columns ...string) *Select {
 	return &Select{
-		Columns: appendColumns(nil, columns),
+		Columns: appendColumns(nil, columns, false),
 	}
 }
 
@@ -108,7 +108,7 @@ func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 func (c *Connection) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     c.Log,
-		Columns: appendColumns(nil, columns),
+		Columns: appendColumns(nil, columns, false),
 	}
 	s.DB.Querier = c.DB
 	s.DB.Preparer = c.DB
@@ -131,7 +131,7 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 func (tx *Tx) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     tx.Logger,
-		Columns: appendColumns(nil, columns),
+		Columns: appendColumns(nil, columns, false),
 	}
 	s.DB.Querier = tx.Tx
 	s.DB.Preparer = tx.Tx
@@ -224,7 +224,7 @@ func (b *Select) From(from ...string) *Select {
 // 		AddColumns("a,b","z","c,d")	// `a,b`,`z`,`c,d` <- invalid SQL!
 //		AddColumns("t1.name","t1.sku","price") // `t1`.`name`, `t1`.`sku`,`price`
 func (b *Select) AddColumns(cols ...string) *Select {
-	b.Columns = appendColumns(b.Columns, cols)
+	b.Columns = appendColumns(b.Columns, cols, false)
 	return b
 }
 
@@ -268,9 +268,37 @@ func (b *Select) Where(c ...ConditionArg) *Select {
 	return b
 }
 
-// GroupBy appends a column or an expression to group the statement.
-func (b *Select) GroupBy(groups ...string) *Select {
-	b.GroupBys = append(b.GroupBys, groups...)
+// GroupBy appends columns to group the statement. The column gets always
+// quoted. MySQL does not sort the results set. To avoid the overhead of sorting
+// that GROUP BY produces this function should add an ORDER BY NULL with
+// function `OrderByDisabled`.
+func (b *Select) GroupBy(columns ...string) *Select {
+	b.GroupBys = appendColumns(b.GroupBys, columns, false)
+	return b
+}
+
+// GroupByAsc sorts the groups in ascending order. No need to add an ORDER BY
+// clause. When you use ORDER BY or GROUP BY to sort a column in a SELECT, the
+// server sorts values using only the initial number of bytes indicated by the
+// max_sort_length system variable.
+func (b *Select) GroupByAsc(groups ...string) *Select {
+	b.GroupBys = appendColumns(b.GroupBys, groups, false).applySort(len(groups), sortAscending)
+	return b
+}
+
+// GroupByDesc sorts the groups in descending order. No need to add an ORDER BY
+// clause. When you use ORDER BY or GROUP BY to sort a column in a SELECT, the
+// server sorts values using only the initial number of bytes indicated by the
+// max_sort_length system variable.
+func (b *Select) GroupByDesc(groups ...string) *Select {
+	b.GroupBys = appendColumns(b.GroupBys, groups, false).applySort(len(groups), sortDescending)
+	return b
+}
+
+// GroupByExpr adds a custom SQL expression to the GROUP BY clause. Does not
+// quote the strings nor add an ORDER BY NULL.
+func (b *Select) GroupByExpr(groups ...string) *Select {
+	b.GroupBys = appendColumns(b.GroupBys, groups, true)
 	return b
 }
 
@@ -280,16 +308,37 @@ func (b *Select) Having(c ...ConditionArg) *Select {
 	return b
 }
 
-// OrderBy appends a column or an expression to ORDER the statement ascending.
-func (b *Select) OrderBy(ord ...string) *Select {
-	b.OrderBys = append(b.OrderBys, ord...)
+// OrderBy appends columns to the ORDER BY statement for ascending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a SELECT, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Select) OrderByDisabled() *Select {
+	b.OrderBys = aliases{MakeAliasExpr("NULL")}
 	return b
 }
 
-// OrderByDesc appends a column or an expression to ORDER the statement
-// descending.
-func (b *Select) OrderByDesc(ord ...string) *Select {
-	b.OrderBys = orderByDesc(b.OrderBys, ord)
+// OrderBy appends columns to the ORDER BY statement for ascending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a SELECT, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Select) OrderBy(columns ...string) *Select {
+	b.OrderBys = appendColumns(b.OrderBys, columns, false)
+	return b
+}
+
+// OrderByDesc appends columns to the ORDER BY statement for descending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a SELECT, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Select) OrderByDesc(columns ...string) *Select {
+	b.OrderBys = appendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	return b
+}
+
+// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
+// quote the strings.
+func (b *Select) OrderByExpr(columns ...string) *Select {
+	b.OrderBys = appendColumns(b.OrderBys, columns, true)
 	return b
 }
 
@@ -401,11 +450,11 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	if len(b.GroupBys) > 0 {
 		w.WriteString(" GROUP BY ")
-		for i, s := range b.GroupBys {
+		for i, c := range b.GroupBys {
 			if i > 0 {
 				w.WriteString(", ")
 			}
-			w.WriteString(s)
+			_, _ = c.FquoteAs(w)
 		}
 	}
 

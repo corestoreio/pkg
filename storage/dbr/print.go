@@ -100,7 +100,7 @@ func sqlWriteUnionAll(w queryWriter, isAll bool) {
 	w.WriteByte('\n')
 }
 
-func sqlWriteOrderBy(w queryWriter, orderBys []string, br bool) {
+func sqlWriteOrderBy(w queryWriter, orderBys aliases, br bool) {
 	if len(orderBys) == 0 {
 		return
 	}
@@ -110,11 +110,12 @@ func sqlWriteOrderBy(w queryWriter, orderBys []string, br bool) {
 	}
 	w.WriteRune(brS)
 	w.WriteString("ORDER BY ")
-	for i, s := range orderBys {
+	for i, c := range orderBys {
 		if i > 0 {
 			w.WriteString(", ")
 		}
-		w.WriteString(s)
+		_, _ = c.FquoteAs(w)
+		// TODO append arguments
 	}
 }
 

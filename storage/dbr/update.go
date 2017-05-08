@@ -39,7 +39,7 @@ type Update struct {
 	// there must be one argument.
 	SetClauses UpdatedColumns
 	WhereFragments
-	OrderBys    []string
+	OrderBys    aliases
 	LimitCount  uint64
 	OffsetCount uint64
 	LimitValid  bool
@@ -152,16 +152,28 @@ func (b *Update) Where(args ...ConditionArg) *Update {
 	return b
 }
 
-// OrderBy appends a column or an expression to ORDER the statement ascending.
-func (b *Update) OrderBy(ord ...string) *Update {
-	b.OrderBys = append(b.OrderBys, ord...)
+// OrderBy appends columns to the ORDER BY statement for ascending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a UPDATE, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Update) OrderBy(columns ...string) *Update {
+	b.OrderBys = appendColumns(b.OrderBys, columns, false)
 	return b
 }
 
-// OrderByDesc appends a column or an expression to ORDER the statement
-// descending.
-func (b *Update) OrderByDesc(ord ...string) *Update {
-	b.OrderBys = orderByDesc(b.OrderBys, ord)
+// OrderByDesc appends columns to the ORDER BY statement for descending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a UPDATE, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Update) OrderByDesc(columns ...string) *Update {
+	b.OrderBys = appendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	return b
+}
+
+// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
+// quote the strings.
+func (b *Update) OrderByExpr(columns ...string) *Update {
+	b.OrderBys = appendColumns(b.OrderBys, columns, true)
 	return b
 }
 

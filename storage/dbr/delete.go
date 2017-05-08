@@ -22,7 +22,23 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Delete contains the clauses for a DELETE statement
+// Delete contains the clauses for a DELETE statement.
+//
+// InnoDB Tables: If you are deleting many rows from a large table, you may
+// exceed the lock table size for an InnoDB table. To avoid this problem, or
+// simply to minimize the time that the table remains locked, the following
+// strategy (which does not use DELETE at all) might be helpful:
+//
+// Select the rows not to be deleted into an empty table that has the same
+// structure as the original table:
+//	INSERT INTO t_copy SELECT * FROM t WHERE ... ;
+// Use RENAME TABLE to atomically move the original table out of the way and
+// rename the copy to the original name:
+//	RENAME TABLE t TO t_old, t_copy TO t;
+// Drop the original table:
+//	DROP TABLE t_old;
+// No other sessions can access the tables involved while RENAME TABLE executes,
+// so the rename operation is not subject to concurrency problems.
 type Delete struct {
 	Log log.Logger // Log optional logger
 	DB  struct {
@@ -31,7 +47,7 @@ type Delete struct {
 	}
 	From alias
 	WhereFragments
-	OrderBys    []string
+	OrderBys    aliases
 	LimitCount  uint64
 	OffsetCount uint64
 	LimitValid  bool
@@ -88,16 +104,28 @@ func (b *Delete) Where(args ...ConditionArg) *Delete {
 	return b
 }
 
-// OrderBy appends a column or an expression to ORDER the statement ascending.
-func (b *Delete) OrderBy(ord ...string) *Delete {
-	b.OrderBys = append(b.OrderBys, ord...)
+// OrderBy appends columns to the ORDER BY statement for ascending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a DELETE, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Delete) OrderBy(columns ...string) *Delete {
+	b.OrderBys = appendColumns(b.OrderBys, columns, false)
 	return b
 }
 
-// OrderByDesc appends a column or an expression to ORDER the statement
-// descending.
-func (b *Delete) OrderByDesc(ord ...string) *Delete {
-	b.OrderBys = orderByDesc(b.OrderBys, ord)
+// OrderByDesc appends columns to the ORDER BY statement for descending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a DELETE, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Delete) OrderByDesc(columns ...string) *Delete {
+	b.OrderBys = appendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	return b
+}
+
+// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
+// quote the strings.
+func (b *Delete) OrderByExpr(columns ...string) *Delete {
+	b.OrderBys = appendColumns(b.OrderBys, columns, true)
 	return b
 }
 

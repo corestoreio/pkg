@@ -61,7 +61,7 @@ func TestSelectFullToSQL(t *testing.T) {
 
 	sql, args, err := sel.ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY ab HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY l LIMIT 7 OFFSET 8", sql)
+	assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8", sql)
 	assert.Equal(t, []interface{}{int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3"}, args.Interfaces())
 }
 
@@ -93,7 +93,7 @@ func TestSelect_Interpolate(t *testing.T) {
 		ToSQL()
 
 	require.NoError(t, err)
-	assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY ab HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY l LIMIT 7 OFFSET 8", sql)
+	assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8", sql)
 	assert.Nil(t, args)
 }
 
@@ -107,7 +107,7 @@ func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 		OrderByDesc("id").
 		ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY id DESC LIMIT 20 OFFSET 0", sql)
+	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY `id` DESC LIMIT 20 OFFSET 0", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 
 	sql, args, err = s.Select("a", "b").
@@ -117,7 +117,7 @@ func TestSelectPaginateOrderDirToSQL(t *testing.T) {
 		OrderBy("id").
 		ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY id LIMIT 30 OFFSET 60", sql)
+	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY `id` LIMIT 30 OFFSET 60", sql)
 	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
 }
 
@@ -137,16 +137,16 @@ func TestSelectMultiHavingSQL(t *testing.T) {
 		Where(Column("p", argInt(1))).
 		GroupBy("z").Having(Column("z`z", argInt(2)), Column("y", argInt(3))).ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`p` = ?) GROUP BY z HAVING (`zz` = ?) AND (`y` = ?)", sql)
+	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`p` = ?) GROUP BY `z` HAVING (`zz` = ?) AND (`y` = ?)", sql)
 	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
 }
 
 func TestSelectMultiOrderSQL(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args, err := s.Select("a", "b").From("c").OrderBy("name ASC").OrderBy("id DESC").ToSQL()
+	sql, args, err := s.Select("a", "b").From("c").OrderBy("name").OrderByDesc("id").ToSQL()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` ORDER BY name ASC, id DESC", sql)
+	assert.Equal(t, "SELECT `a`, `b` FROM `c` ORDER BY `name`, `id` DESC", sql)
 	assert.Equal(t, []interface{}(nil), args.Interfaces())
 }
 
@@ -401,7 +401,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	var people dbrPersons
-	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").Load(context.TODO(), &people)
+	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id").Load(context.TODO(), &people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
@@ -753,11 +753,11 @@ func TestSelect_Events(t *testing.T) {
 		)
 		sql, _, err := d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY col3, col1 DESC, col2 DESC", sql)
+		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC", sql)
 
 		sql, _, err = d.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY col3, col1 DESC, col2 DESC, col1 DESC, col2 DESC", sql)
+		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC, `col1` DESC, `col2` DESC", sql)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
@@ -801,12 +801,12 @@ func TestSelect_Events(t *testing.T) {
 		sql, args, err := s.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{3.14159, "a"}, args.Interfaces())
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = ?) AND (`b` = ?) ORDER BY col3, col1 DESC, col2 DESC", sql)
+		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = ?) AND (`b` = ?) ORDER BY `col3`, `col1` DESC, `col2` DESC", sql)
 
 		sql, args, err = s.ToSQL()
 		assert.NoError(t, err)
 		assert.Exactly(t, []interface{}{3.14159, "a", "a"}, args.Interfaces())
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = ?) AND (`b` = ?) AND (`b` = ?) ORDER BY col3, col1 DESC, col2 DESC, col2 DESC", sql)
+		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = ?) AND (`b` = ?) AND (`b` = ?) ORDER BY `col3`, `col1` DESC, `col2` DESC, `col2` DESC", sql)
 
 		assert.Exactly(t, `a col1; b col2`, s.Listeners.String())
 	})

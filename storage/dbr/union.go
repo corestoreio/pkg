@@ -26,7 +26,7 @@ import (
 // from multiple SELECT statements into a single result set.
 type Union struct {
 	Selects  []*Select
-	OrderBys []string
+	OrderBys aliases
 	IsAll    bool
 }
 
@@ -59,23 +59,32 @@ func (u *Union) PreserveResultSet() *Union {
 	for i, s := range u.Selects {
 		s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
 	}
-	u.OrderBys = append([]string{"`_preserve_result_set`"}, u.OrderBys...)
+	u.OrderBys = append(aliases{MakeAlias("_preserve_result_set")}, u.OrderBys...)
 	return u
 }
 
-// OrderBy appends a column or an expression to ORDER the statement ascending.
-// MySQL will order the result set in a temporary table, which is slow.
+// OrderBy appends a column to ORDER the statement ascending. Columns are
+// getting quoted. MySQL might order the result set in a temporary table, which
+// is slow. Under different conditions sorting can skip the temporary table.
 // https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
-func (u *Union) OrderBy(ord ...string) *Union {
-	u.OrderBys = append(u.OrderBys, ord...)
+func (u *Union) OrderBy(columns ...string) *Union {
+	u.OrderBys = appendColumns(u.OrderBys, columns, false).applySort(len(columns), sortAscending)
 	return u
 }
 
-// OrderByDesc appends a column or an expression to ORDER the statement
-// descending. MySQL will order the result set in a temporary table, which is
-// slow.
-func (u *Union) OrderByDesc(ord ...string) *Union {
-	u.OrderBys = orderByDesc(u.OrderBys, ord)
+// OrderByDesc appends columns to the ORDER BY statement for descending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a DELETE, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (u *Union) OrderByDesc(columns ...string) *Union {
+	u.OrderBys = appendColumns(u.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	return u
+}
+
+// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
+// quote the strings.
+func (u *Union) OrderByExpr(columns ...string) *Union {
+	u.OrderBys = appendColumns(u.OrderBys, columns, true)
 	return u
 }
 
@@ -110,7 +119,7 @@ type UnionTemplate struct {
 	oldNew        [][]string
 	repls         []*strings.Replacer
 	stmtCount     int
-	OrderBys      []string
+	OrderBys      aliases
 	IsAll         bool
 	previousError error
 }
@@ -139,26 +148,35 @@ func (ut *UnionTemplate) PreserveResultSet() *UnionTemplate {
 	// this API is different than compared to the Union.PreserveResultSet()
 	// because here we can guarantee idempotent calls to ToSQL.
 	ut.Select.AddColumnsExprAlias("{preserveResultSet}", "_preserve_result_set")
-	ut.OrderBys = append([]string{"`_preserve_result_set`"}, ut.OrderBys...)
+	ut.OrderBys = append(aliases{MakeAlias("_preserve_result_set")}, ut.OrderBys...)
 	for i := 0; i < ut.stmtCount; i++ {
 		ut.oldNew[i] = append(ut.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
 	}
 	return ut
 }
 
-// OrderBy appends a column or an expression to ORDER the statement ascending.
-// MySQL will order the result set in a temporary table, which is slow.
+// OrderBy appends a column to ORDER the statement ascending. Columns are
+// getting quoted. MySQL might order the result set in a temporary table, which
+// is slow. Under different conditions sorting can skip the temporary table.
 // https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
-func (ut *UnionTemplate) OrderBy(ord ...string) *UnionTemplate {
-	ut.OrderBys = append(ut.OrderBys, ord...)
+func (ut *UnionTemplate) OrderBy(columns ...string) *UnionTemplate {
+	ut.OrderBys = appendColumns(ut.OrderBys, columns, false).applySort(len(columns), sortAscending)
 	return ut
 }
 
-// OrderByDesc appends a column or an expression to ORDER the statement
-// descending. MySQL will order the result set in a temporary table, which is
-// slow.
-func (ut *UnionTemplate) OrderByDesc(ord ...string) *UnionTemplate {
-	ut.OrderBys = orderByDesc(ut.OrderBys, ord)
+// OrderByDesc appends columns to the ORDER BY statement for descending sorting.
+// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
+// column in a DELETE, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (ut *UnionTemplate) OrderByDesc(columns ...string) *UnionTemplate {
+	ut.OrderBys = appendColumns(ut.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	return ut
+}
+
+// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
+// quote the strings.
+func (ut *UnionTemplate) OrderByExpr(columns ...string) *UnionTemplate {
+	ut.OrderBys = appendColumns(ut.OrderBys, columns, true)
 	return ut
 }
 
