@@ -62,8 +62,6 @@ var _ Scanner = (*dbrPersons)(nil)
 var _ InsertArgProducer = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
-//var _ UpdateArgProducer = (*nullTypedRecord)(nil)
-
 type dbrPerson struct {
 	ID    int64
 	Name  string
@@ -71,10 +69,10 @@ type dbrPerson struct {
 	Key   NullString
 }
 
-// RowScan loads a single row from a SELECT statement returning only one row
-func (p *dbrPerson) RowScan(idx int, columns []string) ([]interface{}, error) {
+// ScanRow loads a single row from a SELECT statement returning only one row
+func (p *dbrPerson) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
 	if idx > 0 {
-		return nil, errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
+		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}
 	vp := make([]interface{}, 0, 4) // vp == valuePointers
 	for _, c := range columns {
@@ -88,10 +86,10 @@ func (p *dbrPerson) RowScan(idx int, columns []string) ([]interface{}, error) {
 		case "key":
 			vp = append(vp, &p.Key)
 		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+			return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	return vp, nil
+	return scan(vp...)
 }
 
 func (p *dbrPerson) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
@@ -131,33 +129,42 @@ func (p *dbrPerson) columnToArg(t byte, args Arguments, columns []string) (Argum
 }
 
 type dbrPersons struct {
-	Data []*dbrPerson
-	dto  []interface{}
+	Data     []*dbrPerson
+	scanArgs []interface{}
+	dto      dbrPerson
 }
 
-func (ps *dbrPersons) RowScan(idx int, columns []string) ([]interface{}, error) {
+func (ps *dbrPersons) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
 	if idx == 0 {
 		ps.Data = make([]*dbrPerson, 0, 5)
-		ps.dto = make([]interface{}, 0, 4) // four fields in the struct
-	}
-	ps.dto = ps.dto[:0]
-	p := new(dbrPerson)
-	for _, c := range columns {
-		switch c {
-		case "id":
-			ps.dto = append(ps.dto, &p.ID)
-		case "name":
-			ps.dto = append(ps.dto, &p.Name)
-		case "email":
-			ps.dto = append(ps.dto, &p.Email)
-		case "key":
-			ps.dto = append(ps.dto, &p.Key)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		ps.scanArgs = make([]interface{}, 0, 4) // four fields in the struct
+
+		for _, c := range columns {
+			switch c {
+			case "id":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.ID)
+			case "name":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.Name)
+			case "email":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.Email)
+			case "key":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.Key)
+			default:
+				return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+			}
 		}
 	}
-	ps.Data = append(ps.Data, p)
-	return ps.dto, nil
+
+	if err := scan(ps.scanArgs...); err != nil {
+		return errors.Wrap(err, "[dbr_test] dbrPersons.ScanRow")
+	}
+	ps.Data = append(ps.Data, &dbrPerson{
+		ID:    ps.dto.ID,
+		Name:  ps.dto.Name,
+		Email: ps.dto.Email,
+		Key:   ps.dto.Key,
+	})
+	return nil
 }
 
 type nullTypedRecord struct {
@@ -169,11 +176,11 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func (p *nullTypedRecord) RowScan(idx int, columns []string) ([]interface{}, error) {
+func (p *nullTypedRecord) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
 	if idx > 0 {
-		return nil, errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
+		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}
-	return []interface{}{&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal}, nil
+	return scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
 func (p *nullTypedRecord) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {

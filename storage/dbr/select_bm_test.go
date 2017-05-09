@@ -225,9 +225,10 @@ const coreConfigDataRowCount = 2007
 // BenchmarkSelect_Integration_Load-4   	     500	   3393616 ns/op	  752254 B/op	   21882 allocs/op <- if/else orgie
 // BenchmarkSelect_Integration_Load-4   	     500	   3461720 ns/op	  752234 B/op	   21882 allocs/op <- switch
 
-// BenchmarkSelect_Integration_LScanner-4   	     500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
+// BenchmarkSelect_Integration_LScanner-4   	 500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
+// BenchmarkSelect_Integration_Scanner-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
 
-func xxxBenchmarkSelect_Integration_Scanner(b *testing.B) {
+func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 	c, ok := createRealSession()
 	if !ok {
 		b.Skip("Skipping because DSN not set")

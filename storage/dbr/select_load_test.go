@@ -119,8 +119,10 @@ type TableCoreConfigDataSlice []*TableCoreConfigData
 // TableCoreConfigDatas represents a collection type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigDatas struct {
-	Data []*TableCoreConfigData
-	dto  []interface{}
+	DataCap  int
+	Data     []*TableCoreConfigData
+	scanArgs []interface{}
+	dto      TableCoreConfigData
 }
 
 // TableCoreConfigData represents a type for DB table core_config_data
@@ -133,31 +135,44 @@ type TableCoreConfigData struct {
 	Value    dbr.NullString `json:",omitempty"` // value text NULL
 }
 
-func (ps *TableCoreConfigDatas) RowScan(idx int, columns []string) ([]interface{}, error) {
-	if idx == 0 {
-		ps.Data = make([]*TableCoreConfigData, 0, 10)
-		ps.dto = make([]interface{}, 0, 5) // vp == valuePointers | 5 == number of struct fields
-	}
-	ps.dto = ps.dto[:0]
-	ccd := new(TableCoreConfigData)
-	for _, c := range columns {
-		switch c {
-		case "config_id":
-			ps.dto = append(ps.dto, &ccd.ConfigID)
-		case "scope":
-			ps.dto = append(ps.dto, &ccd.Scope)
-		case "scope_id":
-			ps.dto = append(ps.dto, &ccd.ScopeID)
-		case "path":
-			ps.dto = append(ps.dto, &ccd.Path)
-		case "value":
-			ps.dto = append(ps.dto, &ccd.Value)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+func (ps *TableCoreConfigDatas) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
+	const fieldCount = 5 //  5 == number of struct fields
+	if idx == 0 && nil == ps.Data {
+		cap := ps.DataCap
+		if cap == 0 {
+			cap = 10
+		}
+		ps.Data = make([]*TableCoreConfigData, 0, cap)
+		ps.scanArgs = make([]interface{}, 0, fieldCount)
+		for _, c := range columns {
+			switch c {
+			case "config_id":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.ConfigID)
+			case "scope":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.Scope)
+			case "scope_id":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.ScopeID)
+			case "path":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.Path)
+			case "value":
+				ps.scanArgs = append(ps.scanArgs, &ps.dto.Value)
+			default:
+				return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+			}
 		}
 	}
-	ps.Data = append(ps.Data, ccd)
-	return ps.dto, nil
+
+	if err := scan(ps.scanArgs...); err != nil {
+		return errors.Wrap(err, "[dbr_test] dbrPersons.ScanRow")
+	}
+
+	// We can copy here easy by assigning the value to a new variable and then
+	// creating a pointer. If the the TableCoreConfigData struct would contain
+	// pointers to other structs, then the copying would be more complex to
+	// avoid a shallow copy.
+	ccd := ps.dto
+	ps.Data = append(ps.Data, &ccd)
+	return nil
 }
 
 func TestSelect_Load(t *testing.T) {

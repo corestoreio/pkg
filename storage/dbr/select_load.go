@@ -23,12 +23,15 @@ import (
 )
 
 // Scanner allows a type to load data from database query. It's used in the
-// rows.Scan() function.
+// rows.Next() for-loop.
 type Scanner interface {
-	// RowScan returns a list of pointers to be scanned into. Each index in
-	// the `columns` slice must be mapped to a returned primitive pointer in the
-	// interface slice. `idx` defines the current iteration.
-	RowScan(idx int, columns []string) (valuePointers []interface{}, _ error)
+	// ScanRow implementation must use function `scan` to scan the values of the
+	// query into its own type. See database/sql package for examples. `idx`
+	// defines the current iteration number. `columns` specifies the list of
+	// provided column names used in the query. This function signature shows
+	// its strength in creating slices of values or iterating over a result set,
+	// modifying values and saving it back somewhere.
+	ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error
 }
 
 // Rows executes a query and returns many rows. Does no interpolation.
@@ -83,12 +86,9 @@ func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
 
 	var rowCount int
 	for rows.Next() {
-		scanArgs, err := scnr.RowScan(rowCount, columns)
+		err := scnr.ScanRow(rowCount, columns, rows.Scan)
 		if err != nil {
-			return 0, errors.Wrap(err, "[dbr] Select.Loader.ScanArgs")
-		}
-		if err := rows.Scan(scanArgs...); err != nil {
-			return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.scan")
+			return 0, errors.Wrap(err, "[dbr] Select.Loader.ScanRow")
 		}
 		rowCount++
 	}
