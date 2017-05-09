@@ -23,6 +23,9 @@
 // https://news.ycombinator.com/item?id=11929267 => For people using JWT as a
 // substitute for stateful sessions, how do you handle renewal (or revocation)?
 //
+// https://news.ycombinator.com/item?id=14290114 => Things to Use Instead of JSON Web Tokens (inburke.com)
+// TL;DR: Refactor the library and strip out RSA/ECDSA/encoding/decoding into its own sub-packages.
+//
 // A new discussion: https://news.ycombinator.com/item?id=13865459 JSON Web
 // Tokens should be avoided (paragonie.com)
 //
