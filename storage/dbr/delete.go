@@ -45,6 +45,14 @@ type Delete struct {
 		Preparer
 		Execer
 	}
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
+	buildCache    []byte
+
+	RawFullSQL   string
+	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
+
 	From alias
 	WhereFragments
 	OrderBys    aliases
@@ -109,7 +117,7 @@ func (b *Delete) Where(args ...ConditionArg) *Delete {
 // column in a DELETE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderBy(columns ...string) *Delete {
-	b.OrderBys = appendColumns(b.OrderBys, columns, false)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false)
 	return b
 }
 
@@ -118,14 +126,14 @@ func (b *Delete) OrderBy(columns ...string) *Delete {
 // column in a DELETE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderByDesc(columns ...string) *Delete {
-	b.OrderBys = appendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
 	return b
 }
 
 // OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
 // quote the strings.
 func (b *Delete) OrderByExpr(columns ...string) *Delete {
-	b.OrderBys = appendColumns(b.OrderBys, columns, true)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, true)
 	return b
 }
 
@@ -157,12 +165,30 @@ func (b *Delete) ToSQL() (string, Arguments, error) {
 	return toSQL(b, b.IsInterpolate)
 }
 
+func (b *Delete) writeBuildCache(sql []byte, arguments Arguments) {
+	b.buildCache = sql
+	b.RawArguments = arguments
+}
+
+func (b *Delete) readBuildCache() (sql []byte, arguments Arguments) {
+	return b.buildCache, b.RawArguments
+}
+
+func (b *Delete) hasBuildCache() bool {
+	return b.UseBuildCache
+}
+
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
+	}
+
+	if b.RawFullSQL != "" {
+		buf.WriteString(b.RawFullSQL)
+		return b.RawArguments, nil
 	}
 
 	if len(b.From.Name) == 0 {

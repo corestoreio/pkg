@@ -131,7 +131,7 @@ func (as aliases) fQuoteAs(w queryWriter, args Arguments) (Arguments, error) {
 		if err != nil {
 			return nil, errors.Wrapf(err, "[dbr] aliases.fQuoteAs")
 		}
-		if args2 != nil {
+		if len(args2) > 0 {
 			args = append(args, args2...)
 		}
 	}
@@ -150,7 +150,7 @@ func (as aliases) applySort(lastNindexes int, sort byte) aliases {
 	return as
 }
 
-func appendColumns(as aliases, columns []string, isExpression bool) aliases {
+func aliasAppendColumns(as aliases, columns []string, isExpression bool) aliases {
 	if len(as) == 0 {
 		as = make(aliases, 0, len(columns))
 	}
@@ -161,7 +161,7 @@ func appendColumns(as aliases, columns []string, isExpression bool) aliases {
 }
 
 // columns must be balanced slice. i=column name, i+1=alias name
-func appendColumnsAliases(as aliases, columns []string, isExpression bool) aliases {
+func aliasAppendColumnsAliases(as aliases, columns []string, isExpression bool) aliases {
 	if len(as) == 0 {
 		as = make(aliases, 0, len(columns)/2)
 	}

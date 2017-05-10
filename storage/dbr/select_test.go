@@ -1134,3 +1134,57 @@ func TestSelect_Count(t *testing.T) {
 		assert.Equal(t, "SELECT COUNT(*) AS `counted` FROM `dbr_people`", sqlStr)
 	})
 }
+
+func TestSelect_UseBuildCache(t *testing.T) {
+	t.Parallel()
+
+	sel := NewSelect("a", "b").
+		Distinct().
+		From("c", "cc").
+		Where(
+			ParenthesisOpen(),
+			Column("d", argInt(1)),
+			Column("e", ArgString("wat")).Or(),
+			ParenthesisClose(),
+			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
+		).
+		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(In)}).
+		GroupBy("ab").
+		Having(
+			ParenthesisOpen(),
+			Column("m", argInt(33)),
+			Column("n", ArgString("wh3r3")).Or(),
+			ParenthesisClose(),
+			Expression("j = k"),
+		).
+		OrderBy("l").
+		Limit(7).
+		Offset(8)
+	sel.UseBuildCache = true
+
+	const cachedSQLPlaceHolder = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
+	t.Run("without interpolate", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			sql, args, err := sel.ToSQL()
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Equal(t, []interface{}{int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3"}, args.Interfaces())
+			assert.Equal(t, cachedSQLPlaceHolder, string(sel.buildCache))
+		}
+	})
+
+	t.Run("with interpolate", func(t *testing.T) {
+		sel.Interpolate()
+		sel.buildCache = nil
+		sel.RawArguments = nil
+
+		const cachedSQLInterpolated = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
+		for i := 0; i < 3; i++ {
+			sql, args, err := sel.ToSQL()
+			assert.Equal(t, cachedSQLPlaceHolder, string(sel.buildCache))
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLInterpolated, sql)
+			assert.Nil(t, args)
+		}
+	})
+}

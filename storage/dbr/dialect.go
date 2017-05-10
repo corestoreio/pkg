@@ -9,7 +9,9 @@ import (
 
 // no other dialect will be supported. Maybe MariaDB ;-)
 
-var dialect dialecter = mysqlDialect{}
+var dialect dialecter = mysqlDialect{
+	identR: strings.NewReplacer("`", "``", ".", "`.`"),
+}
 
 // dialecter at an interface that wraps the diverse properties of individual
 // SQL drivers.
@@ -27,16 +29,17 @@ const mysqlTimeFormat = "2006-01-02 15:04:05"
 // DriverNameMySQL name of the driver for usage in sql.Open function.
 const DriverNameMySQL = "mysql"
 
-type mysqlDialect struct{}
+type mysqlDialect struct {
+	identR *strings.Replacer
+}
 
-func (mysqlDialect) EscapeIdent(w queryWriter, ident string) {
+func (d mysqlDialect) EscapeIdent(w queryWriter, ident string) {
 	w.WriteByte('`')
-	r := strings.NewReplacer("`", "``", ".", "`.`")
-	w.WriteString(r.Replace(ident))
+	w.WriteString(d.identR.Replace(ident))
 	w.WriteByte('`')
 }
 
-func (mysqlDialect) EscapeBool(w queryWriter, b bool) {
+func (d mysqlDialect) EscapeBool(w queryWriter, b bool) {
 	if b {
 		w.WriteByte('1')
 	} else {
@@ -44,7 +47,7 @@ func (mysqlDialect) EscapeBool(w queryWriter, b bool) {
 	}
 }
 
-func (mysqlDialect) EscapeBinary(w queryWriter, b []byte) {
+func (d mysqlDialect) EscapeBinary(w queryWriter, b []byte) {
 	// TODO(CyS) no idea if that at the correct way. do an RTFM
 	w.WriteString("0x")
 	w.WriteString(hex.EncodeToString(b))
@@ -52,7 +55,7 @@ func (mysqlDialect) EscapeBinary(w queryWriter, b []byte) {
 
 // EscapeString. Need to turn \x00, \n, \r, \, ', " and \x1a.
 // Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''".
-func (mysqlDialect) EscapeString(w queryWriter, s string) {
+func (d mysqlDialect) EscapeString(w queryWriter, s string) {
 	w.WriteByte('\'')
 	for _, char := range s {
 		// for each case, don't use write rune 8-)
@@ -82,7 +85,7 @@ func (d mysqlDialect) EscapeTime(w queryWriter, t time.Time) {
 	d.EscapeString(w, t.Format(mysqlTimeFormat))
 }
 
-func (mysqlDialect) ApplyLimitAndOffset(w queryWriter, limit, offset uint64) {
+func (d mysqlDialect) ApplyLimitAndOffset(w queryWriter, limit, offset uint64) {
 	w.WriteString(" LIMIT ")
 	if limit == 0 {
 		// In MYSQL, OFFSET cannot be used alone. Set the limit to the max possible value.
@@ -94,5 +97,4 @@ func (mysqlDialect) ApplyLimitAndOffset(w queryWriter, limit, offset uint64) {
 		w.WriteString(" OFFSET ")
 		w.WriteString(strconv.FormatUint(offset, 10))
 	}
-
 }

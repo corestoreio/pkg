@@ -30,6 +30,9 @@ type QueryBuilder interface {
 
 type queryBuilder interface {
 	toSQL(queryWriter) (Arguments, error)
+	hasBuildCache() bool
+	writeBuildCache(sql []byte, arguments Arguments)
+	readBuildCache() (sql []byte, arguments Arguments)
 }
 
 // queryWriter at used to generate a query.
@@ -42,54 +45,65 @@ type queryWriter interface {
 // toSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
-	var w = bufferpool.Get()
-	defer bufferpool.Put(w)
-	args, err := b.toSQL(w)
+	useCache := b.hasBuildCache()
+	if sql, args := b.readBuildCache(); useCache && sql != nil {
+		if isInterpolate {
+			sqlStr, err := interpolate(sql, args...)
+			return sqlStr, nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
+		}
+		return string(sql), args, nil
+	}
+
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	args, err := b.toSQL(buf)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] Insert.ToSQL")
+		return "", nil, errors.Wrap(err, "[dbr] toSQL.toSQL")
 	}
+
+	if useCache {
+		sqlCopy := make([]byte, buf.Len())
+		copy(sqlCopy, buf.Bytes())
+		b.writeBuildCache(sqlCopy, args)
+	}
+
 	if isInterpolate {
-		// can be optimized later
-		sqlStr, err := Interpolate(w.String(), args...)
-		return sqlStr, nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Interpolate")
+		sqlStr, err := interpolate(buf.Bytes(), args...)
+		return sqlStr, nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
 	}
-	return w.String(), args, nil
+	return buf.String(), args, nil
 }
 
-func makeSQL(b QueryBuilder) string {
-	sRaw, vals, err := b.ToSQL()
+func makeSQL(b queryBuilder, isInterpolate bool) string {
+	sRaw, _, err := toSQL(b, isInterpolate)
 	if err != nil {
 		return fmt.Sprintf("[dbr] ToSQL Error: %+v", err)
 	}
-	sql, err := Interpolate(sRaw, vals...)
-	if err != nil {
-		return fmt.Sprintf("[dbr] Interpolate Error: %+v", err)
-	}
-	return sql
+	return sRaw
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Delete) String() string {
-	return makeSQL(b)
+	return makeSQL(b, b.IsInterpolate)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Insert) String() string {
-	return makeSQL(b)
+	return makeSQL(b, b.IsInterpolate)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Select) String() string {
-	return makeSQL(b)
+	return makeSQL(b, b.IsInterpolate)
 }
 
 // String returns a string representing a preprocessed, interpolated, query.
 // On error, the error gets printed. Fulfills interface fmt.Stringer.
 func (b *Update) String() string {
-	return makeSQL(b)
+	return makeSQL(b, b.IsInterpolate)
 }
 
 func sqlWriteUnionAll(w queryWriter, isAll bool) {

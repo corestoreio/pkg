@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var benchmarkDeleteSQL Arguments
@@ -270,5 +271,37 @@ func TestDelete_Events(t *testing.T) {
 
 		assert.Exactly(t, `col1; storeid; repetitive`, d.Listeners.String())
 	})
+}
 
+func TestDelete_UseBuildCache(t *testing.T) {
+	t.Parallel()
+
+	del := NewDelete("alpha").Where(Column("a", ArgString("b"))).Limit(1).OrderBy("id")
+	del.UseBuildCache = true
+
+	const cachedSQLPlaceHolder = "DELETE FROM `alpha` WHERE (`a` = ?) ORDER BY `id` LIMIT 1"
+	t.Run("without interpolate", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			sql, args, err := del.ToSQL()
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Equal(t, []interface{}{"b"}, args.Interfaces())
+			assert.Equal(t, cachedSQLPlaceHolder, string(del.buildCache))
+		}
+	})
+
+	t.Run("with interpolate", func(t *testing.T) {
+		del.Interpolate()
+		del.buildCache = nil
+		del.RawArguments = nil
+
+		const cachedSQLInterpolated = "DELETE FROM `alpha` WHERE (`a` = 'b') ORDER BY `id` LIMIT 1"
+		for i := 0; i < 3; i++ {
+			sql, args, err := del.ToSQL()
+			assert.Equal(t, cachedSQLPlaceHolder, string(del.buildCache))
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLInterpolated, sql)
+			assert.Nil(t, args)
+		}
+	})
 }

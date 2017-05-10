@@ -31,8 +31,13 @@ type Update struct {
 	}
 	// TODO: add UPDATE JOINS
 
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
+	buildCache    []byte
+
 	RawFullSQL   string
-	RawArguments Arguments
+	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
 
 	Table alias
 	// SetClauses contains the column/argument association. For each column
@@ -157,7 +162,7 @@ func (b *Update) Where(args ...ConditionArg) *Update {
 // column in a UPDATE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Update) OrderBy(columns ...string) *Update {
-	b.OrderBys = appendColumns(b.OrderBys, columns, false)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false)
 	return b
 }
 
@@ -166,14 +171,14 @@ func (b *Update) OrderBy(columns ...string) *Update {
 // column in a UPDATE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Update) OrderByDesc(columns ...string) *Update {
-	b.OrderBys = appendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
 	return b
 }
 
 // OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
 // quote the strings.
 func (b *Update) OrderByExpr(columns ...string) *Update {
-	b.OrderBys = appendColumns(b.OrderBys, columns, true)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, true)
 	return b
 }
 
@@ -202,6 +207,19 @@ func (b *Update) Interpolate() *Update {
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Update) ToSQL() (string, Arguments, error) {
 	return toSQL(b, b.IsInterpolate)
+}
+
+func (b *Update) writeBuildCache(sql []byte, arguments Arguments) {
+	b.buildCache = sql
+	b.RawArguments = arguments
+}
+
+func (b *Update) readBuildCache() (sql []byte, arguments Arguments) {
+	return b.buildCache, b.RawArguments
+}
+
+func (b *Update) hasBuildCache() bool {
+	return b.UseBuildCache
 }
 
 // ToSQL serialized the Update to a SQL string
@@ -502,7 +520,7 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
 		}
 
-		if b.UsePreprocess {
+		if b.UsePreprocess { // TODO see other todo and remove this because of IsInterpolate
 			fullSQL, err := Interpolate(rawSQL, args...)
 			if err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, rawSQL)

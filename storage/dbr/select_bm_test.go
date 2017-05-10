@@ -83,6 +83,11 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	}
 }
 
+// BenchmarkSelectFullSQL-4                		  300000	      5351 ns/op	    2408 B/op	      38 allocs/op nearly no backticks
+// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6689 ns/op	    3465 B/op	      50 allocs/op full backtick quoting
+// BenchmarkSelectFullSQL/ToSQL_with_cache-4  	10000000	       125 ns/op	     256 B/op	       1 allocs/op
+// BenchmarkSelectFullSQL/toSQL_no_cache-4    	  500000	      3619 ns/op	     882 B/op	      17 allocs/op
+
 func BenchmarkSelectFullSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
@@ -93,29 +98,71 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
-			Distinct().
-			Where(dbr.Column("(d = ? OR e = ?)", args...)).
-			Where(argEq1).
-			Where(argEq2).
-			Where(argEq3).
-			GroupBy("ab").
-			GroupBy("ii").
-			GroupBy("iii").
-			Having(dbr.Column("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
-			Having(dbr.Column("jjj", dbr.ArgInt64(2))).
-			OrderBy("l").
-			OrderBy("l").
-			OrderBy("l").
-			Limit(7).
-			Offset(8).
-			ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
+
+	b.Run("NewSelect", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
+				Distinct().
+				Where(dbr.Column("(d = ? OR e = ?)", args...)).
+				Where(argEq1).
+				Where(argEq2).
+				Where(argEq3).
+				GroupBy("ab").
+				GroupBy("ii").
+				GroupBy("iii").
+				Having(dbr.Column("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
+				Having(dbr.Column("jjj", dbr.ArgInt64(2))).
+				OrderBy("l").
+				OrderBy("l").
+				OrderBy("l").
+				Limit(7).
+				Offset(8).
+				ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			benchmarkSelectBasicSQL = args
 		}
-		benchmarkSelectBasicSQL = args
-	}
+	})
+
+	sel := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
+		Distinct().
+		Where(dbr.Column("(d = ? OR e = ?)", args...)).
+		Where(argEq1).
+		Where(argEq2).
+		Where(argEq3).
+		GroupBy("ab").
+		GroupBy("ii").
+		GroupBy("iii").
+		Having(dbr.Column("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
+		Having(dbr.Column("jjj", dbr.ArgInt64(2))).
+		OrderBy("l").
+		OrderBy("l").
+		OrderBy("l").
+		Limit(7).
+		Offset(8)
+
+	b.Run("toSQL no cache", func(b *testing.B) {
+		sel.UseBuildCache = false
+		for i := 0; i < b.N; i++ {
+			_, args, err := sel.ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			benchmarkSelectBasicSQL = args
+		}
+	})
+
+	b.Run("ToSQL with cache", func(b *testing.B) {
+		sel.UseBuildCache = true
+		for i := 0; i < b.N; i++ {
+			_, args, err := sel.ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			benchmarkSelectBasicSQL = args
+		}
+	})
 }
 
 func BenchmarkSelect_Large_IN(b *testing.B) {

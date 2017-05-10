@@ -4,6 +4,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"bytes"
+
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
@@ -60,16 +62,16 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	return buf.String(), retArgs, nil
 }
 
-// Interpolate takes an SQL string with placeholders and a list of arguments to
+// Interpolate takes a SQL byte slice with placeholders and a list of arguments to
 // replace them with. It returns a blank string and error if the number of placeholders
 // does not match the number of arguments.
 func Interpolate(sql string, args ...Argument) (string, error) {
-	// Get the number of arguments to add to this query
-	if sql == "" {
-		if len(args) != 0 {
-			return "", errors.NewNotValidf("[dbr] Arguments are imbalanced")
-		}
-		return "", nil
+	return interpolate([]byte(sql), args...)
+}
+
+func interpolate(sql []byte, args ...Argument) (string, error) {
+	if len(args) == 0 {
+		return string(sql), nil
 	}
 
 	var buf = bufferpool.Get()
@@ -84,7 +86,7 @@ func Interpolate(sql string, args ...Argument) (string, error) {
 	}
 	pos := 0
 	for pos < len(sql) {
-		r, w := utf8.DecodeRuneInString(sql[pos:])
+		r, w := utf8.DecodeRune(sql[pos:])
 		pos += w
 
 		switch {
@@ -113,7 +115,7 @@ func Interpolate(sql string, args ...Argument) (string, error) {
 
 			qCountTotal++
 		case r == '`', r == '\'', r == '"':
-			p := strings.IndexRune(sql[pos:], r)
+			p := bytes.IndexRune(sql[pos:], r)
 			if p == -1 {
 				return "", errors.NewNotValidf("[dbr] Interpolate: Invalid syntax")
 			}
@@ -121,13 +123,13 @@ func Interpolate(sql string, args ...Argument) (string, error) {
 				r = '\''
 			}
 			buf.WriteRune(r)
-			buf.WriteString(sql[pos : pos+p])
+			buf.Write(sql[pos : pos+p])
 			buf.WriteRune(r)
 			pos += p + 1
 		case r == '[':
-			w := strings.IndexRune(sql[pos:], ']')
+			w := bytes.IndexRune(sql[pos:], ']')
 			col := sql[pos : pos+w]
-			dialect.EscapeIdent(buf, col)
+			dialect.EscapeIdent(buf, string(col))
 			pos += w + 1 // size of ']'
 		default:
 			buf.WriteRune(r)

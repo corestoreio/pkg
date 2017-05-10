@@ -35,8 +35,13 @@ type Select struct {
 		Preparer
 	}
 
-	RawFullSQL string
-	Arguments
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
+	buildCache    []byte
+
+	RawFullSQL   string
+	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
 
 	// Columns represents a slice of names and its optional aliases. Wildcard
 	// `SELECT *` statements are not really supported:
@@ -83,7 +88,7 @@ type Select struct {
 // NewSelect creates a new Select object.
 func NewSelect(columns ...string) *Select {
 	return &Select{
-		Columns: appendColumns(nil, columns, false),
+		Columns: aliasAppendColumns(nil, columns, false),
 	}
 }
 
@@ -108,7 +113,7 @@ func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 func (c *Connection) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     c.Log,
-		Columns: appendColumns(nil, columns, false),
+		Columns: aliasAppendColumns(nil, columns, false),
 	}
 	s.DB.Querier = c.DB
 	s.DB.Preparer = c.DB
@@ -118,9 +123,9 @@ func (c *Connection) Select(columns ...string) *Select {
 // SelectBySQL creates a new Select for the given SQL string and arguments
 func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
-		Log:        c.Log,
-		RawFullSQL: sql,
-		Arguments:  args,
+		Log:          c.Log,
+		RawFullSQL:   sql,
+		RawArguments: args,
 	}
 	s.DB.Querier = c.DB
 	s.DB.Preparer = c.DB
@@ -131,7 +136,7 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 func (tx *Tx) Select(columns ...string) *Select {
 	s := &Select{
 		Log:     tx.Logger,
-		Columns: appendColumns(nil, columns, false),
+		Columns: aliasAppendColumns(nil, columns, false),
 	}
 	s.DB.Querier = tx.Tx
 	s.DB.Preparer = tx.Tx
@@ -141,9 +146,9 @@ func (tx *Tx) Select(columns ...string) *Select {
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
-		Log:        tx.Logger,
-		RawFullSQL: sql,
-		Arguments:  args,
+		Log:          tx.Logger,
+		RawFullSQL:   sql,
+		RawArguments: args,
 	}
 	s.DB.Querier = tx.Tx
 	s.DB.Preparer = tx.Tx
@@ -224,7 +229,7 @@ func (b *Select) From(from ...string) *Select {
 // 		AddColumns("a,b","z","c,d")	// `a,b`,`z`,`c,d` <- invalid SQL!
 //		AddColumns("t1.name","t1.sku","price") // `t1`.`name`, `t1`.`sku`,`price`
 func (b *Select) AddColumns(cols ...string) *Select {
-	b.Columns = appendColumns(b.Columns, cols, false)
+	b.Columns = aliasAppendColumns(b.Columns, cols, false)
 	return b
 }
 
@@ -236,7 +241,7 @@ func (b *Select) AddColumnsAlias(columnAliases ...string) *Select {
 	if (len(columnAliases) % 2) == 1 {
 		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columnAliases)
 	} else {
-		b.Columns = appendColumnsAliases(b.Columns, columnAliases, false)
+		b.Columns = aliasAppendColumnsAliases(b.Columns, columnAliases, false)
 	}
 	return b
 }
@@ -248,7 +253,7 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	if (len(expressionAliases) % 2) == 1 {
 		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", expressionAliases)
 	} else {
-		b.Columns = appendColumnsAliases(b.Columns, expressionAliases, true)
+		b.Columns = aliasAppendColumnsAliases(b.Columns, expressionAliases, true)
 	}
 	return b
 }
@@ -257,7 +262,7 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 // You must call this function directly after you have used e.g.
 // AddColumnsExprAlias with place holders.
 func (b *Select) AddArguments(args ...Argument) *Select {
-	b.Arguments = append(b.Arguments, args...)
+	b.RawArguments = append(b.RawArguments, args...)
 	return b
 }
 
@@ -273,7 +278,7 @@ func (b *Select) Where(c ...ConditionArg) *Select {
 // that GROUP BY produces this function should add an ORDER BY NULL with
 // function `OrderByDeactivated`.
 func (b *Select) GroupBy(columns ...string) *Select {
-	b.GroupBys = appendColumns(b.GroupBys, columns, false)
+	b.GroupBys = aliasAppendColumns(b.GroupBys, columns, false)
 	return b
 }
 
@@ -282,7 +287,7 @@ func (b *Select) GroupBy(columns ...string) *Select {
 // server sorts values using only the initial number of bytes indicated by the
 // max_sort_length system variable.
 func (b *Select) GroupByAsc(groups ...string) *Select {
-	b.GroupBys = appendColumns(b.GroupBys, groups, false).applySort(len(groups), sortAscending)
+	b.GroupBys = aliasAppendColumns(b.GroupBys, groups, false).applySort(len(groups), sortAscending)
 	return b
 }
 
@@ -291,14 +296,14 @@ func (b *Select) GroupByAsc(groups ...string) *Select {
 // server sorts values using only the initial number of bytes indicated by the
 // max_sort_length system variable.
 func (b *Select) GroupByDesc(groups ...string) *Select {
-	b.GroupBys = appendColumns(b.GroupBys, groups, false).applySort(len(groups), sortDescending)
+	b.GroupBys = aliasAppendColumns(b.GroupBys, groups, false).applySort(len(groups), sortDescending)
 	return b
 }
 
 // GroupByExpr adds a custom SQL expression to the GROUP BY clause. Does not
 // quote the strings nor add an ORDER BY NULL.
 func (b *Select) GroupByExpr(groups ...string) *Select {
-	b.GroupBys = appendColumns(b.GroupBys, groups, true)
+	b.GroupBys = aliasAppendColumns(b.GroupBys, groups, true)
 	return b
 }
 
@@ -320,7 +325,7 @@ func (b *Select) OrderByDeactivated() *Select {
 // column in a SELECT, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Select) OrderBy(columns ...string) *Select {
-	b.OrderBys = appendColumns(b.OrderBys, columns, false)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false)
 	return b
 }
 
@@ -329,14 +334,14 @@ func (b *Select) OrderBy(columns ...string) *Select {
 // column in a SELECT, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Select) OrderByDesc(columns ...string) *Select {
-	b.OrderBys = appendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
 	return b
 }
 
 // OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
 // quote the strings.
 func (b *Select) OrderByExpr(columns ...string) *Select {
-	b.OrderBys = appendColumns(b.OrderBys, columns, true)
+	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, true)
 	return b
 }
 
@@ -375,6 +380,19 @@ func (b *Select) ToSQL() (string, Arguments, error) {
 	return toSQL(b, b.IsInterpolate)
 }
 
+func (b *Select) writeBuildCache(sql []byte, arguments Arguments) {
+	b.buildCache = sql
+	b.RawArguments = arguments
+}
+
+func (b *Select) readBuildCache() (sql []byte, arguments Arguments) {
+	return b.buildCache, b.RawArguments
+}
+
+func (b *Select) hasBuildCache() bool {
+	return b.UseBuildCache
+}
+
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) toSQL(w queryWriter) (Arguments, error) {
@@ -384,13 +402,10 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
-	// TODO(CyS) implement SQL string cache. If cache set to true, then the
-	// finalized query will be written in the empty RawFullSQL field. if cache
-	// has been set to false, then query gets regenerated.
 
 	if b.RawFullSQL != "" {
 		w.WriteString(b.RawFullSQL)
-		return b.Arguments, nil
+		return b.RawArguments, nil
 	}
 
 	if b.Table.Name == "" && b.Table.Select == nil {
@@ -402,8 +417,8 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	// not sure if copying is necessary but leaves at least b.Arguments in pristine
 	// condition
-	var args = make(Arguments, len(b.Arguments), len(b.Arguments)+len(b.JoinFragments)+len(b.WhereFragments))
-	copy(args, b.Arguments)
+	var args = make(Arguments, len(b.RawArguments), len(b.RawArguments)+len(b.JoinFragments)+len(b.WhereFragments))
+	copy(args, b.RawArguments)
 
 	w.WriteString("SELECT ")
 

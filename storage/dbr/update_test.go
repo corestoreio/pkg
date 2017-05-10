@@ -8,6 +8,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var benchmarkUpdateValuesSQL Arguments
@@ -437,5 +438,40 @@ func TestUpdate_SetRecord(t *testing.T) {
 		assert.Nil(t, args)
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 	})
+}
 
+func TestUpdate_UseBuildCache(t *testing.T) {
+	t.Parallel()
+
+	up := NewUpdate("a").
+		Set("foo", argInt(1)).
+		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", argInt(2))).Where(Column("id", argInt(9)))
+
+	up.UseBuildCache = true
+
+	const cachedSQLPlaceHolder = "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)"
+	t.Run("without interpolate", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			sql, args, err := up.ToSQL()
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Equal(t, []interface{}{int64(1), int64(2), int64(9)}, args.Interfaces())
+			assert.Equal(t, cachedSQLPlaceHolder, string(up.buildCache))
+		}
+	})
+
+	t.Run("with interpolate", func(t *testing.T) {
+		up.Interpolate()
+		up.buildCache = nil
+		up.RawArguments = nil
+
+		const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)"
+		for i := 0; i < 3; i++ {
+			sql, args, err := up.ToSQL()
+			assert.Equal(t, cachedSQLPlaceHolder, string(up.buildCache))
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLInterpolated, sql)
+			assert.Nil(t, args)
+		}
+	})
 }

@@ -471,3 +471,46 @@ func TestInsert_Pair(t *testing.T) {
 		assert.True(t, errors.IsAlreadyExists(err), "%+v", err)
 	})
 }
+
+func TestInsert_UseBuildCache(t *testing.T) {
+	t.Parallel()
+
+	ins := NewInsert("a").AddColumns("b", "c").
+		AddValues(
+			argInt(1), argInt(2),
+			argInt(3), argInt(4),
+		).
+		AddValues(
+			argInt(5), argInt(6),
+		).
+		AddOnDuplicateKey("b", nil).
+		AddOnDuplicateKey("c", nil)
+
+	ins.UseBuildCache = true
+
+	const cachedSQLPlaceHolder = "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
+	t.Run("without interpolate", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			sql, args, err := ins.ToSQL()
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
+			assert.Equal(t, cachedSQLPlaceHolder, string(ins.buildCache))
+		}
+	})
+
+	t.Run("with interpolate", func(t *testing.T) {
+		ins.Interpolate()
+		ins.buildCache = nil
+		ins.RawArguments = nil
+
+		const cachedSQLInterpolated = "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
+		for i := 0; i < 3; i++ {
+			sql, args, err := ins.ToSQL()
+			assert.Equal(t, cachedSQLPlaceHolder, string(ins.buildCache))
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLInterpolated, sql)
+			assert.Nil(t, args)
+		}
+	})
+}
