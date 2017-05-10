@@ -89,7 +89,7 @@ func MustConnectAndVerify(opts ...ConnectionOption) *Connection {
 	if err != nil {
 		panic(err)
 	}
-	if err := c.Ping(); err != nil {
+	if err := c.DB.Ping(); err != nil {
 		panic(err)
 	}
 	return c
@@ -108,9 +108,4 @@ func (c *Connection) Options(opts ...ConnectionOption) error {
 // Close closes the database, releasing any open resources.
 func (c *Connection) Close() error {
 	return errors.Wrap(c.DB.Close(), "[dbr] connection.close")
-}
-
-// Ping verifies a connection to the database at still alive, establishing a connection if necessary.
-func (c *Connection) Ping() error {
-	return errors.Wrap(c.DB.Ping(), "[dbr] connection.ping")
 }
