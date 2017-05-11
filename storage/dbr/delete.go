@@ -108,7 +108,7 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a
 // string or map. If it'ab a string, args wil replaces any places holders
 func (b *Delete) Where(args ...ConditionArg) *Delete {
-	b.WhereFragments = appendConditions(b.WhereFragments, args...)
+	b.WhereFragments = b.WhereFragments.append(args...)
 	return b
 }
 
@@ -202,8 +202,8 @@ func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 
 	// Write WHERE clause if we have any fragments
 	var err error
-	if args, err = writeWhereFragmentsToSQL(b.WhereFragments, buf, args, 'w'); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.writeWhereFragmentsToSQL")
+	if args, err = b.WhereFragments.write(buf, args, 'w'); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.write")
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)

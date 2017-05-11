@@ -167,7 +167,7 @@ func ParenthesisClose() ConditionArg {
 	}
 }
 
-func appendConditions(wf WhereFragments, wargs ...ConditionArg) WhereFragments {
+func (wf WhereFragments) append(wargs ...ConditionArg) WhereFragments {
 	for _, warg := range wargs {
 		wf = warg.appendConditions(wf)
 	}
@@ -175,7 +175,7 @@ func appendConditions(wf WhereFragments, wargs ...ConditionArg) WhereFragments {
 }
 
 // stmtType enum of j=join, w=where, h=having
-func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, stmtType byte) (Arguments, error) {
+func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (Arguments, error) {
 	if len(wf) == 0 {
 		return args, nil
 	}
@@ -251,7 +251,7 @@ func writeWhereFragmentsToSQL(wf WhereFragments, w queryWriter, args Arguments, 
 				subArgs, err := f.Sub.Select.toSQL(w)
 				w.WriteByte(')')
 				if err != nil {
-					return nil, errors.Wrapf(err, "[dbr] writeWhereFragmentsToSQL failed SubSelect for table: %q", f.Sub.Select.Table.String())
+					return nil, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
 				}
 				args = append(args, subArgs...)
 			} else {

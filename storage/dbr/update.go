@@ -153,7 +153,7 @@ func (b *Update) Where(args ...ConditionArg) *Update {
 	if b.previousError != nil {
 		return b
 	}
-	b.WhereFragments = appendConditions(b.WhereFragments, args...)
+	b.WhereFragments = b.WhereFragments.append(args...)
 	return b
 }
 
@@ -282,8 +282,8 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 
 	var err error
 	// Write WHERE clause if we have any fragments
-	if args, err = writeWhereFragmentsToSQL(b.WhereFragments, buf, args, 'w'); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.writeWhereFragmentsToSQL")
+	if args, err = b.WhereFragments.write(buf, args, 'w'); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.write")
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
