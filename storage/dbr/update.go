@@ -162,7 +162,7 @@ func (b *Update) Where(args ...ConditionArg) *Update {
 // column in a UPDATE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Update) OrderBy(columns ...string) *Update {
-	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false)
+	b.OrderBys = b.OrderBys.appendColumns(columns, false)
 	return b
 }
 
@@ -171,14 +171,14 @@ func (b *Update) OrderBy(columns ...string) *Update {
 // column in a UPDATE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Update) OrderByDesc(columns ...string) *Update {
-	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	b.OrderBys = b.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
 	return b
 }
 
 // OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
 // quote the strings.
 func (b *Update) OrderByExpr(columns ...string) *Update {
-	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, true)
+	b.OrderBys = b.OrderBys.appendColumns(columns, true)
 	return b
 }
 

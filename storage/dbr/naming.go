@@ -150,7 +150,7 @@ func (as aliases) applySort(lastNindexes int, sort byte) aliases {
 	return as
 }
 
-func aliasAppendColumns(as aliases, columns []string, isExpression bool) aliases {
+func (as aliases) appendColumns(columns []string, isExpression bool) aliases {
 	if len(as) == 0 {
 		as = make(aliases, 0, len(columns))
 	}
@@ -161,7 +161,7 @@ func aliasAppendColumns(as aliases, columns []string, isExpression bool) aliases
 }
 
 // columns must be balanced slice. i=column name, i+1=alias name
-func aliasAppendColumnsAliases(as aliases, columns []string, isExpression bool) aliases {
+func (as aliases) appendColumnsAliases(columns []string, isExpression bool) aliases {
 	if len(as) == 0 {
 		as = make(aliases, 0, len(columns)/2)
 	}

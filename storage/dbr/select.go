@@ -87,9 +87,9 @@ type Select struct {
 
 // NewSelect creates a new Select object.
 func NewSelect(columns ...string) *Select {
-	return &Select{
-		Columns: aliasAppendColumns(nil, columns, false),
-	}
+	s := new(Select)
+	s.Columns = s.Columns.appendColumns(columns, false)
+	return s
 }
 
 // NewSelectFromSub creates a new derived table (Subquery in the FROM Clause)
@@ -112,9 +112,9 @@ func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
 // Columns won't get quoted.
 func (c *Connection) Select(columns ...string) *Select {
 	s := &Select{
-		Log:     c.Log,
-		Columns: aliasAppendColumns(nil, columns, false),
+		Log: c.Log,
 	}
+	s.Columns = s.Columns.appendColumns(columns, false)
 	s.DB.Querier = c.DB
 	s.DB.Preparer = c.DB
 	return s
@@ -135,9 +135,9 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 // Select creates a new Select that select that given columns bound to the transaction
 func (tx *Tx) Select(columns ...string) *Select {
 	s := &Select{
-		Log:     tx.Logger,
-		Columns: aliasAppendColumns(nil, columns, false),
+		Log: tx.Logger,
 	}
+	s.Columns = s.Columns.appendColumns(columns, false)
 	s.DB.Querier = tx.Tx
 	s.DB.Preparer = tx.Tx
 	return s
@@ -229,7 +229,7 @@ func (b *Select) From(from ...string) *Select {
 // 		AddColumns("a,b","z","c,d")	// `a,b`,`z`,`c,d` <- invalid SQL!
 //		AddColumns("t1.name","t1.sku","price") // `t1`.`name`, `t1`.`sku`,`price`
 func (b *Select) AddColumns(cols ...string) *Select {
-	b.Columns = aliasAppendColumns(b.Columns, cols, false)
+	b.Columns = b.Columns.appendColumns(cols, false)
 	return b
 }
 
@@ -241,7 +241,7 @@ func (b *Select) AddColumnsAlias(columnAliases ...string) *Select {
 	if (len(columnAliases) % 2) == 1 {
 		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columnAliases)
 	} else {
-		b.Columns = aliasAppendColumnsAliases(b.Columns, columnAliases, false)
+		b.Columns = b.Columns.appendColumnsAliases(columnAliases, false)
 	}
 	return b
 }
@@ -253,7 +253,7 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	if (len(expressionAliases) % 2) == 1 {
 		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", expressionAliases)
 	} else {
-		b.Columns = aliasAppendColumnsAliases(b.Columns, expressionAliases, true)
+		b.Columns = b.Columns.appendColumnsAliases(expressionAliases, true)
 	}
 	return b
 }
@@ -278,7 +278,7 @@ func (b *Select) Where(c ...ConditionArg) *Select {
 // that GROUP BY produces this function should add an ORDER BY NULL with
 // function `OrderByDeactivated`.
 func (b *Select) GroupBy(columns ...string) *Select {
-	b.GroupBys = aliasAppendColumns(b.GroupBys, columns, false)
+	b.GroupBys = b.GroupBys.appendColumns(columns, false)
 	return b
 }
 
@@ -287,7 +287,7 @@ func (b *Select) GroupBy(columns ...string) *Select {
 // server sorts values using only the initial number of bytes indicated by the
 // max_sort_length system variable.
 func (b *Select) GroupByAsc(groups ...string) *Select {
-	b.GroupBys = aliasAppendColumns(b.GroupBys, groups, false).applySort(len(groups), sortAscending)
+	b.GroupBys = b.GroupBys.appendColumns(groups, false).applySort(len(groups), sortAscending)
 	return b
 }
 
@@ -296,14 +296,14 @@ func (b *Select) GroupByAsc(groups ...string) *Select {
 // server sorts values using only the initial number of bytes indicated by the
 // max_sort_length system variable.
 func (b *Select) GroupByDesc(groups ...string) *Select {
-	b.GroupBys = aliasAppendColumns(b.GroupBys, groups, false).applySort(len(groups), sortDescending)
+	b.GroupBys = b.GroupBys.appendColumns(groups, false).applySort(len(groups), sortDescending)
 	return b
 }
 
 // GroupByExpr adds a custom SQL expression to the GROUP BY clause. Does not
 // quote the strings nor add an ORDER BY NULL.
 func (b *Select) GroupByExpr(groups ...string) *Select {
-	b.GroupBys = aliasAppendColumns(b.GroupBys, groups, true)
+	b.GroupBys = b.GroupBys.appendColumns(groups, true)
 	return b
 }
 
@@ -325,7 +325,7 @@ func (b *Select) OrderByDeactivated() *Select {
 // column in a SELECT, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Select) OrderBy(columns ...string) *Select {
-	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false)
+	b.OrderBys = b.OrderBys.appendColumns(columns, false)
 	return b
 }
 
@@ -334,14 +334,14 @@ func (b *Select) OrderBy(columns ...string) *Select {
 // column in a SELECT, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Select) OrderByDesc(columns ...string) *Select {
-	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	b.OrderBys = b.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
 	return b
 }
 
 // OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
 // quote the strings.
 func (b *Select) OrderByExpr(columns ...string) *Select {
-	b.OrderBys = aliasAppendColumns(b.OrderBys, columns, true)
+	b.OrderBys = b.OrderBys.appendColumns(columns, true)
 	return b
 }
 
