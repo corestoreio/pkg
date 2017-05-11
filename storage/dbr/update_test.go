@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -10,39 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var benchmarkUpdateValuesSQL Arguments
-
-func BenchmarkUpdateValuesSQL(b *testing.B) {
-	s := createFakeSession()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, args, err := s.Update("alpha").Set("something_id", argInt64(1)).Where(Column("id", argInt64(1))).ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
-		}
-		benchmarkUpdateValuesSQL = args
-	}
-}
-
-func BenchmarkUpdateValueMapSQL(b *testing.B) {
-	s := createFakeSession()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, args, err := s.Update("alpha").
-			Set("something_id", argInt64(1)).
-			SetMap(map[string]Argument{
-				"b": argInt64(2),
-				"c": argInt64(3),
-			}).
-			Where(Column("id", argInt(1))).
-			ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
-		}
-		benchmarkUpdateValuesSQL = args
-	}
-}
 
 func TestUpdateAllToSQL(t *testing.T) {
 	s := createFakeSession()
@@ -374,25 +355,6 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `sku`=VALUES(`sku`), `stock`=?", buf.String())
 		assert.Exactly(t, []interface{}{"E0S 5D Mark III", int64(14)}, args.Interfaces())
 	})
-}
-
-// BenchmarkUpdatedColumns_writeOnDuplicateKey-4   	 5000000	       337 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
-	buf := new(bytes.Buffer)
-	args := make(Arguments, 0, 2)
-	uc := UpdatedColumns{
-		Columns:   []string{"name", "sku", "stock"},
-		Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, argInt64(14)},
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var err error
-		if args, err = uc.writeOnDuplicateKey(buf, args); err != nil {
-			b.Fatalf("%+v", err)
-		}
-		buf.Reset()
-		args = args[:0]
-	}
 }
 
 func TestUpdate_SetRecord(t *testing.T) {

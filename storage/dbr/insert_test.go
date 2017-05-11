@@ -51,40 +51,6 @@ func (sr someRecord) ProduceInsertArgs(args Arguments, columns []string) (Argume
 	return args, nil
 }
 
-var benchmarkInsertValuesSQLArgs Arguments
-
-func BenchmarkInsertValuesSQL(b *testing.B) {
-	s := createFakeSession()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, args, err := s.InsertInto("alpha").AddColumns("something_id", "user_id", "other").AddValues(
-			argInt(1), argInt(2), ArgBool(true),
-		).ToSQL()
-		if err != nil {
-			b.Fatal(err)
-		}
-		benchmarkInsertValuesSQLArgs = args
-	}
-}
-
-func BenchmarkInsertRecordsSQL(b *testing.B) {
-	s := createFakeSession()
-	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, args, err := s.InsertInto("alpha").
-			AddColumns("something_id", "user_id", "other").
-			AddRecords(obj).
-			ToSQL()
-		if err != nil {
-			b.Fatal(err)
-		}
-		benchmarkInsertValuesSQLArgs = args
-		// ifaces = args.Interfaces()
-	}
-}
-
 func TestInsertSingleToSQL(t *testing.T) {
 	s := createFakeSession()
 
@@ -137,14 +103,14 @@ func TestInsertRecordsToSQL(t *testing.T) {
 	s := createFakeSession()
 
 	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
-	sql, args, err := s.InsertInto("a").
+	sqlStr, args, err := s.InsertInto("a").
 		AddColumns("something_id", "user_id", "other").
 		AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
 		AddOnDuplicateKey("something_id", argInt64(99)).
 		AddOnDuplicateKey("user_id", nil).
 		ToSQL()
 	require.NoError(t, err)
-	assert.Equal(t, "INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)", sql)
+	assert.Equal(t, "INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)", sqlStr)
 	// without fmt.Sprint we have an error despite objects are equal ...
 	assert.Equal(t, fmt.Sprint([]interface{}{1, 88, false, 2, 99, true, 3, 101, true, int64(99)}), fmt.Sprint(args.Interfaces()))
 }
@@ -153,10 +119,10 @@ func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
 	s := createFakeSession()
 
 	objs := []someRecord{{1, 88, false}, {2, 99, true}}
-	sql, args, err := s.InsertInto("a").AddColumns("something_it", "user_id", "other").AddRecords(objs[0]).AddRecords(objs[1]).ToSQL()
+	sqlStr, args, err := s.InsertInto("a").AddColumns("something_it", "user_id", "other").AddRecords(objs[0]).AddRecords(objs[1]).ToSQL()
 	assert.True(t, errors.IsNotFound(err), "%+v", err)
 	assert.Nil(t, args)
-	assert.Empty(t, sql)
+	assert.Empty(t, sqlStr)
 }
 
 func TestInsertKeywordColumnName(t *testing.T) {

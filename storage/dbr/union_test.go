@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbr_test
+package dbr
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnion(t *testing.T) {
 	t.Parallel()
 	t.Run("simple", func(t *testing.T) {
-		u := dbr.NewUnion(
-			dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("a", dbr.ArgInt64(3))),
+		u := NewUnion(
+			NewSelect("a", "b").From("tableAB").Where(Column("a", ArgInt64(3))),
 		)
 		u.Append(
-			dbr.NewSelect("c", "d").From("tableCD").Where(dbr.Column("d", dbr.ArgString("e"))),
+			NewSelect("c", "d").From("tableCD").Where(Column("d", ArgString("e"))),
 		)
 
 		uStr, args, err := u.ToSQL()
@@ -41,9 +41,9 @@ func TestUnion(t *testing.T) {
 	})
 
 	t.Run("simple all", func(t *testing.T) {
-		u := dbr.NewUnion(
-			dbr.NewSelect("c", "d").From("tableCD").Where(dbr.Column("d", dbr.ArgString("e"))),
-			dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("a", dbr.ArgInt64(3))),
+		u := NewUnion(
+			NewSelect("c", "d").From("tableCD").Where(Column("d", ArgString("e"))),
+			NewSelect("a", "b").From("tableAB").Where(Column("a", ArgInt64(3))),
 		).All()
 
 		uStr, args, err := u.ToSQL()
@@ -55,9 +55,9 @@ func TestUnion(t *testing.T) {
 	})
 
 	t.Run("order by", func(t *testing.T) {
-		u := dbr.NewUnion(
-			dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD").Where(dbr.Column("d", dbr.ArgString("f"))),
-			dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("a", dbr.ArgInt64(3))),
+		u := NewUnion(
+			NewSelect("a").AddColumnsAlias("d", "b").From("tableAD").Where(Column("d", ArgString("f"))),
+			NewSelect("a", "b").From("tableAB").Where(Column("a", ArgInt64(3))),
 		).All().OrderBy("a").OrderByDesc("b")
 
 		uStr, args, err := u.ToSQL()
@@ -69,9 +69,9 @@ func TestUnion(t *testing.T) {
 	})
 
 	t.Run("preserve result set", func(t *testing.T) {
-		u := dbr.NewUnion(
-			dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
-			dbr.NewSelect("a", "b").From("tableAB"),
+		u := NewUnion(
+			NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
+			NewSelect("a", "b").From("tableAB"),
 		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
 		// testing idempotent function ToSQL
@@ -82,6 +82,42 @@ func TestUnion(t *testing.T) {
 			assert.Exactly(t,
 				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB`)\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC",
 				uStr)
+		}
+	})
+}
+
+func TestUnion_UseBuildCache(t *testing.T) {
+	t.Parallel()
+
+	u := NewUnion(
+		NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
+		NewSelect("a", "b").From("tableAB").Where(Column("b", ArgFloat64(3.14159))),
+	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
+	u.UseBuildCache = true
+
+	const cachedSQLPlaceHolder = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC"
+	t.Run("without interpolate", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			sql, args, err := u.ToSQL()
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Equal(t, []interface{}{float64(3.14159)}, args.Interfaces())
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
+		}
+	})
+
+	t.Run("with interpolate", func(t *testing.T) {
+		u.Interpolate()
+		u.buildCache = nil
+		u.RawArguments = nil
+
+		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC"
+		for i := 0; i < 3; i++ {
+			sql, args, err := u.ToSQL()
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLInterpolated, sql)
+			assert.Nil(t, args)
 		}
 	})
 }
@@ -125,10 +161,10 @@ func TestNewUnionTemplate(t *testing.T) {
 	*/
 
 	t.Run("full statement EAV", func(t *testing.T) {
-		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
+		u := NewUnionTemplate(
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
 				From("catalog_product_entity_{type}", "t").
-				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
+				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", ArgInt64(1, 0).Operator(In))).
 				OrderByDesc("t.{column}_store_id"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -155,8 +191,8 @@ func TestNewUnionTemplate(t *testing.T) {
 		}
 	})
 	t.Run("StringReplace 2nd call fewer values", func(t *testing.T) {
-		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
+		u := NewUnionTemplate(
+			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX")
@@ -167,8 +203,8 @@ func TestNewUnionTemplate(t *testing.T) {
 		assert.True(t, errors.IsNotValid(err), "%+v")
 	})
 	t.Run("StringReplace 2nd call too many values", func(t *testing.T) {
-		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
+		u := NewUnionTemplate(
+			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX", "bytesX")
@@ -197,75 +233,58 @@ func TestNewUnionTemplate(t *testing.T) {
 		// never see the scoped data because the default data overwrites
 		// everything when loading the PHP array.
 
-		u := dbr.NewUnionTemplate(
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
+		u := NewUnionTemplate(
+			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
+				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", ArgInt64(1, 0).Operator(In))),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			PreserveResultSet().
-			All().OrderBy("attribute_id", "store_id")
-
-		sqlStr, err := u.Interpolate()
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
+			All().OrderBy("attribute_id", "store_id").
+			Interpolate()
+		sqlStr, args, err := u.ToSQL()
+		require.NoError(t, err)
+		assert.Nil(t, args)
 		assert.Exactly(t,
 			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC",
 			sqlStr)
 	})
 }
 
-var benchmarkGlobalArgs dbr.Arguments
+func TestUnionTemplate_UseBuildCache(t *testing.T) {
+	t.Parallel()
 
-// BenchmarkUnion_AllOptions-4           	  300000	      5345 ns/op	    1680 B/op	       8 allocs/op
-func BenchmarkUnion_AllOptions(b *testing.B) {
-
-	u := dbr.NewUnion(
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.varchar AS `col_type`").From("catalog_product_entity_varchar", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
-			OrderByDesc("t.varchar_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.int AS `col_type`").From("catalog_product_entity_int", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
-			OrderByDesc("t.int_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.decimal AS `col_type`").From("catalog_product_entity_decimal", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
-			OrderByDesc("t.decimal_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.datetime AS `col_type`").From("catalog_product_entity_datetime", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
-			OrderByDesc("t.datetime_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.text AS `col_type`").From("catalog_product_entity_text", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
-			OrderByDesc("t.text_store_id"),
-	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
-
-	for i := 0; i < b.N; i++ {
-		_, args, err := u.ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
-		}
-		benchmarkGlobalArgs = args
-	}
-}
-
-// BenchmarkUnionTemplate_AllOptions-4   	  300000	      6068 ns/op	    1712 B/op	       4 allocs/op
-func BenchmarkUnionTemplate_AllOptions(b *testing.B) {
-	u := dbr.NewUnionTemplate(
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
-			OrderByDesc("t.{column}_store_id"),
+	u := NewUnionTemplate(
+		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
+			Where(Column("entity_id", ArgInt64(1561)), Column("store_id", ArgInt64(1, 0).Operator(In))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
-		StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX").
 		PreserveResultSet().
-		All().
-		OrderByDesc("col_type")
+		All().OrderBy("attribute_id", "store_id")
+	u.UseBuildCache = true
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, args, err := u.ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
+	const cachedSQLPlaceHolder = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN ?))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC"
+	t.Run("without interpolate", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			sql, args, err := u.ToSQL()
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLPlaceHolder, sql)
+			assert.Equal(t, []interface{}{int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0)}, args.Interfaces())
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
 		}
-		benchmarkGlobalArgs = args
-	}
+	})
+
+	t.Run("with interpolate", func(t *testing.T) {
+		u.Interpolate()
+		u.buildCache = nil
+		u.RawArguments = nil
+
+		const cachedSQLInterpolated = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC"
+		for i := 0; i < 3; i++ {
+			sql, args, err := u.ToSQL()
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
+			require.NoError(t, err, "%+v", err)
+			require.Equal(t, cachedSQLInterpolated, sql)
+			assert.Nil(t, args)
+		}
+	})
 }

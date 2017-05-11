@@ -25,9 +25,16 @@ import (
 // Union represents a UNION SQL statement. UNION is used to combine the result
 // from multiple SELECT statements into a single result set.
 type Union struct {
-	Selects  []*Select
-	OrderBys aliases
-	IsAll    bool
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
+	buildCache    []byte
+	RawArguments  Arguments // Arguments used by RawFullSQL or BuildCache
+
+	Selects       []*Select
+	OrderBys      aliases
+	IsAll         bool // IsAll enables UNION ALL
+	IsInterpolate bool // See Interpolate()
 }
 
 // NewUnion creates a new Union object.
@@ -68,7 +75,7 @@ func (u *Union) PreserveResultSet() *Union {
 // is slow. Under different conditions sorting can skip the temporary table.
 // https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
 func (u *Union) OrderBy(columns ...string) *Union {
-	u.OrderBys = appendColumns(u.OrderBys, columns, false).applySort(len(columns), sortAscending)
+	u.OrderBys = u.OrderBys.appendColumns(columns, false).applySort(len(columns), sortAscending)
 	return u
 }
 
@@ -77,22 +84,46 @@ func (u *Union) OrderBy(columns ...string) *Union {
 // column in a DELETE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (u *Union) OrderByDesc(columns ...string) *Union {
-	u.OrderBys = appendColumns(u.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	u.OrderBys = u.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
 	return u
 }
 
 // OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
 // quote the strings.
 func (u *Union) OrderByExpr(columns ...string) *Union {
-	u.OrderBys = appendColumns(u.OrderBys, columns, true)
+	u.OrderBys = u.OrderBys.appendColumns(columns, true)
 	return u
 }
 
-// ToSQL renders the UNION into a string and returns its arguments. This
-// function is idempotent.
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+func (u *Union) Interpolate() *Union {
+	u.IsInterpolate = true
+	return u
+}
+
+// ToSQL converts the select statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, Arguments, error) {
-	var w = bufferpool.Get()
-	defer bufferpool.Put(w)
+	return toSQL(u, u.IsInterpolate)
+}
+
+func (u *Union) writeBuildCache(sql []byte, arguments Arguments) {
+	u.buildCache = sql
+	u.RawArguments = arguments
+}
+
+func (u *Union) readBuildCache() (sql []byte, arguments Arguments) {
+	return u.buildCache, u.RawArguments
+}
+
+func (u *Union) hasBuildCache() bool {
+	return u.UseBuildCache
+}
+
+// ToSQL generates the SQL string and its arguments. Calls to this function are
+// idempotent.
+func (u *Union) toSQL(w queryWriter) (Arguments, error) {
 
 	args := make(Arguments, 0, len(u.Selects))
 	for i, s := range u.Selects {
@@ -103,24 +134,31 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 		w.WriteByte('(')
 		sArgs, err := s.toSQL(w)
 		if err != nil {
-			return "", nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
+			return nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
 		}
 		w.WriteByte(')')
 		args = append(args, sArgs...)
 	}
 	sqlWriteOrderBy(w, u.OrderBys, true)
-	return w.String(), args, nil
+	return args, nil
 }
 
 // UnionTemplate builds multiple select statements joined by UNION and all based
 // on a common template.
 type UnionTemplate struct {
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
+	buildCache    []byte
+	RawArguments  Arguments // Arguments used by RawFullSQL or BuildCache
+
 	Select        *Select
-	oldNew        [][]string
+	oldNew        [][]string //use for string replacement with `repls` field
 	repls         []*strings.Replacer
 	stmtCount     int
 	OrderBys      aliases
-	IsAll         bool
+	IsAll         bool // IsAll enables UNION ALL
+	IsInterpolate bool // See Interpolate()
 	previousError error
 }
 
@@ -160,7 +198,7 @@ func (ut *UnionTemplate) PreserveResultSet() *UnionTemplate {
 // is slow. Under different conditions sorting can skip the temporary table.
 // https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
 func (ut *UnionTemplate) OrderBy(columns ...string) *UnionTemplate {
-	ut.OrderBys = appendColumns(ut.OrderBys, columns, false).applySort(len(columns), sortAscending)
+	ut.OrderBys = ut.OrderBys.appendColumns(columns, false).applySort(len(columns), sortAscending)
 	return ut
 }
 
@@ -169,14 +207,14 @@ func (ut *UnionTemplate) OrderBy(columns ...string) *UnionTemplate {
 // column in a DELETE, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (ut *UnionTemplate) OrderByDesc(columns ...string) *UnionTemplate {
-	ut.OrderBys = appendColumns(ut.OrderBys, columns, false).applySort(len(columns), sortDescending)
+	ut.OrderBys = ut.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
 	return ut
 }
 
 // OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
 // quote the strings.
 func (ut *UnionTemplate) OrderByExpr(columns ...string) *UnionTemplate {
-	ut.OrderBys = appendColumns(ut.OrderBys, columns, true)
+	ut.OrderBys = ut.OrderBys.appendColumns(columns, true)
 	return ut
 }
 
@@ -213,21 +251,37 @@ func (ut *UnionTemplate) MultiplyArguments(args ...Argument) Arguments {
 	return ret
 }
 
-// Interpolate wrapper function which calls ToSQL and then Interpolate.
-func (ut *UnionTemplate) Interpolate() (string, error) {
-	sStr, args, err := ut.ToSQL()
-	if err != nil {
-		return "", errors.Wrap(err, "[dbr] UnionTemplate.Interpolate.ToSQL")
-	}
-	sStr, err = Interpolate(sStr, args...)
-	return sStr, errors.Wrap(err, "[dbr] UnionTemplate.Interpolate.Interpolate")
+// Interpolate if set stringyfies the arguments into the SQL string and returns
+// pre-processed SQL command when calling the function ToSQL. Not suitable for
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+func (ut *UnionTemplate) Interpolate() *UnionTemplate {
+	ut.IsInterpolate = true
+	return ut
+}
+
+// ToSQL converts the select statement into a string and returns its arguments.
+func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
+	return toSQL(ut, ut.IsInterpolate)
+}
+
+func (ut *UnionTemplate) writeBuildCache(sql []byte, arguments Arguments) {
+	ut.buildCache = sql
+	ut.RawArguments = arguments
+}
+
+func (ut *UnionTemplate) readBuildCache() (sql []byte, arguments Arguments) {
+	return ut.buildCache, ut.RawArguments
+}
+
+func (ut *UnionTemplate) hasBuildCache() bool {
+	return ut.UseBuildCache
 }
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
-func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
+func (ut *UnionTemplate) toSQL(wu queryWriter) (Arguments, error) {
 	if ut.previousError != nil {
-		return "", nil, ut.previousError
+		return nil, ut.previousError
 	}
 
 	w := bufferpool.Get()
@@ -235,11 +289,8 @@ func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
 	selStr := w.String()
 	bufferpool.Put(w)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] UnionTpl.ToSQL: toSQL template")
+		return nil, errors.Wrap(err, "[dbr] UnionTpl.ToSQL: toSQL template")
 	}
-
-	wu := bufferpool.Get()
-	defer bufferpool.Put(wu)
 
 	for i := 0; i < ut.stmtCount; i++ {
 		repl := ut.repls[i]
@@ -255,5 +306,5 @@ func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
 		wu.WriteByte(')')
 	}
 	sqlWriteOrderBy(wu, ut.OrderBys, true)
-	return wu.String(), ut.MultiplyArguments(tplArgs...), nil
+	return ut.MultiplyArguments(tplArgs...), nil
 }

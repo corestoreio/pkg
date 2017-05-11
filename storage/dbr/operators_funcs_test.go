@@ -128,45 +128,6 @@ func TestSQLIfNull(t *testing.T) {
 	))
 }
 
-func BenchmarkIfNull(b *testing.B) {
-	runner := func(want string, have ...string) func(*testing.B) {
-		return func(b *testing.B) {
-			var result string
-			for i := 0; i < b.N; i++ {
-				result = dbr.SQLIfNull(have...)
-			}
-			if result != want {
-				b.Fatalf("\nHave: %q\nWant: %q", result, want)
-			}
-		}
-	}
-	b.Run("3 args expression right", runner(
-		"IFNULL(`c2`,(1/0)) AS `alias`",
-		"c2", "1/0", "alias",
-	))
-	b.Run("3 args no qualifier", runner(
-		"IFNULL(`c1`,`c2`) AS `alias`",
-		"c1", "c2", "alias",
-	))
-	b.Run("3 args with qualifier", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
-		"t1.c1", "t2.c2", "alias",
-	))
-
-	b.Run("4 args", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`)",
-		"t1", "c1", "t2", "c2",
-	))
-	b.Run("5 args", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
-		"t1", "c1", "t2", "c2", "alias",
-	))
-	b.Run("6 args", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x`",
-		"t1", "c1", "t2", "c2", "alias", "x",
-	))
-}
-
 func TestSQLIf(t *testing.T) {
 	assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value"))
 

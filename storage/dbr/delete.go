@@ -45,10 +45,6 @@ type Delete struct {
 		Preparer
 		Execer
 	}
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
-	UseBuildCache bool
-	buildCache    []byte
 
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
@@ -65,6 +61,10 @@ type Delete struct {
 	// listeners will be suppressed.
 	PropagationStopped bool
 	IsInterpolate      bool // See Interpolate()
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
+	buildCache    []byte
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners DeleteListeners

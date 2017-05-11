@@ -34,14 +34,14 @@ type alias struct {
 	// Select used in cases where a sub-select is required. Ignored in any other
 	// cases.
 	Select *Select
-	// IsExpression if true the field `Name` will be treated as an expression and
-	// won't get quoted when generating the SQL.
-	IsExpression bool
 	// Name can be any kind of SQL expression or a valid identifier. It gets
 	// quoted when `IsExpression` is false.
 	Name string
 	// Alias must be a valid identifier allowed for alias usage.
 	Alias string
+	// IsExpression if true the field `Name` will be treated as an expression and
+	// won't get quoted when generating the SQL.
+	IsExpression bool
 	// Sort applies only to GROUP BY and ORDER BY clauses. 'd'=descending,
 	// 0=default or nothing; 'a'=ascending.
 	Sort byte

@@ -24,20 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var benchmarkDeleteSQL Arguments
-
-func BenchmarkDeleteSQL(b *testing.B) {
-	s := createFakeSession()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var err error
-		_, benchmarkDeleteSQL, err = s.DeleteFrom("alpha").Where(Column("a", ArgString("b"))).Limit(1).OrderBy("id").ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
-		}
-	}
-}
-
 func TestDeleteAllToSQL(t *testing.T) {
 	s := createFakeSession()
 

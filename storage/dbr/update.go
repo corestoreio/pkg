@@ -31,13 +31,9 @@ type Update struct {
 	}
 	// TODO: add UPDATE JOINS
 
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
-	UseBuildCache bool
-	buildCache    []byte
-
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
+	buildCache   []byte
 
 	Table alias
 	// SetClauses contains the column/argument association. For each column
@@ -54,6 +50,9 @@ type Update struct {
 	// listeners will be suppressed.
 	PropagationStopped bool
 	IsInterpolate      bool // See Interpolate()
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners UpdateListeners

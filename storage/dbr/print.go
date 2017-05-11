@@ -40,6 +40,7 @@ type queryWriter interface {
 	WriteString(s string) (n int, err error)
 	WriteRune(r rune) (n int, err error)
 	WriteByte(c byte) error
+	Write(p []byte) (n int, err error)
 }
 
 // toSQL serialized the Insert to a SQL string

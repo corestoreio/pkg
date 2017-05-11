@@ -95,9 +95,9 @@ type WhereFragments []*whereFragment
 
 // Conditions iterates over each WHERE fragment and assembles all conditions
 // into a new slice.
-func (wfs WhereFragments) Conditions() []string {
-	c := make([]string, len(wfs))
-	for i, w := range wfs {
+func (wf WhereFragments) Conditions() []string {
+	c := make([]string, len(wf))
+	for i, w := range wf {
 		c[i] = w.Condition
 	}
 	return c

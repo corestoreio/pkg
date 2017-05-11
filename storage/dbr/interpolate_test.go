@@ -64,44 +64,6 @@ func TestRepeat(t *testing.T) {
 	})
 }
 
-func BenchmarkRepeat(b *testing.B) {
-
-	b.Run("multi", func(b *testing.B) {
-		sl := []string{"a", "b", "c", "d", "e"}
-		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)",
-				ArgInt(5, 7, 9, 11), ArgString(sl...), argInt(22))
-			if err != nil {
-				b.Fatalf("%+v", err)
-			}
-			if s != want {
-				b.Fatalf("\nHave: %q\nWant: %q", s, want)
-			}
-			if len(args) == 0 {
-				b.Fatal("Args cannot be empty")
-			}
-		}
-	})
-
-	b.Run("single", func(b *testing.B) {
-		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
-		for i := 0; i < b.N; i++ {
-			s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(9, 8, 7, 6))
-			if err != nil {
-				b.Fatalf("%+v", err)
-			}
-			if s != want {
-				b.Fatalf("\nHave: %q\nWant: %q", s, want)
-			}
-			if len(args) == 0 {
-				b.Fatal("Args cannot be empty")
-			}
-		}
-	})
-}
-
 func TestInterpolateNil(t *testing.T) {
 	t.Parallel()
 	str, err := Interpolate("SELECT * FROM x WHERE a = ?", ArgNull())
@@ -238,33 +200,6 @@ func TestInterpolateInt64(t *testing.T) {
 	})
 }
 
-var preprocessSink string
-
-// BenchmarkInterpolate-4   	  500000	      4013 ns/op	     174 B/op	      11 allocs/op with reflection
-// BenchmarkInterpolate-4   	  500000	      3591 ns/op	     174 B/op	      11 allocs/op string
-// BenchmarkInterpolate-4   	  500000	      3599 ns/op	     174 B/op	      11 allocs/op []byte
-func BenchmarkInterpolate(b *testing.B) {
-	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
-	sqlBytes := []byte("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?")
-	args := Arguments{
-		ArgInt64(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
-		ArgString("Hello"),
-		ArgBool(true),
-	}
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var err error
-		preprocessSink, err = interpolate(sqlBytes, args...)
-		if err != nil {
-			b.Fatal(err)
-		}
-	}
-	if preprocessSink != want {
-		b.Fatalf("Have: %v Want: %v", preprocessSink, want)
-	}
-}
-
 func TestInterpolateBools(t *testing.T) {
 	t.Parallel()
 	t.Run("single args", func(t *testing.T) {
@@ -344,7 +279,7 @@ func TestInterpolateSlices(t *testing.T) {
 }
 
 func TestInterpolate(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		sql string
 		Arguments

@@ -35,11 +35,6 @@ type Select struct {
 		Preparer
 	}
 
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
-	UseBuildCache bool
-	buildCache    []byte
-
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
 
@@ -74,6 +69,10 @@ type Select struct {
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
+	// UseBuildCache if set to true the final build query will be stored in
+	// field private field `buildCache` and the arguments in field `Arguments`
+	UseBuildCache bool
+	buildCache    []byte
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners SelectListeners

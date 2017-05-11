@@ -70,34 +70,56 @@ func TestSelectFullToSQL(t *testing.T) {
 func TestSelect_Interpolate(t *testing.T) {
 	t.Parallel()
 
-	sql, args, err := NewSelect("a", "b").
-		Distinct().
-		From("c", "cc").
-		Where(
-			ParenthesisOpen(),
-			Column("d", argInt(1)),
-			Column("e", ArgString("wat")).Or(),
-			ParenthesisClose(),
-			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
-		).
-		Where(Eq{"h": ArgInt64(4, 5, 6).Operator(In)}).
-		GroupBy("ab").
-		Having(
-			ParenthesisOpen(),
-			Column("m", argInt(33)),
-			Column("n", ArgString("wh3r3")).Or(),
-			ParenthesisClose(),
-			Column("j = k"),
-		).
-		OrderBy("l").
-		Limit(7).
-		Offset(8).
-		Interpolate().
-		ToSQL()
+	t.Run("with paranthesis", func(t *testing.T) {
+		sql, args, err := NewSelect("a", "b").
+			Distinct().
+			From("c", "cc").
+			Where(
+				ParenthesisOpen(),
+				Column("d", argInt(1)),
+				Column("e", ArgString("wat")).Or(),
+				ParenthesisClose(),
+				Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
+			).
+			Where(Eq{"h": ArgInt64(4, 5, 6).Operator(In)}).
+			GroupBy("ab").
+			Having(
+				ParenthesisOpen(),
+				Column("m", argInt(33)),
+				Column("n", ArgString("wh3r3")).Or(),
+				ParenthesisClose(),
+				Column("j = k"),
+			).
+			OrderBy("l").
+			Limit(7).
+			Offset(8).
+			Interpolate().
+			ToSQL()
 
-	require.NoError(t, err)
-	assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8", sql)
-	assert.Nil(t, args)
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8", sql)
+		assert.Nil(t, args)
+	})
+
+	t.Run("two args in one condition", func(t *testing.T) {
+
+		sql, args, err := NewSelect("a", "b", "z", "y", "x").From("c").
+			Distinct().
+			Where(Expression("`d` = ? OR `e` = ?", ArgInt64(1), ArgString("wat"))).
+			Where(Eq{"g": ArgInt64(3)}).
+			Where(Eq{"h": ArgInt(1, 2, 3).Operator(In)}).
+			GroupBy("ab").GroupBy("ii").GroupBy("iii").
+			Having(Column("j = k"), Column("jj", ArgInt64(1))).
+			Having(Column("jjj", ArgInt64(2))).
+			OrderBy("l1").OrderBy("l2").OrderBy("l3").
+			Limit(7).Offset(8).
+			Interpolate().
+			ToSQL()
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8", sql)
+		assert.Nil(t, args)
+
+	})
 }
 
 func TestSelectPaginateOrderDirToSQL(t *testing.T) {

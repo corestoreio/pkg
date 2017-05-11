@@ -56,47 +56,6 @@ func TestQuoteAs(t *testing.T) {
 	}
 }
 
-func BenchmarkQuoteAs(b *testing.B) {
-	const want = "`e`.`entity_id` AS `ee`"
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		if have := Quoter.QuoteAs("e.entity_id", "ee"); have != want {
-			b.Fatalf("Have %s\nWant %s\n", have, want)
-		}
-	}
-}
-
-func BenchmarkQuoteAlias(b *testing.B) {
-	const want = "(e.price * a.tax * e.weee) AS `final_price`"
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		if have := Quoter.exprAlias("(e.price * a.tax * e.weee)", "final_price"); have != want {
-			b.Fatalf("Have %s\nWant %s\n", have, want)
-		}
-	}
-}
-
-func BenchmarkQuoteQuote(b *testing.B) {
-	const want = "`databaseName`.`tableName`"
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.Run("Worse Case", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			if have := Quoter.Quote("database`Name", "table`Name"); have != want {
-				b.Fatalf("Have %s\nWant %s\n", have, want)
-			}
-		}
-	})
-	b.Run("Best Case", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			if have := Quoter.Quote("databaseName", "tableName"); have != want {
-				b.Fatalf("Have %s\nWant %s\n", have, want)
-			}
-		}
-	})
-}
-
 func TestMysqlQuoter_Quote(t *testing.T) {
 	assert.Exactly(t, "`tableName`", Quoter.Quote("tableName"))
 	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.Quote("databaseName", "tableName"))
@@ -132,18 +91,5 @@ func TestIsValidIdentifier(t *testing.T) {
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, isValidIdentifier(test.have), "Index %d with %q", i, test.have)
-	}
-}
-
-var benchmarkIsValidIdentifier int8
-
-// BenchmarkIsValidIdentifier-4   	20000000	        92.0 ns/op	       0 B/op	       0 allocs/op
-// BenchmarkIsValidIdentifier-4   	 5000000	       280 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkIsValidIdentifier(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		benchmarkIsValidIdentifier = isValidIdentifier(`store_owner.catalog_product_entity_varchar`)
-	}
-	if benchmarkIsValidIdentifier != 0 {
-		b.Fatalf("Should be zero but got %d", benchmarkIsValidIdentifier)
 	}
 }
