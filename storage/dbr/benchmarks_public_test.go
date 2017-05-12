@@ -363,7 +363,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 }
 
-var _ dbr.InsertArgProducer = (*someRecord)(nil)
+var _ dbr.ArgumentAssembler = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -371,7 +371,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) ProduceInsertArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (sr someRecord) AssembleArguments(stmtType rune, args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "something_id":

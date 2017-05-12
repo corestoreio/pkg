@@ -19,9 +19,8 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// Make sure that type productEntity implements interface
-// dbr.InsertArgProducer.
-var _ dbr.InsertArgProducer = (*productEntity)(nil)
+// Make sure that type productEntity implements interface.
+var _ dbr.ArgumentAssembler = (*productEntity)(nil)
 
 // productEntity represents just a demo record.
 type productEntity struct {
@@ -32,7 +31,7 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) ProduceInsertArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (pe productEntity) AssembleArguments(stmtType rune, args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":

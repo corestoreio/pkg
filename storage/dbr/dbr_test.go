@@ -55,11 +55,10 @@ func createRealSessionWithFixtures() *Connection {
 	return sess
 }
 
-var _ InsertArgProducer = (*dbrPerson)(nil)
-var _ UpdateArgProducer = (*dbrPerson)(nil)
+var _ ArgumentAssembler = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPersons)(nil)
-var _ InsertArgProducer = (*nullTypedRecord)(nil)
+var _ ArgumentAssembler = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
@@ -92,12 +91,8 @@ func (p *dbrPerson) ScanRow(idx int, columns []string, scan func(dest ...interfa
 	return scan(vp...)
 }
 
-func (p *dbrPerson) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
-	return p.columnToArg('i', args, columns)
-}
-
-func (p *dbrPerson) ProduceUpdateArgs(args Arguments, columns, condition []string) (_ Arguments, err error) {
-	args, err = p.columnToArg('u', args, columns)
+func (p *dbrPerson) AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (_ Arguments, err error) {
+	args, err = p.columnToArg(stmtType, args, columns)
 	for _, c := range condition {
 		switch c {
 		case "id":
@@ -109,7 +104,7 @@ func (p *dbrPerson) ProduceUpdateArgs(args Arguments, columns, condition []strin
 	return args, err
 }
 
-func (p *dbrPerson) columnToArg(t byte, args Arguments, columns []string) (Arguments, error) {
+func (p *dbrPerson) columnToArg(t rune, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
@@ -167,6 +162,8 @@ func (ps *dbrPersons) ScanRow(idx int, columns []string, scan func(dest ...inter
 	return nil
 }
 
+var _ ArgumentAssembler = (*nullTypedRecord)(nil)
+
 type nullTypedRecord struct {
 	ID         int64
 	StringVal  NullString
@@ -183,7 +180,7 @@ func (p *nullTypedRecord) ScanRow(idx int, columns []string, scan func(dest ...i
 	return scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
+func (p *nullTypedRecord) AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":

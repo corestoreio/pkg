@@ -26,8 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//var _ UpdateArgProducer = (*someRecord)(nil)
-var _ InsertArgProducer = (*someRecord)(nil)
+var _ ArgumentAssembler = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -35,7 +34,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) ProduceInsertArgs(args Arguments, columns []string) (Arguments, error) {
+func (sr someRecord) AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "something_id":

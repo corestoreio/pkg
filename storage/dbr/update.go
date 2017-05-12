@@ -126,7 +126,7 @@ func (b *Update) Set(column string, arg Argument) *Update {
 
 // SetRecord sets a new argument generator type. See the example for more
 // details.
-func (b *Update) SetRecord(columns []string, rec UpdateArgProducer) *Update {
+func (b *Update) SetRecord(columns []string, rec ArgumentAssembler) *Update {
 	if b.previousError != nil {
 		return b
 	}
@@ -252,9 +252,9 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 
 	if b.SetClauses.Record != nil {
 		var err error
-		args, err = b.SetClauses.Record.ProduceUpdateArgs(args, b.SetClauses.Columns, b.WhereFragments.Conditions())
+		args, err = b.SetClauses.Record.AssembleArguments(stmtTypeUpdate, args, b.SetClauses.Columns, b.WhereFragments.Conditions())
 		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.ProduceUpdateArgs")
+			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
 		}
 	}
 
@@ -351,7 +351,7 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 type UpdatedColumns struct {
 	Columns   []string
 	Arguments Arguments
-	Record    UpdateArgProducer
+	Record    ArgumentAssembler
 }
 
 // writeOnDuplicateKey writes the columns to `w` and appends the arguments to
@@ -418,11 +418,11 @@ type UpdateMulti struct {
 	// slice is empty the column names get passed. Otherwise the alias slice
 	// must have the same length as the columns slice.
 	Alias   []string
-	Records []UpdateArgProducer
+	Records []ArgumentAssembler
 	// RecordChan waits for incoming records to send them to the prepared
 	// statement. If the channel gets closed the transaction gets terminated and
 	// the UPDATE statement removed.
-	RecordChan <-chan UpdateArgProducer
+	RecordChan <-chan ArgumentAssembler
 }
 
 // NewUpdateMulti creates new UPDATE statement which runs multiple times for a
@@ -434,7 +434,7 @@ func NewUpdateMulti(table ...string) *UpdateMulti {
 }
 
 // AddRecords pulls in values to match Columns from the record.
-func (b *UpdateMulti) AddRecords(recs ...UpdateArgProducer) *UpdateMulti {
+func (b *UpdateMulti) AddRecords(recs ...ArgumentAssembler) *UpdateMulti {
 	b.Records = append(b.Records, recs...)
 	return b
 }
@@ -522,7 +522,7 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 			cols = b.Alias
 		}
 		var err error
-		args, err = rec.ProduceUpdateArgs(args, cols, where)
+		args, err = rec.AssembleArguments(stmtTypeUpdate, args, cols, where)
 		if err != nil {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
 		}

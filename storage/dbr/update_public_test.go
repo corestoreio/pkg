@@ -54,7 +54,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
 
-	records := []dbr.UpdateArgProducer{
+	records := []dbr.ArgumentAssembler{
 		&dbrPerson{
 			ID:    1,
 			Name:  "Alf",

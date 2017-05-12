@@ -22,8 +22,7 @@ import (
 )
 
 // Make sure that type categoryEntity implements interface
-// dbr.InsertArgProducer.
-var _ dbr.UpdateArgProducer = (*categoryEntity)(nil)
+var _ dbr.ArgumentAssembler = (*categoryEntity)(nil)
 
 // categoryEntity represents just a demo record.
 type categoryEntity struct {
@@ -33,7 +32,7 @@ type categoryEntity struct {
 	Path           dbr.NullString
 }
 
-func (pe *categoryEntity) ProduceUpdateArgs(args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
+func (pe *categoryEntity) AssembleArguments(stmtType rune, args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":

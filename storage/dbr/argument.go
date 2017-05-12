@@ -53,9 +53,48 @@ const (
 )
 
 const (
-	sqlStrNull = "NULL"
-	sqlStar    = "*"
+	sqlStrNull     = "NULL"
+	sqlStar        = "*"
+	stmtTypeUpdate = 'u'
+	stmtTypeDelete = 'd'
+	stmtTypeInsert = 'i'
+	stmtTypeSelect = 's'
 )
+
+// ArgumentAssembler assembles arguments for a SQL INSERT or UPDATE statement.
+// The `stmtType` variable is either `i` for INSERT or `u` for UPDATE. Future
+// uses for `s` (SELECT) might occur. Any new arguments must be append to
+// variable `args` and then returned. Variable `columns` contains the name of
+// the requested columns. E.g. if the first requested column names `id` then the
+// first appended argument must be an integer. Variable `condition` contains the
+// names and/or expressions used in the WHERE or ON clause, if applicable for
+// the SQL statement type.
+type ArgumentAssembler interface {
+	AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (Arguments, error)
+}
+
+// Argument transforms your value or values into an interface slice or encodes
+// them into textual representation to be used directly in a SQL query. This
+// interface slice gets used in the database query functions at an argument. The
+// underlying type in the interface must be one of driver.Value allowed types.
+type Argument interface {
+	// Operator sets a comparison or logical operator. Please see the constants
+	// Operator* for the different flags. An underscore in the argument list of
+	// a type indicates that no operator is yet supported.
+	Operator(rune) Argument
+	// toIFace appends the value or values to interface slice and returns it.
+	toIFace([]interface{}) []interface{}
+	// writeTo writes the value correctly escaped to the queryWriter. It must
+	// avoid SQL injections.
+	writeTo(w queryWriter, position int) error
+	// len returns the length of the available values. If the IN clause has been
+	// activated then len returns 1.
+	len() int
+	operator() rune
+}
+
+// Arguments representing multiple arguments.
+type Arguments []Argument
 
 func writeOperator(w queryWriter, operator rune, hasArg bool) (addArg bool) {
 	// hasArg argument only used in case we have in the parent caller function a
@@ -155,49 +194,6 @@ func writeOperator(w queryWriter, operator rune, hasArg bool) (addArg bool) {
 	}
 	return
 }
-
-// InsertArgProducer produces arguments for a SQL INSERT statement. Any new
-// arguments must be append to variable `args` and then returned. Variable
-// `columns` contains the name of the requested columns. E.g. if the first
-// requested column names `id` then the first appended argument must be an
-// integer. An empty or nil `columns` variable must append all requested columns
-// to the `args` variable.
-type InsertArgProducer interface {
-	ProduceInsertArgs(args Arguments, columns []string) (Arguments, error)
-}
-
-// UpdateArgProducer produces arguments for a SQL UPDATE statement. Any new
-// arguments must be append to variable `args` and then returned. Variable
-// `columns` contains the name of the requested columns. E.g. if the first
-// requested column names `id` then the first appended argument must be an
-// integer. Variable `condition` contains the names and/or expressions used in
-// the WHERE or ON clause.
-type UpdateArgProducer interface {
-	ProduceUpdateArgs(args Arguments, columns, condition []string) (Arguments, error)
-}
-
-// Argument transforms your value or values into an interface slice or encodes
-// them into textual representation to be used directly in a SQL query. This
-// interface slice gets used in the database query functions at an argument. The
-// underlying type in the interface must be one of driver.Value allowed types.
-type Argument interface {
-	// Operator sets a comparison or logical operator. Please see the constants
-	// Operator* for the different flags. An underscore in the argument list of
-	// a type indicates that no operator is yet supported.
-	Operator(rune) Argument
-	// toIFace appends the value or values to interface slice and returns it.
-	toIFace([]interface{}) []interface{}
-	// writeTo writes the value correctly escaped to the queryWriter. It must
-	// avoid SQL injections.
-	writeTo(w queryWriter, position int) error
-	// len returns the length of the available values. If the IN clause has been
-	// activated then len returns 1.
-	len() int
-	operator() rune
-}
-
-// Arguments representing multiple arguments.
-type Arguments []Argument
 
 // len calculates the total length of all values
 func (as Arguments) len() (l int) {

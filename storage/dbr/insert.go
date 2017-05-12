@@ -42,7 +42,7 @@ type Insert struct {
 	Columns []string
 	Values  []Arguments
 
-	Records []InsertArgProducer
+	Records []ArgumentAssembler
 	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
 	Select *Select
 	Maps   map[string]Argument
@@ -144,7 +144,7 @@ func (b *Insert) AddValues(vals ...Argument) *Insert {
 }
 
 // AddRecords pulls in values to match Columns from the record generator.
-func (b *Insert) AddRecords(recs ...InsertArgProducer) *Insert {
+func (b *Insert) AddRecords(recs ...ArgumentAssembler) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
@@ -324,7 +324,7 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 	}
 
 	for i, rec := range b.Records {
-		args, err = rec.ProduceInsertArgs(args, b.Columns)
+		args, err = rec.AssembleArguments(stmtTypeInsert, args, b.Columns, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
 		}
