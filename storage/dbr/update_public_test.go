@@ -70,12 +70,12 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	mu := dbr.NewUpdateMulti("customer_entity", "ce")
 	mu.Update.SetClauses.Columns = []string{"name", "email"}
 	mu.Update.Where(dbr.Column("id", dbr.ArgInt64().Operator(dbr.Equal))) // ArgInt64 must be without arguments
-	mu.UsePreprocess = true
+	mu.Update.Interpolate()
 
 	mu.Records = append(mu.Records, records...)
 
 	// SM = SQL Mock
-	setSMPreProcess := func(m sqlmock.Sqlmock) {
+	setSQLMockInterpolate := func(m sqlmock.Sqlmock) {
 		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`='Alf', `email`='alf@m\\') -- el.mac' WHERE (`id` = 1)")).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`='John', `email`='john@doe.com' WHERE (`id` = 2)")).
@@ -97,7 +97,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 			}
 		}()
 
-		setSMPreProcess(dbMock)
+		setSQLMockInterpolate(dbMock)
 
 		mu.Update.DB.Execer = dbc.DB
 		mu.Update.DB.Preparer = nil
@@ -128,7 +128,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 		setSMPrepared(dbMock)
 
-		mu.UsePreprocess = false
+		mu.Update.IsInterpolate = false
 		mu.Update.DB.Execer = nil
 		mu.Update.DB.Preparer = dbc.DB
 
@@ -161,8 +161,8 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		dbMock.ExpectCommit()
 
 		mu.Tx = dbc.DB
-		mu.UseTransaction = true
-		mu.UsePreprocess = false
+		mu.Transaction()
+		mu.Update.IsInterpolate = false
 		mu.Update.DB.Execer = nil
 		mu.Update.DB.Preparer = dbc.DB
 
@@ -191,12 +191,12 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		}()
 
 		dbMock.ExpectBegin()
-		setSMPreProcess(dbMock)
+		setSQLMockInterpolate(dbMock)
 		dbMock.ExpectCommit()
 
 		mu.Tx = dbc.DB
-		mu.UseTransaction = true
-		mu.UsePreprocess = true
+		mu.Transaction()
+		mu.Update.IsInterpolate = true
 		mu.Update.DB.Execer = nil
 		mu.Update.DB.Preparer = dbc.DB
 

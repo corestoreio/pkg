@@ -395,19 +395,16 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arg
 }
 
 // UpdateMulti allows to run an UPDATE statement multiple times with different
-// values either in a transaction or as a preprocessed SQL string. Create one
-// update statement without the SET arguments but with empty WHERE arguments.
-// The empty WHERE arguments trigger the placeholder and the correct operator.
-// The values itself will be provided either through the Records slice or via
-// RecordChan.
+// values in an optionally transaction. I fyou enable the interpolate feature on
+// the Update object the interpolate SQL string will send each time to the SQL
+// server otherwise a prepared statement will be created. Create one update
+// statement without the SET arguments but with empty WHERE arguments. The empty
+// WHERE arguments trigger the placeholder and the correct operator. The values
+// itself will be provided either through the Records slice or via RecordChan.
 type UpdateMulti struct {
-	// UsePreprocess if true, preprocesses the SQL statement with the provided
-	// arguments. The placeholders gets replaced with the current values. SQL
-	// injections cannot not be possible *cough* *cough*.
-	UsePreprocess bool // TODO maybe remove that because interpolate now implement in statements
-	// UseTransaction set to true to enable running the UPDATE queries in a
+	// IsTransaction set to true to enable running the UPDATE queries in a
 	// transaction.
-	UseTransaction bool
+	IsTransaction bool
 	// IsolationLevel defines the transaction isolation level.
 	sql.IsolationLevel
 	// Tx knows how to start a transaction. Must be set if transactions hasn't
@@ -442,6 +439,16 @@ func (b *UpdateMulti) AddRecords(recs ...UpdateArgProducer) *UpdateMulti {
 	return b
 }
 
+// Transaction enables transaction usage and sets an optional isolation level.
+// If not set the default database isolation level gets used.
+func (b *UpdateMulti) Transaction(level ...sql.IsolationLevel) *UpdateMulti {
+	b.IsTransaction = true
+	if len(level) == 1 {
+		b.IsolationLevel = level[0]
+	}
+	return b
+}
+
 func (b *UpdateMulti) validate() error {
 	if len(b.Update.SetClauses.Columns) == 0 {
 		return errors.NewEmptyf("[dbr] UpdateMulti: Columns are empty")
@@ -469,6 +476,8 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec")
 	}
 
+	isInterpolate := b.Update.IsInterpolate
+	b.Update.IsInterpolate = false
 	rawSQL, _, err := b.Update.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec.ToSQL")
@@ -482,9 +491,8 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 	exec := b.Update.DB.Execer
 	prep := b.Update.DB.Preparer
 	var tx Txer = txMock{}
-	if b.UseTransaction {
-		// TODO fix context and make it set-able via outside
-		tx, err = b.Tx.BeginTx(context.TODO(), &sql.TxOptions{
+	if b.IsTransaction {
+		tx, err = b.Tx.BeginTx(ctx, &sql.TxOptions{
 			Isolation: b.IsolationLevel,
 		})
 		if err != nil {
@@ -495,7 +503,7 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 	}
 
 	var stmt *sql.Stmt
-	if !b.UsePreprocess {
+	if !isInterpolate {
 		var err error
 		stmt, err = prep.PrepareContext(ctx, rawSQL)
 		if err != nil {
@@ -519,7 +527,8 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
 		}
 
-		if b.UsePreprocess { // TODO see other todo and remove this because of IsInterpolate
+		if isInterpolate {
+
 			fullSQL, err := Interpolate(rawSQL, args...)
 			if err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, rawSQL)
