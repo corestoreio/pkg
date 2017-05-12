@@ -16,34 +16,6 @@ package dbr
 
 import "github.com/corestoreio/errors"
 
-// Eq is a map Expression -> value pairs which must be matched in a query.
-// Joined at AND statements to the WHERE clause. Implements ConditionArg
-// interface. Eq = EqualityMap.
-type Eq map[string]Argument
-
-func (eq Eq) appendConditions(wfs WhereFragments) WhereFragments {
-	for c, arg := range eq {
-		if arg == nil {
-			arg = ArgNull()
-		}
-		wfs = append(wfs, &whereFragment{
-			Condition: c,
-			Arguments: Arguments{arg},
-		})
-	}
-	return wfs
-}
-
-// And sets the logical AND operator. Default case.
-func (eq Eq) And() ConditionArg {
-	return eq
-}
-
-// Or not supported
-func (eq Eq) Or() ConditionArg {
-	return eq
-}
-
 const (
 	logicalAnd byte = 'a'
 	logicalOr  byte = 'o'
@@ -74,6 +46,56 @@ type whereFragment struct {
 	Using []string
 }
 
+// WhereFragments provides a list WHERE resp. ON clauses.
+type WhereFragments []*whereFragment
+
+// JoinFragments defines multiple join conditions.
+type JoinFragments []*joinFragment
+
+type joinFragment struct {
+	// JoinType can be LEFT, RIGHT, INNER, OUTER or CROSS
+	JoinType string
+	// Table name and alias of the table
+	Table alias
+	// OnConditions join on those conditions
+	OnConditions WhereFragments
+}
+
+// ConditionArg used at argument in Where()
+type ConditionArg interface {
+	appendConditions(WhereFragments) WhereFragments
+	And() ConditionArg // And connects next condition via AND
+	Or() ConditionArg  // Or connects next condition via OR
+}
+
+// Eq is a map Expression -> value pairs which must be matched in a query.
+// Joined at AND statements to the WHERE clause. Implements ConditionArg
+// interface. Eq = EqualityMap.
+type Eq map[string]Argument
+
+func (eq Eq) appendConditions(wfs WhereFragments) WhereFragments {
+	for c, arg := range eq {
+		if arg == nil {
+			arg = ArgNull()
+		}
+		wfs = append(wfs, &whereFragment{
+			Condition: c,
+			Arguments: Arguments{arg},
+		})
+	}
+	return wfs
+}
+
+// And sets the logical AND operator. Default case.
+func (eq Eq) And() ConditionArg {
+	return eq
+}
+
+// Or not supported
+func (eq Eq) Or() ConditionArg {
+	return eq
+}
+
 func (wf *whereFragment) appendConditions(wfs WhereFragments) WhereFragments {
 	return append(wfs, wf)
 }
@@ -90,9 +112,6 @@ func (wf *whereFragment) Or() ConditionArg {
 	return wf
 }
 
-// WhereFragments provides a list WHERE resp. ON clauses.
-type WhereFragments []*whereFragment
-
 // Conditions iterates over each WHERE fragment and assembles all conditions
 // into a new slice.
 func (wf WhereFragments) Conditions() []string {
@@ -101,13 +120,6 @@ func (wf WhereFragments) Conditions() []string {
 		c[i] = w.Condition
 	}
 	return c
-}
-
-// ConditionArg used at argument in Where()
-type ConditionArg interface {
-	appendConditions(WhereFragments) WhereFragments
-	And() ConditionArg // And connects next condition via AND
-	Or() ConditionArg  // Or connects next condition via OR
 }
 
 // Using add syntactic sugar to a JOIN statement: The USING(column_list) clause
