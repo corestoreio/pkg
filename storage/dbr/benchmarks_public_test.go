@@ -65,7 +65,7 @@ var benchmarkSelectBasicSQL dbr.Arguments
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq := dbr.Eq{"a": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
+	argEq := dbr.Eq{"a": dbr.In.Int64(1, 2, 3)}
 	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
@@ -94,7 +94,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	// Do some allocations outside the loop so they don't affect the results
 	argEq1 := dbr.Eq{"f": dbr.ArgInt64(2), "x": dbr.ArgString("hi")}
 	argEq2 := dbr.Eq{"g": dbr.ArgInt64(3)}
-	argEq3 := dbr.Eq{"h": dbr.ArgInt(1, 2, 3).Operator(dbr.In)}
+	argEq3 := dbr.Eq{"h": dbr.In.Int(1, 2, 3)}
 	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	sqlObj := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
@@ -166,10 +166,10 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("entity_id", "attribute_id", "value").
 			From("catalog_product_entity_varchar").
-			Where(dbr.Column("entity_type_id", dbr.ArgInt64(4))).
-			Where(dbr.Column("entity_id", dbr.ArgInt64(entityIDs...).Operator(dbr.In))).
-			Where(dbr.Column("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
-			Where(dbr.Column("store_id", dbr.ArgInt64(0))).
+			Where(dbr.Column("entity_type_id", dbr.Equal.Int64(4))).
+			Where(dbr.Column("entity_id", dbr.In.Int64(entityIDs...))).
+			Where(dbr.Column("attribute_id", dbr.In.Int64(174, 175))).
+			Where(dbr.Column("store_id", dbr.Equal.Int(0))).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
@@ -192,7 +192,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 			AddColumnsAlias("cpev.value", "value2nd").
 			From("catalog_product_entity_varchar", "cpev").
 			Where(dbr.Column("entity_type_id", dbr.ArgInt64(4))).
-			Where(dbr.Column("attribute_id", dbr.ArgInt64(174, 175).Operator(dbr.In))).
+			Where(dbr.Column("attribute_id", dbr.In.Int64(174, 175))).
 			Where(dbr.Column("store_id", dbr.ArgInt64(0))).
 			ToSQL()
 		if err != nil {
@@ -219,7 +219,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 func BenchmarkSelect_SQLCase(b *testing.B) {
 	start := dbr.ArgTime(time.Unix(1257894000, 0))
 	end := dbr.ArgTime(time.Unix(1257980400, 0))
-	pid := dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)
+	pid := dbr.NotIn.Int(4711, 815, 42)
 
 	var haveSQL string
 
@@ -262,7 +262,7 @@ const coreConfigDataRowCount = 2007
 // BenchmarkSelect_Integration_LScanner-4   	 500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
 // BenchmarkSelect_Integration_Scanner-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
 
-func BenchmarkSelect_Integration_Scanner(b *testing.B) {
+func xxxBenchmarkSelect_Integration_Scanner(b *testing.B) {
 	c, ok := createRealSession()
 	if !ok {
 		b.Skip("Skipping because DSN not set")
@@ -547,19 +547,19 @@ func BenchmarkUnion_AllOptions(b *testing.B) {
 
 	u := dbr.NewUnion(
 		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.varchar AS `col_type`").From("catalog_product_entity_varchar", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 			OrderByDesc("t.varchar_store_id"),
 		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.int AS `col_type`").From("catalog_product_entity_int", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 			OrderByDesc("t.int_store_id"),
 		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.decimal AS `col_type`").From("catalog_product_entity_decimal", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 			OrderByDesc("t.decimal_store_id"),
 		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.datetime AS `col_type`").From("catalog_product_entity_datetime", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 			OrderByDesc("t.datetime_store_id"),
 		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.text AS `col_type`").From("catalog_product_entity_text", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 			OrderByDesc("t.text_store_id"),
 	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
@@ -576,7 +576,7 @@ func BenchmarkUnion_AllOptions(b *testing.B) {
 func BenchmarkUnionTemplate_AllOptions(b *testing.B) {
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))).
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 			OrderByDesc("t.{column}_store_id"),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").

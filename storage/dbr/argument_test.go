@@ -27,8 +27,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//var _ Argument = argInt(0)
 var _ fmt.Stringer = Op(0)
+var _ Argument = argInt(0)
 var _ Argument = argInt64(0)
 var _ Argument = argFloat64(0)
 var _ Argument = argBool(true)

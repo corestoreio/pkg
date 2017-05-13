@@ -167,7 +167,7 @@ func TestSQLCase(t *testing.T) {
 				"3458", "qty+?",
 			), dbr.ArgInt(3, 4, 5))).
 			Where(
-				dbr.Column("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
+				dbr.Column("product_id", dbr.In.Int64(345, 567, 897)),
 				dbr.Column("website_id", dbr.ArgInt64(6)),
 			)
 

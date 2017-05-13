@@ -142,7 +142,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 func ExampleInsert_FromSelect() {
 	ins := dbr.NewInsert("tableA")
 
-	argEq := dbr.Eq{"int64B": dbr.ArgInt64(1, 2, 3).Operator(dbr.In)}
+	argEq := dbr.Eq{"int64B": dbr.In.Int64(1, 2, 3)}
 
 	ins.FromSelect(
 		dbr.NewSelect().AddColumns("something_id", "user_id").
@@ -150,7 +150,7 @@ func ExampleInsert_FromSelect() {
 			From("some_table").
 			Where(
 				dbr.ParenthesisOpen(),
-				dbr.Column("int64A", dbr.ArgInt64(1).Operator(dbr.GreaterOrEqual)),
+				dbr.Column("int64A", dbr.GreaterOrEqual.Int64(1)),
 				dbr.Column("string", dbr.ArgString("wat")).Or(),
 				dbr.ParenthesisClose(),
 			).
@@ -174,8 +174,8 @@ func ExampleInsert_FromSelect() {
 
 func ExampleNewDelete() {
 	d := dbr.NewDelete("tableA").Where(
-		dbr.Column("a", dbr.ArgString("b'%").Operator(dbr.Like)),
-		dbr.Column("b", dbr.ArgInt(3, 4, 5, 6).Operator(dbr.In)),
+		dbr.Column("a", dbr.Like.Str("b'%")),
+		dbr.Column("b", dbr.In.Int(3, 4, 5, 6)),
 	).
 		Limit(1).OrderBy("id")
 	writeToSqlAndPreprocess(d)
@@ -241,7 +241,7 @@ func ExampleNewUnionTemplate() {
 
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
@@ -304,7 +304,7 @@ func ExampleUnionTemplate_Interpolate() {
 
 	u := dbr.NewUnionTemplate(
 		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.ArgInt64(1, 0).Operator(dbr.In))),
+			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
@@ -359,10 +359,10 @@ func ExampleUnionTemplate_Interpolate() {
 
 func ExampleInterpolate() {
 	sqlStr, err := dbr.Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?",
-		dbr.ArgInt(1).Operator(dbr.In),
-		dbr.ArgInt(1, 2, 3).Operator(dbr.In),
-		dbr.ArgInt64(5, 6, 7).Operator(dbr.In),
-		dbr.ArgString("wat", "ok").Operator(dbr.Between),
+		dbr.In.Int(1),
+		dbr.In.Int(1, 2, 3),
+		dbr.In.Int64(5, 6, 7),
+		dbr.Between.Str("wat", "ok"),
 	)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -410,24 +410,24 @@ func ExampleArgument() {
 	argPrinter(dbr.ArgNull())
 	argPrinter(dbr.ArgNull().Operator(dbr.NotNull))
 	argPrinter(dbr.ArgInt(2))
-	argPrinter(dbr.ArgInt(3).Operator(dbr.Null))
-	argPrinter(dbr.ArgInt(4).Operator(dbr.NotNull))
-	argPrinter(dbr.ArgInt(7, 8, 9).Operator(dbr.In))
-	argPrinter(dbr.ArgInt(10, 11, 12).Operator(dbr.NotIn))
-	argPrinter(dbr.ArgInt(13, 14).Operator(dbr.Between))
-	argPrinter(dbr.ArgInt(15, 16).Operator(dbr.NotBetween))
-	argPrinter(dbr.ArgInt(17, 18, 19).Operator(dbr.Greatest))
-	argPrinter(dbr.ArgInt(20, 21, 22).Operator(dbr.Least))
-	argPrinter(dbr.ArgInt(30).Operator(dbr.Equal))
-	argPrinter(dbr.ArgInt(31).Operator(dbr.NotEqual))
+	argPrinter(dbr.Null.Int(3))
+	argPrinter(dbr.NotNull.Int(4))
+	argPrinter(dbr.In.Int(7, 8, 9))
+	argPrinter(dbr.NotIn.Int(10, 11, 12))
+	argPrinter(dbr.Between.Int(13, 14))
+	argPrinter(dbr.NotBetween.Int(15, 16))
+	argPrinter(dbr.Greatest.Int(17, 18, 19))
+	argPrinter(dbr.Least.Int(20, 21, 22))
+	argPrinter(dbr.Equal.Int(30))
+	argPrinter(dbr.NotEqual.Int(31))
 
-	argPrinter(dbr.ArgInt(32).Operator(dbr.Less))
-	argPrinter(dbr.ArgInt(33).Operator(dbr.Greater))
-	argPrinter(dbr.ArgInt(34).Operator(dbr.LessOrEqual))
-	argPrinter(dbr.ArgInt(35).Operator(dbr.GreaterOrEqual))
+	argPrinter(dbr.Less.Int(32))
+	argPrinter(dbr.Greater.Int(33))
+	argPrinter(dbr.LessOrEqual.Int(34))
+	argPrinter(dbr.GreaterOrEqual.Int(35))
 
-	argPrinter(dbr.ArgString("Goph%").Operator(dbr.Like))
-	argPrinter(dbr.ArgString("Cat%").Operator(dbr.NotLike))
+	argPrinter(dbr.Like.Str("Goph%"))
+	argPrinter(dbr.NotLike.Str("Cat%"))
 
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
@@ -470,24 +470,24 @@ func ExampleCondition() {
 	argPrinter(dbr.ArgNull())
 	argPrinter(dbr.ArgNull().Operator(dbr.NotNull))
 	argPrinter(dbr.ArgInt(2))
-	argPrinter(dbr.ArgInt(3).Operator(dbr.Null))
-	argPrinter(dbr.ArgInt(4).Operator(dbr.NotNull))
-	argPrinter(dbr.ArgInt(7, 8, 9).Operator(dbr.In))
-	argPrinter(dbr.ArgInt(10, 11, 12).Operator(dbr.NotIn))
-	argPrinter(dbr.ArgInt(13, 14).Operator(dbr.Between))
-	argPrinter(dbr.ArgInt(15, 16).Operator(dbr.NotBetween))
-	argPrinter(dbr.ArgInt(17, 18, 19).Operator(dbr.Greatest))
-	argPrinter(dbr.ArgInt(20, 21, 22).Operator(dbr.Least))
-	argPrinter(dbr.ArgInt(30).Operator(dbr.Equal))
-	argPrinter(dbr.ArgInt(31).Operator(dbr.NotEqual))
+	argPrinter(dbr.Null.Int(3))
+	argPrinter(dbr.NotNull.Int(4))
+	argPrinter(dbr.In.Int(7, 8, 9))
+	argPrinter(dbr.NotIn.Int(10, 11, 12))
+	argPrinter(dbr.Between.Int(13, 14))
+	argPrinter(dbr.NotBetween.Int(15, 16))
+	argPrinter(dbr.Greatest.Int(17, 18, 19))
+	argPrinter(dbr.Least.Int(20, 21, 22))
+	argPrinter(dbr.Equal.Int(30))
+	argPrinter(dbr.NotEqual.Int(31))
 
-	argPrinter(dbr.ArgInt(32).Operator(dbr.Less))
-	argPrinter(dbr.ArgInt(33).Operator(dbr.Greater))
-	argPrinter(dbr.ArgInt(34).Operator(dbr.LessOrEqual))
-	argPrinter(dbr.ArgInt(35).Operator(dbr.GreaterOrEqual))
+	argPrinter(dbr.Less.Int(32))
+	argPrinter(dbr.Greater.Int(33))
+	argPrinter(dbr.LessOrEqual.Int(34))
+	argPrinter(dbr.GreaterOrEqual.Int(35))
 
-	argPrinter(dbr.ArgString("Goph%").Operator(dbr.Like))
-	argPrinter(dbr.ArgString("Cat%").Operator(dbr.NotLike))
+	argPrinter(dbr.Like.Str("Goph%"))
+	argPrinter(dbr.NotLike.Str("Cat%"))
 
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
@@ -610,7 +610,7 @@ func ExampleSQLIf() {
 		From("table1").Where(
 		dbr.Expression(
 			dbr.SQLIf("a > 0", "b", "c"),
-			dbr.ArgInt(4711).Operator(dbr.Greater),
+			dbr.Greater.Int(4711),
 		))
 	writeToSqlAndPreprocess(s)
 
@@ -631,7 +631,7 @@ func ExampleSQLCase_update() {
 			"3458", "qty+?",
 		), dbr.ArgInt(3, 4, 5))).
 		Where(
-			dbr.Column("product_id", dbr.ArgInt64(345, 567, 897).Operator(dbr.In)),
+			dbr.Column("product_id", dbr.In.Int64(345, 567, 897)),
 			dbr.Column("website_id", dbr.ArgInt64(6)),
 		)
 	writeToSqlAndPreprocess(u)
@@ -664,7 +664,7 @@ func ExampleSQLCase_select() {
 		).
 		AddArguments(start, end, start, end).
 		From("catalog_promotions").Where(
-		dbr.Column("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
+		dbr.Column("promotion_id", dbr.NotIn.Int(4711, 815, 42)))
 	writeToSqlAndPreprocess(s)
 
 	// Output:
@@ -698,7 +698,7 @@ func ExampleSelect_AddArguments() {
 		).
 		AddArguments(start, end, start, end).
 		From("catalog_promotions").Where(
-		dbr.Column("promotion_id", dbr.ArgInt(4711, 815, 42).Operator(dbr.NotIn)))
+		dbr.Column("promotion_id", dbr.NotIn.Int(4711, 815, 42)))
 	writeToSqlAndPreprocess(s)
 
 	// Output:

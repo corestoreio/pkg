@@ -88,8 +88,8 @@ func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
 func TestDelete_Interpolate(t *testing.T) {
 	sql, _, err := NewDelete("tableA").
 		Where(
-			Column("colA", ArgFloat64(3.14159).Operator(GreaterOrEqual)),
-			Column("colB", ArgInt(1, 2, 3, 45).Operator(In)),
+			Column("colA", GreaterOrEqual.Float64(3.14159)),
+			Column("colB", In.Int(1, 2, 3, 45)),
 			Column("colC", ArgString("He'l`lo")),
 		).
 		Limit(10).Offset(20).OrderBy("id").

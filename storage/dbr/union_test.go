@@ -164,7 +164,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		u := NewUnionTemplate(
 			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
 				From("catalog_product_entity_{type}", "t").
-				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", ArgInt64(1, 0).Operator(In))).
+				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))).
 				OrderByDesc("t.{column}_store_id"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -235,7 +235,7 @@ func TestNewUnionTemplate(t *testing.T) {
 
 		u := NewUnionTemplate(
 			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", ArgInt64(1, 0).Operator(In))),
+				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			PreserveResultSet().
@@ -255,7 +255,7 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 
 	u := NewUnionTemplate(
 		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(Column("entity_id", ArgInt64(1561)), Column("store_id", ArgInt64(1, 0).Operator(In))),
+			Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
