@@ -26,7 +26,7 @@ import (
 // Argument.
 type NullFloat64 struct {
 	sql.NullFloat64
-	op rune
+	op Op
 }
 
 func (a NullFloat64) toIFace(args []interface{}) []interface{} {
@@ -47,14 +47,14 @@ func (a NullFloat64) writeTo(w queryWriter, _ int) error {
 
 func (a NullFloat64) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a NullFloat64) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a NullFloat64) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a NullFloat64) operator() rune { return a.op }
+func (a NullFloat64) operator() Op { return a.op }
 
 // MakeNullFloat64 creates a new NullFloat64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullFloat64
@@ -157,7 +157,7 @@ func (a NullFloat64) IsZero() bool {
 }
 
 type argNullFloat64s struct {
-	op   rune
+	op   Op
 	data []NullFloat64 // maybe use sql.NullFloat
 }
 
@@ -173,7 +173,7 @@ func (a argNullFloat64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
-	if a.operator() != In && a.operator() != NotIn {
+	if a.op != In && a.op != NotIn {
 		if s := a.data[pos]; s.Valid {
 			_, err := w.WriteString(strconv.FormatFloat(s.Float64, 'f', -1, 64))
 			return err
@@ -197,20 +197,20 @@ func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
 }
 
 func (a argNullFloat64s) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argNullFloat64s) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argNullFloat64s) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a argNullFloat64s) operator() rune { return a.op }
+func (a argNullFloat64s) operator() Op { return a.op }
 
 // ArgNullFloat64 adds a nullable float64 or a slice of nullable float64s to the
 // argument list. Providing no arguments returns a NULL type.

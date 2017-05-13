@@ -26,7 +26,7 @@ import (
 // Argument.
 type NullInt64 struct {
 	sql.NullInt64
-	op rune
+	op Op
 }
 
 func (a NullInt64) toIFace(args []interface{}) []interface{} {
@@ -47,14 +47,14 @@ func (a NullInt64) writeTo(w queryWriter, _ int) error {
 
 func (a NullInt64) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a NullInt64) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a NullInt64) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a NullInt64) operator() rune { return a.op }
+func (a NullInt64) operator() Op { return a.op }
 
 // MakeNullInt64 creates a new NullInt64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullInt64
@@ -165,7 +165,7 @@ func (a NullInt64) IsZero() bool {
 }
 
 type argNullInt64s struct {
-	op   rune
+	op   Op
 	data []NullInt64
 }
 
@@ -181,7 +181,7 @@ func (a argNullInt64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argNullInt64s) writeTo(w queryWriter, pos int) error {
-	if a.operator() != In && a.operator() != NotIn {
+	if a.op != In && a.op != NotIn {
 		if s := a.data[pos]; s.Valid {
 			_, err := w.WriteString(strconv.FormatInt(s.Int64, 10))
 			return err
@@ -205,20 +205,20 @@ func (a argNullInt64s) writeTo(w queryWriter, pos int) error {
 }
 
 func (a argNullInt64s) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argNullInt64s) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argNullInt64s) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a argNullInt64s) operator() rune { return a.op }
+func (a argNullInt64s) operator() Op { return a.op }
 
 // ArgNullInt64 adds a nullable int64 or a slice of nullable int64s to the
 // argument list. Providing no arguments returns a NULL type.

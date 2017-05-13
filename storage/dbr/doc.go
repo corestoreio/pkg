@@ -17,5 +17,7 @@
 // CRUD (https://en.wikipedia.org/wiki/Create,_read,_update_and_delete) Create,
 // Read, Update and Delete.
 //
+// https://mariadb.com/kb/en/mariadb/documentation/
+//
 // TODO(CyS) Add named parameter from GO1.8 to each query builder
 package dbr

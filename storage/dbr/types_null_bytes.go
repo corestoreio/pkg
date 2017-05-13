@@ -25,7 +25,7 @@ import (
 // null to SQL if zero. NullBytes implements interface Argument.
 type NullBytes struct {
 	Bytes []byte
-	op    rune
+	op    Op
 	Valid bool
 }
 
@@ -47,14 +47,14 @@ func (a NullBytes) writeTo(w queryWriter, _ int) error {
 
 func (a NullBytes) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a NullBytes) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a NullBytes) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a NullBytes) operator() rune { return a.op }
+func (a NullBytes) operator() Op { return a.op }
 
 // MakeNullBytes creates a new NullBytes. Implements interface Argument.
 func MakeNullBytes(b []byte, valid ...bool) NullBytes {

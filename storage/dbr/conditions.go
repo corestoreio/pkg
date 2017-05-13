@@ -33,7 +33,7 @@ type whereFragment struct {
 		// a column name or anything else which can handle the result of a
 		// sub-select.
 		Select   *Select
-		Operator rune
+		Operator Op
 	}
 	// Logical states how multiple where statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
@@ -137,7 +137,7 @@ func Using(columns ...string) ConditionArg {
 // SubSelect creates a condition for a WHERE or JOIN statement to compare the
 // data in `rawStatementOrColumnName` with the returned value/s of the
 // sub-select.
-func SubSelect(columnName string, operator rune, s *Select) ConditionArg {
+func SubSelect(columnName string, operator Op, s *Select) ConditionArg {
 	wf := &whereFragment{
 		Condition: columnName,
 	}

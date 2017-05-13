@@ -19,13 +19,16 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 //var _ Argument = argInt(0)
+var _ fmt.Stringer = Op(0)
 var _ Argument = argInt64(0)
 var _ Argument = argFloat64(0)
 var _ Argument = argBool(true)
@@ -49,7 +52,151 @@ var _ Argument = (*NullBool)(nil)
 var _ Argument = (*argValue)(nil)
 var _ driver.Value = (*Arguments)(nil)
 
+func TestOpRune(t *testing.T) {
+	t.Parallel()
+	s := NewSelect().From("tableA").AddColumns("a", "b").
+		Where(
+			Column("a1", Like.Str("H_ll_")),
+			Column("a1", Like.NullString(NullString{})),
+			Column("a1", Like.NullString(MakeNullString("NullString"))),
+			Column("a1", Like.Float64(2.718281)),
+			Column("a1", Like.NullFloat64(NullFloat64{})),
+			Column("a1", Like.NullFloat64(MakeNullFloat64(-2.718281))),
+			Column("a1", Like.Int64(2718281)),
+			Column("a1", Like.NullInt64(NullInt64{})),
+			Column("a1", Like.NullInt64(MakeNullInt64(-987))),
+			Column("a1", Like.Int(2718281)),
+			Column("a1", Like.Bool(true)),
+			Column("a1", Like.NullBool(NullBool{})),
+			Column("a1", Like.NullBool(MakeNullBool(false))),
+			Column("a1", Like.Time(now())),
+			Column("a1", Like.NullTime(MakeNullTime(now().Add(time.Minute)))),
+			Column("a1", Like.Null()),
+			Column("a1", Like.Bytes([]byte(`H3llo`))),
+			Column("a1", Like.Value(MakeNullInt64(2345))),
+
+			Column("a2", NotLike.Str("H_ll_")),
+			Column("a2", NotLike.NullString(NullString{})),
+			Column("a2", NotLike.NullString(MakeNullString("NullString"))),
+			Column("a2", NotLike.Float64(2.718281)),
+			Column("a2", NotLike.NullFloat64(NullFloat64{})),
+			Column("a2", NotLike.NullFloat64(MakeNullFloat64(-2.718281))),
+			Column("a2", NotLike.Int64(2718281)),
+			Column("a2", NotLike.NullInt64(NullInt64{})),
+			Column("a2", NotLike.NullInt64(MakeNullInt64(-987))),
+			Column("a2", NotLike.Int(2718281)),
+			Column("a2", NotLike.Bool(true)),
+			Column("a2", NotLike.NullBool(NullBool{})),
+			Column("a2", NotLike.NullBool(MakeNullBool(false))),
+			Column("a2", NotLike.Time(now())),
+			Column("a2", NotLike.NullTime(MakeNullTime(now().Add(time.Minute)))),
+			Column("a2", NotLike.Null()),
+			Column("a2", NotLike.Bytes([]byte(`H3llo`))),
+			Column("a2", NotLike.Value(MakeNullInt64(2345))),
+
+			Column("a301", In.Str("Go1", "Go2")),
+			Column("a302", In.NullString(NullString{}, NullString{})),
+			Column("a303", In.NullString(MakeNullString("NullString"))),
+			Column("a304", In.Float64(2.718281, 3.14159)),
+			Column("a305", In.NullFloat64(NullFloat64{})),
+			Column("a306", In.NullFloat64(MakeNullFloat64(-2.718281), MakeNullFloat64(-3.14159))),
+			Column("a307", In.Int64(2718281, 314159)),
+			Column("a308", In.NullInt64(NullInt64{})),
+			Column("a309", In.NullInt64(MakeNullInt64(-987), MakeNullInt64(-654))),
+			Column("a310", In.Int(2718281, 314159)),
+			Column("a311", In.Bool(true, false)),
+			Column("a312", In.NullBool(NullBool{})),
+			Column("a313", In.NullBool(MakeNullBool(true))),
+			Column("a314", In.Time(now(), now())),
+			Column("a315", In.NullTime(MakeNullTime(now().Add(time.Minute)))),
+			Column("a316", In.Null()),
+			Column("a317", In.Bytes([]byte(`H3llo1`))),
+			Column("a320", In.Value(MakeNullInt64(2345), MakeNullFloat64(3.14159))),
+
+			Column("a401", SpaceShip.Str("H_ll_")),
+			Column("a402", SpaceShip.NullString(NullString{})),
+			Column("a403", SpaceShip.NullString(MakeNullString("NullString"))),
+		)
+	sStr, args, err := s.ToSQL()
+	require.NoError(t, err)
+	assert.Equal(t, "SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a301` IN ?) AND (`a302` IN ?) AND (`a303` IN ?) AND (`a304` IN ?) AND (`a305` IN ?) AND (`a306` IN ?) AND (`a307` IN ?) AND (`a308` IN ?) AND (`a309` IN ?) AND (`a310` IN ?) AND (`a311` IN ?) AND (`a312` IN ?) AND (`a313` IN ?) AND (`a314` IN ?) AND (`a315` IN ?) AND (`a316` IN ?) AND (`a317` IN ?) AND (`a320` IN ?) AND (`a401` <=> ?) AND (`a402` <=> ?) AND (`a403` <=> ?)",
+		sStr)
+	assert.Equal(t, 57, len(args), "Argument count")
+
+	sStr, args, err = s.Interpolate().ToSQL()
+	require.NoError(t, err)
+	assert.Nil(t, args)
+	assert.Equal(t,
+		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` LIKE NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE 2345) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE 2345) AND (`a301` IN ('Go1','Go2')) AND (`a302` IN (NULL,NULL)) AND (`a303` IN 'NullString') AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN NULL) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN NULL) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN NULL) AND (`a313` IN 1) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315` IN '2006-01-02 15:05:05') AND (`a316` IN (NULL)) AND (`a317` IN ('H3llo1')) AND (`a320` IN (2345,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
+		sStr)
+}
+
+func TestOpArgs(t *testing.T) {
+	t.Parallel()
+	t.Run("ArgNull IN", func(t *testing.T) {
+		s := NewSelect("a", "b").From("t1").Where(
+			Column("a316", In.Null()),
+			Column("a317", Regexp.Null()),
+		).Interpolate()
+		sStr, args, err := s.ToSQL()
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (NULL)) AND (`a317` REGEXP NULL)", sStr)
+		assert.Nil(t, args)
+	})
+	t.Run("Args IN", func(t *testing.T) {
+		s := NewSelect("a", "b").From("t1").Where(
+			Column("a313", In.Float64(3.3)),
+			Column("a314", In.Int64(33)),
+			Column("a312", In.Int(44)),
+			Column("a315", In.Str(`Go1`)),
+			Column("a316", In.Bytes([]byte(`Go`), []byte(`Rust`))),
+		).Interpolate()
+		sStr, args, err := s.ToSQL()
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT `a`, `b` FROM `t1` WHERE (`a313` IN (3.3)) AND (`a314` IN (33)) AND (`a312` IN (44)) AND (`a315` IN ('Go1')) AND (`a316` IN ('Go','Rust'))", sStr)
+		assert.Nil(t, args)
+	})
+	t.Run("ArgBytes BETWEEN strings", func(t *testing.T) {
+		s := NewSelect("a", "b").From("t1").Where(
+			Column("a316", Between.Bytes([]byte(`Go`), []byte(`Rust`))),
+		).Interpolate()
+		sStr, args, err := s.ToSQL()
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT `a`, `b` FROM `t1` WHERE (`a316` BETWEEN 'Go' AND 'Rust')", sStr)
+		assert.Nil(t, args)
+	})
+	t.Run("ArgBytes IN binary", func(t *testing.T) {
+		s := NewSelect("a", "b").From("t1").Where(
+			Column("a316", In.Bytes([]byte{66, 250, 67}, []byte(`Rust`), []byte("\xFB\xBF\xBF\xBF\xBF"))),
+		).Interpolate()
+		sStr, args, err := s.ToSQL()
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (0x42fa43,'Rust',0xfbbfbfbfbf))", sStr)
+		assert.Nil(t, args)
+	})
+	t.Run("ArgValue IN", func(t *testing.T) {
+		s := NewSelect("a", "b").From("t1").Where(
+			Column("a319", In.Value(MakeNullFloat64(3.141), MakeNullString("G'o"), MakeNullBytes([]byte{66, 250, 67}),
+				MakeNullTime(now()), MakeNullBytes([]byte("x\x00y")))),
+		).Interpolate()
+		sStr, args, err := s.ToSQL()
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT `a`, `b` FROM `t1` WHERE (`a319` IN (3.141,'G\\'o',0x42fa43,'2006-01-02 15:04:05',0x780079))", sStr)
+		assert.Nil(t, args)
+	})
+	t.Run("ArgValue BETWEEN values", func(t *testing.T) {
+		s := NewSelect("a", "b").From("t1").Where(
+			Column("a319", Between.Value(MakeNullFloat64(3.141), MakeNullString("G'o"))),
+		).Interpolate()
+		sStr, args, err := s.ToSQL()
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT `a`, `b` FROM `t1` WHERE (`a319` BETWEEN 3.141 AND 'G\\'o')", sStr)
+		assert.Nil(t, args)
+	})
+}
+
 func TestArguments_DriverValues(t *testing.T) {
+	t.Parallel()
 	args := Arguments{
 		ArgInt64(1),
 		ArgInt(2),

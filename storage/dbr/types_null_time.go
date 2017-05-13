@@ -38,14 +38,14 @@ func (a NullTime) writeTo(w queryWriter, _ int) error {
 
 func (a NullTime) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a NullTime) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a NullTime) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a NullTime) operator() rune { return a.op }
+func (a NullTime) operator() Op { return a.op }
 
 // MakeNullTime creates a new NullTime. Setting the second optional argument to
 // false, the string will not be valid anymore, hence NULL. NullTime implements
@@ -138,7 +138,7 @@ func (a NullTime) Ptr() *time.Time {
 }
 
 type argNullTimes struct {
-	op   rune
+	op   Op
 	data []NullTime
 }
 
@@ -154,7 +154,7 @@ func (a argNullTimes) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argNullTimes) writeTo(w queryWriter, pos int) error {
-	if a.operator() != In && a.operator() != NotIn {
+	if a.op != In && a.op != NotIn {
 		if s := a.data[pos]; s.Valid {
 			dialect.EscapeTime(w, s.Time)
 			return nil
@@ -178,20 +178,20 @@ func (a argNullTimes) writeTo(w queryWriter, pos int) error {
 }
 
 func (a argNullTimes) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argNullTimes) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argNullTimes) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a argNullTimes) operator() rune { return a.op }
+func (a argNullTimes) operator() Op { return a.op }
 
 // ArgNullTime adds a nullable Time or a slice of nullable Timess to the
 // argument list. Providing no arguments returns a NULL type.

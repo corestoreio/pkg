@@ -27,7 +27,7 @@ import (
 // NullString implements interface Argument.
 type NullString struct {
 	sql.NullString
-	op rune
+	op Op
 }
 
 func (a NullString) toIFace(args []interface{}) []interface{} {
@@ -51,14 +51,14 @@ func (a NullString) writeTo(w queryWriter, _ int) error {
 
 func (a NullString) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a NullString) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a NullString) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a NullString) operator() rune { return a.op }
+func (a NullString) operator() Op { return a.op }
 
 // MakeNullString creates a new NullString. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullString
@@ -171,7 +171,7 @@ func (a NullString) IsZero() bool {
 }
 
 type argNullStrings struct {
-	op   rune
+	op   Op
 	data []NullString
 }
 
@@ -187,7 +187,7 @@ func (a argNullStrings) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argNullStrings) writeTo(w queryWriter, pos int) error {
-	if a.operator() != In && a.operator() != NotIn {
+	if a.op != In && a.op != NotIn {
 		if s := a.data[pos]; s.Valid {
 			if !utf8.ValidString(s.String) {
 				return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
@@ -217,20 +217,20 @@ func (a argNullStrings) writeTo(w queryWriter, pos int) error {
 }
 
 func (a argNullStrings) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argNullStrings) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argNullStrings) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a argNullStrings) operator() rune { return a.op }
+func (a argNullStrings) operator() Op { return a.op }
 
 // ArgNullString adds a nullable string or a slice of nullable strings to the
 // argument list. Providing no arguments returns a NULL type. All arguments must

@@ -933,7 +933,7 @@ func TestSubSelect(t *testing.T) {
 	sub := NewSelect().From("catalog_category_product").
 		AddColumns("entity_id").Where(Column("category_id", ArgInt64(234)))
 
-	runner := func(op rune, wantSQL string) func(*testing.T) {
+	runner := func(op Op, wantSQL string) func(*testing.T) {
 		return func(t *testing.T) {
 			s := NewSelect("sku", "type_id").
 				From("catalog_product_entity").

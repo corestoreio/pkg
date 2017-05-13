@@ -25,32 +25,149 @@ import (
 
 // https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
 
-// Comparison functions and operators describe all available possibilities. The upper case letter
-// always negates.
-// https://dev.mysql.com/doc/refman/5.7/en/comparison-operators.html
+// Comparison functions and operators describe all available possibilities.
 const (
-	Null           = 'n' // IS NULL
-	NotNull        = 'N' // IS NOT NULL
-	In             = '∈' // IN ?
-	NotIn          = '∉' // NOT IN ?
-	Between        = 'b' // BETWEEN ? AND ?
-	NotBetween     = 'B' // NOT BETWEEN ? AND ?
-	Like           = 'l' // LIKE ?
-	NotLike        = 'L' // NOT LIKE ?
-	Greatest       = '≫' // GREATEST(?,?,?)
-	Least          = '≪' // LEAST(?,?,?)
-	Equal          = '=' // = ?
-	NotEqual       = '≠' // != ?
-	Exists         = '∃' // EXISTS(subquery)
-	NotExists      = '∄' // NOT EXISTS(subquery)
-	Less           = '<' // <
-	Greater        = '>' // >
-	LessOrEqual    = '≤' // <=
-	GreaterOrEqual = '≥' // >=
-	Regexp         = 'r' // REGEXP ?
-	NotRegexp      = 'R' // NOT REGEXP ?
-	Xor            = '⊻' // XOR ?
+	Null           Op = 'n'          // IS NULL
+	NotNull        Op = 'N'          // IS NOT NULL
+	In             Op = '∈'          // IN ?
+	NotIn          Op = '∉'          // NOT IN ?
+	Between        Op = 'b'          // BETWEEN ? AND ?
+	NotBetween     Op = 'B'          // NOT BETWEEN ? AND ?
+	Like           Op = 'l'          // LIKE ?
+	NotLike        Op = 'L'          // NOT LIKE ?
+	Greatest       Op = '≫'          // GREATEST(?,?,?)
+	Least          Op = '≪'          // LEAST(?,?,?)
+	Equal          Op = '='          // = ?
+	NotEqual       Op = '≠'          // != ?
+	Exists         Op = '∃'          // EXISTS(subquery)
+	NotExists      Op = '∄'          // NOT EXISTS(subquery)
+	Less           Op = '<'          // <
+	Greater        Op = '>'          // >
+	LessOrEqual    Op = '≤'          // <=
+	GreaterOrEqual Op = '≥'          // >=
+	Regexp         Op = 'r'          // REGEXP ?
+	NotRegexp      Op = 'R'          // NOT REGEXP ?
+	Xor            Op = '⊻'          // XOR ?
+	SpaceShip      Op = '\U0001f680' // a <=> b is equivalent to a = b OR (a IS NULL AND b IS NULL)
 )
+
+// Op the Operator, defines comparison and operator functions used in any
+// conditions. The upper case letter always negates.
+// https://dev.mysql.com/doc/refman/5.7/en/comparison-operators.html
+// https://mariadb.com/kb/en/mariadb/comparison-operators/
+type Op rune
+
+// isNotIn returns true if the operator is not one of the four types in the
+// code.
+func (o Op) isNotIn() bool {
+	switch o {
+	case In, NotIn, Greatest, Least:
+		return false
+	}
+	return true
+}
+
+// String transforms the rune into a string.
+func (o Op) String() string {
+	if o < 1 {
+		o = Equal
+	}
+	return string(o)
+}
+
+// With allows to use any argument with an operator.
+func (o Op) With(arg Argument) Argument {
+	return arg.Operator(o)
+}
+
+// Str uses string values for comparison.
+func (o Op) Str(values ...string) Argument {
+	return &argStrings{data: values, op: o}
+}
+
+// NullString uses nullable string values for comparison.
+func (o Op) NullString(values ...NullString) Argument {
+	if len(values) == 1 {
+		values[0].op = o
+		return values[0]
+	}
+	return argNullStrings{data: values, op: o}
+}
+
+// Float64 uses float64 values for comparison.
+func (o Op) Float64(values ...float64) Argument {
+	return &argFloat64s{data: values, op: o}
+}
+
+// NullFloat64 uses nullable float64 values for comparison.
+func (o Op) NullFloat64(values ...NullFloat64) Argument {
+	if len(values) == 1 {
+		values[0].op = o
+		return values[0]
+	}
+	return argNullFloat64s{data: values, op: o}
+}
+
+// Int64 uses int64 values for comparison.
+func (o Op) Int64(values ...int64) Argument {
+	return &argInt64s{data: values, op: o}
+}
+
+// NullInt64 uses nullable int64 values for comparison.
+func (o Op) NullInt64(values ...NullInt64) Argument {
+	if len(values) == 1 {
+		values[0].op = o
+		return values[0]
+	}
+	return argNullInt64s{data: values, op: o}
+}
+
+// Int uses int values for comparison.
+func (o Op) Int(values ...int) Argument {
+	return &argInts{data: values, op: o}
+}
+
+// Bool uses bool values for comparison.
+func (o Op) Bool(values ...bool) Argument {
+	return &argBools{data: values, op: o}
+}
+
+// NullBool uses nullable bool values for comparison.
+func (o Op) NullBool(value NullBool) Argument {
+	value.op = o
+	return value
+}
+
+// Time uses time.Time values for comparison.
+func (o Op) Time(values ...time.Time) Argument {
+	return &argTimes{data: values, op: o}
+}
+
+// NullTime uses nullable time values for comparison.
+func (o Op) NullTime(values ...NullTime) Argument {
+	if len(values) == 1 {
+		values[0].op = o
+		return values[0]
+	}
+	return argNullTimes{data: values, op: o}
+}
+
+// Null is always a NULL.
+func (o Op) Null() Argument {
+	return argNull(o)
+}
+
+// Bytes uses a byte slice for comparison. Providing a nil argument returns a
+// NULL type. Detects between valid UTF-8 strings and binary data. Later gets
+// hex encoded.
+func (o Op) Bytes(p ...[]byte) Argument {
+	return argBytes{data: p, op: o}
+}
+
+// Value uses driver.Valuers for comparison.
+func (o Op) Value(values ...driver.Valuer) Argument {
+	return &argValue{data: values, op: o}
+}
 
 const (
 	sqlStrNull     = "NULL"
@@ -73,15 +190,16 @@ type ArgumentAssembler interface {
 	AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (Arguments, error)
 }
 
-// Argument transforms your value or values into an interface slice or encodes
-// them into textual representation to be used directly in a SQL query. This
-// interface slice gets used in the database query functions at an argument. The
-// underlying type in the interface must be one of driver.Value allowed types.
+// Argument transforms a value or values into an interface slice or encodes them
+// into their textual representation to be used directly in a SQL query. This
+// interface slice gets used in the database query functions as an argument. The
+// underlying primitive type in the interface must be one of driver.Value
+// allowed types.
 type Argument interface {
 	// Operator sets a comparison or logical operator. Please see the constants
-	// Operator* for the different flags. An underscore in the argument list of
+	// Op* for the different flags. An underscore in the argument list of
 	// a type indicates that no operator is yet supported.
-	Operator(rune) Argument
+	Operator(Op) Argument
 	// toIFace appends the value or values to interface slice and returns it.
 	toIFace([]interface{}) []interface{}
 	// writeTo writes the value correctly escaped to the queryWriter. It must
@@ -90,16 +208,16 @@ type Argument interface {
 	// len returns the length of the available values. If the IN clause has been
 	// activated then len returns 1.
 	len() int
-	operator() rune
+	operator() Op
 }
 
 // Arguments representing multiple arguments.
 type Arguments []Argument
 
-func writeOperator(w queryWriter, operator rune, hasArg bool) (addArg bool) {
-	// hasArg argument only used in case we have in the parent caller function a
-	// sub-select. sub-selects do not need a place holder.
-	switch operator {
+func writeOperator(w queryWriter, op Op, hasArg bool) (addArg bool) {
+	// hasArg argument only used in cases where we have in the parent caller
+	// function a sub-select. sub-selects do not need a place holder.
+	switch op {
 	case Null:
 		w.WriteString(" IS NULL")
 	case NotNull:
@@ -185,6 +303,12 @@ func writeOperator(w queryWriter, operator rune, hasArg bool) (addArg bool) {
 			w.WriteByte('?')
 			addArg = true
 		}
+	case SpaceShip:
+		w.WriteString(" <=> ")
+		if hasArg {
+			w.WriteByte('?')
+			addArg = true
+		}
 	default:
 		w.WriteString(" = ")
 		if hasArg {
@@ -233,16 +357,8 @@ func (as Arguments) DriverValues() []driver.Value {
 	return dv
 }
 
-func isNotIn(o rune) bool {
-	switch o {
-	case In, NotIn, Greatest, Least:
-		return false
-	}
-	return true
-}
-
 type argValue struct {
-	op   rune
+	op   Op
 	data []driver.Valuer
 }
 
@@ -286,7 +402,7 @@ func writeDriverValuer(w queryWriter, value driver.Valuer) error {
 }
 
 func (a *argValue) writeTo(w queryWriter, pos int) error {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return writeDriverValuer(w, a.data[pos])
 	}
 
@@ -296,7 +412,6 @@ func (a *argValue) writeTo(w queryWriter, pos int) error {
 		if err := writeDriverValuer(w, value); err != nil {
 			return err
 		}
-		//dialect.EscapeTime(w, v)
 		if i < l {
 			w.WriteByte(',')
 		}
@@ -306,20 +421,20 @@ func (a *argValue) writeTo(w queryWriter, pos int) error {
 }
 
 func (a *argValue) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a *argValue) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a *argValue) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a *argValue) operator() rune { return a.op }
+func (a *argValue) operator() Op { return a.op }
 
 // ArgValue allows to use any type which implements driver.Valuer interface.
 func ArgValue(args ...driver.Valuer) Argument {
@@ -329,7 +444,7 @@ func ArgValue(args ...driver.Valuer) Argument {
 }
 
 type argTimes struct {
-	op   rune
+	op   Op
 	data []time.Time
 }
 
@@ -341,7 +456,7 @@ func (a *argTimes) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argTimes) writeTo(w queryWriter, pos int) error {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		dialect.EscapeTime(w, a.data[pos])
 		return nil
 	}
@@ -358,20 +473,20 @@ func (a *argTimes) writeTo(w queryWriter, pos int) error {
 }
 
 func (a *argTimes) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a *argTimes) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a *argTimes) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a *argTimes) operator() rune { return a.op }
+func (a *argTimes) operator() Op { return a.op }
 
 // ArgTime adds a time.Time or a slice of times to the argument list.
 // Providing no arguments returns a NULL type.
@@ -379,31 +494,59 @@ func ArgTime(args ...time.Time) Argument {
 	return &argTimes{data: args}
 }
 
-type argBytes []byte
-
-func (a argBytes) toIFace(args []interface{}) []interface{} {
-	return append(args, []byte(a))
+type argBytes struct {
+	op   Op
+	data [][]byte
 }
 
-func (a argBytes) writeTo(w queryWriter, _ int) error {
-	dialect.EscapeBinary(w, a)
+func (a argBytes) toIFace(args []interface{}) []interface{} {
+	return append(args, a.data)
+}
+
+func (a argBytes) writeTo(w queryWriter, pos int) (err error) {
+	if a.op.isNotIn() {
+		if !utf8.Valid(a.data[pos]) {
+			dialect.EscapeBinary(w, a.data[pos])
+		} else {
+			dialect.EscapeString(w, string(a.data[pos]))
+		}
+		return nil
+	}
+	l := len(a.data) - 1
+	w.WriteByte('(')
+	for i, v := range a.data {
+		if !utf8.Valid(v) {
+			dialect.EscapeBinary(w, v)
+		} else {
+			dialect.EscapeString(w, string(v))
+		}
+		if i < l {
+			w.WriteByte(',')
+		}
+	}
+	w.WriteByte(')')
 	return nil
 }
 
-func (a argBytes) len() int { return 1 }
+func (a argBytes) len() int {
+	if a.op.isNotIn() {
+		return len(a.data)
+	}
+	return 1
+}
 
-// Operator not supported
-func (a argBytes) Operator(_ rune) Argument { return a }
-func (a argBytes) operator() rune           { return 0 }
+// Op not supported
+func (a argBytes) Operator(op Op) Argument { a.op = op; return a }
+func (a argBytes) operator() Op            { return a.op }
 
-// ArgBytes adds a byte slice to the argument list.
-// Providing a nil argument returns a NULL type.
-// IN clause not supported.
-func ArgBytes(p []byte) Argument {
+// ArgBytes adds a byte slice to the argument list. Providing a nil argument
+// returns a NULL type. Detects between valid UTF-8 strings and binary data. Later
+// gets hex encoded.
+func ArgBytes(p ...[]byte) Argument {
 	if p == nil {
 		return ArgNull()
 	}
-	return argBytes(p)
+	return argBytes{data: p}
 }
 
 type argNull rune
@@ -412,18 +555,24 @@ func (i argNull) toIFace(args []interface{}) []interface{} {
 	return append(args, nil)
 }
 
-func (i argNull) writeTo(w queryWriter, _ int) error {
-	_, err := w.WriteString(`NULL`)
+func (i argNull) writeTo(w queryWriter, _ int) (err error) {
+	if Op(i).isNotIn() {
+		_, err = w.WriteString("NULL")
+	} else {
+		w.WriteByte('(')
+		_, err = w.WriteString("NULL")
+		w.WriteByte(')')
+	}
 	return err
 }
 
 func (i argNull) len() int { return 1 }
 
-// Operator not supported
-func (i argNull) Operator(op rune) Argument { return argNull(op) }
-func (i argNull) operator() rune {
+// Op not supported
+func (i argNull) Operator(op Op) Argument { return argNull(op) }
+func (i argNull) operator() Op {
 	if i != 0 {
-		return rune(i)
+		return Op(i)
 	}
 	return Null
 }
@@ -451,19 +600,19 @@ func (a argString) writeTo(w queryWriter, _ int) error {
 
 func (a argString) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argString) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argString) Operator(op Op) Argument {
 	return &argStrings{
 		data: []string{string(a)},
 		op:   op,
 	}
 }
-func (a argString) operator() rune { return 0 }
+func (a argString) operator() Op { return 0 }
 
 type argStrings struct {
 	data []string
-	op   rune
+	op   Op
 }
 
 func (a *argStrings) toIFace(args []interface{}) []interface{} {
@@ -474,7 +623,7 @@ func (a *argStrings) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argStrings) writeTo(w queryWriter, pos int) error {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		if !utf8.ValidString(a.data[pos]) {
 			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a.data[pos])
 		}
@@ -497,19 +646,19 @@ func (a *argStrings) writeTo(w queryWriter, pos int) error {
 }
 
 func (a *argStrings) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a *argStrings) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a *argStrings) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
-func (a *argStrings) operator() rune { return a.op }
+func (a *argStrings) operator() Op { return a.op }
 
 // ArgString adds a string or a slice of strings to the argument list.
 // Providing no arguments returns a NULL type.
@@ -533,12 +682,12 @@ func (a argBool) writeTo(w queryWriter, _ int) error {
 }
 func (a argBool) len() int { return 1 }
 
-// Operator not supported
-func (a argBool) Operator(_ rune) Argument { return a }
-func (a argBool) operator() rune           { return 0 }
+// Op not supported
+func (a argBool) Operator(_ Op) Argument { return a }
+func (a argBool) operator() Op           { return 0 }
 
 type argBools struct {
-	op   rune
+	op   Op
 	data []bool
 }
 
@@ -550,7 +699,7 @@ func (a *argBools) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argBools) writeTo(w queryWriter, pos int) error {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		dialect.EscapeBool(w, a.data[pos])
 		return nil
 	}
@@ -567,19 +716,19 @@ func (a *argBools) writeTo(w queryWriter, pos int) error {
 }
 
 func (a *argBools) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a *argBools) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a *argBools) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
-func (a *argBools) operator() rune { return a.op }
+func (a *argBools) operator() Op { return a.op }
 
 // ArgBool adds a string or a slice of bools to the argument list.
 // Providing no arguments returns a NULL type.
@@ -603,18 +752,18 @@ func (a argInt) writeTo(w queryWriter, _ int) error {
 }
 func (a argInt) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argInt) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argInt) Operator(op Op) Argument {
 	return &argInts{
 		op:   op,
 		data: []int{int(a)},
 	}
 }
-func (a argInt) operator() rune { return 0 }
+func (a argInt) operator() Op { return 0 }
 
 type argInts struct {
-	op   rune
+	op   Op
 	data []int
 }
 
@@ -626,7 +775,7 @@ func (a *argInts) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argInts) writeTo(w queryWriter, pos int) error {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		_, err := w.WriteString(strconv.Itoa(a.data[pos]))
 		return err
 	}
@@ -643,20 +792,20 @@ func (a *argInts) writeTo(w queryWriter, pos int) error {
 }
 
 func (a *argInts) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a *argInts) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a *argInts) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a *argInts) operator() rune { return a.op }
+func (a *argInts) operator() Op { return a.op }
 
 // ArgInt adds an integer or a slice of integers to the argument list.
 // Providing no arguments returns a NULL type.
@@ -680,18 +829,18 @@ func (a argInt64) writeTo(w queryWriter, _ int) error {
 }
 func (a argInt64) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argInt64) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argInt64) Operator(op Op) Argument {
 	return &argInt64s{
 		op:   op,
 		data: []int64{int64(a)},
 	}
 }
-func (a argInt64) operator() rune { return 0 }
+func (a argInt64) operator() Op { return 0 }
 
 type argInt64s struct {
-	op   rune
+	op   Op
 	data []int64
 }
 
@@ -703,7 +852,7 @@ func (a *argInt64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argInt64s) writeTo(w queryWriter, pos int) error {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		_, err := w.WriteString(strconv.FormatInt(a.data[pos], 10))
 		return err
 	}
@@ -720,20 +869,20 @@ func (a *argInt64s) writeTo(w queryWriter, pos int) error {
 }
 
 func (a *argInt64s) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a *argInt64s) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a *argInt64s) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a *argInt64s) operator() rune { return a.op }
+func (a *argInt64s) operator() Op { return a.op }
 
 // ArgInt64 adds an integer or a slice of integers to the argument list.
 // Providing no arguments returns a NULL type.
@@ -756,18 +905,18 @@ func (a argFloat64) writeTo(w queryWriter, _ int) error {
 }
 func (a argFloat64) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a argFloat64) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a argFloat64) Operator(op Op) Argument {
 	return &argFloat64s{
 		op:   op,
 		data: []float64{float64(a)},
 	}
 }
-func (a argFloat64) operator() rune { return 0 }
+func (a argFloat64) operator() Op { return 0 }
 
 type argFloat64s struct {
-	op   rune
+	op   Op
 	data []float64
 }
 
@@ -779,7 +928,7 @@ func (a *argFloat64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argFloat64s) writeTo(w queryWriter, pos int) error {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		_, err := w.WriteString(strconv.FormatFloat(a.data[pos], 'f', -1, 64))
 		return err
 	}
@@ -796,20 +945,20 @@ func (a *argFloat64s) writeTo(w queryWriter, pos int) error {
 }
 
 func (a *argFloat64s) len() int {
-	if isNotIn(a.operator()) {
+	if a.op.isNotIn() {
 		return len(a.data)
 	}
 	return 1
 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (a *argFloat64s) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (a *argFloat64s) Operator(op Op) Argument {
 	a.op = op
 	return a
 }
 
-func (a *argFloat64s) operator() rune { return a.op }
+func (a *argFloat64s) operator() Op { return a.op }
 
 // ArgFloat64 adds a float64 or a slice of floats to the argument list.
 // Providing no arguments returns a NULL type.
@@ -823,7 +972,7 @@ func ArgFloat64(args ...float64) Argument {
 type expr struct {
 	SQL string
 	Arguments
-	op rune
+	op Op
 }
 
 // ArgExpr at a SQL fragment with placeholders, and a slice of args to replace them
@@ -845,14 +994,14 @@ func (e *expr) writeTo(w queryWriter, _ int) error {
 }
 func (e *expr) len() int { return 1 }
 
-// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Operator*.
-func (e *expr) Operator(op rune) Argument {
+// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+// the constants Op*.
+func (e *expr) Operator(op Op) Argument {
 	e.op = op
 	return e
 }
 
-func (e *expr) operator() rune { return e.op }
+func (e *expr) operator() Op { return e.op }
 
 // for type subQuery see function SubSelect
 
@@ -862,7 +1011,7 @@ func (e *expr) operator() rune { return e.op }
 //	// args contains the arguments after calling ToSQL
 //	args Arguments
 //	s    *Select
-//	op   rune
+//	op Op
 //}
 
 // I don't know anymore where I would have needed this ... but once the idea
@@ -910,10 +1059,10 @@ func (e *expr) operator() rune { return e.op }
 //
 //func (e *argSubSelect) len() int { return 1 }
 //
-//// Operator sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-//// the constants Operator*.
-//func (e *argSubSelect) Operator(op rune) Argument {
+//// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
+//// the constants Op*.
+//func (e *argSubSelect) Op(op Op) Argument {
 //	e.op = op
 //	return e
 //}
-//func (e *argSubSelect) operator() rune { return e.op }
+//func (e *argSubSelect) operator() Op { return e.op }
