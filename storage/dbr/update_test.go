@@ -26,24 +26,25 @@ import (
 )
 
 func TestUpdateAllToSQL(t *testing.T) {
-	s := createFakeSession()
-
-	sql, args, err := s.Update("a").Set("b", argInt64(1)).Set("c", argInt(2)).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `b`=?, `c`=?", sql)
-	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
+	t.Parallel()
+	qb := NewUpdate("a").Set("b", argInt64(1)).Set("c", argInt(2))
+	compareToSQL(t, qb, nil, "UPDATE `a` SET `b`=?, `c`=?", "", int64(1), int64(2))
 }
 
 func TestUpdateSingleToSQL(t *testing.T) {
-	s := createFakeSession()
+	t.Parallel()
 
-	sql, args, err := s.Update("a").Set("b", argInt(1)).Set("c", argInt(2)).Where(Column("id", argInt(1))).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)", sql)
-	assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
+	compareToSQL(t, NewUpdate("a").
+		Set("b", argInt(1)).Set("c", argInt(2)).Where(Column("id", argInt(1))),
+		nil,
+		"UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)",
+		"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)",
+		int64(1), int64(2), int64(1))
+
 }
 
 func TestUpdateSetMapToSQL(t *testing.T) {
+	t.Parallel()
 	s := createFakeSession()
 
 	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": argInt64(1), "c": ArgInt64(2)}).Where(Column("id", argInt(1))).ToSQL()
@@ -57,30 +58,34 @@ func TestUpdateSetMapToSQL(t *testing.T) {
 }
 
 func TestUpdateSetExprToSQL(t *testing.T) {
-	s := createFakeSession()
+	t.Parallel()
 
-	sql, args, err := s.Update("a").
+	compareToSQL(t, NewUpdate("a").
 		Set("foo", argInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id", argInt(9))).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = ?)", sql)
-	assert.Equal(t, []interface{}{int64(1), int64(9)}, args.Interfaces())
+		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id", argInt(9))),
+		nil,
+		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = ?)",
+		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = 9)",
+		int64(1), int64(9))
 
-	sql, args, err = s.Update("a").
+	compareToSQL(t, NewUpdate("a").
 		Set("foo", argInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", argInt(2))).Where(Column("id", argInt(9))).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)", sql)
-	assert.Equal(t, []interface{}{int64(1), int64(2), int64(9)}, args.Interfaces())
+		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", argInt(2))).Where(Column("id", argInt(9))),
+		nil,
+		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)",
+		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)",
+		int64(1), int64(2), int64(9))
 }
 
-func TestUpdateTenStaringFromTwentyToSQL(t *testing.T) {
-	s := createFakeSession()
+func TestUpdate_Limit_Offset(t *testing.T) {
+	t.Parallel()
 
-	sql, args, err := s.Update("a").Set("b", argInt(1)).Limit(10).Offset(20).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20", sql)
-	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
+	compareToSQL(t, NewUpdate("a").
+		Set("b", argInt(1)).Limit(10).Offset(20),
+		nil,
+		"UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20",
+		"UPDATE `a` SET `b`=1 LIMIT 10 OFFSET 20",
+		int64(1))
 }
 
 func TestUpdateKeywordColumnName(t *testing.T) {

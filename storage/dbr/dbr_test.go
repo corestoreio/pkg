@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"testing"
 
 	"github.com/corestoreio/errors"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 //
@@ -97,6 +100,8 @@ func (p *dbrPerson) AssembleArguments(stmtType rune, args Arguments, columns, co
 		switch c {
 		case "id":
 			args = append(args, ArgInt64(p.ID))
+		case "email":
+			args = append(args, ArgNullString(p.Email))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
@@ -285,4 +290,50 @@ func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interfac
 		return nil, pm.error
 	}
 	return nil, nil
+}
+
+func compareToSQL(
+	t testing.TB, qb QueryBuilder, wantErr errors.BehaviourFunc,
+	wantSQLPlaceholders, wantSQLInterpolated string,
+	wantArgs ...interface{},
+) {
+
+	sql, args, err := qb.ToSQL()
+	if wantErr == nil {
+		require.NoError(t, err, "%+v", err)
+	} else {
+		require.True(t, wantErr(err), "%+v")
+	}
+	assert.Equal(t, wantSQLPlaceholders, sql)
+	assert.Equal(t, wantArgs, args.Interfaces())
+
+	if wantSQLInterpolated == "" {
+		return
+	}
+
+	switch dml := qb.(type) {
+	case *Delete:
+		dml.Interpolate()
+	case *Update:
+		dml.Interpolate()
+	case *Insert:
+		dml.Interpolate()
+	case *Select:
+		dml.Interpolate()
+	case *UnionTemplate:
+		dml.Interpolate()
+	case *Union:
+		dml.Interpolate()
+	default:
+		t.Fatalf("Type %#v not (yet) supported.", qb)
+	}
+
+	sql, args, err = qb.ToSQL()
+	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
+	if wantErr == nil {
+		require.NoError(t, err, "%+v", err)
+	} else {
+		require.True(t, wantErr(err), "%+v")
+	}
+	require.Equal(t, wantSQLInterpolated, sql)
 }
