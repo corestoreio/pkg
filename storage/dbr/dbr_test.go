@@ -304,26 +304,35 @@ func compareToSQL(
 	} else {
 		require.True(t, wantErr(err), "%+v")
 	}
-	assert.Equal(t, wantSQLPlaceholders, sqlStr)
-	assert.Equal(t, wantArgs, args.Interfaces())
+	assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
+	assert.Equal(t, wantArgs, args.Interfaces(), "Placeholder Arguments do not match")
 
 	if wantSQLInterpolated == "" {
 		return
 	}
 
+	// If you care regarding the duplication ... send us a PR ;-)
+	// Enables Interpolate feature and resets it after the test has been
+	// executed.
 	switch dml := qb.(type) {
 	case *Delete:
 		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	case *Update:
 		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	case *Insert:
 		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	case *Select:
 		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	case *UnionTemplate:
 		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	case *Union:
 		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	default:
 		t.Fatalf("Type %#v not (yet) supported.", qb)
 	}
@@ -335,5 +344,5 @@ func compareToSQL(
 	} else {
 		require.True(t, wantErr(err), "%+v")
 	}
-	require.Equal(t, wantSQLInterpolated, sqlStr)
+	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }
