@@ -203,7 +203,7 @@ func ExampleNewUnion() {
 		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
 			AddArguments(dbr.ArgString("-")).
 			AddColumnsAlias("c2", "B").
-			From("tableC").Where(dbr.Column("c2", dbr.ArgString("ArgForC2"))),
+			From("tableC").Where(dbr.Column("c2", dbr.Equal.Str("ArgForC2"))),
 	).
 		OrderBy("A").       // Ascending by A
 		OrderByDesc("B").   // Descending by B

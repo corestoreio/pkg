@@ -298,13 +298,13 @@ func compareToSQL(
 	wantArgs ...interface{},
 ) {
 
-	sql, args, err := qb.ToSQL()
+	sqlStr, args, err := qb.ToSQL()
 	if wantErr == nil {
 		require.NoError(t, err, "%+v", err)
 	} else {
 		require.True(t, wantErr(err), "%+v")
 	}
-	assert.Equal(t, wantSQLPlaceholders, sql)
+	assert.Equal(t, wantSQLPlaceholders, sqlStr)
 	assert.Equal(t, wantArgs, args.Interfaces())
 
 	if wantSQLInterpolated == "" {
@@ -328,12 +328,12 @@ func compareToSQL(
 		t.Fatalf("Type %#v not (yet) supported.", qb)
 	}
 
-	sql, args, err = qb.ToSQL()
+	sqlStr, args, err = qb.ToSQL()
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
 		require.NoError(t, err, "%+v", err)
 	} else {
 		require.True(t, wantErr(err), "%+v")
 	}
-	require.Equal(t, wantSQLInterpolated, sql)
+	require.Equal(t, wantSQLInterpolated, sqlStr)
 }
