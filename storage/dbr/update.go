@@ -281,7 +281,7 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 
 	var err error
 	// Write WHERE clause if we have any fragments
-	if args, err = b.WhereFragments.write(buf, args, 'w'); err != nil {
+	if args, _, err = b.WhereFragments.write(buf, args, 'w'); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.write")
 	}
 

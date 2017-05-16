@@ -82,6 +82,9 @@ func (o Op) With(arg Argument) Argument {
 
 // Str uses string values for comparison.
 func (o Op) Str(values ...string) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	return &argStrings{data: values, op: o}
 }
 
@@ -110,6 +113,9 @@ func (o Op) NullFloat64(values ...NullFloat64) Argument {
 
 // Int64 uses int64 values for comparison.
 func (o Op) Int64(values ...int64) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	return &argInt64s{data: values, op: o}
 }
 
@@ -571,7 +577,7 @@ func (i argNull) len() int { return 1 }
 // Op not supported
 func (i argNull) Operator(op Op) Argument { return argNull(op) }
 func (i argNull) operator() Op {
-	if i != 0 {
+	if i > 0 {
 		return Op(i)
 	}
 	return Null
@@ -1002,6 +1008,27 @@ func (e *expr) Operator(op Op) Argument {
 }
 
 func (e *expr) operator() Op { return e.op }
+
+type argPlaceHolder rune
+
+func (i argPlaceHolder) toIFace(args []interface{}) []interface{} {
+	return args //append(args, nil)
+}
+
+func (i argPlaceHolder) writeTo(w queryWriter, _ int) (err error) {
+	_, err = w.WriteString("?/*SHOULD NOT GET WRITTEN*/")
+	return err
+}
+
+func (i argPlaceHolder) len() int {
+	return cahensConstant
+}
+
+// Op not supported
+func (i argPlaceHolder) Operator(op Op) Argument { return argPlaceHolder(op) }
+func (i argPlaceHolder) operator() Op {
+	return Op(i)
+}
 
 // for type subQuery see function SubSelect
 

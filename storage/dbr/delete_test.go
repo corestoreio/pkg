@@ -25,78 +25,74 @@ import (
 )
 
 func TestDeleteAllToSQL(t *testing.T) {
-	s := createFakeSession()
+	t.Parallel()
 
-	sql, _, err := s.DeleteFrom("a").ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, sql, "DELETE FROM `a`")
-
-	sql, _, err = s.DeleteFrom("a", "b").ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, sql, "DELETE FROM `a` AS `b`")
+	compareToSQL(t, NewDelete("a"), nil, "DELETE FROM `a`", "DELETE FROM `a`")
+	compareToSQL(t, NewDelete("a", "b"), nil, "DELETE FROM `a` AS `b`", "DELETE FROM `a` AS `b`")
 }
 
 func TestDeleteSingleToSQL(t *testing.T) {
-	s := createFakeSession()
+	t.Parallel()
 
-	del := s.DeleteFrom("a").Where(Column("id", argInt(1)))
-	sql, args, err := del.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `a` WHERE (`id` = ?)", sql)
-	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
+	qb := NewDelete("a").Where(Column("id", argInt(1)))
+	compareToSQL(t, qb, nil,
+		"DELETE FROM `a` WHERE (`id` = ?)",
+		"DELETE FROM `a` WHERE (`id` = 1)",
+		int64(1),
+	)
 
 	// test for being idempotent
-	sql, args, err = del.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `a` WHERE (`id` = ?)", sql)
-	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
+	compareToSQL(t, qb, nil,
+		"DELETE FROM `a` WHERE (`id` = ?)",
+		"DELETE FROM `a` WHERE (`id` = 1)",
+		int64(1),
+	)
 }
 
 func TestDelete_OrderBy(t *testing.T) {
-	s := createFakeSession()
+	t.Parallel()
 	t.Run("expr", func(t *testing.T) {
-		del := s.DeleteFrom("a").OrderByExpr("b=c").OrderByDesc("d").Interpolate()
-		sql, args, err := del.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "DELETE FROM `a` ORDER BY b=c, `d` DESC", sql)
-		assert.Nil(t, args, "Args should be nil")
+		compareToSQL(t, NewDelete("a").OrderByExpr("b=c").OrderByDesc("d"), nil,
+			"DELETE FROM `a` ORDER BY b=c, `d` DESC",
+			"DELETE FROM `a` ORDER BY b=c, `d` DESC",
+		)
 	})
 	t.Run("asc", func(t *testing.T) {
-		del := s.DeleteFrom("a").OrderBy("b").OrderBy("c").Interpolate()
-		sql, args, err := del.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "DELETE FROM `a` ORDER BY `b`, `c`", sql)
-		assert.Nil(t, args, "Args should be nil")
+		compareToSQL(t, NewDelete("a").OrderBy("b").OrderBy("c"), nil,
+			"DELETE FROM `a` ORDER BY `b`, `c`",
+			"DELETE FROM `a` ORDER BY `b`, `c`",
+		)
 	})
 	t.Run("desc", func(t *testing.T) {
-		del := s.DeleteFrom("a").OrderBy("b").OrderByDesc("c").OrderBy("d").OrderByDesc("e", "f").OrderBy("g").Interpolate()
-		sql, args, err := del.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "DELETE FROM `a` ORDER BY `b`, `c` DESC, `d`, `e` DESC, `f` DESC, `g`", sql)
-		assert.Nil(t, args, "Args should be nil")
+		compareToSQL(t, NewDelete("a").OrderBy("b").OrderByDesc("c").OrderBy("d").OrderByDesc("e", "f").OrderBy("g"), nil,
+			"DELETE FROM `a` ORDER BY `b`, `c` DESC, `d`, `e` DESC, `f` DESC, `g`",
+			"DELETE FROM `a` ORDER BY `b`, `c` DESC, `d`, `e` DESC, `f` DESC, `g`",
+		)
 	})
 }
 
-func TestDeleteTenStaringFromTwentyToSQL(t *testing.T) {
-	s := createFakeSession()
-
-	sql, _, err := s.DeleteFrom("a").Limit(10).Offset(20).OrderBy("id").ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `a` ORDER BY `id` LIMIT 10 OFFSET 20", sql)
+func TestDelete_Limit_Offset(t *testing.T) {
+	t.Parallel()
+	compareToSQL(t, NewDelete("a").Limit(10).Offset(20).OrderBy("id"), nil,
+		"DELETE FROM `a` ORDER BY `id` LIMIT 10 OFFSET 20",
+		"DELETE FROM `a` ORDER BY `id` LIMIT 10 OFFSET 20",
+	)
 }
 
 func TestDelete_Interpolate(t *testing.T) {
-	sql, _, err := NewDelete("tableA").
+	t.Parallel()
+	compareToSQL(t, NewDelete("tableA").
 		Where(
 			Column("colA", GreaterOrEqual.Float64(3.14159)),
 			Column("colB", In.Int(1, 2, 3, 45)),
 			Column("colC", ArgString("He'l`lo")),
 		).
-		Limit(10).Offset(20).OrderBy("id").
-		Interpolate().
-		ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY `id` LIMIT 10 OFFSET 20", sql)
+		Limit(10).Offset(20).OrderBy("id"), nil,
+		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN ?) AND (`colC` = ?) ORDER BY `id` LIMIT 10 OFFSET 20",
+		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY `id` LIMIT 10 OFFSET 20",
+		3.14159, int64(1), int64(2), int64(3), int64(45), "He'l`lo",
+	)
+
 }
 
 func TestDeleteReal(t *testing.T) {
@@ -129,13 +125,9 @@ func TestDeleteReal(t *testing.T) {
 }
 
 func TestDelete_Prepare(t *testing.T) {
-
+	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
-		d := &Delete{}
-		d.Where(Column("a", argInt64(1)))
-		stmt, err := d.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
+		compareToSQL(t, NewDelete("").Where(Column("a", argInt64(1))), errors.IsEmpty, "", "")
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
@@ -182,14 +174,10 @@ func TestDelete_Events(t *testing.T) {
 				},
 			},
 		)
-		sql, _, err := d.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC", sql)
-
-		sql, _, err = d.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC, `col1` DESC, `col2` DESC", sql)
-
+		compareToSQL(t, d, nil,
+			"DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC",
+			"DELETE FROM `tableA` AS `main_table` ORDER BY `col1` DESC, `col2` DESC, `col1` DESC, `col2` DESC",
+		)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
@@ -204,11 +192,10 @@ func TestDelete_Events(t *testing.T) {
 				},
 			},
 		)
-
-		sql, args, err := d.ToSQL()
-		assert.Empty(t, sql)
-		assert.Nil(t, args)
-		assert.True(t, errors.IsEmpty(err), "%+v", err)
+		compareToSQL(t, d, errors.IsEmpty,
+			"",
+			"",
+		)
 	})
 
 	t.Run("Should Dispatch", func(t *testing.T) {
@@ -244,17 +231,11 @@ func TestDelete_Events(t *testing.T) {
 				},
 			},
 		)
-
-		sql, args, err := d.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(1), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) ORDER BY `col2`, `col1` DESC", sql)
-
-		sql, args, err = d.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(1), int64(3), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) AND (`repetitive` = ?) ORDER BY `col2`, `col1` DESC", sql)
-
+		compareToSQL(t, d, nil,
+			"DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = ?) AND (`repetitive` = ?) ORDER BY `col2`, `col1` DESC",
+			"DELETE FROM `tableA` AS `main_table` WHERE (`store_id` = 1) AND (`repetitive` = 3) AND (`repetitive` = 3) ORDER BY `col2`, `col1` DESC",
+			int64(1), int64(3),
+		)
 		assert.Exactly(t, `col1; storeid; repetitive`, d.Listeners.String())
 	})
 }
@@ -289,5 +270,43 @@ func TestDelete_UseBuildCache(t *testing.T) {
 			require.Equal(t, cachedSQLInterpolated, sql)
 			assert.Nil(t, args)
 		}
+	})
+}
+
+func TestDelete_AddRecord(t *testing.T) {
+	t.Parallel()
+	p := &dbrPerson{
+		ID:    5555,
+		Email: MakeNullString("hans@wurst.com"),
+	}
+	t.Run("multiple args from Record", func(t *testing.T) {
+		del := NewDelete("dbr_people").
+			Where(
+				Column("idI64", Greater.Int64(4)),
+				Column("id", Equal.Int64()),
+				Column("float64_pi", Equal.Float64(3.14159)),
+				Column("email", Equal.Str()),
+				Column("int_e", Equal.Int(2718281)),
+			).
+			AddRecord(p).OrderBy("id")
+
+		compareToSQL(t, del, nil,
+			"DELETE FROM `dbr_people` WHERE (`idI64` > ?) AND (`id` = ?) AND (`float64_pi` = ?) AND (`email` = ?) AND (`int_e` = ?) ORDER BY `id`",
+			"DELETE FROM `dbr_people` WHERE (`idI64` > 4) AND (`id` = 5555) AND (`float64_pi` = 3.14159) AND (`email` = 'hans@wurst.com') AND (`int_e` = 2718281) ORDER BY `id`",
+			int64(4), int64(5555), 3.14159, "hans@wurst.com", int64(2718281),
+		)
+	})
+	t.Run("single arg from Record", func(t *testing.T) {
+		del := NewDelete("dbr_people").
+			Where(
+				Column("id", Equal.Int64()),
+			).
+			AddRecord(p).OrderBy("id")
+
+		compareToSQL(t, del, nil,
+			"DELETE FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
+			"DELETE FROM `dbr_people` WHERE (`id` = 5555) ORDER BY `id`",
+			int64(5555),
+		)
 	})
 }

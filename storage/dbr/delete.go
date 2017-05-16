@@ -46,8 +46,13 @@ type Delete struct {
 		Execer
 	}
 
+	// TODO(CyS) add DELETE ... JOIN ... statement
+
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
+
+	// Record if set retrieves the necessary arguments from the interface.
+	Record ArgumentAssembler
 
 	From alias
 	WhereFragments
@@ -103,6 +108,12 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 	d.DB.Execer = tx.Tx
 	d.DB.Preparer = tx.Tx
 	return d
+}
+
+// AddRecord pulls in values to match Columns from the record generator.
+func (b *Delete) AddRecord(rec ArgumentAssembler) *Delete {
+	b.Record = rec
+	return b
 }
 
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a
@@ -195,15 +206,34 @@ func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 		return nil, errors.NewEmptyf(errTableMissing)
 	}
 
-	var args Arguments // no make() lazy init the slice via append in cases where not WHERE has been provided.
-
 	buf.WriteString("DELETE FROM ")
 	b.From.FquoteAs(buf)
 
-	// Write WHERE clause if we have any fragments
-	var err error
-	if args, err = b.WhereFragments.write(buf, args, 'w'); err != nil {
+	// Write WHERE clause if we have any fragments.
+	// pap defines the pending argument positions. The pending arguments gets
+	// assembled in the Record.AssembleArguments.
+	args, pap, err := b.WhereFragments.write(buf, make(Arguments, 0, len(b.WhereFragments)), 'w')
+	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.write")
+	}
+
+	if b.Record != nil {
+		var err error
+		lenBefore := len(args)
+		args, err = b.Record.AssembleArguments(stmtTypeDelete, args, nil, b.WhereFragments.Conditions())
+		if err != nil {
+			return nil, errors.Wrap(err, "[dbr] Delete.ToSQL Record.AssembleArguments")
+		}
+		lenAfter := len(args)
+		if lenAfter > lenBefore {
+			j := 0
+			newLen := lenAfter - len(pap)
+			for i := newLen; i < lenAfter; i++ {
+				args[pap[j]], args[i] = args[i], args[pap[j]]
+				j++
+			}
+			args = args[:newLen] // remove the appended argPlaceHolder types after swapping
+		}
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)

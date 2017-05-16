@@ -490,13 +490,13 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 			w.WriteString(f.JoinType)
 			w.WriteString(" JOIN ")
 			f.Table.FquoteAs(w)
-			if args, err = f.OnConditions.write(w, args, 'j'); err != nil {
+			if args, _, err = f.OnConditions.write(w, args, 'j'); err != nil {
 				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
 			}
 		}
 	}
 
-	if args, err = b.WhereFragments.write(w, args, 'w'); err != nil {
+	if args, _, err = b.WhereFragments.write(w, args, 'w'); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
 	}
 
@@ -510,7 +510,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		}
 	}
 
-	if args, err = b.HavingFragments.write(w, args, 'h'); err != nil {
+	if args, _, err = b.HavingFragments.write(w, args, 'h'); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
 	}
 

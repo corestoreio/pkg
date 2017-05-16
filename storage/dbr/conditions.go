@@ -112,12 +112,23 @@ func (wf *whereFragment) Or() ConditionArg {
 	return wf
 }
 
+// cahensConstant a randomly chosen number aka unique identifier to check if
+// some conditions are only placeholder in combination with the interface
+// ArgumentAssembler. A bit hacky ...
+const cahensConstant = -6434105
+
 // Conditions iterates over each WHERE fragment and assembles all conditions
 // into a new slice.
 func (wf WhereFragments) Conditions() []string {
-	c := make([]string, len(wf))
-	for i, w := range wf {
-		c[i] = w.Condition
+	// this calculates the intersection of the columns in WhereFragments which
+	// already have an argument provided and those where the arguments must be
+	// assembled from the interface ArgumentAssembler. If the arguments should
+	// be assembled from the interface Argument.len() returns cahensConstant.
+	c := make([]string, 0, len(wf))
+	for _, w := range wf {
+		if len(w.Arguments) > 0 && w.Arguments[0].len() == cahensConstant {
+			c = append(c, w.Condition)
+		}
 	}
 	return c
 }
@@ -187,9 +198,9 @@ func (wf WhereFragments) append(wargs ...ConditionArg) WhereFragments {
 }
 
 // stmtType enum of j=join, w=where, h=having
-func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (Arguments, error) {
+func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (_ Arguments, pendingArgPos []int, _ error) {
 	if len(wf) == 0 {
-		return args, nil
+		return args, pendingArgPos, nil
 	}
 
 	switch stmtType {
@@ -212,7 +223,7 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (Ar
 					Quoter.quote(w, c)
 				}
 				w.WriteByte(')')
-				return args, nil // done, only one using allowed
+				return args, pendingArgPos, nil // done, only one USING allowed
 			}
 			if i == 0 {
 				w.WriteString(" ON ")
@@ -263,13 +274,24 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (Ar
 				subArgs, err := f.Sub.Select.toSQL(w)
 				w.WriteByte(')')
 				if err != nil {
-					return nil, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
+					return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
 				}
 				args = append(args, subArgs...)
 			} else {
 				// a column only supports one argument.
 				if len(f.Arguments) == 1 {
-					addArg = writeOperator(w, f.Arguments[0].operator(), true)
+					a := f.Arguments[0]
+					addArg = writeOperator(w, a.operator(), true)
+					if a.len() == cahensConstant {
+						// By keeping addArg as it is and not setting
+						// addArg=false, this []int avoids
+						// https://en.wikipedia.org/wiki/Permutation Which would
+						// result in a Go Code like
+						// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
+						// Because addArg=false does not add below the arguments and we must
+						// later swap the positions.
+						pendingArgPos = append(pendingArgPos, i)
+					}
 				}
 			}
 		}
@@ -280,5 +302,5 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (Ar
 		}
 		i++
 	}
-	return args, nil
+	return args, pendingArgPos, nil
 }

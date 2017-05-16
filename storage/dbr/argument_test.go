@@ -28,6 +28,7 @@ import (
 )
 
 var _ fmt.Stringer = Op(0)
+var _ Argument = argPlaceHolder(0)
 var _ Argument = argInt(0)
 var _ Argument = argInt64(0)
 var _ Argument = argFloat64(0)
