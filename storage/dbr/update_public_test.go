@@ -69,7 +69,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	mu := dbr.NewUpdateMulti("customer_entity", "ce")
 	mu.Update.SetClauses.Columns = []string{"name", "email"}
-	mu.Update.Where(dbr.Column("id", dbr.ArgInt64().Operator(dbr.Equal))) // ArgInt64 must be without arguments
+	mu.Update.Where(dbr.Column("id", dbr.Equal.Int64())) // Int64 must be without arguments, because Placeholder
 	mu.Update.Interpolate()
 
 	mu.Records = append(mu.Records, records...)
@@ -213,4 +213,54 @@ func TestUpdateMulti_Exec(t *testing.T) {
 			assert.Exactly(t, int64(1), aff)
 		}
 	})
+}
+
+func TestUpdate_SetRecord_Arguments(t *testing.T) {
+	ce := &categoryEntity{
+		EntityID:       678,
+		AttributeSetID: 6,
+		ParentID:       "p456",
+		Path:           dbr.MakeNullString("3/4/5"),
+	}
+
+	t.Run("1 WHERE", func(t *testing.T) {
+		u := dbr.NewUpdate("catalog_category_entity").
+			SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
+			Where(dbr.Column("entity_id", dbr.Greater.Int64())) // No Arguments in Int64 because we need a place holder.
+
+		compareToSQL(t, u, nil,
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678)",
+			int64(6), "p456", "3/4/5", int64(678),
+		)
+	})
+
+	t.Run("2 WHERE", func(t *testing.T) {
+		u := dbr.NewUpdate("catalog_category_entity").
+			SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
+			Where(
+				dbr.Column("x", dbr.In.Int64(66, 77)),
+				dbr.Column("entity_id", dbr.Greater.Int64()),
+			)
+		compareToSQL(t, u, nil,
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN ?) AND (`entity_id` > ?)",
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
+			int64(6), "p456", "3/4/5", int64(66), int64(77), int64(678),
+		)
+	})
+	t.Run("3 WHERE", func(t *testing.T) {
+		u := dbr.NewUpdate("catalog_category_entity").
+			SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
+			Where(
+				dbr.Column("entity_id", dbr.Greater.Int64()),
+				dbr.Column("x", dbr.In.Int64(66, 77)),
+				dbr.Column("y", dbr.Greater.Int64(99)),
+			)
+		compareToSQL(t, u, nil,
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN ?) AND (`y` > ?)",
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
+			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(99),
+		)
+	})
+
 }

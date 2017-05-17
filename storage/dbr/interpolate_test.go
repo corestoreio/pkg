@@ -268,7 +268,7 @@ func TestInterpolateStrings(t *testing.T) {
 func TestInterpolateSlices(t *testing.T) {
 	t.Parallel()
 	str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ?",
-		argInt(1).Operator(In),
+		In.Int(1),
 		In.Int(1, 2, 3),
 		In.Int64(5, 6, 7),
 		In.Str("wat", "ok"),

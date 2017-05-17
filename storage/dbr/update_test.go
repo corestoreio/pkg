@@ -171,7 +171,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("with condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity", "cpe")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
-		u.Where(Column("entity_id", ArgInt64(1, 2, 3).Operator(In)))
+		u.Where(Column("entity_id", In.Int64(1, 2, 3)))
 
 		sqlStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
@@ -183,7 +183,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("without condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity", "cpe")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
-		u.Where(Column("entity_id", ArgInt64().Operator(In)))
+		u.Where(Column("entity_id", In.Int64()))
 
 		sqlStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
@@ -385,7 +385,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	t.Run("with where", func(t *testing.T) {
 
 		u := NewUpdate("dbr_person").SetRecord([]string{"name", "email"}, pRec).
-			Where(Column("id", ArgInt().Operator(Equal)))
+			Where(Column("id", Equal.Int()))
 
 		sqlStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
@@ -398,7 +398,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	t.Run("fails column not in entity object", func(t *testing.T) {
 		u := NewUpdate("dbr_person").SetRecord([]string{"name", "email"}, pRec).
 			Set("key", ArgString("JustAKey")).
-			Where(Column("id", ArgInt().Operator(Equal)))
+			Where(Column("id", Equal.Int()))
 
 		sqlStr, args, err := u.ToSQL()
 		assert.Empty(t, sqlStr)

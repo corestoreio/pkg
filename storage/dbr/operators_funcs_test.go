@@ -135,7 +135,7 @@ func TestSQLIf(t *testing.T) {
 		From("table1").Where(
 		dbr.Expression(
 			dbr.SQLIf("a > 0", "b", "c"),
-			dbr.ArgInt(4711).Operator(dbr.Greater),
+			dbr.Greater.Int(4711),
 		))
 
 	sqlStr, args, err := s.ToSQL()

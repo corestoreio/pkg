@@ -35,9 +35,9 @@ func TestColumn(t *testing.T) {
 
 	t.Run("valid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
-			Column("a", ArgInt(111, 222).Operator(In)),
+			Column("a", In.Int64(111, 222)),
 			Column("b"),
-			Column("d", ArgFloat64(2.5, 2.7).Operator(Between)),
+			Column("d", Between.Float64(2.5, 2.7)),
 		).Interpolate()
 		sql, args, err := s.ToSQL()
 		require.NoError(t, err)

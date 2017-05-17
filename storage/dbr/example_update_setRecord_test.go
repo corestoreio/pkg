@@ -71,7 +71,7 @@ func ExampleUpdate_SetRecord() {
 	// Updates only one row in the table
 	u = dbr.NewUpdate("catalog_category_entity").
 		SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
-		Where(dbr.Column("entity_id", dbr.ArgInt64())) // dbr.Equal is default operator!
+		Where(dbr.Column("entity_id", dbr.Equal.Int64())) // No Arguments in Int64 because we need a place holder.
 	writeToSqlAndPreprocess(u)
 
 	// Output:

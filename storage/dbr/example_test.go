@@ -408,7 +408,7 @@ func ExampleArgument() {
 	}
 
 	argPrinter(dbr.ArgNull())
-	argPrinter(dbr.ArgNull().Operator(dbr.NotNull))
+	argPrinter(dbr.NotNull.Null())
 	argPrinter(dbr.ArgInt(2))
 	argPrinter(dbr.Null.Int(3))
 	argPrinter(dbr.NotNull.Int(4))
@@ -468,7 +468,7 @@ func ExampleCondition() {
 	}
 
 	argPrinter(dbr.ArgNull())
-	argPrinter(dbr.ArgNull().Operator(dbr.NotNull))
+	argPrinter(dbr.NotNull.Null())
 	argPrinter(dbr.ArgInt(2))
 	argPrinter(dbr.Null.Int(3))
 	argPrinter(dbr.NotNull.Int(4))
