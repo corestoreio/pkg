@@ -292,6 +292,9 @@ func (pm dbMock) ExecContext(ctx context.Context, query string, args ...interfac
 	return nil, nil
 }
 
+// compareToSQL compares a SQL object with a placeholder string and an optional
+// interpolated string. This function also exists in file dbr_public_test.go to
+// avoid import cycles when using a single package dedicated for testing.
 func compareToSQL(
 	t testing.TB, qb QueryBuilder, wantErr errors.BehaviourFunc,
 	wantSQLPlaceholders, wantSQLInterpolated string,

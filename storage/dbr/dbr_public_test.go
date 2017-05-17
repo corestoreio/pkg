@@ -16,9 +16,12 @@ package dbr_test
 
 import (
 	"os"
+	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var _ dbr.ArgumentAssembler = (*dbrPerson)(nil)
@@ -64,4 +67,62 @@ func createRealSession() (*dbr.Connection, bool) {
 		panic(err)
 	}
 	return cxn, true
+}
+
+// compareToSQL compares a SQL object with a placeholder string and an optional
+// interpolated string. This function also exists in file dbr_public_test.go to
+// avoid import cycles when using a single package dedicated for testing.
+func compareToSQL(
+	t testing.TB, qb dbr.QueryBuilder, wantErr errors.BehaviourFunc,
+	wantSQLPlaceholders, wantSQLInterpolated string,
+	wantArgs ...interface{},
+) {
+
+	sqlStr, args, err := qb.ToSQL()
+	if wantErr == nil {
+		require.NoError(t, err, "%+v", err)
+	} else {
+		require.True(t, wantErr(err), "%+v")
+	}
+	assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
+	assert.Equal(t, wantArgs, args.Interfaces(), "Placeholder Arguments do not match")
+
+	if wantSQLInterpolated == "" {
+		return
+	}
+
+	// If you care regarding the duplication ... send us a PR ;-)
+	// Enables Interpolate feature and resets it after the test has been
+	// executed.
+	switch dml := qb.(type) {
+	case *dbr.Delete:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
+	case *dbr.Update:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
+	case *dbr.Insert:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
+	case *dbr.Select:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
+	case *dbr.UnionTemplate:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
+	case *dbr.Union:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
+	default:
+		t.Fatalf("Type %#v not (yet) supported.", qb)
+	}
+
+	sqlStr, args, err = qb.ToSQL()
+	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
+	if wantErr == nil {
+		require.NoError(t, err, "%+v", err)
+	} else {
+		require.True(t, wantErr(err), "%+v")
+	}
+	require.Equal(t, wantSQLInterpolated, sqlStr, "Interpolated SQL strings do not match")
 }
