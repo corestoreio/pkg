@@ -129,6 +129,8 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 
 // AddValues appends a set of values to the statement. Each call of AddValues
 // creates a new set of values.
+// TODO(CyS) refactor and maybe use an empty interface slice ...
+// Deprecated: Gets refactored
 func (b *Insert) AddValues(vals ...Argument) *Insert {
 	if lv, mod := len(vals), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more

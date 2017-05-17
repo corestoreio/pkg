@@ -17,7 +17,6 @@ package dbr
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 
 	"github.com/corestoreio/errors"
@@ -50,78 +49,64 @@ func (sr someRecord) AssembleArguments(stmtType rune, args Arguments, columns, c
 	return args, nil
 }
 
-func TestInsertSingleToSQL(t *testing.T) {
-	s := createFakeSession()
+func TestNewInsert(t *testing.T) {
+	t.Parallel()
 
-	sStr, args, err := s.InsertInto("a").AddColumns("b", "c").AddValues(argInt(1), argInt(2)).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (?,?)", sStr)
-	assert.Equal(t, []interface{}{int64(1), int64(2)}, args.Interfaces())
+	t.Run("single value", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").AddColumns("b", "c").AddValues(ArgInt(1), ArgInt(2)),
+			nil,
+			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
+			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
+			int64(1), int64(2),
+		)
+	})
+
+	t.Run("multi value on duplicate key", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").AddColumns("b", "c").
+				AddValues(
+					ArgInt(1), ArgInt(2),
+					ArgInt(3), ArgInt(4),
+				).
+				AddValues(
+					ArgInt(5), ArgInt(6),
+				).
+				AddOnDuplicateKey("b", nil).
+				AddOnDuplicateKey("c", nil),
+			nil,
+			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
+			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
+			int64(1), int64(2), int64(3), int64(4), int64(5), int64(6),
+		)
+	})
 }
 
-func TestInsertMultipleToSQL(t *testing.T) {
-	s := createFakeSession()
-
-	sStr, args, err := s.InsertInto("a").AddColumns("b", "c").
-		AddValues(
-			argInt(1), argInt(2),
-			argInt(3), argInt(4),
-		).
-		AddValues(
-			argInt(5), argInt(6),
-		).
-		AddOnDuplicateKey("b", nil).
-		AddOnDuplicateKey("c", nil).
-		ToSQL()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", sStr)
-	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
-}
-
-func TestInsert_Interpolate(t *testing.T) {
-	sStr, args, err := NewInsert("a").AddColumns("b", "c").
-		AddValues(
-			argInt(1), argInt(2),
-			argInt(3), argInt(4),
-		).
-		AddValues(
-			argInt(5), argInt(6),
-		).
-		AddOnDuplicateKey("b", nil).
-		AddOnDuplicateKey("c", nil).
-		Interpolate().
-		ToSQL()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)", sStr)
-	assert.Nil(t, args)
-}
-
-func TestInsertRecordsToSQL(t *testing.T) {
-	s := createFakeSession()
-
-	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
-	sqlStr, args, err := s.InsertInto("a").
-		AddColumns("something_id", "user_id", "other").
-		AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
-		AddOnDuplicateKey("something_id", argInt64(99)).
-		AddOnDuplicateKey("user_id", nil).
-		ToSQL()
-	require.NoError(t, err)
-	assert.Equal(t, "INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)", sqlStr)
-	// without fmt.Sprint we have an error despite objects are equal ...
-	assert.Equal(t, fmt.Sprint([]interface{}{1, 88, false, 2, 99, true, 3, 101, true, int64(99)}), fmt.Sprint(args.Interfaces()))
-}
-
-func TestInsertRecordsToSQLNotFoundMapping(t *testing.T) {
-	s := createFakeSession()
-
-	objs := []someRecord{{1, 88, false}, {2, 99, true}}
-	sqlStr, args, err := s.InsertInto("a").AddColumns("something_it", "user_id", "other").AddRecords(objs[0]).AddRecords(objs[1]).ToSQL()
-	assert.True(t, errors.IsNotFound(err), "%+v", err)
-	assert.Nil(t, args)
-	assert.Empty(t, sqlStr)
+func TestInsert_AddRecords(t *testing.T) {
+	t.Parallel()
+	t.Run("valid", func(t *testing.T) {
+		objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
+		compareToSQL(t,
+			NewInsert("a").
+				AddColumns("something_id", "user_id", "other").
+				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
+				AddOnDuplicateKey("something_id", argInt64(99)).
+				AddOnDuplicateKey("user_id", nil),
+			nil,
+			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
+			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
+			int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true, int64(99),
+		)
+	})
+	t.Run("column not found", func(t *testing.T) {
+		objs := []someRecord{{1, 88, false}, {2, 99, true}}
+		compareToSQL(t,
+			NewInsert("a").AddColumns("something_it", "user_id", "other").AddRecords(objs[0]).AddRecords(objs[1]),
+			errors.IsNotFound,
+			"",
+			"",
+		)
+	})
 }
 
 func TestInsertKeywordColumnName(t *testing.T) {
@@ -224,7 +209,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 // TODO: do a real test inserting multiple records
 
 func TestInsert_Prepare(t *testing.T) {
-
+	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Insert{}
 		in.AddColumns("a", "b")
@@ -280,13 +265,17 @@ func TestInsert_Events(t *testing.T) {
 				},
 			},
 		)
-		sql, _, err := d.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
+		compareToSQL(t, d, nil,
+			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)",
+			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')",
+			int64(1), true, "X1", "X2",
+		)
+		// call it twice (4x) to test for being NOT idempotent
+		compareToSQL(t, d, errors.IsAlreadyExists,
+			"",
+			"",
+		)
 
-		sql, _, err = d.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)", sql)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
@@ -301,10 +290,10 @@ func TestInsert_Events(t *testing.T) {
 				},
 			},
 		)
-		sql, args, err := ins.ToSQL()
-		assert.Empty(t, sql)
-		assert.Nil(t, args)
-		assert.True(t, errors.IsEmpty(err), "%+v", err)
+		compareToSQL(t, ins, errors.IsEmpty,
+			"",
+			"",
+		)
 	})
 
 	t.Run("Should Dispatch", func(t *testing.T) {
@@ -341,75 +330,82 @@ func TestInsert_Events(t *testing.T) {
 			},
 		)
 
-		sql, args, err := ins.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, 2.7182, "X1"}, args.Interfaces())
-		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
-
-		sql, args, err = ins.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(1), true, 3.14159, 2.7182, "X1"}, args.Interfaces())
-		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)", sql)
+		compareToSQL(t, ins, nil,
+			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)",
+			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')",
+			int64(1), true, 3.14159, 2.7182, "X1",
+		)
+		compareToSQL(t, ins, errors.IsAlreadyExists,
+			"",
+			"",
+		)
 
 		assert.Exactly(t, `colA; colB; colC`, ins.Listeners.String())
 	})
 }
 
 func TestInsert_FromSelect(t *testing.T) {
+	t.Parallel()
+
 	ins := NewInsert("tableA")
 	// columns and args just to check that they get ignored
 	ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
 
 	argEq := Eq{"a": In.Int64(1, 2, 3)}
 
-	iSQL, args, err := ins.FromSelect(NewSelect("something_id", "user_id", "other").
+	compareToSQL(t, ins.FromSelect(NewSelect("something_id", "user_id", "other").
 		From("some_table").
 		Where(
 			ParenthesisOpen(),
-			Column("d", argInt64(1)),
+			Column("d", ArgInt64(1)),
 			Column("e", ArgString("wat")).Or(),
 			ParenthesisClose(),
 		).
 		Where(argEq).
 		OrderByDesc("id").
-		Paginate(1, 20)).ToSQL()
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	assert.Exactly(t, "INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY `id` DESC LIMIT 20 OFFSET 0", iSQL)
-	assert.Exactly(t, []interface{}{int64(1), "wat", int64(1), int64(2), int64(3)}, args.Interfaces())
+		Paginate(1, 20)),
+		nil,
+		"INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+		"INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+		int64(1), "wat", int64(1), int64(2), int64(3),
+	)
 }
 
 func TestInsert_Replace_Ignore(t *testing.T) {
+	t.Parallel()
 
 	// this generated statement does not comply the SQL standard
-	sStr, args, err := NewInsert("a").
+	compareToSQL(t, NewInsert("a").
 		Replace().Ignore().
 		AddColumns("b", "c").
-		AddValues(argInt(1), argInt(2)).
-		AddValues(argInt64(3), argInt64(4)).
-		ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (?,?),(?,?)", sStr)
-	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4)}, args.Interfaces())
+		AddValues(ArgInt(1), ArgInt(2)).
+		AddValues(ArgInt64(3), ArgInt64(4)),
+		nil,
+		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
+		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (1,2),(3,4)",
+		int64(1), int64(2), int64(3), int64(4),
+	)
 }
 
 func TestInsert_WithoutColumns(t *testing.T) {
+	t.Parallel()
 
 	t.Run("each column in its own Arg", func(t *testing.T) {
-		ins := NewInsert("catalog_product_link").
+		compareToSQL(t, NewInsert("catalog_product_link").
 			AddValues(ArgInt64(2046), ArgInt64(33), ArgInt64(3)).
 			AddValues(ArgInt64(2046), ArgInt64(34), ArgInt64(3)).
-			AddValues(ArgInt64(2046), ArgInt64(35), ArgInt64(3))
-
-		sStr, args, err := ins.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(2046), int64(33), int64(3), int64(2046), int64(34), int64(3), int64(2046), int64(35), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)", sStr)
+			AddValues(ArgInt64(2046), ArgInt64(35), ArgInt64(3)),
+			nil,
+			"INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)",
+			"INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)",
+			int64(2046), int64(33), int64(3), int64(2046), int64(34), int64(3), int64(2046), int64(35), int64(3),
+		)
 	})
 }
 
 func TestInsert_Pair(t *testing.T) {
+	t.Parallel()
+
 	t.Run("one row", func(t *testing.T) {
 		ins := NewInsert("catalog_product_link").
 			Pair("product_id", ArgInt64(2046)).
