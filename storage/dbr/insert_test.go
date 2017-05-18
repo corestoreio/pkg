@@ -90,7 +90,7 @@ func TestInsert_AddRecords(t *testing.T) {
 			NewInsert("a").
 				AddColumns("something_id", "user_id", "other").
 				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
-				AddOnDuplicateKey("something_id", argInt64(99)).
+				AddOnDuplicateKey("something_id", ArgInt64(99)).
 				AddOnDuplicateKey("user_id", nil),
 			nil,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
@@ -225,7 +225,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.DB.Preparer = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		in.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
+		in.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -238,7 +238,7 @@ func TestInsert_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewInsert("tableA")
-		d.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
+		d.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -280,7 +280,7 @@ func TestInsert_Events(t *testing.T) {
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		ins := NewInsert("tableA")
-		ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
+		ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
 
 		ins.Listeners.Add(
 			Listen{
@@ -299,7 +299,7 @@ func TestInsert_Events(t *testing.T) {
 	t.Run("Should Dispatch", func(t *testing.T) {
 		ins := NewInsert("tableA")
 
-		ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
+		ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
 
 		ins.Listeners.Add(
 			Listen{
@@ -349,7 +349,7 @@ func TestInsert_FromSelect(t *testing.T) {
 
 	ins := NewInsert("tableA")
 	// columns and args just to check that they get ignored
-	ins.AddColumns("a", "b").AddValues(argInt(1), ArgBool(true))
+	ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
 
 	argEq := Eq{"a": In.Int64(1, 2, 3)}
 
@@ -407,29 +407,30 @@ func TestInsert_Pair(t *testing.T) {
 	t.Parallel()
 
 	t.Run("one row", func(t *testing.T) {
-		ins := NewInsert("catalog_product_link").
+		compareToSQL(t, NewInsert("catalog_product_link").
 			Pair("product_id", ArgInt64(2046)).
 			Pair("linked_product_id", ArgInt64(33)).
-			Pair("link_type_id", ArgInt64(3))
-		sStr, args, err := ins.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{int64(2046), int64(33), int64(3)}, args.Interfaces())
-		assert.Exactly(t, "INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?)", sStr)
+			Pair("link_type_id", ArgInt64(3)),
+			nil,
+			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?)",
+			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3)",
+			int64(2046), int64(33), int64(3),
+		)
+
 	})
 	t.Run("multiple rows triggers error", func(t *testing.T) {
-		ins := NewInsert("catalog_product_link").
+		compareToSQL(t, NewInsert("catalog_product_link").
 			Pair("product_id", ArgInt64(2046)).
 			Pair("linked_product_id", ArgInt64(33)).
 			Pair("link_type_id", ArgInt64(3)).
 			// next row
 			Pair("product_id", ArgInt64(2046)).
 			Pair("linked_product_id", ArgInt64(34)).
-			Pair("link_type_id", ArgInt64(3))
-
-		sStr, args, err := ins.ToSQL()
-		assert.Empty(t, sStr)
-		assert.Nil(t, args)
-		assert.True(t, errors.IsAlreadyExists(err), "%+v", err)
+			Pair("link_type_id", ArgInt64(3)),
+			errors.IsAlreadyExists,
+			"",
+			"",
+		)
 	})
 }
 
@@ -438,11 +439,11 @@ func TestInsert_UseBuildCache(t *testing.T) {
 
 	ins := NewInsert("a").AddColumns("b", "c").
 		AddValues(
-			argInt(1), argInt(2),
-			argInt(3), argInt(4),
+			ArgInt(1), ArgInt(2),
+			ArgInt(3), ArgInt(4),
 		).
 		AddValues(
-			argInt(5), argInt(6),
+			ArgInt(5), ArgInt(6),
 		).
 		AddOnDuplicateKey("b", nil).
 		AddOnDuplicateKey("c", nil)

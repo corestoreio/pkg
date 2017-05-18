@@ -37,13 +37,13 @@ func TestRepeat(t *testing.T) {
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 	t.Run("MisMatch qMarks", func(t *testing.T) {
-		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN(!)", argInt(3))
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN(!)", ArgInt(3))
 		assert.Empty(t, s)
 		assert.Nil(t, args)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 	t.Run("one arg with one value", func(t *testing.T) {
-		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", argInt(1))
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", ArgInt(1))
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?)", s)
 		assert.Exactly(t, []interface{}{int64(1)}, args)
 		assert.NoError(t, err, "%+v", err)
@@ -94,7 +94,7 @@ func TestInterpolateErrors(t *testing.T) {
 	t.Run("way too many qmarks", func(t *testing.T) {
 		str, err := Interpolate("SELECT * FROM x WHERE a IN ? OR b = ? OR c = ? AND d = ?",
 			In.Int(3, 4),
-			argInt64(2),
+			ArgInt64(2),
 		)
 		assert.Empty(t, str)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
@@ -179,7 +179,7 @@ func TestInterpolateInt64(t *testing.T) {
 	t.Run("in and equal", func(t *testing.T) {
 		str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND h = ? AND i = ? AND j = ? AND k = ? AND m IN ? OR n = ?",
 			ArgInt64(1, -2, 3, 4, 5, 6),
-			argInt64(11),
+			ArgInt64(11),
 			In.Int64(12, 13),
 			ArgInt64(-14),
 		)
@@ -191,7 +191,7 @@ func TestInterpolateInt64(t *testing.T) {
 	t.Run("empty arg", func(t *testing.T) {
 		str, err := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND h = ? AND i = ? AND j = ? AND k = ? AND m IN ? OR n = ?",
 			ArgInt64(1, -2, 3, 4, 5, 6),
-			argInt64(11),
+			ArgInt64(11),
 			In.Int64(12, 13),
 			ArgInt64(),
 		)
@@ -272,7 +272,7 @@ func TestInterpolateSlices(t *testing.T) {
 		In.Int(1, 2, 3),
 		In.Int64(5, 6, 7),
 		In.Str("wat", "ok"),
-		argInt(8),
+		ArgInt(8),
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT * FROM x WHERE a = (1) AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok') AND e = 8", str)
@@ -318,7 +318,7 @@ func TestInterpolate(t *testing.T) {
 
 		// slices
 		{"SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ?",
-			Arguments{argInt(1), In.Int(1, 2, 3), In.Int(5, 6, 7), In.Str("wat", "ok")},
+			Arguments{ArgInt(1), In.Int(1, 2, 3), In.Int(5, 6, 7), In.Str("wat", "ok")},
 			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", nil},
 
 		//// TODO valuers
@@ -327,10 +327,10 @@ func TestInterpolate(t *testing.T) {
 		//	"SELECT * FROM x WHERE a = 'wat' AND b = NULL", nil},
 
 		// errors
-		{"SELECT * FROM x WHERE a = ? AND b = ?", Arguments{argInt64(1)},
+		{"SELECT * FROM x WHERE a = ? AND b = ?", Arguments{ArgInt64(1)},
 			"", errors.IsNotValid},
 
-		{"SELECT * FROM x WHERE", Arguments{argInt(1)},
+		{"SELECT * FROM x WHERE", Arguments{ArgInt(1)},
 			"", errors.IsNotValid},
 
 		{"SELECT * FROM x WHERE a = ?", Arguments{ArgString(string([]byte{0x34, 0xFF, 0xFE}))},
