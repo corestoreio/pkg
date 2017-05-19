@@ -16,6 +16,7 @@ package dbr
 
 import (
 	"database/sql/driver"
+	"fmt"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -77,7 +78,7 @@ func (o Op) String() string {
 
 // With allows to use any argument with an operator.
 func (o Op) With(arg Argument) Argument {
-	return arg.Operator(o)
+	return arg.applyOperator(o)
 }
 
 // Str uses string values for comparison.
@@ -90,6 +91,9 @@ func (o Op) Str(values ...string) Argument {
 
 // NullString uses nullable string values for comparison.
 func (o Op) NullString(values ...NullString) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	if len(values) == 1 {
 		values[0].op = o
 		return values[0]
@@ -99,11 +103,17 @@ func (o Op) NullString(values ...NullString) Argument {
 
 // Float64 uses float64 values for comparison.
 func (o Op) Float64(values ...float64) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	return &argFloat64s{data: values, op: o}
 }
 
 // NullFloat64 uses nullable float64 values for comparison.
 func (o Op) NullFloat64(values ...NullFloat64) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	if len(values) == 1 {
 		values[0].op = o
 		return values[0]
@@ -121,6 +131,9 @@ func (o Op) Int64(values ...int64) Argument {
 
 // NullInt64 uses nullable int64 values for comparison.
 func (o Op) NullInt64(values ...NullInt64) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	if len(values) == 1 {
 		values[0].op = o
 		return values[0]
@@ -130,11 +143,17 @@ func (o Op) NullInt64(values ...NullInt64) Argument {
 
 // Int uses int values for comparison.
 func (o Op) Int(values ...int) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	return &argInts{data: values, op: o}
 }
 
 // Bool uses bool values for comparison.
 func (o Op) Bool(values ...bool) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	return &argBools{data: values, op: o}
 }
 
@@ -146,11 +165,17 @@ func (o Op) NullBool(value NullBool) Argument {
 
 // Time uses time.Time values for comparison.
 func (o Op) Time(values ...time.Time) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	return &argTimes{data: values, op: o}
 }
 
 // NullTime uses nullable time values for comparison.
 func (o Op) NullTime(values ...NullTime) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	if len(values) == 1 {
 		values[0].op = o
 		return values[0]
@@ -167,11 +192,17 @@ func (o Op) Null() Argument {
 // NULL type. Detects between valid UTF-8 strings and binary data. Later gets
 // hex encoded.
 func (o Op) Bytes(p ...[]byte) Argument {
+	if len(p) == 0 {
+		return argPlaceHolder(o)
+	}
 	return argBytes{data: p, op: o}
 }
 
 // Value uses driver.Valuers for comparison.
 func (o Op) Value(values ...driver.Valuer) Argument {
+	if len(values) == 0 {
+		return argPlaceHolder(o)
+	}
 	return &argValue{data: values, op: o}
 }
 
@@ -202,17 +233,17 @@ type ArgumentAssembler interface {
 // underlying primitive type in the interface must be one of driver.Value
 // allowed types.
 type Argument interface {
-	// Operator sets a comparison or logical operator. Please see the constants
-	// Op* for the different flags. An underscore in the argument list of
-	// a type indicates that no operator is yet supported.
-	Operator(Op) Argument
+	// applyOperator sets a comparison or logical operator. Please see the
+	// constants Op for the different flags.
+	applyOperator(Op) Argument
 	// toIFace appends the value or values to interface slice and returns it.
 	toIFace([]interface{}) []interface{}
 	// writeTo writes the value correctly escaped to the queryWriter. It must
 	// avoid SQL injections.
 	writeTo(w queryWriter, position int) error
 	// len returns the length of the available values. If the IN clause has been
-	// activated then len returns 1.
+	// activated then len returns 1. In case of an underlying place holder type
+	// the returned length of cahensConstant
 	len() int
 	operator() Op
 }
@@ -435,7 +466,7 @@ func (a *argValue) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a *argValue) Operator(op Op) Argument {
+func (a *argValue) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -487,7 +518,7 @@ func (a *argTimes) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a *argTimes) Operator(op Op) Argument {
+func (a *argTimes) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -542,8 +573,8 @@ func (a argBytes) len() int {
 }
 
 // Op not supported
-func (a argBytes) Operator(op Op) Argument { a.op = op; return a }
-func (a argBytes) operator() Op            { return a.op }
+func (a argBytes) applyOperator(op Op) Argument { a.op = op; return a }
+func (a argBytes) operator() Op                 { return a.op }
 
 // ArgBytes adds a byte slice to the argument list. Providing a nil argument
 // returns a NULL type. Detects between valid UTF-8 strings and binary data. Later
@@ -575,7 +606,7 @@ func (i argNull) writeTo(w queryWriter, _ int) (err error) {
 func (i argNull) len() int { return 1 }
 
 // Op not supported
-func (i argNull) Operator(op Op) Argument { return argNull(op) }
+func (i argNull) applyOperator(op Op) Argument { return argNull(op) }
 func (i argNull) operator() Op {
 	if i > 0 {
 		return Op(i)
@@ -608,7 +639,7 @@ func (a argString) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argString) Operator(op Op) Argument {
+func (a argString) applyOperator(op Op) Argument {
 	return &argStrings{
 		data: []string{string(a)},
 		op:   op,
@@ -660,7 +691,7 @@ func (a *argStrings) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a *argStrings) Operator(op Op) Argument {
+func (a *argStrings) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -689,8 +720,8 @@ func (a argBool) writeTo(w queryWriter, _ int) error {
 func (a argBool) len() int { return 1 }
 
 // Op not supported
-func (a argBool) Operator(_ Op) Argument { return a }
-func (a argBool) operator() Op           { return 0 }
+func (a argBool) applyOperator(_ Op) Argument { return a }
+func (a argBool) operator() Op                { return 0 }
 
 type argBools struct {
 	op   Op
@@ -730,7 +761,7 @@ func (a *argBools) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a *argBools) Operator(op Op) Argument {
+func (a *argBools) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -760,7 +791,7 @@ func (a argInt) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argInt) Operator(op Op) Argument {
+func (a argInt) applyOperator(op Op) Argument {
 	return &argInts{
 		op:   op,
 		data: []int{int(a)},
@@ -806,7 +837,7 @@ func (a *argInts) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a *argInts) Operator(op Op) Argument {
+func (a *argInts) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -837,7 +868,7 @@ func (a argInt64) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argInt64) Operator(op Op) Argument {
+func (a argInt64) applyOperator(op Op) Argument {
 	return &argInt64s{
 		op:   op,
 		data: []int64{int64(a)},
@@ -883,7 +914,7 @@ func (a *argInt64s) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a *argInt64s) Operator(op Op) Argument {
+func (a *argInt64s) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -913,7 +944,7 @@ func (a argFloat64) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argFloat64) Operator(op Op) Argument {
+func (a argFloat64) applyOperator(op Op) Argument {
 	return &argFloat64s{
 		op:   op,
 		data: []float64{float64(a)},
@@ -959,7 +990,7 @@ func (a *argFloat64s) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a *argFloat64s) Operator(op Op) Argument {
+func (a *argFloat64s) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -1002,7 +1033,7 @@ func (e *expr) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (e *expr) Operator(op Op) Argument {
+func (e *expr) applyOperator(op Op) Argument {
 	e.op = op
 	return e
 }
@@ -1025,9 +1056,13 @@ func (i argPlaceHolder) len() int {
 }
 
 // Op not supported
-func (i argPlaceHolder) Operator(op Op) Argument { return argPlaceHolder(op) }
+func (i argPlaceHolder) applyOperator(op Op) Argument { return argPlaceHolder(op) }
 func (i argPlaceHolder) operator() Op {
 	return Op(i)
+}
+
+func (i argPlaceHolder) GoString() string {
+	return fmt.Sprintf("argPlaceHolder(%q)", i)
 }
 
 // for type subQuery see function SubSelect

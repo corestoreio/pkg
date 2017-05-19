@@ -220,6 +220,40 @@ func (p *nullTypedRecord) AssembleArguments(stmtType rune, args Arguments, colum
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
+
+	for _, c := range condition {
+		switch c {
+		case "id":
+			args = append(args, ArgInt64(p.ID))
+		case "string_val":
+			args = append(args, ArgNullString(p.StringVal))
+		case "int64_val":
+			if p.Int64Val.Valid {
+				args = append(args, ArgInt64(p.Int64Val.Int64))
+			} else {
+				args = append(args, ArgNull())
+			}
+		case "float64_val":
+			if p.Float64Val.Valid {
+				args = append(args, ArgFloat64(p.Float64Val.Float64))
+			} else {
+				args = append(args, ArgNull())
+			}
+		case "time_val":
+			if p.TimeVal.Valid {
+				args = append(args, ArgTime(p.TimeVal.Time))
+			} else {
+				args = append(args, ArgNull())
+			}
+		case "bool_val":
+			if p.BoolVal.Valid {
+				args = append(args, ArgBool(p.BoolVal.Bool))
+			} else {
+				args = append(args, ArgNull())
+			}
+		}
+	}
+
 	return args, nil
 }
 

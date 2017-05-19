@@ -48,7 +48,7 @@ func (a NullBool) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a NullBool) Operator(op Op) Argument {
+func (a NullBool) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }

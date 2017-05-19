@@ -17,6 +17,7 @@ package dbr
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -307,6 +308,26 @@ func TestDelete_AddRecord(t *testing.T) {
 			"DELETE FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
 			"DELETE FROM `dbr_people` WHERE (`id` = 5555) ORDER BY `id`",
 			int64(5555),
+		)
+	})
+	t.Run("null type records", func(t *testing.T) {
+		ntr := newNullTypedRecordWithData()
+
+		del := NewDelete("null_type_table").
+			Where(
+				Column("string_val", Equal.NullString()),
+				Column("int64_val", Equal.NullInt64()),
+				Column("float64_val", Equal.NullFloat64()),
+				Column("random1", Between.Float64(1.2, 3.4)),
+				Column("time_val", Equal.NullTime()),
+				Column("bool_val", Equal.Bool()),
+			).
+			AddRecord(ntr).OrderBy("id")
+
+		compareToSQL(t, del, nil,
+			"DELETE FROM `null_type_table` WHERE (`string_val` = ?) AND (`int64_val` = ?) AND (`float64_val` = ?) AND (`random1` BETWEEN ? AND ?) AND (`time_val` = ?) AND (`bool_val` = ?) ORDER BY `id`",
+			"DELETE FROM `null_type_table` WHERE (`string_val` = 'wow') AND (`int64_val` = 42) AND (`float64_val` = 1.618) AND (`random1` BETWEEN 1.2 AND 3.4) AND (`time_val` = '2009-01-03 18:15:05') AND (`bool_val` = 1) ORDER BY `id`",
+			"wow", int64(42), 1.618, 1.2, 3.4, time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), true,
 		)
 	})
 }

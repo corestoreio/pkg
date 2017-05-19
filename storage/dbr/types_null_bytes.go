@@ -49,7 +49,7 @@ func (a NullBytes) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a NullBytes) Operator(op Op) Argument {
+func (a NullBytes) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }

@@ -219,7 +219,7 @@ func TestNullBytes_Argument(t *testing.T) {
 		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
 
-		arg := ns.Operator(NotBetween)
+		arg := ns.applyOperator(NotBetween)
 		assert.Exactly(t, NotBetween, arg.operator(), "Index %d", i)
 		assert.Exactly(t, 1, arg.len(), "Length must be always one")
 	}
@@ -234,11 +234,11 @@ func TestArgNullBytes(t *testing.T) {
 
 	//args := ArgNullBytes(MakeNullBytes(math.Phi), MakeNullBytes(math.E, false), MakeNullBytes(math.SqrtE))
 	//assert.Exactly(t, 3, args.len())
-	//args = args.Operator(NotIn)
+	//args = args.applyOperator(NotIn)
 	//assert.Exactly(t, 1, args.len())
 	//
 	//t.Run("IN operator", func(t *testing.T) {
-	//	args = args.Operator(In)
+	//	args = args.applyOperator(In)
 	//	var buf bytes.Buffer
 	//	argIF := make([]interface{}, 0, 2)
 	//	if err := args.writeTo(&buf, 0); err != nil {
@@ -250,7 +250,7 @@ func TestArgNullBytes(t *testing.T) {
 	//})
 	//
 	//t.Run("Not Equal operator", func(t *testing.T) {
-	//	args = args.Operator(NotEqual)
+	//	args = args.applyOperator(NotEqual)
 	//	var buf bytes.Buffer
 	//	argIF := make([]interface{}, 0, 2)
 	//	for i := 0; i < args.len(); i++ {
@@ -265,7 +265,7 @@ func TestArgNullBytes(t *testing.T) {
 
 	t.Run("single arg", func(t *testing.T) {
 		args := MakeNullBytes([]byte("The quic\b\b\b\b\b\bk brown fo\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007\u0007x... [Beeeep]")).
-			Operator(NotEqual)
+			applyOperator(NotEqual)
 
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)

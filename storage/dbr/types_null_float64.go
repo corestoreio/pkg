@@ -49,7 +49,7 @@ func (a NullFloat64) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a NullFloat64) Operator(op Op) Argument {
+func (a NullFloat64) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
@@ -205,7 +205,7 @@ func (a argNullFloat64s) len() int {
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argNullFloat64s) Operator(op Op) Argument {
+func (a argNullFloat64s) applyOperator(op Op) Argument {
 	a.op = op
 	return a
 }
