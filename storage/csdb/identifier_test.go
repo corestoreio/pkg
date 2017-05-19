@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsValidIdentifier(t *testing.T) {
@@ -266,5 +267,42 @@ func BenchmarkTableName(b *testing.B) {
 			}
 		}
 	})
+}
 
+func TestAlias(t *testing.T) {
+	t.Parallel()
+	var testData = map[string]string{
+		"passwords":                                            "pa",
+		"p":                                                    "p",
+		"admin_passwords":                                      "adpa",
+		"admin_system_messages":                                "adsyme",
+		"admin_user":                                           "adus",
+		"admin_user_session":                                   "adusse",
+		"adminnotification_inbox":                              "adin",
+		"authorization_role":                                   "auro",
+		"authorization_rule":                                   "auru",
+		"cache":                                                "ca",
+		"cache_tag":                                            "cata",
+		"captcha_log":                                          "calo",
+		"catalog_category_entity":                              "cacaen",
+		"catalog_category_entity_datetime":                     "cacaenda",
+		"catalog_category_entity_decimal":                      "cacaende",
+		"catalog_category_entity_int":                          "cacaenin",
+		"catalog_category_entity_text":                         "cacaente", // ;-) a poo duck
+		"catalog_category_entity_varchar":                      "cacaenva",
+		"catalog_category_product":                             "cacapr",
+		"catalog_category_product_index":                       "cacaprin",
+		"catalog_category_product_index_replica":               "cacaprinre",
+		"catalog_category_product_index_tmp":                   "cacaprintm",
+		"catalog_compare_item":                                 "cacoit",
+		"catalog_eav_attribute":                                "caeaat",
+		"catalog_product_entity_media_gallery_value_to_entity": "caprenmegavatoen",
+		"cms_block":               "cmbl",
+		"importexport_importdata": "imim",
+		"quote":                   "qu",
+	}
+
+	for have, want := range testData {
+		require.Exactly(t, want, csdb.Alias(have), "Input: %q", have)
+	}
 }

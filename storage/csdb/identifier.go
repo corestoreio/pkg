@@ -86,6 +86,26 @@ func cleanIdentifier(upper bool, name []byte) string {
 	return string(bytes.Map(fn, name))
 }
 
+// Alias creates a short alias name from a table name using the first two
+// characters.
+//		catalog_category_entity_datetime => cacaenda
+//		catalog_category_entity_decimal => cacaende
+func Alias(tableName string) string {
+	var buf = new(bytes.Buffer)
+	next := 2
+	for i, s := range tableName {
+		if i < 2 || next < 2 {
+			buf.WriteRune(s)
+			next++
+			continue
+		}
+		if s == '_' {
+			next = 0
+		}
+	}
+	return buf.String()
+}
+
 // TableName generates a table name, shortens it, if necessary, and removes all
 // invalid characters. First round of shortening goes by replacing common words
 // with their abbreviations and in the second round creating a MD5 hash of the
