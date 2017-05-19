@@ -250,15 +250,12 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 	b.Table.FquoteAs(buf)
 	buf.WriteString(" SET ")
 
-	recordArgCount := 0
 	if b.SetClauses.Record != nil {
 		var err error
-		before := len(args)
 		args, err = b.SetClauses.Record.AssembleArguments(stmtTypeUpdate, args, b.SetClauses.Columns, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
 		}
-		recordArgCount = len(args) - before
 	}
 
 	// Build SET clause SQL with placeholders and add values to args
@@ -287,24 +284,8 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.write")
 	}
-	// Assemble the WHERE arguments from a Record
-	if b.SetClauses.Record != nil {
-		var err error
-		lenBefore := len(args)
-		args, err = b.SetClauses.Record.AssembleArguments(stmtTypeUpdate, args, nil, b.WhereFragments.Conditions())
-		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
-		}
-		lenAfter := len(args)
-		if lenAfter > lenBefore {
-			j := 0
-			newLen := lenAfter - len(pap)
-			for i := newLen; i < lenAfter; i++ {
-				args[pap[j]+recordArgCount], args[i] = args[i], args[pap[j]+recordArgCount]
-				j++
-			}
-			args = args[:newLen] // remove the appended argPlaceHolder types after swapping
-		}
+	if args, err = appendAssembledArgs(pap, b.SetClauses.Record, args, stmtTypeUpdate, nil, b.WhereFragments.Conditions()); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Update.toSQL.appendAssembledArgs")
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)

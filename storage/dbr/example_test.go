@@ -390,7 +390,7 @@ func ExampleRepeat() {
 	// Arguments: [5 7 9 a b c d e]
 }
 
-// ExampleArgument is duplicate of ExampleCondition
+// ExampleArgument is duplicate of ExampleColumn
 func ExampleArgument() {
 
 	argPrinter := func(arg ...dbr.Argument) {
@@ -451,8 +451,8 @@ func ExampleArgument() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
 }
 
-// ExampleCondition is a duplicate of ExampleArgument
-func ExampleCondition() {
+// ExampleColumn is a duplicate of ExampleArgument
+func ExampleColumn() {
 	argPrinter := func(arg ...dbr.Argument) {
 		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
 			From("c").Where(dbr.Column("d", arg...)).ToSQL()

@@ -216,24 +216,8 @@ func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.write")
 	}
-
-	if b.Record != nil {
-		var err error
-		lenBefore := len(args)
-		args, err = b.Record.AssembleArguments(stmtTypeDelete, args, nil, b.WhereFragments.Conditions())
-		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] Delete.ToSQL Record.AssembleArguments")
-		}
-		lenAfter := len(args)
-		if lenAfter > lenBefore {
-			j := 0
-			newLen := lenAfter - len(pap)
-			for i := newLen; i < lenAfter; i++ {
-				args[pap[j]], args[i] = args[i], args[pap[j]]
-				j++
-			}
-			args = args[:newLen] // remove the appended argPlaceHolder types after swapping
-		}
+	if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeDelete, nil, b.WhereFragments.Conditions()); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Delete.toSQL.appendAssembledArgs")
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)

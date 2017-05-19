@@ -38,6 +38,9 @@ type Select struct {
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
 
+	// Record if set retrieves the necessary arguments from the interface.
+	Record ArgumentAssembler
+
 	// Columns represents a slice of names and its optional aliases. Wildcard
 	// `SELECT *` statements are not really supported:
 	// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
@@ -257,6 +260,12 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	return b
 }
 
+// AddRecord pulls in values to match Columns from the record generator.
+func (b *Select) AddRecord(rec ArgumentAssembler) *Select {
+	b.Record = rec
+	return b
+}
+
 // AddArguments adds more arguments to the Argument field of the Select type.
 // You must call this function directly after you have used e.g.
 // AddColumnsExprAlias with place holders.
@@ -473,31 +482,40 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	{
 		var err error
 		if args, err = b.Columns.fQuoteAs(w, args); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Selec.toSQL.Columns.fQuoteAs")
+			return nil, errors.Wrap(err, "[dbr] Select.toSQL.Columns.fQuoteAs")
 		}
 	}
 
 	w.WriteString(" FROM ")
 	tArgs, err := b.Table.FquoteAs(w)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Selec.toSQL.Table.FquoteAs")
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
 	}
 	args = append(args, tArgs...)
 
+	var pap []int
 	if len(b.JoinFragments) > 0 {
+		var pap []int
 		for _, f := range b.JoinFragments {
 			w.WriteByte(' ')
 			w.WriteString(f.JoinType)
 			w.WriteString(" JOIN ")
 			f.Table.FquoteAs(w)
-			if args, _, err = f.OnConditions.write(w, args, 'j'); err != nil {
+
+			if args, pap, err = f.OnConditions.write(w, args, 'j'); err != nil {
 				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+			}
+			if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeSelect, nil, f.OnConditions.Conditions()); err != nil {
+				return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
 			}
 		}
 	}
 
-	if args, _, err = b.WhereFragments.write(w, args, 'w'); err != nil {
+	if args, pap, err = b.WhereFragments.write(w, args, 'w'); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+	}
+	if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeSelect, nil, b.WhereFragments.Conditions()); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -510,8 +528,11 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		}
 	}
 
-	if args, _, err = b.HavingFragments.write(w, args, 'h'); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+	if args, pap, err = b.HavingFragments.write(w, args, 'h'); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.HavingFragments.write")
+	}
+	if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeSelect, nil, b.HavingFragments.Conditions()); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
 	}
 
 	sqlWriteOrderBy(w, b.OrderBys, false)

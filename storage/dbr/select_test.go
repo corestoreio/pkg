@@ -1210,3 +1210,77 @@ func TestSelect_UseBuildCache(t *testing.T) {
 		}
 	})
 }
+
+func TestSelect_AddRecord(t *testing.T) {
+	p := &dbrPerson{
+		ID:    6666,
+		Name:  "Hans Wurst",
+		Email: MakeNullString("hans@wurst.com"),
+	}
+
+	t.Run("multiple args from record", func(t *testing.T) {
+		sel := NewSelect("a", "b").
+			From("dbr_person", "dp").
+			Join(MakeAlias("dbr_group", "dg"), Column("dp.id", Equal.Str())).
+			Where(
+				ParenthesisOpen(),
+				Column("name", Equal.Str()),
+				Column("e", ArgString("wat")).Or(),
+				ParenthesisClose(),
+				Eq{"f": LessOrEqual.Int(2)}, Eq{"g": Greater.Int(3)},
+			).
+			Where(Eq{"h": In.Int64(4, 5, 6)}).
+			GroupBy("ab").
+			Having(
+				Column("email", Equal.Str()),
+				Column("n", ArgString("wh3r3")),
+			).
+			OrderBy("l").
+			AddRecord(p)
+
+		compareToSQL(t, sel, nil,
+			"SELECT `a`, `b` FROM `dbr_person` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) WHERE ((`name` = ?) OR (`e` = ?)) AND (`f` <= ?) AND (`g` > ?) AND (`h` IN ?) GROUP BY `ab` HAVING (`email` = ?) AND (`n` = ?) ORDER BY `l`",
+			"",
+			int64(6666), "Hans Wurst", "wat", int64(2), int64(3), int64(4), int64(5), int64(6), "hans@wurst.com", "wh3r3",
+		)
+	})
+	t.Run("single arg JOIN", func(t *testing.T) {
+		sel := NewSelect("a").From("dbr_people").
+			Join(MakeAlias("dbr_group", "dg"), Column("dp.id", Equal.Str()), Column("dg.name", Equal.Str("XY%"))).
+			AddRecord(p).OrderBy("id")
+
+		compareToSQL(t, sel, nil,
+			"SELECT `a` FROM `dbr_people` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) AND (`dg`.`name` = ?) ORDER BY `id`",
+			"SELECT `a` FROM `dbr_people` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = 6666) AND (`dg`.`name` = 'XY%') ORDER BY `id`",
+			int64(6666), "XY%",
+		)
+	})
+	t.Run("single arg WHERE", func(t *testing.T) {
+		sel := NewSelect("a").From("dbr_people").
+			Where(
+				Column("id", Equal.Int64()),
+			).
+			AddRecord(p).OrderBy("id")
+
+		compareToSQL(t, sel, nil,
+			"SELECT `a` FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
+			"SELECT `a` FROM `dbr_people` WHERE (`id` = 6666) ORDER BY `id`",
+			int64(6666),
+		)
+	})
+	t.Run("HAVING", func(t *testing.T) {
+		sel := NewSelect("a").From("dbr_people").
+			Having(
+				Column("id", Equal.Int64()),
+				Column("name", Like.Str()),
+			).
+			AddRecord(p).OrderBy("id")
+
+		compareToSQL(t, sel, nil,
+			"SELECT `a` FROM `dbr_people` HAVING (`id` = ?) AND (`name` LIKE ?) ORDER BY `id`",
+			"SELECT `a` FROM `dbr_people` HAVING (`id` = 6666) AND (`name` LIKE 'Hans Wurst') ORDER BY `id`",
+			int64(6666), "Hans Wurst",
+		)
+	})
+
+}

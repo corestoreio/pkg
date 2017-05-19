@@ -98,10 +98,12 @@ func (p *dbrPerson) AssembleArguments(stmtType rune, args Arguments, columns, co
 	args, err = p.columnToArg(stmtType, args, columns)
 	for _, c := range condition {
 		switch c {
-		case "id":
+		case "id", "dp.id":
 			args = append(args, ArgInt64(p.ID))
 		case "email":
 			args = append(args, ArgNullString(p.Email))
+		case "name":
+			args = append(args, ArgString(p.Name))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}

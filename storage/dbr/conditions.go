@@ -197,23 +197,24 @@ func (wf WhereFragments) append(wargs ...ConditionArg) WhereFragments {
 	return wf
 }
 
-// stmtType enum of j=join, w=where, h=having
-func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (_ Arguments, pendingArgPos []int, _ error) {
+// conditionType enum of j=join, w=where, h=having
+func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte) (_ Arguments, pendingArgPos []int, _ error) {
 	if len(wf) == 0 {
 		return args, pendingArgPos, nil
 	}
 
-	switch stmtType {
+	switch conditionType {
 	case 'w':
 		w.WriteString(" WHERE ")
 	case 'h':
 		w.WriteString(" HAVING ")
 	}
 
+	pendingArgPosCount := len(args)
 	i := 0
 	for _, f := range wf {
 
-		if stmtType == 'j' {
+		if conditionType == 'j' {
 			if len(f.Using) > 0 {
 				w.WriteString(" USING (")
 				for j, c := range f.Using {
@@ -290,7 +291,7 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (_ 
 						// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
 						// Because addArg=false does not add below the arguments and we must
 						// later swap the positions.
-						pendingArgPos = append(pendingArgPos, i)
+						pendingArgPos = append(pendingArgPos, pendingArgPosCount)
 					}
 				}
 			}
@@ -300,7 +301,31 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, stmtType byte) (_ 
 		if addArg {
 			args = append(args, f.Arguments...)
 		}
+		pendingArgPosCount++
 		i++
 	}
 	return args, pendingArgPos, nil
+}
+
+func appendAssembledArgs(pendingArgPos []int, rec ArgumentAssembler, args Arguments, stmtType rune, columns, condition []string) (_ Arguments, err error) {
+	if rec == nil {
+		return args, nil
+	}
+
+	lenBefore := len(args)
+	args, err = rec.AssembleArguments(stmtType, args, columns, condition)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] appendAssembledArgs Record.AssembleArguments")
+	}
+	lenAfter := len(args)
+	if lenAfter > lenBefore {
+		j := 0
+		newLen := lenAfter - len(pendingArgPos)
+		for i := newLen; i < lenAfter; i++ {
+			args[pendingArgPos[j]], args[i] = args[i], args[pendingArgPos[j]]
+			j++
+		}
+		args = args[:newLen] // remove the appended argPlaceHolder types after swapping
+	}
+	return args, nil
 }
