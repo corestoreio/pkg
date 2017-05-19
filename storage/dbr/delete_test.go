@@ -112,7 +112,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where(Column("id", ArgInt64(id))).Exec(context.TODO())
+	res, err = s.DeleteFrom("dbr_people").Where(Column("id", Equal.Int64(id))).Exec(context.TODO())
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -120,7 +120,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
-	count, err := s.Select().Count().From("dbr_people").Where(Column("id", ArgInt64(id))).LoadInt64(context.TODO())
+	count, err := s.Select().Count().From("dbr_people").Where(Column("id", Equal.Int64(id))).LoadInt64(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
 }
@@ -128,7 +128,7 @@ func TestDeleteReal(t *testing.T) {
 func TestDelete_Prepare(t *testing.T) {
 	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
-		compareToSQL(t, NewDelete("").Where(Column("a", argInt64(1))), errors.IsEmpty, "", "")
+		compareToSQL(t, NewDelete("").Where(Column("a", Equal.Int64(1))), errors.IsEmpty, "", "")
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {

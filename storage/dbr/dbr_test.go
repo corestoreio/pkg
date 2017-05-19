@@ -94,40 +94,23 @@ func (p *dbrPerson) ScanRow(idx int, columns []string, scan func(dest ...interfa
 	return scan(vp...)
 }
 
-func (p *dbrPerson) AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (_ Arguments, err error) {
-	args, err = p.columnToArg(stmtType, args, columns)
-	for _, c := range condition {
+func (p *dbrPerson) AssembleArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
+	for _, c := range columns {
 		switch c {
 		case "id", "dp.id":
+			//if t == 'i' {
 			args = append(args, ArgInt64(p.ID))
-		case "email":
-			args = append(args, ArgNullString(p.Email))
+			//}
 		case "name":
 			args = append(args, ArgString(p.Name))
+		case "email":
+			args = append(args, ArgNullString(p.Email))
+			// case "key": don't add key, it triggers a test failure condition
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
 	return args, err
-}
-
-func (p *dbrPerson) columnToArg(t rune, args Arguments, columns []string) (Arguments, error) {
-	for _, c := range columns {
-		switch c {
-		case "id":
-			if t == 'i' {
-				args = append(args, ArgInt64(p.ID))
-			}
-		case "name":
-			args = append(args, ArgString(p.Name))
-		case "email":
-			args = append(args, ArgNullString(p.Email))
-		// case "key": don't add key, it triggers a test failure condition
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
-	}
-	return args, nil
 }
 
 type dbrPersons struct {
@@ -187,7 +170,7 @@ func (p *nullTypedRecord) ScanRow(idx int, columns []string, scan func(dest ...i
 	return scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (Arguments, error) {
+func (p *nullTypedRecord) AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
@@ -220,39 +203,6 @@ func (p *nullTypedRecord) AssembleArguments(stmtType rune, args Arguments, colum
 			}
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
-	}
-
-	for _, c := range condition {
-		switch c {
-		case "id":
-			args = append(args, ArgInt64(p.ID))
-		case "string_val":
-			args = append(args, ArgNullString(p.StringVal))
-		case "int64_val":
-			if p.Int64Val.Valid {
-				args = append(args, ArgInt64(p.Int64Val.Int64))
-			} else {
-				args = append(args, ArgNull())
-			}
-		case "float64_val":
-			if p.Float64Val.Valid {
-				args = append(args, ArgFloat64(p.Float64Val.Float64))
-			} else {
-				args = append(args, ArgNull())
-			}
-		case "time_val":
-			if p.TimeVal.Valid {
-				args = append(args, ArgTime(p.TimeVal.Time))
-			} else {
-				args = append(args, ArgNull())
-			}
-		case "bool_val":
-			if p.BoolVal.Valid {
-				args = append(args, ArgBool(p.BoolVal.Bool))
-			} else {
-				args = append(args, ArgNull())
-			}
 		}
 	}
 

@@ -371,8 +371,8 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AssembleArguments(stmtType rune, args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
-	for _, c := range columns {
+func (sr someRecord) AssembleArguments(stmtType int, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
+	for _, c := range condition {
 		switch c {
 		case "something_id":
 			args = append(args, dbr.ArgInt(sr.SomethingID))

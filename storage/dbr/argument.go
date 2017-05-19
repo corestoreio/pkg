@@ -207,24 +207,37 @@ func (o Op) Value(values ...driver.Valuer) Argument {
 }
 
 const (
-	sqlStrNull     = "NULL"
-	sqlStar        = "*"
-	stmtTypeUpdate = 'u'
-	stmtTypeDelete = 'd'
-	stmtTypeInsert = 'i'
-	stmtTypeSelect = 's'
+	sqlStrNull = "NULL"
+	sqlStar    = "*"
 )
 
-// ArgumentAssembler assembles arguments for a SQL INSERT or UPDATE statement.
-// The `stmtType` variable is either `i` for INSERT or `u` for UPDATE. Future
-// uses for `s` (SELECT) might occur. Any new arguments must be append to
-// variable `args` and then returned. Variable `columns` contains the name of
-// the requested columns. E.g. if the first requested column names `id` then the
-// first appended argument must be an integer. Variable `condition` contains the
-// names and/or expressions used in the WHERE or ON clause, if applicable for
-// the SQL statement type.
+// SQL statement types and parts used as bit flag e.g. hint in
+// ArgumentAssembler.AssembleArguments.
+const (
+	SQLStmtInsert int = 1 << iota
+	SQLStmtSelect
+	SQLStmtUpdate
+	SQLStmtDelete
+
+	SQLPartJoin
+	SQLPartWhere
+	SQLPartHaving
+	SQLPartSet
+	SQLPartValues
+)
+
+// ArgumentAssembler assembles arguments for CRUD statements. The `stmtType`
+// variable contains a bit flag from the constants SQLStmt* and SQLPart* to
+// allow the knowledge in which case the function AssembleArguments gets called.
+// Any new arguments must be append to variable `args` and then returned.
+// Variable `columns` contains the name of the requested columns. E.g. if the
+// first requested column names `id` then the first appended argument must be an
+// integer. Variable `columns` can additionally contain the names and/or
+// expressions used in the WHERE, JOIN or HAVING clauses, if applicable for the
+// SQL statement type. In case where stmtType has been set to SQLStmtInsert|SQLPartValues, the
+// `columns` slice can be empty which means that all arguments are requested.
 type ArgumentAssembler interface {
-	AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (Arguments, error)
+	AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error)
 }
 
 // Argument transforms a value or values into an interface slice or encodes them

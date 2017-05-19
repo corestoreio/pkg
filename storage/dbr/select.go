@@ -457,10 +457,10 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	}
 
 	if b.Table.Name == "" && b.Table.Select == nil {
-		return nil, errors.NewEmptyf(errTableMissing)
+		return nil, errors.NewEmptyf("[dbr] Select: Table is missing")
 	}
 	if len(b.Columns) == 0 {
-		return nil, errors.NewEmptyf(errColumnsMissing)
+		return nil, errors.NewEmptyf("[dbr] Select: no columns specified")
 	}
 
 	// not sure if copying is necessary but leaves at least b.Arguments in pristine
@@ -505,7 +505,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 			if args, pap, err = f.OnConditions.write(w, args, 'j'); err != nil {
 				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
 			}
-			if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeSelect, nil, f.OnConditions.Conditions()); err != nil {
+			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.OnConditions.Conditions()); err != nil {
 				return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
 			}
 		}
@@ -514,7 +514,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	if args, pap, err = b.WhereFragments.write(w, args, 'w'); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeSelect, nil, b.WhereFragments.Conditions()); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
 	}
 
@@ -531,7 +531,7 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	if args, pap, err = b.HavingFragments.write(w, args, 'h'); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.toSQL.HavingFragments.write")
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeSelect, nil, b.HavingFragments.Conditions()); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.Conditions()); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
 	}
 

@@ -33,7 +33,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AssembleArguments(stmtType rune, args Arguments, columns, condition []string) (Arguments, error) {
+func (sr someRecord) AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "something_id":
@@ -45,6 +45,13 @@ func (sr someRecord) AssembleArguments(stmtType rune, args Arguments, columns, c
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
+	}
+	if len(columns) == 0 && stmtType&(SQLPartValues) != 0 {
+		args = append(args,
+			ArgInt(sr.SomethingID),
+			ArgInt64(sr.UserID),
+			ArgBool(sr.Other),
+		)
 	}
 	return args, nil
 }
@@ -84,8 +91,10 @@ func TestNewInsert(t *testing.T) {
 
 func TestInsert_AddRecords(t *testing.T) {
 	t.Parallel()
+	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
+	wantArgs := []interface{}{int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true, int64(99)}
+
 	t.Run("valid", func(t *testing.T) {
-		objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
 		compareToSQL(t,
 			NewInsert("a").
 				AddColumns("something_id", "user_id", "other").
@@ -95,7 +104,19 @@ func TestInsert_AddRecords(t *testing.T) {
 			nil,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
-			int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true, int64(99),
+			wantArgs...,
+		)
+	})
+	t.Run("without columns, all columns requested", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").
+				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
+				AddOnDuplicateKey("something_id", ArgInt64(99)).
+				AddOnDuplicateKey("user_id", nil),
+			nil,
+			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
+			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
+			wantArgs...,
 		)
 	})
 	t.Run("column not found", func(t *testing.T) {

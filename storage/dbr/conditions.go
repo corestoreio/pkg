@@ -307,13 +307,13 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 	return args, pendingArgPos, nil
 }
 
-func appendAssembledArgs(pendingArgPos []int, rec ArgumentAssembler, args Arguments, stmtType rune, columns, condition []string) (_ Arguments, err error) {
+func appendAssembledArgs(pendingArgPos []int, rec ArgumentAssembler, args Arguments, stmtType int, columns []string) (_ Arguments, err error) {
 	if rec == nil {
 		return args, nil
 	}
 
 	lenBefore := len(args)
-	args, err = rec.AssembleArguments(stmtType, args, columns, condition)
+	args, err = rec.AssembleArguments(stmtType, args, columns)
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] appendAssembledArgs Record.AssembleArguments")
 	}

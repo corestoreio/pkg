@@ -32,9 +32,11 @@ type categoryEntity struct {
 	Path           dbr.NullString
 }
 
-func (pe *categoryEntity) AssembleArguments(stmtType rune, args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
+func (pe *categoryEntity) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
+		case "entity_id":
+			args = append(args, dbr.ArgInt64(pe.EntityID))
 		case "attribute_set_id":
 			args = append(args, dbr.ArgInt64(pe.AttributeSetID))
 		case "parent_id":
@@ -45,13 +47,6 @@ func (pe *categoryEntity) AssembleArguments(stmtType rune, args dbr.Arguments, c
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	for _, c := range condition {
-		switch c {
-		case "entity_id":
-			args = append(args, dbr.ArgInt64(pe.EntityID))
-		}
-	}
-
 	return args, nil
 }
 

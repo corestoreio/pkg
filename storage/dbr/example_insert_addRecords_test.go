@@ -31,7 +31,7 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AssembleArguments(stmtType rune, args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
+func (pe productEntity) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":
@@ -46,7 +46,7 @@ func (pe productEntity) AssembleArguments(stmtType rune, args dbr.Arguments, col
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	if len(columns) == 0 {
+	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
 		args = append(args,
 			dbr.ArgInt64(pe.EntityID),
 			dbr.ArgInt64(pe.AttributeSetID),

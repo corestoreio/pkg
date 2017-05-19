@@ -18,6 +18,8 @@ import (
 	"context"
 	"database/sql"
 
+	"fmt"
+
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -45,7 +47,6 @@ type Insert struct {
 	Records []ArgumentAssembler
 	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
 	Select *Select
-	Maps   map[string]Argument
 
 	// OnDuplicateKey updates the referenced columns. See documentation for type
 	// `UpdatedColumns`. For more details
@@ -161,18 +162,6 @@ func (b *Insert) AddOnDuplicateKey(column string, arg Argument) *Insert {
 	return b
 }
 
-// Map pulls in values to match Columns from the record. Calling multiple
-// times will add new map entries to the Insert map.
-func (b *Insert) Map(m map[string]Argument) *Insert {
-	if b.Maps == nil {
-		b.Maps = make(map[string]Argument)
-	}
-	for col, val := range m {
-		b.Maps[col] = val
-	}
-	return b
-}
-
 // Pair adds a key/value pair to the statement.
 func (b *Insert) Pair(column string, arg Argument) *Insert {
 	if b.previousError != nil {
@@ -243,7 +232,7 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 	}
 
 	if len(b.Into) == 0 {
-		return nil, errors.NewEmptyf(errTableMissing)
+		return nil, errors.NewEmptyf("[dbr] Insert Table is missing")
 	}
 
 	ior := "INSERT "
@@ -264,16 +253,12 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 		return sArgs, errors.Wrap(err, "[dbr] Insert.FromSelect")
 	}
 
-	if len(b.Maps) > 0 {
-		args, err := b.mapToSQL(buf)
-		return args, errors.Wrap(err, "[dbr] Insert.mapToSQL")
-	}
-
 	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
 		return nil, errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
 	}
 
 	var ph = bufferpool.Get() // Build the ph like "(?,?,?)"
+	defer bufferpool.Put(ph)
 
 	if len(b.Columns) > 0 {
 		ph.WriteByte('(')
@@ -289,10 +274,15 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 		ph.WriteByte(')')
 		buf.WriteByte(')')
 		buf.WriteByte(' ')
-	} else {
+	}
+	buf.WriteString("VALUES ")
+
+	var argCount0 int
+	if len(b.Values) > 0 && len(b.Columns) == 0 {
+		argCount0 = len(b.Values[0])
 		// no columns provided so build the place holders.
 		ph.WriteByte('(')
-		for i := range b.Values[0] {
+		for i := 0; i < argCount0; i++ {
 			if i > 0 {
 				ph.WriteByte(',')
 			}
@@ -300,15 +290,9 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 		}
 		ph.WriteByte(')')
 	}
-	buf.WriteString("VALUES ")
 
 	placeholderStr := ph.String()
-	bufferpool.Put(ph)
 
-	var argCount0 int
-	if len(b.Values) > 0 {
-		argCount0 = len(b.Values[0])
-	}
 	totalArgCount := len(b.Values) * argCount0
 	args := make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
 	for i, v := range b.Values {
@@ -326,9 +310,23 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 	}
 
 	for i, rec := range b.Records {
-		args, err = rec.AssembleArguments(stmtTypeInsert, args, b.Columns, nil)
+		before := len(args)
+		args, err = rec.AssembleArguments(SQLStmtInsert|SQLPartValues, args, b.Columns) // Columns can be empty
 		if err != nil {
 			return nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
+		}
+		if i == 0 && placeholderStr == "" {
+			argCount0 = len(args) - before
+			// Build place holder string because here the func knows how many arguments it have.
+			ph.WriteByte('(')
+			for i := 0; i < argCount0; i++ {
+				if i > 0 {
+					ph.WriteByte(',')
+				}
+				ph.WriteByte('?')
+			}
+			ph.WriteByte(')')
+			placeholderStr = ph.String()
 		}
 		if i > 0 {
 			buf.WriteByte(',')
@@ -339,44 +337,6 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 	if args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
 	}
-	return args, nil
-}
-
-// mapToSQL serialized the Insert to a SQL string
-// It goes through the Maps param and combined its keys/values into the SQL query string
-// It returns the string with placeholders and a slice of query arguments
-func (b *Insert) mapToSQL(w queryWriter) (Arguments, error) {
-	if b.previousError != nil {
-		return nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
-	}
-
-	keys := make([]string, len(b.Maps))
-	vals := make(Arguments, len(b.Maps))
-	i := 0
-	for k, v := range b.Maps {
-		keys[i] = k
-		vals[i] = v
-		i++
-	}
-	var args Arguments
-	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
-	defer bufferpool.Put(placeholder)
-
-	placeholder.WriteByte('(')
-	for i, c := range keys {
-		if i > 0 {
-			w.WriteByte(',')
-			placeholder.WriteByte(',')
-		}
-		Quoter.FquoteAs(w, c)
-		placeholder.WriteByte('?')
-	}
-	w.WriteString(") VALUES ")
-	placeholder.WriteByte(')')
-	w.WriteString(placeholder.String())
-
-	args = append(args, vals...)
-
 	return args, nil
 }
 

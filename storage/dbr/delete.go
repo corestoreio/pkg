@@ -46,7 +46,7 @@ type Delete struct {
 		Execer
 	}
 
-	// TODO(CyS) add DELETE ... JOIN ... statement
+	// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
@@ -203,11 +203,13 @@ func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 	}
 
 	if len(b.From.Name) == 0 {
-		return nil, errors.NewEmptyf(errTableMissing)
+		return nil, errors.NewEmptyf("[dbr] Delete: Table is missing")
 	}
 
 	buf.WriteString("DELETE FROM ")
 	b.From.FquoteAs(buf)
+
+	// TODO(CyS) add SQLStmtDeleteJoin
 
 	// Write WHERE clause if we have any fragments.
 	// pap defines the pending argument positions. The pending arguments gets
@@ -216,7 +218,7 @@ func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.write")
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, stmtTypeDelete, nil, b.WhereFragments.Conditions()); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtDelete|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.toSQL.appendAssembledArgs")
 	}
 
@@ -250,7 +252,7 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 // database/sql Statement and an error if there was one. Provided arguments in
 // the Delete are getting ignored. It panics when field Preparer at nil.
 func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
+	sqlStr, _, err := b.ToSQL() // TODO maybe create a ToSQL version without any arguments
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.Prepare.ToSQL")
 	}

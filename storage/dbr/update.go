@@ -29,7 +29,7 @@ type Update struct {
 		Preparer
 		Execer
 	}
-	// TODO: add UPDATE JOINS
+	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
@@ -252,7 +252,7 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 
 	if b.SetClauses.Record != nil {
 		var err error
-		args, err = b.SetClauses.Record.AssembleArguments(stmtTypeUpdate, args, b.SetClauses.Columns, nil)
+		args, err = b.SetClauses.Record.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
 		if err != nil {
 			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
 		}
@@ -284,7 +284,7 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.write")
 	}
-	if args, err = appendAssembledArgs(pap, b.SetClauses.Record, args, stmtTypeUpdate, nil, b.WhereFragments.Conditions()); err != nil {
+	if args, err = appendAssembledArgs(pap, b.SetClauses.Record, args, SQLStmtUpdate|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.toSQL.appendAssembledArgs")
 	}
 
@@ -516,16 +516,23 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 	}
 
 	where := b.Update.WhereFragments.Conditions()
+	args := make(Arguments, 0, len(b.Records)+len(where))
 
 	results := make([]sql.Result, len(b.Records))
-	args := make(Arguments, 0, len(b.Records)+len(where))
 	for i, rec := range b.Records {
+		// TODO(CyS) add join part
+
 		cols := b.Update.SetClauses.Columns
 		if len(b.Alias) > 0 {
 			cols = b.Alias
 		}
-		var err error
-		args, err = rec.AssembleArguments(stmtTypeUpdate, args, cols, where)
+
+		args, err = rec.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, cols)
+		if err != nil {
+			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
+		}
+
+		args, err = rec.AssembleArguments(SQLStmtUpdate|SQLPartWhere, args, where)
 		if err != nil {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
 		}

@@ -33,9 +33,11 @@ type dbrPerson struct {
 	Key   dbr.NullString
 }
 
-func (p *dbrPerson) AssembleArguments(stmtType rune, args dbr.Arguments, columns, condition []string) (dbr.Arguments, error) {
+func (p *dbrPerson) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
+		case "id":
+			args = append(args, dbr.ArgInt64(p.ID))
 		case "name":
 			args = append(args, dbr.ArgString(p.Name))
 		case "email":
@@ -44,12 +46,6 @@ func (p *dbrPerson) AssembleArguments(stmtType rune, args dbr.Arguments, columns
 			args = append(args, dbr.ArgNullString(p.Key))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
-	}
-	for _, c := range condition {
-		switch c {
-		case "id":
-			args = append(args, dbr.ArgInt64(p.ID))
 		}
 	}
 	return args, nil
