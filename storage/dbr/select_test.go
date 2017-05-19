@@ -26,13 +26,13 @@ import (
 
 func TestSelectBasicToSQL(t *testing.T) {
 	t.Parallel()
-	s := createFakeSession()
 
-	sel := s.Select("a", "b").From("c").Where(Column("id", argInt(1)))
-	sql, args, err := sel.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`id` = ?)", sql)
-	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
+	sel := NewSelect("a", "b").From("c").Where(Column("id", Equal.Int(1)))
+	compareToSQL(t, sel, nil,
+		"SELECT `a`, `b` FROM `c` WHERE (`id` = ?)",
+		"SELECT `a`, `b` FROM `c` WHERE (`id` = 1)",
+		int64(1),
+	)
 }
 
 func TestSelectFullToSQL(t *testing.T) {
@@ -61,49 +61,48 @@ func TestSelectFullToSQL(t *testing.T) {
 		Limit(7).
 		Offset(8)
 
-	sql, args, err := sel.ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8", sql)
-	assert.Equal(t, []interface{}{int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3"}, args.Interfaces())
+	compareToSQL(t, sel, nil,
+		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
+		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
+		int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
+	)
 }
 
 func TestSelect_Interpolate(t *testing.T) {
 	t.Parallel()
 
 	t.Run("with paranthesis", func(t *testing.T) {
-		sql, args, err := NewSelect("a", "b").
+		sel := NewSelect("a", "b").
 			Distinct().
 			From("c", "cc").
 			Where(
 				ParenthesisOpen(),
-				Column("d", argInt(1)),
-				Column("e", ArgString("wat")).Or(),
+				Column("d", Equal.Int(1)),
+				Column("e", Equal.Str("wat")).Or(),
 				ParenthesisClose(),
-				Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
+				Eq{"f": Equal.Int64(2)}, Eq{"g": Equal.Int64(3)},
 			).
 			Where(Eq{"h": In.Int64(4, 5, 6)}).
 			GroupBy("ab").
 			Having(
 				ParenthesisOpen(),
-				Column("m", argInt(33)),
-				Column("n", ArgString("wh3r3")).Or(),
+				Column("m", Equal.Int(33)),
+				Column("n", Equal.Str("wh3r3")).Or(),
 				ParenthesisClose(),
 				Column("j = k"),
 			).
 			OrderBy("l").
 			Limit(7).
-			Offset(8).
-			Interpolate().
-			ToSQL()
-
-		require.NoError(t, err)
-		assert.Equal(t, "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8", sql)
-		assert.Nil(t, args)
+			Offset(8)
+		compareToSQL(t, sel, nil,
+			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8",
+			int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
+		)
 	})
 
 	t.Run("two args in one condition", func(t *testing.T) {
-
-		sql, args, err := NewSelect("a", "b", "z", "y", "x").From("c").
+		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
 			Where(Expression("`d` = ? OR `e` = ?", ArgInt64(1), ArgString("wat"))).
 			Where(Eq{"g": ArgInt64(3)}).
@@ -112,12 +111,13 @@ func TestSelect_Interpolate(t *testing.T) {
 			Having(Column("j = k"), Column("jj", ArgInt64(1))).
 			Having(Column("jjj", ArgInt64(2))).
 			OrderBy("l1").OrderBy("l2").OrderBy("l3").
-			Limit(7).Offset(8).
-			Interpolate().
-			ToSQL()
-		require.NoError(t, err)
-		assert.Equal(t, "SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8", sql)
-		assert.Nil(t, args)
+			Limit(7).Offset(8)
+
+		compareToSQL(t, sel, nil,
+			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = ? OR `e` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = ?) AND (`jjj` = ?) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
+			int64(1), "wat", int64(3), int64(1), int64(2), int64(3), int64(1), int64(2),
+		)
 
 	})
 }

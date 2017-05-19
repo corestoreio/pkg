@@ -18,8 +18,6 @@ import (
 	"context"
 	"database/sql"
 
-	"fmt"
-
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
