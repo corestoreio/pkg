@@ -43,16 +43,16 @@ func TestSelectFullToSQL(t *testing.T) {
 		From("c", "cc").
 		Where(
 			ParenthesisOpen(),
-			Column("d", argInt(1)),
+			Column("d", Equal.Int(1)),
 			Column("e", ArgString("wat")).Or(),
 			ParenthesisClose(),
-			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
+			Eq{"f": Equal.Int(2)}, Eq{"g": Equal.Int(3)},
 		).
 		Where(Eq{"h": In.Int64(4, 5, 6)}).
 		GroupBy("ab").
 		Having(
 			ParenthesisOpen(),
-			Column("m", argInt(33)),
+			Column("m", Equal.Int(33)),
 			Column("n", ArgString("wh3r3")).Or(),
 			ParenthesisClose(),
 			Expression("j = k"),
@@ -122,84 +122,95 @@ func TestSelect_Interpolate(t *testing.T) {
 	})
 }
 
-func TestSelectPaginateOrderDirToSQL(t *testing.T) {
+func TestSelect_Paginate(t *testing.T) {
 	t.Parallel()
-	s := createFakeSession()
 
-	sql, args, err := s.Select("a", "b").
-		From("c").
-		Where(Column("d", argInt(1))).
-		Paginate(1, 20).
-		OrderByDesc("id").
-		ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY `id` DESC LIMIT 20 OFFSET 0", sql)
-	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
-
-	sql, args, err = s.Select("a", "b").
-		From("c").
-		Where(Column("d", argInt(1))).
-		Paginate(3, 30).
-		OrderBy("id").
-		ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY `id` LIMIT 30 OFFSET 60", sql)
-	assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
+	t.Run("asc", func(t *testing.T) {
+		compareToSQL(t,
+			NewSelect("a", "b").
+				From("c").
+				Where(Column("d", Equal.Int(1))).
+				Paginate(3, 30).
+				OrderBy("id"),
+			nil,
+			"SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY `id` LIMIT 30 OFFSET 60",
+			"SELECT `a`, `b` FROM `c` WHERE (`d` = 1) ORDER BY `id` LIMIT 30 OFFSET 60",
+			int64(1),
+		)
+	})
+	t.Run("desc", func(t *testing.T) {
+		compareToSQL(t,
+			NewSelect("a", "b").
+				From("c").
+				Where(Column("d", Equal.Int(1))).
+				Paginate(1, 20).
+				OrderByDesc("id"),
+			nil,
+			"SELECT `a`, `b` FROM `c` WHERE (`d` = ?) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+			"SELECT `a`, `b` FROM `c` WHERE (`d` = 1) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+			int64(1),
+		)
+	})
 }
 
-func TestSelectNoWhereSQL(t *testing.T) {
+func TestSelectWithoutWhere(t *testing.T) {
 	t.Parallel()
-	s := createFakeSession()
 
-	sql, args, err := s.Select("a", "b").From("c").ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c`", sql)
-	assert.Equal(t, []interface{}(nil), args.Interfaces())
+	compareToSQL(t,
+		NewSelect("a", "b").From("c"),
+		nil,
+		"SELECT `a`, `b` FROM `c`",
+		"SELECT `a`, `b` FROM `c`",
+	)
 }
 
 func TestSelectMultiHavingSQL(t *testing.T) {
 	t.Parallel()
-	s := createFakeSession()
 
-	sql, args, err := s.Select("a", "b").From("c").
-		Where(Column("p", argInt(1))).
-		GroupBy("z").Having(Column("z`z", argInt(2)), Column("y", argInt(3))).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`p` = ?) GROUP BY `z` HAVING (`zz` = ?) AND (`y` = ?)", sql)
-	assert.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
+	compareToSQL(t,
+		NewSelect("a", "b").From("c").
+			Where(Column("p", Equal.Int(1))).
+			GroupBy("z").Having(Column("z`z", Equal.Int(2)), Column("y", Equal.Int(3))),
+		nil,
+		"SELECT `a`, `b` FROM `c` WHERE (`p` = ?) GROUP BY `z` HAVING (`zz` = ?) AND (`y` = ?)",
+		"SELECT `a`, `b` FROM `c` WHERE (`p` = 1) GROUP BY `z` HAVING (`zz` = 2) AND (`y` = 3)",
+		int64(1), int64(2), int64(3),
+	)
 }
 
 func TestSelectMultiOrderSQL(t *testing.T) {
 	t.Parallel()
-	s := createFakeSession()
-
-	sql, args, err := s.Select("a", "b").From("c").OrderBy("name").OrderByDesc("id").ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` ORDER BY `name`, `id` DESC", sql)
-	assert.Equal(t, []interface{}(nil), args.Interfaces())
+	compareToSQL(t,
+		NewSelect("a", "b").From("c").OrderBy("name").OrderByDesc("id"),
+		nil,
+		"SELECT `a`, `b` FROM `c` ORDER BY `name`, `id` DESC",
+		"SELECT `a`, `b` FROM `c` ORDER BY `name`, `id` DESC",
+	)
 }
 
 func TestSelect_OrderByDeactivated(t *testing.T) {
 	t.Parallel()
-
-	sql, args, err := NewSelect("a", "b").From("c").OrderBy("name").OrderByDeactivated().ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `a`, `b` FROM `c` ORDER BY NULL", sql)
-	assert.Exactly(t, Arguments{}, args)
+	compareToSQL(t,
+		NewSelect("a", "b").From("c").OrderBy("name").OrderByDeactivated(),
+		nil,
+		"SELECT `a`, `b` FROM `c` ORDER BY NULL",
+		"SELECT `a`, `b` FROM `c` ORDER BY NULL",
+	)
 }
 
 func TestSelect_ConditionColumn(t *testing.T) {
 	t.Parallel()
 	// TODO rewrite test to use every type which implements interface Argument and every operator
 
-	s := createFakeSession()
 	runner := func(arg Argument, wantSQL string, wantVal []interface{}) func(*testing.T) {
 		return func(t *testing.T) {
-			sql, args, err := s.Select("a", "b").From("c").Where(Column("d", arg)).ToSQL()
-			assert.NoError(t, err)
-			assert.Exactly(t, wantSQL, sql)
-			assert.Exactly(t, wantVal, args.Interfaces())
-
+			compareToSQL(t,
+				NewSelect("a", "b").From("c").Where(Column("d", arg)),
+				nil,
+				wantSQL,
+				"",
+				wantVal...,
+			)
 		}
 	}
 	t.Run("single int64", runner(
@@ -228,7 +239,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{float64(33), float64(44)},
 	))
 	t.Run("single int", runner(
-		argInt(33),
+		Equal.Int(33),
 		"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)",
 		[]interface{}{int64(33)},
 	))
@@ -294,48 +305,57 @@ func TestSelect_ConditionColumn(t *testing.T) {
 }
 
 func TestSelect_Null(t *testing.T) {
-	s := createFakeSession()
+	t.Parallel()
 
 	t.Run("col is null", func(t *testing.T) {
-		sql, args, err := s.Select("a", "b").From("c").Where(Column("r", ArgNull())).ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, "SELECT `a`, `b` FROM `c` WHERE (`r` IS NULL)", sql)
-		assert.Exactly(t, []interface{}(nil), args.Interfaces())
+		compareToSQL(t,
+			NewSelect("a", "b").From("c").Where(Column("r", ArgNull())),
+			nil,
+			"SELECT `a`, `b` FROM `c` WHERE (`r` IS NULL)",
+			"SELECT `a`, `b` FROM `c` WHERE (`r` IS NULL)",
+		)
 	})
 
 	t.Run("col is not null", func(t *testing.T) {
-		sql, args, err := s.Select("a", "b").From("c").Where(Column("r", NotNull.Null())).ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, "SELECT `a`, `b` FROM `c` WHERE (`r` IS NOT NULL)", sql)
-		assert.Exactly(t, []interface{}(nil), args.Interfaces())
+		compareToSQL(t,
+			NewSelect("a", "b").From("c").Where(Column("r", NotNull.Null())),
+			nil,
+			"SELECT `a`, `b` FROM `c` WHERE (`r` IS NOT NULL)",
+			"SELECT `a`, `b` FROM `c` WHERE (`r` IS NOT NULL)",
+		)
 	})
 
 	t.Run("complex", func(t *testing.T) {
-		sql, args, err := s.Select("a", "b").From("c").
-			Where(
-				Column("r", ArgNull()),
-				Column("d", argInt(3)),
-				Column("ab", ArgNull()),
-				Column("w", NotNull.Null()),
-			).ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, "SELECT `a`, `b` FROM `c` WHERE (`r` IS NULL) AND (`d` = ?) AND (`ab` IS NULL) AND (`w` IS NOT NULL)", sql)
-		assert.Exactly(t, []interface{}{int64(3)}, args.Interfaces())
+		compareToSQL(t,
+			NewSelect("a", "b").From("c").
+				Where(
+					Column("r", ArgNull()),
+					Column("d", Equal.Int(3)),
+					Column("ab", ArgNull()),
+					Column("w", NotNull.Null()),
+				),
+			nil,
+			"SELECT `a`, `b` FROM `c` WHERE (`r` IS NULL) AND (`d` = ?) AND (`ab` IS NULL) AND (`w` IS NOT NULL)",
+			"SELECT `a`, `b` FROM `c` WHERE (`r` IS NULL) AND (`d` = 3) AND (`ab` IS NULL) AND (`w` IS NOT NULL)",
+			int64(3),
+		)
 	})
 }
 
 func TestSelectWhereMapSQL(t *testing.T) {
-	s := createFakeSession()
-
+	t.Parallel()
 	t.Run("one", func(t *testing.T) {
-		sql, args, err := s.Select("a").From("b").Where(Eq{"a": argInt(1)}).ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a` FROM `b` WHERE (`a` = ?)", sql)
-		assert.Equal(t, []interface{}{int64(1)}, args.Interfaces())
+		compareToSQL(t,
+			NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1)}),
+			nil,
+			"SELECT `a` FROM `b` WHERE (`a` = ?)",
+			"SELECT `a` FROM `b` WHERE (`a` = 1)",
+			int64(1),
+		)
 	})
 
 	t.Run("two", func(t *testing.T) {
-		sql, args, err := s.Select("a").From("b").Where(Eq{"a": argInt(1), "b": ArgBool(true)}).ToSQL()
+		sql, args, err := NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1), "b": ArgBool(true)}).ToSQL()
 		assert.NoError(t, err)
 		if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` = ?)" {
 			assert.Equal(t, []interface{}{int64(1), true}, args.Interfaces())
@@ -346,55 +366,68 @@ func TestSelectWhereMapSQL(t *testing.T) {
 	})
 
 	t.Run("one nil", func(t *testing.T) {
-		sql, args, err := s.Select("a").From("b").Where(Eq{"a": nil}).ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a` FROM `b` WHERE (`a` IS NULL)", sql)
-		assert.Equal(t, []interface{}(nil), args.Interfaces())
+		compareToSQL(t,
+			NewSelect("a").From("b").Where(Eq{"a": nil}),
+			nil,
+			"SELECT `a` FROM `b` WHERE (`a` IS NULL)",
+			"SELECT `a` FROM `b` WHERE (`a` IS NULL)",
+		)
 	})
 
 	t.Run("one IN", func(t *testing.T) {
-		sql, args, err := s.Select("a").From("b").Where(Eq{"a": In.Int(1, 2, 3)}).ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a` FROM `b` WHERE (`a` IN ?)", sql)
-		assert.Equal(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
+		compareToSQL(t,
+			NewSelect("a").From("b").Where(Eq{"a": In.Int(1, 2, 3)}),
+			nil,
+			"SELECT `a` FROM `b` WHERE (`a` IN ?)",
+			"SELECT `a` FROM `b` WHERE (`a` IN (1,2,3))",
+			int64(1), int64(2), int64(3),
+		)
 	})
 
 	t.Run("no values", func(t *testing.T) {
 		// NOTE: a has no valid values, we want a query that returns nothing
 		// TODO(CyS): revise architecture and behaviour ... maybe
-		sql, args, err := s.Select("a").From("b").Where(Eq{"a": ArgInt()}).ToSQL()
-		assert.NoError(t, err)
+		var args = []interface{}{}
+		compareToSQL(t,
+			NewSelect("a").From("b").Where(Eq{"a": ArgInt()}),
+			nil,
+			"SELECT `a` FROM `b` WHERE (`a` = ?)",
+			"",
+			args...,
+		)
 		//assert.Equal(t, "SELECT a FROM `b` WHERE (1=0)", sql)
-		assert.Equal(t, "SELECT `a` FROM `b` WHERE (`a` = ?)", sql)
-		assert.Equal(t, []interface{}{}, args.Interfaces())
 	})
 
 	t.Run("empty ArgInt", func(t *testing.T) {
 		// see subtest above "no values" and its TODO
 		var iVal []int
-		sql, args, err := s.Select("a").From("b").Where(Eq{"a": ArgInt(iVal...)}).ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a` FROM `b` WHERE (`a` = ?)", sql)
-		assert.Equal(t, []interface{}{}, args.Interfaces())
+
+		compareToSQL(t,
+			NewSelect("a").From("b").Where(Eq{"a": ArgInt(iVal...)}),
+			nil,
+			"SELECT `a` FROM `b` WHERE (`a` = ?)",
+			"",
+			[]interface{}{}...,
+		)
 	})
 
 	t.Run("Map nil arg", func(t *testing.T) {
-		sql, args, err := s.Select("a").From("b").
+		s := NewSelect("a").From("b").
 			Where(Eq{"a": nil}).
 			Where(Eq{"b": ArgBool(false)}).
 			Where(Eq{"c": ArgNull()}).
-			Where(Eq{"d": NotNull.Null()}).
-			ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a` FROM `b` WHERE (`a` IS NULL) AND (`b` = ?) AND (`c` IS NULL) AND (`d` IS NOT NULL)", sql)
-		assert.Equal(t, []interface{}{false}, args.Interfaces())
+			Where(Eq{"d": NotNull.Null()})
+		compareToSQL(t, s, nil,
+			"SELECT `a` FROM `b` WHERE (`a` IS NULL) AND (`b` = ?) AND (`c` IS NULL) AND (`d` IS NOT NULL)",
+			"SELECT `a` FROM `b` WHERE (`a` IS NULL) AND (`b` = 0) AND (`c` IS NULL) AND (`d` IS NOT NULL)",
+			false,
+		)
 	})
 }
 
 func TestSelectWhereEqSQL(t *testing.T) {
-	s := createFakeSession()
-
-	sql, args, err := s.Select("a").From("b").Where(Eq{"a": argInt(1), "b": In.Int64(1, 2, 3)}).ToSQL()
+	t.Parallel()
+	sql, args, err := NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1), "b": In.Int64(1, 2, 3)}).ToSQL()
 	assert.NoError(t, err)
 	if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` IN ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(1), int64(2), int64(3)}, args.Interfaces())
@@ -405,35 +438,45 @@ func TestSelectWhereEqSQL(t *testing.T) {
 }
 
 func TestSelectBySQL(t *testing.T) {
+	t.Parallel()
+
 	s := createFakeSession()
 
-	sql, args, err := s.SelectBySQL("SELECT * FROM users WHERE x = 1").ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT * FROM users WHERE x = 1")
-	assert.Equal(t, []interface{}(nil), args.Interfaces())
-
-	sql, args, err = s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN ?", argInt(9), ArgInt(5, 6, 7)).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT * FROM users WHERE x = ? AND y IN ?")
-	assert.Equal(t, []interface{}{int64(9), int64(5), int64(6), int64(7)}, args.Interfaces())
-
-	// Doesn't fix shit if it'ab broken:
-	sql, args, err = s.SelectBySQL("wat", argInt(9), ArgInt(5, 6, 7)).ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, sql, "wat")
-	assert.Equal(t, []interface{}{int64(9), int64(5), int64(6), int64(7)}, args.Interfaces())
+	compareToSQL(t,
+		s.SelectBySQL("SELECT * FROM users WHERE x = 1"),
+		nil,
+		"SELECT * FROM users WHERE x = 1",
+		"SELECT * FROM users WHERE x = 1",
+	)
+	compareToSQL(t,
+		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN ?", Equal.Int(9), In.Int(5, 6, 7)),
+		nil,
+		"SELECT * FROM users WHERE x = ? AND y IN ?",
+		"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
+		int64(9), int64(5), int64(6), int64(7),
+	)
+	compareToSQL(t,
+		s.SelectBySQL("wat", Equal.Int(9), ArgInt(5, 6, 7)),
+		nil,
+		"wat",
+		"",
+		int64(9), int64(5), int64(6), int64(7),
+	)
 }
 
 func TestSelectVarieties(t *testing.T) {
-	s := createFakeSession()
+	t.Parallel()
 
-	sql, _, err := s.Select("id, name, email").From("users").ToSQL()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT `id, name, email` FROM `users`", sql)
-	sql2, _, err2 := s.Select("id", "name", "email").From("users").ToSQL()
-	assert.NoError(t, err2)
-	assert.NotEqual(t, sql, sql2)
-	assert.Equal(t, "SELECT `id`, `name`, `email` FROM `users`", sql2)
+	// This would be wrong SQL!
+	compareToSQL(t, NewSelect("id, name, email").From("users"), nil,
+		"SELECT `id, name, email` FROM `users`",
+		"SELECT `id, name, email` FROM `users`",
+	)
+	// correct way to handle it
+	compareToSQL(t, NewSelect("id", "name", "email").From("users"), nil,
+		"SELECT `id`, `name`, `email` FROM `users`",
+		"SELECT `id`, `name`, `email` FROM `users`",
+	)
 }
 
 func TestSelect_Load_Slice_Scanner(t *testing.T) {
@@ -641,6 +684,7 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 }
 
 func TestSelectJoin(t *testing.T) {
+	t.Parallel()
 	s := createRealSessionWithFixtures()
 
 	t.Run("inner, distinct, no cache, high proi", func(t *testing.T) {
@@ -651,15 +695,15 @@ func TestSelectJoin(t *testing.T) {
 			Join(
 				MakeAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
-				Column("p1.id", argInt(42)),
+				Column("p1.id", Equal.Int(42)),
 			)
 
-		sql, _, err := sqlObj.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t,
+		compareToSQL(t, sqlObj, nil,
 			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
-			sql,
+			"SELECT DISTINCT STRAIGHT_JOIN SQL_NO_CACHE `p1`.*, `p2`.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 42)",
+			int64(42),
 		)
+
 	})
 
 	t.Run("inner", func(t *testing.T) {
@@ -669,14 +713,13 @@ func TestSelectJoin(t *testing.T) {
 			Join(
 				MakeAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
-				Column("p1.id", argInt(42)),
+				Column("p1.id", Equal.Int(42)),
 			)
 
-		sql, _, err := sqlObj.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t,
+		compareToSQL(t, sqlObj, nil,
 			"SELECT `p1`.*, `p2`.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
-			sql,
+			"SELECT `p1`.*, `p2`.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 42)",
+			int64(42),
 		)
 	})
 
@@ -687,13 +730,13 @@ func TestSelectJoin(t *testing.T) {
 			LeftJoin(
 				MakeAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
-				Column("p1.id", argInt(42)),
+				Column("p1.id", Equal.Int(42)),
 			)
-		sql, _, err := sqlObj.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t,
+
+		compareToSQL(t, sqlObj, nil,
 			"SELECT `p1`.*, `p2`.`name` FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
-			sql,
+			"SELECT `p1`.*, `p2`.`name` FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = 42)",
+			int64(42),
 		)
 	})
 
@@ -706,12 +749,9 @@ func TestSelectJoin(t *testing.T) {
 				MakeAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
 			)
-
-		sql, _, err := sqlObj.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t,
+		compareToSQL(t, sqlObj, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
-			sql,
+			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
 		)
 	})
 
@@ -724,36 +764,31 @@ func TestSelectJoin(t *testing.T) {
 				MakeAlias("dbr_people", "p2"),
 				Using("id", "email"),
 			)
-
-		sql, _, err := sqlObj.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t,
+		compareToSQL(t, sqlObj, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` USING (`id`,`email`)",
-			sql,
+			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` USING (`id`,`email`)",
 		)
 	})
 }
+
 func TestSelect_Locks(t *testing.T) {
+	t.Parallel()
 	t.Run("LOCK IN SHARE MODE", func(t *testing.T) {
 		s := NewSelect("p1.*").
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
 			From("dbr_people", "p1").LockInShareMode()
-		sql, _, err := s.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t,
+		compareToSQL(t, s, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` LOCK IN SHARE MODE",
-			sql,
+			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` LOCK IN SHARE MODE",
 		)
 	})
 	t.Run("FOR UPDATE", func(t *testing.T) {
 		s := NewSelect("p1.*").
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
 			From("dbr_people", "p1").ForUpdate()
-		sql, _, err := s.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t,
+		compareToSQL(t, s, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` FOR UPDATE",
-			sql,
+			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` FOR UPDATE",
 		)
 	})
 }
@@ -790,13 +825,10 @@ func TestSelect_Events(t *testing.T) {
 				},
 			},
 		)
-		sql, _, err := d.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC", sql)
-
-		sql, _, err = d.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC, `col1` DESC, `col2` DESC", sql)
+		compareToSQL(t, d, nil,
+			"SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC",
+			"SELECT `a`, `b` FROM `tableA` AS `tA` ORDER BY `col3`, `col1` DESC, `col2` DESC, `col1` DESC, `col2` DESC",
+		)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
@@ -809,11 +841,10 @@ func TestSelect_Events(t *testing.T) {
 				s2.OrderByDesc("col1")
 			},
 		})
-
-		sql, args, err := s.ToSQL()
-		assert.Empty(t, sql)
-		assert.Nil(t, args)
-		assert.True(t, errors.IsEmpty(err), "%+v", err)
+		compareToSQL(t, s, errors.IsEmpty,
+			"",
+			"",
+		)
 	})
 
 	t.Run("Should Dispatch", func(t *testing.T) {
@@ -837,15 +868,11 @@ func TestSelect_Events(t *testing.T) {
 			},
 		})
 
-		sql, args, err := s.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{3.14159, "a"}, args.Interfaces())
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = ?) AND (`b` = ?) ORDER BY `col3`, `col1` DESC, `col2` DESC", sql)
-
-		sql, args, err = s.ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, []interface{}{3.14159, "a", "a"}, args.Interfaces())
-		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = ?) AND (`b` = ?) AND (`b` = ?) ORDER BY `col3`, `col1` DESC, `col2` DESC, `col2` DESC", sql)
+		compareToSQL(t, s, nil,
+			"SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = ?) AND (`b` = ?) ORDER BY `col3`, `col1` DESC, `col2` DESC",
+			"SELECT `a`, `b` FROM `tableA` AS `tA` WHERE (`a` = 3.14159) AND (`b` = 'a') AND (`b` = 'a') ORDER BY `col3`, `col1` DESC, `col2` DESC, `col2` DESC",
+			3.14159, "a",
+		)
 
 		assert.Exactly(t, `a col1; b col2`, s.Listeners.String())
 	})
@@ -858,73 +885,77 @@ func TestSelect_Columns(t *testing.T) {
 		s := NewSelect("a", "b")
 		s.From("tableA", "tA")
 		s.AddColumns("d,e, f", "g", "h", "i,j ,k")
-		sql, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `a`, `b`, `d,e, f`, `g`, `h`, `i,j ,k` FROM `tableA` AS `tA`", sql)
+		compareToSQL(t, s, nil,
+			"SELECT `a`, `b`, `d,e, f`, `g`, `h`, `i,j ,k` FROM `tableA` AS `tA`",
+			"SELECT `a`, `b`, `d,e, f`, `g`, `h`, `i,j ,k` FROM `tableA` AS `tA`",
+		)
 	})
 	t.Run("AddColumns, each column itself", func(t *testing.T) {
 		s := NewSelect("a", "b")
 		s.From("tableA", "tA")
 		s.AddColumns("d", "e", "f")
-		sql, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `a`, `b`, `d`, `e`, `f` FROM `tableA` AS `tA`", sql)
+		compareToSQL(t, s, nil,
+			"SELECT `a`, `b`, `d`, `e`, `f` FROM `tableA` AS `tA`",
+			"SELECT `a`, `b`, `d`, `e`, `f` FROM `tableA` AS `tA`",
+		)
 	})
 	t.Run("AddColumnsAlias Expression Quoted", func(t *testing.T) {
 		s := NewSelect().From("t3").
 			AddColumnsAlias("x", "u", "y", "v").
 			AddColumnsAlias("SUM(price)", "total_price")
-		sSQL, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `x` AS `u`, `y` AS `v`, `SUM(price)` AS `total_price` FROM `t3`", sSQL)
+		compareToSQL(t, s, nil,
+			"SELECT `x` AS `u`, `y` AS `v`, `SUM(price)` AS `total_price` FROM `t3`",
+			"SELECT `x` AS `u`, `y` AS `v`, `SUM(price)` AS `total_price` FROM `t3`",
+		)
 	})
 	t.Run("AddColumns+AddColumnsExprAlias", func(t *testing.T) {
 		s := NewSelect().From("t3").
 			AddColumns("t3.name", "sku").
 			AddColumnsExprAlias("SUM(price)", "total_price")
-		sSQL, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`", sSQL)
+		compareToSQL(t, s, nil,
+			"SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`",
+			"SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`",
+		)
 	})
 
 	t.Run("AddColumnsAlias multi", func(t *testing.T) {
 		s := NewSelect().From("t3").
 			AddColumnsAlias("t3.name", "t3Name", "t3.sku", "t3SKU")
-		sSQL, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`", sSQL)
-	})
-	t.Run("AddColumnsAlias one", func(t *testing.T) {
-		s := NewSelect().From("t3").
-			AddColumnsAlias("t3.name", "t3Name", "t3.sku", "t3SKU")
-		sSQL, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`", sSQL)
+		compareToSQL(t, s, nil,
+			"SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`",
+			"SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`",
+		)
 	})
 	t.Run("AddColumnsAlias imbalanced", func(t *testing.T) {
 		s := NewSelect().From("t3").
 			AddColumnsAlias("t3.name", "t3Name", "t3.sku")
-		_, _, err := s.ToSQL()
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		compareToSQL(t, s, errors.IsMismatch,
+			"",
+			"",
+		)
 	})
 	t.Run("AddColumnsExprAlias imbalanced", func(t *testing.T) {
 		s := NewSelect().From("t3").
 			AddColumnsExprAlias("t3.name", "t3Name", "t3.sku")
-		_, _, err := s.ToSQL()
-		assert.True(t, errors.IsMismatch(err), "%+v", err)
+		compareToSQL(t, s, errors.IsMismatch,
+			"",
+			"",
+		)
 	})
 	t.Run("AddColumnsExprAlias", func(t *testing.T) {
 		s := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
 			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period")
-		sSQL, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`", sSQL)
+		compareToSQL(t, s, nil,
+			"SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`",
+			"SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`",
+		)
 	})
 	t.Run("AddColumns with expression incorrect", func(t *testing.T) {
 		s := NewSelect().AddColumns(" `t.value`", "`t`.`attribute_id`", "t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t")
-		sSQL, _, err := s.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, "SELECT ` t`.`value`, `t`.`attribute_id`, `t`.`{column} AS col_type` FROM `catalog_product_entity_{type}` AS `t`", sSQL)
+		compareToSQL(t, s, nil,
+			"SELECT ` t`.`value`, `t`.`attribute_id`, `t`.`{column} AS col_type` FROM `catalog_product_entity_{type}` AS `t`",
+			"SELECT ` t`.`value`, `t`.`attribute_id`, `t`.`{column} AS col_type` FROM `catalog_product_entity_{type}` AS `t`",
+		)
 	})
 }
 
@@ -938,11 +969,7 @@ func TestSubSelect(t *testing.T) {
 			s := NewSelect("sku", "type_id").
 				From("catalog_product_entity").
 				Where(SubSelect("entity_id", op, sub))
-
-			sStr, args, err := s.ToSQL()
-			assert.NoError(t, err)
-			assert.Exactly(t, []interface{}{int64(234)}, args.Interfaces())
-			assert.Exactly(t, wantSQL, sStr)
+			compareToSQL(t, s, nil, wantSQL, "", int64(234))
 		}
 	}
 	t.Run("IN", runner(In,
@@ -1016,16 +1043,10 @@ func TestSelect_Subselect(t *testing.T) {
 			AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 			OrderBy("`t1`.period", "`t1`.product_id")
 
-		sSQL, args, err := sel1.ToSQL()
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		assert.Exactly(t, []interface{}(nil), args.Interfaces())
-		//println(sSQL)
-		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`"
-		if sSQL != wantSQL {
-			t.Errorf("\nHave: %q\nWant: %q", sSQL, wantSQL)
-		}
+		compareToSQL(t, sel1, nil,
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+		)
 	})
 
 	t.Run("with args", func(t *testing.T) {
@@ -1036,7 +1057,7 @@ func TestSelect_Subselect(t *testing.T) {
 			GroupBy("t3.store_id").
 			GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			GroupBy("t3.product_id", "t3.product_name").
-			Having(Expression("COUNT(*)>?", argInt(3))).
+			Having(Expression("COUNT(*)>?", ArgInt(3))).
 			OrderBy("t3.store_id").
 			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			OrderByDesc("total_qty DESC").
@@ -1050,20 +1071,15 @@ func TestSelect_Subselect(t *testing.T) {
 			AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 			OrderBy("`t1`.period", "`t1`.product_id")
 
-		sSQL, args, err := sel1.ToSQL()
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		assert.Exactly(t, []interface{}{int64(2), int64(3), int64(4), int64(3)}, args.Interfaces())
-		//println(sSQL)
-		const wantSQL = "SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`"
-		if sSQL != wantSQL {
-			t.Errorf("\nHave: %q\nWant: %q", sSQL, wantSQL)
-		}
+		compareToSQL(t, sel1, nil,
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			int64(2), int64(3), int64(4), int64(3),
+		)
 	})
 }
 
-func TestParenthesisOpen_Close(t *testing.T) {
+func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 	t.Parallel()
 	t.Run("beginning of WHERE", func(t *testing.T) {
 
@@ -1071,7 +1087,7 @@ func TestParenthesisOpen_Close(t *testing.T) {
 			From("c", "cc").
 			Where(
 				ParenthesisOpen(),
-				Column("d", argInt(1)),
+				Column("d", Equal.Int(1)),
 				Column("e", ArgString("wat")).Or(),
 				ParenthesisClose(),
 				Column("f", ArgFloat64(2.7182)),
@@ -1079,16 +1095,16 @@ func TestParenthesisOpen_Close(t *testing.T) {
 			GroupBy("ab").
 			Having(
 				ParenthesisOpen(),
-				Column("m", argInt(33)),
+				Column("m", Equal.Int(33)),
 				Column("n", ArgString("wh3r3")).Or(),
 				ParenthesisClose(),
 				Column("j = k"),
 			)
+		compareToSQL(t, sel, nil,
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`)",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2.7182) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`)",
+			int64(1), "wat", 2.7182, int64(33), "wh3r3")
 
-		sql, args, err := sel.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`)", sql)
-		assert.Equal(t, []interface{}{int64(1), "wat", 2.7182, int64(33), "wh3r3"}, args.Interfaces())
 	})
 
 	t.Run("end of WHERE", func(t *testing.T) {
@@ -1097,7 +1113,7 @@ func TestParenthesisOpen_Close(t *testing.T) {
 			Where(
 				Column("f", ArgFloat64(2.7182)),
 				ParenthesisOpen(),
-				Column("d", argInt(1)),
+				Column("d", Equal.Int(1)),
 				Column("e", ArgString("wat")).Or(),
 				ParenthesisClose(),
 			).
@@ -1105,14 +1121,14 @@ func TestParenthesisOpen_Close(t *testing.T) {
 			Having(
 				Column("j = k"),
 				ParenthesisOpen(),
-				Column("m", argInt(33)),
+				Column("m", Equal.Int(33)),
 				Column("n", ArgString("wh3r3")).Or(),
 				ParenthesisClose(),
 			)
-
-		sql, _, err := sel.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?))", sql)
+		compareToSQL(t, sel, nil,
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?))",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = 2.7182) AND ((`d` = 1) OR (`e` = 'wat')) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = 33) OR (`n` = 'wh3r3'))",
+			2.7182, int64(1), "wat", int64(33), "wh3r3")
 	})
 
 	t.Run("middle of WHERE", func(t *testing.T) {
@@ -1121,7 +1137,7 @@ func TestParenthesisOpen_Close(t *testing.T) {
 			Where(
 				Column("f", ArgFloat64(2.7182)),
 				ParenthesisOpen(),
-				Column("d", argInt(1)),
+				Column("d", Equal.Int(1)),
 				Column("e", ArgString("wat")).Or(),
 				ParenthesisClose(),
 				Column("p", ArgFloat64(3.141592)),
@@ -1130,30 +1146,35 @@ func TestParenthesisOpen_Close(t *testing.T) {
 			Having(
 				Column("j = k"),
 				ParenthesisOpen(),
-				Column("m", argInt(33)),
+				Column("m", Equal.Int(33)),
 				Column("n", ArgString("wh3r3")).Or(),
 				ParenthesisClose(),
 				Column("q", NotNull.Null()),
 			)
-
-		sql, _, err := sel.ToSQL()
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)", sql)
+		compareToSQL(t, sel, nil,
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = 2.7182) AND ((`d` = 1) OR (`e` = 'wat')) AND (`p` = 3.141592) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = 33) OR (`n` = 'wh3r3')) AND (`q` IS NOT NULL)",
+			2.7182, int64(1), "wat", 3.141592, int64(33), "wh3r3")
 	})
 }
 
 func TestSelect_Count(t *testing.T) {
+	t.Parallel()
 	t.Run("written count star gets quoted", func(t *testing.T) {
-		sqlStr, args, err := NewSelect("count(*)").From("dbr_people").ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, Arguments{}, args)
-		assert.Equal(t, "SELECT `count(*)` FROM `dbr_people`", sqlStr)
+		compareToSQL(t,
+			NewSelect("count(*)").From("dbr_people"),
+			nil,
+			"SELECT `count(*)` FROM `dbr_people`",
+			"SELECT `count(*)` FROM `dbr_people`",
+		)
 	})
 	t.Run("func count star", func(t *testing.T) {
-		sqlStr, args, err := NewSelect().Count().From("dbr_people").ToSQL()
-		assert.NoError(t, err)
-		assert.Exactly(t, Arguments{}, args)
-		assert.Equal(t, "SELECT COUNT(*) AS `counted` FROM `dbr_people`", sqlStr)
+		compareToSQL(t,
+			NewSelect().Count().From("dbr_people"),
+			nil,
+			"SELECT COUNT(*) AS `counted` FROM `dbr_people`",
+			"SELECT COUNT(*) AS `counted` FROM `dbr_people`",
+		)
 	})
 }
 
@@ -1165,16 +1186,16 @@ func TestSelect_UseBuildCache(t *testing.T) {
 		From("c", "cc").
 		Where(
 			ParenthesisOpen(),
-			Column("d", argInt(1)),
+			Column("d", Equal.Int(1)),
 			Column("e", ArgString("wat")).Or(),
 			ParenthesisClose(),
-			Eq{"f": argInt(2)}, Eq{"g": argInt(3)},
+			Eq{"f": Equal.Int(2)}, Eq{"g": Equal.Int(3)},
 		).
 		Where(Eq{"h": In.Int64(4, 5, 6)}).
 		GroupBy("ab").
 		Having(
 			ParenthesisOpen(),
-			Column("m", argInt(33)),
+			Column("m", Equal.Int(33)),
 			Column("n", ArgString("wh3r3")).Or(),
 			ParenthesisClose(),
 			Expression("j = k"),
@@ -1187,31 +1208,32 @@ func TestSelect_UseBuildCache(t *testing.T) {
 	const cachedSQLPlaceHolder = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			sql, args, err := sel.ToSQL()
-			require.NoError(t, err, "%+v", err)
-			require.Equal(t, cachedSQLPlaceHolder, sql)
-			assert.Equal(t, []interface{}{int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3"}, args.Interfaces())
+			compareToSQL(t, sel, nil,
+				cachedSQLPlaceHolder,
+				"",
+				int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
+			)
 			assert.Equal(t, cachedSQLPlaceHolder, string(sel.buildCache))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		sel.Interpolate()
 		sel.buildCache = nil
 		sel.RawArguments = nil
-
 		const cachedSQLInterpolated = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
 		for i := 0; i < 3; i++ {
-			sql, args, err := sel.ToSQL()
+			compareToSQL(t, sel, nil,
+				cachedSQLPlaceHolder,
+				cachedSQLInterpolated,
+				int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
+			)
 			assert.Equal(t, cachedSQLPlaceHolder, string(sel.buildCache))
-			require.NoError(t, err, "%+v", err)
-			require.Equal(t, cachedSQLInterpolated, sql)
-			assert.Nil(t, args)
 		}
 	})
 }
 
 func TestSelect_AddRecord(t *testing.T) {
+	t.Parallel()
 	p := &dbrPerson{
 		ID:    6666,
 		Name:  "Hans Wurst",
