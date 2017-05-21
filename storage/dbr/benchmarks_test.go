@@ -19,6 +19,33 @@ import (
 	"testing"
 )
 
+var preprocessSink string
+
+// BenchmarkInterpolate-4   	  500000	      4013 ns/op	     174 B/op	      11 allocs/op with reflection
+// BenchmarkInterpolate-4   	  500000	      3591 ns/op	     174 B/op	      11 allocs/op string
+// BenchmarkInterpolate-4   	  500000	      3599 ns/op	     174 B/op	      11 allocs/op []byte
+func BenchmarkInterpolate(b *testing.B) {
+	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
+	var sqlBytes = []byte("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?")
+	args := Arguments{
+		Equal.Int64(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
+		ArgString("Hello"),
+		ArgBool(true),
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var err error
+		preprocessSink, err = interpolate(sqlBytes, args...)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+	if preprocessSink != want {
+		b.Fatalf("Have: %v Want: %v", preprocessSink, want)
+	}
+}
+
 var benchmarkIsValidIdentifier int8
 
 // BenchmarkIsValidIdentifier-4   	20000000	        92.0 ns/op	       0 B/op	       0 allocs/op
