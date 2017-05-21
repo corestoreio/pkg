@@ -264,10 +264,11 @@ type Argument interface {
 // Arguments representing multiple arguments.
 type Arguments []Argument
 
-func writeOperator(w queryWriter, op Op, hasArg bool) (addArg bool) {
+// argCount contains the number of primitives within an argument.
+func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 	// hasArg argument only used in cases where we have in the parent caller
 	// function a sub-select. sub-selects do not need a place holder.
-	switch op {
+	switch arg.operator() {
 	case Null:
 		w.WriteString(" IS NULL")
 	case NotNull:

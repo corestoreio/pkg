@@ -264,13 +264,13 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 			_, _ = w.WriteString(f.Condition)
 			addArg = true
 			if len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
-				writeOperator(w, f.Arguments[0].operator(), true)
+				writeOperator(w, true, f.Arguments[0])
 			}
 		} else {
 			Quoter.FquoteAs(w, f.Condition)
 
 			if f.Sub.Select != nil {
-				writeOperator(w, f.Sub.Operator, false)
+				writeOperator(w, false, argNull(f.Sub.Operator))
 				w.WriteByte('(')
 				subArgs, err := f.Sub.Select.toSQL(w)
 				w.WriteByte(')')
@@ -282,7 +282,7 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 				// a column only supports one argument.
 				if len(f.Arguments) == 1 {
 					a := f.Arguments[0]
-					addArg = writeOperator(w, a.operator(), true)
+					addArg = writeOperator(w, true, a)
 					if a.len() == cahensConstant {
 						// By keeping addArg as it is and not setting
 						// addArg=false, this []int avoids

@@ -515,57 +515,55 @@ func BenchmarkIfNull(b *testing.B) {
 
 var benchmarkGlobalArgs dbr.Arguments
 
-// BenchmarkUnion_AllOptions-4           	  300000	      5345 ns/op	    1680 B/op	       8 allocs/op
-func BenchmarkUnion_AllOptions(b *testing.B) {
+func BenchmarkUnion(b *testing.B) {
+	b.Run("5 SELECTs", func(b *testing.B) {
+		// not valid SQL
+		u := dbr.NewUnion(
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'varchar'", "col_type").From("catalog_product_entity_varchar", "t").
+				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
+				OrderByDesc("t.varchar_store_id"),
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'int'", "col_type").From("catalog_product_entity_int", "t").
+				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
+				OrderByDesc("t.int_store_id"),
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'decimal'", "col_type").From("catalog_product_entity_decimal", "t").
+				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
+				OrderByDesc("t.decimal_store_id"),
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'datetime'", "col_type").From("catalog_product_entity_datetime", "t").
+				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
+				OrderByDesc("t.datetime_store_id"),
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'text'", "col_type").From("catalog_product_entity_text", "t").
+				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
+				OrderByDesc("t.text_store_id"),
+		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
-	u := dbr.NewUnion(
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.varchar AS `col_type`").From("catalog_product_entity_varchar", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
-			OrderByDesc("t.varchar_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.int AS `col_type`").From("catalog_product_entity_int", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
-			OrderByDesc("t.int_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.decimal AS `col_type`").From("catalog_product_entity_decimal", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
-			OrderByDesc("t.decimal_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.datetime AS `col_type`").From("catalog_product_entity_datetime", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
-			OrderByDesc("t.datetime_store_id"),
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.text AS `col_type`").From("catalog_product_entity_text", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
-			OrderByDesc("t.text_store_id"),
-	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
-
-	for i := 0; i < b.N; i++ {
-		_, args, err := u.ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
+		for i := 0; i < b.N; i++ {
+			_, args, err := u.ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			benchmarkGlobalArgs = args
 		}
-		benchmarkGlobalArgs = args
-	}
-}
+	})
+	b.Run("Template", func(b *testing.B) {
+		u := dbr.NewUnionTemplate(
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'{column}'", "col_type").From("catalog_product_entity_{type}", "t").
+				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
+				OrderByDesc("t.{column}_store_id"),
+		).
+			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
+			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX").
+			PreserveResultSet().
+			All().
+			OrderByDesc("col_type")
 
-// BenchmarkUnionTemplate_AllOptions-4   	  300000	      6068 ns/op	    1712 B/op	       4 allocs/op
-func BenchmarkUnionTemplate_AllOptions(b *testing.B) {
-	u := dbr.NewUnionTemplate(
-		dbr.NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
-			OrderByDesc("t.{column}_store_id"),
-	).
-		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
-		StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX").
-		PreserveResultSet().
-		All().
-		OrderByDesc("col_type")
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, args, err := u.ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
+		for i := 0; i < b.N; i++ {
+			_, args, err := u.ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			benchmarkGlobalArgs = args
 		}
-		benchmarkGlobalArgs = args
-	}
+	})
 }
 
 var benchmarkUpdateValuesSQL dbr.Arguments

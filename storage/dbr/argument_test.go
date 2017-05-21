@@ -154,7 +154,6 @@ func TestOp_Value(t *testing.T) {
 func TestOpArgs(t *testing.T) {
 	t.Parallel()
 	t.Run("ArgNull IN", func(t *testing.T) {
-
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
 				Column("a316", In.Null()),
@@ -167,7 +166,8 @@ func TestOpArgs(t *testing.T) {
 			interface{}(nil), interface{}(nil), interface{}(nil),
 		)
 	})
-	t.Run("Args IN", func(t *testing.T) {
+
+	t.Run("Args In", func(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
 				Column("a311", Xor.Int(9)),
@@ -183,6 +183,7 @@ func TestOpArgs(t *testing.T) {
 			int64(9), 3.3, int64(33), int64(44), "Go1", [][]uint8{{0x47, 0x6f}, {0x52, 0x75, 0x73, 0x74}},
 		)
 	})
+
 	t.Run("ArgBytes BETWEEN strings", func(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
