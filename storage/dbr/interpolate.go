@@ -1,10 +1,23 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
+	"bytes"
 	"strings"
 	"unicode/utf8"
-
-	"bytes"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -70,9 +83,6 @@ func Interpolate(sql string, args ...Argument) (string, error) {
 }
 
 func interpolate(sql []byte, args ...Argument) (string, error) {
-	if len(args) == 0 {
-		return string(sql), nil
-	}
 
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
@@ -91,10 +101,6 @@ func interpolate(sql []byte, args ...Argument) (string, error) {
 
 		switch {
 		case r == '?':
-			if qCount >= argLength {
-				return "", errors.NewNotValidf("[dbr] Arguments are imbalanced. Placeholder count: %d Current argument count: %d", qCount, args[argIndex].len())
-			}
-
 			if qCount < argLength-1 {
 				qCount++
 			} else {
@@ -104,9 +110,6 @@ func interpolate(sql []byte, args ...Argument) (string, error) {
 					return "", errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d but argument count was %d", argIndex, len(args)-1)
 				}
 				argLength = args[argIndex].len()
-			}
-			if argLength == 0 {
-				return "", errors.NewEmptyf("[dbr] Empty Argument for position %d", qCountTotal+1)
 			}
 
 			if err := args[argIndex].writeTo(buf, qCount); err != nil {

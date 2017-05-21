@@ -235,6 +235,8 @@ func (q MysqlQuoter) QuoteAs(expressionAlias ...string) string {
 	bufferpool.Put(buf)
 	return x
 }
+
+// FquoteExprAs quotes an expression with an optional alias into w.
 func (q MysqlQuoter) FquoteExprAs(w queryWriter, expressionAlias ...string) {
 	w.WriteString(expressionAlias[0])
 	if len(expressionAlias) > 1 && expressionAlias[1] != "" {

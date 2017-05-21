@@ -487,6 +487,7 @@ func (a *argValue) applyOperator(op Op) Argument {
 func (a *argValue) operator() Op { return a.op }
 
 // ArgValue allows to use any type which implements driver.Valuer interface.
+// Implements interface Argument.
 func ArgValue(args ...driver.Valuer) Argument {
 	return &argValue{
 		data: args,
@@ -538,8 +539,8 @@ func (a *argTimes) applyOperator(op Op) Argument {
 
 func (a *argTimes) operator() Op { return a.op }
 
-// ArgTime adds a time.Time or a slice of times to the argument list.
-// Providing no arguments returns a NULL type.
+// ArgTime adds a time.Time or a slice of times to the argument list. Providing
+// no arguments returns a NULL type. Implements interface Argument.
 func ArgTime(args ...time.Time) Argument {
 	return &argTimes{data: args}
 }
@@ -627,20 +628,20 @@ func (i argNull) operator() Op {
 	return Null
 }
 
-// ArgNull treats the argument as a SQL `IS NULL` or `NULL`.
-// IN clause not supported.
+// ArgNull treats the argument as a SQL `IS NULL` or `NULL`. IN clause not
+// supported. Implements interface Argument.
 func ArgNull() Argument {
 	return argNull(0)
 }
 
-// argString implements interface Argument but does not allocate.
-type argString string
+// ArgString implements interface Argument.
+type ArgString string
 
-func (a argString) toIFace(args []interface{}) []interface{} {
+func (a ArgString) toIFace(args []interface{}) []interface{} {
 	return append(args, string(a))
 }
 
-func (a argString) writeTo(w queryWriter, _ int) error {
+func (a ArgString) writeTo(w queryWriter, _ int) error {
 	if !utf8.ValidString(string(a)) {
 		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
 	}
@@ -648,17 +649,17 @@ func (a argString) writeTo(w queryWriter, _ int) error {
 	return nil
 }
 
-func (a argString) len() int { return 1 }
+func (a ArgString) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argString) applyOperator(op Op) Argument {
+func (a ArgString) applyOperator(op Op) Argument {
 	return &argStrings{
 		data: []string{string(a)},
 		op:   op,
 	}
 }
-func (a argString) operator() Op { return 0 }
+func (a ArgString) operator() Op { return 0 }
 
 type argStrings struct {
 	data []string
@@ -710,31 +711,22 @@ func (a *argStrings) applyOperator(op Op) Argument {
 }
 func (a *argStrings) operator() Op { return a.op }
 
-// ArgString adds a string or a slice of strings to the argument list.
-// Providing no arguments returns a NULL type.
-// All arguments mut be a valid utf-8 string.
-func ArgString(args ...string) Argument {
-	if len(args) == 1 {
-		return argString(args[0])
-	}
-	return &argStrings{data: args}
-}
+// ArgBool implements interface Argument.
+type ArgBool bool
 
-type argBool bool
-
-func (a argBool) toIFace(args []interface{}) []interface{} {
+func (a ArgBool) toIFace(args []interface{}) []interface{} {
 	return append(args, a == true)
 }
 
-func (a argBool) writeTo(w queryWriter, _ int) error {
+func (a ArgBool) writeTo(w queryWriter, _ int) error {
 	dialect.EscapeBool(w, a == true)
 	return nil
 }
-func (a argBool) len() int { return 1 }
+func (a ArgBool) len() int { return 1 }
 
 // Op not supported
-func (a argBool) applyOperator(_ Op) Argument { return a }
-func (a argBool) operator() Op                { return 0 }
+func (a ArgBool) applyOperator(_ Op) Argument { return a }
+func (a ArgBool) operator() Op                { return 0 }
 
 type argBools struct {
 	op   Op
@@ -780,37 +772,28 @@ func (a *argBools) applyOperator(op Op) Argument {
 }
 func (a *argBools) operator() Op { return a.op }
 
-// ArgBool adds a string or a slice of bools to the argument list.
-// Providing no arguments returns a NULL type.
-func ArgBool(args ...bool) Argument {
-	if len(args) == 1 {
-		return argBool(args[0])
-	}
-	return &argBools{data: args}
-}
+// ArgInt implements interface Argument.
+type ArgInt int
 
-// argInt implements interface Argument but does not allocate.
-type argInt int
-
-func (a argInt) toIFace(args []interface{}) []interface{} {
+func (a ArgInt) toIFace(args []interface{}) []interface{} {
 	return append(args, int64(a))
 }
 
-func (a argInt) writeTo(w queryWriter, _ int) error {
+func (a ArgInt) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
 	return err
 }
-func (a argInt) len() int { return 1 }
+func (a ArgInt) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argInt) applyOperator(op Op) Argument {
+func (a ArgInt) applyOperator(op Op) Argument {
 	return &argInts{
 		op:   op,
 		data: []int{int(a)},
 	}
 }
-func (a argInt) operator() Op { return 0 }
+func (a ArgInt) operator() Op { return 0 }
 
 type argInts struct {
 	op   Op
@@ -857,37 +840,28 @@ func (a *argInts) applyOperator(op Op) Argument {
 
 func (a *argInts) operator() Op { return a.op }
 
-// ArgInt adds an integer or a slice of integers to the argument list.
-// Providing no arguments returns a NULL type.
-func ArgInt(args ...int) Argument {
-	if len(args) == 1 {
-		return argInt(args[0])
-	}
-	return &argInts{data: args}
-}
+// ArgInt64 implements interface Argument.
+type ArgInt64 int64
 
-// argInt64 implements interface Argument but does not allocate.
-type argInt64 int64
-
-func (a argInt64) toIFace(args []interface{}) []interface{} {
+func (a ArgInt64) toIFace(args []interface{}) []interface{} {
 	return append(args, int64(a))
 }
 
-func (a argInt64) writeTo(w queryWriter, _ int) error {
+func (a ArgInt64) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
 	return err
 }
-func (a argInt64) len() int { return 1 }
+func (a ArgInt64) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argInt64) applyOperator(op Op) Argument {
+func (a ArgInt64) applyOperator(op Op) Argument {
 	return &argInt64s{
 		op:   op,
 		data: []int64{int64(a)},
 	}
 }
-func (a argInt64) operator() Op { return 0 }
+func (a ArgInt64) operator() Op { return 0 }
 
 type argInt64s struct {
 	op   Op
@@ -934,36 +908,28 @@ func (a *argInt64s) applyOperator(op Op) Argument {
 
 func (a *argInt64s) operator() Op { return a.op }
 
-// ArgInt64 adds an integer or a slice of integers to the argument list.
-// Providing no arguments returns a NULL type.
-func ArgInt64(args ...int64) Argument {
-	if len(args) == 1 {
-		return argInt64(args[0])
-	}
-	return &argInt64s{data: args}
-}
+// ArgFloat64 implements interface Argument.
+type ArgFloat64 float64
 
-type argFloat64 float64
-
-func (a argFloat64) toIFace(args []interface{}) []interface{} {
+func (a ArgFloat64) toIFace(args []interface{}) []interface{} {
 	return append(args, float64(a))
 }
 
-func (a argFloat64) writeTo(w queryWriter, _ int) error {
+func (a ArgFloat64) writeTo(w queryWriter, _ int) error {
 	_, err := w.WriteString(strconv.FormatFloat(float64(a), 'f', -1, 64))
 	return err
 }
-func (a argFloat64) len() int { return 1 }
+func (a ArgFloat64) len() int { return 1 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
 // the constants Op*.
-func (a argFloat64) applyOperator(op Op) Argument {
+func (a ArgFloat64) applyOperator(op Op) Argument {
 	return &argFloat64s{
 		op:   op,
 		data: []float64{float64(a)},
 	}
 }
-func (a argFloat64) operator() Op { return 0 }
+func (a ArgFloat64) operator() Op { return 0 }
 
 type argFloat64s struct {
 	op   Op
@@ -1010,23 +976,14 @@ func (a *argFloat64s) applyOperator(op Op) Argument {
 
 func (a *argFloat64s) operator() Op { return a.op }
 
-// ArgFloat64 adds a float64 or a slice of floats to the argument list.
-// Providing no arguments returns a NULL type.
-func ArgFloat64(args ...float64) Argument {
-	if len(args) == 1 {
-		return argFloat64(args[0])
-	}
-	return &argFloat64s{data: args}
-}
-
 type expr struct {
 	SQL string
 	Arguments
 	op Op
 }
 
-// ArgExpr at a SQL fragment with placeholders, and a slice of args to replace them
-// with. Mostly used in UPDATE statements.
+// ArgExpr at a SQL fragment with placeholders, and a slice of args to replace
+// them with. Mostly used in UPDATE statements. Implements interface Argument.
 func ArgExpr(sql string, args ...Argument) Argument {
 	return &expr{SQL: sql, Arguments: args}
 }

@@ -35,7 +35,7 @@ func TestDeleteAllToSQL(t *testing.T) {
 func TestDeleteSingleToSQL(t *testing.T) {
 	t.Parallel()
 
-	qb := NewDelete("a").Where(Column("id", argInt(1)))
+	qb := NewDelete("a").Where(Column("id", Equal.Int(1)))
 	compareToSQL(t, qb, nil,
 		"DELETE FROM `a` WHERE (`id` = ?)",
 		"DELETE FROM `a` WHERE (`id` = 1)",
@@ -138,7 +138,7 @@ func TestDelete_Prepare(t *testing.T) {
 		d.DB.Preparer = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		d.Where(Column("a", argInt(1)))
+		d.Where(Column("a", Equal.Int(1)))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
@@ -228,7 +228,7 @@ func TestDelete_Events(t *testing.T) {
 				Name:      "repetitive",
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(Column("repetitive", argInt(3)))
+					b.Where(Column("repetitive", Equal.Int(3)))
 				},
 			},
 		)

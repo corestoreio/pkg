@@ -47,7 +47,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			Where(dbr.Column(`TABLE_SCHEMA=DATABASE()`))
 		sel.DB.Querier = benchMockQuerier{}
 		if len(tables) > 0 {
-			sel.Where(dbr.Column("TABLE_NAME IN ?", dbr.ArgString(tables...)))
+			sel.Where(dbr.Column("TABLE_NAME IN ?", dbr.In.Str(tables...)))
 		}
 
 		rows, err := sel.Rows(ctx)
@@ -414,7 +414,7 @@ func BenchmarkInterpolate(b *testing.B) {
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	const sqlBytes = ("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?")
 	args := dbr.Arguments{
-		dbr.ArgInt64(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
+		dbr.Equal.Int64(1, -2, 3, 4, 5, 6, 7, 8, 9, 10),
 		dbr.ArgString("Hello"),
 		dbr.ArgBool(true),
 	}
@@ -440,7 +440,7 @@ func BenchmarkRepeat(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)",
-				dbr.ArgInt(5, 7, 9, 11), dbr.ArgString(sl...), dbr.ArgInt(22))
+				dbr.In.Int(5, 7, 9, 11), dbr.In.Str(sl...), dbr.Equal.Int(22))
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -456,7 +456,7 @@ func BenchmarkRepeat(b *testing.B) {
 	b.Run("single", func(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
 		for i := 0; i < b.N; i++ {
-			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?)", dbr.ArgInt(9, 8, 7, 6))
+			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?)", dbr.In.Int(9, 8, 7, 6))
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}

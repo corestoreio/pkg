@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"math"
 	"testing"
 
@@ -11,8 +12,9 @@ import (
 )
 
 var (
-	float64JSON     = []byte(`1.2345`)
-	nullFloat64JSON = []byte(`{"NullFloat64":1.2345,"Valid":true}`)
+	_               fmt.GoStringer = (*NullFloat64)(nil)
+	float64JSON                    = []byte(`1.2345`)
+	nullFloat64JSON                = []byte(`{"NullFloat64":1.2345,"Valid":true}`)
 )
 
 func TestFloat64From(t *testing.T) {
@@ -23,6 +25,13 @@ func TestFloat64From(t *testing.T) {
 	if !zero.Valid {
 		t.Error("MakeNullFloat64(0)", "is invalid, but should be valid")
 	}
+}
+
+func TestNullFloat64_GoString(t *testing.T) {
+	var f NullFloat64
+	assert.Exactly(t, "dbr.NullFloat64{}", f.GoString())
+	f = MakeNullFloat64(3.1415926)
+	assert.Exactly(t, "dbr.MakeNullFloat64(3.1415926)", f.GoString())
 }
 
 func TestUnmarshalFloat64(t *testing.T) {

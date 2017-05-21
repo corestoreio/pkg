@@ -26,7 +26,7 @@ import (
 
 func TestUpdateAllToSQL(t *testing.T) {
 	t.Parallel()
-	qb := NewUpdate("a").Set("b", argInt64(1)).Set("c", ArgInt(2))
+	qb := NewUpdate("a").Set("b", Equal.Int64(1)).Set("c", ArgInt(2))
 	compareToSQL(t, qb, nil, "UPDATE `a` SET `b`=?, `c`=?", "", int64(1), int64(2))
 }
 
@@ -46,7 +46,7 @@ func TestUpdateSetMapToSQL(t *testing.T) {
 	t.Parallel()
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": argInt64(1), "c": Equal.Int64(2)}).Where(Column("id", ArgInt(1))).ToSQL()
+	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": Equal.Int64(1), "c": Equal.Int64(2)}).Where(Column("id", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
@@ -316,7 +316,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), argInt64(12)},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), Equal.Int64(12)},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -329,7 +329,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgExpr("VALUES(`stock`)+?", argInt64(13))},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgExpr("VALUES(`stock`)+?", ArgInt64(13))},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -342,7 +342,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val) and with arguments and nil", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "sku", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, argInt64(14)},
+			Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)

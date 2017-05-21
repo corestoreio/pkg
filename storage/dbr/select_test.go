@@ -214,7 +214,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		}
 	}
 	t.Run("single int64", runner(
-		argInt64(33),
+		Equal.Int64(33),
 		"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)",
 		[]interface{}{int64(33)},
 	))
@@ -389,7 +389,7 @@ func TestSelectWhereMapSQL(t *testing.T) {
 		// TODO(CyS): revise architecture and behaviour ... maybe
 		var args = []interface{}{}
 		compareToSQL(t,
-			NewSelect("a").From("b").Where(Eq{"a": ArgInt()}),
+			NewSelect("a").From("b").Where(Eq{"a": Equal.Int()}),
 			nil,
 			"SELECT `a` FROM `b` WHERE (`a` = ?)",
 			"",
@@ -403,9 +403,9 @@ func TestSelectWhereMapSQL(t *testing.T) {
 		var iVal []int
 
 		compareToSQL(t,
-			NewSelect("a").From("b").Where(Eq{"a": ArgInt(iVal...)}),
+			NewSelect("a").From("b").Where(Eq{"a": In.Int(iVal...)}),
 			nil,
-			"SELECT `a` FROM `b` WHERE (`a` = ?)",
+			"SELECT `a` FROM `b` WHERE (`a` IN ?)",
 			"",
 			[]interface{}{}...,
 		)
@@ -456,7 +456,7 @@ func TestSelectBySQL(t *testing.T) {
 		int64(9), int64(5), int64(6), int64(7),
 	)
 	compareToSQL(t,
-		s.SelectBySQL("wat", Equal.Int(9), ArgInt(5, 6, 7)),
+		s.SelectBySQL("wat", Equal.Int(9), In.Int(5, 6, 7)),
 		nil,
 		"wat",
 		"",

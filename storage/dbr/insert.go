@@ -317,8 +317,8 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 			argCount0 = len(args) - before
 			// Build place holder string because here the func knows how many arguments it have.
 			ph.WriteByte('(')
-			for i := 0; i < argCount0; i++ {
-				if i > 0 {
+			for j := 0; j < argCount0; j++ {
+				if j > 0 {
 					ph.WriteByte(',')
 				}
 				ph.WriteByte('?')

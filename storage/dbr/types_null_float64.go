@@ -72,6 +72,14 @@ func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
 	}
 }
 
+// GoString prints an optimized Go representation.
+func (a NullFloat64) GoString() string {
+	if !a.Valid {
+		return "dbr.NullFloat64{}"
+	}
+	return "dbr.MakeNullFloat64(" + strconv.FormatFloat(a.Float64, 'f', -1, 64) + ")"
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 // It supports number and null input.
 // 0 will not be considered a null NullFloat64.

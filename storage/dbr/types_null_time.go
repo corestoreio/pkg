@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -59,6 +60,14 @@ func MakeNullTime(t time.Time, valid ...bool) NullTime {
 		Time:  t,
 		Valid: v,
 	}
+}
+
+// GoString prints an optimized Go representation.
+func (a NullTime) GoString() string {
+	if !a.Valid {
+		return "dbr.NullTime{}"
+	}
+	return fmt.Sprintf("dbr.MakeNullTime(time.Unix(%d,%d)", a.Time.Unix(), a.Time.Nanosecond())
 }
 
 // MarshalJSON implements json.Marshaler.

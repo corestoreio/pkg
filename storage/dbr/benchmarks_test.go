@@ -48,7 +48,7 @@ func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 	args := make(Arguments, 0, 2)
 	uc := UpdatedColumns{
 		Columns:   []string{"name", "sku", "stock"},
-		Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, argInt64(14)},
+		Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

@@ -495,7 +495,6 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 
 	var pap []int
 	if len(b.JoinFragments) > 0 {
-		var pap []int
 		for _, f := range b.JoinFragments {
 			w.WriteByte(' ')
 			w.WriteString(f.JoinType)

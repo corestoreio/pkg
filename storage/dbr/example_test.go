@@ -377,7 +377,7 @@ func ExampleRepeat() {
 	sl := []string{"a", "b", "c", "d", "e"}
 
 	sqlStr, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)",
-		dbr.ArgInt(5, 7, 9), dbr.ArgString(sl...))
+		dbr.In.Int(5, 7, 9), dbr.In.Str(sl...))
 
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -629,7 +629,7 @@ func ExampleSQLCase_update() {
 			"3456", "qty+?",
 			"3457", "qty+?",
 			"3458", "qty+?",
-		), dbr.ArgInt(3, 4, 5))).
+		), dbr.Equal.Int(3, 4, 5))).
 		Where(
 			dbr.Column("product_id", dbr.In.Int64(345, 567, 897)),
 			dbr.Column("website_id", dbr.ArgInt64(6)),
