@@ -1,3 +1,17 @@
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package dbr
 
 import (
@@ -38,16 +52,27 @@ func (tx *Tx) Rollback() error {
 	return errors.Wrap(tx.Tx.Rollback(), "[dbr] transaction.rollback.error")
 }
 
-// RollbackUnlessCommitted rolls back the transaction unless it has already been
-// committed or rolled back. Useful to defer tx.RollbackUnlessCommitted() -- so
-// you don't have to handle N failure cases Keep in mind the only way to detect
-// an error on the rollback at via the event log.
-func (tx *Tx) RollbackUnlessCommitted() {
-	err := tx.Tx.Rollback()
-	if err == sql.ErrTxDone {
-		// ok
-	} else if err != nil {
-		//tx.EventErr("dbr.rollback_unless_committed", err)
-		panic(err) // todo remove panic
+// Wrap is a helper method that will automatically COMMIT or ROLLBACK once the
+// supplied functions are done executing.
+//
+//      tx, err := db.Begin()
+//      if err != nil{
+//           panic(err.Error()) // you could gracefully handle the error also
+//      }
+//      if err := tx.Wrap(func() error {
+//          // SQL
+//          return nil
+//      }); err != nil{
+//           panic(err.Error()) // you could gracefully handle the error also
+//      }
+func (tx *Tx) Wrap(fns ...func() error) error {
+	for i, f := range fns {
+		if err := f(); err != nil {
+			if rErr := tx.Rollback(); rErr != nil {
+				return errors.Wrapf(err, "[dbr] transaction.wrap.Rollback.error at index %d", i)
+			}
+			return errors.Wrapf(err, "[dbr] transaction.wrap.error at index %d", i)
+		}
 	}
+	return errors.Wrap(tx.Commit(), "[dbr] transaction.wrap.commit")
 }
