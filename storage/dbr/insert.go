@@ -338,7 +338,7 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 	return args, nil
 }
 
-// Exec executes the statement represented by the Insert
+// Exec executes the statement represented by the Insert object.
 // It returns the raw database/sql Result and an error if there was one.
 // Regarding LastInsertID(): If you insert multiple rows using a single
 // INSERT statement, LAST_INSERT_ID() returns the value generated for

@@ -15,6 +15,8 @@
 package dbr_test
 
 import (
+	"fmt"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 )
@@ -68,10 +70,10 @@ func ExampleInsert_AddRecords() {
 	i := dbr.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").
 		AddRecords(objs[0]).AddRecords(objs[1])
 	writeToSqlAndPreprocess(i)
-	// the next code does not yet work
-	//fmt.Print("\n")
-	//i = dbr.NewInsert("catalog_product_entity").AddRecords(objs[0]).AddRecords(objs[1])
-	//writeToSqlAndPreprocess(i)
+
+	fmt.Print("\n\n")
+	i = dbr.NewInsert("catalog_product_entity").AddRecords(objs[0]).AddRecords(objs[1])
+	writeToSqlAndPreprocess(i)
 
 	// Output:
 	//Prepared Statement:
@@ -83,4 +85,12 @@ func ExampleInsert_AddRecords() {
 	//INSERT INTO `catalog_product_entity`
 	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES
 	//(5,'simple','SOA9',0),(5,'virtual',NULL,1)
+	//
+	//Prepared Statement:
+	//INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)
+	//Arguments: [1 5 simple SOA9 false 2 5 virtual <nil> true]
+	//
+	//Preprocessed Statement:
+	//INSERT INTO `catalog_product_entity` VALUES
+	//(1,5,'simple','SOA9',0),(2,5,'virtual',NULL,1)
 }

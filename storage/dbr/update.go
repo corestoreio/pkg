@@ -398,12 +398,13 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arg
 }
 
 // UpdateMulti allows to run an UPDATE statement multiple times with different
-// values in an optionally transaction. I fyou enable the interpolate feature on
-// the Update object the interpolate SQL string will send each time to the SQL
-// server otherwise a prepared statement will be created. Create one update
-// statement without the SET arguments but with empty WHERE arguments. The empty
-// WHERE arguments trigger the placeholder and the correct operator. The values
-// itself will be provided either through the Records slice or via RecordChan.
+// values in an optionally transaction. If you enable the interpolate feature on
+// the Update object the interpolated SQL string will be send each time to the
+// SQL server otherwise a prepared statement will be created. Create a single
+// Update object without the SET arguments but with empty WHERE arguments. The
+// empty WHERE arguments trigger the placeholder and the correct operator. The
+// values itself will be provided either through the Records slice or via
+// RecordChan.
 type UpdateMulti struct {
 	// IsTransaction set to true to enable running the UPDATE queries in a
 	// transaction.
