@@ -37,8 +37,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
 	t.Run("alias mismatch", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe")
-		mu.Update.SetClauses.Columns = []string{"sku", "updated_at"}
+		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe").AddColumns("sku", "updated_at")
 		mu.Update.Where(dbr.Column("entity_id", dbr.In.Int64())) // ArgInt64 must be without arguments
 		mu.Alias = []string{"update_sku"}
 		res, err := mu.Exec(context.TODO())
@@ -46,8 +45,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe")
-		mu.Update.SetClauses.Columns = []string{"sku", "updated_at"}
+		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe").AddColumns("sku", "updated_at")
 		mu.Update.Where(dbr.Column("entity_id", dbr.In.Int64())) // ArgInt64 must be without arguments
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
@@ -67,8 +65,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		},
 	}
 
-	mu := dbr.NewUpdateMulti("customer_entity", "ce")
-	mu.Update.SetClauses.Columns = []string{"name", "email"}
+	mu := dbr.NewUpdateMulti("customer_entity", "ce").AddColumns("name", "email")
 	mu.Update.Where(dbr.Column("id", dbr.Equal.Int64())) // Int64 must be without arguments, because Placeholder
 	mu.Update.Interpolate()
 

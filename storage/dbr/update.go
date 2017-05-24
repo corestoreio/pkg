@@ -437,6 +437,13 @@ func NewUpdateMulti(table ...string) *UpdateMulti {
 	}
 }
 
+// AddColumns adds columns to the Update type. Those columns will get passed to
+// the ArgumentAssembler implementation.
+func (b *UpdateMulti) AddColumns(columnNames ...string) *UpdateMulti {
+	b.Update.SetClauses.Columns = append(b.Update.SetClauses.Columns, columnNames...)
+	return b
+}
+
 // AddRecords pulls in values to match Columns from the record.
 func (b *UpdateMulti) AddRecords(recs ...ArgumentAssembler) *UpdateMulti {
 	b.Records = append(b.Records, recs...)
