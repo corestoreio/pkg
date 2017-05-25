@@ -246,6 +246,21 @@ type TableProductEntityDecimal struct {
 	Value       money.Money `db:"value"`        // value decimal(12,4) NULL
 }
 
+func (ped TableProductEntityDecimal) GenerateArguments(statementType byte, columns, condition []string) (dbr.Arguments, error) {
+
+	switch statementType {
+	case dbr.StatementTypeInsert:
+		for _, c := range columns {
+			switch c {
+			case "value_id":
+			}
+		}
+	default:
+		panic("other statement types than insert are not yet supported")
+	}
+	return nil, nil
+}
+
 type TableProductEntityDecimalSlice []*TableProductEntityDecimal
 
 //func off_TestLoadFromDb(t *testing.T) {
@@ -307,14 +322,12 @@ func TestValue(t *testing.T) {
 	tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(8889933)}
 	ib := dbr.NewInsert("catalog_product_entity_decimal")
 
-	ib.Columns("attribute_id", "store_id", "entity_id", "value")
-
-	ib.Values(tuple.AttributeID, tuple.StoreID, tuple.EntityID, tuple.Value)
-	ib.Values(tuple2.AttributeID, tuple2.StoreID, tuple2.EntityID, &tuple2.Value)
+	ib.AddColumns("attribute_id", "store_id", "entity_id", "value")
+	ib.AddRecords(tuple, tuple2)
 
 	sql, args, err := ib.ToSQL()
 	assert.NoError(t, err)
-	fullSql, err := dbr.Preprocess(sql, args)
+	fullSql, err := dbr.Interpolate(sql, args...)
 	assert.NoError(t, err)
 	assert.Contains(t, fullSql, `(73,3,231,777.9933),(74,2,231,888.9933)`)
 }

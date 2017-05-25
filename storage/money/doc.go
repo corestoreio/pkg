@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: https://github.com/Rhymond/go-money
+
 /*
 Package money uses a fixed-length guard for precision arithmetic.
 Implements Un/Marshaller and Scan() method for database
