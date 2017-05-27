@@ -238,6 +238,8 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 	}
 }
 
+var _ dbr.ArgumentAssembler = (*TableProductEntityDecimal)(nil)
+
 type TableProductEntityDecimal struct {
 	ValueID     int64       `db:"value_id"`     // value_id int(11) NOT NULL PRI  auto_increment
 	AttributeID int64       `db:"attribute_id"` // attribute_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
@@ -246,19 +248,16 @@ type TableProductEntityDecimal struct {
 	Value       money.Money `db:"value"`        // value decimal(12,4) NULL
 }
 
-func (ped TableProductEntityDecimal) GenerateArguments(statementType byte, columns, condition []string) (dbr.Arguments, error) {
-
-	switch statementType {
-	case dbr.StatementTypeInsert:
-		for _, c := range columns {
-			switch c {
-			case "value_id":
-			}
+func (ped TableProductEntityDecimal) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	for _, c := range columns {
+		switch c {
+		case "value_id":
+			args = append(args, dbr.ArgInt64(ped.ValueID))
+		default:
+			panic("other statement types than insert are not yet supported")
 		}
-	default:
-		panic("other statement types than insert are not yet supported")
 	}
-	return nil, nil
+	return args, nil
 }
 
 type TableProductEntityDecimalSlice []*TableProductEntityDecimal
