@@ -29,6 +29,8 @@
 // A new discussion: https://news.ycombinator.com/item?id=13865459 JSON Web
 // Tokens should be avoided (paragonie.com)
 //
+// Headless JWT mode: https://dev.to/neilmadden/7-best-practices-for-json-web-tokens
+//
 // TODO: Investigate security bugs: http://blogs.adobe.com/security/2017/03/critical-vulnerability-uncovered-in-json-encryption.html
 // Critical Vulnerability Uncovered in JSON Encryption. Executive Summary: If
 // you are using go-jose, node-jose, jose2go, Nimbus JOSE+JWT or jose4 with
