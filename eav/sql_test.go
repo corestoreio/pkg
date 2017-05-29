@@ -51,31 +51,31 @@ func TestSelect_Join_EAVIfNull(t *testing.T) {
 		From("catalog_product_entity", "cpe").
 		LeftJoin(
 			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerDefault"),
-			dbr.Condition("manufacturerDefault.scope = 0"),
-			dbr.Condition("manufacturerDefault.scope_id = 0"),
-			dbr.Condition("manufacturerDefault.attribute_id = 83"),
-			dbr.Condition("manufacturerDefault.value IS NOT NULL"),
+			dbr.Column("manufacturerDefault.scope = 0"),
+			dbr.Column("manufacturerDefault.scope_id = 0"),
+			dbr.Column("manufacturerDefault.attribute_id = 83"),
+			dbr.Column("manufacturerDefault.value IS NOT NULL"),
 		).
 		LeftJoin(
 			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerWebsite"),
-			dbr.Condition("manufacturerWebsite.scope = 1"),
-			dbr.Condition("manufacturerWebsite.scope_id = 10"),
-			dbr.Condition("manufacturerWebsite.attribute_id = 83"),
-			dbr.Condition("manufacturerWebsite.value IS NOT NULL"),
+			dbr.Column("manufacturerWebsite.scope = 1"),
+			dbr.Column("manufacturerWebsite.scope_id = 10"),
+			dbr.Column("manufacturerWebsite.attribute_id = 83"),
+			dbr.Column("manufacturerWebsite.value IS NOT NULL"),
 		).
 		LeftJoin(
 			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerGroup"),
-			dbr.Condition("manufacturerGroup.scope = 2"),
-			dbr.Condition("manufacturerGroup.scope_id = 20"),
-			dbr.Condition("manufacturerGroup.attribute_id = 83"),
-			dbr.Condition("manufacturerGroup.value IS NOT NULL"),
+			dbr.Column("manufacturerGroup.scope = 2"),
+			dbr.Column("manufacturerGroup.scope_id = 20"),
+			dbr.Column("manufacturerGroup.attribute_id = 83"),
+			dbr.Column("manufacturerGroup.value IS NOT NULL"),
 		).
 		LeftJoin(
 			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerStore"),
-			dbr.Condition("manufacturerStore.scope = 2"),
-			dbr.Condition("manufacturerStore.scope_id = 20"),
-			dbr.Condition("manufacturerStore.attribute_id = 83"),
-			dbr.Condition("manufacturerStore.value IS NOT NULL"),
+			dbr.Column("manufacturerStore.scope = 2"),
+			dbr.Column("manufacturerStore.scope_id = 20"),
+			dbr.Column("manufacturerStore.attribute_id = 83"),
+			dbr.Column("manufacturerStore.value IS NOT NULL"),
 		)
 
 	sql, _, err := s.ToSQL()
