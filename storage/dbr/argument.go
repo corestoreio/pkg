@@ -442,6 +442,12 @@ func iFaceToArgs(values ...interface{}) (Arguments, error) {
 			args = append(args, ArgInt64(int64(v)))
 		case int8:
 			args = append(args, ArgInt64(int64(v)))
+		case uint32:
+			args = append(args, ArgInt64(int64(v)))
+		case uint16:
+			args = append(args, ArgInt64(int64(v)))
+		case uint8:
+			args = append(args, ArgInt64(int64(v)))
 		case bool:
 			args = append(args, ArgBool(v))
 		case string:
