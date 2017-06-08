@@ -41,10 +41,7 @@ import (
 // so the rename operation is not subject to concurrency problems.
 type Delete struct {
 	Log log.Logger // Log optional logger
-	DB  struct {
-		Preparer
-		Execer
-	}
+	DB  Execer
 
 	// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 
@@ -54,13 +51,13 @@ type Delete struct {
 	// Record if set retrieves the necessary arguments from the interface.
 	Record ArgumentAssembler
 
-	From alias
-	WhereFragments
-	OrderBys    aliases
-	LimitCount  uint64
-	OffsetCount uint64
-	LimitValid  bool
-	OffsetValid bool
+	From           alias
+	WhereFragments WhereFragments
+	OrderBys       aliases
+	LimitCount     uint64
+	OffsetCount    uint64
+	LimitValid     bool
+	OffsetValid    bool
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -93,8 +90,7 @@ func (c *Connection) DeleteFrom(from ...string) *Delete {
 		From:           MakeAlias(from...),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
-	d.DB.Execer = c.DB
-	d.DB.Preparer = c.DB
+	d.DB = c.DB
 	return d
 }
 
@@ -105,9 +101,14 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 		Log:  tx.Logger,
 		From: MakeAlias(from...),
 	}
-	d.DB.Execer = tx.Tx
-	d.DB.Preparer = tx.Tx
+	d.DB = tx.Tx
 	return d
+}
+
+// WithDB sets the database query object.
+func (b *Delete) WithDB(db Execer) *Delete {
+	b.DB = db
+	return b
 }
 
 // AddRecord pulls in values to match Columns from the record generator.
@@ -191,19 +192,19 @@ func (b *Delete) hasBuildCache() bool {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
+func (b *Delete) toSQL(buf queryWriter) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
+		return errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
 	}
 
 	if b.RawFullSQL != "" {
 		buf.WriteString(b.RawFullSQL)
-		return b.RawArguments, nil
+		return nil
 	}
 
 	if len(b.From.Name) == 0 {
-		return nil, errors.NewEmptyf("[dbr] Delete: Table is missing")
+		return errors.NewEmptyf("[dbr] Delete: Table is missing")
 	}
 
 	buf.WriteString("DELETE FROM ")
@@ -211,19 +212,37 @@ func (b *Delete) toSQL(buf queryWriter) (Arguments, error) {
 
 	// TODO(CyS) add SQLStmtDeleteJoin
 
-	// Write WHERE clause if we have any fragments.
-	// pap defines the pending argument positions. The pending arguments gets
-	// assembled in the Record.AssembleArguments.
-	args, pap, err := b.WhereFragments.write(buf, make(Arguments, 0, len(b.WhereFragments)), 'w')
+	if err := b.WhereFragments.write(buf, 'w'); err != nil {
+		return errors.Wrap(err, "[dbr] Delete.ToSQL.write")
+	}
+
+	sqlWriteOrderBy(buf, b.OrderBys, false)
+	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
+
+	return nil
+}
+
+// ToSQL serialized the Delete to a SQL string
+// It returns the string with placeholders and a slice of query arguments
+func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
+
+	if b.RawFullSQL != "" {
+		return b.RawArguments, nil
+	}
+	if args == nil {
+		args = make(Arguments, 0, len(b.WhereFragments))
+	}
+	args, err = b.From.appendArgs(args)
+
+	// TODO(CyS) add SQLStmtDeleteJoin
+
+	args, pap, err := b.WhereFragments.appendArgs(args, 'w')
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.write")
 	}
 	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtDelete|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.toSQL.appendAssembledArgs")
 	}
-
-	sqlWriteOrderBy(buf, b.OrderBys, false)
-	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
 
 	return args, nil
 }

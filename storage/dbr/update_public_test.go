@@ -23,30 +23,33 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // due to import cycle with the cstesting package, we must test externally
 
 func TestUpdateMulti_Exec(t *testing.T) {
+	t.Parallel()
 
 	t.Run("no columns provided", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe")
-		mu.Update.Where(dbr.Column("entity_id", dbr.In.Int64())) // ArgInt64 must be without arguments
+		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity", "cpe").
+			Where(dbr.Column("entity_id", dbr.In.Int64())), // ArgInt64 must be without arguments
+		)
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
+
 	t.Run("alias mismatch", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe").AddColumns("sku", "updated_at")
-		mu.Update.Where(dbr.Column("entity_id", dbr.In.Int64())) // ArgInt64 must be without arguments
+		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id", dbr.In.Int64())))
 		mu.Alias = []string{"update_sku"}
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
+
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti("catalog_product_entity", "cpe").AddColumns("sku", "updated_at")
-		mu.Update.Where(dbr.Column("entity_id", dbr.In.Int64())) // ArgInt64 must be without arguments
+		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id", dbr.In.Int64())))
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
@@ -65,11 +68,9 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		},
 	}
 
-	mu := dbr.NewUpdateMulti("customer_entity", "ce").AddColumns("name", "email")
-	mu.Update.Where(dbr.Column("id", dbr.Equal.Int64())) // Int64 must be without arguments, because Placeholder
-	mu.Update.Interpolate()
-
-	mu.Records = append(mu.Records, records...)
+	mu := dbr.NewUpdateMulti(
+		dbr.NewUpdate("customer_entity", "ce").AddColumns("name", "email").Where(dbr.Column("id", dbr.Equal.Int64())).Interpolate(),
+	).AddRecords(records...)
 
 	// SM = SQL Mock
 	setSQLMockInterpolate := func(m sqlmock.Sqlmock) {
@@ -96,8 +97,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 		setSQLMockInterpolate(dbMock)
 
-		mu.Update.DB.Execer = dbc.DB
-		mu.Update.DB.Preparer = nil
+		mu.Update.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO())
 		if err != nil {
@@ -126,8 +126,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		setSMPrepared(dbMock)
 
 		mu.Update.IsInterpolate = false
-		mu.Update.DB.Execer = nil
-		mu.Update.DB.Preparer = dbc.DB
+		mu.Update.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO())
 		if err != nil {
@@ -160,8 +159,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Tx = dbc.DB
 		mu.Transaction()
 		mu.Update.IsInterpolate = false
-		mu.Update.DB.Execer = nil
-		mu.Update.DB.Preparer = dbc.DB
+		mu.Update.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO())
 		if err != nil {
@@ -194,8 +192,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Tx = dbc.DB
 		mu.Transaction()
 		mu.Update.IsInterpolate = true
-		mu.Update.DB.Execer = nil
-		mu.Update.DB.Preparer = dbc.DB
+		mu.Update.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO())
 		if err != nil {
@@ -210,6 +207,55 @@ func TestUpdateMulti_Exec(t *testing.T) {
 			assert.Exactly(t, int64(1), aff)
 		}
 	})
+}
+
+func TestNewUpdateMulti(t *testing.T) {
+	t.Parallel()
+
+	dbc, dbMock := cstesting.MockDB(fatalLog{})
+
+	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
+		// "UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN ?) AND (`entity_id` = ?)",
+		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` = ?) AND (`entity_id` = ?)",
+	))
+
+	prep.ExpectExec().WithArgs(
+		"pending", int64(5678), 31.41459, "DHL", 1).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	prep.ExpectExec().WithArgs(
+		"processing", int64(8912), nil, "DHL", 2).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	// </ignore_this>
+
+	// Our objects which should update the columns in the database table
+	// `sales_order`.
+	so1 := salesOrder{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
+	so2 := salesOrder{2, "processing", 7, 8912, dbr.NullFloat64{}}
+
+	// Create the multi update statement
+	um := dbr.NewUpdateMulti(dbr.NewUpdate("sales_order").
+		AddColumns("state", "customer_id", "grand_total").
+		Where(
+			// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
+			dbr.Column("shipping_method", dbr.Equal.Str("DHL")), // For all clauses the same restriction
+			dbr.Column("entity_id", dbr.Equal.Int64()),          // Int64() acts as a place holder
+		).
+		WithDB(dbc.DB), // Our template statement
+	).AddRecords(so1, so2)
+
+	results, err := um.Exec(context.Background())
+	require.NoError(t, err)
+
+	dbMock.ExpectClose()
+	dbc.Close()
+	require.NoError(t, dbMock.ExpectationsWereMet())
+
+	for i, r := range results {
+		ra, err := r.RowsAffected()
+		require.NoError(t, err, "Index %d", i)
+		assert.Exactly(t, int64(1), ra, "Index %d", i)
+	}
 }
 
 func TestUpdate_SetRecord_Arguments(t *testing.T) {

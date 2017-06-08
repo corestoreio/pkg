@@ -135,7 +135,7 @@ func TestDelete_Prepare(t *testing.T) {
 		d := &Delete{
 			From: MakeAlias("table"),
 		}
-		d.DB.Preparer = dbMock{
+		d.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		d.Where(Column("a", Equal.Int(1)))

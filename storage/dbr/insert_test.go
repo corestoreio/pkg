@@ -110,6 +110,7 @@ func TestInsert_AddRecords(t *testing.T) {
 	t.Run("without columns, all columns requested", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").
+				SetRecordValueCount(3).
 				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
 				AddOnDuplicateKey("something_id", ArgInt64(99)).
 				AddOnDuplicateKey("user_id", nil),
@@ -243,7 +244,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in := &Insert{
 			Into: "table",
 		}
-		in.DB.Preparer = dbMock{
+		in.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		in.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
@@ -287,7 +288,7 @@ func TestInsert_Events(t *testing.T) {
 			},
 		)
 		compareToSQL(t, d, nil,
-			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)",
+			"", // "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)",
 			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')",
 			int64(1), true, "X1", "X2",
 		)
@@ -352,7 +353,7 @@ func TestInsert_Events(t *testing.T) {
 		)
 
 		compareToSQL(t, ins, nil,
-			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)",
+			"", // "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)",
 			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')",
 			int64(1), true, 3.14159, 2.7182, "X1",
 		)

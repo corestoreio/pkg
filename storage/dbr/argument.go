@@ -264,6 +264,17 @@ type Argument interface {
 // Arguments representing multiple arguments.
 type Arguments []Argument
 
+func repeatPlaceHolder(w queryWriter, arg Argument) {
+	w.WriteByte('(')
+	for j := 0; j < arg.len(); j++ {
+		if j > 0 {
+			w.WriteByte(',')
+		}
+		w.WriteByte('?')
+	}
+	w.WriteByte(')')
+}
+
 // argCount contains the number of primitives within an argument.
 func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 	// hasArg argument only used in cases where we have in the parent caller
@@ -276,6 +287,7 @@ func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 	case In:
 		w.WriteString(" IN ")
 		if hasArg {
+			// repeatPlaceHolder(w,arg) // TODO because of IN clause in TestNewUpdateMulti, also change len() function on arg* types
 			w.WriteByte('?')
 			addArg = true
 		}
@@ -371,9 +383,13 @@ func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 }
 
 // len calculates the total length of all values
-func (as Arguments) len() (l int) {
+func (as Arguments) len() (tl int) {
 	for _, a := range as {
-		l += a.len()
+		l := a.len()
+		if l == cahensConstant {
+			l = 1
+		}
+		tl += l
 	}
 	return
 }
@@ -1018,7 +1034,7 @@ func (i argPlaceHolder) toIFace(args []interface{}) []interface{} {
 }
 
 func (i argPlaceHolder) writeTo(w queryWriter, _ int) (err error) {
-	_, err = w.WriteString("?/*SHOULD NOT GET WRITTEN*/")
+	_, err = w.WriteString("? /*PLACEHOLDER*/") // maybe remove /*PLACEHOLDER*/ if it's annoying
 	return err
 }
 

@@ -286,8 +286,8 @@ func TestInterpolateStrings(t *testing.T) {
 		var sl = make([]string, 0, 2)
 		str, err := Interpolate("SELECT * FROM x WHERE a IN ? AND b = ? OR c = ?",
 			In.Str("a", "b"), ArgString("c"), Equal.Str(sl...))
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
-		assert.Empty(t, str)
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM x WHERE a IN ('a','b') AND b = 'c' OR c = ? /*PLACEHOLDER*/", str)
 	})
 }
 

@@ -123,23 +123,32 @@ func (u *Union) hasBuildCache() bool {
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
-func (u *Union) toSQL(w queryWriter) (Arguments, error) {
-
-	args := make(Arguments, 0, len(u.Selects))
+func (u *Union) toSQL(w queryWriter) error {
 	for i, s := range u.Selects {
-
 		if i > 0 {
 			sqlWriteUnionAll(w, u.IsAll)
 		}
 		w.WriteByte('(')
-		sArgs, err := s.toSQL(w)
+
+		if err := s.toSQL(w); err != nil {
+			return errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
+		}
+		w.WriteByte(')')
+	}
+	sqlWriteOrderBy(w, u.OrderBys, true)
+	return nil
+}
+
+func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
+	if args == nil {
+		args = make(Arguments, 0, len(u.Selects)*2) // 2 == just guessed
+	}
+	for i, s := range u.Selects {
+		args, err = s.appendArgs(args)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
 		}
-		w.WriteByte(')')
-		args = append(args, sArgs...)
 	}
-	sqlWriteOrderBy(w, u.OrderBys, true)
 	return args, nil
 }
 
@@ -279,17 +288,17 @@ func (ut *UnionTemplate) hasBuildCache() bool {
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
-func (ut *UnionTemplate) toSQL(wu queryWriter) (Arguments, error) {
+func (ut *UnionTemplate) toSQL(wu queryWriter) error {
 	if ut.previousError != nil {
-		return nil, ut.previousError
+		return ut.previousError
 	}
 
 	w := bufferpool.Get()
-	tplArgs, err := ut.Select.toSQL(w)
+	err := ut.Select.toSQL(w)
 	selStr := w.String()
 	bufferpool.Put(w)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] UnionTpl.ToSQL: toSQL template")
+		return errors.Wrap(err, "[dbr] UnionTpl.ToSQL: toSQL template")
 	}
 
 	for i := 0; i < ut.stmtCount; i++ {
@@ -306,5 +315,16 @@ func (ut *UnionTemplate) toSQL(wu queryWriter) (Arguments, error) {
 		wu.WriteByte(')')
 	}
 	sqlWriteOrderBy(wu, ut.OrderBys, true)
-	return ut.MultiplyArguments(tplArgs...), nil
+	return nil
+}
+
+func (ut *UnionTemplate) appendArgs(args Arguments) (_ Arguments, err error) {
+	if ut.previousError != nil {
+		return nil, ut.previousError
+	}
+	args, err = ut.Select.appendArgs(args)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] UnionTpl.ToSQL: toSQL template")
+	}
+	return ut.MultiplyArguments(args...), nil
 }

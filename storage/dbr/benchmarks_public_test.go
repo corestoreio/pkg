@@ -31,6 +31,9 @@ type benchMockQuerier struct{}
 func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return new(sql.Rows), nil
 }
+func (benchMockQuerier) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+	return new(sql.Stmt), nil
+}
 
 // BenchmarkSelect_Rows-4   	 1000000	      2188 ns/op	    1354 B/op	      19 allocs/op old
 // BenchmarkSelect_Rows-4   	 1000000	      2223 ns/op	    1386 B/op	      20 allocs/op new
@@ -38,14 +41,15 @@ func BenchmarkSelect_Rows(b *testing.B) {
 
 	tables := []string{"eav_attribute"}
 	ctx := context.TODO()
+	db := benchMockQuerier{}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
 		sel := dbr.NewSelect("TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 			"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").From("information_schema.COLUMNS").
-			Where(dbr.Column(`TABLE_SCHEMA=DATABASE()`))
-		sel.DB.Querier = benchMockQuerier{}
+			Where(dbr.Column(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
+
 		if len(tables) > 0 {
 			sel.Where(dbr.Column("TABLE_NAME IN ?", dbr.In.Str(tables...)))
 		}

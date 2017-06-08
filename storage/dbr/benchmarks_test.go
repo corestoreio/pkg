@@ -79,8 +79,11 @@ func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		if err := uc.writeOnDuplicateKey(buf); err != nil {
+			b.Fatalf("%+v", err)
+		}
 		var err error
-		if args, err = uc.writeOnDuplicateKey(buf, args); err != nil {
+		if args, err = uc.appendArgs(args); err != nil {
 			b.Fatalf("%+v", err)
 		}
 		buf.Reset()

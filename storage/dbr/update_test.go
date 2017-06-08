@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUpdateAllToSQL(t *testing.T) {
@@ -153,7 +154,7 @@ func TestUpdate_Prepare(t *testing.T) {
 
 	t.Run("Prepare Error", func(t *testing.T) {
 		u := &Update{}
-		u.DB.Preparer = dbMock{
+		u.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		u.Table = MakeAlias("tableY")
@@ -294,11 +295,9 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("empty columns does nothing", func(t *testing.T) {
 		uc := UpdatedColumns{}
 		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
-		args, err := uc.writeOnDuplicateKey(buf, args)
+		err := uc.writeOnDuplicateKey(buf)
 		assert.NoError(t, err, "%+v", err)
 		assert.Empty(t, buf.String())
-		assert.Empty(t, args)
 	})
 
 	t.Run("col=VALUES(col) and no arguments", func(t *testing.T) {
@@ -306,11 +305,9 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 			Columns: []string{"sku", "name", "stock"},
 		}
 		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
-		args, err := uc.writeOnDuplicateKey(buf, args)
+		err := uc.writeOnDuplicateKey(buf)
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `sku`=VALUES(`sku`), `name`=VALUES(`name`), `stock`=VALUES(`stock`)", buf.String())
-		assert.Empty(t, args)
 	})
 
 	t.Run("col=? and with arguments", func(t *testing.T) {
@@ -320,8 +317,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		args, err := uc.writeOnDuplicateKey(buf, args)
-		assert.NoError(t, err, "%+v", err)
+		err := uc.writeOnDuplicateKey(buf)
+		require.NoError(t, err, "%+v", err)
+		args, err = uc.appendArgs(args)
+		require.NoError(t, err, "%+v", err)
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=?", buf.String())
 		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(12)}, args.Interfaces())
 	})
@@ -333,8 +332,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		args, err := uc.writeOnDuplicateKey(buf, args)
-		assert.NoError(t, err, "%+v", err)
+		err := uc.writeOnDuplicateKey(buf)
+		require.NoError(t, err, "%+v", err)
+		args, err = uc.appendArgs(args)
+		require.NoError(t, err, "%+v", err)
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=VALUES(`stock`)+?", buf.String())
 		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(13)}, args.Interfaces())
 	})
@@ -346,8 +347,11 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
-		args, err := uc.writeOnDuplicateKey(buf, args)
-		assert.NoError(t, err, "%+v", err)
+		err := uc.writeOnDuplicateKey(buf)
+		require.NoError(t, err, "%+v", err)
+		args, err = uc.appendArgs(args)
+		require.NoError(t, err, "%+v", err)
+
 		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `sku`=VALUES(`sku`), `stock`=?", buf.String())
 		assert.Exactly(t, []interface{}{"E0S 5D Mark III", int64(14)}, args.Interfaces())
 	})

@@ -21,20 +21,15 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 )
 
-var _ dbr.DBer = (*sql.DB)(nil)
-var _ dbr.Preparer = (*sql.DB)(nil)
 var _ dbr.Querier = (*sql.DB)(nil)
 var _ dbr.Execer = (*sql.DB)(nil)
-var _ dbr.QueryRower = (*sql.DB)(nil)
 
 var _ dbr.Stmter = (*sql.Stmt)(nil)
-var _ dbr.StmtQueryRower = (*sql.Stmt)(nil)
 var _ dbr.StmtQueryer = (*sql.Stmt)(nil)
 var _ dbr.StmtExecer = (*sql.Stmt)(nil)
 
 var _ dbr.Txer = (*sql.Tx)(nil)
 
-var _ dbr.Preparer = (*dbMock)(nil)
 var _ dbr.Querier = (*dbMock)(nil)
 var _ dbr.Execer = (*dbMock)(nil)
 

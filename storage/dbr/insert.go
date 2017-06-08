@@ -26,10 +26,8 @@ import (
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	Log log.Logger // Log optional logger
-	DB  struct {
-		Preparer
-		Execer
-	}
+	DB  Execer
+
 	// UseBuildCache if set to true the final build query will be stored in
 	// field private field `buildCache` and the arguments in field `Arguments`
 	UseBuildCache bool
@@ -43,6 +41,10 @@ type Insert struct {
 	Values  []Arguments
 
 	Records []ArgumentAssembler
+	// RecordValueCount defines the number of place holders for each value
+	// within the brackets for each set. Must only be set when Records are set
+	// and `Columns` field has been omitted.
+	RecordValueCount int
 	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
 	Select *Select
 
@@ -83,8 +85,7 @@ func (c *Connection) InsertInto(into string) *Insert {
 		Log:  c.Log,
 		Into: into,
 	}
-	i.DB.Execer = c.DB
-	i.DB.Preparer = c.DB
+	i.DB = c.DB
 	return i
 }
 
@@ -94,9 +95,14 @@ func (tx *Tx) InsertInto(into string) *Insert {
 		Log:  tx.Logger,
 		Into: into,
 	}
-	i.DB.Execer = tx.Tx
-	i.DB.Preparer = tx.Tx
+	i.DB = tx.Tx
 	return i
+}
+
+// WithDB sets the database query object.
+func (b *Insert) WithDB(db Execer) *Insert {
+	b.DB = db
+	return b
 }
 
 // Ignore modifier enables errors that occur while executing the INSERT
@@ -122,6 +128,7 @@ func (b *Insert) Replace() *Insert {
 
 // AddColumns appends columns to insert in the statement.
 func (b *Insert) AddColumns(columns ...string) *Insert {
+	b.RecordValueCount += len(columns)
 	b.Columns = append(b.Columns, columns...)
 	return b
 }
@@ -147,6 +154,14 @@ func (b *Insert) AddValues(vals ...Argument) *Insert {
 // AddRecords pulls in values to match Columns from the record generator.
 func (b *Insert) AddRecords(recs ...ArgumentAssembler) *Insert {
 	b.Records = append(b.Records, recs...)
+	return b
+}
+
+// SetRecordValueCount number of expected values within each set. Must be
+// applied if columns have been omitted.
+func (b *Insert) SetRecordValueCount(valueCount int) *Insert {
+	// maybe we can do better and remove this method ...
+	b.RecordValueCount = valueCount
 	return b
 }
 
@@ -215,22 +230,22 @@ func (b *Insert) hasBuildCache() bool {
 	return b.UseBuildCache
 }
 
-func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
+func (b *Insert) toSQL(buf queryWriter) error {
 	if b.previousError != nil {
-		return nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
+		return errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
 	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
+		return errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
 	}
 
 	if b.RawFullSQL != "" {
 		buf.WriteString(b.RawFullSQL)
-		return b.RawArguments, nil
+		return nil
 	}
 
 	if len(b.Into) == 0 {
-		return nil, errors.NewEmptyf("[dbr] Insert Table is missing")
+		return errors.NewEmptyf("[dbr] Insert Table is missing")
 	}
 
 	ior := "INSERT "
@@ -247,12 +262,11 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 	buf.WriteByte(' ')
 
 	if b.Select != nil {
-		sArgs, err := b.Select.toSQL(buf)
-		return sArgs, errors.Wrap(err, "[dbr] Insert.FromSelect")
+		return errors.Wrap(b.Select.toSQL(buf), "[dbr] Insert.FromSelect")
 	}
 
 	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
-		return nil, errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
+		return errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
 	}
 
 	var ph = bufferpool.Get() // Build the ph like "(?,?,?)"
@@ -291,33 +305,23 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 
 	placeholderStr := ph.String()
 
-	totalArgCount := len(b.Values) * argCount0
-	args := make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
-	for i, v := range b.Values {
+	for i := range b.Values {
 		if i > 0 {
 			buf.WriteByte(',')
 		}
 		buf.WriteString(placeholderStr)
-		args = append(args, v...)
 	}
 
-	var err error
 	if b.Records == nil {
-		args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args)
-		return args, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
+		return errors.Wrap(b.OnDuplicateKey.writeOnDuplicateKey(buf), "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
 	}
 
-	for i, rec := range b.Records {
-		before := len(args)
-		args, err = rec.AssembleArguments(SQLStmtInsert|SQLPartValues, args, b.Columns) // Columns can be empty
-		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
-		}
+	for i := range b.Records {
 		if i == 0 && placeholderStr == "" {
-			argCount0 = len(args) - before
+
 			// Build place holder string because here the func knows how many arguments it have.
 			ph.WriteByte('(')
-			for j := 0; j < argCount0; j++ {
+			for j := 0; j < b.RecordValueCount; j++ {
 				if j > 0 {
 					ph.WriteByte(',')
 				}
@@ -332,8 +336,64 @@ func (b *Insert) toSQL(buf queryWriter) (Arguments, error) {
 		buf.WriteString(placeholderStr)
 	}
 
-	if args, err = b.OnDuplicateKey.writeOnDuplicateKey(buf, args); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
+	if err := b.OnDuplicateKey.writeOnDuplicateKey(buf); err != nil {
+		return errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
+	}
+	return nil
+}
+
+func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
+	if b.previousError != nil {
+		return nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
+	}
+
+	if b.RawFullSQL != "" {
+		return b.RawArguments, nil
+	}
+
+	if b.Select != nil {
+		args, err = b.Select.appendArgs(args)
+		return args, errors.Wrap(err, "[dbr] Insert.FromSelect")
+	}
+
+	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
+		return nil, errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
+	}
+
+	argCount0 := b.RecordValueCount
+	if len(b.Values) > 0 && len(b.Columns) == 0 {
+		argCount0 = len(b.Values[0])
+	}
+	if lc := len(b.Columns); argCount0 < 1 && lc > 0 {
+		argCount0 = lc
+	}
+
+	totalArgCount := len(b.Values) * argCount0
+	if args == nil {
+		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
+	}
+	for _, v := range b.Values {
+		args = append(args, v...)
+	}
+
+	if b.Records == nil {
+		args, err = b.OnDuplicateKey.appendArgs(args)
+		return args, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.appendArgs")
+	}
+
+	for _, rec := range b.Records {
+		alBefore := len(args)
+		args, err = rec.AssembleArguments(SQLStmtInsert|SQLPartValues, args, b.Columns) // Columns can be empty
+		if err != nil {
+			return nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
+		}
+		if addedArgs := len(args) - alBefore; addedArgs != argCount0 {
+			return nil, errors.NewMismatchf("[dbr] Insert.appendArgs RecordValueCount(%d) does not match the number of assembled arguments (%d)", b.RecordValueCount, addedArgs)
+		}
+	}
+
+	if args, err = b.OnDuplicateKey.appendArgs(args); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.appendArgs")
 	}
 	return args, nil
 }
@@ -353,7 +413,6 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 	if b.Log != nil && b.Log.IsInfo() {
 		defer log.WhenDone(b.Log).Info("dbr.Insert.Exec.Timing", log.String("sqlStr", sqlStr))
 	}
-
 	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
 		return result, errors.Wrap(err, "[dbr] Insert.Exec.Exec")

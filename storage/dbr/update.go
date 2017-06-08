@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -25,10 +26,8 @@ import (
 // Update contains the clauses for an UPDATE statement
 type Update struct {
 	Log log.Logger
-	DB  struct {
-		Preparer
-		Execer
-	}
+	DB  Execer
+
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
 	RawFullSQL   string
@@ -38,13 +37,13 @@ type Update struct {
 	Table alias
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
-	SetClauses UpdatedColumns
-	WhereFragments
-	OrderBys    aliases
-	LimitCount  uint64
-	OffsetCount uint64
-	LimitValid  bool
-	OffsetValid bool
+	SetClauses     UpdatedColumns
+	WhereFragments WhereFragments
+	OrderBys       aliases
+	LimitCount     uint64
+	OffsetCount    uint64
+	LimitValid     bool
+	OffsetValid    bool
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -77,7 +76,7 @@ func (c *Connection) Update(table ...string) *Update {
 		Log:   c.Log,
 		Table: MakeAlias(table...),
 	}
-	u.DB.Execer = c.DB
+	u.DB = c.DB
 	return u
 }
 
@@ -88,7 +87,7 @@ func (c *Connection) UpdateBySQL(sql string, args ...Argument) *Update {
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
-	u.DB.Execer = c.DB
+	u.DB = c.DB
 	return u
 }
 
@@ -98,7 +97,7 @@ func (tx *Tx) Update(table ...string) *Update {
 		Log:   tx.Logger,
 		Table: MakeAlias(table...),
 	}
-	u.DB.Execer = tx.Tx
+	u.DB = tx.Tx
 	return u
 }
 
@@ -110,8 +109,14 @@ func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
-	u.DB.Execer = tx.Tx
+	u.DB = tx.Tx
 	return u
+}
+
+// WithDB sets the database query object.
+func (b *Update) WithDB(db Execer) *Update {
+	b.DB = db
+	return b
 }
 
 // Set appends a column/value pair for the statement.
@@ -121,6 +126,17 @@ func (b *Update) Set(column string, arg Argument) *Update {
 	}
 	b.SetClauses.Columns = append(b.SetClauses.Columns, column)
 	b.SetClauses.Arguments = append(b.SetClauses.Arguments, arg)
+	return b
+}
+
+// AddColumns adds columns which values gets later derived from an
+// ArgumentAssembler. Those columns will get passed to the ArgumentAssembler
+// implementation. Mostly used with the type UpdateMulti.
+func (b *Update) AddColumns(columnNames ...string) *Update {
+	if b.previousError != nil {
+		return b
+	}
+	b.SetClauses.Columns = append(b.SetClauses.Columns, columnNames...)
 	return b
 }
 
@@ -223,40 +239,30 @@ func (b *Update) hasBuildCache() bool {
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
+func (b *Update) toSQL(buf queryWriter) error {
 	if b.previousError != nil {
-		return nil, errors.Wrap(b.previousError, "[dbr] Update.ToSQL")
+		return errors.Wrap(b.previousError, "[dbr] Update.ToSQL")
 	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
+		return errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
 	}
 
 	if b.RawFullSQL != "" {
 		buf.WriteString(b.RawFullSQL)
-		return b.RawArguments, nil
+		return nil
 	}
 
 	if len(b.Table.Name) == 0 {
-		return nil, errors.NewEmptyf("[dbr] Update: Table at empty")
+		return errors.NewEmptyf("[dbr] Update: Table at empty")
 	}
 	if len(b.SetClauses.Columns) == 0 {
-		return nil, errors.NewEmptyf("[dbr] Update: SetClauses are empty")
+		return errors.NewEmptyf("[dbr] Update: SetClauses are empty")
 	}
-
-	args := make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
 
 	buf.WriteString("UPDATE ")
 	b.Table.FquoteAs(buf)
 	buf.WriteString(" SET ")
-
-	if b.SetClauses.Record != nil {
-		var err error
-		args, err = b.SetClauses.Record.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
-		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
-		}
-	}
 
 	// Build SET clause SQL with placeholders and add values to args
 	for i, c := range b.SetClauses.Columns {
@@ -269,10 +275,8 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 			arg := b.SetClauses.Arguments[i]
 			if e, ok := arg.(*expr); ok {
 				e.writeTo(buf, 0)
-				args = append(args, e.Arguments...)
 			} else {
 				buf.WriteByte('?')
-				args = append(args, arg)
 			}
 		} else {
 			buf.WriteByte('?')
@@ -280,7 +284,48 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 	}
 
 	// Write WHERE clause if we have any fragments
-	args, pap, err := b.WhereFragments.write(buf, args, 'w')
+	if err := b.WhereFragments.write(buf, 'w'); err != nil {
+		return errors.Wrap(err, "[dbr] Update.ToSQL.write")
+	}
+
+	sqlWriteOrderBy(buf, b.OrderBys, false)
+	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
+	return nil
+}
+
+// ToSQL serialized the Update to a SQL string
+// It returns the string with placeholders and a slice of query arguments
+func (b *Update) appendArgs(args Arguments) (Arguments, error) {
+	if b.previousError != nil {
+		return nil, errors.Wrap(b.previousError, "[dbr] Update.appendArgs")
+	}
+
+	if b.RawFullSQL != "" {
+		return b.RawArguments, nil
+	}
+
+	if args == nil {
+		args = make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
+	}
+	if b.SetClauses.Record != nil {
+		var err error
+		args, err = b.SetClauses.Record.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
+		if err != nil {
+			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
+		}
+	}
+
+	// Build SET clause SQL with placeholders and add values to args
+	for _, arg := range b.SetClauses.Arguments {
+		if e, ok := arg.(*expr); ok {
+			args = append(args, e.Arguments...)
+		} else {
+			args = append(args, arg)
+		}
+	}
+
+	// Write WHERE clause if we have any fragments
+	args, pap, err := b.WhereFragments.appendArgs(args, 'w')
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.write")
 	}
@@ -288,8 +333,6 @@ func (b *Update) toSQL(buf queryWriter) (Arguments, error) {
 		return nil, errors.Wrap(err, "[dbr] Update.toSQL.appendAssembledArgs")
 	}
 
-	sqlWriteOrderBy(buf, b.OrderBys, false)
-	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
 	return args, nil
 }
 
@@ -316,16 +359,19 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 // Prepare creates a new prepared statement represented by the Update object. It
 // returns the raw database/sql Stmt and an error if there was one.
 func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	rawSQL, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
-	if err != nil {
+	// TODO(CyS) implement build cache like the toSQL function
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	if err := b.toSQL(buf); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.Prepare.ToSQL")
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", rawSQL))
+		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", buf.String()))
 	}
 
-	stmt, err := b.DB.PrepareContext(ctx, rawSQL)
+	stmt, err := b.DB.PrepareContext(ctx, buf.String())
 	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
 }
 
@@ -359,9 +405,9 @@ type UpdatedColumns struct {
 
 // writeOnDuplicateKey writes the columns to `w` and appends the arguments to
 // `args` and returns `args`.
-func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arguments, error) {
+func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter) error {
 	if len(uc.Columns) == 0 {
-		return args, nil
+		return nil
 	}
 
 	useArgs := len(uc.Arguments) == len(uc.Columns)
@@ -377,7 +423,6 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arg
 			// todo remove continue
 			if e, ok := uc.Arguments[i].(*expr); ok {
 				_ = e.writeTo(w, 0)
-				args = append(args, uc.Arguments[i])
 				continue
 			}
 			if uc.Arguments[i] == nil {
@@ -387,11 +432,25 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter, args Arguments) (Arg
 				continue
 			}
 			w.WriteByte('?')
-			args = append(args, uc.Arguments[i])
 		} else {
 			w.WriteString("VALUES(")
 			Quoter.quote(w, c)
 			w.WriteByte(')')
+		}
+	}
+	return nil
+}
+
+func (uc UpdatedColumns) appendArgs(args Arguments) (Arguments, error) {
+	if len(uc.Columns) == 0 {
+		return args, nil
+	}
+	useArgs := len(uc.Arguments) == len(uc.Columns)
+	for i := range uc.Columns {
+		if useArgs {
+			if arg := uc.Arguments[i]; arg != nil { // must get skipped because VALUES(column_name)
+				args = append(args, arg)
+			}
 		}
 	}
 	return args, nil
@@ -414,7 +473,7 @@ type UpdateMulti struct {
 	// Tx knows how to start a transaction. Must be set if transactions hasn't
 	// been disabled.
 	Tx TxBeginner
-	// Update represents the main UPDATE statement
+	// Update represents the template UPDATE statement.
 	Update *Update
 
 	// Alias provides a special feature that instead of the column name, the
@@ -430,18 +489,11 @@ type UpdateMulti struct {
 }
 
 // NewUpdateMulti creates new UPDATE statement which runs multiple times for a
-// specific table.
-func NewUpdateMulti(table ...string) *UpdateMulti {
+// specific Update statement.
+func NewUpdateMulti(tpl *Update) *UpdateMulti {
 	return &UpdateMulti{
-		Update: NewUpdate(table...),
+		Update: tpl,
 	}
-}
-
-// AddColumns adds columns to the Update type. Those columns will get passed to
-// the ArgumentAssembler implementation.
-func (b *UpdateMulti) AddColumns(columnNames ...string) *UpdateMulti {
-	b.Update.SetClauses.Columns = append(b.Update.SetClauses.Columns, columnNames...)
-	return b
 }
 
 // AddRecords pulls in values to match Columns from the record.
@@ -481,92 +533,82 @@ func txUpdateMultiRollback(tx Txer, previousErr error, msg string, args ...inter
 	return nil, errors.Wrapf(previousErr, msg, args...)
 }
 
-// Exec creates a transaction
+// Exec runs multiple UPDATE queries for different records in serial order. The
+// returned result slice indexes are same index as for the Records slice.
 func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 	if err := b.validate(); err != nil {
 		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec")
 	}
 
-	isInterpolate := b.Update.IsInterpolate
-	b.Update.IsInterpolate = false
-	rawSQL, _, err := b.Update.ToSQL()
-	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec.ToSQL")
-	}
-
 	if b.Update.Log != nil && b.Update.Log.IsInfo() {
 		defer log.WhenDone(b.Update.Log).Info("dbr.UpdateMulti.Exec.Timing",
-			log.String("sql", rawSQL), log.Int("records", len(b.Records)))
+			log.Stringer("sql", b.Update),
+			log.Int("records", len(b.Records)))
 	}
 
-	exec := b.Update.DB.Execer
-	prep := b.Update.DB.Preparer
+	isInterpolate := b.Update.IsInterpolate
+	b.Update.IsInterpolate = false
+
+	sqlBuf := bufferpool.Get()
+	defer bufferpool.Put(sqlBuf)
+
+	err := b.Update.toSQL(sqlBuf)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec.Update.toSQL")
+	}
+
+	exec := b.Update.DB
 	var tx Txer = txMock{}
 	if b.IsTransaction {
+		var err error
 		tx, err = b.Tx.BeginTx(ctx, &sql.TxOptions{
 			Isolation: b.IsolationLevel,
 		})
 		if err != nil {
-			return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Exec.Tx.BeginTx. with Query: %q", rawSQL)
+			return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Exec.Tx.BeginTx. with Query: %q", b.Update)
 		}
 		exec = tx
-		prep = tx
 	}
 
 	var stmt *sql.Stmt
 	if !isInterpolate {
-		var err error
-		stmt, err = prep.PrepareContext(ctx, rawSQL)
+		stmt, err = exec.PrepareContext(ctx, sqlBuf.String())
 		if err != nil {
-			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Prepare. with Query: %q", rawSQL)
+			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Prepare. with Query: %q", b.Update)
 		}
-		defer stmt.Close()
+		defer stmt.Close() // todo check for error
 	}
 
-	where := b.Update.WhereFragments.Conditions()
-	args := make(Arguments, 0, len(b.Records)+len(where))
-
+	args := make(Arguments, 0, len(b.Records)+len(b.Update.WhereFragments))
 	results := make([]sql.Result, len(b.Records))
 	for i, rec := range b.Records {
-		// TODO(CyS) add join part
-
-		cols := b.Update.SetClauses.Columns
-		if len(b.Alias) > 0 {
-			cols = b.Alias
-		}
-
-		args, err = rec.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, cols)
+		// For parallel execution see ExecChan
+		b.Update.SetClauses.Record = rec
+		args, err = b.Update.appendArgs(args)
 		if err != nil {
-			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
+			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 		}
-
-		args, err = rec.AssembleArguments(SQLStmtUpdate|SQLPartWhere, args, where)
-		if err != nil {
-			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Record. Index %d with Query: %q", i, rawSQL)
-		}
-
 		if isInterpolate {
-
-			fullSQL, err := Interpolate(rawSQL, args...)
+			fullSQL, err := interpolate(sqlBuf.Bytes(), args...)
 			if err != nil {
-				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, rawSQL)
+				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 			}
 
 			results[i], err = exec.ExecContext(ctx, fullSQL)
 			if err != nil {
-				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Exec. Index %d with Query: %q", i, rawSQL)
+				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Exec. Index %d with Query: %q", i, sqlBuf)
 			}
 		} else {
 			results[i], err = stmt.ExecContext(ctx, args.Interfaces()...)
 			if err != nil {
-				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Stmt.Exec. Index %d with Query: %q", i, rawSQL)
+				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Stmt.Exec. Index %d with Query: %q", i, sqlBuf)
 			}
 		}
-		args = args[:0] // reset for reusage
+		args = args[:0] // reset for re-usage
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Tx.Commit. Query: %q", rawSQL)
+		return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Tx.Commit. Query: %q", sqlBuf)
 	}
 
 	return results, nil
@@ -574,6 +616,7 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 
 // ExecChan executes incoming Records and writes the output into the provided
 // channels. It closes the channels once the queries have been sent.
+// All queries will run parallel, except when using a transaction.
 func (b *UpdateMulti) ExecChan(resChan chan<- sql.Result, errChan chan<- error) {
 	defer close(resChan)
 	defer close(errChan)
@@ -581,6 +624,9 @@ func (b *UpdateMulti) ExecChan(resChan chan<- sql.Result, errChan chan<- error) 
 		errChan <- errors.Wrap(err, "[dbr] UpdateMulti.Exec")
 		return
 	}
+	// This could run in parallel but it depends if each exec gets a
+	// different connection. In a transaction only serial processing is
+	// possible because a Go transaction gets bound to one connection.
 
 	panic("TODO(CyS) implement")
 

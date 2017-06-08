@@ -72,7 +72,7 @@ func ExampleInsert_AddRecords() {
 	writeToSqlAndPreprocess(i)
 
 	fmt.Print("\n\n")
-	i = dbr.NewInsert("catalog_product_entity").AddRecords(objs[0]).AddRecords(objs[1])
+	i = dbr.NewInsert("catalog_product_entity").SetRecordValueCount(5).AddRecords(objs[0]).AddRecords(objs[1])
 	writeToSqlAndPreprocess(i)
 
 	// Output:

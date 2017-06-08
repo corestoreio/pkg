@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var _ fmt.Stringer = Op(0)
@@ -326,7 +327,7 @@ func TestNullTypeScanning(t *testing.T) {
 		res, err := s.InsertInto("null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val").
 			AddRecords(test.record).Exec(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)
 

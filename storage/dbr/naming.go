@@ -90,15 +90,25 @@ func (a alias) QuoteAs() string {
 	return Quoter.QuoteAs(a.Name, a.Alias)
 }
 
+// appendArgs assembles the arguments and appends them to `args`
+func (a alias) appendArgs(args Arguments) (_ Arguments, err error) {
+	if a.Select != nil {
+		args, err = a.Select.appendArgs(args)
+	}
+	return args, errors.Wrap(err, "[dbr] alias.appendArgs")
+}
+
 // FquoteAs writes the quoted table and its maybe alias into w.
-func (a alias) FquoteAs(w queryWriter) (Arguments, error) {
+func (a alias) FquoteAs(w queryWriter) error {
 	if a.Select != nil {
 		w.WriteByte('(')
-		args, err := a.Select.toSQL(w)
+		if err := a.Select.toSQL(w); err != nil {
+			return errors.Wrap(err, "[dbr] alias.FquoteAs.SubSelect")
+		}
 		w.WriteByte(')')
 		w.WriteString(" AS ")
 		Quoter.quote(w, a.Alias)
-		return args, errors.Wrap(err, "[dbr] FquoteAs.SubSelect")
+		return nil
 	}
 
 	qf := Quoter.FquoteAs
@@ -113,7 +123,7 @@ func (a alias) FquoteAs(w queryWriter) (Arguments, error) {
 	if a.Sort == sortDescending {
 		w.WriteString(" DESC")
 	}
-	return nil, nil
+	return nil
 }
 
 // TODO(CyS) if we need to distinguish between table name and the column or even need
@@ -122,17 +132,24 @@ func (a alias) FquoteAs(w queryWriter) (Arguments, error) {
 // in dispatched events, it's getting easier ...
 type aliases []alias
 
-func (as aliases) fQuoteAs(w queryWriter, args Arguments) (Arguments, error) {
+func (as aliases) fQuoteAs(w queryWriter) error {
 	for i, a := range as {
 		if i > 0 {
 			w.WriteString(", ")
 		}
-		args2, err := a.FquoteAs(w)
+		if err := a.FquoteAs(w); err != nil {
+			return errors.Wrapf(err, "[dbr] aliases.fQuoteAs")
+		}
+	}
+	return nil
+}
+
+func (as aliases) appendArgs(args Arguments) (Arguments, error) {
+	for _, a := range as {
+		var err error
+		args, err = a.appendArgs(args)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[dbr] aliases.fQuoteAs")
-		}
-		if len(args2) > 0 {
-			args = append(args, args2...)
 		}
 	}
 	return args, nil

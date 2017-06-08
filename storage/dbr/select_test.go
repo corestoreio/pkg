@@ -989,7 +989,7 @@ func TestSubSelect(t *testing.T) {
 	))
 }
 
-func TestSelect_Subselect(t *testing.T) {
+func TestSelect_Subselect_Complex(t *testing.T) {
 	t.Parallel()
 	/* Something like:
 	   SELECT
@@ -1077,6 +1077,26 @@ func TestSelect_Subselect(t *testing.T) {
 			int64(2), int64(3), int64(4), int64(3),
 		)
 	})
+}
+
+func TestSelect_Subselect_Compact(t *testing.T) {
+	t.Parallel()
+
+	sel2 := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+		AddColumns("`t3`.`product_name`").
+		Where(Column("t3.store_id", In.Int64(2, 3, 4))).
+		GroupBy("t3.store_id").
+		Having(Expression("COUNT(*)>?", ArgInt(5)))
+
+	sel := NewSelectFromSub(sel2, "t2").
+		AddColumns("t2.product_name").
+		Where(Column("t2.floatcol", Equal.Float64(3.14159)))
+
+	compareToSQL(t, sel, nil,
+		"SELECT `t2`.`product_name` FROM (SELECT `t3`.`product_name` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id` HAVING (COUNT(*)>?)) AS `t2` WHERE (`t2`.`floatcol` = ?)",
+		"", //"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+		int64(2), int64(3), int64(4), int64(5), 3.14159,
+	)
 }
 
 func TestSelect_ParenthesisOpen_Close(t *testing.T) {

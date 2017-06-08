@@ -29,7 +29,10 @@ type QueryBuilder interface {
 }
 
 type queryBuilder interface {
-	toSQL(queryWriter) (Arguments, error)
+	toSQL(queryWriter) error
+	// appendArgs appends the arguments to Arguments and returns them.
+	// If argument `Arguments` is nil, allocates new bytes
+	appendArgs(Arguments) (Arguments, error)
 	hasBuildCache() bool
 	writeBuildCache(sql []byte, arguments Arguments)
 	readBuildCache() (sql []byte, arguments Arguments)
@@ -42,6 +45,15 @@ type queryWriter interface {
 	WriteByte(c byte) error
 	Write(p []byte) (n int, err error)
 }
+
+var _ queryWriter = (*backHole)(nil)
+
+type backHole struct{} // TODO(CyS) just a temporary implementation. should get removed later
+
+func (backHole) WriteString(s string) (n int, err error) { return }
+func (backHole) WriteRune(r rune) (n int, err error)     { return }
+func (backHole) WriteByte(c byte) error                  { return nil }
+func (backHole) Write(p []byte) (n int, err error)       { return }
 
 // toSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
@@ -57,11 +69,14 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	args, err := b.toSQL(buf)
-	if err != nil {
+
+	if err := b.toSQL(buf); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] toSQL.toSQL")
 	}
-
+	args, err := b.appendArgs(nil)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "[dbr] toSQL.appendArgs")
+	}
 	if useCache {
 		sqlCopy := make([]byte, buf.Len())
 		copy(sqlCopy, buf.Bytes())
@@ -129,7 +144,7 @@ func sqlWriteOrderBy(w queryWriter, orderBys aliases, br bool) {
 		if i > 0 {
 			w.WriteString(", ")
 		}
-		_, _ = c.FquoteAs(w)
+		c.FquoteAs(w)
 		// TODO append arguments
 	}
 }

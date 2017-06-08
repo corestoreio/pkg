@@ -198,9 +198,9 @@ func (wf WhereFragments) append(wargs ...ConditionArg) WhereFragments {
 }
 
 // conditionType enum of j=join, w=where, h=having
-func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte) (_ Arguments, pendingArgPos []int, _ error) {
+func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 	if len(wf) == 0 {
-		return args, pendingArgPos, nil
+		return nil
 	}
 
 	switch conditionType {
@@ -210,7 +210,6 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 		w.WriteString(" HAVING ")
 	}
 
-	pendingArgPosCount := len(args)
 	i := 0
 	for _, f := range wf {
 
@@ -224,7 +223,7 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 					Quoter.quote(w, c)
 				}
 				w.WriteByte(')')
-				return args, pendingArgPos, nil // done, only one USING allowed
+				return nil // done, only one USING allowed
 			}
 			if i == 0 {
 				w.WriteString(" ON ")
@@ -259,10 +258,9 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 		}
 
 		w.WriteByte('(')
-		addArg := false
+
 		if f.IsExpression {
 			_, _ = w.WriteString(f.Condition)
-			addArg = true
 			if len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
 				writeOperator(w, true, f.Arguments[0])
 			}
@@ -272,17 +270,67 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 			if f.Sub.Select != nil {
 				writeOperator(w, false, argNull(f.Sub.Operator))
 				w.WriteByte('(')
-				subArgs, err := f.Sub.Select.toSQL(w)
-				w.WriteByte(')')
-				if err != nil {
-					return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
+				if err := f.Sub.Select.toSQL(w); err != nil {
+					return errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
 				}
-				args = append(args, subArgs...)
+				w.WriteByte(')')
 			} else {
 				// a column only supports one argument.
 				if len(f.Arguments) == 1 {
 					a := f.Arguments[0]
-					addArg = writeOperator(w, true, a)
+					writeOperator(w, true, a)
+				}
+			}
+		}
+		w.WriteByte(')')
+		i++
+	}
+	return nil
+}
+
+// conditionType enum of j=join, w=where, h=having
+func (wf WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Arguments, pendingArgPos []int, err error) {
+	if len(wf) == 0 {
+		return args, pendingArgPos, nil
+	}
+
+	pendingArgPosCount := len(args)
+	i := 0
+	for _, f := range wf {
+
+		if conditionType == 'j' {
+			if len(f.Using) > 0 {
+				return args, pendingArgPos, nil // done, only one USING allowed
+			}
+		}
+
+		if f.Condition == ")" {
+			continue
+		}
+
+		if f.Condition == "(" { // todo merge both IF branches into one or even completely remove them
+			i = 0
+			continue
+		}
+
+		addArg := false
+		if f.IsExpression {
+			addArg = true
+			if len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
+
+			}
+		} else {
+
+			if f.Sub.Select != nil {
+				args, err = f.Sub.Select.appendArgs(args) // todo
+				if err != nil {
+					return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
+				}
+			} else {
+				// a column only supports one argument.
+				if len(f.Arguments) == 1 {
+					a := f.Arguments[0]
+					addArg = writeOperator(backHole{}, true, a)
 					if a.len() == cahensConstant {
 						// By keeping addArg as it is and not setting
 						// addArg=false, this []int avoids
@@ -296,7 +344,6 @@ func (wf WhereFragments) write(w queryWriter, args Arguments, conditionType byte
 				}
 			}
 		}
-		w.WriteByte(')')
 
 		if addArg {
 			args = append(args, f.Arguments...)

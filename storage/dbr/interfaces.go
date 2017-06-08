@@ -21,15 +21,7 @@ import (
 
 // DBer is a composition of multiple interfaces to describe the common needed
 // behaviour for querying a database. This interface is context independent.
-type DBer interface {
-	Preparer
-	Execer
-	Querier
-	QueryRower
-}
-
-// Preparer creates a new prepared statement.
-type Preparer interface {
+type Execer interface {
 	// PrepareContext creates a prepared statement for later queries or
 	// executions. Multiple queries or executions may be run concurrently from
 	// the returned statement. The caller must call the statement's Close method
@@ -38,27 +30,22 @@ type Preparer interface {
 	// The provided context is used for the preparation of the statement, not
 	// for the execution of the statement.
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
-}
-
-// Querier can execute a SELECT query which can return many rows.
-type Querier interface {
-	// QueryContext executes a query that returns rows, typically a SELECT. The
-	// args are for any placeholder parameters in the query.
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-}
-
-// Execer can execute all other queries except SELECT.
-type Execer interface {
 	// ExecContext executes a query that doesn't return rows.
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-// QueryRower executes a SELECT query which returns one row.
-type QueryRower interface {
-	// QueryRowContext executes a query that is expected to return at most one
-	// row. QueryRow always returns a non-nil value. Errors are deferred until
-	// Row'ab Scan method is called.
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+type Querier interface {
+	// PrepareContext creates a prepared statement for later queries or
+	// executions. Multiple queries or executions may be run concurrently from
+	// the returned statement. The caller must call the statement's Close method
+	// when the statement is no longer needed.
+	//
+	// The provided context is used for the preparation of the statement, not
+	// for the execution of the statement.
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+	// QueryContext executes a query that returns rows, typically a SELECT. The
+	// args are for any placeholder parameters in the query.
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
 // Stmter is a composition of multiple interfaces to describe the common needed
@@ -67,7 +54,6 @@ type QueryRower interface {
 type Stmter interface {
 	StmtExecer
 	StmtQueryer
-	StmtQueryRower
 }
 
 // StmtExecer executes a prepared non-SELECT statement
@@ -81,12 +67,6 @@ type StmtExecer interface {
 // rows.
 type StmtQueryer interface {
 	QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
-}
-
-// StmtQueryRower executes a prepared e.g. SELECT statement which can return one
-// row.
-type StmtQueryRower interface {
-	QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row
 }
 
 // TxBeginner starts a transaction
@@ -107,7 +87,10 @@ type Txer interface {
 	Commit() error
 	Rollback() error
 	Stmt(stmt *sql.Stmt) *sql.Stmt
-	DBer
+	Execer
+	// QueryContext executes a query that returns rows, typically a SELECT. The
+	// args are for any placeholder parameters in the query.
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
 var _ Txer = (*txMock)(nil)
@@ -124,7 +107,4 @@ func (txMock) QueryContext(ctx context.Context, query string, args ...interface{
 }
 func (txMock) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	return nil, nil
-}
-func (txMock) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return nil
 }

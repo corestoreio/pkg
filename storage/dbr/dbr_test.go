@@ -248,7 +248,6 @@ func installFixtures(db *sql.DB) {
 	}
 }
 
-var _ Preparer = (*dbMock)(nil)
 var _ Querier = (*dbMock)(nil)
 var _ Execer = (*dbMock)(nil)
 
@@ -287,14 +286,16 @@ func compareToSQL(
 	wantArgs ...interface{},
 ) {
 
-	sqlStr, args, err := qb.ToSQL()
-	if wantErr == nil {
-		require.NoError(t, err, "%+v", err)
-	} else {
-		require.True(t, wantErr(err), "%+v")
+	if wantSQLPlaceholders != "" {
+		sqlStr, args, err := qb.ToSQL()
+		if wantErr == nil {
+			require.NoError(t, err, "%+v", err)
+		} else {
+			require.True(t, wantErr(err), "%+v")
+		}
+		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
+		assert.Equal(t, wantArgs, args.Interfaces(), "Placeholder Arguments do not match")
 	}
-	assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-	assert.Equal(t, wantArgs, args.Interfaces(), "Placeholder Arguments do not match")
 
 	if wantSQLInterpolated == "" {
 		return
@@ -326,7 +327,7 @@ func compareToSQL(
 		t.Fatalf("Type %#v not (yet) supported.", qb)
 	}
 
-	sqlStr, args, err = qb.ToSQL()
+	sqlStr, args, err := qb.ToSQL()
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
 		require.NoError(t, err, "%+v", err)

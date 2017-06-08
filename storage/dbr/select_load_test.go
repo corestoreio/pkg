@@ -43,7 +43,7 @@ func TestSelect_Rows(t *testing.T) {
 			Table: dbr.MakeAlias("tableX"),
 		}
 		sel.AddColumns("a", "b")
-		sel.DB.Querier = dbMock{
+		sel.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 
@@ -65,7 +65,7 @@ func TestSelect_Rows(t *testing.T) {
 		dbMock.ExpectQuery("SELECT `a` FROM `tableX`").WillReturnRows(smr)
 
 		sel := dbr.NewSelect("a").From("tableX")
-		sel.DB.Querier = dbc.DB
+		sel.DB = dbc.DB
 		rows, err := sel.Rows(context.TODO())
 		require.NoError(t, err, "%+v", err)
 		defer func() {
@@ -105,7 +105,7 @@ func TestSelect_Prepare(t *testing.T) {
 		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
 		sel := dbr.NewSelect("a", "b").From("tableX")
-		sel.DB.Preparer = dbc.DB
+		sel.DB = dbc.DB
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
@@ -188,7 +188,7 @@ func TestSelect_Load(t *testing.T) {
 
 	dbMock.ExpectQuery("SELECT").WillReturnRows(cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data.csv")))
 	s := dbr.NewSelect("*").From("core_config_data")
-	s.DB.Querier = dbc.DB
+	s.DB = dbc.DB
 
 	ccd := &TableCoreConfigDatas{}
 

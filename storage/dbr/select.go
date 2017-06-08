@@ -30,10 +30,7 @@ type Select struct {
 	ID  string
 	Log log.Logger // Log optional logger
 	// DB gets required once the Load*() functions will be used.
-	DB struct {
-		Querier
-		Preparer
-	}
+	DB Querier
 
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
@@ -53,8 +50,8 @@ type Select struct {
 	// Table table name and optional alias name to SELECT from.
 	Table alias
 
-	WhereFragments
-	JoinFragments
+	WhereFragments    WhereFragments
+	JoinFragments     JoinFragments
 	GroupBys          aliases
 	HavingFragments   WhereFragments
 	OrderBys          aliases
@@ -117,8 +114,7 @@ func (c *Connection) Select(columns ...string) *Select {
 		Log: c.Log,
 	}
 	s.Columns = s.Columns.appendColumns(columns, false)
-	s.DB.Querier = c.DB
-	s.DB.Preparer = c.DB
+	s.DB = c.DB
 	return s
 }
 
@@ -129,8 +125,7 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
-	s.DB.Querier = c.DB
-	s.DB.Preparer = c.DB
+	s.DB = c.DB
 	return s
 }
 
@@ -140,8 +135,7 @@ func (tx *Tx) Select(columns ...string) *Select {
 		Log: tx.Logger,
 	}
 	s.Columns = s.Columns.appendColumns(columns, false)
-	s.DB.Querier = tx.Tx
-	s.DB.Preparer = tx.Tx
+	s.DB = tx.Tx
 	return s
 }
 
@@ -152,9 +146,14 @@ func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 		RawFullSQL:   sql,
 		RawArguments: args,
 	}
-	s.DB.Querier = tx.Tx
-	s.DB.Preparer = tx.Tx
+	s.DB = tx.Tx
 	return s
+}
+
+// WithDB sets the database query object.
+func (b *Select) WithDB(db Querier) *Select {
+	b.DB = db
+	return b
 }
 
 // Distinct marks the statement at a DISTINCT SELECT. It specifies removal of
@@ -443,30 +442,25 @@ func (b *Select) hasBuildCache() bool {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) toSQL(w queryWriter) (Arguments, error) {
+func (b *Select) toSQL(w queryWriter) error {
 	if b.previousError != nil {
-		return nil, errors.Wrap(b.previousError, "[dbr] Select.toSQL")
+		return errors.Wrap(b.previousError, "[dbr] Select.toSQL")
 	}
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
+		return errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
 
 	if b.RawFullSQL != "" {
-		w.WriteString(b.RawFullSQL)
-		return b.RawArguments, nil
+		_, err := w.WriteString(b.RawFullSQL)
+		return err
 	}
 
 	if b.Table.Name == "" && b.Table.Select == nil {
-		return nil, errors.NewEmptyf("[dbr] Select: Table is missing")
+		return errors.NewEmptyf("[dbr] Select: Table is missing")
 	}
 	if len(b.Columns) == 0 {
-		return nil, errors.NewEmptyf("[dbr] Select: no columns specified")
+		return errors.NewEmptyf("[dbr] Select: no columns specified")
 	}
-
-	// not sure if copying is necessary but leaves at least b.Arguments in pristine
-	// condition
-	var args = make(Arguments, len(b.RawArguments), len(b.RawArguments)+len(b.JoinFragments)+len(b.WhereFragments))
-	copy(args, b.RawArguments)
 
 	w.WriteString("SELECT ")
 
@@ -479,42 +473,29 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 	if b.IsSQLNoCache {
 		w.WriteString("SQL_NO_CACHE ")
 	}
-	{
-		var err error
-		if args, err = b.Columns.fQuoteAs(w, args); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Select.toSQL.Columns.fQuoteAs")
-		}
+	if err := b.Columns.fQuoteAs(w); err != nil {
+		return errors.Wrap(err, "[dbr] Select.toSQL.Columns.fQuoteAs")
 	}
 
 	w.WriteString(" FROM ")
-	tArgs, err := b.Table.FquoteAs(w)
-	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
+	if err := b.Table.FquoteAs(w); err != nil {
+		return errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
 	}
-	args = append(args, tArgs...)
 
-	var pap []int
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
 			w.WriteByte(' ')
 			w.WriteString(f.JoinType)
 			w.WriteString(" JOIN ")
 			f.Table.FquoteAs(w)
-
-			if args, pap, err = f.OnConditions.write(w, args, 'j'); err != nil {
-				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
-			}
-			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.OnConditions.Conditions()); err != nil {
-				return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+			if err := f.OnConditions.write(w, 'j'); err != nil {
+				return errors.Wrap(err, "[dbr] Select.toSQL.write")
 			}
 		}
 	}
 
-	if args, pap, err = b.WhereFragments.write(w, args, 'w'); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
-	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+	if err := b.WhereFragments.write(w, 'w'); err != nil {
+		return errors.Wrap(err, "[dbr] Select.toSQL.write")
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -523,15 +504,14 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 			if i > 0 {
 				w.WriteString(", ")
 			}
-			_, _ = c.FquoteAs(w)
+			if err := c.FquoteAs(w); err != nil {
+				return errors.Wrap(err, "[dbr] Select.toSQL.GroupBys")
+			}
 		}
 	}
 
-	if args, pap, err = b.HavingFragments.write(w, args, 'h'); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.HavingFragments.write")
-	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.Conditions()); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+	if err := b.HavingFragments.write(w, 'h'); err != nil {
+		return errors.Wrap(err, "[dbr] Select.toSQL.HavingFragments.write")
 	}
 
 	sqlWriteOrderBy(w, b.OrderBys, false)
@@ -541,6 +521,65 @@ func (b *Select) toSQL(w queryWriter) (Arguments, error) {
 		w.WriteString(" LOCK IN SHARE MODE")
 	case b.IsForUpdate:
 		w.WriteString(" FOR UPDATE")
+	}
+	return nil
+}
+
+// ToSQL serialized the Select to a SQL string
+// It returns the string with placeholders and a slice of query arguments
+func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
+	if b.previousError != nil {
+		return nil, errors.Wrap(b.previousError, "[dbr] Select.toSQL")
+	}
+
+	if b.RawFullSQL != "" {
+		return b.RawArguments, nil
+	}
+
+	// not sure if copying is necessary but leaves at least b.Arguments in pristine
+	// condition
+	if args == nil {
+		args = make(Arguments, 0, len(b.RawArguments)+len(b.JoinFragments)+len(b.WhereFragments))
+	}
+	args = append(args, b.RawArguments...)
+
+	if args, err = b.Columns.appendArgs(args); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Columns.fQuoteAs")
+	}
+
+	if args, err = b.Table.appendArgs(args); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
+	}
+
+	var pap []int
+	if len(b.JoinFragments) > 0 {
+		for _, f := range b.JoinFragments {
+			args, err = f.Table.appendArgs(args)
+			if err != nil {
+				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+			}
+
+			if args, pap, err = f.OnConditions.appendArgs(args, 'j'); err != nil {
+				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+			}
+			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.OnConditions.Conditions()); err != nil {
+				return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+			}
+		}
+	}
+
+	if args, pap, err = b.WhereFragments.appendArgs(args, 'w'); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+	}
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+	}
+
+	if args, pap, err = b.HavingFragments.appendArgs(args, 'h'); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.HavingFragments.write")
+	}
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.Conditions()); err != nil {
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
 	}
 	return args, nil
 }
