@@ -424,6 +424,45 @@ func (as Arguments) DriverValues() []driver.Value {
 	return dv
 }
 
+func iFaceToArgs(values ...interface{}) (Arguments, error) {
+	args := make(Arguments, 0, len(values))
+	for _, val := range values {
+		switch v := val.(type) {
+		case float32:
+			args = append(args, ArgFloat64(float64(v)))
+		case float64:
+			args = append(args, ArgFloat64(v))
+		case int64:
+			args = append(args, ArgInt64(v))
+		case int:
+			args = append(args, ArgInt64(int64(v)))
+		case int32:
+			args = append(args, ArgInt64(int64(v)))
+		case int16:
+			args = append(args, ArgInt64(int64(v)))
+		case int8:
+			args = append(args, ArgInt64(int64(v)))
+		case bool:
+			args = append(args, ArgBool(v))
+		case string:
+			args = append(args, ArgString(v))
+		case []byte:
+			args = append(args, ArgBytes(v))
+		case time.Time:
+			args = append(args, ArgTime(v))
+		case *time.Time:
+			if v != nil {
+				args = append(args, ArgTime(*v))
+			}
+		case nil:
+			args = append(args, ArgNull())
+		default:
+			return nil, errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v)
+		}
+	}
+	return args, nil
+}
+
 type argValue struct {
 	op   Op
 	data []driver.Valuer

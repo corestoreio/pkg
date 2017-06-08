@@ -445,9 +445,8 @@ func (uc UpdatedColumns) appendArgs(args Arguments) (Arguments, error) {
 	if len(uc.Columns) == 0 {
 		return args, nil
 	}
-	useArgs := len(uc.Arguments) == len(uc.Columns)
-	for i := range uc.Columns {
-		if useArgs {
+	if len(uc.Arguments) == len(uc.Columns) {
+		for i := range uc.Columns {
 			if arg := uc.Arguments[i]; arg != nil { // must get skipped because VALUES(column_name)
 				args = append(args, arg)
 			}

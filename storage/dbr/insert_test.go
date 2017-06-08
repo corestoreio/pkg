@@ -61,7 +61,7 @@ func TestNewInsert(t *testing.T) {
 
 	t.Run("single value", func(t *testing.T) {
 		compareToSQL(t,
-			NewInsert("a").AddColumns("b", "c").AddValues(ArgInt(1), ArgInt(2)),
+			NewInsert("a").AddColumns("b", "c").AddValues(1, 2),
 			nil,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
@@ -73,11 +73,11 @@ func TestNewInsert(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
 				AddValues(
-					ArgInt(1), ArgInt(2),
-					ArgInt(3), ArgInt(4),
+					1, 2,
+					3, 4,
 				).
 				AddValues(
-					ArgInt(5), ArgInt(6),
+					5, 6,
 				).
 				AddOnDuplicateKey("b", nil).
 				AddOnDuplicateKey("c", nil),
@@ -134,7 +134,7 @@ func TestInsert_AddRecords(t *testing.T) {
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues(ArgString("Barack"), ArgString("44")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues("Barack", "44").Exec(context.TODO())
 	assert.NoError(t, err)
 
 	rowsAff, err := res.RowsAffected()
@@ -145,7 +145,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures()
-	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues(ArgString("Barack"), ArgString("obama@whitehouse.gov")).Exec(context.TODO())
+	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues("Barack", "obama@whitehouse.gov").Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
@@ -189,7 +189,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	s := createRealSessionWithFixtures()
 	res, err := s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(ArgInt64(678), ArgString("Pike"), ArgString("pikes@peak.co")).Exec(context.TODO())
+		AddValues(678, "Pike", "pikes@peak.co").Exec(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -206,7 +206,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	}
 	res, err = s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(ArgInt64(inID), ArgString(""), ArgString("pikes@peak.com")).
+		AddValues(inID, "", "pikes@peak.com").
 		AddOnDuplicateKey("name", ArgString("Pik3")).
 		AddOnDuplicateKey("email", nil).
 		Exec(context.TODO())
@@ -247,7 +247,7 @@ func TestInsert_Prepare(t *testing.T) {
 		in.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		in.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		in.AddColumns("a", "b").AddValues(1, true)
 
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -260,7 +260,7 @@ func TestInsert_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewInsert("tableA")
-		d.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		d.AddColumns("a", "b").AddValues(1, true)
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -302,7 +302,7 @@ func TestInsert_Events(t *testing.T) {
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		ins := NewInsert("tableA")
-		ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		ins.AddColumns("a", "b").AddValues(1, true)
 
 		ins.Listeners.Add(
 			Listen{
@@ -321,7 +321,7 @@ func TestInsert_Events(t *testing.T) {
 	t.Run("Should Dispatch", func(t *testing.T) {
 		ins := NewInsert("tableA")
 
-		ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+		ins.AddColumns("a", "b").AddValues(1, true)
 
 		ins.Listeners.Add(
 			Listen{
@@ -371,7 +371,7 @@ func TestInsert_FromSelect(t *testing.T) {
 
 	ins := NewInsert("tableA")
 	// columns and args just to check that they get ignored
-	ins.AddColumns("a", "b").AddValues(ArgInt(1), ArgBool(true))
+	ins.AddColumns("a", "b").AddValues(1, true)
 
 	argEq := Eq{"a": In.Int64(1, 2, 3)}
 
@@ -400,8 +400,8 @@ func TestInsert_Replace_Ignore(t *testing.T) {
 	compareToSQL(t, NewInsert("a").
 		Replace().Ignore().
 		AddColumns("b", "c").
-		AddValues(ArgInt(1), ArgInt(2)).
-		AddValues(ArgInt64(3), ArgInt64(4)),
+		AddValues(1, 2).
+		AddValues(3, 4),
 		nil,
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
 		"REPLACE IGNORE INTO `a` (`b`,`c`) VALUES (1,2),(3,4)",
@@ -414,9 +414,9 @@ func TestInsert_WithoutColumns(t *testing.T) {
 
 	t.Run("each column in its own Arg", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").
-			AddValues(ArgInt64(2046), ArgInt64(33), ArgInt64(3)).
-			AddValues(ArgInt64(2046), ArgInt64(34), ArgInt64(3)).
-			AddValues(ArgInt64(2046), ArgInt64(35), ArgInt64(3)),
+			AddValues(2046, 33, 3).
+			AddValues(2046, 34, 3).
+			AddValues(2046, 35, 3),
 			nil,
 			"INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)",
@@ -461,11 +461,11 @@ func TestInsert_UseBuildCache(t *testing.T) {
 
 	ins := NewInsert("a").AddColumns("b", "c").
 		AddValues(
-			ArgInt(1), ArgInt(2),
-			ArgInt(3), ArgInt(4),
+			1, 2,
+			3, 4,
 		).
 		AddValues(
-			ArgInt(5), ArgInt(6),
+			5, 6,
 		).
 		AddOnDuplicateKey("b", nil).
 		AddOnDuplicateKey("c", nil)

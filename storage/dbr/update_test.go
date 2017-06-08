@@ -93,7 +93,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 
 	// Insert a user with a key
 	_, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
-		AddValues(ArgString("Benjamin"), ArgString("ben@whitehouse.gov"), ArgString("6")).Exec(context.TODO())
+		AddValues("Benjamin", "ben@whitehouse.gov", "6").Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Update the key
@@ -118,7 +118,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Insert a George
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
-		AddValues(ArgString("George"), ArgString("george@whitehouse.gov")).Exec(context.TODO())
+		AddValues("George", "george@whitehouse.gov").Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Get George'ab ID

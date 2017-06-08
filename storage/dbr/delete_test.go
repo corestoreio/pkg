@@ -101,7 +101,7 @@ func TestDeleteReal(t *testing.T) {
 
 	// Insert a Barack
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
-		AddValues(ArgString("Barack"), ArgString("barack@whitehouse.gov")).Exec(context.TODO())
+		AddValues("Barack", "barack@whitehouse.gov").Exec(context.TODO())
 	assert.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")

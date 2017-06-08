@@ -332,7 +332,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, args, err := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
-				dbr.ArgInt(1), dbr.ArgInt(2), dbr.ArgBool(true),
+				1, 2, true,
 			).ToSQL()
 			if err != nil {
 				b.Fatal(err)
@@ -342,7 +342,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	sqlObj := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddValues(
-		dbr.ArgInt(1), dbr.ArgInt(2), dbr.ArgBool(true),
+		1, 2, true,
 	).Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.UseBuildCache = false

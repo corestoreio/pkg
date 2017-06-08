@@ -134,19 +134,23 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 }
 
 // AddValues appends a set of values to the statement. Each call of AddValues
-// creates a new set of values.
-// TODO(CyS) refactor and maybe use an empty interface slice ...
-// Deprecated: Gets refactored
-func (b *Insert) AddValues(vals ...Argument) *Insert {
-	if lv, mod := len(vals), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
+// creates a new set of values. Only primitive types are supported. Runtime type
+// safety only.
+func (b *Insert) AddValues(values ...interface{}) *Insert {
+	args, err := iFaceToArgs(values...)
+	if err != nil {
+		b.previousError = errors.Wrap(err, "[dbr] Insert.AddValues.iFaceToArgs")
+		return b
+	}
+	if lv, mod := len(args), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more
 		// rows gets inserted.
-		for i := 0; i < len(vals); i = i + mod {
-			b.Values = append(b.Values, vals[i:i+mod])
+		for i := 0; i < len(args); i = i + mod {
+			b.Values = append(b.Values, args[i:i+mod])
 		}
 	} else {
 		// each call to AddValues equals one row in a table.
-		b.Values = append(b.Values, vals)
+		b.Values = append(b.Values, args)
 	}
 	return b
 }
@@ -158,7 +162,8 @@ func (b *Insert) AddRecords(recs ...ArgumentAssembler) *Insert {
 }
 
 // SetRecordValueCount number of expected values within each set. Must be
-// applied if columns have been omitted.
+// applied if columns have been omitted and AddRecords gets called or Records
+// gets set in a different way.
 func (b *Insert) SetRecordValueCount(valueCount int) *Insert {
 	// maybe we can do better and remove this method ...
 	b.RecordValueCount = valueCount

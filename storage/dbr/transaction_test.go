@@ -28,8 +28,8 @@ func TestTransactionReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	res, err := tx.InsertInto("dbr_people").AddColumns("name", "email").AddValues(
-		ArgString("Barack"), ArgString("obama@whitehouse.gov"),
-		ArgString("Obama"), ArgString("barack@whitehouse.gov"),
+		"Barack", "obama@whitehouse.gov",
+		"Obama", "barack@whitehouse.gov",
 	).Exec(context.TODO())
 
 	assert.NoError(t, err)

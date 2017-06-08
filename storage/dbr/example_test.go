@@ -49,8 +49,8 @@ func writeToSqlAndPreprocess(qb dbr.QueryBuilder) {
 func ExampleNewInsert() {
 	i := dbr.NewInsert("tableA").
 		AddColumns("b", "c", "d", "e").
-		AddValues(dbr.ArgInt(1), dbr.ArgInt64(2), dbr.ArgString("Three"), dbr.ArgNull()).
-		AddValues(dbr.ArgInt(5), dbr.ArgInt64(6), dbr.ArgString("Seven"), dbr.ArgFloat64(3.14156))
+		AddValues(1, 2, "Three", nil).
+		AddValues(5, 6, "Seven", 3.14156)
 	writeToSqlAndPreprocess(i)
 
 	// Output:
@@ -65,9 +65,9 @@ func ExampleNewInsert() {
 
 func ExampleNewInsert_withoutColumns() {
 	i := dbr.NewInsert("catalog_product_link").
-		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(33), dbr.ArgInt64(3)).
-		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(34), dbr.ArgInt64(3)).
-		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(35), dbr.ArgInt64(3))
+		AddValues(2046, 33, 3).
+		AddValues(2046, 34, 3).
+		AddValues(2046, 35, 3)
 	writeToSqlAndPreprocess(i)
 
 	// Output:
@@ -83,9 +83,9 @@ func ExampleInsert_AddValues() {
 	// Without any columns you must for each row call AddValues. Here we insert
 	// three rows at once.
 	i := dbr.NewInsert("catalog_product_link").
-		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(33), dbr.ArgInt64(3)).
-		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(34), dbr.ArgInt64(3)).
-		AddValues(dbr.ArgInt64(2046), dbr.ArgInt64(35), dbr.ArgInt64(3))
+		AddValues(2046, 33, 3).
+		AddValues(2046, 34, 3).
+		AddValues(2046, 35, 3)
 	writeToSqlAndPreprocess(i)
 	fmt.Print("\n\n")
 
@@ -94,9 +94,9 @@ func ExampleInsert_AddValues() {
 	i = dbr.NewInsert("catalog_product_link").
 		AddColumns("product_id", "linked_product_id", "link_type_id").
 		AddValues(
-			dbr.ArgInt64(2046), dbr.ArgInt64(33), dbr.ArgInt64(3),
-			dbr.ArgInt64(2046), dbr.ArgInt64(34), dbr.ArgInt64(3),
-			dbr.ArgInt64(2046), dbr.ArgInt64(35), dbr.ArgInt64(3),
+			2046, 33, 3,
+			2046, 34, 3,
+			2046, 35, 3,
 		)
 	writeToSqlAndPreprocess(i)
 
@@ -122,7 +122,7 @@ func ExampleInsert_AddValues() {
 func ExampleInsert_AddOnDuplicateKey() {
 	i := dbr.NewInsert("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(dbr.ArgInt64(1), dbr.ArgString("Pik'e"), dbr.ArgString("pikes@peak.com")).
+		AddValues(1, "Pik'e", "pikes@peak.com").
 		AddOnDuplicateKey("name", dbr.ArgString("Pik3")).
 		AddOnDuplicateKey("email", nil)
 	writeToSqlAndPreprocess(i)
