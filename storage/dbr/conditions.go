@@ -277,8 +277,7 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 			} else {
 				// a column only supports one argument.
 				if len(f.Arguments) == 1 {
-					a := f.Arguments[0]
-					writeOperator(w, true, a)
+					writeOperator(w, true, f.Arguments[0])
 				}
 			}
 		}

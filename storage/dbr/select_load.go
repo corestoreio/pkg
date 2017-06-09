@@ -86,7 +86,7 @@ func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
 
 	var rowCount int
 	for rows.Next() {
-		err := scnr.ScanRow(rowCount, columns, rows.Scan)
+		err = scnr.ScanRow(rowCount, columns, rows.Scan)
 		if err != nil {
 			return 0, errors.Wrap(err, "[dbr] Select.Loader.ScanRow")
 		}
@@ -129,7 +129,7 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 	var value int64
 	found := false
 	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.scan")
 		}
 		found = true
@@ -163,7 +163,7 @@ func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
 	values := make([]int64, 0, 10)
 	for rows.Next() {
 		var value int64
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.scan")
 		}
 		values = append(values, value)
@@ -196,7 +196,7 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 	var value uint64
 	found := false
 	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.scan")
 		}
 		found = true
@@ -230,7 +230,7 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 	values := make([]uint64, 0, 10)
 	for rows.Next() {
 		var value uint64
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.scan")
 		}
 		values = append(values, value)
@@ -262,7 +262,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 	var value float64
 	found := false
 	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.scan")
 		}
 		found = true
@@ -296,7 +296,7 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 	values := make([]float64, 0, 10)
 	for rows.Next() {
 		var value float64
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.scan")
 		}
 		values = append(values, value)
@@ -328,7 +328,7 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 	var value string
 	found := false
 	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return "", errors.Wrap(err, "[dbr] Select.LoadInt64.scan")
 		}
 		found = true
@@ -362,7 +362,7 @@ func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
 	values := make([]string, 0, 10)
 	for rows.Next() {
 		var value string
-		if err := rows.Scan(&value); err != nil {
+		if err = rows.Scan(&value); err != nil {
 			return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.scan")
 		}
 		values = append(values, value)

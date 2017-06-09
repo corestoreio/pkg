@@ -265,13 +265,14 @@ func (b *Update) toSQL(buf queryWriter) error {
 	buf.WriteString(" SET ")
 
 	// Build SET clause SQL with placeholders and add values to args
+	clausArgLen := len(b.SetClauses.Arguments)
 	for i, c := range b.SetClauses.Columns {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
 		Quoter.FquoteAs(buf, c)
 		buf.WriteByte('=')
-		if i < len(b.SetClauses.Arguments) {
+		if i < clausArgLen {
 			arg := b.SetClauses.Arguments[i]
 			if e, ok := arg.(*expr); ok {
 				e.writeTo(buf, 0)
@@ -458,10 +459,11 @@ func (uc UpdatedColumns) appendArgs(args Arguments) (Arguments, error) {
 // values in an optionally transaction. If you enable the interpolate feature on
 // the Update object the interpolated SQL string will be send each time to the
 // SQL server otherwise a prepared statement will be created. Create a single
-// Update object without the SET arguments but with empty WHERE arguments. The
-// empty WHERE arguments trigger the placeholder and the correct operator. The
-// values itself will be provided either through the Records slice or via
-// RecordChan.
+// Update object without the SET columns and without arguments. Add a WHERE
+// clause with common conditions and conditions with place holders where the
+// value/s get derived from the ArgumentAssembler. The empty WHERE arguments
+// trigger the placeholder and the correct operator. The values itself will be
+// provided either through the Records slice or via RecordChan.
 type UpdateMulti struct {
 	// IsTransaction set to true to enable running the UPDATE queries in a
 	// transaction.
@@ -558,7 +560,6 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 	exec := b.Update.DB
 	var tx Txer = txMock{}
 	if b.IsTransaction {
-		var err error
 		tx, err = b.Tx.BeginTx(ctx, &sql.TxOptions{
 			Isolation: b.IsolationLevel,
 		})
@@ -587,7 +588,8 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 		}
 		if isInterpolate {
-			fullSQL, err := interpolate(sqlBuf.Bytes(), args...)
+			var fullSQL string
+			fullSQL, err = interpolate(sqlBuf.Bytes(), args...)
 			if err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 			}

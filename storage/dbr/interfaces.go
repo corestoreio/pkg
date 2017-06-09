@@ -19,8 +19,7 @@ import (
 	"database/sql"
 )
 
-// DBer is a composition of multiple interfaces to describe the common needed
-// behaviour for querying a database. This interface is context independent.
+// Execer can prepare a query and execute a non-returning query.
 type Execer interface {
 	// PrepareContext creates a prepared statement for later queries or
 	// executions. Multiple queries or executions may be run concurrently from
@@ -34,6 +33,7 @@ type Execer interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
+// Querier can prepare a query and execute a returning query.
 type Querier interface {
 	// PrepareContext creates a prepared statement for later queries or
 	// executions. Multiple queries or executions may be run concurrently from

@@ -233,6 +233,9 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 		args = make(Arguments, 0, len(b.WhereFragments))
 	}
 	args, err = b.From.appendArgs(args)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.From.appendArgs")
+	}
 
 	// TODO(CyS) add SQLStmtDeleteJoin
 
