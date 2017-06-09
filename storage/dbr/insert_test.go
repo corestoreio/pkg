@@ -56,10 +56,10 @@ func (sr someRecord) AssembleArguments(stmtType int, args Arguments, columns []s
 	return args, nil
 }
 
-func TestNewInsert(t *testing.T) {
+func TestInsert_Add(t *testing.T) {
 	t.Parallel()
 
-	t.Run("single value", func(t *testing.T) {
+	t.Run("single AddValues", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").AddValues(1, 2),
 			nil,
@@ -68,8 +68,7 @@ func TestNewInsert(t *testing.T) {
 			int64(1), int64(2),
 		)
 	})
-
-	t.Run("multi value on duplicate key", func(t *testing.T) {
+	t.Run("multi AddValues on duplicate key", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
 				AddValues(
@@ -78,6 +77,33 @@ func TestNewInsert(t *testing.T) {
 				).
 				AddValues(
 					5, 6,
+				).
+				AddOnDuplicateKey("b", nil).
+				AddOnDuplicateKey("c", nil),
+			nil,
+			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
+			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
+			int64(1), int64(2), int64(3), int64(4), int64(5), int64(6),
+		)
+	})
+	t.Run("single AddArguments", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").AddColumns("b", "c").AddArguments(ArgInt64(1), ArgInt64(2)),
+			nil,
+			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
+			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
+			int64(1), int64(2),
+		)
+	})
+	t.Run("multi AddArguments on duplicate key", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").AddColumns("b", "c").
+				AddArguments(
+					ArgInt64(1), ArgInt64(2),
+					ArgInt64(3), ArgInt64(4),
+				).
+				AddArguments(
+					ArgInt64(5), ArgInt64(6),
 				).
 				AddOnDuplicateKey("b", nil).
 				AddOnDuplicateKey("c", nil),
@@ -387,7 +413,7 @@ func TestInsert_FromSelect(t *testing.T) {
 		OrderByDesc("id").
 		Paginate(1, 20)),
 		nil,
-		"INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN ?) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
+		"INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = ?) OR (`e` = ?)) AND (`a` IN (?,?,?)) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
 		"INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`a` IN (1,2,3)) ORDER BY `id` DESC LIMIT 20 OFFSET 0",
 		int64(1), "wat", int64(1), int64(2), int64(3),
 	)

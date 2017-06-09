@@ -142,6 +142,13 @@ func (b *Insert) AddValues(values ...interface{}) *Insert {
 		b.previousError = errors.Wrap(err, "[dbr] Insert.AddValues.iFaceToArgs")
 		return b
 	}
+	return b.AddArguments(args...)
+}
+
+// AddArguments appends a set of values to the statement. Each call of
+// AddArguments creates a new set of values. Only primitive types are supported.
+// Runtime type safety only.
+func (b *Insert) AddArguments(args ...Argument) *Insert {
 	if lv, mod := len(args), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more
 		// rows gets inserted.

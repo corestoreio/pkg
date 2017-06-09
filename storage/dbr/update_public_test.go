@@ -286,7 +286,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 				dbr.Column("entity_id", dbr.Greater.Int64()),
 			)
 		compareToSQL(t, u, nil,
-			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN ?) AND (`entity_id` > ?)",
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (?,?)) AND (`entity_id` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`x` IN (66,77)) AND (`entity_id` > 678)",
 			int64(6), "p456", "3/4/5", int64(66), int64(77), int64(678),
 		)
@@ -300,7 +300,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 				dbr.Column("y", dbr.Greater.Int64(99)),
 			)
 		compareToSQL(t, u, nil,
-			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN ?) AND (`y` > ?)",
+			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (?,?)) AND (`y` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
 			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(99),
 		)

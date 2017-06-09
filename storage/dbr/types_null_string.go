@@ -187,40 +187,19 @@ func (a argNullStrings) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argNullStrings) writeTo(w queryWriter, pos int) error {
-	if a.op != In && a.op != NotIn {
-		if s := a.data[pos]; s.Valid {
-			if !utf8.ValidString(s.String) {
-				return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
-			}
-			dialect.EscapeString(w, s.String)
-			return nil
+	if s := a.data[pos]; s.Valid {
+		if !utf8.ValidString(s.String) {
+			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
 		}
-		_, err := w.WriteString(sqlStrNull)
-		return err
+		dialect.EscapeString(w, s.String)
+		return nil
 	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		if v.Valid {
-			if !utf8.ValidString(v.String) {
-				return errors.NewNotValidf("[dbr] Argument.WriteTo: StringNull is not UTF-8: %q", v.String)
-			}
-			dialect.EscapeString(w, v.String)
-		} else {
-			w.WriteString(sqlStrNull)
-		}
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	return w.WriteByte(')')
+	_, err := w.WriteString(sqlStrNull)
+	return err
 }
 
 func (a argNullStrings) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to

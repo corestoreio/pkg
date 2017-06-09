@@ -246,21 +246,9 @@ func TestArgNullString(t *testing.T) {
 	args := ArgNullString(MakeNullString("1'; DROP TABLE users-- 1"), MakeNullString("Rusty", false), MakeNullString("Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗"))
 	assert.Exactly(t, 3, args.len())
 	args = args.applyOperator(NotIn)
-	assert.Exactly(t, 1, args.len())
+	assert.Exactly(t, 3, args.len())
 
-	t.Run("IN operator", func(t *testing.T) {
-		args = args.applyOperator(In)
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		if err := args.writeTo(&buf, 0); err != nil {
-			t.Fatalf("%+v", err)
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{"1'; DROP TABLE users-- 1", interface{}(nil), "Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗"}, argIF)
-		assert.Exactly(t, "('1\\'; DROP TABLE users-- 1',NULL,'Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗')", buf.String())
-	})
-
-	t.Run("Not Equal operator", func(t *testing.T) {
+	t.Run("writeTo", func(t *testing.T) {
 		args = args.applyOperator(NotEqual)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
@@ -286,10 +274,6 @@ func TestArgNullString(t *testing.T) {
 		err = args2.writeTo(&buf, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		buf.Reset()
-
-		args2 = args2.applyOperator(In)
-		err = args2.writeTo(&buf, -1)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
 
 	t.Run("single arg", func(t *testing.T) {

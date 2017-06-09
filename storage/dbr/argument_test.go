@@ -123,8 +123,8 @@ func TestOpRune(t *testing.T) {
 			Column("a403", SpaceShip.NullString(MakeNullString("NullString"))),
 		)
 	compareToSQL(t, s, nil,
-		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a301` IN ?) AND (`a302` IN ?) AND (`a303` IN ?) AND (`a304` IN ?) AND (`a305` IN ?) AND (`a306` IN ?) AND (`a307` IN ?) AND (`a308` IN ?) AND (`a309` IN ?) AND (`a310` IN ?) AND (`a311` IN ?) AND (`a312` IN ?) AND (`a313` IN ?) AND (`a314` IN ?) AND (`a315` IN ?) AND (`a316` IN ?) AND (`a317` IN ?) AND (`a320` IN ?) AND (`a401` <=> ?) AND (`a402` <=> ?) AND (`a403` <=> ?)",
-		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` LIKE NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE 2345) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE 2345) AND (`a301` IN ('Go1','Go2')) AND (`a302` IN (NULL,NULL)) AND (`a303` IN 'NullString') AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN NULL) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN NULL) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN NULL) AND (`a313` IN 1) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315` IN '2006-01-02 15:05:05') AND (`a316` IN (NULL)) AND (`a317` IN ('H3llo1')) AND (`a320` IN (2345,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
+		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a301` IN (?,?)) AND (`a302` IN (?,?)) AND (`a303` IN (?)) AND (`a304` IN (?,?)) AND (`a305` IN (?)) AND (`a306` IN (?,?)) AND (`a307` IN (?,?)) AND (`a308` IN (?)) AND (`a309` IN (?,?)) AND (`a310` IN (?,?)) AND (`a311` IN (?,?)) AND (`a312` IN (?)) AND (`a313` IN (?)) AND (`a314` IN (?,?)) AND (`a315` IN (?)) AND (`a316` IN (?)) AND (`a317` IN (?)) AND (`a320` IN (?,?)) AND (`a401` <=> ?) AND (`a402` <=> ?) AND (`a403` <=> ?)",
+		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` LIKE NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE 2345) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE 2345) AND (`a301` IN ('Go1','Go2')) AND (`a302` IN (NULL,NULL)) AND (`a303` IN ('NullString')) AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN (NULL)) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN (NULL)) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN (NULL)) AND (`a313` IN (1)) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315` IN ('2006-01-02 15:05:05')) AND (`a316` IN (NULL)) AND (`a317` IN ('H3llo1')) AND (`a320` IN (2345,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
 		"H_ll_", interface{}(nil), "NullString", 2.718281, interface{}(nil),
 		-2.718281, int64(2718281), interface{}(nil), int64(-987), int64(2718281), true,
 		interface{}(nil), false, now(), now().Add(time.Minute), interface{}(nil),
@@ -164,7 +164,7 @@ func TestOpArgs(t *testing.T) {
 				Column("a317", NotRegexp.Null()),
 			),
 			nil,
-			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN ?) AND (`a317` REGEXP ?) AND (`a317` NOT REGEXP ?)",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (?)) AND (`a317` REGEXP ?) AND (`a317` NOT REGEXP ?)",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (NULL)) AND (`a317` REGEXP NULL) AND (`a317` NOT REGEXP NULL)",
 			interface{}(nil), interface{}(nil), interface{}(nil),
 		)
@@ -181,7 +181,7 @@ func TestOpArgs(t *testing.T) {
 				Column("a316", In.Bytes([]byte(`Go`), []byte(`Rust`))),
 			),
 			nil,
-			"SELECT `a`, `b` FROM `t1` WHERE (`a311` XOR ?) AND (`a313` IN ?) AND (`a314` IN ?) AND (`a312` IN ?) AND (`a315` IN ?) AND (`a316` IN ?)",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a311` XOR ?) AND (`a313` IN (?)) AND (`a314` IN (?)) AND (`a312` IN (?)) AND (`a315` IN (?)) AND (`a316` IN (?,?))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a311` XOR 9) AND (`a313` IN (3.3)) AND (`a314` IN (33)) AND (`a312` IN (44)) AND (`a315` IN ('Go1')) AND (`a316` IN ('Go','Rust'))",
 			int64(9), 3.3, int64(33), int64(44), "Go1", [][]uint8{{0x47, 0x6f}, {0x52, 0x75, 0x73, 0x74}},
 		)
@@ -205,7 +205,7 @@ func TestOpArgs(t *testing.T) {
 				Column("a316", In.Bytes([]byte{66, 250, 67}, []byte(`Rust`), []byte("\xFB\xBF\xBF\xBF\xBF"))),
 			),
 			nil,
-			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN ?)",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (?,?,?))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a316` IN (0x42fa43,'Rust',0xfbbfbfbfbf))",
 			[][]uint8{{0x42, 0xfa, 0x43}, {0x52, 0x75, 0x73, 0x74}, {0xfb, 0xbf, 0xbf, 0xbf, 0xbf}},
 		)
@@ -218,7 +218,7 @@ func TestOpArgs(t *testing.T) {
 					MakeNullTime(now()), MakeNullBytes([]byte("x\x00y")))),
 			),
 			nil,
-			"SELECT `a`, `b` FROM `t1` WHERE (`a319` IN ?)",
+			"SELECT `a`, `b` FROM `t1` WHERE (`a319` IN (?,?,?,?,?))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` IN (3.141,'G\\'o',0x42fa43,'2006-01-02 15:04:05',0x780079))",
 			MakeNullFloat64(3.141), MakeNullString(`G'o`), MakeNullBytes([]byte{0x42, 0xfa, 0x43}), MakeNullTime(now()), MakeNullBytes([]byte{0x78, 0x0, 0x79}),
 		)

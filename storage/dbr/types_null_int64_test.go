@@ -267,21 +267,9 @@ func TestArgNullInt64(t *testing.T) {
 	args := ArgNullInt64(MakeNullInt64(987651), MakeNullInt64(987652, false), MakeNullInt64(987653))
 	assert.Exactly(t, 3, args.len())
 	args = args.applyOperator(NotIn)
-	assert.Exactly(t, 1, args.len())
+	assert.Exactly(t, 3, args.len())
 
-	t.Run("IN operator", func(t *testing.T) {
-		args = args.applyOperator(In)
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		if err := args.writeTo(&buf, 0); err != nil {
-			t.Fatalf("%+v", err)
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{int64(987651), interface{}(nil), int64(987653)}, argIF)
-		assert.Exactly(t, "(987651,NULL,987653)", buf.String())
-	})
-
-	t.Run("Not Equal operator", func(t *testing.T) {
+	t.Run("writeTo", func(t *testing.T) {
 		args = args.applyOperator(NotEqual)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)

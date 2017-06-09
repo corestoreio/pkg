@@ -36,8 +36,8 @@ const (
 	NotBetween     Op = 'B'          // NOT BETWEEN ? AND ?
 	Like           Op = 'l'          // LIKE ?
 	NotLike        Op = 'L'          // NOT LIKE ?
-	Greatest       Op = '≫'          // GREATEST(?,?,?)
-	Least          Op = '≪'          // LEAST(?,?,?)
+	Greatest       Op = '≫'          // GREATEST(?,?,?) returns NULL if any argument is NULL.
+	Least          Op = '≪'          // LEAST(?,?,?) If any argument is NULL, the result is NULL.
 	Equal          Op = '='          // = ?
 	NotEqual       Op = '≠'          // != ?
 	Exists         Op = '∃'          // EXISTS(subquery)
@@ -49,7 +49,8 @@ const (
 	Regexp         Op = 'r'          // REGEXP ?
 	NotRegexp      Op = 'R'          // NOT REGEXP ?
 	Xor            Op = '⊻'          // XOR ?
-	SpaceShip      Op = '\U0001f680' // a <=> b is equivalent to a = b OR (a IS NULL AND b IS NULL)
+	SpaceShip      Op = '\U0001f680' // a <=> b is equivalent to a = b OR (a IS NULL AND b IS NULL) NULL-safe equal to operator
+	Coalesce       Op = 'c'          // Returns the first non-NULL value in the list, or NULL if there are no non-NULL values.
 )
 
 // Op the Operator, defines comparison and operator functions used in any
@@ -57,16 +58,6 @@ const (
 // https://dev.mysql.com/doc/refman/5.7/en/comparison-operators.html
 // https://mariadb.com/kb/en/mariadb/comparison-operators/
 type Op rune
-
-// isNotIn returns true if the operator is not one of the four types in the
-// code.
-func (o Op) isNotIn() bool {
-	switch o {
-	case In, NotIn, Greatest, Least:
-		return false
-	}
-	return true
-}
 
 // String transforms the rune into a string.
 func (o Op) String() string {
@@ -264,7 +255,7 @@ type Argument interface {
 // Arguments representing multiple arguments.
 type Arguments []Argument
 
-func repeatPlaceHolder(w queryWriter, arg Argument) {
+func writePlaceHolderList(w queryWriter, arg Argument) {
 	w.WriteByte('(')
 	for j := 0; j < arg.len(); j++ {
 		if j > 0 {
@@ -287,14 +278,13 @@ func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 	case In:
 		w.WriteString(" IN ")
 		if hasArg {
-			// repeatPlaceHolder(w,arg) // TODO because of IN clause in TestNewUpdateMulti, also change len() function on arg* types
-			w.WriteByte('?')
+			writePlaceHolderList(w, arg)
 			addArg = true
 		}
 	case NotIn:
 		w.WriteString(" NOT IN ")
 		if hasArg {
-			w.WriteByte('?')
+			writePlaceHolderList(w, arg)
 			addArg = true
 		}
 	case Like:
@@ -316,10 +306,16 @@ func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 		w.WriteString(" NOT BETWEEN ? AND ?")
 		addArg = true
 	case Greatest:
-		w.WriteString(" GREATEST (?)")
+		w.WriteString(" GREATEST ")
+		writePlaceHolderList(w, arg)
 		addArg = true
 	case Least:
-		w.WriteString(" LEAST (?)")
+		w.WriteString(" LEAST ")
+		writePlaceHolderList(w, arg)
+		addArg = true
+	case Coalesce:
+		w.WriteString(" COALESCE ")
+		writePlaceHolderList(w, arg)
 		addArg = true
 	case Xor:
 		w.WriteString(" XOR ?")
@@ -514,29 +510,11 @@ func writeDriverValuer(w queryWriter, value driver.Valuer) error {
 }
 
 func (a *argValue) writeTo(w queryWriter, pos int) error {
-	if a.op.isNotIn() {
-		return writeDriverValuer(w, a.data[pos])
-	}
-
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, value := range a.data {
-		if err := writeDriverValuer(w, value); err != nil {
-			return err
-		}
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
-	return nil
+	return writeDriverValuer(w, a.data[pos])
 }
 
 func (a *argValue) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
@@ -569,27 +547,12 @@ func (a *argTimes) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argTimes) writeTo(w queryWriter, pos int) error {
-	if a.op.isNotIn() {
-		dialect.EscapeTime(w, a.data[pos])
-		return nil
-	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		dialect.EscapeTime(w, v)
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
+	dialect.EscapeTime(w, a.data[pos])
 	return nil
 }
 
 func (a *argTimes) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
@@ -617,35 +580,16 @@ func (a argBytes) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argBytes) writeTo(w queryWriter, pos int) (err error) {
-	if a.op.isNotIn() {
-		if !utf8.Valid(a.data[pos]) {
-			dialect.EscapeBinary(w, a.data[pos])
-		} else {
-			dialect.EscapeString(w, string(a.data[pos]))
-		}
-		return nil
+	if !utf8.Valid(a.data[pos]) {
+		dialect.EscapeBinary(w, a.data[pos])
+	} else {
+		dialect.EscapeString(w, string(a.data[pos]))
 	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		if !utf8.Valid(v) {
-			dialect.EscapeBinary(w, v)
-		} else {
-			dialect.EscapeString(w, string(v))
-		}
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
 	return nil
 }
 
 func (a argBytes) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op not supported
@@ -669,13 +613,7 @@ func (i argNull) toIFace(args []interface{}) []interface{} {
 }
 
 func (i argNull) writeTo(w queryWriter, _ int) (err error) {
-	if Op(i).isNotIn() {
-		_, err = w.WriteString("NULL")
-	} else {
-		w.WriteByte('(')
-		_, err = w.WriteString("NULL")
-		w.WriteByte(')')
-	}
+	_, err = w.WriteString("NULL")
 	return err
 }
 
@@ -736,33 +674,15 @@ func (a *argStrings) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argStrings) writeTo(w queryWriter, pos int) error {
-	if a.op.isNotIn() {
-		if !utf8.ValidString(a.data[pos]) {
-			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a.data[pos])
-		}
-		dialect.EscapeString(w, a.data[pos])
-		return nil
+	if !utf8.ValidString(a.data[pos]) {
+		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a.data[pos])
 	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		if !utf8.ValidString(v) {
-			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", v)
-		}
-		dialect.EscapeString(w, v)
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
+	dialect.EscapeString(w, a.data[pos])
 	return nil
 }
 
 func (a *argStrings) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
@@ -803,27 +723,12 @@ func (a *argBools) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argBools) writeTo(w queryWriter, pos int) error {
-	if a.op.isNotIn() {
-		dialect.EscapeBool(w, a.data[pos])
-		return nil
-	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		dialect.EscapeBool(w, v == true)
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
+	dialect.EscapeBool(w, a.data[pos])
 	return nil
 }
 
 func (a *argBools) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
@@ -870,27 +775,12 @@ func (a *argInts) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argInts) writeTo(w queryWriter, pos int) error {
-	if a.op.isNotIn() {
-		_, err := w.WriteString(strconv.Itoa(a.data[pos]))
-		return err
-	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		w.WriteString(strconv.Itoa(v))
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
-	return nil
+	_, err := w.WriteString(strconv.Itoa(a.data[pos]))
+	return err
 }
 
 func (a *argInts) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
@@ -938,27 +828,12 @@ func (a *argInt64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argInt64s) writeTo(w queryWriter, pos int) error {
-	if a.op.isNotIn() {
-		_, err := w.WriteString(strconv.FormatInt(a.data[pos], 10))
-		return err
-	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		w.WriteString(strconv.FormatInt(v, 10))
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
-	return nil
+	_, err := w.WriteString(strconv.FormatInt(a.data[pos], 10))
+	return err
 }
 
 func (a *argInt64s) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
@@ -1006,27 +881,12 @@ func (a *argFloat64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argFloat64s) writeTo(w queryWriter, pos int) error {
-	if a.op.isNotIn() {
-		_, err := w.WriteString(strconv.FormatFloat(a.data[pos], 'f', -1, 64))
-		return err
-	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		w.WriteString(strconv.FormatFloat(v, 'f', -1, 64))
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	w.WriteByte(')')
-	return nil
+	_, err := w.WriteString(strconv.FormatFloat(a.data[pos], 'f', -1, 64))
+	return err
 }
 
 func (a *argFloat64s) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to

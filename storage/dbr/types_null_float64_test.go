@@ -208,21 +208,9 @@ func TestArgNullFloat64(t *testing.T) {
 	args := ArgNullFloat64(MakeNullFloat64(math.Phi), MakeNullFloat64(math.E, false), MakeNullFloat64(math.SqrtE))
 	assert.Exactly(t, 3, args.len())
 	args = args.applyOperator(NotIn)
-	assert.Exactly(t, 1, args.len())
+	assert.Exactly(t, 3, args.len())
 
-	t.Run("IN operator", func(t *testing.T) {
-		args = args.applyOperator(In)
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		if err := args.writeTo(&buf, 0); err != nil {
-			t.Fatalf("%+v", err)
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{math.Phi, interface{}(nil), math.SqrtE}, argIF)
-		assert.Exactly(t, "(1.618033988749895,NULL,1.6487212707001282)", buf.String())
-	})
-
-	t.Run("Not Equal operator", func(t *testing.T) {
+	t.Run("writeTo", func(t *testing.T) {
 		args = args.applyOperator(NotEqual)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)

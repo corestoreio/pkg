@@ -75,16 +75,58 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	return buf.String(), retArgs, nil
 }
 
-// Interpolate takes a SQL byte slice with placeholders and a list of arguments to
-// replace them with. It returns a blank string and error if the number of placeholders
-// does not match the number of arguments.
+// repeat multiplies the place holder with the arguments internal len.
+func repeat(buf queryWriter, sql []byte, args ...Argument) error {
+	const qMarkRne = '?'
+
+	i := 0
+	pos := 0
+	for pos < len(sql) {
+		r, w := utf8.DecodeRune(sql[pos:])
+		pos += w
+
+		switch r {
+		case '?':
+			if i < len(args) {
+				reps := args[i].len()
+				for r := 0; r < reps; r++ {
+					buf.WriteByte(qMarkRne)
+					if r < reps-1 {
+						buf.WriteByte(',')
+					}
+				}
+			}
+			i++
+		default:
+			buf.WriteRune(r)
+		}
+	}
+	return nil
+}
+
+// Interpolate takes a SQL byte slice with placeholders and a list of arguments
+// to replace them with. It returns a blank string or an error if the number of
+// placeholders does not match the number of arguments. Implements the Repeat
+// function.
 func Interpolate(sql string, args ...Argument) (string, error) {
 	return interpolate([]byte(sql), args...)
 }
 
 func interpolate(sql []byte, args ...Argument) (string, error) {
+	var qMarkStr = []byte("?")
 
-	var buf = bufferpool.Get()
+	markCount := bytes.Count(sql, qMarkStr)
+	argCount := Arguments(args).len()
+	if markCount < argCount {
+		rBuf := bufferpool.Get()
+		defer bufferpool.Put(rBuf)
+		if err := repeat(rBuf, sql, args...); err != nil {
+			return "", errors.Wrap(err, "[dbr]. Interpolate.repeat")
+		}
+		sql = rBuf.Bytes()
+	}
+
+	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
 	qCountTotal := 0

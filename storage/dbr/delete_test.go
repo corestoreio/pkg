@@ -89,7 +89,7 @@ func TestDelete_Interpolate(t *testing.T) {
 			Column("colC", ArgString("He'l`lo")),
 		).
 		Limit(10).Offset(20).OrderBy("id"), nil,
-		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN ?) AND (`colC` = ?) ORDER BY `id` LIMIT 10 OFFSET 20",
+		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN (?,?,?,?)) AND (`colC` = ?) ORDER BY `id` LIMIT 10 OFFSET 20",
 		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY `id` LIMIT 10 OFFSET 20",
 		3.14159, int64(1), int64(2), int64(3), int64(45), "He'l`lo",
 	)

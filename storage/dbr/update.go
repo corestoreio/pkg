@@ -347,7 +347,6 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 	if b.Log != nil && b.Log.IsInfo() {
 		defer log.WhenDone(b.Log).Info("dbr.Update.Exec.Timing", log.String("sql", sqlStr))
 	}
-
 	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.Exec.Exec")

@@ -70,6 +70,14 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 
 	compareToSQL(t, NewUpdate("a").
 		Set("foo", ArgInt(1)).
+		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id", In.Int64(10, 11))),
+		nil,
+		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (?,?))",
+		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (10,11))",
+		int64(1), int64(10), int64(11))
+
+	compareToSQL(t, NewUpdate("a").
+		Set("foo", ArgInt(1)).
 		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Column("id", ArgInt(9))),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)",
@@ -128,9 +136,9 @@ func TestUpdateReal(t *testing.T) {
 	// Rename our George to Barack
 	_, err = s.Update("dbr_people").
 		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
-		Where(Column("id", Equal.Int64(id))).Exec(context.TODO())
-
-	assert.NoError(t, err)
+		Where(Column("id", In.Int64(id, 8888))).Exec(context.TODO())
+	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
+	require.NoError(t, err)
 
 	var person dbrPerson
 	_, err = s.Select("*").From("dbr_people").Where(Column("id", Equal.Int64(id))).Load(context.TODO(), &person)
@@ -177,7 +185,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
 		assert.Exactly(t,
-			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)",
+			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?,?,?))",
 			sqlStr)
 	})
 	t.Run("without condition values", func(t *testing.T) {
@@ -189,7 +197,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{}, args.Interfaces())
 		assert.Exactly(t,
-			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ?)",
+			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ())",
 			sqlStr)
 	})
 }

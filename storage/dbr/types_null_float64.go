@@ -181,34 +181,16 @@ func (a argNullFloat64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
-	if a.op != In && a.op != NotIn {
-		if s := a.data[pos]; s.Valid {
-			_, err := w.WriteString(strconv.FormatFloat(s.Float64, 'f', -1, 64))
-			return err
-		}
-		_, err := w.WriteString(sqlStrNull)
-		return err
+	ws := sqlStrNull
+	if s := a.data[pos]; s.Valid {
+		ws = strconv.FormatFloat(s.Float64, 'f', -1, 64)
 	}
-	l := len(a.data) - 1
-	w.WriteByte('(')
-	for i, v := range a.data {
-		if v.Valid {
-			w.WriteString(strconv.FormatFloat(v.Float64, 'f', -1, 64))
-		} else {
-			w.WriteString(sqlStrNull)
-		}
-		if i < l {
-			w.WriteByte(',')
-		}
-	}
-	return w.WriteByte(')')
+	_, err := w.WriteString(ws)
+	return err
 }
 
 func (a argNullFloat64s) len() int {
-	if a.op.isNotIn() {
-		return len(a.data)
-	}
-	return 1
+	return len(a.data)
 }
 
 // Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to

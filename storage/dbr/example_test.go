@@ -162,8 +162,8 @@ func ExampleInsert_FromSelect() {
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
-	//WHERE ((`int64A` >= ?) OR (`string` = ?)) AND (`int64B` IN ?) ORDER BY `id` DESC
-	//LIMIT 20 OFFSET 0
+	//WHERE ((`int64A` >= ?) OR (`string` = ?)) AND (`int64B` IN (?,?,?)) ORDER BY
+	//`id` DESC LIMIT 20 OFFSET 0
 	//Arguments: [1 wat 1 2 3]
 	//
 	//Preprocessed Statement:
@@ -181,7 +181,8 @@ func ExampleNewDelete() {
 	writeToSqlAndPreprocess(d)
 	// Output:
 	//Prepared Statement:
-	//DELETE FROM `tableA` WHERE (`a` LIKE ?) AND (`b` IN ?) ORDER BY `id` LIMIT 1
+	//DELETE FROM `tableA` WHERE (`a` LIKE ?) AND (`b` IN (?,?,?,?)) ORDER BY `id`
+	//LIMIT 1
 	//Arguments: [b'% 3 4 5 6]
 	//
 	//Preprocessed Statement:
@@ -251,23 +252,23 @@ func ExampleNewUnionTemplate() {
 	//Prepared Statement:
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
 	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
 	//
@@ -314,23 +315,23 @@ func ExampleUnionTemplate_Interpolate() {
 	//Prepared Statement:
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//UNION ALL
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN ?))
+	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
 	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
 	//
@@ -358,11 +359,12 @@ func ExampleUnionTemplate_Interpolate() {
 }
 
 func ExampleInterpolate() {
-	sqlStr, err := dbr.Interpolate("SELECT * FROM x WHERE a IN ? AND b IN ? AND c NOT IN ? AND d BETWEEN ? AND ?",
+	sqlStr, err := dbr.Interpolate("SELECT * FROM x WHERE a IN (?) AND b IN (?) AND c NOT IN (?) AND d BETWEEN ? AND ?",
 		dbr.In.Int(1),
 		dbr.In.Int(1, 2, 3),
 		dbr.In.Int64(5, 6, 7),
-		dbr.Between.Str("wat", "ok"),
+		dbr.ArgString("wat"),
+		dbr.ArgString("ok"),
 	)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -435,12 +437,12 @@ func ExampleArgument() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN ?)" Arguments: [7 8 9]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN ?)" Arguments: [10 11 12]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?))" Arguments: [17 18 19]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?))" Arguments: [20 21 22]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
@@ -495,12 +497,12 @@ func ExampleColumn() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN ?)" Arguments: [7 8 9]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN ?)" Arguments: [10 11 12]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?))" Arguments: [17 18 19]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?))" Arguments: [20 21 22]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
@@ -640,7 +642,7 @@ func ExampleSQLCase_update() {
 	//Prepared Statement:
 	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
 	//qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`product_id`
-	//IN ?) AND (`website_id` = ?)
+	//IN (?,?,?)) AND (`website_id` = ?)
 	//Arguments: [3 4 5 345 567 897 6]
 	//
 	//Preprocessed Statement:
@@ -672,7 +674,7 @@ func ExampleSQLCase_select() {
 	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
-	//(`promotion_id` NOT IN ?)
+	//(`promotion_id` NOT IN (?,?,?))
 	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
 	//
 	//Preprocessed Statement:
@@ -706,7 +708,7 @@ func ExampleSelect_AddArguments() {
 	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
-	//(`promotion_id` NOT IN ?)
+	//(`promotion_id` NOT IN (?,?,?))
 	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
 	//
 	//Preprocessed Statement:

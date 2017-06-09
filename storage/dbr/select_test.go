@@ -62,7 +62,7 @@ func TestSelectFullToSQL(t *testing.T) {
 		Offset(8)
 
 	compareToSQL(t, sel, nil,
-		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
+		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
 		"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
 		int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
 	)
@@ -95,7 +95,7 @@ func TestSelect_Interpolate(t *testing.T) {
 			Limit(7).
 			Offset(8)
 		compareToSQL(t, sel, nil,
-			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8",
 			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8",
 			int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
 		)
@@ -114,7 +114,7 @@ func TestSelect_Interpolate(t *testing.T) {
 			Limit(7).Offset(8)
 
 		compareToSQL(t, sel, nil,
-			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = ? OR `e` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = ?) AND (`jjj` = ?) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = ? OR `e` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = ?) AND (`jjj` = ?) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
 			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
 			int64(1), "wat", int64(3), int64(1), int64(2), int64(3), int64(1), int64(2),
 		)
@@ -220,7 +220,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	))
 	t.Run("IN int64", runner(
 		In.Int64(33, 44),
-		"SELECT `a`, `b` FROM `c` WHERE (`d` IN ?)",
+		"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?))",
 		[]interface{}{int64(33), int64(44)},
 	))
 	t.Run("single float64", runner(
@@ -230,12 +230,12 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	))
 	t.Run("IN float64", runner(
 		In.Float64(33, 44),
-		"SELECT `a`, `b` FROM `c` WHERE (`d` IN ?)",
+		"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?))",
 		[]interface{}{float64(33), float64(44)},
 	))
 	t.Run("NOT IN float64", runner(
 		NotIn.Float64(33, 44),
-		"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN ?)",
+		"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?))",
 		[]interface{}{float64(33), float64(44)},
 	))
 	t.Run("single int", runner(
@@ -245,7 +245,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	))
 	t.Run("IN int", runner(
 		In.Int(33, 44),
-		"SELECT `a`, `b` FROM `c` WHERE (`d` IN ?)",
+		"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?))",
 		[]interface{}{int64(33), int64(44)},
 	))
 	t.Run("single string", runner(
@@ -255,7 +255,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	))
 	t.Run("IN string", runner(
 		In.Str("x", "y"),
-		"SELECT `a`, `b` FROM `c` WHERE (`d` IN ?)",
+		"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?))",
 		[]interface{}{"x", "y"},
 	))
 
@@ -378,7 +378,7 @@ func TestSelectWhereMapSQL(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a").From("b").Where(Eq{"a": In.Int(1, 2, 3)}),
 			nil,
-			"SELECT `a` FROM `b` WHERE (`a` IN ?)",
+			"SELECT `a` FROM `b` WHERE (`a` IN (?,?,?))",
 			"SELECT `a` FROM `b` WHERE (`a` IN (1,2,3))",
 			int64(1), int64(2), int64(3),
 		)
@@ -405,7 +405,7 @@ func TestSelectWhereMapSQL(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a").From("b").Where(Eq{"a": In.Int(iVal...)}),
 			nil,
-			"SELECT `a` FROM `b` WHERE (`a` IN ?)",
+			"SELECT `a` FROM `b` WHERE (`a` IN ())",
 			"",
 			[]interface{}{}...,
 		)
@@ -429,10 +429,10 @@ func TestSelectWhereEqSQL(t *testing.T) {
 	t.Parallel()
 	sql, args, err := NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1), "b": In.Int64(1, 2, 3)}).ToSQL()
 	assert.NoError(t, err)
-	if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` IN ?)" {
+	if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` IN (?,?,?))" {
 		assert.Equal(t, []interface{}{int64(1), int64(1), int64(2), int64(3)}, args.Interfaces())
 	} else {
-		assert.Equal(t, sql, "SELECT `a` FROM `b` WHERE (`b` IN ?) AND (`a` = ?)")
+		assert.Equal(t, sql, "SELECT `a` FROM `b` WHERE (`b` IN (?,?,?)) AND (`a` = ?)")
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(1)}, args.Interfaces())
 	}
 }
@@ -449,9 +449,9 @@ func TestSelectBySQL(t *testing.T) {
 		"SELECT * FROM users WHERE x = 1",
 	)
 	compareToSQL(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN ?", Equal.Int(9), In.Int(5, 6, 7)),
+		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN (?)", Equal.Int(9), In.Int(5, 6, 7)),
 		nil,
-		"SELECT * FROM users WHERE x = ? AND y IN ?",
+		"SELECT * FROM users WHERE x = ? AND y IN (?)",
 		"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
 		int64(9), int64(5), int64(6), int64(7),
 	)
@@ -504,7 +504,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 	}
 }
 
-func TestSelect_Load_Single(t *testing.T) {
+func TestSelect_Load_Rows(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
 	t.Run("found", func(t *testing.T) {
@@ -527,23 +527,37 @@ func TestSelect_Load_Single(t *testing.T) {
 		assert.Exactly(t, dbrPerson{}, person2)
 		assert.Empty(t, count, "Should have no rows loaded")
 	})
-
 }
 
 func TestSelectBySQL_Load_Slice(t *testing.T) {
 	s := createRealSessionWithFixtures()
 
-	var people dbrPersons
-	count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).Load(context.TODO(), &people)
+	t.Run("single slice item", func(t *testing.T) {
+		var people dbrPersons
+		count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).Load(context.TODO(), &people)
 
-	assert.NoError(t, err)
-	assert.Equal(t, count, 1)
-	if len(people.Data) == 1 {
-		assert.Equal(t, "Jonathan", people.Data[0].Name)
-		assert.Equal(t, int64(0), people.Data[0].ID)       // not set
-		assert.Equal(t, false, people.Data[0].Email.Valid) // not set
-		assert.Equal(t, "", people.Data[0].Email.String)   // not set
-	}
+		assert.NoError(t, err)
+		assert.Equal(t, count, 1)
+		if len(people.Data) == 1 {
+			assert.Equal(t, "Jonathan", people.Data[0].Name)
+			assert.Equal(t, int64(0), people.Data[0].ID)       // not set
+			assert.Equal(t, false, people.Data[0].Email.Valid) // not set
+			assert.Equal(t, "", people.Data[0].Email.String)   // not set
+		}
+	})
+
+	t.Run("IN Clause", func(t *testing.T) {
+		ids, err := s.Select("id").From("dbr_people").
+			Where(Column("id", In.Int64(1, 2, 3))).LoadInt64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Exactly(t, []int64{1, 2}, ids)
+	})
+	t.Run("NOT IN Clause", func(t *testing.T) {
+		ids, err := s.Select("id").From("dbr_people").
+			Where(Column("id", NotIn.Int64(2, 3))).LoadInt64s(context.TODO())
+		assert.NoError(t, err)
+		assert.Exactly(t, []int64{1}, ids)
+	})
 }
 
 func TestSelect_LoadType_Single(t *testing.T) {
@@ -1072,7 +1086,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 			OrderBy("`t1`.period", "`t1`.product_id")
 
 		compareToSQL(t, sel1, nil,
-			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (?,?,?)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
 			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
 			int64(2), int64(3), int64(4), int64(3),
 		)
@@ -1093,8 +1107,8 @@ func TestSelect_Subselect_Compact(t *testing.T) {
 		Where(Column("t2.floatcol", Equal.Float64(3.14159)))
 
 	compareToSQL(t, sel, nil,
-		"SELECT `t2`.`product_name` FROM (SELECT `t3`.`product_name` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN ?) GROUP BY `t3`.`store_id` HAVING (COUNT(*)>?)) AS `t2` WHERE (`t2`.`floatcol` = ?)",
-		"", //"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+		"SELECT `t2`.`product_name` FROM (SELECT `t3`.`product_name` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (?,?,?)) GROUP BY `t3`.`store_id` HAVING (COUNT(*)>?)) AS `t2` WHERE (`t2`.`floatcol` = ?)",
+		"SELECT `t2`.`product_name` FROM (SELECT `t3`.`product_name` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id` HAVING (COUNT(*)>5)) AS `t2` WHERE (`t2`.`floatcol` = 3.14159)",
 		int64(2), int64(3), int64(4), int64(5), 3.14159,
 	)
 }
@@ -1225,7 +1239,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 		Offset(8)
 	sel.UseBuildCache = true
 
-	const cachedSQLPlaceHolder = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
+	const cachedSQLPlaceHolder = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, sel, nil,
@@ -1281,7 +1295,7 @@ func TestSelect_AddRecord(t *testing.T) {
 			AddRecord(p)
 
 		compareToSQL(t, sel, nil,
-			"SELECT `a`, `b` FROM `dbr_person` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) WHERE ((`name` = ?) OR (`e` = ?)) AND (`f` <= ?) AND (`g` > ?) AND (`h` IN ?) GROUP BY `ab` HAVING (`email` = ?) AND (`n` = ?) ORDER BY `l`",
+			"SELECT `a`, `b` FROM `dbr_person` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) WHERE ((`name` = ?) OR (`e` = ?)) AND (`f` <= ?) AND (`g` > ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING (`email` = ?) AND (`n` = ?) ORDER BY `l`",
 			"",
 			int64(6666), "Hans Wurst", "wat", int64(2), int64(3), int64(4), int64(5), int64(6), "hans@wurst.com", "wh3r3",
 		)
