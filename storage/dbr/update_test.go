@@ -425,7 +425,6 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 
 	t.Run("with interpolate", func(t *testing.T) {
 		up.cacheSQL = nil
-		up.RawArguments = nil
 
 		const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)"
 		for i := 0; i < 3; i++ {

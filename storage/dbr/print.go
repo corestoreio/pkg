@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 
@@ -62,6 +63,12 @@ func (backHole) Write(p []byte) (n int, err error)       { return }
 // including the stringyfied arguments. With an enabled cache, the arguments
 // gets regenerated each time a call to ToSQL happens.
 func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
+	var ipBuf *bytes.Buffer // ip = interpolate buffer
+	if isInterpolate {
+		ipBuf = bufferpool.Get()
+		defer bufferpool.Put(ipBuf)
+	}
+
 	useCache := b.hasBuildCache()
 	if useCache {
 		sql, args, err := b.readBuildCache()
@@ -70,8 +77,8 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 		}
 		if sql != nil {
 			if isInterpolate {
-				sqlStr, err := interpolate(sql, args...)
-				return sqlStr, nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
+				err := interpolate(ipBuf, sql, args...)
+				return ipBuf.String(), nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
 			}
 			return string(sql), args, nil
 		}
@@ -95,8 +102,8 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	}
 
 	if isInterpolate {
-		sqlStr, err := interpolate(buf.Bytes(), args...)
-		return sqlStr, nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
+		err := interpolate(ipBuf, buf.Bytes(), args...)
+		return ipBuf.String(), nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
 	}
 	return buf.String(), args, nil
 }

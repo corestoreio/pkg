@@ -1253,7 +1253,6 @@ func TestSelect_UseBuildCache(t *testing.T) {
 
 	t.Run("with interpolate", func(t *testing.T) {
 		sel.cacheSQL = nil
-		sel.RawArguments = nil
 		const cachedSQLInterpolated = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, sel, nil,

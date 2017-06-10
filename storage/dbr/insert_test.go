@@ -512,7 +512,6 @@ func TestInsert_UseBuildCache(t *testing.T) {
 	t.Run("with interpolate", func(t *testing.T) {
 		ins.Interpolate()
 		ins.cacheSQL = nil
-		ins.RawArguments = nil
 
 		const cachedSQLInterpolated = "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 		for i := 0; i < 3; i++ {

@@ -109,25 +109,31 @@ func repeat(buf queryWriter, sql []byte, args ...Argument) error {
 // placeholders does not match the number of arguments. Implements the Repeat
 // function.
 func Interpolate(sql string, args ...Argument) (string, error) {
-	return interpolate([]byte(sql), args...)
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if err := interpolate(buf, []byte(sql), args...); err != nil {
+		return "", errors.Wrapf(err, "[dbr] Interpolate with SQL string %q", sql)
+	}
+	return buf.String(), nil
 }
 
-func interpolate(sql []byte, args ...Argument) (string, error) {
+// interpolate merges `args` into `sql` and writes the result into `buf`. `sql`
+// stays unchanged.
+func interpolate(buf queryWriter, sql []byte, args ...Argument) error {
 	var qMarkStr = []byte("?")
 
 	markCount := bytes.Count(sql, qMarkStr)
 	argCount := Arguments(args).len()
+
+	// Repeats the place holders, e.g. IN (?) will become IN (?,?,?)
 	if markCount < argCount {
 		rBuf := bufferpool.Get()
 		defer bufferpool.Put(rBuf)
 		if err := repeat(rBuf, sql, args...); err != nil {
-			return "", errors.Wrap(err, "[dbr]. Interpolate.repeat")
+			return errors.Wrap(err, "[dbr]. Interpolate.repeat")
 		}
 		sql = rBuf.Bytes()
 	}
-
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
 
 	qCountTotal := 0
 	qCount := -1
@@ -149,20 +155,20 @@ func interpolate(sql []byte, args ...Argument) (string, error) {
 				qCount = 0 // next argument set starts
 				argIndex++
 				if argIndex >= len(args) {
-					return "", errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d but argument count was %d", argIndex, len(args)-1)
+					return errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d but argument count was %d", argIndex, len(args)-1)
 				}
 				argLength = args[argIndex].len()
 			}
 
 			if err := args[argIndex].writeTo(buf, qCount); err != nil {
-				return "", errors.Wrap(err, "[dbr] Interpolate writeTo arguments")
+				return errors.Wrap(err, "[dbr] Interpolate writeTo arguments")
 			}
 
 			qCountTotal++
 		case r == '`', r == '\'', r == '"':
 			p := bytes.IndexRune(sql[pos:], r)
 			if p == -1 {
-				return "", errors.NewNotValidf("[dbr] Interpolate: Invalid syntax")
+				return errors.NewNotValidf("[dbr] Interpolate: Invalid syntax")
 			}
 			if r == '"' {
 				r = '\''
@@ -182,7 +188,7 @@ func interpolate(sql []byte, args ...Argument) (string, error) {
 	}
 
 	if al := Arguments(args).len(); qCountTotal != al {
-		return "", errors.NewNotValidf("[dbr] Arguments are imbalanced. Placeholders: %d Current argument count: %d or %d", qCountTotal, al, len(args))
+		return errors.NewNotValidf("[dbr] Arguments are imbalanced. Placeholders: %d Current argument count: %d or %d", qCountTotal, al, len(args))
 	}
-	return buf.String(), nil
+	return nil
 }

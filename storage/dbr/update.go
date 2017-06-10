@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 
@@ -576,6 +577,13 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 
 	args := make(Arguments, 0, (len(records)+len(b.Update.WhereFragments))*3) // 3 just a guess
 	results := make([]sql.Result, len(records))
+
+	var ipBuf *bytes.Buffer // ip = interpolate buffer
+	if isInterpolate {
+		ipBuf = bufferpool.Get()
+		defer bufferpool.Put(ipBuf)
+	}
+
 	for i, rec := range records {
 		b.Update.SetClauses.Record = rec
 		args, err = b.Update.appendArgs(args)
@@ -583,16 +591,15 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 		}
 		if isInterpolate {
-			var fullSQL string
-			fullSQL, err = interpolate(sqlBuf.Bytes(), args...)
-			if err != nil {
+			if err = interpolate(ipBuf, sqlBuf.Bytes(), args...); err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 			}
 
-			results[i], err = exec.ExecContext(ctx, fullSQL)
+			results[i], err = exec.ExecContext(ctx, ipBuf.String())
 			if err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Exec. Index %d with Query: %q", i, sqlBuf)
 			}
+			ipBuf.Reset()
 		} else {
 			results[i], err = stmt.ExecContext(ctx, args.Interfaces()...)
 			if err != nil {
