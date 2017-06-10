@@ -30,12 +30,13 @@ type QueryBuilder interface {
 
 type queryBuilder interface {
 	toSQL(queryWriter) error
-	// appendArgs appends the arguments to Arguments and returns them.
-	// If argument `Arguments` is nil, allocates new bytes
+	// appendArgs appends the arguments to Arguments and returns them. If
+	// argument `Arguments` is nil, allocates new bytes
 	appendArgs(Arguments) (Arguments, error)
 	hasBuildCache() bool
-	writeBuildCache(sql []byte, arguments Arguments)
-	readBuildCache() (sql []byte, arguments Arguments)
+	writeBuildCache(sql []byte)
+	// readBuildCache returns the cached SQL string including its place holders.
+	readBuildCache() (sql []byte, args Arguments, err error)
 }
 
 // queryWriter at used to generate a query.
@@ -55,16 +56,25 @@ func (backHole) WriteRune(r rune) (n int, err error)     { return }
 func (backHole) WriteByte(c byte) error                  { return nil }
 func (backHole) Write(p []byte) (n int, err error)       { return }
 
-// toSQL serialized the Insert to a SQL string
-// It returns the string with placeholders and a slice of query arguments
+// toSQL generates the SQL string and its place holders. Takes care of caching
+// and interpolation. It returns the string with placeholders and a slice of
+// query arguments. With switched on interpolation, it only returns a string
+// including the stringyfied arguments. With an enabled cache, the arguments
+// gets regenerated each time a call to ToSQL happens.
 func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	useCache := b.hasBuildCache()
-	if sql, args := b.readBuildCache(); useCache && sql != nil {
-		if isInterpolate {
-			sqlStr, err := interpolate(sql, args...)
-			return sqlStr, nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
+	if useCache {
+		sql, args, err := b.readBuildCache()
+		if err != nil {
+			return "", nil, errors.Wrap(err, "[dbr] toSQL.readBuildCache")
 		}
-		return string(sql), args, nil
+		if sql != nil {
+			if isInterpolate {
+				sqlStr, err := interpolate(sql, args...)
+				return sqlStr, nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
+			}
+			return string(sql), args, nil
+		}
 	}
 
 	buf := bufferpool.Get()
@@ -73,14 +83,15 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	if err := b.toSQL(buf); err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] toSQL.toSQL")
 	}
-	args, err := b.appendArgs(nil)
+	// capacity of Arguments gets handled in the concret implementation of `b`
+	args, err := b.appendArgs(Arguments{})
 	if err != nil {
 		return "", nil, errors.Wrap(err, "[dbr] toSQL.appendArgs")
 	}
 	if useCache {
 		sqlCopy := make([]byte, buf.Len())
 		copy(sqlCopy, buf.Bytes())
-		b.writeBuildCache(sqlCopy, args)
+		b.writeBuildCache(sqlCopy)
 	}
 
 	if isInterpolate {

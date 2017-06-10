@@ -505,19 +505,19 @@ func TestInsert_UseBuildCache(t *testing.T) {
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLPlaceHolder, sql)
 			assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
-			assert.Equal(t, cachedSQLPlaceHolder, string(ins.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(ins.cacheSQL))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
 		ins.Interpolate()
-		ins.buildCache = nil
+		ins.cacheSQL = nil
 		ins.RawArguments = nil
 
 		const cachedSQLInterpolated = "INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 		for i := 0; i < 3; i++ {
 			sql, args, err := ins.ToSQL()
-			assert.Equal(t, cachedSQLPlaceHolder, string(ins.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(ins.cacheSQL))
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLInterpolated, sql)
 			assert.Nil(t, args)

@@ -1247,12 +1247,12 @@ func TestSelect_UseBuildCache(t *testing.T) {
 				"",
 				int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(sel.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(sel.cacheSQL))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		sel.buildCache = nil
+		sel.cacheSQL = nil
 		sel.RawArguments = nil
 		const cachedSQLInterpolated = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
 		for i := 0; i < 3; i++ {
@@ -1261,7 +1261,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 				cachedSQLInterpolated,
 				int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(sel.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(sel.cacheSQL))
 		}
 	})
 }

@@ -33,7 +33,7 @@ type Select struct {
 	DB Querier
 
 	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
+	RawArguments Arguments // Arguments used by RawFullSQL
 
 	// Record if set retrieves the necessary arguments from the interface.
 	Record ArgumentAssembler
@@ -69,10 +69,12 @@ type Select struct {
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
 	PropagationStopped bool
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
+	// UseBuildCache if `true` the final build query including place holders
+	// will be cached in a private field. Each time a call to function ToSQL
+	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
-	buildCache    []byte
+	cacheSQL      []byte
+	cacheArgs     Arguments // like a buffer, gets reused
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners SelectListeners
@@ -427,13 +429,22 @@ func (b *Select) ToSQL() (string, Arguments, error) {
 	return toSQL(b, b.IsInterpolate)
 }
 
-func (b *Select) writeBuildCache(sql []byte, arguments Arguments) {
-	b.buildCache = sql
-	b.RawArguments = arguments
+// argumentCapacity returns the total possible guessed size of a new Arguments
+// slice. Use as the cap parameter in a call to `make`.
+func (b *Select) argumentCapacity() int {
+	return len(b.RawArguments) + len(b.JoinFragments) + len(b.WhereFragments)
 }
 
-func (b *Select) readBuildCache() (sql []byte, arguments Arguments) {
-	return b.buildCache, b.RawArguments
+func (b *Select) writeBuildCache(sql []byte) {
+	b.cacheSQL = sql
+}
+
+func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
+	if b.cacheSQL == nil {
+		return nil, nil, nil
+	}
+	b.cacheArgs, err = b.appendArgs(b.cacheArgs[:0])
+	return b.cacheSQL, b.cacheArgs, err
 }
 
 func (b *Select) hasBuildCache() bool {
@@ -538,8 +549,8 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	// not sure if copying is necessary but leaves at least b.Arguments in pristine
 	// condition
-	if args == nil {
-		args = make(Arguments, 0, len(b.RawArguments)+len(b.JoinFragments)+len(b.WhereFragments))
+	if cap(args) == 0 {
+		args = make(Arguments, 0, b.argumentCapacity())
 	}
 	args = append(args, b.RawArguments...)
 

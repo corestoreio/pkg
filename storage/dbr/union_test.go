@@ -96,12 +96,12 @@ func TestUnion_UseBuildCache(t *testing.T) {
 				"",
 				float64(3.14159),
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		u.buildCache = nil
+		u.cacheSQL = nil
 		u.RawArguments = nil
 
 		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC"
@@ -111,7 +111,7 @@ func TestUnion_UseBuildCache(t *testing.T) {
 				cachedSQLInterpolated,
 				3.14159,
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
 		}
 	})
 }

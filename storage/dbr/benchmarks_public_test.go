@@ -88,11 +88,6 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	}
 }
 
-// BenchmarkSelectFullSQL-4                		  		300000	      5351 ns/op	    2408 B/op	      38 allocs/op nearly no backticks
-//BenchmarkSelectFullSQL/NewSelect-4         	  		200000	      8904 ns/op	    3465 B/op	      50 allocs/op
-//BenchmarkSelectFullSQL/ToSQL_Interpolate_NoCache-4    100000	     11639 ns/op	     922 B/op	      25 allocs/op
-//BenchmarkSelectFullSQL/ToSQL_Interpolate_Cache-4      200000	      6592 ns/op	     296 B/op	       9 allocs/op
-
 func BenchmarkSelectFullSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results

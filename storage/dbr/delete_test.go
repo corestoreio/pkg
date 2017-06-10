@@ -254,19 +254,19 @@ func TestDelete_UseBuildCache(t *testing.T) {
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLPlaceHolder, sql)
 			assert.Equal(t, []interface{}{"b"}, args.Interfaces())
-			assert.Equal(t, cachedSQLPlaceHolder, string(del.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(del.cacheSQL))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
 		del.Interpolate()
-		del.buildCache = nil
+		del.cacheSQL = nil
 		del.RawArguments = nil
 
 		const cachedSQLInterpolated = "DELETE FROM `alpha` WHERE (`a` = 'b') ORDER BY `id` LIMIT 1"
 		for i := 0; i < 3; i++ {
 			sql, args, err := del.ToSQL()
-			assert.Equal(t, cachedSQLPlaceHolder, string(del.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(del.cacheSQL))
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLInterpolated, sql)
 			assert.Nil(t, args)

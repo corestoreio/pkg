@@ -419,12 +419,12 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 				"",
 				int64(1), int64(2), int64(9),
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(up.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(up.cacheSQL))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		up.buildCache = nil
+		up.cacheSQL = nil
 		up.RawArguments = nil
 
 		const cachedSQLInterpolated = "UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)"
@@ -434,7 +434,7 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 				cachedSQLInterpolated,
 				int64(1), int64(2), int64(9),
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(up.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(up.cacheSQL))
 		}
 	})
 }

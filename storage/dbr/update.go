@@ -31,8 +31,9 @@ type Update struct {
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
 	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
-	buildCache   []byte
+	RawArguments Arguments // Arguments used by RawFullSQL
+	cacheSQL     []byte
+	cacheArgs    Arguments // like a buffer, gets reused
 
 	Table alias
 	// SetClauses contains the column/argument association. For each column
@@ -49,8 +50,9 @@ type Update struct {
 	// listeners will be suppressed.
 	PropagationStopped bool
 	IsInterpolate      bool // See Interpolate()
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
+	// UseBuildCache if `true` the final build query including place holders
+	// will be cached in a private field. Each time a call to function ToSQL
+	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -224,13 +226,16 @@ func (b *Update) ToSQL() (string, Arguments, error) {
 	return toSQL(b, b.IsInterpolate)
 }
 
-func (b *Update) writeBuildCache(sql []byte, arguments Arguments) {
-	b.buildCache = sql
-	b.RawArguments = arguments
+func (b *Update) writeBuildCache(sql []byte) {
+	b.cacheSQL = sql
 }
 
-func (b *Update) readBuildCache() (sql []byte, arguments Arguments) {
-	return b.buildCache, b.RawArguments
+func (b *Update) readBuildCache() (sql []byte, _ Arguments, err error) {
+	if b.cacheSQL == nil {
+		return nil, nil, nil
+	}
+	b.cacheArgs, err = b.appendArgs(b.cacheArgs[:0])
+	return b.cacheSQL, b.cacheArgs, err
 }
 
 func (b *Update) hasBuildCache() bool {
@@ -305,7 +310,7 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 		return b.RawArguments, nil
 	}
 
-	if args == nil {
+	if cap(args) == 0 {
 		args = make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
 	}
 	if b.SetClauses.Record != nil {

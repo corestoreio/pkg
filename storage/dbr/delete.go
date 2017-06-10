@@ -46,7 +46,7 @@ type Delete struct {
 	// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 
 	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
+	RawArguments Arguments // Arguments used by RawFullSQL
 
 	// Record if set retrieves the necessary arguments from the interface.
 	Record ArgumentAssembler
@@ -63,10 +63,13 @@ type Delete struct {
 	// listeners will be suppressed.
 	PropagationStopped bool
 	IsInterpolate      bool // See Interpolate()
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
+	// UseBuildCache if `true` the final build query including place holders
+	// will be cached in a private field. Each time a call to function ToSQL
+	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
-	buildCache    []byte
+	cacheSQL      []byte
+	cacheArgs     Arguments // like a buffer, gets reused
+
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners DeleteListeners
@@ -177,13 +180,16 @@ func (b *Delete) ToSQL() (string, Arguments, error) {
 	return toSQL(b, b.IsInterpolate)
 }
 
-func (b *Delete) writeBuildCache(sql []byte, arguments Arguments) {
-	b.buildCache = sql
-	b.RawArguments = arguments
+func (b *Delete) writeBuildCache(sql []byte) {
+	b.cacheSQL = sql
 }
 
-func (b *Delete) readBuildCache() (sql []byte, arguments Arguments) {
-	return b.buildCache, b.RawArguments
+func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
+	if b.cacheSQL == nil {
+		return nil, nil, nil
+	}
+	b.cacheArgs, err = b.appendArgs(b.cacheArgs[:0])
+	return b.cacheSQL, b.cacheArgs, err
 }
 
 func (b *Delete) hasBuildCache() bool {
@@ -229,7 +235,7 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
-	if args == nil {
+	if cap(args) == 0 {
 		args = make(Arguments, 0, len(b.WhereFragments))
 	}
 	args, err = b.From.appendArgs(args)
@@ -246,7 +252,6 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtDelete|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Delete.toSQL.appendAssembledArgs")
 	}
-
 	return args, nil
 }
 

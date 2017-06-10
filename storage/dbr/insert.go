@@ -28,13 +28,15 @@ type Insert struct {
 	Log log.Logger // Log optional logger
 	DB  Execer
 
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
+	// UseBuildCache if `true` the final build query including place holders
+	// will be cached in a private field. Each time a call to function ToSQL
+	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
-	buildCache    []byte
+	cacheSQL      []byte
+	cacheArgs     Arguments // like a buffer, gets reused
 
 	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL or BuildCache
+	RawArguments Arguments // Arguments used by RawFullSQL
 
 	Into    string
 	Columns []string
@@ -162,15 +164,17 @@ func (b *Insert) AddArguments(args ...Argument) *Insert {
 	return b
 }
 
-// AddRecords pulls in values to match Columns from the record generator.
+// AddRecords appends record generators.
 func (b *Insert) AddRecords(recs ...ArgumentAssembler) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
 
 // SetRecordValueCount number of expected values within each set. Must be
-// applied if columns have been omitted and AddRecords gets called or Records
-// gets set in a different way.
+// applied if a call to AddColumns has been omitted and AddRecords gets called
+// or Records gets set in a different way.
+//		INSERT INTO tableX (?,?,?)
+// SetRecordValueCount would now be 3 because of the three place holders.
 func (b *Insert) SetRecordValueCount(valueCount int) *Insert {
 	// maybe we can do better and remove this method ...
 	b.RecordValueCount = valueCount
@@ -229,13 +233,16 @@ func (b *Insert) ToSQL() (string, Arguments, error) {
 	return toSQL(b, b.IsInterpolate)
 }
 
-func (b *Insert) writeBuildCache(sql []byte, arguments Arguments) {
-	b.buildCache = sql
-	b.RawArguments = arguments
+func (b *Insert) writeBuildCache(sql []byte) {
+	b.cacheSQL = sql
 }
 
-func (b *Insert) readBuildCache() (sql []byte, arguments Arguments) {
-	return b.buildCache, b.RawArguments
+func (b *Insert) readBuildCache() (sql []byte, _ Arguments, err error) {
+	if b.cacheSQL == nil {
+		return nil, nil, nil
+	}
+	b.cacheArgs, err = b.appendArgs(b.cacheArgs[:0])
+	return b.cacheSQL, b.cacheArgs, err
 }
 
 func (b *Insert) hasBuildCache() bool {
@@ -381,7 +388,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 
 	totalArgCount := len(b.Values) * argCount0
-	if args == nil {
+	if cap(args) == 0 {
 		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
 	}
 	for _, v := range b.Values {

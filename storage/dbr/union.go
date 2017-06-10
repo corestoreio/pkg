@@ -25,11 +25,14 @@ import (
 // Union represents a UNION SQL statement. UNION is used to combine the result
 // from multiple SELECT statements into a single result set.
 type Union struct {
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
+	// UseBuildCache if `true` the final build query including place holders
+	// will be cached in a private field. Each time a call to function ToSQL
+	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
-	buildCache    []byte
-	RawArguments  Arguments // Arguments used by RawFullSQL or BuildCache
+	cacheSQL      []byte
+	cacheArgs     Arguments // like a buffer, gets reused
+
+	RawArguments Arguments // Arguments used by RawFullSQL
 
 	Selects       []*Select
 	OrderBys      aliases
@@ -108,13 +111,16 @@ func (u *Union) ToSQL() (string, Arguments, error) {
 	return toSQL(u, u.IsInterpolate)
 }
 
-func (u *Union) writeBuildCache(sql []byte, arguments Arguments) {
-	u.buildCache = sql
-	u.RawArguments = arguments
+func (u *Union) writeBuildCache(sql []byte) {
+	u.cacheSQL = sql
 }
 
-func (u *Union) readBuildCache() (sql []byte, arguments Arguments) {
-	return u.buildCache, u.RawArguments
+func (u *Union) readBuildCache() (sql []byte, _ Arguments, err error) {
+	if u.cacheSQL == nil {
+		return nil, nil, nil
+	}
+	u.cacheArgs, err = u.appendArgs(u.cacheArgs[:0])
+	return u.cacheSQL, u.cacheArgs, err
 }
 
 func (u *Union) hasBuildCache() bool {
@@ -138,10 +144,17 @@ func (u *Union) toSQL(w queryWriter) error {
 	sqlWriteOrderBy(w, u.OrderBys, true)
 	return nil
 }
+func (u *Union) makeArguments() Arguments {
+	var argCap int
+	for _, s := range u.Selects {
+		argCap += s.argumentCapacity()
+	}
+	return make(Arguments, 0, len(u.Selects)*argCap)
+}
 
 func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
-	if args == nil {
-		args = make(Arguments, 0, len(u.Selects)*2) // 2 == just guessed
+	if cap(args) == 0 {
+		args = u.makeArguments()
 	}
 	for i, s := range u.Selects {
 		args, err = s.appendArgs(args)
@@ -156,7 +169,7 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 // on a common template.
 type UnionTemplate struct {
 	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `buildCache` and the arguments in field `Arguments`
+	// field private field `cacheSQL` and the arguments in field `Arguments`
 	UseBuildCache bool
 	buildCache    []byte
 	RawArguments  Arguments // Arguments used by RawFullSQL or BuildCache
@@ -273,13 +286,19 @@ func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
 	return toSQL(ut, ut.IsInterpolate)
 }
 
-func (ut *UnionTemplate) writeBuildCache(sql []byte, arguments Arguments) {
+func (ut *UnionTemplate) writeBuildCache(sql []byte) {
 	ut.buildCache = sql
-	ut.RawArguments = arguments
 }
 
-func (ut *UnionTemplate) readBuildCache() (sql []byte, arguments Arguments) {
-	return ut.buildCache, ut.RawArguments
+func (u *UnionTemplate) readBuildCache() (sql []byte, _ Arguments, err error) {
+	if u.buildCache == nil {
+		return nil, nil, nil
+	}
+	if u.RawArguments == nil {
+		u.RawArguments = make(Arguments, 0, 10)
+	}
+	u.RawArguments, err = u.appendArgs(u.RawArguments[:0])
+	return u.buildCache, u.RawArguments, err
 }
 
 func (ut *UnionTemplate) hasBuildCache() bool {
