@@ -89,11 +89,6 @@ func ExampleUpdateMulti() {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// </ignore_this>
 
-	// Our objects which should update the columns in the database table
-	// `sales_order`.
-	so1 := salesOrder{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
-	so2 := salesOrder{2, "processing", 7, 8912, dbr.NullFloat64{}}
-
 	// Create the multi update statement
 	um := dbr.NewUpdateMulti(
 		dbr.NewUpdate("sales_order").
@@ -104,9 +99,14 @@ func ExampleUpdateMulti() {
 				dbr.Column("entity_id", dbr.Equal.Int64()),          // Int64() acts as a place holder
 			).
 			WithDB(dbc.DB), // Our template statement
-	).AddRecords(so1, so2)
+	)
 
-	results, err := um.Exec(context.Background())
+	// Our objects which should update the columns in the database table
+	// `sales_order`.
+	so1 := salesOrder{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
+	so2 := salesOrder{2, "processing", 7, 8912, dbr.NullFloat64{}}
+
+	results, err := um.Exec(context.Background(), so1, so2)
 	if err != nil {
 		fmt.Printf("Exec Error: %+v\n", err)
 		return

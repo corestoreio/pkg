@@ -476,16 +476,12 @@ type UpdateMulti struct {
 	// Update represents the template UPDATE statement.
 	Update *Update
 
-	// Alias provides a special feature that instead of the column name, the
-	// alias will be passed to the ArgumentGenerater.Record function. If the alias
-	// slice is empty the column names get passed. Otherwise the alias slice
-	// must have the same length as the columns slice.
-	Alias   []string
-	Records []ArgumentAssembler
-	// RecordChan waits for incoming records to send them to the prepared
-	// statement. If the channel gets closed the transaction gets terminated and
-	// the UPDATE statement removed.
-	RecordChan <-chan ArgumentAssembler
+	// ColumnAliases provides a special feature, if set, that instead of the
+	// column names, the aliases will be passed to the ArgumentGenerater.Record
+	// function. The alias slice must have the same length as the columns slice.
+	// Despite setting `ColumnAliases` the Update.SetClauses.Columns must be
+	// provided to create a valid SQL statement.
+	ColumnAliases []string
 }
 
 // NewUpdateMulti creates new UPDATE statement which runs multiple times for a
@@ -494,12 +490,6 @@ func NewUpdateMulti(tpl *Update) *UpdateMulti {
 	return &UpdateMulti{
 		Update: tpl,
 	}
-}
-
-// AddRecords pulls in values to match Columns from the record.
-func (b *UpdateMulti) AddRecords(recs ...ArgumentAssembler) *UpdateMulti {
-	b.Records = append(b.Records, recs...)
-	return b
 }
 
 // Transaction enables transaction usage and sets an optional isolation level.
@@ -516,11 +506,8 @@ func (b *UpdateMulti) validate() error {
 	if len(b.Update.SetClauses.Columns) == 0 {
 		return errors.NewEmptyf("[dbr] UpdateMulti: Columns are empty")
 	}
-	if len(b.Alias) > 0 && len(b.Alias) != len(b.Update.SetClauses.Columns) {
-		return errors.NewMismatchf("[dbr] UpdateMulti: Alias slice and Columns slice must have the same length")
-	}
-	if len(b.Records) == 0 && b.RecordChan == nil {
-		return errors.NewEmptyf("[dbr] UpdateMulti: Records empty or RecordChan is nil")
+	if len(b.ColumnAliases) > 0 && len(b.ColumnAliases) != len(b.Update.SetClauses.Columns) {
+		return errors.NewMismatchf("[dbr] UpdateMulti: ColumnAliases slice and Columns slice must have the same length")
 	}
 	return nil
 }
@@ -535,7 +522,7 @@ func txUpdateMultiRollback(tx Txer, previousErr error, msg string, args ...inter
 
 // Exec runs multiple UPDATE queries for different records in serial order. The
 // returned result slice indexes are same index as for the Records slice.
-func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
+func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([]sql.Result, error) {
 	if err := b.validate(); err != nil {
 		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec")
 	}
@@ -543,7 +530,7 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 	if b.Update.Log != nil && b.Update.Log.IsInfo() {
 		defer log.WhenDone(b.Update.Log).Info("dbr.UpdateMulti.Exec.Timing",
 			log.Stringer("sql", b.Update),
-			log.Int("records", len(b.Records)))
+			log.Int("records", len(records)))
 	}
 
 	isInterpolate := b.Update.IsInterpolate
@@ -578,10 +565,13 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 		defer stmt.Close() // todo check for error
 	}
 
-	args := make(Arguments, 0, len(b.Records)+len(b.Update.WhereFragments))
-	results := make([]sql.Result, len(b.Records))
-	for i, rec := range b.Records {
-		// For parallel execution see ExecChan
+	if len(b.ColumnAliases) > 0 {
+		b.Update.SetClauses.Columns = b.ColumnAliases
+	}
+
+	args := make(Arguments, 0, (len(records)+len(b.Update.WhereFragments))*3) // 3 just a guess
+	results := make([]sql.Result, len(records))
+	for i, rec := range records {
 		b.Update.SetClauses.Record = rec
 		args, err = b.Update.appendArgs(args)
 		if err != nil {
@@ -617,17 +607,33 @@ func (b *UpdateMulti) Exec(ctx context.Context) ([]sql.Result, error) {
 // ExecChan executes incoming Records and writes the output into the provided
 // channels. It closes the channels once the queries have been sent.
 // All queries will run parallel, except when using a transaction.
-func (b *UpdateMulti) ExecChan(resChan chan<- sql.Result, errChan chan<- error) {
-	defer close(resChan)
-	defer close(errChan)
-	if err := b.validate(); err != nil {
-		errChan <- errors.Wrap(err, "[dbr] UpdateMulti.Exec")
-		return
-	}
-	// This could run in parallel but it depends if each exec gets a
-	// different connection. In a transaction only serial processing is
-	// possible because a Go transaction gets bound to one connection.
-
-	panic("TODO(CyS) implement")
-
-}
+//func (b *UpdateMulti) ExecChan(ctx context.Context, records <-chan ArgumentAssembler, results chan<- sql.Result, errs chan<- error) {
+//	defer close(errs)
+//	defer close(errs)
+//	if err := b.validate(); err != nil {
+//		errs <- errors.Wrap(err, "[dbr] UpdateMulti.Exec")
+//		return
+//	}
+//
+//	// RecordChan waits for incoming records to send them to the prepared
+//	// statement. If the channel gets closed the transaction gets terminated and
+//	// the UPDATE statement removed.
+//
+//	//g, ctx := errgroup.WithContext(ctx)
+//	//
+//	//g.Go()
+//	//
+//	//go func() {
+//	//	g.Wait()
+//	//	close(b.RecordChan)
+//	//}()
+//	//
+//	//if err := g.Wait(); err != nil {
+//	//	errChan <- errors.Wrap(err, "[dbr] UpdateMulti.Exec.ErrGroup.Wait")
+//	//}
+//
+//	// This could run in parallel but it depends if each exec gets a
+//	// different connection. In a transaction only serial processing is
+//	// possible because a Go transaction gets bound to one connection.
+//
+//}

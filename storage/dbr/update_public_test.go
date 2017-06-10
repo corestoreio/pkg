@@ -42,17 +42,23 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("alias mismatch", func(t *testing.T) {
 		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id", dbr.In.Int64())))
-		mu.Alias = []string{"update_sku"}
+		mu.ColumnAliases = []string{"update_sku"}
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id", dbr.In.Int64())))
+		mu := dbr.NewUpdateMulti(
+			dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").
+				Where(dbr.Column("entity_id", dbr.In.Int64())).WithDB(dbMock{
+				error: errors.NewAlreadyClosedf("Who closed myself?"),
+			}),
+		)
+
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
-		assert.True(t, errors.IsEmpty(err), "%+v", err)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 
 	records := []dbr.ArgumentAssembler{
@@ -70,7 +76,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	mu := dbr.NewUpdateMulti(
 		dbr.NewUpdate("customer_entity", "ce").AddColumns("name", "email").Where(dbr.Column("id", dbr.Equal.Int64())).Interpolate(),
-	).AddRecords(records...)
+	)
 
 	// SM = SQL Mock
 	setSQLMockInterpolate := func(m sqlmock.Sqlmock) {
@@ -99,7 +105,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 		mu.Update.WithDB(dbc.DB)
 
-		results, err := mu.Exec(context.TODO())
+		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -128,7 +134,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.IsInterpolate = false
 		mu.Update.WithDB(dbc.DB)
 
-		results, err := mu.Exec(context.TODO())
+		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -161,7 +167,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.IsInterpolate = false
 		mu.Update.WithDB(dbc.DB)
 
-		results, err := mu.Exec(context.TODO())
+		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -194,7 +200,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Update.IsInterpolate = true
 		mu.Update.WithDB(dbc.DB)
 
-		results, err := mu.Exec(context.TODO())
+		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -209,14 +215,57 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	})
 }
 
-func TestNewUpdateMulti(t *testing.T) {
+// Make sure that type salesInvoice implements interface.
+var _ dbr.ArgumentAssembler = (*salesInvoice)(nil)
+
+// salesInvoice represents just a demo record.
+type salesInvoice struct {
+	EntityID   int64  // Auto Increment
+	State      string // processing, pending, shipped,
+	StoreID    dbr.ArgInt64
+	CustomerID int64
+	GrandTotal dbr.NullFloat64
+}
+
+func (so salesInvoice) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	for _, c := range columns {
+		switch c {
+		case "entity_id":
+			args = append(args, dbr.ArgInt64(so.EntityID))
+		case "state":
+			args = append(args, dbr.ArgString(so.State))
+		case "store_id":
+			args = append(args, so.StoreID)
+		case "customer_id":
+			args = append(args, dbr.ArgInt64(so.CustomerID))
+		case "alias_customer_id":
+			// Here can be a special treatment implement like encoding to JSON or encryption
+			args = append(args, dbr.ArgInt64(so.CustomerID))
+		case "grand_total":
+			args = append(args, so.GrandTotal)
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+	}
+	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
+		args = append(args,
+			dbr.ArgInt64(so.EntityID),
+			dbr.ArgString(so.State),
+			so.StoreID,
+			dbr.ArgInt64(so.CustomerID),
+			so.GrandTotal,
+		)
+	}
+	return args, nil
+}
+
+func TestUpdateMulti_ColumnAliases(t *testing.T) {
 	t.Parallel()
 
-	dbc, dbMock := cstesting.MockDB(fatalLog{})
+	dbc, dbMock := cstesting.MockDB(t)
 
 	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
-		// "UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN ?) AND (`entity_id` = ?)",
-		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` = ?) AND (`entity_id` = ?)",
+		"UPDATE `sales_invoice` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` = ?) AND (`entity_id` = ?)",
 	))
 
 	prep.ExpectExec().WithArgs(
@@ -229,12 +278,12 @@ func TestNewUpdateMulti(t *testing.T) {
 	// </ignore_this>
 
 	// Our objects which should update the columns in the database table
-	// `sales_order`.
-	so1 := salesOrder{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
-	so2 := salesOrder{2, "processing", 7, 8912, dbr.NullFloat64{}}
+	// `sales_invoice`.
+	so1 := salesInvoice{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
+	so2 := salesInvoice{2, "processing", 7, 8912, dbr.NullFloat64{}}
 
 	// Create the multi update statement
-	um := dbr.NewUpdateMulti(dbr.NewUpdate("sales_order").
+	um := dbr.NewUpdateMulti(dbr.NewUpdate("sales_invoice").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
 			// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
@@ -242,9 +291,11 @@ func TestNewUpdateMulti(t *testing.T) {
 			dbr.Column("entity_id", dbr.Equal.Int64()),          // Int64() acts as a place holder
 		).
 		WithDB(dbc.DB), // Our template statement
-	).AddRecords(so1, so2)
+	)
 
-	results, err := um.Exec(context.Background())
+	um.ColumnAliases = []string{"state", "alias_customer_id", "grand_total"}
+
+	results, err := um.Exec(context.Background(), so1, so2)
 	require.NoError(t, err)
 
 	dbMock.ExpectClose()
