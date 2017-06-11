@@ -463,7 +463,7 @@ func (uc UpdatedColumns) appendArgs(args Arguments) (Arguments, error) {
 }
 
 // UpdateMulti allows to run an UPDATE statement multiple times with different
-// values in an optionally transaction. If you enable the interpolate feature on
+// records in an optionally transaction. If you enable the interpolate feature on
 // the Update object the interpolated SQL string will be send each time to the
 // SQL server otherwise a prepared statement will be created. Create a single
 // Update object without the SET columns and without arguments. Add a WHERE
