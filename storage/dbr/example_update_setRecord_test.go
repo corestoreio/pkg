@@ -56,16 +56,19 @@ func ExampleUpdate_SetRecord() {
 
 	// Updates all rows in the table
 	u := dbr.NewUpdate("catalog_category_entity").
-		SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce)
+		AddColumns("attribute_set_id", "parent_id", "path").
+		SetRecord(ce)
 	writeToSQLAndInterpolate(u)
 
 	fmt.Print("\n\n")
 
 	ce = &categoryEntity{678, 6, "p456", dbr.NullString{}}
 
-	// Updates only one row in the table
+	// Updates only one row in the table. You can call SetRecord and Exec as
+	// often as you like. Each call to Exec will reassemble the arguments.
 	u = dbr.NewUpdate("catalog_category_entity").
-		SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
+		AddColumns("attribute_set_id", "parent_id", "path").
+		SetRecord(ce).
 		Where(dbr.Column("entity_id", dbr.Equal.Int64())) // No Arguments in Int64 because we need a place holder.
 	writeToSQLAndInterpolate(u)
 

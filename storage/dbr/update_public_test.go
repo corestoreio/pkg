@@ -319,7 +319,8 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 
 	t.Run("1 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
-			SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
+			AddColumns("attribute_set_id", "parent_id", "path").
+			SetRecord(ce).
 			Where(dbr.Column("entity_id", dbr.Greater.Int64())) // No Arguments in Int64 because we need a place holder.
 
 		compareToSQL(t, u, nil,
@@ -331,7 +332,8 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 
 	t.Run("2 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
-			SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
+			AddColumns("attribute_set_id", "parent_id", "path").
+			SetRecord(ce).
 			Where(
 				dbr.Column("x", dbr.In.Int64(66, 77)),
 				dbr.Column("entity_id", dbr.Greater.Int64()),
@@ -344,7 +346,8 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 	})
 	t.Run("3 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
-			SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
+			AddColumns("attribute_set_id", "parent_id", "path").
+			SetRecord(ce).
 			Where(
 				dbr.Column("entity_id", dbr.Greater.Int64()),
 				dbr.Column("x", dbr.In.Int64(66, 77)),

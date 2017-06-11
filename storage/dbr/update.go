@@ -37,6 +37,9 @@ type Update struct {
 	cacheArgs    Arguments // like a buffer, gets reused
 
 	Table alias
+	// Record   the new record which gets written to the database or assembles
+	// the JOIN/WHERE conditions.
+	Record ArgumentAssembler
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
 	SetClauses     UpdatedColumns
@@ -145,12 +148,11 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 
 // SetRecord sets a new argument generator type. See the example for more
 // details.
-func (b *Update) SetRecord(columns []string, rec ArgumentAssembler) *Update {
+func (b *Update) SetRecord(rec ArgumentAssembler) *Update {
 	if b.previousError != nil {
 		return b
 	}
-	b.SetClauses.Columns = append(b.SetClauses.Columns, columns...)
-	b.SetClauses.Record = rec
+	b.Record = rec
 	return b
 }
 
@@ -314,9 +316,9 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	if cap(args) == 0 {
 		args = make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
 	}
-	if b.SetClauses.Record != nil {
+	if b.Record != nil {
 		var err error
-		args, err = b.SetClauses.Record.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
+		args, err = b.Record.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
 		if err != nil {
 			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
 		}
@@ -336,7 +338,7 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.write")
 	}
-	if args, err = appendAssembledArgs(pap, b.SetClauses.Record, args, SQLStmtUpdate|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtUpdate|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
 		return nil, errors.Wrap(err, "[dbr] Update.toSQL.appendAssembledArgs")
 	}
 
@@ -406,7 +408,6 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 type UpdatedColumns struct {
 	Columns   []string
 	Arguments Arguments
-	Record    ArgumentAssembler
 }
 
 // writeOnDuplicateKey writes the columns to `w` and appends the arguments to
@@ -585,7 +586,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 	}
 
 	for i, rec := range records {
-		b.Update.SetClauses.Record = rec
+		b.Update.Record = rec
 		args, err = b.Update.appendArgs(args)
 		if err != nil {
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
