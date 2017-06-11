@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/util/wordwrap"
 )
 
-func writeToSqlAndPreprocess(qb dbr.QueryBuilder) {
+func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	sqlStr, args, err := qb.ToSQL()
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -42,7 +42,7 @@ func writeToSqlAndPreprocess(qb dbr.QueryBuilder) {
 		fmt.Printf("%+v\n", err)
 		return
 	}
-	fmt.Println("Preprocessed Statement:")
+	fmt.Println("Interpolated Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
 }
 
@@ -51,14 +51,14 @@ func ExampleNewInsert() {
 		AddColumns("b", "c", "d", "e").
 		AddValues(1, 2, "Three", nil).
 		AddValues(5, 6, "Seven", 3.14156)
-	writeToSqlAndPreprocess(i)
+	writeToSQLAndInterpolate(i)
 
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES (?,?,?,?),(?,?,?,?)
 	//Arguments: [1 2 Three <nil> 5 6 Seven 3.14156]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES
 	//(1,2,'Three',NULL),(5,6,'Seven',3.14156)
 }
@@ -68,14 +68,14 @@ func ExampleNewInsert_withoutColumns() {
 		AddValues(2046, 33, 3).
 		AddValues(2046, 34, 3).
 		AddValues(2046, 35, 3)
-	writeToSqlAndPreprocess(i)
+	writeToSQLAndInterpolate(i)
 
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
 	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
 }
 
@@ -86,7 +86,7 @@ func ExampleInsert_AddValues() {
 		AddValues(2046, 33, 3).
 		AddValues(2046, 34, 3).
 		AddValues(2046, 35, 3)
-	writeToSqlAndPreprocess(i)
+	writeToSQLAndInterpolate(i)
 	fmt.Print("\n\n")
 
 	// Specifying columns allows to call only one time AddValues but inserting
@@ -98,14 +98,14 @@ func ExampleInsert_AddValues() {
 			2046, 34, 3,
 			2046, 35, 3,
 		)
-	writeToSqlAndPreprocess(i)
+	writeToSQLAndInterpolate(i)
 
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
 	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
 	//
 	//Prepared Statement:
@@ -113,7 +113,7 @@ func ExampleInsert_AddValues() {
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?),(?,?,?)
 	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `catalog_product_link`
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES
 	//(2046,33,3),(2046,34,3),(2046,35,3)
@@ -125,7 +125,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 		AddValues(1, "Pik'e", "pikes@peak.com").
 		AddOnDuplicateKey("name", dbr.ArgString("Pik3")).
 		AddOnDuplicateKey("email", nil)
-	writeToSqlAndPreprocess(i)
+	writeToSQLAndInterpolate(i)
 
 	// Output:
 	//Prepared Statement:
@@ -133,7 +133,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 	//UPDATE `name`=?, `email`=VALUES(`email`)
 	//Arguments: [1 Pik'e pikes@peak.com Pik3]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `dbr_people` (`id`,`name`,`email`) VALUES
 	//(1,'Pik\'e','pikes@peak.com') ON DUPLICATE KEY UPDATE `name`='Pik3',
 	//`email`=VALUES(`email`)
@@ -158,7 +158,7 @@ func ExampleInsert_FromSelect() {
 			OrderByDesc("id").
 			Paginate(1, 20),
 	)
-	writeToSqlAndPreprocess(ins)
+	writeToSQLAndInterpolate(ins)
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
@@ -166,7 +166,7 @@ func ExampleInsert_FromSelect() {
 	//`id` DESC LIMIT 20 OFFSET 0
 	//Arguments: [1 wat 1 2 3]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
 	//WHERE ((`int64A` >= 1) OR (`string` = 'wat')) AND (`int64B` IN (1,2,3)) ORDER BY
 	//`id` DESC LIMIT 20 OFFSET 0
@@ -178,14 +178,14 @@ func ExampleNewDelete() {
 		dbr.Column("b", dbr.In.Int(3, 4, 5, 6)),
 	).
 		Limit(1).OrderBy("id")
-	writeToSqlAndPreprocess(d)
+	writeToSQLAndInterpolate(d)
 	// Output:
 	//Prepared Statement:
 	//DELETE FROM `tableA` WHERE (`a` LIKE ?) AND (`b` IN (?,?,?,?)) ORDER BY `id`
 	//LIMIT 1
 	//Arguments: [b'% 3 4 5 6]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY
 	//`id` LIMIT 1
 }
@@ -212,7 +212,7 @@ func ExampleNewUnion() {
 		PreserveResultSet() // Maintains the correct order of the result set for all SELECTs.
 	// Note that the final ORDER BY statement of a UNION creates a temporary
 	// table in MySQL.
-	writeToSqlAndPreprocess(u)
+	writeToSQLAndInterpolate(u)
 	// Output:
 	//Prepared Statement:
 	//(SELECT `a1` AS `A`, `a2` AS `B`, 0 AS `_preserve_result_set` FROM `tableA`
@@ -226,7 +226,7 @@ func ExampleNewUnion() {
 	//ORDER BY `_preserve_result_set`, `A` ASC, `B` DESC
 	//Arguments: [3 4 - ArgForC2]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//(SELECT `a1` AS `A`, `a2` AS `B`, 0 AS `_preserve_result_set` FROM `tableA`
 	//WHERE (`a1` = 3))
 	//UNION ALL
@@ -238,79 +238,22 @@ func ExampleNewUnion() {
 	//ORDER BY `_preserve_result_set`, `A` ASC, `B` DESC
 }
 
-func ExampleNewUnionTemplate() {
-
-	u := dbr.NewUnionTemplate(
-		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
-			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))),
-	).
-		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
-		PreserveResultSet().
-		All().OrderBy("attribute_id", "store_id")
-	writeToSqlAndPreprocess(u)
-	// Output:
-	//Prepared Statement:
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
-	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
-	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
-	//
-	//Preprocessed Statement:
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
-	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE
-	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE
-	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE
-	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//UNION ALL
-	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
-	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
-	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
-}
-
-// ExampleUnionTemplate_Interpolate interpolates the SQL string with its
-// placeholders and puts for each placeholder the correct encoded and escaped
-// value into it. Eliminates the need for prepared statements by sending in one
-// round trip the query and its arguments directly to the database server. If
+// ExampleNewUnion_template interpolates the SQL string with its placeholders
+// and puts for each placeholder the correct encoded and escaped value into it.
+// Eliminates the need for prepared statements. Avoids an additional round trip
+// to the database server by sending the query and its arguments directly. If
 // you execute a query multiple times within a short time you should use
 // prepared statements.
-func ExampleUnionTemplate_Interpolate() {
+func ExampleNewUnion_template() {
 
-	u := dbr.NewUnionTemplate(
+	u := dbr.NewUnion(
 		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
 			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
 		All().OrderBy("attribute_id", "store_id")
-	writeToSqlAndPreprocess(u)
+	writeToSQLAndInterpolate(u)
 	// Output:
 	//Prepared Statement:
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
@@ -335,7 +278,7 @@ func ExampleUnionTemplate_Interpolate() {
 	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
 	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
@@ -521,14 +464,14 @@ func ExampleSubSelect() {
 			dbr.NewSelect().From("catalog_category_product").
 				AddColumns("entity_id").Where(dbr.Column("category_id", dbr.ArgInt64(234))),
 		))
-	writeToSqlAndPreprocess(s)
+	writeToSQLAndInterpolate(s)
 	// Output:
 	//Prepared Statement:
 	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
 	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))
 	//Arguments: [234]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
 	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` =
 	//234)))
@@ -551,7 +494,7 @@ func ExampleNewSelectFromSub() {
 		AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 		Where(dbr.Column("product_name", dbr.ArgString("Sony%"))).
 		OrderBy("t1.period", "t1.product_id")
-	writeToSqlAndPreprocess(sel1)
+	writeToSQLAndInterpolate(sel1)
 	// Output:
 	//Prepared Statement:
 	//SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`,
@@ -565,7 +508,7 @@ func ExampleNewSelectFromSub() {
 	//(`product_name` = ?) ORDER BY `t1`.`period`, `t1`.`product_id`
 	//Arguments: [Canon% Sony%]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`,
 	//`t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT DATE_FORMAT(t3.period,
 	//'%Y-%m-01') AS `period`, `t3`.`store_id`, `t3`.`product_id`,
@@ -614,14 +557,14 @@ func ExampleSQLIf() {
 			dbr.SQLIf("a > 0", "b", "c"),
 			dbr.Greater.Int(4711),
 		))
-	writeToSqlAndPreprocess(s)
+	writeToSQLAndInterpolate(s)
 
 	// Output:
 	//Prepared Statement:
 	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)
 	//Arguments: [4711]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)
 }
 
@@ -636,7 +579,7 @@ func ExampleSQLCase_update() {
 			dbr.Column("product_id", dbr.In.Int64(345, 567, 897)),
 			dbr.Column("website_id", dbr.ArgInt64(6)),
 		)
-	writeToSqlAndPreprocess(u)
+	writeToSQLAndInterpolate(u)
 
 	// Output:
 	//Prepared Statement:
@@ -645,7 +588,7 @@ func ExampleSQLCase_update() {
 	//IN (?,?,?)) AND (`website_id` = ?)
 	//Arguments: [3 4 5 345 567 897 6]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
 	//qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id`
 	//IN (345,567,897)) AND (`website_id` = 6)
@@ -667,7 +610,7 @@ func ExampleSQLCase_select() {
 		AddArguments(start, end, start, end).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id", dbr.NotIn.Int(4711, 815, 42)))
-	writeToSqlAndPreprocess(s)
+	writeToSQLAndInterpolate(s)
 
 	// Output:
 	//Prepared Statement:
@@ -677,7 +620,7 @@ func ExampleSQLCase_select() {
 	//(`promotion_id` NOT IN (?,?,?))
 	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
 	//date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
@@ -701,7 +644,7 @@ func ExampleSelect_AddArguments() {
 		AddArguments(start, end, start, end).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id", dbr.NotIn.Int(4711, 815, 42)))
-	writeToSqlAndPreprocess(s)
+	writeToSQLAndInterpolate(s)
 
 	// Output:
 	//Prepared Statement:
@@ -711,7 +654,7 @@ func ExampleSelect_AddArguments() {
 	//(`promotion_id` NOT IN (?,?,?))
 	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
 	//'2009-11-11 00:00:00' AND date_end >= '2009-11-12 00:00:00' THEN `open` WHEN
 	//date_start > '2009-11-11 00:00:00' AND date_end > '2009-11-12 00:00:00' THEN
@@ -741,7 +684,7 @@ func ExampleParenthesisOpen() {
 		OrderBy("l").
 		Limit(7).
 		Offset(8)
-	writeToSqlAndPreprocess(s)
+	writeToSQLAndInterpolate(s)
 
 	// Output:
 	//Prepared Statement:
@@ -750,7 +693,7 @@ func ExampleParenthesisOpen() {
 	//?)) ORDER BY `l` LIMIT 7 OFFSET 8
 	//Arguments: [1 wat 2 33 wh3r3]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
 	//(`e` = 'wat')) AND (`f` = 2) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR
 	//(`n` = 'wh3r3')) ORDER BY `l` LIMIT 7 OFFSET 8

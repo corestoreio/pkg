@@ -69,11 +69,11 @@ func ExampleInsert_AddRecords() {
 
 	i := dbr.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").
 		AddRecords(objs[0]).AddRecords(objs[1])
-	writeToSqlAndPreprocess(i)
+	writeToSQLAndInterpolate(i)
 
 	fmt.Print("\n\n")
 	i = dbr.NewInsert("catalog_product_entity").SetRecordValueCount(5).AddRecords(objs[0]).AddRecords(objs[1])
-	writeToSqlAndPreprocess(i)
+	writeToSQLAndInterpolate(i)
 
 	// Output:
 	//Prepared Statement:
@@ -81,7 +81,7 @@ func ExampleInsert_AddRecords() {
 	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES (?,?,?,?),(?,?,?,?)
 	//Arguments: [5 simple SOA9 false 5 virtual <nil> true]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `catalog_product_entity`
 	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES
 	//(5,'simple','SOA9',0),(5,'virtual',NULL,1)
@@ -90,7 +90,7 @@ func ExampleInsert_AddRecords() {
 	//INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)
 	//Arguments: [1 5 simple SOA9 false 2 5 virtual <nil> true]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//INSERT INTO `catalog_product_entity` VALUES
 	//(1,5,'simple','SOA9',0),(2,5,'virtual',NULL,1)
 }

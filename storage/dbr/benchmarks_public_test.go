@@ -544,7 +544,7 @@ func BenchmarkUnion(b *testing.B) {
 		}
 	})
 	b.Run("Template", func(b *testing.B) {
-		u := dbr.NewUnionTemplate(
+		u := dbr.NewUnion(
 			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'{column}'", "col_type").From("catalog_product_entity_{type}", "t").
 				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 				OrderByDesc("t.{column}_store_id"),

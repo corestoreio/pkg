@@ -24,6 +24,8 @@ import (
 
 // Union represents a UNION SQL statement. UNION is used to combine the result
 // from multiple SELECT statements into a single result set.
+// With template usage enabled, it builds multiple select statements joined by
+// UNION and all based on a common template.
 type Union struct {
 	// UseBuildCache if `true` the final build query including place holders
 	// will be cached in a private field. Each time a call to function ToSQL
@@ -32,22 +34,28 @@ type Union struct {
 	cacheSQL      []byte
 	cacheArgs     Arguments // like a buffer, gets reused
 
-	RawArguments Arguments // Arguments used by RawFullSQL
-
 	Selects       []*Select
 	OrderBys      aliases
 	IsAll         bool // IsAll enables UNION ALL
 	IsInterpolate bool // See Interpolate()
+
+	// When using Union as a template, only one *Select is required.
+	oldNew        [][]string //use for string replacement with `repls` field
+	repls         []*strings.Replacer
+	stmtCount     int
+	previousError error
 }
 
-// NewUnion creates a new Union object.
+// NewUnion creates a new Union object. If using as a template, only one *Select
+// object can be provided.
 func NewUnion(selects ...*Select) *Union {
 	return &Union{
 		Selects: selects,
 	}
 }
 
-// Append adds more Select objects to the Union object.
+// Append adds more *Select objects to the Union object. When using Union as a
+// template only one *Select object can be provided.
 func (u *Union) Append(selects ...*Select) *Union {
 	u.Selects = append(u.Selects, selects...)
 	return u
@@ -66,10 +74,20 @@ func (u *Union) All() *Union {
 // SELECT one after the other, select an additional column in each SELECT to use
 // as a sort column and add an ORDER BY following the last SELECT.
 func (u *Union) PreserveResultSet() *Union {
-	for i, s := range u.Selects {
-		s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
+	if len(u.Selects) > 1 {
+		for i, s := range u.Selects {
+			s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
+		}
+		u.OrderBys = append(aliases{MakeAlias("_preserve_result_set")}, u.OrderBys...)
+		return u
 	}
+
+	// Panics without any *Select in the slice. Programmer error.
+	u.Selects[0].AddColumnsExprAlias("{preserveResultSet}", "_preserve_result_set")
 	u.OrderBys = append(aliases{MakeAlias("_preserve_result_set")}, u.OrderBys...)
+	for i := 0; i < u.stmtCount; i++ {
+		u.oldNew[i] = append(u.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
+	}
 	return u
 }
 
@@ -106,7 +124,48 @@ func (u *Union) Interpolate() *Union {
 	return u
 }
 
-// ToSQL converts the select statements into a string and returns its arguments.
+// StringReplace is only applicable when using *Union as a template.
+// StringReplace replaces the `key` with one of the `values`. Each value defines
+// a generated SELECT query. Repeating calls of StringReplace must provide the
+// same amount of `values` as the first call. This function is just a simple
+// string replacement. Make sure that your key does not match other parts of the
+// SQL query.
+func (u *Union) StringReplace(key string, values ...string) *Union {
+	if len(u.Selects) > 1 {
+		return u
+	}
+	if u.stmtCount == 0 {
+		u.stmtCount = len(values)
+		u.oldNew = make([][]string, u.stmtCount)
+		u.repls = make([]*strings.Replacer, u.stmtCount)
+	}
+	if len(values) != u.stmtCount {
+		u.previousError = errors.NewNotValidf("[dbr] Union.StringReplace: Argument count for values too short. Have %d Want %d", len(values), u.stmtCount)
+		return u
+	}
+	for i := 0; i < u.stmtCount; i++ {
+		u.oldNew[i] = append(u.oldNew[i], key, values[i])
+	}
+	return u
+}
+
+// MultiplyArguments is only applicable when using *Union as a template.
+// MultiplyArguments repeats the `args` variable n-times to match the number of
+// generated SELECT queries in the final UNION statement. It should be called
+// after all calls to `StringReplace` have been made.
+func (u *Union) MultiplyArguments(args ...Argument) Arguments {
+	if len(u.Selects) > 1 {
+		return args
+	}
+	ret := make(Arguments, len(args)*u.stmtCount)
+	lArgs := len(args)
+	for i := 0; i < u.stmtCount; i++ {
+		copy(ret[i*lArgs:], args)
+	}
+	return ret
+}
+
+// ToSQL converts the statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, Arguments, error) {
 	return toSQL(u, u.IsInterpolate)
 }
@@ -130,20 +189,50 @@ func (u *Union) hasBuildCache() bool {
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
 func (u *Union) toSQL(w queryWriter) error {
-	for i, s := range u.Selects {
+	if u.previousError != nil {
+		return u.previousError
+	}
+	if len(u.Selects) > 1 {
+		for i, s := range u.Selects {
+			if i > 0 {
+				sqlWriteUnionAll(w, u.IsAll)
+			}
+			w.WriteByte('(')
+
+			if err := s.toSQL(w); err != nil {
+				return errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
+			}
+			w.WriteByte(')')
+		}
+		sqlWriteOrderBy(w, u.OrderBys, true)
+		return nil
+	}
+
+	bufS1 := bufferpool.Get()
+	err := u.Selects[0].toSQL(bufS1)
+	selStr := bufS1.String()
+	bufferpool.Put(bufS1)
+	if err != nil {
+		return errors.Wrap(err, "[dbr] Union.ToSQL: toSQL template")
+	}
+
+	for i := 0; i < u.stmtCount; i++ {
+		repl := u.repls[i]
+		if repl == nil {
+			repl = strings.NewReplacer(u.oldNew[i]...)
+			u.repls[i] = repl
+		}
 		if i > 0 {
 			sqlWriteUnionAll(w, u.IsAll)
 		}
 		w.WriteByte('(')
-
-		if err := s.toSQL(w); err != nil {
-			return errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
-		}
+		repl.WriteString(w, selStr)
 		w.WriteByte(')')
 	}
 	sqlWriteOrderBy(w, u.OrderBys, true)
 	return nil
 }
+
 func (u *Union) makeArguments() Arguments {
 	var argCap int
 	for _, s := range u.Selects {
@@ -153,197 +242,24 @@ func (u *Union) makeArguments() Arguments {
 }
 
 func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
+	if u.previousError != nil {
+		return nil, u.previousError
+	}
 	if cap(args) == 0 {
 		args = u.makeArguments()
 	}
-	for i, s := range u.Selects {
-		args, err = s.appendArgs(args)
-		if err != nil {
-			return nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
+	if len(u.Selects) > 1 {
+		for i, s := range u.Selects {
+			args, err = s.appendArgs(args)
+			if err != nil {
+				return nil, errors.Wrapf(err, "[dbr] Union.ToSQL at Select index %d", i)
+			}
 		}
+		return args, nil
 	}
-	return args, nil
-}
-
-// UnionTemplate builds multiple select statements joined by UNION and all based
-// on a common template.
-type UnionTemplate struct {
-	// UseBuildCache if set to true the final build query will be stored in
-	// field private field `cacheSQL` and the arguments in field `Arguments`
-	UseBuildCache bool
-	buildCache    []byte
-	RawArguments  Arguments // Arguments used by RawFullSQL or BuildCache
-
-	Select        *Select
-	oldNew        [][]string //use for string replacement with `repls` field
-	repls         []*strings.Replacer
-	stmtCount     int
-	OrderBys      aliases
-	IsAll         bool // IsAll enables UNION ALL
-	IsInterpolate bool // See Interpolate()
-	previousError error
-}
-
-// NewUnionTemplate creates a new UNION generator from a provided SELECT
-// template.
-func NewUnionTemplate(selectTemplate *Select) *UnionTemplate {
-	return &UnionTemplate{
-		Select: selectTemplate,
-	}
-}
-
-// All returns all rows. The default behavior for UNION is that duplicate rows
-// are removed from the result. Enabling ALL returns all rows.
-func (ut *UnionTemplate) All() *UnionTemplate {
-	ut.IsAll = true
-	return ut
-}
-
-// PreserveResultSet enables the correct ordering of the result set from the
-// Select statements. UNION by default produces an unordered set of rows. To
-// cause rows in a UNION result to consist of the sets of rows retrieved by each
-// SELECT one after the other, select an additional column in each SELECT to use
-// as a sort column and add an ORDER BY following the last SELECT.
-func (ut *UnionTemplate) PreserveResultSet() *UnionTemplate {
-	// this API is different than compared to the Union.PreserveResultSet()
-	// because here we can guarantee idempotent calls to ToSQL.
-	ut.Select.AddColumnsExprAlias("{preserveResultSet}", "_preserve_result_set")
-	ut.OrderBys = append(aliases{MakeAlias("_preserve_result_set")}, ut.OrderBys...)
-	for i := 0; i < ut.stmtCount; i++ {
-		ut.oldNew[i] = append(ut.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
-	}
-	return ut
-}
-
-// OrderBy appends a column to ORDER the statement ascending. Columns are
-// getting quoted. MySQL might order the result set in a temporary table, which
-// is slow. Under different conditions sorting can skip the temporary table.
-// https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
-func (ut *UnionTemplate) OrderBy(columns ...string) *UnionTemplate {
-	ut.OrderBys = ut.OrderBys.appendColumns(columns, false).applySort(len(columns), sortAscending)
-	return ut
-}
-
-// OrderByDesc appends columns to the ORDER BY statement for descending sorting.
-// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a DELETE, the server sorts values using only the initial number of
-// bytes indicated by the max_sort_length system variable.
-func (ut *UnionTemplate) OrderByDesc(columns ...string) *UnionTemplate {
-	ut.OrderBys = ut.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
-	return ut
-}
-
-// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
-// quote the strings.
-func (ut *UnionTemplate) OrderByExpr(columns ...string) *UnionTemplate {
-	ut.OrderBys = ut.OrderBys.appendColumns(columns, true)
-	return ut
-}
-
-// StringReplace replaces the `key` with one of the `values`. Each value defines
-// a generated SELECT query. Repeating calls of StringReplace must provide the
-// same amount of `values` as the first call. This function is just a simple
-// string replacement. Make sure that your key does not match other parts of the
-// SQL query.
-func (ut *UnionTemplate) StringReplace(key string, values ...string) *UnionTemplate {
-	if ut.stmtCount == 0 {
-		ut.stmtCount = len(values)
-		ut.oldNew = make([][]string, ut.stmtCount)
-		ut.repls = make([]*strings.Replacer, ut.stmtCount)
-	}
-	if len(values) != ut.stmtCount {
-		ut.previousError = errors.NewNotValidf("[dbr] UnionTemplate.StringReplace: Argument count for values too short. Have %d Want %d", len(values), ut.stmtCount)
-		return ut
-	}
-	for i := 0; i < ut.stmtCount; i++ {
-		ut.oldNew[i] = append(ut.oldNew[i], key, values[i])
-	}
-	return ut
-}
-
-// MultiplyArguments repeats the `args` variable n-times to match the number of
-// generated SELECT queries in the final UNION statement. It should be called
-// after all calls to `StringReplace` have been made.
-func (ut *UnionTemplate) MultiplyArguments(args ...Argument) Arguments {
-	ret := make(Arguments, len(args)*ut.stmtCount)
-	lArgs := len(args)
-	for i := 0; i < ut.stmtCount; i++ {
-		copy(ret[i*lArgs:], args)
-	}
-	return ret
-}
-
-// Interpolate if set stringyfies the arguments into the SQL string and returns
-// pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
-func (ut *UnionTemplate) Interpolate() *UnionTemplate {
-	ut.IsInterpolate = true
-	return ut
-}
-
-// ToSQL converts the select statement into a string and returns its arguments.
-func (ut *UnionTemplate) ToSQL() (string, Arguments, error) {
-	return toSQL(ut, ut.IsInterpolate)
-}
-
-func (ut *UnionTemplate) writeBuildCache(sql []byte) {
-	ut.buildCache = sql
-}
-
-func (u *UnionTemplate) readBuildCache() (sql []byte, _ Arguments, err error) {
-	if u.buildCache == nil {
-		return nil, nil, nil
-	}
-	if u.RawArguments == nil {
-		u.RawArguments = make(Arguments, 0, 10)
-	}
-	u.RawArguments, err = u.appendArgs(u.RawArguments[:0])
-	return u.buildCache, u.RawArguments, err
-}
-
-func (ut *UnionTemplate) hasBuildCache() bool {
-	return ut.UseBuildCache
-}
-
-// ToSQL generates the SQL string and its arguments. Calls to this function are
-// idempotent.
-func (ut *UnionTemplate) toSQL(wu queryWriter) error {
-	if ut.previousError != nil {
-		return ut.previousError
-	}
-
-	w := bufferpool.Get()
-	err := ut.Select.toSQL(w)
-	selStr := w.String()
-	bufferpool.Put(w)
+	args, err = u.Selects[0].appendArgs(args)
 	if err != nil {
-		return errors.Wrap(err, "[dbr] UnionTpl.ToSQL: toSQL template")
+		return nil, errors.Wrap(err, "[dbr] Union.ToSQL: toSQL template")
 	}
-
-	for i := 0; i < ut.stmtCount; i++ {
-		repl := ut.repls[i]
-		if repl == nil {
-			repl = strings.NewReplacer(ut.oldNew[i]...)
-			ut.repls[i] = repl
-		}
-		if i > 0 {
-			sqlWriteUnionAll(wu, ut.IsAll)
-		}
-		wu.WriteByte('(')
-		repl.WriteString(wu, selStr)
-		wu.WriteByte(')')
-	}
-	sqlWriteOrderBy(wu, ut.OrderBys, true)
-	return nil
-}
-
-func (ut *UnionTemplate) appendArgs(args Arguments) (_ Arguments, err error) {
-	if ut.previousError != nil {
-		return nil, ut.previousError
-	}
-	args, err = ut.Select.appendArgs(args)
-	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] UnionTpl.ToSQL: toSQL template")
-	}
-	return ut.MultiplyArguments(args...), nil
+	return u.MultiplyArguments(args...), nil
 }

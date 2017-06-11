@@ -57,7 +57,7 @@ func ExampleUpdate_SetRecord() {
 	// Updates all rows in the table
 	u := dbr.NewUpdate("catalog_category_entity").
 		SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce)
-	writeToSqlAndPreprocess(u)
+	writeToSQLAndInterpolate(u)
 
 	fmt.Print("\n\n")
 
@@ -67,7 +67,7 @@ func ExampleUpdate_SetRecord() {
 	u = dbr.NewUpdate("catalog_category_entity").
 		SetRecord([]string{"attribute_set_id", "parent_id", "path"}, ce).
 		Where(dbr.Column("entity_id", dbr.Equal.Int64())) // No Arguments in Int64 because we need a place holder.
-	writeToSqlAndPreprocess(u)
+	writeToSQLAndInterpolate(u)
 
 	// Output:
 	//Prepared Statement:
@@ -75,7 +75,7 @@ func ExampleUpdate_SetRecord() {
 	//`path`=?
 	//Arguments: [6 p123 4/5/6/7]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p123',
 	//`path`='4/5/6/7'
 	//
@@ -84,7 +84,7 @@ func ExampleUpdate_SetRecord() {
 	//`path`=? WHERE (`entity_id` = ?)
 	//Arguments: [6 p456 <nil> 678]
 	//
-	//Preprocessed Statement:
+	//Interpolated Statement:
 	//UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456',
 	//`path`=NULL WHERE (`entity_id` = 678)
 }

@@ -317,9 +317,6 @@ func compareToSQL(
 	case *Select:
 		dml.Interpolate()
 		defer func() { dml.IsInterpolate = false }()
-	case *UnionTemplate:
-		dml.Interpolate()
-		defer func() { dml.IsInterpolate = false }()
 	case *Union:
 		dml.Interpolate()
 		defer func() { dml.IsInterpolate = false }()

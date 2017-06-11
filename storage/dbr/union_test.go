@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUnion(t *testing.T) {
+func TestUnionStmts(t *testing.T) {
 	t.Parallel()
 	t.Run("simple", func(t *testing.T) {
 		u := NewUnion(
@@ -155,7 +155,7 @@ func TestNewUnionTemplate(t *testing.T) {
 	*/
 
 	t.Run("full statement EAV", func(t *testing.T) {
-		u := NewUnionTemplate(
+		u := NewUnion(
 			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
 				From("catalog_product_entity_{type}", "t").
 				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))).
@@ -185,7 +185,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		}
 	})
 	t.Run("StringReplace 2nd call fewer values", func(t *testing.T) {
-		u := NewUnionTemplate(
+		u := NewUnion(
 			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -193,7 +193,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		compareToSQL(t, u, errors.IsNotValid, "", "")
 	})
 	t.Run("StringReplace 2nd call too many values", func(t *testing.T) {
-		u := NewUnionTemplate(
+		u := NewUnion(
 			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -201,7 +201,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		compareToSQL(t, u, errors.IsNotValid, "", "")
 	})
 
-	t.Run("Preprocessed", func(t *testing.T) {
+	t.Run("Interpolated", func(t *testing.T) {
 		// Hint(CyS): We use the following query all over this file. This EAV
 		// query gets generated here:
 		// app/code/Magento/Eav/Model/ResourceModel/ReadHandler.php::execute but
@@ -219,7 +219,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		// never see the scoped data because the default data overwrites
 		// everything when loading the PHP array.
 
-		u := NewUnionTemplate(
+		u := NewUnion(
 			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
 				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
 		).
@@ -237,7 +237,7 @@ func TestNewUnionTemplate(t *testing.T) {
 func TestUnionTemplate_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
-	u := NewUnionTemplate(
+	u := NewUnion(
 		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
 			Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
 	).
@@ -254,12 +254,12 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 				"",
 				int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0),
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
-		u.buildCache = nil
+		u.cacheSQL = nil
 
 		const cachedSQLInterpolated = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC"
 		for i := 0; i < 3; i++ {
@@ -268,7 +268,7 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 				cachedSQLInterpolated,
 				int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0), int64(1561), int64(1), int64(0),
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(u.buildCache))
+			assert.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
 		}
 	})
 }
