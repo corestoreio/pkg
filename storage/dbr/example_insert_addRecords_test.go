@@ -49,6 +49,7 @@ func (pe productEntity) AssembleArguments(stmtType int, args dbr.Arguments, colu
 		}
 	}
 	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
+		// This case gets executed when an INSERT statement doesn't contain any columns.
 		args = append(args,
 			dbr.ArgInt64(pe.EntityID),
 			dbr.ArgInt64(pe.AttributeSetID),

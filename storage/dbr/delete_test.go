@@ -288,7 +288,7 @@ func TestDelete_AddRecord(t *testing.T) {
 				Column("email", Equal.Str()),
 				Column("int_e", Equal.Int(2718281)),
 			).
-			AddRecord(p).OrderBy("id")
+			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `dbr_people` WHERE (`idI64` > ?) AND (`id` = ?) AND (`float64_pi` = ?) AND (`email` = ?) AND (`int_e` = ?) ORDER BY `id`",
@@ -301,7 +301,7 @@ func TestDelete_AddRecord(t *testing.T) {
 			Where(
 				Column("id", Equal.Int64()),
 			).
-			AddRecord(p).OrderBy("id")
+			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -321,7 +321,7 @@ func TestDelete_AddRecord(t *testing.T) {
 				Column("time_val", Equal.NullTime()),
 				Column("bool_val", Equal.Bool()),
 			).
-			AddRecord(ntr).OrderBy("id")
+			SetRecord(ntr).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `null_type_table` WHERE (`string_val` = ?) AND (`int64_val` = ?) AND (`float64_val` = ?) AND (`random1` BETWEEN ? AND ?) AND (`time_val` = ?) AND (`bool_val` = ?) ORDER BY `id`",

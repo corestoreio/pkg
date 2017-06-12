@@ -1291,7 +1291,7 @@ func TestSelect_AddRecord(t *testing.T) {
 				Column("n", ArgString("wh3r3")),
 			).
 			OrderBy("l").
-			AddRecord(p)
+			SetRecord(p)
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a`, `b` FROM `dbr_person` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) WHERE ((`name` = ?) OR (`e` = ?)) AND (`f` <= ?) AND (`g` > ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING (`email` = ?) AND (`n` = ?) ORDER BY `l`",
@@ -1302,7 +1302,7 @@ func TestSelect_AddRecord(t *testing.T) {
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").From("dbr_people").
 			Join(MakeAlias("dbr_group", "dg"), Column("dp.id", Equal.Str()), Column("dg.name", Equal.Str("XY%"))).
-			AddRecord(p).OrderBy("id")
+			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) AND (`dg`.`name` = ?) ORDER BY `id`",
@@ -1315,7 +1315,7 @@ func TestSelect_AddRecord(t *testing.T) {
 			Where(
 				Column("id", Equal.Int64()),
 			).
-			AddRecord(p).OrderBy("id")
+			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -1329,7 +1329,7 @@ func TestSelect_AddRecord(t *testing.T) {
 				Column("id", Equal.Int64()),
 				Column("name", Like.Str()),
 			).
-			AddRecord(p).OrderBy("id")
+			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` HAVING (`id` = ?) AND (`name` LIKE ?) ORDER BY `id`",

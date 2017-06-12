@@ -210,7 +210,7 @@ func (b *Select) LockInShareMode() *Select {
 	return b
 }
 
-// Count resets the columns to COUNT(*) as `counted`
+// Count resets the columns to COUNT(*) as `counted`.
 func (b *Select) Count() *Select {
 	b.Columns = aliases{
 		MakeAliasExpr("COUNT(*)", "counted"),
@@ -261,8 +261,8 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	return b
 }
 
-// AddRecord pulls in values to match Columns from the record generator.
-func (b *Select) AddRecord(rec ArgumentAssembler) *Select {
+// SetRecord pulls in values to match Columns from the record generator.
+func (b *Select) SetRecord(rec ArgumentAssembler) *Select {
 	b.Record = rec
 	return b
 }

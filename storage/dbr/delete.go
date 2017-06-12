@@ -114,8 +114,8 @@ func (b *Delete) WithDB(db Execer) *Delete {
 	return b
 }
 
-// AddRecord pulls in values to match Columns from the record generator.
-func (b *Delete) AddRecord(rec ArgumentAssembler) *Delete {
+// SetRecord pulls in values to match Columns from the record generator.
+func (b *Delete) SetRecord(rec ArgumentAssembler) *Delete {
 	b.Record = rec
 	return b
 }
