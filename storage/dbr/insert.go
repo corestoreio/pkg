@@ -74,7 +74,7 @@ type Insert struct {
 	previousError error
 }
 
-// NewInsert creates a new object with a black hole logger.
+// NewInsert creates a new Insert object.
 func NewInsert(into string) *Insert {
 	return &Insert{
 		Into: into,
@@ -442,15 +442,15 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 
 // Prepare creates a prepared statement
 func (b *Insert) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	rawSQL, _, err := b.ToSQL() // TODO create a ToSQL version without any arguments
+	sqlStr, err := toSQLPrepared(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
+		return nil, errors.Wrap(err, "[dbr] Insert.Prepare.toSQLPrepared")
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Insert.Prepare.Timing", log.String("sql", rawSQL))
+		defer log.WhenDone(b.Log).Info("dbr.Insert.Prepare.Timing", log.String("sql", sqlStr))
 	}
 
-	stmt, err := b.DB.PrepareContext(ctx, rawSQL)
+	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
 	return stmt, errors.Wrap(err, "[dbr] Insert.Prepare.Prepare")
 }

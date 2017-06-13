@@ -34,31 +34,31 @@ type Scanner interface {
 	ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error
 }
 
-// Rows executes a query and returns many rows. Does no interpolation.
-func (b *Select) Rows(ctx context.Context) (*sql.Rows, error) {
+// Query executes a query and returns many rows.
+func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
+		return nil, errors.Wrap(err, "[store] Select.Query.ToSQL")
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
 		// we might log sensitive data
-		defer log.WhenDone(b.Log).Info("dbr.Select.Rows.Timing", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Info("dbr.Select.Query.Timing", log.String("sql", sqlStr))
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args.Interfaces()...)
-	return rows, errors.Wrap(err, "[store] Select.Rows.QueryContext")
+	return rows, errors.Wrap(err, "[store] Select.Query.QueryContext")
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
 func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	b.IsInterpolate = false
-	sqlStr, _, err := b.ToSQL()
+	sqlStr, err := toSQLPrepared(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "[store] Select.Rows.ToSQL")
+		return nil, errors.Wrap(err, "[dbr] Update.Prepare.toSQLPrepared")
 	}
+
 	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
-	return stmt, errors.Wrap(err, "[store] Select.Rows.QueryContext")
+	return stmt, errors.Wrap(err, "[store] Select.Query.QueryContext")
 }
 
 // Load loads data from a query into an object. You must set DB.QueryContext on

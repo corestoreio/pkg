@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
 )
 
 func TestUnionStmts(t *testing.T) {
@@ -85,10 +86,13 @@ func TestUnion_UseBuildCache(t *testing.T) {
 	u := NewUnion(
 		NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
 		NewSelect("a", "b").From("tableAB").Where(Column("b", Equal.Float64(3.14159))),
-	).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
+	).All().
+		StringReplace("MyKey", "a", "b", "c"). // does nothing because more than one NewSelect functions
+		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`).
+		PreserveResultSet()
 	u.UseBuildCache = true
 
-	const cachedSQLPlaceHolder = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC"
+	const cachedSQLPlaceHolder = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat(\"c\",b,\"d\")"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, nil,
@@ -96,21 +100,21 @@ func TestUnion_UseBuildCache(t *testing.T) {
 				"",
 				float64(3.14159),
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
+			require.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
 		}
 	})
 
 	t.Run("with interpolate", func(t *testing.T) {
 		u.cacheSQL = nil
 
-		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC"
+		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat('c',b,'d')"
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, nil,
 				cachedSQLPlaceHolder,
 				cachedSQLInterpolated,
 				3.14159,
 			)
-			assert.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
+			require.Equal(t, cachedSQLPlaceHolder, string(u.cacheSQL))
 		}
 	})
 }

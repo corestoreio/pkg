@@ -132,13 +132,13 @@ func (a alias) FquoteAs(w queryWriter) error {
 // in dispatched events, it's getting easier ...
 type aliases []alias
 
-func (as aliases) fQuoteAs(w queryWriter) error {
+func (as aliases) FquoteAs(w queryWriter) error {
 	for i, a := range as {
 		if i > 0 {
 			w.WriteString(", ")
 		}
 		if err := a.FquoteAs(w); err != nil {
-			return errors.Wrapf(err, "[dbr] aliases.fQuoteAs")
+			return errors.Wrapf(err, "[dbr] aliases.FquoteAs")
 		}
 	}
 	return nil
@@ -149,7 +149,7 @@ func (as aliases) appendArgs(args Arguments) (Arguments, error) {
 		var err error
 		args, err = a.appendArgs(args)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[dbr] aliases.fQuoteAs")
+			return nil, errors.Wrapf(err, "[dbr] aliases.FquoteAs")
 		}
 	}
 	return args, nil

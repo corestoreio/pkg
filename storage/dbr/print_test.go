@@ -12,22 +12,60 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbr_test
+package dbr
 
 import (
 	"fmt"
+	"testing"
 
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/errors"
+	"github.com/stretchr/testify/assert"
 )
 
 // check if the types implement the interfaces
 
-var _ fmt.Stringer = (*dbr.Delete)(nil)
-var _ fmt.Stringer = (*dbr.Insert)(nil)
-var _ fmt.Stringer = (*dbr.Update)(nil)
-var _ fmt.Stringer = (*dbr.Select)(nil)
+var _ fmt.Stringer = (*Delete)(nil)
+var _ fmt.Stringer = (*Insert)(nil)
+var _ fmt.Stringer = (*Update)(nil)
+var _ fmt.Stringer = (*Select)(nil)
 
-var _ dbr.QueryBuilder = (*dbr.Select)(nil)
-var _ dbr.QueryBuilder = (*dbr.Delete)(nil)
-var _ dbr.QueryBuilder = (*dbr.Update)(nil)
-var _ dbr.QueryBuilder = (*dbr.Insert)(nil)
+var _ QueryBuilder = (*Select)(nil)
+var _ QueryBuilder = (*Delete)(nil)
+var _ QueryBuilder = (*Update)(nil)
+var _ QueryBuilder = (*Insert)(nil)
+var _ queryBuilder = (*buildQueryMock)(nil)
+
+type buildQueryMock struct{ error }
+
+func (m buildQueryMock) toSQL(queryWriter) error { return m.error }
+
+func (m buildQueryMock) appendArgs(Arguments) (Arguments, error) { return nil, m.error }
+func (m buildQueryMock) hasBuildCache() bool                     { return false }
+func (m buildQueryMock) writeBuildCache(sql []byte)              {}
+func (m buildQueryMock) readBuildCache() (sql []byte, args Arguments, err error) {
+	return nil, nil, m.error
+}
+
+func TestMakeSQL(t *testing.T) {
+	t.Parallel()
+	t.Run("error", func(t *testing.T) {
+		s := makeSQL(buildQueryMock{errors.NewAbortedf("Canceled")}, false)
+		assert.Contains(t, s, "[dbr] ToSQL Error: Canceled\n")
+	})
+	t.Run("DELETE", func(t *testing.T) {
+		b := NewDelete("tableX").Where(Column("columnA", Greater.Int64(2)))
+		assert.Exactly(t, "DELETE FROM `tableX` WHERE (`columnA` > ?)", b.String())
+	})
+	t.Run("INSERT", func(t *testing.T) {
+		b := NewInsert("tableX").AddColumns("columnA", "columnB").AddValues(2, "Go")
+		assert.Exactly(t, "INSERT INTO `tableX` (`columnA`,`columnB`) VALUES (?,?)", b.String())
+	})
+	t.Run("SELECT", func(t *testing.T) {
+		b := NewSelect("columnA").From("tableX", "X").Where(Column("columnA", LessOrEqual.Float64(2.4)))
+		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= ?)", b.String())
+	})
+	t.Run("UPDATE", func(t *testing.T) {
+		b := NewUpdate("tableX").Set("columnA", ArgInt64(4)).Where(Column("columnB", Between.Int(5, 7)))
+		assert.Exactly(t, "UPDATE `tableX` SET `columnA`=? WHERE (`columnB` BETWEEN ? AND ?)", b.String())
+	})
+}

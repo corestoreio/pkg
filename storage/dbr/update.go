@@ -69,7 +69,7 @@ type Update struct {
 	previousError error
 }
 
-// NewUpdate creates a new object with a black hole logger.
+// NewUpdate creates a new Update object.
 func NewUpdate(table ...string) *Update {
 	return &Update{
 		Table: MakeAlias(table...),
@@ -367,19 +367,15 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 // Prepare creates a new prepared statement represented by the Update object. It
 // returns the raw database/sql Stmt and an error if there was one.
 func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	// TODO(CyS) implement build cache like the toSQL function
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	if err := b.toSQL(buf); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Prepare.ToSQL")
+	sqlStr, err := toSQLPrepared(b)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Update.Prepare.toSQLPrepared")
 	}
-
 	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", buf.String()))
+		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", sqlStr))
 	}
 
-	stmt, err := b.DB.PrepareContext(ctx, buf.String())
+	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
 	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
 }
 

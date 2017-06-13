@@ -42,6 +42,8 @@ type Select struct {
 	// `SELECT *` statements are not really supported:
 	// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
 	Columns aliases
+	// IsCountStar retains the column names but executes a COUNT(*) query.
+	IsCountStar bool
 
 	//TODO: create a possibility of the Select type which has a half-pre-rendered
 	// SQL statement where a developer can only modify or append WHERE clauses.
@@ -210,11 +212,10 @@ func (b *Select) LockInShareMode() *Select {
 	return b
 }
 
-// Count resets the columns to COUNT(*) as `counted`.
+// Count executes a COUNT(*) as `counted` query without touching or changing the
+// currently set columns.
 func (b *Select) Count() *Select {
-	b.Columns = aliases{
-		MakeAliasExpr("COUNT(*)", "counted"),
-	}
+	b.IsCountStar = true
 	return b
 }
 
@@ -467,9 +468,9 @@ func (b *Select) toSQL(w queryWriter) error {
 	}
 
 	if b.Table.Name == "" && b.Table.Select == nil {
-		return errors.NewEmptyf("[dbr] Select: Table is missing")
+		return errors.NewEmptyf("[dbr] Select: Missing table name or alias")
 	}
-	if len(b.Columns) == 0 {
+	if len(b.Columns) == 0 && !b.IsCountStar {
 		return errors.NewEmptyf("[dbr] Select: no columns specified")
 	}
 
@@ -484,8 +485,14 @@ func (b *Select) toSQL(w queryWriter) error {
 	if b.IsSQLNoCache {
 		w.WriteString("SQL_NO_CACHE ")
 	}
-	if err := b.Columns.fQuoteAs(w); err != nil {
-		return errors.Wrap(err, "[dbr] Select.toSQL.Columns.fQuoteAs")
+	cols := b.Columns
+	if b.IsCountStar {
+		cols = aliases{
+			MakeAliasExpr("COUNT(*)", "counted"),
+		}
+	}
+	if err := cols.FquoteAs(w); err != nil {
+		return errors.Wrap(err, "[dbr] Select.toSQL.Columns.FquoteAs")
 	}
 
 	w.WriteString(" FROM ")
@@ -555,7 +562,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	args = append(args, b.RawArguments...)
 
 	if args, err = b.Columns.appendArgs(args); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Columns.fQuoteAs")
+		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Columns.FquoteAs")
 	}
 
 	if args, err = b.Table.appendArgs(args); err != nil {

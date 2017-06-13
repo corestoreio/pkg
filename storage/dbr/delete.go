@@ -79,7 +79,7 @@ type Delete struct {
 	propagationStoppedAt int
 }
 
-// NewDelete creates a new object with a black hole logger.
+// NewDelete creates a new Delete object.
 func NewDelete(from ...string) *Delete {
 	return &Delete{
 		From: MakeAlias(from...),
@@ -279,9 +279,9 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 // database/sql Statement and an error if there was one. Provided arguments in
 // the Delete are getting ignored. It panics when field Preparer at nil.
 func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, _, err := b.ToSQL() // TODO maybe create a ToSQL version without any arguments
+	sqlStr, err := toSQLPrepared(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.Prepare.ToSQL")
+		return nil, errors.Wrap(err, "[dbr] Delete.Prepare.toSQLPrepared")
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {

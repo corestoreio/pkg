@@ -15,11 +15,14 @@
 package dbr
 
 import (
+	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Union represents a UNION SQL statement. UNION is used to combine the result
@@ -262,4 +265,43 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 		return nil, errors.Wrap(err, "[dbr] Union.ToSQL: toSQL template")
 	}
 	return u.MultiplyArguments(args...), nil
+}
+
+// Exec executes the statement represented by the Union
+// It returns the raw database/sql Result and an error if there was one
+func (b *Union) Query(ctx context.Context) (*sql.Rows, error) {
+	sqlStr, args, err := b.ToSQL()
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Union.Exec.ToSQL")
+	}
+
+	s1 := b.Selects[0]
+	if s1.Log != nil && s1.Log.IsInfo() {
+		defer log.WhenDone(s1.Log).Info("dbr.Union.Exec.Timing", log.String("sql", sqlStr))
+	}
+
+	rows, err := s1.DB.QueryContext(ctx, sqlStr, args.Interfaces()...)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] delete.exec.Exec")
+	}
+
+	return rows, nil
+}
+
+// Prepare executes the statement represented by the Union. It returns the raw
+// database/sql Statement and an error if there was one. Provided arguments in
+// the Union are getting ignored. It panics when field Preparer at nil.
+func (b *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
+	sqlStr, err := toSQLPrepared(b)
+	if err != nil {
+		return nil, errors.Wrap(err, "[dbr] Union.Prepare.toSQLPrepared")
+	}
+
+	s1 := b.Selects[0]
+	if s1.Log != nil && s1.Log.IsInfo() {
+		defer log.WhenDone(s1.Log).Info("dbr.Union.Prepare.Timing", log.String("sql", sqlStr))
+	}
+
+	stmt, err := s1.DB.PrepareContext(ctx, sqlStr)
+	return stmt, errors.Wrap(err, "[dbr] Union.Prepare.Prepare")
 }

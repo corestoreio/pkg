@@ -54,12 +54,12 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			sel.Where(dbr.Column("TABLE_NAME IN ?", dbr.In.Str(tables...)))
 		}
 
-		rows, err := sel.Rows(ctx)
+		rows, err := sel.Query(ctx)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
 		if rows == nil {
-			b.Fatal("Rows should not be nil")
+			b.Fatal("Query should not be nil")
 		}
 	}
 }

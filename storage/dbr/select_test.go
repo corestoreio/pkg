@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"bytes"
+
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
@@ -1203,12 +1205,16 @@ func TestSelect_Count(t *testing.T) {
 		)
 	})
 	t.Run("func count star", func(t *testing.T) {
+		s := NewSelect("a", "b").Count().From("dbr_people")
 		compareToSQL(t,
-			NewSelect().Count().From("dbr_people"),
+			s,
 			nil,
 			"SELECT COUNT(*) AS `counted` FROM `dbr_people`",
 			"SELECT COUNT(*) AS `counted` FROM `dbr_people`",
 		)
+		var buf bytes.Buffer
+		assert.NoError(t, s.Columns.FquoteAs(&buf))
+		assert.Exactly(t, "`a`, `b`", buf.String(), "Columns should be removed or changed when calling Count() function")
 	})
 }
 
@@ -1337,5 +1343,4 @@ func TestSelect_AddRecord(t *testing.T) {
 			int64(6666), "Hans Wurst",
 		)
 	})
-
 }

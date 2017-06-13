@@ -108,6 +108,14 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	return buf.String(), args, nil
 }
 
+func toSQLPrepared(b queryBuilder) (string, error) {
+	// TODO(CyS) implement build cache like the toSQL function. see above.
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	err := b.toSQL(buf)
+	return buf.String(), errors.Wrap(err, "[dbr] toSQLPrepared.toSQL")
+}
+
 func makeSQL(b queryBuilder, isInterpolate bool) string {
 	sRaw, _, err := toSQL(b, isInterpolate)
 	if err != nil {

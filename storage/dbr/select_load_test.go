@@ -33,7 +33,7 @@ func TestSelect_Rows(t *testing.T) {
 	t.Run("ToSQL Error", func(t *testing.T) {
 		sel := &dbr.Select{}
 		sel.AddColumns("a", "b")
-		rows, err := sel.Rows(context.TODO())
+		rows, err := sel.Query(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.IsEmpty(err))
 	})
@@ -47,7 +47,7 @@ func TestSelect_Rows(t *testing.T) {
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 
-		rows, err := sel.Rows(context.TODO())
+		rows, err := sel.Query(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -66,7 +66,7 @@ func TestSelect_Rows(t *testing.T) {
 
 		sel := dbr.NewSelect("a").From("tableX")
 		sel.DB = dbc.DB
-		rows, err := sel.Rows(context.TODO())
+		rows, err := sel.Query(context.TODO())
 		require.NoError(t, err, "%+v", err)
 		defer func() {
 			if err := rows.Close(); err != nil {
