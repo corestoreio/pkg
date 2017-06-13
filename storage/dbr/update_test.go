@@ -33,14 +33,22 @@ func TestUpdateAllToSQL(t *testing.T) {
 
 func TestUpdateSingleToSQL(t *testing.T) {
 	t.Parallel()
-
 	compareToSQL(t, NewUpdate("a").
 		Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(Column("id", ArgInt(1))),
 		nil,
 		"UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)",
 		"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)",
 		int64(1), int64(2), int64(1))
+}
 
+func TestUpdate_OrderBy(t *testing.T) {
+	t.Parallel()
+	qb := NewUpdate("a").Set("b", ArgInt64(1)).Set("c", ArgInt(2)).
+		OrderBy("col1", "col2").OrderByDesc("col2", "col3").OrderByExpr("concat(1,2,3)")
+	compareToSQL(t, qb, nil,
+		"UPDATE `a` SET `b`=?, `c`=? ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
+		"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
+		int64(1), int64(2))
 }
 
 func TestUpdateSetMapToSQL(t *testing.T) {

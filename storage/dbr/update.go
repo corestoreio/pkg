@@ -65,8 +65,6 @@ type Update struct {
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
-	// previousError any error occurred during construction the SQL statement
-	previousError error
 }
 
 // NewUpdate creates a new Update object.
@@ -127,9 +125,6 @@ func (b *Update) WithDB(db Execer) *Update {
 
 // Set appends a column/value pair for the statement.
 func (b *Update) Set(column string, arg Argument) *Update {
-	if b.previousError != nil {
-		return b
-	}
 	b.SetClauses.Columns = append(b.SetClauses.Columns, column)
 	b.SetClauses.Arguments = append(b.SetClauses.Arguments, arg)
 	return b
@@ -139,9 +134,6 @@ func (b *Update) Set(column string, arg Argument) *Update {
 // ArgumentAssembler. Those columns will get passed to the ArgumentAssembler
 // implementation. Mostly used with the type UpdateMulti.
 func (b *Update) AddColumns(columnNames ...string) *Update {
-	if b.previousError != nil {
-		return b
-	}
 	b.SetClauses.Columns = append(b.SetClauses.Columns, columnNames...)
 	return b
 }
@@ -149,9 +141,6 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 // SetRecord sets a new argument generator type. See the example for more
 // details.
 func (b *Update) SetRecord(rec ArgumentAssembler) *Update {
-	if b.previousError != nil {
-		return b
-	}
 	b.Record = rec
 	return b
 }
@@ -159,9 +148,6 @@ func (b *Update) SetRecord(rec ArgumentAssembler) *Update {
 // SetMap appends the elements of the map at column/value pairs for the
 // statement. Calls internally the `Set` function.
 func (b *Update) SetMap(clauses map[string]Argument) *Update {
-	if b.previousError != nil {
-		return b
-	}
 	for col, val := range clauses {
 		b.Set(col, val)
 	}
@@ -170,9 +156,6 @@ func (b *Update) SetMap(clauses map[string]Argument) *Update {
 
 // Where appends a WHERE clause to the statement
 func (b *Update) Where(args ...ConditionArg) *Update {
-	if b.previousError != nil {
-		return b
-	}
 	b.WhereFragments = b.WhereFragments.append(args...)
 	return b
 }
@@ -248,9 +231,6 @@ func (b *Update) hasBuildCache() bool {
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) toSQL(buf queryWriter) error {
-	if b.previousError != nil {
-		return errors.Wrap(b.previousError, "[dbr] Update.ToSQL")
-	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
@@ -305,9 +285,6 @@ func (b *Update) toSQL(buf queryWriter) error {
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Update) appendArgs(args Arguments) (Arguments, error) {
-	if b.previousError != nil {
-		return nil, errors.Wrap(b.previousError, "[dbr] Update.appendArgs")
-	}
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil

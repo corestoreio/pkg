@@ -267,15 +267,16 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 	return u.MultiplyArguments(args...), nil
 }
 
-// Exec executes the statement represented by the Union
-// It returns the raw database/sql Result and an error if there was one
-func (b *Union) Query(ctx context.Context) (*sql.Rows, error) {
-	sqlStr, args, err := b.ToSQL()
+// Exec executes the statement represented by the Union. It returns the raw
+// database/sql Result or an error if there was one. It expects the *sql.DB
+// object on the first []*Select index.
+func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
+	sqlStr, args, err := u.ToSQL()
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Union.Exec.ToSQL")
 	}
 
-	s1 := b.Selects[0]
+	s1 := u.Selects[0]
 	if s1.Log != nil && s1.Log.IsInfo() {
 		defer log.WhenDone(s1.Log).Info("dbr.Union.Exec.Timing", log.String("sql", sqlStr))
 	}
@@ -290,14 +291,15 @@ func (b *Union) Query(ctx context.Context) (*sql.Rows, error) {
 
 // Prepare executes the statement represented by the Union. It returns the raw
 // database/sql Statement and an error if there was one. Provided arguments in
-// the Union are getting ignored. It panics when field Preparer at nil.
-func (b *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, err := toSQLPrepared(b)
+// the Union are getting ignored. It panics when field Preparer at nil. It
+// expects the *sql.DB object on the first []*Select index.
+func (u *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
+	sqlStr, err := toSQLPrepared(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "[dbr] Union.Prepare.toSQLPrepared")
 	}
 
-	s1 := b.Selects[0]
+	s1 := u.Selects[0]
 	if s1.Log != nil && s1.Log.IsInfo() {
 		defer log.WhenDone(s1.Log).Info("dbr.Union.Prepare.Timing", log.String("sql", sqlStr))
 	}

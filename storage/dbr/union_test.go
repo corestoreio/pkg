@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
-	require "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUnionStmts(t *testing.T) {
