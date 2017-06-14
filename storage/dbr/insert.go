@@ -54,6 +54,12 @@ type Insert struct {
 	// `UpdatedColumns`. For more details
 	// https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
 	OnDuplicateKey UpdatedColumns
+	// OnDuplicateKeyAvoidUpdate skips adding the mentioned columns to the ON
+	// DUPLICATE KEY UPDATE section. Otherwise all columns in the field
+	// `Columns` will be added to the ON DUPLICATE KEY UPDATE expression.
+	// Usually the slice `OnDuplicateKeyAvoidUpdate` contains the primary key
+	// columns. Case-sensitive comparison.
+	OnDuplicateKeyAvoidUpdate []string
 	// IsReplace uses the REPLACE syntax. See function Replace().
 	IsReplace bool
 	// IsIgnore ignores error. See function Ignore().
@@ -104,6 +110,16 @@ func (tx *Tx) InsertInto(into string) *Insert {
 // WithDB sets the database query object.
 func (b *Insert) WithDB(db Execer) *Insert {
 	b.DB = db
+	return b
+}
+
+// AddOnDuplicateKeyAvoidUpdate skips adding the mentioned columns to the ON
+// DUPLICATE KEY UPDATE section. Otherwise all columns in the field
+// `Columns` will be added to the ON DUPLICATE KEY UPDATE expression.
+// Usually the slice `OnDuplicateKeyAvoidUpdate` contains the primary key
+// columns. Case-sensitive comparison.
+func (b *Insert) AddOnDuplicateKeyAvoidUpdate(primaryKeyColumnNames ...string) *Insert {
+	b.OnDuplicateKeyAvoidUpdate = append(b.OnDuplicateKeyAvoidUpdate, primaryKeyColumnNames...)
 	return b
 }
 
@@ -256,6 +272,17 @@ func (b *Insert) toSQL(buf queryWriter) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
+	}
+
+	if len(b.OnDuplicateKeyAvoidUpdate) > 0 {
+		for _, c := range b.Columns {
+			// Wow two times a comparison with a slice. That costs a bit
+			// performance but a reliable way to avoid writing duplicate ON
+			// DUPLICATE KEY UPDATE sets. If there is something faster, write us.
+			if !strInSlice(c, b.OnDuplicateKeyAvoidUpdate) && !strInSlice(c, b.OnDuplicateKey.Columns) {
+				b.OnDuplicateKey.Columns = append(b.OnDuplicateKey.Columns, c)
+			}
+		}
 	}
 
 	if b.RawFullSQL != "" {

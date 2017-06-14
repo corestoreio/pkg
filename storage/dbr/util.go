@@ -32,3 +32,12 @@ func (sc stmtChecker) IsDelete(sql string) bool {
 func (sc stmtChecker) IsInsert(sql string) bool {
 	return sc.startContain(sql, "insert", " ")
 }
+
+func strInSlice(search string, sl []string) bool {
+	for _, s := range sl {
+		if s == search {
+			return true
+		}
+	}
+	return false
+}

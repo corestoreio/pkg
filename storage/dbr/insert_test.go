@@ -58,7 +58,14 @@ func (sr someRecord) AssembleArguments(stmtType int, args Arguments, columns []s
 
 func TestInsert_Add(t *testing.T) {
 	t.Parallel()
-
+	t.Run("AddValues error", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").AddColumns("b").AddValues(make(chan int)),
+			errors.IsNotSupported,
+			"",
+			"",
+		)
+	})
 	t.Run("single AddValues", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").AddValues(1, 2),
@@ -522,4 +529,17 @@ func TestInsert_UseBuildCache(t *testing.T) {
 			assert.Nil(t, args)
 		}
 	})
+}
+
+func TestInsert_AddUpdateAllNonPrimary(t *testing.T) {
+	t.Parallel()
+	compareToSQL(t, NewInsert("customer_gr1d_flat").
+		AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
+		AddValues(1, "Martin", "martin@go.go", 3, "2019-01-01", 2).
+		AddOnDuplicateKeyAvoidUpdate("entity_id"),
+		nil,
+		"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+		"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+		int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
+	)
 }
