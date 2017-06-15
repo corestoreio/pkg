@@ -31,9 +31,10 @@ var Quoter = MysqlQuoter{
 }
 
 type alias struct {
-	// Select used in cases where a sub-select is required. Ignored in any other
-	// cases.
-	Select *Select
+	// Derived Tables (Subqueries in the FROM Clause). A derived table is a
+	// subquery in a SELECT statement FROM clause. Derived tables can return a
+	// scalar, column, row, or table. Ignored in any other case.
+	DerivedTable *Select
 	// Name can be any kind of SQL expression or a valid identifier. It gets
 	// quoted when `IsExpression` is false.
 	Name string
@@ -92,17 +93,17 @@ func (a alias) QuoteAs() string {
 
 // appendArgs assembles the arguments and appends them to `args`
 func (a alias) appendArgs(args Arguments) (_ Arguments, err error) {
-	if a.Select != nil {
-		args, err = a.Select.appendArgs(args)
+	if a.DerivedTable != nil {
+		args, err = a.DerivedTable.appendArgs(args)
 	}
 	return args, errors.Wrap(err, "[dbr] alias.appendArgs")
 }
 
 // FquoteAs writes the quoted table and its maybe alias into w.
 func (a alias) FquoteAs(w queryWriter) error {
-	if a.Select != nil {
+	if a.DerivedTable != nil {
 		w.WriteByte('(')
-		if err := a.Select.toSQL(w); err != nil {
+		if err := a.DerivedTable.toSQL(w); err != nil {
 			return errors.Wrap(err, "[dbr] alias.FquoteAs.SubSelect")
 		}
 		w.WriteByte(')')

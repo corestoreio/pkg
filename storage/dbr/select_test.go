@@ -1051,11 +1051,11 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			OrderByDesc("total_qty")
 
-		sel2 := NewSelectFromSub(sel3, "t2").
+		sel2 := NewSelectWithDerivedTable(sel3, "t2").
 			AddColumns("t2.period", "t2.store_id", "t2.product_id", "t2.product_name", "t2.avg_price").
 			AddColumnsAlias("`t2`.`total_qty`", "`qty_ordered`")
 
-		sel1 := NewSelectFromSub(sel2, "t1").
+		sel1 := NewSelectWithDerivedTable(sel2, "t1").
 			AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 			OrderBy("`t1`.period", "`t1`.product_id")
 
@@ -1079,11 +1079,11 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 			OrderByDesc("total_qty DESC").
 			Where(Column("t3.store_id", In.Int64(2, 3, 4)))
 
-		sel2 := NewSelectFromSub(sel3, "t2").
+		sel2 := NewSelectWithDerivedTable(sel3, "t2").
 			AddColumns("t2.period", "t2.store_id", "t2.product_id", "t2.product_name", "t2.avg_price").
 			AddColumnsAlias("t2.total_qty", "qty_ordered")
 
-		sel1 := NewSelectFromSub(sel2, "t1").
+		sel1 := NewSelectWithDerivedTable(sel2, "t1").
 			AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 			OrderBy("`t1`.period", "`t1`.product_id")
 
@@ -1104,7 +1104,7 @@ func TestSelect_Subselect_Compact(t *testing.T) {
 		GroupBy("t3.store_id").
 		Having(Expression("COUNT(*)>?", ArgInt(5)))
 
-	sel := NewSelectFromSub(sel2, "t2").
+	sel := NewSelectWithDerivedTable(sel2, "t2").
 		AddColumns("t2.product_name").
 		Where(Column("t2.floatcol", Equal.Float64(3.14159)))
 

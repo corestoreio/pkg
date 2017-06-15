@@ -95,17 +95,17 @@ func NewSelect(columns ...string) *Select {
 	return s
 }
 
-// NewSelectFromSub creates a new derived table (Subquery in the FROM Clause)
-// using the provided sub-select in the FROM part together with an alias name.
-// Appends the arguments of the sub-select to the parent *Select pointer
+// NewSelectWithDerivedTable creates a new derived table (Subquery in the FROM
+// Clause) using the provided sub-select in the FROM part together with an alias
+// name. Appends the arguments of the sub-select to the parent *Select pointer
 // arguments list. SQL result may look like:
 //		SELECT a,b FROM (SELECT x,y FROM `product` AS `p`) AS `t`
 // https://dev.mysql.com/doc/refman/5.7/en/derived-tables.html
-func NewSelectFromSub(subSelect *Select, aliasName string) *Select {
+func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
 	s := &Select{
 		Table: alias{
-			Select: subSelect,
-			Alias:  aliasName,
+			DerivedTable: subSelect,
+			Alias:        aliasName,
 		},
 	}
 	return s
@@ -467,7 +467,7 @@ func (b *Select) toSQL(w queryWriter) error {
 		return err
 	}
 
-	if b.Table.Name == "" && b.Table.Select == nil {
+	if b.Table.Name == "" && b.Table.DerivedTable == nil {
 		return errors.NewEmptyf("[dbr] Select: Missing table name or alias")
 	}
 	if len(b.Columns) == 0 && !b.IsCountStar {

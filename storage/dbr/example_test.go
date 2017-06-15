@@ -477,7 +477,7 @@ func ExampleSubSelect() {
 	//234)))
 }
 
-func ExampleNewSelectFromSub() {
+func ExampleNewSelectWithDerivedTable() {
 	sel3 := dbr.NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
 		AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
@@ -490,7 +490,7 @@ func ExampleNewSelectFromSub() {
 		OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 		OrderByDesc("total_qty")
 
-	sel1 := dbr.NewSelectFromSub(sel3, "t1").
+	sel1 := dbr.NewSelectWithDerivedTable(sel3, "t1").
 		AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 		Where(dbr.Column("product_name", dbr.ArgString("Sony%"))).
 		OrderBy("t1.period", "t1.product_id")
