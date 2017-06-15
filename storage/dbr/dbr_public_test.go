@@ -78,10 +78,13 @@ func compareToSQL(
 	if wantErr == nil {
 		require.NoError(t, err, "%+v", err)
 	} else {
-		require.True(t, wantErr(err), "%+v")
+		require.True(t, wantErr(err), "%+v", err)
 	}
-	assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-	assert.Equal(t, wantArgs, args.Interfaces(), "Placeholder Arguments do not match")
+
+	if wantSQLPlaceholders != "" {
+		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
+		assert.Equal(t, wantArgs, args.Interfaces(), "Placeholder Arguments do not match")
+	}
 
 	if wantSQLInterpolated == "" {
 		return

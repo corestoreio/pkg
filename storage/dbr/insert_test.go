@@ -320,11 +320,12 @@ func TestInsert_Events(t *testing.T) {
 				},
 			},
 		)
-		compareToSQL(t, d, nil,
-			"", // "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (?,?,?,?)",
-			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')",
-			int64(1), true, "X1", "X2",
-		)
+
+		sqlStr, args, err := d.Interpolate().ToSQL()
+		require.NoError(t, err)
+		assert.Nil(t, args.Interfaces())
+		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')", sqlStr)
+
 		// call it twice (4x) to test for being NOT idempotent
 		compareToSQL(t, d, errors.IsAlreadyExists,
 			"",
@@ -384,12 +385,11 @@ func TestInsert_Events(t *testing.T) {
 				},
 			},
 		)
+		sqlStr, args, err := ins.Interpolate().ToSQL()
+		require.NoError(t, err)
+		assert.Nil(t, args.Interfaces())
+		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')", sqlStr)
 
-		compareToSQL(t, ins, nil,
-			"", // "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (?,?,?,?,?)",
-			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')",
-			int64(1), true, 3.14159, 2.7182, "X1",
-		)
 		compareToSQL(t, ins, errors.IsAlreadyExists,
 			"",
 			"",
