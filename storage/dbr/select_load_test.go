@@ -32,7 +32,6 @@ func TestSelect_Rows(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		sel := &dbr.Select{}
-		sel.AddColumns("a", "b")
 		rows, err := sel.Query(context.TODO())
 		assert.Nil(t, rows)
 		assert.True(t, errors.IsEmpty(err))
@@ -87,7 +86,7 @@ func TestSelect_Rows(t *testing.T) {
 func TestSelect_Prepare(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
-		sel := dbr.NewSelect("a", "b")
+		sel := dbr.NewSelect()
 		stmt, err := sel.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))

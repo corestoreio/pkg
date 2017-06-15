@@ -31,8 +31,8 @@ func TestUnion_Query(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		u := dbr.NewUnion(
-			dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
-			dbr.NewSelect("a", "b"),
+			dbr.NewSelect(),
+			dbr.NewSelect(),
 		)
 		rows, err := u.Query(context.TODO())
 		assert.Nil(t, rows)
@@ -88,8 +88,8 @@ func TestUnion_Prepare(t *testing.T) {
 
 	t.Run("ToSQL Error", func(t *testing.T) {
 		u := dbr.NewUnion(
-			dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
-			dbr.NewSelect("a", "b"),
+			dbr.NewSelect(),
+			dbr.NewSelect(),
 		)
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)

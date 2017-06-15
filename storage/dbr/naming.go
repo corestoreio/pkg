@@ -78,6 +78,8 @@ func MakeAliasExpr(expressionAlias ...string) alias {
 	return a
 }
 
+func (a alias) isEmpty() bool { return a.Name == "" && a.DerivedTable == nil }
+
 // String returns the correct stringyfied statement.
 func (a alias) String() string {
 	if a.IsExpression {

@@ -467,9 +467,6 @@ func (b *Select) toSQL(w queryWriter) error {
 		return err
 	}
 
-	if b.Table.Name == "" && b.Table.DerivedTable == nil {
-		return errors.NewEmptyf("[dbr] Select: Missing table name or alias")
-	}
 	if len(b.Columns) == 0 && !b.IsCountStar {
 		return errors.NewEmptyf("[dbr] Select: no columns specified")
 	}
@@ -494,21 +491,20 @@ func (b *Select) toSQL(w queryWriter) error {
 	if err := cols.FquoteAs(w); err != nil {
 		return errors.Wrap(err, "[dbr] Select.toSQL.Columns.FquoteAs")
 	}
-
-	w.WriteString(" FROM ")
-	if err := b.Table.FquoteAs(w); err != nil {
-		return errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
+	if !b.Table.isEmpty() {
+		w.WriteString(" FROM ")
+		if err := b.Table.FquoteAs(w); err != nil {
+			return errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
+		}
 	}
 
-	if len(b.JoinFragments) > 0 {
-		for _, f := range b.JoinFragments {
-			w.WriteByte(' ')
-			w.WriteString(f.JoinType)
-			w.WriteString(" JOIN ")
-			f.Table.FquoteAs(w)
-			if err := f.OnConditions.write(w, 'j'); err != nil {
-				return errors.Wrap(err, "[dbr] Select.toSQL.write")
-			}
+	for _, f := range b.JoinFragments {
+		w.WriteByte(' ')
+		w.WriteString(f.JoinType)
+		w.WriteString(" JOIN ")
+		f.Table.FquoteAs(w)
+		if err := f.OnConditions.write(w, 'j'); err != nil {
+			return errors.Wrap(err, "[dbr] Select.toSQL.write")
 		}
 	}
 

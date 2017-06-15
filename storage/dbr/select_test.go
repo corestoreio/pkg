@@ -15,10 +15,9 @@
 package dbr
 
 import (
+	"bytes"
 	"context"
 	"testing"
-
-	"bytes"
 
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -26,15 +25,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSelectBasicToSQL(t *testing.T) {
+func TestSelect_BasicToSQL(t *testing.T) {
 	t.Parallel()
 
-	sel := NewSelect("a", "b").From("c").Where(Column("id", Equal.Int(1)))
-	compareToSQL(t, sel, nil,
-		"SELECT `a`, `b` FROM `c` WHERE (`id` = ?)",
-		"SELECT `a`, `b` FROM `c` WHERE (`id` = 1)",
-		int64(1),
-	)
+	t.Run("no table no args", func(t *testing.T) {
+		sel := NewSelect().AddColumnsExprAlias("1", "n").AddColumnsAlias("abc", "str")
+		compareToSQL(t, sel, nil,
+			"SELECT 1 AS `n`, `abc` AS `str`",
+			"",
+		)
+	})
+	t.Run("no table with args", func(t *testing.T) {
+		sel := NewSelect().
+			AddColumnsExprAlias("?", "n").AddArguments(ArgInt64(1)).
+			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArguments(ArgString("a'bc"))
+		compareToSQL(t, sel, nil,
+			"SELECT ? AS `n`, CAST(? AS CHAR(20)) AS `str`",
+			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
+			int64(1), "a'bc",
+		)
+	})
+
+	t.Run("two cols, one table, one condition", func(t *testing.T) {
+		sel := NewSelect("a", "b").From("c").Where(Column("id", Equal.Int(1)))
+		compareToSQL(t, sel, nil,
+			"SELECT `a`, `b` FROM `c` WHERE (`id` = ?)",
+			"SELECT `a`, `b` FROM `c` WHERE (`id` = 1)",
+			int64(1),
+		)
+	})
 }
 
 func TestSelectFullToSQL(t *testing.T) {
