@@ -41,6 +41,8 @@ type Union struct {
 	OrderBys      aliases
 	IsAll         bool // IsAll enables UNION ALL
 	IsInterpolate bool // See Interpolate()
+	IsIntersect   bool // See Intersect()
+	IsExcept      bool // See Except()
 
 	// When using Union as a template, only one *Select is required.
 	oldNew        [][]string //use for string replacement with `repls` field
@@ -127,6 +129,26 @@ func (u *Union) Interpolate() *Union {
 	return u
 }
 
+// Intersect switches the query type from UNION to INTERSECT. The result of an
+// intersect is the intersection of right and left SELECT results, i.e. only
+// records that are present in both result sets will be included in the result
+// of the operation. INTERSECT has higher precedence than UNION and EXCEPT. If
+// possible it will be executed linearly but if not it will be translated to a
+// subquery in the FROM clause. Only supported in MariaDB >=10.3
+func (u *Union) Intersect() *Union {
+	u.IsIntersect = true
+	return u
+}
+
+// Except switches the query from UNION to EXCEPT. The result of EXCEPT is all
+// records of the left SELECT result except records which are in right SELECT
+// result set, i.e. it is subtraction of two result sets. EXCEPT and UNION have
+// the same operation precedence. Only supported in MariaDB >=10.3
+func (u *Union) Except() *Union {
+	u.IsExcept = true
+	return u
+}
+
 // StringReplace is only applicable when using *Union as a template.
 // StringReplace replaces the `key` with one of the `values`. Each value defines
 // a generated SELECT query. Repeating calls of StringReplace must provide the
@@ -198,7 +220,7 @@ func (u *Union) toSQL(w queryWriter) error {
 	if len(u.Selects) > 1 {
 		for i, s := range u.Selects {
 			if i > 0 {
-				sqlWriteUnionAll(w, u.IsAll)
+				sqlWriteUnionAll(w, u.IsAll, u.IsIntersect, u.IsExcept)
 			}
 			w.WriteByte('(')
 
@@ -226,7 +248,7 @@ func (u *Union) toSQL(w queryWriter) error {
 			u.repls[i] = repl
 		}
 		if i > 0 {
-			sqlWriteUnionAll(w, u.IsAll)
+			sqlWriteUnionAll(w, u.IsAll, u.IsIntersect, u.IsExcept)
 		}
 		w.WriteByte('(')
 		repl.WriteString(w, selStr)

@@ -24,6 +24,7 @@ import (
 
 func TestUnionStmts(t *testing.T) {
 	t.Parallel()
+
 	t.Run("simple", func(t *testing.T) {
 		u := NewUnion(
 			NewSelect("a", "b").From("tableAB").Where(Column("a", Equal.Int64(3))),
@@ -77,6 +78,30 @@ func TestUnionStmts(t *testing.T) {
 				int64(3), int64(5),
 			)
 		}
+	})
+	t.Run("intersec", func(t *testing.T) {
+		u := NewUnion(
+			NewSelect("a").From("tableAD"),
+			NewSelect("b").From("tableAB"),
+		).All().Intersect().OrderBy("a").OrderByDesc("b")
+		// All gets ignored
+
+		compareToSQL(t, u, nil,
+			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a` ASC, `b` DESC",
+			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a` ASC, `b` DESC",
+		)
+	})
+	t.Run("except", func(t *testing.T) {
+		u := NewUnion(
+			NewSelect("a").From("tableAD"),
+			NewSelect("b").From("tableAB"),
+		).All().Except()
+		// All gets ignored
+
+		compareToSQL(t, u, nil,
+			"(SELECT `a` FROM `tableAD`)\nEXCEPT\n(SELECT `b` FROM `tableAB`)",
+			"(SELECT `a` FROM `tableAD`)\nEXCEPT\n(SELECT `b` FROM `tableAB`)",
+		)
 	})
 }
 

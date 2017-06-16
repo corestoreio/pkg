@@ -148,10 +148,18 @@ func (b *Update) String() string {
 	return makeSQL(b, b.IsInterpolate)
 }
 
-func sqlWriteUnionAll(w queryWriter, isAll bool) {
-	w.WriteString("\nUNION")
-	if isAll {
-		w.WriteString(" ALL")
+func sqlWriteUnionAll(w queryWriter, isAll bool, isIntersect bool, isExcept bool) {
+	w.WriteByte('\n')
+	switch {
+	case isIntersect:
+		w.WriteString("INTERSECT") // MariaDB >= 10.3
+	case isExcept:
+		w.WriteString("EXCEPT") // MariaDB >= 10.3
+	default:
+		w.WriteString("UNION")
+		if isAll {
+			w.WriteString(" ALL")
+		}
 	}
 	w.WriteByte('\n')
 }
