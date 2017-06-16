@@ -321,8 +321,11 @@ func compareToSQL(
 	case *Union:
 		dml.Interpolate()
 		defer func() { dml.IsInterpolate = false }()
+	case *With:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	default:
-		t.Fatalf("Type %#v not (yet) supported.", qb)
+		t.Fatalf("func compareToSQL: the type %#v is not (yet) supported.", qb)
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation

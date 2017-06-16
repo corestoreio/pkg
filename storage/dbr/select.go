@@ -219,6 +219,14 @@ func (b *Select) Count() *Select {
 	return b
 }
 
+// Star creates a SELECT * FROM query. Such queries are discouraged from using.
+func (b *Select) Star() *Select {
+	b.Columns = aliases{
+		alias{Name: "*", IsExpression: true},
+	}
+	return b
+}
+
 // From sets the table to SELECT FROM. If second argument will be provided this
 // at then considered at the alias. SELECT ... FROM table AS alias.
 func (b *Select) From(from ...string) *Select {
@@ -259,6 +267,12 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	} else {
 		b.Columns = b.Columns.appendColumnsAliases(expressionAliases, true)
 	}
+	return b
+}
+
+// AddColumnsExpr adds expressions to the columns list.
+func (b *Select) AddColumnsExpr(expressions ...string) *Select {
+	b.Columns = b.Columns.appendColumns(expressions, true)
 	return b
 }
 

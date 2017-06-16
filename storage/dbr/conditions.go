@@ -157,6 +157,16 @@ func SubSelect(columnName string, operator Op, s *Select) ConditionArg {
 	return wf
 }
 
+// TODO(CyS) implement once needed
+//func WithSelect(columnName string, operator Op, wth *With) ConditionArg {
+//	wf := &whereFragment{
+//		Condition: columnName,
+//	}
+//	wf.Sub.With = wth
+//	wf.Sub.Operator = operator
+//	return wf
+//}
+
 // Column adds a condition to a WHERE or HAVING statement.
 func Column(columnName string, arg ...Argument) ConditionArg {
 	return &whereFragment{

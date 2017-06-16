@@ -698,3 +698,64 @@ func ExampleParenthesisOpen() {
 	//(`e` = 'wat')) AND (`f` = 2) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR
 	//(`n` = 'wh3r3')) ORDER BY `l` LIMIT 7 OFFSET 8
 }
+
+func ExampleWith_Union() {
+	// Non-recursive CTE
+	// Sales: Find best and worst month:
+	cte := dbr.NewWith(
+		dbr.WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
+			Select: dbr.NewSelect().AddColumnsExpr("Month(day_of_sale)", "Sum(amount)").From("sales_days").
+				Where(dbr.Expression("Year(day_of_sale) = ?", dbr.ArgInt(2015))).
+				GroupByExpr("Month(day_of_sale))"),
+		},
+		dbr.WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
+			Select: dbr.NewSelect().AddColumns("month", "total").AddColumnsExpr(`"best"`).From("sales_by_month").
+				Where(dbr.SubSelect("total", dbr.Equal, dbr.NewSelect().AddColumnsExpr("Max(total)").From("sales_by_month"))),
+		},
+		dbr.WithCTE{Name: "worst_month", Columns: []string{"month", "total", "award"},
+			Select: dbr.NewSelect().AddColumns("month", "total").AddColumnsExpr(`"worst"`).From("sales_by_month").
+				Where(dbr.SubSelect("total", dbr.Equal, dbr.NewSelect().AddColumnsExpr("Min(total)").From("sales_by_month"))),
+		},
+	).Union(dbr.NewUnion(
+		dbr.NewSelect().Star().From("best_month"),
+		dbr.NewSelect().Star().From("worst_month"),
+	).All())
+	writeToSQLAndInterpolate(cte)
+
+	//Result:
+	//+-------+-------+-------+
+	//| month | total | award |
+	//+-------+-------+-------+
+	//|     1 |   300 | best  |
+	//|     3 |    11 | worst |
+	//+-------+-------+-------+
+
+	// Output:
+	//Prepared Statement:
+	//WITH
+	//`sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount)
+	//FROM `sales_days` WHERE (Year(day_of_sale) = ?) GROUP BY Month(day_of_sale))),
+	//`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "best" FROM
+	//`sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),
+	//`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "worst"
+	//FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM
+	//`sales_by_month`)))
+	//(SELECT * FROM `best_month`)
+	//UNION ALL
+	//(SELECT * FROM `worst_month`)
+	//Arguments: [2015]
+	//
+	//Interpolated Statement:
+	//WITH
+	//`sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount)
+	//FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY
+	//Month(day_of_sale))),
+	//`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'best' FROM
+	//`sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),
+	//`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'worst'
+	//FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM
+	//`sales_by_month`)))
+	//(SELECT * FROM `best_month`)
+	//UNION ALL
+	//(SELECT * FROM `worst_month`)
+}

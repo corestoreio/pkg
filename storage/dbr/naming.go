@@ -170,6 +170,11 @@ func (as aliases) applySort(lastNindexes int, sort byte) aliases {
 	return as
 }
 
+// AddColumns adds more columns to the aliases. Columns get quoted.
+func (as aliases) AddColumns(columns ...string) aliases {
+	return as.appendColumns(columns, false)
+}
+
 func (as aliases) appendColumns(columns []string, isExpression bool) aliases {
 	if len(as) == 0 {
 		as = make(aliases, 0, len(columns))
