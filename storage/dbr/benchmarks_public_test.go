@@ -157,7 +157,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 	// This tests simulates selecting many varchar attribute values for specific products.
 	var entityIDs = make([]int64, 1024)
 	for i := 0; i < 1024; i++ {
-		entityIDs[i] = int64(i + 10)
+		entityIDs[i] = int64(i + 1600)
 	}
 
 	b.ResetTimer()

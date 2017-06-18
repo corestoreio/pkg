@@ -47,9 +47,13 @@ func (d mysqlDialect) EscapeBool(w queryWriter, b bool) {
 }
 
 func (d mysqlDialect) EscapeBinary(w queryWriter, b []byte) {
-	// TODO(CyS) no idea if that at the correct way. do an RTFM
-	w.WriteString("0x")
-	w.WriteString(hex.EncodeToString(b))
+	if b == nil {
+		w.WriteString("NULL")
+	} else {
+		// TODO(CyS) no idea if that at the correct way. do an RTFM
+		w.WriteString("0x")
+		w.WriteString(hex.EncodeToString(b))
+	}
 }
 
 // EscapeString. Need to turn \x00, \n, \r, \, ', " and \x1a.
@@ -81,7 +85,17 @@ func (d mysqlDialect) EscapeString(w queryWriter, s string) {
 }
 
 func (d mysqlDialect) EscapeTime(w queryWriter, t time.Time) {
-	d.EscapeString(w, t.Format(mysqlTimeFormat))
+	if t.IsZero() {
+		w.WriteString("'0000-00-00'") //  00:00:00
+	} else {
+		// time.Location must be considered ...
+		w.WriteByte('\'')
+		d := w.Bytes()
+		w.Reset()
+		w.Write(t.AppendFormat(d, mysqlTimeFormat))
+		w.WriteByte('\'')
+	}
+	// d.EscapeString(w, t.Format(mysqlTimeFormat))
 }
 
 func (d mysqlDialect) ApplyLimitAndOffset(w queryWriter, limit, offset uint64) {
