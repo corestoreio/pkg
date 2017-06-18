@@ -38,8 +38,7 @@ func (a NullFloat64) toIFace(args []interface{}) []interface{} {
 
 func (a NullFloat64) writeTo(w queryWriter, _ int) error {
 	if a.NullFloat64.Valid {
-		_, err := w.WriteString(strconv.FormatFloat(a.NullFloat64.Float64, 'f', -1, 64))
-		return err
+		return writeFloat64(w, a.NullFloat64.Float64)
 	}
 	_, err := w.WriteString(sqlStrNull)
 	return err
@@ -181,11 +180,10 @@ func (a argNullFloat64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
-	ws := sqlStrNull
 	if s := a.data[pos]; s.Valid {
-		ws = strconv.FormatFloat(s.Float64, 'f', -1, 64)
+		return writeFloat64(w, s.Float64)
 	}
-	_, err := w.WriteString(ws)
+	_, err := w.WriteString(sqlStrNull)
 	return err
 }
 

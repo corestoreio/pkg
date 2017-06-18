@@ -65,6 +65,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 }
 
 var benchmarkSelectBasicSQL dbr.Arguments
+var benchmarkSelectStr string
 
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
@@ -154,27 +155,49 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 func BenchmarkSelect_Large_IN(b *testing.B) {
 
 	// This tests simulates selecting many varchar attribute values for specific products.
-
 	var entityIDs = make([]int64, 1024)
 	for i := 0; i < 1024; i++ {
-		entityIDs[i] = int64(i + 600)
+		entityIDs[i] = int64(i + 10)
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		_, args, err := dbr.NewSelect("entity_id", "attribute_id", "value").
-			From("catalog_product_entity_varchar").
-			Where(dbr.Column("entity_type_id", dbr.Equal.Int64(4))).
-			Where(dbr.Column("entity_id", dbr.In.Int64(entityIDs...))).
-			Where(dbr.Column("attribute_id", dbr.In.Int64(174, 175))).
-			Where(dbr.Column("store_id", dbr.Equal.Int(0))).
-			ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
+
+	b.Run("SQL", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, args, err := dbr.NewSelect("entity_id", "attribute_id", "value").
+				From("catalog_product_entity_varchar").
+				Where(dbr.Column("entity_type_id", dbr.Equal.Int64(4))).
+				Where(dbr.Column("entity_id", dbr.In.Int64(entityIDs...))).
+				Where(dbr.Column("attribute_id", dbr.In.Int64(174, 175))).
+				Where(dbr.Column("store_id", dbr.Equal.Int(0))).
+				ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			benchmarkSelectBasicSQL = args
 		}
-		benchmarkSelectBasicSQL = args
-	}
+	})
+
+	b.Run("interpolate", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			sqlStr, args, err := dbr.NewSelect("entity_id", "attribute_id", "value").
+				From("catalog_product_entity_varchar").
+				Where(dbr.Column("entity_type_id", dbr.Equal.Int64(4))).
+				Where(dbr.Column("entity_id", dbr.In.Int64(entityIDs...))).
+				Where(dbr.Column("attribute_id", dbr.In.Int64(174, 175))).
+				Where(dbr.Column("store_id", dbr.Equal.Int(0))).
+				Interpolate().
+				ToSQL()
+			if err != nil {
+				b.Fatalf("%+v", err)
+			}
+			if args != nil {
+				b.Fatal("Args should be nil")
+			}
+			benchmarkSelectStr = sqlStr
+		}
+	})
 }
 
 func BenchmarkSelect_ComplexAddColumns(b *testing.B) {

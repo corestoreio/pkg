@@ -2,7 +2,6 @@ package dbr
 
 import (
 	"encoding/hex"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -91,10 +90,10 @@ func (d mysqlDialect) ApplyLimitAndOffset(w queryWriter, limit, offset uint64) {
 		// In MYSQL, OFFSET cannot be used alone. Set the limit to the max possible value.
 		w.WriteString("18446744073709551615")
 	} else {
-		w.WriteString(strconv.FormatUint(limit, 10))
+		writeUint64(w, limit)
 	}
 	if offset > 0 {
 		w.WriteString(" OFFSET ")
-		w.WriteString(strconv.FormatUint(offset, 10))
+		writeUint64(w, offset)
 	}
 }

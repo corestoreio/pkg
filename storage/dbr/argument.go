@@ -17,7 +17,6 @@ package dbr
 import (
 	"database/sql/driver"
 	"fmt"
-	"strconv"
 	"time"
 	"unicode/utf8"
 
@@ -490,11 +489,11 @@ func writeDriverValuer(w queryWriter, value driver.Valuer) error {
 	case nil:
 		_, err = w.WriteString("NULL")
 	case int:
-		_, err = w.WriteString(strconv.Itoa(t))
+		err = writeInt64(w, int64(t))
 	case int64:
-		_, err = w.WriteString(strconv.FormatInt(t, 10))
+		err = writeInt64(w, t)
 	case float64:
-		_, err = w.WriteString(strconv.FormatFloat(t, 'f', -1, 64))
+		err = writeFloat64(w, t)
 	case string:
 		dialect.EscapeString(w, t)
 	case bool:
@@ -747,8 +746,7 @@ func (a ArgInt) toIFace(args []interface{}) []interface{} {
 }
 
 func (a ArgInt) writeTo(w queryWriter, _ int) error {
-	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
-	return err
+	return writeInt64(w, int64(a))
 }
 func (a ArgInt) len() int { return 1 }
 
@@ -775,8 +773,7 @@ func (a *argInts) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argInts) writeTo(w queryWriter, pos int) error {
-	_, err := w.WriteString(strconv.Itoa(a.data[pos]))
-	return err
+	return writeInt64(w, int64(a.data[pos]))
 }
 
 func (a *argInts) len() int {
@@ -800,8 +797,7 @@ func (a ArgInt64) toIFace(args []interface{}) []interface{} {
 }
 
 func (a ArgInt64) writeTo(w queryWriter, _ int) error {
-	_, err := w.WriteString(strconv.FormatInt(int64(a), 10))
-	return err
+	return writeInt64(w, int64(a))
 }
 func (a ArgInt64) len() int { return 1 }
 
@@ -828,8 +824,7 @@ func (a *argInt64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argInt64s) writeTo(w queryWriter, pos int) error {
-	_, err := w.WriteString(strconv.FormatInt(a.data[pos], 10))
-	return err
+	return writeInt64(w, int64(a.data[pos]))
 }
 
 func (a *argInt64s) len() int {
@@ -853,8 +848,7 @@ func (a ArgFloat64) toIFace(args []interface{}) []interface{} {
 }
 
 func (a ArgFloat64) writeTo(w queryWriter, _ int) error {
-	_, err := w.WriteString(strconv.FormatFloat(float64(a), 'f', -1, 64))
-	return err
+	return writeFloat64(w, float64(a))
 }
 func (a ArgFloat64) len() int { return 1 }
 
@@ -881,8 +875,7 @@ func (a *argFloat64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argFloat64s) writeTo(w queryWriter, pos int) error {
-	_, err := w.WriteString(strconv.FormatFloat(a.data[pos], 'f', -1, 64))
-	return err
+	return writeFloat64(w, a.data[pos])
 }
 
 func (a *argFloat64s) len() int {
@@ -956,67 +949,3 @@ func (i argPlaceHolder) operator() Op {
 func (i argPlaceHolder) GoString() string {
 	return fmt.Sprintf("argPlaceHolder(%q)", i)
 }
-
-// for type subQuery see function SubSelect
-
-//type argSubSelect struct {
-//	// buf contains the cached SQL string
-//	buf *bytes.Buffer
-//	// args contains the arguments after calling ToSQL
-//	args Arguments
-//	s    *Select
-//	op Op
-//}
-
-// I don't know anymore where I would have needed this ... but once the idea
-// and a real world use case pops up, I'm gonna implement it. Until then use the function
-// SubSelect(rawStatementOrColumnName string, operator rune, s *Select) ConditionArg
-//// ArgSubSelect
-//// The written sub-select gets wrapped in parenthesis: (SELECT ...)
-//func ArgSubSelect(s *Select) Argument {
-//	return &argSubSelect{s: s}
-//}
-//
-//func (e *argSubSelect) toIFace(args []interface{}) []interface{} {
-//
-//	if e.buf == nil {
-//		e.buf = new(bytes.Buffer)
-//		var err error
-//		e.args, err = e.s.toSQL(e.buf) // can be optimized later
-//		if err != nil {
-//			args = append(args, err) // not that optimal :-(
-//		} else {
-//			for _, a := range e.args {
-//				a.toIFace(args)
-//			}
-//		}
-//		return
-//	}
-//	for _, a := range e.args {
-//		a.toIFace(args)
-//	}
-//}
-//
-//func (e *argSubSelect) writeTo(w queryWriter, _ int) (err error) {
-//	if e.buf == nil {
-//		e.buf = new(bytes.Buffer)
-//		e.buf.WriteByte('(')
-//		e.args, err = e.s.toSQL(e.buf)
-//		if err != nil {
-//			return errors.Wrap(err, "[dbr] argSubSelect.writeTo")
-//		}
-//		e.buf.WriteByte(')')
-//	}
-//	_, err = w.WriteString(e.buf.String())
-//	return err
-//}
-//
-//func (e *argSubSelect) len() int { return 1 }
-//
-//// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-//// the constants Op*.
-//func (e *argSubSelect) Op(op Op) Argument {
-//	e.op = op
-//	return e
-//}
-//func (e *argSubSelect) operator() Op { return e.op }
