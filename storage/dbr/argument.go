@@ -420,7 +420,7 @@ func (as Arguments) DriverValues() []driver.Value {
 	return dv
 }
 
-func iFaceToArgs(values ...interface{}) (Arguments, error) {
+func iFaceToArgs(values ...interface{}) Arguments {
 	args := make(Arguments, 0, len(values))
 	for _, val := range values {
 		switch v := val.(type) {
@@ -459,10 +459,10 @@ func iFaceToArgs(values ...interface{}) (Arguments, error) {
 		case nil:
 			args = append(args, ArgNull())
 		default:
-			return nil, errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v)
+			panic(errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v))
 		}
 	}
-	return args, nil
+	return args
 }
 
 type argValue struct {

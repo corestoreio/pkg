@@ -17,7 +17,6 @@ package dbr
 import (
 	"testing"
 
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -214,20 +213,35 @@ func TestNewUnionTemplate(t *testing.T) {
 		}
 	})
 	t.Run("StringReplace 2nd call fewer values", func(t *testing.T) {
-		u := NewUnion(
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					t.Log(err)
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+
+		NewUnion(
 			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX")
-		compareToSQL(t, u, errors.IsNotValid, "", "")
+
 	})
-	t.Run("StringReplace 2nd call too many values", func(t *testing.T) {
+	t.Run("StringReplace 2nd call too many values and nothing should happen", func(t *testing.T) {
 		u := NewUnion(
 			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX", "bytesX")
-		compareToSQL(t, u, errors.IsNotValid, "", "")
+		compareToSQL(t, u, nil,
+			"(SELECT `t`.`value,t.attribute_id,t.varcharX AS col_type` FROM `catalog_product_entity_varchar` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.intX AS col_type` FROM `catalog_product_entity_int` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.decimalX AS col_type` FROM `catalog_product_entity_decimal` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.datetimeX AS col_type` FROM `catalog_product_entity_datetime` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.textX AS col_type` FROM `catalog_product_entity_text` AS `t`)",
+			"",
+		)
 	})
 
 	t.Run("Interpolated", func(t *testing.T) {

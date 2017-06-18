@@ -59,12 +59,18 @@ func (sr someRecord) AssembleArguments(stmtType int, args Arguments, columns []s
 func TestInsert_Add(t *testing.T) {
 	t.Parallel()
 	t.Run("AddValues error", func(t *testing.T) {
-		compareToSQL(t,
-			NewInsert("a").AddColumns("b").AddValues(make(chan int)),
-			errors.IsNotSupported,
-			"",
-			"",
-		)
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					assert.True(t, errors.IsNotSupported(err), "%+v", err)
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+		NewInsert("a").AddColumns("b").AddValues(make(chan int))
 	})
 	t.Run("single AddValues", func(t *testing.T) {
 		compareToSQL(t,
@@ -327,8 +333,8 @@ func TestInsert_Events(t *testing.T) {
 		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')", sqlStr)
 
 		// call it twice (4x) to test for being NOT idempotent
-		compareToSQL(t, d, errors.IsAlreadyExists,
-			"",
+		compareToSQL(t, d, nil,
+			"INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')",
 			"",
 		)
 
@@ -378,6 +384,9 @@ func TestInsert_Events(t *testing.T) {
 
 		ins.Listeners.Add(
 			Listen{
+				// Multiple calls and colC is getting ignored because the Pair
+				// function only creates the next value slice when a column `a`
+				// gets called with Pair.
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
 				InsertFunc: func(i *Insert) {
@@ -390,8 +399,8 @@ func TestInsert_Events(t *testing.T) {
 		assert.Nil(t, args.Interfaces())
 		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')", sqlStr)
 
-		compareToSQL(t, ins, errors.IsAlreadyExists,
-			"",
+		compareToSQL(t, ins, nil,
+			"INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')",
 			"",
 		)
 
@@ -471,9 +480,8 @@ func TestInsert_Pair(t *testing.T) {
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3)",
 			int64(2046), int64(33), int64(3),
 		)
-
 	})
-	t.Run("multiple rows triggers error", func(t *testing.T) {
+	t.Run("multiple rows triggers NO error", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").
 			Pair("product_id", ArgInt64(2046)).
 			Pair("linked_product_id", ArgInt64(33)).
@@ -482,9 +490,10 @@ func TestInsert_Pair(t *testing.T) {
 			Pair("product_id", ArgInt64(2046)).
 			Pair("linked_product_id", ArgInt64(34)).
 			Pair("link_type_id", ArgInt64(3)),
-			errors.IsAlreadyExists,
-			"",
-			"",
+			nil,
+			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)",
+			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)",
+			int64(2046), int64(33), int64(3), int64(2046), int64(34), int64(3),
 		)
 	})
 }

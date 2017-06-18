@@ -84,8 +84,6 @@ type Select struct {
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
-	// previousError any error occurred during construction the SQL statement
-	previousError error
 }
 
 // NewSelect creates a new Select object.
@@ -251,7 +249,8 @@ func (b *Select) AddColumns(cols ...string) *Select {
 // 		AddColumnsAlias("(e.price*x.tax*t.weee)", "final_price") // `(e.price*x.tax*t.weee)` AS `final_price`
 func (b *Select) AddColumnsAlias(columnAliases ...string) *Select {
 	if (len(columnAliases) % 2) == 1 {
-		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columnAliases)
+		// A programmer made an error
+		panic(errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columnAliases))
 	} else {
 		b.Columns = b.Columns.appendColumnsAliases(columnAliases, false)
 	}
@@ -263,7 +262,8 @@ func (b *Select) AddColumnsAlias(columnAliases ...string) *Select {
 // 		AddColumnsExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
 func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	if (len(expressionAliases) % 2) == 1 {
-		b.previousError = errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", expressionAliases)
+		// A programmer made an error
+		panic(errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", expressionAliases))
 	} else {
 		b.Columns = b.Columns.appendColumnsAliases(expressionAliases, true)
 	}
@@ -469,9 +469,6 @@ func (b *Select) hasBuildCache() bool {
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) toSQL(w queryWriter) error {
-	if b.previousError != nil {
-		return errors.Wrap(b.previousError, "[dbr] Select.toSQL")
-	}
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
 	}
@@ -556,10 +553,6 @@ func (b *Select) toSQL(w queryWriter) error {
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
-	if b.previousError != nil {
-		return nil, errors.Wrap(b.previousError, "[dbr] Select.toSQL")
-	}
-
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}

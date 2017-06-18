@@ -172,6 +172,28 @@ func ExampleInsert_FromSelect() {
 	//`id` DESC LIMIT 20 OFFSET 0
 }
 
+func ExampleInsert_Pair() {
+	ins := dbr.NewInsert("catalog_product_link").
+		Pair("product_id", dbr.ArgInt64(2046)).
+		Pair("linked_product_id", dbr.ArgInt64(33)).
+		Pair("link_type_id", dbr.ArgInt64(3)).
+		// next row
+		Pair("product_id", dbr.ArgInt64(2046)).
+		Pair("linked_product_id", dbr.ArgInt64(34)).
+		Pair("link_type_id", dbr.ArgInt64(3))
+	// next row ...
+	writeToSQLAndInterpolate(ins)
+	// Output:
+	//Prepared Statement:
+	//INSERT INTO `catalog_product_link`
+	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)
+	//Arguments: [2046 33 3 2046 34 3]
+	//
+	//Interpolated Statement:
+	//INSERT INTO `catalog_product_link`
+	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)
+}
+
 func ExampleNewDelete() {
 	d := dbr.NewDelete("tableA").Where(
 		dbr.Column("a", dbr.Like.Str("b'%")),

@@ -397,13 +397,22 @@ func newNullTypedRecordWithData() *nullTypedRecord {
 func TestIFaceToArgs(t *testing.T) {
 	t.Parallel()
 	t.Run("not supported", func(t *testing.T) {
-		args, err := iFaceToArgs(time.Minute)
-		assert.Nil(t, args)
-		assert.True(t, errors.IsNotSupported(err), "%+v", err)
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					assert.True(t, errors.IsNotSupported(err), "%+v", err)
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+		_ = iFaceToArgs(time.Minute)
 	})
 	t.Run("all types", func(t *testing.T) {
 		nt := now()
-		args, err := iFaceToArgs(
+		args := iFaceToArgs(
 			float32(2.3), float64(2.2),
 			int64(5), int(6), int32(7), int16(8), int8(9),
 			uint32(math.MaxUint32), uint16(math.MaxUint16), uint8(math.MaxUint8),
@@ -411,7 +420,6 @@ func TestIFaceToArgs(t *testing.T) {
 			now(), &nt, nil,
 		)
 
-		require.NoError(t, err)
 		assert.Exactly(t, []interface{}{
 			float64(2.299999952316284), float64(2.2),
 			int64(5), int64(6), int64(7), int64(8), int64(9),

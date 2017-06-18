@@ -17,6 +17,7 @@ package dbr
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -76,8 +77,6 @@ type Insert struct {
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.
 	propagationStoppedAt int
-	// previousError any error occurred during construction the SQL statement
-	previousError error
 }
 
 // NewInsert creates a new Insert object.
@@ -155,12 +154,7 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 // creates a new set of values. Only primitive types are supported. Runtime type
 // safety only.
 func (b *Insert) AddValues(values ...interface{}) *Insert {
-	args, err := iFaceToArgs(values...)
-	if err != nil {
-		b.previousError = errors.Wrap(err, "[dbr] Insert.AddValues.iFaceToArgs")
-		return b
-	}
-	return b.AddArguments(args...)
+	return b.AddArguments(iFaceToArgs(values...)...)
 }
 
 // AddArguments appends a set of values to the statement. Each call of
@@ -207,24 +201,30 @@ func (b *Insert) AddOnDuplicateKey(column string, arg Argument) *Insert {
 	return b
 }
 
-// Pair adds a key/value pair to the statement.
+// Pair appends a key/value (column/value) pair to the statement. Calling this
+// function multiple times with the same column name produces invalid SQL.
 func (b *Insert) Pair(column string, arg Argument) *Insert {
-	if b.previousError != nil {
-		return b
-	}
-	for _, c := range b.Columns {
-		if c == column {
-			b.previousError = errors.NewAlreadyExistsf("[dbr] Column %q has already been added", c)
-			return b
+	colPos := -1
+	for i, c := range b.Columns {
+		if strings.EqualFold(c, column) {
+			colPos = i
+			break
 		}
 	}
-
-	b.Columns = append(b.Columns, column)
-	if len(b.Values) == 0 {
-		b.Values = make([]Arguments, 1, 5)
+	if colPos == -1 {
+		b.Columns = append(b.Columns, column)
+		if len(b.Values) == 0 {
+			b.Values = make([]Arguments, 1, 5)
+		}
+		b.Values[0] = append(b.Values[0], arg)
+		return b
 	}
-	b.Values[0] = append(b.Values[0], arg)
 
+	if colPos == 0 { // create new slice
+		b.Values = append(b.Values, make(Arguments, len(b.Columns)))
+	}
+	pos := len(b.Values) - 1
+	b.Values[pos][colPos] = arg
 	return b
 }
 
@@ -266,9 +266,6 @@ func (b *Insert) hasBuildCache() bool {
 }
 
 func (b *Insert) toSQL(buf queryWriter) error {
-	if b.previousError != nil {
-		return errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
-	}
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
@@ -389,9 +386,6 @@ func (b *Insert) toSQL(buf queryWriter) error {
 }
 
 func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
-	if b.previousError != nil {
-		return nil, errors.Wrap(b.previousError, "[dbr] Insert.ToSQL")
-	}
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil

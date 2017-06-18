@@ -45,10 +45,9 @@ type Union struct {
 	IsExcept      bool // See Except()
 
 	// When using Union as a template, only one *Select is required.
-	oldNew        [][]string //use for string replacement with `repls` field
-	repls         []*strings.Replacer
-	stmtCount     int
-	previousError error
+	oldNew    [][]string //use for string replacement with `repls` field
+	repls     []*strings.Replacer
+	stmtCount int
 }
 
 // NewUnion creates a new Union object. If using as a template, only one *Select
@@ -152,9 +151,9 @@ func (u *Union) Except() *Union {
 // StringReplace is only applicable when using *Union as a template.
 // StringReplace replaces the `key` with one of the `values`. Each value defines
 // a generated SELECT query. Repeating calls of StringReplace must provide the
-// same amount of `values` as the first call. This function is just a simple
-// string replacement. Make sure that your key does not match other parts of the
-// SQL query.
+// same amount of `values` as the first  or an index of bound stack trace
+// happens. This function is just a simple string replacement. Make sure that
+// your key does not match other parts of the SQL query.
 func (u *Union) StringReplace(key string, values ...string) *Union {
 	if len(u.Selects) > 1 {
 		return u
@@ -164,12 +163,13 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 		u.oldNew = make([][]string, u.stmtCount)
 		u.repls = make([]*strings.Replacer, u.stmtCount)
 	}
-	if len(values) != u.stmtCount {
-		u.previousError = errors.NewNotValidf("[dbr] Union.StringReplace: Argument count for values too short. Have %d Want %d", len(values), u.stmtCount)
-		return u
-	}
 	for i := 0; i < u.stmtCount; i++ {
-		u.oldNew[i] = append(u.oldNew[i], key, values[i])
+		// The following block has been put on each line because the (index out of
+		// bound) stack trace will show exactly what you have made wrong =>
+		// Providing in the 2nd call of StringReplace too few `values`
+		// arguments.
+		u.oldNew[i] = append(u.oldNew[i], key,
+			values[i])
 	}
 	return u
 }
@@ -214,9 +214,7 @@ func (u *Union) hasBuildCache() bool {
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
 func (u *Union) toSQL(w queryWriter) error {
-	if u.previousError != nil {
-		return u.previousError
-	}
+
 	if len(u.Selects) > 1 {
 		for i, s := range u.Selects {
 			if i > 0 {
@@ -267,9 +265,6 @@ func (u *Union) makeArguments() Arguments {
 }
 
 func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
-	if u.previousError != nil {
-		return nil, u.previousError
-	}
 	if cap(args) == 0 {
 		args = u.makeArguments()
 	}

@@ -962,20 +962,35 @@ func TestSelect_Columns(t *testing.T) {
 		)
 	})
 	t.Run("AddColumnsAlias imbalanced", func(t *testing.T) {
-		s := NewSelect().From("t3").
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					assert.True(t, errors.IsMismatch(err), "%+v", err)
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+		NewSelect().From("t3").
 			AddColumnsAlias("t3.name", "t3Name", "t3.sku")
-		compareToSQL(t, s, errors.IsMismatch,
-			"",
-			"",
-		)
+
 	})
 	t.Run("AddColumnsExprAlias imbalanced", func(t *testing.T) {
-		s := NewSelect().From("t3").
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					assert.True(t, errors.IsMismatch(err), "%+v", err)
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+		NewSelect().From("t3").
 			AddColumnsExprAlias("t3.name", "t3Name", "t3.sku")
-		compareToSQL(t, s, errors.IsMismatch,
-			"",
-			"",
-		)
 	})
 	t.Run("AddColumnsExprAlias", func(t *testing.T) {
 		s := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
