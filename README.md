@@ -161,7 +161,6 @@ from the geniuses listed below:
 | Name | Package | License |
 | -------|----------|-------|
 | Steve Francia | [util/conv](http://github.com/corestoreio/csfw/tree/master/utils/conv) | MIT Copyright (c) 2014 |
-| Jonathan Novak, Tyler Smith, Michal Bohuslávek | [dbr](http://github.com/corestoreio/csfw/tree/master/storage/dbr) | The MIT License (MIT) 2014 |
 | Martin Angers and Contributors. | [ctxthrottled](http://github.com/corestoreio/csfw/tree/master/net/ctxthrottled) | The MIT License (MIT) 2014 |
 | Dave Cheney <dave AT cheney.net> | [util/errors](https://github.com/pkg/errors) | The MIT License (MIT) 2015 |
 | Jad Dittmar | [finance](https://github.com/Confunctionist/finance) aka. [money](http://github.com/corestoreio/csfw/tree/master/storage/money) | Copyright (c) 2011 |

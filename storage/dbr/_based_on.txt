@@ -1,3 +1,5 @@
+Based on github.com/gocraft/dbr made by:
+
 The MIT License (MIT)
 
 Copyright (c) 2014 Jonathan Novak, Tyler Smith, Michal Bohuslávek
