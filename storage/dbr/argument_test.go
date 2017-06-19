@@ -236,20 +236,6 @@ func TestOpArgs(t *testing.T) {
 	})
 }
 
-func TestArguments_DriverValues(t *testing.T) {
-	t.Parallel()
-	args := Arguments{
-		ArgInt64(1),
-		ArgInt(2),
-		ArgString("BlackForest"),
-		ArgFloat64(3.14159),
-		ArgBool(true),
-	}
-	assert.Exactly(t,
-		[]driver.Value{int64(1), int64(2), "BlackForest", 3.14159, true},
-		args.DriverValues())
-}
-
 func TestNullStringFrom(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, "product", MakeNullString("product").String)
