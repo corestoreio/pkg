@@ -34,6 +34,42 @@ type Scanner interface {
 	ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error
 }
 
+// Load loads data from a query into `s`. Load supports up to n-rows.
+func Load(ctx context.Context, b QueryBuilder, db Querier, s Scanner) (rowCount int, err error) {
+	sqlStr, tArg, err := b.ToSQL()
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+
+	rows, err := db.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	defer func() {
+		// Not testable with the sqlmock package :-(
+		if err2 := rows.Close(); err2 != nil && err == nil {
+			err = errors.WithStack(err2)
+		}
+	}()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+
+	for rows.Next() {
+		err = s.ScanRow(rowCount, columns, rows.Scan)
+		if err != nil {
+			return 0, errors.WithStack(err)
+		}
+		rowCount++
+	}
+	if err = rows.Err(); err != nil {
+		return rowCount, errors.WithStack(err)
+	}
+	return rowCount, err
+}
+
 // Query executes a query and returns many rows.
 func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
 	sqlStr, args, err := b.ToSQL()
@@ -63,43 +99,8 @@ func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Select object or it just panics. Load can load a single row or n-rows.
-func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
-	sqlStr, tArg, err := b.ToSQL()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	if b.Log != nil && b.Log.IsInfo() {
-		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Info("dbr.Select.Load.Timing", log.String("sql", sqlStr))
-	}
-
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	defer func() {
-		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.WithStack(err2)
-		}
-	}()
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	var rowCount int
-	for rows.Next() {
-		err = scnr.ScanRow(rowCount, columns, rows.Scan)
-		if err != nil {
-			return 0, errors.WithStack(err)
-		}
-		rowCount++
-	}
-	if err = rows.Err(); err != nil {
-		return rowCount, errors.WithStack(err)
-	}
-	return rowCount, err
+func (b *Select) Load(ctx context.Context, s Scanner) (rowCount int, err error) {
+	return Load(ctx, b, b.DB, s)
 }
 
 // The partially duplicated code in the Load[a-z0-9]+ functions can be optimized
