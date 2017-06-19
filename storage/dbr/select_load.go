@@ -77,7 +77,11 @@ func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err2 := rows.Close(); err2 != nil && err == nil {
+			err = errors.WithStack(err2)
+		}
+	}()
 
 	columns, err := rows.Columns()
 	if err != nil {
@@ -95,7 +99,7 @@ func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
 	if err = rows.Err(); err != nil {
 		return rowCount, errors.WithStack(err)
 	}
-	return rowCount, nil
+	return rowCount, err
 }
 
 // The partially duplicated code in the Load[a-z0-9]+ functions can be optimized
@@ -124,7 +128,7 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer rows.Close() // ToDo(CyS) See Load() if returned error should be checked. hard to tests :-(
 
 	var value int64
 	found := false

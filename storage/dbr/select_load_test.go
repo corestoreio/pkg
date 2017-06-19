@@ -174,33 +174,57 @@ func (ps *TableCoreConfigDatas) ScanRow(idx int, columns []string, scan func(des
 }
 
 func TestSelect_Load(t *testing.T) {
+	t.Parallel()
 
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
+	t.Run("success", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+
+		dbMock.ExpectQuery("SELECT").WillReturnRows(cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data.csv")))
+		s := dbr.NewSelect("*").From("core_config_data")
+		s.DB = dbc.DB
+
+		ccd := &TableCoreConfigDatas{}
+
+		_, err := s.Load(context.TODO(), ccd)
+		assert.NoError(t, err, "%+v", err)
+
+		buf := new(bytes.Buffer)
+		je := json.NewEncoder(buf)
+
+		for _, c := range ccd.Data {
+			if err := je.Encode(c); err != nil {
+				t.Fatalf("%+v", err)
+			}
 		}
-	}()
+		assert.Equal(t, "{\"ConfigID\":2,\"Scope\":\"default\",\"Path\":\"web/unsecure/base_url\",\"Value\":\"http://mgeto2.local/\"}\n{\"ConfigID\":3,\"Scope\":\"website\",\"ScopeID\":11,\"Path\":\"general/locale/code\",\"Value\":\"en_US\"}\n{\"ConfigID\":4,\"Scope\":\"default\",\"Path\":\"general/locale/timezone\",\"Value\":\"Europe/Berlin\"}\n{\"ConfigID\":5,\"Scope\":\"default\",\"Path\":\"currency/options/base\",\"Value\":\"EUR\"}\n{\"ConfigID\":15,\"Scope\":\"store\",\"ScopeID\":33,\"Path\":\"design/head/includes\",\"Value\":\"\\u003clink  rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"{{MEDIA_URL}}styles.css\\\" /\\u003e\"}\n{\"ConfigID\":16,\"Scope\":\"default\",\"Path\":\"admin/security/use_case_sensitive_login\",\"Value\":null}\n{\"ConfigID\":17,\"Scope\":\"default\",\"Path\":\"admin/security/session_lifetime\",\"Value\":\"90000\"}\n",
+			buf.String())
+	})
 
-	dbMock.ExpectQuery("SELECT").WillReturnRows(cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data.csv")))
-	s := dbr.NewSelect("*").From("core_config_data")
-	s.DB = dbc.DB
+	t.Run("row error", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
 
-	ccd := &TableCoreConfigDatas{}
+		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").
+			RowError(1, errors.NewConnectionFailedf("Con failed"))
+		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
+		s := dbr.NewSelect("config_id").From("core_config_data")
+		s.DB = dbc.DB
 
-	_, err := s.Load(context.TODO(), ccd)
-	assert.NoError(t, err, "%+v", err)
-
-	buf := new(bytes.Buffer)
-	je := json.NewEncoder(buf)
-
-	for _, c := range ccd.Data {
-		if err := je.Encode(c); err != nil {
-			t.Fatalf("%+v", err)
-		}
-	}
-	assert.Equal(t, "{\"ConfigID\":2,\"Scope\":\"default\",\"Path\":\"web/unsecure/base_url\",\"Value\":\"http://mgeto2.local/\"}\n{\"ConfigID\":3,\"Scope\":\"website\",\"ScopeID\":11,\"Path\":\"general/locale/code\",\"Value\":\"en_US\"}\n{\"ConfigID\":4,\"Scope\":\"default\",\"Path\":\"general/locale/timezone\",\"Value\":\"Europe/Berlin\"}\n{\"ConfigID\":5,\"Scope\":\"default\",\"Path\":\"currency/options/base\",\"Value\":\"EUR\"}\n{\"ConfigID\":15,\"Scope\":\"store\",\"ScopeID\":33,\"Path\":\"design/head/includes\",\"Value\":\"\\u003clink  rel=\\\"stylesheet\\\" type=\\\"text/css\\\" href=\\\"{{MEDIA_URL}}styles.css\\\" /\\u003e\"}\n{\"ConfigID\":16,\"Scope\":\"default\",\"Path\":\"admin/security/use_case_sensitive_login\",\"Value\":null}\n{\"ConfigID\":17,\"Scope\":\"default\",\"Path\":\"admin/security/session_lifetime\",\"Value\":\"90000\"}\n",
-		buf.String())
+		ccd := &TableCoreConfigDatas{}
+		_, err := s.Load(context.TODO(), ccd)
+		assert.True(t, errors.IsConnectionFailed(err), "%+v", err)
+	})
 }
