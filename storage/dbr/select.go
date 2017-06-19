@@ -115,7 +115,11 @@ func (c *Connection) Select(columns ...string) *Select {
 	s := &Select{
 		Log: c.Log,
 	}
-	s.Columns = s.Columns.appendColumns(columns, false)
+	if len(columns) == 1 && columns[0] == "*" {
+		s.Star()
+	} else {
+		s.Columns = s.Columns.appendColumns(columns, false)
+	}
 	s.DB = c.DB
 	return s
 }
@@ -136,7 +140,11 @@ func (tx *Tx) Select(columns ...string) *Select {
 	s := &Select{
 		Log: tx.Logger,
 	}
-	s.Columns = s.Columns.appendColumns(columns, false)
+	if len(columns) == 1 && columns[0] == "*" {
+		s.Star()
+	} else {
+		s.Columns = s.Columns.appendColumns(columns, false)
+	}
 	s.DB = tx.Tx
 	return s
 }
@@ -470,7 +478,7 @@ func (b *Select) hasBuildCache() bool {
 // It returns the string with placeholders and a slice of query arguments
 func (b *Select) toSQL(w queryWriter) error {
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.Wrap(err, "[dbr] Select.Listeners.dispatch")
+		return errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
@@ -500,12 +508,12 @@ func (b *Select) toSQL(w queryWriter) error {
 		}
 	}
 	if err := cols.FquoteAs(w); err != nil {
-		return errors.Wrap(err, "[dbr] Select.toSQL.Columns.FquoteAs")
+		return errors.WithStack(err)
 	}
 	if !b.Table.isEmpty() {
 		w.WriteString(" FROM ")
 		if err := b.Table.FquoteAs(w); err != nil {
-			return errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
+			return errors.WithStack(err)
 		}
 	}
 
@@ -515,12 +523,12 @@ func (b *Select) toSQL(w queryWriter) error {
 		w.WriteString(" JOIN ")
 		f.Table.FquoteAs(w)
 		if err := f.OnConditions.write(w, 'j'); err != nil {
-			return errors.Wrap(err, "[dbr] Select.toSQL.write")
+			return errors.WithStack(err)
 		}
 	}
 
 	if err := b.WhereFragments.write(w, 'w'); err != nil {
-		return errors.Wrap(err, "[dbr] Select.toSQL.write")
+		return errors.WithStack(err)
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -530,13 +538,13 @@ func (b *Select) toSQL(w queryWriter) error {
 				w.WriteString(", ")
 			}
 			if err := c.FquoteAs(w); err != nil {
-				return errors.Wrap(err, "[dbr] Select.toSQL.GroupBys")
+				return errors.WithStack(err)
 			}
 		}
 	}
 
 	if err := b.HavingFragments.write(w, 'h'); err != nil {
-		return errors.Wrap(err, "[dbr] Select.toSQL.HavingFragments.write")
+		return errors.WithStack(err)
 	}
 
 	sqlWriteOrderBy(w, b.OrderBys, false)
@@ -565,11 +573,11 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	args = append(args, b.RawArguments...)
 
 	if args, err = b.Columns.appendArgs(args); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Columns.FquoteAs")
+		return nil, errors.WithStack(err)
 	}
 
 	if args, err = b.Table.appendArgs(args); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.Table.FquoteAs")
+		return nil, errors.WithStack(err)
 	}
 
 	var pap []int
@@ -577,30 +585,30 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 		for _, f := range b.JoinFragments {
 			args, err = f.Table.appendArgs(args)
 			if err != nil {
-				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+				return nil, errors.WithStack(err)
 			}
 
 			if args, pap, err = f.OnConditions.appendArgs(args, 'j'); err != nil {
-				return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+				return nil, errors.WithStack(err)
 			}
 			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.OnConditions.Conditions()); err != nil {
-				return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+				return nil, errors.WithStack(err)
 			}
 		}
 	}
 
 	if args, pap, err = b.WhereFragments.appendArgs(args, 'w'); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.write")
+		return nil, errors.WithStack(err)
 	}
 	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+		return nil, errors.WithStack(err)
 	}
 
 	if args, pap, err = b.HavingFragments.appendArgs(args, 'h'); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.HavingFragments.write")
+		return nil, errors.WithStack(err)
 	}
 	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.Conditions()); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.toSQL.appendAssembledArgs")
+		return nil, errors.WithStack(err)
 	}
 	return args, nil
 }

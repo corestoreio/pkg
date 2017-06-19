@@ -236,7 +236,7 @@ func (u *Union) toSQL(w queryWriter) error {
 	selStr := bufS1.String()
 	bufferpool.Put(bufS1)
 	if err != nil {
-		return errors.Wrap(err, "[dbr] Union.ToSQL: toSQL template")
+		return errors.WithStack(err)
 	}
 
 	for i := 0; i < u.stmtCount; i++ {
@@ -279,7 +279,7 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 	args, err = u.Selects[0].appendArgs(args)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Union.ToSQL: toSQL template")
+		return nil, errors.WithStack(err)
 	}
 	return u.MultiplyArguments(args...), nil
 }
@@ -290,7 +290,7 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
 	sqlStr, args, err := u.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Union.Exec.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 
 	s1 := u.Selects[0]
@@ -300,7 +300,7 @@ func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
 
 	rows, err := s1.DB.QueryContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] delete.exec.Exec")
+		return nil, errors.WithStack(err)
 	}
 
 	return rows, nil
@@ -313,7 +313,7 @@ func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
 func (u *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	sqlStr, err := toSQLPrepared(u)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Union.Prepare.toSQLPrepared")
+		return nil, errors.WithStack(err)
 	}
 
 	s1 := u.Selects[0]
@@ -322,5 +322,5 @@ func (u *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	}
 
 	stmt, err := s1.DB.PrepareContext(ctx, sqlStr)
-	return stmt, errors.Wrap(err, "[dbr] Union.Prepare.Prepare")
+	return stmt, errors.WithStack(err)
 }

@@ -182,22 +182,22 @@ func (b *With) toSQL(w queryWriter) error {
 	case b.TopLevel.Select != nil:
 		b.TopLevel.Select.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Select.UseBuildCache = b.UseBuildCache
-		return errors.Wrap(b.TopLevel.Select.toSQL(w), "[dbr] With.toSQL.Select")
+		return errors.WithStack(b.TopLevel.Select.toSQL(w))
 
 	case b.TopLevel.Union != nil:
 		b.TopLevel.Union.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Union.UseBuildCache = b.UseBuildCache
-		return errors.Wrap(b.TopLevel.Union.toSQL(w), "[dbr] With.toSQL.Union")
+		return errors.WithStack(b.TopLevel.Union.toSQL(w))
 
 	case b.TopLevel.Update != nil:
 		b.TopLevel.Update.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Update.UseBuildCache = b.UseBuildCache
-		return errors.Wrap(b.TopLevel.Update.toSQL(w), "[dbr] With.toSQL.Update")
+		return errors.WithStack(b.TopLevel.Update.toSQL(w))
 
 	case b.TopLevel.Delete != nil:
 		b.TopLevel.Delete.IsInterpolate = b.IsInterpolate
 		b.TopLevel.Delete.UseBuildCache = b.UseBuildCache
-		return errors.Wrap(b.TopLevel.Delete.toSQL(w), "[dbr] With.toSQL.Delete")
+		return errors.WithStack(b.TopLevel.Delete.toSQL(w))
 	}
 	return errors.NewEmptyf("[dbr] Type With misses a top level statement")
 }
@@ -211,7 +211,7 @@ func (b *With) appendArgs(args Arguments) (_ Arguments, err error) {
 			args, err = sc.Union.appendArgs(args)
 		}
 		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] With.appendArgs")
+			return nil, errors.WithStack(err)
 		}
 	}
 

@@ -233,7 +233,7 @@ func (b *Update) hasBuildCache() bool {
 func (b *Update) toSQL(buf queryWriter) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.Wrap(err, "[dbr] Update.Listeners.dispatch")
+		return errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
@@ -274,7 +274,7 @@ func (b *Update) toSQL(buf queryWriter) error {
 
 	// Write WHERE clause if we have any fragments
 	if err := b.WhereFragments.write(buf, 'w'); err != nil {
-		return errors.Wrap(err, "[dbr] Update.ToSQL.write")
+		return errors.WithStack(err)
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
@@ -297,7 +297,7 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 		var err error
 		args, err = b.Record.AssembleArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
 		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] Update.ToSQL Record.AssembleArguments")
+			return nil, errors.WithStack(err)
 		}
 	}
 
@@ -313,10 +313,10 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	// Write WHERE clause if we have any fragments
 	args, pap, err := b.WhereFragments.appendArgs(args, 'w')
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.ToSQL.write")
+		return nil, errors.WithStack(err)
 	}
 	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtUpdate|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.toSQL.appendAssembledArgs")
+		return nil, errors.WithStack(err)
 	}
 
 	return args, nil
@@ -327,7 +327,7 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Exec.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
@@ -335,7 +335,7 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 	}
 	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Exec.Exec")
+		return nil, errors.WithStack(err)
 	}
 
 	return result, nil
@@ -346,14 +346,14 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	sqlStr, err := toSQLPrepared(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Prepare.toSQLPrepared")
+		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsInfo() {
 		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", sqlStr))
 	}
 
 	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
-	return stmt, errors.Wrap(err, "[dbr] Update.Prepare.Prepare")
+	return stmt, errors.WithStack(err)
 }
 
 // UpdatedColumns contains the column/argument association for either the SET
@@ -504,7 +504,7 @@ func txUpdateMultiRollback(tx Txer, previousErr error, msg string, args ...inter
 // returned result slice indexes are same index as for the Records slice.
 func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([]sql.Result, error) {
 	if err := b.validate(); err != nil {
-		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec")
+		return nil, errors.WithStack(err)
 	}
 
 	if b.Update.Log != nil && b.Update.Log.IsInfo() {
@@ -521,7 +521,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 
 	err := b.Update.toSQL(sqlBuf)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] UpdateMulti.Exec.Update.toSQL")
+		return nil, errors.WithStack(err)
 	}
 
 	exec := b.Update.DB
@@ -584,7 +584,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Tx.Commit. Query: %q", sqlBuf)
+		return nil, errors.WithStack(err)
 	}
 
 	return results, nil
@@ -597,7 +597,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 //	defer close(errs)
 //	defer close(errs)
 //	if err := b.validate(); err != nil {
-//		errs <- errors.Wrap(err, "[dbr] UpdateMulti.Exec")
+//		errs <- errors.WithStack(err)
 //		return
 //	}
 //
@@ -615,7 +615,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 //	//}()
 //	//
 //	//if err := g.Wait(); err != nil {
-//	//	errChan <- errors.Wrap(err, "[dbr] UpdateMulti.Exec.ErrGroup.Wait")
+//	//	errChan <- errors.WithStack(err)
 //	//}
 //
 //	// This could run in parallel but it depends if each exec gets a

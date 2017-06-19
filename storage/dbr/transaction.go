@@ -31,7 +31,7 @@ type Tx struct {
 func (c *Connection) Begin() (*Tx, error) {
 	dbTx, err := c.DB.Begin()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] transaction.begin.error")
+		return nil, errors.WithStack(err)
 	}
 	tx := &Tx{
 		Tx: dbTx,
@@ -44,12 +44,12 @@ func (c *Connection) Begin() (*Tx, error) {
 
 // Commit finishes the transaction
 func (tx *Tx) Commit() error {
-	return errors.Wrap(tx.Tx.Commit(), "[dbr] transaction.commit.error")
+	return errors.WithStack(tx.Tx.Commit())
 }
 
 // Rollback cancels the transaction
 func (tx *Tx) Rollback() error {
-	return errors.Wrap(tx.Tx.Rollback(), "[dbr] transaction.rollback.error")
+	return errors.WithStack(tx.Tx.Rollback())
 }
 
 // Wrap is a helper method that will automatically COMMIT or ROLLBACK once the
@@ -74,5 +74,5 @@ func (tx *Tx) Wrap(fns ...func() error) error {
 			return errors.Wrapf(err, "[dbr] transaction.wrap.error at index %d", i)
 		}
 	}
-	return errors.Wrap(tx.Commit(), "[dbr] transaction.wrap.commit")
+	return errors.WithStack(tx.Commit())
 }

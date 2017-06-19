@@ -268,7 +268,7 @@ func (b *Insert) hasBuildCache() bool {
 func (b *Insert) toSQL(buf queryWriter) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.Wrap(err, "[dbr] Insert.Listeners.dispatch")
+		return errors.WithStack(err)
 	}
 
 	if len(b.OnDuplicateKeyAvoidUpdate) > 0 {
@@ -305,7 +305,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 	buf.WriteByte(' ')
 
 	if b.Select != nil {
-		return errors.Wrap(b.Select.toSQL(buf), "[dbr] Insert.FromSelect")
+		return errors.WithStack(b.Select.toSQL(buf))
 	}
 
 	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
@@ -356,7 +356,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 	}
 
 	if b.Records == nil {
-		return errors.Wrap(b.OnDuplicateKey.writeOnDuplicateKey(buf), "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
+		return errors.WithStack(b.OnDuplicateKey.writeOnDuplicateKey(buf))
 	}
 
 	for i := range b.Records {
@@ -380,7 +380,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 	}
 
 	if err := b.OnDuplicateKey.writeOnDuplicateKey(buf); err != nil {
-		return errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.writeOnDuplicateKey")
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -393,7 +393,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if b.Select != nil {
 		args, err = b.Select.appendArgs(args)
-		return args, errors.Wrap(err, "[dbr] Insert.FromSelect")
+		return args, errors.WithStack(err)
 	}
 
 	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
@@ -418,14 +418,14 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if b.Records == nil {
 		args, err = b.OnDuplicateKey.appendArgs(args)
-		return args, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.appendArgs")
+		return args, errors.WithStack(err)
 	}
 
 	for _, rec := range b.Records {
 		alBefore := len(args)
 		args, err = rec.AssembleArguments(SQLStmtInsert|SQLPartValues, args, b.Columns) // Columns can be empty
 		if err != nil {
-			return nil, errors.Wrap(err, "[dbr] Insert.ToSQL.Record")
+			return nil, errors.WithStack(err)
 		}
 		if addedArgs := len(args) - alBefore; addedArgs != argCount0 {
 			return nil, errors.NewMismatchf("[dbr] Insert.appendArgs RecordValueCount(%d) does not match the number of assembled arguments (%d)", b.RecordValueCount, addedArgs)
@@ -433,7 +433,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 
 	if args, err = b.OnDuplicateKey.appendArgs(args); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.OnDuplicateKey.appendArgs")
+		return nil, errors.WithStack(err)
 	}
 	return args, nil
 }
@@ -447,7 +447,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.Exec.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
@@ -455,7 +455,7 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 	}
 	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
-		return result, errors.Wrap(err, "[dbr] Insert.Exec.Exec")
+		return result, errors.WithStack(err)
 	}
 
 	return result, nil
@@ -465,7 +465,7 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 func (b *Insert) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	sqlStr, err := toSQLPrepared(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Insert.Prepare.toSQLPrepared")
+		return nil, errors.WithStack(err)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
@@ -473,5 +473,5 @@ func (b *Insert) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	}
 
 	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
-	return stmt, errors.Wrap(err, "[dbr] Insert.Prepare.Prepare")
+	return stmt, errors.WithStack(err)
 }

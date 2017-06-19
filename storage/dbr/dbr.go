@@ -53,7 +53,7 @@ func WithDSN(dsn string) ConnectionOption {
 	return func(c *Connection) error {
 		myc, err := mysql.ParseDSN(dsn)
 		if err != nil {
-			return errors.Wrap(err, "[dbr] mysql.ParseDSN")
+			return errors.WithStack(err)
 		}
 		c.dsn = myc
 		return nil
@@ -68,7 +68,7 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 		dn: DriverNameMySQL,
 	}
 	if err := c.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[dbr] NewConnection.ApplyOpts")
+		return nil, errors.WithStack(err)
 	}
 
 	switch c.dn {
@@ -87,7 +87,7 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 
 	var err error
 	if c.DB, err = sql.Open(c.dn, c.dsn.FormatDSN()); err != nil {
-		return nil, errors.Wrap(err, "[dbr] sql.Open")
+		return nil, errors.WithStack(err)
 	}
 
 	return c, nil
@@ -110,7 +110,7 @@ func MustConnectAndVerify(opts ...ConnectionOption) *Connection {
 func (c *Connection) Options(opts ...ConnectionOption) error {
 	for _, opt := range opts {
 		if err := opt(c); err != nil {
-			return errors.Wrap(err, "[dbr] Connection ApplyOpts")
+			return errors.WithStack(err)
 		}
 	}
 	return nil
@@ -118,5 +118,5 @@ func (c *Connection) Options(opts ...ConnectionOption) error {
 
 // Close closes the database, releasing any open resources.
 func (c *Connection) Close() error {
-	return errors.Wrap(c.DB.Close(), "[dbr] connection.close")
+	return errors.WithStack(c.DB.Close())
 }

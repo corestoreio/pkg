@@ -161,7 +161,7 @@ func (ps *TableCoreConfigDatas) ScanRow(idx int, columns []string, scan func(des
 	}
 
 	if err := scan(ps.scanArgs...); err != nil {
-		return errors.Wrap(err, "[dbr_test] dbrPersons.ScanRow")
+		return errors.WithStack(err)
 	}
 
 	// We can copy here easy by assigning the value to a new variable and then

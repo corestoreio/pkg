@@ -331,7 +331,7 @@ func (wf WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argum
 		} else {
 
 			if f.Sub.Select != nil {
-				args, err = f.Sub.Select.appendArgs(args) // todo
+				args, err = f.Sub.Select.appendArgs(args)
 				if err != nil {
 					return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
 				}
@@ -371,7 +371,7 @@ func appendAssembledArgs(pendingArgPos []int, rec ArgumentAssembler, args Argume
 	lenBefore := len(args)
 	args, err = rec.AssembleArguments(stmtType, args, columns)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] appendAssembledArgs Record.AssembleArguments")
+		return nil, errors.WithStack(err)
 	}
 	lenAfter := len(args)
 	if lenAfter > lenBefore {

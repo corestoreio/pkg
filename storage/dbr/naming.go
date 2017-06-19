@@ -98,7 +98,7 @@ func (a alias) appendArgs(args Arguments) (_ Arguments, err error) {
 	if a.DerivedTable != nil {
 		args, err = a.DerivedTable.appendArgs(args)
 	}
-	return args, errors.Wrap(err, "[dbr] alias.appendArgs")
+	return args, errors.WithStack(err)
 }
 
 // FquoteAs writes the quoted table and its maybe alias into w.
@@ -106,7 +106,7 @@ func (a alias) FquoteAs(w queryWriter) error {
 	if a.DerivedTable != nil {
 		w.WriteByte('(')
 		if err := a.DerivedTable.toSQL(w); err != nil {
-			return errors.Wrap(err, "[dbr] alias.FquoteAs.SubSelect")
+			return errors.WithStack(err)
 		}
 		w.WriteByte(')')
 		w.WriteString(" AS ")
@@ -141,7 +141,7 @@ func (as aliases) FquoteAs(w queryWriter) error {
 			w.WriteString(", ")
 		}
 		if err := a.FquoteAs(w); err != nil {
-			return errors.Wrapf(err, "[dbr] aliases.FquoteAs")
+			return errors.WithStack(err)
 		}
 	}
 	return nil
@@ -152,7 +152,7 @@ func (as aliases) appendArgs(args Arguments) (Arguments, error) {
 		var err error
 		args, err = a.appendArgs(args)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[dbr] aliases.FquoteAs")
+			return nil, errors.WithStack(err)
 		}
 	}
 	return args, nil

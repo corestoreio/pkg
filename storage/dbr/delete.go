@@ -201,7 +201,7 @@ func (b *Delete) hasBuildCache() bool {
 func (b *Delete) toSQL(buf queryWriter) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
-		return errors.Wrap(err, "[dbr] Delete.Listeners.dispatch")
+		return errors.WithStack(err)
 	}
 
 	if b.RawFullSQL != "" {
@@ -219,7 +219,7 @@ func (b *Delete) toSQL(buf queryWriter) error {
 	// TODO(CyS) add SQLStmtDeleteJoin
 
 	if err := b.WhereFragments.write(buf, 'w'); err != nil {
-		return errors.Wrap(err, "[dbr] Delete.ToSQL.write")
+		return errors.WithStack(err)
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
@@ -240,17 +240,17 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 	args, err = b.From.appendArgs(args)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.From.appendArgs")
+		return nil, errors.WithStack(err)
 	}
 
 	// TODO(CyS) add SQLStmtDeleteJoin
 
 	args, pap, err := b.WhereFragments.appendArgs(args, 'w')
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.ToSQL.write")
+		return nil, errors.WithStack(err)
 	}
 	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtDelete|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.toSQL.appendAssembledArgs")
+		return nil, errors.WithStack(err)
 	}
 	return args, nil
 }
@@ -260,7 +260,7 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.Exec.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
@@ -269,7 +269,7 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 
 	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
 	if err != nil {
-		return result, errors.Wrap(err, "[dbr] delete.exec.Exec")
+		return result, errors.WithStack(err)
 	}
 
 	return result, nil
@@ -281,7 +281,7 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	sqlStr, err := toSQLPrepared(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Delete.Prepare.toSQLPrepared")
+		return nil, errors.WithStack(err)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
@@ -289,5 +289,5 @@ func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	}
 
 	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
-	return stmt, errors.Wrap(err, "[dbr] Delete.Prepare.Prepare")
+	return stmt, errors.WithStack(err)
 }

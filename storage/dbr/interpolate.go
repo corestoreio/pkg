@@ -112,7 +112,7 @@ func Interpolate(sql string, args ...Argument) (string, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := interpolate(buf, []byte(sql), args...); err != nil {
-		return "", errors.Wrapf(err, "[dbr] Interpolate with SQL string %q", sql)
+		return "", errors.WithStack(err)
 	}
 	return buf.String(), nil
 }
@@ -130,7 +130,7 @@ func interpolate(buf queryWriter, sql []byte, args ...Argument) error {
 		rBuf := bufferpool.Get()
 		defer bufferpool.Put(rBuf)
 		if err := repeat(rBuf, sql, args...); err != nil {
-			return errors.Wrap(err, "[dbr]. Interpolate.repeat")
+			return errors.WithStack(err)
 		}
 		sql = rBuf.Bytes()
 	}
@@ -161,7 +161,7 @@ func interpolate(buf queryWriter, sql []byte, args ...Argument) error {
 			}
 
 			if err := args[argIndex].writeTo(buf, qCount); err != nil {
-				return errors.Wrap(err, "[dbr] Interpolate writeTo arguments")
+				return errors.WithStack(err)
 			}
 
 			qCountTotal++

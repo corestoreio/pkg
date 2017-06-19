@@ -38,7 +38,7 @@ type Scanner interface {
 func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[store] Select.Query.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
@@ -47,18 +47,18 @@ func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args.Interfaces()...)
-	return rows, errors.Wrap(err, "[store] Select.Query.QueryContext")
+	return rows, errors.WithStack(err)
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
 func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	sqlStr, err := toSQLPrepared(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Update.Prepare.toSQLPrepared")
+		return nil, errors.WithStack(err)
 	}
 
 	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
-	return stmt, errors.Wrap(err, "[store] Select.Query.QueryContext")
+	return stmt, errors.WithStack(err)
 }
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
@@ -66,7 +66,7 @@ func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
 func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.ToSQL")
+		return 0, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsInfo() {
 		// do not use fullSQL because we might log sensitive data
@@ -75,25 +75,25 @@ func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadStructs.query")
+		return 0, errors.WithStack(err)
 	}
 	defer rows.Close()
 
 	columns, err := rows.Columns()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.load_one.rows.Columns")
+		return 0, errors.WithStack(err)
 	}
 
 	var rowCount int
 	for rows.Next() {
 		err = scnr.ScanRow(rowCount, columns, rows.Scan)
 		if err != nil {
-			return 0, errors.Wrap(err, "[dbr] Select.Loader.ScanRow")
+			return 0, errors.WithStack(err)
 		}
 		rowCount++
 	}
 	if err = rows.Err(); err != nil {
-		return rowCount, errors.Wrap(err, "[dbr] Select.LoadStructs.rows_err")
+		return rowCount, errors.WithStack(err)
 	}
 	return rowCount, nil
 }
@@ -113,7 +113,7 @@ func (b *Select) Load(ctx context.Context, scnr Scanner) (int, error) {
 func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.ToSQL")
+		return 0, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -122,7 +122,7 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.QueryContext")
+		return 0, errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -130,12 +130,12 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 	found := false
 	for rows.Next() {
 		if err = rows.Scan(&value); err != nil {
-			return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.scan")
+			return 0, errors.WithStack(err)
 		}
 		found = true
 	}
 	if err = rows.Err(); err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadInt64.rows_err")
+		return 0, errors.WithStack(err)
 	}
 	if !found {
 		err = errors.NewNotFoundf("[dbr] LoadInt64 value not found")
@@ -147,7 +147,7 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -156,7 +156,7 @@ func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.QueryContext")
+		return nil, errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -164,12 +164,12 @@ func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
 	for rows.Next() {
 		var value int64
 		if err = rows.Scan(&value); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.scan")
+			return nil, errors.WithStack(err)
 		}
 		values = append(values, value)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadInt64s.rows_err")
+		return nil, errors.WithStack(err)
 	}
 	return values, nil
 }
@@ -180,7 +180,7 @@ func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
 func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.ToSQL")
+		return 0, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -189,7 +189,7 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.QueryContext")
+		return 0, errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -197,12 +197,12 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 	found := false
 	for rows.Next() {
 		if err = rows.Scan(&value); err != nil {
-			return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.scan")
+			return 0, errors.WithStack(err)
 		}
 		found = true
 	}
 	if err = rows.Err(); err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadUint64.rows_err")
+		return 0, errors.WithStack(err)
 	}
 	if !found {
 		err = errors.NewNotFoundf("[dbr] LoadUint64 value not found")
@@ -214,7 +214,7 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -223,7 +223,7 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.QueryContext")
+		return nil, errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -231,12 +231,12 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 	for rows.Next() {
 		var value uint64
 		if err = rows.Scan(&value); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.scan")
+			return nil, errors.WithStack(err)
 		}
 		values = append(values, value)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadUint64s.rows_err")
+		return nil, errors.WithStack(err)
 	}
 	return values, nil
 }
@@ -246,7 +246,7 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.ToSQL")
+		return 0, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -255,7 +255,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.QueryContext")
+		return 0, errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -263,12 +263,12 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 	found := false
 	for rows.Next() {
 		if err = rows.Scan(&value); err != nil {
-			return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.scan")
+			return 0, errors.WithStack(err)
 		}
 		found = true
 	}
 	if err = rows.Err(); err != nil {
-		return 0, errors.Wrap(err, "[dbr] Select.LoadFloat64.rows_err")
+		return 0, errors.WithStack(err)
 	}
 	if !found {
 		err = errors.NewNotFoundf("[dbr] LoadFloat64 value not found")
@@ -280,7 +280,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -289,7 +289,7 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.QueryContext")
+		return nil, errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -297,12 +297,12 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 	for rows.Next() {
 		var value float64
 		if err = rows.Scan(&value); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.scan")
+			return nil, errors.WithStack(err)
 		}
 		values = append(values, value)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadFloat64s.rows_err")
+		return nil, errors.WithStack(err)
 	}
 	return values, nil
 }
@@ -312,7 +312,7 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 func (b *Select) LoadString(ctx context.Context) (string, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return "", errors.Wrap(err, "[dbr] Select.LoadInt64.ToSQL")
+		return "", errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -321,7 +321,7 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return "", errors.Wrap(err, "[dbr] Select.LoadInt64.QueryContext")
+		return "", errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -329,12 +329,12 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 	found := false
 	for rows.Next() {
 		if err = rows.Scan(&value); err != nil {
-			return "", errors.Wrap(err, "[dbr] Select.LoadInt64.scan")
+			return "", errors.WithStack(err)
 		}
 		found = true
 	}
 	if err = rows.Err(); err != nil {
-		return "", errors.Wrap(err, "[dbr] Select.LoadInt64.rows_err")
+		return "", errors.WithStack(err)
 	}
 	if !found {
 		err = errors.NewNotFoundf("[dbr] LoadInt64 value not found")
@@ -346,7 +346,7 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.ToSQL")
+		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
@@ -355,7 +355,7 @@ func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.QueryContext")
+		return nil, errors.WithStack(err)
 	}
 	defer rows.Close()
 
@@ -363,12 +363,12 @@ func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
 	for rows.Next() {
 		var value string
 		if err = rows.Scan(&value); err != nil {
-			return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.scan")
+			return nil, errors.WithStack(err)
 		}
 		values = append(values, value)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "[dbr] Select.LoadStrings.rows_err")
+		return nil, errors.WithStack(err)
 	}
 	return values, nil
 }

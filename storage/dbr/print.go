@@ -77,12 +77,12 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	if useCache {
 		sql, args, err := b.readBuildCache()
 		if err != nil {
-			return "", nil, errors.Wrap(err, "[dbr] toSQL.readBuildCache")
+			return "", nil, errors.WithStack(err)
 		}
 		if sql != nil {
 			if isInterpolate {
 				err := interpolate(ipBuf, sql, args...)
-				return ipBuf.String(), nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
+				return ipBuf.String(), nil, errors.WithStack(err)
 			}
 			return string(sql), args, nil
 		}
@@ -92,12 +92,12 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	defer bufferpool.Put(buf)
 
 	if err := b.toSQL(buf); err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] toSQL.toSQL")
+		return "", nil, errors.WithStack(err)
 	}
 	// capacity of Arguments gets handled in the concret implementation of `b`
 	args, err := b.appendArgs(Arguments{})
 	if err != nil {
-		return "", nil, errors.Wrap(err, "[dbr] toSQL.appendArgs")
+		return "", nil, errors.WithStack(err)
 	}
 	if useCache {
 		sqlCopy := make([]byte, buf.Len())
@@ -107,7 +107,7 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 
 	if isInterpolate {
 		err := interpolate(ipBuf, buf.Bytes(), args...)
-		return ipBuf.String(), nil, errors.Wrap(err, "[dbr] toSQL.Interpolate")
+		return ipBuf.String(), nil, errors.WithStack(err)
 	}
 	return buf.String(), args, nil
 }
@@ -117,7 +117,7 @@ func toSQLPrepared(b queryBuilder) (string, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	err := b.toSQL(buf)
-	return buf.String(), errors.Wrap(err, "[dbr] toSQLPrepared.toSQL")
+	return buf.String(), errors.WithStack(err)
 }
 
 func makeSQL(b queryBuilder, isInterpolate bool) string {

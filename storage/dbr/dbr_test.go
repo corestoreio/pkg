@@ -141,7 +141,7 @@ func (ps *dbrPersons) ScanRow(idx int, columns []string, scan func(dest ...inter
 	}
 
 	if err := scan(ps.scanArgs...); err != nil {
-		return errors.Wrap(err, "[dbr_test] dbrPersons.ScanRow")
+		return errors.WithStack(err)
 	}
 	ps.Data = append(ps.Data, &dbrPerson{
 		ID:    ps.dto.ID,
