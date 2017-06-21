@@ -14,7 +14,13 @@
 
 package dbr
 
-import "github.com/corestoreio/errors"
+import (
+	"context"
+	"database/sql"
+
+	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
+)
 
 // WithCTE defines a common table expression used in the type `With`.
 type WithCTE struct {
@@ -47,6 +53,10 @@ type WithCTE struct {
 //
 // Supported in: MySQL >=8.0.1 and MariaDb >=10.2
 type With struct {
+	Log log.Logger // Log optional logger
+	// DB gets required once the Load*() functions will be used.
+	DB QueryPreparer
+
 	Subclauses []WithCTE
 	// TopLevel a union type which allows only one of the fields to be set.
 	TopLevel struct {
@@ -71,6 +81,31 @@ func NewWith(expressions ...WithCTE) *With {
 	return &With{
 		Subclauses: expressions,
 	}
+}
+
+// With creates a new With which selects from the provided columns.
+// Columns won't get quoted.
+func (c *Connection) With(expressions ...WithCTE) *With {
+	return &With{
+		Log:        c.Log,
+		Subclauses: expressions,
+		DB:         c.DB,
+	}
+}
+
+// With creates a new With that select that given columns bound to the transaction
+func (tx *Tx) With(expressions ...WithCTE) *With {
+	return &With{
+		Log:        tx.Logger,
+		Subclauses: expressions,
+		DB:         tx.Tx,
+	}
+}
+
+// WithDB sets the database query object.
+func (b *With) WithDB(db QueryPreparer) *With {
+	b.DB = db
+	return b
 }
 
 // Select gets used in the top level statement.
@@ -120,7 +155,7 @@ func (b *With) Interpolate() *With {
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *With) ToSQL() (string, Arguments, error) {
-	return toSQL(b, b.IsInterpolate)
+	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 
 func (b *With) writeBuildCache(sql []byte) {
@@ -226,4 +261,23 @@ func (b *With) appendArgs(args Arguments) (_ Arguments, err error) {
 		return b.TopLevel.Delete.appendArgs(args)
 	}
 	return nil, errors.NewEmptyf("[dbr] Type With misses a top level statement")
+}
+
+// Query executes a query and returns many rows.
+func (b *With) Query(ctx context.Context) (*sql.Rows, error) {
+	rows, err := Query(ctx, b.DB, b)
+	return rows, errors.WithStack(err)
+}
+
+// Prepare prepares a SQL statement. Sets IsInterpolate to false.
+func (b *With) Prepare(ctx context.Context) (*sql.Stmt, error) {
+	stmt, err := Prepare(ctx, b.DB, b)
+	return stmt, errors.WithStack(err)
+}
+
+// Load loads data from a query into an object. You must set DB.QueryContext on
+// the With object or it just panics. Load can load a single row or n-rows.
+func (b *With) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	rowCount, err = Load(ctx, b.DB, b, s)
+	return rowCount, errors.WithStack(err)
 }

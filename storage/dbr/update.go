@@ -27,7 +27,7 @@ import (
 // Update contains the clauses for an UPDATE statement
 type Update struct {
 	Log log.Logger
-	DB  Execer
+	DB  ExecPreparer
 
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
@@ -76,49 +76,45 @@ func NewUpdate(table ...string) *Update {
 
 // Update creates a new Update for the given table
 func (c *Connection) Update(table ...string) *Update {
-	u := &Update{
+	return &Update{
 		Log:   c.Log,
 		Table: MakeAlias(table...),
+		DB:    c.DB,
 	}
-	u.DB = c.DB
-	return u
 }
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments
 func (c *Connection) UpdateBySQL(sql string, args ...Argument) *Update {
-	u := &Update{
+	return &Update{
 		Log:          c.Log,
 		RawFullSQL:   sql,
 		RawArguments: args,
+		DB:           c.DB,
 	}
-	u.DB = c.DB
-	return u
 }
 
 // Update creates a new Update for the given table bound to a transaction
 func (tx *Tx) Update(table ...string) *Update {
-	u := &Update{
+	return &Update{
 		Log:   tx.Logger,
 		Table: MakeAlias(table...),
+		DB:    tx.Tx,
 	}
-	u.DB = tx.Tx
-	return u
 }
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments bound
 // to a transaction
 func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
-	u := &Update{
+	return &Update{
 		Log:          tx.Logger,
 		RawFullSQL:   sql,
 		RawArguments: args,
+		DB:           tx.Tx,
 	}
-	u.DB = tx.Tx
-	return u
 }
 
 // WithDB sets the database query object.
-func (b *Update) WithDB(db Execer) *Update {
+func (b *Update) WithDB(db ExecPreparer) *Update {
 	b.DB = db
 	return b
 }
@@ -209,7 +205,7 @@ func (b *Update) Interpolate() *Update {
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Update) ToSQL() (string, Arguments, error) {
-	return toSQL(b, b.IsInterpolate)
+	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 
 func (b *Update) writeBuildCache(sql []byte) {
@@ -325,34 +321,14 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 // Exec interpolates and executes the statement represented by the Update
 // object. It returns the raw database/sql Result and an error if there was one.
 func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Update.Exec.Timing", log.String("sql", sqlStr))
-	}
-	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return result, nil
+	result, err := Exec(ctx, b.DB, b)
+	return result, errors.WithStack(err)
 }
 
 // Prepare creates a new prepared statement represented by the Update object. It
 // returns the raw database/sql Stmt and an error if there was one.
 func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, err := toSQLPrepared(b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Update.Prepare.Timing", log.String("sql", sqlStr))
-	}
-
-	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
+	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
 }
 
@@ -445,6 +421,9 @@ func (uc UpdatedColumns) appendArgs(args Arguments) (Arguments, error) {
 // trigger the placeholder and the correct operator. The values itself will be
 // provided either through the Records slice or via RecordChan.
 type UpdateMulti struct {
+	Log log.Logger
+	DB  ExecPreparer
+
 	// IsTransaction set to true to enable running the UPDATE queries in a
 	// transaction.
 	IsTransaction bool
@@ -470,6 +449,31 @@ func NewUpdateMulti(tpl *Update) *UpdateMulti {
 	return &UpdateMulti{
 		Update: tpl,
 	}
+}
+
+// UpdateMulti creates a new UpdateMulti for the UPDATE template object.
+func (c *Connection) UpdateMulti(tpl *Update) *UpdateMulti {
+	return &UpdateMulti{
+		Log:    c.Log,
+		DB:     c.DB,
+		Update: tpl,
+	}
+}
+
+// UpdateMulti creates a new UpdateMulti for the given UPDATE template object
+// bound to a transaction.
+func (tx *Tx) UpdateMulti(tpl *Update) *UpdateMulti {
+	return &UpdateMulti{
+		Log:    tx.Logger,
+		DB:     tx.Tx,
+		Update: tpl,
+	}
+}
+
+// WithDB sets the database query object.
+func (b *UpdateMulti) WithDB(db ExecPreparer) *UpdateMulti {
+	b.DB = db
+	return b
 }
 
 // Transaction enables transaction usage and sets an optional isolation level.
@@ -507,8 +511,8 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 		return nil, errors.WithStack(err)
 	}
 
-	if b.Update.Log != nil && b.Update.Log.IsInfo() {
-		defer log.WhenDone(b.Update.Log).Info("dbr.UpdateMulti.Exec.Timing",
+	if b.Log != nil && b.Log.IsInfo() {
+		defer log.WhenDone(b.Log).Info("dbr.UpdateMulti.Exec.Timing",
 			log.Stringer("sql", b.Update),
 			log.Int("records", len(records)))
 	}
@@ -524,7 +528,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentAssembler) ([
 		return nil, errors.WithStack(err)
 	}
 
-	exec := b.Update.DB
+	exec := b.DB
 	var tx Txer = txMock{}
 	if b.IsTransaction {
 		tx, err = b.Tx.BeginTx(ctx, &sql.TxOptions{

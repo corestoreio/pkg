@@ -30,7 +30,7 @@ type Select struct {
 	ID  string
 	Log log.Logger // Log optional logger
 	// DB gets required once the Load*() functions will be used.
-	DB Querier
+	DB QueryPreparer
 
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL
@@ -161,7 +161,7 @@ func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 }
 
 // WithDB sets the database query object.
-func (b *Select) WithDB(db Querier) *Select {
+func (b *Select) WithDB(db QueryPreparer) *Select {
 	b.DB = db
 	return b
 }
@@ -449,7 +449,7 @@ func (b *Select) CrossJoin(table alias, onConditions ...ConditionArg) *Select {
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Select) ToSQL() (string, Arguments, error) {
-	return toSQL(b, b.IsInterpolate)
+	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 
 // argumentCapacity returns the total possible guessed size of a new Arguments

@@ -19,33 +19,40 @@ import (
 	"database/sql"
 )
 
-// Execer can prepare a query and execute a non-returning query.
-type Execer interface {
+// Preparer prepares a query.
+type Preparer interface {
+	// PrepareContext - the provided context is used for the preparation of the
+	// statement, not for the execution of the statement.
 	// PrepareContext creates a prepared statement for later queries or
 	// executions. Multiple queries or executions may be run concurrently from
 	// the returned statement. The caller must call the statement's Close method
 	// when the statement is no longer needed.
-	//
-	// The provided context is used for the preparation of the statement, not
-	// for the execution of the statement.
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+}
+
+// Execer can execute a non-returning query.
+type Execer interface {
 	// ExecContext executes a query that doesn't return rows.
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-// Querier can prepare a query and execute a returning query.
+// ExecPreparer a composite interface which can execute and prepare a query.
+type ExecPreparer interface {
+	Preparer
+	Execer
+}
+
+// Querier can execute a returning query.
 type Querier interface {
-	// PrepareContext creates a prepared statement for later queries or
-	// executions. Multiple queries or executions may be run concurrently from
-	// the returned statement. The caller must call the statement's Close method
-	// when the statement is no longer needed.
-	//
-	// The provided context is used for the preparation of the statement, not
-	// for the execution of the statement.
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 	// QueryContext executes a query that returns rows, typically a SELECT. The
 	// args are for any placeholder parameters in the query.
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+}
+
+// QueryPreparer can execute a returning query and prepare a returning query.
+type QueryPreparer interface {
+	Preparer
+	Querier
 }
 
 // Stmter is a composition of multiple interfaces to describe the common needed
@@ -88,9 +95,8 @@ type Txer interface {
 	Rollback() error
 	Stmt(stmt *sql.Stmt) *sql.Stmt
 	Execer
-	// QueryContext executes a query that returns rows, typically a SELECT. The
-	// args are for any placeholder parameters in the query.
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	Preparer
+	Querier
 }
 
 var _ Txer = (*txMock)(nil)

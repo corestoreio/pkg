@@ -22,85 +22,23 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Scanner allows a type to load data from database query. It's used in the
-// rows.Next() for-loop.
-type Scanner interface {
-	// ScanRow implementation must use function `scan` to scan the values of the
-	// query into its own type. See database/sql package for examples. `idx`
-	// defines the current iteration number. `columns` specifies the list of
-	// provided column names used in the query. This function signature shows
-	// its strength in creating slices of values or iterating over a result set,
-	// modifying values and saving it back somewhere.
-	ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error
-}
-
-// Load loads data from a query into `s`. Load supports up to n-rows.
-func Load(ctx context.Context, b QueryBuilder, db Querier, s Scanner) (rowCount int, err error) {
-	sqlStr, tArg, err := b.ToSQL()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	rows, err := db.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-	defer func() {
-		// Not testable with the sqlmock package :-(
-		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.WithStack(err2)
-		}
-	}()
-
-	columns, err := rows.Columns()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	for rows.Next() {
-		err = s.ScanRow(rowCount, columns, rows.Scan)
-		if err != nil {
-			return 0, errors.WithStack(err)
-		}
-		rowCount++
-	}
-	if err = rows.Err(); err != nil {
-		return rowCount, errors.WithStack(err)
-	}
-	return rowCount, err
-}
-
 // Query executes a query and returns many rows.
 func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		// we might log sensitive data
-		defer log.WhenDone(b.Log).Info("dbr.Select.Query.Timing", log.String("sql", sqlStr))
-	}
-
-	rows, err := b.DB.QueryContext(ctx, sqlStr, args.Interfaces()...)
+	rows, err := Query(ctx, b.DB, b)
 	return rows, errors.WithStack(err)
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
 func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, err := toSQLPrepared(b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
+	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
 }
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Select object or it just panics. Load can load a single row or n-rows.
-func (b *Select) Load(ctx context.Context, s Scanner) (rowCount int, err error) {
-	return Load(ctx, b, b.DB, s)
+func (b *Select) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	rowCount, err = Load(ctx, b.DB, b, s)
+	return rowCount, errors.WithStack(err)
 }
 
 // The partially duplicated code in the Load[a-z0-9]+ functions can be optimized

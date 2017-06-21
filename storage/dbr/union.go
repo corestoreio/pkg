@@ -30,6 +30,10 @@ import (
 // With template usage enabled, it builds multiple select statements joined by
 // UNION and all based on a common template.
 type Union struct {
+	Log log.Logger // Log optional logger
+	// DB gets required once the Load*() functions will be used.
+	DB QueryPreparer
+
 	// UseBuildCache if `true` the final build query including place holders
 	// will be cached in a private field. Each time a call to function ToSQL
 	// happens, the arguments will be re-evaluated and returned or interpolated.
@@ -56,6 +60,31 @@ func NewUnion(selects ...*Select) *Union {
 	return &Union{
 		Selects: selects,
 	}
+}
+
+// Union creates a new Union which selects from the provided columns.
+// Columns won't get quoted.
+func (c *Connection) Union(selects ...*Select) *Union {
+	return &Union{
+		Log:     c.Log,
+		Selects: selects,
+		DB:      c.DB,
+	}
+}
+
+// Union creates a new Union that select that given columns bound to the transaction
+func (tx *Tx) Union(selects ...*Select) *Union {
+	return &Union{
+		Log:     tx.Logger,
+		Selects: selects,
+		DB:      tx.Tx,
+	}
+}
+
+// WithDB sets the database query object.
+func (b *Union) WithDB(db QueryPreparer) *Union {
+	b.DB = db
+	return b
 }
 
 // Append adds more *Select objects to the Union object. When using Union as a
@@ -192,7 +221,7 @@ func (u *Union) MultiplyArguments(args ...Argument) Arguments {
 
 // ToSQL converts the statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, Arguments, error) {
-	return toSQL(u, u.IsInterpolate)
+	return toSQL(u, u.IsInterpolate, isNotPrepared)
 }
 
 func (u *Union) writeBuildCache(sql []byte) {
@@ -284,43 +313,21 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 	return u.MultiplyArguments(args...), nil
 }
 
-// Exec executes the statement represented by the Union. It returns the raw
-// database/sql Result or an error if there was one. It expects the *sql.DB
-// object on the first []*Select index.
-func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
-	sqlStr, args, err := u.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	s1 := u.Selects[0]
-	if s1.Log != nil && s1.Log.IsInfo() {
-		defer log.WhenDone(s1.Log).Info("dbr.Union.Exec.Timing", log.String("sql", sqlStr))
-	}
-
-	rows, err := s1.DB.QueryContext(ctx, sqlStr, args.Interfaces()...)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return rows, nil
+// Query executes a query and returns many rows.
+func (b *Union) Query(ctx context.Context) (*sql.Rows, error) {
+	rows, err := Query(ctx, b.DB, b)
+	return rows, errors.WithStack(err)
 }
 
-// Prepare executes the statement represented by the Union. It returns the raw
-// database/sql Statement and an error if there was one. Provided arguments in
-// the Union are getting ignored. It panics when field Preparer at nil. It
-// expects the *sql.DB object on the first []*Select index.
-func (u *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, err := toSQLPrepared(u)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	s1 := u.Selects[0]
-	if s1.Log != nil && s1.Log.IsInfo() {
-		defer log.WhenDone(s1.Log).Info("dbr.Union.Prepare.Timing", log.String("sql", sqlStr))
-	}
-
-	stmt, err := s1.DB.PrepareContext(ctx, sqlStr)
+// Prepare prepares a SQL statement. Sets IsInterpolate to false.
+func (b *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
+	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
+}
+
+// Load loads data from a query into an object. You must set DB.QueryContext on
+// the Union object or it just panics. Load can load a single row or n-rows.
+func (b *Union) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	rowCount, err = Load(ctx, b.DB, b, s)
+	return rowCount, errors.WithStack(err)
 }

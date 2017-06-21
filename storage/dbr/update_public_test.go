@@ -51,10 +51,10 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
 		mu := dbr.NewUpdateMulti(
 			dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").
-				Where(dbr.Column("entity_id", dbr.In.Int64())).WithDB(dbMock{
-				error: errors.NewAlreadyClosedf("Who closed myself?"),
-			}),
-		)
+				Where(dbr.Column("entity_id", dbr.In.Int64())),
+		).WithDB(dbMock{
+			error: errors.NewAlreadyClosedf("Who closed myself?"),
+		})
 
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
@@ -103,7 +103,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 		setSQLMockInterpolate(dbMock)
 
-		mu.Update.WithDB(dbc.DB)
+		mu.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
@@ -132,7 +132,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		setSMPrepared(dbMock)
 
 		mu.Update.IsInterpolate = false
-		mu.Update.WithDB(dbc.DB)
+		mu.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
@@ -165,7 +165,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Tx = dbc.DB
 		mu.Transaction()
 		mu.Update.IsInterpolate = false
-		mu.Update.WithDB(dbc.DB)
+		mu.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
@@ -198,7 +198,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		mu.Tx = dbc.DB
 		mu.Transaction()
 		mu.Update.IsInterpolate = true
-		mu.Update.WithDB(dbc.DB)
+		mu.WithDB(dbc.DB)
 
 		results, err := mu.Exec(context.TODO(), records...)
 		if err != nil {
@@ -289,9 +289,8 @@ func TestUpdateMulti_ColumnAliases(t *testing.T) {
 			// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
 			dbr.Column("shipping_method", dbr.Equal.Str("DHL")), // For all clauses the same restriction
 			dbr.Column("entity_id", dbr.Equal.Int64()),          // Int64() acts as a place holder
-		).
-		WithDB(dbc.DB), // Our template statement
-	)
+		), // Our template statement
+	).WithDB(dbc.DB)
 
 	um.ColumnAliases = []string{"state", "alias_customer_id", "grand_total"}
 

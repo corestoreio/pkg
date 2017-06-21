@@ -30,7 +30,7 @@ type Scanner interface {
 	// provided column names used in the query. This function signature shows
 	// its strength in creating slices of values or iterating over a result set,
 	// modifying values and saving it back somewhere.
-	ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error
+	ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error
 }
 
 // Exec executes the statement represented by the QueryBuilder. It returns the
@@ -78,7 +78,7 @@ func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
 }
 
 // Load loads data from a query into `s`. Load supports up to n-rows.
-func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount int, err error) {
+func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
 	sqlStr, tArg, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)

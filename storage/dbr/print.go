@@ -61,12 +61,21 @@ func (backHole) Write(p []byte) (n int, err error)       { return }
 func (backHole) Bytes() []byte                           { return nil }
 func (backHole) Reset()                                  {}
 
+// For the sake of readability within the source code, because boolean arguments
+// are terrible.
+const (
+	isNotPrepared    = false
+	isPrepared       = true
+	isNotInterpolate = false
+)
+
 // toSQL generates the SQL string and its place holders. Takes care of caching
 // and interpolation. It returns the string with placeholders and a slice of
 // query arguments. With switched on interpolation, it only returns a string
 // including the stringyfied arguments. With an enabled cache, the arguments
 // gets regenerated each time a call to ToSQL happens.
-func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
+// isPrepared if true skips assembling the arguments.
+func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, Arguments, error) {
 	var ipBuf *bytes.Buffer // ip = interpolate buffer
 	if isInterpolate {
 		ipBuf = bufferpool.Get()
@@ -80,7 +89,7 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 			return "", nil, errors.WithStack(err)
 		}
 		if sql != nil {
-			if isInterpolate {
+			if isInterpolate && !isPrepared {
 				err := interpolate(ipBuf, sql, args...)
 				return ipBuf.String(), nil, errors.WithStack(err)
 			}
@@ -94,15 +103,19 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	if err := b.toSQL(buf); err != nil {
 		return "", nil, errors.WithStack(err)
 	}
-	// capacity of Arguments gets handled in the concret implementation of `b`
-	args, err := b.appendArgs(Arguments{})
-	if err != nil {
-		return "", nil, errors.WithStack(err)
-	}
 	if useCache {
 		sqlCopy := make([]byte, buf.Len())
 		copy(sqlCopy, buf.Bytes())
 		b.writeBuildCache(sqlCopy)
+	}
+	if isPrepared {
+		return buf.String(), nil, nil
+	}
+
+	// capacity of Arguments gets handled in the concret implementation of `b`
+	args, err := b.appendArgs(Arguments{})
+	if err != nil {
+		return "", nil, errors.WithStack(err)
 	}
 
 	if isInterpolate {
@@ -112,16 +125,8 @@ func toSQL(b queryBuilder, isInterpolate bool) (string, Arguments, error) {
 	return buf.String(), args, nil
 }
 
-func toSQLPrepared(b queryBuilder) (string, error) {
-	// TODO(CyS) implement build cache like the toSQL function. see above.
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	err := b.toSQL(buf)
-	return buf.String(), errors.WithStack(err)
-}
-
 func makeSQL(b queryBuilder, isInterpolate bool) string {
-	sRaw, _, err := toSQL(b, isInterpolate)
+	sRaw, _, err := toSQL(b, isInterpolate, isNotPrepared)
 	if err != nil {
 		return fmt.Sprintf("[dbr] ToSQL Error: %+v", err)
 	}

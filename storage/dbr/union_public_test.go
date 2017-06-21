@@ -45,7 +45,7 @@ func TestUnion_Query(t *testing.T) {
 	)
 
 	t.Run("Error", func(t *testing.T) {
-		u.Selects[0].WithDB(dbMock{
+		u.WithDB(dbMock{
 			error: errors.NewConnectionFailedf("Who closed myself?"),
 		})
 		rows, err := u.Query(context.TODO())
@@ -67,7 +67,7 @@ func TestUnion_Query(t *testing.T) {
 			cstesting.SQLMockQuoteMeta("(SELECT `value` FROM `eavChar`) UNION (SELECT `value` FROM `eavInt` WHERE (`b` = ?))"),
 		).WillReturnRows(smr)
 
-		u.Selects[0].WithDB(dbc.DB)
+		u.WithDB(dbc.DB)
 
 		rows, err := u.Query(context.TODO())
 		require.NoError(t, err, "%+v", err)
@@ -118,7 +118,7 @@ func TestUnion_Prepare(t *testing.T) {
 		).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
-		u.Selects[0].WithDB(dbc.DB)
+		u.WithDB(dbc.DB)
 
 		stmt, err := u.Prepare(context.TODO())
 		require.Nil(t, stmt)
@@ -138,11 +138,37 @@ func TestUnion_Prepare(t *testing.T) {
 			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat(\"c\",b,\"d\")"),
 		)
 
-		u.Selects[0].WithDB(dbc.DB)
+		u.WithDB(dbc.DB)
 
 		stmt, err := u.Prepare(context.TODO())
 		require.NotNil(t, stmt)
 		assert.NoError(t, err)
 	})
+}
 
+func TestUnion_Load(t *testing.T) {
+	t.Parallel()
+
+	u := dbr.NewUnion(
+		dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
+		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b", dbr.Equal.Float64(3.14159))),
+	).
+		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`)
+
+	t.Run("error", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `a` ASC, `b` DESC, concat(\"c\",b,\"d\")")).
+			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+
+		rows, err := u.WithDB(dbc.DB).Load(context.TODO(), nil)
+		assert.Exactly(t, int64(0), rows)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
 }

@@ -133,7 +133,7 @@ type TableCoreConfigData struct {
 	Value    dbr.NullString `json:",omitempty"` // value text NULL
 }
 
-func (ps *TableCoreConfigDatas) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
+func (ps *TableCoreConfigDatas) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	const fieldCount = 5 //  5 == number of struct fields
 	if idx == 0 && nil == ps.Data {
 		cap := ps.DataCap

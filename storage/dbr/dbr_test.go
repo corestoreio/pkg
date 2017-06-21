@@ -72,7 +72,7 @@ type dbrPerson struct {
 }
 
 // ScanRow loads a single row from a SELECT statement returning only one row
-func (p *dbrPerson) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
+func (p *dbrPerson) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	if idx > 0 {
 		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}
@@ -119,7 +119,7 @@ type dbrPersons struct {
 	dto      dbrPerson
 }
 
-func (ps *dbrPersons) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
+func (ps *dbrPersons) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	if idx == 0 {
 		ps.Data = make([]*dbrPerson, 0, 5)
 		ps.scanArgs = make([]interface{}, 0, 4) // four fields in the struct
@@ -163,7 +163,7 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func (p *nullTypedRecord) ScanRow(idx int, columns []string, scan func(dest ...interface{}) error) error {
+func (p *nullTypedRecord) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	if idx > 0 {
 		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}

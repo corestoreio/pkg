@@ -41,7 +41,7 @@ import (
 // so the rename operation is not subject to concurrency problems.
 type Delete struct {
 	Log log.Logger // Log optional logger
-	DB  Execer
+	DB  ExecPreparer
 
 	// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 
@@ -109,7 +109,7 @@ func (tx *Tx) DeleteFrom(from ...string) *Delete {
 }
 
 // WithDB sets the database query object.
-func (b *Delete) WithDB(db Execer) *Delete {
+func (b *Delete) WithDB(db ExecPreparer) *Delete {
 	b.DB = db
 	return b
 }
@@ -177,7 +177,7 @@ func (b *Delete) Interpolate() *Delete {
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, Arguments, error) {
-	return toSQL(b, b.IsInterpolate)
+	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 
 func (b *Delete) writeBuildCache(sql []byte) {
@@ -258,36 +258,14 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 // Exec executes the statement represented by the Delete
 // It returns the raw database/sql Result and an error if there was one
 func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Delete.Exec.Timing", log.String("sql", sqlStr))
-	}
-
-	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
-	if err != nil {
-		return result, errors.WithStack(err)
-	}
-
-	return result, nil
+	r, err := Exec(ctx, b.DB, b)
+	return r, errors.WithStack(err)
 }
 
 // Prepare executes the statement represented by the Delete. It returns the raw
 // database/sql Statement and an error if there was one. Provided arguments in
 // the Delete are getting ignored. It panics when field Preparer at nil.
 func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, err := toSQLPrepared(b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Delete.Prepare.Timing", log.String("sql", sqlStr))
-	}
-
-	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
+	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
 }

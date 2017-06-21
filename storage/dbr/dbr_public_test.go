@@ -109,6 +109,9 @@ func compareToSQL(
 	case *dbr.Union:
 		dml.Interpolate()
 		defer func() { dml.IsInterpolate = false }()
+	case *dbr.With:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	default:
 		t.Fatalf("Type %#v not (yet) supported.", qb)
 	}

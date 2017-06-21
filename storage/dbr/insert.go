@@ -15,9 +15,10 @@
 package dbr
 
 import (
+	"strings"
+
 	"context"
 	"database/sql"
-	"strings"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -27,7 +28,7 @@ import (
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	Log log.Logger // Log optional logger
-	DB  Execer
+	DB  ExecPreparer
 
 	// UseBuildCache if `true` the final build query including place holders
 	// will be cached in a private field. Each time a call to function ToSQL
@@ -107,7 +108,7 @@ func (tx *Tx) InsertInto(into string) *Insert {
 }
 
 // WithDB sets the database query object.
-func (b *Insert) WithDB(db Execer) *Insert {
+func (b *Insert) WithDB(db ExecPreparer) *Insert {
 	b.DB = db
 	return b
 }
@@ -246,7 +247,7 @@ func (b *Insert) Interpolate() *Insert {
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, Arguments, error) {
-	return toSQL(b, b.IsInterpolate)
+	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 
 func (b *Insert) writeBuildCache(sql []byte) {
@@ -445,33 +446,12 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 // the first inserted row only. The reason for this at to make it possible to
 // reproduce easily the same INSERT statement against some other server.
 func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
-	sqlStr, args, err := b.ToSQL()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Insert.Exec.Timing", log.String("sqlStr", sqlStr))
-	}
-	result, err := b.DB.ExecContext(ctx, sqlStr, args.Interfaces()...)
-	if err != nil {
-		return result, errors.WithStack(err)
-	}
-
-	return result, nil
+	result, err := Exec(ctx, b.DB, b)
+	return result, errors.WithStack(err)
 }
 
 // Prepare creates a prepared statement
 func (b *Insert) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	sqlStr, err := toSQLPrepared(b)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Insert.Prepare.Timing", log.String("sql", sqlStr))
-	}
-
-	stmt, err := b.DB.PrepareContext(ctx, sqlStr)
+	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
 }
