@@ -246,7 +246,7 @@ func (b *Insert) Interpolate() *Insert {
 
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Insert) ToSQL() (string, Arguments, error) {
+func (b *Insert) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 

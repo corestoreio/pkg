@@ -83,7 +83,7 @@ func compareToSQL(
 
 	if wantSQLPlaceholders != "" {
 		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-		assert.Equal(t, wantArgs, args.Interfaces(), "Placeholder Arguments do not match")
+		assert.Equal(t, wantArgs, args, "Placeholder Arguments do not match")
 	}
 
 	if wantSQLInterpolated == "" {

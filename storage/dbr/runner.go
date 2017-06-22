@@ -44,7 +44,7 @@ func Exec(ctx context.Context, db Execer, b QueryBuilder) (sql.Result, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	result, err := db.ExecContext(ctx, sqlStr, args.Interfaces()...)
+	result, err := db.ExecContext(ctx, sqlStr, args...)
 	return result, errors.WithStack(err)
 }
 
@@ -73,18 +73,18 @@ func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	rows, err := db.QueryContext(ctx, sqlStr, args.Interfaces()...)
+	rows, err := db.QueryContext(ctx, sqlStr, args...)
 	return rows, errors.WithStack(err)
 }
 
 // Load loads data from a query into `s`. Load supports up to n-rows.
 func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
 
-	rows, err := db.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := db.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}

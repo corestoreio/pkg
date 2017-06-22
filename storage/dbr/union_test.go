@@ -203,7 +203,7 @@ func TestNewUnionTemplate(t *testing.T) {
 			}
 
 			wantArg := []interface{}{int64(1561), int64(1), int64(0)}
-			haveArg := args.Interfaces()
+			haveArg := args
 			assert.Exactly(t, wantArg, haveArg[:3])
 			assert.Exactly(t, wantArg, haveArg[3:6])
 			assert.Len(t, haveArg, 15)

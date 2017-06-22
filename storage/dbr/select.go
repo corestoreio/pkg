@@ -448,7 +448,7 @@ func (b *Select) CrossJoin(table alias, onConditions ...ConditionArg) *Select {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *Select) ToSQL() (string, Arguments, error) {
+func (b *Select) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 

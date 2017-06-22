@@ -329,7 +329,7 @@ func TestInsert_Events(t *testing.T) {
 
 		sqlStr, args, err := d.Interpolate().ToSQL()
 		require.NoError(t, err)
-		assert.Nil(t, args.Interfaces())
+		assert.Nil(t, args)
 		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`col1`,`col2`) VALUES (1,1,'X1','X2')", sqlStr)
 
 		// call it twice (4x) to test for being NOT idempotent
@@ -396,7 +396,7 @@ func TestInsert_Events(t *testing.T) {
 		)
 		sqlStr, args, err := ins.Interpolate().ToSQL()
 		require.NoError(t, err)
-		assert.Nil(t, args.Interfaces())
+		assert.Nil(t, args)
 		assert.Exactly(t, "INSERT INTO `tableA` (`a`,`b`,`colA`,`colB`,`colC`) VALUES (1,1,3.14159,2.7182,'X1')", sqlStr)
 
 		compareToSQL(t, ins, nil,
@@ -520,7 +520,7 @@ func TestInsert_UseBuildCache(t *testing.T) {
 			sql, args, err := ins.ToSQL()
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLPlaceHolder, sql)
-			assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args.Interfaces())
+			assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(4), int64(5), int64(6)}, args)
 			assert.Equal(t, cachedSQLPlaceHolder, string(ins.cacheSQL))
 		}
 	})

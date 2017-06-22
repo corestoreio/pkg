@@ -58,10 +58,10 @@ func TestUpdateSetMapToSQL(t *testing.T) {
 	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": Equal.Int64(1), "c": Equal.Int64(2)}).Where(Column("id", ArgInt(1))).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)" {
-		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args.Interfaces())
+		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args)
 	} else {
 		assert.Equal(t, "UPDATE `a` SET `c`=?, `b`=? WHERE (`id` = ?)", sql)
-		assert.Equal(t, []interface{}{int64(2), int64(1), int64(1)}, args.Interfaces())
+		assert.Equal(t, []interface{}{int64(2), int64(1), int64(1)}, args)
 	}
 }
 
@@ -191,7 +191,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 
 		sqlStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args.Interfaces())
+		assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args)
 		assert.Exactly(t,
 			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?,?,?))",
 			sqlStr)
@@ -203,7 +203,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 
 		sqlStr, args, err := u.ToSQL()
 		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, []interface{}{}, args.Interfaces())
+		assert.Exactly(t, []interface{}{}, args)
 		assert.Exactly(t,
 			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ())",
 			sqlStr)

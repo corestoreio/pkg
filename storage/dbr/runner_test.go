@@ -26,11 +26,11 @@ import (
 
 type myToSQL struct {
 	sql  string
-	args dbr.Arguments
+	args []interface{}
 	error
 }
 
-func (m myToSQL) ToSQL() (string, dbr.Arguments, error) {
+func (m myToSQL) ToSQL() (string, []interface{}, error) {
 	return m.sql, m.args, m.error
 }
 

@@ -26,7 +26,7 @@ import (
 // QueryBuilder assembles a query and returns the raw SQL without parameter
 // substitution and the arguments.
 type QueryBuilder interface {
-	ToSQL() (string, Arguments, error)
+	ToSQL() (string, []interface{}, error)
 }
 
 type queryBuilder interface {
@@ -75,7 +75,7 @@ const (
 // including the stringyfied arguments. With an enabled cache, the arguments
 // gets regenerated each time a call to ToSQL happens.
 // isPrepared if true skips assembling the arguments.
-func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, Arguments, error) {
+func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{}, error) {
 	var ipBuf *bytes.Buffer // ip = interpolate buffer
 	if isInterpolate {
 		ipBuf = bufferpool.Get()
@@ -93,7 +93,7 @@ func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, Arguments, e
 				err := interpolate(ipBuf, sql, args...)
 				return ipBuf.String(), nil, errors.WithStack(err)
 			}
-			return string(sql), args, nil
+			return string(sql), args.Interfaces(), nil
 		}
 	}
 
@@ -122,7 +122,7 @@ func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, Arguments, e
 		err := interpolate(ipBuf, buf.Bytes(), args...)
 		return ipBuf.String(), nil, errors.WithStack(err)
 	}
-	return buf.String(), args, nil
+	return buf.String(), args.Interfaces(), nil
 }
 
 func makeSQL(b queryBuilder, isInterpolate bool) string {

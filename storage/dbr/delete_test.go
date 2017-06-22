@@ -253,7 +253,7 @@ func TestDelete_UseBuildCache(t *testing.T) {
 			sql, args, err := del.ToSQL()
 			require.NoError(t, err, "%+v", err)
 			require.Equal(t, cachedSQLPlaceHolder, sql)
-			assert.Equal(t, []interface{}{"b"}, args.Interfaces())
+			assert.Equal(t, []interface{}{"b"}, args)
 			assert.Equal(t, cachedSQLPlaceHolder, string(del.cacheSQL))
 		}
 	})

@@ -54,7 +54,7 @@ func (b *Select) Load(ctx context.Context, s Scanner) (rowCount int64, err error
 // LoadInt64 executes the Select and returns the value at an int64. It returns a
 // NotFound error if the query returns nothing.
 func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
@@ -63,7 +63,7 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
@@ -88,7 +88,7 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 
 // LoadInt64s executes the Select and returns the value as a slice of int64s.
 func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -97,7 +97,7 @@ func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64s", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -121,7 +121,7 @@ func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
 // a NotFound error if the query returns nothing. This function comes in handy
 // when performing a COUNT(*) query. See function `Select.Count`.
 func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
@@ -130,7 +130,7 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadUint64", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
@@ -155,7 +155,7 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 
 // LoadUint64s executes the Select and returns the value at a slice of uint64s.
 func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -164,7 +164,7 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadUint64s", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -187,7 +187,7 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 // LoadFloat64 executes the Select and returns the value at an float64. It
 // returns a NotFound error if the query returns nothing.
 func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
@@ -196,7 +196,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadFloat64", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
@@ -221,7 +221,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 
 // LoadFloat64s executes the Select and returns the value at a slice of float64s.
 func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -230,7 +230,7 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadFloat64s", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -253,7 +253,7 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 // LoadString executes the Select and returns the value as a string. It
 // returns a NotFound error if the row amount is not equal one.
 func (b *Select) LoadString(ctx context.Context) (string, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -262,7 +262,7 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -287,7 +287,7 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 
 // LoadStrings executes the Select and returns a slice of strings.
 func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
-	sqlStr, tArg, err := b.ToSQL()
+	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -296,7 +296,7 @@ func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
 		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadStrings", log.String("sql", sqlStr))
 	}
 
-	rows, err := b.DB.QueryContext(ctx, sqlStr, tArg.Interfaces()...)
+	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -204,7 +204,7 @@ func (b *Update) Interpolate() *Update {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *Update) ToSQL() (string, Arguments, error) {
+func (b *Update) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 

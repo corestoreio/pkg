@@ -21,7 +21,42 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/wordwrap"
+	"github.com/corestoreio/errors"
 )
+
+// iFaceToArgs unpacks the interface and creates an Argument slice. Just a
+// helper function for the examples.
+func iFaceToArgs(values ...interface{}) dbr.Arguments {
+	args := make(dbr.Arguments, 0, len(values))
+	for _, val := range values {
+		switch v := val.(type) {
+		case float64:
+			args = append(args, dbr.ArgFloat64(v))
+		case int64:
+			args = append(args, dbr.ArgInt64(v))
+		case int:
+			args = append(args, dbr.ArgInt64(int64(v)))
+			args = append(args, dbr.ArgInt64(int64(v)))
+		case bool:
+			args = append(args, dbr.ArgBool(v))
+		case string:
+			args = append(args, dbr.ArgString(v))
+		case []byte:
+			args = append(args, dbr.ArgBytes(v))
+		case time.Time:
+			args = append(args, dbr.ArgTime(v))
+		case *time.Time:
+			if v != nil {
+				args = append(args, dbr.ArgTime(*v))
+			}
+		case nil:
+			args = append(args, dbr.ArgNull())
+		default:
+			panic(errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v))
+		}
+	}
+	return args
+}
 
 func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	sqlStr, args, err := qb.ToSQL()
@@ -32,12 +67,12 @@ func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	fmt.Println("Prepared Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
 	if len(args) > 0 {
-		fmt.Printf("\nArguments: %v\n\n", args.Interfaces())
+		fmt.Printf("\nArguments: %v\n\n", args)
 	} else {
 		fmt.Print("\n")
 	}
 
-	sqlStr, err = dbr.Interpolate(sqlStr, args...)
+	sqlStr, err = dbr.Interpolate(sqlStr, iFaceToArgs(args...)...)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
@@ -368,7 +403,7 @@ func ExampleArgument() {
 		} else {
 			fmt.Printf("%q", sqlStr)
 			if len(args) > 0 {
-				fmt.Printf(" Arguments: %v", args.Interfaces())
+				fmt.Printf(" Arguments: %v", args)
 			}
 			fmt.Print("\n")
 		}
@@ -428,7 +463,7 @@ func ExampleColumn() {
 		} else {
 			fmt.Printf("%q", sqlStr)
 			if len(args) > 0 {
-				fmt.Printf(" Arguments: %v", args.Interfaces())
+				fmt.Printf(" Arguments: %v", args)
 			}
 			fmt.Print("\n")
 		}

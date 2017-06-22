@@ -24,6 +24,8 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+var benchmarkGlobalArgs []interface{}
+
 var _ dbr.Querier = (*benchMockQuerier)(nil)
 
 type benchMockQuerier struct{}
@@ -64,7 +66,6 @@ func BenchmarkSelect_Rows(b *testing.B) {
 	}
 }
 
-var benchmarkSelectBasicSQL dbr.Arguments
 var benchmarkSelectStr string
 
 func BenchmarkSelectBasicSQL(b *testing.B) {
@@ -85,7 +86,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkSelectBasicSQL = args
+		benchmarkGlobalArgs = args
 	}
 }
 
@@ -125,7 +126,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkSelectBasicSQL = args
+			benchmarkGlobalArgs = args
 		}
 	})
 
@@ -136,7 +137,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkSelectBasicSQL = args
+			benchmarkGlobalArgs = args
 		}
 	})
 
@@ -147,7 +148,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkSelectBasicSQL = args
+			benchmarkGlobalArgs = args
 		}
 	})
 }
@@ -175,7 +176,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkSelectBasicSQL = args
+			benchmarkGlobalArgs = args
 		}
 	})
 
@@ -205,7 +206,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 	var haveSQL string
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var args dbr.Arguments
+		var args []interface{}
 		var err error
 		haveSQL, args, err = dbr.NewSelect().
 			AddColumns(" entity_id ,   value").
@@ -220,7 +221,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkSelectBasicSQL = args
+		benchmarkGlobalArgs = args
 	}
 	_ = haveSQL
 	//b.Logf("%s", haveSQL)
@@ -247,7 +248,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var args dbr.Arguments
+		var args []interface{}
 		var err error
 		haveSQL, args, err = dbr.NewSelect().
 			AddColumns("price,sku,name,title,description").
@@ -265,7 +266,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkSelectBasicSQL = args
+		benchmarkGlobalArgs = args
 	}
 	_ = haveSQL
 }
@@ -305,14 +306,12 @@ func xxxBenchmarkSelect_Integration_Scanner(b *testing.B) {
 	}
 }
 
-var benchmarkDeleteSQL dbr.Arguments
-
 func BenchmarkDeleteSQL(b *testing.B) {
 
 	b.Run("NewDelete", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			_, benchmarkDeleteSQL, err = dbr.NewDelete("alpha").Where(dbr.Column("a", dbr.ArgString("b"))).Limit(1).OrderBy("id").ToSQL()
+			_, benchmarkGlobalArgs, err = dbr.NewDelete("alpha").Where(dbr.Column("a", dbr.ArgString("b"))).Limit(1).OrderBy("id").ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -327,7 +326,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkDeleteSQL = args
+			benchmarkGlobalArgs = args
 		}
 	})
 
@@ -338,12 +337,10 @@ func BenchmarkDeleteSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkDeleteSQL = args
+			benchmarkGlobalArgs = args
 		}
 	})
 }
-
-var benchmarkInsertValuesSQLArgs dbr.Arguments
 
 func BenchmarkInsertValuesSQL(b *testing.B) {
 
@@ -355,7 +352,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
-			benchmarkInsertValuesSQLArgs = args
+			benchmarkGlobalArgs = args
 		}
 	})
 
@@ -369,7 +366,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkInsertValuesSQLArgs = args
+			benchmarkGlobalArgs = args
 		}
 	})
 
@@ -380,7 +377,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkInsertValuesSQLArgs = args
+			benchmarkGlobalArgs = args
 		}
 	})
 }
@@ -422,7 +419,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		benchmarkInsertValuesSQLArgs = args
+		benchmarkGlobalArgs = args
 		// ifaces = args.Interfaces()
 	}
 }
@@ -535,9 +532,8 @@ func BenchmarkIfNull(b *testing.B) {
 	))
 }
 
-var benchmarkGlobalArgs dbr.Arguments
-
 func BenchmarkUnion(b *testing.B) {
+
 	b.Run("5 SELECTs", func(b *testing.B) {
 		// not valid SQL
 		u := dbr.NewUnion(
@@ -556,7 +552,10 @@ func BenchmarkUnion(b *testing.B) {
 			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'text'", "col_type").From("catalog_product_entity_text", "t").
 				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
 				OrderByDesc("t.text_store_id"),
-		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
+		).All().
+			Interpolate().
+			OrderBy("a").
+			OrderByDesc("b").PreserveResultSet()
 
 		for i := 0; i < b.N; i++ {
 			_, args, err := u.ToSQL()
@@ -567,6 +566,7 @@ func BenchmarkUnion(b *testing.B) {
 		}
 	})
 	b.Run("Template", func(b *testing.B) {
+
 		u := dbr.NewUnion(
 			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'{column}'", "col_type").From("catalog_product_entity_{type}", "t").
 				Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))).
@@ -576,6 +576,7 @@ func BenchmarkUnion(b *testing.B) {
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX").
 			PreserveResultSet().
 			All().
+			Interpolate().
 			OrderByDesc("col_type")
 
 		for i := 0; i < b.N; i++ {
@@ -588,8 +589,6 @@ func BenchmarkUnion(b *testing.B) {
 	})
 }
 
-var benchmarkUpdateValuesSQL dbr.Arguments
-
 func BenchmarkUpdateValuesSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -597,7 +596,7 @@ func BenchmarkUpdateValuesSQL(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkUpdateValuesSQL = args
+		benchmarkGlobalArgs = args
 	}
 }
 
@@ -615,6 +614,6 @@ func BenchmarkUpdateValueMapSQL(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkUpdateValuesSQL = args
+		benchmarkGlobalArgs = args
 	}
 }

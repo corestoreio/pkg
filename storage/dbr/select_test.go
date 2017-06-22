@@ -379,10 +379,10 @@ func TestSelectWhereMapSQL(t *testing.T) {
 		sql, args, err := NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1), "b": ArgBool(true)}).ToSQL()
 		assert.NoError(t, err)
 		if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` = ?)" {
-			assert.Equal(t, []interface{}{int64(1), true}, args.Interfaces())
+			assert.Equal(t, []interface{}{int64(1), true}, args)
 		} else {
 			assert.Equal(t, "SELECT `a` FROM `b` WHERE (`b` = ?) AND (`a` = ?)", sql)
-			assert.Equal(t, []interface{}{true, int64(1)}, args.Interfaces())
+			assert.Equal(t, []interface{}{true, int64(1)}, args)
 		}
 	})
 
@@ -451,10 +451,10 @@ func TestSelectWhereEqSQL(t *testing.T) {
 	sql, args, err := NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1), "b": In.Int64(1, 2, 3)}).ToSQL()
 	assert.NoError(t, err)
 	if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` IN (?,?,?))" {
-		assert.Equal(t, []interface{}{int64(1), int64(1), int64(2), int64(3)}, args.Interfaces())
+		assert.Equal(t, []interface{}{int64(1), int64(1), int64(2), int64(3)}, args)
 	} else {
 		assert.Equal(t, sql, "SELECT `a` FROM `b` WHERE (`b` IN (?,?,?)) AND (`a` = ?)")
-		assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(1)}, args.Interfaces())
+		assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(1)}, args)
 	}
 }
 

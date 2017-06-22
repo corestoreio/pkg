@@ -30,7 +30,7 @@ func TestColumn(t *testing.T) {
 		sql, args, err := s.ToSQL()
 		require.NoError(t, err)
 		assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`a` = ?) AND (`b=c`)", sql)
-		assert.Equal(t, []interface{}{int64(111)}, args.Interfaces())
+		assert.Equal(t, []interface{}{int64(111)}, args)
 	})
 
 	t.Run("valid column name", func(t *testing.T) {

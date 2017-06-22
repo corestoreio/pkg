@@ -154,7 +154,7 @@ func (b *With) Interpolate() *With {
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.
-func (b *With) ToSQL() (string, Arguments, error) {
+func (b *With) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, isNotPrepared)
 }
 
