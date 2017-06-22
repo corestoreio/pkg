@@ -147,10 +147,10 @@ func TestTableStructure(t *testing.T) {
 	assert.Nil(t, sInvalid)
 	assert.Error(t, err)
 
-	selectBuilder := sValid.Select()
-	selectString, _, err := selectBuilder.ToSQL()
-	assert.Equal(t, "SELECT `main_table`.`category_id`, `main_table`.`path` FROM `catalog_category_anc_categs_index_idx` AS `main_table`", selectString)
-	assert.NoError(t, err)
+	//selectBuilder := sValid.Select()
+	//selectString, _, err := selectBuilder.ToSQL()
+	//assert.Equal(t, "SELECT `main_table`.`category_id`, `main_table`.`path` FROM `catalog_category_anc_categs_index_idx` AS `main_table`", selectString)
+	//assert.NoError(t, err)
 }
 
 func TestTableStructureTableAliasQuote(t *testing.T) {

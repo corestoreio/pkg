@@ -15,9 +15,8 @@
 package csdb
 
 import (
-	"database/sql"
-
 	"context"
+	"database/sql"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
@@ -52,21 +51,32 @@ func isValidVarName(name string, allowPercent bool) error {
 			return errors.NewNotValidf("[csdb] Invalid character %q in variable name %q", string(r), name)
 		}
 	}
-
 	return nil
 }
 
 // LoadOne loads a single variable identified by name for the current session.
 // For now MySQL DSN must have set interpolateParams to true.
-func (v *Variable) LoadOne(db dbr.QueryRower, name string) error {
+func (v *Variable) LoadOne(db dbr.Querier, name string) error {
 	if err := isValidVarName(name, false); err != nil {
 		return errors.Wrap(err, "[csdb] Variable.ShowVariable")
 	}
-	row := db.QueryRowContext(context.Background(), "SHOW SESSION VARIABLES LIKE ?", name)
-	if err := row.Scan(&v.Name, &v.Value); err != nil {
-		return errors.Wrap(err, "[csdb] ShowVariable")
-	}
-	return nil
+	v.Name = name // hmmm ... a hidden argument passing
+	_, err := dbr.Load(context.Background(), db, v, v)
+	return errors.Wrap(err, "[csdb] dbr.Load")
+}
+
+// ToSQL implements dbr.QueryBuilder interface to assemble a SQL string and its
+// arguments for query execution.
+func (ms *Variable) ToSQL() (string, []interface{}, error) {
+	s, err := dbr.Interpolate("SHOW SESSION VARIABLES LIKE ?", dbr.ArgString(ms.Name))
+	return s, nil, err
+}
+
+// ScanRow implements dbr.Scanner interface
+func (v *Variable) ScanRow(_ int64, _ []string, scan func(...interface{}) error) error {
+	return errors.WithStack(
+		scan(&v.Name, &v.Value),
+	)
 }
 
 // AppendFiltered appends multiple variables to the current slice. If name is

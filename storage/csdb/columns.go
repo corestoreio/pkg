@@ -75,7 +75,7 @@ const selTablesColumns = `SELECT
 	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
 		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
 		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT	
-	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN (?)
+	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ?
 	 ORDER BY TABLE_NAME, ORDINAL_POSITION`
 
 const selAllTablesColumns = `SELECT
@@ -99,7 +99,7 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
 		}
 	} else {
-		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.ArgString(tables...))
+		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.In.Str(tables...))
 		if err != nil {
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
 		}

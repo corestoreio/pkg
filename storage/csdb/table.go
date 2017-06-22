@@ -74,8 +74,8 @@ func (t *Table) update() *Table {
 	t.CountUnique = t.Columns.UniqueKeys().Len()
 
 	t.selectAllCache = &dbr.Select{
-		Columns: t.AllColumnAliasQuote(MainTable),
-		Table:   dbr.MakeAlias(t.Name, MainTable),
+		// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
+		Table: dbr.MakeAlias(t.Name, MainTable),
 	}
 
 	return t
@@ -208,22 +208,16 @@ func (t *Table) Drop(ctx context.Context, execer dbr.Execer) error {
 	return errors.Wrapf(err, "[csdb] failed to drop table %q", t.Name)
 }
 
-// Select generates a SELECT * FROM tableName statement.
-func (t *Table) Select() *dbr.Select {
-	var sb = new(dbr.Select)
-	*sb = *t.selectAllCache // shallow copy, buggy, copies slice header ... can panic
-	return sb
-}
-
 // LoadSlice performs a SELECT * FROM `tableName` query and puts the results
 // into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
 // and an error. The variadic third arguments can modify the SQL query.
 func (t *Table) LoadSlice(ctx context.Context, db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
-	sb := t.Select()
-	sb.DB.Querier = db
-	sb.Listeners.Merge(t.Listeners.Select)
-	sb.Listeners.Add(listeners...)
-	return sb.LoadStructs(ctx, dest)
+	//sb := t.Select()
+	//sb.DB.Querier = db
+	//sb.Listeners.Merge(t.Listeners.Select)
+	//sb.Listeners.Add(listeners...)
+	//return sb.LoadStructs(ctx, dest)
+	return 0, nil
 }
 
 // InfileOptions provides options for the function LoadDataInfile. Some fields

@@ -15,14 +15,19 @@
 package csdb_test
 
 import (
+	"context"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ dbr.QueryBuilder = (*csdb.MasterStatus)(nil)
+var _ dbr.Scanner = (*csdb.MasterStatus)(nil)
 
 func TestMasterStatus_Compare(t *testing.T) {
 	t.Parallel()
@@ -60,7 +65,7 @@ func TestShowMasterStatus(t *testing.T) {
 	dbMock.ExpectQuery("SHOW MASTER STATUS").WillReturnRows(mockedRows)
 
 	v := new(csdb.MasterStatus)
-	err := v.Load(dbc.DB)
+	err := v.Load(context.TODO(), dbc.DB)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
