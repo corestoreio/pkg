@@ -15,10 +15,9 @@
 package dbr
 
 import (
-	"strings"
-
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -302,7 +301,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 	}
 
 	buf.WriteString("INTO ")
-	Quoter.quote(buf, b.Into)
+	Quoter.writeName(buf, b.Into)
 	buf.WriteByte(' ')
 
 	if b.Select != nil {
@@ -324,7 +323,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 				buf.WriteByte(',')
 				ph.WriteByte(',')
 			}
-			Quoter.FquoteAs(buf, c)
+			Quoter.writeName(buf, c)
 			ph.WriteByte('?')
 		}
 		ph.WriteByte(')')

@@ -304,7 +304,8 @@ func ExampleNewUnion() {
 func ExampleNewUnion_template() {
 
 	u := dbr.NewUnion(
-		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
+		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").
+			FromAlias("catalog_product_entity_{type}", "t").
 			Where(dbr.Column("entity_id", dbr.ArgInt64(1561)), dbr.Column("store_id", dbr.In.Int64(1, 0))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -535,7 +536,7 @@ func ExampleSubSelect() {
 }
 
 func ExampleNewSelectWithDerivedTable() {
-	sel3 := dbr.NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+	sel3 := dbr.NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
 		AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
 		AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
@@ -722,7 +723,7 @@ func ExampleSelect_AddArguments() {
 func ExampleParenthesisOpen() {
 	s := dbr.NewSelect("columnA", "columnB").
 		Distinct().
-		From("tableC", "ccc").
+		FromAlias("tableC", "ccc").
 		Where(
 			dbr.ParenthesisOpen(),
 			dbr.Column("d", dbr.ArgInt(1)),

@@ -32,7 +32,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no columns provided", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity", "cpe").
+		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").
 			Where(dbr.Column("entity_id", dbr.In.Int64())), // ArgInt64 must be without arguments
 		)
 		res, err := mu.Exec(context.TODO())
@@ -41,7 +41,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	})
 
 	t.Run("alias mismatch", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id", dbr.In.Int64())))
+		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id", dbr.In.Int64())))
 		mu.ColumnAliases = []string{"update_sku"}
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
@@ -50,7 +50,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
 		mu := dbr.NewUpdateMulti(
-			dbr.NewUpdate("catalog_product_entity", "cpe").AddColumns("sku", "updated_at").
+			dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").
 				Where(dbr.Column("entity_id", dbr.In.Int64())),
 		).WithDB(dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
@@ -75,7 +75,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	}
 
 	mu := dbr.NewUpdateMulti(
-		dbr.NewUpdate("customer_entity", "ce").AddColumns("name", "email").Where(dbr.Column("id", dbr.Equal.Int64())).Interpolate(),
+		dbr.NewUpdate("customer_entity").Alias("ce").AddColumns("name", "email").Where(dbr.Column("id", dbr.Equal.Int64())).Interpolate(),
 	)
 
 	// SM = SQL Mock

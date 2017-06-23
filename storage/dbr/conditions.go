@@ -26,6 +26,7 @@ const (
 type whereFragment struct {
 	// Condition can contain either a valid identifier or an expression. Set
 	// field `IsExpression` to true to avoid quoting of the `Column` field.
+	// Condition can also contain `qualifier.identifier`.
 	Condition string
 	Arguments Arguments
 	Sub       struct {
@@ -230,7 +231,7 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 					if j > 0 {
 						w.WriteByte(',')
 					}
-					Quoter.quote(w, c)
+					Quoter.writeName(w, c)
 				}
 				w.WriteByte(')')
 				return nil // done, only one USING allowed
@@ -275,7 +276,7 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 				writeOperator(w, true, f.Arguments[0])
 			}
 		} else {
-			Quoter.FquoteAs(w, f.Condition)
+			Quoter.WriteNameAlias(w, f.Condition, "")
 
 			if f.Sub.Select != nil {
 				writeOperator(w, false, argNull(f.Sub.Operator))

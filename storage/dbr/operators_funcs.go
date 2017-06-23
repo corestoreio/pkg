@@ -50,22 +50,22 @@ func SQLIfNull(expressionAlias ...string) string {
 		// Output: IFNULL(expr1, expr1) AS `alias`
 		sqlIfNullQuote2(buf, expressionAlias...)
 		buf.WriteString(" AS ")
-		Quoter.quote(buf, expressionAlias[2])
+		Quoter.writeName(buf, expressionAlias[2])
 
 	case 4:
-		// Input:  dbr.SQLIfNull(table1,col1,table2,col2,alias)
-		// Output: IFNULL(`table1`.`col1`, `table2`.`col2`) AS `alias`
-		sqlIfNullQuote4(buf, expressionAlias[:3]...)
+		// Input:  dbr.SQLIfNull(table1,col1,table2,col2)
+		// Output: IFNULL(`table1`.`col1`, `table2`.`col2`)
+		sqlIfNullQuote4(buf, expressionAlias...)
 	case 5:
 		// Input:  dbr.SQLIfNull(table1,col1,table2,col2,alias)
 		// Output: IFNULL(`table1`.`col1`, `table2`.`col2`) AS `alias`
-		sqlIfNullQuote4(buf, expressionAlias[:3]...)
+		sqlIfNullQuote4(buf, expressionAlias[:4]...)
 		buf.WriteString(" AS ")
-		Quoter.quote(buf, expressionAlias[4])
+		Quoter.writeName(buf, expressionAlias[4])
 	default:
-		sqlIfNullQuote4(buf, expressionAlias[:3]...)
+		sqlIfNullQuote4(buf, expressionAlias[:4]...)
 		buf.WriteString(" AS ")
-		Quoter.quote(buf, strings.Join(expressionAlias[4:], "_"))
+		Quoter.writeName(buf, strings.Join(expressionAlias[4:], "_"))
 	}
 	return buf.String()
 }
@@ -73,7 +73,7 @@ func SQLIfNull(expressionAlias ...string) string {
 func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
 	w.WriteString("IFNULL(")
 	if isValidIdentifier(expressionAlias[0]) == 0 {
-		Quoter.FquoteAs(w, expressionAlias[0])
+		Quoter.WriteNameAlias(w, expressionAlias[0], "")
 	} else {
 		w.WriteByte('(')
 		w.WriteString(expressionAlias[0])
@@ -81,7 +81,7 @@ func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
 	}
 	w.WriteByte(',')
 	if isValidIdentifier(expressionAlias[1]) == 0 {
-		Quoter.FquoteAs(w, expressionAlias[1])
+		Quoter.WriteNameAlias(w, expressionAlias[1], "")
 	} else {
 		w.WriteByte('(')
 		w.WriteString(expressionAlias[1])
@@ -90,11 +90,11 @@ func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
 	w.WriteByte(')')
 }
 
-func sqlIfNullQuote4(w queryWriter, expressionAlias ...string) {
+func sqlIfNullQuote4(w queryWriter, qualifierName ...string) {
 	w.WriteString("IFNULL(")
-	Quoter.quote(w, expressionAlias[:2]...)
+	Quoter.writeQualifierName(w, qualifierName[0], qualifierName[1])
 	w.WriteByte(',')
-	Quoter.quote(w, expressionAlias[2:4]...)
+	Quoter.writeQualifierName(w, qualifierName[2], qualifierName[3])
 	w.WriteByte(')')
 }
 
@@ -144,7 +144,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) string {
 	if useAlias {
 		buf.WriteByte(')')
 		buf.WriteString(" AS ")
-		Quoter.quote(buf, compareResult[len(compareResult)-1])
+		Quoter.writeName(buf, compareResult[len(compareResult)-1])
 	}
 	return buf.String()
 }

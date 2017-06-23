@@ -173,7 +173,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		u.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		u.Table = MakeAlias("tableY")
+		u.Table.Name = "tableY"
 		u.Set("a", ArgInt(1))
 
 		stmt, err := u.Prepare(context.TODO())
@@ -185,7 +185,7 @@ func TestUpdate_Prepare(t *testing.T) {
 func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Parallel()
 	t.Run("with condition values", func(t *testing.T) {
-		u := NewUpdate("catalog_product_entity", "cpe")
+		u := NewUpdate("catalog_product_entity")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
 		u.Where(Column("entity_id", In.Int64(1, 2, 3)))
 
@@ -193,11 +193,11 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args)
 		assert.Exactly(t,
-			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?,?,?))",
+			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?,?,?))",
 			sqlStr)
 	})
 	t.Run("without condition values", func(t *testing.T) {
-		u := NewUpdate("catalog_product_entity", "cpe")
+		u := NewUpdate("catalog_product_entity")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
 		u.Where(Column("entity_id", In.Int64()))
 
@@ -205,7 +205,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 		assert.Exactly(t, []interface{}{}, args)
 		assert.Exactly(t,
-			"UPDATE `catalog_product_entity` AS `cpe` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ())",
+			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ())",
 			sqlStr)
 	})
 }
@@ -214,7 +214,7 @@ func TestUpdate_Events(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewUpdate("tableA", "tA")
+		d := NewUpdate("tableA")
 		d.Set("y", ArgInt(25)).Set("z", ArgInt(26))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
@@ -243,14 +243,14 @@ func TestUpdate_Events(t *testing.T) {
 			},
 		)
 		compareToSQL(t, d, nil,
-			"UPDATE `tableA` AS `tA` SET `y`=?, `z`=?, `a`=?, `b`=?",
-			"UPDATE `tableA` AS `tA` SET `y`=25, `z`=26, `a`=1, `b`=1, `a`=1, `b`=1", // each call ToSQL appends more columns
+			"UPDATE `tableA` SET `y`=?, `z`=?, `a`=?, `b`=?",
+			"UPDATE `tableA` SET `y`=25, `z`=26, `a`=1, `b`=1, `a`=1, `b`=1", // each call ToSQL appends more columns
 			int64(25), int64(26), int64(1), int64(1),
 		)
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
-		up := NewUpdate("tableA", "tA")
+		up := NewUpdate("tableA")
 		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
 
 		up.Listeners.Add(
@@ -269,7 +269,7 @@ func TestUpdate_Events(t *testing.T) {
 	})
 
 	t.Run("Should Dispatch", func(t *testing.T) {
-		up := NewUpdate("tableA", "tA")
+		up := NewUpdate("tableA")
 		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
 
 		up.Listeners.Add(
@@ -299,8 +299,8 @@ func TestUpdate_Events(t *testing.T) {
 			},
 		})
 		compareToSQL(t, up, nil,
-			"UPDATE `tableA` AS `tA` SET `a`=?, `b`=?, `c`=?, `d`=?, `e`=?",
-			"UPDATE `tableA` AS `tA` SET `a`=1, `b`=1, `c`=3.14159, `d`='d', `e`='e', `e`='e'", // each call ToSQL appends more columns
+			"UPDATE `tableA` SET `a`=?, `b`=?, `c`=?, `d`=?, `e`=?",
+			"UPDATE `tableA` SET `a`=1, `b`=1, `c`=3.14159, `d`='d', `e`='e', `e`='e'", // each call ToSQL appends more columns
 			int64(1), true, 3.14159, "d", "e",
 		)
 		assert.Exactly(t, `c=pi; d=d; e`, up.Listeners.String())

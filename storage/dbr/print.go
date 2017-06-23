@@ -183,13 +183,7 @@ func sqlWriteOrderBy(w queryWriter, orderBys aliases, br bool) {
 	}
 	w.WriteRune(brS)
 	w.WriteString("ORDER BY ")
-	for i, c := range orderBys {
-		if i > 0 {
-			w.WriteString(", ")
-		}
-		c.FquoteAs(w)
-		// TODO append arguments
-	}
+	orderBys.WriteQuoted(w)
 }
 
 func sqlWriteLimitOffset(w queryWriter, limitValid bool, limitCount uint64, offsetValid bool, offsetCount uint64) {

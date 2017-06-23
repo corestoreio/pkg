@@ -29,7 +29,7 @@ func TestDeleteAllToSQL(t *testing.T) {
 	t.Parallel()
 
 	compareToSQL(t, NewDelete("a"), nil, "DELETE FROM `a`", "DELETE FROM `a`")
-	compareToSQL(t, NewDelete("a", "b"), nil, "DELETE FROM `a` AS `b`", "DELETE FROM `a` AS `b`")
+	compareToSQL(t, NewDelete("a").Alias("b"), nil, "DELETE FROM `a` AS `b`", "DELETE FROM `a` AS `b`")
 }
 
 func TestDeleteSingleToSQL(t *testing.T) {
@@ -133,7 +133,7 @@ func TestDelete_Prepare(t *testing.T) {
 
 	t.Run("Prepare Error", func(t *testing.T) {
 		d := &Delete{
-			From: MakeAlias("table"),
+			From: MakeNameAlias("table", ""),
 		}
 		d.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
@@ -149,7 +149,7 @@ func TestDelete_Events(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewDelete("tableA", "main_table")
+		d := NewDelete("tableA").Alias("main_table")
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
 			Listen{
@@ -182,7 +182,7 @@ func TestDelete_Events(t *testing.T) {
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
-		d := NewDelete("tableA", "main_table")
+		d := NewDelete("tableA").Alias("main_table")
 
 		d.OrderBy("col2")
 		d.Listeners.Add(
@@ -201,7 +201,7 @@ func TestDelete_Events(t *testing.T) {
 
 	t.Run("Should Dispatch", func(t *testing.T) {
 
-		d := NewDelete("tableA", "main_table")
+		d := NewDelete("tableA").Alias("main_table")
 
 		d.OrderBy("col2")
 		d.Listeners.Add(

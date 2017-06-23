@@ -68,17 +68,17 @@ type Update struct {
 }
 
 // NewUpdate creates a new Update object.
-func NewUpdate(table ...string) *Update {
+func NewUpdate(table string) *Update {
 	return &Update{
-		Table: MakeAlias(table...),
+		Table: MakeNameAlias(table, ""),
 	}
 }
 
 // Update creates a new Update for the given table
-func (c *Connection) Update(table ...string) *Update {
+func (c *Connection) Update(table string) *Update {
 	return &Update{
 		Log:   c.Log,
-		Table: MakeAlias(table...),
+		Table: MakeNameAlias(table, ""),
 		DB:    c.DB,
 	}
 }
@@ -94,10 +94,10 @@ func (c *Connection) UpdateBySQL(sql string, args ...Argument) *Update {
 }
 
 // Update creates a new Update for the given table bound to a transaction
-func (tx *Tx) Update(table ...string) *Update {
+func (tx *Tx) Update(table string) *Update {
 	return &Update{
 		Log:   tx.Logger,
-		Table: MakeAlias(table...),
+		Table: MakeNameAlias(table, ""),
 		DB:    tx.Tx,
 	}
 }
@@ -111,6 +111,12 @@ func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
 		RawArguments: args,
 		DB:           tx.Tx,
 	}
+}
+
+// Alias sets an alias for the table name.
+func (b *Update) Alias(alias string) *Update {
+	b.Table.Alias = alias
+	return b
 }
 
 // WithDB sets the database query object.
@@ -245,7 +251,7 @@ func (b *Update) toSQL(buf queryWriter) error {
 	}
 
 	buf.WriteString("UPDATE ")
-	b.Table.FquoteAs(buf)
+	b.Table.WriteQuoted(buf)
 	buf.WriteString(" SET ")
 
 	// Build SET clause SQL with placeholders and add values to args
@@ -254,7 +260,7 @@ func (b *Update) toSQL(buf queryWriter) error {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		Quoter.FquoteAs(buf, c)
+		Quoter.writeName(buf, c)
 		buf.WriteByte('=')
 		if i < clausArgLen {
 			arg := b.SetClauses.Arguments[i]
@@ -373,7 +379,7 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter) error {
 		if i > 0 {
 			w.WriteString(", ")
 		}
-		Quoter.quote(w, c)
+		Quoter.writeName(w, c)
 		w.WriteByte('=')
 		if useArgs {
 			// todo remove continue
@@ -383,14 +389,14 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter) error {
 			}
 			if uc.Arguments[i] == nil {
 				w.WriteString("VALUES(")
-				Quoter.quote(w, c)
+				Quoter.writeName(w, c)
 				w.WriteByte(')')
 				continue
 			}
 			w.WriteByte('?')
 		} else {
 			w.WriteString("VALUES(")
-			Quoter.quote(w, c)
+			Quoter.writeName(w, c)
 			w.WriteByte(')')
 		}
 	}

@@ -185,7 +185,7 @@ func TestNewUnionTemplate(t *testing.T) {
 	t.Run("full statement EAV", func(t *testing.T) {
 		u := NewUnion(
 			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
-				From("catalog_product_entity_{type}", "t").
+				FromAlias("catalog_product_entity_{type}", "t").
 				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))).
 				OrderByDesc("t.{column}_store_id"),
 		).
@@ -226,7 +226,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		}()
 
 		NewUnion(
-			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
+			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").FromAlias("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX")
@@ -234,7 +234,7 @@ func TestNewUnionTemplate(t *testing.T) {
 	})
 	t.Run("StringReplace 2nd call too many values and nothing should happen", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t"),
+			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").FromAlias("catalog_product_entity_{type}", "t"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX", "bytesX")
@@ -263,7 +263,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		// everything when loading the PHP array.
 
 		u := NewUnion(
-			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
+			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_{type}", "t").
 				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -281,7 +281,7 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
 	u := NewUnion(
-		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").From("catalog_product_entity_{type}", "t").
+		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_{type}", "t").
 			Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").

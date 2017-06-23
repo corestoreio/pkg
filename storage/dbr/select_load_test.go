@@ -39,7 +39,7 @@ func TestSelect_Rows(t *testing.T) {
 
 	t.Run("Error", func(t *testing.T) {
 		sel := &dbr.Select{
-			Table: dbr.MakeAlias("tableX"),
+			Table: dbr.MakeNameAlias("tableX", ""),
 		}
 		sel.AddColumns("a", "b")
 		sel.DB = dbMock{

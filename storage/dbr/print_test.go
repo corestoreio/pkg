@@ -61,7 +61,7 @@ func TestMakeSQL(t *testing.T) {
 		assert.Exactly(t, "INSERT INTO `tableX` (`columnA`,`columnB`) VALUES (?,?)", b.String())
 	})
 	t.Run("SELECT", func(t *testing.T) {
-		b := NewSelect("columnA").From("tableX", "X").Where(Column("columnA", LessOrEqual.Float64(2.4)))
+		b := NewSelect("columnA").FromAlias("tableX", "X").Where(Column("columnA", LessOrEqual.Float64(2.4)))
 		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= ?)", b.String())
 	})
 	t.Run("UPDATE", func(t *testing.T) {

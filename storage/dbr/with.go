@@ -183,7 +183,7 @@ func (b *With) toSQL(w queryWriter) error {
 	w.WriteRune('\n')
 
 	for i, sc := range b.Subclauses {
-		Quoter.quote(w, sc.Name)
+		Quoter.writeName(w, sc.Name)
 		if len(sc.Columns) > 0 {
 			w.WriteRune(' ')
 			w.WriteRune('(')
@@ -191,7 +191,7 @@ func (b *With) toSQL(w queryWriter) error {
 				if j > 0 {
 					w.WriteRune(',')
 				}
-				Quoter.quote(w, c)
+				Quoter.writeName(w, c)
 			}
 			w.WriteRune(')')
 		}

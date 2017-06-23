@@ -22,45 +22,46 @@ import (
 
 func TestMakeAlias(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "`table1`", MakeAlias("table1").String())
-	assert.Exactly(t, "`table0` AS `table1`", MakeAlias("table0", "table1").String())
-	assert.Exactly(t, "`(table1)`", MakeAlias("(table1)").String())
-	assert.Exactly(t, "`(table1)` AS `table2`", MakeAlias("(table1)", "table2").String())
-	assert.Exactly(t, "`(table1)`", MakeAlias("(table1)", "").String())
-	assert.Exactly(t, "`table1`", MakeAlias("table1", "").String())
+	assert.Exactly(t, "`table1`", MakeNameAlias("table1", "").String())
+	assert.Exactly(t, "`table0` AS `table1`", MakeNameAlias("table0", "table1").String())
+	assert.Exactly(t, "`(table1)`", MakeNameAlias("(table1)", "").String())
+	assert.Exactly(t, "`(table1)` AS `table2`", MakeNameAlias("(table1)", "table2").String())
+	assert.Exactly(t, "`(table1)`", MakeNameAlias("(table1)", "").String())
+	assert.Exactly(t, "`table1`", MakeNameAlias("table1", "").String())
 }
 
 func TestMakeAliasExpr(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "(table1)", MakeAliasExpr("(table1)", "").String())
-	assert.Exactly(t, "(table1) AS `x`", MakeAliasExpr("(table1)", "x").String())
-	assert.Exactly(t, "(table1)", MakeAliasExpr("(table1)").String())
+	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
+	assert.Exactly(t, "(table1) AS `x`", MakeExpressionAlias("(table1)", "x").String())
+	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
 }
 
-func TestQuoteAs(t *testing.T) {
+func TestMysqlQuoter_QuoteAlias(t *testing.T) {
 	tests := []struct {
-		have []string
-		want string
+		name, alias, want string
 	}{
-		0: {[]string{"a"}, "`a`"},
-		1: {[]string{"a", "b"}, "`a` AS `b`"},
-		2: {[]string{"a", ""}, "`a`"},
-		3: {[]string{"`c`"}, "`c`"},
-		4: {[]string{"d.e"}, "`d`.`e`"},
-		5: {[]string{"`d`.`e`"}, "`d`.`e`"},
-		6: {[]string{"f", "g", "h"}, "`f` AS `g_h`"},
-		7: {[]string{"f", "g", "h`h"}, "`f` AS `g_hh`"},
+		0: {"a", "", "`a`"},
+		1: {"a", "b", "`a` AS `b`"},
+		2: {"a", "", "`a`"},
+		3: {"`c`", "", "`c`"},
+		4: {"d.e", "", "`d`.`e`"},
+		5: {"`d`.`e`", "", "`d`.`e`"},
+		6: {"f", "g_h", "`f` AS `g_h`"},
+		7: {"f", "g_h`h", "`f` AS `g_hh`"},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, Quoter.QuoteAs(test.have...), "Index %d", i)
+		assert.Exactly(t, test.want, Quoter.NameAlias(test.name, test.alias), "Index %d", i)
 	}
 }
 
-func TestMysqlQuoter_Quote(t *testing.T) {
-	assert.Exactly(t, "`tableName`", Quoter.Quote("tableName"))
-	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.Quote("databaseName", "tableName"))
-	assert.Exactly(t, "`tableName`", Quoter.Quote("", "tableName")) // qualifier is empty
-	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.Quote("database`Name", "table`Name"))
+func TestMysqlQuoter_Name(t *testing.T) {
+	assert.Exactly(t, "`tableName`", Quoter.Name("tableName"))
+	assert.Exactly(t, "`tableName`", Quoter.Name("table`Name"))
+	assert.Exactly(t, "``", Quoter.Name(""))
+	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.QualifierName("databaseName", "tableName"))
+	assert.Exactly(t, "`tableName`", Quoter.QualifierName("", "tableName")) // qualifier is empty
+	assert.Exactly(t, "`databaseName`.`tableName`", Quoter.QualifierName("database`Name", "table`Name"))
 }
 
 func TestIsValidIdentifier(t *testing.T) {

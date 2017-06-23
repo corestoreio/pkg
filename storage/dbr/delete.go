@@ -80,17 +80,17 @@ type Delete struct {
 }
 
 // NewDelete creates a new Delete object.
-func NewDelete(from ...string) *Delete {
+func NewDelete(from string) *Delete {
 	return &Delete{
-		From: MakeAlias(from...),
+		From: MakeNameAlias(from, ""),
 	}
 }
 
 // DeleteFrom creates a new Delete for the given table
-func (c *Connection) DeleteFrom(from ...string) *Delete {
+func (c *Connection) DeleteFrom(from string) *Delete {
 	d := &Delete{
 		Log:            c.Log,
-		From:           MakeAlias(from...),
+		From:           MakeNameAlias(from, ""),
 		WhereFragments: make(WhereFragments, 0, 2),
 	}
 	d.DB = c.DB
@@ -99,13 +99,19 @@ func (c *Connection) DeleteFrom(from ...string) *Delete {
 
 // DeleteFrom creates a new Delete for the given table
 // in the context for a transaction
-func (tx *Tx) DeleteFrom(from ...string) *Delete {
+func (tx *Tx) DeleteFrom(from string) *Delete {
 	d := &Delete{
 		Log:  tx.Logger,
-		From: MakeAlias(from...),
+		From: MakeNameAlias(from, ""),
 	}
 	d.DB = tx.Tx
 	return d
+}
+
+// Alias sets an alias for the table name.
+func (b *Delete) Alias(alias string) *Delete {
+	b.From.Alias = alias
+	return b
 }
 
 // WithDB sets the database query object.
@@ -214,7 +220,7 @@ func (b *Delete) toSQL(buf queryWriter) error {
 	}
 
 	buf.WriteString("DELETE FROM ")
-	b.From.FquoteAs(buf)
+	b.From.WriteQuoted(buf)
 
 	// TODO(CyS) add SQLStmtDeleteJoin
 

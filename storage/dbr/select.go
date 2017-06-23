@@ -233,10 +233,16 @@ func (b *Select) Star() *Select {
 	return b
 }
 
-// From sets the table to SELECT FROM. If second argument will be provided this
-// at then considered at the alias. SELECT ... FROM table AS alias.
-func (b *Select) From(from ...string) *Select {
-	b.Table = MakeAlias(from...)
+// From sets the table for the SELECT FROM part.
+func (b *Select) From(from string) *Select {
+	b.Table = MakeNameAlias(from, "")
+	return b
+}
+
+// FromAlias sets the table and its alias name for a `SELECT ... FROM table AS
+// alias` query.
+func (b *Select) FromAlias(from, alias string) *Select {
+	b.Table = MakeNameAlias(from, alias)
 	return b
 }
 
@@ -348,7 +354,7 @@ func (b *Select) Having(c ...ConditionArg) *Select {
 // OrderByDeactivated deactivates ordering of the result set by applying ORDER
 // BY NULL to the SELECT statement. Very useful for GROUP BY queries.
 func (b *Select) OrderByDeactivated() *Select {
-	b.OrderBys = aliases{MakeAliasExpr("NULL")}
+	b.OrderBys = aliases{MakeExpressionAlias("NULL", "")}
 	return b
 }
 
@@ -504,15 +510,15 @@ func (b *Select) toSQL(w queryWriter) error {
 	cols := b.Columns
 	if b.IsCountStar {
 		cols = aliases{
-			MakeAliasExpr("COUNT(*)", "counted"),
+			MakeExpressionAlias("COUNT(*)", "counted"),
 		}
 	}
-	if err := cols.FquoteAs(w); err != nil {
+	if err := cols.WriteQuoted(w); err != nil {
 		return errors.WithStack(err)
 	}
 	if !b.Table.isEmpty() {
 		w.WriteString(" FROM ")
-		if err := b.Table.FquoteAs(w); err != nil {
+		if err := b.Table.WriteQuoted(w); err != nil {
 			return errors.WithStack(err)
 		}
 	}
@@ -521,7 +527,7 @@ func (b *Select) toSQL(w queryWriter) error {
 		w.WriteByte(' ')
 		w.WriteString(f.JoinType)
 		w.WriteString(" JOIN ")
-		f.Table.FquoteAs(w)
+		f.Table.WriteQuoted(w)
 		if err := f.OnConditions.write(w, 'j'); err != nil {
 			return errors.WithStack(err)
 		}
@@ -537,7 +543,7 @@ func (b *Select) toSQL(w queryWriter) error {
 			if i > 0 {
 				w.WriteString(", ")
 			}
-			if err := c.FquoteAs(w); err != nil {
+			if err := c.WriteQuoted(w); err != nil {
 				return errors.WithStack(err)
 			}
 		}

@@ -61,7 +61,7 @@ func TestSelectFullToSQL(t *testing.T) {
 
 	sel := NewSelect("a", "b").
 		Distinct().
-		From("c", "cc").
+		FromAlias("c", "cc").
 		Where(
 			ParenthesisOpen(),
 			Column("d", Equal.Int(1)),
@@ -95,7 +95,7 @@ func TestSelect_Interpolate(t *testing.T) {
 	t.Run("with paranthesis", func(t *testing.T) {
 		sel := NewSelect("a", "b").
 			Distinct().
-			From("c", "cc").
+			FromAlias("c", "cc").
 			Where(
 				ParenthesisOpen(),
 				Column("d", Equal.Int(1)),
@@ -726,9 +726,9 @@ func TestSelectJoin(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*", "p2.*").
 			Distinct().StraightJoin().SQLNoCache().
-			From("dbr_people", "p1").
+			FromAlias("dbr_people", "p1").
 			Join(
-				MakeAlias("dbr_people", "p2"),
+				MakeNameAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id", Equal.Int(42)),
 			)
@@ -744,9 +744,9 @@ func TestSelectJoin(t *testing.T) {
 	t.Run("inner", func(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*", "p2.*").
-			From("dbr_people", "p1").
+			FromAlias("dbr_people", "p1").
 			Join(
-				MakeAlias("dbr_people", "p2"),
+				MakeNameAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id", Equal.Int(42)),
 			)
@@ -761,9 +761,9 @@ func TestSelectJoin(t *testing.T) {
 	t.Run("left", func(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*", "p2.name").
-			From("dbr_people", "p1").
+			FromAlias("dbr_people", "p1").
 			LeftJoin(
-				MakeAlias("dbr_people", "p2"),
+				MakeNameAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id", Equal.Int(42)),
 			)
@@ -779,9 +779,9 @@ func TestSelectJoin(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*").
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID").
-			From("dbr_people", "p1").
+			FromAlias("dbr_people", "p1").
 			RightJoin(
-				MakeAlias("dbr_people", "p2"),
+				MakeNameAlias("dbr_people", "p2"),
 				Column("`p2`.`id` = `p1`.`id`"),
 			)
 		compareToSQL(t, sqlObj, nil,
@@ -794,9 +794,9 @@ func TestSelectJoin(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*").
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
-			From("dbr_people", "p1").
+			FromAlias("dbr_people", "p1").
 			RightJoin(
-				MakeAlias("dbr_people", "p2"),
+				MakeNameAlias("dbr_people", "p2"),
 				Using("id", "email"),
 			)
 		compareToSQL(t, sqlObj, nil,
@@ -811,7 +811,7 @@ func TestSelect_Locks(t *testing.T) {
 	t.Run("LOCK IN SHARE MODE", func(t *testing.T) {
 		s := NewSelect("p1.*").
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
-			From("dbr_people", "p1").LockInShareMode()
+			FromAlias("dbr_people", "p1").LockInShareMode()
 		compareToSQL(t, s, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` LOCK IN SHARE MODE",
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` LOCK IN SHARE MODE",
@@ -820,7 +820,7 @@ func TestSelect_Locks(t *testing.T) {
 	t.Run("FOR UPDATE", func(t *testing.T) {
 		s := NewSelect("p1.*").
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
-			From("dbr_people", "p1").ForUpdate()
+			FromAlias("dbr_people", "p1").ForUpdate()
 		compareToSQL(t, s, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` FOR UPDATE",
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` FOR UPDATE",
@@ -832,7 +832,7 @@ func TestSelect_Events(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Stop Propagation", func(t *testing.T) {
-		d := NewSelect("a", "b").From("tableA", "tA")
+		d := NewSelect("a", "b").FromAlias("tableA", "tA")
 		d.OrderBy("col3")
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
@@ -867,7 +867,7 @@ func TestSelect_Events(t *testing.T) {
 	})
 
 	t.Run("Missing EventType", func(t *testing.T) {
-		s := NewSelect("a", "b").From("tableA", "tA")
+		s := NewSelect("a", "b").FromAlias("tableA", "tA")
 		s.OrderBy("col3")
 		s.Listeners.Add(Listen{
 			Name: "a col1",
@@ -883,7 +883,7 @@ func TestSelect_Events(t *testing.T) {
 	})
 
 	t.Run("Should Dispatch", func(t *testing.T) {
-		s := NewSelect("a", "b").From("tableA", "tA")
+		s := NewSelect("a", "b").FromAlias("tableA", "tA")
 		s.OrderBy("col3")
 		s.Listeners.Add(Listen{
 			Name:      "a col1",
@@ -918,7 +918,7 @@ func TestSelect_Columns(t *testing.T) {
 
 	t.Run("AddColumns, multiple args", func(t *testing.T) {
 		s := NewSelect("a", "b")
-		s.From("tableA", "tA")
+		s.FromAlias("tableA", "tA")
 		s.AddColumns("d,e, f", "g", "h", "i,j ,k")
 		compareToSQL(t, s, nil,
 			"SELECT `a`, `b`, `d,e, f`, `g`, `h`, `i,j ,k` FROM `tableA` AS `tA`",
@@ -927,7 +927,7 @@ func TestSelect_Columns(t *testing.T) {
 	})
 	t.Run("AddColumns, each column itself", func(t *testing.T) {
 		s := NewSelect("a", "b")
-		s.From("tableA", "tA")
+		s.FromAlias("tableA", "tA")
 		s.AddColumns("d", "e", "f")
 		compareToSQL(t, s, nil,
 			"SELECT `a`, `b`, `d`, `e`, `f` FROM `tableA` AS `tA`",
@@ -993,7 +993,7 @@ func TestSelect_Columns(t *testing.T) {
 			AddColumnsExprAlias("t3.name", "t3Name", "t3.sku")
 	})
 	t.Run("AddColumnsExprAlias", func(t *testing.T) {
-		s := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+		s := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
 			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period")
 		compareToSQL(t, s, nil,
 			"SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`",
@@ -1001,7 +1001,7 @@ func TestSelect_Columns(t *testing.T) {
 		)
 	})
 	t.Run("AddColumns with expression incorrect", func(t *testing.T) {
-		s := NewSelect().AddColumns(" `t.value`", "`t`.`attribute_id`", "t.{column} AS `col_type`").From("catalog_product_entity_{type}", "t")
+		s := NewSelect().AddColumns(" `t.value`", "`t`.`attribute_id`", "t.{column} AS `col_type`").FromAlias("catalog_product_entity_{type}", "t")
 		compareToSQL(t, s, nil,
 			"SELECT ` t`.`value`, `t`.`attribute_id`, `t`.`{column} AS col_type` FROM `catalog_product_entity_{type}` AS `t`",
 			"SELECT ` t`.`value`, `t`.`attribute_id`, `t`.`{column} AS col_type` FROM `catalog_product_entity_{type}` AS `t`",
@@ -1074,7 +1074,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 	*/
 
 	t.Run("without args", func(t *testing.T) {
-		sel3 := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+		sel3 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
 			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
 			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
@@ -1100,7 +1100,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 	})
 
 	t.Run("with args", func(t *testing.T) {
-		sel3 := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+		sel3 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
 			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
 			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
@@ -1132,7 +1132,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 func TestSelect_Subselect_Compact(t *testing.T) {
 	t.Parallel()
 
-	sel2 := NewSelect().From("sales_bestsellers_aggregated_daily", "t3").
+	sel2 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
 		AddColumns("`t3`.`product_name`").
 		Where(Column("t3.store_id", In.Int64(2, 3, 4))).
 		GroupBy("t3.store_id").
@@ -1154,7 +1154,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 	t.Run("beginning of WHERE", func(t *testing.T) {
 
 		sel := NewSelect("a", "b").
-			From("c", "cc").
+			FromAlias("c", "cc").
 			Where(
 				ParenthesisOpen(),
 				Column("d", Equal.Int(1)),
@@ -1179,7 +1179,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 
 	t.Run("end of WHERE", func(t *testing.T) {
 		sel := NewSelect("a", "b").
-			From("c", "cc").
+			FromAlias("c", "cc").
 			Where(
 				Column("f", ArgFloat64(2.7182)),
 				ParenthesisOpen(),
@@ -1203,7 +1203,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 
 	t.Run("middle of WHERE", func(t *testing.T) {
 		sel := NewSelect("a", "b").
-			From("c", "cc").
+			FromAlias("c", "cc").
 			Where(
 				Column("f", ArgFloat64(2.7182)),
 				ParenthesisOpen(),
@@ -1247,7 +1247,7 @@ func TestSelect_Count(t *testing.T) {
 			"SELECT COUNT(*) AS `counted` FROM `dbr_people`",
 		)
 		var buf bytes.Buffer
-		assert.NoError(t, s.Columns.FquoteAs(&buf))
+		assert.NoError(t, s.Columns.WriteQuoted(&buf))
 		assert.Exactly(t, "`a`, `b`", buf.String(), "Columns should be removed or changed when calling Count() function")
 	})
 }
@@ -1257,7 +1257,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 
 	sel := NewSelect("a", "b").
 		Distinct().
-		From("c", "cc").
+		FromAlias("c", "cc").
 		Where(
 			ParenthesisOpen(),
 			Column("d", Equal.Int(1)),
@@ -1315,8 +1315,8 @@ func TestSelect_AddRecord(t *testing.T) {
 
 	t.Run("multiple args from record", func(t *testing.T) {
 		sel := NewSelect("a", "b").
-			From("dbr_person", "dp").
-			Join(MakeAlias("dbr_group", "dg"), Column("dp.id", Equal.Str())).
+			FromAlias("dbr_person", "dp").
+			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id", Equal.Str())).
 			Where(
 				ParenthesisOpen(),
 				Column("name", Equal.Str()),
@@ -1341,7 +1341,7 @@ func TestSelect_AddRecord(t *testing.T) {
 	})
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").From("dbr_people").
-			Join(MakeAlias("dbr_group", "dg"), Column("dp.id", Equal.Str()), Column("dg.name", Equal.Str("XY%"))).
+			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id", Equal.Str()), Column("dg.name", Equal.Str("XY%"))).
 			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
