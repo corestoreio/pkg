@@ -94,8 +94,7 @@ func TestVariable_LoadOne(t *testing.T) {
 	var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
 		FromCSVString("keyVal01,helloWorld")
 
-	dbMock.ExpectQuery("SHOW SESSION VARIABLES.+").
-		WithArgs(("keyVal01")).
+	dbMock.ExpectQuery("SHOW SESSION VARIABLES LIKE 'keyVal01'").
 		WillReturnRows(mockedRows)
 
 	v := &Variable{}

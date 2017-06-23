@@ -75,7 +75,7 @@ func (t *Table) update() *Table {
 
 	t.selectAllCache = &dbr.Select{
 		// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
-		Table: dbr.MakeAlias(t.Name, MainTable),
+		Table: dbr.MakeNameAlias(t.Name, MainTable),
 	}
 
 	return t
@@ -97,9 +97,9 @@ func (t *Table) LoadColumns(ctx context.Context, db dbr.Querier) error {
 // with alias e would become `catalog_product_entity` AS `e`.
 func (t *Table) TableAliasQuote(alias string) string {
 	if t.Schema != "" {
-		return dbr.Quoter.QuoteAs(t.Schema+"."+t.Name, alias)
+		return dbr.Quoter.NameAlias(t.Schema+"."+t.Name, alias)
 	}
-	return dbr.Quoter.QuoteAs(t.Name, alias)
+	return dbr.Quoter.NameAlias(t.Name, alias)
 }
 
 // ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around
@@ -143,7 +143,7 @@ func (t *Table) Truncate(ctx context.Context, execer dbr.Execer) error {
 	if err := IsValidIdentifier(t.Name); err != nil {
 		return errors.Wrap(err, "[csdb] Truncate table name")
 	}
-	ddl := "TRUNCATE TABLE " + dbr.Quoter.QuoteAs(t.Name)
+	ddl := "TRUNCATE TABLE " + dbr.Quoter.QualifierName(t.Schema, t.Name)
 	_, err := execer.ExecContext(ctx, ddl)
 	return errors.Wrapf(err, "[csdb] failed to truncate table %q", ddl)
 }
@@ -157,7 +157,7 @@ func (t *Table) Rename(ctx context.Context, execer dbr.Execer, new string) error
 	if err := IsValidIdentifier(t.Name, new); err != nil {
 		return errors.Wrap(err, "[csdb] Rename table name")
 	}
-	ddl := "RENAME TABLE " + dbr.Quoter.QuoteAs(t.Name) + " TO " + dbr.Quoter.QuoteAs(new)
+	ddl := "RENAME TABLE " + dbr.Quoter.QualifierName(t.Schema, t.Name) + " TO " + dbr.Quoter.NameAlias(new, "")
 	_, err := execer.ExecContext(ctx, ddl)
 	return errors.Wrapf(err, "[csdb] failed to rename table %q", ddl)
 }
@@ -176,17 +176,17 @@ func (t *Table) Swap(ctx context.Context, execer dbr.Execer, other string) error
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	buf.WriteString("RENAME TABLE ")
-	dbr.Quoter.FquoteAs(buf, t.Name)
+	dbr.Quoter.WriteQualifierName(buf, t.Schema, t.Name)
 	buf.WriteString(" TO ")
-	dbr.Quoter.FquoteAs(buf, tmp)
+	dbr.Quoter.WriteNameAlias(buf, tmp, "")
 	buf.WriteString(", ")
-	dbr.Quoter.FquoteAs(buf, other)
+	dbr.Quoter.WriteNameAlias(buf, other, "")
 	buf.WriteString(" TO ")
-	dbr.Quoter.FquoteAs(buf, t.Name)
+	dbr.Quoter.WriteQualifierName(buf, t.Schema, t.Name)
 	buf.WriteByte(',')
-	dbr.Quoter.FquoteAs(buf, tmp)
+	dbr.Quoter.WriteNameAlias(buf, tmp, "")
 	buf.WriteString(" TO ")
-	dbr.Quoter.FquoteAs(buf, other)
+	dbr.Quoter.WriteNameAlias(buf, other, "")
 
 	if _, err := execer.ExecContext(ctx, buf.String()); err != nil {
 		// only allocs in case of an error ;-)
@@ -204,7 +204,7 @@ func (t *Table) Drop(ctx context.Context, execer dbr.Execer) error {
 	if err := IsValidIdentifier(t.Name); err != nil {
 		return errors.Wrap(err, "[csdb] Drop table name")
 	}
-	_, err := execer.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dbr.Quoter.QuoteAs(t.Name))
+	_, err := execer.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dbr.Quoter.QualifierName(t.Schema, t.Name))
 	return errors.Wrapf(err, "[csdb] failed to drop table %q", t.Name)
 }
 
@@ -296,7 +296,7 @@ func (t *Table) LoadDataInfile(ctx context.Context, execer dbr.Execer, filePath 
 		buf.WriteString(" IGNORE ")
 	}
 	buf.WriteString(" INTO TABLE ")
-	buf.WriteString(dbr.Quoter.Quote(t.Schema, t.Name))
+	dbr.Quoter.WriteQualifierName(&buf, t.Schema, t.Name)
 
 	var hasFields bool
 	if o.FieldsEscapedBy > 0 || o.FieldsTerminatedBy != "" || o.FieldsEnclosedBy > 0 {
