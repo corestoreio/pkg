@@ -53,7 +53,7 @@ type Tables struct {
 	// differs.
 	ts map[int]*Table
 	// tn for faster access we use tn and also because ts might get removed
-	tn map[string]*Table
+	// tn map[string]*Table
 }
 
 // WithTableOrViewFromQuery creates the new view or table from the SELECT query and
@@ -189,10 +189,10 @@ func WithTableNames(idx []int, tableName []string) TableOption {
 // current database. Argument sql will be either appended to the SHOW TABLES
 // statement or if it starts with SELECT then it replaces the SHOW TABLES
 // statement.
-func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption {
+func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption { // TODO use dbr.Select
 	qry := "SHOW TABLES"
 	if len(sql) > 0 && sql[0] != "" {
-		if false == dbr.Stmt.IsSelect(sql[0]) {
+		if !dbr.Stmt.IsSelect(sql[0]) {
 			qry = qry + " LIKE '" + strings.Replace(sql[0], "'", "", -1) + "'"
 		} else {
 			qry = sql[0]
@@ -208,10 +208,10 @@ func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption {
 
 			i := 0
 			for rows.Next() {
-				if err := rows.Scan(&tableName); err != nil {
+				if err = rows.Scan(&tableName); err != nil {
 					return errors.Wrapf(err, "Scan Query %q", qry)
 				}
-				if err := tm.Upsert(i, NewTable(tableName)); err != nil {
+				if err = tm.Upsert(i, NewTable(tableName)); err != nil {
 					return errors.Wrapf(err, "[csdb] Tables.Insert Index %d with name %q", i, tableName)
 				}
 				i++

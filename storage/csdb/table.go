@@ -88,7 +88,6 @@ func (t *Table) LoadColumns(ctx context.Context, db dbr.Querier) error {
 		return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", t.Name)
 	}
 	t.Columns = tc[t.Name]
-	tc = nil
 	t.update()
 	return nil
 }
@@ -119,8 +118,9 @@ func (t *Table) AllColumnAliasQuote(alias string) []string {
 	return dbr.Quoter.TableColumnAlias(alias, sl...)
 }
 
-// In checks if column name n is a column of this table. Case sensitive.
-func (t *Table) In(n string) bool {
+// ContainsColumn checks if column name n is a column of this table. Case
+// sensitive.
+func (t *Table) ContainsColumn(n string) bool {
 	for _, c := range t.fieldsPK {
 		if c == n {
 			return true
@@ -195,7 +195,7 @@ func (t *Table) Swap(ctx context.Context, execer dbr.Execer, other string) error
 	return nil
 }
 
-// Drop, if exists, drops the table or the view.
+// Drop drops, if exists, the table or the view.
 func (t *Table) Drop(ctx context.Context, execer dbr.Execer) error {
 	typ := "TABLE"
 	if t.IsView {
@@ -208,10 +208,10 @@ func (t *Table) Drop(ctx context.Context, execer dbr.Execer) error {
 	return errors.Wrapf(err, "[csdb] failed to drop table %q", t.Name)
 }
 
-// LoadSlice performs a SELECT * FROM `tableName` query and puts the results
+// Load performs a SELECT * FROM `tableName` query and puts the results
 // into the pointer slice `dest`. Returns the number of loaded rows and nil or 0
 // and an error. The variadic third arguments can modify the SQL query.
-func (t *Table) LoadSlice(ctx context.Context, db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
+func (t *Table) Load(ctx context.Context, db dbr.Querier, dest interface{}, listeners ...dbr.Listen) (int, error) {
 	//sb := t.Select()
 	//sb.DB.Querier = db
 	//sb.Listeners.Merge(t.Listeners.Select)
@@ -273,7 +273,7 @@ type InfileOptions struct {
 // https://godoc.org/github.com/go-sql-driver/mysql#RegisterLocalFile. To ignore
 // foreign key constraints during the load operation, issue a SET
 // foreign_key_checks = 0 statement before executing LOAD DATA.
-func (t *Table) LoadDataInfile(ctx context.Context, execer dbr.Execer, filePath string, o InfileOptions) error {
+func (t *Table) LoadDataInfile(ctx context.Context, db dbr.Execer, filePath string, o InfileOptions) error {
 	if t.IsView {
 		return nil
 	}
@@ -382,6 +382,6 @@ func (t *Table) LoadDataInfile(ctx context.Context, execer dbr.Execer, filePath 
 		o.Log.Debug("csdb.Table.Infile.SQL", log.String("sql", buf.String()))
 	}
 
-	_, err := execer.ExecContext(ctx, buf.String())
+	_, err := db.ExecContext(ctx, buf.String())
 	return errors.NewFatal(err, "[csb] Infile for table %q failed with query: %q", t.Name, buf.String())
 }

@@ -135,6 +135,7 @@ func mustStructure(i int) *csdb.Table {
 }
 
 func TestTableStructure(t *testing.T) {
+	t.Parallel()
 
 	sValid, err := tableMap.Table(table1)
 	assert.NotNil(t, sValid)
@@ -154,6 +155,7 @@ func TestTableStructure(t *testing.T) {
 }
 
 func TestTableStructureTableAliasQuote(t *testing.T) {
+	t.Parallel()
 
 	want := map[string]string{
 		"catalog_category_anc_categs_index_idx":   "`catalog_category_anc_categs_index_idx` AS `alias`",
@@ -172,6 +174,7 @@ func TestTableStructureTableAliasQuote(t *testing.T) {
 }
 
 func TestTableStructureColumnAliasQuote(t *testing.T) {
+	t.Parallel()
 
 	want := map[string][]string{
 		"catalog_category_anc_categs_index_idx":   {"`alias`.`category_id`", "`alias`.`path`"},
@@ -190,6 +193,7 @@ func TestTableStructureColumnAliasQuote(t *testing.T) {
 }
 
 func TestTableStructureAllColumnAliasQuote(t *testing.T) {
+	t.Parallel()
 
 	want := map[string][]string{
 		"catalog_category_anc_categs_index_idx":   {"`alias`.`category_id`", "`alias`.`path`"},
@@ -208,7 +212,7 @@ func TestTableStructureAllColumnAliasQuote(t *testing.T) {
 }
 
 func TestTableStructureIn(t *testing.T) {
-
+	t.Parallel()
 	want := map[string]bool{
 		"catalog_category_anc_categs_index_idx":   true,
 		"catalog_category_anc_categs_index_tmp":   true,
@@ -219,7 +223,7 @@ func TestTableStructureIn(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		have := table.In("path")
+		have := table.ContainsColumn("path")
 		assert.EqualValues(t, want[table.Name], have, "Table %s", table.Name)
 	}
 
@@ -233,7 +237,7 @@ func TestTableStructureIn(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		have := table.In("category_id")
+		have := table.ContainsColumn("category_id")
 		assert.EqualValues(t, want2[table.Name], have, "Table %s", table.Name)
 	}
 }

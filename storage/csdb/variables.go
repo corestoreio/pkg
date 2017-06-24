@@ -67,8 +67,8 @@ func (v *Variable) LoadOne(db dbr.Querier, name string) error {
 
 // ToSQL implements dbr.QueryBuilder interface to assemble a SQL string and its
 // arguments for query execution.
-func (ms *Variable) ToSQL() (string, []interface{}, error) {
-	s, err := dbr.Interpolate("SHOW SESSION VARIABLES LIKE ?", dbr.ArgString(ms.Name))
+func (v *Variable) ToSQL() (string, []interface{}, error) {
+	s, err := dbr.Interpolate("SHOW SESSION VARIABLES LIKE ?", dbr.ArgString(v.Name))
 	return s, nil, err
 }
 
