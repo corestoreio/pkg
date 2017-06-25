@@ -7,42 +7,43 @@
 package internal
 
 import (
-        "fmt"
-        "io/ioutil"
-        "os"
-        "path/filepath"
-        "strings"
-        "time"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
+
 type asset struct {
-        bytes []byte
-        info  os.FileInfo
+	bytes []byte
+	info  os.FileInfo
 }
 
 type bindataFileInfo struct {
-        name    string
-        size    int64
-        mode    os.FileMode
-        modTime time.Time
+	name    string
+	size    int64
+	mode    os.FileMode
+	modTime time.Time
 }
 
 func (fi bindataFileInfo) Name() string {
-        return fi.name
+	return fi.name
 }
 func (fi bindataFileInfo) Size() int64 {
-        return fi.size
+	return fi.size
 }
 func (fi bindataFileInfo) Mode() os.FileMode {
-        return fi.mode
+	return fi.mode
 }
 func (fi bindataFileInfo) ModTime() time.Time {
-        return fi.modTime
+	return fi.modTime
 }
 func (fi bindataFileInfo) IsDir() bool {
-        return false
+	return false
 }
 func (fi bindataFileInfo) Sys() interface{} {
-        return nil
+	return nil
 }
 
 var _BlnsBase64Json = []byte(`[
@@ -717,18 +718,18 @@ var _BlnsBase64Json = []byte(`[
 ]`)
 
 func BlnsBase64JsonBytes() ([]byte, error) {
-        return _BlnsBase64Json, nil
+	return _BlnsBase64Json, nil
 }
 
 func BlnsBase64Json() (*asset, error) {
-        bytes, err := BlnsBase64JsonBytes()
-        if err != nil {
-                return nil, err
-        }
+	bytes, err := BlnsBase64JsonBytes()
+	if err != nil {
+		return nil, err
+	}
 
-        info := bindataFileInfo{name: "../blns.base64.json", size: 33414, mode: os.FileMode(420), modTime: time.Unix(1484832583, 0)}
-        a := &asset{bytes: bytes, info: info}
-        return a, nil
+	info := bindataFileInfo{name: "../blns.base64.json", size: 33414, mode: os.FileMode(420), modTime: time.Unix(1484832583, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
 }
 
 var _BlnsJson = []byte(`[
@@ -823,12 +824,9 @@ var _BlnsJson = []byte(`[
   "2.2250738585072011e-308",
   ",./;'[]\\-=",
   "<>?:\"{}|_+",
-  "!@#$%^&*()`+"`"+`~",
+  "!@#$%^&*()` + "`" + `~",
   "\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f",
   "",
-  "\t\u000b\f              ​    　",
-  "­؀؁؂؃؄؅؜۝܏᠎​‌‍‎‏‪‫‬‭‮⁠⁡⁢⁣⁤⁦⁧⁨⁩⁪⁫⁬⁭⁮⁯﻿￹￺￻𑂽𛲠𛲡𛲢𛲣𝅳𝅴𝅵𝅶𝅷𝅸𝅹𝅺󠀁󠀠󠀡󠀢󠀣󠀤󠀥󠀦󠀧󠀨󠀩󠀪󠀫󠀬󠀭󠀮󠀯󠀰󠀱󠀲󠀳󠀴󠀵󠀶󠀷󠀸󠀹󠀺󠀻󠀼󠀽󠀾󠀿󠁀󠁁󠁂󠁃󠁄󠁅󠁆󠁇󠁈󠁉󠁊󠁋󠁌󠁍󠁎󠁏󠁐󠁑󠁒󠁓󠁔󠁕󠁖󠁗󠁘󠁙󠁚󠁛󠁜󠁝󠁞󠁟󠁠󠁡󠁢󠁣󠁤󠁥󠁦󠁧󠁨󠁩󠁪󠁫󠁬󠁭󠁮󠁯󠁰󠁱󠁲󠁳󠁴󠁵󠁶󠁷󠁸󠁹󠁺󠁻󠁼󠁽󠁾󠁿",
-  "﻿",
   "￾",
   "Ω≈ç√∫˜µ≤≥÷",
   "åß∂ƒ©˙∆˚¬…æ",
@@ -837,7 +835,7 @@ var _BlnsJson = []byte(`[
   "¸˛Ç◊ı˜Â¯˘¿",
   "ÅÍÎÏ˝ÓÔÒÚÆ☃",
   "Œ„´‰ˇÁ¨ˆØ∏”’",
-  "`+"`"+`⁄€‹›ﬁﬂ‡°·‚—±",
+  "` + "`" + `⁄€‹›ﬁﬂ‡°·‚—±",
   "⅛⅜⅝⅞",
   "ЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя",
   "٠١٢٣٤٥٦٧٨٩",
@@ -855,7 +853,7 @@ var _BlnsJson = []byte(`[
   "<foo val=“bar” />",
   "<foo val=“bar” />",
   "<foo val=”bar“ />",
-  "<foo val=`+"`"+`bar' />",
+  "<foo val=` + "`" + `bar' />",
   "田中さんにあげて下さい",
   "パーティーへ行かないか",
   "和製漢語",
@@ -873,7 +871,6 @@ var _BlnsJson = []byte(`[
   "ﾟ･✿ヾ╲(｡◕‿◕｡)╱✿･ﾟ",
   ",。・:*:・゜’( ☻ ω ☻ )。・:*:・゜’",
   "(╯°□°）╯︵ ┻━┻)",
-  "(ﾉಥ益ಥ）ﾉ﻿ ┻━┻",
   "┬─┬ノ( º _ ºノ)",
   "( ͡° ͜ʖ ͡°)",
   "😍",
@@ -947,8 +944,8 @@ var _BlnsJson = []byte(`[
   "<script\\x0Ctype=\"text/javascript\">javascript:alert(1);</script>",
   "<script\\x2Ftype=\"text/javascript\">javascript:alert(1);</script>",
   "<script\\x0Atype=\"text/javascript\">javascript:alert(1);</script>",
-  "'`+"`"+`\"><\\x3Cscript>javascript:alert(1)</script>",
-  "'`+"`"+`\"><\\x00script>javascript:alert(1)</script>",
+  "'` + "`" + `\"><\\x3Cscript>javascript:alert(1)</script>",
+  "'` + "`" + `\"><\\x00script>javascript:alert(1)</script>",
   "ABC<div style=\"x\\x3Aexpression(javascript:alert(1)\">DEF",
   "ABC<div style=\"x:expression\\x5C(javascript:alert(1)\">DEF",
   "ABC<div style=\"x:expression\\x00(javascript:alert(1)\">DEF",
@@ -1033,53 +1030,53 @@ var _BlnsJson = []byte(`[
   "<a href=\"javascript\\x09:javascript:alert(1)\" id=\"fuzzelement1\">test</a>",
   "<a href=\"javascript\\x0D:javascript:alert(1)\" id=\"fuzzelement1\">test</a>",
   "<a href=\"javascript\\x0A:javascript:alert(1)\" id=\"fuzzelement1\">test</a>",
-  "`+"`"+`\"'><img src=xxx:x \\x0Aonerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x22onerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x0Bonerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x0Donerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x2Fonerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x09onerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x0Conerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x00onerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x27onerror=javascript:alert(1)>",
-  "`+"`"+`\"'><img src=xxx:x \\x20onerror=javascript:alert(1)>",
-  "\"`+"`"+`'><script>\\x3Bjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x0Djavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xEF\\xBB\\xBFjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x81javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x84javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE3\\x80\\x80javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x09javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x89javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x85javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x88javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x00javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\xA8javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x8Ajavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE1\\x9A\\x80javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x0Cjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x2Bjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xF0\\x90\\x96\\x9Ajavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>-javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x0Ajavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\xAFjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x7Ejavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x87javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x81\\x9Fjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\xA9javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xC2\\x85javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xEF\\xBF\\xAEjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x83javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x8Bjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xEF\\xBF\\xBEjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x80javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x21javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x82javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE2\\x80\\x86javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xE1\\xA0\\x8Ejavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x0Bjavascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\x20javascript:alert(1)</script>",
-  "\"`+"`"+`'><script>\\xC2\\xA0javascript:alert(1)</script>",
+  "` + "`" + `\"'><img src=xxx:x \\x0Aonerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x22onerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x0Bonerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x0Donerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x2Fonerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x09onerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x0Conerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x00onerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x27onerror=javascript:alert(1)>",
+  "` + "`" + `\"'><img src=xxx:x \\x20onerror=javascript:alert(1)>",
+  "\"` + "`" + `'><script>\\x3Bjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x0Djavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xEF\\xBB\\xBFjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x81javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x84javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE3\\x80\\x80javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x09javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x89javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x85javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x88javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x00javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\xA8javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x8Ajavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE1\\x9A\\x80javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x0Cjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x2Bjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xF0\\x90\\x96\\x9Ajavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>-javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x0Ajavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\xAFjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x7Ejavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x87javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x81\\x9Fjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\xA9javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xC2\\x85javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xEF\\xBF\\xAEjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x83javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x8Bjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xEF\\xBF\\xBEjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x80javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x21javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x82javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE2\\x80\\x86javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xE1\\xA0\\x8Ejavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x0Bjavascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\x20javascript:alert(1)</script>",
+  "\"` + "`" + `'><script>\\xC2\\xA0javascript:alert(1)</script>",
   "<img \\x00src=x onerror=\"alert(1)\">",
   "<img \\x47src=x onerror=\"javascript:alert(1)\">",
   "<img \\x11src=x onerror=\"javascript:alert(1)\">",
@@ -1115,10 +1112,10 @@ var _BlnsJson = []byte(`[
   "<img src=x onerror=\\x32\"javascript:alert(1)\">",
   "<img src=x onerror=\\x00\"javascript:alert(1)\">",
   "<a href=java&#1&#2&#3&#4&#5&#6&#7&#8&#11&#12script:javascript:alert(1)>XXX</a>",
-  "<img src=\"x`+"`"+` `+"`"+`<script>javascript:alert(1)</script>\"`+"`"+` `+"`"+`>",
+  "<img src=\"x` + "`" + ` ` + "`" + `<script>javascript:alert(1)</script>\"` + "`" + ` ` + "`" + `>",
   "<img src onerror /\" '\"= alt=javascript:alert(1)//\">",
   "<title onpropertychange=javascript:alert(1)></title><title title=>",
-  "<a href=http://foo.bar/#x=`+"`"+`y></a><img alt=\"`+"`"+`><img src=x:x onerror=javascript:alert(1)></a>\">",
+  "<a href=http://foo.bar/#x=` + "`" + `y></a><img alt=\"` + "`" + `><img src=x:x onerror=javascript:alert(1)></a>\">",
   "<!--[if]><script>javascript:alert(1)</script -->",
   "<!--[if<img src=x onerror=javascript:alert(1)//]> -->",
   "<script src=\"/\\%(jscript)s\"></script>",
@@ -1138,7 +1135,7 @@ var _BlnsJson = []byte(`[
   "perl -e 'print \"<IMG SRC=java\\0script:alert(\\\"XSS\\\")>\";' > out",
   "<IMG SRC=\" &#14;  javascript:alert('XSS');\">",
   "<SCRIPT/XSS SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>",
-  "<BODY onload!#$%&()*~+-_.,:;?@[/|\\]^`+"`"+`=alert(\"XSS\")>",
+  "<BODY onload!#$%&()*~+-_.,:;?@[/|\\]^` + "`" + `=alert(\"XSS\")>",
   "<SCRIPT/SRC=\"http://ha.ckers.org/xss.js\"></SCRIPT>",
   "<<SCRIPT>alert(\"XSS\");//<</SCRIPT>",
   "<SCRIPT SRC=http://ha.ckers.org/xss.js?< B >",
@@ -1164,12 +1161,12 @@ var _BlnsJson = []byte(`[
   "--help",
   "$USER",
   "/dev/null; touch /tmp/blns.fail ; echo",
-  "`+"`"+`touch /tmp/blns.fail`+"`"+`",
+  "` + "`" + `touch /tmp/blns.fail` + "`" + `",
   "$(touch /tmp/blns.fail)",
   "@{[system \"touch /tmp/blns.fail\"]}",
   "eval(\"puts 'hello world'\")",
   "System(\"ls -al /\")",
-  "`+"`"+`ls -al /`+"`"+`",
+  "` + "`" + `ls -al /` + "`" + `",
   "Kernel.exec(\"ls -al /\")",
   "Kernel.exit(1)",
   "%x('ls -al /')",
@@ -1231,74 +1228,74 @@ var _BlnsJson = []byte(`[
 ]`)
 
 func BlnsJsonBytes() ([]byte, error) {
-        return _BlnsJson, nil
+	return _BlnsJson, nil
 }
 
 func BlnsJson() (*asset, error) {
-        bytes, err := BlnsJsonBytes()
-        if err != nil {
-                return nil, err
-        }
+	bytes, err := BlnsJsonBytes()
+	if err != nil {
+		return nil, err
+	}
 
-        info := bindataFileInfo{name: "../blns.json", size: 22013, mode: os.FileMode(420), modTime: time.Unix(1484832486, 0)}
-        a := &asset{bytes: bytes, info: info}
-        return a, nil
+	info := bindataFileInfo{name: "../blns.json", size: 22013, mode: os.FileMode(420), modTime: time.Unix(1484832486, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
 }
 
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
 func Asset(name string) ([]byte, error) {
-        cannonicalName := strings.Replace(name, "\\", "/", -1)
-        if f, ok := _bindata[cannonicalName]; ok {
-                a, err := f()
-                if err != nil {
-                        return nil, fmt.Errorf("Asset %s can't read by error: %v", name, err)
-                }
-                return a.bytes, nil
-        }
-        return nil, fmt.Errorf("Asset %s not found", name)
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	if f, ok := _bindata[cannonicalName]; ok {
+		a, err := f()
+		if err != nil {
+			return nil, fmt.Errorf("Asset %s can't read by error: %v", name, err)
+		}
+		return a.bytes, nil
+	}
+	return nil, fmt.Errorf("Asset %s not found", name)
 }
 
 // MustAsset is like Asset but panics when Asset would return an error.
 // It simplifies safe initialization of global variables.
 func MustAsset(name string) []byte {
-        a, err := Asset(name)
-        if err != nil {
-                panic("asset: Asset(" + name + "): " + err.Error())
-        }
+	a, err := Asset(name)
+	if err != nil {
+		panic("asset: Asset(" + name + "): " + err.Error())
+	}
 
-        return a
+	return a
 }
 
 // AssetInfo loads and returns the asset info for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
 func AssetInfo(name string) (os.FileInfo, error) {
-        cannonicalName := strings.Replace(name, "\\", "/", -1)
-        if f, ok := _bindata[cannonicalName]; ok {
-                a, err := f()
-                if err != nil {
-                        return nil, fmt.Errorf("AssetInfo %s can't read by error: %v", name, err)
-                }
-                return a.info, nil
-        }
-        return nil, fmt.Errorf("AssetInfo %s not found", name)
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	if f, ok := _bindata[cannonicalName]; ok {
+		a, err := f()
+		if err != nil {
+			return nil, fmt.Errorf("AssetInfo %s can't read by error: %v", name, err)
+		}
+		return a.info, nil
+	}
+	return nil, fmt.Errorf("AssetInfo %s not found", name)
 }
 
 // AssetNames returns the names of the assets.
 func AssetNames() []string {
-        names := make([]string, 0, len(_bindata))
-        for name := range _bindata {
-                names = append(names, name)
-        }
-        return names
+	names := make([]string, 0, len(_bindata))
+	for name := range _bindata {
+		names = append(names, name)
+	}
+	return names
 }
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-        "../blns.base64.json": BlnsBase64Json,
-        "../blns.json": BlnsJson,
+	"../blns.base64.json": BlnsBase64Json,
+	"../blns.json":        BlnsJson,
 }
 
 // AssetDir returns the file names below a certain
@@ -1315,81 +1312,82 @@ var _bindata = map[string]func() (*asset, error){
 // AssetDir("foo.txt") and AssetDir("notexist") would return an error
 // AssetDir("") will return []string{"data"}.
 func AssetDir(name string) ([]string, error) {
-        node := _bintree
-        if len(name) != 0 {
-                cannonicalName := strings.Replace(name, "\\", "/", -1)
-                pathList := strings.Split(cannonicalName, "/")
-                for _, p := range pathList {
-                        node = node.Children[p]
-                        if node == nil {
-                                return nil, fmt.Errorf("Asset %s not found", name)
-                        }
-                }
-        }
-        if node.Func != nil {
-                return nil, fmt.Errorf("Asset %s not found", name)
-        }
-        rv := make([]string, 0, len(node.Children))
-        for childName := range node.Children {
-                rv = append(rv, childName)
-        }
-        return rv, nil
+	node := _bintree
+	if len(name) != 0 {
+		cannonicalName := strings.Replace(name, "\\", "/", -1)
+		pathList := strings.Split(cannonicalName, "/")
+		for _, p := range pathList {
+			node = node.Children[p]
+			if node == nil {
+				return nil, fmt.Errorf("Asset %s not found", name)
+			}
+		}
+	}
+	if node.Func != nil {
+		return nil, fmt.Errorf("Asset %s not found", name)
+	}
+	rv := make([]string, 0, len(node.Children))
+	for childName := range node.Children {
+		rv = append(rv, childName)
+	}
+	return rv, nil
 }
 
 type bintree struct {
-        Func     func() (*asset, error)
-        Children map[string]*bintree
+	Func     func() (*asset, error)
+	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
-        "..": &bintree{nil, map[string]*bintree{
-                "blns.base64.json": &bintree{BlnsBase64Json, map[string]*bintree{}},
-                "blns.json": &bintree{BlnsJson, map[string]*bintree{}},
-        }},
+	"..": {nil, map[string]*bintree{
+		"blns.base64.json": {BlnsBase64Json, map[string]*bintree{}},
+		"blns.json":        {BlnsJson, map[string]*bintree{}},
+	}},
 }}
 
 // RestoreAsset restores an asset under the given directory
 func RestoreAsset(dir, name string) error {
-        data, err := Asset(name)
-        if err != nil {
-                return err
-        }
-        info, err := AssetInfo(name)
-        if err != nil {
-                return err
-        }
-        err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
-        if err != nil {
-                return err
-        }
-        err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
-        if err != nil {
-                return err
-        }
-        err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
-        if err != nil {
-                return err
-        }
-        return nil
+	data, err := Asset(name)
+	if err != nil {
+		return err
+	}
+	info, err := AssetInfo(name)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
+	if err != nil {
+		return err
+	}
+	err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // RestoreAssets restores an asset under the given directory recursively
 func RestoreAssets(dir, name string) error {
-        children, err := AssetDir(name)
-        // File
-        if err != nil {
-                return RestoreAsset(dir, name)
-        }
-        // Dir
-        for _, child := range children {
-                err = RestoreAssets(dir, filepath.Join(name, child))
-                if err != nil {
-                        return err
-                }
-        }
-        return nil
+	children, err := AssetDir(name)
+	// File
+	if err != nil {
+		return RestoreAsset(dir, name)
+	}
+	// Dir
+	for _, child := range children {
+		err = RestoreAssets(dir, filepath.Join(name, child))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func _filePath(dir, name string) string {
-        cannonicalName := strings.Replace(name, "\\", "/", -1)
-        return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
