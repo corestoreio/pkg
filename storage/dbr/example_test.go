@@ -71,7 +71,9 @@ func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	} else {
 		fmt.Print("\n")
 	}
-
+	if len(args) == 0 {
+		return
+	}
 	sqlStr, err = dbr.Interpolate(sqlStr, iFaceToArgs(args...)...)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -172,6 +174,18 @@ func ExampleInsert_AddOnDuplicateKey() {
 	//INSERT INTO `dbr_people` (`id`,`name`,`email`) VALUES
 	//(1,'Pik\'e','pikes@peak.com') ON DUPLICATE KEY UPDATE `name`='Pik3',
 	//`email`=VALUES(`email`)
+}
+
+func ExampleInsert_SetRowCount() {
+	// RowCount of 4 allows to insert four rows with a single INSERT query.
+	// Useful when creating prepared statements.
+	i := dbr.NewInsert("dbr_people").AddColumns("id", "name", "email").SetRowCount(4)
+	writeToSQLAndInterpolate(i)
+
+	// Output:
+	//Prepared Statement:
+	//INSERT INTO `dbr_people` (`id`,`name`,`email`) VALUES
+	//(?,?,?),(?,?,?),(?,?,?),(?,?,?)
 }
 
 func ExampleInsert_FromSelect() {

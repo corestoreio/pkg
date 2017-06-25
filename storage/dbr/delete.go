@@ -183,7 +183,7 @@ func (b *Delete) Interpolate() *Delete {
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Delete) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, isNotPrepared)
+	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
 func (b *Delete) writeBuildCache(sql []byte) {

@@ -455,7 +455,7 @@ func (b *Select) CrossJoin(table alias, onConditions ...ConditionArg) *Select {
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Select) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, isNotPrepared)
+	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
 // argumentCapacity returns the total possible guessed size of a new Arguments

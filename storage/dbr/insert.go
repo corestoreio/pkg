@@ -19,7 +19,6 @@ import (
 	"database/sql"
 	"strings"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -42,6 +41,8 @@ type Insert struct {
 	Into    string
 	Columns []string
 	Values  []Arguments
+	// RowCount defines the number of expected rows.
+	RowCount int // See SetRowCount()
 
 	Records []ArgumentAssembler
 	// RecordValueCount defines the number of place holders for each value
@@ -143,7 +144,7 @@ func (b *Insert) Replace() *Insert {
 	return b
 }
 
-// AddColumns appends columns to insert in the statement.
+// AddColumns appends columns and increases the `RecordValueCount` variable.
 func (b *Insert) AddColumns(columns ...string) *Insert {
 	b.RecordValueCount += len(columns)
 	b.Columns = append(b.Columns, columns...)
@@ -155,6 +156,18 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 // safety only.
 func (b *Insert) AddValues(values ...interface{}) *Insert {
 	return b.AddArguments(iFaceToArgs(values...)...)
+}
+
+// RowCount defines the number of expected rows. Each set of place holders
+// within the brackets defines a row. This setting defaults to one. It gets
+// applied when fields `Values` and `Records` have been left empty. For each
+// defined column the QueryBuilder creates a place holder. Use when creating a
+// prepared statement. See the example for more details.
+// 		RowCount = 2 ==> (?,?,?),(?,?,?)
+// 		RowCount = 3 ==> (?,?,?),(?,?,?),(?,?,?)
+func (b *Insert) SetRowCount(rows int) *Insert {
+	b.RowCount = rows
+	return b
 }
 
 // AddArguments appends a set of values to the statement. Each call of
@@ -246,7 +259,7 @@ func (b *Insert) Interpolate() *Insert {
 // ToSQL serialized the Insert to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *Insert) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, isNotPrepared)
+	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
 func (b *Insert) writeBuildCache(sql []byte) {
@@ -308,81 +321,56 @@ func (b *Insert) toSQL(buf queryWriter) error {
 		return errors.WithStack(b.Select.toSQL(buf))
 	}
 
-	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
-		return errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
-	}
-
-	var ph = bufferpool.Get() // Build the ph like "(?,?,?)"
-	defer bufferpool.Put(ph)
-
 	if len(b.Columns) > 0 {
-		ph.WriteByte('(')
 		buf.WriteByte('(')
 		for i, c := range b.Columns {
 			if i > 0 {
 				buf.WriteByte(',')
-				ph.WriteByte(',')
 			}
 			Quoter.writeName(buf, c)
-			ph.WriteByte('?')
 		}
-		ph.WriteByte(')')
-		buf.WriteByte(')')
-		buf.WriteByte(' ')
+		buf.WriteString(") ")
 	}
 	buf.WriteString("VALUES ")
 
+	rowCount := 1
+	if b.RowCount > 0 {
+		rowCount = b.RowCount
+	}
+
 	var argCount0 int
-	if len(b.Values) > 0 && len(b.Columns) == 0 {
-		argCount0 = len(b.Values[0])
-		// no columns provided so build the place holders.
-		ph.WriteByte('(')
+	if b.Records == nil {
+		argCount0 = len(b.Columns)
+		lv := len(b.Values)
+		if lv > 0 {
+			rowCount = lv
+		}
+		if argCount0 == 0 && lv > 0 {
+			argCount0 = len(b.Values[0])
+		}
+	} else {
+		argCount0 = len(b.Columns)
+		if b.RecordValueCount > 0 {
+			argCount0 = b.RecordValueCount
+		}
+		rowCount = len(b.Records)
+	}
+
+	// write the place holders: (?,?,?)[,(?,?,?)...]
+	for vc := 0; vc < rowCount; vc++ {
+		if vc > 0 {
+			buf.WriteByte(',')
+		}
+		buf.WriteByte('(')
 		for i := 0; i < argCount0; i++ {
 			if i > 0 {
-				ph.WriteByte(',')
+				buf.WriteByte(',')
 			}
-			ph.WriteByte('?')
+			buf.WriteByte('?')
 		}
-		ph.WriteByte(')')
+		buf.WriteByte(')')
 	}
-
-	placeholderStr := ph.String()
-
-	for i := range b.Values {
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteString(placeholderStr)
-	}
-
-	if b.Records == nil {
-		return errors.WithStack(b.OnDuplicateKey.writeOnDuplicateKey(buf))
-	}
-
-	for i := range b.Records {
-		if i == 0 && placeholderStr == "" {
-
-			// Build place holder string because here the func knows how many arguments it have.
-			ph.WriteByte('(')
-			for j := 0; j < b.RecordValueCount; j++ {
-				if j > 0 {
-					ph.WriteByte(',')
-				}
-				ph.WriteByte('?')
-			}
-			ph.WriteByte(')')
-			placeholderStr = ph.String()
-		}
-		if i > 0 {
-			buf.WriteByte(',')
-		}
-		buf.WriteString(placeholderStr)
-	}
-
-	if err := b.OnDuplicateKey.writeOnDuplicateKey(buf); err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
+	return errors.Wrap(b.OnDuplicateKey.writeOnDuplicateKey(buf), "[dbr] Insert.toSQL.writeOnDuplicateKey\n")
 }
 
 func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
@@ -397,7 +385,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 
 	if lv := len(b.Values); b.Records == nil && (lv == 0 || (lv > 0 && len(b.Values[0]) == 0)) {
-		return nil, errors.NewEmptyf("[dbr] Insert.ToSQL cannot find any Values for table %q", b.Into)
+		return nil, nil
 	}
 
 	argCount0 := b.RecordValueCount

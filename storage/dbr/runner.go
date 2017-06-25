@@ -45,7 +45,7 @@ func Exec(ctx context.Context, db Execer, b QueryBuilder) (sql.Result, error) {
 		return nil, errors.WithStack(err)
 	}
 	result, err := db.ExecContext(ctx, sqlStr, args...)
-	return result, errors.WithStack(err)
+	return result, errors.Wrapf(err, "[dbr] Exec.ExecContext with query %q", sqlStr)
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
@@ -53,7 +53,7 @@ func Prepare(ctx context.Context, db Preparer, b QueryBuilder) (*sql.Stmt, error
 	var sqlStr string
 	var err error
 	if qb, ok := b.(queryBuilder); ok { // Interface upgrade
-		sqlStr, _, err = toSQL(qb, isNotInterpolate, isPrepared)
+		sqlStr, _, err = toSQL(qb, _isNotInterpolate, _isPrepared)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -64,7 +64,7 @@ func Prepare(ctx context.Context, db Preparer, b QueryBuilder) (*sql.Stmt, error
 		}
 	}
 	stmt, err := db.PrepareContext(ctx, sqlStr)
-	return stmt, errors.WithStack(err)
+	return stmt, errors.Wrapf(err, "[dbr] Prepare.PrepareContext with query %q", sqlStr)
 }
 
 // Query executes a query and returns many rows.
@@ -74,7 +74,7 @@ func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
 		return nil, errors.WithStack(err)
 	}
 	rows, err := db.QueryContext(ctx, sqlStr, args...)
-	return rows, errors.WithStack(err)
+	return rows, errors.Wrapf(err, "[dbr] Query.QueryContext with query %q", sqlStr)
 }
 
 // Load loads data from a query into `s`. Load supports up to n-rows.
@@ -86,7 +86,7 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 
 	rows, err := db.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
-		return 0, errors.WithStack(err)
+		return 0, errors.Wrapf(err, "[dbr] Load.QueryContext with query %q", sqlStr)
 	}
 	defer func() {
 		// Not testable with the sqlmock package :-(

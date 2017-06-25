@@ -56,6 +56,48 @@ func (sr someRecord) AssembleArguments(stmtType int, args Arguments, columns []s
 	return args, nil
 }
 
+func TestInsert_SetValuesCount(t *testing.T) {
+	t.Parallel()
+
+	t.Run("not set", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").AddColumns("b", "c"),
+			nil,
+			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
+			"",
+		)
+	})
+	t.Run("set to two", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("a").AddColumns("b", "c").SetRowCount(2),
+			nil,
+			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?)",
+			"",
+		)
+	})
+	t.Run("with values", func(t *testing.T) {
+		compareToSQL(t,
+			NewInsert("dbr_people").AddColumns("name", "key").AddValues("Barack", "44"),
+			nil,
+			"INSERT INTO `dbr_people` (`name`,`key`) VALUES (?,?)",
+			"INSERT INTO `dbr_people` (`name`,`key`) VALUES ('Barack','44')",
+			"Barack", "44",
+		)
+	})
+	t.Run("with record", func(t *testing.T) {
+		person := dbrPerson{Name: "Barack"}
+		person.Email.Valid = true
+		person.Email.String = "obama@whitehouse.gov"
+		compareToSQL(t,
+			NewInsert("dbr_people").AddColumns("name", "email").AddRecords(&person),
+			nil,
+			"INSERT INTO `dbr_people` (`name`,`email`) VALUES (?,?)",
+			"INSERT INTO `dbr_people` (`name`,`email`) VALUES ('Barack','obama@whitehouse.gov')",
+			"Barack", "obama@whitehouse.gov",
+		)
+	})
+}
+
 func TestInsert_Add(t *testing.T) {
 	t.Parallel()
 	t.Run("AddValues error", func(t *testing.T) {

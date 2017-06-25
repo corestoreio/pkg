@@ -211,7 +211,7 @@ func (b *Update) Interpolate() *Update {
 
 // ToSQL converts the select statement into a string and returns its arguments.
 func (b *Update) ToSQL() (string, []interface{}, error) {
-	return toSQL(b, b.IsInterpolate, isNotPrepared)
+	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
 func (b *Update) writeBuildCache(sql []byte) {

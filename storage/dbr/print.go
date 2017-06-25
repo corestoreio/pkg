@@ -64,9 +64,9 @@ func (backHole) Reset()                                  {}
 // For the sake of readability within the source code, because boolean arguments
 // are terrible.
 const (
-	isNotPrepared    = false
-	isPrepared       = true
-	isNotInterpolate = false
+	_isNotPrepared    = false
+	_isPrepared       = true
+	_isNotInterpolate = false
 )
 
 // toSQL generates the SQL string and its place holders. Takes care of caching
@@ -74,7 +74,7 @@ const (
 // query arguments. With switched on interpolation, it only returns a string
 // including the stringyfied arguments. With an enabled cache, the arguments
 // gets regenerated each time a call to ToSQL happens.
-// isPrepared if true skips assembling the arguments.
+// _isPrepared if true skips assembling the arguments.
 func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{}, error) {
 	var ipBuf *bytes.Buffer // ip = interpolate buffer
 	if isInterpolate {
@@ -126,7 +126,7 @@ func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{
 }
 
 func makeSQL(b queryBuilder, isInterpolate bool) string {
-	sRaw, _, err := toSQL(b, isInterpolate, isNotPrepared)
+	sRaw, _, err := toSQL(b, isInterpolate, _isNotPrepared)
 	if err != nil {
 		return fmt.Sprintf("[dbr] ToSQL Error: %+v", err)
 	}

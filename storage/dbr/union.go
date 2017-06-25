@@ -221,7 +221,7 @@ func (u *Union) MultiplyArguments(args ...Argument) Arguments {
 
 // ToSQL converts the statements into a string and returns its arguments.
 func (u *Union) ToSQL() (string, []interface{}, error) {
-	return toSQL(u, u.IsInterpolate, isNotPrepared)
+	return toSQL(u, u.IsInterpolate, _isNotPrepared)
 }
 
 func (u *Union) writeBuildCache(sql []byte) {

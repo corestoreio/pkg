@@ -244,6 +244,17 @@ func (mq MysqlQuoter) QualifierName(q, n string) string {
 	return quote + mq.unQuote(q) + quote + "." + quote + mq.unQuote(n) + quote
 }
 
+// WriteQualifierName same as function QualifierName but writes into w.
+func (mq MysqlQuoter) WriteQualifierName(w queryWriter, q, n string) {
+	if q == "" {
+		mq.writeName(w, n)
+		return
+	}
+	mq.writeName(w, q)
+	w.WriteByte('.')
+	mq.writeName(w, n)
+}
+
 // NameAlias quotes with back ticks and splits at a dot in the name. First
 // argument table and/or column name (separated by a dot) and second argument
 // can be an alias. Both parts will get quoted.
@@ -318,8 +329,10 @@ func (mq MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {
 	mq.writeName(w, part)
 }
 
-// TableColumnAlias prefixes all columns with a table name/alias and puts quotes around them.
-// If a column name has already been prefixed by a name or an alias it will be ignored.
+// TableColumnAlias prefixes all columns in the slice `cols` with a table
+// name/alias and puts quotes around them. If a column name has already been
+// prefixed by a name or an alias it will be ignored. This functions modifies
+// the argument slice `cols`.
 func (mq MysqlQuoter) TableColumnAlias(t string, cols ...string) []string {
 	for i, c := range cols {
 		switch {
