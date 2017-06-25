@@ -1,4 +1,0 @@
-PASS
-BenchmarkUnserialize-4	   10000	    130943 ns/op	   20044 B/op	     875 allocs/op
-BenchmarkSerialize-4  	   10000	    117714 ns/op	   12915 B/op	     687 allocs/op
-ok  	github.com/corestoreio/csfw/util/php/phpserialize	2.522s

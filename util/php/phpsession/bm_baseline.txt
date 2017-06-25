@@ -1,3 +1,0 @@
-PASS
-BenchmarkDecode-4	   20000	     93870 ns/op	   16813 B/op	     559 allocs/op
-ok  	github.com/corestoreio/csfw/util/php/phpsession	2.835s
