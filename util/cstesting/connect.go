@@ -15,14 +15,11 @@
 package cstesting
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util/magento"
 	"github.com/corestoreio/errors"
 )
 
@@ -47,56 +44,14 @@ func MustGetDSN() string {
 	return d
 }
 
-type dsnVersion struct {
-	sync.RWMutex
-	cache map[string]magento.Version
-}
-
-func (dv *dsnVersion) v(dsn string) magento.Version {
-	dv.RLock()
-	defer dv.RUnlock()
-	return dv.cache[dsn]
-}
-
-func (dv *dsnVersion) set(dsn string, v magento.Version) {
-	dv.Lock()
-	defer dv.Unlock()
-	dv.cache[dsn] = v
-}
-
-// dsnVersion stores for a specific DSN the Magento version of the database.
-// This struct avoids rescanning the database tables.
-var dsnVersionCache = &dsnVersion{
-	cache: make(map[string]magento.Version),
-}
-
 // MustConnectDB is a helper function that creates a new database connection
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
 // It queries the database to figure out the current version of Magento. If the
 // DSN environment variable has not been set it returns nil,0.
-func MustConnectDB(opts ...dbr.ConnectionOption) (*dbr.Connection, magento.Version) {
-	dsn, err := getDSN(EnvDSN)
-	if errors.IsNotFound(err) {
-		return nil, 0
-	}
-
-	cos := make([]dbr.ConnectionOption, 0, 2)
-	cos = append(cos, dbr.WithDSN(MustGetDSN()))
+func MustConnectDB(opts ...dbr.ConnectionOption) *dbr.Connection {
+	cos := append([]dbr.ConnectionOption{}, dbr.WithDSN(MustGetDSN()))
 	dbc := dbr.MustConnectAndVerify(append(cos, opts...)...)
-
-	if v := dsnVersionCache.v(dsn); v > 0 {
-		return dbc, v
-	}
-
-	tables, err := showTables(dbc.DB)
-	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
-	}
-
-	v := magento.DetectVersion("", tables) // hmm refactor later if we need a prefix
-	dsnVersionCache.set(dsn, v)
-
-	return dbc, v
+	return dbc
 }
 
 // MockDB creates a mocked database connection. Fatals on error.
@@ -107,28 +62,4 @@ func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 	dbc, err := dbr.NewConnection(dbr.WithDB(db))
 	fatalIfError(t, err)
 	return dbc, sm
-}
-
-// showTables executes the query SHOW TABLES and returns all tables within the
-// current database.
-func showTables(db dbr.Querier) ([]string, error) {
-	rows, err := db.QueryContext(context.Background(), "SHOW TABLES")
-	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] ShowTables: SHOW TABLES failed")
-	}
-	defer rows.Close()
-
-	var tables = make([]string, 0, 200)
-	var table = new(string)
-	for rows.Next() {
-		if err := rows.Scan(table); err != nil {
-			return nil, errors.Wrap(err, "[csdb] ShowTables: scan failed")
-		}
-		tables = append(tables, *table)
-		*table = ""
-	}
-	if rows.Err() != nil {
-		return nil, errors.Wrap(rows.Err(), "[csdb] ShowTables: row error")
-	}
-	return tables, nil
 }
