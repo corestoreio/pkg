@@ -20,8 +20,6 @@ import (
 	"time"
 )
 
-// no other dialect will be supported. Maybe MariaDB ;-)
-
 var dialect dialecter = mysqlDialect{
 	identR: strings.NewReplacer("`", "``", ".", "`.`"),
 }
