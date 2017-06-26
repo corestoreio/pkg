@@ -44,11 +44,18 @@ func MustGetDSN() string {
 	return d
 }
 
+type skipper interface {
+	Skipf(format string, args ...interface{})
+}
+
 // MustConnectDB is a helper function that creates a new database connection
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
-// It queries the database to figure out the current version of Magento. If the
-// DSN environment variable has not been set it returns nil,0.
-func MustConnectDB(opts ...dbr.ConnectionOption) *dbr.Connection {
+// If the DSN environment variable has not been set it skips the test.
+// Argument t specified usually the *testing.T/B struct.
+func MustConnectDB(t skipper, opts ...dbr.ConnectionOption) *dbr.Connection {
+	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
+		t.Skipf("%s", err)
+	}
 	cos := append([]dbr.ConnectionOption{}, dbr.WithDSN(MustGetDSN()))
 	dbc := dbr.MustConnectAndVerify(append(cos, opts...)...)
 	return dbc
