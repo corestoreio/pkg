@@ -284,12 +284,9 @@ const coreConfigDataRowCount = 2007
 
 // BenchmarkSelect_Integration_LScanner-4   	 500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
 // BenchmarkSelect_Integration_Scanner-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
-
+// BenchmarkSelect_Integration_Scanner-4   	     500	   3001319 ns/op	  784290 B/op	   23888 allocs/op Go 1.9 with new Scanner iFace
 func xxxBenchmarkSelect_Integration_Scanner(b *testing.B) {
-	c, ok := createRealSession()
-	if !ok {
-		b.Skip("Skipping because DSN not set")
-	}
+	c := createRealSession(b)
 	defer c.Close()
 
 	s := c.Select("*").From("core_config_data112")

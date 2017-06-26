@@ -214,7 +214,7 @@ func TestInsert_AddRecords(t *testing.T) {
 
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues("Barack", "44").Exec(context.TODO())
 	assert.NoError(t, err)
 
@@ -225,12 +225,12 @@ func TestInsertKeywordColumnName(t *testing.T) {
 
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues("Barack", "obama@whitehouse.gov").Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
-	s = createRealSessionWithFixtures()
+	s = createRealSessionWithFixtures(t)
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
@@ -267,7 +267,7 @@ func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err er
 
 func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 	res, err := s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
 		AddValues(678, "Pike", "pikes@peak.co").Exec(context.TODO())

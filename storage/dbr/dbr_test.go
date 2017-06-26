@@ -41,8 +41,11 @@ func createFakeSession() *Connection {
 	return cxn
 }
 
-func createRealSession() *Connection {
+func createRealSession(t testing.TB) *Connection {
 	dsn := os.Getenv("CS_DSN")
+	if dsn == "" {
+		t.Skip("Environment variable CS_DSN not found. Skipping ...")
+	}
 	cxn, err := NewConnection(
 		WithDSN(dsn),
 	)
@@ -52,8 +55,8 @@ func createRealSession() *Connection {
 	return cxn
 }
 
-func createRealSessionWithFixtures() *Connection {
-	sess := createRealSession()
+func createRealSessionWithFixtures(t testing.TB) *Connection {
+	sess := createRealSession(t)
 	installFixtures(sess.DB)
 	return sess
 }

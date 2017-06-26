@@ -97,7 +97,7 @@ func TestDelete_Interpolate(t *testing.T) {
 }
 
 func TestDeleteReal(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 
 	// Insert a Barack
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").

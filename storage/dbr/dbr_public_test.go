@@ -51,10 +51,10 @@ func (p *dbrPerson) AssembleArguments(stmtType int, args dbr.Arguments, columns 
 	return args, nil
 }
 
-func createRealSession() (*dbr.Connection, bool) {
+func createRealSession(t testing.TB) *dbr.Connection {
 	dsn := os.Getenv("CS_DSN")
 	if dsn == "" {
-		return nil, false
+		t.Skip("Environment variable CS_DSN not found. Skipping ...")
 	}
 	cxn, err := dbr.NewConnection(
 		dbr.WithDSN(dsn),
@@ -62,7 +62,7 @@ func createRealSession() (*dbr.Connection, bool) {
 	if err != nil {
 		panic(err)
 	}
-	return cxn, true
+	return cxn
 }
 
 // compareToSQL compares a SQL object with a placeholder string and an optional

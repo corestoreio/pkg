@@ -105,7 +105,7 @@ func TestUpdate_Limit_Offset(t *testing.T) {
 }
 
 func TestUpdateKeywordColumnName(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 
 	// Insert a user with a key
 	_, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
@@ -130,7 +130,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 }
 
 func TestUpdateReal(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 
 	// Insert a George
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").

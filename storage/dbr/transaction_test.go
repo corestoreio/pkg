@@ -22,7 +22,7 @@ import (
 )
 
 func TestTransactionReal(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 
 	tx, err := s.Begin()
 	assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestTransactionReal(t *testing.T) {
 
 func TestTransactionRollbackReal(t *testing.T) {
 	// Insert by specifying values
-	s := createRealSessionWithFixtures()
+	s := createRealSessionWithFixtures(t)
 
 	tx, err := s.Begin()
 	assert.NoError(t, err)
