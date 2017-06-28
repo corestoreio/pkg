@@ -111,12 +111,12 @@ func TestSelect_Prepare(t *testing.T) {
 
 }
 
-// TableCoreConfigDataSlice used in benchmarks
-type TableCoreConfigDataSlice []*TableCoreConfigData
+var _ dbr.Scanner = (*TableCoreConfigDataSlice)(nil)
+var _ dbr.RowCloser = (*TableCoreConfigDataSlice)(nil)
 
-// TableCoreConfigDatas represents a collection type for DB table core_config_data
+// TableCoreConfigDataSlice represents a collection type for DB table core_config_data
 // Generated via tableToStruct.
-type TableCoreConfigDatas struct {
+type TableCoreConfigDataSlice struct {
 	DataCap  int
 	Data     []*TableCoreConfigData
 	scanArgs []interface{}
@@ -134,7 +134,7 @@ type TableCoreConfigData struct {
 	Value    dbr.NullString `json:",omitempty"` // value text NULL
 }
 
-func (ps *TableCoreConfigDatas) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
+func (ps *TableCoreConfigDataSlice) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	const fieldCount = 5 //  5 == number of struct fields
 	if idx == 0 && nil == ps.Data {
 		cap := ps.DataCap
@@ -174,7 +174,7 @@ func (ps *TableCoreConfigDatas) ScanRow(idx int64, columns []string, scan func(d
 	return nil
 }
 
-func (ps *TableCoreConfigDatas) ScanClose() error {
+func (ps *TableCoreConfigDataSlice) RowClose() error {
 	ps.scanArgs = ps.scanArgs[:0]
 	return ps.scanErr
 }
@@ -196,7 +196,7 @@ func TestSelect_Load(t *testing.T) {
 		s := dbr.NewSelect("*").From("core_config_data")
 		s.DB = dbc.DB
 
-		ccd := &TableCoreConfigDatas{}
+		ccd := &TableCoreConfigDataSlice{}
 
 		_, err := s.Load(context.TODO(), ccd)
 		assert.NoError(t, err, "%+v", err)
@@ -229,12 +229,12 @@ func TestSelect_Load(t *testing.T) {
 		s := dbr.NewSelect("config_id").From("core_config_data")
 		s.DB = dbc.DB
 
-		ccd := &TableCoreConfigDatas{}
+		ccd := &TableCoreConfigDataSlice{}
 		_, err := s.Load(context.TODO(), ccd)
 		assert.True(t, errors.IsConnectionFailed(err), "%+v", err)
 	})
 
-	t.Run("ScanClose error", func(t *testing.T) {
+	t.Run("RowClose error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer func() {
 			dbMock.ExpectClose()
@@ -249,7 +249,7 @@ func TestSelect_Load(t *testing.T) {
 		s := dbr.NewSelect("config_id").From("core_config_data")
 		s.DB = dbc.DB
 
-		ccd := &TableCoreConfigDatas{
+		ccd := &TableCoreConfigDataSlice{
 			scanErr: errors.NewDuplicatedf("Somewhere exists a duplicate entry"),
 		}
 		_, err := s.Load(context.TODO(), ccd)

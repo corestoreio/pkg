@@ -24,17 +24,23 @@ import (
 // Scanner allows a type to load data from database query. It's used in the
 // rows.Next() for-loop.
 type Scanner interface {
-	// ScanRow implementation must use function `scan` to scan the values of the
+	// RowScan implementation must use function `scan` to scan the values of the
 	// query into its own type. See database/sql package for examples. `idx`
 	// defines the current iteration number. `columns` specifies the list of
 	// provided column names used in the query. This function signature shows
 	// its strength in creating slices of values or iterating over a result set,
 	// modifying values and saving it back somewhere.
-	ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error
-	// ScanClose gets called at the very end and even after rows.Close. Allows
+	RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error
+}
+
+// RowCloser allows to execute special functions after the scanning has
+// happened. Should only be implemented in a custom type, if the interface
+// Scanner has been implemented too. Not every type might need a RowCloser.
+type RowCloser interface {
+	// RowClose gets called at the very end and even after rows.Close. Allows
 	// to implement special functions, like unlocking a mutex or updating
 	// internal structures or resetting internal type containers.
-	ScanClose() error
+	RowClose() error
 }
 
 // Exec executes the statement represented by the QueryBuilder. It returns the
@@ -81,7 +87,8 @@ func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
 	return rows, errors.Wrapf(err, "[dbr] Query.QueryContext with query %q", sqlStr)
 }
 
-// Load loads data from a query into `s`. Load supports up to n-rows.
+// Load loads data from a query into `s`. Load supports loading of up to n-rows.
+// Load checks if a type implements RowCloser interface.
 func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
@@ -97,8 +104,10 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 		if err2 := rows.Close(); err2 != nil && err == nil {
 			err = errors.Wrap(err2, "[dbr] Load.QueryContext.Rows.Close")
 		}
-		if err2 := s.ScanClose(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dbr] Load.QueryContext.Scanner.ScanClose")
+		if rc, ok := s.(RowCloser); ok {
+			if err2 := rc.RowClose(); err2 != nil && err == nil {
+				err = errors.Wrap(err2, "[dbr] Load.QueryContext.Scanner.RowClose")
+			}
 		}
 	}()
 
@@ -108,7 +117,7 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 	}
 
 	for rows.Next() {
-		err = s.ScanRow(rowCount, columns, rows.Scan)
+		err = s.RowScan(rowCount, columns, rows.Scan)
 		if err != nil {
 			return 0, errors.WithStack(err)
 		}

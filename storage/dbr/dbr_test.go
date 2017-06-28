@@ -75,8 +75,8 @@ type dbrPerson struct {
 	scanErr error
 }
 
-// ScanRow loads a single row from a SELECT statement returning only one row
-func (p *dbrPerson) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
+// RowScan loads a single row from a SELECT statement returning only one row
+func (p *dbrPerson) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	if idx > 0 {
 		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}
@@ -96,10 +96,6 @@ func (p *dbrPerson) ScanRow(idx int64, columns []string, scan func(dest ...inter
 		}
 	}
 	return scan(vp...)
-}
-
-func (p *dbrPerson) ScanClose() error {
-	return p.scanErr
 }
 
 func (p *dbrPerson) AssembleArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
@@ -125,10 +121,9 @@ type dbrPersons struct {
 	Data     []*dbrPerson
 	scanArgs []interface{}
 	dto      dbrPerson
-	scanErr  error
 }
 
-func (ps *dbrPersons) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
+func (ps *dbrPersons) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	if idx == 0 {
 		ps.Data = make([]*dbrPerson, 0, 5)
 		ps.scanArgs = make([]interface{}, 0, 4) // four fields in the struct
@@ -161,10 +156,6 @@ func (ps *dbrPersons) ScanRow(idx int64, columns []string, scan func(dest ...int
 	return nil
 }
 
-func (ps *dbrPersons) ScanClose() error {
-	return ps.scanErr
-}
-
 var _ ArgumentAssembler = (*nullTypedRecord)(nil)
 
 type nullTypedRecord struct {
@@ -176,15 +167,11 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func (p *nullTypedRecord) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
+func (p *nullTypedRecord) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
 	if idx > 0 {
 		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}
 	return scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
-}
-
-func (p *nullTypedRecord) ScanClose() error {
-	return nil
 }
 
 func (p *nullTypedRecord) AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {

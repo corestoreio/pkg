@@ -293,7 +293,7 @@ func xxxBenchmarkSelect_Integration_Scanner(b *testing.B) {
 	ctx := context.TODO()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var ccd TableCoreConfigDatas
+		var ccd TableCoreConfigDataSlice
 		if _, err := s.Load(ctx, &ccd); err != nil {
 			b.Fatalf("%+v", err)
 		}
