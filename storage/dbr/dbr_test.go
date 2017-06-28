@@ -68,10 +68,11 @@ var _ ArgumentAssembler = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
-	ID    int64
-	Name  string
-	Email NullString
-	Key   NullString
+	ID      int64
+	Name    string
+	Email   NullString
+	Key     NullString
+	scanErr error
 }
 
 // ScanRow loads a single row from a SELECT statement returning only one row
@@ -97,6 +98,10 @@ func (p *dbrPerson) ScanRow(idx int64, columns []string, scan func(dest ...inter
 	return scan(vp...)
 }
 
+func (p *dbrPerson) ScanClose() error {
+	return p.scanErr
+}
+
 func (p *dbrPerson) AssembleArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
 	for _, c := range columns {
 		switch c {
@@ -120,6 +125,7 @@ type dbrPersons struct {
 	Data     []*dbrPerson
 	scanArgs []interface{}
 	dto      dbrPerson
+	scanErr  error
 }
 
 func (ps *dbrPersons) ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error {
@@ -155,6 +161,10 @@ func (ps *dbrPersons) ScanRow(idx int64, columns []string, scan func(dest ...int
 	return nil
 }
 
+func (ps *dbrPersons) ScanClose() error {
+	return ps.scanErr
+}
+
 var _ ArgumentAssembler = (*nullTypedRecord)(nil)
 
 type nullTypedRecord struct {
@@ -171,6 +181,10 @@ func (p *nullTypedRecord) ScanRow(idx int64, columns []string, scan func(dest ..
 		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
 	}
 	return scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
+}
+
+func (p *nullTypedRecord) ScanClose() error {
+	return nil
 }
 
 func (p *nullTypedRecord) AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {

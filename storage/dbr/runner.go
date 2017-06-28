@@ -31,6 +31,10 @@ type Scanner interface {
 	// its strength in creating slices of values or iterating over a result set,
 	// modifying values and saving it back somewhere.
 	ScanRow(idx int64, columns []string, scan func(dest ...interface{}) error) error
+	// ScanClose gets called at the very end and even after rows.Close. Allows
+	// to implement special functions, like unlocking a mutex or updating
+	// internal structures or resetting internal type containers.
+	ScanClose() error
 }
 
 // Exec executes the statement represented by the QueryBuilder. It returns the
@@ -91,7 +95,10 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.WithStack(err2)
+			err = errors.Wrap(err2, "[dbr] Load.QueryContext.Rows.Close")
+		}
+		if err2 := s.ScanClose(); err2 != nil && err == nil {
+			err = errors.Wrap(err2, "[dbr] Load.QueryContext.Scanner.ScanClose")
 		}
 	}()
 

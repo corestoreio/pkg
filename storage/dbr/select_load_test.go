@@ -121,6 +121,7 @@ type TableCoreConfigDatas struct {
 	Data     []*TableCoreConfigData
 	scanArgs []interface{}
 	dto      TableCoreConfigData
+	scanErr  error
 }
 
 // TableCoreConfigData represents a type for DB table core_config_data
@@ -171,6 +172,11 @@ func (ps *TableCoreConfigDatas) ScanRow(idx int64, columns []string, scan func(d
 	ccd := ps.dto
 	ps.Data = append(ps.Data, &ccd)
 	return nil
+}
+
+func (ps *TableCoreConfigDatas) ScanClose() error {
+	ps.scanArgs = ps.scanArgs[:0]
+	return ps.scanErr
 }
 
 func TestSelect_Load(t *testing.T) {
@@ -226,5 +232,27 @@ func TestSelect_Load(t *testing.T) {
 		ccd := &TableCoreConfigDatas{}
 		_, err := s.Load(context.TODO(), ccd)
 		assert.True(t, errors.IsConnectionFailed(err), "%+v", err)
+	})
+
+	t.Run("ScanClose error", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer func() {
+			dbMock.ExpectClose()
+			assert.NoError(t, dbc.Close())
+			if err := dbMock.ExpectationsWereMet(); err != nil {
+				t.Error("there were unfulfilled expections", err)
+			}
+		}()
+
+		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").AddRow("3456")
+		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
+		s := dbr.NewSelect("config_id").From("core_config_data")
+		s.DB = dbc.DB
+
+		ccd := &TableCoreConfigDatas{
+			scanErr: errors.NewDuplicatedf("Somewhere exists a duplicate entry"),
+		}
+		_, err := s.Load(context.TODO(), ccd)
+		assert.True(t, errors.IsDuplicated(err), "%+v", err)
 	})
 }
