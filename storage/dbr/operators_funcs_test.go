@@ -128,25 +128,47 @@ func TestSQLIfNull(t *testing.T) {
 	))
 }
 
-func TestSQLIf(t *testing.T) {
-	assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value"))
+func TestSQLIf_Expression(t *testing.T) {
+	t.Parallel()
 
-	s := dbr.NewSelect().AddColumns("a", "b", "c").
-		From("table1").Where(
-		dbr.Expression(
-			dbr.SQLIf("a > 0", "b", "c"),
-			dbr.Greater.Int(4711),
-		))
+	t.Run("single call", func(t *testing.T) {
+		assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value"))
+	})
 
-	sqlStr, args, err := s.ToSQL()
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	assert.Exactly(t, []interface{}{int64(4711)}, args)
-	assert.Exactly(t, "SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)", sqlStr)
+	t.Run("just EXPRESSION", func(t *testing.T) {
+		s := dbr.NewSelect().AddColumns("a", "b", "c").
+			From("table1").Where(
+			dbr.Expression(
+				"IF((a > 0), b, c) > ?",
+				dbr.Greater.Int(4711),
+			))
+
+		compareToSQL(t, s, nil,
+			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)",
+			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
+			int64(4711),
+		)
+	})
+
+	t.Run("IF in EXPRESSION", func(t *testing.T) {
+		s := dbr.NewSelect().AddColumns("a", "b", "c").
+			From("table1").Where(
+			dbr.Expression(
+				dbr.SQLIf("a > 0", "b", "c"),
+				dbr.Greater.Int(4711),
+			))
+
+		compareToSQL(t, s, nil,
+			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)",
+			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)",
+			int64(4711),
+		)
+	})
 }
 
 func TestSQLCase(t *testing.T) {
+	t.Parallel()
+
 	t.Run("UPDATE in columns with args", func(t *testing.T) {
 		/*
 					UPDATE `cataloginventory_stock_item`

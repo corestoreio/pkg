@@ -50,7 +50,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 		sel := dbr.NewSelect("TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 			"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").From("information_schema.COLUMNS").
-			Where(dbr.Column(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
+			Where(dbr.Expression(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
 
 		if len(tables) > 0 {
 			sel.Where(dbr.Column("TABLE_NAME IN ?", dbr.In.Str(tables...)))
@@ -78,7 +78,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
-			Where(dbr.Column("d = ? OR e = ?", args...)).
+			Where(dbr.Expression("d = ? OR e = ?", args...)).
 			Where(argEq).
 			OrderByDesc("id").
 			Paginate(1, 20).
@@ -103,7 +103,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		Where(dbr.Expression("`d` = ? OR `e` = ?", args...)).
 		Where(argEq1).Where(argEq2).Where(argEq3).
 		GroupBy("ab").GroupBy("ii").GroupBy("iii").
-		Having(dbr.Column("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
+		Having(dbr.Expression("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
 		Having(dbr.Column("jjj", dbr.ArgInt64(2))).
 		OrderBy("l1").OrderBy("l2").OrderBy("l3").
 		Limit(7).Offset(8).Interpolate()
@@ -118,7 +118,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 				Where(dbr.Expression("`d` = ? OR `e` = ?", args...)).
 				Where(argEq1).Where(argEq2).Where(argEq3).
 				GroupBy("ab").GroupBy("ii").GroupBy("iii").
-				Having(dbr.Column("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
+				Having(dbr.Expression("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
 				Having(dbr.Column("jjj", dbr.ArgInt64(2))).
 				OrderBy("l1").OrderBy("l2").OrderBy("l3").
 				Limit(7).Offset(8).

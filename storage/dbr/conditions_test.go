@@ -25,23 +25,23 @@ func TestColumn(t *testing.T) {
 	t.Run("invalid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
 			Column("a", ArgInt(111)),
-			Column("b=c"),
+			Expression("b=c"),
 		)
 		sql, args, err := s.ToSQL()
 		require.NoError(t, err)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`a` = ?) AND (`b=c`)", sql)
+		assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`a` = ?) AND (b=c)", sql)
 		assert.Equal(t, []interface{}{int64(111)}, args)
 	})
 
 	t.Run("valid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
 			Column("a", In.Int64(111, 222)),
-			Column("b"),
+			Column("b", ArgNull()),
 			Column("d", Between.Float64(2.5, 2.7)),
 		).Interpolate()
 		sql, args, err := s.ToSQL()
 		require.NoError(t, err)
 		assert.Nil(t, args)
-		assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`a` IN (111,222)) AND (`b`) AND (`d` BETWEEN 2.5 AND 2.7)", sql)
+		assert.Equal(t, "SELECT `a`, `b` FROM `c` WHERE (`a` IN (111,222)) AND (`b` IS NULL) AND (`d` BETWEEN 2.5 AND 2.7)", sql)
 	})
 }

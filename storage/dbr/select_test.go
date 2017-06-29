@@ -110,14 +110,14 @@ func TestSelect_Interpolate(t *testing.T) {
 				Column("m", Equal.Int(33)),
 				Column("n", Equal.Str("wh3r3")).Or(),
 				ParenthesisClose(),
-				Column("j = k"),
+				Expression("j = k"),
 			).
 			OrderBy("l").
 			Limit(7).
 			Offset(8)
 		compareToSQL(t, sel, nil,
-			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8",
-			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`) ORDER BY `l` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2) AND (`g` = 3) AND (`h` IN (4,5,6)) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8",
 			int64(1), "wat", int64(2), int64(3), int64(4), int64(5), int64(6), int64(33), "wh3r3",
 		)
 	})
@@ -129,14 +129,14 @@ func TestSelect_Interpolate(t *testing.T) {
 			Where(Eq{"g": ArgInt64(3)}).
 			Where(Eq{"h": In.Int(1, 2, 3)}).
 			GroupBy("ab").GroupBy("ii").GroupBy("iii").
-			Having(Column("j = k"), Column("jj", ArgInt64(1))).
+			Having(Expression("j = k"), Column("jj", ArgInt64(1))).
 			Having(Column("jjj", ArgInt64(2))).
 			OrderBy("l1").OrderBy("l2").OrderBy("l3").
 			Limit(7).Offset(8)
 
 		compareToSQL(t, sel, nil,
-			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = ? OR `e` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = ?) AND (`jjj` = ?) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
-			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (`j = k`) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = ? OR `e` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab`, `ii`, `iii` HAVING (j = k) AND (`jj` = ?) AND (`jjj` = ?) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
+			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (j = k) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
 			int64(1), "wat", int64(3), int64(1), int64(2), int64(3), int64(1), int64(2),
 		)
 
@@ -729,7 +729,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			Join(
 				MakeNameAlias("dbr_people", "p2"),
-				Column("`p2`.`id` = `p1`.`id`"),
+				Expression("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id", Equal.Int(42)),
 			)
 
@@ -747,7 +747,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			Join(
 				MakeNameAlias("dbr_people", "p2"),
-				Column("`p2`.`id` = `p1`.`id`"),
+				Expression("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id", Equal.Int(42)),
 			)
 
@@ -764,7 +764,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			LeftJoin(
 				MakeNameAlias("dbr_people", "p2"),
-				Column("`p2`.`id` = `p1`.`id`"),
+				Expression("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id", Equal.Int(42)),
 			)
 
@@ -782,7 +782,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			RightJoin(
 				MakeNameAlias("dbr_people", "p2"),
-				Column("`p2`.`id` = `p1`.`id`"),
+				Expression("`p2`.`id` = `p1`.`id`"),
 			)
 		compareToSQL(t, sqlObj, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
@@ -1168,11 +1168,11 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 				Column("m", Equal.Int(33)),
 				Column("n", ArgString("wh3r3")).Or(),
 				ParenthesisClose(),
-				Column("j = k"),
+				Expression("j = k"),
 			)
 		compareToSQL(t, sel, nil,
-			"SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (`j = k`)",
-			"SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2.7182) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (`j = k`)",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k)",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = 1) OR (`e` = 'wat')) AND (`f` = 2.7182) GROUP BY `ab` HAVING ((`m` = 33) OR (`n` = 'wh3r3')) AND (j = k)",
 			int64(1), "wat", 2.7182, int64(33), "wh3r3")
 
 	})
@@ -1189,15 +1189,15 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 			).
 			GroupBy("ab").
 			Having(
-				Column("j = k"),
+				Expression("j = k"),
 				ParenthesisOpen(),
 				Column("m", Equal.Int(33)),
 				Column("n", ArgString("wh3r3")).Or(),
 				ParenthesisClose(),
 			)
 		compareToSQL(t, sel, nil,
-			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?))",
-			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = 2.7182) AND ((`d` = 1) OR (`e` = 'wat')) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = 33) OR (`n` = 'wh3r3'))",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) GROUP BY `ab` HAVING (j = k) AND ((`m` = ?) OR (`n` = ?))",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = 2.7182) AND ((`d` = 1) OR (`e` = 'wat')) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR (`n` = 'wh3r3'))",
 			2.7182, int64(1), "wat", int64(33), "wh3r3")
 	})
 
@@ -1214,7 +1214,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 			).
 			GroupBy("ab").
 			Having(
-				Column("j = k"),
+				Expression("j = k"),
 				ParenthesisOpen(),
 				Column("m", Equal.Int(33)),
 				Column("n", ArgString("wh3r3")).Or(),
@@ -1222,8 +1222,8 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 				Column("q", NotNull.Null()),
 			)
 		compareToSQL(t, sel, nil,
-			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)",
-			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = 2.7182) AND ((`d` = 1) OR (`e` = 'wat')) AND (`p` = 3.141592) GROUP BY `ab` HAVING (`j = k`) AND ((`m` = 33) OR (`n` = 'wh3r3')) AND (`q` IS NOT NULL)",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = ?) AND ((`d` = ?) OR (`e` = ?)) AND (`p` = ?) GROUP BY `ab` HAVING (j = k) AND ((`m` = ?) OR (`n` = ?)) AND (`q` IS NOT NULL)",
+			"SELECT `a`, `b` FROM `c` AS `cc` WHERE (`f` = 2.7182) AND ((`d` = 1) OR (`e` = 'wat')) AND (`p` = 3.141592) GROUP BY `ab` HAVING (j = k) AND ((`m` = 33) OR (`n` = 'wh3r3')) AND (`q` IS NOT NULL)",
 			2.7182, int64(1), "wat", 3.141592, int64(33), "wh3r3")
 	})
 }

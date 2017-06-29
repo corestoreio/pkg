@@ -14,7 +14,11 @@
 
 package dbr
 
-import "github.com/corestoreio/errors"
+import (
+	"strings"
+
+	"github.com/corestoreio/errors"
+)
 
 const (
 	logicalAnd byte = 'a'
@@ -28,8 +32,11 @@ type whereFragment struct {
 	// field `IsExpression` to true to avoid quoting of the `Column` field.
 	// Condition can also contain `qualifier.identifier`.
 	Condition string
+
+	Argument  Argument // Either this or the slice is set.
 	Arguments Arguments
-	Sub       struct {
+
+	Sub struct {
 		// Select adds a sub-select to the where statement. Column must be either
 		// a column name or anything else which can handle the result of a
 		// sub-select.
@@ -81,7 +88,7 @@ func (eq Eq) appendConditions(wfs WhereFragments) WhereFragments {
 		}
 		wfs = append(wfs, &whereFragment{
 			Condition: c,
-			Arguments: Arguments{arg},
+			Argument:  arg,
 		})
 	}
 	return wfs
@@ -127,6 +134,9 @@ func (wf WhereFragments) Conditions() []string {
 	// be assembled from the interface Argument.len() returns cahensConstant.
 	c := make([]string, 0, len(wf))
 	for _, w := range wf {
+		if w.Argument != nil && w.Argument.len() == cahensConstant {
+			c = append(c, w.Condition)
+		}
 		if len(w.Arguments) > 0 && w.Arguments[0].len() == cahensConstant {
 			c = append(c, w.Condition)
 		}
@@ -169,10 +179,10 @@ func SubSelect(columnName string, operator Op, s *Select) ConditionArg {
 //}
 
 // Column adds a condition to a WHERE or HAVING statement.
-func Column(columnName string, arg ...Argument) ConditionArg {
+func Column(columnName string, arg Argument) ConditionArg {
 	return &whereFragment{
 		Condition: columnName,
-		Arguments: arg,
+		Argument:  arg,
 	}
 }
 
@@ -272,7 +282,8 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 
 		if f.IsExpression {
 			_, _ = w.WriteString(f.Condition)
-			if len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
+			// Only write the operator in case there is no place holder and we have one argument
+			if strings.IndexByte(f.Condition, '?') == -1 && len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
 				writeOperator(w, true, f.Arguments[0])
 			}
 		} else {
@@ -287,8 +298,8 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 				w.WriteByte(')')
 			} else {
 				// a column only supports one argument.
-				if len(f.Arguments) == 1 {
-					writeOperator(w, true, f.Arguments[0])
+				if f.Argument != nil {
+					writeOperator(w, true, f.Argument)
 				}
 			}
 		}
@@ -308,54 +319,46 @@ func (wf WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argum
 	i := 0
 	for _, f := range wf {
 
-		if conditionType == 'j' {
-			if len(f.Using) > 0 {
-				return args, pendingArgPos, nil // done, only one USING allowed
-			}
-		}
+		switch {
+		case conditionType == 'j' && len(f.Using) > 0:
+			return args, pendingArgPos, nil // done, only one USING allowed
 
-		if f.Condition == ")" {
+		case f.Condition == ")":
 			continue
-		}
 
-		if f.Condition == "(" { // todo merge both IF branches into one or even completely remove them
+		case f.Condition == "(":
 			i = 0
 			continue
 		}
 
 		addArg := false
-		if f.IsExpression {
+		switch {
+		case f.IsExpression:
 			addArg = true
-			if len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
-
+		case f.Sub.Select != nil:
+			args, err = f.Sub.Select.appendArgs(args)
+			if err != nil {
+				return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
 			}
-		} else {
-
-			if f.Sub.Select != nil {
-				args, err = f.Sub.Select.appendArgs(args)
-				if err != nil {
-					return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
-				}
-			} else {
-				// a column only supports one argument.
-				if len(f.Arguments) == 1 {
-					a := f.Arguments[0]
-					addArg = writeOperator(backHole{}, true, a)
-					if a.len() == cahensConstant {
-						// By keeping addArg as it is and not setting
-						// addArg=false, this []int avoids
-						// https://en.wikipedia.org/wiki/Permutation Which would
-						// result in a Go Code like
-						// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
-						// Because addArg=false does not add below the arguments and we must
-						// later swap the positions.
-						pendingArgPos = append(pendingArgPos, pendingArgPosCount)
-					}
-				}
+		case f.Argument != nil:
+			// a column only supports one argument.
+			addArg = writeOperator(backHole{}, true, f.Argument)
+			if f.Argument.len() == cahensConstant {
+				// By keeping addArg as it is and not setting
+				// addArg=false, this []int avoids
+				// https://en.wikipedia.org/wiki/Permutation Which would
+				// result in a Go Code like
+				// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
+				// Because addArg=false does not add below the arguments and we must
+				// later swap the positions.
+				pendingArgPos = append(pendingArgPos, pendingArgPosCount)
 			}
 		}
 
 		if addArg {
+			if f.Argument != nil {
+				args = append(args, f.Argument)
+			}
 			args = append(args, f.Arguments...)
 		}
 		pendingArgPosCount++

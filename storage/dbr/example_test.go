@@ -410,9 +410,9 @@ func ExampleRepeat() {
 // ExampleArgument is duplicate of ExampleColumn
 func ExampleArgument() {
 
-	argPrinter := func(arg ...dbr.Argument) {
+	argPrinter := func(arg dbr.Argument) {
 		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
-			From("c").Where(dbr.Column("d", arg...)).ToSQL()
+			From("c").Where(dbr.Column("d", arg)).ToSQL()
 		if err != nil {
 			fmt.Printf("%+v\n", err)
 		} else {
@@ -470,9 +470,9 @@ func ExampleArgument() {
 
 // ExampleColumn is a duplicate of ExampleArgument
 func ExampleColumn() {
-	argPrinter := func(arg ...dbr.Argument) {
+	argPrinter := func(arg dbr.Argument) {
 		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
-			From("c").Where(dbr.Column("d", arg...)).ToSQL()
+			From("c").Where(dbr.Column("d", arg)).ToSQL()
 		if err != nil {
 			fmt.Printf("%+v\n", err)
 		} else {
