@@ -200,11 +200,15 @@ func (b *With) toSQL(w queryWriter) error {
 		case sc.Select != nil:
 			sc.Select.IsInterpolate = b.IsInterpolate
 			sc.Select.UseBuildCache = b.UseBuildCache
-			sc.Select.toSQL(w)
+			if err := sc.Select.toSQL(w); err != nil {
+				return errors.Wrap(err, "[dbr] sc.Select.toSQL")
+			}
 		case sc.Union != nil:
 			sc.Union.IsInterpolate = b.IsInterpolate
 			sc.Union.UseBuildCache = b.UseBuildCache
-			sc.Union.toSQL(w)
+			if err := sc.Union.toSQL(w); err != nil {
+				return errors.Wrap(err, "[dbr] sc.Union.toSQL")
+			}
 		}
 		w.WriteRune(')')
 		if i < len(b.Subclauses)-1 {

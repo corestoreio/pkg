@@ -82,9 +82,9 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 }
 
 // WithDB sets the database query object.
-func (b *Union) WithDB(db QueryPreparer) *Union {
-	b.DB = db
-	return b
+func (u *Union) WithDB(db QueryPreparer) *Union {
+	u.DB = db
+	return u
 }
 
 // Append adds more *Select objects to the Union object. When using Union as a
@@ -314,20 +314,20 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 }
 
 // Query executes a query and returns many rows.
-func (b *Union) Query(ctx context.Context) (*sql.Rows, error) {
-	rows, err := Query(ctx, b.DB, b)
+func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
+	rows, err := Query(ctx, u.DB, u)
 	return rows, errors.WithStack(err)
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
-func (b *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	stmt, err := Prepare(ctx, b.DB, b)
+func (u *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
+	stmt, err := Prepare(ctx, u.DB, u)
 	return stmt, errors.WithStack(err)
 }
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Union object or it just panics. Load can load a single row or n-rows.
-func (b *Union) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
-	rowCount, err = Load(ctx, b.DB, b, s)
+func (u *Union) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	rowCount, err = Load(ctx, u.DB, u, s)
 	return rowCount, errors.WithStack(err)
 }

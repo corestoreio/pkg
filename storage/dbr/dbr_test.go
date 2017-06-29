@@ -68,11 +68,10 @@ var _ ArgumentAssembler = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
-	ID      int64
-	Name    string
-	Email   NullString
-	Key     NullString
-	scanErr error
+	ID    int64
+	Name  string
+	Email NullString
+	Key   NullString
 }
 
 // RowScan loads a single row from a SELECT statement returning only one row

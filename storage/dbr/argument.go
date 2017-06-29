@@ -809,7 +809,7 @@ func (a *argInt64s) toIFace(args []interface{}) []interface{} {
 }
 
 func (a *argInt64s) writeTo(w queryWriter, pos int) error {
-	return writeInt64(w, int64(a.data[pos]))
+	return writeInt64(w, a.data[pos])
 }
 
 func (a *argInt64s) len() int {

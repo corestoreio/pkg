@@ -158,7 +158,7 @@ func (b *Insert) AddValues(values ...interface{}) *Insert {
 	return b.AddArguments(iFaceToArgs(values...)...)
 }
 
-// RowCount defines the number of expected rows. Each set of place holders
+// SetRowCount defines the number of expected rows. Each set of place holders
 // within the brackets defines a row. This setting defaults to one. It gets
 // applied when fields `Values` and `Records` have been left empty. For each
 // defined column the QueryBuilder creates a place holder. Use when creating a
