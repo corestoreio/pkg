@@ -14,7 +14,11 @@
 
 package dbr
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestShow(t *testing.T) {
 	t.Parallel()
@@ -91,19 +95,22 @@ func TestShow(t *testing.T) {
 	})
 
 	t.Run("table status WHERE", func(t *testing.T) {
-		s := NewShow().TableStatus().Where(Column("Name", Like.Str("%catalog%")))
+		s := NewShow().TableStatus().Where(Column("Name", Regexp.Str(".*catalog[_]+")))
 		s.UseBuildCache = true
 		compareToSQL(t, s, nil,
-			"SHOW TABLE STATUS WHERE (`Name` LIKE ?)",
-			"SHOW TABLE STATUS WHERE (`Name` LIKE '%catalog%')",
-			"%catalog%",
+			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",
+			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
+			".*catalog[_]+",
 		)
+		assert.Exactly(t, "SHOW TABLE STATUS WHERE (`Name` REGEXP ?)", string(s.cacheSQL))
+		s.WhereFragments[0].Argument = Equal.Str("sales$") // set Equal on purpose ... because cache already written
 		// twice to test the build cache
 		compareToSQL(t, s, nil,
-			"SHOW TABLE STATUS WHERE (`Name` LIKE ?)",
-			"SHOW TABLE STATUS WHERE (`Name` LIKE '%catalog%')",
-			"%catalog%",
+			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",
+			"SHOW TABLE STATUS WHERE (`Name` REGEXP 'sales$')",
+			"sales$",
 		)
+		assert.Exactly(t, "SHOW TABLE STATUS WHERE (`Name` REGEXP ?)", string(s.cacheSQL))
 	})
 
 }
