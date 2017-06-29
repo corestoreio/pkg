@@ -19,11 +19,15 @@ import (
 	"github.com/corestoreio/log"
 )
 
+// Always in alphabetical order. We can add more once needed.
 const (
-	showGlobal uint = 1 << iota
-	showSession
-	showVariables
+	showBinaryLog uint = 1 << iota
+	showGlobal
 	showMasterStatus
+	showSession
+	showStatus
+	showTableStatus
+	showVariables
 )
 
 // Show represents the SHOW syntax
@@ -32,6 +36,7 @@ type Show struct {
 	// DB gets required once the Load*() functions will be used.
 	DB QueryPreparer
 
+	// Type bitwise flag containing the type of the SHOW statement.
 	Type           uint
 	LikeCondition  Argument
 	WhereFragments WhereFragments
@@ -65,7 +70,7 @@ func (b *Show) Global() *Show {
 // Session displays with a SESSION modifier, the statement displays the system
 // variable values that are in effect for the current connection. If a variable
 // has no session value, the global value is displayed. LOCAL is a synonym for
-// SESSION.
+// SESSION. If no modifier is present, the default is SESSION.
 func (b *Show) Session() *Show {
 	b.Type = b.Type | showSession
 	return b
@@ -79,8 +84,32 @@ func (b *Show) Variable() *Show {
 	return b
 }
 
+// MasterStatus provides status information about the binary log files of the
+// master. It requires either the SUPER or REPLICATION CLIENT privilege.
 func (b *Show) MasterStatus() *Show {
 	b.Type = b.Type | showMasterStatus
+	return b
+}
+
+// TableStatus works likes SHOW TABLES, but provides a lot of information about
+// each non-TEMPORARY table. The LIKE clause, if present, indicates which table
+// names to match. The WHERE clause can be given to select rows using more
+// general conditions. This statement also displays information about views.
+func (b *Show) TableStatus() *Show {
+	b.Type = b.Type | showTableStatus
+	return b
+}
+
+// Status provides server status information. This statement does not require
+// any privilege. It requires only the ability to connect to the server.
+func (b *Show) Status() *Show {
+	b.Type = b.Type | showStatus
+	return b
+}
+
+// BinaryLog lists the binary log files on the server.
+func (b *Show) BinaryLog() *Show {
+	b.Type = b.Type | showBinaryLog
 	return b
 }
 
@@ -138,15 +167,24 @@ func (b *Show) toSQL(w queryWriter) error {
 
 	w.WriteString("SHOW ")
 
-	if b.Type&showSession != 0 {
+	switch {
+	case b.Type&showSession != 0:
 		w.WriteString("SESSION ")
+	case b.Type&showGlobal != 0:
+		w.WriteString("GLOBAL ")
 	}
 
 	switch {
 	case b.Type&showVariables != 0:
 		w.WriteString("VARIABLES")
+	case b.Type&showStatus != 0:
+		w.WriteString("STATUS")
 	case b.Type&showMasterStatus != 0:
 		w.WriteString("MASTER STATUS")
+	case b.Type&showTableStatus != 0:
+		w.WriteString("TABLE STATUS")
+	case b.Type&showBinaryLog != 0:
+		w.WriteString("BINARY LOG")
 	}
 
 	if b.LikeCondition != nil {
