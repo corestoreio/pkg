@@ -328,6 +328,9 @@ func compareToSQL(
 	case *With:
 		dml.Interpolate()
 		defer func() { dml.IsInterpolate = false }()
+	case *Show:
+		dml.Interpolate()
+		defer func() { dml.IsInterpolate = false }()
 	default:
 		t.Fatalf("func compareToSQL: the type %#v is not (yet) supported.", qb)
 	}
