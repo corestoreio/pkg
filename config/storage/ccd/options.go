@@ -30,12 +30,12 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.Option {
 	return func(s *config.Service) error {
 
 		var ccd TableCoreConfigDataSlice
-		loadedRows, err := TableCollection.MustTable(TableIndexCoreConfigData).LoadSlice(dbrSess, &ccd)
+		loadedRows, err := TableCollection.MustTable(TableIndexCoreConfigData).Load(dbrSess, &ccd)
 		if s.Log.IsDebug() {
-			s.Log.Debug("ccd.WithCoreConfigData.LoadSlice", log.Int("rows", loadedRows), log.Err(err))
+			s.Log.Debug("ccd.WithCoreConfigData.Load", log.Int("rows", loadedRows), log.Err(err))
 		}
 		if err != nil {
-			return errors.Wrap(err, "[ccd] WithCoreConfigData.csdb.LoadSlice")
+			return errors.Wrap(err, "[ccd] WithCoreConfigData.csdb.Load")
 		}
 
 		var writtenRows int

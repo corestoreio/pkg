@@ -50,28 +50,28 @@ func TestSelect_Join_EAVIfNull(t *testing.T) {
 	s := dbr.NewSelect(eav.IfNull("manufacturer", "value", "''"), "cpe.*").
 		From("catalog_product_entity", "cpe").
 		LeftJoin(
-			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerDefault"),
+			dbr.MakeNameAlias("catalog_product_entity_varchar", "manufacturerDefault"),
 			dbr.Column("manufacturerDefault.scope = 0"),
 			dbr.Column("manufacturerDefault.scope_id = 0"),
 			dbr.Column("manufacturerDefault.attribute_id = 83"),
 			dbr.Column("manufacturerDefault.value IS NOT NULL"),
 		).
 		LeftJoin(
-			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerWebsite"),
+			dbr.MakeNameAlias("catalog_product_entity_varchar", "manufacturerWebsite"),
 			dbr.Column("manufacturerWebsite.scope = 1"),
 			dbr.Column("manufacturerWebsite.scope_id = 10"),
 			dbr.Column("manufacturerWebsite.attribute_id = 83"),
 			dbr.Column("manufacturerWebsite.value IS NOT NULL"),
 		).
 		LeftJoin(
-			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerGroup"),
+			dbr.MakeNameAlias("catalog_product_entity_varchar", "manufacturerGroup"),
 			dbr.Column("manufacturerGroup.scope = 2"),
 			dbr.Column("manufacturerGroup.scope_id = 20"),
 			dbr.Column("manufacturerGroup.attribute_id = 83"),
 			dbr.Column("manufacturerGroup.value IS NOT NULL"),
 		).
 		LeftJoin(
-			dbr.MakeAlias("catalog_product_entity_varchar", "manufacturerStore"),
+			dbr.MakeNameAlias("catalog_product_entity_varchar", "manufacturerStore"),
 			dbr.Column("manufacturerStore.scope = 2"),
 			dbr.Column("manufacturerStore.scope_id = 20"),
 			dbr.Column("manufacturerStore.attribute_id = 83"),

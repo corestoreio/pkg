@@ -45,7 +45,7 @@ const SQL = `
 // {{ typePrefix "SQLSelect" }} fills this slice with data from the database.
 // Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "SQLSelect" }}(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
-	return csdb.LoadSlice(dbrSess, TableCollection, TableIndex{{.Name}}, &(*s), cbs...)
+	return csdb.Load(dbrSess, TableCollection, TableIndex{{.Name}}, &(*s), cbs...)
 }
 
 // {{ typePrefix "SQLInsert" }} inserts all records into the database @todo.
