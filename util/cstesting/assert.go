@@ -20,12 +20,12 @@ import (
 )
 
 // ErrorFormater defines the function needed to print out an formatted error.
-type errorFormater interface {
+type errorFormatter interface {
 	Errorf(format string, args ...interface{})
 }
 
-// EqualPointers compares pointers for equality. errorFormater is *testing.T.
-func EqualPointers(t errorFormater, expected, actual interface{}) bool {
+// EqualPointers compares pointers for equality. errorFormatter is *testing.T.
+func EqualPointers(t errorFormatter, expected, actual interface{}) bool {
 	wantP := reflect.ValueOf(expected)
 	haveP := reflect.ValueOf(actual)
 	if wantP.Pointer() != haveP.Pointer() {
@@ -37,7 +37,7 @@ func EqualPointers(t errorFormater, expected, actual interface{}) bool {
 
 // ContainsCount checks if str contains the substring contains maxOccurrences
 // times.
-func ContainsCount(t errorFormater, str, contains string, maxOccurrences int) {
+func ContainsCount(t errorFormatter, str, contains string, maxOccurrences int) {
 	if have, want := strings.Count(str, contains), maxOccurrences; have != want {
 		t.Errorf("%q should contain %q times %d Have: %v Want: %v", str, contains, maxOccurrences, have, want)
 	}

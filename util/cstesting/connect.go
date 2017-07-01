@@ -16,6 +16,7 @@ package cstesting
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -61,6 +62,14 @@ func MustConnectDB(t skipper, opts ...dbr.ConnectionOption) *dbr.Connection {
 	return dbc
 }
 
+// Close for usage in conjunction with defer.
+// 		defer cstesting.Close(t,db)
+func Close(t errorFormatter, c io.Closer) {
+	if err := c.Close(); err != nil {
+		t.Errorf("%+v", err)
+	}
+}
+
 // MockDB creates a mocked database connection. Fatals on error.
 func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 	db, sm, err := sqlmock.New()
@@ -69,4 +78,16 @@ func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 	dbc, err := dbr.NewConnection(dbr.WithDB(db))
 	fatalIfError(t, err)
 	return dbc, sm
+}
+
+// MockClose for usage in conjunction with defer.
+// 		defer cstesting.MockClose(t,db,dbMock)
+func MockClose(t fataler, c io.Closer, m sqlmock.Sqlmock) {
+	m.ExpectClose()
+	if err := c.Close(); err != nil {
+		t.Fatalf("%+v", err)
+	}
+	if err := m.ExpectationsWereMet(); err != nil {
+		t.Fatalf("There were unfulfilled expectations:\n%+v", err)
+	}
 }
