@@ -15,17 +15,14 @@
 package csdb_test
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"sort"
 	"testing"
 
-	"context"
-
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/csfw/util/magento"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,14 +36,8 @@ var _ sort.Interface = (*csdb.Columns)(nil)
 func TestLoadColumns_Mage21(t *testing.T) {
 	t.Parallel()
 
-	dbc, version := cstesting.MustConnectDB()
-	if dbc == nil {
-		t.Skip("Environment DB DSN not found")
-	}
-	defer func() { assert.NoError(t, dbc.Close()) }()
-	if version != magento.Version2 {
-		t.Skip("Environment DB DSN should refer to a Magento2 database")
-	}
+	dbc := cstesting.MustConnectDB(t)
+	defer dbc.Close()
 
 	tests := []struct {
 		table          string
@@ -94,23 +85,23 @@ func TestColumns(t *testing.T) {
 		wantS string
 	}{
 		{
-			mustStructure(table1).Columns.PrimaryKeys().Len(),
+			tableMap.MustTable("catalog_category_anc_categs_index_idx").Columns.PrimaryKeys().Len(),
 			0,
-			mustStructure(table1).Columns.GoString(),
+			tableMap.MustTable("catalog_category_anc_categs_index_idx").Columns.GoString(),
 			"csdb.Columns{\n&csdb.Column{Field: \"category_id\", Default: dbr.MakeNullString(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"MUL\", },\n&csdb.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", Key: \"MUL\", },\n}",
 		},
 		{
-			mustStructure(table2).Columns.PrimaryKeys().Len(),
+			tableMap.MustTable("catalog_category_anc_categs_index_tmp").Columns.PrimaryKeys().Len(),
 			1,
-			mustStructure(table2).Columns.GoString(),
+			tableMap.MustTable("catalog_category_anc_categs_index_tmp").Columns.GoString(),
 			"csdb.Columns{\n&csdb.Column{Field: \"category_id\", Default: dbr.MakeNullString(\"0\"), ColumnType: \"int(10) unsigned\", Key: \"PRI\", },\n&csdb.Column{Field: \"path\", Null: \"YES\", ColumnType: \"varchar(255)\", },\n}",
 		},
 		{
-			mustStructure(table4).Columns.UniqueKeys().Len(), 1,
-			mustStructure(table4).Columns.GoString(),
+			tableMap.MustTable("admin_user").Columns.UniqueKeys().Len(), 1,
+			tableMap.MustTable("admin_user").Columns.GoString(),
 			"csdb.Columns{\n&csdb.Column{Field: \"user_id\", ColumnType: \"int(10) unsigned\", Key: \"PRI\", Extra: \"auto_increment\", },\n&csdb.Column{Field: \"email\", Null: \"YES\", ColumnType: \"varchar(128)\", },\n&csdb.Column{Field: \"username\", Null: \"YES\", ColumnType: \"varchar(40)\", Key: \"UNI\", },\n}",
 		},
-		{mustStructure(table4).Columns.PrimaryKeys().Len(), 1, "", ""},
+		{tableMap.MustTable("admin_user").Columns.PrimaryKeys().Len(), 1, "", ""},
 	}
 
 	for i, test := range tests {
@@ -118,23 +109,23 @@ func TestColumns(t *testing.T) {
 		assert.Equal(t, test.wantS, test.haveS, "Index %d", i)
 	}
 
-	tsN := mustStructure(table4).Columns.ByField("user_id_not_found")
+	tsN := tableMap.MustTable("admin_user").Columns.ByField("user_id_not_found")
 	assert.NotNil(t, tsN)
 	assert.Empty(t, tsN.Field)
 
-	ts4 := mustStructure(table4).Columns.ByField("user_id")
+	ts4 := tableMap.MustTable("admin_user").Columns.ByField("user_id")
 	assert.NotEmpty(t, ts4.Field)
 	assert.True(t, ts4.IsAutoIncrement())
 
-	ts4b := mustStructure(table4).Columns.ByField("email")
+	ts4b := tableMap.MustTable("admin_user").Columns.ByField("email")
 	assert.NotEmpty(t, ts4b.Field)
 	assert.True(t, ts4b.IsNull())
 
-	assert.True(t, mustStructure(table4).Columns.First().IsPK())
+	assert.True(t, tableMap.MustTable("admin_user").Columns.First().IsPK())
 	emptyTS := &csdb.Table{}
 	assert.False(t, emptyTS.Columns.First().IsPK())
 
-	hash, err := mustStructure(table3).Columns.Hash()
+	hash, err := tableMap.MustTable("catalog_category_anc_products_index_idx").Columns.Hash()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{0x3b, 0x72, 0x14, 0x1d, 0x3f, 0x61, 0xf, 0x5b}, hash)
 }
@@ -438,75 +429,4 @@ func TestColumn_IsCurrentTimestamp(t *testing.T) {
 	t.Parallel()
 	assert.True(t, adminUserColumns.ByField("modified").IsCurrentTimestamp())
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsCurrentTimestamp())
-}
-
-var benchmarkLoadColumns map[string]csdb.Columns
-var benchmarkLoadColumnsHashWant = []byte{0x66, 0x73, 0x3c, 0x93, 0x11, 0x65, 0xbc, 0xcf}
-
-// BenchmarkLoadColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
-// BenchmarkLoadColumns-4   	    2000	    748079 ns/op	   14364 B/op	     363 allocs/op
-// BenchmarkLoadColumns-4   	    2000	    782965 ns/op	   14241 B/op	     350 allocs/op
-func BenchmarkLoadColumns(b *testing.B) {
-	const tn = "eav_attribute"
-	ctx := context.TODO()
-	dbc, _ := cstesting.MustConnectDB()
-	if dbc == nil {
-		b.Skip("Environment DB DSN not found")
-	}
-	defer dbc.Close()
-	var err error
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkLoadColumns, err = csdb.LoadColumns(ctx, dbc.DB, tn)
-		if err != nil {
-			b.Error(err)
-		}
-	}
-	hashHave, err := benchmarkLoadColumns[tn].Hash()
-	if err != nil {
-		b.Error(err)
-	}
-	if 0 != bytes.Compare(hashHave, benchmarkLoadColumnsHashWant) {
-		b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkLoadColumnsHashWant)
-	}
-	//b.Log(benchmarkLoadColumns[tn].GoString())
-}
-
-var benchmarkColumnsJoinFields string
-var benchmarkColumnsJoinFieldsWant = "category_id|product_id|position"
-var benchmarkColumnsJoinFieldsData = csdb.Columns{
-	&csdb.Column{
-		Field:      "category_id",
-		ColumnType: ("int(10) unsigned"),
-		Key:        "",
-		Default:    dbr.MakeNullString("0"),
-		Extra:      (""),
-	},
-	&csdb.Column{
-		Field:      "product_id",
-		ColumnType: ("int(10) unsigned"),
-		Key:        (""),
-		Default:    dbr.MakeNullString("0"),
-		Extra:      (""),
-	},
-	&csdb.Column{
-		Field:      "position",
-		ColumnType: ("int(10) unsigned"),
-		Null:       "YES",
-		Key:        (""),
-		Extra:      (""),
-	},
-}
-
-// BenchmarkColumnsJoinFields-4	 2000000	       625 ns/op	     176 B/op	       5 allocs/op <- Go 1.5
-func BenchmarkColumnsJoinFields(b *testing.B) {
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkColumnsJoinFields = benchmarkColumnsJoinFieldsData.JoinFields("|")
-	}
-	if benchmarkColumnsJoinFields != benchmarkColumnsJoinFieldsWant {
-		b.Errorf("\nWant: %s\nHave: %s\n", benchmarkColumnsJoinFieldsWant, benchmarkColumnsJoinFields)
-	}
 }

@@ -15,11 +15,9 @@
 package csdb
 
 import (
-	"context"
 	"strconv"
 	"strings"
 
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 )
 
@@ -39,21 +37,15 @@ type MasterStatus struct {
 	ExecutedGTIDSet string
 }
 
-// Load retrieves the current master status from the database and puts it into
-// variable ms. For interface querier see dbr.Querier.
-func (ms *MasterStatus) Load(ctx context.Context, db dbr.Querier) error {
-	_, err := dbr.Load(ctx, db, ms, ms)
-	return errors.WithStack(err)
-}
-
 // ToSQL implements dbr.QueryBuilder interface to assemble a SQL string and its
 // arguments for query execution.
 func (ms *MasterStatus) ToSQL() (string, []interface{}, error) {
 	return "SHOW MASTER STATUS", nil, nil
 }
 
-// ScanRow implements dbr.Scanner interface
-func (ms *MasterStatus) ScanRow(_ int64, _ []string, scan func(...interface{}) error) error {
+// RowScan implements dbr.Scanner interface to scan a row returned from database
+// query.
+func (ms *MasterStatus) RowScan(_ int64, _ []string, scan func(...interface{}) error) error {
 	return errors.WithStack(
 		scan(&ms.File, &ms.Position, &ms.BinlogDoDB, &ms.BinlogIgnoreDB, &ms.ExecutedGTIDSet),
 	)

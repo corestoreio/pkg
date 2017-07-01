@@ -17,7 +17,6 @@ package csdb
 import (
 	"context"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -43,17 +42,12 @@ type TableOption struct {
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
 	// Schema represents the name of the database. Might be empty.
-	Schema string
-	mu     sync.RWMutex
-	// ts uses int as the table index.
-	// What is the reason to use int as the table index and not a name? Because
-	// table names between M1 and M2 get renamed and in a Go SQL code generator
-	// script of the CoreStore project, we can guarantee that the generated
-	// index constant will always stay the same but the name of the table
-	// differs.
-	ts map[int]*Table
-	// tn for faster access we use tn and also because ts might get removed
-	// tn map[string]*Table
+	Schema        string
+	dto           Column // used in ScanArgs
+	previousTable string // the table which has been scanned beforehand
+	mu            sync.RWMutex
+	// tm a map where key = table name and value the table pointer
+	tm map[string]*Table
 }
 
 // WithTableOrViewFromQuery creates the new view or table from the SELECT query and
@@ -64,7 +58,7 @@ type Tables struct {
 func WithTableOrViewFromQuery(ctx context.Context, db interface {
 	dbr.Execer
 	dbr.Querier
-}, typ string, idx int, objectName string, query string, dropIfExists ...bool) TableOption {
+}, typ string, objectName string, query string, dropIfExists ...bool) TableOption {
 	return TableOption{
 		priority: 10,
 		fn: func(tm *Tables) error {
@@ -100,13 +94,13 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 				return errors.Wrapf(err, "[csdb] Load columns failed for %q", objectName)
 			}
 
-			if err := WithTable(idx, objectName, tc[objectName]...).fn(tm); err != nil {
+			if err := WithTable(objectName, tc[objectName]...).fn(tm); err != nil {
 				return errors.Wrapf(err, "[csdb] Failed to add new table %q", objectName)
 			}
 
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
-			tm.ts[idx].IsView = viewOrTable == "VIEW"
+			tm.tm[objectName].IsView = viewOrTable == "VIEW"
 
 			return nil
 		},
@@ -119,14 +113,14 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 // and in a Go SQL code generator script of the CoreStore project, we can
 // guarantee that the generated index constant will always stay the same but the
 // name of the table differs.
-func WithTable(idx int, tableName string, cols ...*Column) TableOption {
+func WithTable(tableName string, cols ...*Column) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
 			if err := IsValidIdentifier(tableName); err != nil {
 				return errors.Wrap(err, "[csdb] WithNewTable.IsValidIdentifier")
 			}
 
-			if err := tm.Upsert(idx, NewTable(tableName, cols...)); err != nil {
+			if err := tm.Upsert(NewTable(tableName, cols...)); err != nil {
 				return errors.Wrap(err, "[csdb] WithNewTable.Tables.Insert")
 			}
 			return nil
@@ -140,21 +134,28 @@ func WithTable(idx int, tableName string, cols ...*Column) TableOption {
 // generator script of the CoreStore project, we can guarantee that the
 // generated index constant will always stay the same but the name of the table
 // differs.
-func WithTableLoadColumns(ctx context.Context, db dbr.Querier, idx int, tableName string) TableOption {
+func WithTableLoadColumns(ctx context.Context, db dbr.Querier, tableNames ...string) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
-			if err := IsValidIdentifier(tableName); err != nil {
+
+			if err := IsValidIdentifier(tableNames...); err != nil {
 				return errors.Wrap(err, "[csdb] WithTableLoadColumns.IsValidIdentifier")
 			}
 
-			t := NewTable(tableName)
-			t.Schema = tm.Schema
-			if err := t.LoadColumns(ctx, db); err != nil {
-				return errors.Wrap(err, "[csdb] WithTableLoadColumns.LoadColumns")
+			tc, err := LoadColumns(ctx, db, tableNames...)
+			if err != nil {
+				return errors.Wrap(err, "[csdb] Load columns failed")
 			}
 
-			if err := tm.Upsert(idx, t); err != nil {
-				return errors.Wrap(err, "[csdb] Tables.Insert")
+			for _, tableName := range tableNames {
+
+				t := NewTable(tableName)
+				t.Schema = tm.Schema
+
+				t.Columns = tc[tableName]
+				if err := tm.Upsert(t); err != nil {
+					return errors.Wrapf(err, "[csdb] Tables.Insert for %q", tableName)
+				}
 			}
 			return nil
 		},
@@ -164,19 +165,15 @@ func WithTableLoadColumns(ctx context.Context, db dbr.Querier, idx int, tableNam
 // WithTableNames creates for each table name and its index a new table pointer.
 // You should call afterwards the functional option WithLoadColumnDefinitions.
 // This function returns an error if a table index already exists.
-func WithTableNames(idx []int, tableName []string) TableOption {
+func WithTableNames(tableName ...string) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
-			if len(idx) != len(tableName) {
-				return errors.NewNotValidf("[csdb] Length of the index must be equal to the length of the table names: %d != %d", len(idx), len(tableName))
-			}
-
 			if err := IsValidIdentifier(tableName...); err != nil {
 				return errors.Wrap(err, "[csdb] WithTable.IsValidIdentifier")
 			}
 
-			for i, tn := range tableName {
-				if err := tm.Upsert(idx[i], NewTable(tn)); err != nil {
+			for _, tn := range tableName {
+				if err := tm.Upsert(NewTable(tn)); err != nil {
 					return errors.Wrapf(err, "[csdb] Tables.Insert %q", tn)
 				}
 			}
@@ -185,88 +182,22 @@ func WithTableNames(idx []int, tableName []string) TableOption {
 	}
 }
 
-// WithLoadTableNames executes a query to load all available tables in the
-// current database. Argument sql will be either appended to the SHOW TABLES
-// statement or if it starts with SELECT then it replaces the SHOW TABLES
-// statement.
-func WithLoadTableNames(querier dbr.Querier, sql ...string) TableOption { // TODO use dbr.Select
-	qry := "SHOW TABLES"
-	if len(sql) > 0 && sql[0] != "" {
-		if !dbr.Stmt.IsSelect(sql[0]) {
-			qry = qry + " LIKE '" + strings.Replace(sql[0], "'", "", -1) + "'"
-		} else {
-			qry = sql[0]
-		}
-	}
-	return TableOption{
-		fn: func(tm *Tables) error {
-			rows, err := querier.QueryContext(context.Background(), qry)
-			if err != nil {
-				return errors.Wrapf(err, "[csdb] Query %q failed", qry)
-			}
-			var tableName string
-
-			i := 0
-			for rows.Next() {
-				if err = rows.Scan(&tableName); err != nil {
-					return errors.Wrapf(err, "Scan Query %q", qry)
-				}
-				if err = tm.Upsert(i, NewTable(tableName)); err != nil {
-					return errors.Wrapf(err, "[csdb] Tables.Insert Index %d with name %q", i, tableName)
-				}
-				i++
-			}
-
-			if err = rows.Err(); err != nil {
-				return errors.Wrapf(err, "[csdb] Rows with query %q", qry)
-			}
-			return nil
-		},
-	}
-}
-
-// WithLoadColumnDefinitions loads the column definitions from the database for each
-// table in the internal map. Thread safe.
-func WithLoadColumnDefinitions(ctx context.Context, db dbr.Querier) TableOption {
-	return TableOption{
-		priority: 255, // must be the last element
-		fn: func(tm *Tables) error {
-
-			tc, err := LoadColumns(ctx, db, tm.Tables()...)
-			if err != nil {
-				return errors.Wrap(err, "[csdb] table.LoadColumns")
-			}
-
-			tm.mu.Lock()
-			defer tm.mu.Unlock()
-			for _, t := range tm.ts {
-				if c, ok := tc[t.Name]; ok {
-					t.Columns = c
-					t.update()
-				}
-			}
-
-			return nil
-		},
-	}
-}
-
 // WithTableDMLListeners adds event listeners to a table object. It doesn't
 // matter if the table has already been set. If the table object gets set later,
 // the events will be copied to the new object.
-func WithTableDMLListeners(idx int, events ...*dbr.ListenerBucket) TableOption {
+func WithTableDMLListeners(tableName string, events ...*dbr.ListenerBucket) TableOption {
 	return TableOption{
 		priority: 254,
 		fn: func(tm *Tables) error {
 			tm.mu.Lock()
 			defer tm.mu.Unlock()
 
-			t, ok := tm.ts[idx]
+			t, ok := tm.tm[tableName]
 			if !ok {
-				return errors.NewNotFoundf("[csdb] Table at index %d not found", idx)
+				return errors.NewNotFoundf("[csdb] Table %q not found", tableName)
 			}
 			t.Listeners.Merge(events...)
-			tm.ts[idx] = t
+			tm.tm[tableName] = t
 
 			return nil
 		},
@@ -276,7 +207,7 @@ func WithTableDMLListeners(idx int, events ...*dbr.ListenerBucket) TableOption {
 // NewTables creates a new TableService satisfying interface Manager.
 func NewTables(opts ...TableOption) (*Tables, error) {
 	tm := &Tables{
-		ts: make(map[int]*Table),
+		tm: make(map[string]*Table),
 	}
 	if err := tm.Options(opts...); err != nil {
 		return nil, errors.Wrap(err, "[csdb] NewTables applied option error")
@@ -339,82 +270,57 @@ func (tm *Tables) Options(opts ...TableOption) error {
 // between M1 and M2 get renamed and in a Go SQL code generator script of the
 // CoreStore project, we can guarantee that the generated index constant will
 // always stay the same but the name of the table differs.
-func (tm *Tables) Table(i int) (*Table, error) {
+func (tm *Tables) Table(name string) (*Table, error) {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-	if t, ok := tm.ts[i]; ok {
+	if t, ok := tm.tm[name]; ok {
 		return t, nil
-	}
-	return nil, errors.NewNotFoundf("[csdb] Table at index %d not found.", i)
-}
-
-// TableByName returns a table object via its table name. Case sensitive.
-func (tm *Tables) TableByName(name string) (*Table, error) {
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-	for _, t := range tm.ts {
-		if t.Name == name {
-			return t, nil
-		}
 	}
 	return nil, errors.NewNotFoundf("[csdb] Table %q not found.", name)
 }
 
-// Tables returns a list of all available table names.
-func (tm *Tables) Tables() []string {
-	// todo maybe use internal cache
-	tm.mu.RLock()
-	defer tm.mu.RUnlock()
-
-	ts := make([]string, 0, len(tm.ts))
-	for _, table := range tm.ts {
-		ts = append(ts, table.Name)
-	}
-	return ts
-}
-
 // MustTable same as Table function but panics when the table cannot be found or
 // any other error occurs.
-func (tm *Tables) MustTable(i int) *Table {
-	t, err := tm.Table(i)
+func (tm *Tables) MustTable(name string) *Table {
+	t, err := tm.Table(name)
 	if err != nil {
 		panic(err)
 	}
 	return t
 }
 
-// Name is a short hand to return a table name by given index i. Does not return
-// an error when the table can't be found but returns an empty string.
-func (tm *Tables) Name(i int) string {
+// Tables returns a list of all available table names, unsorted.
+func (tm *Tables) Tables() []string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-	if ts, ok := tm.ts[i]; ok && ts != nil {
-		return ts.Name
+
+	ts := make([]string, 0, len(tm.tm))
+	for tn := range tm.tm {
+		ts = append(ts, tn)
 	}
-	return ""
+	return ts
 }
 
 // Len returns the number of all tables.
 func (tm *Tables) Len() int {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
-	return len(tm.ts)
+	return len(tm.tm)
 }
 
 // Upsert adds or updates a new table into the internal cache. If a table
 // already exists, then the new table gets applied. The ListenerBuckets gets
 // merged from the existing table to the new table, they will be appended to the
-// new table buckets. Empty fields in the new table gets updated from the
+// new table buckets. Empty columns in the new table gets updated from the
 // existing table.
-func (tm *Tables) Upsert(i int, tNew *Table) error {
-	_ = tNew.Name // let it panic as early as possible if *Table is nil
+func (tm *Tables) Upsert(tNew *Table) error {
 
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 
-	tOld, ok := tm.ts[i]
+	tOld, ok := tm.tm[tNew.Name]
 	if tOld == nil || !ok {
-		tm.ts[i] = tNew
+		tm.tm[tNew.Name] = tNew
 		return nil
 	}
 
@@ -431,17 +337,17 @@ func (tm *Tables) Upsert(i int, tNew *Table) error {
 		tNew.Columns = tOld.Columns
 	}
 
-	tm.ts[i] = tNew.update()
+	tm.tm[tNew.Name] = tNew.update()
 	return nil
 }
 
 // DeleteFromCache removes tables by their given indexes. If no index has been passed
 // then all entries get removed and the map reinitialized.
-func (tm *Tables) DeleteFromCache(idxs ...int) {
+func (tm *Tables) DeleteFromCache(tableNames ...string) {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
-	for _, idx := range idxs {
-		delete(tm.ts, idx)
+	for _, tn := range tableNames {
+		delete(tm.tm, tn)
 	}
 }
 
@@ -450,5 +356,67 @@ func (tm *Tables) DeleteAllFromCache() {
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
 	// maybe clear each pointer in the Table struct to avoid a memory leak
-	tm.ts = make(map[int]*Table)
+	tm.tm = make(map[string]*Table)
+}
+
+// RowScan scans a row from a database. It creates automatically a new Table
+// object for non-existing ones. Existing tables gets reset their columns slice
+// and it refreshes them.
+func (tm *Tables) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
+	if idx == 0 {
+		tm.mu.Lock()
+	}
+
+	var tableName string
+	if err := scan(
+		&tableName,
+		&tm.dto.Field, &tm.dto.Pos, &tm.dto.Default, &tm.dto.Null,
+		&tm.dto.DataType, &tm.dto.CharMaxLength, &tm.dto.Precision, &tm.dto.Scale,
+		&tm.dto.ColumnType, &tm.dto.Key, &tm.dto.Extra, &tm.dto.Comment,
+	); err != nil {
+		return errors.Wrapf(err, "[csdb] Tables.RowScan. Columns %v\n", columns)
+	}
+
+	t, ok := tm.tm[tableName]
+	if !ok {
+		t = NewTable(tableName)
+		tm.tm[tableName] = t
+	}
+
+	if tm.previousTable != tableName {
+		tm.previousTable = tableName
+		t.resetColumns()
+	}
+
+	c := tm.dto
+	t.Columns = append(t.Columns, &c)
+	return nil
+}
+
+// RowClose implements dbr.RowCloser interface used in dbr.Load. It unlocks the
+// internal mutex.
+func (tm *Tables) RowClose() error {
+	tm.mu.Unlock()
+	return nil
+}
+
+// ToSQL returns the SQL string for loading the column definitions of either all
+// tables or of the already created Table objects.
+func (tm *Tables) ToSQL() (string, []interface{}, error) {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
+
+	query := selAllTablesColumns
+	var arg dbr.Argument
+	if ltm := len(tm.tm); ltm > 0 {
+		query = selTablesColumns
+		tables := make([]string, 0, ltm)
+		for name := range tm.tm {
+			tables = append(tables, name)
+		}
+		arg = dbr.In.Str(tables...)
+	}
+
+	sql, err := dbr.Interpolate(query, arg)
+	return sql, nil, errors.Wrap(err, "[csdb] Tables.ToSQL.Interpolate")
 }

@@ -51,13 +51,7 @@ func TestShowMasterStatus(t *testing.T) {
 	t.Parallel()
 
 	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
-		}
-	}()
+	defer cstesting.MockClose(t, dbc, dbMock)
 
 	var mockedRows = sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 		FromCSVString("mysql-bin.000001,3581378,test,mysql,123-456-789")
@@ -65,7 +59,7 @@ func TestShowMasterStatus(t *testing.T) {
 	dbMock.ExpectQuery("SHOW MASTER STATUS").WillReturnRows(mockedRows)
 
 	v := new(csdb.MasterStatus)
-	err := v.Load(context.TODO(), dbc.DB)
+	_, err := dbr.Load(context.TODO(), dbc.DB, v, v)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

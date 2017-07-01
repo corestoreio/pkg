@@ -35,22 +35,17 @@ type Table struct {
 	Name string
 	// Columns all table columns
 	Columns Columns
-	// CountPK number of primary keys. Auto updated.
-	CountPK int
-	// CountUnique number of unique keys. Auto updated.
-	CountUnique int
 	// Listeners specific pre defined listeners which gets dispatches to each
 	// DML statement (SELECT, INSERT, UPDATE or DELETE).
 	Listeners dbr.ListenerBucket
 	// IsView set to true to mark if the table is a view
 	IsView bool
-	// internal caches
-	fieldsPK  []string // all PK column field
-	fieldsUNI []string // all unique key column field
-	fields    []string // all other non-pk column field
 
 	// selectAllCache no quite sure about this one .... maybe remove it
 	selectAllCache *dbr.Select
+
+	// data transfer object while scanning
+	dto Column
 }
 
 // NewTable initializes a new table structure
@@ -62,76 +57,67 @@ func NewTable(tableName string, cs ...*Column) *Table {
 	return ts.update()
 }
 
-// update recalculates the internal cached fields
+// update recalculates the internal cached columns
 func (t *Table) update() *Table {
 	if len(t.Columns) == 0 {
 		return t
 	}
-	t.fieldsPK = t.Columns.PrimaryKeys().FieldNames()
-	t.fieldsUNI = t.Columns.UniqueKeys().FieldNames()
-	t.fields = t.Columns.ColumnsNoPK().FieldNames()
-	t.CountPK = t.Columns.PrimaryKeys().Len()
-	t.CountUnique = t.Columns.UniqueKeys().Len()
 
 	t.selectAllCache = &dbr.Select{
-		// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
-		Table: dbr.MakeNameAlias(t.Name, MainTable),
+	// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
+	//Table: dbr.MakeNameAlias(t.Name, MainTable),
 	}
 
 	return t
 }
 
-// LoadColumns reads the column information from the DB.
-func (t *Table) LoadColumns(ctx context.Context, db dbr.Querier) error {
-	tc, err := LoadColumns(ctx, db, t.Name)
-	if err != nil {
-		return errors.Wrapf(err, "[csdb] table.LoadColumns. Table %q", t.Name)
+func (t *Table) resetColumns() {
+	if cap(t.Columns) == 0 {
+		t.Columns = make(Columns, 0, 10)
 	}
-	t.Columns = tc[t.Name]
+	for i := range t.Columns {
+		// Pointer must be nilled to remove a reference and avoid a memory
+		// leak, AFAIK.
+		t.Columns[i] = nil
+	}
+	t.Columns = t.Columns[:0]
+}
+
+// RowScan implements dbr.Scanner interface
+func (t *Table) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
+	if idx == 0 {
+		t.resetColumns()
+	}
+	var tableName string
+	if err := scan(
+		&tableName,
+		&t.dto.Field, &t.dto.Pos, &t.dto.Default, &t.dto.Null,
+		&t.dto.DataType, &t.dto.CharMaxLength, &t.dto.Precision, &t.dto.Scale,
+		&t.dto.ColumnType, &t.dto.Key, &t.dto.Extra, &t.dto.Comment,
+	); err != nil {
+		return errors.Wrapf(err, "[csdb] Table.RowScan. Table %q Columns %v\n", t.Name, columns)
+	}
+
+	if t.Name == "" {
+		t.Name = tableName
+	}
+
+	c := t.dto // copy DTO into a new variable
+	t.Columns = append(t.Columns, &c)
+	return nil
+}
+
+func (t *Table) ScanClose() error {
 	t.update()
 	return nil
 }
 
-// TableAliasQuote returns a table name with the alias. catalog_product_entity
-// with alias e would become `catalog_product_entity` AS `e`.
-func (t *Table) TableAliasQuote(alias string) string {
-	if t.Schema != "" {
-		return dbr.Quoter.NameAlias(t.Schema+"."+t.Name, alias)
+func (t *Table) ToSQL() (string, []interface{}, error) {
+	sql, err := dbr.Interpolate(selTablesColumns, dbr.ArgString(t.Name))
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "[csdb] Table.ToSQL.Interpolate for table %q", t.Name)
 	}
-	return dbr.Quoter.NameAlias(t.Name, alias)
-}
-
-// ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around
-// them. Returns a copy.
-func (t *Table) ColumnAliasQuote(alias string) []string {
-	sl := make([]string, len(t.fields))
-	copy(sl, t.fields)
-	return dbr.Quoter.TableColumnAlias(alias, sl...)
-}
-
-// AllColumnAliasQuote prefixes all columns with an alias and puts quotes around
-// them. Returns a copy.
-func (t *Table) AllColumnAliasQuote(alias string) []string {
-	sl := make([]string, len(t.fieldsPK)+len(t.fields))
-	n := copy(sl, t.fieldsPK)
-	copy(sl[n:], t.fields)
-	return dbr.Quoter.TableColumnAlias(alias, sl...)
-}
-
-// ContainsColumn checks if column name n is a column of this table. Case
-// sensitive.
-func (t *Table) ContainsColumn(n string) bool {
-	for _, c := range t.fieldsPK {
-		if c == n {
-			return true
-		}
-	}
-	for _, c := range t.fields {
-		if c == n {
-			return true
-		}
-	}
-	return false
+	return sql, nil, nil
 }
 
 // Truncate truncates the tables. Removes all rows and sets the auto increment
@@ -220,7 +206,7 @@ func (t *Table) Load(ctx context.Context, db dbr.Querier, dest interface{}, list
 	return 0, nil
 }
 
-// InfileOptions provides options for the function LoadDataInfile. Some fields
+// InfileOptions provides options for the function LoadDataInfile. Some columns
 // are self-describing.
 type InfileOptions struct {
 	// IsNotLocal disables LOCAL load file. If LOCAL is specified, the file is read

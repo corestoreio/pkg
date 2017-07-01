@@ -15,9 +15,8 @@
 package csdb_test
 
 import (
-	"testing"
-
 	"context"
+	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -27,204 +26,123 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	table1 = iota // must start with 0 because of the for loops
-	table2
-	table3
-	table4
-	table5
-)
+var _ dbr.QueryBuilder = (*csdb.Table)(nil)
+var _ dbr.Scanner = (*csdb.Table)(nil)
 
 var tableMap *csdb.Tables
 
 func init() {
 	tableMap = csdb.MustNewTables(
 		csdb.WithTable(
-			table1,
 			"catalog_category_anc_categs_index_idx",
 			&csdb.Column{
-				Field:      ("category_id"),
-				ColumnType: ("int(10) unsigned"),
-				Key:        ("MUL"),
+				Field:      "category_id",
+				ColumnType: "int(10) unsigned",
+				Key:        "MUL",
 				Default:    dbr.MakeNullString("0"),
-				Extra:      (""),
+				Extra:      "",
 			},
 			&csdb.Column{
-				Field:      ("path"),
-				ColumnType: ("varchar(255)"),
+				Field:      "path",
+				ColumnType: "varchar(255)",
 				Null:       "YES",
-				Key:        ("MUL"),
-				Extra:      (""),
+				Key:        "MUL",
+				Extra:      "",
 			},
 		),
 		csdb.WithTable(
-			table2,
 			"catalog_category_anc_categs_index_tmp",
 			&csdb.Column{
-				Field:      ("category_id"),
-				ColumnType: ("int(10) unsigned"),
-				Key:        ("PRI"),
+				Field:      "category_id",
+				ColumnType: "int(10) unsigned",
+				Key:        "PRI",
 				Default:    dbr.MakeNullString("0"),
-				Extra:      (""),
+				Extra:      "",
 			},
 			&csdb.Column{
-				Field:      ("path"),
-				ColumnType: ("varchar(255)"),
+				Field:      "path",
+				ColumnType: "varchar(255)",
 				Null:       "YES",
-				Extra:      (""),
+				Extra:      "",
 			},
 		),
 	)
 
-	tableMap.Upsert(table3, csdb.NewTable(
+	tableMap.Upsert(csdb.NewTable(
 		"catalog_category_anc_products_index_idx",
 		&csdb.Column{
-			Field:      ("category_id"),
-			ColumnType: ("int(10) unsigned"),
+			Field:      "category_id",
+			ColumnType: "int(10) unsigned",
 			Default:    dbr.MakeNullString("0"),
-			Extra:      (""),
+			Extra:      "",
 		},
 		&csdb.Column{
-			Field:      ("product_id"),
-			ColumnType: ("int(10) unsigned"),
-			Key:        (""),
+			Field:      "product_id",
+			ColumnType: "int(10) unsigned",
+			Key:        "",
 			Default:    dbr.MakeNullString("0"),
-			Extra:      (""),
+			Extra:      "",
 		},
 		&csdb.Column{
-			Field:      ("position"),
-			ColumnType: ("int(10) unsigned"),
+			Field:      "position",
+			ColumnType: "int(10) unsigned",
 			Null:       "YES",
-			Key:        (""),
-			Extra:      (""),
+			Key:        "",
+			Extra:      "",
 		},
 	),
 	)
-	tableMap.Upsert(table4, csdb.NewTable(
+	tableMap.Upsert(csdb.NewTable(
 		"admin_user",
 		&csdb.Column{
-			Field:      ("user_id"),
-			ColumnType: ("int(10) unsigned"),
-			Key:        ("PRI"),
-			Extra:      ("auto_increment"),
+			Field:      "user_id",
+			ColumnType: "int(10) unsigned",
+			Key:        "PRI",
+			Extra:      "auto_increment",
 		},
 		&csdb.Column{
-			Field:      ("email"),
-			ColumnType: ("varchar(128)"),
+			Field:      "email",
+			ColumnType: "varchar(128)",
 			Null:       "YES",
-			Key:        (""),
-			Extra:      (""),
+			Key:        "",
+			Extra:      "",
 		},
 		&csdb.Column{
-			Field:      ("username"),
-			ColumnType: ("varchar(40)"),
+			Field:      "username",
+			ColumnType: "varchar(40)",
 			Null:       "YES",
-			Key:        ("UNI"),
-			Extra:      (""),
+			Key:        "UNI",
+			Extra:      "",
 		},
 	),
 	)
-}
-
-func mustStructure(i int) *csdb.Table {
-	st1, err := tableMap.Table(i)
-	if err != nil {
-		panic(err)
-	}
-	return st1
 }
 
 func TestTableStructure(t *testing.T) {
 	t.Parallel()
 
-	sValid, err := tableMap.Table(table1)
+	sValid, err := tableMap.Table("catalog_category_anc_categs_index_idx")
 	assert.NotNil(t, sValid)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "catalog_category_anc_categs_index_tmp", tableMap.Name(table2))
-	assert.Equal(t, "", tableMap.Name(table5))
+	assert.Equal(t, "catalog_category_anc_categs_index_tmp", tableMap.MustTable("catalog_category_anc_categs_index_tmp").Name)
 
-	sInvalid, err := tableMap.Table(table5)
+	sInvalid, err := tableMap.Table("not_found")
 	assert.Nil(t, sInvalid)
 	assert.Error(t, err)
-
-	//selectBuilder := sValid.Select()
-	//selectString, _, err := selectBuilder.ToSQL()
-	//assert.Equal(t, "SELECT `main_table`.`category_id`, `main_table`.`path` FROM `catalog_category_anc_categs_index_idx` AS `main_table`", selectString)
-	//assert.NoError(t, err)
-}
-
-func TestTableStructureTableAliasQuote(t *testing.T) {
-	t.Parallel()
-
-	want := map[string]string{
-		"catalog_category_anc_categs_index_idx":   "`catalog_category_anc_categs_index_idx` AS `alias`",
-		"catalog_category_anc_categs_index_tmp":   "`catalog_category_anc_categs_index_tmp` AS `alias`",
-		"catalog_category_anc_products_index_idx": "`catalog_category_anc_products_index_idx` AS `alias`",
-		"admin_user":                              "`admin_user` AS `alias`",
-	}
-	for i := 0; i < tableMap.Len(); i++ {
-		table, err := tableMap.Table(i)
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		have := table.TableAliasQuote("alias")
-		assert.EqualValues(t, want[table.Name], have, "Table %s", table.Name)
-	}
-}
-
-func TestTableStructureColumnAliasQuote(t *testing.T) {
-	t.Parallel()
-
-	want := map[string][]string{
-		"catalog_category_anc_categs_index_idx":   {"`alias`.`category_id`", "`alias`.`path`"},
-		"catalog_category_anc_categs_index_tmp":   {"`alias`.`path`"},
-		"catalog_category_anc_products_index_idx": {"`alias`.`category_id`", "`alias`.`product_id`", "`alias`.`position`"},
-		"admin_user":                              {"`alias`.`email`", "`alias`.`username`"},
-	}
-	for i := 0; i < tableMap.Len(); i++ {
-		table, err := tableMap.Table(i)
-		if err != nil {
-			t.Error(err)
-		}
-		have := table.ColumnAliasQuote("alias")
-		assert.EqualValues(t, want[table.Name], have, "Table %s", table.Name)
-	}
-}
-
-func TestTableStructureAllColumnAliasQuote(t *testing.T) {
-	t.Parallel()
-
-	want := map[string][]string{
-		"catalog_category_anc_categs_index_idx":   {"`alias`.`category_id`", "`alias`.`path`"},
-		"catalog_category_anc_categs_index_tmp":   {"`alias`.`category_id`", "`alias`.`path`"},
-		"catalog_category_anc_products_index_idx": {"`alias`.`category_id`", "`alias`.`product_id`", "`alias`.`position`"},
-		"admin_user":                              {"`alias`.`user_id`", "`alias`.`email`", "`alias`.`username`"},
-	}
-	for i := 0; i < tableMap.Len(); i++ {
-		table, err := tableMap.Table(i)
-		if err != nil {
-			t.Error(err)
-		}
-		have := table.AllColumnAliasQuote("alias")
-		assert.EqualValues(t, want[table.Name], have, "Table %s", table.Name)
-	}
 }
 
 func TestTableStructureIn(t *testing.T) {
 	t.Parallel()
+
 	want := map[string]bool{
 		"catalog_category_anc_categs_index_idx":   true,
 		"catalog_category_anc_categs_index_tmp":   true,
 		"catalog_category_anc_products_index_idx": false,
 	}
-	for i := 0; i < tableMap.Len(); i++ {
-		table, err := tableMap.Table(i)
-		if err != nil {
-			t.Error(err)
-		}
-		have := table.ContainsColumn("path")
-		assert.EqualValues(t, want[table.Name], have, "Table %s", table.Name)
+	for tn, wantRes := range want {
+		table := tableMap.MustTable(tn)
+		assert.Exactly(t, wantRes, table.Columns.Contains("path"), "Table %s", table.Name)
 	}
 
 	want2 := map[string]bool{
@@ -232,13 +150,9 @@ func TestTableStructureIn(t *testing.T) {
 		"catalog_category_anc_categs_index_tmp":   true,
 		"catalog_category_anc_products_index_idx": true,
 	}
-	for i := 0; i < tableMap.Len(); i++ {
-		table, err := tableMap.Table(i)
-		if err != nil {
-			t.Error(err)
-		}
-		have := table.ContainsColumn("category_id")
-		assert.EqualValues(t, want2[table.Name], have, "Table %s", table.Name)
+	for tn, wantRes := range want2 {
+		table := tableMap.MustTable(tn)
+		assert.Exactly(t, wantRes, table.Columns.Contains("category_id"), "Table %s", table.Name)
 	}
 }
 
@@ -247,16 +161,10 @@ func TestTable_Truncate(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec("TRUNCATE TABLE `catalog_category_anc_categs_index_tmp`").WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Truncate(context.TODO(), dbc.DB)
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Truncate(context.TODO(), dbc.DB)
 		assert.NoError(t, err, "%+v", err)
 	})
 
@@ -272,17 +180,11 @@ func TestTable_Rename(t *testing.T) {
 	t.Parallel()
 	t.Run("ok", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Rename(context.TODO(), dbc.DB, "catalog_category_anc_categs")
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Rename(context.TODO(), dbc.DB, "catalog_category_anc_categs")
 		assert.NoError(t, err, "%+v", err)
 	})
 
@@ -299,17 +201,11 @@ func TestTable_Swap(t *testing.T) {
 
 	t.Run("ok", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec("RENAME TABLE `catalog_category_anc_categs_index_tmp` TO `catalog_category_anc_categs_index_tmp_[0-9]+`, `catalog_category_anc_categs_NEW` TO `catalog_category_anc_categs_index_tmp`,`catalog_category_anc_categs_index_tmp_[0-9]+` TO `catalog_category_anc_categs_NEW`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Swap(context.TODO(), dbc.DB, "catalog_category_anc_categs_NEW")
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Swap(context.TODO(), dbc.DB, "catalog_category_anc_categs_NEW")
 		assert.NoError(t, err, "%+v", err)
 	})
 
@@ -325,17 +221,11 @@ func TestTable_Drop(t *testing.T) {
 	t.Parallel()
 	t.Run("ok", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec("DROP TABLE IF EXISTS `catalog_category_anc_categs_index_tmp`").
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table2).Drop(context.TODO(), dbc.DB)
+		err := tableMap.MustTable("catalog_category_anc_categs_index_tmp").Drop(context.TODO(), dbc.DB)
 		assert.NoError(t, err, "%+v", err)
 	})
 	t.Run("Invalid table Name", func(t *testing.T) {
@@ -351,34 +241,22 @@ func TestTable_LoadDataInfile(t *testing.T) {
 
 	t.Run("default options", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' INTO TABLE `admin_user` (user_id,email,username) ;")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		err := tableMap.MustTable(table4).LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{})
+		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{})
 		assert.NoError(t, err, "%+v", err)
 	})
 
 	t.Run("all options", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' REPLACE  INTO TABLE `admin_user` FIELDS TERMINATED BY '|' OPTIONALLY  ENCLOSED BY '+' ESCAPED BY '\"'\n LINES  TERMINATED BY '\r\n' STARTING BY '###'\nIGNORE 1 LINES\n (user_id,@email,@username)\nSET username=UPPER(@username),\nemail=UPPER(@email);")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable(table4).LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{
+		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{
 			Replace:                    true,
 			FieldsTerminatedBy:         "|",
 			FieldsOptionallyEnclosedBy: true,

@@ -44,8 +44,8 @@ type ResurrectStmt struct {
 	// DB contains for now only the prepare() function for a new statement
 	// may be extended in the far future.
 	db dbr.Preparer
-	// sqlRaw is any prepareable SQL command, use ? for argument placeholders
-	sqlRaw string
+	// qb is any prepareable SQL command, use ? for argument placeholders
+	qb dbr.QueryBuilder
 	// Idle defines the duration how to wait until no query will be executed.
 	Idle time.Duration
 	// Log default logger is PkgLof
@@ -63,13 +63,13 @@ type ResurrectStmt struct {
 // NewResurrectStmt creates a new resurrected statement via a DB connection
 // to prepare the stmt and a SQL query string. Default idle time is defined
 // in DefaultResurrectStmtIdleTime. Default logger: PkgLog.
-func NewResurrectStmt(p dbr.Preparer, SQL string) *ResurrectStmt {
+func NewResurrectStmt(p dbr.Preparer, qb dbr.QueryBuilder) *ResurrectStmt {
 	// the overall question here is if the Stmt() function should
 	// return an error once the ticker has been stopped or is not running.
 
 	return &ResurrectStmt{
 		db:     p,
-		sqlRaw: SQL,
+		qb:     qb,
 		Idle:   DefaultResurrectStmtIdleTime,
 		Log:    log.BlackHole{},
 		stop:   make(chan struct{}),
@@ -115,7 +115,8 @@ func (su *ResurrectStmt) close() error {
 	}()
 
 	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", log.String("SQL", su.sqlRaw))
+		sqlStr, _, err := su.qb.ToSQL()
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", log.String("SQL", sqlStr), log.ErrWithKey("ToSQL", err))
 	}
 	if su.stmt == nil {
 		// statement has not been opened or is unused.
@@ -138,7 +139,8 @@ func (su *ResurrectStmt) checkIdle() {
 				// stmt has not been used within the last x seconds.
 				// so close the stmt and release the resources in the DB.
 				if err := su.close(); err != nil {
-					su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", log.Err(err), log.String("SQL", su.sqlRaw))
+					sqlStr, _, err := su.qb.ToSQL()
+					su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", log.Err(err), log.String("SQL", sqlStr), log.ErrWithKey("ToSQL", err))
 				}
 			}
 		case <-su.stop:
@@ -163,14 +165,17 @@ func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 	if !su.closed {
 		return su.stmt, nil
 	}
-
-	var err error
-	su.stmt, err = su.db.PrepareContext(context.Background(), su.sqlRaw)
+	sqlStr, _, err := su.qb.ToSQL()
 	if err != nil {
-		return nil, errors.Wrapf(err, "[csdb] DB.Prepare %q", su.sqlRaw)
+		return nil, errors.Wrapf(err, "[csdb] DB.Prepare.ToSQL %q", sqlStr)
+	}
+
+	su.stmt, err = su.db.PrepareContext(context.Background(), sqlStr)
+	if err != nil {
+		return nil, errors.Wrapf(err, "[csdb] DB.PrepareContext. %q", sqlStr)
 	}
 	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", log.String("SQL", su.sqlRaw))
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", log.String("SQL", sqlStr))
 	}
 	su.closed = false
 	return su.stmt, nil

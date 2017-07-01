@@ -75,7 +75,7 @@ const selTablesColumns = `SELECT
 	TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE,
 		DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE,
 		COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT	
-	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ?
+	 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN (?)
 	 ORDER BY TABLE_NAME, ORDINAL_POSITION`
 
 const selAllTablesColumns = `SELECT
@@ -99,13 +99,13 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
 		}
 	} else {
-		sqlStr, args, err := dbr.Repeat(selTablesColumns, dbr.In.Str(tables...))
+		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.In.Str(tables...))
 		if err != nil {
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
 		}
-		rows, err = db.QueryContext(ctx, sqlStr, args...)
+		rows, err = db.QueryContext(ctx, sqlStr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
+			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v with WHERE clause", tables)
 		}
 	}
 	defer rows.Close()
@@ -171,14 +171,15 @@ func (cs Columns) Hash() ([]byte, error) {
 	return f64.Sum(buf.Bytes()), nil
 }
 
-// Filter returns a new slice filtered by predicate f
-func (cs Columns) Filter(f func(*Column) bool) (cols Columns) {
+// Filter filters the columns by predicate f and appends the column pointers to
+// the optional argument `cols`.
+func (cs Columns) Filter(f func(*Column) bool, cols ...*Column) Columns {
 	for _, c := range cs {
 		if f(c) {
 			cols = append(cols, c)
 		}
 	}
-	return
+	return cols
 }
 
 // Map will run function f on all items in Columns and returns a copy of the
@@ -196,34 +197,41 @@ func (cs Columns) Map(f func(*Column) *Column) Columns {
 }
 
 // FieldNames returns all column names
-func (cs Columns) FieldNames() (fieldNames []string) {
+func (cs Columns) FieldNames() []string {
+	fieldNames := make([]string, 0, len(cs))
 	for _, c := range cs {
 		if c.Field != "" {
 			fieldNames = append(fieldNames, c.Field)
 		}
 	}
-	return
+	return fieldNames
+}
+
+func colIsPK(c *Column) bool {
+	return c.IsPK()
 }
 
 // PrimaryKeys returns all primary key columns
 func (cs Columns) PrimaryKeys() Columns {
-	return cs.Filter(func(c *Column) bool {
-		return c.IsPK()
-	})
+	return cs.Filter(colIsPK)
+}
+
+func colIsUnique(c *Column) bool {
+	return c.IsUnique()
 }
 
 // UniqueKeys returns all unique key columns
 func (cs Columns) UniqueKeys() Columns {
-	return cs.Filter(func(c *Column) bool {
-		return c.IsUnique()
-	})
+	return cs.Filter(colIsUnique)
+}
+
+func colIsNotPK(c *Column) bool {
+	return !c.IsPK()
 }
 
 // ColumnsNoPK returns all non primary key columns
 func (cs Columns) ColumnsNoPK() Columns {
-	return cs.Filter(func(c *Column) bool {
-		return !c.IsPK()
-	})
+	return cs.Filter(colIsNotPK)
 }
 
 // Len returns the length
@@ -236,6 +244,16 @@ func (cs Columns) Less(i, j int) bool { return cs[i].Pos < cs[j].Pos }
 
 // Swap changes the position
 func (cs Columns) Swap(i, j int) { cs[i], cs[j] = cs[j], cs[i] }
+
+// Contains returns true if fieldName is contained in slice Columns.
+func (cs Columns) Contains(fieldName string) bool {
+	for _, c := range cs {
+		if c.Field == fieldName {
+			return true
+		}
+	}
+	return false
+}
 
 // ByField finds a column by its field name. Case sensitive. Guaranteed to
 // return a non-nil return value.
@@ -302,7 +320,7 @@ func (c *Column) GoComment() string {
 
 // GoString returns the Go types representation. See interface fmt.GoStringer
 func (c *Column) GoString() string {
-	// fix tests if you change this layout of the returned string or rename fields.
+	// fix tests if you change this layout of the returned string or rename columns.
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 

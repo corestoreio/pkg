@@ -37,8 +37,14 @@ type typeWriter struct {
 	Write *csdb.ResurrectStmt
 }
 
+var (
+	sqlStmtInsert         = dbr.NewInsert("xtable").AddColumns("path", "value").SetRowCount(1)
+	expectedInsertPrepare = cstesting.SQLMockQuoteMeta("INSERT INTO `xtable` (`path`,`value`) VALUES (?,?)")
+	sqlStmtReplace        = dbr.NewInsert("core_config_data").Replace().AddColumns("path", "value").SetRowCount(1)
+)
+
 func newTypeWriterMocked(db *sql.DB, l log.Logger) *typeWriter {
-	rs := csdb.NewResurrectStmt(db, "INSERT INTO `xtable` (`path`,`value`) VALUES (?,?)")
+	rs := csdb.NewResurrectStmt(db, sqlStmtInsert)
 	rs.Log = l
 	tw := &typeWriter{
 		Write: rs,
@@ -48,7 +54,7 @@ func newTypeWriterMocked(db *sql.DB, l log.Logger) *typeWriter {
 }
 
 func newTypeWriterReal(db *sql.DB, l log.Logger) *typeWriter {
-	rs := csdb.NewResurrectStmt(db, "REPLACE INTO `core_config_data` (`path`,`value`) VALUES (?,?)")
+	rs := csdb.NewResurrectStmt(db, sqlStmtReplace)
 	rs.Log = l
 	tw := &typeWriter{
 		Write: rs,
@@ -93,7 +99,7 @@ func TestResurrectStmtSqlMockNoTicker(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectPrepare("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
+	mock.ExpectPrepare(expectedInsertPrepare).
 		ExpectExec().WithArgs("gopher", 3141).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	tw := newTypeWriterMocked(db, log.BlackHole{true, true})
@@ -103,7 +109,7 @@ func TestResurrectStmtSqlMockNoTicker(t *testing.T) {
 
 	assert.NoError(t, tw.Write.StopIdleChecker())
 
-	mock.ExpectPrepare("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
+	mock.ExpectPrepare(expectedInsertPrepare).
 		ExpectExec().WithArgs("gopher", 3144).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	assert.NoError(t, tw.Save("gopher", 3144))
@@ -122,7 +128,7 @@ func TestResurrectStmtSqlMockShouldPrepareOnceAndThenBecomeIdle(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectPrepare("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
+	mock.ExpectPrepare(expectedInsertPrepare).
 		ExpectExec().WithArgs("gopher", 3141).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	tw := newTypeWriterMocked(db, log.BlackHole{true, true})
@@ -151,7 +157,7 @@ func TestResurrectStmtSqlMockShouldPrepareTwoTimesWithThreeCalls(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectPrepare("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
+	mock.ExpectPrepare(expectedInsertPrepare).
 		ExpectExec().
 		WithArgs("gopher", 3141).
 		WillReturnResult(sqlmock.NewResult(1, 0))
@@ -163,7 +169,7 @@ func TestResurrectStmtSqlMockShouldPrepareTwoTimesWithThreeCalls(t *testing.T) {
 	assert.False(t, tw.Write.IsIdle())
 
 	mock.
-		ExpectExec("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
+		ExpectExec(expectedInsertPrepare).
 		WithArgs("gopher", 3142).
 		WillReturnResult(sqlmock.NewResult(1, 0))
 
@@ -174,7 +180,7 @@ func TestResurrectStmtSqlMockShouldPrepareTwoTimesWithThreeCalls(t *testing.T) {
 	assert.True(t, tw.Write.IsIdle())
 	assert.NoError(t, tw.Write.StopIdleChecker())
 
-	mock.ExpectPrepare("INSERT INTO `xtable` \\(`path`,`value`\\) VALUES .+").
+	mock.ExpectPrepare(expectedInsertPrepare).
 		ExpectExec().
 		WithArgs("gopher", 271828).
 		WillReturnResult(sqlmock.NewResult(1, 0))
@@ -204,10 +210,7 @@ func TestResurrectStmtRealDB(t *testing.T) {
 		t.Skip("Skipping because no DSN found.")
 	}
 
-	dbc, _ := cstesting.MustConnectDB()
-	if dbc == nil {
-		t.Skip("Environment DB DSN not found")
-	}
+	dbc := cstesting.MustConnectDB(t)
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
 	tw := newTypeWriterReal(dbc.DB, l)

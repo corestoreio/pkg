@@ -15,17 +15,18 @@
 package csdb
 
 import (
-	"encoding/json"
-	"sort"
+	"context"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ sort.Interface = (*Variables)(nil)
+var _ dbr.Scanner = (*Variables)(nil)
+var _ dbr.QueryBuilder = (*Variables)(nil)
 
 func TestIsValidVarName(t *testing.T) {
 	t.Parallel()
@@ -55,108 +56,61 @@ func TestIsValidVarName(t *testing.T) {
 	}
 }
 
-func TestVariables_FindOne(t *testing.T) {
+func TestNewVariables_Integration(t *testing.T) {
 	t.Parallel()
-	vs := Variables{
-		&Variable{Name: "a", Value: "1"},
-		&Variable{Name: "b", Value: "2"},
-	}
-	assert.Exactly(t, "1", vs.FindOne("a").Value)
-	assert.Exactly(t, "2", vs.FindOne("b").Value)
-	assert.Exactly(t, "", vs.FindOne("c").Value)
-}
 
-func TestVariables_Sort(t *testing.T) {
-	t.Parallel()
-	vs := Variables{
-		&Variable{Name: "d", Value: "4"},
-		&Variable{Name: "a", Value: "1"},
-		&Variable{Name: "c", Value: "3"},
-		&Variable{Name: "b", Value: "2"},
-	}
-	sort.Stable(vs)
-	jb, err := json.Marshal(vs)
-	assert.NoError(t, err)
-	assert.Exactly(t, `[{"Name":"a","Value":"1"},{"Name":"b","Value":"2"},{"Name":"c","Value":"3"},{"Name":"d","Value":"4"}]`, string(jb))
-}
+	db := cstesting.MustConnectDB(t)
+	defer cstesting.Close(t, db)
 
-func TestVariable_LoadOne(t *testing.T) {
-	t.Parallel()
-	dbc, dbMock := cstesting.MockDB(t)
-	defer func() {
-		dbMock.ExpectClose()
-		assert.NoError(t, dbc.Close())
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			t.Error("there were unfulfilled expections", err)
-		}
-	}()
-
-	var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
-		FromCSVString("keyVal01,helloWorld")
-
-	dbMock.ExpectQuery("SHOW SESSION VARIABLES LIKE 'keyVal01'").
-		WillReturnRows(mockedRows)
-
-	v := &Variable{}
-	err := v.LoadOne(dbc.DB, "keyVal01")
+	vs := NewVariables()
+	_, err := dbr.Load(context.TODO(), db.DB, vs, vs)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	assert.Exactly(t, "keyVal01", v.Name)
-	assert.Exactly(t, "helloWorld", v.Value)
-
-	err = v.LoadOne(nil, "test__var")
-	assert.True(t, errors.IsNotValid(err), "%+v", err)
+	assert.Exactly(t, "InnoDB", vs.Data["storage_engine"])
+	assert.True(t, len(vs.Data) > 400, "Should have more than 400 map entries")
 }
 
-func TestVariables_AppendFiltered(t *testing.T) {
+func TestNewVariables_Mock(t *testing.T) {
 	t.Parallel()
-	dbc, dbMock := cstesting.MockDB(t)
 
-	t.Run("One", func(t *testing.T) {
+	dbc, dbMock := cstesting.MockDB(t)
+	defer cstesting.MockClose(t, dbc, dbMock)
+
+	t.Run("one with LIKE", func(t *testing.T) {
 		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
 			FromCSVString("keyVal11,helloAustralia")
 
-		dbMock.ExpectQuery("SHOW SESSION VARIABLES LIKE.+").
-			WithArgs(("keyVal11")).WillReturnRows(mockedRows)
-
-		var vs Variables
-		if err := vs.AppendFiltered(dbc.DB, "keyVal11"); err != nil {
-			t.Fatalf("%+v", err)
-		}
-		assert.Exactly(t, `keyVal11`, vs.FindOne("keyVal11").Name)
-		assert.Exactly(t, `helloAustralia`, vs.FindOne("keyVal11").Value)
-		assert.Len(t, vs, 1)
-	})
-
-	t.Run("All", func(t *testing.T) {
-		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
-			FromCSVString("keyVal01,helloWorld\nkeyVal10,helloGermany\nkeyVal11,helloAustralia")
-
-		dbMock.ExpectQuery("SHOW SESSION VARIABLES").
+		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'keyVal11')")).
 			WillReturnRows(mockedRows)
 
-		var vs Variables
-		if err := vs.AppendFiltered(dbc.DB, ""); err != nil {
+		vs := NewVariables("keyVal11")
+		rc, err := dbr.Load(context.TODO(), dbc.DB, vs, vs)
+		if err != nil {
 			t.Fatalf("%+v", err)
 		}
-		js, err := json.Marshal(vs)
+		assert.Exactly(t, int64(1), rc, "Should load one row")
+
+		assert.Exactly(t, `helloAustralia`, vs.Data["keyVal11"])
+		assert.Len(t, vs.Data, 1)
+	})
+
+	t.Run("many with WHERE", func(t *testing.T) {
+		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
+			FromCSVString("keyVal11,helloAustralia\nkeyVal22,helloNewZealand")
+
+		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` IN ('keyVal11','keyVal22'))")).
+			WillReturnRows(mockedRows)
+
+		vs := NewVariables("keyVal11", "keyVal22")
+		rc, err := dbr.Load(context.TODO(), dbc.DB, vs, vs)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("%+v", err)
 		}
-		assert.Exactly(t, `[{"Name":"keyVal01","Value":"helloWorld"},{"Name":"keyVal10","Value":"helloGermany"},{"Name":"keyVal11","Value":"helloAustralia"}]`, string(js))
-		assert.Len(t, vs, 3)
-	})
+		assert.Exactly(t, int64(2), rc, "Shoud load two rows")
 
-	t.Run("Invalid Name", func(t *testing.T) {
-		var vs Variables
-		err := vs.AppendFiltered(dbc.DB, "")
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.Exactly(t, `helloAustralia`, vs.Data["keyVal11"])
+		assert.Exactly(t, `helloNewZealand`, vs.Data["keyVal22"])
+		assert.Len(t, vs.Data, 2)
 	})
-
-	dbMock.ExpectClose()
-	assert.NoError(t, dbc.Close())
-	if err := dbMock.ExpectationsWereMet(); err != nil {
-		t.Error("there were unfulfilled expections", err)
-	}
 }

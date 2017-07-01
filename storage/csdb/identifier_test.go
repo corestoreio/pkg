@@ -58,20 +58,6 @@ func TestIsValidIdentifier(t *testing.T) {
 	})
 }
 
-var benchmarkIsValidIdentifier error
-
-func BenchmarkIsValidIdentifier(b *testing.B) {
-	const id = `$catalog_product_3ntity`
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkIsValidIdentifier = csdb.IsValidIdentifier(id)
-	}
-	if benchmarkIsValidIdentifier != nil {
-		b.Fatalf("%+v", benchmarkIsValidIdentifier)
-	}
-}
-
 func TestTableName(t *testing.T) {
 	t.Parallel()
 
@@ -191,81 +177,6 @@ func TestForeignKeyName(t *testing.T) {
 	t.Run("unique hashed", func(t *testing.T) {
 		have := csdb.ForeignKeyName("catalog_product_bundle_optioncatalog_product_bundle_optioncatalog_product_bundle_option", "parent_id", "catalog_product_entitycatalog_product_entitycatalog_product_entity", "entity_id")
 		assert.Exactly(t, `FK_8FC0390CFB720B81470F95BE9E5A8584`, have)
-	})
-}
-
-func BenchmarkIndexName(b *testing.B) {
-	b.ReportAllocs()
-	b.Run("unique short", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.IndexName("unique", "sales_invoiced_aggregated_order", "period", "store_id", "order_status")
-			if want := `SALES_INVOICED_AGGREGATED_ORDER_PERIOD_STORE_ID_ORDER_STATUS`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
-	})
-
-	b.Run("unique abbreviated", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.IndexName("unique", "sales_invoiced_aggregated_order", "customer", "store_id", "order_status", "order_type")
-			if want := `SALES_INVOICED_AGGRED_ORDER_CSTR_STORE_ID_ORDER_STS_ORDER_TYPE`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
-	})
-
-	b.Run("unique hashed", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.IndexName("unique", "sales_invoiced_aggregated_order", "period", "store_id", "order_status", "order_type", "order_date")
-			if want := `UNQ_26EE326A968C157BC5004C8206E082E2`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
-	})
-}
-
-func BenchmarkTableName(b *testing.B) {
-	b.ReportAllocs()
-
-	b.Run("Short with prefix suffix", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("xyz_", "catalog_product_€ntity", "int")
-			if want := `xyz_catalog_product_ntity_int`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
-	})
-	b.Run("Short with prefix without suffix", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("xyz_", "catalog_product_€ntity")
-			if want := `xyz_catalog_product_ntity`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
-	})
-	b.Run("Short without prefix and suffix", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("", "catalog_product_€ntity")
-			if want := `catalog_product_ntity`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
-	})
-	b.Run("abbreviated", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("", "catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity")
-			if want := `cat_prd_ntity_cat_prd_ntity_cstr_cat_prd_ntity`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
-	})
-	b.Run("hashed", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("", "catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity_catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity")
-			if want := `t_bb0f749c31c69ed73ad028cb61f43745`; have != want {
-				b.Fatalf("\nHave %q\nWant %q", have, want)
-			}
-		}
 	})
 }
 

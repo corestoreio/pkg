@@ -15,20 +15,48 @@
 package csdb
 
 import (
-	"context"
-	"database/sql"
-
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 )
 
-// Variables contains multiple MySQL configurations.
-type Variables []*Variable
+// Variables contains multiple MySQL configuration variables. Not threadsafe.
+type Variables struct {
+	Data        map[string]string
+	Show        *dbr.Show
+	name, value string
+}
 
-// Variable represents one MySQL configuration value retrieved from the database.
-type Variable struct {
-	Name  string
-	Value string
+// NewVariables creates a new variable collection. If the argument names gets
+// passed, the SQL query will load the all variables matching the names.
+// Empty argument loads all variables.
+func NewVariables(names ...string) *Variables {
+	vs := &Variables{
+		Data: make(map[string]string),
+		Show: dbr.NewShow().Variable().Interpolate(),
+	}
+	vs.Show.UseBuildCache = true
+	if len(names) > 1 {
+		vs.Show.Where(dbr.Column("Variable_name", dbr.In.Str(names...)))
+	} else if len(names) == 1 {
+		vs.Show.Where(dbr.Column("Variable_name", dbr.Like.Str(names...)))
+	}
+	return vs
+}
+
+// ToSQL implements dbr.QueryBuilder interface to assemble a SQL string and its
+// arguments for query execution.
+func (vs *Variables) ToSQL() (string, []interface{}, error) {
+	return vs.Show.ToSQL()
+}
+
+// RowScan implements dbr.Scanner interface and scans a single row from the
+// database query result.
+func (vs *Variables) RowScan(idx int64, _ []string, scan func(...interface{}) error) error {
+	if err := errors.WithStack(scan(&vs.name, &vs.value)); err != nil {
+		return err
+	}
+	vs.Data[vs.name] = vs.value
+	return nil
 }
 
 func isValidVarName(name string, allowPercent bool) error {
@@ -53,80 +81,3 @@ func isValidVarName(name string, allowPercent bool) error {
 	}
 	return nil
 }
-
-// LoadOne loads a single variable identified by name for the current session.
-// For now MySQL DSN must have set interpolateParams to true.
-func (v *Variable) LoadOne(db dbr.Querier, name string) error {
-	if err := isValidVarName(name, false); err != nil {
-		return errors.Wrap(err, "[csdb] Variable.ShowVariable")
-	}
-	v.Name = name // hmmm ... a hidden argument passing
-	_, err := dbr.Load(context.Background(), db, v, v)
-	return errors.Wrap(err, "[csdb] dbr.Load")
-}
-
-// ToSQL implements dbr.QueryBuilder interface to assemble a SQL string and its
-// arguments for query execution.
-func (v *Variable) ToSQL() (string, []interface{}, error) {
-	s, err := dbr.Interpolate("SHOW SESSION VARIABLES LIKE ?", dbr.ArgString(v.Name))
-	return s, nil, err
-}
-
-// ScanRow implements dbr.Scanner interface
-func (v *Variable) ScanRow(_ int64, _ []string, scan func(...interface{}) error) error {
-	return errors.WithStack(
-		scan(&v.Name, &v.Value),
-	)
-}
-
-// AppendFiltered appends multiple variables to the current slice. If name is
-// empty, all variables will be loaded. Name argument can contain the SQL
-// wildcard. For now MySQL DSN must have set interpolateParams to true.
-func (vs *Variables) AppendFiltered(db dbr.Querier, name string) error {
-	if err := isValidVarName(name, true); err != nil {
-		return errors.Wrap(err, "[csdb] Variables.isValidVarName")
-	}
-
-	ctx := context.Background()
-	var err error
-	var rows *sql.Rows
-	if name != "" {
-		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES LIKE ?", name)
-	} else {
-		rows, err = db.QueryContext(ctx, "SHOW SESSION VARIABLES")
-	}
-	if err != nil {
-		return errors.Wrap(err, "[csdb] csdb.QueryContext")
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		v := new(Variable)
-		if err := rows.Scan(&v.Name, &v.Value); err != nil {
-			return errors.Wrap(err, "[csdb] Variables.Scan")
-		}
-		*vs = append(*vs, v)
-	}
-
-	return nil
-}
-
-// FindOne finds one entry in the slice. May return an empty type. Comparing
-// is case sensitive.
-func (vs Variables) FindOne(name string) (v Variable) {
-	for _, vv := range vs {
-		if name == vv.Name {
-			return *vv
-		}
-	}
-	return v
-}
-
-// Len returns the length
-func (vs Variables) Len() int { return len(vs) }
-
-// Less compares two slice values
-func (vs Variables) Less(i, j int) bool { return vs[i].Name < vs[j].Name }
-
-// Swap changes the position
-func (vs Variables) Swap(i, j int) { vs[i], vs[j] = vs[j], vs[i] }
