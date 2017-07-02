@@ -21,9 +21,12 @@ import (
 
 // Variables contains multiple MySQL configuration variables. Not threadsafe.
 type Variables struct {
-	Data        map[string]string
-	Show        *dbr.Show
-	name, value string
+	Data    map[string]string
+	Show    *dbr.Show
+	scanArg [2]interface{}
+	dto     struct {
+		name, value string
+	}
 }
 
 // NewVariables creates a new variable collection. If the argument names gets
@@ -52,10 +55,13 @@ func (vs *Variables) ToSQL() (string, []interface{}, error) {
 // RowScan implements dbr.Scanner interface and scans a single row from the
 // database query result.
 func (vs *Variables) RowScan(idx int64, _ []string, scan func(...interface{}) error) error {
-	if err := errors.WithStack(scan(&vs.name, &vs.value)); err != nil {
+	if idx == 0 {
+		vs.scanArg = [2]interface{}{&vs.dto.name, &vs.dto.value}
+	}
+	if err := errors.WithStack(scan(vs.scanArg[:]...)); err != nil {
 		return err
 	}
-	vs.Data[vs.name] = vs.value
+	vs.Data[vs.dto.name] = vs.dto.value
 	return nil
 }
 

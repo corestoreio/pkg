@@ -183,14 +183,15 @@ func BenchmarkLoadColumns(b *testing.B) {
 
 // BenchmarkVariables-4   	    2000	   1046318 ns/op	   28401 B/op	    1121 allocs/op <= 186 rows
 // BenchmarkVariables-4   	    2000	    651096 ns/op	     769 B/op	      21 allocs/op <= one row!
+// BenchmarkVariables-4   	    2000	   1027245 ns/op	   22417 B/op	     935 allocs/op <= pre alloc slice
 func BenchmarkVariables(b *testing.B) {
+
 	ctx := context.TODO()
 
 	db := cstesting.MustConnectDB(b)
 	defer cstesting.Close(b, db)
 
 	vars := csdb.NewVariables("innodb%")
-
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := dbr.Load(ctx, db.DB, vars, vars)
@@ -198,6 +199,7 @@ func BenchmarkVariables(b *testing.B) {
 			b.Fatalf("%+v", err)
 		}
 	}
+
 	if "Barracuda" != vars.Data["innodb_file_format"] {
 		b.Fatalf("storage_engine variable should be Barracuda, got: %q", vars.Data["innodb_file_format"])
 	}

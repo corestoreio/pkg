@@ -30,6 +30,7 @@ var _ dbr.QueryBuilder = (*Variables)(nil)
 
 func TestIsValidVarName(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name         string
 		allowPercent bool
