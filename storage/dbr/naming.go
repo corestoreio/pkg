@@ -35,13 +35,21 @@ type alias struct {
 	// subquery in a SELECT statement FROM clause. Derived tables can return a
 	// scalar, column, row, or table. Ignored in any other case.
 	DerivedTable *Select
+	// Qualifier provides the correct context in case of ambiguous names. Object
+	// names may be unqualified or qualified. An unqualified name is permitted
+	// in contexts where interpretation of the name is unambiguous. A qualified
+	// name includes at least one qualifier to clarify the interpretive context
+	// by overriding a default context or providing missing context.
+	// t1.price => `t1`=qualifier and `price`=name
+	Qualifier string
 	// Name can be any kind of SQL expression or a valid identifier. It gets
 	// quoted when `IsExpression` is false.
 	Name string
 	// Alias must be a valid identifier allowed for alias usage.
 	Alias string
-	// IsExpression if true the field `Name` will be treated as an expression and
-	// won't get quoted when generating the SQL.
+	// IsExpression if true the field `Name` will be treated as an expression
+	// and won't get quoted when generating the SQL. The Qualifier field gets
+	// ignored.
 	IsExpression bool
 	// Sort applies only to GROUP BY and ORDER BY clauses. 'd'=descending,
 	// 0=default or nothing; 'a'=ascending.
@@ -329,11 +337,10 @@ func (mq MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {
 	mq.writeName(w, part)
 }
 
-// TableColumnAlias prefixes all columns in the slice `cols` with a table
-// name/alias and puts quotes around them. If a column name has already been
-// prefixed by a name or an alias it will be ignored. This functions modifies
+// ColumnsWithQualifier prefixes all columns in the slice `cols` with a qualifier and applies backticks. If a column name has already been
+// prefixed with a qualifier or an alias it will be ignored. This functions modifies
 // the argument slice `cols`.
-func (mq MysqlQuoter) TableColumnAlias(t string, cols ...string) []string {
+func (mq MysqlQuoter) ColumnsWithQualifier(t string, cols ...string) []string {
 	for i, c := range cols {
 		switch {
 		case strings.IndexByte(c, quoteRune) >= 0:

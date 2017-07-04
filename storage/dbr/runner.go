@@ -24,13 +24,9 @@ import (
 // Scanner allows a type to load data from database query. It's used in the
 // rows.Next() for-loop.
 type Scanner interface {
-	// RowScan implementation must use function `scan` to scan the values of the
-	// query into its own type. See database/sql package for examples. `idx`
-	// defines the current iteration number. `columns` specifies the list of
-	// provided column names used in the query. This function signature shows
-	// its strength in creating slices of values or iterating over a result set,
-	// modifying values and saving it back somewhere.
-	RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error
+	// RowScan implementation must use function `Scan` to scan the values of the
+	// query into its own type. See database/sql package for examples.
+	RowScan(*sql.Rows) error
 }
 
 // RowCloser allows to execute special functions after the scanning has
@@ -95,13 +91,13 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 		return 0, errors.WithStack(err)
 	}
 
-	rows, err := db.QueryContext(ctx, sqlStr, args...)
+	r, err := db.QueryContext(ctx, sqlStr, args...)
 	if err != nil {
 		return 0, errors.Wrapf(err, "[dbr] Load.QueryContext with query %q", sqlStr)
 	}
 	defer func() {
 		// Not testable with the sqlmock package :-(
-		if err2 := rows.Close(); err2 != nil && err == nil {
+		if err2 := r.Close(); err2 != nil && err == nil {
 			err = errors.Wrap(err2, "[dbr] Load.QueryContext.Rows.Close")
 		}
 		if rc, ok := s.(RowCloser); ok {
@@ -111,19 +107,14 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 		}
 	}()
 
-	columns, err := rows.Columns()
-	if err != nil {
-		return 0, errors.WithStack(err)
-	}
-
-	for rows.Next() {
-		err = s.RowScan(rowCount, columns, rows.Scan)
+	for r.Next() {
+		err = s.RowScan(r)
 		if err != nil {
 			return 0, errors.WithStack(err)
 		}
 		rowCount++
 	}
-	if err = rows.Err(); err != nil {
+	if err = r.Err(); err != nil {
 		return rowCount, errors.WithStack(err)
 	}
 	return rowCount, err

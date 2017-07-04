@@ -72,14 +72,16 @@ type dbrPerson struct {
 	Name  string
 	Email NullString
 	Key   NullString
+	vp    [4]interface{}
 }
 
 // RowScan loads a single row from a SELECT statement returning only one row
-func (p *dbrPerson) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
-	if idx > 0 {
-		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
+func (p *dbrPerson) RowScan(r *sql.Rows) error {
+	vp := p.vp[:0]
+	columns, err := r.Columns()
+	if err != nil {
+		return err
 	}
-	vp := make([]interface{}, 0, 4) // vp == valuePointers
 	for _, c := range columns {
 		switch c {
 		case "id":
@@ -94,7 +96,7 @@ func (p *dbrPerson) RowScan(idx int64, columns []string, scan func(dest ...inter
 			return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	return scan(vp...)
+	return r.Scan(vp...)
 }
 
 func (p *dbrPerson) AssembleArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
@@ -122,11 +124,15 @@ type dbrPersons struct {
 	dto      dbrPerson
 }
 
-func (ps *dbrPersons) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
-	if idx == 0 {
+func (ps *dbrPersons) RowScan(r *sql.Rows) error {
+	if len(ps.Data) == 0 {
 		ps.Data = make([]*dbrPerson, 0, 5)
 		ps.scanArgs = make([]interface{}, 0, 4) // four fields in the struct
 
+		columns, err := r.Columns()
+		if err != nil {
+			return err
+		}
 		for _, c := range columns {
 			switch c {
 			case "id":
@@ -143,7 +149,7 @@ func (ps *dbrPersons) RowScan(idx int64, columns []string, scan func(dest ...int
 		}
 	}
 
-	if err := scan(ps.scanArgs...); err != nil {
+	if err := r.Scan(ps.scanArgs...); err != nil {
 		return errors.WithStack(err)
 	}
 	ps.Data = append(ps.Data, &dbrPerson{
@@ -166,11 +172,8 @@ type nullTypedRecord struct {
 	BoolVal    NullBool
 }
 
-func (p *nullTypedRecord) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
-	if idx > 0 {
-		return errors.NewExceededf("[dbr_test] Can only load one row. Got a next row.")
-	}
-	return scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
+func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
+	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
 func (p *nullTypedRecord) AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {

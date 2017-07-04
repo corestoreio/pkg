@@ -51,7 +51,7 @@ func TestTableColumnQuote(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		actC := dbr.Quoter.TableColumnAlias(test.haveT, test.haveC...)
+		actC := dbr.Quoter.ColumnsWithQualifier(test.haveT, test.haveC...)
 		assert.Equal(t, test.want, actC, "Index %d", i)
 	}
 }

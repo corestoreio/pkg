@@ -178,6 +178,8 @@ func SubSelect(columnName string, operator Op, s *Select) ConditionArg {
 //	return wf
 //}
 
+// TODO remove interface ConditionArg and implmenent directly whereFragment
+
 // Column adds a condition to a WHERE or HAVING statement.
 func Column(columnName string, arg Argument) ConditionArg {
 	return &whereFragment{

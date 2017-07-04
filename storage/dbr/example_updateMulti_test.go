@@ -67,7 +67,7 @@ func (so salesOrder) AssembleArguments(stmtType int, args dbr.Arguments, columns
 
 func ExampleUpdateMulti() {
 	// <ignore_this>
-	dbc, dbMock := cstesting.MockDB(fatalLog{})
+	dbc, dbMock := cstesting.MockDB(nil)
 	defer func() {
 		dbMock.ExpectClose()
 		dbc.Close()

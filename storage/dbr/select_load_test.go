@@ -17,6 +17,7 @@ package dbr_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"testing"
 
@@ -134,15 +135,19 @@ type TableCoreConfigData struct {
 	Value    dbr.NullString `json:",omitempty"` // value text NULL
 }
 
-func (ps *TableCoreConfigDataSlice) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
+func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
 	const fieldCount = 5 //  5 == number of struct fields
-	if idx == 0 && nil == ps.Data {
-		cap := ps.DataCap
-		if cap == 0 {
-			cap = 10
+	if 0 == len(ps.Data) {
+		dc := ps.DataCap
+		if dc == 0 {
+			dc = 10
 		}
-		ps.Data = make([]*TableCoreConfigData, 0, cap)
+		ps.Data = make([]*TableCoreConfigData, 0, dc)
 		ps.scanArgs = make([]interface{}, 0, fieldCount)
+		columns, err := r.Columns()
+		if err != nil {
+			return err
+		}
 		for _, c := range columns {
 			switch c {
 			case "config_id":
@@ -161,7 +166,7 @@ func (ps *TableCoreConfigDataSlice) RowScan(idx int64, columns []string, scan fu
 		}
 	}
 
-	if err := scan(ps.scanArgs...); err != nil {
+	if err := r.Scan(ps.scanArgs...); err != nil {
 		return errors.WithStack(err)
 	}
 
