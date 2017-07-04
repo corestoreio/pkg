@@ -23,6 +23,7 @@ import (
 
 func TestMockDB(t *testing.T) {
 	dbc, mockDB := cstesting.MockDB(t)
+	defer cstesting.MockClose(t, dbc, mockDB)
 	assert.NotNil(t, dbc)
 	assert.NotNil(t, mockDB)
 }
@@ -36,6 +37,6 @@ func TestMustConnectDB(t *testing.T) {
 		}
 	}()
 
-	db := cstesting.MustConnectDB()
+	db := cstesting.MustConnectDB(t)
 	assert.NotNil(t, db)
 }

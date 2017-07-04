@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -45,33 +46,37 @@ func MustGetDSN() string {
 	return d
 }
 
-type skipper interface {
-	Skipf(format string, args ...interface{})
-}
-
 // MustConnectDB is a helper function that creates a new database connection
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
 // If the DSN environment variable has not been set it skips the test.
 // Argument t specified usually the *testing.T/B struct.
-func MustConnectDB(t skipper, opts ...dbr.ConnectionOption) *dbr.Connection {
+func MustConnectDB(t testing.TB, opts ...dbr.ConnectionOption) *dbr.Connection {
+	t.Helper()
 	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
 		t.Skipf("%s", err)
 	}
-	cos := append([]dbr.ConnectionOption{}, dbr.WithDSN(MustGetDSN()))
+	cos := []dbr.ConnectionOption{dbr.WithDSN(MustGetDSN())}
+	if len(opts) == 0 {
+		return dbr.MustConnectAndVerify(cos...)
+	}
 	dbc := dbr.MustConnectAndVerify(append(cos, opts...)...)
 	return dbc
 }
 
 // Close for usage in conjunction with defer.
 // 		defer cstesting.Close(t,db)
-func Close(t errorFormatter, c io.Closer) {
+func Close(t testing.TB, c io.Closer) {
+	t.Helper()
 	if err := c.Close(); err != nil {
 		t.Errorf("%+v", err)
 	}
 }
 
 // MockDB creates a mocked database connection. Fatals on error.
-func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
+func MockDB(t testing.TB) (*dbr.Connection, sqlmock.Sqlmock) {
+	if t != nil { // t can be nil in Example functions
+		t.Helper()
+	}
 	db, sm, err := sqlmock.New()
 	fatalIfError(t, err)
 
@@ -82,7 +87,10 @@ func MockDB(t fataler) (*dbr.Connection, sqlmock.Sqlmock) {
 
 // MockClose for usage in conjunction with defer.
 // 		defer cstesting.MockClose(t,db,dbMock)
-func MockClose(t fataler, c io.Closer, m sqlmock.Sqlmock) {
+func MockClose(t testing.TB, c io.Closer, m sqlmock.Sqlmock) {
+	if t != nil { // t can be nil in Example functions
+		t.Helper()
+	}
 	m.ExpectClose()
 	if err := c.Close(); err != nil {
 		t.Fatalf("%+v", err)
