@@ -56,7 +56,7 @@ func (vs *Variables) ToSQL() (string, []interface{}, error) {
 // database query result.
 func (vs *Variables) RowScan(idx int64, _ []string, scan func(...interface{}) error) error {
 	if idx == 0 {
-		vs.scanArg = [2]interface{}{&vs.dto.name, &vs.dto.value}
+		vs.scanArg = [...]interface{}{&vs.dto.name, &vs.dto.value}
 	}
 	if err := errors.WithStack(scan(vs.scanArg[:]...)); err != nil {
 		return err

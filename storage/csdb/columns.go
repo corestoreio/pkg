@@ -113,17 +113,19 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 	tc := make(map[string]Columns)
 
 	var tn string
+	var dto Column
+	scanArgs := []interface{}{&tn, &dto.Field, &dto.Pos, &dto.Default, &dto.Null, &dto.DataType, &dto.CharMaxLength, &dto.Precision, &dto.Scale, &dto.ColumnType, &dto.Key, &dto.Extra, &dto.Comment}
 	for rows.Next() {
-		c := new(Column)
-		if err := rows.Scan(&tn, &c.Field, &c.Pos, &c.Default, &c.Null, &c.DataType, &c.CharMaxLength, &c.Precision, &c.Scale, &c.ColumnType, &c.Key, &c.Extra, &c.Comment); err != nil {
+		if err := rows.Scan(scanArgs...); err != nil {
 			return nil, errors.Wrap(err, "[csdb] Scan Query")
 		}
 
 		if _, ok := tc[tn]; !ok {
 			tc[tn] = make(Columns, 0, 10)
 		}
+		c := dto
 		c.DataType = strings.ToLower(c.DataType)
-		tc[tn] = append(tc[tn], c)
+		tc[tn] = append(tc[tn], &c)
 		tn = ""
 	}
 	if err := rows.Err(); err != nil {

@@ -156,6 +156,7 @@ var benchmarkLoadColumnsHashWant = []byte{0x66, 0x73, 0x3c, 0x93, 0x11, 0x65, 0x
 // BenchmarkLoadColumns-4   	    2000	    748079 ns/op	   14364 B/op	     363 allocs/op
 // BenchmarkLoadColumns-4   	    2000	    782965 ns/op	   14241 B/op	     350 allocs/op
 // BenchmarkLoadColumns-4         	2000	   1228441 ns/op	   16554 B/op	     422 allocs/op // Go 1.9 Scanner iFace
+// BenchmarkLoadColumns-4   	    1000	   1262590 ns/op	   16830 B/op	     423 allocs/op
 func BenchmarkLoadColumns(b *testing.B) {
 	const tn = "eav_attribute"
 	ctx := context.TODO()
