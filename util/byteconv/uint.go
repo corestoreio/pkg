@@ -17,15 +17,31 @@ limitations under the License.
 package byteconv
 
 import (
+	"database/sql"
 	"strconv"
 
 	"github.com/corestoreio/errors"
 )
 
+// ParseUintSQL like ParseUint
+func ParseUintSQL(s *sql.RawBytes, base int, bitSize int) (n uint64, valid bool, err error) {
+	if s == nil {
+		return 0, false, nil
+	}
+	s2 := *s
+	if len(s2) == 0 {
+		return 0, false, nil
+	}
+	n, err = ParseUint(s2, base, bitSize)
+	return n, err == nil, err
+}
+
 // ParseUint is like strconv.ParseUint, but using a []byte.
 func ParseUint(s []byte, base int, bitSize int) (n uint64, err error) {
+	if UseStdLib {
+		return strconv.ParseUint(string(s), 10, bitSize)
+	}
 	var cutoff, maxVal uint64
-
 	if bitSize == 0 {
 		bitSize = int(strconv.IntSize)
 	}
@@ -56,7 +72,7 @@ func ParseUint(s []byte, base int, bitSize int) (n uint64, err error) {
 		}
 
 	default:
-		err = errors.NewNotValidf("[rawconv] invalid base %d", base)
+		err = errors.New("invalid base " + strconv.Itoa(base))
 		goto Error
 	}
 

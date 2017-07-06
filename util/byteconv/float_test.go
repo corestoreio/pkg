@@ -24,26 +24,49 @@
 package byteconv
 
 import (
+	"database/sql"
 	"testing"
+
+	"strconv"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestParseFloatPtr(t *testing.T) {
-	b := []byte(`5.1`)
-	f, n := ParseFloatPtr(&b)
-	if n != 3 {
-		t.Errorf("Have %d Want %d", n, 3)
-	}
-	if f != 5.1 {
-		t.Errorf("Have %f Want %f", f, 5.1)
-	}
+func TestParseNullFloatSQL_ParseFloatSQL(t *testing.T) {
 
-	f, n = ParseFloatPtr(nil)
-	if n != 0 {
-		t.Errorf("Have %d Want %d", n, 0)
+	f, err := strconv.ParseFloat("", 64)
+	t.Logf("%f => %s", f, err)
+
+	runner := func(have string, want sql.NullFloat64, wantErr bool) func(*testing.T) {
+		return func(t *testing.T) {
+			b := sql.RawBytes(have)
+			if have == "NULL" {
+				b = nil
+			}
+			nf, err := ParseNullFloat64SQL(&b)
+			f, err2 := ParseFloatSQL(&b)
+			if wantErr {
+				assert.Error(t, err, "err: For number %q", have)
+				assert.Error(t, err2, "err2: For number %q", have)
+				return
+			}
+			require.NoError(t, err, t.Name())
+			require.NoError(t, err2, t.Name())
+			assert.Exactly(t, want, nf, t.Name())
+			assert.Exactly(t, want.Float64, f, t.Name())
+		}
 	}
-	if f != 0 {
-		t.Errorf("Have %f Want %f", f, 0)
-	}
+	t.Run("NULL is 0 and invalid", runner("NULL", sql.NullFloat64{}, false))
+	t.Run("empty is 0 and invalid", runner("", sql.NullFloat64{}, false))
+	t.Run(" is 0 and invalid", runner("", sql.NullFloat64{}, true))
+	t.Run("0 is valid", runner("0", sql.NullFloat64{Valid: true}, false))
+	t.Run("1 valid", runner("1", sql.NullFloat64{Valid: true, Float64: 1}, false))
+	t.Run("35.5456 valid", runner("35.5456", sql.NullFloat64{Valid: true, Float64: 35.5456}, false))
+	t.Run("-35.5456 valid", runner("-35.5456", sql.NullFloat64{Valid: true, Float64: -35.5456}, false))
+	t.Run("999 valid", runner("999", sql.NullFloat64{Valid: true, Float64: 999}, false))
+	t.Run("10 is valid", runner("10", sql.NullFloat64{Valid: true, Float64: 10}, false))
+	t.Run("01 is valid", runner("01", sql.NullFloat64{Valid: true, Float64: 1}, false))
 }
 
 func TestParseFloat(t *testing.T) {
@@ -53,6 +76,7 @@ func TestParseFloat(t *testing.T) {
 	}{
 		{"5", 5},
 		{"5.1", 5.1},
+		{"+5.1", 5.1},
 		{"-5.1", -5.1},
 		{"5.1e-2", 5.1e-2},
 		{"5.1e+2", 5.1e+2},
@@ -64,9 +88,9 @@ func TestParseFloat(t *testing.T) {
 		// {"4.9406564584124e-308", 4.9406564584124e-308)
 	}
 	for i, tt := range floatTests {
-		f, n := ParseFloat([]byte(tt.f))
-		if n != len(tt.f) {
-			t.Fatalf("Index %d invalid length for %q", i, tt.f)
+		f, err := ParseFloat([]byte(tt.f))
+		if err != nil {
+			t.Fatalf("Index %d invalid length for %q with error %s", i, tt.f, err)
 		}
 		if f != tt.expected {
 			t.Fatalf("Index %d\nHave %f\nWant %f", i, f, tt.expected)

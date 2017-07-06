@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package byteconv converts sql.RawBytes for MySQL or MariaDB to primitive types.
-//
-// It supports the null types.
 package byteconv
+
+// UseStdLib set to true to use the standard library strconv functions. They are
+// much slower and only ParseFloat has more precision.
+var UseStdLib = false

@@ -33,6 +33,7 @@ package byteconv
 import (
 	"database/sql"
 	"math"
+	"strconv"
 )
 
 var float64pow10 = []float64{
@@ -41,30 +42,33 @@ var float64pow10 = []float64{
 	1e20, 1e21, 1e22,
 }
 
-// ParseFloatPtr same as ParseFloat
-func ParseFloatPtr(b *[]byte) (float64, int) {
-	if b == nil {
-		return 0, 0
-	}
-	return ParseFloat(*b)
-}
-
-// ParseFloatPtr same as ParseFloat
-func ParseFloatSQL(b *sql.RawBytes) (_ float64, valid bool) {
-	if b == nil {
-		return 0, false
-	}
+// ParseNullFloat64SQL same as ParseFloat
+func ParseNullFloat64SQL(b *sql.RawBytes) (val sql.NullFloat64, err error) {
 	b2 := *b
 	if len(b2) == 0 {
-		return 0, false
+		return
 	}
-	f, _ := ParseFloat(b2)
-	return f, true
+	val.Float64, err = ParseFloat(b2)
+	val.Valid = err == nil
+	return
+}
+
+// ParseFloatSQL same as ParseFloat
+func ParseFloatSQL(b *sql.RawBytes) (f float64, err error) {
+	b2 := *b
+	if len(b2) == 0 {
+		return
+	}
+	return ParseFloat(b2)
 }
 
 // Float parses a byte-slice and returns the float it represents.
 // If an invalid character is encountered, it will stop there.
-func ParseFloat(b []byte) (float64, int) {
+func ParseFloat(b []byte) (float64, error) {
+	if UseStdLib {
+		return strconv.ParseFloat(string(b), 64)
+	}
+
 	i := 0
 	neg := false
 	if i < len(b) && (b[i] == '+' || b[i] == '-') {
@@ -89,7 +93,10 @@ func ParseFloat(b []byte) (float64, int) {
 		} else if dot == -1 && c == '.' {
 			dot = i
 		} else {
-			break
+			if c == 'e' || c == 'E' {
+				break
+			}
+			return 0, syntaxError("ParseFloat", string(b))
 		}
 	}
 
@@ -110,16 +117,18 @@ func ParseFloat(b []byte) (float64, int) {
 	expExp := int64(0)
 	if i < len(b) && (b[i] == 'e' || b[i] == 'E') {
 		i++
-		if e, expLen := ParseInt(b[i:]); expLen > 0 {
+		if e, err := ParseInt(b[i:]); err == nil {
 			expExp = e
-			i += expLen
+			i += LenInt(e)
+		} else {
+			return 0, syntaxError("ParseFloat", string(b))
 		}
 	}
 	exp := expExp - mantExp
 
 	// copied from strconv/atof.go
 	if exp == 0 {
-		return f, i
+		return f, nil
 	} else if exp > 0 && exp <= 15+22 { // int * 10^k
 		// If exponent is big but number of digits is not,
 		// can move a few zeros into the integer part.
@@ -128,11 +137,11 @@ func ParseFloat(b []byte) (float64, int) {
 			exp = 22
 		}
 		if f <= 1e15 && f >= -1e15 {
-			return f * float64pow10[exp], i
+			return f * float64pow10[exp], nil
 		}
 	} else if exp < 0 && exp >= -22 { // int / 10^k
-		return f / float64pow10[-exp], i
+		return f / float64pow10[-exp], nil
 	}
 	f *= math.Pow10(int(-mantExp))
-	return f * math.Pow10(int(expExp)), i
+	return f * math.Pow10(int(expExp)), nil
 }

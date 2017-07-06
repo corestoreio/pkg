@@ -23,11 +23,47 @@
 
 package byteconv
 
-import "math"
+import (
+	"database/sql"
+	"math"
+	"strconv"
+)
 
-// Int parses a byte-slice and returns the integer it represents.
-// If an invalid character is encountered, it will stop there.
-func ParseInt(b []byte) (int64, int) {
+// ParseNullInt64SQL same as ParseInt
+func ParseNullInt64SQL(b *sql.RawBytes) (val sql.NullInt64, err error) {
+	b2 := *b
+	if len(b2) == 0 {
+		return
+	}
+	val.Int64, err = ParseInt(b2)
+	val.Valid = err == nil
+	return
+}
+
+// ParseIntSQL same as ParseInt
+func ParseIntSQL(b *sql.RawBytes) (int64, error) {
+	b2 := *b
+	if len(b2) == 0 {
+		return 0, nil
+	}
+	return ParseInt(b2)
+}
+
+func syntaxError(fn, str string) *strconv.NumError {
+	return &strconv.NumError{fn, str, strconv.ErrSyntax}
+}
+
+func rangeError(fn, str string) *strconv.NumError {
+	return &strconv.NumError{fn, str, strconv.ErrRange}
+}
+
+// ParseInt parses a byte-slice and returns the integer it represents. If an
+// invalid character is encountered, it returns a syntax error.
+func ParseInt(b []byte) (int64, error) {
+	if UseStdLib {
+		return strconv.ParseInt(string(b), 10, 64)
+	}
+
 	i := 0
 	neg := false
 	if len(b) > 0 && (b[0] == '+' || b[0] == '-') {
@@ -38,7 +74,7 @@ func ParseInt(b []byte) (int64, int) {
 	for i < len(b) {
 		c := b[i]
 		if n > math.MaxUint64/10 {
-			return 0, 0
+			return 0, rangeError("ParseInt", string(b))
 		} else if c >= '0' && c <= '9' {
 			n *= 10
 			n += uint64(c - '0')
@@ -48,11 +84,14 @@ func ParseInt(b []byte) (int64, int) {
 		i++
 	}
 	if !neg && n > uint64(math.MaxInt64) || n > uint64(math.MaxInt64)+1 {
-		return 0, 0
+		return 0, rangeError("ParseInt", string(b))
 	} else if neg {
-		return -int64(n), i
+		return -int64(n), nil
 	}
-	return int64(n), i
+	if len(b) != i {
+		return 0, syntaxError("ParseInt", string(b))
+	}
+	return int64(n), nil
 }
 
 func LenInt(i int64) int {

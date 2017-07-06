@@ -12,7 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package byteconv converts sql.RawBytes for MySQL or MariaDB to primitive types.
-//
-// It supports the null types.
 package byteconv
+
+import "database/sql"
+
+// ParseNullStringSQL converts a maybe nil byte slice into the appropriate valid
+// SQL type.
+func ParseNullStringSQL(b *sql.RawBytes) (ns sql.NullString) {
+	if b == nil {
+		return
+	}
+	b2 := *b
+	if b2 == nil {
+		return
+	}
+	ns.Valid = true
+	ns.String = string(b2)
+	return
+}
+
+// ParseStringSQL casts the byte slice into a string.
+func ParseStringSQL(b *sql.RawBytes) string {
+	b2 := *b
+	if len(b2) == 0 {
+		return ""
+	}
+	return string(b2)
+}
