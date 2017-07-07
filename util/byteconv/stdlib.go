@@ -14,6 +14,16 @@
 
 package byteconv
 
+import "strconv"
+
 // UseStdLib set to true to use the standard library strconv functions. They are
 // much slower and only ParseFloat has more precision.
 var UseStdLib = false
+
+func syntaxError(fn, str string) *strconv.NumError {
+	return &strconv.NumError{fn, str, strconv.ErrSyntax}
+}
+
+func rangeError(fn, str string) *strconv.NumError {
+	return &strconv.NumError{fn, str, strconv.ErrRange}
+}

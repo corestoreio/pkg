@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/corestoreio/csfw.svg?branch=master)](https://travis-ci.org/corestoreio/csfw) [![wercker status](https://app.wercker.com/status/d7d0bdda415d2228b6fb5bb01681b5c4/s/master "wercker status")](https://app.wercker.com/project/bykey/d7d0bdda415d2228b6fb5bb01681b5c4) [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/lrlnbpcjdy585mg1/branch/master?svg=true)](https://ci.appveyor.com/project/SchumacherFM/csfw/branch/master) [![GoDoc](http://godoc.org/github.com/corestoreio/csfw?status.svg)](http://godoc.org/github.com/corestoreio/csfw) [![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
 
-eCommerce library which is compatible to Magento 1 and 2 database schema.
+eCommerce library which is NOT compatible to Magento 2 database schema.
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
@@ -18,7 +18,6 @@ before running `go generate`. (TODO)
 `CS_DSN` the environment variable for the MySQL connection.
 
 ```shell
-$ export CS_DSN='magento1:magento1@tcp(localhost:3306)/magento1'
 $ export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2'
 ```
 
@@ -177,6 +176,8 @@ from the geniuses listed below:
 | The Go-MySQL-Driver Authors | [util/null/time_mysql.go](http://github.com/corestoreio/csfw/tree/master/util/null/time_mysql.go) | Mozilla Public License, v. 2.0, Copyright 2012  |
 | siddontang | [storage/binlogsync](http://github.com/corestoreio/csfw/tree/master/storage/binlogsync) | MIT Copyright (c) 2014  |
 | siddontang | [storage/myreplicator](http://github.com/corestoreio/csfw/tree/master/storage/myreplicator) | MIT Copyright (c) 2014  |
+| Tace De Wolf | [util/byteconv](http://github.com/corestoreio/csfw/tree/master/util/byteconv) | MIT Copyright (c) 2015  |
+| Copyright 2013 The Camlistore Authors | [util/byteconv](http://github.com/corestoreio/csfw/tree/master/util/byteconv) | Apache 2.0  |
 
 ## Licensing
 

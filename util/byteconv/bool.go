@@ -19,34 +19,32 @@ import (
 	"strconv"
 )
 
-// ParseNullBoolSQL parses RawBytes into an integer and on success returns a
-// valid bool. The Bool is only true if the underlying value compares equally to
-// one.
-func ParseNullBoolSQL(b *sql.RawBytes) (val sql.NullBool) {
-	b2 := *b
-	if len(b2) != 1 {
+// ParseNullBool same as strconv.ParseBool but has no allocations.
+func ParseNullBool(b []byte) (val sql.NullBool, err error) {
+	if b == nil {
 		return
 	}
-	i, _ := ParseInt(b2)
-	val.Bool = i == 1
-	val.Valid = true
+	val.Bool, err = ParseBool(b)
+	val.Valid = err == nil
 	return
 }
 
-// ParseBoolSQL parses the underlying bytes into an integer and returns only
-// then true if the integer is equal to one.
-func ParseBoolSQL(b *sql.RawBytes) bool {
-	b2 := *b
-	if len(b2) != 1 {
-		return false
-	}
-	i, _ := ParseInt(b2)
-	return i == 1
+var bools = map[string]bool{
+	"1": true, "t": true, "T": true, "true": true, "TRUE": true, "True": true,
+	"0": false, "f": false, "F": false, "false": false, "FALSE": false, "False": false,
 }
 
+// ParseBool same as strconv.ParseBool but faster and no allocations.
 func ParseBool(b []byte) (bool, error) {
+	// The only difference between using stdlib or the map access is, that
+	// stdlib does one allocation where the string(b) map access has no
+	// overhead, but both have the same speed.
 	if UseStdLib {
 		return strconv.ParseBool(string(b))
 	}
-	return false, nil
+
+	if t, ok := bools[string(b)]; ok { // compiler optimizes the byte to string conversion
+		return t, nil
+	}
+	return false, syntaxError("ParseBool", string(b))
 }

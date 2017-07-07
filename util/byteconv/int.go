@@ -29,32 +29,14 @@ import (
 	"strconv"
 )
 
-// ParseNullInt64SQL same as ParseInt
-func ParseNullInt64SQL(b *sql.RawBytes) (val sql.NullInt64, err error) {
-	b2 := *b
-	if len(b2) == 0 {
+// ParseNullInt64 same as ParseInt
+func ParseNullInt64(b []byte) (val sql.NullInt64, err error) {
+	if len(b) == 0 {
 		return
 	}
-	val.Int64, err = ParseInt(b2)
+	val.Int64, err = ParseInt(b)
 	val.Valid = err == nil
 	return
-}
-
-// ParseIntSQL same as ParseInt
-func ParseIntSQL(b *sql.RawBytes) (int64, error) {
-	b2 := *b
-	if len(b2) == 0 {
-		return 0, nil
-	}
-	return ParseInt(b2)
-}
-
-func syntaxError(fn, str string) *strconv.NumError {
-	return &strconv.NumError{fn, str, strconv.ErrSyntax}
-}
-
-func rangeError(fn, str string) *strconv.NumError {
-	return &strconv.NumError{fn, str, strconv.ErrRange}
 }
 
 // ParseInt parses a byte-slice and returns the integer it represents. If an

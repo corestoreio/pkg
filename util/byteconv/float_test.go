@@ -27,16 +27,11 @@ import (
 	"database/sql"
 	"testing"
 
-	"strconv"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseNullFloatSQL_ParseFloatSQL(t *testing.T) {
-
-	f, err := strconv.ParseFloat("", 64)
-	t.Logf("%f => %s", f, err)
 
 	runner := func(have string, want sql.NullFloat64, wantErr bool) func(*testing.T) {
 		return func(t *testing.T) {
@@ -44,17 +39,13 @@ func TestParseNullFloatSQL_ParseFloatSQL(t *testing.T) {
 			if have == "NULL" {
 				b = nil
 			}
-			nf, err := ParseNullFloat64SQL(&b)
-			f, err2 := ParseFloatSQL(&b)
+			nf, err := ParseNullFloat64(b)
 			if wantErr {
 				assert.Error(t, err, "err: For number %q", have)
-				assert.Error(t, err2, "err2: For number %q", have)
 				return
 			}
 			require.NoError(t, err, t.Name())
-			require.NoError(t, err2, t.Name())
 			assert.Exactly(t, want, nf, t.Name())
-			assert.Exactly(t, want.Float64, f, t.Name())
 		}
 	}
 	t.Run("NULL is 0 and invalid", runner("NULL", sql.NullFloat64{}, false))

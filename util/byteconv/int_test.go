@@ -39,19 +39,15 @@ func TestParseNullInt64SQL_ParseIntSQL(t *testing.T) {
 			if have == "NULL" {
 				b = nil
 			}
-			ni, err := ParseNullInt64SQL(&b)
-			i, err2 := ParseIntSQL(&b)
+			ni, err := ParseNullInt64(b)
 
 			assert.Exactly(t, want, ni, t.Name())
-			assert.Exactly(t, want.Int64, i, t.Name())
 
 			if wantErr {
 				assert.Error(t, err, "For %q", have)
-				assert.Error(t, err2, "For %q", have)
 				return
 			}
 			require.NoError(t, err, t.Name())
-			require.NoError(t, err2, t.Name())
 		}
 	}
 	t.Run("NULL is 0 and invalid", runner("NULL", sql.NullInt64{}, false))

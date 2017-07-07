@@ -16,26 +16,13 @@ package byteconv
 
 import "database/sql"
 
-// ParseNullStringSQL converts a maybe nil byte slice into the appropriate valid
+// ParseNullString converts a maybe nil byte slice into the appropriate valid
 // SQL type.
-func ParseNullStringSQL(b *sql.RawBytes) (ns sql.NullString) {
+func ParseNullString(b []byte) (ns sql.NullString) {
 	if b == nil {
 		return
 	}
-	b2 := *b
-	if b2 == nil {
-		return
-	}
 	ns.Valid = true
-	ns.String = string(b2)
+	ns.String = string(b)
 	return
-}
-
-// ParseStringSQL casts the byte slice into a string.
-func ParseStringSQL(b *sql.RawBytes) string {
-	b2 := *b
-	if len(b2) == 0 {
-		return ""
-	}
-	return string(b2)
 }

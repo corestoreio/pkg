@@ -42,24 +42,14 @@ var float64pow10 = []float64{
 	1e20, 1e21, 1e22,
 }
 
-// ParseNullFloat64SQL same as ParseFloat
-func ParseNullFloat64SQL(b *sql.RawBytes) (val sql.NullFloat64, err error) {
-	b2 := *b
-	if len(b2) == 0 {
+// ParseNullFloat64 same as ParseFloat
+func ParseNullFloat64(b []byte) (val sql.NullFloat64, err error) {
+	if len(b) == 0 {
 		return
 	}
-	val.Float64, err = ParseFloat(b2)
+	val.Float64, err = ParseFloat(b)
 	val.Valid = err == nil
 	return
-}
-
-// ParseFloatSQL same as ParseFloat
-func ParseFloatSQL(b *sql.RawBytes) (f float64, err error) {
-	b2 := *b
-	if len(b2) == 0 {
-		return
-	}
-	return ParseFloat(b2)
 }
 
 // Float parses a byte-slice and returns the float it represents.

@@ -17,22 +17,17 @@ limitations under the License.
 package byteconv
 
 import (
-	"database/sql"
 	"strconv"
 
 	"github.com/corestoreio/errors"
 )
 
 // ParseUintSQL like ParseUint
-func ParseUintSQL(s *sql.RawBytes, base int, bitSize int) (n uint64, valid bool, err error) {
-	if s == nil {
+func ParseUintSQL(b []byte, base int, bitSize int) (n uint64, valid bool, err error) {
+	if len(b) == 0 {
 		return 0, false, nil
 	}
-	s2 := *s
-	if len(s2) == 0 {
-		return 0, false, nil
-	}
-	n, err = ParseUint(s2, base, bitSize)
+	n, err = ParseUint(b, base, bitSize)
 	return n, err == nil, err
 }
 

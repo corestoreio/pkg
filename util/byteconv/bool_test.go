@@ -19,26 +19,60 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestParseNullBoolSQL_ParseBoolSQL(t *testing.T) {
-
-	runner := func(have string, want sql.NullBool) func(*testing.T) {
+func TestParseNullBool(t *testing.T) {
+	UseStdLib = false
+	runner := func(have string, want sql.NullBool, wantErr bool) func(*testing.T) {
 		return func(t *testing.T) {
 			b := sql.RawBytes(have)
 			if have == "NULL" {
 				b = nil
 			}
-			assert.Exactly(t, want, ParseNullBoolSQL(&b), t.Name())
-			assert.Exactly(t, want.Bool, ParseBoolSQL(&b), t.Name())
+			bv, err := ParseNullBool(b)
+			if wantErr {
+				assert.Error(t, err, "%q", have)
+				return
+			}
+			require.NoError(t, err, "%q", have)
+			assert.Exactly(t, want, bv, t.Name())
 		}
 	}
-	t.Run("NULL is false and invalid", runner("NULL", sql.NullBool{}))
-	t.Run("empty is false and invalid", runner("", sql.NullBool{}))
-	t.Run(" is false and invalid", runner("", sql.NullBool{}))
-	t.Run("£ is false and invalid", runner("£", sql.NullBool{}))
-	t.Run("0 is false and valid", runner("0", sql.NullBool{Valid: true}))
-	t.Run("1 is true and valid", runner("1", sql.NullBool{Valid: true, Bool: true}))
-	t.Run("10 is false and invalid", runner("10", sql.NullBool{}))
-	t.Run("01 is false and invalid", runner("01", sql.NullBool{}))
+	t.Run("NULL is false and invalid", runner("NULL", sql.NullBool{}, false))
+	t.Run("empty is false and invalid", runner("", sql.NullBool{}, true))
+	t.Run(" is false and invalid", runner("", sql.NullBool{}, true))
+	t.Run("£ is false and invalid", runner("£", sql.NullBool{}, true))
+	t.Run("0 is false and valid", runner("0", sql.NullBool{Valid: true}, false))
+	t.Run("1 is true and valid", runner("1", sql.NullBool{Valid: true, Bool: true}, false))
+	t.Run("10 is false and invalid", runner("10", sql.NullBool{}, true))
+	t.Run("01 is false and invalid", runner("01", sql.NullBool{}, true))
+	t.Run("t is true and valid", runner("t", sql.NullBool{Valid: true, Bool: true}, false))
+	t.Run("true is true and valid", runner("true", sql.NullBool{Valid: true, Bool: true}, false))
+	t.Run("TRUE is true and valid", runner("TRUE", sql.NullBool{Valid: true, Bool: true}, false))
+	t.Run("f is false and valid", runner("f", sql.NullBool{Valid: true, Bool: false}, false))
+	t.Run("false is false and valid", runner("false", sql.NullBool{Valid: true, Bool: false}, false))
+	t.Run("FALSE is false and valid", runner("FALSE", sql.NullBool{Valid: true, Bool: false}, false))
+}
+
+var benchmarkParseBool bool
+
+//BenchmarkParseBool/no-std-map-4         	50000000	        29.7 ns/op	       0 B/op	       0 allocs/op
+//BenchmarkParseBool/with-stdlib-4        	50000000	        30.2 ns/op	       4 B/op	       1 allocs/op
+func BenchmarkParseBool(b *testing.B) {
+	var err error
+	tr := true
+	true := []byte(`True`)
+	b.Run("no-std-map", func(b *testing.B) {
+		UseStdLib = false
+		for i := 0; i < b.N; i++ {
+			benchmarkParseBool, err = ParseBool(true)
+		}
+	})
+	b.Run("with-stdlib", func(b *testing.B) {
+		UseStdLib = tr
+		for i := 0; i < b.N; i++ {
+			benchmarkParseBool, err = ParseBool(true)
+		}
+	})
 }
