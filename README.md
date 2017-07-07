@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/corestoreio/csfw.svg?branch=master)](https://travis-ci.org/corestoreio/csfw) [![wercker status](https://app.wercker.com/status/d7d0bdda415d2228b6fb5bb01681b5c4/s/master "wercker status")](https://app.wercker.com/project/bykey/d7d0bdda415d2228b6fb5bb01681b5c4) [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/lrlnbpcjdy585mg1/branch/master?svg=true)](https://ci.appveyor.com/project/SchumacherFM/csfw/branch/master) [![GoDoc](http://godoc.org/github.com/corestoreio/csfw?status.svg)](http://godoc.org/github.com/corestoreio/csfw) [![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
 
-eCommerce library which is NOT compatible to Magento 2 database schema.
+eCommerce library which is NOT compatible to a Magento 2 database schema but kinda.
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
@@ -30,115 +30,10 @@ $ go run codegen/tableToStruct/*.go
 
 ## Testing
 
-Setup two databases. One for Magento 1 and one for Magento 2 and fill them with
+Setup database for Magento 2 and fill them with
 the provided [testdata](https://github.com/corestoreio/csfw/tree/master/testData).
 
-Create a DSN env var `CS_DSN` and point it to Magento 1 database. Run the tests.
-Change the env var to let it point to Magento 2 database. Rerun the tests.
-
-### Finding Allocations
-
-Side note: There is a new testing approach: TBDD = Test n' Benchmark Driven
-Development.
-
-On the first run we got this result:
-
-```
-$ go test -run=😶 -bench=Benchmark_WithInitStoreByToken .
-PASS
-Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op
-ok  	github.com/corestoreio/csfw/store	2.569s
-
-```
-
-Quite shocking to use 203 allocs for just figuring out the current store view
-within a request.
-
-Now compile your tests into an executable binary:
-
-```
-$ go test -c
-```
-
-This compilation reduces the noise in the below output trace log.
-
-```
-$ GODEBUG=allocfreetrace=1 ./store -test.run=😶 -test.bench=Benchmark_WithInitStoreByToken -test.benchtime=10ms 2>trace.log
-```
-
-Now open the trace.log file (around 26MB) and investigate all the allocations
-and refactor your code. Once finished you can achieve results like:
-
-```
-$ go test -run=NONE -bench=Benchmark_WithInitStoreByToken .
-PASS
-Benchmark_WithInitStoreByToken-4	 2000000	       826 ns/op	     128 B/op	       5 allocs/op
-ok  	github.com/corestoreio/csfw/store	2.569s
-```
-
-### Profiling
-
-```
-$ go test -cpuprofile=cpu.out -benchmem -memprofile=mem.out -run=NONE -bench=NameOfBenchmark -v
-$ go tool pprof packageName.test cpu.out
-Entering interactive mode (type "help" for commands)
-(pprof) top5
-560ms of 1540ms total (36.36%)
-Showing top 5 nodes out of 112 (cum >= 60ms)
-      flat  flat%   sum%        cum   cum%
-     180ms 11.69% 11.69%      400ms 25.97%  runtime.mallocgc
-```
-
-- `flat` is how much time is spent inside of a function.
-- `cum` shows how much time is spent in a function, and also in any code called by a function.
-
-For memory profile:
-
-```
-Sample value selection option (for heap profiles):
-  -inuse_space      Display in-use memory size
-  -inuse_objects    Display in-use object counts
-  -alloc_space      Display allocated memory size
-  -alloc_objects    Display allocated object counts
-
-$ go tool pprof -alloc_objects packageName.test mem.out
-```
-
-### Bound Check Elimination
-
-[http://klauspost-talks.appspot.com/2016/go17-compiler.slide](http://klauspost-talks.appspot.com/2016/go17-compiler.slide)
-
-```
-$ go build -gcflags="-d=ssa/check_bce/debug=1" bounds.go
-or
-$ go test -gcflags="-d=ssa/check_bce/debug=1" .
-```
-
-Success - Check bounds outside the loop. 
-
-### Running Benchmark
-
-Assuming we have already an existing file called `bm_baseline.txt`.
-
-```
-$ go test -v -run=🤐 -bench=. -count=10 . > bm_baseline_new.txt
-```
-
-After running above command to generate the second benchmark statistics file
-we run:
-
-```
-$ benchstat bm_baseline.txt bm_baseline_new.txt
-```
-
-[https://godoc.org/rsc.io/benchstat](https://godoc.org/rsc.io/benchstat)
-
-#### Other development helpers
-
-- [go get github.com/maruel/panicparse/cmd/pp](https://github.com/maruel/panicparse)
-- [go get github.com/alecthomas/gometalinter](https://github.com/alecthomas/gometalinter)
-
-A preconfigured linter file `lint` has been included in this repoistory.
+Create a DSN env var `CS_DSN` and point it to Magento 2 database. Run the tests. 
 
 ## TODO
 
@@ -146,11 +41,43 @@ If you find an entry in the source like `TODO(CS)` that means you can ask `CS`
 to get more information about how to implement and what to fix if the context of
 the todo description isn't understandable.
 
-- Create Magento 1+2 modules to setup test database and test Magento system.
+- Create Magento 2 modules to setup test database and test Magento system.
+
+## Details
+
+* **single repo**. CoreStore is a single repo. That means things can be
+    changed and rearranged globally atomically with ease and
+    confidence.
+
+* **no backwards compatibility**. CoreStore makes no backwards compatibility
+    promises. If you want to use CoreStore, vendor it. And next time you
+    update your vendor tree, update to the latest API if things in CoreStore
+    changed. The plan is to eventually provide tools to make this
+    easier.
+
+* **forward progress** because we have no backwards compatibility,
+    it's always okay to change things to make things better. That also
+    means the bar for contributions is lower. We don't have to get the
+    API 100% correct in the first commit.
+
+* **no Go version policy** CoreStore packages are usually built and tested
+    with the latest Go stable version. However, CoreStore has no overarching
+    version policy; each package can declare its own set of supported
+    Go versions.
+
+* **code review** contributions must be code-reviewed.
+
+* **CLA compliant** contributors must agree to the CLA.
+
+* **docs, tests, portability** all code should be documented in the
+    normal Go style, have tests, and be portable to different
+    operating systems and architectures. We'll try to get builders in
+    place to help run the tests on different OS/arches. For now we
+    have Travis at least.
 
 ## Contributing
 
-Please have a look at the [contribution guidelines](https://github.com/corestoreio/corestore/blob/master/CONTRIBUTING.md).
+Please have a look at the [contribution guidelines](https://github.com/corestoreio/corestore/blob/master/CONTRIBUTING.md) That document is an idea.
 
 ## Acknowledgements
 
@@ -186,4 +113,4 @@ CoreStore is licensed under the Apache License, Version 2.0. See
 
 ## Copyright
 
-[Cyrill Schumacher](http://cyrillschumacher.com) - [PGP Key](https://keybase.io/cyrill)
+[Cyrill Schumacher](https://cyrillschumacher.com) - [PGP Key](https://keybase.io/cyrill)
