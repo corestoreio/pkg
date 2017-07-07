@@ -29,13 +29,8 @@ func TestWith_Query(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
+
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
@@ -54,13 +49,8 @@ func TestWith_Prepare(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
+
 		dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
@@ -79,13 +69,8 @@ func TestWith_Load(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
+
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 

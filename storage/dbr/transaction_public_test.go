@@ -31,13 +31,7 @@ func TestTx_Wrap(t *testing.T) {
 
 	t.Run("commit", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
 		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WillReturnResult(sqlmock.NewResult(0, 9))
@@ -62,13 +56,7 @@ func TestTx_Wrap(t *testing.T) {
 
 	t.Run("rollback", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
 		dbMock.ExpectExec("UPDATE `tableX` SET `value`").WillReturnError(errors.NewAbortedf("Sorry dude"))

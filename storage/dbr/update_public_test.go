@@ -93,13 +93,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("preprocess no transaction", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		setSQLMockInterpolate(dbMock)
 
@@ -121,13 +115,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("prepared no transaction", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		setSMPrepared(dbMock)
 
@@ -150,13 +138,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("prepared with transaction", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
 		setSMPrepared(dbMock)
@@ -183,13 +165,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("preprocess with transaction", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectBegin()
 		setSQLMockInterpolate(dbMock)

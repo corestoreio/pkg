@@ -54,13 +54,8 @@ func TestSelect_Rows(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
+
 		smr := sqlmock.NewRows([]string{"a"}).AddRow("row1").AddRow("row2")
 		dbMock.ExpectQuery("SELECT `a` FROM `tableX`").WillReturnRows(smr)
 
@@ -95,13 +90,8 @@ func TestSelect_Prepare(t *testing.T) {
 
 	t.Run("Prepare Error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
+
 		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
 		sel := dbr.NewSelect("a", "b").From("tableX").WithDB(dbc.DB)
@@ -189,13 +179,7 @@ func TestSelect_Load(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectQuery("SELECT").WillReturnRows(cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data.csv")))
 		s := dbr.NewSelect("*").From("core_config_data")
@@ -220,13 +204,7 @@ func TestSelect_Load(t *testing.T) {
 
 	t.Run("row error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").
 			RowError(1, errors.NewConnectionFailedf("Con failed"))
@@ -241,13 +219,7 @@ func TestSelect_Load(t *testing.T) {
 
 	t.Run("RowClose error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
-		defer func() {
-			dbMock.ExpectClose()
-			assert.NoError(t, dbc.Close())
-			if err := dbMock.ExpectationsWereMet(); err != nil {
-				t.Error("there were unfulfilled expections", err)
-			}
-		}()
+		defer cstesting.MockClose(t, dbc, dbMock)
 
 		r := sqlmock.NewRows([]string{"config_id"}).FromCSVString("222\n333\n").AddRow("3456")
 		dbMock.ExpectQuery("SELECT").WillReturnRows(r)
