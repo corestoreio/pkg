@@ -17,7 +17,14 @@ package dbr
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"io"
+	"math"
+	"strconv"
+	"unicode/utf8"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/corestoreio/csfw/util/byteconv"
 	"github.com/corestoreio/errors"
 )
 
@@ -118,4 +125,230 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 		return rowCount, errors.WithStack(err)
 	}
 	return rowCount, err
+}
+
+// TODO(CyS) not quite sure if the name Base has been chosen wisely.
+
+// Base represents the commonly used fields for each struct for a database table
+// or a view. Base scans a *sql.Rows into a *sql.RawBytes slice and allows to
+// convert the byte slices into the desired type without allocating memory. Base
+// should be used as a composite field in a database table struct.
+type Base struct {
+	// Initialized gets set to true after the first call to Scan to initialize
+	// the internal slices.
+	Initialized bool
+	// Count increments on call to Scan.
+	Count uint64
+	// Columns contains the names of the column returned from the query.
+	Columns []string
+	// Alias maps a `key` containing the alias name, used in the query, to the
+	// `value`, the original snake case name used in the parent struct.
+	Alias map[string]string
+	// CheckValidUTF8 if enabled checks if strings contains valid UTF-8 characters.
+	CheckValidUTF8 bool
+	scanArgs       []interface{}
+	scanRaw        []*sql.RawBytes
+	index          int
+	current        []byte
+}
+
+// sqlRower relates to *sql.Rows but used as an interface for testing purposes.
+type sqlRower interface {
+	Columns() ([]string, error)
+	Scan(dest ...interface{}) error
+}
+
+// Scan calls rows.Scan and builds an internal stack of sql.RawBytes for further
+// processing and type conversion.
+//
+// Each function for a specific type converts the underlying byte slice at the
+// current set index (see function Index) to the appropriate type. You can call
+// as many times as you want the specific functions. The underlying byte slice
+// value is valid until the next call to rows.Next, rows,Scan or rows.Close. See
+// the example for further usages.
+//
+// sqlRower relates to type *sql.Rows, but kept private to not confuse
+// developers with another exported interface. The interface exists mainly for
+// testing purposes.
+func (b *Base) Scan(r sqlRower) error {
+	if !b.Initialized {
+		var err error
+		b.Columns, err = r.Columns()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		lc := len(b.Columns)
+		b.scanRaw = make([]*sql.RawBytes, lc)
+		b.scanArgs = make([]interface{}, lc)
+		for i := range b.Columns {
+			rb := new(sql.RawBytes)
+			b.scanRaw[i] = rb
+			b.scanArgs[i] = rb
+		}
+		b.Initialized = true
+		b.Count = 0
+	}
+	if err := r.Scan(b.scanArgs...); err != nil {
+		return errors.WithStack(err)
+	}
+	b.Count++
+	return nil
+}
+
+// Index sets the current column index to read data from. You must call this
+// first before calling any other type conversion function or they will return
+// empty or NULL values.
+func (b *Base) Index(i int) *Base {
+	b.index = i
+	b.current = *b.scanRaw[i]
+	return b
+}
+
+// Bool see the documentation for function Scan.
+func (b *Base) Bool() (bool, error) {
+	return byteconv.ParseBool(b.current)
+}
+
+// NullBool see the documentation for function Scan.
+func (b *Base) NullBool() (sql.NullBool, error) {
+	return byteconv.ParseNullBool(b.current)
+}
+
+// Int see the documentation for function Scan.
+func (b *Base) Int() (int, error) {
+	i, err := byteconv.ParseInt(b.current)
+	if err != nil {
+		return 0, err
+	}
+	if strconv.IntSize == 32 && (i < -math.MaxInt32 || i > math.MaxInt32) {
+		return 0, rangeError("Base.Int", string(b.current))
+	}
+	return int(i), nil
+}
+
+// Int64 see the documentation for function Scan.
+func (b *Base) Int64() (int64, error) {
+	return byteconv.ParseInt(b.current)
+}
+
+// NullInt64 see the documentation for function Scan.
+func (b *Base) NullInt64() (sql.NullInt64, error) {
+	return byteconv.ParseNullInt64(b.current)
+}
+
+// Float64 see the documentation for function Scan.
+func (b *Base) Float64() (float64, error) {
+	return byteconv.ParseFloat(b.current)
+}
+
+// NullFloat64 see the documentation for function Scan.
+func (b *Base) NullFloat64() (sql.NullFloat64, error) {
+	return byteconv.ParseNullFloat64(b.current)
+}
+
+// Uint see the documentation for function Scan.
+func (b *Base) Uint() (uint, error) {
+	i, _, err := byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
+	if err != nil {
+		return 0, err
+	}
+	if strconv.IntSize == 32 && i > math.MaxUint32 {
+		return 0, rangeError("Base.Uint", string(b.current))
+	}
+	return uint(i), nil
+}
+
+// Uint8 see the documentation for function Scan.
+func (b *Base) Uint8() (uint8, error) {
+	i, _, err := byteconv.ParseUintSQL(b.current, 10, 8)
+	if err != nil {
+		return 0, err
+	}
+	return uint8(i), nil
+}
+
+// Uint16 see the documentation for function Scan.
+func (b *Base) Uint16() (uint16, error) {
+	i, _, err := byteconv.ParseUintSQL(b.current, 10, 16)
+	if err != nil {
+		return 0, err
+	}
+	return uint16(i), nil
+}
+
+// Uint32 see the documentation for function Scan.
+func (b *Base) Uint32() (uint32, error) {
+	i, _, err := byteconv.ParseUintSQL(b.current, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return uint32(i), nil
+}
+
+// Uint64 see the documentation for function Scan.
+func (b *Base) Uint64() (uint64, error) {
+	i, _, err := byteconv.ParseUintSQL(b.current, 10, 64)
+	return i, err
+}
+
+// String implements fmt.Stringer interface and returns the column names with
+// their values. Mostly useful for debugging purposes. The output format might
+// change.
+func (b *Base) String() string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	for i, c := range b.Columns {
+		if i > 0 {
+			buf.WriteByte('\n')
+		}
+		buf.WriteString(c)
+		b := *b.scanRaw[i]
+		if b == nil {
+			buf.WriteString(": <nil>")
+		} else {
+			fmt.Fprintf(buf, ": %q", string(b))
+		}
+	}
+	return buf.String()
+}
+
+// Byte copies the value byte slice at index `idx` into a new slice. See the
+// documentation for function Scan.
+func (b *Base) Byte() []byte {
+	if b.current == nil {
+		return nil
+	}
+	ret := make([]byte, len(b.current))
+	copy(ret, b.current)
+	return ret
+}
+
+// WriteTo implements interface io.WriterTo. It puts the underlying byte slice
+// directly into w. The value is valid until the next call to rows.Next.
+// See the documentation for function Scan.
+func (b *Base) WriteTo(w io.Writer) (n int64, err error) {
+	var n2 int
+	n2, err = w.Write(b.current)
+	return int64(n2), errors.WithStack(err)
+}
+
+// Str see the documentation for function Scan.
+func (b *Base) Str() (string, error) {
+	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
+		return "", errors.NewNotValidf("[dbr] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+	}
+	return string(b.current), nil
+}
+
+// NullString see the documentation for function Scan.
+func (b *Base) NullString() (sql.NullString, error) {
+	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
+		return sql.NullString{}, errors.NewNotValidf("[dbr] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+	}
+	s := byteconv.ParseNullString(b.current)
+	return s, nil
+}
+
+func rangeError(fn, str string) *strconv.NumError {
+	return &strconv.NumError{Func: fn, Num: str, Err: strconv.ErrRange}
 }
