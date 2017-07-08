@@ -15,6 +15,7 @@
 package dbr_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
@@ -167,6 +168,8 @@ func TestBase(t *testing.T) {
 	dbc, dbMock := cstesting.MockDB(t)
 	defer cstesting.MockClose(t, dbc, dbMock)
 
+	// TODO(CyS) check that Base.Byte() returns a copy
+
 	columns := []string{
 		"bool", "null_bool",
 		"int", "int64", "null_int64",
@@ -223,5 +226,137 @@ null_string: <nil>`, b.String())
 		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
 		assert.Exactly(t, int64(1), rc)
 		require.NoError(t, err)
+	})
+
+	t.Run("all types non-nil", func(t *testing.T) {
+		r := sqlmock.NewRows(columns).AddRow(
+			"1", "false",
+			-1, -64, -128,
+			0.1, 3.141,
+			0, 8, 16, 32, 64,
+			"byte data", "I'm a string", "null_string")
+		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
+
+		tbl := new(baseTestCollection)
+
+		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
+		assert.Exactly(t, int64(1), rc)
+		require.NoError(t, err)
+		require.Len(t, tbl.Data, 1)
+
+		assert.Exactly(t,
+			&baseTest{
+				Bool:        true,
+				NullBool:    sql.NullBool{Bool: false, Valid: true},
+				Int:         -1,
+				Int64:       -64,
+				NullInt64:   sql.NullInt64{Int64: -128, Valid: true},
+				Float64:     0.1,
+				NullFloat64: sql.NullFloat64{Float64: 3.141, Valid: true},
+				Uint:        0x0,
+				Uint8:       0x8,
+				Uint16:      0x10,
+				Uint32:      0x20,
+				Uint64:      0x40,
+				Byte:        []byte("byte data"),
+				Str:         "I'm a string",
+				NullString:  sql.NullString{String: "null_string", Valid: true},
+			},
+			tbl.Data[0])
+	})
+
+	t.Run("all types nil", func(t *testing.T) {
+		r := sqlmock.NewRows(columns).AddRow(
+			"True", nil,
+			-1, -64, nil,
+			0.1, nil,
+			0, 8, 16, 32, 64,
+			nil, "I'm a string", nil)
+		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
+
+		tbl := new(baseTestCollection)
+
+		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
+		assert.Exactly(t, int64(1), rc)
+		require.NoError(t, err)
+		require.Len(t, tbl.Data, 1)
+
+		assert.Exactly(t,
+			&baseTest{
+				Bool:    true,
+				Int:     -1,
+				Int64:   -64,
+				Float64: 0.1,
+				Uint:    0x0,
+				Uint8:   0x8,
+				Uint16:  0x10,
+				Uint32:  0x20,
+				Uint64:  0x40,
+				Str:     "I'm a string",
+			},
+			tbl.Data[0])
+
+		assert.Exactly(t, "bool: \"True\"\nnull_bool: <nil>\nint: \"-1\"\nint64: \"-64\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"I'm a string\"\nnull_string: <nil>",
+			tbl.Base.String())
+	})
+
+	t.Run("invalid UTF8 Str", func(t *testing.T) {
+
+		r := sqlmock.NewRows(columns).AddRow(
+			"True", nil,
+			-1, -64, nil,
+			0.1, nil,
+			0, 8, 16, 32, 64,
+			nil, "aa\xe2", string([]byte{66, 250, 67})) // both are invalid
+		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
+
+		tbl := new(baseTestCollection)
+		tbl.Base.CheckValidUTF8 = true
+
+		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
+		assert.Exactly(t, int64(0), rc)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+	})
+	t.Run("invalid UTF8 NullStr", func(t *testing.T) {
+
+		r := sqlmock.NewRows(columns).AddRow(
+			"True", nil,
+			-1, -64, nil,
+			0.1, nil,
+			0, 8, 16, 32, 64,
+			nil, "aa", string([]byte{66, 250, 67})) // both are invalid
+		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
+
+		tbl := new(baseTestCollection)
+		tbl.Base.CheckValidUTF8 = true
+
+		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
+		assert.Exactly(t, int64(0), rc)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+
+	})
+	t.Run("WriteTo", func(t *testing.T) {
+
+		r := sqlmock.NewRows(columns).AddRow(
+			"True", nil,
+			-1, -64, nil,
+			0.1, nil,
+			0, 8, 16, 32, 64,
+			nil, "I'm writing to ...", nil)
+		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
+
+		tbl := new(baseTestCollection)
+
+		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
+		assert.Exactly(t, int64(1), rc)
+		require.NoError(t, err)
+
+		// Does only work for one returned row OR when using a call back function
+		buf := new(bytes.Buffer)
+		l, err := tbl.Base.Index(13).WriteTo(buf)
+		require.NoError(t, err)
+		assert.Exactly(t, int64(18), l)
+		assert.Exactly(t, `I'm writing to ...`, buf.String())
+
 	})
 }

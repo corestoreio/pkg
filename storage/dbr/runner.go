@@ -152,12 +152,6 @@ type Base struct {
 	current        []byte
 }
 
-// sqlRower relates to *sql.Rows but used as an interface for testing purposes.
-type sqlRower interface {
-	Columns() ([]string, error)
-	Scan(dest ...interface{}) error
-}
-
 // Scan calls rows.Scan and builds an internal stack of sql.RawBytes for further
 // processing and type conversion.
 //
@@ -170,7 +164,7 @@ type sqlRower interface {
 // sqlRower relates to type *sql.Rows, but kept private to not confuse
 // developers with another exported interface. The interface exists mainly for
 // testing purposes.
-func (b *Base) Scan(r sqlRower) error {
+func (b *Base) Scan(r *sql.Rows) error {
 	if !b.Initialized {
 		var err error
 		b.Columns, err = r.Columns()
