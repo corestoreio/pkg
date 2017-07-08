@@ -30,8 +30,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ fmt.Stringer = (*dbr.Base)(nil)
-var _ io.WriterTo = (*dbr.Base)(nil)
+var _ fmt.Stringer = (*dbr.RowConvert)(nil)
+var _ io.WriterTo = (*dbr.RowConvert)(nil)
 
 type myToSQL struct {
 	sql  string
@@ -94,9 +94,9 @@ type baseTest struct {
 }
 
 type baseTestCollection struct {
-	Base           dbr.Base
+	Convert        dbr.RowConvert
 	Data           []*baseTest
-	EventAfterScan func(dbr.Base, *baseTest)
+	EventAfterScan func(dbr.RowConvert, *baseTest)
 }
 
 func (vs *baseTestCollection) ToSQL() (string, []interface{}, error) {
@@ -106,18 +106,18 @@ func (vs *baseTestCollection) ToSQL() (string, []interface{}, error) {
 // RowScan implements dbr.Scanner interface and scans a single row from the
 // database query result.
 func (vs *baseTestCollection) RowScan(r *sql.Rows) error {
-	if err := vs.Base.Scan(r); err != nil {
+	if err := vs.Convert.Scan(r); err != nil {
 		return err
 	}
 
 	o := new(baseTest)
-	for i, col := range vs.Base.Columns {
-		if vs.Base.Alias != nil {
-			if orgCol, ok := vs.Base.Alias[col]; ok {
+	for i, col := range vs.Convert.Columns {
+		if vs.Convert.Alias != nil {
+			if orgCol, ok := vs.Convert.Alias[col]; ok {
 				col = orgCol
 			}
 		}
-		b := vs.Base.Index(i)
+		b := vs.Convert.Index(i)
 		var err error
 
 		switch col {
@@ -157,18 +157,19 @@ func (vs *baseTestCollection) RowScan(r *sql.Rows) error {
 		}
 	}
 	if vs.EventAfterScan != nil {
-		vs.EventAfterScan(vs.Base, o)
+		vs.EventAfterScan(vs.Convert, o)
 	}
 	vs.Data = append(vs.Data, o)
 	return nil
 }
 
-func TestBase(t *testing.T) {
+func TestRowConvert(t *testing.T) {
 	t.Parallel()
+
 	dbc, dbMock := cstesting.MockDB(t)
 	defer cstesting.MockClose(t, dbc, dbMock)
 
-	// TODO(CyS) check that Base.Byte() returns a copy
+	// TODO(CyS) check that RowConvert.Byte() returns a copy
 
 	columns := []string{
 		"bool", "null_bool",
@@ -205,7 +206,7 @@ func TestBase(t *testing.T) {
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
-		tbl.EventAfterScan = func(b dbr.Base, _ *baseTest) {
+		tbl.EventAfterScan = func(b dbr.RowConvert, _ *baseTest) {
 			assert.Exactly(t, `bool: "1"
 null_bool: "false"
 int: "-1"
@@ -297,7 +298,7 @@ null_string: <nil>`, b.String())
 			tbl.Data[0])
 
 		assert.Exactly(t, "bool: \"True\"\nnull_bool: <nil>\nint: \"-1\"\nint64: \"-64\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"I'm a string\"\nnull_string: <nil>",
-			tbl.Base.String())
+			tbl.Convert.String())
 	})
 
 	t.Run("invalid UTF8 Str", func(t *testing.T) {
@@ -311,7 +312,7 @@ null_string: <nil>`, b.String())
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
-		tbl.Base.CheckValidUTF8 = true
+		tbl.Convert.CheckValidUTF8 = true
 
 		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
 		assert.Exactly(t, int64(0), rc)
@@ -328,7 +329,7 @@ null_string: <nil>`, b.String())
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
-		tbl.Base.CheckValidUTF8 = true
+		tbl.Convert.CheckValidUTF8 = true
 
 		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
 		assert.Exactly(t, int64(0), rc)
@@ -353,7 +354,7 @@ null_string: <nil>`, b.String())
 
 		// Does only work for one returned row OR when using a call back function
 		buf := new(bytes.Buffer)
-		l, err := tbl.Base.Index(13).WriteTo(buf)
+		l, err := tbl.Convert.Index(13).WriteTo(buf)
 		require.NoError(t, err)
 		assert.Exactly(t, int64(18), l)
 		assert.Exactly(t, `I'm writing to ...`, buf.String())

@@ -127,13 +127,12 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 	return rowCount, err
 }
 
-// TODO(CyS) not quite sure if the name Base has been chosen wisely.
-
-// Base represents the commonly used fields for each struct for a database table
-// or a view. Base scans a *sql.Rows into a *sql.RawBytes slice and allows to
-// convert the byte slices into the desired type without allocating memory. Base
-// should be used as a composite field in a database table struct.
-type Base struct {
+// RowConvert represents the commonly used fields for each struct for a database
+// table or a view to convert the sql.RawBytes into the desired final type. It
+// scans a *sql.Rows into a *sql.RawBytes slice. The conversion into the desired
+// final type can happen without allocating of memory. RowConvert should be used
+// as a composite field in a database table struct.
+type RowConvert struct {
 	// Initialized gets set to true after the first call to Scan to initialize
 	// the internal slices.
 	Initialized bool
@@ -164,7 +163,7 @@ type Base struct {
 // sqlRower relates to type *sql.Rows, but kept private to not confuse
 // developers with another exported interface. The interface exists mainly for
 // testing purposes.
-func (b *Base) Scan(r *sql.Rows) error {
+func (b *RowConvert) Scan(r *sql.Rows) error {
 	if !b.Initialized {
 		var err error
 		b.Columns, err = r.Columns()
@@ -192,68 +191,68 @@ func (b *Base) Scan(r *sql.Rows) error {
 // Index sets the current column index to read data from. You must call this
 // first before calling any other type conversion function or they will return
 // empty or NULL values.
-func (b *Base) Index(i int) *Base {
+func (b *RowConvert) Index(i int) *RowConvert {
 	b.index = i
 	b.current = *b.scanRaw[i]
 	return b
 }
 
 // Bool see the documentation for function Scan.
-func (b *Base) Bool() (bool, error) {
+func (b *RowConvert) Bool() (bool, error) {
 	return byteconv.ParseBool(b.current)
 }
 
 // NullBool see the documentation for function Scan.
-func (b *Base) NullBool() (sql.NullBool, error) {
+func (b *RowConvert) NullBool() (sql.NullBool, error) {
 	return byteconv.ParseNullBool(b.current)
 }
 
 // Int see the documentation for function Scan.
-func (b *Base) Int() (int, error) {
+func (b *RowConvert) Int() (int, error) {
 	i, err := byteconv.ParseInt(b.current)
 	if err != nil {
 		return 0, err
 	}
 	if strconv.IntSize == 32 && (i < -math.MaxInt32 || i > math.MaxInt32) {
-		return 0, rangeError("Base.Int", string(b.current))
+		return 0, rangeError("RowConvert.Int", string(b.current))
 	}
 	return int(i), nil
 }
 
 // Int64 see the documentation for function Scan.
-func (b *Base) Int64() (int64, error) {
+func (b *RowConvert) Int64() (int64, error) {
 	return byteconv.ParseInt(b.current)
 }
 
 // NullInt64 see the documentation for function Scan.
-func (b *Base) NullInt64() (sql.NullInt64, error) {
+func (b *RowConvert) NullInt64() (sql.NullInt64, error) {
 	return byteconv.ParseNullInt64(b.current)
 }
 
 // Float64 see the documentation for function Scan.
-func (b *Base) Float64() (float64, error) {
+func (b *RowConvert) Float64() (float64, error) {
 	return byteconv.ParseFloat(b.current)
 }
 
 // NullFloat64 see the documentation for function Scan.
-func (b *Base) NullFloat64() (sql.NullFloat64, error) {
+func (b *RowConvert) NullFloat64() (sql.NullFloat64, error) {
 	return byteconv.ParseNullFloat64(b.current)
 }
 
 // Uint see the documentation for function Scan.
-func (b *Base) Uint() (uint, error) {
+func (b *RowConvert) Uint() (uint, error) {
 	i, _, err := byteconv.ParseUintSQL(b.current, 10, strconv.IntSize)
 	if err != nil {
 		return 0, err
 	}
 	if strconv.IntSize == 32 && i > math.MaxUint32 {
-		return 0, rangeError("Base.Uint", string(b.current))
+		return 0, rangeError("RowConvert.Uint", string(b.current))
 	}
 	return uint(i), nil
 }
 
 // Uint8 see the documentation for function Scan.
-func (b *Base) Uint8() (uint8, error) {
+func (b *RowConvert) Uint8() (uint8, error) {
 	i, _, err := byteconv.ParseUintSQL(b.current, 10, 8)
 	if err != nil {
 		return 0, err
@@ -262,7 +261,7 @@ func (b *Base) Uint8() (uint8, error) {
 }
 
 // Uint16 see the documentation for function Scan.
-func (b *Base) Uint16() (uint16, error) {
+func (b *RowConvert) Uint16() (uint16, error) {
 	i, _, err := byteconv.ParseUintSQL(b.current, 10, 16)
 	if err != nil {
 		return 0, err
@@ -271,7 +270,7 @@ func (b *Base) Uint16() (uint16, error) {
 }
 
 // Uint32 see the documentation for function Scan.
-func (b *Base) Uint32() (uint32, error) {
+func (b *RowConvert) Uint32() (uint32, error) {
 	i, _, err := byteconv.ParseUintSQL(b.current, 10, 32)
 	if err != nil {
 		return 0, err
@@ -280,7 +279,7 @@ func (b *Base) Uint32() (uint32, error) {
 }
 
 // Uint64 see the documentation for function Scan.
-func (b *Base) Uint64() (uint64, error) {
+func (b *RowConvert) Uint64() (uint64, error) {
 	i, _, err := byteconv.ParseUintSQL(b.current, 10, 64)
 	return i, err
 }
@@ -288,7 +287,7 @@ func (b *Base) Uint64() (uint64, error) {
 // String implements fmt.Stringer interface and returns the column names with
 // their values. Mostly useful for debugging purposes. The output format might
 // change.
-func (b *Base) String() string {
+func (b *RowConvert) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	for i, c := range b.Columns {
@@ -308,7 +307,7 @@ func (b *Base) String() string {
 
 // Byte copies the value byte slice at index `idx` into a new slice. See the
 // documentation for function Scan.
-func (b *Base) Byte() []byte {
+func (b *RowConvert) Byte() []byte {
 	if b.current == nil {
 		return nil
 	}
@@ -320,14 +319,14 @@ func (b *Base) Byte() []byte {
 // WriteTo implements interface io.WriterTo. It puts the underlying byte slice
 // directly into w. The value is valid until the next call to rows.Next.
 // See the documentation for function Scan.
-func (b *Base) WriteTo(w io.Writer) (n int64, err error) {
+func (b *RowConvert) WriteTo(w io.Writer) (n int64, err error) {
 	var n2 int
 	n2, err = w.Write(b.current)
 	return int64(n2), errors.WithStack(err)
 }
 
 // Str see the documentation for function Scan.
-func (b *Base) Str() (string, error) {
+func (b *RowConvert) Str() (string, error) {
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
 		return "", errors.NewNotValidf("[dbr] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 	}
@@ -335,7 +334,7 @@ func (b *Base) Str() (string, error) {
 }
 
 // NullString see the documentation for function Scan.
-func (b *Base) NullString() (sql.NullString, error) {
+func (b *RowConvert) NullString() (sql.NullString, error) {
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
 		return sql.NullString{}, errors.NewNotValidf("[dbr] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 	}
