@@ -39,4 +39,9 @@
 // key of a party using JWE with Key Agreement with Elliptic Curve
 // Diffie-Hellman Ephemeral Static (ECDH-ES), where the sender could extract
 // receiver’s private key.
+//
+// https://news.ycombinator.com/item?id=14727252 =>
+// https://github.com/shieldfy/API-Security-Checklist
+//
+// https://dadario.com.br/revoking-json-web-tokens/
 package csjwt
