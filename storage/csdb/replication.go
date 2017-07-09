@@ -18,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 
+	"database/sql"
+
 	"github.com/corestoreio/errors"
 )
 
@@ -45,9 +47,9 @@ func (ms *MasterStatus) ToSQL() (string, []interface{}, error) {
 
 // RowScan implements dbr.Scanner interface to scan a row returned from database
 // query.
-func (ms *MasterStatus) RowScan(_ int64, _ []string, scan func(...interface{}) error) error {
+func (ms *MasterStatus) RowScan(r *sql.Rows) error {
 	return errors.WithStack(
-		scan(&ms.File, &ms.Position, &ms.BinlogDoDB, &ms.BinlogIgnoreDB, &ms.ExecutedGTIDSet),
+		r.Scan(&ms.File, &ms.Position, &ms.BinlogDoDB, &ms.BinlogIgnoreDB, &ms.ExecutedGTIDSet),
 	)
 }
 

@@ -15,18 +15,17 @@
 package csdb
 
 import (
+	"database/sql"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 )
 
 // Variables contains multiple MySQL configuration variables. Not threadsafe.
 type Variables struct {
+	Convert dbr.RowConvert
 	Data    map[string]string
 	Show    *dbr.Show
-	scanArg [2]interface{}
-	dto     struct {
-		name, value string
-	}
 }
 
 // NewVariables creates a new variable collection. If the argument names gets
@@ -53,15 +52,21 @@ func (vs *Variables) ToSQL() (string, []interface{}, error) {
 }
 
 // RowScan implements dbr.Scanner interface and scans a single row from the
-// database query result.
-func (vs *Variables) RowScan(idx int64, _ []string, scan func(...interface{}) error) error {
-	if idx == 0 {
-		vs.scanArg = [...]interface{}{&vs.dto.name, &vs.dto.value}
-	}
-	if err := errors.WithStack(scan(vs.scanArg[:]...)); err != nil {
+// database query result. It expects that the variable name is in column 0 and
+// the variable value in column 1.
+func (vs *Variables) RowScan(r *sql.Rows) error {
+	if err := vs.Convert.Scan(r); err != nil {
 		return err
 	}
-	vs.Data[vs.dto.name] = vs.dto.value
+	name, err := vs.Convert.Index(0).Str()
+	if err != nil {
+		return errors.Wrapf(err, "[csdb] Variables.RowScan.Index.0 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
+	}
+	value, err := vs.Convert.Index(1).Str()
+	if err != nil {
+		return errors.Wrapf(err, "[csdb] Variables.RowScan.Index.1 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
+	}
+	vs.Data[name] = value
 	return nil
 }
 

@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/byteconv"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
 
@@ -141,7 +142,6 @@ var benchmarkColumnsJoinFieldsData = csdb.Columns{
 
 func BenchmarkColumnsJoinFields(b *testing.B) {
 	b.ReportAllocs()
-	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		benchmarkColumnsJoinFields = benchmarkColumnsJoinFieldsData.JoinFields("|")
 	}
@@ -153,38 +153,38 @@ func BenchmarkColumnsJoinFields(b *testing.B) {
 var benchmarkLoadColumns map[string]csdb.Columns
 var benchmarkLoadColumnsHashWant = []byte{0x66, 0x73, 0x3c, 0x93, 0x11, 0x65, 0xbc, 0xcf}
 
-// BenchmarkLoadColumns-4   	    2000	    748079 ns/op	   14364 B/op	     363 allocs/op
-// BenchmarkLoadColumns-4   	    2000	    782965 ns/op	   14241 B/op	     350 allocs/op
-// BenchmarkLoadColumns-4         	2000	   1228441 ns/op	   16554 B/op	     422 allocs/op // Go 1.9 Scanner iFace
-// BenchmarkLoadColumns-4   	    1000	   1262590 ns/op	   16830 B/op	     423 allocs/op
 func BenchmarkLoadColumns(b *testing.B) {
 	const tn = "eav_attribute"
 	ctx := context.TODO()
 	db := cstesting.MustConnectDB(b)
 	defer cstesting.Close(b, db)
 
+	byteconv.UseStdLib = false
+
 	var err error
 	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkLoadColumns, err = csdb.LoadColumns(ctx, db.DB, tn)
+	b.Run("RowConvert", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			benchmarkLoadColumns, err = csdb.LoadColumns(ctx, db.DB, tn)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+		hashHave, err := benchmarkLoadColumns[tn].Hash()
 		if err != nil {
 			b.Error(err)
 		}
-	}
-	hashHave, err := benchmarkLoadColumns[tn].Hash()
-	if err != nil {
-		b.Error(err)
-	}
-	if 0 != bytes.Compare(hashHave, benchmarkLoadColumnsHashWant) {
-		b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkLoadColumnsHashWant)
-	}
-	//b.Log(benchmarkLoadColumns[tn].GoString())
+		if 0 != bytes.Compare(hashHave, benchmarkLoadColumnsHashWant) {
+			b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkLoadColumnsHashWant)
+		}
+	})
 }
 
 // BenchmarkVariables-4   	    2000	   1046318 ns/op	   28401 B/op	    1121 allocs/op <= 186 rows
 // BenchmarkVariables-4   	    2000	    651096 ns/op	     769 B/op	      21 allocs/op <= one row!
 // BenchmarkVariables-4   	    2000	   1027245 ns/op	   22417 B/op	     935 allocs/op <= pre alloc slice
+// BenchmarkVariables-4   	    2000	   1008059 ns/op	   19506 B/op	     750 allocs/op
 func BenchmarkVariables(b *testing.B) {
 
 	ctx := context.TODO()

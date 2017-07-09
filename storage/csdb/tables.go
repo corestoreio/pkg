@@ -16,6 +16,7 @@ package csdb
 
 import (
 	"context"
+	"database/sql"
 	"sort"
 	"sync"
 
@@ -41,9 +42,9 @@ type TableOption struct {
 
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
+	Convert dbr.RowConvert
 	// Schema represents the name of the database. Might be empty.
 	Schema        string
-	dto           Column // used in ScanArgs
 	previousTable string // the table which has been scanned beforehand
 	mu            sync.RWMutex
 	// tm a map where key = table name and value the table pointer
@@ -362,19 +363,18 @@ func (tm *Tables) DeleteAllFromCache() {
 // RowScan scans a row from a database. It creates automatically a new Table
 // object for non-existing ones. Existing tables gets reset their columns slice
 // and it refreshes them.
-func (tm *Tables) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
-	if idx == 0 {
+func (tm *Tables) RowScan(r *sql.Rows) error {
+	if tm.Convert.Count == 0 {
 		tm.mu.Lock()
 	}
 
-	var tableName string
-	if err := scan(
-		&tableName,
-		&tm.dto.Field, &tm.dto.Pos, &tm.dto.Default, &tm.dto.Null,
-		&tm.dto.DataType, &tm.dto.CharMaxLength, &tm.dto.Precision, &tm.dto.Scale,
-		&tm.dto.ColumnType, &tm.dto.Key, &tm.dto.Extra, &tm.dto.Comment,
-	); err != nil {
-		return errors.Wrapf(err, "[csdb] Tables.RowScan. Columns %v\n", columns)
+	if err := tm.Convert.Scan(r); err != nil {
+		return err
+	}
+
+	c, tableName, err := NewColumn(&tm.Convert)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
 	t, ok := tm.tm[tableName]
@@ -388,8 +388,7 @@ func (tm *Tables) RowScan(idx int64, columns []string, scan func(dest ...interfa
 		t.resetColumns()
 	}
 
-	c := tm.dto
-	t.Columns = append(t.Columns, &c)
+	t.Columns = append(t.Columns, c)
 	return nil
 }
 

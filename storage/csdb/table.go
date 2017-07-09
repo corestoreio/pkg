@@ -17,6 +17,7 @@ package csdb
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"time"
@@ -29,6 +30,7 @@ import (
 
 // Table represents a table from a specific database.
 type Table struct {
+	Convert dbr.RowConvert
 	// Schema represents the name of the database. Might be empty.
 	Schema string
 	// Name of the table
@@ -43,9 +45,6 @@ type Table struct {
 
 	// selectAllCache no quite sure about this one .... maybe remove it
 	selectAllCache *dbr.Select
-
-	// data transfer object while scanning
-	dto Column
 }
 
 // NewTable initializes a new table structure
@@ -84,26 +83,24 @@ func (t *Table) resetColumns() {
 }
 
 // RowScan implements dbr.Scanner interface
-func (t *Table) RowScan(idx int64, columns []string, scan func(dest ...interface{}) error) error {
-	if idx == 0 {
+func (t *Table) RowScan(r *sql.Rows) error {
+	if t.Convert.Count == 0 {
 		t.resetColumns()
 	}
-	var tableName string
-	if err := scan(
-		&tableName,
-		&t.dto.Field, &t.dto.Pos, &t.dto.Default, &t.dto.Null,
-		&t.dto.DataType, &t.dto.CharMaxLength, &t.dto.Precision, &t.dto.Scale,
-		&t.dto.ColumnType, &t.dto.Key, &t.dto.Extra, &t.dto.Comment,
-	); err != nil {
-		return errors.Wrapf(err, "[csdb] Table.RowScan. Table %q Columns %v\n", t.Name, columns)
+	if err := t.Convert.Scan(r); err != nil {
+		return err
+	}
+
+	c, tableName, err := NewColumn(&t.Convert)
+	if err != nil {
+		return errors.Wrapf(err, "[csdb] Table.RowScan. Table %q Columns %v\n", t.Name, t.Convert.Columns)
 	}
 
 	if t.Name == "" {
 		t.Name = tableName
 	}
 
-	c := t.dto // copy DTO into a new variable
-	t.Columns = append(t.Columns, &c)
+	t.Columns = append(t.Columns, c)
 	return nil
 }
 

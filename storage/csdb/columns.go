@@ -46,26 +46,26 @@ type Columns []*Column
 // Column contains information about one database table column retrieved from
 // information_schema.COLUMNS
 type Column struct {
-	Field   string         `db:"COLUMN_NAME"`      //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
-	Pos     int64          `db:"ORDINAL_POSITION"` //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
-	Default dbr.NullString `db:"COLUMN_DEFAULT"`   //`COLUMN_DEFAULT` longtext,
-	Null    string         `db:"IS_NULLABLE"`      //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
+	Field   string         //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
+	Pos     uint64         //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
+	Default dbr.NullString //`COLUMN_DEFAULT` longtext,
+	Null    string         //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
 	// DataType contains the basic type of a column like smallint, int, mediumblob,
 	// float, double, etc... but always transformed to lower case.
-	DataType      string        `db:"DATA_TYPE"`                //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
-	CharMaxLength dbr.NullInt64 `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
-	Precision     dbr.NullInt64 `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
-	Scale         dbr.NullInt64 `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
+	DataType      string        //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
+	CharMaxLength dbr.NullInt64 //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
+	Precision     dbr.NullInt64 //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
+	Scale         dbr.NullInt64 //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
 	// ColumnType full SQL string of the column type
-	ColumnType string `db:"COLUMN_TYPE"` //`COLUMN_TYPE` longtext NOT NULL,
+	ColumnType string //`COLUMN_TYPE` longtext NOT NULL,
 	// Key primary or unique or ...
-	Key     string `db:"COLUMN_KEY"`     //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
-	Extra   string `db:"EXTRA"`          //`EXTRA` varchar(30) NOT NULL DEFAULT '',
-	Comment string `db:"COLUMN_COMMENT"` //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
+	Key     string //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
+	Extra   string //`EXTRA` varchar(30) NOT NULL DEFAULT '',
+	Comment string //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
 
 	mu sync.RWMutex
 	// DataTypeSimple contains the simplified data type of the field DataType.
-	// Fo example bigint, smallint, tinyiny will result in "int".
+	// Fo example bigint, smallint, tinyint will result in "int".
 	dataTypeSimple string
 }
 
@@ -90,6 +90,61 @@ const selAllTablesColumns = `SELECT
 // available. All columns from all tables gets selected when you don't provide
 // the argument `tables`.
 func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[string]Columns, error) {
+	var rows *sql.Rows
+
+	if len(tables) == 0 {
+		var err error
+		rows, err = db.QueryContext(ctx, selAllTablesColumns)
+		if err != nil {
+			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
+		}
+	} else {
+		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.In.Str(tables...))
+		if err != nil {
+			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
+		}
+		rows, err = db.QueryContext(ctx, sqlStr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v with WHERE clause", tables)
+		}
+	}
+	var err error
+	defer func() {
+		// Not testable with the sqlmock package :-(
+		if err2 := rows.Close(); err2 != nil && err == nil {
+			err = errors.Wrap(err2, "[dbr] LoadColumns.Rows.Close")
+		}
+	}()
+
+	tc := make(map[string]Columns)
+	rc := new(dbr.RowConvert)
+	for rows.Next() {
+		if err = rc.Scan(rows); err != nil {
+			return nil, errors.Wrapf(err, "[csdb] Scan Query for tables: %v", tables)
+		}
+		c, tn, err := NewColumn(rc)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		if _, ok := tc[tn]; !ok {
+			tc[tn] = make(Columns, 0, 10)
+		}
+
+		c.DataType = strings.ToLower(c.DataType)
+		tc[tn] = append(tc[tn], c)
+		tn = ""
+	}
+	if err = rows.Err(); err != nil {
+		return nil, errors.Wrapf(err, "[csdb] rows.Err Query")
+	}
+	if len(tc) == 0 {
+		return nil, errors.NewNotFoundf("[csdb] Tables %v not found", tables)
+	}
+	return tc, err
+}
+
+func LoadColumnsOLD(ctx context.Context, db dbr.Querier, tables ...string) (map[string]Columns, error) {
 	var rows *sql.Rows
 
 	if len(tables) == 0 {
@@ -140,6 +195,7 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 // Hash calculates a non-cryptographic, fast and efficient hash value from all
 // columns. Current hash algorithm is fnv64a.
 func (cs Columns) Hash() ([]byte, error) {
+	// TODO use encoding/binary
 	var tr byte = 't' // letter t for true
 	var fl byte = 'f' // letter f for false
 	var buf bytes.Buffer
@@ -287,7 +343,8 @@ func (cs Columns) GoString() string {
 	return buf.String()
 }
 
-// First returns the first column from the slice. Guaranteed to a non-nil return value.
+// First returns the first column from the slice. Guaranteed to a non-nil return
+// value.
 func (cs Columns) First() *Column {
 	if len(cs) > 0 {
 		return cs[0]
@@ -295,14 +352,74 @@ func (cs Columns) First() *Column {
 	return new(Column)
 }
 
-// JoinFields joins the field names into a string, separated by the optional
-// first argument.
-func (cs Columns) JoinFields(sep ...string) string {
-	aSep := ""
-	if len(sep) > 0 {
-		aSep = sep[0]
+// JoinFields joins the field names into a string, separated by the provided
+// separator.
+func (cs Columns) JoinFields(sep string) string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	i := 0
+	for _, c := range cs {
+		if c.Field != "" {
+			if i > 0 {
+				buf.WriteString(sep)
+			}
+			buf.WriteString(c.Field)
+			i++
+		}
 	}
-	return strings.Join(cs.FieldNames(), aSep)
+	return buf.String()
+}
+
+// NewColumn creates a new column pointer and maps it from a raw database row
+// its bytes into the type Column.
+func NewColumn(rc *dbr.RowConvert) (c *Column, tableName string, err error) {
+	c = new(Column)
+	for i, col := range rc.Columns {
+		if rc.Alias != nil {
+			// col might be the alias name used in the query. Lookup the
+			// original upper case name as used in the switch mapping.
+			if orgCol, ok := rc.Alias[col]; ok {
+				col = orgCol
+			}
+		}
+
+		rc = rc.Index(i)
+		var err error
+		switch col {
+		case "TABLE_NAME":
+			tableName, err = rc.Str()
+		case "COLUMN_NAME":
+			c.Field, err = rc.Str()
+		case "ORDINAL_POSITION":
+			c.Pos, err = rc.Uint64()
+		case "COLUMN_DEFAULT":
+			c.Default.NullString, err = rc.NullString()
+		case "IS_NULLABLE":
+			c.Null, err = rc.Str()
+		case "DATA_TYPE":
+			c.DataType, err = rc.Str()
+		case "CHARACTER_MAXIMUM_LENGTH":
+			c.CharMaxLength.NullInt64, err = rc.NullInt64()
+		case "NUMERIC_PRECISION":
+			c.Precision.NullInt64, err = rc.NullInt64()
+		case "NUMERIC_SCALE":
+			c.Scale.NullInt64, err = rc.NullInt64()
+		case "COLUMN_TYPE":
+			c.ColumnType, err = rc.Str()
+		case "COLUMN_KEY":
+			c.Key, err = rc.Str()
+		case "EXTRA":
+			c.Extra, err = rc.Str()
+		case "COLUMN_COMMENT":
+			c.Comment, err = rc.Str()
+		default:
+			return nil, "", errors.NewNotSupportedf("[csdb] Column %q not supported or alias not found")
+		}
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "[csdb] Failed to scan %q at row %d", col, rc.Count)
+		}
+	}
+	return c, tableName, nil
 }
 
 // GoComment creates a comment from a database column to be used in Go code
