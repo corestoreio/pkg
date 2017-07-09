@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package csmath provides additional math helper functions.
+// Package csmath provides additional math functions.
 //
+// For further information about rounding read https://www.cockroachlabs.com/blog/rounding-implementations-in-go/
 package csmath

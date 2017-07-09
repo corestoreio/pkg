@@ -17,6 +17,8 @@ package csmath
 import "math"
 
 // Round rounds a value. RoundOn is usually .5.
+// Implemented in Go 1.10
+// https://www.cockroachlabs.com/blog/rounding-implementations-in-go/
 func Round(val float64, roundOn float64, places int) float64 {
 	pow := math.Pow(10, float64(places))
 	digit := pow * val
