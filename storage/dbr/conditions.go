@@ -243,26 +243,26 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 			if strings.IndexByte(f.Condition, '?') == -1 && len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
 				writeOperator(w, true, f.Arguments[0])
 			}
-			// TODO: case f.Sub.Select != nil:
-		default:
-			Quoter.WriteNameAlias(w, f.Condition, "")
 
-			if f.Sub.Select != nil {
-				writeOperator(w, false, argNull(f.Sub.Operator))
-				w.WriteByte('(')
-				if err := f.Sub.Select.toSQL(w); err != nil {
-					return errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
-				}
-				w.WriteByte(')')
-			} else {
-				// a column only supports one argument.
-				if f.Argument != nil && f.Arguments == nil {
-					writeOperator(w, true, f.Argument)
-				}
-				if f.Argument == nil && f.Arguments == nil {
-					writeOperator(w, true, ArgNull())
-				}
+		case f.Sub.Select != nil:
+			Quoter.WriteNameAlias(w, f.Condition, "")
+			writeOperator(w, false, argNull(f.Sub.Operator))
+			w.WriteByte('(')
+			if err := f.Sub.Select.toSQL(w); err != nil {
+				return errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
 			}
+			w.WriteByte(')')
+
+		case f.Argument != nil && f.Arguments == nil:
+			Quoter.WriteNameAlias(w, f.Condition, "")
+			writeOperator(w, true, f.Argument)
+
+		case f.Argument == nil && f.Arguments == nil:
+			Quoter.WriteNameAlias(w, f.Condition, "")
+			writeOperator(w, true, ArgNull())
+
+		default:
+			panic(errors.NewNotSupportedf("[dbr] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", f))
 		}
 
 		w.WriteByte(')')
