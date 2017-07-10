@@ -133,9 +133,6 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 // final type can happen without allocating of memory. RowConvert should be used
 // as a composite field in a database table struct.
 type RowConvert struct {
-	// Initialized gets set to true after the first call to Scan to initialize
-	// the internal slices.
-	Initialized bool
 	// Count increments on call to Scan.
 	Count uint64
 	// Columns contains the names of the column returned from the query.
@@ -143,6 +140,9 @@ type RowConvert struct {
 	// Alias maps a `key` containing the alias name, used in the query, to the
 	// `value`, the original snake case name used in the parent struct.
 	Alias map[string]string
+	// Initialized gets set to true after the first call to Scan to initialize
+	// the internal slices.
+	Initialized bool
 	// CheckValidUTF8 if enabled checks if strings contains valid UTF-8 characters.
 	CheckValidUTF8 bool
 	scanArgs       []interface{}

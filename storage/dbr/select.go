@@ -42,8 +42,6 @@ type Select struct {
 	// `SELECT *` statements are not really supported:
 	// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
 	Columns aliases
-	// IsCountStar retains the column names but executes a COUNT(*) query.
-	IsCountStar bool
 
 	//TODO: create a possibility of the Select type which has a half-pre-rendered
 	// SQL statement where a developer can only modify or append WHERE clauses.
@@ -61,6 +59,7 @@ type Select struct {
 	OffsetCount       uint64
 	LimitValid        bool
 	OffsetValid       bool
+	IsCountStar       bool // IsCountStar retains the column names but executes a COUNT(*) query.
 	IsDistinct        bool // See Distinct()
 	IsStraightJoin    bool // See StraightJoin()
 	IsSQLNoCache      bool // See SQLNoCache()
