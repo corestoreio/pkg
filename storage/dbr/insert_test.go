@@ -457,8 +457,6 @@ func TestInsert_FromSelect(t *testing.T) {
 	// columns and args just to check that they get ignored
 	ins.AddColumns("a", "b").AddValues(1, true)
 
-	argEq := Eq{"a": In.Int64(1, 2, 3)}
-
 	compareToSQL(t, ins.FromSelect(NewSelect("something_id", "user_id", "other").
 		From("some_table").
 		Where(
@@ -466,8 +464,8 @@ func TestInsert_FromSelect(t *testing.T) {
 			Column("d", ArgInt64(1)),
 			Column("e", ArgString("wat")).Or(),
 			ParenthesisClose(),
+			Column("a", In.Int64(1, 2, 3)),
 		).
-		Where(argEq).
 		OrderByDesc("id").
 		Paginate(1, 20)),
 		nil,

@@ -113,7 +113,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err := s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Eq{"key": ArgString("6")}).Exec(context.TODO())
+	res, err := s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Column("key", ArgString("6"))).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -122,7 +122,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	_, err = s.Select("*").From("dbr_people").Where(Eq{"email": ArgString("ben@whitehouse.gov")}).Load(context.TODO(), &person)
+	_, err = s.Select("*").From("dbr_people").Where(Column("email", ArgString("ben@whitehouse.gov"))).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)

@@ -67,9 +67,10 @@ func TestSelectFullToSQL(t *testing.T) {
 			Column("d", Equal.Int(1)),
 			Column("e", ArgString("wat")).Or(),
 			ParenthesisClose(),
-			Eq{"f": Equal.Int(2)}, Eq{"g": Equal.Int(3)},
+			Column("f", Equal.Int(2)),
+			Column("g", Equal.Int(3)),
+			Column("h", In.Int64(4, 5, 6)),
 		).
-		Where(Eq{"h": In.Int64(4, 5, 6)}).
 		GroupBy("ab").
 		Having(
 			ParenthesisOpen(),
@@ -101,9 +102,10 @@ func TestSelect_Interpolate(t *testing.T) {
 				Column("d", Equal.Int(1)),
 				Column("e", Equal.Str("wat")).Or(),
 				ParenthesisClose(),
-				Eq{"f": Equal.Int64(2)}, Eq{"g": Equal.Int64(3)},
+				Column("f", Equal.Int(2)),
+				Column("g", Equal.Int(3)),
+				Column("h", In.Int64(4, 5, 6)),
 			).
-			Where(Eq{"h": In.Int64(4, 5, 6)}).
 			GroupBy("ab").
 			Having(
 				ParenthesisOpen(),
@@ -126,8 +128,10 @@ func TestSelect_Interpolate(t *testing.T) {
 		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
 			Where(Expression("`d` = ? OR `e` = ?", ArgInt64(1), ArgString("wat"))).
-			Where(Eq{"g": ArgInt64(3)}).
-			Where(Eq{"h": In.Int(1, 2, 3)}).
+			Where(
+				Column("g", Equal.Int(3)),
+				Column("h", In.Int64(1, 2, 3)),
+			).
 			GroupBy("ab").GroupBy("ii").GroupBy("iii").
 			Having(Expression("j = k"), Column("jj", ArgInt64(1))).
 			Having(Column("jjj", ArgInt64(2))).
@@ -363,68 +367,33 @@ func TestSelect_Null(t *testing.T) {
 	})
 }
 
-func TestSelectWhereMapSQL(t *testing.T) {
+func TestSelectWhereNULL(t *testing.T) {
 	t.Parallel()
-	t.Run("one", func(t *testing.T) {
-		compareToSQL(t,
-			NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1)}),
-			nil,
-			"SELECT `a` FROM `b` WHERE (`a` = ?)",
-			"SELECT `a` FROM `b` WHERE (`a` = 1)",
-			int64(1),
-		)
-	})
-
-	t.Run("two", func(t *testing.T) {
-		sql, args, err := NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1), "b": ArgBool(true)}).ToSQL()
-		assert.NoError(t, err)
-		if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` = ?)" {
-			assert.Equal(t, []interface{}{int64(1), true}, args)
-		} else {
-			assert.Equal(t, "SELECT `a` FROM `b` WHERE (`b` = ?) AND (`a` = ?)", sql)
-			assert.Equal(t, []interface{}{true, int64(1)}, args)
-		}
-	})
 
 	t.Run("one nil", func(t *testing.T) {
 		compareToSQL(t,
-			NewSelect("a").From("b").Where(Eq{"a": nil}),
+			NewSelect("a").From("b").Where(Column("a", nil)),
 			nil,
 			"SELECT `a` FROM `b` WHERE (`a` IS NULL)",
 			"SELECT `a` FROM `b` WHERE (`a` IS NULL)",
-		)
-	})
-
-	t.Run("one IN", func(t *testing.T) {
-		compareToSQL(t,
-			NewSelect("a").From("b").Where(Eq{"a": In.Int(1, 2, 3)}),
-			nil,
-			"SELECT `a` FROM `b` WHERE (`a` IN (?,?,?))",
-			"SELECT `a` FROM `b` WHERE (`a` IN (1,2,3))",
-			int64(1), int64(2), int64(3),
 		)
 	})
 
 	t.Run("no values", func(t *testing.T) {
-		// NOTE: a has no valid values, we want a query that returns nothing
-		// TODO(CyS): revise architecture and behaviour ... maybe
 		var args = []interface{}{}
 		compareToSQL(t,
-			NewSelect("a").From("b").Where(Eq{"a": Equal.Int()}),
+			NewSelect("a").From("b").Where(Column("a", Equal.Int())),
 			nil,
 			"SELECT `a` FROM `b` WHERE (`a` = ?)",
 			"",
 			args...,
 		)
-		//assert.Equal(t, "SELECT a FROM `b` WHERE (1=0)", sql)
 	})
 
 	t.Run("empty ArgInt", func(t *testing.T) {
-		// see subtest above "no values" and its TODO
 		var iVal []int
-
 		compareToSQL(t,
-			NewSelect("a").From("b").Where(Eq{"a": In.Int(iVal...)}),
+			NewSelect("a").From("b").Where(Column("a", In.Int(iVal...))),
 			nil,
 			"SELECT `a` FROM `b` WHERE (`a` IN ())",
 			"",
@@ -434,28 +403,18 @@ func TestSelectWhereMapSQL(t *testing.T) {
 
 	t.Run("Map nil arg", func(t *testing.T) {
 		s := NewSelect("a").From("b").
-			Where(Eq{"a": nil}).
-			Where(Eq{"b": ArgBool(false)}).
-			Where(Eq{"c": ArgNull()}).
-			Where(Eq{"d": NotNull.Null()})
+			Where(
+				Column("a", nil),
+				Column("b", ArgBool(false)),
+				Column("c", ArgNull()),
+				Column("d", NotNull.Null()),
+			)
 		compareToSQL(t, s, nil,
 			"SELECT `a` FROM `b` WHERE (`a` IS NULL) AND (`b` = ?) AND (`c` IS NULL) AND (`d` IS NOT NULL)",
 			"SELECT `a` FROM `b` WHERE (`a` IS NULL) AND (`b` = 0) AND (`c` IS NULL) AND (`d` IS NOT NULL)",
 			false,
 		)
 	})
-}
-
-func TestSelectWhereEqSQL(t *testing.T) {
-	t.Parallel()
-	sql, args, err := NewSelect("a").From("b").Where(Eq{"a": Equal.Int(1), "b": In.Int64(1, 2, 3)}).ToSQL()
-	assert.NoError(t, err)
-	if sql == "SELECT `a` FROM `b` WHERE (`a` = ?) AND (`b` IN (?,?,?))" {
-		assert.Equal(t, []interface{}{int64(1), int64(1), int64(2), int64(3)}, args)
-	} else {
-		assert.Equal(t, sql, "SELECT `a` FROM `b` WHERE (`b` IN (?,?,?)) AND (`a` = ?)")
-		assert.Equal(t, []interface{}{int64(1), int64(2), int64(3), int64(1)}, args)
-	}
 }
 
 func TestSelectBySQL(t *testing.T) {
@@ -1263,9 +1222,10 @@ func TestSelect_UseBuildCache(t *testing.T) {
 			Column("d", Equal.Int(1)),
 			Column("e", ArgString("wat")).Or(),
 			ParenthesisClose(),
-			Eq{"f": Equal.Int(2)}, Eq{"g": Equal.Int(3)},
+			Column("f", Equal.Int(2)),
+			Column("g", Equal.Int(3)),
+			Column("h", In.Int64(4, 5, 6)),
 		).
-		Where(Eq{"h": In.Int64(4, 5, 6)}).
 		GroupBy("ab").
 		Having(
 			ParenthesisOpen(),
@@ -1322,9 +1282,10 @@ func TestSelect_AddRecord(t *testing.T) {
 				Column("name", Equal.Str()),
 				Column("e", ArgString("wat")).Or(),
 				ParenthesisClose(),
-				Eq{"f": LessOrEqual.Int(2)}, Eq{"g": Greater.Int(3)},
+				Column("f", LessOrEqual.Int(2)),
+				Column("g", Greater.Int(3)),
+				Column("h", In.Int64(4, 5, 6)),
 			).
-			Where(Eq{"h": In.Int64(4, 5, 6)}).
 			GroupBy("ab").
 			Having(
 				Column("email", Equal.Str()),

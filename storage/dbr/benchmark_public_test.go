@@ -71,15 +71,13 @@ var benchmarkSelectStr string
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq := dbr.Eq{"a": dbr.In.Int64(1, 2, 3)}
 	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
-			Where(dbr.Expression("d = ? OR e = ?", args...)).
-			Where(argEq).
+			Where(dbr.Expression("d = ? OR e = ?", args...), dbr.Column("a", dbr.In.Int64(1, 2, 3))).
 			OrderByDesc("id").
 			Paginate(1, 20).
 			ToSQL()
@@ -93,15 +91,17 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 func BenchmarkSelectFullSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	argEq1 := dbr.Eq{"f": dbr.ArgInt64(2), "x": dbr.ArgString("hi")}
-	argEq2 := dbr.Eq{"g": dbr.ArgInt64(3)}
-	argEq3 := dbr.Eq{"h": dbr.In.Int(1, 2, 3)}
+
 	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
 
 	sqlObj := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
-		Where(dbr.Expression("`d` = ? OR `e` = ?", args...)).
-		Where(argEq1).Where(argEq2).Where(argEq3).
+		Where(dbr.Expression("`d` = ? OR `e` = ?", args...),
+			dbr.Column("f", dbr.ArgInt64(2)),
+			dbr.Column("x", dbr.ArgString("hi")),
+			dbr.Column("g", dbr.ArgInt64(3)),
+			dbr.Column("h", dbr.In.Int(1, 2, 3)),
+		).
 		GroupBy("ab").GroupBy("ii").GroupBy("iii").
 		Having(dbr.Expression("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
 		Having(dbr.Column("jjj", dbr.ArgInt64(2))).
@@ -115,8 +115,12 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 				Distinct().
-				Where(dbr.Expression("`d` = ? OR `e` = ?", args...)).
-				Where(argEq1).Where(argEq2).Where(argEq3).
+				Where(dbr.Expression("`d` = ? OR `e` = ?", args...),
+					dbr.Column("f", dbr.ArgInt64(2)),
+					dbr.Column("x", dbr.ArgString("hi")),
+					dbr.Column("g", dbr.ArgInt64(3)),
+					dbr.Column("h", dbr.In.Int(1, 2, 3)),
+				).
 				GroupBy("ab").GroupBy("ii").GroupBy("iii").
 				Having(dbr.Expression("j = k"), dbr.Column("jj", dbr.ArgInt64(1))).
 				Having(dbr.Column("jjj", dbr.ArgInt64(2))).

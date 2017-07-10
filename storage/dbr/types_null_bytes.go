@@ -18,7 +18,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"github.com/corestoreio/csfw/storage/convert"
+	"github.com/corestoreio/errors"
 )
 
 // NullBytes is a nullable byte slice. JSON marshals to zero if null. Considered
@@ -147,11 +147,22 @@ func (a NullBytes) IsZero() bool {
 // Scan implements the Scanner interface.
 func (a *NullBytes) Scan(value interface{}) error {
 	if value == nil {
-		a.Bytes, a.Valid = []byte{}, false
 		return nil
 	}
-	a.Valid = true
-	return convert.ConvertAssign(&a.Bytes, value)
+
+	switch v := value.(type) {
+	case []byte:
+		a.Bytes = make([]byte, len(v))
+		copy(a.Bytes, v)
+	case string:
+		a.Bytes = []byte(v)
+	default:
+		return errors.NewNotSupportedf("[dbr] NUllBytes.Scan Type %T not supported", value)
+	}
+
+	a.Valid = a.Bytes != nil
+
+	return nil
 }
 
 // Value implements the driver Valuer interface.

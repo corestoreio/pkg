@@ -191,8 +191,6 @@ func ExampleInsert_SetRowCount() {
 func ExampleInsert_FromSelect() {
 	ins := dbr.NewInsert("tableA")
 
-	argEq := dbr.Eq{"int64B": dbr.In.Int64(1, 2, 3)}
-
 	ins.FromSelect(
 		dbr.NewSelect().AddColumns("something_id", "user_id").
 			AddColumns("other").
@@ -202,8 +200,8 @@ func ExampleInsert_FromSelect() {
 				dbr.Column("int64A", dbr.GreaterOrEqual.Int64(1)),
 				dbr.Column("string", dbr.ArgString("wat")).Or(),
 				dbr.ParenthesisClose(),
+				dbr.Column("int64B", dbr.In.Int64(1, 2, 3)),
 			).
-			Where(argEq).
 			OrderByDesc("id").
 			Paginate(1, 20),
 	)
@@ -743,7 +741,7 @@ func ExampleParenthesisOpen() {
 			dbr.Column("d", dbr.ArgInt(1)),
 			dbr.Column("e", dbr.ArgString("wat")).Or(),
 			dbr.ParenthesisClose(),
-			dbr.Eq{"f": dbr.ArgInt(2)},
+			dbr.Column("f", dbr.ArgInt(2)),
 		).
 		GroupBy("ab").
 		Having(

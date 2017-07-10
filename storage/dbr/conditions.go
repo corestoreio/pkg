@@ -27,12 +27,14 @@ const (
 	logicalNot byte = 'n'
 )
 
-type whereFragment struct {
+// WhereFragment implements a single WHERE condition. Please use the helper
+// functions instead of using this type directly.
+type WhereFragment struct {
 	// Condition can contain either a valid identifier or an expression. Set
 	// field `IsExpression` to true to avoid quoting of the `Column` field.
 	// Condition can also contain `qualifier.identifier`.
 	Condition string
-
+	// Operator  Op todo rethink that
 	Argument  Argument // Either this or the slice is set.
 	Arguments Arguments
 
@@ -43,7 +45,7 @@ type whereFragment struct {
 		Select   *Select
 		Operator Op
 	}
-	// Logical states how multiple where statements will be connected.
+	// Logical states how multiple WHERE statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
 	Logical byte
 	// IsExpression set to true if the Column contains an expression.
@@ -55,7 +57,7 @@ type whereFragment struct {
 }
 
 // WhereFragments provides a list WHERE resp. ON clauses.
-type WhereFragments []*whereFragment
+type WhereFragments []*WhereFragment
 
 // JoinFragments defines multiple join conditions.
 type JoinFragments []*joinFragment
@@ -69,53 +71,14 @@ type joinFragment struct {
 	OnConditions WhereFragments
 }
 
-// ConditionArg used at argument in Where()
-type ConditionArg interface {
-	appendConditions(WhereFragments) WhereFragments
-	And() ConditionArg // And connects next condition via AND
-	Or() ConditionArg  // Or connects next condition via OR
-}
-
-// Eq is a map Expression -> value pairs which must be matched in a query.
-// Joined at AND statements to the WHERE clause. Implements ConditionArg
-// interface. Eq = EqualityMap.
-type Eq map[string]Argument
-
-func (eq Eq) appendConditions(wfs WhereFragments) WhereFragments {
-	for c, arg := range eq {
-		if arg == nil {
-			arg = ArgNull()
-		}
-		wfs = append(wfs, &whereFragment{
-			Condition: c,
-			Argument:  arg,
-		})
-	}
-	return wfs
-}
-
-// And sets the logical AND operator. Default case.
-func (eq Eq) And() ConditionArg {
-	return eq
-}
-
-// Or not supported
-func (eq Eq) Or() ConditionArg {
-	return eq
-}
-
-func (wf *whereFragment) appendConditions(wfs WhereFragments) WhereFragments {
-	return append(wfs, wf)
-}
-
 // And sets the logical AND operator
-func (wf *whereFragment) And() ConditionArg {
+func (wf *WhereFragment) And() *WhereFragment {
 	wf.Logical = logicalAnd
 	return wf
 }
 
 // Or sets the logical OR operator
-func (wf *whereFragment) Or() ConditionArg {
+func (wf *WhereFragment) Or() *WhereFragment {
 	wf.Logical = logicalOr
 	return wf
 }
@@ -150,8 +113,8 @@ func (wf WhereFragments) Conditions() []string {
 // corresponding columns from the two tables:
 //	a LEFT JOIN b USING (c1, c2, c3)
 // The columns list gets quoted while writing the query string.
-func Using(columns ...string) ConditionArg {
-	return &whereFragment{
+func Using(columns ...string) *WhereFragment {
+	return &WhereFragment{
 		Using: columns, // gets quoted during writing the query in ToSQL
 	}
 }
@@ -159,8 +122,8 @@ func Using(columns ...string) ConditionArg {
 // SubSelect creates a condition for a WHERE or JOIN statement to compare the
 // data in `rawStatementOrColumnName` with the returned value/s of the
 // sub-select.
-func SubSelect(columnName string, operator Op, s *Select) ConditionArg {
-	wf := &whereFragment{
+func SubSelect(columnName string, operator Op, s *Select) *WhereFragment {
+	wf := &WhereFragment{
 		Condition: columnName,
 	}
 	wf.Sub.Select = s
@@ -169,8 +132,8 @@ func SubSelect(columnName string, operator Op, s *Select) ConditionArg {
 }
 
 // TODO(CyS) implement once needed
-//func WithSelect(columnName string, operator Op, wth *With) ConditionArg {
-//	wf := &whereFragment{
+//func WithSelect(columnName string, operator Op, wth *With) *WhereFragment {
+//	wf := &WhereFragment{
 //		Condition: columnName,
 //	}
 //	wf.Sub.With = wth
@@ -178,19 +141,17 @@ func SubSelect(columnName string, operator Op, s *Select) ConditionArg {
 //	return wf
 //}
 
-// TODO remove interface ConditionArg and implmenent directly whereFragment
-
 // Column adds a condition to a WHERE or HAVING statement.
-func Column(columnName string, arg Argument) ConditionArg {
-	return &whereFragment{
+func Column(columnName string, arg Argument) *WhereFragment {
+	return &WhereFragment{
 		Condition: columnName,
 		Argument:  arg,
 	}
 }
 
 // Expression adds an unquoted SQL expression to a WHERE or HAVING statement.
-func Expression(expression string, arg ...Argument) ConditionArg {
-	return &whereFragment{
+func Expression(expression string, arg ...Argument) *WhereFragment {
+	return &WhereFragment{
 		IsExpression: true,
 		Condition:    expression,
 		Arguments:    arg,
@@ -199,25 +160,18 @@ func Expression(expression string, arg ...Argument) ConditionArg {
 
 // ParenthesisOpen sets an open parenthesis "(". Mostly used for OR conditions
 // in combination with AND conditions.
-func ParenthesisOpen() ConditionArg {
-	return &whereFragment{
+func ParenthesisOpen() *WhereFragment {
+	return &WhereFragment{
 		Condition: "(",
 	}
 }
 
 // ParenthesisClose sets a closing parenthesis ")". Mostly used for OR
 // conditions in combination with AND conditions.
-func ParenthesisClose() ConditionArg {
-	return &whereFragment{
+func ParenthesisClose() *WhereFragment {
+	return &WhereFragment{
 		Condition: ")",
 	}
-}
-
-func (wf WhereFragments) append(wargs ...ConditionArg) WhereFragments {
-	for _, warg := range wargs {
-		wf = warg.appendConditions(wf)
-	}
-	return wf
 }
 
 // conditionType enum of j=join, w=where, h=having
@@ -282,13 +236,15 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 
 		w.WriteByte('(')
 
-		if f.IsExpression {
+		switch {
+		case f.IsExpression:
 			_, _ = w.WriteString(f.Condition)
 			// Only write the operator in case there is no place holder and we have one argument
 			if strings.IndexByte(f.Condition, '?') == -1 && len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
 				writeOperator(w, true, f.Arguments[0])
 			}
-		} else {
+			// TODO: case f.Sub.Select != nil:
+		default:
 			Quoter.WriteNameAlias(w, f.Condition, "")
 
 			if f.Sub.Select != nil {
@@ -300,11 +256,15 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 				w.WriteByte(')')
 			} else {
 				// a column only supports one argument.
-				if f.Argument != nil {
+				if f.Argument != nil && f.Arguments == nil {
 					writeOperator(w, true, f.Argument)
+				}
+				if f.Argument == nil && f.Arguments == nil {
+					writeOperator(w, true, ArgNull())
 				}
 			}
 		}
+
 		w.WriteByte(')')
 		i++
 	}
