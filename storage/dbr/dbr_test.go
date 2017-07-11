@@ -340,7 +340,7 @@ func compareToSQL(
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
-		require.NoError(t, err, "%+v", err)
+		require.NoError(t, err)
 	} else {
 		require.True(t, wantErr(err), "%+v")
 	}

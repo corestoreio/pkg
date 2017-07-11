@@ -241,12 +241,12 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 			_, _ = w.WriteString(f.Condition)
 			// Only write the operator in case there is no place holder and we have one argument
 			if strings.IndexByte(f.Condition, '?') == -1 && len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
-				writeOperator(w, true, f.Arguments[0])
+				writeOperator(w, f.Arguments[0].len(), f.Arguments[0].operator())
 			}
 
 		case f.Sub.Select != nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
-			writeOperator(w, false, argNull(f.Sub.Operator))
+			writeOperator(w, 0, f.Sub.Operator)
 			w.WriteByte('(')
 			if err := f.Sub.Select.toSQL(w); err != nil {
 				return errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
@@ -255,11 +255,15 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 
 		case f.Argument != nil && f.Arguments == nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
-			writeOperator(w, true, f.Argument)
+			al := f.Argument.len()
+			if al == cahensConstant {
+				al = 1
+			}
+			writeOperator(w, al, f.Argument.operator())
 
 		case f.Argument == nil && f.Arguments == nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
-			writeOperator(w, true, ArgNull())
+			writeOperator(w, 1, Null) // IS NULL !!!
 
 		default:
 			panic(errors.NewNotSupportedf("[dbr] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", f))
@@ -304,7 +308,11 @@ func (wf WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argum
 			}
 		case f.Argument != nil:
 			// a column only supports one argument.
-			addArg = writeOperator(backHole{}, true, f.Argument)
+			al := f.Argument.len()
+			if al == cahensConstant {
+				al = 1 // just a place holder!
+			}
+			addArg = writeOperator(backHole{}, al, f.Argument.operator())
 			if f.Argument.len() == cahensConstant {
 				// By keeping addArg as it is and not setting
 				// addArg=false, this []int avoids

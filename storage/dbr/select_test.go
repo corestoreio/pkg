@@ -395,7 +395,7 @@ func TestSelectWhereNULL(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a").From("b").Where(Column("a", In.Int(iVal...))),
 			nil,
-			"SELECT `a` FROM `b` WHERE (`a` IN ())",
+			"SELECT `a` FROM `b` WHERE (`a` IN (?))",
 			"",
 			[]interface{}{}...,
 		)

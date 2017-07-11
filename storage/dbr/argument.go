@@ -254,9 +254,9 @@ type Argument interface {
 // Arguments representing multiple arguments.
 type Arguments []Argument
 
-func writePlaceHolderList(w queryWriter, arg Argument) {
+func writePlaceHolderList(w queryWriter, argLen int) {
 	w.WriteByte('(')
-	for j := 0; j < arg.len(); j++ {
+	for j := 0; j < argLen; j++ {
 		if j > 0 {
 			w.WriteByte(',')
 		}
@@ -266,10 +266,11 @@ func writePlaceHolderList(w queryWriter, arg Argument) {
 }
 
 // argCount contains the number of primitives within an argument.
-func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
+func writeOperator(w queryWriter, argLen int, op Op) (addArg bool) {
 	// hasArg argument only used in cases where we have in the parent caller
 	// function a sub-select. sub-selects do not need a place holder.
-	switch arg.operator() {
+	hasArg := argLen > 0
+	switch op {
 	case Null:
 		w.WriteString(" IS NULL")
 	case NotNull:
@@ -277,13 +278,13 @@ func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 	case In:
 		w.WriteString(" IN ")
 		if hasArg {
-			writePlaceHolderList(w, arg)
+			writePlaceHolderList(w, argLen)
 			addArg = true
 		}
 	case NotIn:
 		w.WriteString(" NOT IN ")
 		if hasArg {
-			writePlaceHolderList(w, arg)
+			writePlaceHolderList(w, argLen)
 			addArg = true
 		}
 	case Like:
@@ -306,15 +307,15 @@ func writeOperator(w queryWriter, hasArg bool, arg Argument) (addArg bool) {
 		addArg = true
 	case Greatest:
 		w.WriteString(" GREATEST ")
-		writePlaceHolderList(w, arg)
+		writePlaceHolderList(w, argLen)
 		addArg = true
 	case Least:
 		w.WriteString(" LEAST ")
-		writePlaceHolderList(w, arg)
+		writePlaceHolderList(w, argLen)
 		addArg = true
 	case Coalesce:
 		w.WriteString(" COALESCE ")
-		writePlaceHolderList(w, arg)
+		writePlaceHolderList(w, argLen)
 		addArg = true
 	case Xor:
 		w.WriteString(" XOR ?")

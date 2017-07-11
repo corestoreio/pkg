@@ -189,24 +189,23 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
 		u.Where(Column("entity_id", In.Int64(1, 2, 3)))
 
-		sqlStr, args, err := u.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, []interface{}{int64(1), int64(2), int64(3)}, args)
-		assert.Exactly(t,
+		compareToSQL(t, u, nil,
 			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?,?,?))",
-			sqlStr)
+			"",
+			int64(1), int64(2), int64(3),
+		)
 	})
 	t.Run("without condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
 		u.Where(Column("entity_id", In.Int64()))
 
-		sqlStr, args, err := u.ToSQL()
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, []interface{}{}, args)
-		assert.Exactly(t,
-			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN ())",
-			sqlStr)
+		args := []interface{}{}
+		compareToSQL(t, u, nil,
+			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?))",
+			"",
+			args...,
+		)
 	})
 }
 
