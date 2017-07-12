@@ -15,9 +15,9 @@
 package dbr
 
 import (
-	"strings"
-
 	"github.com/corestoreio/errors"
+	"strings"
+	"time"
 )
 
 const (
@@ -27,21 +27,22 @@ const (
 	logicalNot byte = 'n'
 )
 
-// WhereFragment implements a single WHERE condition. Please use the helper
+// whereFragment implements a single WHERE condition. Please use the helper
 // functions instead of using this type directly.
-type WhereFragment struct {
+type whereFragment struct {
 	// Condition can contain either a valid identifier or an expression. Set
 	// field `IsExpression` to true to avoid quoting of the `Column` field.
 	// Condition can also contain `qualifier.identifier`.
 	Condition string
-	// Operator  Op todo rethink that
-	Argument  Argument // Either this or the slice is set.
-	Arguments Arguments
+	// Operator contains the comparison logic like LIKE, IN, GREATER, etc ...
+	Operator Op
+	Val      *Value // Either this or the slice is set.
+	Vals     Values
 
 	Sub struct {
-		// Select adds a sub-select to the where statement. Column must be either
-		// a column name or anything else which can handle the result of a
-		// sub-select.
+		// Select adds a sub-select to the where statement. Column must be
+		// either a column name or anything else which can handle the result of
+		// a sub-select.
 		Select   *Select
 		Operator Op
 	}
@@ -57,7 +58,7 @@ type WhereFragment struct {
 }
 
 // WhereFragments provides a list WHERE resp. ON clauses.
-type WhereFragments []*WhereFragment
+type WhereFragments []*whereFragment
 
 // JoinFragments defines multiple join conditions.
 type JoinFragments []*joinFragment
@@ -72,13 +73,13 @@ type joinFragment struct {
 }
 
 // And sets the logical AND operator
-func (wf *WhereFragment) And() *WhereFragment {
+func (wf *whereFragment) And() *whereFragment {
 	wf.Logical = logicalAnd
 	return wf
 }
 
 // Or sets the logical OR operator
-func (wf *WhereFragment) Or() *WhereFragment {
+func (wf *whereFragment) Or() *whereFragment {
 	wf.Logical = logicalOr
 	return wf
 }
@@ -90,17 +91,17 @@ const cahensConstant = -6434105
 
 // Conditions iterates over each WHERE fragment and assembles all conditions
 // into a new slice.
-func (wf WhereFragments) Conditions() []string {
+func (wfs WhereFragments) Conditions() []string {
 	// this calculates the intersection of the columns in WhereFragments which
 	// already have an argument provided and those where the arguments must be
 	// assembled from the interface ArgumentAssembler. If the arguments should
 	// be assembled from the interface Argument.len() returns cahensConstant.
-	c := make([]string, 0, len(wf))
-	for _, w := range wf {
-		if w.Argument != nil && w.Argument.len() == cahensConstant {
+	c := make([]string, 0, len(wfs))
+	for _, w := range wfs {
+		if w.Val != nil && w.Val.len() == cahensConstant {
 			c = append(c, w.Condition)
 		}
-		if len(w.Arguments) > 0 && w.Arguments[0].len() == cahensConstant {
+		if len(w.Vals) > 0 && w.Vals[0].len() == cahensConstant {
 			c = append(c, w.Condition)
 		}
 	}
@@ -113,8 +114,8 @@ func (wf WhereFragments) Conditions() []string {
 // corresponding columns from the two tables:
 //	a LEFT JOIN b USING (c1, c2, c3)
 // The columns list gets quoted while writing the query string.
-func Using(columns ...string) *WhereFragment {
-	return &WhereFragment{
+func Using(columns ...string) *whereFragment {
+	return &whereFragment{
 		Using: columns, // gets quoted during writing the query in ToSQL
 	}
 }
@@ -122,8 +123,8 @@ func Using(columns ...string) *WhereFragment {
 // SubSelect creates a condition for a WHERE or JOIN statement to compare the
 // data in `rawStatementOrColumnName` with the returned value/s of the
 // sub-select.
-func SubSelect(columnName string, operator Op, s *Select) *WhereFragment {
-	wf := &WhereFragment{
+func SubSelect(columnName string, operator Op, s *Select) *whereFragment {
+	wf := &whereFragment{
 		Condition: columnName,
 	}
 	wf.Sub.Select = s
@@ -131,45 +132,273 @@ func SubSelect(columnName string, operator Op, s *Select) *WhereFragment {
 	return wf
 }
 
-// TODO(CyS) implement once needed
-//func WithSelect(columnName string, operator Op, wth *With) *WhereFragment {
-//	wf := &WhereFragment{
-//		Condition: columnName,
-//	}
-//	wf.Sub.With = wth
-//	wf.Sub.Operator = operator
-//	return wf
-//}
-
 // Column adds a condition to a WHERE or HAVING statement.
-func Column(columnName string, arg Argument) *WhereFragment {
-	return &WhereFragment{
+func Column(columnName string) *whereFragment {
+	return &whereFragment{
 		Condition: columnName,
-		Argument:  arg,
 	}
 }
 
+func (wf *whereFragment) Null() *whereFragment {
+	wf.Operator = Null
+	return wf
+}
+func (wf *whereFragment) NotNull() *whereFragment {
+	wf.Operator = NotNull
+	return wf
+}
+func (wf *whereFragment) In() *whereFragment {
+	wf.Operator = In
+	return wf
+}
+func (wf *whereFragment) NotIn() *whereFragment {
+	wf.Operator = NotIn
+	return wf
+}
+func (wf *whereFragment) Between() *whereFragment {
+	wf.Operator = Between
+	return wf
+}
+func (wf *whereFragment) NotBetween() *whereFragment {
+	wf.Operator = NotBetween
+	return wf
+}
+func (wf *whereFragment) Like() *whereFragment {
+	wf.Operator = Like
+	return wf
+}
+func (wf *whereFragment) NotLike() *whereFragment {
+	wf.Operator = NotLike
+	return wf
+}
+func (wf *whereFragment) Greatest() *whereFragment {
+	wf.Operator = Greatest
+	return wf
+}
+func (wf *whereFragment) Least() *whereFragment {
+	wf.Operator = Least
+	return wf
+}
+func (wf *whereFragment) Equal() *whereFragment {
+	wf.Operator = Equal
+	return wf
+}
+func (wf *whereFragment) NotEqual() *whereFragment {
+	wf.Operator = NotEqual
+	return wf
+}
+func (wf *whereFragment) Exists() *whereFragment {
+	wf.Operator = Exists
+	return wf
+}
+func (wf *whereFragment) NotExists() *whereFragment {
+	wf.Operator = NotExists
+	return wf
+}
+func (wf *whereFragment) Less() *whereFragment {
+	wf.Operator = Less
+	return wf
+}
+func (wf *whereFragment) Greater() *whereFragment {
+	wf.Operator = Greater
+	return wf
+}
+func (wf *whereFragment) LessOrEqual() *whereFragment {
+	wf.Operator = LessOrEqual
+	return wf
+}
+func (wf *whereFragment) GreaterOrEqual() *whereFragment {
+	wf.Operator = GreaterOrEqual
+	return wf
+}
+
+func (wf *whereFragment) Regexp() *whereFragment {
+	wf.Operator = Regexp
+	return wf
+}
+
+func (wf *whereFragment) NotRegexp() *whereFragment {
+	wf.Operator = NotRegexp
+	return wf
+}
+
+func (wf *whereFragment) Xor() *whereFragment {
+	wf.Operator = Xor
+	return wf
+}
+
+func (wf *whereFragment) SpaceShip() *whereFragment {
+	wf.Operator = SpaceShip
+	return wf
+}
+
+func (wf *whereFragment) Coalesce() *whereFragment {
+	wf.Operator = Coalesce
+	return wf
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+//		TYPES
+///////////////////////////////////////////////////////////////////////////////////
+func (wf *whereFragment) Int(i int) *whereFragment {
+	wf.Val = newValue().setInt(i)
+	return wf
+}
+
+func (wf *whereFragment) Ints(i ...int) *whereFragment {
+	wf.Val = newValue().setInts(i...)
+	return wf
+}
+func (wf *whereFragment) Int64(i int64) *whereFragment {
+	wf.Val = newValue().setInt64(i)
+	return wf
+}
+
+func (wf *whereFragment) Int64s(i ...int64) *whereFragment {
+	wf.Val = newValue().setInt64s(i...)
+	return wf
+}
+
+func (wf *whereFragment) Float64(f float64) *whereFragment {
+	wf.Val = newValue().setFloat64(f)
+	return wf
+}
+func (wf *whereFragment) Float64s(f ...float64) *whereFragment {
+	wf.Val = newValue().setFloat64s(f...)
+	return wf
+}
+func (wf *whereFragment) String(s string) *whereFragment {
+	wf.Val = newValue().setString(s)
+	return wf
+}
+
+func (wf *whereFragment) Strings(s ...string) *whereFragment {
+	wf.Val = newValue().setStrings(s...)
+	return wf
+}
+
+// Bool uses bool values for comparison.
+func (wf *whereFragment) Bool(b bool) *whereFragment {
+	wf.Val = newValue().setBool(b)
+	return wf
+}
+
+// Bytes uses a byte slice for comparison. Providing a nil argument returns a
+// NULL type. Detects between valid UTF-8 strings and binary data. Later gets
+// hex encoded.
+func (wf *whereFragment) Bytes(p []byte) *whereFragment {
+	wf.Val = newValue()
+	wf.Val.byte = p
+	return wf
+}
+
+func (wf *whereFragment) BytesSlice(p ...[]byte) *whereFragment {
+	wf.Val = newValue()
+	wf.Val.bytes = p
+	return wf
+}
+
+// Time uses time.Time values for comparison.
+func (wf *whereFragment) Time(t time.Time) *whereFragment {
+	wf.Val = newValue().setTime(t)
+	return wf
+}
+
+// Times uses time.Time values for comparison.
+func (wf *whereFragment) Times(t ...time.Time) *whereFragment {
+	wf.Val = newValue().setTimes(t...)
+	return wf
+}
+
+//// NullString uses nullable string values for comparison.
+//func (wf *whereFragment) NullString(values ...NullString) *whereFragment {
+//	switch len(values) {
+//	case 0:
+//		wf.WhereFragment.Argument = argPlaceHolder(0)
+//	case 1:
+//		wf.WhereFragment.Argument = values[0]
+//	default:
+//		wf.WhereFragment.Argument = argNullStrings{data: values}
+//	}
+//	return wf
+//}
+
+//// NullFloat64 uses nullable float64 values for comparison.
+//func (wf *whereFragment) NullFloat64(values ...NullFloat64) *whereFragment {
+//	switch len(values) {
+//	case 0:
+//		wf.WhereFragment.Argument = argPlaceHolder(0)
+//	case 1:
+//		wf.WhereFragment.Argument = values[0]
+//	default:
+//		wf.WhereFragment.Argument = argNullFloat64s{data: values}
+//	}
+//	return wf
+//}
+
+//// NullInt64 uses nullable int64 values for comparison.
+//func (wf *whereFragment) NullInt64(values ...NullInt64) *whereFragment {
+//	switch len(values) {
+//	case 0:
+//		wf.WhereFragment.Argument = argPlaceHolder(0)
+//	case 1:
+//		wf.WhereFragment.Argument = values[0]
+//	default:
+//		wf.WhereFragment.Argument = argNullInt64s{data: values}
+//	}
+//	return wf
+//}
+
+//// NullBool uses nullable bool values for comparison.
+//func (wf *whereFragment) NullBool(value NullBool) *whereFragment {
+//	wf.WhereFragment.Argument = value
+//	return wf
+//}
+
+//// NullTime uses nullable time values for comparison.
+//func (wf *whereFragment) NullTime(values ...NullTime) *whereFragment {
+//	switch len(values) {
+//	case 0:
+//		wf.WhereFragment.Argument = argPlaceHolder(0)
+//	case 1:
+//		wf.WhereFragment.Argument = values[0]
+//	default:
+//		wf.WhereFragment.Argument = argNullTimes{data: values}
+//	}
+//	return wf
+//}
+
+//// Value uses driver.Valuers for comparison.
+//func (wf *whereFragment) Value(values ...driver.Valuer) *whereFragment {
+//	if len(values) == 0 {
+//		wf.WhereFragment.Argument = argPlaceHolder(0)
+//	} else {
+//		wf.WhereFragment.Argument = argValue{data: values}
+//	}
+//	return wf
+//}
+
 // Expression adds an unquoted SQL expression to a WHERE or HAVING statement.
-func Expression(expression string, arg ...Argument) *WhereFragment {
-	return &WhereFragment{
+func Expression(expression string, vals ...*Value) *whereFragment {
+	return &whereFragment{
 		IsExpression: true,
 		Condition:    expression,
-		Arguments:    arg,
+		Vals:         vals,
 	}
 }
 
 // ParenthesisOpen sets an open parenthesis "(". Mostly used for OR conditions
 // in combination with AND conditions.
-func ParenthesisOpen() *WhereFragment {
-	return &WhereFragment{
+func ParenthesisOpen() *whereFragment {
+	return &whereFragment{
 		Condition: "(",
 	}
 }
 
 // ParenthesisClose sets a closing parenthesis ")". Mostly used for OR
 // conditions in combination with AND conditions.
-func ParenthesisClose() *WhereFragment {
-	return &WhereFragment{
+func ParenthesisClose() *whereFragment {
+	return &whereFragment{
 		Condition: ")",
 	}
 }
@@ -240,8 +469,8 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 		case f.IsExpression:
 			_, _ = w.WriteString(f.Condition)
 			// Only write the operator in case there is no place holder and we have one argument
-			if strings.IndexByte(f.Condition, '?') == -1 && len(f.Arguments) == 1 && f.Arguments[0].operator() > 0 {
-				writeOperator(w, f.Arguments[0].len(), f.Arguments[0].operator())
+			if strings.IndexByte(f.Condition, '?') == -1 && len(f.Arguments) == 1 && f.Operator > 0 {
+				writeOperator(w, f.Arguments[0].len(), f.Operator)
 			}
 
 		case f.Sub.Select != nil:
@@ -259,7 +488,7 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 			if al == cahensConstant {
 				al = 1
 			}
-			writeOperator(w, al, f.Argument.operator())
+			writeOperator(w, al, f.Operator)
 
 		case f.Argument == nil && f.Arguments == nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
@@ -312,7 +541,7 @@ func (wf WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argum
 			if al == cahensConstant {
 				al = 1 // just a place holder!
 			}
-			addArg = writeOperator(backHole{}, al, f.Argument.operator())
+			addArg = writeOperator(backHole{}, al, f.Operator)
 			if f.Argument.len() == cahensConstant {
 				// By keeping addArg as it is and not setting
 				// addArg=false, this []int avoids

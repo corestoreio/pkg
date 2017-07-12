@@ -115,7 +115,7 @@ func (b *Show) BinaryLog() *Show {
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs. Either WHERE or LIKE can be used.
-func (b *Show) Where(wf ...*WhereFragment) *Show {
+func (b *Show) Where(wf ...*whereFragment) *Show {
 	b.WhereFragments = append(b.WhereFragments, wf...)
 	return b
 }
@@ -188,8 +188,7 @@ func (b *Show) toSQL(w queryWriter) error {
 	}
 
 	if b.LikeCondition != nil {
-		b.LikeCondition = b.LikeCondition.applyOperator(Like)
-		_ = writeOperator(w, 1, b.LikeCondition.operator())
+		writeOperator(w, 1, Like)
 	} else if err := b.WhereFragments.write(w, 'w'); err != nil {
 		return errors.WithStack(err)
 	}

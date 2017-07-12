@@ -35,7 +35,7 @@ func TestDeleteAllToSQL(t *testing.T) {
 func TestDeleteSingleToSQL(t *testing.T) {
 	t.Parallel()
 
-	qb := NewDelete("a").Where(Column("id", Equal.Int(1)))
+	qb := NewDelete("a").Where(Column("id", Equal, ArgInt(1)))
 	compareToSQL(t, qb, nil,
 		"DELETE FROM `a` WHERE (`id` = ?)",
 		"DELETE FROM `a` WHERE (`id` = 1)",
@@ -84,9 +84,10 @@ func TestDelete_Interpolate(t *testing.T) {
 	t.Parallel()
 	compareToSQL(t, NewDelete("tableA").
 		Where(
-			Column("colA", GreaterOrEqual.Float64(3.14159)),
-			Column("colB", In.Int(1, 2, 3, 45)),
-			Column("colC", ArgString("He'l`lo")),
+			Column("colA").GreaterOrEqual().Float64(3.14159),
+			//Column("colA", GreaterOrEqual.Float64(3.14159)),
+			//Column("colB", In.Int(1, 2, 3, 45)),
+			//Column("colC", ArgString("He'l`lo")),
 		).
 		Limit(10).Offset(20).OrderBy("id"), nil,
 		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN (?,?,?,?)) AND (`colC` = ?) ORDER BY `id` LIMIT 10 OFFSET 20",

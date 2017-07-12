@@ -66,136 +66,6 @@ func (o Op) String() string {
 	return string(o)
 }
 
-// With allows to use any argument with an operator.
-func (o Op) With(arg Argument) Argument {
-	return arg.applyOperator(o)
-}
-
-// Str uses string values for comparison.
-func (o Op) Str(values ...string) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	return &argStrings{data: values, op: o}
-}
-
-// NullString uses nullable string values for comparison.
-func (o Op) NullString(values ...NullString) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	if len(values) == 1 {
-		values[0].op = o
-		return values[0]
-	}
-	return argNullStrings{data: values, op: o}
-}
-
-// Float64 uses float64 values for comparison.
-func (o Op) Float64(values ...float64) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	return &argFloat64s{data: values, op: o}
-}
-
-// NullFloat64 uses nullable float64 values for comparison.
-func (o Op) NullFloat64(values ...NullFloat64) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	if len(values) == 1 {
-		values[0].op = o
-		return values[0]
-	}
-	return argNullFloat64s{data: values, op: o}
-}
-
-// Int64 uses int64 values for comparison.
-func (o Op) Int64(values ...int64) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	return &argInt64s{data: values, op: o}
-}
-
-// NullInt64 uses nullable int64 values for comparison.
-func (o Op) NullInt64(values ...NullInt64) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	if len(values) == 1 {
-		values[0].op = o
-		return values[0]
-	}
-	return argNullInt64s{data: values, op: o}
-}
-
-// Int uses int values for comparison.
-func (o Op) Int(values ...int) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	return &argInts{data: values, op: o}
-}
-
-// Bool uses bool values for comparison.
-func (o Op) Bool(values ...bool) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	return &argBools{data: values, op: o}
-}
-
-// NullBool uses nullable bool values for comparison.
-func (o Op) NullBool(value NullBool) Argument {
-	value.op = o
-	return value
-}
-
-// Time uses time.Time values for comparison.
-func (o Op) Time(values ...time.Time) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	return &argTimes{data: values, op: o}
-}
-
-// NullTime uses nullable time values for comparison.
-func (o Op) NullTime(values ...NullTime) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	if len(values) == 1 {
-		values[0].op = o
-		return values[0]
-	}
-	return argNullTimes{data: values, op: o}
-}
-
-// Null is always a NULL.
-func (o Op) Null() Argument {
-	return argNull(o)
-}
-
-// Bytes uses a byte slice for comparison. Providing a nil argument returns a
-// NULL type. Detects between valid UTF-8 strings and binary data. Later gets
-// hex encoded.
-func (o Op) Bytes(p ...[]byte) Argument {
-	if len(p) == 0 {
-		return argPlaceHolder(o)
-	}
-	return argBytes{data: p, op: o}
-}
-
-// Value uses driver.Valuers for comparison.
-func (o Op) Value(values ...driver.Valuer) Argument {
-	if len(values) == 0 {
-		return argPlaceHolder(o)
-	}
-	return &argValue{data: values, op: o}
-}
-
 const (
 	sqlStrNull = "NULL"
 	sqlStar    = "*"
@@ -236,9 +106,6 @@ type ArgumentAssembler interface {
 // underlying primitive type in the interface must be one of driver.Value
 // allowed types.
 type Argument interface {
-	// applyOperator sets a comparison or logical operator. Please see the
-	// constants Op for the different flags.
-	applyOperator(Op) Argument
 	// toIFace appends the value or values to interface slice and returns it.
 	toIFace([]interface{}) []interface{}
 	// writeTo writes the value correctly escaped to the queryWriter. It must
@@ -248,7 +115,6 @@ type Argument interface {
 	// activated then len returns 1. In case of an underlying place holder type
 	// the returned length of cahensConstant
 	len() int
-	operator() Op
 }
 
 // Arguments representing multiple arguments.
@@ -451,11 +317,10 @@ func iFaceToArgs(values ...interface{}) Arguments {
 }
 
 type argValue struct {
-	op   Op
 	data []driver.Valuer
 }
 
-func (a *argValue) toIFace(args []interface{}) []interface{} {
+func (a argValue) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
 		args = append(args, v)
 	}
@@ -494,22 +359,13 @@ func writeDriverValuer(w queryWriter, value driver.Valuer) error {
 	return err
 }
 
-func (a *argValue) writeTo(w queryWriter, pos int) error {
+func (a argValue) writeTo(w queryWriter, pos int) error {
 	return writeDriverValuer(w, a.data[pos])
 }
 
-func (a *argValue) len() int {
+func (a argValue) len() int {
 	return len(a.data)
 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a *argValue) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a *argValue) operator() Op { return a.op }
 
 // ArgValue allows to use any type which implements driver.Valuer interface.
 // Implements interface Argument.
@@ -520,34 +376,24 @@ func ArgValue(args ...driver.Valuer) Argument {
 }
 
 type argTimes struct {
-	op   Op
 	data []time.Time
 }
 
-func (a *argTimes) toIFace(args []interface{}) []interface{} {
+func (a argTimes) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a *argTimes) writeTo(w queryWriter, pos int) error {
+func (a argTimes) writeTo(w queryWriter, pos int) error {
 	dialect.EscapeTime(w, a.data[pos])
 	return nil
 }
 
-func (a *argTimes) len() int {
+func (a argTimes) len() int {
 	return len(a.data)
 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a *argTimes) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a *argTimes) operator() Op { return a.op }
 
 // ArgTime adds a time.Time or a slice of times to the argument list. Providing
 // no arguments returns a NULL type. Implements interface Argument.
@@ -556,7 +402,6 @@ func ArgTime(args ...time.Time) Argument {
 }
 
 type argBytes struct {
-	op   Op
 	data [][]byte
 }
 
@@ -576,10 +421,6 @@ func (a argBytes) writeTo(w queryWriter, pos int) (err error) {
 func (a argBytes) len() int {
 	return len(a.data)
 }
-
-// Op not supported
-func (a argBytes) applyOperator(op Op) Argument { a.op = op; return a }
-func (a argBytes) operator() Op                 { return a.op }
 
 // ArgBytes adds a byte slice to the argument list. Providing a nil argument
 // returns a NULL type. Detects between valid UTF-8 strings and binary data. Later
@@ -604,15 +445,6 @@ func (i argNull) writeTo(w queryWriter, _ int) (err error) {
 
 func (i argNull) len() int { return 1 }
 
-// Op not supported
-func (i argNull) applyOperator(op Op) Argument { return argNull(op) }
-func (i argNull) operator() Op {
-	if i > 0 {
-		return Op(i)
-	}
-	return Null
-}
-
 // ArgNull treats the argument as a SQL `IS NULL` or `NULL`. IN clause not
 // supported. Implements interface Argument.
 func ArgNull() Argument {
@@ -636,29 +468,18 @@ func (a ArgString) writeTo(w queryWriter, _ int) error {
 
 func (a ArgString) len() int { return 1 }
 
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a ArgString) applyOperator(op Op) Argument {
-	return &argStrings{
-		data: []string{string(a)},
-		op:   op,
-	}
-}
-func (a ArgString) operator() Op { return 0 }
-
 type argStrings struct {
 	data []string
-	op   Op
 }
 
-func (a *argStrings) toIFace(args []interface{}) []interface{} {
+func (a argStrings) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a *argStrings) writeTo(w queryWriter, pos int) error {
+func (a argStrings) writeTo(w queryWriter, pos int) error {
 	if !utf8.ValidString(a.data[pos]) {
 		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a.data[pos])
 	}
@@ -666,17 +487,9 @@ func (a *argStrings) writeTo(w queryWriter, pos int) error {
 	return nil
 }
 
-func (a *argStrings) len() int {
+func (a argStrings) len() int {
 	return len(a.data)
 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a *argStrings) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-func (a *argStrings) operator() Op { return a.op }
 
 // ArgBool implements interface Argument.
 type ArgBool bool
@@ -691,38 +504,25 @@ func (a ArgBool) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgBool) len() int { return 1 }
 
-// Op not supported
-func (a ArgBool) applyOperator(_ Op) Argument { return a }
-func (a ArgBool) operator() Op                { return 0 }
-
 type argBools struct {
-	op   Op
 	data []bool
 }
 
-func (a *argBools) toIFace(args []interface{}) []interface{} {
+func (a argBools) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
 		args = append(args, v == true)
 	}
 	return args
 }
 
-func (a *argBools) writeTo(w queryWriter, pos int) error {
+func (a argBools) writeTo(w queryWriter, pos int) error {
 	dialect.EscapeBool(w, a.data[pos])
 	return nil
 }
 
-func (a *argBools) len() int {
+func (a argBools) len() int {
 	return len(a.data)
 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a *argBools) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-func (a *argBools) operator() Op { return a.op }
 
 // ArgInt implements interface Argument.
 type ArgInt int
@@ -736,44 +536,24 @@ func (a ArgInt) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgInt) len() int { return 1 }
 
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a ArgInt) applyOperator(op Op) Argument {
-	return &argInts{
-		op:   op,
-		data: []int{int(a)},
-	}
-}
-func (a ArgInt) operator() Op { return 0 }
-
 type argInts struct {
-	op   Op
 	data []int
 }
 
-func (a *argInts) toIFace(args []interface{}) []interface{} {
+func (a argInts) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
 		args = append(args, int64(v))
 	}
 	return args
 }
 
-func (a *argInts) writeTo(w queryWriter, pos int) error {
+func (a argInts) writeTo(w queryWriter, pos int) error {
 	return writeInt64(w, int64(a.data[pos]))
 }
 
-func (a *argInts) len() int {
+func (a argInts) len() int {
 	return len(a.data)
 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a *argInts) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a *argInts) operator() Op { return a.op }
 
 // ArgInt64 implements interface Argument.
 type ArgInt64 int64
@@ -787,44 +567,28 @@ func (a ArgInt64) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgInt64) len() int { return 1 }
 
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a ArgInt64) applyOperator(op Op) Argument {
-	return &argInt64s{
-		op:   op,
-		data: []int64{int64(a)},
-	}
-}
-func (a ArgInt64) operator() Op { return 0 }
-
 type argInt64s struct {
-	op   Op
 	data []int64
 }
 
-func (a *argInt64s) toIFace(args []interface{}) []interface{} {
+func ArgInt64s(val ...int64) Argument {
+	return argInt64s{data: val}
+}
+
+func (a argInt64s) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a *argInt64s) writeTo(w queryWriter, pos int) error {
+func (a argInt64s) writeTo(w queryWriter, pos int) error {
 	return writeInt64(w, a.data[pos])
 }
 
-func (a *argInt64s) len() int {
+func (a argInt64s) len() int {
 	return len(a.data)
 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a *argInt64s) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a *argInt64s) operator() Op { return a.op }
 
 // ArgFloat64 implements interface Argument.
 type ArgFloat64 float64
@@ -838,49 +602,28 @@ func (a ArgFloat64) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgFloat64) len() int { return 1 }
 
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a ArgFloat64) applyOperator(op Op) Argument {
-	return &argFloat64s{
-		op:   op,
-		data: []float64{float64(a)},
-	}
-}
-func (a ArgFloat64) operator() Op { return 0 }
-
 type argFloat64s struct {
-	op   Op
 	data []float64
 }
 
-func (a *argFloat64s) toIFace(args []interface{}) []interface{} {
+func (a argFloat64s) toIFace(args []interface{}) []interface{} {
 	for _, v := range a.data {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a *argFloat64s) writeTo(w queryWriter, pos int) error {
+func (a argFloat64s) writeTo(w queryWriter, pos int) error {
 	return writeFloat64(w, a.data[pos])
 }
 
-func (a *argFloat64s) len() int {
+func (a argFloat64s) len() int {
 	return len(a.data)
 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a *argFloat64s) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a *argFloat64s) operator() Op { return a.op }
 
 type expr struct {
 	SQL string
 	Arguments
-	op Op
 }
 
 // ArgExpr at a SQL fragment with placeholders, and a slice of args to replace
@@ -902,15 +645,6 @@ func (e *expr) writeTo(w queryWriter, _ int) error {
 }
 func (e *expr) len() int { return 1 }
 
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (e *expr) applyOperator(op Op) Argument {
-	e.op = op
-	return e
-}
-
-func (e *expr) operator() Op { return e.op }
-
 type argPlaceHolder rune
 
 func (i argPlaceHolder) toIFace(args []interface{}) []interface{} {
@@ -924,12 +658,6 @@ func (i argPlaceHolder) writeTo(w queryWriter, _ int) (err error) {
 
 func (i argPlaceHolder) len() int {
 	return cahensConstant
-}
-
-// Op not supported
-func (i argPlaceHolder) applyOperator(op Op) Argument { return argPlaceHolder(op) }
-func (i argPlaceHolder) operator() Op {
-	return Op(i)
 }
 
 func (i argPlaceHolder) GoString() string {

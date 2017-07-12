@@ -305,7 +305,7 @@ func (b *Select) AddArguments(args ...Argument) *Select {
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs.
-func (b *Select) Where(wf ...*WhereFragment) *Select {
+func (b *Select) Where(wf ...*whereFragment) *Select {
 	b.WhereFragments = append(b.WhereFragments, wf...)
 	return b
 }
@@ -345,7 +345,7 @@ func (b *Select) GroupByExpr(groups ...string) *Select {
 }
 
 // Having appends a HAVING clause to the statement
-func (b *Select) Having(wf ...*WhereFragment) *Select {
+func (b *Select) Having(wf ...*whereFragment) *Select {
 	b.HavingFragments = append(b.HavingFragments, wf...)
 	return b
 }
@@ -412,7 +412,7 @@ func (b *Select) Interpolate() *Select {
 	return b
 }
 
-func (b *Select) join(j string, t alias, on ...*WhereFragment) *Select {
+func (b *Select) join(j string, t alias, on ...*whereFragment) *Select {
 	jf := &joinFragment{
 		JoinType: j,
 		Table:    t,
@@ -424,31 +424,31 @@ func (b *Select) join(j string, t alias, on ...*WhereFragment) *Select {
 
 // Join creates an INNER join construct. By default, the onConditions are glued
 // together with AND.
-func (b *Select) Join(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) Join(table alias, onConditions ...*whereFragment) *Select {
 	return b.join("INNER", table, onConditions...)
 }
 
 // LeftJoin creates a LEFT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) LeftJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) LeftJoin(table alias, onConditions ...*whereFragment) *Select {
 	return b.join("LEFT", table, onConditions...)
 }
 
 // RightJoin creates a RIGHT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) RightJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) RightJoin(table alias, onConditions ...*whereFragment) *Select {
 	return b.join("RIGHT", table, onConditions...)
 }
 
 // OuterJoin creates an OUTER join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) OuterJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) OuterJoin(table alias, onConditions ...*whereFragment) *Select {
 	return b.join("OUTER", table, onConditions...)
 }
 
 // CrossJoin creates a CROSS join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) CrossJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) CrossJoin(table alias, onConditions ...*whereFragment) *Select {
 	return b.join("CROSS", table, onConditions...)
 }
 

@@ -24,7 +24,7 @@ import (
 func TestColumn(t *testing.T) {
 	t.Run("invalid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
-			Column("a", ArgInt(111)),
+			Column("a").Int(111),
 			Expression("b=c"),
 		)
 		sql, args, err := s.ToSQL()
@@ -35,9 +35,9 @@ func TestColumn(t *testing.T) {
 
 	t.Run("valid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
-			Column("a", In.Int64(111, 222)),
-			Column("b", ArgNull()),
-			Column("d", Between.Float64(2.5, 2.7)),
+			Column("a").Ints(111, 222), // omitted In(). on purpose because default operator is IN for slices
+			Column("b").Null(),
+			Column("d").Between().Float64s(2.5, 2.7),
 		).Interpolate()
 		sql, args, err := s.ToSQL()
 		require.NoError(t, err)
