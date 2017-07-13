@@ -211,10 +211,6 @@ func TestNullTime_Argument(t *testing.T) {
 	for i, ns := range nss {
 		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
-
-		arg := ns.applyOperator(NotBetween)
-		assert.Exactly(t, NotBetween, arg.operator(), "Index %d", i)
-		assert.Exactly(t, 1, arg.len(), "Length must be always one")
 	}
 	assert.Exactly(t, []interface{}{interface{}(nil), timeValue}, args)
 	assert.Exactly(t, "NULL'1977-05-25 20:21:21'", buf.String())
@@ -223,13 +219,10 @@ func TestNullTime_Argument(t *testing.T) {
 func TestArgNullTime(t *testing.T) {
 	t.Parallel()
 
-	args := ArgNullTime(MakeNullTime(timeValue), MakeNullTime(timeValue, false), MakeNullTime(timeValue))
-	assert.Exactly(t, 3, args.len())
-	args = args.applyOperator(NotIn)
+	args := ArgNullTimes{MakeNullTime(timeValue), MakeNullTime(timeValue, false), MakeNullTime(timeValue)}
 	assert.Exactly(t, 3, args.len())
 
 	t.Run("writeTo", func(t *testing.T) {
-		args = args.applyOperator(NotEqual)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		for i := 0; i < args.len(); i++ {
@@ -243,8 +236,7 @@ func TestArgNullTime(t *testing.T) {
 	})
 
 	t.Run("single arg", func(t *testing.T) {
-		args = ArgNullTime(MakeNullTime(timeValue))
-		args = args.applyOperator(NotEqual)
+		args = ArgNullTimes{MakeNullTime(timeValue)}
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		for i := 0; i < args.len(); i++ {

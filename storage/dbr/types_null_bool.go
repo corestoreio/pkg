@@ -24,7 +24,6 @@ import (
 // will decode to null, not false, if null. NullBool implements interface
 // Argument.
 type NullBool struct {
-	op Op
 	sql.NullBool
 }
 
@@ -45,15 +44,6 @@ func (a NullBool) writeTo(w queryWriter, _ int) error {
 }
 
 func (a NullBool) len() int { return 1 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a NullBool) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a NullBool) operator() Op { return a.op }
 
 // MakeNullBool creates a new NullBool. Implements interface Argument.
 func MakeNullBool(b bool, valid ...bool) NullBool {

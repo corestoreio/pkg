@@ -36,26 +36,25 @@ var _ Argument = ArgInt(0)
 var _ Argument = ArgInt64(0)
 var _ Argument = ArgFloat64(0)
 var _ Argument = ArgBool(true)
-var _ Argument = (*argBytes)(nil)
-var _ Argument = (*argInts)(nil)
-var _ Argument = (*argInt64s)(nil)
-var _ Argument = (*argFloat64s)(nil)
-var _ Argument = (*argTimes)(nil)
-var _ Argument = (*argBools)(nil)
-var _ Argument = (*argStrings)(nil)
+var _ Argument = (*ArgBytesSlice)(nil)
+var _ Argument = (*ArgInts)(nil)
+var _ Argument = (*ArgInt64s)(nil)
+var _ Argument = (*ArgFloat64s)(nil)
+var _ Argument = (*ArgTimes)(nil)
+var _ Argument = (*ArgStrings)(nil)
 var _ Argument = (*NullString)(nil)
-var _ Argument = (*argNullStrings)(nil)
+var _ Argument = (*ArgNullStrings)(nil)
 var _ Argument = (*NullFloat64)(nil)
-var _ Argument = (*argNullFloat64s)(nil)
-var _ Argument = (*NullBytes)(nil)
+var _ Argument = (*ArgNullFloat64s)(nil)
 var _ Argument = (*NullTime)(nil)
-var _ Argument = (*argNullTimes)(nil)
+var _ Argument = (*ArgNullTimes)(nil)
 var _ Argument = (*NullInt64)(nil)
-var _ Argument = (*argNullInt64s)(nil)
+var _ Argument = (*ArgNullInt64s)(nil)
 var _ Argument = (*NullBool)(nil)
-var _ Argument = (*argValue)(nil)
+var _ Argument = (*ArgValues)(nil)
 var _ driver.Value = (*Arguments)(nil)
 
+// TODO fix me
 //func TestOpRune(t *testing.T) {
 //	t.Parallel()
 //	s := NewSelect().From("tableA").AddColumns("a", "b").
@@ -186,7 +185,7 @@ var _ driver.Value = (*Arguments)(nil)
 //		)
 //	})
 //
-//	t.Run("ArgBytes BETWEEN strings", func(t *testing.T) {
+//	t.Run("ArgBytesSlice BETWEEN strings", func(t *testing.T) {
 //		compareToSQL(t,
 //			NewSelect("a", "b").From("t1").Where(
 //				Column("a316", Between.Bytes([]byte(`Go`), []byte(`Rust`))),
@@ -197,7 +196,7 @@ var _ driver.Value = (*Arguments)(nil)
 //			[][]uint8{{0x47, 0x6f}, {0x52, 0x75, 0x73, 0x74}},
 //		)
 //	})
-//	t.Run("ArgBytes IN binary", func(t *testing.T) {
+//	t.Run("ArgBytesSlice IN binary", func(t *testing.T) {
 //
 //		compareToSQL(t,
 //			NewSelect("a", "b").From("t1").Where(

@@ -26,7 +26,6 @@ import (
 // Argument.
 type NullFloat64 struct {
 	sql.NullFloat64
-	op Op
 }
 
 func (a NullFloat64) toIFace(args []interface{}) []interface{} {
@@ -45,15 +44,6 @@ func (a NullFloat64) writeTo(w queryWriter, _ int) error {
 }
 
 func (a NullFloat64) len() int { return 1 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a NullFloat64) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a NullFloat64) operator() Op { return a.op }
 
 // MakeNullFloat64 creates a new NullFloat64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullFloat64
@@ -163,13 +153,12 @@ func (a NullFloat64) IsZero() bool {
 	return !a.Valid
 }
 
-type argNullFloat64s struct {
-	op   Op
-	data []NullFloat64 // maybe use sql.NullFloat
-}
+// ArgNullFloat64s adds a nullable float64 or a slice of nullable float64s to the
+// argument list. Providing no arguments returns a NULL type.
+type ArgNullFloat64s []NullFloat64
 
-func (a argNullFloat64s) toIFace(args []interface{}) []interface{} {
-	for _, s := range a.data {
+func (a ArgNullFloat64s) toIFace(args []interface{}) []interface{} {
+	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.Float64)
 		} else {
@@ -179,32 +168,14 @@ func (a argNullFloat64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a argNullFloat64s) writeTo(w queryWriter, pos int) error {
-	if s := a.data[pos]; s.Valid {
+func (a ArgNullFloat64s) writeTo(w queryWriter, pos int) error {
+	if s := a[pos]; s.Valid {
 		return writeFloat64(w, s.Float64)
 	}
 	_, err := w.WriteString(sqlStrNull)
 	return err
 }
 
-func (a argNullFloat64s) len() int {
-	return len(a.data)
-}
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a argNullFloat64s) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a argNullFloat64s) operator() Op { return a.op }
-
-// ArgNullFloat64 adds a nullable float64 or a slice of nullable float64s to the
-// argument list. Providing no arguments returns a NULL type.
-func ArgNullFloat64(args ...NullFloat64) Argument {
-	if len(args) == 1 {
-		return args[0]
-	}
-	return argNullFloat64s{data: args}
+func (a ArgNullFloat64s) len() int {
+	return len(a)
 }

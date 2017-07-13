@@ -39,15 +39,6 @@ func (a NullTime) writeTo(w queryWriter, _ int) error {
 
 func (a NullTime) len() int { return 1 }
 
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a NullTime) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a NullTime) operator() Op { return a.op }
-
 // MakeNullTime creates a new NullTime. Setting the second optional argument to
 // false, the string will not be valid anymore, hence NULL. NullTime implements
 // interface Argument.
@@ -146,13 +137,12 @@ func (a NullTime) Ptr() *time.Time {
 	return &a.Time
 }
 
-type argNullTimes struct {
-	op   Op
-	data []NullTime
-}
+// ArgNullTimes adds a nullable Time or a slice of nullable Timess to the
+// argument list. Providing no arguments returns a NULL type.
+type ArgNullTimes []NullTime
 
-func (a argNullTimes) toIFace(args []interface{}) []interface{} {
-	for _, s := range a.data {
+func (a ArgNullTimes) toIFace(args []interface{}) []interface{} {
+	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.Time)
 		} else {
@@ -162,8 +152,8 @@ func (a argNullTimes) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a argNullTimes) writeTo(w queryWriter, pos int) error {
-	if s := a.data[pos]; s.Valid {
+func (a ArgNullTimes) writeTo(w queryWriter, pos int) error {
+	if s := a[pos]; s.Valid {
 		dialect.EscapeTime(w, s.Time)
 		return nil
 	}
@@ -171,24 +161,6 @@ func (a argNullTimes) writeTo(w queryWriter, pos int) error {
 	return err
 }
 
-func (a argNullTimes) len() int {
-	return len(a.data)
-}
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a argNullTimes) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a argNullTimes) operator() Op { return a.op }
-
-// ArgNullTime adds a nullable Time or a slice of nullable Timess to the
-// argument list. Providing no arguments returns a NULL type.
-func ArgNullTime(args ...NullTime) Argument {
-	if len(args) == 1 {
-		return args[0]
-	}
-	return argNullTimes{data: args}
+func (a ArgNullTimes) len() int {
+	return len(a)
 }

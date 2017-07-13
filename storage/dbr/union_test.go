@@ -26,10 +26,10 @@ func TestUnionStmts(t *testing.T) {
 
 	t.Run("simple", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect("a", "b").From("tableAB").Where(Column("a", Equal.Int64(3))),
+			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		)
 		u.Append(
-			NewSelect("c", "d").From("tableCD").Where(Column("d", Equal.Str("e"))),
+			NewSelect("c", "d").From("tableCD").Where(Column("d").String("e")),
 		)
 		compareToSQL(t, u, nil,
 			"(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))\nUNION\n(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = ?))",
@@ -40,8 +40,8 @@ func TestUnionStmts(t *testing.T) {
 
 	t.Run("simple all", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect("c", "d").From("tableCD").Where(Column("d", Equal.Str("e"))),
-			NewSelect("a", "b").From("tableAB").Where(Column("a", Equal.Int64(3))),
+			NewSelect("c", "d").From("tableCD").Where(Column("d").String("e")),
+			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		).All()
 		compareToSQL(t, u, nil,
 			"(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))",
@@ -52,8 +52,8 @@ func TestUnionStmts(t *testing.T) {
 
 	t.Run("order by", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect("a").AddColumnsAlias("d", "b").From("tableAD").Where(Column("d", Equal.Str("f"))),
-			NewSelect("a", "b").From("tableAB").Where(Column("a", Equal.Int64(3))),
+			NewSelect("a").AddColumnsAlias("d", "b").From("tableAD").Where(Column("d").String("f")),
+			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		).All().OrderBy("a").OrderByDesc("b")
 
 		compareToSQL(t, u, nil,
@@ -66,7 +66,7 @@ func TestUnionStmts(t *testing.T) {
 	t.Run("preserve result set", func(t *testing.T) {
 		u := NewUnion(
 			NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
-			NewSelect("a", "b").From("tableAB").Where(Column("c", Between.Int64(3, 5))),
+			NewSelect("a", "b").From("tableAB").Where(Column("c").Between().Int64s(3, 5)),
 		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
 		// testing idempotent function ToSQL
@@ -109,7 +109,7 @@ func TestUnion_UseBuildCache(t *testing.T) {
 
 	u := NewUnion(
 		NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
-		NewSelect("a", "b").From("tableAB").Where(Column("b", Equal.Float64(3.14159))),
+		NewSelect("a", "b").From("tableAB").Where(Column("b").Float64(3.14159)),
 	).All().
 		StringReplace("MyKey", "a", "b", "c"). // does nothing because more than one NewSelect functions
 		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`).
@@ -186,7 +186,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		u := NewUnion(
 			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
 				FromAlias("catalog_product_entity_{type}", "t").
-				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))).
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.{column}_store_id"),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
@@ -264,7 +264,7 @@ func TestNewUnionTemplate(t *testing.T) {
 
 		u := NewUnion(
 			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_{type}", "t").
-				Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
+				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)),
 		).
 			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 			PreserveResultSet().
@@ -282,7 +282,7 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 
 	u := NewUnion(
 		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_{type}", "t").
-			Where(Column("entity_id", ArgInt64(1561)), Column("store_id", In.Int64(1, 0))),
+			Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)),
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().

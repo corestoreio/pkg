@@ -95,8 +95,8 @@ func ExampleUpdateMulti() {
 			AddColumns("state", "customer_id", "grand_total").
 			Where(
 				// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
-				dbr.Column("shipping_method", dbr.Equal.Str("DHL")), // For all clauses the same restriction
-				dbr.Column("entity_id", dbr.Equal.Int64()),          // Int64() acts as a place holder
+				dbr.Column("shipping_method").Equal().String("DHL"), // For all clauses the same restriction
+				dbr.Column("entity_id").Int64s(),                    // Int64() acts as a place holder
 			), // Our template statement
 	).WithDB(dbc.DB)
 

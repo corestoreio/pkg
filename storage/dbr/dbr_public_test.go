@@ -41,9 +41,9 @@ func (p *dbrPerson) AssembleArguments(stmtType int, args dbr.Arguments, columns 
 		case "name":
 			args = append(args, dbr.ArgString(p.Name))
 		case "email":
-			args = append(args, dbr.ArgNullString(p.Email))
+			args = append(args, p.Email)
 		case "key":
-			args = append(args, dbr.ArgNullString(p.Key))
+			args = append(args, p.Key)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}

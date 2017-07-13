@@ -316,13 +316,13 @@ func iFaceToArgs(values ...interface{}) Arguments {
 	return args
 }
 
-type argValue struct {
-	data []driver.Valuer
-}
+// ArgValue allows to use any type which implements driver.Valuer interface.
+// Implements interface Argument.
+type ArgValues []driver.Valuer
 
-func (a argValue) toIFace(args []interface{}) []interface{} {
-	for _, v := range a.data {
-		args = append(args, v)
+func (a ArgValues) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
+		args = append(args, v) // TODO FIX BUG call .Value()
 	}
 	return args
 }
@@ -334,7 +334,7 @@ func writeDriverValuer(w queryWriter, value driver.Valuer) error {
 	}
 	val, err := value.Value()
 	if err != nil {
-		return errors.Wrapf(err, "[dbr] argValue.WriteTo: %#v", value)
+		return errors.Wrapf(err, "[dbr] ArgValues.WriteTo: %#v", value)
 	}
 	switch t := val.(type) {
 	case nil:
@@ -354,82 +354,110 @@ func writeDriverValuer(w queryWriter, value driver.Valuer) error {
 	case []byte:
 		dialect.EscapeBinary(w, t)
 	default:
-		return errors.NewNotSupportedf("[dbr] argValue.WriteTo Type not yet supported: %#v", value)
+		return errors.NewNotSupportedf("[dbr] ArgValues.WriteTo Type not yet supported: %#v", value)
 	}
 	return err
 }
 
-func (a argValue) writeTo(w queryWriter, pos int) error {
-	return writeDriverValuer(w, a.data[pos])
+func (a ArgValues) writeTo(w queryWriter, pos int) error {
+	return writeDriverValuer(w, a[pos])
 }
 
-func (a argValue) len() int {
-	return len(a.data)
+func (a ArgValues) len() int {
+	return len(a)
 }
 
-// ArgValue allows to use any type which implements driver.Valuer interface.
-// Implements interface Argument.
-func ArgValue(args ...driver.Valuer) Argument {
-	return &argValue{
-		data: args,
-	}
-}
+// ArgTimes adds a time.Time or a slice of times to the argument list. Providing
+// no arguments returns a NULL type. Implements interface Argument.
+type ArgTimes []time.Time
 
-type argTimes struct {
-	data []time.Time
-}
-
-func (a argTimes) toIFace(args []interface{}) []interface{} {
-	for _, v := range a.data {
+func (a ArgTimes) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a argTimes) writeTo(w queryWriter, pos int) error {
-	dialect.EscapeTime(w, a.data[pos])
+func (a ArgTimes) writeTo(w queryWriter, pos int) error {
+	dialect.EscapeTime(w, a[pos])
 	return nil
 }
 
-func (a argTimes) len() int {
-	return len(a.data)
+func (a ArgTimes) len() int {
+	return len(a)
 }
 
-// ArgTime adds a time.Time or a slice of times to the argument list. Providing
+// argTime adds a time.Time or a slice of times to the argument list. Providing
 // no arguments returns a NULL type. Implements interface Argument.
-func ArgTime(args ...time.Time) Argument {
-	return &argTimes{data: args}
+type argTime struct{ time.Time }
+
+func (a argTime) toIFace(args []interface{}) []interface{} {
+	return append(args, a.Time)
 }
 
-type argBytes struct {
-	data [][]byte
-}
-
-func (a argBytes) toIFace(args []interface{}) []interface{} {
-	return append(args, a.data)
-}
-
-func (a argBytes) writeTo(w queryWriter, pos int) (err error) {
-	if !utf8.Valid(a.data[pos]) {
-		dialect.EscapeBinary(w, a.data[pos])
-	} else {
-		dialect.EscapeString(w, string(a.data[pos]))
-	}
+func (a argTime) writeTo(w queryWriter, _ int) error {
+	dialect.EscapeTime(w, a.Time)
 	return nil
 }
 
-func (a argBytes) len() int {
-	return len(a.data)
+func (a argTime) len() int {
+	return 1
 }
 
-// ArgBytes adds a byte slice to the argument list. Providing a nil argument
+func ArgTime(t time.Time) Argument {
+	return argTime{Time: t}
+}
+
+// ArgBytesSlice adds a byte slice to the argument list. Providing a nil argument
 // returns a NULL type. Detects between valid UTF-8 strings and binary data. Later
 // gets hex encoded.
-func ArgBytes(p ...[]byte) Argument {
-	if p == nil {
-		return ArgNull()
+type ArgBytesSlice [][]byte
+
+func (a ArgBytesSlice) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
+		args = append(args, []byte(v))
 	}
-	return argBytes{data: p}
+	return args
+}
+
+func (a ArgBytesSlice) writeTo(w queryWriter, pos int) (err error) {
+	if !utf8.Valid(a[pos]) {
+		dialect.EscapeBinary(w, a[pos])
+	} else {
+		dialect.EscapeString(w, string(a[pos]))
+	}
+	return nil
+}
+
+func (a ArgBytesSlice) len() int {
+	return len(a)
+}
+
+type ArgBytes []byte
+
+func (a ArgBytes) toIFace(args []interface{}) []interface{} {
+	return append(args, []byte(a))
+}
+
+func (a ArgBytes) writeTo(w queryWriter, _ int) (err error) {
+	if !utf8.Valid(a) {
+		dialect.EscapeBinary(w, a)
+	} else {
+		dialect.EscapeString(w, string(a))
+	}
+	return nil
+}
+
+func (a ArgBytes) len() int {
+	return 1
+}
+
+// Value implements the driver Valuer interface.
+func (a ArgBytes) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+	return []byte(a), nil
 }
 
 type argNull rune
@@ -468,27 +496,25 @@ func (a ArgString) writeTo(w queryWriter, _ int) error {
 
 func (a ArgString) len() int { return 1 }
 
-type argStrings struct {
-	data []string
-}
+type ArgStrings []string
 
-func (a argStrings) toIFace(args []interface{}) []interface{} {
-	for _, v := range a.data {
+func (a ArgStrings) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a argStrings) writeTo(w queryWriter, pos int) error {
-	if !utf8.ValidString(a.data[pos]) {
-		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a.data[pos])
+func (a ArgStrings) writeTo(w queryWriter, pos int) error {
+	if !utf8.ValidString(a[pos]) {
+		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a[pos])
 	}
-	dialect.EscapeString(w, a.data[pos])
+	dialect.EscapeString(w, a[pos])
 	return nil
 }
 
-func (a argStrings) len() int {
-	return len(a.data)
+func (a ArgStrings) len() int {
+	return len(a)
 }
 
 // ArgBool implements interface Argument.
@@ -504,24 +530,22 @@ func (a ArgBool) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgBool) len() int { return 1 }
 
-type argBools struct {
-	data []bool
-}
+type ArgBools []bool
 
-func (a argBools) toIFace(args []interface{}) []interface{} {
-	for _, v := range a.data {
-		args = append(args, v == true)
+func (a ArgBools) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
+		args = append(args, v)
 	}
 	return args
 }
 
-func (a argBools) writeTo(w queryWriter, pos int) error {
-	dialect.EscapeBool(w, a.data[pos])
+func (a ArgBools) writeTo(w queryWriter, pos int) error {
+	dialect.EscapeBool(w, a[pos])
 	return nil
 }
 
-func (a argBools) len() int {
-	return len(a.data)
+func (a ArgBools) len() int {
+	return len(a)
 }
 
 // ArgInt implements interface Argument.
@@ -536,23 +560,21 @@ func (a ArgInt) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgInt) len() int { return 1 }
 
-type argInts struct {
-	data []int
-}
+type ArgInts []int
 
-func (a argInts) toIFace(args []interface{}) []interface{} {
-	for _, v := range a.data {
+func (a ArgInts) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
 		args = append(args, int64(v))
 	}
 	return args
 }
 
-func (a argInts) writeTo(w queryWriter, pos int) error {
-	return writeInt64(w, int64(a.data[pos]))
+func (a ArgInts) writeTo(w queryWriter, pos int) error {
+	return writeInt64(w, int64(a[pos]))
 }
 
-func (a argInts) len() int {
-	return len(a.data)
+func (a ArgInts) len() int {
+	return len(a)
 }
 
 // ArgInt64 implements interface Argument.
@@ -567,27 +589,21 @@ func (a ArgInt64) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgInt64) len() int { return 1 }
 
-type argInt64s struct {
-	data []int64
-}
+type ArgInt64s []int64
 
-func ArgInt64s(val ...int64) Argument {
-	return argInt64s{data: val}
-}
-
-func (a argInt64s) toIFace(args []interface{}) []interface{} {
-	for _, v := range a.data {
+func (a ArgInt64s) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a argInt64s) writeTo(w queryWriter, pos int) error {
-	return writeInt64(w, a.data[pos])
+func (a ArgInt64s) writeTo(w queryWriter, pos int) error {
+	return writeInt64(w, a[pos])
 }
 
-func (a argInt64s) len() int {
-	return len(a.data)
+func (a ArgInt64s) len() int {
+	return len(a)
 }
 
 // ArgFloat64 implements interface Argument.
@@ -602,23 +618,21 @@ func (a ArgFloat64) writeTo(w queryWriter, _ int) error {
 }
 func (a ArgFloat64) len() int { return 1 }
 
-type argFloat64s struct {
-	data []float64
-}
+type ArgFloat64s []float64
 
-func (a argFloat64s) toIFace(args []interface{}) []interface{} {
-	for _, v := range a.data {
+func (a ArgFloat64s) toIFace(args []interface{}) []interface{} {
+	for _, v := range a {
 		args = append(args, v)
 	}
 	return args
 }
 
-func (a argFloat64s) writeTo(w queryWriter, pos int) error {
-	return writeFloat64(w, a.data[pos])
+func (a ArgFloat64s) writeTo(w queryWriter, pos int) error {
+	return writeFloat64(w, a[pos])
 }
 
-func (a argFloat64s) len() int {
-	return len(a.data)
+func (a ArgFloat64s) len() int {
+	return len(a)
 }
 
 type expr struct {

@@ -53,7 +53,7 @@ func TestMakeSQL(t *testing.T) {
 		assert.Contains(t, s, "[dbr] ToSQL Error: Canceled\n")
 	})
 	t.Run("DELETE", func(t *testing.T) {
-		b := NewDelete("tableX").Where(Column("columnA", Greater.Int64(2)))
+		b := NewDelete("tableX").Where(Column("columnA").Greater().Int64(2))
 		assert.Exactly(t, "DELETE FROM `tableX` WHERE (`columnA` > ?)", b.String())
 	})
 	t.Run("INSERT", func(t *testing.T) {
@@ -61,11 +61,11 @@ func TestMakeSQL(t *testing.T) {
 		assert.Exactly(t, "INSERT INTO `tableX` (`columnA`,`columnB`) VALUES (?,?)", b.String())
 	})
 	t.Run("SELECT", func(t *testing.T) {
-		b := NewSelect("columnA").FromAlias("tableX", "X").Where(Column("columnA", LessOrEqual.Float64(2.4)))
+		b := NewSelect("columnA").FromAlias("tableX", "X").Where(Column("columnA").LessOrEqual().Float64(2.4))
 		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= ?)", b.String())
 	})
 	t.Run("UPDATE", func(t *testing.T) {
-		b := NewUpdate("tableX").Set("columnA", ArgInt64(4)).Where(Column("columnB", Between.Int(5, 7)))
+		b := NewUpdate("tableX").Set("columnA", ArgInt64(4)).Where(Column("columnB").Between().Ints(5, 7))
 		assert.Exactly(t, "UPDATE `tableX` SET `columnA`=? WHERE (`columnB` BETWEEN ? AND ?)", b.String())
 	})
 }

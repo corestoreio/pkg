@@ -140,8 +140,7 @@ func TestSQLIf_Expression(t *testing.T) {
 			From("table1").Where(
 			dbr.Expression(
 				"IF((a > 0), b, c) > ?",
-				dbr.Greater.Int(4711),
-			))
+			).Greater().Int(4711))
 
 		compareToSQL(t, s, nil,
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)",
@@ -155,8 +154,7 @@ func TestSQLIf_Expression(t *testing.T) {
 			From("table1").Where(
 			dbr.Expression(
 				dbr.SQLIf("a > 0", "b", "c"),
-				dbr.Greater.Int(4711),
-			))
+			).Greater().Int(4711))
 
 		compareToSQL(t, s, nil,
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)",
@@ -187,10 +185,10 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty+?",
 				"3457", "qty+?",
 				"3458", "qty+?",
-			), dbr.Equal.Int(3, 4, 5))).
+			), dbr.ArgInts{3, 4, 5})).
 			Where(
-				dbr.Column("product_id", dbr.In.Int64(345, 567, 897)),
-				dbr.Column("website_id", dbr.ArgInt64(6)),
+				dbr.Column("product_id").In().Int64s(345, 567, 897),
+				dbr.Column("website_id").Int64(6),
 			)
 
 		sqlStr, args, err := u.ToSQL()

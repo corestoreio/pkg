@@ -109,7 +109,7 @@ func (p *dbrPerson) AssembleArguments(stmtType int, args Arguments, columns []st
 		case "name":
 			args = append(args, ArgString(p.Name))
 		case "email":
-			args = append(args, ArgNullString(p.Email))
+			args = append(args, NullString(p.Email))
 			// case "key": don't add key, it triggers a test failure condition
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
@@ -182,7 +182,7 @@ func (p *nullTypedRecord) AssembleArguments(stmtType int, args Arguments, column
 		case "id":
 			args = append(args, ArgInt64(p.ID))
 		case "string_val":
-			args = append(args, ArgNullString(p.StringVal))
+			args = append(args, NullString(p.StringVal))
 		case "int64_val":
 			if p.Int64Val.Valid {
 				args = append(args, ArgInt64(p.Int64Val.Int64))

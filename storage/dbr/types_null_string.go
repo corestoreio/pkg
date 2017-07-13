@@ -27,7 +27,6 @@ import (
 // NullString implements interface Argument.
 type NullString struct {
 	sql.NullString
-	op Op
 }
 
 func (a NullString) toIFace(args []interface{}) []interface{} {
@@ -50,15 +49,6 @@ func (a NullString) writeTo(w queryWriter, _ int) error {
 }
 
 func (a NullString) len() int { return 1 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a NullString) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a NullString) operator() Op { return a.op }
 
 // MakeNullString creates a new NullString. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullString
@@ -170,13 +160,13 @@ func (a NullString) IsZero() bool {
 	return !a.Valid
 }
 
-type argNullStrings struct {
-	op   Op
-	data []NullString
-}
+// ArgNullString adds a nullable string or a slice of nullable strings to the
+// argument list. Providing no arguments returns a NULL type. All arguments must
+// be a valid utf-8 string.
+type ArgNullStrings []NullString
 
-func (a argNullStrings) toIFace(args []interface{}) []interface{} {
-	for _, s := range a.data {
+func (a ArgNullStrings) toIFace(args []interface{}) []interface{} {
+	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.String)
 		} else {
@@ -186,8 +176,8 @@ func (a argNullStrings) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a argNullStrings) writeTo(w queryWriter, pos int) error {
-	if s := a.data[pos]; s.Valid {
+func (a ArgNullStrings) writeTo(w queryWriter, pos int) error {
+	if s := a[pos]; s.Valid {
 		if !utf8.ValidString(s.String) {
 			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
 		}
@@ -198,25 +188,6 @@ func (a argNullStrings) writeTo(w queryWriter, pos int) error {
 	return err
 }
 
-func (a argNullStrings) len() int {
-	return len(a.data)
-}
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a argNullStrings) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a argNullStrings) operator() Op { return a.op }
-
-// ArgNullString adds a nullable string or a slice of nullable strings to the
-// argument list. Providing no arguments returns a NULL type. All arguments must
-// be a valid utf-8 string.
-func ArgNullString(args ...NullString) Argument {
-	if len(args) == 1 {
-		return args[0]
-	}
-	return argNullStrings{data: args}
+func (a ArgNullStrings) len() int {
+	return len(a)
 }

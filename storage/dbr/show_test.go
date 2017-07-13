@@ -60,7 +60,7 @@ func TestShow(t *testing.T) {
 		)
 	})
 	t.Run("variables WHERE", func(t *testing.T) {
-		s := NewShow().Variable().Where(Column("Variable_name", In.Str("basedir", "back_log")))
+		s := NewShow().Variable().Where(Column("Variable_name").In().Strings("basedir", "back_log"))
 		compareToSQL(t, s, nil,
 			"SHOW VARIABLES WHERE (`Variable_name` IN (?,?))",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",
@@ -86,7 +86,7 @@ func TestShow(t *testing.T) {
 	})
 
 	t.Run("status WHERE", func(t *testing.T) {
-		s := NewShow().Session().Status().Where(Column("Variable_name", Like.Str("%error%")))
+		s := NewShow().Session().Status().Where(Column("Variable_name").Like().String("%error%"))
 		compareToSQL(t, s, nil,
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE ?)",
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
@@ -95,7 +95,7 @@ func TestShow(t *testing.T) {
 	})
 
 	t.Run("table status WHERE", func(t *testing.T) {
-		s := NewShow().TableStatus().Where(Column("Name", Regexp.Str(".*catalog[_]+")))
+		s := NewShow().TableStatus().Where(Column("Name").Regexp().String(".*catalog[_]+"))
 		s.UseBuildCache = true
 		compareToSQL(t, s, nil,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",
@@ -103,7 +103,7 @@ func TestShow(t *testing.T) {
 			".*catalog[_]+",
 		)
 		assert.Exactly(t, "SHOW TABLE STATUS WHERE (`Name` REGEXP ?)", string(s.cacheSQL))
-		s.WhereFragments[0].Argument = Equal.Str("sales$") // set Equal on purpose ... because cache already written
+		s.WhereFragments[0].String("sales$") // set Equal on purpose ... because cache already written
 		// twice to test the build cache
 		compareToSQL(t, s, nil,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",

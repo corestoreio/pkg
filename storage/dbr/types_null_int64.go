@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"strconv"
 
+	"database/sql/driver"
 	"github.com/corestoreio/errors"
 )
 
@@ -26,7 +27,6 @@ import (
 // Argument.
 type NullInt64 struct {
 	sql.NullInt64
-	op Op
 }
 
 func (a NullInt64) toIFace(args []interface{}) []interface{} {
@@ -45,15 +45,6 @@ func (a NullInt64) writeTo(w queryWriter, _ int) error {
 }
 
 func (a NullInt64) len() int { return 1 }
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a NullInt64) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a NullInt64) operator() Op { return a.op }
 
 // MakeNullInt64 creates a new NullInt64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullInt64
@@ -163,13 +154,20 @@ func (a NullInt64) IsZero() bool {
 	return !a.Valid
 }
 
-type argNullInt64s struct {
-	op   Op
-	data []NullInt64
+// Value implements the driver Valuer interface.
+func (nt NullInt64) Value() (driver.Value, error) {
+	if !nt.Valid {
+		return nil, nil
+	}
+	return nt.Int64, nil
 }
 
-func (a argNullInt64s) toIFace(args []interface{}) []interface{} {
-	for _, s := range a.data {
+// ArgNullInt64s adds a nullable int64 or a slice of nullable int64s to the
+// argument list. Providing no arguments returns a NULL type.
+type ArgNullInt64s []NullInt64
+
+func (a ArgNullInt64s) toIFace(args []interface{}) []interface{} {
+	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.Int64)
 		} else {
@@ -179,32 +177,14 @@ func (a argNullInt64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a argNullInt64s) writeTo(w queryWriter, pos int) error {
-	if s := a.data[pos]; s.Valid {
+func (a ArgNullInt64s) writeTo(w queryWriter, pos int) error {
+	if s := a[pos]; s.Valid {
 		return writeInt64(w, s.Int64)
 	}
 	_, err := w.WriteString(sqlStrNull)
 	return err
 }
 
-func (a argNullInt64s) len() int {
-	return len(a.data)
-}
-
-// Op sets the SQL operator (IN, =, LIKE, BETWEEN, ...). Please refer to
-// the constants Op*.
-func (a argNullInt64s) applyOperator(op Op) Argument {
-	a.op = op
-	return a
-}
-
-func (a argNullInt64s) operator() Op { return a.op }
-
-// ArgNullInt64 adds a nullable int64 or a slice of nullable int64s to the
-// argument list. Providing no arguments returns a NULL type.
-func ArgNullInt64(args ...NullInt64) Argument {
-	if len(args) == 1 {
-		return args[0]
-	}
-	return argNullInt64s{data: args}
+func (a ArgNullInt64s) len() int {
+	return len(a)
 }

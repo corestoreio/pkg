@@ -245,10 +245,6 @@ func TestNullString_Argument(t *testing.T) {
 	for i, ns := range nss {
 		args = ns.toIFace(args)
 		ns.writeTo(&buf, i)
-
-		arg := ns.applyOperator(NotBetween)
-		assert.Exactly(t, NotBetween, arg.operator(), "Index %d", i)
-		assert.Exactly(t, 1, arg.len(), "Length must be always one")
 	}
 	assert.Exactly(t, []interface{}{interface{}(nil), "Ru'st\")y('"}, args)
 	assert.Exactly(t, "NULL'Ru\\'st\\\")y(\\''", buf.String())
@@ -257,13 +253,10 @@ func TestNullString_Argument(t *testing.T) {
 func TestArgNullString(t *testing.T) {
 	t.Parallel()
 
-	args := ArgNullString(MakeNullString("1'; DROP TABLE users-- 1"), MakeNullString("Rusty", false), MakeNullString("Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗"))
-	assert.Exactly(t, 3, args.len())
-	args = args.applyOperator(NotIn)
+	args := ArgNullStrings{MakeNullString("1'; DROP TABLE users-- 1"), MakeNullString("Rusty", false), MakeNullString("Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗")}
 	assert.Exactly(t, 3, args.len())
 
 	t.Run("writeTo", func(t *testing.T) {
-		args = args.applyOperator(NotEqual)
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		for i := 0; i < args.len(); i++ {
@@ -279,20 +272,20 @@ func TestArgNullString(t *testing.T) {
 	t.Run("invalid UTF-8", func(t *testing.T) {
 		var buf bytes.Buffer
 
-		args2 := ArgNullString(MakeNullString("\x00\xff"))
+		args2 := ArgNullStrings{MakeNullString("\x00\xff")}
 		err := args2.writeTo(&buf, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		buf.Reset()
 
-		args2 = ArgNullString(MakeNullString("\x00\xff"), MakeNullString("2nd"))
+		args2 = ArgNullStrings{MakeNullString("\x00\xff"), MakeNullString("2nd")}
 		err = args2.writeTo(&buf, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		buf.Reset()
 	})
 
 	t.Run("single arg", func(t *testing.T) {
-		args = ArgNullString(MakeNullString("1';"))
-		args = args.applyOperator(NotEqual)
+		args = ArgNullStrings{MakeNullString("1';")}
+
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		for i := 0; i < args.len(); i++ {

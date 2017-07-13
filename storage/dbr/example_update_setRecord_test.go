@@ -69,7 +69,7 @@ func ExampleUpdate_SetRecord() {
 	u = dbr.NewUpdate("catalog_category_entity").
 		AddColumns("attribute_set_id", "parent_id", "path").
 		SetRecord(ce).
-		Where(dbr.Column("entity_id", dbr.Equal.Int64())) // No Arguments in Int64 because we need a place holder.
+		Where(dbr.Column("entity_id").Int64s()) // No Arguments in Int64s because we need a place holder.
 	writeToSQLAndInterpolate(u)
 
 	// Output:

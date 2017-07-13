@@ -27,14 +27,14 @@ import (
 
 func TestUpdateAllToSQL(t *testing.T) {
 	t.Parallel()
-	qb := NewUpdate("a").Set("b", Equal.Int64(1)).Set("c", ArgInt(2))
+	qb := NewUpdate("a").Set("b", ArgInt64(1)).Set("c", ArgInt(2))
 	compareToSQL(t, qb, nil, "UPDATE `a` SET `b`=?, `c`=?", "", int64(1), int64(2))
 }
 
 func TestUpdateSingleToSQL(t *testing.T) {
 	t.Parallel()
 	compareToSQL(t, NewUpdate("a").
-		Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(Column("id", ArgInt(1))),
+		Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(Column("id").Int(1)),
 		nil,
 		"UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)",
 		"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)",
@@ -55,7 +55,7 @@ func TestUpdateSetMapToSQL(t *testing.T) {
 	t.Parallel()
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": Equal.Int64(1), "c": Equal.Int64(2)}).Where(Column("id", ArgInt(1))).ToSQL()
+	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": ArgInt64(1), "c": ArgInt64(2)}).Where(Column("id").Int(1)).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args)
@@ -70,7 +70,7 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 
 	compareToSQL(t, NewUpdate("a").
 		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id", ArgInt(9))),
+		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id").Int(9)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = ?)",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = 9)",
@@ -78,7 +78,7 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 
 	compareToSQL(t, NewUpdate("a").
 		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id", In.Int64(10, 11))),
+		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id").In().Int64s(10, 11)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (?,?))",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (10,11))",
@@ -86,7 +86,7 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 
 	compareToSQL(t, NewUpdate("a").
 		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Column("id", ArgInt(9))),
+		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Column("id").Int(9)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)",
@@ -113,7 +113,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err := s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Column("key", ArgString("6"))).Exec(context.TODO())
+	res, err := s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Column("key").String("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -122,7 +122,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	_, err = s.Select("*").From("dbr_people").Where(Column("email", ArgString("ben@whitehouse.gov"))).Load(context.TODO(), &person)
+	_, err = s.Select("*").From("dbr_people").Where(Column("email").String("ben@whitehouse.gov")).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)
@@ -144,12 +144,12 @@ func TestUpdateReal(t *testing.T) {
 	// Rename our George to Barack
 	_, err = s.Update("dbr_people").
 		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
-		Where(Column("id", In.Int64(id, 8888))).Exec(context.TODO())
+		Where(Column("id").In().Int64s(id, 8888)).Exec(context.TODO())
 	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
 	require.NoError(t, err)
 
 	var person dbrPerson
-	_, err = s.Select("*").From("dbr_people").Where(Column("id", Equal.Int64(id))).Load(context.TODO(), &person)
+	_, err = s.Select("*").From("dbr_people").Where(Column("id").Int64(id)).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)
@@ -187,7 +187,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("with condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
-		u.Where(Column("entity_id", In.Int64(1, 2, 3)))
+		u.Where(Column("entity_id").In().Int64s(1, 2, 3))
 
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?,?,?))",
@@ -198,7 +198,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("without condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
-		u.Where(Column("entity_id", In.Int64()))
+		u.Where(Column("entity_id").In().Int64s())
 
 		args := []interface{}{}
 		compareToSQL(t, u, nil,
@@ -328,7 +328,7 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), Equal.Int64(12)},
+			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgInt64(12)},
 		}
 		buf := new(bytes.Buffer)
 		args := make(Arguments, 0, 2)
@@ -391,7 +391,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 	t.Run("with where", func(t *testing.T) {
 		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
-			Where(Column("id", Equal.Int()))
+			Where(Column("id").Ints())
 		compareToSQL(t, u, nil,
 			"UPDATE `dbr_person` SET `name`=?, `email`=? WHERE (`id` = ?)",
 			"UPDATE `dbr_person` SET `name`='Gopher', `email`='gopher@g00gle.c0m' WHERE (`id` = 12345)",
@@ -401,7 +401,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	t.Run("fails column not in entity object", func(t *testing.T) {
 		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
 			Set("key", ArgString("JustAKey")).
-			Where(Column("id", Equal.Int()))
+			Where(Column("id").Ints())
 		compareToSQL(t, u, errors.IsNotFound,
 			"",
 			"",
@@ -414,7 +414,7 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 
 	up := NewUpdate("a").
 		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Column("id", ArgInt(9)))
+		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Column("id").Int(9))
 
 	up.UseBuildCache = true
 

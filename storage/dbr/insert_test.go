@@ -256,7 +256,7 @@ func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err er
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	_, err = c.Select("*").From("dbr_people").Where(Column("id", ArgInt64(id))).Load(context.TODO(), &person)
+	_, err = c.Select("*").From("dbr_people").Where(Column("id").Int64(id)).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, person.ID)
@@ -280,7 +280,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	}
 	{
 		var p dbrPerson
-		_, err = s.Select("*").From("dbr_people").Where(Column("id", ArgInt64(inID))).Load(context.TODO(), &p)
+		_, err = s.Select("*").From("dbr_people").Where(Column("id").Int64(inID)).Load(context.TODO(), &p)
 		assert.NoError(t, err)
 		assert.Equal(t, "Pike", p.Name)
 		assert.Equal(t, "pikes@peak.co", p.Email.String)
@@ -302,7 +302,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
 	{
 		var p dbrPerson
-		_, err = s.Select("*").From("dbr_people").Where(Column("id", ArgInt64(inID))).Load(context.TODO(), &p)
+		_, err = s.Select("*").From("dbr_people").Where(Column("id").Int64(inID)).Load(context.TODO(), &p)
 		assert.NoError(t, err)
 		assert.Equal(t, "Pik3", p.Name)
 		assert.Equal(t, "pikes@peak.com", p.Email.String)
@@ -461,10 +461,10 @@ func TestInsert_FromSelect(t *testing.T) {
 		From("some_table").
 		Where(
 			ParenthesisOpen(),
-			Column("d", ArgInt64(1)),
-			Column("e", ArgString("wat")).Or(),
+			Column("d").Int64(1),
+			Column("e").String("wat").Or(),
 			ParenthesisClose(),
-			Column("a", In.Int64(1, 2, 3)),
+			Column("a").Int64s(1, 2, 3),
 		).
 		OrderByDesc("id").
 		Paginate(1, 20)),

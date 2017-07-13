@@ -102,7 +102,7 @@ func TestNewWith(t *testing.T) {
 				Columns: []string{"n"},
 				Union: dbr.NewUnion(
 					dbr.NewSelect().AddColumnsExpr("1"),
-					dbr.NewSelect().AddColumnsExpr("n+1").From("cte").Where(dbr.Column("n", dbr.Less.Int(5))),
+					dbr.NewSelect().AddColumnsExpr("n+1").From("cte").Where(dbr.Column("n").Less().Int(5)),
 				).All(),
 			},
 		).Recursive().Select(dbr.NewSelect().Star().From("cte"))
@@ -115,8 +115,8 @@ func TestNewWith(t *testing.T) {
 
 	t.Run("two CTEs", func(t *testing.T) {
 		cte := dbr.NewWith(
-			dbr.WithCTE{Name: "intermed", Select: dbr.NewSelect().Star().From("test").Where(dbr.Column("x", dbr.GreaterOrEqual.Int(5)))},
-			dbr.WithCTE{Name: "derived", Select: dbr.NewSelect().Star().From("intermed").Where(dbr.Column("x", dbr.Less.Int(10)))},
+			dbr.WithCTE{Name: "intermed", Select: dbr.NewSelect().Star().From("test").Where(dbr.Column("x").GreaterOrEqual().Int(5))},
+			dbr.WithCTE{Name: "derived", Select: dbr.NewSelect().Star().From("intermed").Where(dbr.Column("x").Less().Int(10))},
 		).Select(dbr.NewSelect().Star().From("derived"))
 		compareToSQL(t, cte, nil,
 			"WITH\n`intermed` AS (SELECT * FROM `test` WHERE (`x` >= ?)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < ?))\nSELECT * FROM `derived`",
@@ -148,7 +148,7 @@ func TestNewWith(t *testing.T) {
 		cte := dbr.NewWith(
 			dbr.WithCTE{Name: "my_cte", Columns: []string{"n"}, Union: dbr.NewUnion(
 				dbr.NewSelect().AddColumnsExpr("1"),
-				dbr.NewSelect().AddColumnsExpr("1+n").From("my_cte").Where(dbr.Column("n", dbr.Less.Int(6))),
+				dbr.NewSelect().AddColumnsExpr("1+n").From("my_cte").Where(dbr.Column("n").Less().Int(6)),
 			).All()},
 			// UPDATE statement is wrong because we're missing a JOIN which is not yet implemented.
 		).Update(dbr.NewUpdate("numbers").Set("n", dbr.ArgInt(0)).Where(dbr.Expression("n=my_cte.n*my_cte.n"))).

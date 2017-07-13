@@ -37,7 +37,6 @@ const timeFormat = "2006-01-02 15:04:05.999999"
 // This NullTime implementation is not driver-specific
 type NullTime struct {
 	Time  time.Time
-	op    Op
 	Valid bool // Valid is true if Time is not NULL
 }
 

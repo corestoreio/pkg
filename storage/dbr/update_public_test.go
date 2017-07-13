@@ -33,7 +33,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("no columns provided", func(t *testing.T) {
 		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").
-			Where(dbr.Column("entity_id", dbr.In.Int64())), // ArgInt64 must be without arguments
+			Where(dbr.Column("entity_id").In().Int64s()), // ArgInt64 must be without arguments
 		)
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
@@ -41,7 +41,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	})
 
 	t.Run("alias mismatch", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id", dbr.In.Int64())))
+		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id").In().Int64s()))
 		mu.ColumnAliases = []string{"update_sku"}
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
@@ -51,7 +51,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
 		mu := dbr.NewUpdateMulti(
 			dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").
-				Where(dbr.Column("entity_id", dbr.In.Int64())),
+				Where(dbr.Column("entity_id").In().Int64s()),
 		).WithDB(dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		})
@@ -75,7 +75,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	}
 
 	mu := dbr.NewUpdateMulti(
-		dbr.NewUpdate("customer_entity").Alias("ce").AddColumns("name", "email").Where(dbr.Column("id", dbr.Equal.Int64())).Interpolate(),
+		dbr.NewUpdate("customer_entity").Alias("ce").AddColumns("name", "email").Where(dbr.Column("id").Equal().Int64s()).Interpolate(),
 	)
 
 	// SM = SQL Mock
@@ -263,8 +263,8 @@ func TestUpdateMulti_ColumnAliases(t *testing.T) {
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
 			// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
-			dbr.Column("shipping_method", dbr.Equal.Str("DHL")), // For all clauses the same restriction
-			dbr.Column("entity_id", dbr.Equal.Int64()),          // Int64() acts as a place holder
+			dbr.Column("shipping_method").String("DHL"), // For all clauses the same restriction
+			dbr.Column("entity_id").Int64s(),            // Int64() acts as a place holder
 		), // Our template statement
 	).WithDB(dbc.DB)
 
@@ -296,7 +296,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			SetRecord(ce).
-			Where(dbr.Column("entity_id", dbr.Greater.Int64())) // No Arguments in Int64 because we need a place holder.
+			Where(dbr.Column("entity_id").Greater().Int64s()) // No Arguments in Int64 because we need a place holder.
 
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
@@ -310,8 +310,8 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 			AddColumns("attribute_set_id", "parent_id", "path").
 			SetRecord(ce).
 			Where(
-				dbr.Column("x", dbr.In.Int64(66, 77)),
-				dbr.Column("entity_id", dbr.Greater.Int64()),
+				dbr.Column("x").In().Int64s(66, 77),
+				dbr.Column("entity_id").Greater().Int64s(),
 			)
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`x` IN (?,?)) AND (`entity_id` > ?)",
@@ -324,9 +324,9 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 			AddColumns("attribute_set_id", "parent_id", "path").
 			SetRecord(ce).
 			Where(
-				dbr.Column("entity_id", dbr.Greater.Int64()),
-				dbr.Column("x", dbr.In.Int64(66, 77)),
-				dbr.Column("y", dbr.Greater.Int64(99)),
+				dbr.Column("entity_id").Greater().Int64s(),
+				dbr.Column("x").In().Int64s(66, 77),
+				dbr.Column("y").Greater().Int64(99),
 			)
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (?,?)) AND (`y` > ?)",

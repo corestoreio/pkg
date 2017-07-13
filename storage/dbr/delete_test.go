@@ -35,7 +35,7 @@ func TestDeleteAllToSQL(t *testing.T) {
 func TestDeleteSingleToSQL(t *testing.T) {
 	t.Parallel()
 
-	qb := NewDelete("a").Where(Column("id", Equal, ArgInt(1)))
+	qb := NewDelete("a").Where(Column("id").Int(1))
 	compareToSQL(t, qb, nil,
 		"DELETE FROM `a` WHERE (`id` = ?)",
 		"DELETE FROM `a` WHERE (`id` = 1)",
@@ -113,7 +113,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where(Column("id", Equal.Int64(id))).Exec(context.TODO())
+	res, err = s.DeleteFrom("dbr_people").Where(Column("id").Int64(id)).Exec(context.TODO())
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -121,7 +121,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
-	count, err := s.Select().Count().From("dbr_people").Where(Column("id", Equal.Int64(id))).LoadInt64(context.TODO())
+	count, err := s.Select().Count().From("dbr_people").Where(Column("id").Int64(id)).LoadInt64(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
 }
@@ -129,7 +129,7 @@ func TestDeleteReal(t *testing.T) {
 func TestDelete_Prepare(t *testing.T) {
 	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
-		compareToSQL(t, NewDelete("").Where(Column("a", Equal.Int64(1))), errors.IsEmpty, "", "")
+		compareToSQL(t, NewDelete("").Where(Column("a").Int64(1)), errors.IsEmpty, "", "")
 	})
 
 	t.Run("Prepare Error", func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestDelete_Prepare(t *testing.T) {
 		d.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
-		d.Where(Column("a", Equal.Int(1)))
+		d.Where(Column("a").Int(1))
 		stmt, err := d.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
@@ -219,7 +219,7 @@ func TestDelete_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(Column("store_id", ArgInt64(1)))
+					b.Where(Column("store_id").Int64(1))
 				},
 			},
 		)
@@ -229,7 +229,7 @@ func TestDelete_Events(t *testing.T) {
 				Name:      "repetitive",
 				EventType: OnBeforeToSQL,
 				DeleteFunc: func(b *Delete) {
-					b.Where(Column("repetitive", Equal.Int(3)))
+					b.Where(Column("repetitive").Int(3))
 				},
 			},
 		)
@@ -245,7 +245,7 @@ func TestDelete_Events(t *testing.T) {
 func TestDelete_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
-	del := NewDelete("alpha").Where(Column("a", ArgString("b"))).Limit(1).OrderBy("id")
+	del := NewDelete("alpha").Where(Column("a").String("b")).Limit(1).OrderBy("id")
 	del.UseBuildCache = true
 
 	const cachedSQLPlaceHolder = "DELETE FROM `alpha` WHERE (`a` = ?) ORDER BY `id` LIMIT 1"
@@ -283,11 +283,11 @@ func TestDelete_AddRecord(t *testing.T) {
 	t.Run("multiple args from Record", func(t *testing.T) {
 		del := NewDelete("dbr_people").
 			Where(
-				Column("idI64", Greater.Int64(4)),
-				Column("id", Equal.Int64()),
-				Column("float64_pi", Equal.Float64(3.14159)),
-				Column("email", Equal.Str()),
-				Column("int_e", Equal.Int(2718281)),
+				Column("idI64").Greater().Int64(4),
+				Column("id").Equal().Int64s(),
+				Column("float64_pi").Float64(3.14159),
+				Column("email").Strings(),
+				Column("int_e").Int(2718281),
 			).
 			SetRecord(p).OrderBy("id")
 
@@ -300,7 +300,7 @@ func TestDelete_AddRecord(t *testing.T) {
 	t.Run("single arg from Record", func(t *testing.T) {
 		del := NewDelete("dbr_people").
 			Where(
-				Column("id", Equal.Int64()),
+				Column("id").Int64s(),
 			).
 			SetRecord(p).OrderBy("id")
 
@@ -315,12 +315,12 @@ func TestDelete_AddRecord(t *testing.T) {
 
 		del := NewDelete("null_type_table").
 			Where(
-				Column("string_val", Equal.NullString()),
-				Column("int64_val", Equal.NullInt64()),
-				Column("float64_val", Equal.NullFloat64()),
-				Column("random1", Between.Float64(1.2, 3.4)),
-				Column("time_val", Equal.NullTime()),
-				Column("bool_val", Equal.Bool()),
+				Column("string_val").NullString(),
+				Column("int64_val").NullInt64(),
+				Column("float64_val").NullFloat64(),
+				Column("random1").Between().Float64s(1.2, 3.4),
+				Column("time_val").NullTime(),
+				Column("bool_val").Bools(),
 			).
 			SetRecord(ntr).OrderBy("id")
 

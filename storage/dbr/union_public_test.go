@@ -41,7 +41,7 @@ func TestUnion_Query(t *testing.T) {
 
 	u := dbr.NewUnion(
 		dbr.NewSelect("value").From("eavChar"),
-		dbr.NewSelect("value").From("eavInt").Where(dbr.Column("b", dbr.Equal.Float64(3.14159))),
+		dbr.NewSelect("value").From("eavInt").Where(dbr.Column("b").Float64(3.14159)),
 	)
 
 	t.Run("Error", func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestUnion_Prepare(t *testing.T) {
 
 	u := dbr.NewUnion(
 		dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
-		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b", dbr.Equal.Float64(3.14159))),
+		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
 	).
 		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`).
 		PreserveResultSet()
@@ -136,7 +136,7 @@ func TestUnion_Load(t *testing.T) {
 
 	u := dbr.NewUnion(
 		dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
-		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b", dbr.Equal.Float64(3.14159))),
+		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
 	).
 		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`)
 
