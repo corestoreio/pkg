@@ -156,11 +156,11 @@ func (a NullInt64) IsZero() bool {
 }
 
 // Value implements the driver Valuer interface.
-func (nt NullInt64) Value() (driver.Value, error) {
-	if !nt.Valid {
+func (a NullInt64) Value() (driver.Value, error) {
+	if !a.Valid {
 		return nil, nil
 	}
-	return nt.Int64, nil
+	return a.Int64, nil
 }
 
 // ArgNullInt64s adds a nullable int64 or a slice of nullable int64s to the

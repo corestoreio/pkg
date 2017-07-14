@@ -157,7 +157,7 @@ func (b *Update) SetMap(clauses map[string]Argument) *Update {
 }
 
 // Where appends a WHERE clause to the statement
-func (b *Update) Where(wf ...*whereFragment) *Update {
+func (b *Update) Where(wf ...*WhereFragment) *Update {
 	b.WhereFragments = append(b.WhereFragments, wf...)
 	return b
 }

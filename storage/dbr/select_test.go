@@ -227,7 +227,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	t.Parallel()
 	// TODO rewrite test to use every type which implements interface Argument and every operator
 
-	runner := func(wf *whereFragment, wantSQL string, wantVal []interface{}) func(*testing.T) {
+	runner := func(wf *WhereFragment, wantSQL string, wantVal []interface{}) func(*testing.T) {
 		return func(t *testing.T) {
 			compareToSQL(t,
 				NewSelect("a", "b").From("c").Where(wf),

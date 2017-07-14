@@ -160,9 +160,7 @@ func (a NullString) IsZero() bool {
 	return !a.Valid
 }
 
-// ArgNullString adds a nullable string or a slice of nullable strings to the
-// argument list. Providing no arguments returns a NULL type. All arguments must
-// be a valid utf-8 string.
+// ArgNullStrings contains multiple nullable strings.
 type ArgNullStrings []NullString
 
 func (a ArgNullStrings) toIFace(args []interface{}) []interface{} {

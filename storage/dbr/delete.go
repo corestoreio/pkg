@@ -128,7 +128,7 @@ func (b *Delete) SetRecord(rec ArgumentAssembler) *Delete {
 
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a
 // string or map. If it'ab a string, args wil replaces any places holders
-func (b *Delete) Where(wf ...*whereFragment) *Delete {
+func (b *Delete) Where(wf ...*WhereFragment) *Delete {
 	b.WhereFragments = append(b.WhereFragments, wf...)
 	return b
 }

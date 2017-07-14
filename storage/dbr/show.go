@@ -115,7 +115,7 @@ func (b *Show) BinaryLog() *Show {
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs. Either WHERE or LIKE can be used.
-func (b *Show) Where(wf ...*whereFragment) *Show {
+func (b *Show) Where(wf ...*WhereFragment) *Show {
 	b.WhereFragments = append(b.WhereFragments, wf...)
 	return b
 }

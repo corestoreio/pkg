@@ -405,128 +405,113 @@ func ExampleRepeat() {
 	// Arguments: [5 7 9 a b c d e]
 }
 
-// TODO fix me
-//// ExampleArgument is duplicate of ExampleColumn
-//func ExampleArgument() {
-//
-//	argPrinter := func(arg dbr.Argument) {
-//		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
-//			From("c").Where(dbr.Column("d", arg)).ToSQL()
-//		if err != nil {
-//			fmt.Printf("%+v\n", err)
-//		} else {
-//			fmt.Printf("%q", sqlStr)
-//			if len(args) > 0 {
-//				fmt.Printf(" Arguments: %v", args)
-//			}
-//			fmt.Print("\n")
-//		}
-//	}
-//
-//	argPrinter(dbr.ArgNull())
-//	argPrinter(dbr.NotNull.Null())
-//	argPrinter(dbr.ArgInt(2))
-//	argPrinter(dbr.Null.Int(3))
-//	argPrinter(dbr.NotNull.Int(4))
-//	argPrinter(dbr.In.Int(7, 8, 9))
-//	argPrinter(dbr.NotIn.Int(10, 11, 12))
-//	argPrinter(dbr.Between.Int(13, 14))
-//	argPrinter(dbr.NotBetween.Int(15, 16))
-//	argPrinter(dbr.Greatest.Int(17, 18, 19))
-//	argPrinter(dbr.Least.Int(20, 21, 22))
-//	argPrinter(dbr.Equal.Int(30))
-//	argPrinter(dbr.NotEqual.Int(31))
-//
-//	argPrinter(dbr.Less.Int(32))
-//	argPrinter(dbr.Greater.Int(33))
-//	argPrinter(dbr.LessOrEqual.Int(34))
-//	argPrinter(dbr.GreaterOrEqual.Int(35))
-//
-//	argPrinter(dbr.Like.Str("Goph%"))
-//	argPrinter(dbr.NotLike.Str("Cat%"))
-//
-//	//Output:
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
-//}
+func argPrinter(wf *dbr.WhereFragment) {
+	sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
+		From("c").Where(wf).ToSQL()
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+	} else {
+		fmt.Printf("%q", sqlStr)
+		if len(args) > 0 {
+			fmt.Printf(" Arguments: %v", args)
+		}
+		fmt.Print("\n")
+	}
+}
 
-// TODO fix me
+// ExampleArgument is duplicate of ExampleColumn
+func ExampleArgument() {
+
+	argPrinter(dbr.Column("d").Null())
+	argPrinter(dbr.Column("d").NotNull())
+	argPrinter(dbr.Column("d").Int(2))
+	argPrinter(dbr.Column("d").Int(3).Null())
+	argPrinter(dbr.Column("d").Int(4).NotNull())
+	argPrinter(dbr.Column("d").In().Ints(7, 8, 9))
+	argPrinter(dbr.Column("d").NotIn().Ints(10, 11, 12))
+	argPrinter(dbr.Column("d").Between().Ints(13, 14))
+	argPrinter(dbr.Column("d").NotBetween().Ints(15, 16))
+	argPrinter(dbr.Column("d").Greatest().Ints(17, 18, 19))
+	argPrinter(dbr.Column("d").Least().Ints(20, 21, 22))
+	argPrinter(dbr.Column("d").Equal().Int(30))
+	argPrinter(dbr.Column("d").NotEqual().Int(31))
+
+	argPrinter(dbr.Column("d").Less().Int(32))
+	argPrinter(dbr.Column("d").Greater().Int(33))
+	argPrinter(dbr.Column("d").LessOrEqual().Int(34))
+	argPrinter(dbr.Column("d").GreaterOrEqual().Int(35))
+
+	argPrinter(dbr.Column("d").Like().String("Goph%"))
+	argPrinter(dbr.Column("d").NotLike().String("Cat%"))
+
+	//Output:
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+}
+
 // ExampleColumn is a duplicate of ExampleArgument
-//func ExampleColumn() {
-//	argPrinter := func(arg dbr.Argument) {
-//		sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
-//			From("c").Where(dbr.Column("d", arg)).ToSQL()
-//		if err != nil {
-//			fmt.Printf("%+v\n", err)
-//		} else {
-//			fmt.Printf("%q", sqlStr)
-//			if len(args) > 0 {
-//				fmt.Printf(" Arguments: %v", args)
-//			}
-//			fmt.Print("\n")
-//		}
-//	}
-//
-//	argPrinter(dbr.ArgNull())
-//	argPrinter(dbr.NotNull.Null())
-//	argPrinter(dbr.ArgInt(2))
-//	argPrinter(dbr.Null.Int(3))
-//	argPrinter(dbr.NotNull.Int(4))
-//	argPrinter(dbr.In.Int(7, 8, 9))
-//	argPrinter(dbr.NotIn.Int(10, 11, 12))
-//	argPrinter(dbr.Between.Int(13, 14))
-//	argPrinter(dbr.NotBetween.Int(15, 16))
-//	argPrinter(dbr.Greatest.Int(17, 18, 19))
-//	argPrinter(dbr.Least.Int(20, 21, 22))
-//	argPrinter(dbr.Equal.Int(30))
-//	argPrinter(dbr.NotEqual.Int(31))
-//
-//	argPrinter(dbr.Less.Int(32))
-//	argPrinter(dbr.Greater.Int(33))
-//	argPrinter(dbr.LessOrEqual.Int(34))
-//	argPrinter(dbr.GreaterOrEqual.Int(35))
-//
-//	argPrinter(dbr.Like.Str("Goph%"))
-//	argPrinter(dbr.NotLike.Str("Cat%"))
-//
-//	//Output:
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
-//	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
-//}
+func ExampleColumn() {
+
+	argPrinter(dbr.Column("d").Null())
+	argPrinter(dbr.Column("d").NotNull())
+	argPrinter(dbr.Column("d").Int(2))
+	argPrinter(dbr.Column("d").Int(3).Null())
+	argPrinter(dbr.Column("d").Int(4).NotNull())
+	argPrinter(dbr.Column("d").In().Ints(7, 8, 9))
+	argPrinter(dbr.Column("d").NotIn().Ints(10, 11, 12))
+	argPrinter(dbr.Column("d").Between().Ints(13, 14))
+	argPrinter(dbr.Column("d").NotBetween().Ints(15, 16))
+	argPrinter(dbr.Column("d").Greatest().Ints(17, 18, 19))
+	argPrinter(dbr.Column("d").Least().Ints(20, 21, 22))
+	argPrinter(dbr.Column("d").Equal().Int(30))
+	argPrinter(dbr.Column("d").NotEqual().Int(31))
+
+	argPrinter(dbr.Column("d").Less().Int(32))
+	argPrinter(dbr.Column("d").Greater().Int(33))
+	argPrinter(dbr.Column("d").LessOrEqual().Int(34))
+	argPrinter(dbr.Column("d").GreaterOrEqual().Int(35))
+
+	argPrinter(dbr.Column("d").Like().String("Goph%"))
+	argPrinter(dbr.Column("d").NotLike().String("Cat%"))
+
+	//Output:
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+}
 
 func ExampleSubSelect() {
 	s := dbr.NewSelect("sku", "type_id").
