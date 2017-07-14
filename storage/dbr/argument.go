@@ -88,13 +88,14 @@ const (
 // ArgumentAssembler assembles arguments for CRUD statements. The `stmtType`
 // variable contains a bit flag from the constants SQLStmt* and SQLPart* to
 // allow the knowledge in which case the function AssembleArguments gets called.
-// Any new arguments must be append to variable `args` and then returned.
-// Variable `columns` contains the name of the requested columns. E.g. if the
-// first requested column names `id` then the first appended argument must be an
-// integer. Variable `columns` can additionally contain the names and/or
-// expressions used in the WHERE, JOIN or HAVING clauses, if applicable for the
-// SQL statement type. In case where stmtType has been set to SQLStmtInsert|SQLPartValues, the
-// `columns` slice can be empty which means that all arguments are requested.
+// Any new arguments must be append to variable `args` and then returned. The
+// readonly variable `columns` contains the name of the requested columns. E.g.
+// if the first requested column names `id` then the first appended argument
+// must be an integer. Variable `columns` can additionally contain the names
+// and/or expressions used in the WHERE, JOIN or HAVING clauses, if applicable
+// for the SQL statement type. In case where stmtType has been set to
+// SQLStmtInsert|SQLPartValues, the `columns` slice can be empty which means
+// that all arguments are requested.
 type ArgumentAssembler interface {
 	AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error)
 }

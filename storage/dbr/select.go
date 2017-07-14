@@ -460,7 +460,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 // argumentCapacity returns the total possible guessed size of a new Arguments
 // slice. Use as the cap parameter in a call to `make`.
 func (b *Select) argumentCapacity() int {
-	return len(b.RawArguments) + len(b.JoinFragments) + len(b.WhereFragments)
+	return len(b.RawArguments) + (len(b.JoinFragments)+len(b.WhereFragments))*2
 }
 
 func (b *Select) writeBuildCache(sql []byte) {
@@ -585,6 +585,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 		return nil, errors.WithStack(err)
 	}
 
+	placeHolderColumns := make([]string, 0, len(b.JoinFragments)+len(b.WhereFragments)+len(b.HavingFragments))
 	var pap []int
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
@@ -596,23 +597,25 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 			if args, pap, err = f.OnConditions.appendArgs(args, 'j'); err != nil {
 				return nil, errors.WithStack(err)
 			}
-			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.OnConditions.Conditions()); err != nil {
+			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.OnConditions.intersectConditions(placeHolderColumns)); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		}
 	}
+	placeHolderColumns = placeHolderColumns[:0]
 
 	if args, pap, err = b.WhereFragments.appendArgs(args, 'w'); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.WhereFragments.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
+	placeHolderColumns = placeHolderColumns[:0]
 
 	if args, pap, err = b.HavingFragments.appendArgs(args, 'h'); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.Conditions()); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return args, nil

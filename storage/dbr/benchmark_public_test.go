@@ -71,13 +71,19 @@ var benchmarkSelectStr string
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
+	exprArgs := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
+	aVal := []int64{1, 2, 3}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
-			Where(dbr.Expression("d = ? OR e = ?", args...), dbr.Column("a").In().Int64s(1, 2, 3)).
+			Where(
+				dbr.Expression("d = ? OR e = ?", exprArgs...),
+				dbr.Column("a").
+					In().
+					Int64s(aVal...),
+			).
 			OrderByDesc("id").
 			Paginate(1, 20).
 			ToSQL()

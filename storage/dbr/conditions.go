@@ -89,14 +89,13 @@ func (wf *whereFragment) Or() *whereFragment {
 	return wf
 }
 
-// Conditions iterates over each WHERE fragment and assembles all conditions
-// into a new slice.
-func (wfs WhereFragments) Conditions() []string {
+// intersectConditions iterates over each WHERE fragment and appends all
+// conditions aka column names to the slice c.
+func (wfs WhereFragments) intersectConditions(c []string) []string {
 	// this calculates the intersection of the columns in WhereFragments which
 	// already have an argument provided/assigned and those where the arguments
 	// must be assembled from the interface ArgumentAssembler. If the arguments
 	// should be assembled from the interface IsPlaceHolder is true.
-	c := make([]string, 0, len(wfs))
 	for _, w := range wfs {
 		if w.IsPlaceHolder {
 			c = append(c, w.Condition)

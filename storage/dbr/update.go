@@ -317,7 +317,8 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtUpdate|SQLPartWhere, b.WhereFragments.Conditions()); err != nil {
+	placeHolderColumns := make([]string, 0, len(b.WhereFragments)) // can be reused once we implement more features of the DELETE statement, like JOINs.
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtUpdate|SQLPartWhere, b.WhereFragments.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
