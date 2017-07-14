@@ -16,7 +16,6 @@ package dbr
 
 import (
 	"database/sql/driver"
-	"fmt"
 	"time"
 	"unicode/utf8"
 
@@ -111,9 +110,7 @@ type Argument interface {
 	// writeTo writes the value correctly escaped to the queryWriter. It must
 	// avoid SQL injections.
 	writeTo(w queryWriter, position int) error
-	// len returns the length of the available values. If the IN clause has been
-	// activated then len returns 1. In case of an underlying place holder type
-	// the returned length of isPlaceHolderLength
+	// len returns the length of the available values.
 	len() int
 }
 
@@ -247,11 +244,7 @@ func writeOperator(w queryWriter, argLen int, op Op) (addArg bool) {
 // len calculates the total length of all values
 func (as Arguments) len() (tl int) {
 	for _, a := range as {
-		l := a.len()
-		if l == isPlaceHolderLength {
-			l = 1
-		}
-		tl += l
+		tl += a.len()
 	}
 	return
 }
@@ -359,13 +352,8 @@ func writeDriverValuer(w queryWriter, value driver.Valuer) error {
 	return err
 }
 
-func (a ArgValues) writeTo(w queryWriter, pos int) error {
-	return writeDriverValuer(w, a[pos])
-}
-
-func (a ArgValues) len() int {
-	return len(a)
-}
+func (a ArgValues) writeTo(w queryWriter, pos int) error { return writeDriverValuer(w, a[pos]) }
+func (a ArgValues) len() int                             { return len(a) }
 
 // ArgTimes adds a time.Time or a slice of times to the argument list. Providing
 // no arguments returns a NULL type. Implements interface Argument.
@@ -378,35 +366,18 @@ func (a ArgTimes) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgTimes) writeTo(w queryWriter, pos int) error {
-	dialect.EscapeTime(w, a[pos])
-	return nil
-}
-
-func (a ArgTimes) len() int {
-	return len(a)
-}
+func (a ArgTimes) writeTo(w queryWriter, pos int) error { dialect.EscapeTime(w, a[pos]); return nil }
+func (a ArgTimes) len() int                             { return len(a) }
 
 // argTime adds a time.Time or a slice of times to the argument list. Providing
 // no arguments returns a NULL type. Implements interface Argument.
 type argTime struct{ time.Time }
 
-func (a argTime) toIFace(args []interface{}) []interface{} {
-	return append(args, a.Time)
-}
+func (a argTime) toIFace(args []interface{}) []interface{} { return append(args, a.Time) }
+func (a argTime) writeTo(w queryWriter, _ int) error       { dialect.EscapeTime(w, a.Time); return nil }
+func (a argTime) len() int                                 { return 1 }
 
-func (a argTime) writeTo(w queryWriter, _ int) error {
-	dialect.EscapeTime(w, a.Time)
-	return nil
-}
-
-func (a argTime) len() int {
-	return 1
-}
-
-func ArgTime(t time.Time) Argument {
-	return argTime{Time: t}
-}
+func ArgTime(t time.Time) Argument { return argTime{Time: t} }
 
 // ArgBytesSlice adds a byte slice to the argument list. Providing a nil argument
 // returns a NULL type. Detects between valid UTF-8 strings and binary data. Later
@@ -429,15 +400,11 @@ func (a ArgBytesSlice) writeTo(w queryWriter, pos int) (err error) {
 	return nil
 }
 
-func (a ArgBytesSlice) len() int {
-	return len(a)
-}
+func (a ArgBytesSlice) len() int { return len(a) }
 
 type ArgBytes []byte
 
-func (a ArgBytes) toIFace(args []interface{}) []interface{} {
-	return append(args, []byte(a))
-}
+func (a ArgBytes) toIFace(args []interface{}) []interface{} { return append(args, []byte(a)) }
 
 func (a ArgBytes) writeTo(w queryWriter, _ int) (err error) {
 	if !utf8.Valid(a) {
@@ -448,9 +415,7 @@ func (a ArgBytes) writeTo(w queryWriter, _ int) (err error) {
 	return nil
 }
 
-func (a ArgBytes) len() int {
-	return 1
-}
+func (a ArgBytes) len() int { return 1 }
 
 // Value implements the driver Valuer interface.
 func (a ArgBytes) Value() (driver.Value, error) {
@@ -462,29 +427,18 @@ func (a ArgBytes) Value() (driver.Value, error) {
 
 type argNull rune
 
-func (i argNull) toIFace(args []interface{}) []interface{} {
-	return append(args, nil)
-}
-
-func (i argNull) writeTo(w queryWriter, _ int) (err error) {
-	_, err = w.WriteString("NULL")
-	return err
-}
-
-func (i argNull) len() int { return 1 }
+func (i argNull) toIFace(args []interface{}) []interface{} { return append(args, nil) }
+func (i argNull) writeTo(w queryWriter, _ int) (err error) { _, err = w.WriteString("NULL"); return err }
+func (i argNull) len() int                                 { return 1 }
 
 // ArgNull treats the argument as a SQL `IS NULL` or `NULL`. IN clause not
 // supported. Implements interface Argument.
-func ArgNull() Argument {
-	return argNull(0)
-}
+func ArgNull() Argument { return argNull(0) }
 
 // ArgString implements interface Argument.
 type ArgString string
 
-func (a ArgString) toIFace(args []interface{}) []interface{} {
-	return append(args, string(a))
-}
+func (a ArgString) toIFace(args []interface{}) []interface{} { return append(args, string(a)) }
 
 func (a ArgString) writeTo(w queryWriter, _ int) error {
 	if !utf8.ValidString(string(a)) {
@@ -520,15 +474,9 @@ func (a ArgStrings) len() int {
 // ArgBool implements interface Argument.
 type ArgBool bool
 
-func (a ArgBool) toIFace(args []interface{}) []interface{} {
-	return append(args, a == true)
-}
-
-func (a ArgBool) writeTo(w queryWriter, _ int) error {
-	dialect.EscapeBool(w, a == true)
-	return nil
-}
-func (a ArgBool) len() int { return 1 }
+func (a ArgBool) toIFace(args []interface{}) []interface{} { return append(args, a == true) }
+func (a ArgBool) writeTo(w queryWriter, _ int) error       { dialect.EscapeBool(w, a == true); return nil }
+func (a ArgBool) len() int                                 { return 1 }
 
 type ArgBools []bool
 
@@ -539,26 +487,15 @@ func (a ArgBools) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgBools) writeTo(w queryWriter, pos int) error {
-	dialect.EscapeBool(w, a[pos])
-	return nil
-}
-
-func (a ArgBools) len() int {
-	return len(a)
-}
+func (a ArgBools) writeTo(w queryWriter, pos int) error { dialect.EscapeBool(w, a[pos]); return nil }
+func (a ArgBools) len() int                             { return len(a) }
 
 // ArgInt implements interface Argument.
 type ArgInt int
 
-func (a ArgInt) toIFace(args []interface{}) []interface{} {
-	return append(args, int64(a))
-}
-
-func (a ArgInt) writeTo(w queryWriter, _ int) error {
-	return writeInt64(w, int64(a))
-}
-func (a ArgInt) len() int { return 1 }
+func (a ArgInt) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
+func (a ArgInt) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
+func (a ArgInt) len() int                                 { return 1 }
 
 type ArgInts []int
 
@@ -569,25 +506,15 @@ func (a ArgInts) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgInts) writeTo(w queryWriter, pos int) error {
-	return writeInt64(w, int64(a[pos]))
-}
-
-func (a ArgInts) len() int {
-	return len(a)
-}
+func (a ArgInts) writeTo(w queryWriter, pos int) error { return writeInt64(w, int64(a[pos])) }
+func (a ArgInts) len() int                             { return len(a) }
 
 // ArgInt64 implements interface Argument.
 type ArgInt64 int64
 
-func (a ArgInt64) toIFace(args []interface{}) []interface{} {
-	return append(args, int64(a))
-}
-
-func (a ArgInt64) writeTo(w queryWriter, _ int) error {
-	return writeInt64(w, int64(a))
-}
-func (a ArgInt64) len() int { return 1 }
+func (a ArgInt64) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
+func (a ArgInt64) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
+func (a ArgInt64) len() int                                 { return 1 }
 
 type ArgInt64s []int64
 
@@ -598,25 +525,16 @@ func (a ArgInt64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgInt64s) writeTo(w queryWriter, pos int) error {
-	return writeInt64(w, a[pos])
-}
-
-func (a ArgInt64s) len() int {
-	return len(a)
-}
+func (a ArgInt64s) writeTo(w queryWriter, pos int) error { return writeInt64(w, a[pos]) }
+func (a ArgInt64s) len() int                             { return len(a) }
 
 // ArgFloat64 implements interface Argument.
 type ArgFloat64 float64
 
-func (a ArgFloat64) toIFace(args []interface{}) []interface{} {
-	return append(args, float64(a))
-}
+func (a ArgFloat64) toIFace(args []interface{}) []interface{} { return append(args, float64(a)) }
 
-func (a ArgFloat64) writeTo(w queryWriter, _ int) error {
-	return writeFloat64(w, float64(a))
-}
-func (a ArgFloat64) len() int { return 1 }
+func (a ArgFloat64) writeTo(w queryWriter, _ int) error { return writeFloat64(w, float64(a)) }
+func (a ArgFloat64) len() int                           { return 1 }
 
 type ArgFloat64s []float64
 
@@ -627,13 +545,8 @@ func (a ArgFloat64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgFloat64s) writeTo(w queryWriter, pos int) error {
-	return writeFloat64(w, a[pos])
-}
-
-func (a ArgFloat64s) len() int {
-	return len(a)
-}
+func (a ArgFloat64s) writeTo(w queryWriter, pos int) error { return writeFloat64(w, a[pos]) }
+func (a ArgFloat64s) len() int                             { return len(a) }
 
 type expr struct {
 	SQL string
@@ -659,21 +572,15 @@ func (e *expr) writeTo(w queryWriter, _ int) error {
 }
 func (e *expr) len() int { return 1 }
 
+// argPlaceHolder identifies place holder values. those values will get
+// assembled from an external type.
 type argPlaceHolder rune
 
-func (i argPlaceHolder) toIFace(args []interface{}) []interface{} {
-	return args //append(args, nil)
-}
-
 func (i argPlaceHolder) writeTo(w queryWriter, _ int) (err error) {
-	_, err = w.WriteString("? /*PLACEHOLDER*/") // maybe remove /*PLACEHOLDER*/ if it's annoying
+	_, err = w.WriteString("?")
 	return err
 }
 
-func (i argPlaceHolder) len() int {
-	return isPlaceHolderLength
-}
-
-func (i argPlaceHolder) GoString() string {
-	return fmt.Sprintf("argPlaceHolder(%q)", i)
-}
+// toIFace does not append anything because the argPlaceHolder acts as an identifier.
+func (i argPlaceHolder) toIFace(args []interface{}) []interface{} { return args }
+func (i argPlaceHolder) len() int                                 { return 1 }

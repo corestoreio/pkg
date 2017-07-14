@@ -54,6 +54,9 @@ type whereFragment struct {
 	// IsExpression set to true if the Column contains an expression.
 	// Otherwise the `Column` gets always quoted.
 	IsExpression bool
+	// IsPlaceHolder true if the current WHERE condition just acts as a place
+	// holder for a prepared statement or an interpolation.
+	IsPlaceHolder bool
 	// Using a list of column names which get quoted during SQL statement
 	// creation.
 	Using []string
@@ -86,24 +89,16 @@ func (wf *whereFragment) Or() *whereFragment {
 	return wf
 }
 
-// isPlaceHolderLength a randomly chosen number aka unique identifier to check if
-// some conditions are only placeholder in combination with the interface
-// ArgumentAssembler. A bit hacky ...
-const isPlaceHolderLength = -6434105 // cahens constant
-
 // Conditions iterates over each WHERE fragment and assembles all conditions
 // into a new slice.
 func (wfs WhereFragments) Conditions() []string {
 	// this calculates the intersection of the columns in WhereFragments which
-	// already have an argument provided and those where the arguments must be
-	// assembled from the interface ArgumentAssembler. If the arguments should
-	// be assembled from the interface Argument.len() returns isPlaceHolderLength.
+	// already have an argument provided/assigned and those where the arguments
+	// must be assembled from the interface ArgumentAssembler. If the arguments
+	// should be assembled from the interface IsPlaceHolder is true.
 	c := make([]string, 0, len(wfs))
 	for _, w := range wfs {
-		if w.Argument != nil && w.Argument.len() == isPlaceHolderLength {
-			c = append(c, w.Condition)
-		}
-		if len(w.Arguments) > 0 && w.Arguments[0].len() == isPlaceHolderLength {
+		if w.IsPlaceHolder {
 			c = append(c, w.Condition)
 		}
 	}
@@ -243,10 +238,14 @@ func (wf *whereFragment) Coalesce() *whereFragment {
 //		TYPES
 ///////////////////////////////////////////////////////////////////////////////////
 
+// Cahen's Constant, used as a random identifier
+const cahensConstant = -64341
+
 // PlaceHolder sets the database specific place holder character. Mostly used in
 // prepared statements and for interpolation.
 func (wf *whereFragment) PlaceHolder() *whereFragment {
-	wf.Argument = argPlaceHolder(0)
+	wf.Argument = argPlaceHolder(cahensConstant)
+	wf.IsPlaceHolder = true
 	return wf
 }
 
@@ -487,7 +486,7 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 		case f.Argument != nil && f.Arguments == nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
 			al := f.Argument.len()
-			if al == isPlaceHolderLength {
+			if f.IsPlaceHolder {
 				al = 1
 			}
 			if al > 1 && f.Operator == 0 { // no operator but slice applied, so creating an IN query.
@@ -539,27 +538,24 @@ func (wf WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argum
 		switch {
 		case f.IsExpression:
 			addArg = true
+		case f.IsPlaceHolder:
+			addArg = writeOperator(backHole{}, 1, f.Operator) // always a length of one, see the `repeat()` function
+			// By keeping addArg as it is and not setting
+			// addArg=false, this []int avoids
+			// https://en.wikipedia.org/wiki/Permutation Which would
+			// result in a Go Code like
+			// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
+			// Because addArg=false does not add below the arguments and we must
+			// later swap the positions.
+			pendingArgPos = append(pendingArgPos, pendingArgPosCount)
+
+		case f.Argument != nil:
+			// a column only supports one argument.
+			addArg = writeOperator(backHole{}, f.Argument.len(), f.Operator)
 		case f.Sub.Select != nil:
 			args, err = f.Sub.Select.appendArgs(args)
 			if err != nil {
 				return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
-			}
-		case f.Argument != nil:
-			// a column only supports one argument.
-			al := f.Argument.len()
-			if al == isPlaceHolderLength {
-				al = 1 // just a place holder!
-			}
-			addArg = writeOperator(backHole{}, al, f.Operator)
-			if f.Argument.len() == isPlaceHolderLength {
-				// By keeping addArg as it is and not setting
-				// addArg=false, this []int avoids
-				// https://en.wikipedia.org/wiki/Permutation Which would
-				// result in a Go Code like
-				// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
-				// Because addArg=false does not add below the arguments and we must
-				// later swap the positions.
-				pendingArgPos = append(pendingArgPos, pendingArgPosCount)
 			}
 		}
 
