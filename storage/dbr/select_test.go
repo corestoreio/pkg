@@ -69,7 +69,7 @@ func TestSelectFullToSQL(t *testing.T) {
 			ParenthesisClose(),
 			Column("f").Int(2),
 			Column("g").Int(3),
-			Column("h").Int64s(4, 5, 6),
+			Column("h").In().Int64s(4, 5, 6),
 		).
 		GroupBy("ab").
 		Having(
@@ -130,7 +130,7 @@ func TestSelect_Interpolate(t *testing.T) {
 			Where(Expression("`d` = ? OR `e` = ?", ArgInt64(1), ArgString("wat"))).
 			Where(
 				Column("g").Int(3),
-				Column("h").Int64s(1, 2, 3),
+				Column("h").In().Int64s(1, 2, 3),
 			).
 			GroupBy("ab").GroupBy("ii").GroupBy("iii").
 			Having(Expression("j = k"), Column("jj").Int64(1)).
@@ -382,7 +382,7 @@ func TestSelectWhereNULL(t *testing.T) {
 	t.Run("no values", func(t *testing.T) {
 		var args = []interface{}{}
 		compareToSQL(t,
-			NewSelect("a").From("b").Where(Column("a").Ints()),
+			NewSelect("a").From("b").Where(Column("a").PlaceHolder()),
 			nil,
 			"SELECT `a` FROM `b` WHERE (`a` = ?)",
 			"",
@@ -390,14 +390,13 @@ func TestSelectWhereNULL(t *testing.T) {
 		)
 	})
 
-	t.Run("empty ArgInt", func(t *testing.T) {
+	t.Run("empty ArgInts trigger invalid SQL", func(t *testing.T) {
 		var iVal []int
 		compareToSQL(t,
-			NewSelect("a").From("b").Where(Column("a").Ints(iVal...)),
+			NewSelect("a").From("b").Where(Column("a").In().Ints(iVal...)),
 			nil,
-			"SELECT `a` FROM `b` WHERE (`a` IN (?))",
+			"SELECT `a` FROM `b` WHERE (`a` IN )",
 			"",
-			[]interface{}{}...,
 		)
 	})
 
@@ -681,7 +680,7 @@ func TestSelectJoin(t *testing.T) {
 	t.Parallel()
 	s := createRealSessionWithFixtures(t)
 
-	t.Run("inner, distinct, no cache, high proi", func(t *testing.T) {
+	t.Run("inner, distinct, no cache, high prio", func(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*", "p2.*").
 			Distinct().StraightJoin().SQLNoCache().
@@ -1276,10 +1275,10 @@ func TestSelect_AddRecord(t *testing.T) {
 	t.Run("multiple args from record", func(t *testing.T) {
 		sel := NewSelect("a", "b").
 			FromAlias("dbr_person", "dp").
-			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id").Strings()).
+			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id").PlaceHolder()).
 			Where(
 				ParenthesisOpen(),
-				Column("name").Strings(),
+				Column("name").PlaceHolder(),
 				Column("e").String("wat").Or(),
 				ParenthesisClose(),
 				Column("f").LessOrEqual().Int(2),
@@ -1288,7 +1287,7 @@ func TestSelect_AddRecord(t *testing.T) {
 			).
 			GroupBy("ab").
 			Having(
-				Column("email").Strings(),
+				Column("email").PlaceHolder(),
 				Column("n").String("wh3r3"),
 			).
 			OrderBy("l").
@@ -1302,7 +1301,7 @@ func TestSelect_AddRecord(t *testing.T) {
 	})
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").From("dbr_people").
-			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id").Strings(), Column("dg.name").Strings("XY%")).
+			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strings("XY%")).
 			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
@@ -1314,7 +1313,7 @@ func TestSelect_AddRecord(t *testing.T) {
 	t.Run("single arg WHERE", func(t *testing.T) {
 		sel := NewSelect("a").From("dbr_people").
 			Where(
-				Column("id").Int64s(),
+				Column("id").PlaceHolder(),
 			).
 			SetRecord(p).OrderBy("id")
 
@@ -1327,8 +1326,8 @@ func TestSelect_AddRecord(t *testing.T) {
 	t.Run("HAVING", func(t *testing.T) {
 		sel := NewSelect("a").From("dbr_people").
 			Having(
-				Column("id").Int64s(),
-				Column("name").Like().Strings(),
+				Column("id").PlaceHolder(),
+				Column("name").Like().PlaceHolder(),
 			).
 			SetRecord(p).OrderBy("id")
 

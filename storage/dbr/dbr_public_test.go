@@ -76,7 +76,7 @@ func compareToSQL(
 
 	sqlStr, args, err := qb.ToSQL()
 	if wantErr == nil {
-		require.NoError(t, err, "%+v", err)
+		require.NoError(t, err)
 	} else {
 		require.True(t, wantErr(err), "%+v", err)
 	}
@@ -119,7 +119,7 @@ func compareToSQL(
 	sqlStr, args, err = qb.ToSQL()
 	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
-		require.NoError(t, err, "%+v", err)
+		require.NoError(t, err)
 	} else {
 		require.True(t, wantErr(err), "%+v")
 	}

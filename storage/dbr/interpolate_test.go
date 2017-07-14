@@ -226,11 +226,11 @@ func TestInterpolate_Bytes(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM x WHERE a IN ('Go','Further')", str)
 	})
-	t.Run("empty arg", func(t *testing.T) {
+	t.Run("empty arg triggers not valid error", func(t *testing.T) {
 		str, err := Interpolate("SELECT * FROM x WHERE a IN (?)",
 			ArgBytesSlice{})
-		assert.NoError(t, err)
-		assert.Equal(t, "SELECT * FROM x WHERE a IN (NULL)", str)
+		assert.True(t, errors.IsNotValid(err), "%+v", err)
+		assert.Equal(t, "", str)
 	})
 }
 
@@ -329,12 +329,12 @@ func TestInterpolateStrings(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM x WHERE a IN ('a\\'b','c`d') AND b = '1\\' or \\'1\\' = \\'1\\'))/*'", str)
 	})
-	t.Run("empty args", func(t *testing.T) {
+	t.Run("empty args triggers incorrect interpolation of values", func(t *testing.T) {
 		var sl = make(ArgStrings, 0, 2)
 		str, err := Interpolate("SELECT * FROM x WHERE a IN (?) AND b = ? OR c = ?",
 			ArgStrings{"a", "b"}, ArgString("c"), sl)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
-		assert.Empty(t, str)
+		assert.NoError(t, err)
+		assert.Exactly(t, "SELECT * FROM x WHERE a IN ('a') AND b = 'b' OR c = 'c'", str)
 	})
 }
 

@@ -85,9 +85,8 @@ func TestDelete_Interpolate(t *testing.T) {
 	compareToSQL(t, NewDelete("tableA").
 		Where(
 			Column("colA").GreaterOrEqual().Float64(3.14159),
-			//Column("colA", GreaterOrEqual.Float64(3.14159)),
-			//Column("colB", In.Int(1, 2, 3, 45)),
-			//Column("colC", ArgString("He'l`lo")),
+			Column("colB").In().Ints(1, 2, 3, 45),
+			Column("colC").String("He'l`lo"),
 		).
 		Limit(10).Offset(20).OrderBy("id"), nil,
 		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN (?,?,?,?)) AND (`colC` = ?) ORDER BY `id` LIMIT 10 OFFSET 20",
@@ -284,9 +283,9 @@ func TestDelete_AddRecord(t *testing.T) {
 		del := NewDelete("dbr_people").
 			Where(
 				Column("idI64").Greater().Int64(4),
-				Column("id").Equal().Int64s(),
+				Column("id").Equal().PlaceHolder(),
 				Column("float64_pi").Float64(3.14159),
-				Column("email").Strings(),
+				Column("email").PlaceHolder(),
 				Column("int_e").Int(2718281),
 			).
 			SetRecord(p).OrderBy("id")
@@ -300,7 +299,7 @@ func TestDelete_AddRecord(t *testing.T) {
 	t.Run("single arg from Record", func(t *testing.T) {
 		del := NewDelete("dbr_people").
 			Where(
-				Column("id").Int64s(),
+				Column("id").PlaceHolder(),
 			).
 			SetRecord(p).OrderBy("id")
 
@@ -315,12 +314,12 @@ func TestDelete_AddRecord(t *testing.T) {
 
 		del := NewDelete("null_type_table").
 			Where(
-				Column("string_val").NullString(),
-				Column("int64_val").NullInt64(),
-				Column("float64_val").NullFloat64(),
+				Column("string_val").PlaceHolder(),
+				Column("int64_val").PlaceHolder(),
+				Column("float64_val").PlaceHolder(),
 				Column("random1").Between().Float64s(1.2, 3.4),
-				Column("time_val").NullTime(),
-				Column("bool_val").Bools(),
+				Column("time_val").PlaceHolder(),
+				Column("bool_val").PlaceHolder(),
 			).
 			SetRecord(ntr).OrderBy("id")
 

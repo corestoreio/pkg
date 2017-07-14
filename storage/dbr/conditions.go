@@ -15,9 +15,10 @@
 package dbr
 
 import (
+	"database/sql/driver"
+	"strings"
 	"time"
 
-	"database/sql/driver"
 	"github.com/corestoreio/errors"
 )
 
@@ -85,10 +86,10 @@ func (wf *whereFragment) Or() *whereFragment {
 	return wf
 }
 
-// cahensConstant a randomly chosen number aka unique identifier to check if
+// isPlaceHolderLength a randomly chosen number aka unique identifier to check if
 // some conditions are only placeholder in combination with the interface
 // ArgumentAssembler. A bit hacky ...
-const cahensConstant = -6434105
+const isPlaceHolderLength = -6434105 // cahens constant
 
 // Conditions iterates over each WHERE fragment and assembles all conditions
 // into a new slice.
@@ -96,13 +97,13 @@ func (wfs WhereFragments) Conditions() []string {
 	// this calculates the intersection of the columns in WhereFragments which
 	// already have an argument provided and those where the arguments must be
 	// assembled from the interface ArgumentAssembler. If the arguments should
-	// be assembled from the interface Argument.len() returns cahensConstant.
+	// be assembled from the interface Argument.len() returns isPlaceHolderLength.
 	c := make([]string, 0, len(wfs))
 	for _, w := range wfs {
-		if w.Argument != nil && w.Argument.len() == cahensConstant {
+		if w.Argument != nil && w.Argument.len() == isPlaceHolderLength {
 			c = append(c, w.Condition)
 		}
-		if len(w.Arguments) > 0 && w.Arguments[0].len() == cahensConstant {
+		if len(w.Arguments) > 0 && w.Arguments[0].len() == isPlaceHolderLength {
 			c = append(c, w.Condition)
 		}
 	}
@@ -241,6 +242,14 @@ func (wf *whereFragment) Coalesce() *whereFragment {
 ///////////////////////////////////////////////////////////////////////////////////
 //		TYPES
 ///////////////////////////////////////////////////////////////////////////////////
+
+// PlaceHolder sets the database specific place holder character. Mostly used in
+// prepared statements and for interpolation.
+func (wf *whereFragment) PlaceHolder() *whereFragment {
+	wf.Argument = argPlaceHolder(0)
+	return wf
+}
+
 func (wf *whereFragment) Int(i int) *whereFragment {
 	wf.Argument = ArgInt(i)
 	return wf
@@ -317,12 +326,9 @@ func (wf *whereFragment) Times(t ...time.Time) *whereFragment {
 
 // NullString uses nullable string values for comparison.
 func (wf *whereFragment) NullString(values ...NullString) *whereFragment {
-	switch len(values) {
-	case 0:
-		wf.Argument = argPlaceHolder(0)
-	case 1:
+	if len(values) == 1 {
 		wf.Argument = values[0]
-	default:
+	} else {
 		wf.Argument = ArgNullStrings(values)
 	}
 	return wf
@@ -330,12 +336,9 @@ func (wf *whereFragment) NullString(values ...NullString) *whereFragment {
 
 // NullFloat64 uses nullable float64 values for comparison.
 func (wf *whereFragment) NullFloat64(values ...NullFloat64) *whereFragment {
-	switch len(values) {
-	case 0:
-		wf.Argument = argPlaceHolder(0)
-	case 1:
+	if len(values) == 1 {
 		wf.Argument = values[0]
-	default:
+	} else {
 		wf.Argument = ArgNullFloat64s(values)
 	}
 	return wf
@@ -343,12 +346,9 @@ func (wf *whereFragment) NullFloat64(values ...NullFloat64) *whereFragment {
 
 // NullInt64 uses nullable int64 values for comparison.
 func (wf *whereFragment) NullInt64(values ...NullInt64) *whereFragment {
-	switch len(values) {
-	case 0:
-		wf.Argument = argPlaceHolder(0)
-	case 1:
+	if len(values) == 1 {
 		wf.Argument = values[0]
-	default:
+	} else {
 		wf.Argument = ArgNullInt64s(values)
 	}
 	return wf
@@ -362,12 +362,9 @@ func (wf *whereFragment) NullBool(value NullBool) *whereFragment {
 
 // NullTime uses nullable time values for comparison.
 func (wf *whereFragment) NullTime(values ...NullTime) *whereFragment {
-	switch len(values) {
-	case 0:
-		wf.Argument = argPlaceHolder(0)
-	case 1:
+	if len(values) == 1 {
 		wf.Argument = values[0]
-	default:
+	} else {
 		wf.Argument = ArgNullTimes(values)
 	}
 	return wf
@@ -375,11 +372,7 @@ func (wf *whereFragment) NullTime(values ...NullTime) *whereFragment {
 
 // Value uses driver.Valuers for comparison.
 func (wf *whereFragment) Value(values ...driver.Valuer) *whereFragment {
-	if len(values) == 0 {
-		wf.Argument = argPlaceHolder(0)
-	} else {
-		wf.Argument = ArgValues(values)
-	}
+	wf.Argument = ArgValues(values)
 	return wf
 }
 
@@ -472,19 +465,15 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 
 		switch {
 		case f.IsExpression:
-			if f.Operator > 0 {
-				w.WriteByte('(')
-			}
 			_, _ = w.WriteString(f.Condition)
 			// Only write the operator in case there is no place holder and we have one argument
-			if f.Operator > 0 {
-				w.WriteByte(')')
+			if strings.IndexByte(f.Condition, '?') == -1 && (len(f.Arguments) == 1 || f.Argument != nil) && f.Operator > 0 {
+				eArg := f.Argument
+				if eArg == nil {
+					eArg = f.Arguments[0]
+				}
+				writeOperator(w, eArg.len(), f.Operator)
 			}
-			writeOperator(w, len(f.Arguments), f.Operator)
-
-			//if strings.IndexByte(f.Condition, '?') == -1 && len(f.Arguments) == 1 && f.Operator > 0 {
-			//	writeOperator(w, f.Arguments[0].len(), f.Operator)
-			//}
 
 		case f.Sub.Select != nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
@@ -498,14 +487,21 @@ func (wf WhereFragments) write(w queryWriter, conditionType byte) error {
 		case f.Argument != nil && f.Arguments == nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
 			al := f.Argument.len()
-			if al == cahensConstant {
+			if al == isPlaceHolderLength {
 				al = 1
+			}
+			if al > 1 && f.Operator == 0 { // no operator but slice applied, so creating an IN query.
+				f.Operator = In
 			}
 			writeOperator(w, al, f.Operator)
 
 		case f.Argument == nil && f.Arguments == nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
-			writeOperator(w, 1, Null) // IS NULL !!!
+			c := f.Operator
+			if c == 0 {
+				c = Null
+			}
+			writeOperator(w, 1, c)
 
 		default:
 			panic(errors.NewNotSupportedf("[dbr] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", f))
@@ -551,11 +547,11 @@ func (wf WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argum
 		case f.Argument != nil:
 			// a column only supports one argument.
 			al := f.Argument.len()
-			if al == cahensConstant {
+			if al == isPlaceHolderLength {
 				al = 1 // just a place holder!
 			}
 			addArg = writeOperator(backHole{}, al, f.Operator)
-			if f.Argument.len() == cahensConstant {
+			if f.Argument.len() == isPlaceHolderLength {
 				// By keeping addArg as it is and not setting
 				// addArg=false, this []int avoids
 				// https://en.wikipedia.org/wiki/Permutation Which would

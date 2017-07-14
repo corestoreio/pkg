@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"database/sql/driver"
+
 	"github.com/corestoreio/errors"
 )
 

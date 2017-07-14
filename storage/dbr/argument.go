@@ -113,7 +113,7 @@ type Argument interface {
 	writeTo(w queryWriter, position int) error
 	// len returns the length of the available values. If the IN clause has been
 	// activated then len returns 1. In case of an underlying place holder type
-	// the returned length of cahensConstant
+	// the returned length of isPlaceHolderLength
 	len() int
 }
 
@@ -248,7 +248,7 @@ func writeOperator(w queryWriter, argLen int, op Op) (addArg bool) {
 func (as Arguments) len() (tl int) {
 	for _, a := range as {
 		l := a.len()
-		if l == cahensConstant {
+		if l == isPlaceHolderLength {
 			l = 1
 		}
 		tl += l
@@ -671,7 +671,7 @@ func (i argPlaceHolder) writeTo(w queryWriter, _ int) (err error) {
 }
 
 func (i argPlaceHolder) len() int {
-	return cahensConstant
+	return isPlaceHolderLength
 }
 
 func (i argPlaceHolder) GoString() string {

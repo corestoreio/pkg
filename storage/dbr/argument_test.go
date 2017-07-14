@@ -54,7 +54,6 @@ var _ Argument = (*NullBool)(nil)
 var _ Argument = (*ArgValues)(nil)
 var _ driver.Value = (*Arguments)(nil)
 
-// TODO fix me
 //func TestOpRune(t *testing.T) {
 //	t.Parallel()
 //	s := NewSelect().From("tableA").AddColumns("a", "b").
@@ -408,7 +407,7 @@ func TestIFaceToArgs(t *testing.T) {
 			float64(2.299999952316284), float64(2.2),
 			int64(5), int64(6), int64(7), int64(8), int64(9),
 			int64(math.MaxUint32), int64(math.MaxUint16), int64(math.MaxUint8),
-			true, "Gopher", [][]uint8{{0x48, 0x65, 0x6c, 0x6c, 0x6f}},
+			true, "Gopher", []uint8{0x48, 0x65, 0x6c, 0x6c, 0x6f},
 			now(), now(), nil,
 		}, args.Interfaces())
 	})

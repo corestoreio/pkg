@@ -198,7 +198,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Run("without condition values", func(t *testing.T) {
 		u := NewUpdate("catalog_product_entity")
 		u.SetClauses.Columns = []string{"sku", "updated_at"}
-		u.Where(Column("entity_id").In().Int64s())
+		u.Where(Column("entity_id").In().PlaceHolder())
 
 		args := []interface{}{}
 		compareToSQL(t, u, nil,
@@ -391,7 +391,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 	t.Run("with where", func(t *testing.T) {
 		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
-			Where(Column("id").Ints())
+			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, nil,
 			"UPDATE `dbr_person` SET `name`=?, `email`=? WHERE (`id` = ?)",
 			"UPDATE `dbr_person` SET `name`='Gopher', `email`='gopher@g00gle.c0m' WHERE (`id` = 12345)",
@@ -401,7 +401,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	t.Run("fails column not in entity object", func(t *testing.T) {
 		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
 			Set("key", ArgString("JustAKey")).
-			Where(Column("id").Ints())
+			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, errors.IsNotFound,
 			"",
 			"",

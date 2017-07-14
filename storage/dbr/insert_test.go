@@ -464,7 +464,7 @@ func TestInsert_FromSelect(t *testing.T) {
 			Column("d").Int64(1),
 			Column("e").String("wat").Or(),
 			ParenthesisClose(),
-			Column("a").Int64s(1, 2, 3),
+			Column("a").In().Int64s(1, 2, 3),
 		).
 		OrderByDesc("id").
 		Paginate(1, 20)),
