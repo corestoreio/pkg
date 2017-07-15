@@ -181,11 +181,11 @@ func TestSQLCase(t *testing.T) {
 		*/
 
 		u := dbr.NewUpdate("cataloginventory_stock_item").
-			Set("qty", dbr.ArgExpr(dbr.SQLCase("`product_id`", "qty",
+			Set("qty", dbr.ExpressionValue(dbr.SQLCase("`product_id`", "qty",
 				"3456", "qty+?",
 				"3457", "qty+?",
 				"3458", "qty+?",
-			), dbr.ArgInts{3, 4, 5})).
+			), dbr.Ints{3, 4, 5})).
 			Where(
 				dbr.Column("product_id").In().Int64s(345, 567, 897),
 				dbr.Column("website_id").Int64(6),

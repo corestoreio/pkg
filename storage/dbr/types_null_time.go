@@ -41,7 +41,7 @@ func (a NullTime) len() int { return 1 }
 
 // MakeNullTime creates a new NullTime. Setting the second optional argument to
 // false, the string will not be valid anymore, hence NULL. NullTime implements
-// interface Argument.
+// interface Value.
 func MakeNullTime(t time.Time, valid ...bool) NullTime {
 	v := true
 	if len(valid) == 1 {

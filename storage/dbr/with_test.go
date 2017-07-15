@@ -57,7 +57,7 @@ func TestWith_ToSQL(t *testing.T) {
 		cte := NewWith(
 			WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
 				Select: NewSelect().AddColumnsExpr("Month(day_of_sale)", "Sum(amount)").From("sales_days").
-					Where(Expression("Year(day_of_sale) = ?", ArgInt(2015))).
+					Where(Expression("Year(day_of_sale) = ?", Int(2015))).
 					GroupByExpr("Month(day_of_sale))"),
 			},
 			WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},

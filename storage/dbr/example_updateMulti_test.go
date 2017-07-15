@@ -25,28 +25,28 @@ import (
 )
 
 // Make sure that type salesOrder implements interface.
-var _ dbr.ArgumentAssembler = (*salesOrder)(nil)
+var _ dbr.ValuesAppender = (*salesOrder)(nil)
 
 // salesOrder represents just a demo record.
 type salesOrder struct {
 	EntityID   int64  // Auto Increment
 	State      string // processing, pending, shipped,
-	StoreID    dbr.ArgInt64
+	StoreID    dbr.Int64
 	CustomerID int64
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesOrder) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (so salesOrder) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
-			args = append(args, dbr.ArgInt64(so.EntityID))
+			args = append(args, dbr.Int64(so.EntityID))
 		case "state":
-			args = append(args, dbr.ArgString(so.State))
+			args = append(args, dbr.String(so.State))
 		case "store_id":
 			args = append(args, so.StoreID)
 		case "customer_id":
-			args = append(args, dbr.ArgInt64(so.CustomerID))
+			args = append(args, dbr.Int64(so.CustomerID))
 		case "grand_total":
 			args = append(args, so.GrandTotal)
 		default:
@@ -55,10 +55,10 @@ func (so salesOrder) AssembleArguments(stmtType int, args dbr.Arguments, columns
 	}
 	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
 		args = append(args,
-			dbr.ArgInt64(so.EntityID),
-			dbr.ArgString(so.State),
+			dbr.Int64(so.EntityID),
+			dbr.String(so.State),
 			so.StoreID,
-			dbr.ArgInt64(so.CustomerID),
+			dbr.Int64(so.CustomerID),
 			so.GrandTotal,
 		)
 	}

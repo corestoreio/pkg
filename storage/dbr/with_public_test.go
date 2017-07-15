@@ -151,7 +151,7 @@ func TestNewWith(t *testing.T) {
 				dbr.NewSelect().AddColumnsExpr("1+n").From("my_cte").Where(dbr.Column("n").Less().Int(6)),
 			).All()},
 			// UPDATE statement is wrong because we're missing a JOIN which is not yet implemented.
-		).Update(dbr.NewUpdate("numbers").Set("n", dbr.ArgInt(0)).Where(dbr.Expression("n=my_cte.n*my_cte.n"))).
+		).Update(dbr.NewUpdate("numbers").Set("n", dbr.Int(0)).Where(dbr.Expression("n=my_cte.n*my_cte.n"))).
 			Recursive()
 
 		compareToSQL(t, cte, nil,

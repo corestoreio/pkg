@@ -37,8 +37,8 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	})
 	t.Run("no table with args", func(t *testing.T) {
 		sel := NewSelect().
-			AddColumnsExprAlias("?", "n").AddArguments(ArgInt64(1)).
-			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArguments(ArgString("a'bc"))
+			AddColumnsExprAlias("?", "n").AddArguments(Int64(1)).
+			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArguments(String("a'bc"))
 		compareToSQL(t, sel, nil,
 			"SELECT ? AS `n`, CAST(? AS CHAR(20)) AS `str`",
 			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
@@ -127,7 +127,7 @@ func TestSelect_Interpolate(t *testing.T) {
 	t.Run("two args in one condition", func(t *testing.T) {
 		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(Expression("`d` = ? OR `e` = ?", ArgInt64(1), ArgString("wat"))).
+			Where(Expression("`d` = ? OR `e` = ?", Int64(1), String("wat"))).
 			Where(
 				Column("g").Int(3),
 				Column("h").In().Int64s(1, 2, 3),
@@ -225,7 +225,7 @@ func TestSelect_OrderByDeactivated(t *testing.T) {
 
 func TestSelect_ConditionColumn(t *testing.T) {
 	t.Parallel()
-	// TODO rewrite test to use every type which implements interface Argument and every operator
+	// TODO rewrite test to use every type which implements interface Value and every operator
 
 	runner := func(wf *WhereFragment, wantSQL string, wantVal []interface{}) func(*testing.T) {
 		return func(t *testing.T) {
@@ -390,7 +390,7 @@ func TestSelectWhereNULL(t *testing.T) {
 		)
 	})
 
-	t.Run("empty ArgInts trigger invalid SQL", func(t *testing.T) {
+	t.Run("empty Ints trigger invalid SQL", func(t *testing.T) {
 		var iVal []int
 		compareToSQL(t,
 			NewSelect("a").From("b").Where(Column("a").In().Ints(iVal...)),
@@ -428,14 +428,14 @@ func TestSelectBySQL(t *testing.T) {
 		"SELECT * FROM users WHERE x = 1",
 	)
 	compareToSQL(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN (?)", ArgInt(9), ArgInts{5, 6, 7}),
+		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN (?)", Int(9), Ints{5, 6, 7}),
 		nil,
 		"SELECT * FROM users WHERE x = ? AND y IN (?)",
 		"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
 		int64(9), int64(5), int64(6), int64(7),
 	)
 	compareToSQL(t,
-		s.SelectBySQL("wat", ArgInt(9), ArgInts{5, 6, 7}),
+		s.SelectBySQL("wat", Int(9), Ints{5, 6, 7}),
 		nil,
 		"wat",
 		"",
@@ -513,7 +513,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 
 	t.Run("single slice item", func(t *testing.T) {
 		var people dbrPersons
-		count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", ArgString("jonathan@uservoice.com")).Load(context.TODO(), &people)
+		count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", String("jonathan@uservoice.com")).Load(context.TODO(), &people)
 
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), count)
@@ -543,7 +543,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 	s := createRealSessionWithFixtures(t)
 
 	t.Run("LoadString", func(t *testing.T) {
-		name, err := s.Select("name").From("dbr_people").Where(Expression("email = 'jonathan@uservoice.com'")).LoadString(context.TODO())
+		name, err := s.Select("name").From("dbr_people").Where(Column("email").String("jonathan@uservoice.com")).LoadString(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, "Jonathan", name)
 	})
@@ -588,6 +588,12 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		id, err := s.Select("id").From("dbr_people").Where(Expression("id=236478326")).LoadUint64(context.TODO())
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, id)
+	})
+	t.Run("LoadUint64 max Uint64 found", func(t *testing.T) {
+		const bigID uint64 = 18446744073700551613 // see also file dbr_test.go
+		id, err := s.Select("id").From("dbr_people").Where(Column("id").Uint64(bigID)).LoadUint64(context.TODO())
+		require.NoError(t, err)
+		assert.Exactly(t, bigID, id)
 	})
 
 	t.Run("LoadFloat64", func(t *testing.T) {
@@ -1065,7 +1071,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 			GroupBy("t3.store_id").
 			GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			GroupBy("t3.product_id", "t3.product_name").
-			Having(Expression("COUNT(*)>?", ArgInt(3))).
+			Having(Expression("COUNT(*)>?", Int(3))).
 			OrderBy("t3.store_id").
 			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			OrderByDesc("total_qty DESC").
@@ -1094,7 +1100,7 @@ func TestSelect_Subselect_Compact(t *testing.T) {
 		AddColumns("`t3`.`product_name`").
 		Where(Column("t3.store_id").In().Int64s(2, 3, 4)).
 		GroupBy("t3.store_id").
-		Having(Expression("COUNT(*)>?", ArgInt(5)))
+		Having(Expression("COUNT(*)>?", Int(5)))
 
 	sel := NewSelectWithDerivedTable(sel2, "t2").
 		AddColumns("t2.product_name").

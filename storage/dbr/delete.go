@@ -46,10 +46,10 @@ type Delete struct {
 	// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 
 	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL
+	RawArguments Values // Values used by RawFullSQL
 
 	// Record if set retrieves the necessary arguments from the interface.
-	Record ArgumentAssembler
+	Record ValuesAppender
 
 	From           alias
 	WhereFragments WhereFragments
@@ -68,7 +68,7 @@ type Delete struct {
 	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
 	cacheSQL      []byte
-	cacheArgs     Arguments // like a buffer, gets reused
+	cacheArgs     Values // like a buffer, gets reused
 
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -121,7 +121,7 @@ func (b *Delete) WithDB(db ExecPreparer) *Delete {
 }
 
 // SetRecord pulls in values to match Columns from the record generator.
-func (b *Delete) SetRecord(rec ArgumentAssembler) *Delete {
+func (b *Delete) SetRecord(rec ValuesAppender) *Delete {
 	b.Record = rec
 	return b
 }
@@ -174,7 +174,7 @@ func (b *Delete) Offset(offset uint64) *Delete {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+// prepared statements. ToSQLs second argument `Values` will then be nil.
 func (b *Delete) Interpolate() *Delete {
 	b.IsInterpolate = true
 	return b
@@ -190,7 +190,7 @@ func (b *Delete) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
+func (b *Delete) readBuildCache() (sql []byte, _ Values, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -236,13 +236,13 @@ func (b *Delete) toSQL(buf queryWriter) error {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
+func (b *Delete) appendArgs(args Values) (_ Values, err error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 	if cap(args) == 0 {
-		args = make(Arguments, 0, len(b.WhereFragments))
+		args = make(Values, 0, len(b.WhereFragments))
 	}
 	args, err = b.From.appendArgs(args)
 	if err != nil {

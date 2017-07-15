@@ -52,7 +52,7 @@ func TestShow(t *testing.T) {
 		)
 	})
 	t.Run("variables LIKE", func(t *testing.T) {
-		s := NewShow().Variable().Like(ArgString("aria%"))
+		s := NewShow().Variable().Like(String("aria%"))
 		compareToSQL(t, s, nil,
 			"SHOW VARIABLES LIKE ?",
 			"SHOW VARIABLES LIKE 'aria%'",

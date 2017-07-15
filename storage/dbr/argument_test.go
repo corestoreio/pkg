@@ -30,27 +30,56 @@ import (
 )
 
 var _ fmt.Stringer = Op(0)
-var _ Argument = ArgInt(0)
-var _ Argument = ArgInt64(0)
-var _ Argument = ArgFloat64(0)
-var _ Argument = ArgBool(true)
-var _ Argument = (*ArgBytesSlice)(nil)
-var _ Argument = (*ArgInts)(nil)
-var _ Argument = (*ArgInt64s)(nil)
-var _ Argument = (*ArgFloat64s)(nil)
-var _ Argument = (*ArgTimes)(nil)
-var _ Argument = (*ArgStrings)(nil)
-var _ Argument = (*NullString)(nil)
-var _ Argument = (*ArgNullStrings)(nil)
-var _ Argument = (*NullFloat64)(nil)
-var _ Argument = (*ArgNullFloat64s)(nil)
-var _ Argument = (*NullTime)(nil)
-var _ Argument = (*ArgNullTimes)(nil)
-var _ Argument = (*NullInt64)(nil)
-var _ Argument = (*ArgNullInt64s)(nil)
-var _ Argument = (*NullBool)(nil)
-var _ Argument = (*ArgValues)(nil)
-var _ driver.Value = (*Arguments)(nil)
+var _ Value = Int(0)
+var _ Value = Int64(0)
+var _ Value = Float64(0)
+var _ Value = Bool(true)
+var _ Value = (*BytesSlice)(nil)
+var _ Value = (*Ints)(nil)
+var _ Value = (*Int64s)(nil)
+var _ Value = (*Float64s)(nil)
+var _ Value = (*Times)(nil)
+var _ Value = (*Strings)(nil)
+var _ Value = (*NullString)(nil)
+var _ Value = (*ArgNullStrings)(nil)
+var _ Value = (*NullFloat64)(nil)
+var _ Value = (*ArgNullFloat64s)(nil)
+var _ Value = (*NullTime)(nil)
+var _ Value = (*ArgNullTimes)(nil)
+var _ Value = (*NullInt64)(nil)
+var _ Value = (*ArgNullInt64s)(nil)
+var _ Value = (*NullBool)(nil)
+var _ Value = (*DriverValues)(nil)
+var _ driver.Valuer = (*Bool)(nil)
+var _ driver.Valuer = (*Int)(nil)
+var _ driver.Valuer = (*Int64)(nil)
+var _ driver.Valuer = (*Float64)(nil)
+var _ driver.Valuer = (*Time)(nil)
+var _ driver.Valuer = (*Bytes)(nil)
+var _ driver.Valuer = (*String)(nil)
+
+func TestDriverValuer(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have driver.Valuer
+		want driver.Value
+	}{
+		{Bool(true), true},
+		{Int(7), int64(7)},
+		{Int64(8), int64(8)},
+		{Float64(8.9), float64(8.9)},
+		{MakeTime(now()), now()},
+		{Bytes(`Go2`), []byte(`Go2`)},
+		{String(`Go2`), `Go2`},
+	}
+	for i, test := range tests {
+		v, err := test.have.Value()
+		if err != nil {
+			t.Fatalf("index %d with %+v", i, err)
+		}
+		assert.Exactly(t, test.want, v, "Index %d", i)
+	}
+}
 
 func TestOpRune(t *testing.T) {
 	t.Parallel()
@@ -123,15 +152,15 @@ func TestOpRune(t *testing.T) {
 		"H_ll_", interface{}(nil), "NullString", 2.718281, interface{}(nil),
 		-2.718281, int64(2718281), interface{}(nil), int64(-987), int64(2718281), true,
 		interface{}(nil), false, now(), now().Add(time.Minute),
-		[]uint8{0x48, 0x33, 0x6c, 0x6c, 0x6f}, MakeNullInt64(2345), "H_ll_",
+		[]uint8{0x48, 0x33, 0x6c, 0x6c, 0x6f}, int64(2345), "H_ll_",
 		interface{}(nil), "NullString", 2.718281, interface{}(nil), -2.718281, int64(2718281),
 		interface{}(nil), int64(-987), int64(2718281), true, interface{}(nil), false, now(), now().Add(time.Minute),
-		[]uint8{0x48, 0x33, 0x6c, 0x6c, 0x6f}, MakeNullInt64(2345),
+		[]uint8{0x48, 0x33, 0x6c, 0x6c, 0x6f}, int64(2345),
 		"Go1", "Go2", interface{}(nil), interface{}(nil), "NullString", 2.718281, 3.14159,
 		interface{}(nil), -2.718281, -3.14159, int64(2718281), int64(314159), interface{}(nil),
 		int64(-987), int64(-654), int64(2718281), int64(314159), true, false, interface{}(nil), true,
 		now(), now(), now().Add(time.Minute), []uint8{0x48, 0x33, 0x6c, 0x6c, 0x6f, 0x31},
-		MakeNullInt64(2345), MakeNullFloat64(3.14159), "H_ll_", interface{}(nil), "NullString",
+		int64(2345), 3.14159, "H_ll_", interface{}(nil), "NullString",
 	)
 }
 
@@ -176,7 +205,7 @@ func TestOpArgs(t *testing.T) {
 		)
 	})
 
-	t.Run("ArgBytesSlice BETWEEN strings", func(t *testing.T) {
+	t.Run("BytesSlice BETWEEN strings", func(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
 				Column("a316").Between().BytesSlice([]byte(`Go`), []byte(`Rust`)),
@@ -187,7 +216,7 @@ func TestOpArgs(t *testing.T) {
 			[]uint8{0x47, 0x6f}, []uint8{0x52, 0x75, 0x73, 0x74},
 		)
 	})
-	t.Run("ArgBytesSlice IN binary", func(t *testing.T) {
+	t.Run("BytesSlice IN binary", func(t *testing.T) {
 
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
@@ -206,15 +235,15 @@ func TestOpArgs(t *testing.T) {
 				Column("a319").In().Value(
 					MakeNullFloat64(3.141),
 					MakeNullString("G'o"),
-					ArgBytes{66, 250, 67},
+					Bytes{66, 250, 67},
 					MakeNullTime(now()),
-					ArgBytes([]byte("x\x00y")),
+					Bytes([]byte("x\x00y")),
 				),
 			),
 			nil,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` IN (?,?,?,?,?))",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` IN (3.141,'G\\'o',0x42fa43,'2006-01-02 15:04:05',0x780079))",
-			MakeNullFloat64(3.141), MakeNullString(`G'o`), ArgBytes{0x42, 0xfa, 0x43}, MakeNullTime(now()), ArgBytes{0x78, 0x0, 0x79},
+			3.141, `G'o`, []uint8{0x42, 0xfa, 0x43}, now(), []uint8{0x78, 0x0, 0x79},
 		)
 	})
 	t.Run("ArgValue BETWEEN values", func(t *testing.T) {
@@ -225,7 +254,7 @@ func TestOpArgs(t *testing.T) {
 			nil,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` BETWEEN ? AND ?)",
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` BETWEEN 3.141 AND 'G\\'o')",
-			MakeNullFloat64(3.141), MakeNullString(`G'o`),
+			3.141, `G'o`,
 		)
 	})
 }
@@ -316,7 +345,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		_, err = s.Select("*").From("null_types").Where(Expression("id = ?", ArgInt64(id))).Load(context.TODO(), nullTypeSet)
+		_, err = s.Select("*").From("null_types").Where(Expression("id = ?", Int64(id))).Load(context.TODO(), nullTypeSet)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)

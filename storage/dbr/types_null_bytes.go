@@ -24,7 +24,7 @@ package dbr
 // do we need this type? AFAIK nope
 
 //// NullBytes is a nullable byte slice. JSON marshals to zero if null. Considered
-//// null to SQL if zero. NullBytes implements interface Argument.
+//// null to SQL if zero. NullBytes implements interface Value.
 //type NullBytes struct {
 //	Bytes []byte
 //	Valid bool
@@ -48,7 +48,7 @@ package dbr
 //
 //func (a NullBytes) len() int { return 1 }
 //
-//// MakeNullBytes creates a new NullBytes. Implements interface Argument.
+//// MakeNullBytes creates a new NullBytes. Implements interface Value.
 //func MakeNullBytes(b []byte, valid ...bool) NullBytes {
 //	v := true
 //	if len(valid) == 1 {

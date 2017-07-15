@@ -61,10 +61,10 @@ func createRealSessionWithFixtures(t testing.TB) *Connection {
 	return sess
 }
 
-var _ ArgumentAssembler = (*dbrPerson)(nil)
+var _ ValuesAppender = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPersons)(nil)
-var _ ArgumentAssembler = (*nullTypedRecord)(nil)
+var _ ValuesAppender = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
@@ -99,15 +99,15 @@ func (p *dbrPerson) RowScan(r *sql.Rows) error {
 	return r.Scan(vp...)
 }
 
-func (p *dbrPerson) AssembleArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
+func (p *dbrPerson) AppendValues(stmtType int, args Values, columns []string) (_ Values, err error) {
 	for _, c := range columns {
 		switch c {
 		case "id", "dp.id":
 			//if t == 'i' {
-			args = append(args, ArgInt64(p.ID))
+			args = append(args, Int64(p.ID))
 			//}
 		case "name":
-			args = append(args, ArgString(p.Name))
+			args = append(args, String(p.Name))
 		case "email":
 			args = append(args, NullString(p.Email))
 			// case "key": don't add key, it triggers a test failure condition
@@ -161,7 +161,7 @@ func (ps *dbrPersons) RowScan(r *sql.Rows) error {
 	return nil
 }
 
-var _ ArgumentAssembler = (*nullTypedRecord)(nil)
+var _ ValuesAppender = (*nullTypedRecord)(nil)
 
 type nullTypedRecord struct {
 	ID         int64
@@ -176,36 +176,36 @@ func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
 	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) AssembleArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
+func (p *nullTypedRecord) AppendValues(stmtType int, args Values, columns []string) (Values, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
-			args = append(args, ArgInt64(p.ID))
+			args = append(args, Int64(p.ID))
 		case "string_val":
 			args = append(args, NullString(p.StringVal))
 		case "int64_val":
 			if p.Int64Val.Valid {
-				args = append(args, ArgInt64(p.Int64Val.Int64))
+				args = append(args, Int64(p.Int64Val.Int64))
 			} else {
-				args = append(args, ArgNull())
+				args = append(args, NullValue())
 			}
 		case "float64_val":
 			if p.Float64Val.Valid {
-				args = append(args, ArgFloat64(p.Float64Val.Float64))
+				args = append(args, Float64(p.Float64Val.Float64))
 			} else {
-				args = append(args, ArgNull())
+				args = append(args, NullValue())
 			}
 		case "time_val":
 			if p.TimeVal.Valid {
-				args = append(args, ArgTime(p.TimeVal.Time))
+				args = append(args, MakeTime(p.TimeVal.Time))
 			} else {
-				args = append(args, ArgNull())
+				args = append(args, NullValue())
 			}
 		case "bool_val":
 			if p.BoolVal.Valid {
-				args = append(args, ArgBool(p.BoolVal.Bool))
+				args = append(args, Bool(p.BoolVal.Bool))
 			} else {
-				args = append(args, ArgNull())
+				args = append(args, NullValue())
 			}
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
@@ -218,7 +218,7 @@ func (p *nullTypedRecord) AssembleArguments(stmtType int, args Arguments, column
 func installFixtures(db *sql.DB) {
 	createPeopleTable := fmt.Sprintf(`
 		CREATE TABLE dbr_people (
-			id int(11) NOT NULL auto_increment PRIMARY KEY,
+			id bigint(8) unsigned NOT NULL auto_increment PRIMARY KEY,
 			name varchar(255) NOT NULL,
 			email varchar(255),
 			%s varchar(255)
@@ -235,12 +235,13 @@ func installFixtures(db *sql.DB) {
 			bool_val bool NULL
 		)
 	`
-
+	// see also test case "LoadUint64 max Uint64 found"
 	sqlToRun := []string{
 		"DROP TABLE IF EXISTS dbr_people",
 		createPeopleTable,
 		"INSERT INTO dbr_people (name,email) VALUES ('Jonathan', 'jonathan@uservoice.com')",
 		"INSERT INTO dbr_people (name,email) VALUES ('Dmitri', 'zavorotni@jadius.com')",
+		"INSERT INTO dbr_people (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')",
 
 		"DROP TABLE IF EXISTS null_types",
 		createNullTypesTable,
@@ -301,7 +302,7 @@ func compareToSQL(
 
 	if wantSQLPlaceholders != "" {
 		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-		assert.Equal(t, wantArgs, args, "Placeholder Arguments do not match")
+		assert.Equal(t, wantArgs, args, "Placeholder Values do not match")
 	}
 
 	if wantSQLInterpolated == "" {
@@ -338,7 +339,7 @@ func compareToSQL(
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
-	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
+	require.Nil(t, args, "Values should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
 		require.NoError(t, err)
 	} else {

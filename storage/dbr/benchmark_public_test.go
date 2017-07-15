@@ -24,13 +24,13 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-var benchmarkGlobalArgs []interface{}
+var benchmarkGlobalVals []interface{}
 
 var _ dbr.Querier = (*benchMockQuerier)(nil)
 
 type benchMockQuerier struct{}
 
-func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (benchMockQuerier) QueryContext(ctx context.Context, query string, vals ...interface{}) (*sql.Rows, error) {
 	return new(sql.Rows), nil
 }
 func (benchMockQuerier) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
@@ -71,7 +71,7 @@ var benchmarkSelectStr string
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	exprArgs := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
+	exprArgs := dbr.Values{dbr.Int64(1), dbr.String("wat")}
 	aVal := []int64{1, 2, 3}
 
 	b.ResetTimer()
@@ -90,7 +90,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkGlobalArgs = args
+		benchmarkGlobalVals = args
 	}
 }
 
@@ -98,7 +98,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
 
-	args := dbr.Arguments{dbr.ArgInt64(1), dbr.ArgString("wat")}
+	args := dbr.Values{dbr.Int64(1), dbr.String("wat")}
 
 	sqlObj := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
@@ -136,7 +136,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 
@@ -147,7 +147,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 
@@ -158,7 +158,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 }
@@ -186,7 +186,7 @@ func BenchmarkSelect_Large_IN(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 
@@ -231,7 +231,7 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkGlobalArgs = args
+		benchmarkGlobalVals = args
 	}
 	_ = haveSQL
 	//b.Logf("%s", haveSQL)
@@ -250,17 +250,16 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 }
 
 func BenchmarkSelect_SQLCase(b *testing.B) {
-	start := dbr.ArgTime(time.Unix(1257894000, 0))
-	end := dbr.ArgTime(time.Unix(1257980400, 0))
+	start := dbr.MakeTime(time.Unix(1257894000, 0))
+	end := dbr.MakeTime(time.Unix(1257980400, 0))
 	pid := []int{4711, 815, 42}
 
 	var haveSQL string
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var args []interface{}
 		var err error
-		haveSQL, args, err = dbr.NewSelect().
+		haveSQL, benchmarkGlobalVals, err = dbr.NewSelect().
 			AddColumns("price", "sku", "name").
 			AddColumnsAlias(
 				dbr.SQLCase("", "`closed`",
@@ -276,7 +275,6 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkGlobalArgs = args
 	}
 	_ = haveSQL
 }
@@ -318,7 +316,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.Run("NewDelete", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			_, benchmarkGlobalArgs, err = dbr.NewDelete("alpha").Where(dbr.Column("a").String("b")).Limit(1).OrderBy("id").ToSQL()
+			_, benchmarkGlobalVals, err = dbr.NewDelete("alpha").Where(dbr.Column("a").String("b")).Limit(1).OrderBy("id").ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -333,7 +331,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 
@@ -344,7 +342,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 }
@@ -354,17 +352,17 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, args, err := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
-				dbr.ArgInt64(1), dbr.ArgInt64(2), dbr.ArgBool(true),
+				dbr.Int64(1), dbr.Int64(2), dbr.Bool(true),
 			).ToSQL()
 			if err != nil {
 				b.Fatal(err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 
 	sqlObj := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
-		dbr.ArgInt64(1), dbr.ArgInt64(2), dbr.ArgBool(true),
+		dbr.Int64(1), dbr.Int64(2), dbr.Bool(true),
 	).Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.UseBuildCache = false
@@ -373,7 +371,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 
@@ -384,12 +382,12 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 }
 
-var _ dbr.ArgumentAssembler = (*someRecord)(nil)
+var _ dbr.ValuesAppender = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -397,20 +395,20 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AssembleArguments(stmtType int, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
+func (sr someRecord) AppendValues(stmtType int, vals dbr.Values, condition []string) (dbr.Values, error) {
 	for _, c := range condition {
 		switch c {
 		case "something_id":
-			args = append(args, dbr.ArgInt(sr.SomethingID))
+			vals = append(vals, dbr.Int(sr.SomethingID))
 		case "user_id":
-			args = append(args, dbr.ArgInt64(sr.UserID))
+			vals = append(vals, dbr.Int64(sr.UserID))
 		case "other":
-			args = append(args, dbr.ArgBool(sr.Other))
+			vals = append(vals, dbr.Bool(sr.Other))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	return args, nil
+	return vals, nil
 }
 
 func BenchmarkInsertRecordsSQL(b *testing.B) {
@@ -426,7 +424,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		benchmarkGlobalArgs = args
+		benchmarkGlobalVals = args
 		// ifaces = args.Interfaces()
 	}
 }
@@ -434,12 +432,12 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 func BenchmarkRepeat(b *testing.B) {
 
 	b.Run("multi", func(b *testing.B) {
-		sl := dbr.ArgStrings{"a", "b", "c", "d", "e"}
+		sl := dbr.Strings{"a", "b", "c", "d", "e"}
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)",
-				dbr.ArgInts{5, 7, 9, 11}, sl, dbr.ArgInt(22))
+				dbr.Ints{5, 7, 9, 11}, sl, dbr.Int(22))
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -455,7 +453,7 @@ func BenchmarkRepeat(b *testing.B) {
 	b.Run("single", func(b *testing.B) {
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
 		for i := 0; i < b.N; i++ {
-			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?)", dbr.ArgInts{9, 8, 7, 6})
+			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?)", dbr.Ints{9, 8, 7, 6})
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
@@ -585,7 +583,7 @@ func BenchmarkUnion(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 	b.Run("5 SELECTs interpolated", func(b *testing.B) {
@@ -596,7 +594,7 @@ func BenchmarkUnion(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 	b.Run("Template", func(b *testing.B) {
@@ -606,7 +604,7 @@ func BenchmarkUnion(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 	b.Run("Template interpolated", func(b *testing.B) {
@@ -616,7 +614,7 @@ func BenchmarkUnion(b *testing.B) {
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
-			benchmarkGlobalArgs = args
+			benchmarkGlobalVals = args
 		}
 	})
 }
@@ -624,11 +622,11 @@ func BenchmarkUnion(b *testing.B) {
 func BenchmarkUpdateValuesSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, args, err := dbr.NewUpdate("alpha").Set("something_id", dbr.ArgInt64(1)).Where(dbr.Column("id").Int64(1)).ToSQL()
+		_, args, err := dbr.NewUpdate("alpha").Set("something_id", dbr.Int64(1)).Where(dbr.Column("id").Int64(1)).ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkGlobalArgs = args
+		benchmarkGlobalVals = args
 	}
 }
 
@@ -636,16 +634,16 @@ func BenchmarkUpdateValueMapSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewUpdate("alpha").
-			Set("something_id", dbr.ArgInt64(1)).
-			SetMap(map[string]dbr.Argument{
-				"b": dbr.ArgInt64(2),
-				"c": dbr.ArgInt64(3),
+			Set("something_id", dbr.Int64(1)).
+			SetMap(map[string]dbr.Value{
+				"b": dbr.Int64(2),
+				"c": dbr.Int64(3),
 			}).
 			Where(dbr.Column("id").Int(1)).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}
-		benchmarkGlobalArgs = args
+		benchmarkGlobalVals = args
 	}
 }

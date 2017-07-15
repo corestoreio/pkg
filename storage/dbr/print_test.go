@@ -39,10 +39,10 @@ type buildQueryMock struct{ error }
 
 func (m buildQueryMock) toSQL(queryWriter) error { return m.error }
 
-func (m buildQueryMock) appendArgs(Arguments) (Arguments, error) { return nil, m.error }
-func (m buildQueryMock) hasBuildCache() bool                     { return false }
-func (m buildQueryMock) writeBuildCache(sql []byte)              {}
-func (m buildQueryMock) readBuildCache() (sql []byte, args Arguments, err error) {
+func (m buildQueryMock) appendArgs(Values) (Values, error) { return nil, m.error }
+func (m buildQueryMock) hasBuildCache() bool               { return false }
+func (m buildQueryMock) writeBuildCache(sql []byte)        {}
+func (m buildQueryMock) readBuildCache() (sql []byte, args Values, err error) {
 	return nil, nil, m.error
 }
 
@@ -65,7 +65,7 @@ func TestMakeSQL(t *testing.T) {
 		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= ?)", b.String())
 	})
 	t.Run("UPDATE", func(t *testing.T) {
-		b := NewUpdate("tableX").Set("columnA", ArgInt64(4)).Where(Column("columnB").Between().Ints(5, 7))
+		b := NewUpdate("tableX").Set("columnA", Int64(4)).Where(Column("columnB").Between().Ints(5, 7))
 		assert.Exactly(t, "UPDATE `tableX` SET `columnA`=? WHERE (`columnB` BETWEEN ? AND ?)", b.String())
 	})
 }

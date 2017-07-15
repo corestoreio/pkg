@@ -33,7 +33,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 	t.Run("no columns provided", func(t *testing.T) {
 		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").
-			Where(dbr.Column("entity_id").In().PlaceHolder()), // ArgInt64 must be without arguments
+			Where(dbr.Column("entity_id").In().PlaceHolder()), // Int64 must be without arguments
 		)
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
@@ -61,7 +61,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 
-	records := []dbr.ArgumentAssembler{
+	records := []dbr.ValuesAppender{
 		&dbrPerson{
 			ID:    1,
 			Name:  "Alf",
@@ -192,31 +192,31 @@ func TestUpdateMulti_Exec(t *testing.T) {
 }
 
 // Make sure that type salesInvoice implements interface.
-var _ dbr.ArgumentAssembler = (*salesInvoice)(nil)
+var _ dbr.ValuesAppender = (*salesInvoice)(nil)
 
 // salesInvoice represents just a demo record.
 type salesInvoice struct {
 	EntityID   int64  // Auto Increment
 	State      string // processing, pending, shipped,
-	StoreID    dbr.ArgInt64
+	StoreID    dbr.Int64
 	CustomerID int64
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesInvoice) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (so salesInvoice) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
-			args = append(args, dbr.ArgInt64(so.EntityID))
+			args = append(args, dbr.Int64(so.EntityID))
 		case "state":
-			args = append(args, dbr.ArgString(so.State))
+			args = append(args, dbr.String(so.State))
 		case "store_id":
 			args = append(args, so.StoreID)
 		case "customer_id":
-			args = append(args, dbr.ArgInt64(so.CustomerID))
+			args = append(args, dbr.Int64(so.CustomerID))
 		case "alias_customer_id":
 			// Here can be a special treatment implement like encoding to JSON or encryption
-			args = append(args, dbr.ArgInt64(so.CustomerID))
+			args = append(args, dbr.Int64(so.CustomerID))
 		case "grand_total":
 			args = append(args, so.GrandTotal)
 		default:
@@ -225,10 +225,10 @@ func (so salesInvoice) AssembleArguments(stmtType int, args dbr.Arguments, colum
 	}
 	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
 		args = append(args,
-			dbr.ArgInt64(so.EntityID),
-			dbr.ArgString(so.State),
+			dbr.Int64(so.EntityID),
+			dbr.String(so.State),
 			so.StoreID,
-			dbr.ArgInt64(so.CustomerID),
+			dbr.Int64(so.CustomerID),
 			so.GrandTotal,
 		)
 	}
@@ -296,7 +296,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			SetRecord(ce).
-			Where(dbr.Column("entity_id").Greater().PlaceHolder()) // No Arguments in Int64 because we need a place holder.
+			Where(dbr.Column("entity_id").Greater().PlaceHolder()) // No Values in Int64 because we need a place holder.
 
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",

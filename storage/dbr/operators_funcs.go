@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
-// SQLIfNull appends the (optional) alias to the IFNULL expression. Argument
+// SQLIfNull appends the (optional) alias to the IFNULL expression. Value
 // count can be between 1-n. IFNULL(expr1,expr2) If expr1 is not NULL, IFNULL()
 // returns expr1; otherwise it returns expr2. IFNULL() returns a numeric or
 // string value, depending on the context in which it is used. See the examples.

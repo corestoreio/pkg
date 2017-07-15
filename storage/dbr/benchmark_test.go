@@ -32,10 +32,10 @@ func BenchmarkInterpolate(b *testing.B) {
 
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	var sqlBytes = []byte("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?")
-	args := Arguments{
-		ArgInt64s{1, -2, 3, 4, 5, 6, 7, 8, 9, 10},
-		ArgString("Hello"),
-		ArgBool(true),
+	args := Values{
+		Int64s{1, -2, 3, 4, 5, 6, 7, 8, 9, 10},
+		String("Hello"),
+		Bool(true),
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -77,10 +77,10 @@ func BenchmarkQuoteAlias(b *testing.B) {
 // BenchmarkUpdatedColumns_writeOnDuplicateKey-4   	 5000000	       337 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 	buf := new(bytes.Buffer)
-	args := make(Arguments, 0, 2)
+	args := make(Values, 0, 2)
 	uc := UpdatedColumns{
 		Columns:   []string{"name", "sku", "stock"},
-		Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
+		Arguments: Values{String("E0S 5D Mark III"), nil, Int64(14)},
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

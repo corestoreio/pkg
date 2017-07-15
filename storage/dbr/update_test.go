@@ -27,14 +27,14 @@ import (
 
 func TestUpdateAllToSQL(t *testing.T) {
 	t.Parallel()
-	qb := NewUpdate("a").Set("b", ArgInt64(1)).Set("c", ArgInt(2))
+	qb := NewUpdate("a").Set("b", Int64(1)).Set("c", Int(2))
 	compareToSQL(t, qb, nil, "UPDATE `a` SET `b`=?, `c`=?", "", int64(1), int64(2))
 }
 
 func TestUpdateSingleToSQL(t *testing.T) {
 	t.Parallel()
 	compareToSQL(t, NewUpdate("a").
-		Set("b", ArgInt(1)).Set("c", ArgInt(2)).Where(Column("id").Int(1)),
+		Set("b", Int(1)).Set("c", Int(2)).Where(Column("id").Int(1)),
 		nil,
 		"UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)",
 		"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)",
@@ -43,7 +43,7 @@ func TestUpdateSingleToSQL(t *testing.T) {
 
 func TestUpdate_OrderBy(t *testing.T) {
 	t.Parallel()
-	qb := NewUpdate("a").Set("b", ArgInt64(1)).Set("c", ArgInt(2)).
+	qb := NewUpdate("a").Set("b", Int64(1)).Set("c", Int(2)).
 		OrderBy("col1", "col2").OrderByDesc("col2", "col3").OrderByExpr("concat(1,2,3)")
 	compareToSQL(t, qb, nil,
 		"UPDATE `a` SET `b`=?, `c`=? ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
@@ -55,7 +55,7 @@ func TestUpdateSetMapToSQL(t *testing.T) {
 	t.Parallel()
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": ArgInt64(1), "c": ArgInt64(2)}).Where(Column("id").Int(1)).ToSQL()
+	sql, args, err := s.Update("a").SetMap(map[string]Value{"b": Int64(1), "c": Int64(2)}).Where(Column("id").Int(1)).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args)
@@ -69,24 +69,24 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 	t.Parallel()
 
 	compareToSQL(t, NewUpdate("a").
-		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id").Int(9)),
+		Set("foo", Int(1)).
+		Set("bar", ExpressionValue("COALESCE(bar, 0) + 1")).Where(Column("id").Int(9)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = ?)",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = 9)",
 		int64(1), int64(9))
 
 	compareToSQL(t, NewUpdate("a").
-		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + 1")).Where(Column("id").In().Int64s(10, 11)),
+		Set("foo", Int(1)).
+		Set("bar", ExpressionValue("COALESCE(bar, 0) + 1")).Where(Column("id").In().Int64s(10, 11)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (?,?))",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (10,11))",
 		int64(1), int64(10), int64(11))
 
 	compareToSQL(t, NewUpdate("a").
-		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Column("id").Int(9)),
+		Set("foo", Int(1)).
+		Set("bar", ExpressionValue("COALESCE(bar, 0) + ?", Int(2))).Where(Column("id").Int(9)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)",
@@ -97,7 +97,7 @@ func TestUpdate_Limit_Offset(t *testing.T) {
 	t.Parallel()
 
 	compareToSQL(t, NewUpdate("a").
-		Set("b", ArgInt(1)).Limit(10).Offset(20),
+		Set("b", Int(1)).Limit(10).Offset(20),
 		nil,
 		"UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20",
 		"UPDATE `a` SET `b`=1 LIMIT 10 OFFSET 20",
@@ -113,7 +113,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err := s.Update("dbr_people").Set("key", ArgString("6-revoked")).Where(Column("key").String("6")).Exec(context.TODO())
+	res, err := s.Update("dbr_people").Set("key", String("6-revoked")).Where(Column("key").String("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -143,7 +143,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Rename our George to Barack
 	_, err = s.Update("dbr_people").
-		SetMap(map[string]Argument{"name": ArgString("Barack"), "email": ArgString("barack@whitehouse.gov")}).
+		SetMap(map[string]Value{"name": String("Barack"), "email": String("barack@whitehouse.gov")}).
 		Where(Column("id").In().Int64s(id, 8888)).Exec(context.TODO())
 	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
 	require.NoError(t, err)
@@ -162,7 +162,7 @@ func TestUpdate_Prepare(t *testing.T) {
 	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
-		in.Set("a", ArgInt(1))
+		in.Set("a", Int(1))
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -174,7 +174,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		u.Table.Name = "tableY"
-		u.Set("a", ArgInt(1))
+		u.Set("a", Int(1))
 
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -214,7 +214,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewUpdate("tableA")
-		d.Set("y", ArgInt(25)).Set("z", ArgInt(26))
+		d.Set("y", Int(25)).Set("z", Int(26))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -222,14 +222,14 @@ func TestUpdate_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("a", ArgInt(1))
+					b.Set("a", Int(1))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("b", ArgInt(1))
+					b.Set("b", Int(1))
 					b.PropagationStopped = true
 				},
 			},
@@ -250,14 +250,14 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		up := NewUpdate("tableA")
-		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
+		up.Set("a", Int(1)).Set("b", Bool(true))
 
 		up.Listeners.Add(
 			Listen{
 				Name: "c=pi",
 				Once: true,
 				UpdateFunc: func(u *Update) {
-					u.Set("c", ArgFloat64(3.14159))
+					u.Set("c", Float64(3.14159))
 				},
 			},
 		)
@@ -269,7 +269,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Should Dispatch", func(t *testing.T) {
 		up := NewUpdate("tableA")
-		up.Set("a", ArgInt(1)).Set("b", ArgBool(true))
+		up.Set("a", Int(1)).Set("b", Bool(true))
 
 		up.Listeners.Add(
 			Listen{
@@ -277,7 +277,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("c", ArgFloat64(3.14159))
+					u.Set("c", Float64(3.14159))
 				},
 			},
 			Listen{
@@ -285,7 +285,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("d", ArgString("d"))
+					u.Set("d", String("d"))
 				},
 			},
 		)
@@ -294,7 +294,7 @@ func TestUpdate_Events(t *testing.T) {
 			Name:      "e",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(u *Update) {
-				u.Set("e", ArgString("e"))
+				u.Set("e", String("e"))
 			},
 		})
 		compareToSQL(t, up, nil,
@@ -328,10 +328,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgInt64(12)},
+			Arguments: Values{String("E0S 5D Mark II"), Int64(12)},
 		}
 		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
+		args := make(Values, 0, 2)
 		err := uc.writeOnDuplicateKey(buf)
 		require.NoError(t, err, "%+v", err)
 		args, err = uc.appendArgs(args)
@@ -343,10 +343,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark II"), ArgExpr("VALUES(`stock`)+?", ArgInt64(13))},
+			Arguments: Values{String("E0S 5D Mark II"), ExpressionValue("VALUES(`stock`)+?", Int64(13))},
 		}
 		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
+		args := make(Values, 0, 2)
 		err := uc.writeOnDuplicateKey(buf)
 		require.NoError(t, err, "%+v", err)
 		args, err = uc.appendArgs(args)
@@ -358,10 +358,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val) and with arguments and nil", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "sku", "stock"},
-			Arguments: Arguments{ArgString("E0S 5D Mark III"), nil, ArgInt64(14)},
+			Arguments: Values{String("E0S 5D Mark III"), nil, Int64(14)},
 		}
 		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
+		args := make(Values, 0, 2)
 		err := uc.writeOnDuplicateKey(buf)
 		require.NoError(t, err, "%+v", err)
 		args, err = uc.appendArgs(args)
@@ -400,7 +400,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 	t.Run("fails column not in entity object", func(t *testing.T) {
 		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
-			Set("key", ArgString("JustAKey")).
+			Set("key", String("JustAKey")).
 			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, errors.IsNotFound,
 			"",
@@ -413,8 +413,8 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
 	up := NewUpdate("a").
-		Set("foo", ArgInt(1)).
-		Set("bar", ArgExpr("COALESCE(bar, 0) + ?", ArgInt(2))).Where(Column("id").Int(9))
+		Set("foo", Int(1)).
+		Set("bar", ExpressionValue("COALESCE(bar, 0) + ?", Int(2))).Where(Column("id").Int(9))
 
 	up.UseBuildCache = true
 

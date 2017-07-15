@@ -24,33 +24,33 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// iFaceToArgs unpacks the interface and creates an Argument slice. Just a
+// iFaceToArgs unpacks the interface and creates an Value slice. Just a
 // helper function for the examples.
-func iFaceToArgs(values ...interface{}) dbr.Arguments {
-	args := make(dbr.Arguments, 0, len(values))
+func iFaceToArgs(values ...interface{}) dbr.Values {
+	args := make(dbr.Values, 0, len(values))
 	for _, val := range values {
 		switch v := val.(type) {
 		case float64:
-			args = append(args, dbr.ArgFloat64(v))
+			args = append(args, dbr.Float64(v))
 		case int64:
-			args = append(args, dbr.ArgInt64(v))
+			args = append(args, dbr.Int64(v))
 		case int:
-			args = append(args, dbr.ArgInt64(v))
-			args = append(args, dbr.ArgInt64(v))
+			args = append(args, dbr.Int64(v))
+			args = append(args, dbr.Int64(v))
 		case bool:
-			args = append(args, dbr.ArgBool(v))
+			args = append(args, dbr.Bool(v))
 		case string:
-			args = append(args, dbr.ArgString(v))
+			args = append(args, dbr.String(v))
 		case []byte:
-			args = append(args, dbr.ArgBytes(v))
+			args = append(args, dbr.Bytes(v))
 		case time.Time:
-			args = append(args, dbr.ArgTime(v))
+			args = append(args, dbr.MakeTime(v))
 		case *time.Time:
 			if v != nil {
-				args = append(args, dbr.ArgTime(*v))
+				args = append(args, dbr.MakeTime(*v))
 			}
 		case nil:
-			args = append(args, dbr.ArgNull())
+			args = append(args, dbr.NullValue())
 		default:
 			panic(errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v))
 		}
@@ -67,7 +67,7 @@ func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	fmt.Println("Prepared Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
 	if len(args) > 0 {
-		fmt.Printf("\nArguments: %v\n\n", args)
+		fmt.Printf("\nValues: %v\n\n", args)
 	} else {
 		fmt.Print("\n")
 	}
@@ -93,7 +93,7 @@ func ExampleNewInsert() {
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES (?,?,?,?),(?,?,?,?)
-	//Arguments: [1 2 Three <nil> 5 6 Seven 3.14156]
+	//Values: [1 2 Three <nil> 5 6 Seven 3.14156]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `tableA` (`b`,`c`,`d`,`e`) VALUES
@@ -110,7 +110,7 @@ func ExampleNewInsert_withoutColumns() {
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	//Values: [2046 33 3 2046 34 3 2046 35 3]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
@@ -140,7 +140,7 @@ func ExampleInsert_AddValues() {
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_link` VALUES (?,?,?),(?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	//Values: [2046 33 3 2046 34 3 2046 35 3]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_link` VALUES (2046,33,3),(2046,34,3),(2046,35,3)
@@ -148,7 +148,7 @@ func ExampleInsert_AddValues() {
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_link`
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3 2046 35 3]
+	//Values: [2046 33 3 2046 34 3 2046 35 3]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_link`
@@ -160,7 +160,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 	i := dbr.NewInsert("dbr_people").
 		AddColumns("id", "name", "email").
 		AddValues(1, "Pik'e", "pikes@peak.com").
-		AddOnDuplicateKey("name", dbr.ArgString("Pik3")).
+		AddOnDuplicateKey("name", dbr.String("Pik3")).
 		AddOnDuplicateKey("email", nil)
 	writeToSQLAndInterpolate(i)
 
@@ -168,7 +168,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 	//Prepared Statement:
 	//INSERT INTO `dbr_people` (`id`,`name`,`email`) VALUES (?,?,?) ON DUPLICATE KEY
 	//UPDATE `name`=?, `email`=VALUES(`email`)
-	//Arguments: [1 Pik'e pikes@peak.com Pik3]
+	//Values: [1 Pik'e pikes@peak.com Pik3]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `dbr_people` (`id`,`name`,`email`) VALUES
@@ -211,7 +211,7 @@ func ExampleInsert_FromSelect() {
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
 	//WHERE ((`int64A` >= ?) OR (`string` = ?)) AND (`int64B` IN (?,?,?)) ORDER BY
 	//`id` DESC LIMIT 20 OFFSET 0
-	//Arguments: [1 wat 1 2 3]
+	//Values: [1 wat 1 2 3]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `tableA` SELECT `something_id`, `user_id`, `other` FROM `some_table`
@@ -221,20 +221,20 @@ func ExampleInsert_FromSelect() {
 
 func ExampleInsert_Pair() {
 	ins := dbr.NewInsert("catalog_product_link").
-		Pair("product_id", dbr.ArgInt64(2046)).
-		Pair("linked_product_id", dbr.ArgInt64(33)).
-		Pair("link_type_id", dbr.ArgInt64(3)).
+		Pair("product_id", dbr.Int64(2046)).
+		Pair("linked_product_id", dbr.Int64(33)).
+		Pair("link_type_id", dbr.Int64(3)).
 		// next row
-		Pair("product_id", dbr.ArgInt64(2046)).
-		Pair("linked_product_id", dbr.ArgInt64(34)).
-		Pair("link_type_id", dbr.ArgInt64(3))
+		Pair("product_id", dbr.Int64(2046)).
+		Pair("linked_product_id", dbr.Int64(34)).
+		Pair("link_type_id", dbr.Int64(3))
 	// next row ...
 	writeToSQLAndInterpolate(ins)
 	// Output:
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_link`
 	//(`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)
-	//Arguments: [2046 33 3 2046 34 3]
+	//Values: [2046 33 3 2046 34 3]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_link`
@@ -252,7 +252,7 @@ func ExampleNewDelete() {
 	//Prepared Statement:
 	//DELETE FROM `tableA` WHERE (`a` LIKE ?) AND (`b` IN (?,?,?,?)) ORDER BY `id`
 	//LIMIT 1
-	//Arguments: [b'% 3 4 5 6]
+	//Values: [b'% 3 4 5 6]
 	//
 	//Interpolated Statement:
 	//DELETE FROM `tableA` WHERE (`a` LIKE 'b\'%') AND (`b` IN (3,4,5,6)) ORDER BY
@@ -271,7 +271,7 @@ func ExampleNewUnion() {
 	// Maybe more of your code ...
 	u.Append(
 		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
-			AddArguments(dbr.ArgString("-")).
+			AddArguments(dbr.String("-")).
 			AddColumnsAlias("c2", "B").
 			From("tableC").Where(dbr.Column("c2").String("ArgForC2")),
 	).
@@ -293,7 +293,7 @@ func ExampleNewUnion() {
 	//(SELECT concat(c1,?,c2) AS `A`, `c2` AS `B`, 2 AS `_preserve_result_set` FROM
 	//`tableC` WHERE (`c2` = ?))
 	//ORDER BY `_preserve_result_set`, `A` ASC, `B` DESC
-	//Arguments: [3 4 - ArgForC2]
+	//Values: [3 4 - ArgForC2]
 	//
 	//Interpolated Statement:
 	//(SELECT `a1` AS `A`, `a2` AS `B`, 0 AS `_preserve_result_set` FROM `tableA`
@@ -346,7 +346,7 @@ func ExampleNewUnion_template() {
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
 	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
-	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
+	//Values: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
 	//
 	//Interpolated Statement:
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS
@@ -373,11 +373,11 @@ func ExampleNewUnion_template() {
 
 func ExampleInterpolate() {
 	sqlStr, err := dbr.Interpolate("SELECT * FROM x WHERE a IN (?) AND b IN (?) AND c NOT IN (?) AND d BETWEEN ? AND ?",
-		dbr.ArgInts{1},
-		dbr.ArgInts{1, 2, 3},
-		dbr.ArgInt64s{5, 6, 7},
-		dbr.ArgString("wat"),
-		dbr.ArgString("ok"),
+		dbr.Ints{1},
+		dbr.Ints{1, 2, 3},
+		dbr.Int64s{5, 6, 7},
+		dbr.String("wat"),
+		dbr.String("ok"),
 	)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -389,20 +389,20 @@ func ExampleInterpolate() {
 }
 
 func ExampleRepeat() {
-	sl := dbr.ArgStrings{"a", "b", "c", "d", "e"}
+	sl := dbr.Strings{"a", "b", "c", "d", "e"}
 
 	sqlStr, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)",
-		dbr.ArgInts{5, 7, 9}, sl)
+		dbr.Ints{5, 7, 9}, sl)
 
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
 	}
 
-	fmt.Printf("%s\nArguments: %v\n", sqlStr, args)
+	fmt.Printf("%s\nValues: %v\n", sqlStr, args)
 	// Output:
 	// SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)
-	// Arguments: [5 7 9 a b c d e]
+	// Values: [5 7 9 a b c d e]
 }
 
 func argPrinter(wf *dbr.WhereFragment) {
@@ -413,7 +413,7 @@ func argPrinter(wf *dbr.WhereFragment) {
 	} else {
 		fmt.Printf("%q", sqlStr)
 		if len(args) > 0 {
-			fmt.Printf(" Arguments: %v", args)
+			fmt.Printf(" Values: %v", args)
 		}
 		fmt.Print("\n")
 	}
@@ -447,23 +447,23 @@ func ExampleArgument() {
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Values: [2]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Values: [7 8 9]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Values: [10 11 12]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Values: [13 14]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Values: [15 16]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Values: [17 18 19]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Values: [20 21 22]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Values: [30]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Values: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Values: [32]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Values: [33]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Values: [34]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Values: [35]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Values: [Goph%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Values: [Cat%]
 }
 
 // ExampleColumn is a duplicate of ExampleArgument
@@ -494,23 +494,23 @@ func ExampleColumn() {
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [2]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Values: [2]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NOT NULL)"
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Arguments: [7 8 9]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Arguments: [10 11 12]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Arguments: [13 14]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Arguments: [15 16]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Arguments: [17 18 19]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Arguments: [35]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Arguments: [Goph%]
-	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?,?))" Values: [7 8 9]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT IN (?,?,?))" Values: [10 11 12]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` BETWEEN ? AND ?)" Values: [13 14]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT BETWEEN ? AND ?)" Values: [15 16]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` GREATEST (?,?,?))" Values: [17 18 19]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Values: [20 21 22]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Values: [30]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Values: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Values: [32]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Values: [33]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Values: [34]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` >= ?)" Values: [35]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)" Values: [Goph%]
+	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Values: [Cat%]
 }
 
 func ExampleSubSelect() {
@@ -526,7 +526,7 @@ func ExampleSubSelect() {
 	//Prepared Statement:
 	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
 	//(SELECT `entity_id` FROM `catalog_category_product` WHERE (`category_id` = ?)))
-	//Arguments: [234]
+	//Values: [234]
 	//
 	//Interpolated Statement:
 	//SELECT `sku`, `type_id` FROM `catalog_product_entity` WHERE (`entity_id` IN
@@ -563,7 +563,7 @@ func ExampleNewSelectWithDerivedTable() {
 	//'%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` ORDER BY `t3`.`store_id`,
 	//DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t1` WHERE
 	//(`product_name` = ?) ORDER BY `t1`.`period`, `t1`.`product_id`
-	//Arguments: [Canon% Sony%]
+	//Values: [Canon% Sony%]
 	//
 	//Interpolated Statement:
 	//SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`,
@@ -616,7 +616,7 @@ func ExampleSQLIf() {
 	// Output:
 	//Prepared Statement:
 	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)
-	//Arguments: [4711]
+	//Values: [4711]
 	//
 	//Interpolated Statement:
 	//SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > 4711)
@@ -624,11 +624,11 @@ func ExampleSQLIf() {
 
 func ExampleSQLCase_update() {
 	u := dbr.NewUpdate("cataloginventory_stock_item").
-		Set("qty", dbr.ArgExpr(dbr.SQLCase("`product_id`", "qty",
+		Set("qty", dbr.ExpressionValue(dbr.SQLCase("`product_id`", "qty",
 			"3456", "qty+?",
 			"3457", "qty+?",
 			"3458", "qty+?",
-		), dbr.ArgInts{3, 4, 5})).
+		), dbr.Ints{3, 4, 5})).
 		Where(
 			dbr.Column("product_id").In().Int64s(345, 567, 897),
 			dbr.Column("website_id").Int64(6),
@@ -640,7 +640,7 @@ func ExampleSQLCase_update() {
 	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
 	//qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`product_id`
 	//IN (?,?,?)) AND (`website_id` = ?)
-	//Arguments: [3 4 5 345 567 897 6]
+	//Values: [3 4 5 345 567 897 6]
 	//
 	//Interpolated Statement:
 	//UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN
@@ -651,8 +651,8 @@ func ExampleSQLCase_update() {
 // ExampleSQLCase_select is a duplicate of ExampleSelect_AddArguments
 func ExampleSQLCase_select() {
 	// time stamp has no special meaning ;-)
-	start := dbr.ArgTime(time.Unix(1257894000, 0))
-	end := dbr.ArgTime(time.Unix(1257980400, 0))
+	start := dbr.MakeTime(time.Unix(1257894000, 0))
+	end := dbr.MakeTime(time.Unix(1257980400, 0))
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnsExprAlias(
 			dbr.SQLCase("", "`closed`",
@@ -672,7 +672,7 @@ func ExampleSQLCase_select() {
 	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (?,?,?))
-	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
+	//Values: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
 	//
 	//Interpolated Statement:
 	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
@@ -685,8 +685,8 @@ func ExampleSQLCase_select() {
 // ExampleSelect_AddArguments is duplicate of ExampleSQLCase_select
 func ExampleSelect_AddArguments() {
 	// time stamp has no special meaning ;-)
-	start := dbr.ArgTime(time.Unix(1257894000, 0))
-	end := dbr.ArgTime(time.Unix(1257980400, 0))
+	start := dbr.MakeTime(time.Unix(1257894000, 0))
+	end := dbr.MakeTime(time.Unix(1257980400, 0))
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnsExprAlias(
 			dbr.SQLCase("", "`closed`",
@@ -706,7 +706,7 @@ func ExampleSelect_AddArguments() {
 	//? AND date_end >= ? THEN `open` WHEN date_start > ? AND date_end > ? THEN
 	//`upcoming` ELSE `closed` END AS `is_on_sale` FROM `catalog_promotions` WHERE
 	//(`promotion_id` NOT IN (?,?,?))
-	//Arguments: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
+	//Values: [2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 2009-11-11 00:00:00 +0100 CET 2009-11-12 00:00:00 +0100 CET 4711 815 42]
 	//
 	//Interpolated Statement:
 	//SELECT `price`, `sku`, `name`, `title`, `description`, CASE  WHEN date_start <=
@@ -745,7 +745,7 @@ func ExampleParenthesisOpen() {
 	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = ?) OR
 	//(`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING (j = k) AND ((`m` = ?) OR (`n` =
 	//?)) ORDER BY `l` LIMIT 7 OFFSET 8
-	//Arguments: [1 wat 2 33 wh3r3]
+	//Values: [1 wat 2 33 wh3r3]
 	//
 	//Interpolated Statement:
 	//SELECT DISTINCT `columnA`, `columnB` FROM `tableC` AS `ccc` WHERE ((`d` = 1) OR
@@ -759,7 +759,7 @@ func ExampleWith_Union() {
 	cte := dbr.NewWith(
 		dbr.WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
 			Select: dbr.NewSelect().AddColumnsExpr("Month(day_of_sale)", "Sum(amount)").From("sales_days").
-				Where(dbr.Expression("Year(day_of_sale) = ?", dbr.ArgInt(2015))).
+				Where(dbr.Expression("Year(day_of_sale) = ?", dbr.Int(2015))).
 				GroupByExpr("Month(day_of_sale))"),
 		},
 		dbr.WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
@@ -797,7 +797,7 @@ func ExampleWith_Union() {
 	//(SELECT * FROM `best_month`)
 	//UNION ALL
 	//(SELECT * FROM `worst_month`)
-	//Arguments: [2015]
+	//Values: [2015]
 	//
 	//Interpolated Statement:
 	//WITH

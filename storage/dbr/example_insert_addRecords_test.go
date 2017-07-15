@@ -22,7 +22,7 @@ import (
 )
 
 // Make sure that type productEntity implements interface.
-var _ dbr.ArgumentAssembler = (*productEntity)(nil)
+var _ dbr.ValuesAppender = (*productEntity)(nil)
 
 // productEntity represents just a demo record.
 type productEntity struct {
@@ -33,17 +33,17 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (pe productEntity) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":
-			args = append(args, dbr.ArgInt64(pe.AttributeSetID))
+			args = append(args, dbr.Int64(pe.AttributeSetID))
 		case "type_id":
-			args = append(args, dbr.ArgString(pe.TypeID))
+			args = append(args, dbr.String(pe.TypeID))
 		case "sku":
 			args = append(args, pe.SKU)
 		case "has_options":
-			args = append(args, dbr.ArgBool(pe.HasOptions))
+			args = append(args, dbr.Bool(pe.HasOptions))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
@@ -51,11 +51,11 @@ func (pe productEntity) AssembleArguments(stmtType int, args dbr.Arguments, colu
 	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
 		// This case gets executed when an INSERT statement doesn't contain any columns.
 		args = append(args,
-			dbr.ArgInt64(pe.EntityID),
-			dbr.ArgInt64(pe.AttributeSetID),
-			dbr.ArgString(pe.TypeID),
+			dbr.Int64(pe.EntityID),
+			dbr.Int64(pe.AttributeSetID),
+			dbr.String(pe.TypeID),
 			pe.SKU,
-			dbr.ArgBool(pe.HasOptions),
+			dbr.Bool(pe.HasOptions),
 		)
 	}
 	return args, nil
@@ -80,7 +80,7 @@ func ExampleInsert_AddRecords() {
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_entity`
 	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES (?,?,?,?),(?,?,?,?)
-	//Arguments: [5 simple SOA9 false 5 virtual <nil> true]
+	//Values: [5 simple SOA9 false 5 virtual <nil> true]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_entity`
@@ -89,7 +89,7 @@ func ExampleInsert_AddRecords() {
 	//
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)
-	//Arguments: [1 5 simple SOA9 false 2 5 virtual <nil> true]
+	//Values: [1 5 simple SOA9 false 2 5 virtual <nil> true]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_entity` VALUES

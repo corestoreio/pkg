@@ -23,7 +23,7 @@ import (
 
 // NullFloat64 is a nullable float64. It does not consider zero values to be null.
 // It will decode to null, not zero, if null. NullFloat64 implements interface
-// Argument.
+// Value.
 type NullFloat64 struct {
 	sql.NullFloat64
 }
@@ -47,7 +47,7 @@ func (a NullFloat64) len() int { return 1 }
 
 // MakeNullFloat64 creates a new NullFloat64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullFloat64
-// implements interface Argument.
+// implements interface Value.
 func MakeNullFloat64(f float64, valid ...bool) NullFloat64 {
 	v := true
 	if len(valid) == 1 {

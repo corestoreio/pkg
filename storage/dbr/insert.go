@@ -33,18 +33,18 @@ type Insert struct {
 	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
 	cacheSQL      []byte
-	cacheArgs     Arguments // like a buffer, gets reused
+	cacheArgs     Values // like a buffer, gets reused
 
 	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL
+	RawArguments Values // Values used by RawFullSQL
 
 	Into    string
 	Columns []string
-	Values  []Arguments
+	Values  []Values
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
 
-	Records []ArgumentAssembler
+	Records []ValuesAppender
 	// RecordValueCount defines the number of place holders for each value
 	// within the brackets for each set. Must only be set when Records are set
 	// and `Columns` field has been omitted.
@@ -173,7 +173,7 @@ func (b *Insert) SetRowCount(rows int) *Insert {
 // AddArguments appends a set of values to the statement. Each call of
 // AddArguments creates a new set of values. Only primitive types are supported.
 // Runtime type safety only.
-func (b *Insert) AddArguments(args ...Argument) *Insert {
+func (b *Insert) AddArguments(args ...Value) *Insert {
 	if lv, mod := len(args), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more
 		// rows gets inserted.
@@ -188,7 +188,7 @@ func (b *Insert) AddArguments(args ...Argument) *Insert {
 }
 
 // AddRecords appends record generators.
-func (b *Insert) AddRecords(recs ...ArgumentAssembler) *Insert {
+func (b *Insert) AddRecords(recs ...ValuesAppender) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
@@ -208,7 +208,7 @@ func (b *Insert) SetRecordValueCount(valueCount int) *Insert {
 // set the Columns itself to allow the following SQL construct:
 //		`columnA`=VALUES(`columnA`)
 // Means columnA gets automatically mapped to the VALUES column name.
-func (b *Insert) AddOnDuplicateKey(column string, arg Argument) *Insert {
+func (b *Insert) AddOnDuplicateKey(column string, arg Value) *Insert {
 	b.OnDuplicateKey.Columns = append(b.OnDuplicateKey.Columns, column)
 	b.OnDuplicateKey.Arguments = append(b.OnDuplicateKey.Arguments, arg)
 	return b
@@ -216,7 +216,7 @@ func (b *Insert) AddOnDuplicateKey(column string, arg Argument) *Insert {
 
 // Pair appends a key/value (column/value) pair to the statement. Calling this
 // function multiple times with the same column name produces invalid SQL.
-func (b *Insert) Pair(column string, arg Argument) *Insert {
+func (b *Insert) Pair(column string, arg Value) *Insert {
 	colPos := -1
 	for i, c := range b.Columns {
 		if strings.EqualFold(c, column) {
@@ -227,14 +227,14 @@ func (b *Insert) Pair(column string, arg Argument) *Insert {
 	if colPos == -1 {
 		b.Columns = append(b.Columns, column)
 		if len(b.Values) == 0 {
-			b.Values = make([]Arguments, 1, 5)
+			b.Values = make([]Values, 1, 5)
 		}
 		b.Values[0] = append(b.Values[0], arg)
 		return b
 	}
 
 	if colPos == 0 { // create new slice
-		b.Values = append(b.Values, make(Arguments, len(b.Columns)))
+		b.Values = append(b.Values, make(Values, len(b.Columns)))
 	}
 	pos := len(b.Values) - 1
 	b.Values[pos][colPos] = arg
@@ -250,7 +250,7 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+// prepared statements. ToSQLs second argument `Values` will then be nil.
 func (b *Insert) Interpolate() *Insert {
 	b.IsInterpolate = true
 	return b
@@ -266,7 +266,7 @@ func (b *Insert) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Insert) readBuildCache() (sql []byte, _ Arguments, err error) {
+func (b *Insert) readBuildCache() (sql []byte, _ Values, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -373,7 +373,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 	return errors.Wrap(b.OnDuplicateKey.writeOnDuplicateKey(buf), "[dbr] Insert.toSQL.writeOnDuplicateKey\n")
 }
 
-func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
+func (b *Insert) appendArgs(args Values) (_ Values, err error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
@@ -398,7 +398,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	totalArgCount := len(b.Values) * argCount0
 	if cap(args) == 0 {
-		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
+		args = make(Values, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
 	}
 	for _, v := range b.Values {
 		args = append(args, v...)
@@ -411,7 +411,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	for _, rec := range b.Records {
 		alBefore := len(args)
-		args, err = rec.AssembleArguments(SQLStmtInsert|SQLPartValues, args, b.Columns) // Columns can be empty
+		args, err = rec.AppendValues(SQLStmtInsert|SQLPartValues, args, b.Columns) // Columns can be empty
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
