@@ -25,7 +25,7 @@ import (
 
 // NullInt64 is a nullable int64. It does not consider zero values to be null.
 // It will decode to null, not zero, if null. NullInt64 implements interface
-// Value.
+// Argument.
 type NullInt64 struct {
 	sql.NullInt64
 }
@@ -49,7 +49,7 @@ func (a NullInt64) len() int { return 1 }
 
 // MakeNullInt64 creates a new NullInt64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullInt64
-// implements interface Value.
+// implements interface Argument.
 func MakeNullInt64(i int64, valid ...bool) NullInt64 {
 	v := true
 	if len(valid) == 1 {
@@ -155,7 +155,7 @@ func (a NullInt64) IsZero() bool {
 	return !a.Valid
 }
 
-// Value implements the driver Valuer interface.
+// Argument implements the driver Valuer interface.
 func (a NullInt64) Value() (driver.Value, error) {
 	if !a.Valid {
 		return nil, nil

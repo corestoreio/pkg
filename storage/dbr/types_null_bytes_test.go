@@ -23,7 +23,7 @@ package dbr
 //
 //	"github.com/stretchr/testify/assert"
 //)
-// var _ Value = (*NullBytes)(nil)
+// var _ Argument = (*NullBytes)(nil)
 //var (
 //	bytesJSON = []byte(`"hello"`)
 //)

@@ -46,10 +46,10 @@ type Delete struct {
 	// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 
 	RawFullSQL   string
-	RawArguments Values // Values used by RawFullSQL
+	RawArguments Arguments // Arguments used by RawFullSQL
 
 	// Record if set retrieves the necessary arguments from the interface.
-	Record ValuesAppender
+	Record ArgumentsAppender
 
 	From           alias
 	WhereFragments WhereFragments
@@ -68,7 +68,7 @@ type Delete struct {
 	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
 	cacheSQL      []byte
-	cacheArgs     Values // like a buffer, gets reused
+	cacheArgs     Arguments // like a buffer, gets reused
 
 	// Listeners allows to dispatch certain functions in different
 	// situations.
@@ -120,14 +120,14 @@ func (b *Delete) WithDB(db ExecPreparer) *Delete {
 	return b
 }
 
-// SetRecord pulls in values to match Columns from the record generator.
-func (b *Delete) SetRecord(rec ValuesAppender) *Delete {
-	b.Record = rec
+// SetRecord pulls in arguments to match Columns from the argument appender.
+func (b *Delete) SetRecord(aa ArgumentsAppender) *Delete {
+	b.Record = aa
 	return b
 }
 
-// Where appends a WHERE clause to the statement whereSQLOrMap can be a
-// string or map. If it'ab a string, args wil replaces any places holders
+// Where appends a WHERE clause to the statement whereSQLOrMap can be a string
+// or map. If it'ab a string, args wil replaces any places holders.
 func (b *Delete) Where(wf ...*WhereFragment) *Delete {
 	b.WhereFragments = append(b.WhereFragments, wf...)
 	return b
@@ -135,8 +135,8 @@ func (b *Delete) Where(wf ...*WhereFragment) *Delete {
 
 // OrderBy appends columns to the ORDER BY statement for ascending sorting.
 // Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a DELETE, the server sorts values using only the initial number of
-// bytes indicated by the max_sort_length system variable.
+// column in a DELETE, the server sorts arguments using only the initial number
+// of bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderBy(columns ...string) *Delete {
 	b.OrderBys = b.OrderBys.appendColumns(columns, false)
 	return b
@@ -144,8 +144,8 @@ func (b *Delete) OrderBy(columns ...string) *Delete {
 
 // OrderByDesc appends columns to the ORDER BY statement for descending sorting.
 // Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a DELETE, the server sorts values using only the initial number of
-// bytes indicated by the max_sort_length system variable.
+// column in a DELETE, the server sorts arguments using only the initial number
+// of bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderByDesc(columns ...string) *Delete {
 	b.OrderBys = b.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
 	return b
@@ -174,7 +174,7 @@ func (b *Delete) Offset(offset uint64) *Delete {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Values` will then be nil.
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
 func (b *Delete) Interpolate() *Delete {
 	b.IsInterpolate = true
 	return b
@@ -190,7 +190,7 @@ func (b *Delete) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Delete) readBuildCache() (sql []byte, _ Values, err error) {
+func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -236,13 +236,13 @@ func (b *Delete) toSQL(buf queryWriter) error {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) appendArgs(args Values) (_ Values, err error) {
+func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 	if cap(args) == 0 {
-		args = make(Values, 0, len(b.WhereFragments))
+		args = make(Arguments, 0, len(b.WhereFragments))
 	}
 	args, err = b.From.appendArgs(args)
 	if err != nil {

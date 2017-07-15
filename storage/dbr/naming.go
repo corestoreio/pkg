@@ -96,7 +96,7 @@ func (a alias) QuoteAs() string {
 }
 
 // appendArgs assembles the arguments and appends them to `args`
-func (a alias) appendArgs(args Values) (_ Values, err error) {
+func (a alias) appendArgs(args Arguments) (_ Arguments, err error) {
 	if a.DerivedTable != nil {
 		args, err = a.DerivedTable.appendArgs(args)
 	}
@@ -150,7 +150,7 @@ func (as aliases) WriteQuoted(w queryWriter) error {
 	return nil
 }
 
-func (as aliases) appendArgs(args Values) (Values, error) {
+func (as aliases) appendArgs(args Arguments) (Arguments, error) {
 	for _, a := range as {
 		var err error
 		args, err = a.appendArgs(args)

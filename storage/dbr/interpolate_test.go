@@ -283,7 +283,7 @@ func TestInterpolateFloats(t *testing.T) {
 func TestInterpolateBetween(t *testing.T) {
 	t.Parallel()
 
-	runner := func(placeHolderStr, interpolatedStr string, wantErr errors.BehaviourFunc, args ...Value) func(*testing.T) {
+	runner := func(placeHolderStr, interpolatedStr string, wantErr errors.BehaviourFunc, args ...Argument) func(*testing.T) {
 		return func(t *testing.T) {
 			have, err := Interpolate(placeHolderStr, args...)
 			if wantErr != nil {
@@ -355,49 +355,49 @@ func TestInterpolate(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		sql string
-		Values
+		Arguments
 		expSQL string
 		errBhf errors.BehaviourFunc
 	}{
 		// NULL
-		{"SELECT * FROM x WHERE a = ?", Values{NullValue()},
+		{"SELECT * FROM x WHERE a = ?", Arguments{NullValue()},
 			"SELECT * FROM x WHERE a = NULL", nil},
 
 		// integers
 		{
 			`SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ?
 			AND g = ? AND h = ? AND i = ? AND j = ?`,
-			Values{Ints{1, -2, 3, 4, 5, 6, 7, 8, 9, 10}},
+			Arguments{Ints{1, -2, 3, 4, 5, 6, 7, 8, 9, 10}},
 			`SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6
 			AND g = 7 AND h = 8 AND i = 9 AND j = 10`, nil,
 		},
 		{
 			`SELECT * FROM x WHERE a IN (?)`,
-			Values{Ints{1, -2, 3, 4, 5, 6, 7, 8, 9, 10}},
+			Arguments{Ints{1, -2, 3, 4, 5, 6, 7, 8, 9, 10}},
 			`SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)`, nil,
 		},
 		{
 			`SELECT * FROM x WHERE a IN (?)`,
-			Values{Int64s{1, -2, 3, 4, 5, 6, 7, 8, 9, 10}},
+			Arguments{Int64s{1, -2, 3, 4, 5, 6, 7, 8, 9, 10}},
 			`SELECT * FROM x WHERE a IN (1,-2,3,4,5,6,7,8,9,10)`, nil,
 		},
 
 		// boolean
-		{"SELECT * FROM x WHERE a = ? AND b = ?", Values{Bool(true), Bool(false)},
+		{"SELECT * FROM x WHERE a = ? AND b = ?", Arguments{Bool(true), Bool(false)},
 			"SELECT * FROM x WHERE a = 1 AND b = 0", nil},
-		{"SELECT * FROM x WHERE a = ? AND b = ?", Values{Bools{true, false}},
+		{"SELECT * FROM x WHERE a = ? AND b = ?", Arguments{Bools{true, false}},
 			"SELECT * FROM x WHERE a = 1 AND b = 0", nil},
 
 		// floats
-		{"SELECT * FROM x WHERE a = ? AND b = ?", Values{Float64(0.15625), Float64(3.14159)},
+		{"SELECT * FROM x WHERE a = ? AND b = ?", Arguments{Float64(0.15625), Float64(3.14159)},
 			"SELECT * FROM x WHERE a = 0.15625 AND b = 3.14159", nil},
-		{"SELECT * FROM x WHERE a = ? AND b = ?", Values{Float64s{0.15625, 3.14159}},
+		{"SELECT * FROM x WHERE a = ? AND b = ?", Arguments{Float64s{0.15625, 3.14159}},
 			"SELECT * FROM x WHERE a = 0.15625 AND b = 3.14159", nil},
-		{"SELECT * FROM x WHERE a = ? AND b = ? and C = ?", Values{Float64s{0.15625, 3.14159}},
+		{"SELECT * FROM x WHERE a = ? AND b = ? and C = ?", Arguments{Float64s{0.15625, 3.14159}},
 			"", errors.IsNotValid},
 		{
 			`SELECT * FROM x WHERE a IN (?)`,
-			Values{Float64s{1.1, -2.2, 3.3}},
+			Arguments{Float64s{1.1, -2.2, 3.3}},
 			`SELECT * FROM x WHERE a IN (1.1,-2.2,3.3)`, nil,
 		},
 
@@ -405,44 +405,44 @@ func TestInterpolate(t *testing.T) {
 		{
 			`SELECT * FROM x WHERE a = ?
 			AND b = ?`,
-			Values{String("hello"), String("\"hello's \\ world\" \n\r\x00\x1a")},
+			Arguments{String("hello"), String("\"hello's \\ world\" \n\r\x00\x1a")},
 			`SELECT * FROM x WHERE a = 'hello'
 			AND b = '\"hello\'s \\ world\" \n\r\x00\x1a'`, nil,
 		},
 		{
 			`SELECT * FROM x WHERE a IN (?)`,
-			Values{Strings{"a'a", "bb"}},
+			Arguments{Strings{"a'a", "bb"}},
 			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, nil,
 		},
 		{
 			`SELECT * FROM x WHERE a IN (?,?)`,
-			Values{Strings{"a'a", "bb"}},
+			Arguments{Strings{"a'a", "bb"}},
 			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, nil,
 		},
 
 		// slices
 		{"SELECT * FROM x WHERE a = ? AND b = (?) AND c = (?) AND d = (?)",
-			Values{Int(1), Ints{1, 2, 3}, Ints{5, 6, 7}, Strings{"wat", "ok"}},
+			Arguments{Int(1), Ints{1, 2, 3}, Ints{5, 6, 7}, Strings{"wat", "ok"}},
 			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", nil},
 		//
 		////// TODO valuers
 		////{"SELECT * FROM x WHERE a = ? AND b = ?",
-		////	Values{myString{true, "wat"}, myString{false, "fry"}},
+		////	Arguments{myString{true, "wat"}, myString{false, "fry"}},
 		////	"SELECT * FROM x WHERE a = 'wat' AND b = NULL", nil},
 
 		// errors
-		{"SELECT * FROM x WHERE a = ? AND b = ?", Values{Int64(1)},
+		{"SELECT * FROM x WHERE a = ? AND b = ?", Arguments{Int64(1)},
 			"", errors.IsNotValid},
 
-		{"SELECT * FROM x WHERE", Values{Int(1)},
+		{"SELECT * FROM x WHERE", Arguments{Int(1)},
 			"", errors.IsNotValid},
 
-		{"SELECT * FROM x WHERE a = ?", Values{String(string([]byte{0x34, 0xFF, 0xFE}))},
+		{"SELECT * FROM x WHERE a = ?", Arguments{String(string([]byte{0x34, 0xFF, 0xFE}))},
 			"", errors.IsNotValid},
 
 		// String() without arguments is equal to empty interface in the previous version.
-		{"SELECT 'hello", Values{String("")}, "", errors.IsNotValid},
-		{`SELECT "hello`, Values{String("")}, "", errors.IsNotValid},
+		{"SELECT 'hello", Arguments{String("")}, "", errors.IsNotValid},
+		{`SELECT "hello`, Arguments{String("")}, "", errors.IsNotValid},
 
 		// preprocessing
 		{"SELECT '?'", nil, "SELECT '?'", nil},
@@ -459,7 +459,7 @@ func TestInterpolate(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		str, err := Interpolate(test.sql, test.Values...)
+		str, err := Interpolate(test.sql, test.Arguments...)
 		if test.errBhf != nil {
 			if !test.errBhf(err) {
 				t.Errorf("IDX %d\ngot error: %v\nwant: %s", i, err, test.errBhf(err))

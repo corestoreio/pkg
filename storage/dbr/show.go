@@ -38,7 +38,7 @@ type Show struct {
 
 	// Type bitwise flag containing the type of the SHOW statement.
 	Type           uint
-	LikeCondition  Value
+	LikeCondition  Argument
 	WhereFragments WhereFragments
 	IsInterpolate  bool // See Interpolate()
 	// UseBuildCache if `true` the final build query including place holders
@@ -46,7 +46,7 @@ type Show struct {
 	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
 	cacheSQL      []byte
-	cacheArgs     Values // like a buffer, gets reused
+	cacheArgs     Arguments // like a buffer, gets reused
 }
 
 // NewShow creates a new Truman SHOW.
@@ -121,14 +121,14 @@ func (b *Show) Where(wf ...*WhereFragment) *Show {
 }
 
 // Like sets the comparisons LIKE condition. Either WHERE or LIKE can be used.
-func (b *Show) Like(arg Value) *Show {
+func (b *Show) Like(arg Argument) *Show {
 	b.LikeCondition = arg
 	return b
 }
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Values` will then be nil.
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
 func (b *Show) Interpolate() *Show {
 	b.IsInterpolate = true
 	return b
@@ -139,7 +139,7 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
-// argumentCapacity returns the total possible guessed size of a new Values
+// argumentCapacity returns the total possible guessed size of a new Arguments
 // slice. Use as the cap parameter in a call to `make`.
 func (b *Show) argumentCapacity() int {
 	return len(b.WhereFragments)
@@ -149,7 +149,7 @@ func (b *Show) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Show) readBuildCache() (sql []byte, _ Values, err error) {
+func (b *Show) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -198,10 +198,10 @@ func (b *Show) toSQL(w queryWriter) error {
 
 // ToSQL serialized the Show to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Show) appendArgs(args Values) (_ Values, err error) {
+func (b *Show) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if cap(args) == 0 {
-		args = make(Values, 0, b.argumentCapacity())
+		args = make(Arguments, 0, b.argumentCapacity())
 	}
 
 	if b.LikeCondition != nil {

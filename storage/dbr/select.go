@@ -33,10 +33,10 @@ type Select struct {
 	DB QueryPreparer
 
 	RawFullSQL   string
-	RawArguments Values // Values used by RawFullSQL
+	RawArguments Arguments // Arguments used by RawFullSQL
 
 	// Record if set retrieves the necessary arguments from the interface.
-	Record ValuesAppender
+	Record ArgumentsAppender
 
 	// Columns represents a slice of names and its optional aliases. Wildcard
 	// `SELECT *` statements are not really supported:
@@ -75,7 +75,7 @@ type Select struct {
 	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
 	cacheSQL      []byte
-	cacheArgs     Values // like a buffer, gets reused
+	cacheArgs     Arguments // like a buffer, gets reused
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners SelectListeners
@@ -128,7 +128,7 @@ func (c *Connection) Select(columns ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments
-func (c *Connection) SelectBySQL(sql string, args ...Value) *Select {
+func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
 		Log:          c.Log,
 		RawFullSQL:   sql,
@@ -153,7 +153,7 @@ func (tx *Tx) Select(columns ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySQL(sql string, args ...Value) *Select {
+func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
 		Log:          tx.Logger,
 		RawFullSQL:   sql,
@@ -294,15 +294,15 @@ func (b *Select) AddColumnsExpr(expressions ...string) *Select {
 }
 
 // SetRecord pulls in values to match Columns from the record generator.
-func (b *Select) SetRecord(rec ValuesAppender) *Select {
+func (b *Select) SetRecord(rec ArgumentsAppender) *Select {
 	b.Record = rec
 	return b
 }
 
-// AddArguments adds more arguments to the Value field of the Select type.
+// AddArguments adds more arguments to the Argument field of the Select type.
 // You must call this function directly after you have used e.g.
 // AddColumnsExprAlias with place holders.
-func (b *Select) AddArguments(args ...Value) *Select {
+func (b *Select) AddArguments(args ...Argument) *Select {
 	b.RawArguments = append(b.RawArguments, args...)
 	return b
 }
@@ -410,7 +410,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Values` will then be nil.
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
 func (b *Select) Interpolate() *Select {
 	b.IsInterpolate = true
 	return b
@@ -461,7 +461,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
-// argumentCapacity returns the total possible guessed size of a new Values
+// argumentCapacity returns the total possible guessed size of a new Arguments
 // slice. Use as the cap parameter in a call to `make`.
 func (b *Select) argumentCapacity() int {
 	return len(b.RawArguments) + (len(b.JoinFragments)+len(b.WhereFragments))*2
@@ -471,7 +471,7 @@ func (b *Select) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Select) readBuildCache() (sql []byte, _ Values, err error) {
+func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -569,15 +569,15 @@ func (b *Select) toSQL(w queryWriter) error {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) appendArgs(args Values) (_ Values, err error) {
+func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 
-	// not sure if copying is necessary but leaves at least b.Values in pristine
+	// not sure if copying is necessary but leaves at least b.Arguments in pristine
 	// condition
 	if cap(args) == 0 {
-		args = make(Values, 0, b.argumentCapacity())
+		args = make(Arguments, 0, b.argumentCapacity())
 	}
 	args = append(args, b.RawArguments...)
 

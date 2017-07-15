@@ -22,7 +22,7 @@ import (
 )
 
 // Make sure that type productEntity implements interface.
-var _ dbr.ValuesAppender = (*productEntity)(nil)
+var _ dbr.ArgumentsAppender = (*productEntity)(nil)
 
 // productEntity represents just a demo record.
 type productEntity struct {
@@ -33,7 +33,7 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
+func (pe productEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":
@@ -80,7 +80,7 @@ func ExampleInsert_AddRecords() {
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_entity`
 	//(`attribute_set_id`,`type_id`,`sku`,`has_options`) VALUES (?,?,?,?),(?,?,?,?)
-	//Values: [5 simple SOA9 false 5 virtual <nil> true]
+	//Arguments: [5 simple SOA9 false 5 virtual <nil> true]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_entity`
@@ -89,7 +89,7 @@ func ExampleInsert_AddRecords() {
 	//
 	//Prepared Statement:
 	//INSERT INTO `catalog_product_entity` VALUES (?,?,?,?,?),(?,?,?,?,?)
-	//Values: [1 5 simple SOA9 false 2 5 virtual <nil> true]
+	//Arguments: [1 5 simple SOA9 false 2 5 virtual <nil> true]
 	//
 	//Interpolated Statement:
 	//INSERT INTO `catalog_product_entity` VALUES

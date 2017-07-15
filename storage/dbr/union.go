@@ -39,7 +39,7 @@ type Union struct {
 	// happens, the arguments will be re-evaluated and returned or interpolated.
 	UseBuildCache bool
 	cacheSQL      []byte
-	cacheArgs     Values // like a buffer, gets reused
+	cacheArgs     Arguments // like a buffer, gets reused
 
 	Selects       []*Select
 	OrderBys      aliases
@@ -151,7 +151,7 @@ func (u *Union) OrderByExpr(columns ...string) *Union {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Values` will then be nil.
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
 func (u *Union) Interpolate() *Union {
 	u.IsInterpolate = true
 	return u
@@ -207,11 +207,11 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 // MultiplyArguments repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called
 // after all calls to `StringReplace` have been made.
-func (u *Union) MultiplyArguments(args ...Value) Values {
+func (u *Union) MultiplyArguments(args ...Argument) Arguments {
 	if len(u.Selects) > 1 {
 		return args
 	}
-	ret := make(Values, len(args)*u.stmtCount)
+	ret := make(Arguments, len(args)*u.stmtCount)
 	lArgs := len(args)
 	for i := 0; i < u.stmtCount; i++ {
 		copy(ret[i*lArgs:], args)
@@ -228,7 +228,7 @@ func (u *Union) writeBuildCache(sql []byte) {
 	u.cacheSQL = sql
 }
 
-func (u *Union) readBuildCache() (sql []byte, _ Values, err error) {
+func (u *Union) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if u.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -285,15 +285,15 @@ func (u *Union) toSQL(w queryWriter) error {
 	return nil
 }
 
-func (u *Union) makeArguments() Values {
+func (u *Union) makeArguments() Arguments {
 	var argCap int
 	for _, s := range u.Selects {
 		argCap += s.argumentCapacity()
 	}
-	return make(Values, 0, len(u.Selects)*argCap)
+	return make(Arguments, 0, len(u.Selects)*argCap)
 }
 
-func (u *Union) appendArgs(args Values) (_ Values, err error) {
+func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 	if cap(args) == 0 {
 		args = u.makeArguments()
 	}

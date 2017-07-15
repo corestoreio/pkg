@@ -61,10 +61,10 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 	return sess
 }
 
-var _ ValuesAppender = (*dbrPerson)(nil)
+var _ ArgumentsAppender = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPersons)(nil)
-var _ ValuesAppender = (*nullTypedRecord)(nil)
+var _ ArgumentsAppender = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
@@ -106,7 +106,7 @@ func (p *dbrPerson) RowScan(r *sql.Rows) error {
 	return assignDbrPerson(p, &p.convert)
 }
 
-func (p *dbrPerson) AppendValues(stmtType int, args Values, columns []string) (_ Values, err error) {
+func (p *dbrPerson) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
 	for _, c := range columns {
 		switch c {
 		case "id", "dp.id":
@@ -143,7 +143,7 @@ func (ps *dbrPersons) RowScan(r *sql.Rows) error {
 	return nil
 }
 
-var _ ValuesAppender = (*nullTypedRecord)(nil)
+var _ ArgumentsAppender = (*nullTypedRecord)(nil)
 
 type nullTypedRecord struct {
 	ID         int64
@@ -158,7 +158,7 @@ func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
 	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) AppendValues(stmtType int, args Values, columns []string) (Values, error) {
+func (p *nullTypedRecord) AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
@@ -290,7 +290,7 @@ func compareToSQL(
 
 	if wantSQLPlaceholders != "" {
 		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-		assert.Equal(t, wantArgs, args, "Placeholder Values do not match")
+		assert.Equal(t, wantArgs, args, "Placeholder Arguments do not match")
 	}
 
 	if wantSQLInterpolated == "" {
@@ -327,7 +327,7 @@ func compareToSQL(
 	}
 
 	sqlStr, args, err = qb.ToSQL() // Call with enabled interpolation
-	require.Nil(t, args, "Values should be nil when the SQL string gets interpolated")
+	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
 		require.NoError(t, err)
 	} else {

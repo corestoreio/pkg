@@ -30,7 +30,7 @@ var _ dbr.Querier = (*benchMockQuerier)(nil)
 
 type benchMockQuerier struct{}
 
-func (benchMockQuerier) QueryContext(ctx context.Context, query string, vals ...interface{}) (*sql.Rows, error) {
+func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return new(sql.Rows), nil
 }
 func (benchMockQuerier) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
@@ -71,7 +71,7 @@ var benchmarkSelectStr string
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	exprArgs := dbr.Values{dbr.Int64(1), dbr.String("wat")}
+	exprArgs := dbr.Arguments{dbr.Int64(1), dbr.String("wat")}
 	aVal := []int64{1, 2, 3}
 
 	b.ResetTimer()
@@ -98,7 +98,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
 
-	args := dbr.Values{dbr.Int64(1), dbr.String("wat")}
+	args := dbr.Arguments{dbr.Int64(1), dbr.String("wat")}
 
 	sqlObj := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
@@ -388,7 +388,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 }
 
-var _ dbr.ValuesAppender = (*someRecord)(nil)
+var _ dbr.ArgumentsAppender = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -396,20 +396,20 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendValues(stmtType int, vals dbr.Values, condition []string) (dbr.Values, error) {
+func (sr someRecord) AppendArguments(stmtType int, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
 	for _, c := range condition {
 		switch c {
 		case "something_id":
-			vals = append(vals, dbr.Int(sr.SomethingID))
+			args = append(args, dbr.Int(sr.SomethingID))
 		case "user_id":
-			vals = append(vals, dbr.Int64(sr.UserID))
+			args = append(args, dbr.Int64(sr.UserID))
 		case "other":
-			vals = append(vals, dbr.Bool(sr.Other))
+			args = append(args, dbr.Bool(sr.Other))
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	return vals, nil
+	return args, nil
 }
 
 func BenchmarkInsertRecordsSQL(b *testing.B) {
@@ -636,7 +636,7 @@ func BenchmarkUpdateValueMapSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewUpdate("alpha").
 			Set("something_id", dbr.Int64(1)).
-			SetMap(map[string]dbr.Value{
+			SetMap(map[string]dbr.Argument{
 				"b": dbr.Int64(2),
 				"c": dbr.Int64(3),
 			}).

@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ ValuesAppender = (*someRecord)(nil)
+var _ ArgumentsAppender = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -33,7 +33,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendValues(stmtType int, args Values, columns []string) (Values, error) {
+func (sr someRecord) AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "something_id":

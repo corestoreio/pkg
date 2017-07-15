@@ -53,7 +53,7 @@ const (
 	NotRegexp      Op = 'R'          // NOT REGEXP ?
 	Xor            Op = '⊻'          // XOR ?
 	SpaceShip      Op = '\U0001f680' // a <=> b is equivalent to a = b OR (a IS NULL AND b IS NULL) NULL-safe equal to operator
-	Coalesce       Op = 'c'          // Returns the first non-NULL value in the list, or NULL if there are no non-NULL values.
+	Coalesce       Op = 'c'          // Returns the first non-NULL value in the list, or NULL if there are no non-NULL arguments.
 )
 
 // Op the Operator, defines comparison and operator functions used in any
@@ -79,8 +79,8 @@ type WhereFragment struct {
 	Condition string
 	// Operator contains the comparison logic like LIKE, IN, GREATER, etc ...
 	Operator  Op
-	Argument  Value // Either this or the slice is set.
-	Arguments Values
+	Argument  Argument // Either this or the slice is set.
+	Arguments Arguments
 
 	Sub struct {
 		// Select adds a sub-select to the where statement. Column must be
@@ -134,8 +134,8 @@ func (wf *WhereFragment) Or() *WhereFragment {
 // conditions aka column names to the slice c.
 func (wfs WhereFragments) intersectConditions(c []string) []string {
 	// this calculates the intersection of the columns in WhereFragments which
-	// already have an value provided/assigned and those where the values
-	// must be assembled from the interface ValuesAppender. If the values
+	// already have an value provided/assigned and those where the arguments
+	// must be assembled from the interface ArgumentsAppender. If the arguments
 	// should be assembled from the interface IsPlaceHolder is true.
 	for _, w := range wfs {
 		if w.IsPlaceHolder {
@@ -332,13 +332,13 @@ func (wf *WhereFragment) Strings(s ...string) *WhereFragment {
 	return wf
 }
 
-// Bool uses bool values for comparison.
+// Bool uses bool arguments for comparison.
 func (wf *WhereFragment) Bool(b bool) *WhereFragment {
 	wf.Argument = Bool(b)
 	return wf
 }
 
-// Bools uses bool values for comparison.
+// Bools uses bool arguments for comparison.
 func (wf *WhereFragment) Bools(b ...bool) *WhereFragment {
 	wf.Argument = Bools(b)
 	return wf
@@ -357,76 +357,76 @@ func (wf *WhereFragment) BytesSlice(p ...[]byte) *WhereFragment {
 	return wf
 }
 
-// Time uses time.Time values for comparison.
+// Time uses time.Time arguments for comparison.
 func (wf *WhereFragment) Time(t time.Time) *WhereFragment {
 	wf.Argument = MakeTime(t)
 	return wf
 }
 
-// Times uses time.Time values for comparison.
+// Times uses time.Time arguments for comparison.
 func (wf *WhereFragment) Times(t ...time.Time) *WhereFragment {
 	wf.Argument = Times(t)
 	return wf
 }
 
-// NullString uses nullable string values for comparison.
-func (wf *WhereFragment) NullString(values ...NullString) *WhereFragment {
-	if len(values) == 1 {
-		wf.Argument = values[0]
+// NullString uses nullable string arguments for comparison.
+func (wf *WhereFragment) NullString(nv ...NullString) *WhereFragment {
+	if len(nv) == 1 {
+		wf.Argument = nv[0]
 	} else {
-		wf.Argument = ArgNullStrings(values)
+		wf.Argument = ArgNullStrings(nv)
 	}
 	return wf
 }
 
-// NullFloat64 uses nullable float64 values for comparison.
-func (wf *WhereFragment) NullFloat64(values ...NullFloat64) *WhereFragment {
-	if len(values) == 1 {
-		wf.Argument = values[0]
+// NullFloat64 uses nullable float64 arguments for comparison.
+func (wf *WhereFragment) NullFloat64(nv ...NullFloat64) *WhereFragment {
+	if len(nv) == 1 {
+		wf.Argument = nv[0]
 	} else {
-		wf.Argument = ArgNullFloat64s(values)
+		wf.Argument = ArgNullFloat64s(nv)
 	}
 	return wf
 }
 
-// NullInt64 uses nullable int64 values for comparison.
-func (wf *WhereFragment) NullInt64(values ...NullInt64) *WhereFragment {
-	if len(values) == 1 {
-		wf.Argument = values[0]
+// NullInt64 uses nullable int64 arguments for comparison.
+func (wf *WhereFragment) NullInt64(nv ...NullInt64) *WhereFragment {
+	if len(nv) == 1 {
+		wf.Argument = nv[0]
 	} else {
-		wf.Argument = ArgNullInt64s(values)
+		wf.Argument = ArgNullInt64s(nv)
 	}
 	return wf
 }
 
-// NullBool uses nullable bool values for comparison.
-func (wf *WhereFragment) NullBool(value NullBool) *WhereFragment {
-	wf.Argument = value
+// NullBool uses nullable bool arguments for comparison.
+func (wf *WhereFragment) NullBool(nv NullBool) *WhereFragment {
+	wf.Argument = nv
 	return wf
 }
 
-// NullTime uses nullable time values for comparison.
-func (wf *WhereFragment) NullTime(values ...NullTime) *WhereFragment {
-	if len(values) == 1 {
-		wf.Argument = values[0]
+// NullTime uses nullable time arguments for comparison.
+func (wf *WhereFragment) NullTime(nv ...NullTime) *WhereFragment {
+	if len(nv) == 1 {
+		wf.Argument = nv[0]
 	} else {
-		wf.Argument = ArgNullTimes(values)
+		wf.Argument = ArgNullTimes(nv)
 	}
 	return wf
 }
 
-// Value uses driver.Valuers for comparison.
-func (wf *WhereFragment) Value(values ...driver.Valuer) *WhereFragment {
-	wf.Argument = DriverValues(values)
+// Argument uses driver.Valuers for comparison.
+func (wf *WhereFragment) Value(dv ...driver.Valuer) *WhereFragment {
+	wf.Argument = DriverValues(dv)
 	return wf
 }
 
 // Expression adds an unquoted SQL expression to a WHERE or HAVING statement.
-func Expression(expression string, val ...Value) *WhereFragment {
+func Expression(expression string, args ...Argument) *WhereFragment {
 	return &WhereFragment{
 		IsExpression: true,
 		Condition:    expression,
-		Arguments:    val,
+		Arguments:    args,
 	}
 }
 
@@ -550,7 +550,7 @@ func (wfs WhereFragments) write(w queryWriter, conditionType byte) error {
 			writeOperator(w, 1, c)
 
 		default:
-			panic(errors.NewNotSupportedf("[dbr] Multiple values for a column are not supported\nWhereFragment: %#v\n", f))
+			panic(errors.NewNotSupportedf("[dbr] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", f))
 		}
 
 		w.WriteByte(')')
@@ -560,18 +560,18 @@ func (wfs WhereFragments) write(w queryWriter, conditionType byte) error {
 }
 
 // conditionType enum of j=join, w=where, h=having
-func (wfs WhereFragments) appendArgs(vals Values, conditionType byte) (_ Values, pendingValPos []int, err error) {
+func (wfs WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Arguments, pendingArgPos []int, err error) {
 	if len(wfs) == 0 {
-		return vals, pendingValPos, nil
+		return args, pendingArgPos, nil
 	}
 
-	pendingArgPosCount := len(vals)
+	pendingArgPosCount := len(args)
 	i := 0
 	for _, f := range wfs {
 
 		switch {
 		case conditionType == 'j' && len(f.Using) > 0:
-			return vals, pendingValPos, nil // done, only one USING allowed
+			return args, pendingArgPos, nil // done, only one USING allowed
 
 		case f.Condition == ")":
 			continue
@@ -592,51 +592,51 @@ func (wfs WhereFragments) appendArgs(vals Values, conditionType byte) (_ Values,
 			// https://en.wikipedia.org/wiki/Permutation Which would
 			// result in a Go Code like
 			// https://play.golang.org/p/rZvW0qW1N7 (C) Volker Dobler
-			// Because addArg=false does not add below the values and we must
+			// Because addArg=false does not add below the arguments and we must
 			// later swap the positions.
-			pendingValPos = append(pendingValPos, pendingArgPosCount)
+			pendingArgPos = append(pendingArgPos, pendingArgPosCount)
 
 		case f.Argument != nil:
 			// a column only supports one value.
 			addArg = writeOperator(backHole{}, f.Argument.len(), f.Operator)
 		case f.Sub.Select != nil:
-			vals, err = f.Sub.Select.appendArgs(vals)
+			args, err = f.Sub.Select.appendArgs(args)
 			if err != nil {
-				return nil, pendingValPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
+				return nil, pendingArgPos, errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
 			}
 		}
 
 		if addArg {
 			if f.Argument != nil {
-				vals = append(vals, f.Argument)
+				args = append(args, f.Argument)
 			}
-			vals = append(vals, f.Arguments...)
+			args = append(args, f.Arguments...)
 		}
 		pendingArgPosCount++
 		i++
 	}
-	return vals, pendingValPos, nil
+	return args, pendingArgPos, nil
 }
 
-func appendAssembledArgs(pendingValPos []int, rec ValuesAppender, vals Values, stmtType int, columns []string) (_ Values, err error) {
+func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args Arguments, stmtType int, columns []string) (_ Arguments, err error) {
 	if rec == nil {
-		return vals, nil
+		return args, nil
 	}
 
-	lenBefore := len(vals)
-	vals, err = rec.AppendValues(stmtType, vals, columns)
+	lenBefore := len(args)
+	args, err = rec.AppendArguments(stmtType, args, columns)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	lenAfter := len(vals)
+	lenAfter := len(args)
 	if lenAfter > lenBefore {
 		j := 0
-		newLen := lenAfter - len(pendingValPos)
+		newLen := lenAfter - len(pendingArgPos)
 		for i := newLen; i < lenAfter; i++ {
-			vals[pendingValPos[j]], vals[i] = vals[i], vals[pendingValPos[j]]
+			args[pendingArgPos[j]], args[i] = args[i], args[pendingArgPos[j]]
 			j++
 		}
-		vals = vals[:newLen] // remove the appended placeHolderOp types after swapping
+		args = args[:newLen] // remove the appended placeHolderOp types after swapping
 	}
-	return vals, nil
+	return args, nil
 }

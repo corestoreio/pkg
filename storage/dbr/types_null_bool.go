@@ -22,7 +22,7 @@ import (
 
 // NullBool is a nullable bool. It does not consider false values to be null. It
 // will decode to null, not false, if null. NullBool implements interface
-// Value.
+// Argument.
 type NullBool struct {
 	sql.NullBool
 }
@@ -45,7 +45,7 @@ func (a NullBool) writeTo(w queryWriter, _ int) error {
 
 func (a NullBool) len() int { return 1 }
 
-// MakeNullBool creates a new NullBool. Implements interface Value.
+// MakeNullBool creates a new NullBool. Implements interface Argument.
 func MakeNullBool(b bool, valid ...bool) NullBool {
 	v := true
 	if len(valid) == 1 {

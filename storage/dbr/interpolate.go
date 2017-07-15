@@ -34,16 +34,16 @@ import (
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func Repeat(sql string, vals ...Value) (string, []interface{}, error) {
+func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	const qMarkStr = `?`
 	const qMarkRne = '?'
 
 	markCount := strings.Count(sql, qMarkStr)
-	if want := len(vals); markCount != want || want == 0 {
+	if want := len(args); markCount != want || want == 0 {
 		return "", nil, errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", qMarkStr, markCount, want)
 	}
 
-	retArgs := make([]interface{}, 0, len(vals)*2)
+	retArgs := make([]interface{}, 0, len(args)*2)
 
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
@@ -57,9 +57,9 @@ func Repeat(sql string, vals ...Value) (string, []interface{}, error) {
 		}
 		buf.WriteString(sql[:m])
 
-		if i < len(vals) {
+		if i < len(args) {
 			prevLen := len(retArgs)
-			retArgs = vals[i].toIFace(retArgs)
+			retArgs = args[i].toIFace(retArgs)
 			reps := len(retArgs) - prevLen
 			for r := 0; r < reps; r++ {
 				buf.WriteByte(qMarkRne)
@@ -76,7 +76,7 @@ func Repeat(sql string, vals ...Value) (string, []interface{}, error) {
 }
 
 // repeat multiplies the place holder with the arguments internal len.
-func repeat(buf queryWriter, sql []byte, vals ...Value) error {
+func repeat(buf queryWriter, sql []byte, args ...Argument) error {
 	const qMarkRne = '?'
 
 	i := 0
@@ -87,8 +87,8 @@ func repeat(buf queryWriter, sql []byte, vals ...Value) error {
 
 		switch r {
 		case '?':
-			if i < len(vals) {
-				reps := vals[i].len()
+			if i < len(args) {
+				reps := args[i].len()
 				for r := 0; r < reps; r++ {
 					buf.WriteByte(qMarkRne)
 					if r < reps-1 {
@@ -108,28 +108,28 @@ func repeat(buf queryWriter, sql []byte, vals ...Value) error {
 // to replace them with. It returns a blank string or an error if the number of
 // placeholders does not match the number of arguments. Implements the Repeat
 // function.
-func Interpolate(sql string, vals ...Value) (string, error) {
+func Interpolate(sql string, args ...Argument) (string, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	if err := interpolate(buf, []byte(sql), vals...); err != nil {
+	if err := interpolate(buf, []byte(sql), args...); err != nil {
 		return "", errors.WithStack(err)
 	}
 	return buf.String(), nil
 }
 
-// interpolate merges `vals` into `sql` and writes the result into `buf`. `sql`
+// interpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
-func interpolate(buf queryWriter, sql []byte, vals ...Value) error {
+func interpolate(buf queryWriter, sql []byte, args ...Argument) error {
 	var qMarkStr = []byte("?")
 
 	markCount := bytes.Count(sql, qMarkStr)
-	argCount := Values(vals).len()
+	argCount := Arguments(args).len()
 
 	// Repeats the place holders, e.g. IN (?) will become IN (?,?,?)
 	if markCount < argCount {
 		rBuf := bufferpool.Get()
 		defer bufferpool.Put(rBuf)
-		if err := repeat(rBuf, sql, vals...); err != nil {
+		if err := repeat(rBuf, sql, args...); err != nil {
 			return errors.WithStack(err)
 		}
 		sql = rBuf.Bytes()
@@ -139,8 +139,8 @@ func interpolate(buf queryWriter, sql []byte, vals ...Value) error {
 	qCount := -1
 	argIndex := 0
 	argLength := 0
-	if len(vals) > 0 {
-		argLength = vals[0].len()
+	if len(args) > 0 {
+		argLength = args[0].len()
 	}
 	pos := 0
 	for pos < len(sql) {
@@ -154,13 +154,13 @@ func interpolate(buf queryWriter, sql []byte, vals ...Value) error {
 			} else {
 				qCount = 0 // next argument set starts
 				argIndex++
-				if argIndex >= len(vals) {
-					return errors.NewNotValidf("[dbr] Values are imbalanced. Value Index %d but argument count was %d", argIndex, len(vals)-1)
+				if argIndex >= len(args) {
+					return errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d but argument count was %d", argIndex, len(args)-1)
 				}
-				argLength = vals[argIndex].len()
+				argLength = args[argIndex].len()
 			}
 
-			if err := vals[argIndex].writeTo(buf, qCount); err != nil {
+			if err := args[argIndex].writeTo(buf, qCount); err != nil {
 				return errors.WithStack(err)
 			}
 
@@ -187,8 +187,8 @@ func interpolate(buf queryWriter, sql []byte, vals ...Value) error {
 		}
 	}
 
-	if al := Values(vals).len(); qCountTotal != al {
-		return errors.NewNotValidf("[dbr] Values are imbalanced. Placeholders: %d Current argument count: %d or %d", qCountTotal, al, len(vals))
+	if al := Arguments(args).len(); qCountTotal != al {
+		return errors.NewNotValidf("[dbr] Arguments are imbalanced. Placeholders: %d Current argument count: %d or %d", qCountTotal, al, len(args))
 	}
 	return nil
 }

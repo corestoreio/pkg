@@ -61,7 +61,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 
-	records := []dbr.ValuesAppender{
+	records := []dbr.ArgumentsAppender{
 		&dbrPerson{
 			ID:    1,
 			Name:  "Alf",
@@ -192,7 +192,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 }
 
 // Make sure that type salesInvoice implements interface.
-var _ dbr.ValuesAppender = (*salesInvoice)(nil)
+var _ dbr.ArgumentsAppender = (*salesInvoice)(nil)
 
 // salesInvoice represents just a demo record.
 type salesInvoice struct {
@@ -203,7 +203,7 @@ type salesInvoice struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesInvoice) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
+func (so salesInvoice) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
@@ -296,7 +296,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			SetRecord(ce).
-			Where(dbr.Column("entity_id").Greater().PlaceHolder()) // No Values in Int64 because we need a place holder.
+			Where(dbr.Column("entity_id").Greater().PlaceHolder()) // No Arguments in Int64 because we need a place holder.
 
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",

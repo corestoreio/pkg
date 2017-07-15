@@ -24,7 +24,7 @@ package dbr
 // do we need this type? AFAIK nope
 
 //// NullBytes is a nullable byte slice. JSON marshals to zero if null. Considered
-//// null to SQL if zero. NullBytes implements interface Value.
+//// null to SQL if zero. NullBytes implements interface Argument.
 //type NullBytes struct {
 //	Bytes []byte
 //	Valid bool
@@ -48,7 +48,7 @@ package dbr
 //
 //func (a NullBytes) len() int { return 1 }
 //
-//// MakeNullBytes creates a new NullBytes. Implements interface Value.
+//// MakeNullBytes creates a new NullBytes. Implements interface Argument.
 //func MakeNullBytes(b []byte, valid ...bool) NullBytes {
 //	v := true
 //	if len(valid) == 1 {
@@ -157,8 +157,8 @@ package dbr
 //	return nil
 //}
 //
-//// Value implements the driver Valuer interface.
-//func (a NullBytes) Value() (driver.Value, error) {
+//// Argument implements the driver Valuer interface.
+//func (a NullBytes) Argument() (driver.Argument, error) {
 //	if !a.Valid {
 //		return nil, nil
 //	}

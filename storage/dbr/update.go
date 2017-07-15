@@ -32,14 +32,14 @@ type Update struct {
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
 	RawFullSQL   string
-	RawArguments Values // Values used by RawFullSQL
+	RawArguments Arguments // Arguments used by RawFullSQL
 	cacheSQL     []byte
-	cacheArgs    Values // like a buffer, gets reused
+	cacheArgs    Arguments // like a buffer, gets reused
 
 	Table alias
 	// Record   the new record which gets written to the database or assembles
 	// the JOIN/WHERE conditions.
-	Record ValuesAppender
+	Record ArgumentsAppender
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
 	SetClauses     UpdatedColumns
@@ -84,7 +84,7 @@ func (c *Connection) Update(table string) *Update {
 }
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments
-func (c *Connection) UpdateBySQL(sql string, args ...Value) *Update {
+func (c *Connection) UpdateBySQL(sql string, args ...Argument) *Update {
 	return &Update{
 		Log:          c.Log,
 		RawFullSQL:   sql,
@@ -104,7 +104,7 @@ func (tx *Tx) Update(table string) *Update {
 
 // UpdateBySQL creates a new Update for the given SQL string and arguments bound
 // to a transaction
-func (tx *Tx) UpdateBySQL(sql string, args ...Value) *Update {
+func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
 	return &Update{
 		Log:          tx.Logger,
 		RawFullSQL:   sql,
@@ -126,14 +126,14 @@ func (b *Update) WithDB(db ExecPreparer) *Update {
 }
 
 // Set appends a column/value pair for the statement.
-func (b *Update) Set(column string, arg Value) *Update {
+func (b *Update) Set(column string, arg Argument) *Update {
 	b.SetClauses.Columns = append(b.SetClauses.Columns, column)
 	b.SetClauses.Arguments = append(b.SetClauses.Arguments, arg)
 	return b
 }
 
 // AddColumns adds columns which values gets later derived from an
-// ValuesAppender. Those columns will get passed to the ValuesAppender
+// ArgumentsAppender. Those columns will get passed to the ArgumentsAppender
 // implementation. Mostly used with the type UpdateMulti.
 func (b *Update) AddColumns(columnNames ...string) *Update {
 	b.SetClauses.Columns = append(b.SetClauses.Columns, columnNames...)
@@ -142,16 +142,16 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 
 // SetRecord sets a new argument generator type. See the example for more
 // details.
-func (b *Update) SetRecord(rec ValuesAppender) *Update {
+func (b *Update) SetRecord(rec ArgumentsAppender) *Update {
 	b.Record = rec
 	return b
 }
 
 // SetMap appends the elements of the map at column/value pairs for the
 // statement. Calls internally the `Set` function.
-func (b *Update) SetMap(clauses map[string]Value) *Update {
-	for col, val := range clauses {
-		b.Set(col, val)
+func (b *Update) SetMap(clauses map[string]Argument) *Update {
+	for col, arg := range clauses {
+		b.Set(col, arg)
 	}
 	return b
 }
@@ -203,7 +203,7 @@ func (b *Update) Offset(offset uint64) *Update {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Values` will then be nil.
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
 func (b *Update) Interpolate() *Update {
 	b.IsInterpolate = true
 	return b
@@ -218,7 +218,7 @@ func (b *Update) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Update) readBuildCache() (sql []byte, _ Values, err error) {
+func (b *Update) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -286,18 +286,18 @@ func (b *Update) toSQL(buf queryWriter) error {
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) appendArgs(args Values) (Values, error) {
+func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 
 	if cap(args) == 0 {
-		args = make(Values, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
+		args = make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
 	}
 	if b.Record != nil {
 		var err error
-		args, err = b.Record.AppendValues(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
+		args, err = b.Record.AppendArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -306,7 +306,7 @@ func (b *Update) appendArgs(args Values) (Values, error) {
 	// Build SET clause SQL with placeholders and add values to args
 	for _, arg := range b.SetClauses.Arguments {
 		if e, ok := arg.(*expr); ok {
-			args = append(args, e.Values...)
+			args = append(args, e.Arguments...)
 		} else {
 			args = append(args, arg)
 		}
@@ -363,7 +363,7 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 // `SetClauses` and in type `Insert` with field OnDuplicateKey.
 type UpdatedColumns struct {
 	Columns   []string
-	Arguments Values
+	Arguments Arguments
 }
 
 // writeOnDuplicateKey writes the columns to `w` and appends the arguments to
@@ -404,7 +404,7 @@ func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter) error {
 	return nil
 }
 
-func (uc UpdatedColumns) appendArgs(args Values) (Values, error) {
+func (uc UpdatedColumns) appendArgs(args Arguments) (Arguments, error) {
 	if len(uc.Columns) == 0 {
 		return args, nil
 	}
@@ -424,7 +424,7 @@ func (uc UpdatedColumns) appendArgs(args Values) (Values, error) {
 // SQL server otherwise a prepared statement will be created. Create a single
 // Update object without the SET columns and without arguments. Add a WHERE
 // clause with common conditions and conditions with place holders where the
-// value/s get derived from the ValuesAppender. The empty WHERE arguments
+// value/s get derived from the ArgumentsAppender. The empty WHERE arguments
 // trigger the placeholder and the correct operator. The values itself will be
 // provided either through the Records slice or via RecordChan.
 type UpdateMulti struct {
@@ -513,7 +513,7 @@ func txUpdateMultiRollback(tx Txer, previousErr error, msg string, args ...inter
 
 // Exec runs multiple UPDATE queries for different records in serial order. The
 // returned result slice indexes are same index as for the Records slice.
-func (b *UpdateMulti) Exec(ctx context.Context, records ...ValuesAppender) ([]sql.Result, error) {
+func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentsAppender) ([]sql.Result, error) {
 	if err := b.validate(); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -560,7 +560,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ValuesAppender) ([]sq
 		b.Update.SetClauses.Columns = b.ColumnAliases
 	}
 
-	args := make(Values, 0, (len(records)+len(b.Update.WhereFragments))*3) // 3 just a guess
+	args := make(Arguments, 0, (len(records)+len(b.Update.WhereFragments))*3) // 3 just a guess
 	results := make([]sql.Result, len(records))
 
 	var ipBuf *bytes.Buffer // ip = interpolate buffer
@@ -604,7 +604,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ValuesAppender) ([]sq
 // ExecChan executes incoming Records and writes the output into the provided
 // channels. It closes the channels once the queries have been sent.
 // All queries will run parallel, except when using a transaction.
-//func (b *UpdateMulti) ExecChan(ctx context.Context, records <-chan ValuesAppender, results chan<- sql.Result, errs chan<- error) {
+//func (b *UpdateMulti) ExecChan(ctx context.Context, records <-chan ArgumentsAppender, results chan<- sql.Result, errs chan<- error) {
 //	defer close(errs)
 //	defer close(errs)
 //	if err := b.validate(); err != nil {

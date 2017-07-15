@@ -22,7 +22,7 @@ import (
 )
 
 // Make sure that type categoryEntity implements interface
-var _ dbr.ValuesAppender = (*categoryEntity)(nil)
+var _ dbr.ArgumentsAppender = (*categoryEntity)(nil)
 
 // categoryEntity represents just a demo record.
 type categoryEntity struct {
@@ -32,7 +32,7 @@ type categoryEntity struct {
 	Path           dbr.NullString
 }
 
-func (pe *categoryEntity) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
+func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
@@ -69,14 +69,14 @@ func ExampleUpdate_SetRecord() {
 	u = dbr.NewUpdate("catalog_category_entity").
 		AddColumns("attribute_set_id", "parent_id", "path").
 		SetRecord(ce).
-		Where(dbr.Column("entity_id").PlaceHolder()) // No Values in Int64s because we need a place holder.
+		Where(dbr.Column("entity_id").PlaceHolder()) // No Arguments in Int64s because we need a place holder.
 	writeToSQLAndInterpolate(u)
 
 	// Output:
 	//Prepared Statement:
 	//UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?,
 	//`path`=?
-	//Values: [6 p123 4/5/6/7]
+	//Arguments: [6 p123 4/5/6/7]
 	//
 	//Interpolated Statement:
 	//UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p123',
@@ -85,7 +85,7 @@ func ExampleUpdate_SetRecord() {
 	//Prepared Statement:
 	//UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?,
 	//`path`=? WHERE (`entity_id` = ?)
-	//Values: [6 p456 <nil> 678]
+	//Arguments: [6 p456 <nil> 678]
 	//
 	//Interpolated Statement:
 	//UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456',

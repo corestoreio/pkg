@@ -225,7 +225,7 @@ func TestSelect_OrderByDeactivated(t *testing.T) {
 
 func TestSelect_ConditionColumn(t *testing.T) {
 	t.Parallel()
-	// TODO rewrite test to use every type which implements interface Value and every operator
+	// TODO rewrite test to use every type which implements interface Argument and every operator
 
 	runner := func(wf *WhereFragment, wantSQL string, wantVal []interface{}) func(*testing.T) {
 		return func(t *testing.T) {

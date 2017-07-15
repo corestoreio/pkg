@@ -24,7 +24,7 @@ import (
 
 // NullString is a nullable string. It supports SQL and JSON serialization.
 // It will marshal to null if null. Blank string input will be considered null.
-// NullString implements interface Value.
+// NullString implements interface Argument.
 type NullString struct {
 	sql.NullString
 }
@@ -39,7 +39,7 @@ func (a NullString) toIFace(args []interface{}) []interface{} {
 func (a NullString) writeTo(w queryWriter, _ int) error {
 	if a.NullString.Valid {
 		if !utf8.ValidString(a.NullString.String) {
-			return errors.NewNotValidf("[dbr] Value.WriteTo: StringNull is not UTF-8: %q", a.NullString.String)
+			return errors.NewNotValidf("[dbr] Argument.WriteTo: StringNull is not UTF-8: %q", a.NullString.String)
 		}
 		dialect.EscapeString(w, a.NullString.String)
 	} else {
@@ -52,7 +52,7 @@ func (a NullString) len() int { return 1 }
 
 // MakeNullString creates a new NullString. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullString
-// implements interface Value.
+// implements interface Argument.
 func MakeNullString(s string, valid ...bool) NullString {
 	v := true
 	if len(valid) == 1 {
@@ -177,7 +177,7 @@ func (a ArgNullStrings) toIFace(args []interface{}) []interface{} {
 func (a ArgNullStrings) writeTo(w queryWriter, pos int) error {
 	if s := a[pos]; s.Valid {
 		if !utf8.ValidString(s.String) {
-			return errors.NewNotValidf("[dbr] Value.WriteTo: String is not UTF-8: %q", s.String)
+			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
 		}
 		dialect.EscapeString(w, s.String)
 		return nil

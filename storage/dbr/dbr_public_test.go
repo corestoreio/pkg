@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ dbr.ValuesAppender = (*dbrPerson)(nil)
+var _ dbr.ArgumentsAppender = (*dbrPerson)(nil)
 
 type dbrPerson struct {
 	ID    int64 `db:"id"`
@@ -33,7 +33,7 @@ type dbrPerson struct {
 	Key   dbr.NullString
 }
 
-func (p *dbrPerson) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
+func (p *dbrPerson) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
@@ -83,7 +83,7 @@ func compareToSQL(
 
 	if wantSQLPlaceholders != "" {
 		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-		assert.Equal(t, wantArgs, args, "Placeholder Values do not match")
+		assert.Equal(t, wantArgs, args, "Placeholder Arguments do not match")
 	}
 
 	if wantSQLInterpolated == "" {
@@ -117,7 +117,7 @@ func compareToSQL(
 	}
 
 	sqlStr, args, err = qb.ToSQL()
-	require.Nil(t, args, "Values should be nil when the SQL string gets interpolated")
+	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
 		require.NoError(t, err)
 	} else {

@@ -39,10 +39,10 @@ type buildQueryMock struct{ error }
 
 func (m buildQueryMock) toSQL(queryWriter) error { return m.error }
 
-func (m buildQueryMock) appendArgs(Values) (Values, error) { return nil, m.error }
-func (m buildQueryMock) hasBuildCache() bool               { return false }
-func (m buildQueryMock) writeBuildCache(sql []byte)        {}
-func (m buildQueryMock) readBuildCache() (sql []byte, args Values, err error) {
+func (m buildQueryMock) appendArgs(Arguments) (Arguments, error) { return nil, m.error }
+func (m buildQueryMock) hasBuildCache() bool                     { return false }
+func (m buildQueryMock) writeBuildCache(sql []byte)              {}
+func (m buildQueryMock) readBuildCache() (sql []byte, args Arguments, err error) {
 	return nil, nil, m.error
 }
 

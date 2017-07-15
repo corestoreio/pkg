@@ -31,7 +31,7 @@ const (
 )
 
 // SQL statement types and parts used as bit flag e.g. hint in
-// ValuesAppender.AppendValues.
+// ArgumentsAppender.AppendArguments.
 const (
 	SQLStmtInsert int = 1 << iota
 	SQLStmtSelect
@@ -45,36 +45,37 @@ const (
 	SQLPartValues
 )
 
-// ValuesAppender assembles values for CRUD statements. The `stmtType` variable
-// contains a flag from the constants SQLStmt* and SQLPart* to allow the
-// knowledge in which case the function AppendValues gets called. Any new values
-// must be append to variable `values` and then returned. The readonly variable
-// `columns` contains the name of the requested columns. E.g. if the first
-// requested column names `id` then the first appended value must be an integer.
-// Variable `columns` can additionally contain the names and/or expressions used
-// in the WHERE, JOIN or HAVING clauses, if applicable for the SQL statement
-// type. In case where stmtType has been set to SQLStmtInsert|SQLPartValues, the
-// `columns` slice can be empty which means that all values are requested.
-type ValuesAppender interface {
-	AppendValues(stmtType int, values Values, columns []string) (Values, error)
+// ArgumentsAppender assembles arguments for CRUD statements. The `stmtType`
+// variable contains a flag from the constants SQLStmt* and SQLPart* to allow
+// the knowledge in which case the function AppendArguments gets called. Any new
+// arguments must be append to variable `args` and then returned. The readonly
+// variable `columns` contains the name of the requested columns. E.g. if the
+// first requested column names `id` then the first appended value must be an
+// integer. Variable `columns` can additionally contain the names and/or
+// expressions used in the WHERE, JOIN or HAVING clauses, if applicable for the
+// SQL statement type. In case where stmtType has been set to
+// SQLStmtInsert|SQLPartValues, the `columns` slice can be empty which means
+// that all arguments are requested.
+type ArgumentsAppender interface {
+	AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error)
 }
 
-// Value an interface which knows how to handle primitive values in case of
-// interface conversion and transforming into the values textual representation.
-// Later gets used during interpolation of SQL strings to avoid round trips to
-// the database, use it wisely.
-type Value interface {
-	// toIFace appends the value or values to interface slice and returns it.
+// Argument an interface which knows how to handle primitive arguments in case
+// of interface conversion and transforming into the arguments textual
+// representation. Later gets used during interpolation of SQL strings to avoid
+// round trips to the database, use it wisely.
+type Argument interface {
+	// toIFace appends the argument or arguments to interface slice and returns it.
 	toIFace([]interface{}) []interface{}
 	// writeTo writes the value correctly escaped to the queryWriter. It must
 	// avoid SQL injections.
 	writeTo(w queryWriter, position int) error
-	// len returns the length of the available values.
+	// len returns the length of the available arguments.
 	len() int
 }
 
-// Values representing multiple Value objects.
-type Values []Value
+// Arguments representing multiple Argument objects.
+type Arguments []Argument
 
 func writePlaceHolderList(w queryWriter, valLen int) {
 	w.WriteByte('(')
@@ -199,8 +200,8 @@ func writeOperator(w queryWriter, valLen int, op Op) (addVal bool) {
 	return
 }
 
-// len calculates the total length of all values
-func (as Values) len() (tl int) {
+// len calculates the total length of all arguments
+func (as Arguments) len() (tl int) {
 	for _, a := range as {
 		tl += a.len()
 	}
@@ -208,10 +209,10 @@ func (as Values) len() (tl int) {
 }
 
 // Interfaces converts the underlying concrete types into an interface slice.
-// Each entry in the interface is guaranteed to be one of the following values:
+// Each entry in the interface is guaranteed to be one of the following arguments:
 // []byte, bool, float64, int64, string or time.Time. Use driver.IsValue() for a
 // check.
-func (as Values) Interfaces() []interface{} {
+func (as Arguments) Interfaces() []interface{} {
 	if len(as) == 0 {
 		return nil
 	}
@@ -222,64 +223,64 @@ func (as Values) Interfaces() []interface{} {
 	return ret
 }
 
-func iFaceToArgs(values ...interface{}) Values {
-	vals := make(Values, 0, len(values))
+func iFaceToArgs(values ...interface{}) Arguments {
+	args := make(Arguments, 0, len(values))
 	for _, val := range values {
 		switch v := val.(type) {
 		case float32:
-			vals = append(vals, Float64(float64(v)))
+			args = append(args, Float64(float64(v)))
 		case float64:
-			vals = append(vals, Float64(v))
+			args = append(args, Float64(v))
 		case int64:
-			vals = append(vals, Int64(v))
+			args = append(args, Int64(v))
 		case int:
-			vals = append(vals, Int64(int64(v)))
+			args = append(args, Int64(int64(v)))
 		case int32:
-			vals = append(vals, Int64(int64(v)))
+			args = append(args, Int64(int64(v)))
 		case int16:
-			vals = append(vals, Int64(int64(v)))
+			args = append(args, Int64(int64(v)))
 		case int8:
-			vals = append(vals, Int64(int64(v)))
+			args = append(args, Int64(int64(v)))
 		case uint32:
-			vals = append(vals, Int64(int64(v)))
+			args = append(args, Int64(int64(v)))
 		case uint16:
-			vals = append(vals, Int64(int64(v)))
+			args = append(args, Int64(int64(v)))
 		case uint8:
-			vals = append(vals, Int64(int64(v)))
+			args = append(args, Int64(int64(v)))
 		case bool:
-			vals = append(vals, Bool(v))
+			args = append(args, Bool(v))
 		case string:
-			vals = append(vals, String(v))
+			args = append(args, String(v))
 		case []byte:
-			vals = append(vals, Bytes(v))
+			args = append(args, Bytes(v))
 		case time.Time:
-			vals = append(vals, MakeTime(v))
+			args = append(args, MakeTime(v))
 		case *time.Time:
 			if v != nil {
-				vals = append(vals, MakeTime(*v))
+				args = append(args, MakeTime(*v))
 			}
 		case nil:
-			vals = append(vals, NullValue())
+			args = append(args, NullValue())
 		default:
 			panic(errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v))
 		}
 	}
-	return vals
+	return args
 }
 
 // DriverValues allows to use any type which implements driver.Valuer interface.
-// Implements interface Value.
+// Implements interface Argument.
 type DriverValues []driver.Valuer
 
-func (a DriverValues) toIFace(vals []interface{}) []interface{} {
+func (a DriverValues) toIFace(args []interface{}) []interface{} {
 	for _, val := range a {
 		v, err := val.Value()
 		if err != nil {
 			panic(err) // TODO(CyS) fix evil implementation of panic and remove panic
 		}
-		vals = append(vals, v)
+		args = append(args, v)
 	}
-	return vals
+	return args
 }
 
 func writeDriverValuer(w queryWriter, v driver.Valuer) error {
@@ -317,43 +318,43 @@ func writeDriverValuer(w queryWriter, v driver.Valuer) error {
 func (a DriverValues) writeTo(w queryWriter, pos int) error { return writeDriverValuer(w, a[pos]) }
 func (a DriverValues) len() int                             { return len(a) }
 
-// Times implements interface Value to handle multiple time.Time values. The
+// Times implements interface Argument to handle multiple time.Time arguments. The
 // time.Time value gets correctly encoded in the MySQL/MariaDB format.
 type Times []time.Time
 
-func (a Times) toIFace(vals []interface{}) []interface{} {
+func (a Times) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		vals = append(vals, v)
+		args = append(args, v)
 	}
-	return vals
+	return args
 }
 
 func (a Times) writeTo(w queryWriter, pos int) error { dialect.EscapeTime(w, a[pos]); return nil }
 func (a Times) len() int                             { return len(a) }
 
-// Time implements interface Value.
+// Time implements interface Argument.
 type Time struct{ time.Time }
 
-func (a Time) toIFace(vals []interface{}) []interface{} { return append(vals, a.Time) }
+func (a Time) toIFace(args []interface{}) []interface{} { return append(args, a.Time) }
 func (a Time) writeTo(w queryWriter, _ int) error       { dialect.EscapeTime(w, a.Time); return nil }
 func (a Time) len() int                                 { return 1 }
 func (a Time) Value() (driver.Value, error) {
 	return a.Time, nil
 }
 
-// MakeTime implements interface Value and creates a new time value.
+// MakeTime implements interface Argument and creates a new time value.
 func MakeTime(t time.Time) Time { return Time{Time: t} }
 
-// BytesSlice implements interface Value. The slice can handle multiple
+// BytesSlice implements interface Argument. The slice can handle multiple
 // []byte slices. Providing a nil returns a NULL type. Detects between valid
 // UTF-8 strings and binary data. Later gets hex encoded.
 type BytesSlice [][]byte
 
-func (a BytesSlice) toIFace(vals []interface{}) []interface{} {
+func (a BytesSlice) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		vals = append(vals, []byte(v))
+		args = append(args, []byte(v))
 	}
-	return vals
+	return args
 }
 
 func (a BytesSlice) writeTo(w queryWriter, pos int) (err error) {
@@ -367,11 +368,11 @@ func (a BytesSlice) writeTo(w queryWriter, pos int) (err error) {
 
 func (a BytesSlice) len() int { return len(a) }
 
-// ArgBytes implements interface Value. Providing a nil returns a NULL type.
+// ArgBytes implements interface Argument. Providing a nil returns a NULL type.
 // Detects between valid UTF-8 strings and binary data. Later gets hex encoded.
 type Bytes []byte
 
-func (a Bytes) toIFace(vals []interface{}) []interface{} { return append(vals, []byte(a)) }
+func (a Bytes) toIFace(args []interface{}) []interface{} { return append(args, []byte(a)) }
 
 func (a Bytes) writeTo(w queryWriter, _ int) (err error) {
 	if !utf8.Valid(a) {
@@ -384,7 +385,7 @@ func (a Bytes) writeTo(w queryWriter, _ int) (err error) {
 
 func (a Bytes) len() int { return 1 }
 
-// Value implements the driver Valuer interface.
+// Argument implements the driver Valuer interface.
 func (a Bytes) Value() (driver.Value, error) {
 	if a == nil {
 		return nil, nil
@@ -394,7 +395,7 @@ func (a Bytes) Value() (driver.Value, error) {
 
 type nullValue rune
 
-func (i nullValue) toIFace(vals []interface{}) []interface{} { return append(vals, nil) }
+func (i nullValue) toIFace(args []interface{}) []interface{} { return append(args, nil) }
 func (i nullValue) writeTo(w queryWriter, _ int) (err error) {
 	_, err = w.WriteString("NULL")
 	return err
@@ -402,18 +403,18 @@ func (i nullValue) writeTo(w queryWriter, _ int) (err error) {
 func (i nullValue) len() int { return 1 }
 
 // NullValue treats the argument as a SQL `IS NULL` or `NULL`. IN clause not
-// supported. Implements interface Value.
-func NullValue() Value { return nullValue(0) }
+// supported. Implements interface Argument.
+func NullValue() Argument { return nullValue(0) }
 
-// String implements interface Value. String also checks for valid UTF-8
+// String implements interface Argument. String also checks for valid UTF-8
 // strings.
 type String string
 
-func (a String) toIFace(vals []interface{}) []interface{} { return append(vals, string(a)) }
+func (a String) toIFace(args []interface{}) []interface{} { return append(args, string(a)) }
 
 func (a String) writeTo(w queryWriter, _ int) error {
 	if !utf8.ValidString(string(a)) {
-		return errors.NewNotValidf("[dbr] Value.WriteTo: String is not UTF-8: %q", a)
+		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
 	}
 	dialect.EscapeString(w, string(a))
 	return nil
@@ -424,20 +425,20 @@ func (a String) Value() (driver.Value, error) {
 	return string(a), nil
 }
 
-// Strings implements interface Value and handles multiple string values.
+// Strings implements interface Argument and handles multiple string arguments.
 // Strings also checks for valid UTF-8 strings.
 type Strings []string
 
-func (a Strings) toIFace(vals []interface{}) []interface{} {
+func (a Strings) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		vals = append(vals, v)
+		args = append(args, v)
 	}
-	return vals
+	return args
 }
 
 func (a Strings) writeTo(w queryWriter, pos int) error {
 	if !utf8.ValidString(a[pos]) {
-		return errors.NewNotValidf("[dbr] Value.WriteTo: String is not UTF-8: %q", a[pos])
+		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a[pos])
 	}
 	dialect.EscapeString(w, a[pos])
 	return nil
@@ -447,68 +448,68 @@ func (a Strings) len() int {
 	return len(a)
 }
 
-// Bool implements interface Value.
+// Bool implements interface Argument.
 type Bool bool
 
-func (a Bool) toIFace(vals []interface{}) []interface{} { return append(vals, a == true) }
+func (a Bool) toIFace(args []interface{}) []interface{} { return append(args, a == true) }
 func (a Bool) writeTo(w queryWriter, _ int) error       { dialect.EscapeBool(w, a == true); return nil }
 func (a Bool) len() int                                 { return 1 }
 func (a Bool) Value() (driver.Value, error) {
 	return a == true, nil
 }
 
-// Bools implements interface Value and handles multiple bool values.
+// Bools implements interface Argument and handles multiple bool arguments.
 type Bools []bool
 
-func (a Bools) toIFace(vals []interface{}) []interface{} {
+func (a Bools) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		vals = append(vals, v)
+		args = append(args, v)
 	}
-	return vals
+	return args
 }
 
 func (a Bools) writeTo(w queryWriter, pos int) error { dialect.EscapeBool(w, a[pos]); return nil }
 func (a Bools) len() int                             { return len(a) }
 
-// Int implements interface Value.
+// Int implements interface Argument.
 type Int int
 
-func (a Int) toIFace(vals []interface{}) []interface{} { return append(vals, int64(a)) }
+func (a Int) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
 func (a Int) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
 func (a Int) len() int                                 { return 1 }
 func (a Int) Value() (driver.Value, error) {
 	return int64(a), nil
 }
 
-// Ints implements interface Value and handles multiple int values.
+// Ints implements interface Argument and handles multiple int arguments.
 type Ints []int
 
-func (a Ints) toIFace(vals []interface{}) []interface{} {
+func (a Ints) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		vals = append(vals, int64(v))
+		args = append(args, int64(v))
 	}
-	return vals
+	return args
 }
 
 func (a Ints) writeTo(w queryWriter, pos int) error { return writeInt64(w, int64(a[pos])) }
 func (a Ints) len() int                             { return len(a) }
 
-// Int64 implements interface Value.
+// Int64 implements interface Argument.
 type Int64 int64
 
-func (a Int64) toIFace(vals []interface{}) []interface{} { return append(vals, int64(a)) }
+func (a Int64) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
 func (a Int64) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
 func (a Int64) len() int                                 { return 1 }
 func (a Int64) Value() (driver.Value, error) {
 	return int64(a), nil
 }
 
-// Uint64 implements interface Value and driver.Value, later get encoded in a
+// Uint64 implements interface Argument and driver.Argument, later get encoded in a
 // byte slice. Full uint64 support.
 type Uint64 uint64
 
-func (a Uint64) toIFace(vals []interface{}) []interface{} {
-	return append(vals, strconv.AppendUint([]byte{}, uint64(a), 10))
+func (a Uint64) toIFace(args []interface{}) []interface{} {
+	return append(args, strconv.AppendUint([]byte{}, uint64(a), 10))
 }
 func (a Uint64) writeTo(w queryWriter, _ int) error { return writeUint64(w, uint64(a)) }
 func (a Uint64) len() int                           { return 1 }
@@ -516,23 +517,23 @@ func (a Uint64) Value() (driver.Value, error) {
 	return strconv.AppendUint([]byte{}, uint64(a), 10), nil
 }
 
-// Int64s implements interface Value and handles multiple int64 values.
+// Int64s implements interface Argument and handles multiple int64 arguments.
 type Int64s []int64
 
-func (a Int64s) toIFace(vals []interface{}) []interface{} {
+func (a Int64s) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		vals = append(vals, v)
+		args = append(args, v)
 	}
-	return vals
+	return args
 }
 
 func (a Int64s) writeTo(w queryWriter, pos int) error { return writeInt64(w, a[pos]) }
 func (a Int64s) len() int                             { return len(a) }
 
-// Float64 implements interface Value.
+// Float64 implements interface Argument.
 type Float64 float64
 
-func (a Float64) toIFace(vals []interface{}) []interface{} { return append(vals, float64(a)) }
+func (a Float64) toIFace(args []interface{}) []interface{} { return append(args, float64(a)) }
 
 func (a Float64) writeTo(w queryWriter, _ int) error { return writeFloat64(w, float64(a)) }
 func (a Float64) len() int                           { return 1 }
@@ -540,14 +541,14 @@ func (a Float64) Value() (driver.Value, error) {
 	return float64(a), nil
 }
 
-// Float64s implements interface Value and handles multiple float64 values.
+// Float64s implements interface Argument and handles multiple float64 arguments.
 type Float64s []float64
 
-func (a Float64s) toIFace(vals []interface{}) []interface{} {
+func (a Float64s) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		vals = append(vals, v)
+		args = append(args, v)
 	}
-	return vals
+	return args
 }
 
 func (a Float64s) writeTo(w queryWriter, pos int) error { return writeFloat64(w, a[pos]) }
@@ -555,32 +556,32 @@ func (a Float64s) len() int                             { return len(a) }
 
 type expr struct {
 	SQL string
-	Values
+	Arguments
 }
 
 // ExpressionValue implements a SQL fragment with placeholders, and a slice of
-// values to replace them with. Mostly used in UPDATE statements. Implements
-// interface Value.
-func ExpressionValue(sql string, vals ...Value) Value {
-	return &expr{SQL: sql, Values: vals}
+// arguments to replace them with. Mostly used in UPDATE statements. Implements
+// interface Argument.
+func ExpressionValue(sql string, args ...Argument) Argument {
+	return &expr{SQL: sql, Arguments: args}
 }
 
-func (e *expr) toIFace(vals []interface{}) []interface{} {
-	for _, a := range e.Values {
-		vals = a.toIFace(vals)
+func (e *expr) toIFace(args []interface{}) []interface{} {
+	for _, a := range e.Arguments {
+		args = a.toIFace(args)
 	}
-	return vals
+	return args
 }
 
 func (e *expr) writeTo(w queryWriter, _ int) error { w.WriteString(e.SQL); return nil }
 func (e *expr) len() int                           { return 1 }
 
-// placeHolderOp identifies place holder values. Those values will get
+// placeHolderOp identifies place holder arguments. Those arguments will get
 // assembled from an external type.
 type placeHolderOp rune
 
 // toIFace does not append anything because the placeHolderOp acts as an identifier.
-func (i placeHolderOp) toIFace(vals []interface{}) []interface{} { return vals }
+func (i placeHolderOp) toIFace(args []interface{}) []interface{} { return args }
 func (i placeHolderOp) len() int                                 { return 1 }
 func (i placeHolderOp) writeTo(w queryWriter, _ int) (err error) {
 	_, err = w.WriteString("?")

@@ -55,7 +55,7 @@ func TestUpdateSetMapToSQL(t *testing.T) {
 	t.Parallel()
 	s := createFakeSession()
 
-	sql, args, err := s.Update("a").SetMap(map[string]Value{"b": Int64(1), "c": Int64(2)}).Where(Column("id").Int(1)).ToSQL()
+	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": Int64(1), "c": Int64(2)}).Where(Column("id").Int(1)).ToSQL()
 	assert.NoError(t, err)
 	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)" {
 		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args)
@@ -143,7 +143,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Rename our George to Barack
 	_, err = s.Update("dbr_people").
-		SetMap(map[string]Value{"name": String("Barack"), "email": String("barack@whitehouse.gov")}).
+		SetMap(map[string]Argument{"name": String("Barack"), "email": String("barack@whitehouse.gov")}).
 		Where(Column("id").In().Int64s(id, 8888)).Exec(context.TODO())
 	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
 	require.NoError(t, err)
@@ -328,10 +328,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Values{String("E0S 5D Mark II"), Int64(12)},
+			Arguments: Arguments{String("E0S 5D Mark II"), Int64(12)},
 		}
 		buf := new(bytes.Buffer)
-		args := make(Values, 0, 2)
+		args := make(Arguments, 0, 2)
 		err := uc.writeOnDuplicateKey(buf)
 		require.NoError(t, err, "%+v", err)
 		args, err = uc.appendArgs(args)
@@ -343,10 +343,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "stock"},
-			Arguments: Values{String("E0S 5D Mark II"), ExpressionValue("VALUES(`stock`)+?", Int64(13))},
+			Arguments: Arguments{String("E0S 5D Mark II"), ExpressionValue("VALUES(`stock`)+?", Int64(13))},
 		}
 		buf := new(bytes.Buffer)
-		args := make(Values, 0, 2)
+		args := make(Arguments, 0, 2)
 		err := uc.writeOnDuplicateKey(buf)
 		require.NoError(t, err, "%+v", err)
 		args, err = uc.appendArgs(args)
@@ -358,10 +358,10 @@ func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
 	t.Run("col=VALUES(val) and with arguments and nil", func(t *testing.T) {
 		uc := UpdatedColumns{
 			Columns:   []string{"name", "sku", "stock"},
-			Arguments: Values{String("E0S 5D Mark III"), nil, Int64(14)},
+			Arguments: Arguments{String("E0S 5D Mark III"), nil, Int64(14)},
 		}
 		buf := new(bytes.Buffer)
-		args := make(Values, 0, 2)
+		args := make(Arguments, 0, 2)
 		err := uc.writeOnDuplicateKey(buf)
 		require.NoError(t, err, "%+v", err)
 		args, err = uc.appendArgs(args)

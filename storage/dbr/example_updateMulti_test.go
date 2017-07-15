@@ -25,7 +25,7 @@ import (
 )
 
 // Make sure that type salesOrder implements interface.
-var _ dbr.ValuesAppender = (*salesOrder)(nil)
+var _ dbr.ArgumentsAppender = (*salesOrder)(nil)
 
 // salesOrder represents just a demo record.
 type salesOrder struct {
@@ -36,7 +36,7 @@ type salesOrder struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesOrder) AppendValues(stmtType int, args dbr.Values, columns []string) (dbr.Values, error) {
+func (so salesOrder) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
