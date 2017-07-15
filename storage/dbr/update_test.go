@@ -105,7 +105,7 @@ func TestUpdate_Limit_Offset(t *testing.T) {
 }
 
 func TestUpdateKeywordColumnName(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	// Insert a user with a key
 	_, err := s.InsertInto("dbr_people").AddColumns("name", "email", "key").
@@ -130,7 +130,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 }
 
 func TestUpdateReal(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	// Insert a George
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
@@ -152,7 +152,7 @@ func TestUpdateReal(t *testing.T) {
 	_, err = s.Select("*").From("dbr_people").Where(Column("id").Int64(id)).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, id, person.ID)
+	assert.Equal(t, id, int64(person.ID))
 	assert.Equal(t, "Barack", person.Name)
 	assert.Equal(t, true, person.Email.Valid)
 	assert.Equal(t, "barack@whitehouse.gov", person.Email.String)

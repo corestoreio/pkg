@@ -55,9 +55,9 @@ func createRealSession(t testing.TB) *Connection {
 	return cxn
 }
 
-func createRealSessionWithFixtures(t testing.TB) *Connection {
+func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Connection {
 	sess := createRealSession(t)
-	installFixtures(sess.DB)
+	installFixtures(sess.DB, c)
 	return sess
 }
 
@@ -68,35 +68,42 @@ var _ ValuesAppender = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
-	ID    int64
-	Name  string
-	Email NullString
-	Key   NullString
-	vp    [4]interface{}
+	convert RowConvert
+	ID      uint64
+	Name    string
+	Email   NullString
+	Key     NullString
+}
+
+func assignDbrPerson(p *dbrPerson, rc *RowConvert) error {
+	for i, c := range rc.Columns {
+		b := rc.Index(i)
+		var err error
+		switch c {
+		case "id":
+			p.ID, err = b.Uint64()
+		case "name":
+			p.Name, err = b.Str()
+		case "email":
+			p.Email.NullString, err = b.NullString()
+		case "key":
+			p.Key.NullString, err = b.NullString()
+		default:
+			return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+		}
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
 }
 
 // RowScan loads a single row from a SELECT statement returning only one row
 func (p *dbrPerson) RowScan(r *sql.Rows) error {
-	vp := p.vp[:0]
-	columns, err := r.Columns()
-	if err != nil {
-		return err
+	if err := p.convert.Scan(r); err != nil {
+		return errors.WithStack(err)
 	}
-	for _, c := range columns {
-		switch c {
-		case "id":
-			vp = append(vp, &p.ID)
-		case "name":
-			vp = append(vp, &p.Name)
-		case "email":
-			vp = append(vp, &p.Email)
-		case "key":
-			vp = append(vp, &p.Key)
-		default:
-			return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
-	}
-	return r.Scan(vp...)
+	return assignDbrPerson(p, &p.convert)
 }
 
 func (p *dbrPerson) AppendValues(stmtType int, args Values, columns []string) (_ Values, err error) {
@@ -119,45 +126,20 @@ func (p *dbrPerson) AppendValues(stmtType int, args Values, columns []string) (_
 }
 
 type dbrPersons struct {
-	Data     []*dbrPerson
-	scanArgs []interface{}
-	dto      dbrPerson
+	convert RowConvert
+	Data    []*dbrPerson
 }
 
 func (ps *dbrPersons) RowScan(r *sql.Rows) error {
-	if len(ps.Data) == 0 {
-		ps.Data = make([]*dbrPerson, 0, 5)
-		ps.scanArgs = make([]interface{}, 0, 4) // four fields in the struct
-
-		columns, err := r.Columns()
-		if err != nil {
-			return err
-		}
-		for _, c := range columns {
-			switch c {
-			case "id":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.ID)
-			case "name":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.Name)
-			case "email":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.Email)
-			case "key":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.Key)
-			default:
-				return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-			}
-		}
-	}
-
-	if err := r.Scan(ps.scanArgs...); err != nil {
+	if err := ps.convert.Scan(r); err != nil {
 		return errors.WithStack(err)
 	}
-	ps.Data = append(ps.Data, &dbrPerson{
-		ID:    ps.dto.ID,
-		Name:  ps.dto.Name,
-		Email: ps.dto.Email,
-		Key:   ps.dto.Key,
-	})
+
+	p := new(dbrPerson)
+	if err := assignDbrPerson(p, &ps.convert); err != nil {
+		return errors.WithStack(err)
+	}
+	ps.Data = append(ps.Data, p)
 	return nil
 }
 
@@ -215,7 +197,11 @@ func (p *nullTypedRecord) AppendValues(stmtType int, args Values, columns []stri
 	return args, nil
 }
 
-func installFixtures(db *sql.DB) {
+type installFixturesConfig struct {
+	AddPeopleWithMaxUint64 bool
+}
+
+func installFixtures(db *sql.DB, c *installFixturesConfig) {
 	createPeopleTable := fmt.Sprintf(`
 		CREATE TABLE dbr_people (
 			id bigint(8) unsigned NOT NULL auto_increment PRIMARY KEY,
@@ -241,10 +227,12 @@ func installFixtures(db *sql.DB) {
 		createPeopleTable,
 		"INSERT INTO dbr_people (name,email) VALUES ('Jonathan', 'jonathan@uservoice.com')",
 		"INSERT INTO dbr_people (name,email) VALUES ('Dmitri', 'zavorotni@jadius.com')",
-		"INSERT INTO dbr_people (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')",
 
 		"DROP TABLE IF EXISTS null_types",
 		createNullTypesTable,
+	}
+	if c != nil && c.AddPeopleWithMaxUint64 {
+		sqlToRun = append(sqlToRun, "INSERT INTO dbr_people (id,name,email) VALUES (18446744073700551613,'Cyrill', 'firstname@lastname.fm')")
 	}
 
 	for _, v := range sqlToRun {

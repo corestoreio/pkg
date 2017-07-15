@@ -16,8 +16,8 @@ package dbr
 
 import (
 	"database/sql/driver"
-	"time"
 	"strconv"
+	"time"
 	"unicode/utf8"
 
 	"github.com/corestoreio/errors"

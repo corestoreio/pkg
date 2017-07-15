@@ -214,7 +214,7 @@ func TestInsert_AddRecords(t *testing.T) {
 
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "key").AddValues("Barack", "44").Exec(context.TODO())
 	require.NoError(t, err)
 
@@ -225,12 +225,12 @@ func TestInsertKeywordColumnName(t *testing.T) {
 
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").AddValues("Barack", "obama@whitehouse.gov").Exec(context.TODO())
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
-	s = createRealSessionWithFixtures(t)
+	s = createRealSessionWithFixtures(t, nil)
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
@@ -253,13 +253,13 @@ func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err er
 	require.NoError(t, err)
 
 	assert.True(t, id > 0)
-	assert.Equal(t, rowsAff, int64(1))
+	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
 	_, err = c.Select("*").From("dbr_people").Where(Column("id").Int64(id)).Load(context.TODO(), &person)
 	require.NoError(t, err)
 
-	assert.Equal(t, id, person.ID)
+	assert.Equal(t, id, int64(person.ID))
 	assert.Equal(t, "Barack", person.Name)
 	assert.Equal(t, true, person.Email.Valid)
 	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
@@ -267,7 +267,7 @@ func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err er
 
 func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 	res, err := s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
 		AddValues(678, "Pike", "pikes@peak.co").Exec(context.TODO())

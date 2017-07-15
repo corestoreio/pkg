@@ -315,7 +315,7 @@ func TestNewNullBool(t *testing.T) {
 }
 
 func TestNullTypeScanning(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	type nullTypeScanningTest struct {
 		record *nullTypedRecord

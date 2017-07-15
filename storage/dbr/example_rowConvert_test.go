@@ -71,7 +71,7 @@ func (cc *salesCreditMemoCollection) RowScan(r *sql.Rows) error {
 			o.GrandTotal, err = b.NullFloat64()
 		}
 		if err != nil {
-			return errors.Wrapf(err, "[dbr] Failed to at row % with column index %d", cc.Convert.Count, i)
+			return errors.Wrapf(err, "[dbr] Failed to convert value at row % with column index %d", cc.Convert.Count, i)
 		}
 	}
 	// For example to implement an event after scanning has been performed.

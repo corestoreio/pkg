@@ -22,7 +22,7 @@ import (
 )
 
 func TestTransactionReal(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	tx, err := s.Begin()
 	assert.NoError(t, err)
@@ -45,7 +45,7 @@ func TestTransactionReal(t *testing.T) {
 	_, err = tx.Select("*").From("dbr_people").Where(Column("id").Int64(id)).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
-	assert.Equal(t, id, person.ID)
+	assert.Equal(t, id, int64(person.ID))
 	assert.Equal(t, "Barack", person.Name)
 	assert.Equal(t, true, person.Email.Valid)
 	assert.Equal(t, "obama@whitehouse.gov", person.Email.String)
@@ -56,7 +56,7 @@ func TestTransactionReal(t *testing.T) {
 
 func TestTransactionRollbackReal(t *testing.T) {
 	// Insert by specifying values
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	tx, err := s.Begin()
 	assert.NoError(t, err)

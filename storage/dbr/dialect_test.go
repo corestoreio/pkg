@@ -22,7 +22,7 @@ import (
 )
 
 func TestEscapeWith_NaughtyStrings(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t,nil)
 
 	sel := s.Select("id", "name", "email").From("dbr_people").OrderBy("id")
 

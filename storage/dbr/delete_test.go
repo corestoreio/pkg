@@ -97,32 +97,32 @@ func TestDelete_Interpolate(t *testing.T) {
 }
 
 func TestDeleteReal(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	// Insert a Barack
 	res, err := s.InsertInto("dbr_people").AddColumns("name", "email").
 		AddValues("Barack", "barack@whitehouse.gov").Exec(context.TODO())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	if res == nil {
 		t.Fatal("result should not be nil. See previous error")
 	}
 
 	// Get Barack'ab ID
 	id, err := res.LastInsertId()
-	assert.NoError(t, err, "LastInsertId")
+	require.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
 	res, err = s.DeleteFrom("dbr_people").Where(Column("id").Int64(id)).Exec(context.TODO())
-	assert.NoError(t, err, "DeleteFrom")
+	require.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
 	rowsAff, err := res.RowsAffected()
-	assert.NoError(t, err)
-	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), rowsAff, "RowsAffected")
 
 	count, err := s.Select().Count().From("dbr_people").Where(Column("id").Int64(id)).LoadInt64(context.TODO())
-	assert.NoError(t, err)
-	assert.Equal(t, count, int64(0), "count")
+	require.NoError(t, err)
+	assert.Equal(t, int64(0), count, "count")
 }
 
 func TestDelete_Prepare(t *testing.T) {

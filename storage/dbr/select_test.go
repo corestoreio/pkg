@@ -459,7 +459,7 @@ func TestSelectVarieties(t *testing.T) {
 }
 
 func TestSelect_Load_Slice_Scanner(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	var people dbrPersons
 	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id").Load(context.TODO(), &people)
@@ -484,7 +484,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 }
 
 func TestSelect_Load_Rows(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	t.Run("found", func(t *testing.T) {
 		var person dbrPerson
@@ -509,7 +509,7 @@ func TestSelect_Load_Rows(t *testing.T) {
 }
 
 func TestSelectBySQL_Load_Slice(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	t.Run("single slice item", func(t *testing.T) {
 		var people dbrPersons
@@ -519,7 +519,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 		assert.Equal(t, int64(1), count)
 		if len(people.Data) == 1 {
 			assert.Equal(t, "Jonathan", people.Data[0].Name)
-			assert.Equal(t, int64(0), people.Data[0].ID)       // not set
+			assert.Equal(t, uint64(0), people.Data[0].ID)      // not set
 			assert.Equal(t, false, people.Data[0].Email.Valid) // not set
 			assert.Equal(t, "", people.Data[0].Email.String)   // not set
 		}
@@ -540,7 +540,9 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 }
 
 func TestSelect_LoadType_Single(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, &installFixturesConfig{
+		AddPeopleWithMaxUint64: true,
+	})
 
 	t.Run("LoadString", func(t *testing.T) {
 		name, err := s.Select("name").From("dbr_people").Where(Column("email").String("jonathan@uservoice.com")).LoadString(context.TODO())
@@ -614,7 +616,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 }
 
 func TestSelect_LoadType_Slices(t *testing.T) {
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	t.Run("LoadStrings", func(t *testing.T) {
 		names, err := s.Select("name").From("dbr_people").LoadStrings(context.TODO())
@@ -684,7 +686,7 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 
 func TestSelectJoin(t *testing.T) {
 	t.Parallel()
-	s := createRealSessionWithFixtures(t)
+	s := createRealSessionWithFixtures(t, nil)
 
 	t.Run("inner, distinct, no cache, high prio", func(t *testing.T) {
 		sqlObj := s.
