@@ -236,7 +236,7 @@ func TestResurrectStmtRealDB(t *testing.T) {
 	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Close SQL: "REPLACE INTO`))
 	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Prepare SQL: "REPLACE INTO`))
 
-	res, err := dbc.DeleteFrom("core_config_data").Where(dbr.Column("path", dbr.Like.Str("RSgopher%"))).Exec(context.TODO())
+	res, err := dbc.DeleteFrom("core_config_data").Where(dbr.Column("path").Like().String("RSgopher%")).Exec(context.TODO())
 	assert.NoError(t, err)
 	ar, err := res.RowsAffected()
 	assert.NoError(t, err)

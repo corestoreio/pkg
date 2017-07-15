@@ -214,6 +214,6 @@ func TestAlias(t *testing.T) {
 	}
 
 	for have, want := range testData {
-		require.Exactly(t, want, csdb.Alias(have), "Input: %q", have)
+		require.Exactly(t, want, csdb.Shorten(have), "Input: %q", have)
 	}
 }

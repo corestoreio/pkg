@@ -86,11 +86,11 @@ func cleanIdentifier(upper bool, name []byte) string {
 	return string(bytes.Map(fn, name))
 }
 
-// Alias creates a short alias name from a table name using the first two
+// Shorten creates a short alias name from a table name using the first two
 // characters.
 //		catalog_category_entity_datetime => cacaenda
 //		catalog_category_entity_decimal => cacaende
-func Alias(tableName string) string {
+func Shorten(tableName string) string {
 	var buf = new(bytes.Buffer)
 	next := 2
 	for i, s := range tableName {

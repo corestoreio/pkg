@@ -110,7 +110,7 @@ func (t *Table) ScanClose() error {
 }
 
 func (t *Table) ToSQL() (string, []interface{}, error) {
-	sql, err := dbr.Interpolate(selTablesColumns, dbr.ArgString(t.Name))
+	sql, err := dbr.Interpolate(selTablesColumns, dbr.String(t.Name))
 	if err != nil {
 		return "", nil, errors.Wrapf(err, "[csdb] Table.ToSQL.Interpolate for table %q", t.Name)
 	}

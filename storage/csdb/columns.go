@@ -99,7 +99,7 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
 		}
 	} else {
-		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.In.Str(tables...))
+		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.Strings(tables))
 		if err != nil {
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
 		}
@@ -154,7 +154,7 @@ func LoadColumnsOLD(ctx context.Context, db dbr.Querier, tables ...string) (map[
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
 		}
 	} else {
-		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.In.Str(tables...))
+		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.Strings(tables))
 		if err != nil {
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
 		}

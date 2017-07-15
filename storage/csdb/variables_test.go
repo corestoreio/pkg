@@ -79,7 +79,7 @@ func TestNewVariables_Mock(t *testing.T) {
 	defer cstesting.MockClose(t, dbc, dbMock)
 
 	t.Run("one with LIKE", func(t *testing.T) {
-		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
+		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Argument"}).
 			FromCSVString("keyVal11,helloAustralia")
 
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'keyVal11')")).
@@ -97,7 +97,7 @@ func TestNewVariables_Mock(t *testing.T) {
 	})
 
 	t.Run("many with WHERE", func(t *testing.T) {
-		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Value"}).
+		var mockedRows = sqlmock.NewRows([]string{"Variable_name", "Argument"}).
 			FromCSVString("keyVal11,helloAustralia\nkeyVal22,helloNewZealand")
 
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` IN ('keyVal11','keyVal22'))")).
