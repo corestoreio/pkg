@@ -93,9 +93,17 @@ func MockClose(t testing.TB, c io.Closer, m sqlmock.Sqlmock) {
 	}
 	m.ExpectClose()
 	if err := c.Close(); err != nil {
-		t.Fatalf("%+v", err)
+		if t != nil {
+			t.Fatalf("%+v", err)
+		} else {
+			panic(err)
+		}
 	}
 	if err := m.ExpectationsWereMet(); err != nil {
-		t.Fatalf("There were unfulfilled expectations:\n%+v", err)
+		if t != nil {
+			t.Fatalf("There were unfulfilled expectations:\n%+v", err)
+		} else {
+			panic(err)
+		}
 	}
 }

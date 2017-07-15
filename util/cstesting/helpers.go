@@ -48,6 +48,10 @@ func ChangeDir(t fataler, dir string) func() {
 // gift wrapped prints the location.
 func fatalIfError(t fataler, err error) {
 	if err != nil {
-		t.Fatalf("%+v", err)
+		if t != nil {
+			t.Fatalf("%+v", err)
+		} else {
+			panic(err)
+		}
 	}
 }
