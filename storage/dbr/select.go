@@ -88,7 +88,11 @@ type Select struct {
 // NewSelect creates a new Select object.
 func NewSelect(columns ...string) *Select {
 	s := new(Select)
-	s.Columns = s.Columns.appendColumns(columns, false)
+	if len(columns) == 1 && columns[0] == "*" {
+		s.Star()
+	} else {
+		s.Columns = s.Columns.appendColumns(columns, false)
+	}
 	return s
 }
 

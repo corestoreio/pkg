@@ -590,7 +590,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.Empty(t, id)
 	})
 	t.Run("LoadUint64 max Uint64 found", func(t *testing.T) {
-		const bigID uint64 = 18446744073700551613 // see also file dbr_test.go
+		const bigID uint64 = 18446744073700551613 // see also file dbr_test.go MaxUint64
 		id, err := s.Select("id").From("dbr_people").Where(Column("id").Uint64(bigID)).LoadUint64(context.TODO())
 		require.NoError(t, err)
 		assert.Exactly(t, bigID, id)

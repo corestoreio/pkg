@@ -68,13 +68,7 @@ func (so salesOrder) AppendValues(stmtType int, args dbr.Values, columns []strin
 func ExampleUpdateMulti() {
 	// <ignore_this>
 	dbc, dbMock := cstesting.MockDB(nil)
-	defer func() {
-		dbMock.ExpectClose()
-		dbc.Close()
-		if err := dbMock.ExpectationsWereMet(); err != nil {
-			fmt.Printf("dbMock Error: %+v\n", err)
-		}
-	}()
+	defer cstesting.MockClose(nil, dbc, dbMock)
 
 	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
 		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` = ?) AND (`entity_id` = ?)",
