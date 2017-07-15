@@ -108,11 +108,9 @@ var _ dbr.RowCloser = (*TableCoreConfigDataSlice)(nil)
 // TableCoreConfigDataSlice represents a collection type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigDataSlice struct {
-	DataCap  int
-	Data     []*TableCoreConfigData
-	scanArgs []interface{}
-	dto      TableCoreConfigData
-	scanErr  error
+	Convert dbr.RowConvert
+	Data    []*TableCoreConfigData
+	scanErr error // just for testing not needed otherwise
 }
 
 // TableCoreConfigData represents a type for DB table core_config_data
@@ -126,51 +124,34 @@ type TableCoreConfigData struct {
 }
 
 func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
-	const fieldCount = 5 //  5 == number of struct fields
-	if 0 == len(ps.Data) {
-		dc := ps.DataCap
-		if dc == 0 {
-			dc = 10
-		}
-		ps.Data = make([]*TableCoreConfigData, 0, dc)
-		ps.scanArgs = make([]interface{}, 0, fieldCount)
-		columns, err := r.Columns()
-		if err != nil {
-			return err
-		}
-		for _, c := range columns {
-			switch c {
-			case "config_id":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.ConfigID)
-			case "scope":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.Scope)
-			case "scope_id":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.ScopeID)
-			case "path":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.Path)
-			case "value":
-				ps.scanArgs = append(ps.scanArgs, &ps.dto.Value)
-			default:
-				return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-			}
-		}
-	}
-
-	if err := r.Scan(ps.scanArgs...); err != nil {
+	if err := ps.Convert.Scan(r); err != nil {
 		return errors.WithStack(err)
 	}
-
-	// We can copy here easy by assigning the value to a new variable and then
-	// creating a pointer. If the the TableCoreConfigData struct would contain
-	// pointers to other structs, then the copying would be more complex to
-	// avoid a shallow copy.
-	ccd := ps.dto
-	ps.Data = append(ps.Data, &ccd)
+	o := new(TableCoreConfigData)
+	for i, col := range ps.Convert.Columns {
+		b := ps.Convert.Index(i)
+		var err error
+		switch col {
+		case "config_id":
+			o.ConfigID, err = b.Int64()
+		case "scope":
+			o.Scope, err = b.Str()
+		case "scope_id":
+			o.ScopeID, err = b.Int64()
+		case "path":
+			o.Path, err = b.Str()
+		case "value":
+			o.Value.NullString, err = b.NullString()
+		}
+		if err != nil {
+			return errors.Wrapf(err, "[dbr] Failed to convert value at row % with column index %d", ps.Convert.Count, i)
+		}
+	}
+	ps.Data = append(ps.Data, o)
 	return nil
 }
 
 func (ps *TableCoreConfigDataSlice) RowClose() error {
-	ps.scanArgs = ps.scanArgs[:0]
 	return ps.scanErr
 }
 
