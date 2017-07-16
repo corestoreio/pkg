@@ -106,13 +106,11 @@ func (p *dbrPerson) RowScan(r *sql.Rows) error {
 	return assignDbrPerson(p, &p.convert)
 }
 
-func (p *dbrPerson) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
+func personAppendArguments(p *dbrPerson, args Arguments, columns []string) (_ Arguments, err error) {
 	for _, c := range columns {
 		switch c {
 		case "id", "dp.id":
-			//if t == 'i' {
 			args = append(args, Int64(p.ID))
-			//}
 		case "name":
 			args = append(args, String(p.Name))
 		case "email":
@@ -125,9 +123,23 @@ func (p *dbrPerson) AppendArguments(stmtType int, args Arguments, columns []stri
 	return args, err
 }
 
+func (p *dbrPerson) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
+	return personAppendArguments(p, args, columns)
+}
+
 type dbrPersons struct {
 	convert RowConvert
 	Data    []*dbrPerson
+}
+
+func (ps *dbrPersons) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
+	for _, p := range ps.Data {
+		args, err = personAppendArguments(p, args, columns)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+	return args, nil
 }
 
 func (ps *dbrPersons) RowScan(r *sql.Rows) error {
@@ -283,7 +295,7 @@ func compareToSQL(
 
 	sqlStr, args, err := qb.ToSQL()
 	if wantErr == nil {
-		require.NoError(t, err, "%+v", err)
+		require.NoError(t, err)
 	} else {
 		require.True(t, wantErr(err), "%+v", err)
 	}

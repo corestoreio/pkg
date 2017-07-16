@@ -175,7 +175,7 @@ func TestInsert_AddRecords(t *testing.T) {
 	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
 	wantArgs := []interface{}{int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true, int64(99)}
 
-	t.Run("valid", func(t *testing.T) {
+	t.Run("valid with multiple records", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").
 				AddColumns("something_id", "user_id", "other").
@@ -210,6 +210,28 @@ func TestInsert_AddRecords(t *testing.T) {
 			"",
 		)
 	})
+	t.Run("slice as record - nice feature", func(t *testing.T) {
+		wantArgs := []interface{}{"Muffin Hat", "Muffin@Hat.head", "Marianne Phyllis Finch", "marianne@phyllis.finch", "Daphne Augusta Perry", "daphne@augusta.perry"}
+		persons := &dbrPersons{
+			Data: []*dbrPerson{
+				{Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
+				{Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
+				{Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
+			},
+		}
+
+		compareToSQL(t,
+			NewInsert("dbr_person").
+				AddColumns("name", "email").
+				AddRecords(persons).
+				SetRowCount(len(persons.Data)),
+			nil,
+			"INSERT INTO `dbr_person` (`name`,`email`) VALUES (?,?),(?,?),(?,?)",
+			"INSERT INTO `dbr_person` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')",
+			wantArgs...,
+		)
+	})
+
 }
 
 func TestInsertKeywordColumnName(t *testing.T) {

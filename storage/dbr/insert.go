@@ -187,7 +187,10 @@ func (b *Insert) AddArguments(args ...Argument) *Insert {
 	return b
 }
 
-// AddRecords appends record generators.
+// AddRecords appends a new record for each INSERT VALUES (),[(...)...] case. A
+// record can also be e.g. a slice which appends all requested arguments at
+// once. Using a slice requires to call `SetRowCount` to tell the Insert object
+// the number of rows.
 func (b *Insert) AddRecords(recs ...ArgumentsAppender) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
@@ -334,7 +337,10 @@ func (b *Insert) toSQL(buf queryWriter) error {
 	buf.WriteString("VALUES ")
 
 	rowCount := 1
-	if b.RowCount > 0 {
+	if lr := len(b.Records); lr > 0 {
+		rowCount = lr
+	}
+	if b.RowCount > 0 { // no switch statement
 		rowCount = b.RowCount
 	}
 
@@ -353,7 +359,6 @@ func (b *Insert) toSQL(buf queryWriter) error {
 		if b.RecordValueCount > 0 {
 			argCount0 = b.RecordValueCount
 		}
-		rowCount = len(b.Records)
 	}
 
 	// write the place holders: (?,?,?)[,(?,?,?)...]
@@ -415,7 +420,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if addedArgs := len(args) - alBefore; addedArgs != argCount0 {
+		if addedArgs := len(args) - alBefore; addedArgs%argCount0 != 0 {
 			return nil, errors.NewMismatchf("[dbr] Insert.appendArgs RecordValueCount(%d) does not match the number of assembled arguments (%d)", b.RecordValueCount, addedArgs)
 		}
 	}
