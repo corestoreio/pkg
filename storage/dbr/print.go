@@ -200,7 +200,7 @@ func sqlWriteLimitOffset(w queryWriter, limitValid bool, limitCount uint64, offs
 func writeFloat64(w queryWriter, f float64) (err error) {
 	d := w.Bytes()
 	w.Reset()
-	_, err = w.Write(strconv.AppendFloat(d, f, 'f', -1, 64))
+	_, err = w.Write(strconv.AppendFloat(d, f, 'g', -1, 64))
 	return err
 }
 
