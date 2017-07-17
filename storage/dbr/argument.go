@@ -504,8 +504,10 @@ func (a Int64) Value() (driver.Value, error) {
 	return int64(a), nil
 }
 
-// Uint64 implements interface Argument and driver.Argument, later get encoded in a
-// byte slice. Full uint64 support.
+// Uint64 implements interface Argument and driver.Argument, later get encoded
+// in a byte slice. Full max uint64 support. The downside shows that the byte
+// encoded uint64 gets transferred as a string to MySQL/MariaDB and the DB must
+// type cast the string into a type bigint.
 type Uint64 uint64
 
 func (a Uint64) toIFace(args []interface{}) []interface{} {

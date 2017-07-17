@@ -540,9 +540,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 }
 
 func TestSelect_LoadType_Single(t *testing.T) {
-	s := createRealSessionWithFixtures(t, &installFixturesConfig{
-		AddPeopleWithMaxUint64: true,
-	})
+	s := createRealSessionWithFixtures(t, nil)
 
 	t.Run("LoadString", func(t *testing.T) {
 		name, err := s.Select("name").From("dbr_people").Where(Column("email").String("jonathan@uservoice.com")).LoadString(context.TODO())
@@ -591,12 +589,6 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, id)
 	})
-	t.Run("LoadUint64 max Uint64 found", func(t *testing.T) {
-		const bigID uint64 = 18446744073700551613 // see also file dbr_test.go MaxUint64
-		id, err := s.Select("id").From("dbr_people").Where(Column("id").Uint64(bigID)).LoadUint64(context.TODO())
-		require.NoError(t, err)
-		assert.Exactly(t, bigID, id)
-	})
 
 	t.Run("LoadFloat64", func(t *testing.T) {
 		id, err := s.Select("id").From("dbr_people").Limit(1).LoadFloat64(context.TODO())
@@ -613,6 +605,30 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, id)
 	})
+}
+
+func TestSelect_LoadUint64(t *testing.T) {
+	s := createRealSessionWithFixtures(t, &installFixturesConfig{
+		AddPeopleWithMaxUint64: true,
+	})
+	// Despite it seems that Go can support large uint64 values ... the down side is that
+	// the byte encoded uint64 gets transferred as a string and MySQL/MariaDB must convert that
+	// string into a bigint.
+	const bigID uint64 = 18446744073700551613 // see also file dbr_test.go MaxUint64
+
+	sel := s.Select("id").From("dbr_people").Where(Column("id").Uint64(bigID))
+
+	t.Run("MaxUint64 prepared stmt op:equal", func(t *testing.T) {
+		id, err := sel.LoadUint64(context.TODO())
+		require.NoError(t, err)
+		assert.Exactly(t, bigID, id)
+	})
+	t.Run("MaxUint64 interpolated op:equal", func(t *testing.T) {
+		id, err := sel.Interpolate().LoadUint64(context.TODO())
+		require.NoError(t, err)
+		assert.Exactly(t, bigID, id)
+	})
+
 }
 
 func TestSelect_LoadType_Slices(t *testing.T) {
