@@ -50,17 +50,6 @@ type queryWriter interface {
 	Bytes() []byte
 }
 
-var _ queryWriter = (*backHole)(nil)
-
-type backHole struct{} // TODO(CyS) just a temporary implementation. should get removed later
-
-func (backHole) WriteString(s string) (n int, err error) { return }
-func (backHole) WriteRune(r rune) (n int, err error)     { return }
-func (backHole) WriteByte(c byte) error                  { return nil }
-func (backHole) Write(p []byte) (n int, err error)       { return }
-func (backHole) Bytes() []byte                           { return nil }
-func (backHole) Reset()                                  {}
-
 // For the sake of readability within the source code, because boolean arguments
 // are terrible.
 const (
@@ -84,6 +73,7 @@ func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{
 
 	useCache := b.hasBuildCache()
 	if useCache {
+		// TODO(CyS) Write a test which reuses the SQL part but updates the arguments
 		sql, args, err := b.readBuildCache()
 		if err != nil {
 			return "", nil, errors.WithStack(err)

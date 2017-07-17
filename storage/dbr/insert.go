@@ -151,6 +151,9 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 	return b
 }
 
+// TODO (CyS) write an intermediate type which will be used to get rid of
+// AddValues and AddArguments. Maybe same pattern as Column() function.
+
 // AddValues appends a set of values to the statement. Each call of AddValues
 // creates a new set of values. Only primitive types are supported. Runtime type
 // safety only.

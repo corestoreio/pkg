@@ -188,7 +188,7 @@ func (b *Show) toSQL(w queryWriter) error {
 	}
 
 	if b.LikeCondition != nil {
-		writeOperator(w, 1, Like)
+		Like.write(w, 1)
 	} else if err := b.WhereFragments.write(w, 'w'); err != nil {
 		return errors.WithStack(err)
 	}

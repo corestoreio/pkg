@@ -70,6 +70,117 @@ func (o Op) String() string {
 	return string(o)
 }
 
+func writePlaceHolderList(w queryWriter, valLen int) {
+	w.WriteByte('(')
+	for j := 0; j < valLen; j++ {
+		if j > 0 {
+			w.WriteByte(',')
+		}
+		w.WriteByte('?')
+	}
+	w.WriteByte(')')
+}
+
+func (op Op) write(w queryWriter, argLen int) (err error) {
+	// hasArgs value only used in cases where we have in the parent caller
+	// function a sub-select. sub-selects do not need a place holder.
+	hasArgs := argLen > 0
+	switch op {
+	case Null:
+		_, err = w.WriteString(" IS NULL")
+	case NotNull:
+		_, err = w.WriteString(" IS NOT NULL")
+	case In:
+		_, err = w.WriteString(" IN ")
+		if hasArgs {
+			writePlaceHolderList(w, argLen)
+		}
+	case NotIn:
+		_, err = w.WriteString(" NOT IN ")
+		if hasArgs {
+			writePlaceHolderList(w, argLen)
+		}
+	case Like:
+		_, err = w.WriteString(" LIKE ?")
+	case NotLike:
+		_, err = w.WriteString(" NOT LIKE ?")
+	case Regexp:
+		_, err = w.WriteString(" REGEXP ?")
+	case NotRegexp:
+		_, err = w.WriteString(" NOT REGEXP ?")
+	case Between:
+		_, err = w.WriteString(" BETWEEN ? AND ?")
+	case NotBetween:
+		_, err = w.WriteString(" NOT BETWEEN ? AND ?")
+	case Greatest:
+		_, err = w.WriteString(" GREATEST ")
+		writePlaceHolderList(w, argLen)
+	case Least:
+		_, err = w.WriteString(" LEAST ")
+		writePlaceHolderList(w, argLen)
+	case Coalesce:
+		_, err = w.WriteString(" COALESCE ")
+		writePlaceHolderList(w, argLen)
+	case Xor:
+		_, err = w.WriteString(" XOR ?")
+	case Exists:
+		_, err = w.WriteString(" EXISTS ")
+	case NotExists:
+		_, err = w.WriteString(" NOT EXISTS ")
+	case NotEqual:
+		_, err = w.WriteString(" != ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
+	case Less:
+		_, err = w.WriteString(" < ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
+	case Greater:
+		_, err = w.WriteString(" > ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
+	case LessOrEqual:
+		_, err = w.WriteString(" <= ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
+	case GreaterOrEqual:
+		_, err = w.WriteString(" >= ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
+	case SpaceShip:
+		_, err = w.WriteString(" <=> ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
+	default: // and case Equal
+		_, err = w.WriteString(" = ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
+	}
+	return
+}
+
+// hasArgs returns true if the Operator requires arguments to compare with.
+func (op Op) hasArgs(argLen int) (addArg bool) {
+	// hasArg value only used in cases where we have in the parent caller
+	// function a sub-select. sub-selects do not need a place holder.
+	switch op {
+	case Null, NotNull:
+		addArg = false
+	case Like, NotLike, Regexp, NotRegexp, Between, NotBetween, Greatest, Least, Coalesce, Xor:
+		addArg = true
+	default:
+		addArg = argLen > 0
+	}
+	return
+}
+
 // WhereFragment implements a single WHERE condition. Please use the helper
 // functions instead of using this type directly.
 type WhereFragment struct {
@@ -279,7 +390,8 @@ func (wf *WhereFragment) Coalesce() *WhereFragment {
 //		TYPES
 ///////////////////////////////////////////////////////////////////////////////////
 
-// Cahen's Constant, used as a random identifier
+// Cahen's Constant, used as a random identifier that an argument is a place
+// holder.
 const cahensConstant = -64341
 
 // PlaceHolder sets the database specific place holder character. Mostly used in
@@ -518,12 +630,12 @@ func (wfs WhereFragments) write(w queryWriter, conditionType byte) error {
 				if eArg == nil {
 					eArg = f.Arguments[0]
 				}
-				writeOperator(w, eArg.len(), f.Operator)
+				f.Operator.write(w, eArg.len())
 			}
 
 		case f.Sub.Select != nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
-			writeOperator(w, 0, f.Sub.Operator)
+			f.Sub.Operator.write(w, 0)
 			w.WriteByte('(')
 			if err := f.Sub.Select.toSQL(w); err != nil {
 				return errors.Wrapf(err, "[dbr] write failed SubSelect for table: %q", f.Sub.Select.Table.String())
@@ -539,15 +651,15 @@ func (wfs WhereFragments) write(w queryWriter, conditionType byte) error {
 			if al > 1 && f.Operator == 0 { // no operator but slice applied, so creating an IN query.
 				f.Operator = In
 			}
-			writeOperator(w, al, f.Operator)
+			f.Operator.write(w, al)
 
 		case f.Argument == nil && f.Arguments == nil:
 			Quoter.WriteNameAlias(w, f.Condition, "")
-			c := f.Operator
-			if c == 0 {
-				c = Null
+			cOp := f.Operator
+			if cOp == 0 {
+				cOp = Null
 			}
-			writeOperator(w, 1, c)
+			cOp.write(w, 1)
 
 		default:
 			panic(errors.NewNotSupportedf("[dbr] Multiple arguments for a column are not supported\nWhereFragment: %#v\n", f))
@@ -586,7 +698,7 @@ func (wfs WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argu
 		case f.IsExpression:
 			addArg = true
 		case f.IsPlaceHolder:
-			addArg = writeOperator(backHole{}, 1, f.Operator) // always a length of one, see the `repeat()` function
+			addArg = f.Operator.hasArgs(1) // always a length of one, see the `repeat()` function
 			// By keeping addArg as it is and not setting
 			// addArg=false, this []int avoids
 			// https://en.wikipedia.org/wiki/Permutation Which would
@@ -598,7 +710,7 @@ func (wfs WhereFragments) appendArgs(args Arguments, conditionType byte) (_ Argu
 
 		case f.Argument != nil:
 			// a column only supports one value.
-			addArg = writeOperator(backHole{}, f.Argument.len(), f.Operator)
+			addArg = f.Operator.hasArgs(f.Argument.len())
 		case f.Sub.Select != nil:
 			args, err = f.Sub.Select.appendArgs(args)
 			if err != nil {
