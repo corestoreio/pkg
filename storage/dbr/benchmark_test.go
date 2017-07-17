@@ -95,3 +95,13 @@ func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
 		args = args[:0]
 	}
 }
+
+var benchmarkDialect_EscapeTimeBuf = new(bytes.Buffer)
+
+func BenchmarkDialect_EscapeTime(b *testing.B) {
+	date := now()
+	for i := 0; i < b.N; i++ {
+		dialect.EscapeTime(benchmarkDialect_EscapeTimeBuf, date)
+		benchmarkDialect_EscapeTimeBuf.Reset()
+	}
+}

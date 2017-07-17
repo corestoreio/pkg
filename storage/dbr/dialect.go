@@ -99,15 +99,13 @@ func (d mysqlDialect) EscapeString(w queryWriter, s string) {
 func (d mysqlDialect) EscapeTime(w queryWriter, t time.Time) {
 	if t.IsZero() {
 		w.WriteString("'0000-00-00'") //  00:00:00
-	} else {
-		// time.Location must be considered ...
-		w.WriteByte('\'')
-		d := w.Bytes()
-		w.Reset()
-		w.Write(t.AppendFormat(d, mysqlTimeFormat))
-		w.WriteByte('\'')
+		return
 	}
-	// d.EscapeString(w, t.Format(mysqlTimeFormat))
+	w.WriteByte('\'')
+	b := w.Bytes()
+	w.Reset()
+	w.Write(t.AppendFormat(b, mysqlTimeFormat))
+	w.WriteByte('\'')
 }
 
 func (d mysqlDialect) ApplyLimitAndOffset(w queryWriter, limit, offset uint64) {
