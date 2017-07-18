@@ -18,6 +18,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -42,6 +43,10 @@ type salesCreditMemo struct {
 	StoreID    uint16
 	CustomerID int64
 	GrandTotal sql.NullFloat64
+	// VoucherCodes contains list of refunded codes, stored as CSV. Or even
+	// stored in another table or even encrypted and the function decrypts it on
+	// load. Same as the M2 EAV models
+	VoucherCodes []string
 }
 
 func (cc *salesCreditMemoCollection) RowScan(r *sql.Rows) error {
@@ -69,6 +74,10 @@ func (cc *salesCreditMemoCollection) RowScan(r *sql.Rows) error {
 			o.CustomerID, err = b.Int64()
 		case "grand_total":
 			o.GrandTotal, err = b.NullFloat64()
+		case "voucher_codes":
+			var s string
+			s, err = b.Str()
+			o.VoucherCodes = strings.Split(s, "|")
 		}
 		if err != nil {
 			return errors.Wrapf(err, "[dbr] Failed to convert value at row % with column index %d", cc.Convert.Count, i)
@@ -88,8 +97,8 @@ func ExampleRowConvert() {
 	dbc, dbMock := cstesting.MockDB(nil)
 	defer cstesting.MockClose(nil, dbc, dbMock)
 
-	r := sqlmock.NewRows([]string{"entity_id", "state", "store_id", "customer_id", "grand_total"}).
-		FromCSVString("18446744073700551613,shipped,7,98765,47.11\n18446744073700551614,shipped,7,12345,28.94\n")
+	r := sqlmock.NewRows([]string{"entity_id", "state", "store_id", "customer_id", "grand_total", "voucher_codes"}).
+		FromCSVString("18446744073700551613,shipped,7,98765,47.11,1FE9983E|28E76FBC\n18446744073700551614,shipped,7,12345,28.94,4FE7787E|15E59FBB|794EFDE8\n")
 
 	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT * FROM `sales_creditmemo` WHERE (`state` = 'shipped')")).WillReturnRows(r)
 	// </ignore_this>
@@ -110,7 +119,7 @@ func ExampleRowConvert() {
 	}
 
 	// Output:
-	//[entity_id state store_id customer_id grand_total]
-	//{18446744073700551613 shipped 7 98765 {47.11 true}}
-	//{18446744073700551614 shipped 7 12345 {28.94 true}}
+	//[entity_id state store_id customer_id grand_total voucher_codes]
+	//{18446744073700551613 shipped 7 98765 {47.11 true} [1FE9983E 28E76FBC]}
+	//{18446744073700551614 shipped 7 12345 {28.94 true} [4FE7787E 15E59FBB 794EFDE8]}
 }
