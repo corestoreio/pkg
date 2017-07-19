@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
 )
 
 func TestRepeat(t *testing.T) {
@@ -67,9 +68,21 @@ func TestRepeat(t *testing.T) {
 
 func TestInterpolateNil(t *testing.T) {
 	t.Parallel()
-	str, err := Interpolate("SELECT * FROM x WHERE a = ?", NullValue())
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT * FROM x WHERE a = NULL", str)
+	t.Run("one nil", func(t *testing.T) {
+		str, err := Interpolate("SELECT * FROM x WHERE a = ?", nil)
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM x WHERE a = NULL", str)
+	})
+	t.Run("two nil", func(t *testing.T) {
+		str, err := Interpolate("SELECT * FROM x WHERE a BETWEEN ? AND ?", nil, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM x WHERE a BETWEEN NULL AND NULL", str)
+	})
+	t.Run("one nil between two values", func(t *testing.T) {
+		str, err := Interpolate("SELECT * FROM x WHERE a BETWEEN ? AND ? OR Y=?", Int(1), nil, String("X"))
+		require.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM x WHERE a BETWEEN 1 AND NULL OR Y='X'", str)
+	})
 }
 
 func TestInterpolateErrors(t *testing.T) {
@@ -360,7 +373,7 @@ func TestInterpolate(t *testing.T) {
 		errBhf errors.BehaviourFunc
 	}{
 		// NULL
-		{"SELECT * FROM x WHERE a = ?", Arguments{NullValue()},
+		{"SELECT * FROM x WHERE a = ?", Arguments{nil},
 			"SELECT * FROM x WHERE a = NULL", nil},
 
 		// integers

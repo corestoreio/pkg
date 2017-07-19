@@ -140,7 +140,10 @@ func interpolate(buf queryWriter, sql []byte, args ...Argument) error {
 	argIndex := 0
 	argLength := 0
 	if len(args) > 0 {
-		argLength = args[0].len()
+		argLength = 1
+		if args[0] != nil {
+			argLength = args[0].len()
+		}
 	}
 	pos := 0
 	for pos < len(sql) {
@@ -157,10 +160,14 @@ func interpolate(buf queryWriter, sql []byte, args ...Argument) error {
 				if argIndex >= len(args) {
 					return errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d but argument count was %d", argIndex, len(args)-1)
 				}
-				argLength = args[argIndex].len()
+				argLength = 1
+				if args[argIndex] != nil {
+					argLength = args[argIndex].len()
+				}
 			}
-
-			if err := args[argIndex].writeTo(buf, qCount); err != nil {
+			if args[argIndex] == nil {
+				buf.WriteString("NULL")
+			} else if err := args[argIndex].writeTo(buf, qCount); err != nil {
 				return errors.WithStack(err)
 			}
 

@@ -80,7 +80,11 @@ type Arguments []Argument
 // len calculates the total length of all arguments
 func (as Arguments) len() (tl int) {
 	for _, a := range as {
-		tl += a.len()
+		if a == nil {
+			tl += 1
+		} else {
+			tl += a.len()
+		}
 	}
 	return
 }
@@ -95,7 +99,11 @@ func (as Arguments) Interfaces() []interface{} {
 	}
 	ret := make([]interface{}, 0, len(as))
 	for _, a := range as {
-		ret = a.toIFace(ret)
+		if a == nil {
+			ret = append(ret, nil)
+		} else {
+			ret = a.toIFace(ret)
+		}
 	}
 	return ret
 }
@@ -137,7 +145,7 @@ func iFaceToArgs(values ...interface{}) Arguments {
 				args = append(args, MakeTime(*v))
 			}
 		case nil:
-			args = append(args, NullValue())
+			args = append(args, nil)
 		default:
 			panic(errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v))
 		}
@@ -269,19 +277,6 @@ func (a Bytes) Value() (driver.Value, error) {
 	}
 	return []byte(a), nil
 }
-
-type nullValue rune
-
-func (i nullValue) toIFace(args []interface{}) []interface{} { return append(args, nil) }
-func (i nullValue) writeTo(w queryWriter, _ int) (err error) {
-	_, err = w.WriteString("NULL")
-	return err
-}
-func (i nullValue) len() int { return 1 }
-
-// NullValue treats the argument as a SQL `IS NULL` or `NULL`. IN clause not
-// supported. Implements interface Argument.
-func NullValue() Argument { return nullValue(0) }
 
 // String implements interface Argument. String also checks for valid UTF-8
 // strings.

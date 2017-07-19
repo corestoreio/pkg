@@ -181,25 +181,25 @@ func (p *nullTypedRecord) AppendArguments(stmtType int, args Arguments, columns 
 			if p.Int64Val.Valid {
 				args = append(args, Int64(p.Int64Val.Int64))
 			} else {
-				args = append(args, NullValue())
+				args = append(args, nil)
 			}
 		case "float64_val":
 			if p.Float64Val.Valid {
 				args = append(args, Float64(p.Float64Val.Float64))
 			} else {
-				args = append(args, NullValue())
+				args = append(args, nil)
 			}
 		case "time_val":
 			if p.TimeVal.Valid {
 				args = append(args, MakeTime(p.TimeVal.Time))
 			} else {
-				args = append(args, NullValue())
+				args = append(args, nil)
 			}
 		case "bool_val":
 			if p.BoolVal.Valid {
 				args = append(args, Bool(p.BoolVal.Bool))
 			} else {
-				args = append(args, NullValue())
+				args = append(args, nil)
 			}
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
