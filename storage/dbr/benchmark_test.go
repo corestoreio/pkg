@@ -40,7 +40,7 @@ func BenchmarkInterpolate(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := interpolate(ipBuf, sqlBytes, args...); err != nil {
+		if err := writeInterpolate(ipBuf, sqlBytes, args); err != nil {
 			b.Fatal(err)
 		}
 		preprocessSink = ipBuf.String()

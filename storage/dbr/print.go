@@ -80,7 +80,7 @@ func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{
 		}
 		if sql != nil {
 			if isInterpolate && !isPrepared {
-				err := interpolate(ipBuf, sql, args...)
+				err := writeInterpolate(ipBuf, sql, args)
 				return ipBuf.String(), nil, errors.WithStack(err)
 			}
 			return string(sql), args.Interfaces(), nil
@@ -109,7 +109,7 @@ func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{
 	}
 
 	if isInterpolate {
-		err := interpolate(ipBuf, buf.Bytes(), args...)
+		err := writeInterpolate(ipBuf, buf.Bytes(), args)
 		return ipBuf.String(), nil, errors.WithStack(err)
 	}
 	return buf.String(), args.Interfaces(), nil

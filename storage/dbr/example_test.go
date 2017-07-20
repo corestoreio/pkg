@@ -50,7 +50,7 @@ func iFaceToArgs(values ...interface{}) dbr.Arguments {
 				args = append(args, dbr.MakeTime(*v))
 			}
 		case nil:
-			args = append(args, dbr.NullValue())
+			args = append(args, nil) // use nil for NULL values
 		default:
 			panic(errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v))
 		}
@@ -66,19 +66,14 @@ func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	}
 	fmt.Println("Prepared Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
+	fmt.Print("\n")
 	if len(args) > 0 {
-		fmt.Printf("\nArguments: %v\n\n", args)
-	} else {
-		fmt.Print("\n")
+		fmt.Printf("Arguments: %v\n\n", args)
 	}
 	if len(args) == 0 {
 		return
 	}
-	sqlStr, err = dbr.Interpolate(sqlStr, iFaceToArgs(args...)...)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
-	}
+	sqlStr = dbr.Interpolate(sqlStr).Arguments(iFaceToArgs(args...)...).String() // TODO hacky ,better API design
 	fmt.Println("Interpolated Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
 }
@@ -372,17 +367,17 @@ func ExampleNewUnion_template() {
 }
 
 func ExampleInterpolate() {
-	sqlStr, err := dbr.Interpolate("SELECT * FROM x WHERE a IN (?) AND b IN (?) AND c NOT IN (?) AND d BETWEEN ? AND ?",
-		dbr.Ints{1},
-		dbr.Ints{1, 2, 3},
-		dbr.Int64s{5, 6, 7},
-		dbr.String("wat"),
-		dbr.String("ok"),
-	)
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		return
-	}
+	sqlStr := dbr.Interpolate("SELECT * FROM x WHERE a IN (?) AND b IN (?) AND c NOT IN (?) AND d BETWEEN ? AND ?").
+		Ints(1).
+		Ints(1, 2, 3).
+		Int64s(5, 6, 7).
+		Str("wat").
+		Str("ok").
+		// `MustString` panics on error, or use `String` which prints the error into
+		// the returned string and hence generates invalid SQL. Alternatively use
+		// `ToSQL`.
+		MustString()
+
 	fmt.Printf("%s\n", sqlStr)
 	// Output:
 	// SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND c NOT IN (5,6,7) AND d BETWEEN 'wat' AND 'ok'
@@ -682,9 +677,35 @@ func ExampleSQLCase_select() {
 	//(`promotion_id` NOT IN (4711,815,42))
 }
 
+func ExampleSelect_statementReuseWithNewArguments() {
+
+	//start := dbr.MakeTime(time.Unix(1257894000, 0))
+	//end := dbr.MakeTime(time.Unix(1257980400, 0))
+	//s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
+	//	AddColumnsExprAlias(
+	//		dbr.SQLCase("", "`closed`",
+	//			"date_start <= ? AND date_end >= ?", "`open`",
+	//			"date_start > ? AND date_end > ?", "`upcoming`",
+	//		),
+	//		"is_on_sale",
+	//	).
+	//	AddArguments(start, end, start, end).
+	//	From("catalog_promotions").Where(
+	//	dbr.Column("promotion_id").In().Ints(22, 33, 44),
+	//).
+	//	OrderBy("price").
+	//	Interpolate() // TODO enable build cache
+	//
+	//fmt.Println(s.String())
+	//// Output:
+	//// Hello
+	////s.WhereFragments[0].
+
+}
+
 // ExampleSelect_AddArguments is duplicate of ExampleSQLCase_select
 func ExampleSelect_AddArguments() {
-	// time stamp has no special meaning ;-)
+
 	start := dbr.MakeTime(time.Unix(1257894000, 0))
 	end := dbr.MakeTime(time.Unix(1257980400, 0))
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").

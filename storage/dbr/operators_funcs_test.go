@@ -198,10 +198,7 @@ func TestSQLCase(t *testing.T) {
 		assert.Exactly(t, []interface{}{int64(3), int64(4), int64(5), int64(345), int64(567), int64(897), int64(6)}, args)
 		assert.Exactly(t, "UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+? WHEN 3457 THEN qty+? WHEN 3458 THEN qty+? ELSE qty END WHERE (`product_id` IN (?,?,?)) AND (`website_id` = ?)", sqlStr)
 
-		sqlStr, err = dbr.Interpolate(sqlStr, iFaceToArgs(args...)...)
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
+		sqlStr = dbr.Interpolate(sqlStr).Arguments(iFaceToArgs(args...)...).String()
 		assert.Exactly(t, "UPDATE `cataloginventory_stock_item` SET `qty`=CASE `product_id` WHEN 3456 THEN qty+3 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty+5 ELSE qty END WHERE (`product_id` IN (345,567,897)) AND (`website_id` = 6)", sqlStr)
 	})
 

@@ -576,7 +576,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentsAppender) ([
 			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 		}
 		if isInterpolate {
-			if err = interpolate(ipBuf, sqlBuf.Bytes(), args...); err != nil {
+			if err = writeInterpolate(ipBuf, sqlBuf.Bytes(), args); err != nil {
 				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
 			}
 
