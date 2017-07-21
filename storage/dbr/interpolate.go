@@ -38,12 +38,12 @@ import (
 // functions. This function should be generally used when dealing with prepared
 // statements.
 func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
-	const qMarkStr = `?`
-	const qMarkRne = '?'
+	const strPH = `?`
+	const rPH = '?'
 
-	markCount := strings.Count(sql, qMarkStr)
-	if want := len(args); markCount != want || want == 0 {
-		return "", nil, errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", qMarkStr, markCount, want)
+	phCount := strings.Count(sql, strPH)
+	if want := len(args); phCount != want || want == 0 {
+		return "", nil, errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", strPH, phCount, want)
 	}
 
 	retArgs := make([]interface{}, 0, len(args)*2)
@@ -51,10 +51,10 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	n := markCount
+	n := phCount
 	i := 0
 	for i < n {
-		m := strings.IndexByte(sql, qMarkRne)
+		m := strings.IndexByte(sql, rPH)
 		if m < 0 {
 			break
 		}
@@ -65,13 +65,13 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 			retArgs = args[i].toIFace(retArgs)
 			reps := len(retArgs) - prevLen
 			for r := 0; r < reps; r++ {
-				buf.WriteByte(qMarkRne)
+				buf.WriteByte(rPH)
 				if r < reps-1 {
 					buf.WriteByte(',')
 				}
 			}
 		}
-		sql = sql[m+len(qMarkStr):]
+		sql = sql[m+len(strPH):]
 		i++
 	}
 	buf.WriteString(sql)
@@ -80,7 +80,7 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 
 // repeat multiplies the place holder with the arguments internal len.
 func repeat(buf queryWriter, sql []byte, args ...Argument) error {
-	const qMarkRne = '?'
+	const rPH = '?'
 
 	i := 0
 	pos := 0
@@ -93,7 +93,7 @@ func repeat(buf queryWriter, sql []byte, args ...Argument) error {
 			if i < len(args) {
 				reps := args[i].len()
 				for r := 0; r < reps; r++ {
-					buf.WriteByte(qMarkRne)
+					buf.WriteByte(rPH)
 					if r < reps-1 {
 						buf.WriteByte(',')
 					}
@@ -301,20 +301,22 @@ func (ip *interpolate) Named(nArgs ...sql.NamedArg) *interpolate {
 	return ip
 }
 
+var bTextPlaceholder = []byte("?")
+
 // writeInterpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
 func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
-	var qMarkStr = []byte("?")
+
 	// TODO(CyS) due to the type `interpolate`, we can optimize the parsing in
 	// the second run with the same SQL slice but different arguments. We know
 	// ahead on which position the insertion must happen. Some refactoring needs
 	// to be done.
 
-	markCount := bytes.Count(sql, qMarkStr)
+	phCount := bytes.Count(sql, bTextPlaceholder)
 	argCount := Arguments(args).len()
 
 	// Repeats the place holders, e.g. IN (?) will become IN (?,?,?)
-	if markCount < argCount {
+	if phCount < argCount {
 		rBuf := bufferpool.Get()
 		defer bufferpool.Put(rBuf)
 		if err := repeat(rBuf, sql, args...); err != nil {
@@ -323,8 +325,8 @@ func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
 		sql = rBuf.Bytes()
 	}
 
-	qCountTotal := 0
-	qCount := -1
+	phTotals := 0
+	phCounter := -1
 	argIndex := 0
 	argLength := 0
 	if len(args) > 0 {
@@ -340,10 +342,10 @@ func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
 
 		switch {
 		case r == '?':
-			if qCount < argLength-1 {
-				qCount++
+			if phCounter < argLength-1 {
+				phCounter++
 			} else {
-				qCount = 0 // next argument set starts
+				phCounter = 0 // next argument set starts
 				argIndex++
 				if argIndex >= len(args) {
 					return errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d but argument count was %d", argIndex, len(args)-1)
@@ -355,11 +357,11 @@ func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
 			}
 			if args[argIndex] == nil {
 				buf.WriteString("NULL")
-			} else if err := args[argIndex].writeTo(buf, qCount); err != nil {
+			} else if err := args[argIndex].writeTo(buf, phCounter); err != nil {
 				return errors.WithStack(err)
 			}
 
-			qCountTotal++
+			phTotals++
 		case r == '`', r == '\'', r == '"':
 			p := bytes.IndexRune(sql[pos:], r)
 			if p == -1 {
@@ -382,8 +384,8 @@ func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
 		}
 	}
 
-	if qCountTotal != argCount {
-		return errors.NewNotValidf("[dbr] Arguments are imbalanced. Placeholders: %d Current argument count: %d or %d", qCountTotal, argCount, len(args))
+	if phTotals != argCount {
+		return errors.NewNotValidf("[dbr] Arguments are imbalanced. Placeholders: %d Current argument count: %d or %d", phTotals, argCount, len(args))
 	}
 	return nil
 }

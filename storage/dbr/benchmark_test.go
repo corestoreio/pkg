@@ -16,12 +16,12 @@ package dbr
 
 import (
 	"bytes"
-	"testing"
-
 	"database/sql"
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"math"
+	"testing"
 	"time"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 var preprocessSink string

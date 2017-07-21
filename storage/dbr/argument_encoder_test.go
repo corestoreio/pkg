@@ -18,10 +18,10 @@ import (
 	"math"
 	"runtime"
 	"testing"
-
 	"time"
 
 	"database/sql"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,7 +46,7 @@ func TestArgBytes(t *testing.T) {
 		assert.Len(t, ac, 0)
 		assert.Exactly(t, argBytesCap, cap(ac), "cap should be unchanged")
 	})
-	t.Run("allocate no new memory but use different args", func(t *testing.T) {
+	t.Run("allocate no new memory but use different args (flaky)", func(t *testing.T) {
 		msBefore := new(runtime.MemStats)
 		runtime.ReadMemStats(msBefore)
 
