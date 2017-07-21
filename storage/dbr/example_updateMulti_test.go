@@ -65,21 +65,24 @@ func (so salesOrder) AppendArguments(stmtType int, args dbr.Arguments, columns [
 	return args, nil
 }
 
+// ExampleUpdateMulti can create a prepared statement or interpolated statements
+// to run updates on table  `sales_order` with different objects. The SQL UPDATE
+// statement acts as a template.
 func ExampleUpdateMulti() {
 	// <ignore_this>
 	dbc, dbMock := cstesting.MockDB(nil)
 	defer cstesting.MockClose(nil, dbc, dbMock)
 
 	prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta(
-		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` = ?) AND (`entity_id` = ?)",
+		"UPDATE `sales_order` SET `state`=?, `customer_id`=?, `grand_total`=? WHERE (`shipping_method` IN (?,?)) AND (`entity_id` = ?)",
 	))
 
 	prep.ExpectExec().WithArgs(
-		"pending", int64(5678), 31.41459, "DHL", 1).
+		"pending", int64(5678), 31.41459, "DHL", "UPS", 1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	prep.ExpectExec().WithArgs(
-		"processing", int64(8912), nil, "DHL", 2).
+		"processing", int64(8912), nil, "DHL", "UPS", 2).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// </ignore_this>
 
@@ -88,9 +91,8 @@ func ExampleUpdateMulti() {
 		dbr.NewUpdate("sales_order").
 			AddColumns("state", "customer_id", "grand_total").
 			Where(
-				// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
-				dbr.Column("shipping_method").Equal().String("DHL"), // For all clauses the same restriction
-				dbr.Column("entity_id").PlaceHolder(),               // Int64() acts as a place holder
+				dbr.Column("shipping_method").In().Strings("DHL", "UPS"),
+				dbr.Column("entity_id").PlaceHolder(),
 			), // Our template statement
 	).WithDB(dbc.DB)
 

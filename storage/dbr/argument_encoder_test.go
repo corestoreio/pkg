@@ -71,7 +71,7 @@ func TestArgBytes(t *testing.T) {
 		//t.Logf("Mallocs %d", msAfter.Mallocs-msBefore.Mallocs)
 	})
 
-	t.Run("allocate 5 new blocks but use different args", func(t *testing.T) {
+	t.Run("allocate 5 new blocks but use different args (flaky)", func(t *testing.T) {
 		ac = ac.reset()
 		msBefore := new(runtime.MemStats)
 		runtime.ReadMemStats(msBefore)

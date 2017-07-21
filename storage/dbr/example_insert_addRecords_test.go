@@ -61,6 +61,10 @@ func (pe productEntity) AppendArguments(stmtType int, args dbr.Arguments, column
 	return args, nil
 }
 
+// ExampleInsert_AddRecords inserts new data into table
+// `catalog_product_entity`. First statement by specifying the exact column
+// names. In the second example all columns values are getting inserted and you
+// specify the number of place holders per record.
 func ExampleInsert_AddRecords() {
 
 	objs := []productEntity{

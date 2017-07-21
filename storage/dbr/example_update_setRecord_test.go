@@ -64,11 +64,14 @@ func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.Arguments, colu
 	return args, nil
 }
 
+// ExampleUpdate_SetRecord performs an UPDATE query in the table `catalog_category_entity` with the
+// fix specified columns. The Go type categoryEntity implements the dbr.ArgumentsAppender interface and can
+// append the required arguments.
 func ExampleUpdate_SetRecord() {
 
 	ce := &categoryEntity{345, 6, "p123", dbr.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
-	// Updates all rows in the table
+	// Updates all rows in the table because of missing WHERE statement.
 	u := dbr.NewUpdate("catalog_category_entity").
 		AddColumns("attribute_set_id", "parent_id", "path", "teaser_id_s").
 		SetRecord(ce)
@@ -78,12 +81,13 @@ func ExampleUpdate_SetRecord() {
 
 	ce = &categoryEntity{678, 6, "p456", dbr.NullString{}, nil}
 
-	// Updates only one row in the table. You can call SetRecord and Exec as
-	// often as you like. Each call to Exec will reassemble the arguments.
-	u = dbr.NewUpdate("catalog_category_entity").
-		AddColumns("attribute_set_id", "parent_id", "path", "teaser_id_s").
+	// Updates only one row in the table because of the WHERE. You can call
+	// SetRecord and Exec as often as you like. Each call to Exec will
+	// reassemble the arguments from SetRecord, means you can exchange SetRecord
+	// with different objects.
+	u.
 		SetRecord(ce).
-		Where(dbr.Column("entity_id").PlaceHolder()) // No Arguments in Int64s because we need a place holder.
+		Where(dbr.Column("entity_id").PlaceHolder())
 	writeToSQLAndInterpolate(u)
 
 	// Output:

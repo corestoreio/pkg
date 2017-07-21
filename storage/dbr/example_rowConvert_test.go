@@ -92,6 +92,10 @@ func (cc *salesCreditMemoCollection) RowScan(r *sql.Rows) error {
 	return nil
 }
 
+// ExampleRowConvert loads from the table `sales_creditmemo` two rows into the
+// type salesCreditMemoCollection which implements interface dbr.Scanner. The
+// column `voucher_codes` contains a special encoded values. These values gets
+// split into a slice during RowScan aka. RowConvert.
 func ExampleRowConvert() {
 	// <ignore_this>
 	dbc, dbMock := cstesting.MockDB(nil)
