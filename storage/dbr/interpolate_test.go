@@ -15,16 +15,15 @@
 package dbr
 
 import (
+	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"testing"
 	"time"
 
-	"database/sql"
-	"fmt"
-
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
-	require "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 var _ fmt.Stringer = (*interpolate)(nil)
