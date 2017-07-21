@@ -18,7 +18,10 @@ import (
 	"bytes"
 	"testing"
 
+	"database/sql"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"math"
+	"time"
 )
 
 var preprocessSink string
@@ -104,4 +107,163 @@ func BenchmarkDialect_EscapeTime(b *testing.B) {
 		dialect.EscapeTime(benchmarkDialect_EscapeTimeBuf, date)
 		benchmarkDialect_EscapeTimeBuf.Reset()
 	}
+}
+
+var benchmarkArgEnc argEncoded
+
+func BenchmarkArgumentEncoding(b *testing.B) {
+
+	b.Run("all types without warm up", func(b *testing.B) {
+		t1 := now()
+		t2 := now().Add(time.Minute * 2)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkArgEnc = makeArgBytes().
+				appendInt(3).
+				appendInts(4, 5, 6).
+				appendInt64(30).
+				appendInt64s(40, 50, 60).
+				appendUint64(math.MaxUint32).
+				appendUint64s(800, 900).
+				appendFloat64(math.MaxFloat32).
+				appendFloat64s(80.5490, math.Pi).
+				appendString("Finally, how will we ship and deliver Go 2?").
+				appendStrings("Finally, how will we fly and deliver Go 1?", "Finally, how will we run and deliver Go 3?", "Finally, how will we walk and deliver Go 3?").
+				appendBool(true).
+				appendBool(false).
+				appendBools(false, true, true, false, true).
+				appendTime(t1).
+				appendTimes(t1, t2, t1).
+				appendNullString(sql.NullString{}, sql.NullString{Valid: true, String: "Hello"}).
+				appendNullFloat64(sql.NullFloat64{Valid: true, Float64: math.E}, sql.NullFloat64{}).
+				appendNullInt64(sql.NullInt64{Valid: true, Int64: 987654321}, sql.NullInt64{}).
+				appendNullBool(sql.NullBool{}, sql.NullBool{Valid: true, Bool: true}, sql.NullBool{Valid: false, Bool: true}).
+				appendNullTime(NullTime{Valid: true, Time: t1}, NullTime{})
+		}
+	})
+
+	b.Run("all types with warm up", func(b *testing.B) {
+
+		t1 := now()
+		t2 := now().Add(time.Minute * 2)
+
+		benchmarkArgEnc = makeArgBytes().
+			appendInt(3).
+			appendInts(4, 5, 6).
+			appendInt64(30).
+			appendInt64s(40, 50, 60).
+			appendUint64(math.MaxUint32).
+			appendUint64s(800, 900).
+			appendFloat64(math.MaxFloat32).
+			appendFloat64s(80.5490, math.Pi).
+			appendString("Finally, how will we ship and deliver Go 2?").
+			appendStrings("Finally, how will we fly and deliver Go 1?", "Finally, how will we run and deliver Go 3?", "Finally, how will we walk and deliver Go 3?").
+			appendBool(true).
+			appendBool(false).
+			appendBools(false, true, true, false, true).
+			appendTime(t1).
+			appendTimes(t1, t2, t1).
+			appendNullString(sql.NullString{}, sql.NullString{Valid: true, String: "Hello"}).
+			appendNullFloat64(sql.NullFloat64{Valid: true, Float64: math.E}, sql.NullFloat64{}).
+			appendNullInt64(sql.NullInt64{Valid: true, Int64: 987654321}, sql.NullInt64{}).
+			appendNullBool(sql.NullBool{}, sql.NullBool{Valid: true, Bool: true}, sql.NullBool{Valid: false, Bool: true}).
+			appendNullTime(NullTime{Valid: true, Time: t1}, NullTime{})
+
+		ns := []sql.NullString{{}, {Valid: true, String: "Hello"}}
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkArgEnc.
+				reset().
+				appendInt(13).
+				appendInts(14, 15, 16).
+				appendInt64(130).
+				appendInt64s(140, 150, 160).
+				appendUint64(math.MaxUint16).
+				appendUint64s(1800, 1900).
+				appendFloat64(math.MaxFloat32).
+				appendFloat64s(84.5490, math.Pi).
+				appendString("F1nally, how will we ship and deliver Go 1?").
+				appendStrings("F1nally, how will we fly and deliver Go 2?", "Finally, how will we run and deliver Go 3?", "Finally, how will we walk and deliver Go 4?").
+				appendBool(false).
+				appendBool(true).
+				appendBools(false, true, true, false, true).
+				appendTime(t1).
+				appendTimes(t1, t2, t1).
+				appendNullString(ns...).
+				appendNullFloat64(sql.NullFloat64{Valid: true, Float64: math.E}, sql.NullFloat64{}).
+				appendNullInt64(sql.NullInt64{Valid: true, Int64: 987654321}, sql.NullInt64{}).
+				appendNullBool(sql.NullBool{}, sql.NullBool{Valid: true, Bool: true}, sql.NullBool{Valid: false, Bool: true}).
+				appendNullTime(NullTime{Valid: true, Time: t1}, NullTime{})
+			// b.Fatal(benchmarkArgEnc.DebugBytes())
+		}
+	})
+	b.Run("number slices without warm up", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkArgEnc = makeArgBytes().
+				appendInt(3).
+				appendInts(4, 5, 6).
+				appendInt64(30).
+				appendInt64s(40, 50, 60).
+				appendUint64(math.MaxUint32).
+				appendUint64s(800, 900).
+				appendFloat64(math.MaxFloat32).
+				appendFloat64s(80.5490, math.Pi)
+		}
+	})
+	b.Run("number slices with warm up", func(b *testing.B) {
+		benchmarkArgEnc = makeArgBytes().
+			appendInt(3).
+			appendInts(4, 5, 6).
+			appendInt64(30).
+			appendInt64s(40, 50, 60).
+			appendUint64(math.MaxUint32).
+			appendUint64s(800, 900).
+			appendFloat64(math.MaxFloat32).
+			appendFloat64s(80.5490, math.Pi)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkArgEnc = benchmarkArgEnc.
+				reset().
+				appendInt(13).
+				appendInts(14, 15, 16).
+				appendInt64(130).
+				appendInt64s(140, 150, 160).
+				appendUint64(math.MaxUint32).
+				appendUint64s(1800, 1900).
+				appendFloat64(math.MaxFloat32).
+				appendFloat64s(180.5490, math.Pi)
+		}
+	})
+
+	b.Run("numbers without warm up", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkArgEnc = makeArgBytes().
+				appendInt(3).
+				appendInt64(30).
+				appendUint64(math.MaxUint32).
+				appendFloat64(math.MaxFloat32)
+		}
+	})
+	b.Run("numbers with warm up", func(b *testing.B) {
+		benchmarkArgEnc = makeArgBytes().
+			appendInt(3).
+			appendInt64(30).
+			appendUint64(math.MaxUint32).
+			appendFloat64(math.MaxFloat32)
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			benchmarkArgEnc = benchmarkArgEnc.
+				reset().
+				appendInt(9).
+				appendInt64(130).
+				appendUint64(math.MaxUint64).
+				appendFloat64(math.MaxFloat64)
+		}
+	})
 }
