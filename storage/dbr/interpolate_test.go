@@ -26,8 +26,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ fmt.Stringer = (*interpolate)(nil)
-var _ QueryBuilder = (*interpolate)(nil)
+var _ fmt.Stringer = (*ipolate)(nil)
+var _ QueryBuilder = (*ipolate)(nil)
 
 func TestRepeat(t *testing.T) {
 	t.Parallel()

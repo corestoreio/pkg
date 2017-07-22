@@ -107,7 +107,7 @@ func repeat(buf queryWriter, sql []byte, args ...Argument) error {
 	return nil
 }
 
-type interpolate struct {
+type ipolate struct {
 	useCache   bool
 	queryCache []byte
 	args       Arguments
@@ -117,8 +117,8 @@ type interpolate struct {
 // to replace them with. It returns a blank string or an error if the number of
 // placeholders does not match the number of arguments. Implements the Repeat
 // function.
-func Interpolate(sql string) *interpolate {
-	return &interpolate{
+func Interpolate(sql string) *ipolate {
+	return &ipolate{
 		queryCache: []byte(sql),
 		args:       make(Arguments, 0, 8),
 	}
@@ -126,7 +126,7 @@ func Interpolate(sql string) *interpolate {
 
 // String implements fmt.Stringer and prints errors into the string which will
 // maybe generate invalid SQL code.
-func (ip *interpolate) String() string {
+func (ip *ipolate) String() string {
 	sql, _, err := ip.ToSQL()
 	if err != nil {
 		return err.Error()
@@ -135,7 +135,7 @@ func (ip *interpolate) String() string {
 }
 
 // MustString returns the fully interpolated SQL string or panics on error.
-func (ip *interpolate) MustString() string {
+func (ip *ipolate) MustString() string {
 	sql, _, err := ip.ToSQL()
 	if err != nil {
 		panic(err)
@@ -144,7 +144,7 @@ func (ip *interpolate) MustString() string {
 }
 
 // ToSQL implements dbr.QueryBuilder. The interface slice is always nil.
-func (ip *interpolate) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
+func (ip *ipolate) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := writeInterpolate(buf, ip.queryCache, ip.args); err != nil {
@@ -155,90 +155,28 @@ func (ip *interpolate) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 
 // Reset resets the internal argument cache for reuse. Avoids lots of
 // allocations.
-func (ip *interpolate) Reset() *interpolate {
-	ip.args = ip.args[:0]
-	return ip
-}
-
-func (ip *interpolate) Null() *interpolate {
-	ip.args = append(ip.args, nil)
-	return ip
-}
-
-func (ip *interpolate) Int(i int) *interpolate {
-	ip.args = append(ip.args, Int(i))
-	return ip
-}
-
-func (ip *interpolate) Ints(i ...int) *interpolate {
-	ip.args = append(ip.args, Ints(i))
-	return ip
-}
-func (ip *interpolate) Int64(i int64) *interpolate {
-	ip.args = append(ip.args, Int64(i))
-	return ip
-}
-
-func (ip *interpolate) Int64s(i ...int64) *interpolate {
-	ip.args = append(ip.args, Int64s(i))
-	return ip
-}
-
-func (ip *interpolate) Uint64(i uint64) *interpolate {
-	ip.args = append(ip.args, Uint64(i))
-	return ip
-}
-
-func (ip *interpolate) Float64(f float64) *interpolate {
-	ip.args = append(ip.args, Float64(f))
-	return ip
-}
-func (ip *interpolate) Float64s(f ...float64) *interpolate {
-	ip.args = append(ip.args, Float64s(f))
-	return ip
-}
-func (ip *interpolate) Str(s string) *interpolate {
-	ip.args = append(ip.args, String(s))
-	return ip
-}
-
-func (ip *interpolate) Strs(s ...string) *interpolate {
-	ip.args = append(ip.args, Strings(s))
-	return ip
-}
-
-func (ip *interpolate) Bool(b bool) *interpolate {
-	ip.args = append(ip.args, Bool(b))
-	return ip
-}
-
-// Bools uses bool arguments for comparison.
-func (ip *interpolate) Bools(b ...bool) *interpolate {
-	ip.args = append(ip.args, Bools(b))
-	return ip
-}
-
-func (ip *interpolate) Bytes(p []byte) *interpolate {
-	ip.args = append(ip.args, Bytes(p))
-	return ip
-}
-
-func (ip *interpolate) BytesSlice(p ...[]byte) *interpolate {
+func (ip *ipolate) Reset() *ipolate                { ip.args = ip.args[:0]; return ip }
+func (ip *ipolate) Null() *ipolate                 { ip.args = append(ip.args, nil); return ip }
+func (ip *ipolate) Int(i int) *ipolate             { ip.args = append(ip.args, Int(i)); return ip }
+func (ip *ipolate) Ints(i ...int) *ipolate         { ip.args = append(ip.args, Ints(i)); return ip }
+func (ip *ipolate) Int64(i int64) *ipolate         { ip.args = append(ip.args, Int64(i)); return ip }
+func (ip *ipolate) Int64s(i ...int64) *ipolate     { ip.args = append(ip.args, Int64s(i)); return ip }
+func (ip *ipolate) Uint64(i uint64) *ipolate       { ip.args = append(ip.args, Uint64(i)); return ip }
+func (ip *ipolate) Float64(f float64) *ipolate     { ip.args = append(ip.args, Float64(f)); return ip }
+func (ip *ipolate) Float64s(f ...float64) *ipolate { ip.args = append(ip.args, Float64s(f)); return ip }
+func (ip *ipolate) Str(s string) *ipolate          { ip.args = append(ip.args, String(s)); return ip }
+func (ip *ipolate) Strs(s ...string) *ipolate      { ip.args = append(ip.args, Strings(s)); return ip }
+func (ip *ipolate) Bool(b bool) *ipolate           { ip.args = append(ip.args, Bool(b)); return ip }
+func (ip *ipolate) Bools(b ...bool) *ipolate       { ip.args = append(ip.args, Bools(b)); return ip }
+func (ip *ipolate) Bytes(p []byte) *ipolate        { ip.args = append(ip.args, Bytes(p)); return ip }
+func (ip *ipolate) BytesSlice(p ...[]byte) *ipolate {
 	ip.args = append(ip.args, BytesSlice(p))
 	return ip
 }
+func (ip *ipolate) Time(t time.Time) *ipolate     { ip.args = append(ip.args, MakeTime(t)); return ip }
+func (ip *ipolate) Times(t ...time.Time) *ipolate { ip.args = append(ip.args, Times(t)); return ip }
 
-func (ip *interpolate) Time(t time.Time) *interpolate {
-	ip.args = append(ip.args, MakeTime(t))
-	return ip
-}
-
-func (ip *interpolate) Times(t ...time.Time) *interpolate {
-	ip.args = append(ip.args, Times(t))
-	return ip
-}
-
-func (ip *interpolate) NullString(nv ...NullString) *interpolate {
+func (ip *ipolate) NullString(nv ...NullString) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
@@ -247,7 +185,7 @@ func (ip *interpolate) NullString(nv ...NullString) *interpolate {
 	return ip
 }
 
-func (ip *interpolate) NullFloat64(nv ...NullFloat64) *interpolate {
+func (ip *ipolate) NullFloat64(nv ...NullFloat64) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
@@ -256,7 +194,7 @@ func (ip *interpolate) NullFloat64(nv ...NullFloat64) *interpolate {
 	return ip
 }
 
-func (ip *interpolate) NullInt64(nv ...NullInt64) *interpolate {
+func (ip *ipolate) NullInt64(nv ...NullInt64) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
@@ -265,11 +203,11 @@ func (ip *interpolate) NullInt64(nv ...NullInt64) *interpolate {
 	return ip
 }
 
-func (ip *interpolate) NullBool(nv NullBool) *interpolate {
+func (ip *ipolate) NullBool(nv NullBool) *ipolate {
 	ip.args = append(ip.args, nv)
 	return ip
 }
-func (ip *interpolate) NullTime(nv ...NullTime) *interpolate {
+func (ip *ipolate) NullTime(nv ...NullTime) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
@@ -277,11 +215,11 @@ func (ip *interpolate) NullTime(nv ...NullTime) *interpolate {
 	}
 	return ip
 }
-func (ip *interpolate) Value(dv ...driver.Valuer) *interpolate {
+func (ip *ipolate) Value(dv ...driver.Valuer) *ipolate {
 	ip.args = append(ip.args, DriverValues(dv))
 	return ip
 }
-func (ip *interpolate) Arguments(arg ...Argument) *interpolate {
+func (ip *ipolate) Arguments(arg ...Argument) *ipolate {
 	// todo maybe make this method Arguments private
 	ip.args = append(ip.args, arg...)
 	return ip
@@ -289,7 +227,7 @@ func (ip *interpolate) Arguments(arg ...Argument) *interpolate {
 
 // Named uses the NamedArg for string replacement. Replaces the names with place
 // holder character. TODO(CyS) Slices in NamedArg.Value are not yet supported.
-func (ip *interpolate) Named(nArgs ...sql.NamedArg) *interpolate {
+func (ip *ipolate) Named(nArgs ...sql.NamedArg) *ipolate {
 	// for now this unoptimized version with a stupid string replacement and
 	// converting between bytes and string.
 	sqlStr := string(ip.queryCache)

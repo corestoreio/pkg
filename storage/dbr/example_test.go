@@ -156,7 +156,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 		AddColumns("id", "name", "email").
 		AddValues(1, "Pik'e", "pikes@peak.com").
 		AddOnDuplicateKey("name", dbr.String("Pik3")).
-		AddOnDuplicateKey("email", nil)
+		AddOnDuplicateKey("email", nil) // TODO fix: wow what is nil? i thought NULL
 	writeToSQLAndInterpolate(i)
 
 	// Output:

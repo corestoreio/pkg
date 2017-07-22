@@ -181,6 +181,12 @@ func (op Op) hasArgs(argLen int) (addArg bool) {
 	return
 }
 
+//type Assignments []struct {
+//	Left     string   // Left, mostly a column name
+//	Right    string   // Right, mostly empty but can be an expression
+//	Argument Argument // Argument, which gets written into Right or as place holder.
+//}
+
 // WhereFragment implements a single WHERE condition. Please use the helper
 // functions instead of using this type directly.
 type WhereFragment struct {

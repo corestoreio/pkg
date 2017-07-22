@@ -68,7 +68,8 @@ type Argument interface {
 	// toIFace appends the argument or arguments to interface slice and returns it.
 	toIFace([]interface{}) []interface{}
 	// writeTo writes the value correctly escaped to the queryWriter. It must
-	// avoid SQL injections.
+	// avoid SQL injections. `position` defines the current index which should
+	// get written. Max index is equal len().
 	writeTo(w queryWriter, position int) error
 	// len returns the length of the available arguments.
 	len() int
