@@ -429,28 +429,6 @@ func (a Float64s) toIFace(args []interface{}) []interface{} {
 func (a Float64s) writeTo(w queryWriter, pos int) error { return writeFloat64(w, a[pos]) }
 func (a Float64s) len() int                             { return len(a) }
 
-type expr struct {
-	SQL string
-	Arguments
-}
-
-// ExpressionValue implements a SQL fragment with placeholders, and a slice of
-// arguments to replace them with. Mostly used in UPDATE statements. Implements
-// interface Argument.
-func ExpressionValue(sql string, args ...Argument) Argument {
-	return &expr{SQL: sql, Arguments: args}
-}
-
-func (e *expr) toIFace(args []interface{}) []interface{} {
-	for _, a := range e.Arguments {
-		args = a.toIFace(args)
-	}
-	return args
-}
-
-func (e *expr) writeTo(w queryWriter, _ int) error { w.WriteString(e.SQL); return nil }
-func (e *expr) len() int                           { return 1 }
-
 // placeHolderOp identifies place holder arguments. Those arguments will get
 // assembled from an external type.
 type placeHolderOp rune

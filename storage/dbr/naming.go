@@ -43,11 +43,11 @@ type alias struct {
 	// t1.price => `t1`=qualifier and `price`=name
 	Qualifier string
 	// Name can be any kind of SQL expression or a valid identifier. It gets
-	// quoted when `IsExpression` is false.
+	// quoted when `IsLeftExpression` is false.
 	Name string
 	// Alias must be a valid identifier allowed for alias usage.
 	Alias string
-	// IsExpression if true the field `Name` will be treated as an expression
+	// IsLeftExpression if true the field `Name` will be treated as an expression
 	// and won't get quoted when generating the SQL. The Qualifier field gets
 	// ignored.
 	IsExpression bool
@@ -294,8 +294,6 @@ func (mq MysqlQuoter) WriteNameAlias(w queryWriter, name, alias string) {
 	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
 	nameHasQuote := strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote)
 	nameHasDot := strings.IndexByte(name, '.') >= 0
-
-	//fmt.Printf("lp %d expr %mq nameHasQuote %t nameHasDot %t | %#v\n", lp, expr, nameHasQuote, nameHasDot, expressionAlias)
 
 	switch {
 	case alias == "" && nameHasQuote:

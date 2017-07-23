@@ -50,10 +50,10 @@ type Select struct {
 	// Table table name and optional alias name to SELECT from.
 	Table alias
 
-	WhereFragments    WhereFragments
-	JoinFragments     JoinFragments
+	Wheres            Conditions
+	Joins             Joins
 	GroupBys          aliases
-	HavingFragments   WhereFragments
+	HavingFragments   Conditions
 	OrderBys          aliases
 	LimitCount        uint64
 	OffsetCount       uint64
@@ -309,8 +309,8 @@ func (b *Select) AddArguments(args ...Argument) *Select {
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs.
-func (b *Select) Where(wf ...*WhereFragment) *Select {
-	b.WhereFragments = append(b.WhereFragments, wf...)
+func (b *Select) Where(wf ...*Condition) *Select {
+	b.Wheres = append(b.Wheres, wf...)
 	return b
 }
 
@@ -349,7 +349,7 @@ func (b *Select) GroupByExpr(groups ...string) *Select {
 }
 
 // Having appends a HAVING clause to the statement
-func (b *Select) Having(wf ...*WhereFragment) *Select {
+func (b *Select) Having(wf ...*Condition) *Select {
 	b.HavingFragments = append(b.HavingFragments, wf...)
 	return b
 }
@@ -416,43 +416,43 @@ func (b *Select) Interpolate() *Select {
 	return b
 }
 
-func (b *Select) join(j string, t alias, on ...*WhereFragment) *Select {
-	jf := &joinFragment{
+func (b *Select) join(j string, t alias, on ...*Condition) *Select {
+	jf := &join{
 		JoinType: j,
 		Table:    t,
 	}
-	jf.OnConditions = append(jf.OnConditions, on...)
-	b.JoinFragments = append(b.JoinFragments, jf)
+	jf.On = append(jf.On, on...)
+	b.Joins = append(b.Joins, jf)
 	return b
 }
 
-// Join creates an INNER join construct. By default, the onConditions are glued
+// Joins creates an INNER join construct. By default, the onConditions are glued
 // together with AND.
-func (b *Select) Join(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) Join(table alias, onConditions ...*Condition) *Select {
 	return b.join("INNER", table, onConditions...)
 }
 
 // LeftJoin creates a LEFT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) LeftJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) LeftJoin(table alias, onConditions ...*Condition) *Select {
 	return b.join("LEFT", table, onConditions...)
 }
 
 // RightJoin creates a RIGHT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) RightJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) RightJoin(table alias, onConditions ...*Condition) *Select {
 	return b.join("RIGHT", table, onConditions...)
 }
 
 // OuterJoin creates an OUTER join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) OuterJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) OuterJoin(table alias, onConditions ...*Condition) *Select {
 	return b.join("OUTER", table, onConditions...)
 }
 
 // CrossJoin creates a CROSS join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) CrossJoin(table alias, onConditions ...*WhereFragment) *Select {
+func (b *Select) CrossJoin(table alias, onConditions ...*Condition) *Select {
 	return b.join("CROSS", table, onConditions...)
 }
 
@@ -464,7 +464,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 // argumentCapacity returns the total possible guessed size of a new Arguments
 // slice. Use as the cap parameter in a call to `make`.
 func (b *Select) argumentCapacity() int {
-	return len(b.RawArguments) + (len(b.JoinFragments)+len(b.WhereFragments))*2
+	return len(b.RawArguments) + (len(b.Joins)+len(b.Wheres))*2
 }
 
 func (b *Select) writeBuildCache(sql []byte) {
@@ -526,17 +526,17 @@ func (b *Select) toSQL(w queryWriter) error {
 		}
 	}
 
-	for _, f := range b.JoinFragments {
+	for _, f := range b.Joins {
 		w.WriteByte(' ')
 		w.WriteString(f.JoinType)
 		w.WriteString(" JOIN ")
 		f.Table.WriteQuoted(w)
-		if err := f.OnConditions.write(w, 'j'); err != nil {
+		if err := f.On.write(w, 'j'); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
-	if err := b.WhereFragments.write(w, 'w'); err != nil {
+	if err := b.Wheres.write(w, 'w'); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -589,34 +589,34 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 		return nil, errors.WithStack(err)
 	}
 
-	placeHolderColumns := make([]string, 0, len(b.JoinFragments)+len(b.WhereFragments)+len(b.HavingFragments))
+	placeHolderColumns := make([]string, 0, len(b.Joins)+len(b.Wheres)+len(b.HavingFragments))
 	var pap []int
-	if len(b.JoinFragments) > 0 {
-		for _, f := range b.JoinFragments {
+	if len(b.Joins) > 0 {
+		for _, f := range b.Joins {
 			args, err = f.Table.appendArgs(args)
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}
 
-			if args, pap, err = f.OnConditions.appendArgs(args, 'j'); err != nil {
+			if args, pap, err = f.On.appendArgs(args, appendArgsJOIN); err != nil {
 				return nil, errors.WithStack(err)
 			}
-			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.OnConditions.intersectConditions(placeHolderColumns)); err != nil {
+			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.On.intersectConditions(placeHolderColumns)); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		}
 	}
 	placeHolderColumns = placeHolderColumns[:0]
 
-	if args, pap, err = b.WhereFragments.appendArgs(args, 'w'); err != nil {
+	if args, pap, err = b.Wheres.appendArgs(args, appendArgsWHERE); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.WhereFragments.intersectConditions(placeHolderColumns)); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	placeHolderColumns = placeHolderColumns[:0]
 
-	if args, pap, err = b.HavingFragments.appendArgs(args, 'h'); err != nil {
+	if args, pap, err = b.HavingFragments.appendArgs(args, appendArgsHAVING); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.intersectConditions(placeHolderColumns)); err != nil {

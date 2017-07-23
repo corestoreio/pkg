@@ -39,7 +39,7 @@ type Show struct {
 	// Type bitwise flag containing the type of the SHOW statement.
 	Type           uint
 	LikeCondition  Argument
-	WhereFragments WhereFragments
+	WhereFragments Conditions
 	IsInterpolate  bool // See Interpolate()
 	// UseBuildCache if `true` the final build query including place holders
 	// will be cached in a private field. Each time a call to function ToSQL
@@ -115,7 +115,7 @@ func (b *Show) BinaryLog() *Show {
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs. Either WHERE or LIKE can be used.
-func (b *Show) Where(wf ...*WhereFragment) *Show {
+func (b *Show) Where(wf ...*Condition) *Show {
 	b.WhereFragments = append(b.WhereFragments, wf...)
 	return b
 }
@@ -206,7 +206,7 @@ func (b *Show) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if b.LikeCondition != nil {
 		args = append(args, b.LikeCondition)
-	} else if args, _, err = b.WhereFragments.appendArgs(args, 'w'); err != nil {
+	} else if args, _, err = b.WhereFragments.appendArgs(args, appendArgsWHERE); err != nil {
 		return nil, errors.WithStack(err)
 	}
 

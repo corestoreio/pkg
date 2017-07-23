@@ -137,7 +137,7 @@ func TestNewWith(t *testing.T) {
 	t.Run("DELETE", func(t *testing.T) {
 		cte := dbr.NewWith(
 			dbr.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dbr.NewSelect().AddColumnsExpr("123")},
-		).Delete(dbr.NewDelete("test").Where(dbr.SubSelect("val", dbr.In, dbr.NewSelect("val").From("check_vals"))))
+		).Delete(dbr.NewDelete("test").Where(dbr.Column("val").In().Sub(dbr.NewSelect("val").From("check_vals"))))
 
 		compareToSQL(t, cte, nil,
 			"WITH\n`check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
@@ -151,7 +151,7 @@ func TestNewWith(t *testing.T) {
 				dbr.NewSelect().AddColumnsExpr("1+n").From("my_cte").Where(dbr.Column("n").Less().Int(6)),
 			).All()},
 			// UPDATE statement is wrong because we're missing a JOIN which is not yet implemented.
-		).Update(dbr.NewUpdate("numbers").Set("n", dbr.Int(0)).Where(dbr.Expression("n=my_cte.n*my_cte.n"))).
+		).Update(dbr.NewUpdate("numbers").Set(dbr.Column("n").Int(0)).Where(dbr.Expression("n=my_cte.n*my_cte.n"))).
 			Recursive()
 
 		compareToSQL(t, cte, nil,

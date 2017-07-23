@@ -133,8 +133,7 @@ func TestInsert_Add(t *testing.T) {
 				AddValues(
 					5, 6,
 				).
-				AddOnDuplicateKey("b", nil).
-				AddOnDuplicateKey("c", nil),
+				OnDuplicateKey(),
 			nil,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
@@ -160,8 +159,7 @@ func TestInsert_Add(t *testing.T) {
 				AddArguments(
 					Int64(5), Int64(6),
 				).
-				AddOnDuplicateKey("b", nil).
-				AddOnDuplicateKey("c", nil),
+				OnDuplicateKey(),
 			nil,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2),(3,4),(5,6) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)",
@@ -180,8 +178,10 @@ func TestInsert_AddRecords(t *testing.T) {
 			NewInsert("a").
 				AddColumns("something_id", "user_id", "other").
 				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
-				AddOnDuplicateKey("something_id", Int64(99)).
-				AddOnDuplicateKey("user_id", nil),
+				AddOnDuplicateKey(
+					Column("something_id").Int64(99),
+					Column("user_id").Values(),
+				),
 			nil,
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -193,8 +193,10 @@ func TestInsert_AddRecords(t *testing.T) {
 			NewInsert("a").
 				SetRecordValueCount(3).
 				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
-				AddOnDuplicateKey("something_id", Int64(99)).
-				AddOnDuplicateKey("user_id", nil),
+				AddOnDuplicateKey(
+					Column("something_id").Int64(99),
+					Column("user_id").Values(),
+				),
 			nil,
 			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
 			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
@@ -310,8 +312,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	res, err = s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
 		AddValues(inID, "", "pikes@peak.com").
-		AddOnDuplicateKey("name", String("Pik3")).
-		AddOnDuplicateKey("email", nil).
+		AddOnDuplicateKey(Column("name").String("Pik3"), Column("email").Values()).
 		Exec(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
@@ -571,8 +572,7 @@ func TestInsert_UseBuildCache(t *testing.T) {
 		AddValues(
 			5, 6,
 		).
-		AddOnDuplicateKey("b", nil).
-		AddOnDuplicateKey("c", nil)
+		OnDuplicateKey()
 
 	ins.UseBuildCache = true
 
@@ -604,13 +604,48 @@ func TestInsert_UseBuildCache(t *testing.T) {
 
 func TestInsert_AddUpdateAllNonPrimary(t *testing.T) {
 	t.Parallel()
-	compareToSQL(t, NewInsert("customer_gr1d_flat").
-		AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
-		AddValues(1, "Martin", "martin@go.go", 3, "2019-01-01", 2).
-		AddOnDuplicateKeyAvoidUpdate("entity_id"),
-		nil,
-		"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
-		"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
-		int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
-	)
+
+	t.Run("AddOnDuplicateKeyExclude only", func(t *testing.T) {
+		compareToSQL(t, NewInsert("customer_gr1d_flat").
+			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
+			AddValues(1, "Martin", "martin@go.go", 3, "2019-01-01", 2).
+			AddOnDuplicateKeyExclude("entity_id"),
+			nil,
+			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
+		)
+	})
+
+	t.Run("AddOnDuplicateKeyExclude plus custom field value", func(t *testing.T) {
+		compareToSQL(t, NewInsert("customer_gr1d_flat").
+			AddColumns("entity_id", "name", "email", "group_id", "created_at", "website_id").
+			AddValues(1, "Martin", "martin@go.go", 3, "2019-01-01", 2).
+			AddOnDuplicateKeyExclude("entity_id").
+			AddOnDuplicateKey(Column("created_at").Time(now())),
+			nil,
+			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`=?",
+			"INSERT INTO `customer_gr1d_flat` (`entity_id`,`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (1,'Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `website_id`=VALUES(`website_id`), `created_at`='2006-01-02 15:04:05'",
+			int64(1), "Martin", "martin@go.go", int64(3), "2019-01-01", int64(2), now(),
+		)
+	})
+
+	t.Run("OnDuplicateKey enabled for all columns", func(t *testing.T) {
+		ins := NewInsert("customer_gr1d_flat").
+			AddColumns("name", "email", "group_id", "created_at", "website_id").
+			AddValues("Martin", "martin@go.go", 3, "2019-01-01", 2).
+			OnDuplicateKey()
+		compareToSQL(t, ins, nil,
+			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES ('Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+			"Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
+		)
+		// testing for being idempotent
+		compareToSQL(t, ins, nil,
+			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+			"INSERT INTO `customer_gr1d_flat` (`name`,`email`,`group_id`,`created_at`,`website_id`) VALUES ('Martin','martin@go.go',3,'2019-01-01',2) ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `email`=VALUES(`email`), `group_id`=VALUES(`group_id`), `created_at`=VALUES(`created_at`), `website_id`=VALUES(`website_id`)",
+			"Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
+		)
+	})
+
 }

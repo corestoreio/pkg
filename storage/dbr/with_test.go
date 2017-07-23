@@ -57,16 +57,18 @@ func TestWith_ToSQL(t *testing.T) {
 		cte := NewWith(
 			WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
 				Select: NewSelect().AddColumnsExpr("Month(day_of_sale)", "Sum(amount)").From("sales_days").
-					Where(Expression("Year(day_of_sale) = ?", Int(2015))).
+					Where(Expression("Year(day_of_sale) = ?").Int(2015)).
 					GroupByExpr("Month(day_of_sale))"),
 			},
 			WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
 				Select: NewSelect().AddColumns("month", "total").AddColumnsExpr(`"best"`).From("sales_by_month").
-					Where(SubSelect("total", Equal, NewSelect().AddColumnsExpr("Max(total)").From("sales_by_month"))),
+					Where(
+						Column("total").Equal().Sub(NewSelect().AddColumnsExpr("Max(total)").From("sales_by_month"))),
 			},
 			WithCTE{Name: "worst_month", Columns: []string{"month", "total", "award"},
 				Select: NewSelect().AddColumns("month", "total").AddColumnsExpr(`"worst"`).From("sales_by_month").
-					Where(SubSelect("total", Equal, NewSelect().AddColumnsExpr("Min(total)").From("sales_by_month"))),
+					Where(
+						Column("total").Equal().Sub(NewSelect().AddColumnsExpr("Min(total)").From("sales_by_month"))),
 			},
 		).Union(NewUnion(
 			NewSelect().Star().From("best_month"),

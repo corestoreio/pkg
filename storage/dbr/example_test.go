@@ -155,8 +155,10 @@ func ExampleInsert_AddOnDuplicateKey() {
 	i := dbr.NewInsert("dbr_people").
 		AddColumns("id", "name", "email").
 		AddValues(1, "Pik'e", "pikes@peak.com").
-		AddOnDuplicateKey("name", dbr.String("Pik3")).
-		AddOnDuplicateKey("email", nil) // TODO fix: wow what is nil? i thought NULL
+		AddOnDuplicateKey(
+			dbr.Column("name").String("Pik3"),
+			dbr.Column("email").Values(),
+		)
 	writeToSQLAndInterpolate(i)
 
 	// Output:
@@ -400,7 +402,7 @@ func ExampleRepeat() {
 	// Arguments: [5 7 9 a b c d e]
 }
 
-func argPrinter(wf *dbr.WhereFragment) {
+func argPrinter(wf *dbr.Condition) {
 	sqlStr, args, err := dbr.NewSelect().AddColumns("a", "b").
 		From("c").Where(wf).ToSQL()
 	if err != nil {
@@ -511,8 +513,7 @@ func ExampleColumn() {
 func ExampleSubSelect() {
 	s := dbr.NewSelect("sku", "type_id").
 		From("catalog_product_entity").
-		Where(dbr.SubSelect(
-			"entity_id", dbr.In,
+		Where(dbr.Column("entity_id").In().Sub(
 			dbr.NewSelect().From("catalog_category_product").
 				AddColumns("entity_id").Where(dbr.Column("category_id").Int64(234)),
 		))
@@ -619,11 +620,11 @@ func ExampleSQLIf() {
 
 func ExampleSQLCase_update() {
 	u := dbr.NewUpdate("cataloginventory_stock_item").
-		Set("qty", dbr.ExpressionValue(dbr.SQLCase("`product_id`", "qty",
+		Set(dbr.Column("qty").Expression(dbr.SQLCase("`product_id`", "qty",
 			"3456", "qty+?",
 			"3457", "qty+?",
 			"3458", "qty+?",
-		), dbr.Ints{3, 4, 5})).
+		)).Ints(3, 4, 5)).
 		Where(
 			dbr.Column("product_id").In().Int64s(345, 567, 897),
 			dbr.Column("website_id").Int64(6),
@@ -699,7 +700,7 @@ func ExampleSelect_statementReuseWithNewArguments() {
 	//fmt.Println(s.String())
 	//// Output:
 	//// Hello
-	////s.WhereFragments[0].
+	////s.Conditions[0].
 
 }
 
@@ -780,16 +781,16 @@ func ExampleWith_Union() {
 	cte := dbr.NewWith(
 		dbr.WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
 			Select: dbr.NewSelect().AddColumnsExpr("Month(day_of_sale)", "Sum(amount)").From("sales_days").
-				Where(dbr.Expression("Year(day_of_sale) = ?", dbr.Int(2015))).
+				Where(dbr.Expression("Year(day_of_sale) = ?").Int(2015)).
 				GroupByExpr("Month(day_of_sale))"),
 		},
 		dbr.WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
 			Select: dbr.NewSelect().AddColumns("month", "total").AddColumnsExpr(`"best"`).From("sales_by_month").
-				Where(dbr.SubSelect("total", dbr.Equal, dbr.NewSelect().AddColumnsExpr("Max(total)").From("sales_by_month"))),
+				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumnsExpr("Max(total)").From("sales_by_month"))),
 		},
 		dbr.WithCTE{Name: "worst_month", Columns: []string{"month", "total", "award"},
 			Select: dbr.NewSelect().AddColumns("month", "total").AddColumnsExpr(`"worst"`).From("sales_by_month").
-				Where(dbr.SubSelect("total", dbr.Equal, dbr.NewSelect().AddColumnsExpr("Min(total)").From("sales_by_month"))),
+				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumnsExpr("Min(total)").From("sales_by_month"))),
 		},
 	).Union(dbr.NewUnion(
 		dbr.NewSelect().Star().From("best_month"),

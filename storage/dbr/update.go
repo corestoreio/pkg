@@ -40,15 +40,20 @@ type Update struct {
 	// Record   the new record which gets written to the database or assembles
 	// the JOIN/WHERE conditions.
 	Record ArgumentsAppender
+	// RecordColumns only applicable in case when Record field has been set.
+	// `RecordColumns` contains the lis of column names which gets passed to the
+	// ArgumentsAppender function. If empty `RecordColumns` then the names gets
+	// collected from `SetClauses`
+	RecordColumns []string
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
-	SetClauses     UpdatedColumns
-	WhereFragments WhereFragments
-	OrderBys       aliases
-	LimitCount     uint64
-	OffsetCount    uint64
-	LimitValid     bool
-	OffsetValid    bool
+	SetClauses  Conditions
+	Wheres      Conditions
+	OrderBys    aliases
+	LimitCount  uint64
+	OffsetCount uint64
+	LimitValid  bool
+	OffsetValid bool
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -126,9 +131,8 @@ func (b *Update) WithDB(db ExecPreparer) *Update {
 }
 
 // Set appends a column/value pair for the statement.
-func (b *Update) Set(column string, arg Argument) *Update {
-	b.SetClauses.Columns = append(b.SetClauses.Columns, column)
-	b.SetClauses.Arguments = append(b.SetClauses.Arguments, arg)
+func (b *Update) Set(c ...*Condition) *Update {
+	b.SetClauses = append(b.SetClauses, c...)
 	return b
 }
 
@@ -136,7 +140,9 @@ func (b *Update) Set(column string, arg Argument) *Update {
 // ArgumentsAppender. Those columns will get passed to the ArgumentsAppender
 // implementation. Mostly used with the type UpdateMulti.
 func (b *Update) AddColumns(columnNames ...string) *Update {
-	b.SetClauses.Columns = append(b.SetClauses.Columns, columnNames...)
+	for _, col := range columnNames {
+		b.SetClauses = append(b.SetClauses, Column(col))
+	}
 	return b
 }
 
@@ -147,18 +153,9 @@ func (b *Update) SetRecord(rec ArgumentsAppender) *Update {
 	return b
 }
 
-// SetMap appends the elements of the map at column/value pairs for the
-// statement. Calls internally the `Set` function.
-func (b *Update) SetMap(clauses map[string]Argument) *Update {
-	for col, arg := range clauses {
-		b.Set(col, arg)
-	}
-	return b
-}
-
 // Where appends a WHERE clause to the statement
-func (b *Update) Where(wf ...*WhereFragment) *Update {
-	b.WhereFragments = append(b.WhereFragments, wf...)
+func (b *Update) Where(wf ...*Condition) *Update {
+	b.Wheres = append(b.Wheres, wf...)
 	return b
 }
 
@@ -246,36 +243,20 @@ func (b *Update) toSQL(buf queryWriter) error {
 	if len(b.Table.Name) == 0 {
 		return errors.NewEmptyf("[dbr] Update: Table at empty")
 	}
-	if len(b.SetClauses.Columns) == 0 {
-		return errors.NewEmptyf("[dbr] Update: SetClauses are empty")
+	if len(b.SetClauses) == 0 {
+		return errors.NewEmptyf("[dbr] Update: No columns specified")
 	}
 
 	buf.WriteString("UPDATE ")
 	b.Table.WriteQuoted(buf)
 	buf.WriteString(" SET ")
 
-	// Build SET clause SQL with placeholders and add values to args
-	clausArgLen := len(b.SetClauses.Arguments)
-	for i, c := range b.SetClauses.Columns {
-		if i > 0 {
-			buf.WriteString(", ")
-		}
-		Quoter.writeName(buf, c)
-		buf.WriteByte('=')
-		if i < clausArgLen {
-			arg := b.SetClauses.Arguments[i]
-			if e, ok := arg.(*expr); ok {
-				e.writeTo(buf, 0)
-			} else {
-				buf.WriteByte('?')
-			}
-		} else {
-			buf.WriteByte('?')
-		}
+	if err := b.SetClauses.writeSetClauses(buf); err != nil {
+		return errors.WithStack(err)
 	}
 
 	// Write WHERE clause if we have any fragments
-	if err := b.WhereFragments.write(buf, 'w'); err != nil {
+	if err := b.Wheres.write(buf, 'w'); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -293,32 +274,28 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	}
 
 	if cap(args) == 0 {
-		args = make(Arguments, 0, len(b.SetClauses.Columns)+len(b.WhereFragments))
+		args = make(Arguments, 0, len(b.SetClauses)+len(b.Wheres))
 	}
+	var err error
 	if b.Record != nil {
-		var err error
-		args, err = b.Record.AppendArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClauses.Columns)
+		if len(b.RecordColumns) == 0 {
+			b.RecordColumns = b.SetClauses.leftHands(b.RecordColumns)
+		}
+		args, err = b.Record.AppendArguments(SQLStmtUpdate|SQLPartSet, args, b.RecordColumns)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
-	// Build SET clause SQL with placeholders and add values to args
-	for _, arg := range b.SetClauses.Arguments {
-		if e, ok := arg.(*expr); ok {
-			args = append(args, e.Arguments...)
-		} else {
-			args = append(args, arg)
-		}
-	}
+	args, _, err = b.SetClauses.appendArgs(args, appendArgsSET)
 
 	// Write WHERE clause if we have any fragments
-	args, pap, err := b.WhereFragments.appendArgs(args, 'w')
+	args, pap, err := b.Wheres.appendArgs(args, appendArgsWHERE)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	placeHolderColumns := make([]string, 0, len(b.WhereFragments)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtUpdate|SQLPartWhere, b.WhereFragments.intersectConditions(placeHolderColumns)); err != nil {
+	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtUpdate|SQLPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -337,85 +314,6 @@ func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
 func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
-}
-
-// UpdatedColumns contains the column/argument association for either the SET
-// clause in an UPDATE statement or to be used in an INSERT ... ON DUPLICATE KEY
-// statement. For each column there must be one argument which can either be nil
-// or has an actual value.
-//
-// When using the ON DUPLICATE KEY feature in the Insert builder:
-//
-// The function dbr.ExpressionValue is supported and allows SQL
-// constructs like (ib == InsertBuilder builds INSERT statements):
-// 		`columnA`=VALUES(`columnB`)+2
-// by writing the Go code:
-//		ib.AddOnDuplicateKey("columnA", ExpressionValue("VALUES(`columnB`)+?", Int(2)))
-// Omitting the argument and using the keyword nil will turn this Go code:
-//		ib.AddOnDuplicateKey("columnA", nil)
-// into that SQL:
-// 		`columnA`=VALUES(`columnA`)
-// Same applies as when the columns gets only assigned without any arguments:
-//		ib.OnDuplicateKey.Columns = []string{"name","sku"}
-// will turn into:
-// 		`name`=VALUES(`name`), `sku`=VALUES(`sku`)
-// Type `UpdatedColumns` gets used in type `Update` with field
-// `SetClauses` and in type `Insert` with field OnDuplicateKey.
-type UpdatedColumns struct {
-	Columns   []string
-	Arguments Arguments
-}
-
-// writeOnDuplicateKey writes the columns to `w` and appends the arguments to
-// `args` and returns `args`.
-func (uc UpdatedColumns) writeOnDuplicateKey(w queryWriter) error {
-	if len(uc.Columns) == 0 {
-		return nil
-	}
-
-	useArgs := len(uc.Arguments) == len(uc.Columns)
-
-	w.WriteString(" ON DUPLICATE KEY UPDATE ")
-	for i, c := range uc.Columns {
-		if i > 0 {
-			w.WriteString(", ")
-		}
-		Quoter.writeName(w, c)
-		w.WriteByte('=')
-		if useArgs {
-			// todo remove continue
-			if e, ok := uc.Arguments[i].(*expr); ok {
-				_ = e.writeTo(w, 0)
-				continue
-			}
-			if uc.Arguments[i] == nil {
-				w.WriteString("VALUES(")
-				Quoter.writeName(w, c)
-				w.WriteByte(')')
-				continue
-			}
-			w.WriteByte('?')
-		} else {
-			w.WriteString("VALUES(")
-			Quoter.writeName(w, c)
-			w.WriteByte(')')
-		}
-	}
-	return nil
-}
-
-func (uc UpdatedColumns) appendArgs(args Arguments) (Arguments, error) {
-	if len(uc.Columns) == 0 {
-		return args, nil
-	}
-	if len(uc.Arguments) == len(uc.Columns) {
-		for i := range uc.Columns {
-			if arg := uc.Arguments[i]; arg != nil { // must get skipped because VALUES(column_name)
-				args = append(args, arg)
-			}
-		}
-	}
-	return args, nil
 }
 
 // UpdateMulti allows to run an UPDATE statement multiple times with different
@@ -494,10 +392,10 @@ func (b *UpdateMulti) Transaction(level ...sql.IsolationLevel) *UpdateMulti {
 }
 
 func (b *UpdateMulti) validate() error {
-	if len(b.Update.SetClauses.Columns) == 0 {
+	if len(b.Update.SetClauses) == 0 {
 		return errors.NewEmptyf("[dbr] UpdateMulti: Columns are empty")
 	}
-	if len(b.ColumnAliases) > 0 && len(b.ColumnAliases) != len(b.Update.SetClauses.Columns) {
+	if len(b.ColumnAliases) > 0 && len(b.ColumnAliases) != len(b.Update.SetClauses) {
 		return errors.NewMismatchf("[dbr] UpdateMulti: ColumnAliases slice and Columns slice must have the same length")
 	}
 	return nil
@@ -557,10 +455,10 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentsAppender) ([
 	}
 
 	if len(b.ColumnAliases) > 0 {
-		b.Update.SetClauses.Columns = b.ColumnAliases
+		b.Update.RecordColumns = b.ColumnAliases
 	}
 
-	args := make(Arguments, 0, (len(records)+len(b.Update.WhereFragments))*3) // 3 just a guess
+	args := make(Arguments, 0, (len(records)+len(b.Update.Wheres))*3) // 3 just a guess
 	results := make([]sql.Result, len(records))
 
 	var ipBuf *bytes.Buffer // ip = interpolate buffer

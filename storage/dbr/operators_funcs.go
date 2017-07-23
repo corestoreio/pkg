@@ -115,6 +115,7 @@ func SQLIf(expression, true, false string) string {
 // should be printed as an alias.
 // https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html#operator_case
 func SQLCase(value, defaultValue string, compareResult ...string) string {
+	// TODO: maybe don't write into a buffer, rather create a []string for each .Write*
 	if len(compareResult) == 1 {
 		return "<SQLCase error len(compareResult) == 1>"
 	}

@@ -102,7 +102,7 @@ func TestOpRune(t *testing.T) {
 			Column("a1").Like().NullTime(MakeNullTime(now().Add(time.Minute))),
 			Column("a1").Like().Null(),
 			Column("a1").Like().Bytes([]byte(`H3llo`)),
-			Column("a1").Like().Value(MakeNullInt64(2345)),
+			Column("a1").Like().DriverValue(MakeNullInt64(2345)),
 
 			Column("a2").NotLike().String("H_ll_"),
 			Column("a2").NotLike().NullString(NullString{}),
@@ -121,7 +121,7 @@ func TestOpRune(t *testing.T) {
 			Column("a2").NotLike().NullTime(MakeNullTime(now().Add(time.Minute))),
 			Column("a2").NotLike().Null(),
 			Column("a2").NotLike().Bytes([]byte(`H3llo`)),
-			Column("a2").NotLike().Value(MakeNullInt64(2345)),
+			Column("a2").NotLike().DriverValue(MakeNullInt64(2345)),
 
 			Column("a301").In().Strings("Go1", "Go2"),
 			Column("a302").In().NullString(NullString{}, NullString{}),
@@ -140,7 +140,7 @@ func TestOpRune(t *testing.T) {
 			Column("a315").In().NullTime(MakeNullTime(now().Add(time.Minute))),
 			Column("a316").In().Null(),
 			Column("a317").In().Bytes([]byte(`H3llo1`)),
-			Column("a320").In().Value(MakeNullInt64(2345), MakeNullFloat64(3.14159)),
+			Column("a320").In().DriverValue(MakeNullInt64(2345), MakeNullFloat64(3.14159)),
 
 			Column("a401").SpaceShip().String("H_ll_"),
 			Column("a402").SpaceShip().NullString(NullString{}),
@@ -232,7 +232,7 @@ func TestOpArgs(t *testing.T) {
 
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
-				Column("a319").In().Value(
+				Column("a319").In().DriverValue(
 					MakeNullFloat64(3.141),
 					MakeNullString("G'o"),
 					Bytes{66, 250, 67},
@@ -249,7 +249,7 @@ func TestOpArgs(t *testing.T) {
 	t.Run("ArgValue BETWEEN values", func(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
-				Column("a319").Between().Value(MakeNullFloat64(3.141), MakeNullString("G'o")),
+				Column("a319").Between().DriverValue(MakeNullFloat64(3.141), MakeNullString("G'o")),
 			),
 			nil,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` BETWEEN ? AND ?)",
@@ -345,7 +345,9 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		_, err = s.Select("*").From("null_types").Where(Expression("id = ?", Int64(id))).Load(context.TODO(), nullTypeSet)
+		_, err = s.Select("*").From("null_types").Where(
+			Expression("id = ?").Int64(id),
+		).Load(context.TODO(), nullTypeSet)
 		assert.NoError(t, err)
 
 		assert.Equal(t, test.record, nullTypeSet)

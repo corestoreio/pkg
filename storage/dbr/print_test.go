@@ -65,7 +65,9 @@ func TestMakeSQL(t *testing.T) {
 		assert.Exactly(t, "SELECT `columnA` FROM `tableX` AS `X` WHERE (`columnA` <= ?)", b.String())
 	})
 	t.Run("UPDATE", func(t *testing.T) {
-		b := NewUpdate("tableX").Set("columnA", Int64(4)).Where(Column("columnB").Between().Ints(5, 7))
+		b := NewUpdate("tableX").Set(
+			Column("columnA").Int64(4),
+		).Where(Column("columnB").Between().Ints(5, 7))
 		assert.Exactly(t, "UPDATE `tableX` SET `columnA`=? WHERE (`columnB` BETWEEN ? AND ?)", b.String())
 	})
 }

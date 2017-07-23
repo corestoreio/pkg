@@ -52,16 +52,41 @@ type Insert struct {
 	// Select used to create an "INSERT INTO `table` SELECT ..." statement.
 	Select *Select
 
-	// OnDuplicateKey updates the referenced columns. See documentation for type
-	// `UpdatedColumns`. For more details
+	// OnDuplicateKeys updates the referenced columns. See documentation for type
+	// `Conditions`. For more details
 	// https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
-	OnDuplicateKey UpdatedColumns
-	// OnDuplicateKeyAvoidUpdate skips adding the mentioned columns to the ON
-	// DUPLICATE KEY UPDATE section. Otherwise all columns in the field
-	// `Columns` will be added to the ON DUPLICATE KEY UPDATE expression.
-	// Usually the slice `OnDuplicateKeyAvoidUpdate` contains the primary key
-	// columns. Case-sensitive comparison.
-	OnDuplicateKeyAvoidUpdate []string
+	// Conditions contains the column/argument association for either the SET
+	// clause in an UPDATE statement or to be used in an INSERT ... ON DUPLICATE KEY
+	// statement. For each column there must be one argument which can either be nil
+	// or has an actual value.
+	//
+	// When using the ON DUPLICATE KEY feature in the Insert builder:
+	//
+	// The function dbr.ExpressionValue is supported and allows SQL
+	// constructs like (ib == InsertBuilder builds INSERT statements):
+	// 		`columnA`=VALUES(`columnB`)+2
+	// by writing the Go code:
+	//		ib.AddOnDuplicateKey("columnA", ExpressionValue("VALUES(`columnB`)+?", Int(2)))
+	// Omitting the argument and using the keyword nil will turn this Go code:
+	//		ib.AddOnDuplicateKey("columnA", nil)
+	// into that SQL:
+	// 		`columnA`=VALUES(`columnA`)
+	// Same applies as when the columns gets only assigned without any arguments:
+	//		ib.OnDuplicateKeys.Columns = []string{"name","sku"}
+	// will turn into:
+	// 		`name`=VALUES(`name`), `sku`=VALUES(`sku`)
+	// Type `Conditions` gets used in type `Update` with field
+	// `SetClauses` and in type `Insert` with field OnDuplicateKeys.
+	OnDuplicateKeys Conditions
+	// IsOnDuplicateKey if enabled adds all columns to the ON DUPLICATE KEY
+	// claus. Takes the OnDuplicateKeyExclude field into consideration.
+	IsOnDuplicateKey bool
+	// OnDuplicateKeyExclude excludes the mentioned columns to the ON DUPLICATE
+	// KEY UPDATE section. Otherwise all columns in the field `Columns` will be
+	// added to the ON DUPLICATE KEY UPDATE expression. Usually the slice
+	// `OnDuplicateKeyExclude` contains the primary key columns. Case-sensitive
+	// comparison.
+	OnDuplicateKeyExclude []string
 	// IsReplace uses the REPLACE syntax. See function Replace().
 	IsReplace bool
 	// IsIgnore ignores error. See function Ignore().
@@ -110,16 +135,6 @@ func (tx *Tx) InsertInto(into string) *Insert {
 // WithDB sets the database query object.
 func (b *Insert) WithDB(db ExecPreparer) *Insert {
 	b.DB = db
-	return b
-}
-
-// AddOnDuplicateKeyAvoidUpdate skips adding the mentioned columns to the ON
-// DUPLICATE KEY UPDATE section. Otherwise all columns in the field
-// `Columns` will be added to the ON DUPLICATE KEY UPDATE expression.
-// Usually the slice `OnDuplicateKeyAvoidUpdate` contains the primary key
-// columns. Case-sensitive comparison.
-func (b *Insert) AddOnDuplicateKeyAvoidUpdate(primaryKeyColumnNames ...string) *Insert {
-	b.OnDuplicateKeyAvoidUpdate = append(b.OnDuplicateKeyAvoidUpdate, primaryKeyColumnNames...)
 	return b
 }
 
@@ -214,9 +229,24 @@ func (b *Insert) SetRecordValueCount(valueCount int) *Insert {
 // set the Columns itself to allow the following SQL construct:
 //		`columnA`=VALUES(`columnA`)
 // Means columnA gets automatically mapped to the VALUES column name.
-func (b *Insert) AddOnDuplicateKey(column string, arg Argument) *Insert {
-	b.OnDuplicateKey.Columns = append(b.OnDuplicateKey.Columns, column)
-	b.OnDuplicateKey.Arguments = append(b.OnDuplicateKey.Arguments, arg)
+func (b *Insert) AddOnDuplicateKey(c ...*Condition) *Insert {
+	b.OnDuplicateKeys = append(b.OnDuplicateKeys, c...)
+	return b
+}
+
+// AddOnDuplicateKeyExclude adds a column to the exclude list. As soon as a
+// column gets set with this function the ON DUPLICATE KEY clause gets
+// generated. Usually the slice `OnDuplicateKeyExclude` contains the
+// primary/unique key columns. Case-sensitive comparison.
+func (b *Insert) AddOnDuplicateKeyExclude(columns ...string) *Insert {
+	b.OnDuplicateKeyExclude = append(b.OnDuplicateKeyExclude, columns...)
+	return b
+}
+
+// OnDuplicateKey enables for all columns to be written into the ON DUPLICATE
+// KEY claus. Takes the field OnDuplicateKeyExclude into consideration.
+func (b *Insert) OnDuplicateKey() *Insert {
+	b.IsOnDuplicateKey = true
 	return b
 }
 
@@ -288,17 +318,6 @@ func (b *Insert) toSQL(buf queryWriter) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.WithStack(err)
-	}
-
-	if len(b.OnDuplicateKeyAvoidUpdate) > 0 {
-		for _, c := range b.Columns {
-			// Wow two times a comparison with a slice. That costs a bit
-			// performance but a reliable way to avoid writing duplicate ON
-			// DUPLICATE KEY UPDATE sets. If there is something faster, write us.
-			if !strInSlice(c, b.OnDuplicateKeyAvoidUpdate) && !strInSlice(c, b.OnDuplicateKey.Columns) {
-				b.OnDuplicateKey.Columns = append(b.OnDuplicateKey.Columns, c)
-			}
-		}
 	}
 
 	if b.RawFullSQL != "" {
@@ -378,7 +397,28 @@ func (b *Insert) toSQL(buf queryWriter) error {
 		}
 		buf.WriteByte(')')
 	}
-	return errors.Wrap(b.OnDuplicateKey.writeOnDuplicateKey(buf), "[dbr] Insert.toSQL.writeOnDuplicateKey\n")
+	if len(b.OnDuplicateKeyExclude) > 0 || b.IsOnDuplicateKey {
+		if len(b.OnDuplicateKeys) == 0 {
+			b.OnDuplicateKeys = append(b.OnDuplicateKeys, &Condition{})
+		}
+	ColumnsLoop:
+		for _, c := range b.Columns {
+			// Wow two times a comparison with a slice. That costs a bit
+			// performance but a reliable way to avoid writing duplicate ON
+			// DUPLICATE KEY UPDATE sets. If there is something faster, write us.
+			if strInSlice(c, b.OnDuplicateKeyExclude) {
+				continue
+			}
+			for _, cnd := range b.OnDuplicateKeys {
+				if c == cnd.Left || strInSlice(c, cnd.Columns) {
+					continue ColumnsLoop
+				}
+			}
+			b.OnDuplicateKeys[0].Columns = append(b.OnDuplicateKeys[0].Columns, c)
+		}
+	}
+
+	return errors.Wrap(b.OnDuplicateKeys.writeOnDuplicateKey(buf), "[dbr] Insert.toSQL.writeOnDuplicateKey\n")
 }
 
 func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
@@ -406,14 +446,14 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	totalArgCount := len(b.Values) * argCount0
 	if cap(args) == 0 {
-		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKey.Columns)) // sneaky ;-)
+		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys)) // sneaky ;-)
 	}
 	for _, v := range b.Values {
 		args = append(args, v...)
 	}
 
 	if b.Records == nil {
-		args, err = b.OnDuplicateKey.appendArgs(args)
+		args, _, err = b.OnDuplicateKeys.appendArgs(args, appendArgsDUPKEY)
 		return args, errors.WithStack(err)
 	}
 
@@ -428,7 +468,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 		}
 	}
 
-	if args, err = b.OnDuplicateKey.appendArgs(args); err != nil {
+	if args, _, err = b.OnDuplicateKeys.appendArgs(args, appendArgsDUPKEY); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return args, nil

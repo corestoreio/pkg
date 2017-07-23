@@ -71,7 +71,7 @@ var benchmarkSelectStr string
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
-	exprArgs := dbr.Arguments{dbr.Int64(1), dbr.String("wat")}
+
 	aVal := []int64{1, 2, 3}
 
 	b.ResetTimer()
@@ -79,10 +79,8 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
 			Where(
-				dbr.Expression("d = ? OR e = ?", exprArgs...),
-				dbr.Column("a").
-					In().
-					Int64s(aVal...),
+				dbr.Expression("d = ? OR e = ?").Int64(1).String("wat"),
+				dbr.Column("a").In().Int64s(aVal...),
 			).
 			OrderByDesc("id").
 			Paginate(1, 20).
@@ -96,13 +94,10 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 
 func BenchmarkSelectFullSQL(b *testing.B) {
 
-	// Do some allocations outside the loop so they don't affect the results
-
-	args := dbr.Arguments{dbr.Int64(1), dbr.String("wat")}
-
 	sqlObj := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
-		Where(dbr.Expression("`d` = ? OR `e` = ?", args...),
+		Where(
+			dbr.Expression("`d` = ? OR `e` = ?").Int64(1).String("wat"),
 			dbr.Column("f").Int64(2),
 			dbr.Column("x").String("hi"),
 			dbr.Column("g").Int64(3),
@@ -121,7 +116,8 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 				Distinct().
-				Where(dbr.Expression("`d` = ? OR `e` = ?", args...),
+				Where(
+					dbr.Expression("`d` = ? OR `e` = ?").Int64(1).String("wat"),
 					dbr.Column("f").Int64(2),
 					dbr.Column("x").String("hi"),
 					dbr.Column("g").Int64(3),
@@ -623,25 +619,12 @@ func BenchmarkUnion(b *testing.B) {
 func BenchmarkUpdateValuesSQL(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, args, err := dbr.NewUpdate("alpha").Set("something_id", dbr.Int64(1)).Where(dbr.Column("id").Int64(1)).ToSQL()
-		if err != nil {
-			b.Fatalf("%+v", err)
-		}
-		benchmarkGlobalVals = args
-	}
-}
-
-func BenchmarkUpdateValueMapSQL(b *testing.B) {
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewUpdate("alpha").
-			Set("something_id", dbr.Int64(1)).
-			SetMap(map[string]dbr.Argument{
-				"b": dbr.Int64(2),
-				"c": dbr.Int64(3),
-			}).
-			Where(dbr.Column("id").Int(1)).
-			ToSQL()
+			Set(
+				dbr.Column("something_id").Int64(1),
+			).Where(
+			dbr.Column("id").Int64(1),
+		).ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}

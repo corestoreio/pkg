@@ -51,13 +51,13 @@ type Delete struct {
 	// Record if set retrieves the necessary arguments from the interface.
 	Record ArgumentsAppender
 
-	From           alias
-	WhereFragments WhereFragments
-	OrderBys       aliases
-	LimitCount     uint64
-	OffsetCount    uint64
-	LimitValid     bool
-	OffsetValid    bool
+	From        alias
+	Wheres      Conditions
+	OrderBys    aliases
+	LimitCount  uint64
+	OffsetCount uint64
+	LimitValid  bool
+	OffsetValid bool
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -89,9 +89,9 @@ func NewDelete(from string) *Delete {
 // DeleteFrom creates a new Delete for the given table
 func (c *Connection) DeleteFrom(from string) *Delete {
 	d := &Delete{
-		Log:            c.Log,
-		From:           MakeNameAlias(from, ""),
-		WhereFragments: make(WhereFragments, 0, 2),
+		Log:    c.Log,
+		From:   MakeNameAlias(from, ""),
+		Wheres: make(Conditions, 0, 2),
 	}
 	d.DB = c.DB
 	return d
@@ -128,8 +128,8 @@ func (b *Delete) SetRecord(aa ArgumentsAppender) *Delete {
 
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a string
 // or map. If it'ab a string, args wil replaces any places holders.
-func (b *Delete) Where(wf ...*WhereFragment) *Delete {
-	b.WhereFragments = append(b.WhereFragments, wf...)
+func (b *Delete) Where(wf ...*Condition) *Delete {
+	b.Wheres = append(b.Wheres, wf...)
 	return b
 }
 
@@ -224,7 +224,7 @@ func (b *Delete) toSQL(buf queryWriter) error {
 
 	// TODO(CyS) add SQLStmtDeleteJoin
 
-	if err := b.WhereFragments.write(buf, 'w'); err != nil {
+	if err := b.Wheres.write(buf, 'w'); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -242,7 +242,7 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 		return b.RawArguments, nil
 	}
 	if cap(args) == 0 {
-		args = make(Arguments, 0, len(b.WhereFragments))
+		args = make(Arguments, 0, len(b.Wheres))
 	}
 	args, err = b.From.appendArgs(args)
 	if err != nil {
@@ -251,12 +251,12 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	// TODO(CyS) add SQLStmtDeleteJoin
 
-	args, pap, err := b.WhereFragments.appendArgs(args, 'w')
+	args, pap, err := b.Wheres.appendArgs(args, appendArgsWHERE)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	placeHolderColumns := make([]string, 0, len(b.WhereFragments)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtDelete|SQLPartWhere, b.WhereFragments.intersectConditions(placeHolderColumns)); err != nil {
+	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtDelete|SQLPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return args, nil

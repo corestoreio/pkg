@@ -37,6 +37,6 @@ func TestEscapeWith_NaughtyStrings(t *testing.T) {
 			t.Fatalf("Should not find any rows, but got %d for string: %q", count, nstr)
 		}
 
-		sel.WhereFragments = sel.WhereFragments[:0]
+		sel.Wheres = sel.Wheres[:0]
 	}
 }

@@ -127,7 +127,7 @@ func TestSelect_Interpolate(t *testing.T) {
 	t.Run("two args in one condition", func(t *testing.T) {
 		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(Expression("`d` = ? OR `e` = ?", Int64(1), String("wat"))).
+			Where(Expression("`d` = ? OR `e` = ?").Int64(1).String("wat")). // TODO special case which requires refactoring the Condition.Types functions
 			Where(
 				Column("g").Int(3),
 				Column("h").In().Int64s(1, 2, 3),
@@ -227,7 +227,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	t.Parallel()
 	// TODO rewrite test to use every type which implements interface Argument and every operator
 
-	runner := func(wf *WhereFragment, wantSQL string, wantVal []interface{}) func(*testing.T) {
+	runner := func(wf *Condition, wantSQL string, wantVal []interface{}) func(*testing.T) {
 		return func(t *testing.T) {
 			compareToSQL(t,
 				NewSelect("a", "b").From("c").Where(wf),
@@ -779,7 +779,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			RightJoin(
 				MakeNameAlias("dbr_people", "p2"),
-				Using("id", "email"),
+				Columns("id", "email"),
 			)
 		compareToSQL(t, sqlObj, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` USING (`id`,`email`)",
@@ -997,10 +997,12 @@ func TestSubSelect(t *testing.T) {
 		AddColumns("entity_id").Where(Column("category_id").Int64(234))
 
 	runner := func(op Op, wantSQL string) func(*testing.T) {
+		c := Column("entity_id").Sub(sub)
+		c.Operator = op
 		return func(t *testing.T) {
 			s := NewSelect("sku", "type_id").
 				From("catalog_product_entity").
-				Where(SubSelect("entity_id", op, sub))
+				Where(c)
 			compareToSQL(t, s, nil, wantSQL, "", int64(234))
 		}
 	}
@@ -1089,7 +1091,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 			GroupBy("t3.store_id").
 			GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			GroupBy("t3.product_id", "t3.product_name").
-			Having(Expression("COUNT(*)>?", Int(3))).
+			Having(Expression("COUNT(*)>?").Int(3)).
 			OrderBy("t3.store_id").
 			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			OrderByDesc("total_qty DESC").
@@ -1118,7 +1120,7 @@ func TestSelect_Subselect_Compact(t *testing.T) {
 		AddColumns("`t3`.`product_name`").
 		Where(Column("t3.store_id").In().Int64s(2, 3, 4)).
 		GroupBy("t3.store_id").
-		Having(Expression("COUNT(*)>?", Int(5)))
+		Having(Expression("COUNT(*)>?").Int(5))
 
 	sel := NewSelectWithDerivedTable(sel2, "t2").
 		AddColumns("t2.product_name").

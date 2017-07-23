@@ -15,7 +15,6 @@
 package dbr
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -25,83 +24,82 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdateAllToSQL(t *testing.T) {
+func TestUpdate_Basics(t *testing.T) {
 	t.Parallel()
-	qb := NewUpdate("a").Set("b", Int64(1)).Set("c", Int(2))
-	compareToSQL(t, qb, nil, "UPDATE `a` SET `b`=?, `c`=?", "", int64(1), int64(2))
-}
 
-func TestUpdateSingleToSQL(t *testing.T) {
-	t.Parallel()
-	compareToSQL(t, NewUpdate("a").
-		Set("b", Int(1)).Set("c", Int(2)).Where(Column("id").Int(1)),
-		nil,
-		"UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)",
-		"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)",
-		int64(1), int64(2), int64(1))
-}
-
-func TestUpdate_OrderBy(t *testing.T) {
-	t.Parallel()
-	qb := NewUpdate("a").Set("b", Int64(1)).Set("c", Int(2)).
-		OrderBy("col1", "col2").OrderByDesc("col2", "col3").OrderByExpr("concat(1,2,3)")
-	compareToSQL(t, qb, nil,
-		"UPDATE `a` SET `b`=?, `c`=? ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
-		"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
-		int64(1), int64(2))
-}
-
-func TestUpdateSetMapToSQL(t *testing.T) {
-	t.Parallel()
-	s := createFakeSession()
-
-	sql, args, err := s.Update("a").SetMap(map[string]Argument{"b": Int64(1), "c": Int64(2)}).Where(Column("id").Int(1)).ToSQL()
-	assert.NoError(t, err)
-	if sql == "UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)" {
-		assert.Equal(t, []interface{}{int64(1), int64(2), int64(1)}, args)
-	} else {
-		assert.Equal(t, "UPDATE `a` SET `c`=?, `b`=? WHERE (`id` = ?)", sql)
-		assert.Equal(t, []interface{}{int64(2), int64(1), int64(1)}, args)
-	}
+	t.Run("all rows", func(t *testing.T) {
+		qb := NewUpdate("a").Set(
+			Column("b").Int64(1),
+			Column("c").Int(2))
+		compareToSQL(t, qb, nil, "UPDATE `a` SET `b`=?, `c`=?", "", int64(1), int64(2))
+	})
+	t.Run("single row", func(t *testing.T) {
+		compareToSQL(t, NewUpdate("a").
+			Set(
+				Column("b").Int(1), Column("c").Int(2),
+			).Where(Column("id").Int(1)),
+			nil,
+			"UPDATE `a` SET `b`=?, `c`=? WHERE (`id` = ?)",
+			"UPDATE `a` SET `b`=1, `c`=2 WHERE (`id` = 1)",
+			int64(1), int64(2), int64(1))
+	})
+	t.Run("order by", func(t *testing.T) {
+		qb := NewUpdate("a").Set(Column("b").Int(1), Column("c").Int(2)).
+			OrderBy("col1", "col2").OrderByDesc("col2", "col3").OrderByExpr("concat(1,2,3)")
+		compareToSQL(t, qb, nil,
+			"UPDATE `a` SET `b`=?, `c`=? ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
+			"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
+			int64(1), int64(2))
+	})
+	t.Run("limit offset", func(t *testing.T) {
+		compareToSQL(t, NewUpdate("a").Set(Column("b").Int(1)).Limit(10).Offset(20),
+			nil,
+			"UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20",
+			"UPDATE `a` SET `b`=1 LIMIT 10 OFFSET 20",
+			int64(1))
+	})
+	t.Run("same column name in SET and WHERE", func(t *testing.T) {
+		compareToSQL(t, NewUpdate("dbr_people").Set(Column("key").String("6-revoked")).Where(Column("key").String("6")),
+			nil,
+			"UPDATE `dbr_people` SET `key`=? WHERE (`key` = ?)",
+			"UPDATE `dbr_people` SET `key`='6-revoked' WHERE (`key` = '6')",
+			"6-revoked", "6")
+	})
 }
 
 func TestUpdateSetExprToSQL(t *testing.T) {
 	t.Parallel()
 
 	compareToSQL(t, NewUpdate("a").
-		Set("foo", Int(1)).
-		Set("bar", ExpressionValue("COALESCE(bar, 0) + 1")).Where(Column("id").Int(9)),
+		Set(
+			Column("foo").Int(1),
+			Column("bar").Expression("COALESCE(bar, 0) + 1"),
+		).Where(Column("id").Int(9)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = ?)",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = 9)",
 		int64(1), int64(9))
 
 	compareToSQL(t, NewUpdate("a").
-		Set("foo", Int(1)).
-		Set("bar", ExpressionValue("COALESCE(bar, 0) + 1")).Where(Column("id").In().Int64s(10, 11)),
+		Set(
+			Column("foo").Int(1),
+			Column("bar").Expression("COALESCE(bar, 0) + 1"),
+		).Where(Column("id").In().Int64s(10, 11)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (?,?))",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (10,11))",
 		int64(1), int64(10), int64(11))
 
 	compareToSQL(t, NewUpdate("a").
-		Set("foo", Int(1)).
-		Set("bar", ExpressionValue("COALESCE(bar, 0) + ?", Int(2))).Where(Column("id").Int(9)),
+		Set(
+			Column("foo").Int(1),
+			Column("bar").Expression("COALESCE(bar, 0) + ?").Int(2),
+		).
+		Where(Column("id").Int(9)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)",
 		"UPDATE `a` SET `foo`=1, `bar`=COALESCE(bar, 0) + 2 WHERE (`id` = 9)",
 		int64(1), int64(2), int64(9))
-}
-
-func TestUpdate_Limit_Offset(t *testing.T) {
-	t.Parallel()
-
-	compareToSQL(t, NewUpdate("a").
-		Set("b", Int(1)).Limit(10).Offset(20),
-		nil,
-		"UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20",
-		"UPDATE `a` SET `b`=1 LIMIT 10 OFFSET 20",
-		int64(1))
 }
 
 func TestUpdateKeywordColumnName(t *testing.T) {
@@ -113,7 +111,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err := s.Update("dbr_people").Set("key", String("6-revoked")).Where(Column("key").String("6")).Exec(context.TODO())
+	res, err := s.Update("dbr_people").Set(Column("key").String("6-revoked")).Where(Column("key").String("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -143,7 +141,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Rename our George to Barack
 	_, err = s.Update("dbr_people").
-		SetMap(map[string]Argument{"name": String("Barack"), "email": String("barack@whitehouse.gov")}).
+		Set(Column("name").String("Barack"), Column("email").String("barack@whitehouse.gov")).
 		Where(Column("id").In().Int64s(id, 8888)).Exec(context.TODO())
 	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
 	require.NoError(t, err)
@@ -162,7 +160,7 @@ func TestUpdate_Prepare(t *testing.T) {
 	t.Parallel()
 	t.Run("ToSQL Error", func(t *testing.T) {
 		in := &Update{}
-		in.Set("a", Int(1))
+		in.Set(Column("a").Int(1))
 		stmt, err := in.Prepare(context.TODO())
 		assert.Nil(t, stmt)
 		assert.True(t, errors.IsEmpty(err))
@@ -174,7 +172,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		}
 		u.Table.Name = "tableY"
-		u.Set("a", Int(1))
+		u.Set(Column("a").Int(1))
 
 		stmt, err := u.Prepare(context.TODO())
 		assert.Nil(t, stmt)
@@ -185,10 +183,8 @@ func TestUpdate_Prepare(t *testing.T) {
 func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 	t.Parallel()
 	t.Run("with condition values", func(t *testing.T) {
-		u := NewUpdate("catalog_product_entity")
-		u.SetClauses.Columns = []string{"sku", "updated_at"}
+		u := NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at")
 		u.Where(Column("entity_id").In().Int64s(1, 2, 3))
-
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_product_entity` SET `sku`=?, `updated_at`=? WHERE (`entity_id` IN (?,?,?))",
 			"",
@@ -196,8 +192,7 @@ func TestUpdate_ToSQL_Without_Column_Arguments(t *testing.T) {
 		)
 	})
 	t.Run("without condition values", func(t *testing.T) {
-		u := NewUpdate("catalog_product_entity")
-		u.SetClauses.Columns = []string{"sku", "updated_at"}
+		u := NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at")
 		u.Where(Column("entity_id").In().PlaceHolder())
 
 		args := []interface{}{}
@@ -214,7 +209,7 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Stop Propagation", func(t *testing.T) {
 		d := NewUpdate("tableA")
-		d.Set("y", Int(25)).Set("z", Int(26))
+		d.Set(Column("y").Int(25), Column("z").Int(26))
 
 		d.Log = log.BlackHole{EnableInfo: true, EnableDebug: true}
 		d.Listeners.Add(
@@ -222,14 +217,14 @@ func TestUpdate_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("a", Int(1))
+					b.Set(Column("a").Int(1))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(b *Update) {
-					b.Set("b", Int(1))
+					b.Set(Column("b").Int(1))
 					b.PropagationStopped = true
 				},
 			},
@@ -250,14 +245,14 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Missing EventType", func(t *testing.T) {
 		up := NewUpdate("tableA")
-		up.Set("a", Int(1)).Set("b", Bool(true))
+		up.Set(Column("a").Int(1), Column("b").Bool(true))
 
 		up.Listeners.Add(
 			Listen{
 				Name: "c=pi",
 				Once: true,
 				UpdateFunc: func(u *Update) {
-					u.Set("c", Float64(3.14159))
+					u.Set(Column("c").Float64(3.14159))
 				},
 			},
 		)
@@ -269,15 +264,14 @@ func TestUpdate_Events(t *testing.T) {
 
 	t.Run("Should Dispatch", func(t *testing.T) {
 		up := NewUpdate("tableA")
-		up.Set("a", Int(1)).Set("b", Bool(true))
-
+		up.Set(Column("a").Int(1), Column("b").Bool(true))
 		up.Listeners.Add(
 			Listen{
 				Name:      "c=pi",
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("c", Float64(3.14159))
+					u.Set(Column("c").Float64(3.14159))
 				},
 			},
 			Listen{
@@ -285,7 +279,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set("d", String("d"))
+					u.Set(Column("d").String("d"))
 				},
 			},
 		)
@@ -294,7 +288,7 @@ func TestUpdate_Events(t *testing.T) {
 			Name:      "e",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(u *Update) {
-				u.Set("e", String("e"))
+				u.Set(Column("e").String("e"))
 			},
 		})
 		compareToSQL(t, up, nil,
@@ -303,72 +297,6 @@ func TestUpdate_Events(t *testing.T) {
 			int64(1), true, 3.14159, "d", "e",
 		)
 		assert.Exactly(t, `c=pi; d=d; e`, up.Listeners.String())
-	})
-}
-
-func TestUpdatedColumns_writeOnDuplicateKey(t *testing.T) {
-	t.Run("empty columns does nothing", func(t *testing.T) {
-		uc := UpdatedColumns{}
-		buf := new(bytes.Buffer)
-		err := uc.writeOnDuplicateKey(buf)
-		assert.NoError(t, err, "%+v", err)
-		assert.Empty(t, buf.String())
-	})
-
-	t.Run("col=VALUES(col) and no arguments", func(t *testing.T) {
-		uc := UpdatedColumns{
-			Columns: []string{"sku", "name", "stock"},
-		}
-		buf := new(bytes.Buffer)
-		err := uc.writeOnDuplicateKey(buf)
-		assert.NoError(t, err, "%+v", err)
-		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `sku`=VALUES(`sku`), `name`=VALUES(`name`), `stock`=VALUES(`stock`)", buf.String())
-	})
-
-	t.Run("col=? and with arguments", func(t *testing.T) {
-		uc := UpdatedColumns{
-			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{String("E0S 5D Mark II"), Int64(12)},
-		}
-		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf)
-		require.NoError(t, err, "%+v", err)
-		args, err = uc.appendArgs(args)
-		require.NoError(t, err, "%+v", err)
-		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=?", buf.String())
-		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(12)}, args.Interfaces())
-	})
-
-	t.Run("col=VALUES(val)+? and with arguments", func(t *testing.T) {
-		uc := UpdatedColumns{
-			Columns:   []string{"name", "stock"},
-			Arguments: Arguments{String("E0S 5D Mark II"), ExpressionValue("VALUES(`stock`)+?", Int64(13))},
-		}
-		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf)
-		require.NoError(t, err, "%+v", err)
-		args, err = uc.appendArgs(args)
-		require.NoError(t, err, "%+v", err)
-		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=VALUES(`stock`)+?", buf.String())
-		assert.Exactly(t, []interface{}{"E0S 5D Mark II", int64(13)}, args.Interfaces())
-	})
-
-	t.Run("col=VALUES(val) and with arguments and nil", func(t *testing.T) {
-		uc := UpdatedColumns{
-			Columns:   []string{"name", "sku", "stock"},
-			Arguments: Arguments{String("E0S 5D Mark III"), nil, Int64(14)},
-		}
-		buf := new(bytes.Buffer)
-		args := make(Arguments, 0, 2)
-		err := uc.writeOnDuplicateKey(buf)
-		require.NoError(t, err, "%+v", err)
-		args, err = uc.appendArgs(args)
-		require.NoError(t, err, "%+v", err)
-
-		assert.Exactly(t, " ON DUPLICATE KEY UPDATE `name`=?, `sku`=VALUES(`sku`), `stock`=?", buf.String())
-		assert.Exactly(t, []interface{}{"E0S 5D Mark III", int64(14)}, args.Interfaces())
 	})
 }
 
@@ -400,7 +328,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 	t.Run("fails column not in entity object", func(t *testing.T) {
 		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
-			Set("key", String("JustAKey")).
+			Set(Column("key").String("JustAKey")).
 			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, errors.IsNotFound,
 			"",
@@ -413,8 +341,10 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
 	up := NewUpdate("a").
-		Set("foo", Int(1)).
-		Set("bar", ExpressionValue("COALESCE(bar, 0) + ?", Int(2))).Where(Column("id").Int(9))
+		Set(
+			Column("foo").Int(1),
+			Column("bar").Expression("COALESCE(bar, 0) + ?").Int(2)).
+		Where(Column("id").Int(9))
 
 	up.UseBuildCache = true
 

@@ -296,7 +296,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
 			SetRecord(ce).
-			Where(dbr.Column("entity_id").Greater().PlaceHolder()) // No Arguments in Int64 because we need a place holder.
+			Where(dbr.Column("entity_id").Greater().PlaceHolder())
 
 		compareToSQL(t, u, nil,
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?)",
@@ -334,5 +334,4 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(99),
 		)
 	})
-
 }

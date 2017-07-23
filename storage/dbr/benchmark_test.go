@@ -77,21 +77,22 @@ func BenchmarkQuoteAlias(b *testing.B) {
 	}
 }
 
-// BenchmarkUpdatedColumns_writeOnDuplicateKey-4   	 5000000	       337 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkUpdatedColumns_writeOnDuplicateKey(b *testing.B) {
+// BenchmarkConditions_writeOnDuplicateKey-4   	 5000000	       337 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkConditions_writeOnDuplicateKey(b *testing.B) {
 	buf := new(bytes.Buffer)
-	args := make(Arguments, 0, 2)
-	uc := UpdatedColumns{
-		Columns:   []string{"name", "sku", "stock"},
-		Arguments: Arguments{String("E0S 5D Mark III"), nil, Int64(14)},
+	args := make(Arguments, 0, 3)
+	dk := Conditions{
+		Column("name").String("E0S 5D Mark III"),
+		Column("sku").Values(),
+		Column("stock").Int64(14),
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := uc.writeOnDuplicateKey(buf); err != nil {
+		if err := dk.writeOnDuplicateKey(buf); err != nil {
 			b.Fatalf("%+v", err)
 		}
 		var err error
-		if args, err = uc.appendArgs(args); err != nil {
+		if args, _, err = dk.appendArgs(args, appendArgsDUPKEY); err != nil {
 			b.Fatalf("%+v", err)
 		}
 		buf.Reset()
