@@ -253,7 +253,7 @@ func TestNullString_Argument(t *testing.T) {
 func TestArgNullString(t *testing.T) {
 	t.Parallel()
 
-	args := ArgNullStrings{MakeNullString("1'; DROP TABLE users-- 1"), MakeNullString("Rusty", false), MakeNullString("Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗")}
+	args := NullStrings{MakeNullString("1'; DROP TABLE users-- 1"), MakeNullString("Rusty", false), MakeNullString("Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗")}
 	assert.Exactly(t, 3, args.len())
 
 	t.Run("writeTo", func(t *testing.T) {
@@ -272,19 +272,19 @@ func TestArgNullString(t *testing.T) {
 	t.Run("invalid UTF-8", func(t *testing.T) {
 		var buf bytes.Buffer
 
-		args2 := ArgNullStrings{MakeNullString("\x00\xff")}
+		args2 := NullStrings{MakeNullString("\x00\xff")}
 		err := args2.writeTo(&buf, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		buf.Reset()
 
-		args2 = ArgNullStrings{MakeNullString("\x00\xff"), MakeNullString("2nd")}
+		args2 = NullStrings{MakeNullString("\x00\xff"), MakeNullString("2nd")}
 		err = args2.writeTo(&buf, 0)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		buf.Reset()
 	})
 
 	t.Run("single arg", func(t *testing.T) {
-		args = ArgNullStrings{MakeNullString("1';")}
+		args = NullStrings{MakeNullString("1';")}
 
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)

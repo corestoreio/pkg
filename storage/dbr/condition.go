@@ -594,11 +594,11 @@ func (c *Condition) Times(t ...time.Time) *Condition {
 func (c *Condition) NullString(nv ...NullString) *Condition {
 	switch {
 	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, ArgNullStrings(nv))
+		c.Right.Arguments = append(c.Right.Arguments, NullStrings(nv))
 	case len(nv) == 1:
 		c.Right.Argument = nv[0]
 	default:
-		c.Right.Argument = ArgNullStrings(nv)
+		c.Right.Argument = NullStrings(nv)
 	}
 	return c
 }
@@ -607,11 +607,11 @@ func (c *Condition) NullString(nv ...NullString) *Condition {
 func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
 	switch {
 	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, ArgNullFloat64s(nv))
+		c.Right.Arguments = append(c.Right.Arguments, NullFloat64s(nv))
 	case len(nv) == 1:
 		c.Right.Argument = nv[0]
 	default:
-		c.Right.Argument = ArgNullFloat64s(nv)
+		c.Right.Argument = NullFloat64s(nv)
 	}
 	return c
 }
@@ -620,11 +620,11 @@ func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
 func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
 	switch {
 	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, ArgNullInt64s(nv))
+		c.Right.Arguments = append(c.Right.Arguments, NullInt64s(nv))
 	case len(nv) == 1:
 		c.Right.Argument = nv[0]
 	default:
-		c.Right.Argument = ArgNullInt64s(nv)
+		c.Right.Argument = NullInt64s(nv)
 	}
 	return c
 }
@@ -644,11 +644,11 @@ func (c *Condition) NullBool(nv NullBool) *Condition {
 func (c *Condition) NullTime(nv ...NullTime) *Condition {
 	switch {
 	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, ArgNullTimes(nv))
+		c.Right.Arguments = append(c.Right.Arguments, NullTimes(nv))
 	case len(nv) == 1:
 		c.Right.Argument = nv[0]
 	default:
-		c.Right.Argument = ArgNullTimes(nv)
+		c.Right.Argument = NullTimes(nv)
 	}
 	return c
 }

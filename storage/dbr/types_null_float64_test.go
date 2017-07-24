@@ -215,7 +215,7 @@ func TestNullFloat64_Argument(t *testing.T) {
 func TestArgNullFloat64(t *testing.T) {
 	t.Parallel()
 
-	args := ArgNullFloat64s{MakeNullFloat64(math.Phi), MakeNullFloat64(math.E, false), MakeNullFloat64(math.SqrtE)}
+	args := NullFloat64s{MakeNullFloat64(math.Phi), MakeNullFloat64(math.E, false), MakeNullFloat64(math.SqrtE)}
 	assert.Exactly(t, 3, args.len())
 
 	t.Run("writeTo", func(t *testing.T) {
@@ -233,7 +233,7 @@ func TestArgNullFloat64(t *testing.T) {
 	})
 
 	t.Run("single arg", func(t *testing.T) {
-		args = ArgNullFloat64s{MakeNullFloat64(math.Sqrt2)}
+		args = NullFloat64s{MakeNullFloat64(math.Sqrt2)}
 
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)

@@ -182,7 +182,7 @@ func (ip *ipolate) NullString(nv ...NullString) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
-		ip.args = append(ip.args, ArgNullStrings(nv))
+		ip.args = append(ip.args, NullStrings(nv))
 	}
 	return ip
 }
@@ -191,7 +191,7 @@ func (ip *ipolate) NullFloat64(nv ...NullFloat64) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
-		ip.args = append(ip.args, ArgNullFloat64s(nv))
+		ip.args = append(ip.args, NullFloat64s(nv))
 	}
 	return ip
 }
@@ -200,7 +200,7 @@ func (ip *ipolate) NullInt64(nv ...NullInt64) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
-		ip.args = append(ip.args, ArgNullInt64s(nv))
+		ip.args = append(ip.args, NullInt64s(nv))
 	}
 	return ip
 }
@@ -213,7 +213,7 @@ func (ip *ipolate) NullTime(nv ...NullTime) *ipolate {
 	if len(nv) == 1 {
 		ip.args = append(ip.args, nv[0])
 	} else {
-		ip.args = append(ip.args, ArgNullTimes(nv))
+		ip.args = append(ip.args, NullTimes(nv))
 	}
 	return ip
 }

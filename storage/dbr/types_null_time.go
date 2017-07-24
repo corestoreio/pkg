@@ -137,11 +137,11 @@ func (a NullTime) Ptr() *time.Time {
 	return &a.Time
 }
 
-// ArgNullTimes adds a nullable Time or a slice of nullable Timess to the
+// NullTimes adds a nullable Time or a slice of nullable Timess to the
 // argument list. Providing no arguments returns a NULL type.
-type ArgNullTimes []NullTime
+type NullTimes []NullTime
 
-func (a ArgNullTimes) toIFace(args []interface{}) []interface{} {
+func (a NullTimes) toIFace(args []interface{}) []interface{} {
 	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.Time)
@@ -152,7 +152,7 @@ func (a ArgNullTimes) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgNullTimes) writeTo(w queryWriter, pos int) error {
+func (a NullTimes) writeTo(w queryWriter, pos int) error {
 	if s := a[pos]; s.Valid {
 		dialect.EscapeTime(w, s.Time)
 		return nil
@@ -161,6 +161,6 @@ func (a ArgNullTimes) writeTo(w queryWriter, pos int) error {
 	return err
 }
 
-func (a ArgNullTimes) len() int {
+func (a NullTimes) len() int {
 	return len(a)
 }

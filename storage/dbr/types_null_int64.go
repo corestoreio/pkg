@@ -163,11 +163,11 @@ func (a NullInt64) Value() (driver.Value, error) {
 	return a.Int64, nil
 }
 
-// ArgNullInt64s adds a nullable int64 or a slice of nullable int64s to the
+// NullInt64s adds a nullable int64 or a slice of nullable int64s to the
 // argument list. Providing no arguments returns a NULL type.
-type ArgNullInt64s []NullInt64
+type NullInt64s []NullInt64
 
-func (a ArgNullInt64s) toIFace(args []interface{}) []interface{} {
+func (a NullInt64s) toIFace(args []interface{}) []interface{} {
 	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.Int64)
@@ -178,7 +178,7 @@ func (a ArgNullInt64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgNullInt64s) writeTo(w queryWriter, pos int) error {
+func (a NullInt64s) writeTo(w queryWriter, pos int) error {
 	if s := a[pos]; s.Valid {
 		return writeInt64(w, s.Int64)
 	}
@@ -186,6 +186,6 @@ func (a ArgNullInt64s) writeTo(w queryWriter, pos int) error {
 	return err
 }
 
-func (a ArgNullInt64s) len() int {
+func (a NullInt64s) len() int {
 	return len(a)
 }

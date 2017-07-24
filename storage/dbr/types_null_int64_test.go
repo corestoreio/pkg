@@ -260,7 +260,7 @@ func TestNullInt64_Argument(t *testing.T) {
 func TestArgNullInt64(t *testing.T) {
 	t.Parallel()
 
-	args := ArgNullInt64s{MakeNullInt64(987651), MakeNullInt64(987652, false), MakeNullInt64(987653)}
+	args := NullInt64s{MakeNullInt64(987651), MakeNullInt64(987652, false), MakeNullInt64(987653)}
 	assert.Exactly(t, 3, args.len())
 
 	t.Run("writeTo", func(t *testing.T) {
@@ -278,7 +278,7 @@ func TestArgNullInt64(t *testing.T) {
 	})
 
 	t.Run("single arg", func(t *testing.T) {
-		args = ArgNullInt64s{MakeNullInt64(1234567)}
+		args = NullInt64s{MakeNullInt64(1234567)}
 
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)

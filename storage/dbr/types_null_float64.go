@@ -153,11 +153,11 @@ func (a NullFloat64) IsZero() bool {
 	return !a.Valid
 }
 
-// ArgNullFloat64s adds a nullable float64 or a slice of nullable float64s to the
+// NullFloat64s adds a nullable float64 or a slice of nullable float64s to the
 // argument list. Providing no arguments returns a NULL type.
-type ArgNullFloat64s []NullFloat64
+type NullFloat64s []NullFloat64
 
-func (a ArgNullFloat64s) toIFace(args []interface{}) []interface{} {
+func (a NullFloat64s) toIFace(args []interface{}) []interface{} {
 	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.Float64)
@@ -168,7 +168,7 @@ func (a ArgNullFloat64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgNullFloat64s) writeTo(w queryWriter, pos int) error {
+func (a NullFloat64s) writeTo(w queryWriter, pos int) error {
 	if s := a[pos]; s.Valid {
 		return writeFloat64(w, s.Float64)
 	}
@@ -176,6 +176,6 @@ func (a ArgNullFloat64s) writeTo(w queryWriter, pos int) error {
 	return err
 }
 
-func (a ArgNullFloat64s) len() int {
+func (a NullFloat64s) len() int {
 	return len(a)
 }

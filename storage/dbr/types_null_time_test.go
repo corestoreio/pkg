@@ -219,7 +219,7 @@ func TestNullTime_Argument(t *testing.T) {
 func TestArgNullTime(t *testing.T) {
 	t.Parallel()
 
-	args := ArgNullTimes{MakeNullTime(timeValue), MakeNullTime(timeValue, false), MakeNullTime(timeValue)}
+	args := NullTimes{MakeNullTime(timeValue), MakeNullTime(timeValue, false), MakeNullTime(timeValue)}
 	assert.Exactly(t, 3, args.len())
 
 	t.Run("writeTo", func(t *testing.T) {
@@ -236,7 +236,7 @@ func TestArgNullTime(t *testing.T) {
 	})
 
 	t.Run("single arg", func(t *testing.T) {
-		args = ArgNullTimes{MakeNullTime(timeValue)}
+		args = NullTimes{MakeNullTime(timeValue)}
 		var buf bytes.Buffer
 		argIF := make([]interface{}, 0, 2)
 		for i := 0; i < args.len(); i++ {

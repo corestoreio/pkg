@@ -160,10 +160,10 @@ func (a NullString) IsZero() bool {
 	return !a.Valid
 }
 
-// ArgNullStrings contains multiple nullable strings.
-type ArgNullStrings []NullString
+// NullStrings contains multiple nullable strings.
+type NullStrings []NullString
 
-func (a ArgNullStrings) toIFace(args []interface{}) []interface{} {
+func (a NullStrings) toIFace(args []interface{}) []interface{} {
 	for _, s := range a {
 		if s.Valid {
 			args = append(args, s.String)
@@ -174,7 +174,7 @@ func (a ArgNullStrings) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a ArgNullStrings) writeTo(w queryWriter, pos int) error {
+func (a NullStrings) writeTo(w queryWriter, pos int) error {
 	if s := a[pos]; s.Valid {
 		if !utf8.ValidString(s.String) {
 			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
@@ -186,6 +186,6 @@ func (a ArgNullStrings) writeTo(w queryWriter, pos int) error {
 	return err
 }
 
-func (a ArgNullStrings) len() int {
+func (a NullStrings) len() int {
 	return len(a)
 }
