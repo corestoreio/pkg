@@ -31,6 +31,7 @@ var _ QueryBuilder = (*ipolate)(nil)
 
 func TestRepeat(t *testing.T) {
 	t.Parallel()
+
 	t.Run("MisMatch", func(t *testing.T) {
 		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)")
 		assert.Empty(t, s)
@@ -51,24 +52,27 @@ func TestRepeat(t *testing.T) {
 	})
 	t.Run("one arg with one value", func(t *testing.T) {
 		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", Int(1))
+		require.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?)", s)
 		assert.Exactly(t, []interface{}{int64(1)}, args)
-		assert.NoError(t, err, "%+v", err)
 	})
 	t.Run("one arg with three values", func(t *testing.T) {
 		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", Ints{11, 3, 5})
+		require.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?)", s)
 		assert.Exactly(t, []interface{}{int64(11), int64(3), int64(5)}, args)
-		assert.NoError(t, err, "%+v", err)
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
 		sl := Strings{"a", "b", "c", "d", "e"}
-		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)",
-			Ints{5, 7, 9}, sl)
+		s, args, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", Ints{5, 7, 9}, sl)
+		require.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
 		assert.Exactly(t, []interface{}{int64(5), int64(7), int64(9), "a", "b", "c", "d", "e"}, args)
-		assert.NoError(t, err, "%+v", err)
 	})
+}
+
+func TestRepeat_Slices(t *testing.T) {
+
 }
 
 func TestInterpolateNil(t *testing.T) {

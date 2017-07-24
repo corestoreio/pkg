@@ -127,7 +127,7 @@ func TestSelect_Interpolate(t *testing.T) {
 	t.Run("two args in one condition", func(t *testing.T) {
 		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(Expression("`d` = ? OR `e` = ?").Int64(1).String("wat")). // TODO special case which requires refactoring the Condition.Types functions
+			Where(Expression("`d` = ? OR `e` = ?").Int64(1).String("wat")).
 			Where(
 				Column("g").Int(3),
 				Column("h").In().Int64s(1, 2, 3),
@@ -143,7 +143,6 @@ func TestSelect_Interpolate(t *testing.T) {
 			"SELECT DISTINCT `a`, `b`, `z`, `y`, `x` FROM `c` WHERE (`d` = 1 OR `e` = 'wat') AND (`g` = 3) AND (`h` IN (1,2,3)) GROUP BY `ab`, `ii`, `iii` HAVING (j = k) AND (`jj` = 1) AND (`jjj` = 2) ORDER BY `l1`, `l2`, `l3` LIMIT 7 OFFSET 8",
 			int64(1), "wat", int64(3), int64(1), int64(2), int64(3), int64(1), int64(2),
 		)
-
 	})
 }
 

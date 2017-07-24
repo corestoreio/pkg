@@ -26,6 +26,11 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+const (
+	placeHolderRune = '?'
+	placeHolderStr  = `?`
+)
+
 // Repeat takes a SQL string and repeats the question marks with the provided
 // arguments. If the amount of arguments does not match the number of questions
 // marks, a Mismatch error gets returned. The arguments are getting converted to
@@ -38,12 +43,10 @@ import (
 // functions. This function should be generally used when dealing with prepared
 // statements.
 func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
-	const strPH = `?`
-	const rPH = '?'
 
-	phCount := strings.Count(sql, strPH)
+	phCount := strings.Count(sql, placeHolderStr)
 	if want := len(args); phCount != want || want == 0 {
-		return "", nil, errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", strPH, phCount, want)
+		return "", nil, errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
 	}
 
 	retArgs := make([]interface{}, 0, len(args)*2)
@@ -54,7 +57,7 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	n := phCount
 	i := 0
 	for i < n {
-		m := strings.IndexByte(sql, rPH)
+		m := strings.IndexByte(sql, placeHolderRune)
 		if m < 0 {
 			break
 		}
@@ -65,13 +68,13 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 			retArgs = args[i].toIFace(retArgs)
 			reps := len(retArgs) - prevLen
 			for r := 0; r < reps; r++ {
-				buf.WriteByte(rPH)
+				buf.WriteByte(placeHolderRune)
 				if r < reps-1 {
 					buf.WriteByte(',')
 				}
 			}
 		}
-		sql = sql[m+len(strPH):]
+		sql = sql[m+len(placeHolderStr):]
 		i++
 	}
 	buf.WriteString(sql)
@@ -80,7 +83,6 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 
 // repeat multiplies the place holder with the arguments internal len.
 func repeat(buf queryWriter, sql []byte, args ...Argument) error {
-	const rPH = '?'
 
 	i := 0
 	pos := 0
@@ -93,7 +95,7 @@ func repeat(buf queryWriter, sql []byte, args ...Argument) error {
 			if i < len(args) {
 				reps := args[i].len()
 				for r := 0; r < reps; r++ {
-					buf.WriteByte(rPH)
+					buf.WriteByte(placeHolderRune)
 					if r < reps-1 {
 						buf.WriteByte(',')
 					}

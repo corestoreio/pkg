@@ -182,7 +182,7 @@ func (op Op) hasArgs(argLen int) (addArg bool) {
 }
 
 // Condition implements a single condition often used in WHERE, ON, SET and ON
-// DUPLCIATE KEY UPDATE. Please use the helper functions instead of using this
+// DUPLICATE KEY UPDATE. Please use the helper functions instead of using this
 // type directly.
 type Condition struct {
 	// Left can contain either a valid identifier or an expression. Set field
@@ -246,6 +246,10 @@ func (c *Condition) Or() *Condition {
 	return c
 }
 
+func (c *Condition) isExpression() bool {
+	return c.IsLeftExpression || c.Right.Expression != ""
+}
+
 // intersectConditions iterates over each WHERE fragment and appends all
 // conditions aka column names to the slice c.
 func (cs Conditions) intersectConditions(cols []string) []string {
@@ -283,7 +287,7 @@ func Columns(columns ...string) *Condition {
 	}
 }
 
-// Column adds a condition to a WHERE or HAVING statement.
+// Column adds a new condition.
 func Column(columnName string) *Condition {
 	return &Condition{
 		Left: columnName,
@@ -313,6 +317,10 @@ func ParenthesisClose() *Condition {
 		Left: ")",
 	}
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// COMPARIONS OPERATOR
+///////////////////////////////////////////////////////////////////////////////
 
 func (c *Condition) Null() *Condition {
 	c.Operator = Null
@@ -412,9 +420,9 @@ func (c *Condition) Coalesce() *Condition {
 	return c
 }
 
-///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //		TYPES
-///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 // Cahen's Constant, used as a random identifier that an argument is a place
 // holder.
@@ -446,57 +454,97 @@ func (c *Condition) Expression(exp string) *Condition {
 }
 
 func (c *Condition) Int(i int) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Int(i))
+		return c
+	}
 	c.Right.Argument = Int(i)
 	return c
 }
 
 func (c *Condition) Ints(i ...int) *Condition {
-	//if c.Right.Argument == nil {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Ints(i))
+		return c
+	}
 	c.Right.Argument = Ints(i)
-	//} else {
-	//	c.Right.Arguments = append(c.Right.Arguments, Ints(i))
-	//}
 	return c
 }
 func (c *Condition) Int64(i int64) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Int64(i))
+		return c
+	}
 	c.Right.Argument = Int64(i)
 	return c
 }
 
 func (c *Condition) Int64s(i ...int64) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Int64s(i))
+		return c
+	}
 	c.Right.Argument = Int64s(i)
 	return c
 }
 
 func (c *Condition) Uint64(i uint64) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Uint64(i))
+		return c
+	}
 	c.Right.Argument = Uint64(i)
 	return c
 }
 
 func (c *Condition) Float64(f float64) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Float64(f))
+		return c
+	}
 	c.Right.Argument = Float64(f)
 	return c
 }
 func (c *Condition) Float64s(f ...float64) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Float64s(f))
+		return c
+	}
 	c.Right.Argument = Float64s(f)
 	return c
 }
 func (c *Condition) String(s string) *Condition { // TODO rename to Str and Strs and use String() as fmt.Stringer
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, String(s))
+		return c
+	}
 	c.Right.Argument = String(s)
 	return c
 }
 
 func (c *Condition) Strings(s ...string) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Strings(s))
+		return c
+	}
 	c.Right.Argument = Strings(s)
 	return c
 }
 
 func (c *Condition) Bool(b bool) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Bool(b))
+		return c
+	}
 	c.Right.Argument = Bool(b)
 	return c
 }
 
 func (c *Condition) Bools(b ...bool) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Bools(b))
+		return c
+	}
 	c.Right.Argument = Bools(b)
 	return c
 }
@@ -505,32 +553,51 @@ func (c *Condition) Bools(b ...bool) *Condition {
 // NULL type. Detects between valid UTF-8 strings and binary data. Later gets
 // hex encoded.
 func (c *Condition) Bytes(p []byte) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Bytes(p))
+		return c
+	}
 	c.Right.Argument = Bytes(p)
 	return c
 }
 
 func (c *Condition) BytesSlice(p ...[]byte) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, BytesSlice(p))
+		return c
+	}
 	c.Right.Argument = BytesSlice(p)
 	return c
 }
 
 // Time uses time.Time arguments for comparison.
 func (c *Condition) Time(t time.Time) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, MakeTime(t))
+		return c
+	}
 	c.Right.Argument = MakeTime(t)
 	return c
 }
 
 // Times uses time.Time arguments for comparison.
 func (c *Condition) Times(t ...time.Time) *Condition {
+	if c.isExpression() {
+		c.Right.Arguments = append(c.Right.Arguments, Times(t))
+		return c
+	}
 	c.Right.Argument = Times(t)
 	return c
 }
 
 // NullString uses nullable string arguments for comparison.
 func (c *Condition) NullString(nv ...NullString) *Condition {
-	if len(nv) == 1 {
+	switch {
+	case c.isExpression():
+		c.Right.Arguments = append(c.Right.Arguments, ArgNullStrings(nv))
+	case len(nv) == 1:
 		c.Right.Argument = nv[0]
-	} else {
+	default:
 		c.Right.Argument = ArgNullStrings(nv)
 	}
 	return c
@@ -538,9 +605,12 @@ func (c *Condition) NullString(nv ...NullString) *Condition {
 
 // NullFloat64 uses nullable float64 arguments for comparison.
 func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
-	if len(nv) == 1 {
+	switch {
+	case c.isExpression():
+		c.Right.Arguments = append(c.Right.Arguments, ArgNullFloat64s(nv))
+	case len(nv) == 1:
 		c.Right.Argument = nv[0]
-	} else {
+	default:
 		c.Right.Argument = ArgNullFloat64s(nv)
 	}
 	return c
@@ -548,9 +618,12 @@ func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
 
 // NullInt64 uses nullable int64 arguments for comparison.
 func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
-	if len(nv) == 1 {
+	switch {
+	case c.isExpression():
+		c.Right.Arguments = append(c.Right.Arguments, ArgNullInt64s(nv))
+	case len(nv) == 1:
 		c.Right.Argument = nv[0]
-	} else {
+	default:
 		c.Right.Argument = ArgNullInt64s(nv)
 	}
 	return c
@@ -558,15 +631,23 @@ func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
 
 // NullBool uses nullable bool arguments for comparison.
 func (c *Condition) NullBool(nv NullBool) *Condition {
-	c.Right.Argument = nv
+	switch {
+	case c.isExpression():
+		c.Right.Arguments = append(c.Right.Arguments, nv)
+	default:
+		c.Right.Argument = nv
+	}
 	return c
 }
 
 // NullTime uses nullable time arguments for comparison.
 func (c *Condition) NullTime(nv ...NullTime) *Condition {
-	if len(nv) == 1 {
+	switch {
+	case c.isExpression():
+		c.Right.Arguments = append(c.Right.Arguments, ArgNullTimes(nv))
+	case len(nv) == 1:
 		c.Right.Argument = nv[0]
-	} else {
+	default:
 		c.Right.Argument = ArgNullTimes(nv)
 	}
 	return c
@@ -581,7 +662,12 @@ func (c *Condition) Values() *Condition {
 
 // DriverValue uses driver.Valuers for comparison.
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
-	c.Right.Argument = DriverValues(dv)
+	switch {
+	case c.isExpression():
+		c.Right.Arguments = append(c.Right.Arguments, DriverValues(dv))
+	default:
+		c.Right.Argument = DriverValues(dv)
+	}
 	return c
 }
 
@@ -650,10 +736,18 @@ func (cs Conditions) write(w queryWriter, conditionType byte) error {
 
 		switch {
 		case cnd.IsLeftExpression:
-			_, _ = w.WriteString(cnd.Left)
+			phCount := strings.Count(cnd.Left, placeHolderStr)
+			if phCount != cnd.Right.Arguments.len() {
+				if err := repeat(w, []byte(cnd.Left), cnd.Right.Arguments...); err != nil {
+					return errors.WithStack(err)
+				}
+			} else {
+				_, _ = w.WriteString(cnd.Left)
+			}
+
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if strings.IndexByte(cnd.Left, '?') == -1 && (len(cnd.Right.Arguments) == 1 || cnd.Right.Argument != nil) && cnd.Operator > 0 {
+			if phCount == 0 && (len(cnd.Right.Arguments) == 1 || cnd.Right.Argument != nil) && cnd.Operator > 0 {
 				eArg := cnd.Right.Argument
 				if eArg == nil {
 					eArg = cnd.Right.Arguments[0]
@@ -731,7 +825,7 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 
 		addArg := false
 		switch {
-		case cnd.IsLeftExpression:
+		case cnd.isExpression():
 			addArg = true
 		case cnd.IsPlaceHolder:
 			addArg = cnd.Operator.hasArgs(1) // always a length of one, see the `repeat()` function

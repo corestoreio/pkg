@@ -28,12 +28,8 @@ type Insert struct {
 	Log log.Logger // Log optional logger
 	DB  ExecPreparer
 
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
-	cacheSQL      []byte
-	cacheArgs     Arguments // like a buffer, gets reused
+	cacheSQL  []byte
+	cacheArgs Arguments // like a buffer, gets reused
 
 	RawFullSQL   string
 	RawArguments Arguments // Arguments used by RawFullSQL
@@ -78,15 +74,19 @@ type Insert struct {
 	// Type `Conditions` gets used in type `Update` with field
 	// `SetClauses` and in type `Insert` with field OnDuplicateKeys.
 	OnDuplicateKeys Conditions
-	// IsOnDuplicateKey if enabled adds all columns to the ON DUPLICATE KEY
-	// claus. Takes the OnDuplicateKeyExclude field into consideration.
-	IsOnDuplicateKey bool
 	// OnDuplicateKeyExclude excludes the mentioned columns to the ON DUPLICATE
 	// KEY UPDATE section. Otherwise all columns in the field `Columns` will be
 	// added to the ON DUPLICATE KEY UPDATE expression. Usually the slice
 	// `OnDuplicateKeyExclude` contains the primary key columns. Case-sensitive
 	// comparison.
 	OnDuplicateKeyExclude []string
+	// IsOnDuplicateKey if enabled adds all columns to the ON DUPLICATE KEY
+	// claus. Takes the OnDuplicateKeyExclude field into consideration.
+	IsOnDuplicateKey bool
+	// UseBuildCache if `true` the final build query including place holders
+	// will be cached in a private field. Each time a call to function ToSQL
+	// happens, the arguments will be re-evaluated and returned or interpolated.
+	UseBuildCache bool
 	// IsReplace uses the REPLACE syntax. See function Replace().
 	IsReplace bool
 	// IsIgnore ignores error. See function Ignore().
