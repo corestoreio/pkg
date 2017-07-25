@@ -265,8 +265,12 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 				"is_on_sale",
 			).
 			AddArguments(start, end, start, end).
-			From("catalog_promotions").Where(
-			dbr.Column("promotion_id").NotIn().Ints(pid...)).
+			From("catalog_promotions").
+			Where(
+				dbr.Column("promotion_id").
+					NotIn().
+					Ints(pid...),
+			).
 			ToSQL()
 		if err != nil {
 			b.Fatalf("%+v", err)
