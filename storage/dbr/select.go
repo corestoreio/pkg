@@ -59,6 +59,7 @@ type Select struct {
 	OffsetCount       uint64
 	LimitValid        bool
 	OffsetValid       bool
+	IsStar            bool // IsStar generates a SELECT * FROM query
 	IsCountStar       bool // IsCountStar retains the column names but executes a COUNT(*) query.
 	IsDistinct        bool // See Distinct()
 	IsStraightJoin    bool // See StraightJoin()
@@ -230,9 +231,7 @@ func (b *Select) Count() *Select {
 
 // Star creates a SELECT * FROM query. Such queries are discouraged from using.
 func (b *Select) Star() *Select {
-	b.Columns = aliases{
-		alias{Name: "*", IsExpression: true},
-	}
+	b.IsStar = true
 	return b
 }
 
@@ -495,7 +494,7 @@ func (b *Select) toSQL(w queryWriter) error {
 		return err
 	}
 
-	if len(b.Columns) == 0 && !b.IsCountStar {
+	if len(b.Columns) == 0 && !b.IsCountStar && !b.IsStar {
 		return errors.NewEmptyf("[dbr] Select: no columns specified")
 	}
 
@@ -510,15 +509,18 @@ func (b *Select) toSQL(w queryWriter) error {
 	if b.IsSQLNoCache {
 		w.WriteString("SQL_NO_CACHE ")
 	}
-	cols := b.Columns
-	if b.IsCountStar {
-		cols = aliases{
-			MakeExpressionAlias("COUNT(*)", "counted"),
+
+	switch {
+	case b.IsStar:
+		w.WriteByte('*')
+	case b.IsCountStar:
+		Quoter.WriteExpressionAlias(w, "COUNT(*)", "counted")
+	default:
+		if err := b.Columns.WriteQuoted(w); err != nil {
+			return errors.WithStack(err)
 		}
 	}
-	if err := cols.WriteQuoted(w); err != nil {
-		return errors.WithStack(err)
-	}
+
 	if !b.Table.isEmpty() {
 		w.WriteString(" FROM ")
 		if err := b.Table.WriteQuoted(w); err != nil {
