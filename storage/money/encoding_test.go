@@ -16,15 +16,19 @@ package money_test
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/storage/money"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -219,7 +223,7 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 		}
 
 		var buf bytes.Buffer
-		for _, ped := range peds {
+		for _, ped := range peds.Data {
 			ped.Value.FmtNum = testFmtNum
 
 			_, err := ped.Value.NumberWriter(&buf)
@@ -238,21 +242,30 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 	}
 }
 
-var _ dbr.ArgumentAssembler = (*TableProductEntityDecimal)(nil)
+var _ dbr.ArgumentsAppender = (*TableProductEntityDecimal)(nil)
+var _ dbr.Scanner = (*TableProductEntityDecimalSlice)(nil)
 
 type TableProductEntityDecimal struct {
-	ValueID     int64       `db:"value_id"`     // value_id int(11) NOT NULL PRI  auto_increment
-	AttributeID int64       `db:"attribute_id"` // attribute_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	StoreID     int64       `db:"store_id"`     // store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	EntityID    int64       `db:"entity_id"`    // entity_id int(10) unsigned NOT NULL MUL DEFAULT '0'
-	Value       money.Money `db:"value"`        // value decimal(12,4) NULL
+	ValueID     int64       // value_id int(11) NOT NULL PRI  auto_increment
+	AttributeID int64       // attribute_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	StoreID     int64       // store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	EntityID    int64       // entity_id int(10) unsigned NOT NULL MUL DEFAULT '0'
+	Value       money.Money // value decimal(12,4) NULL
 }
 
-func (ped TableProductEntityDecimal) AssembleArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (ped TableProductEntityDecimal) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "value_id":
-			args = append(args, dbr.ArgInt64(ped.ValueID))
+			args = append(args, dbr.Int64(ped.ValueID))
+		case "attribute_id":
+			args = append(args, dbr.Int64(ped.AttributeID))
+		case "store_id":
+			args = append(args, dbr.Int64(ped.StoreID))
+		case "entity_id":
+			args = append(args, dbr.Int64(ped.EntityID))
+		case "value":
+			args = append(args, dbr.Float64(ped.Value.Getf()))
 		default:
 			panic("other statement types than insert are not yet supported")
 		}
@@ -260,60 +273,115 @@ func (ped TableProductEntityDecimal) AssembleArguments(stmtType int, args dbr.Ar
 	return args, nil
 }
 
-type TableProductEntityDecimalSlice []*TableProductEntityDecimal
+type TableProductEntityDecimalSlice struct {
+	Convert dbr.RowConvert
+	Data    []*TableProductEntityDecimal
+}
 
-//func off_TestLoadFromDb(t *testing.T) {
-//	//for hacking testing added :-)
-//	conn := csdb.MustConnectTest()
-//	defer conn.Close()
-//	dbrSess := conn.NewSession()
-//
-//	sel := dbrSess.SelectBySql("SELECT * FROM `catalog_product_entity_decimal`")
-//	var peds TableProductEntityDecimalSlice
-//
-//	if rows, err := sel.LoadStructs(&peds); err != nil {
-//		t.Error(err)
-//	} else if rows == 0 {
-//		t.Error("0 rows loaded")
-//	}
-//
-//	for _, ped := range peds {
-//		fmt.Printf("%#v\n", ped)
-//	}
-//}
+func (peds *TableProductEntityDecimalSlice) RowScan(r *sql.Rows) error {
+	if err := peds.Convert.Scan(r); err != nil {
+		return err
+	}
+	o := new(TableProductEntityDecimal)
+	for i, col := range peds.Convert.Columns {
+		b := peds.Convert.Index(i)
+		var err error
+		switch col {
+		case "value_id":
+			o.ValueID, err = b.Int64()
+		case "attribute_id":
+			o.AttributeID, err = b.Int64()
+		case "store_id":
+			o.StoreID, err = b.Int64()
+		case "entity_id":
+			o.EntityID, err = b.Int64()
+		case "value":
+			var f sql.NullFloat64
+			f, err = b.NullFloat64()
+			o.Value = money.New().Setf(f.Float64)
+			o.Value.Valid = f.Valid
+		}
+		if err != nil {
+			return errors.Wrapf(err, "[dbr] Failed to convert value at row % with column index %d", peds.Convert.Count, i)
+		}
+	}
+	peds.Data = append(peds.Data, o)
+	return nil
+}
 
-//func TestSaveToDb(t *testing.T) {
-//for hacking testing added :-)
-//	db := csdb.MustConnectTest()
-//	defer db.Close()
-//	dbrSess := dbr.NewConnection(nil, nil).NewSession(nil)
+func (peds *TableProductEntityDecimalSlice) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	for _, ped := range peds.Data {
+		for _, c := range columns {
+			switch c {
+			case "value_id":
+				args = append(args, dbr.Int64(ped.ValueID))
+			case "attribute_id":
+				args = append(args, dbr.Int64(ped.AttributeID))
+			case "store_id":
+				args = append(args, dbr.Int64(ped.StoreID))
+			case "entity_id":
+				args = append(args, dbr.Int64(ped.EntityID))
+			case "value":
+				args = append(args, dbr.Float64(ped.Value.Getf()))
+			default:
+				panic("other statement types than insert are not yet supported")
+			}
+		}
+	}
+	return args, nil
+}
 
-//		var peds = TableProductEntityDecimalSlice{
-//			&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4)).Set(9990000)},
-//			&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-//			&TableProductEntityDecimal{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-//			&TableProductEntityDecimal{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-//			&TableProductEntityDecimal{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-//			&TableProductEntityDecimal{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-//			&TableProductEntityDecimal{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-//			&TableProductEntityDecimal{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-//		}
+func TestLoadFromDb(t *testing.T) {
+	t.Skip("Only for hacking")
 
-//	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.Precision(4)).Set(7779933)}
-//	tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.Precision(4)).Set(8889933)}
-//	ib := dbrSess.InsertInto("catalog_product_entity_decimal")
-//	ib.Columns("attribute_id", "store_id", "entity_id", "value")
-//
-//	ib.Values(tuple.AttributeID, tuple.StoreID, tuple.EntityID, tuple.Value)
-//	ib.Values(tuple2.AttributeID, tuple2.StoreID, tuple2.EntityID, &tuple2.Value)
-//	t.Error(ib.ToSql())
-//	res, err := ib.Exec()
-//	t.Log(err)
-//	t.Log(res.LastInsertId())
-//	t.Log(res.RowsAffected())
-//	t.Logf("1: %#v", tuple)
-//	t.Logf("2: %#v", tuple2)
-//}
+	conn := cstesting.MustConnectDB(t)
+	defer cstesting.Close(t, conn.DB)
+
+	sel := conn.Select("*").From(`catalog_product_entity_decimal`).Limit(10)
+	peds := new(TableProductEntityDecimalSlice)
+	if rows, err := sel.Load(context.TODO(), peds); err != nil {
+		t.Error(err)
+	} else if rows == 0 {
+		t.Error("0 rows loaded")
+	}
+
+	for _, ped := range peds.Data {
+		fmt.Printf("%#v\n", ped)
+	}
+}
+
+func TestSaveToDb(t *testing.T) {
+	//t.Skip("Only for hacking")
+
+	conn := cstesting.MustConnectDB(t)
+	defer cstesting.Close(t, conn.DB)
+
+	peds := &TableProductEntityDecimalSlice{
+		Data: []*TableProductEntityDecimal{
+			{AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(9990000)},
+			{AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+			{AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+			{AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+			{AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+			{AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+			{AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+			{AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+		},
+	}
+
+	//tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(7779933)}
+	//tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(8889933)}
+	ib := conn.InsertInto("catalog_product_entity_decimal2").
+		AddColumns("attribute_id", "store_id", "entity_id", "value").
+		AddRecords(peds).Interpolate()
+
+	res, err := ib.Exec(context.TODO())
+	require.NoError(t, err)
+	t.Log(res.LastInsertId())
+	t.Log(res.RowsAffected())
+	//t.Logf("1: %#v", tuple)
+	//t.Logf("2: %#v", tuple2)
+}
 
 func TestValue(t *testing.T) {
 
@@ -324,9 +392,7 @@ func TestValue(t *testing.T) {
 	ib.AddColumns("attribute_id", "store_id", "entity_id", "value")
 	ib.AddRecords(tuple, tuple2)
 
-	sql, args, err := ib.ToSQL()
-	assert.NoError(t, err)
-	fullSql, err := dbr.Interpolate(sql, args...)
+	fullSql, _, err := ib.Interpolate().ToSQL()
 	assert.NoError(t, err)
 	assert.Contains(t, fullSql, `(73,3,231,777.9933),(74,2,231,888.9933)`)
 }
@@ -386,14 +452,16 @@ func TestScan(t *testing.T) {
 func TestJSONEncode(t *testing.T) {
 
 	var peds = TableProductEntityDecimalSlice{
-		&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(9990000)},
-		&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
-		&TableProductEntityDecimal{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
-		&TableProductEntityDecimal{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
-		&TableProductEntityDecimal{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
-		&TableProductEntityDecimal{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
-		&TableProductEntityDecimal{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
-		&TableProductEntityDecimal{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+		Data: []*TableProductEntityDecimal{
+			{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(9990000)},
+			{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+			{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+			{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+			{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+			{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+			{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+			{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+		},
 	}
 
 	jb, err := json.Marshal(peds)

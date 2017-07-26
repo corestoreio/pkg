@@ -218,6 +218,11 @@ func (m Money) String() string {
 	return buf.String()
 }
 
+// GoString implements fmt.GoStringer
+func (m Money) GoString() string {
+	return fmt.Sprintf("money.New(money.WithPrecision(%d)).Set(%d)", m.prec, m.Raw())
+}
+
 // Number prints the currency without any locale specific formatting.
 // E.g. useful in JavaScript.
 func (m Money) Number() (buf bytes.Buffer, err error) {
