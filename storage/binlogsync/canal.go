@@ -306,10 +306,10 @@ func (c *Canal) Close() error {
 // the first search, it will add the table to the internal map and performs a
 // column load from the information_schema and then returns the fully defined
 // table.
-func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (csdb.Table, error) {
+func (c *Canal) FindTable(ctx context.Context, tableName string) (csdb.Table, error) {
 	// deference the table pointer to avoid race conditions and devs modifying the
 	// table ;-)
-	t, err := c.tables.Table(id)
+	t, err := c.tables.Table(tableName)
 	if err == nil {
 		return *t, nil
 	}
@@ -318,11 +318,11 @@ func (c *Canal) FindTable(ctx context.Context, id int, tableName string) (csdb.T
 	}
 
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
-		if err := c.tables.Options(csdb.WithTableLoadColumns(dbr.WrapDBContext(ctx, c.db), id, tableName)); err != nil {
+		if err := c.tables.Options(csdb.WithTableLoadColumns(ctx, c.db, tableName)); err != nil {
 			return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
 		}
 
-		t, err = c.tables.Table(id)
+		t, err = c.tables.Table(tableName)
 		if err != nil {
 			return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
 		}
