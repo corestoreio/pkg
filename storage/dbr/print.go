@@ -163,7 +163,7 @@ func sqlWriteUnionAll(w queryWriter, isAll bool, isIntersect bool, isExcept bool
 	w.WriteByte('\n')
 }
 
-func sqlWriteOrderBy(w queryWriter, orderBys aliases, br bool) {
+func sqlWriteOrderBy(w queryWriter, orderBys identifiers, br bool) {
 	if len(orderBys) == 0 {
 		return
 	}

@@ -16,11 +16,14 @@ package dbr
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var _ fmt.Stringer = (*expressions)(nil)
 
 func TestColumn(t *testing.T) {
 	t.Run("invalid column name", func(t *testing.T) {

@@ -54,6 +54,54 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			int64(1),
 		)
 	})
+
+	t.Run("column right expression without arguments", func(t *testing.T) {
+		sel := NewSelect("sku", "name").From("products").Where(
+			Column("id").NotBetween().Ints(4, 7),
+			Column("name").NotEqual().Expression("CONCAT('Canon','E0S 5D Mark III')"),
+		)
+		compareToSQL(t, sel, nil,
+			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` != CONCAT('Canon','E0S 5D Mark III'))",
+			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN 4 AND 7) AND (`name` != CONCAT('Canon','E0S 5D Mark III'))",
+			int64(4), int64(7),
+		)
+	})
+
+	t.Run("column right expression with one argument", func(t *testing.T) {
+		sel := NewSelect("sku", "name").From("products").Where(
+			Column("id").NotBetween().Ints(4, 7),
+			Column("name").Like().Expression("CONCAT('Canon',?,'E0S 7D Mark VI')").String("Camera"),
+		)
+		compareToSQL(t, sel, nil,
+			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` LIKE CONCAT('Canon',?,'E0S 7D Mark VI'))",
+			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN 4 AND 7) AND (`name` LIKE CONCAT('Canon','Camera','E0S 7D Mark VI'))",
+			int64(4), int64(7), "Camera",
+		)
+	})
+
+	t.Run("column right expression with slice argument", func(t *testing.T) {
+		sel := NewSelect("sku", "name").From("products").Where(
+			Column("id").NotBetween().Ints(4, 7),
+			Column("name").NotLike().Expression("CONCAT('Canon',?,'E0S 8D Mark VII')").Strings("Camera", "Photo", "Flash"),
+		)
+		compareToSQL(t, sel, nil,
+			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` NOT LIKE CONCAT('Canon',?,?,?,'E0S 8D Mark VII'))",
+			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN 4 AND 7) AND (`name` NOT LIKE CONCAT('Canon','Camera','Photo','Flash','E0S 8D Mark VII'))",
+			int64(4), int64(7), "Camera", "Photo", "Flash",
+		)
+	})
+
+	//t.Run("column left and right expression without arguments", func(t *testing.T) {
+	//	sel := NewSelect("sku", "name").From("products").Where(
+	//		Column("id").NotBetween().Ints(4, 7),
+	//		Column("name").NotEqual().Expression("CONCAT('Canon','E0S 5D Mark III')"),
+	//	)
+	//	compareToSQL(t, sel, nil,
+	//		"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` != CONCAT('Canon','E0S 5D Mark III'))",
+	//		"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN 4 AND 7) AND (`name` != CONCAT('Canon','E0S 5D Mark III'))",
+	//		int64(4), int64(7),
+	//	)
+	//})
 }
 
 func TestSelectFullToSQL(t *testing.T) {

@@ -30,12 +30,12 @@ func TestMakeAlias(t *testing.T) {
 	assert.Exactly(t, "`table1`", MakeNameAlias("table1", "").String())
 }
 
-func TestMakeAliasExpr(t *testing.T) {
-	t.Parallel()
-	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
-	assert.Exactly(t, "(table1) AS `x`", MakeExpressionAlias("(table1)", "x").String())
-	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
-}
+//func TestMakeExpressionAlias(t *testing.T) {
+//	t.Parallel()
+//	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
+//	assert.Exactly(t, "(table1) AS `x`", MakeExpressionAlias("(table1)", "x").String())
+//	assert.Exactly(t, "(table1)", MakeExpressionAlias("(table1)", "").String())
+//}
 
 func TestMysqlQuoter_QuoteAlias(t *testing.T) {
 	tests := []struct {

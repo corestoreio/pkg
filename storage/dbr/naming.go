@@ -30,7 +30,7 @@ var Quoter = MysqlQuoter{
 	replacer: strings.NewReplacer(quote, ""),
 }
 
-type alias struct {
+type identifier struct {
 	// Derived Tables (Subqueries in the FROM Clause). A derived table is a
 	// subquery in a SELECT statement FROM clause. Derived tables can return a
 	// scalar, column, row, or table. Ignored in any other case.
@@ -45,12 +45,12 @@ type alias struct {
 	// Name can be any kind of SQL expression or a valid identifier. It gets
 	// quoted when `IsLeftExpression` is false.
 	Name string
-	// Alias must be a valid identifier allowed for alias usage.
+	// Expression has precedence over the `Name` field. Each line in an expression
+	// gets written unchanged to the final SQL string.
+	Expression expressions
+	// Alias must be a valid identifier allowed for alias usage. As soon as the field `Alias` has been set
+	// it gets append to the Name and Expression field: "sql AS Alias"
 	Alias string
-	// IsLeftExpression if true the field `Name` will be treated as an expression
-	// and won't get quoted when generating the SQL. The Qualifier field gets
-	// ignored.
-	IsExpression bool
 	// Sort applies only to GROUP BY and ORDER BY clauses. 'd'=descending,
 	// 0=default or nothing; 'a'=ascending.
 	Sort byte
@@ -63,40 +63,45 @@ const (
 
 // MakeNameAlias creates a new quoted name with an optional alias `a`, which can be
 // empty.
-func MakeNameAlias(name, a string) alias {
-	return alias{
+func MakeNameAlias(name, a string) identifier {
+	return identifier{
 		Name:  name,
 		Alias: a,
 	}
 }
 
+// uncomment this functions and its test once needed
 // MakeExpressionAlias creates a new unquoted expression with an optional alias
 // `a`, which can be empty.
-func MakeExpressionAlias(expression, a string) alias {
-	return alias{
-		IsExpression: true,
-		Name:         expression,
-		Alias:        a,
-	}
+//func MakeExpressionAlias(expression []string, a string) identifier {
+//	return identifier{
+//		Expression: expression,
+//		Alias:      a,
+//	}
+//}
+
+func (a identifier) isEmpty() bool {
+	return a.Name == "" && a.DerivedTable == nil && !a.Expression.isset()
 }
 
-func (a alias) isEmpty() bool { return a.Name == "" && a.DerivedTable == nil }
-
 // String returns the correct stringyfied statement.
-func (a alias) String() string {
-	if a.IsExpression {
-		return Quoter.exprAlias(a.Name, a.Alias)
+func (a identifier) String() string {
+	if len(a.Expression) > 0 {
+		buf := bufferpool.Get()
+		defer bufferpool.Put(buf)
+		Quoter.writeExprAlias(buf, a.Expression, a.Alias)
+		return buf.String()
 	}
 	return a.QuoteAs()
 }
 
 // NameAlias always quuotes the name and the alias
-func (a alias) QuoteAs() string {
+func (a identifier) QuoteAs() string {
 	return Quoter.NameAlias(a.Name, a.Alias)
 }
 
 // appendArgs assembles the arguments and appends them to `args`
-func (a alias) appendArgs(args Arguments) (_ Arguments, err error) {
+func (a identifier) appendArgs(args Arguments) (_ Arguments, err error) {
 	if a.DerivedTable != nil {
 		args, err = a.DerivedTable.appendArgs(args)
 	}
@@ -104,7 +109,7 @@ func (a alias) appendArgs(args Arguments) (_ Arguments, err error) {
 }
 
 // WriteQuoted writes the quoted table and its maybe alias into w.
-func (a alias) WriteQuoted(w queryWriter) error {
+func (a identifier) WriteQuoted(w queryWriter) error {
 	if a.DerivedTable != nil {
 		w.WriteByte('(')
 		if err := a.DerivedTable.toSQL(w); err != nil {
@@ -116,11 +121,15 @@ func (a alias) WriteQuoted(w queryWriter) error {
 		return nil
 	}
 
-	qf := Quoter.WriteNameAlias
-	if a.IsExpression {
-		qf = Quoter.WriteExpressionAlias
+	if a.Expression.isset() {
+		a.Expression.write(w)
+	} else {
+		Quoter.WriteIdentifier(w, a.Name)
 	}
-	qf(w, a.Name, a.Alias)
+	if a.Alias != "" {
+		w.WriteString(" AS ")
+		Quoter.writeName(w, a.Alias)
+	}
 
 	if a.Sort == sortAscending {
 		w.WriteString(" ASC")
@@ -131,14 +140,10 @@ func (a alias) WriteQuoted(w queryWriter) error {
 	return nil
 }
 
-// TODO(CyS) if we need to distinguish between table name and the column or even need
-// a sub select in the column list, then we can implement type aliases and replace
-// all []string with type aliases. This costs some allocs but for modifying queries
-// in dispatched events, it's getting easier.
-type aliases []alias
+type identifiers []identifier
 
-// WriteQuoted writes all aliases comma separated and quoted into w.
-func (as aliases) WriteQuoted(w queryWriter) error {
+// WriteQuoted writes all identifiers comma separated and quoted into w.
+func (as identifiers) WriteQuoted(w queryWriter) error {
 	for i, a := range as {
 		if i > 0 {
 			w.WriteString(", ")
@@ -150,7 +155,7 @@ func (as aliases) WriteQuoted(w queryWriter) error {
 	return nil
 }
 
-func (as aliases) appendArgs(args Arguments) (Arguments, error) {
+func (as identifiers) appendArgs(args Arguments) (Arguments, error) {
 	for _, a := range as {
 		var err error
 		args, err = a.appendArgs(args)
@@ -164,8 +169,8 @@ func (as aliases) appendArgs(args Arguments) (Arguments, error) {
 // setSort applies to last n items the sort order `sort` in reverse iteration.
 // Usuallay `lastNindexes` is len(object) because we decrement 1 from
 // `lastNindexes`. This function panics when lastNindexes does not match the
-// length of `aliases`.
-func (as aliases) applySort(lastNindexes int, sort byte) aliases {
+// length of `identifiers`.
+func (as identifiers) applySort(lastNindexes int, sort byte) identifiers {
 	to := len(as) - lastNindexes
 	for i := len(as) - 1; i >= to; i-- {
 		as[i].Sort = sort
@@ -173,28 +178,38 @@ func (as aliases) applySort(lastNindexes int, sort byte) aliases {
 	return as
 }
 
-// AddColumns adds more columns to the aliases. Columns get quoted.
-func (as aliases) AddColumns(columns ...string) aliases {
+// AddColumns adds more columns to the identifiers. Columns get quoted.
+func (as identifiers) AddColumns(columns ...string) identifiers {
 	return as.appendColumns(columns, false)
 }
 
-func (as aliases) appendColumns(columns []string, isExpression bool) aliases {
+func (as identifiers) appendColumns(columns []string, isExpression bool) identifiers {
 	if cap(as) == 0 {
-		as = make(aliases, 0, len(columns)*2)
+		as = make(identifiers, 0, len(columns)*2)
 	}
 	for _, c := range columns {
-		as = append(as, alias{Name: c, IsExpression: isExpression})
+		id := identifier{Name: c}
+		if isExpression {
+			id = identifier{Expression: []string{c}}
+		}
+		as = append(as, id)
 	}
 	return as
 }
 
 // columns must be balanced slice. i=column name, i+1=alias name
-func (as aliases) appendColumnsAliases(columns []string, isExpression bool) aliases {
+func (as identifiers) appendColumnsAliases(columns []string, isExpression bool) identifiers {
 	if cap(as) == 0 {
-		as = make(aliases, 0, len(columns)/2)
+		as = make(identifiers, 0, len(columns)/2)
 	}
+
 	for i := 0; i < len(columns); i = i + 2 {
-		as = append(as, alias{Name: columns[i], Alias: columns[i+1], IsExpression: isExpression})
+		id := identifier{Name: columns[i], Alias: columns[i+1]}
+		if isExpression {
+			id.Name = ""
+			id.Expression = []string{columns[i]}
+		}
+		as = append(as, id)
 	}
 	return as
 }
@@ -217,19 +232,30 @@ func (mq MysqlQuoter) writeName(w queryWriter, n string) {
 	w.WriteByte(quoteRune)
 }
 
+func (mq MysqlQuoter) appendName(sl []string, n string) []string {
+	return append(sl, quote, mq.unQuote(n), quote)
+}
+
 func (mq MysqlQuoter) writeQualifierName(w queryWriter, q, n string) {
 	mq.writeName(w, q)
 	w.WriteByte('.')
 	mq.writeName(w, n)
 }
 
-// exprAlias appends to the provided `expression` the quote alias name, e.g.:
-// 		exprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
-func (mq MysqlQuoter) exprAlias(expression, alias string) string {
-	if alias == "" {
-		return expression
+func (mq MysqlQuoter) appendQualifierName(sl []string, q, n string) []string {
+	sl = mq.appendName(sl, q)
+	sl = append(sl, ".")
+	return mq.appendName(sl, n)
+}
+
+// writeExprAlias appends to the provided `expression` the quote alias name, e.g.:
+// 		writeExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
+func (mq MysqlQuoter) writeExprAlias(w queryWriter, e expressions, alias string) {
+	e.write(w)
+	if alias != "" {
+		w.WriteString(" AS ")
+		mq.writeName(w, alias)
 	}
-	return expression + " AS " + quote + mq.unQuote(alias) + quote
 }
 
 // Name quotes securely a name.
@@ -263,61 +289,53 @@ func (mq MysqlQuoter) WriteQualifierName(w queryWriter, q, n string) {
 	mq.writeName(w, n)
 }
 
-// NameAlias quotes with back ticks and splits at a dot in the name. First
-// argument table and/or column name (separated by a dot) and second argument
-// can be an alias. Both parts will get quoted.
+// NameAlias quotes with back ticks and splits at a dot into the qualified or
+// unqualified identifier. First argument table and/or column name (separated by
+// a dot) and second argument can be an alias. Both parts will get quoted.
 //		NameAlias("f", "g") 			// "`f` AS `g`"
 //		NameAlias("e.entity_id", "ee") 	// `e`.`entity_id` AS `ee`
 //		NameAlias("e.entity_id", "") 	// `e`.`entity_id`
 func (mq MysqlQuoter) NameAlias(name, alias string) string {
 	buf := bufferpool.Get()
-	mq.WriteNameAlias(buf, name, alias)
+	mq.WriteIdentifier(buf, name)
+	if alias != "" {
+		buf.WriteString(" AS ")
+		Quoter.writeName(buf, alias)
+	}
 	x := buf.String()
 	bufferpool.Put(buf)
 	return x
 }
 
-// WriteExpressionAlias writes an expression with an optinal quoted alias (which
-// can be empty) into w.
-func (mq MysqlQuoter) WriteExpressionAlias(w queryWriter, expression, alias string) {
-	w.WriteString(expression)
-	if alias != "" {
-		w.WriteString(" AS ")
-		mq.writeName(w, alias)
-	}
-}
-
-// WriteNameAlias same as NameAlias but writes into w. It quotes always and each
-// part. If a string contains quotes, they won't get stripped.
-func (mq MysqlQuoter) WriteNameAlias(w queryWriter, name, alias string) {
+// WriteIdentifier quotes with back ticks and splits at a dot into the qualified
+// or unqualified identifier. First argument table and/or column name (separated
+// by a dot). It quotes always and each part. If a string contains quotes, they
+// won't get stripped.
+//		WriteIdentifier(&buf,"tableName.ColumnName") -> `tableName`.`ColumnName`
+func (mq MysqlQuoter) WriteIdentifier(w queryWriter, name string) {
 
 	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
 	nameHasQuote := strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote)
 	nameHasDot := strings.IndexByte(name, '.') >= 0
 
 	switch {
-	case alias == "" && nameHasQuote:
+	case nameHasQuote:
 		// already quoted
 		w.WriteString(name)
 		return
-	case alias == "" && !nameHasQuote && !nameHasDot:
+	case !nameHasQuote && !nameHasDot:
 		// must be quoted
 		mq.writeName(w, name)
 		return
-	case alias == "" && !nameHasQuote && nameHasDot:
+	case !nameHasQuote && nameHasDot:
 		mq.splitDotAndQuote(w, name)
 		return
-	case name == "" && alias == "":
+	case name == "":
 		// just an empty string
 		return
 	}
 
 	mq.splitDotAndQuote(w, name)
-
-	if alias != "" {
-		w.WriteString(" AS ")
-		mq.writeName(w, alias)
-	}
 }
 
 func (mq MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {

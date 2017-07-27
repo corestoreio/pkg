@@ -42,7 +42,7 @@ type Union struct {
 	cacheArgs     Arguments // like a buffer, gets reused
 
 	Selects       []*Select
-	OrderBys      aliases
+	OrderBys      identifiers
 	IsAll         bool // IsAll enables UNION ALL
 	IsInterpolate bool // See Interpolate()
 	IsIntersect   bool // See Intersect()
@@ -111,13 +111,13 @@ func (u *Union) PreserveResultSet() *Union {
 		for i, s := range u.Selects {
 			s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
 		}
-		u.OrderBys = append(aliases{MakeNameAlias("_preserve_result_set", "")}, u.OrderBys...)
+		u.OrderBys = append(identifiers{MakeNameAlias("_preserve_result_set", "")}, u.OrderBys...)
 		return u
 	}
 
 	// Panics without any *Select in the slice. Programmer error.
 	u.Selects[0].AddColumnsExprAlias("{preserveResultSet}", "_preserve_result_set")
-	u.OrderBys = append(aliases{MakeNameAlias("_preserve_result_set", "")}, u.OrderBys...)
+	u.OrderBys = append(identifiers{MakeNameAlias("_preserve_result_set", "")}, u.OrderBys...)
 	for i := 0; i < u.stmtCount; i++ {
 		u.oldNew[i] = append(u.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
 	}

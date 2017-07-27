@@ -257,12 +257,11 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 		var err error
 		haveSQL, benchmarkGlobalVals, err = dbr.NewSelect().
 			AddColumns("price", "sku", "name").
-			AddColumnsAlias(
+			AddColumnExpression(
 				dbr.SQLCase("", "`closed`",
 					"date_start <= ? AND date_end >= ?", "`open`",
 					"date_start > ? AND date_end > ?", "`upcoming`",
-				),
-				"is_on_sale",
+				).Alias("is_on_sale"),
 			).
 			AddArguments(start, end, start, end).
 			From("catalog_promotions").
@@ -502,11 +501,12 @@ func BenchmarkQuoteQuote(b *testing.B) {
 func BenchmarkIfNull(b *testing.B) {
 	runner := func(want string, have ...string) func(*testing.B) {
 		return func(b *testing.B) {
-			var result string
+			result := dbr.SQLIfNull(have...)
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				result = dbr.SQLIfNull(have...)
 			}
-			if result != want {
+			if result.String() != want {
 				b.Fatalf("\nHave: %q\nWant: %q", result, want)
 			}
 		}

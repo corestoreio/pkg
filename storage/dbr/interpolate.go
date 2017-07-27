@@ -81,8 +81,8 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 	return buf.String(), retArgs, nil
 }
 
-// repeat multiplies the place holder with the arguments internal len.
-func repeat(buf queryWriter, sql []byte, args ...Argument) error {
+// repeatPlaceHolders multiplies the place holder with the arguments internal len.
+func repeatPlaceHolders(buf queryWriter, sql []byte, args ...Argument) error {
 
 	i := 0
 	pos := 0
@@ -259,7 +259,7 @@ func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
 	if phCount < argCount {
 		rBuf := bufferpool.Get()
 		defer bufferpool.Put(rBuf)
-		if err := repeat(rBuf, sql, args...); err != nil {
+		if err := repeatPlaceHolders(rBuf, sql, args...); err != nil {
 			return errors.WithStack(err)
 		}
 		sql = rBuf.Bytes()

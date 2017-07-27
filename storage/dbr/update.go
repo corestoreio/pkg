@@ -36,7 +36,7 @@ type Update struct {
 	cacheSQL     []byte
 	cacheArgs    Arguments // like a buffer, gets reused
 
-	Table alias
+	Table identifier
 	// Record   the new record which gets written to the database or assembles
 	// the JOIN/WHERE conditions.
 	Record ArgumentsAppender
@@ -49,7 +49,7 @@ type Update struct {
 	// there must be one argument.
 	SetClauses  Conditions
 	Wheres      Conditions
-	OrderBys    aliases
+	OrderBys    identifiers
 	LimitCount  uint64
 	OffsetCount uint64
 	LimitValid  bool
@@ -341,7 +341,7 @@ type UpdateMulti struct {
 	Update *Update
 
 	// ColumnAliases provides a special feature, if set, that instead of the
-	// column names, the aliases will be passed to the ArgumentGenerater.Record
+	// column names, the identifiers will be passed to the ArgumentGenerater.Record
 	// function. The alias slice must have the same length as the columns slice.
 	// Despite setting `ColumnAliases` the Update.SetClauses.Columns must be
 	// provided to create a valid SQL statement.

@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
 
@@ -101,13 +102,25 @@ func (op Op) write(w queryWriter, argLen int) (err error) {
 			writePlaceHolderList(w, argLen)
 		}
 	case Like:
-		_, err = w.WriteString(" LIKE ?")
+		_, err = w.WriteString(" LIKE ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
 	case NotLike:
-		_, err = w.WriteString(" NOT LIKE ?")
+		_, err = w.WriteString(" NOT LIKE ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
 	case Regexp:
-		_, err = w.WriteString(" REGEXP ?")
+		_, err = w.WriteString(" REGEXP ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
 	case NotRegexp:
-		_, err = w.WriteString(" NOT REGEXP ?")
+		_, err = w.WriteString(" NOT REGEXP ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
 	case Between:
 		_, err = w.WriteString(" BETWEEN ? AND ?")
 	case NotBetween:
@@ -122,7 +135,10 @@ func (op Op) write(w queryWriter, argLen int) (err error) {
 		_, err = w.WriteString(" COALESCE ")
 		writePlaceHolderList(w, argLen)
 	case Xor:
-		_, err = w.WriteString(" XOR ?")
+		_, err = w.WriteString(" XOR ")
+		if hasArgs {
+			err = w.WriteByte('?')
+		}
 	case Exists:
 		_, err = w.WriteString(" EXISTS ")
 	case NotExists:
@@ -181,6 +197,55 @@ func (op Op) hasArgs(argLen int) (addArg bool) {
 	return
 }
 
+// expression is just some lines to avoid a fully written string created by
+// other functions. Each line can contain arbitrary characters. The lines get
+// written without any separator into a buffer. Hooks/Event/Observer allow an
+// easily modification of different line items. Much better than having a long
+// string with a wrapped complex SQL expression. There is no need to export it.
+type expressions []string
+
+// write writes the strings into `w` and correctly handles the place holder
+// repetition depending on the number of arguments.
+func (e expressions) write(w queryWriter, arg ...Argument) (phCount int, err error) {
+	eBuf := bufferpool.Get()
+	defer bufferpool.Put(eBuf)
+
+	args := Arguments(arg)
+
+	for _, expr := range e {
+		phCount += strings.Count(expr, placeHolderStr)
+		if _, err := eBuf.WriteString(expr); err != nil {
+			return phCount, errors.Wrapf(err, "[dbr] expression.write: failed to write %q", expr)
+		}
+	}
+	if args != nil && phCount != args.len() {
+		if err := repeatPlaceHolders(w, eBuf.Bytes(), args...); err != nil {
+			return phCount, errors.WithStack(err)
+		}
+	} else {
+		_, err = eBuf.WriteTo(w)
+	}
+	return phCount, errors.WithStack(err)
+}
+
+func (e expressions) isset() bool {
+	return len(e) > 0
+}
+
+// Alias appends a quoted alias name to the expression
+func (e expressions) Alias(a string) expressions {
+	e = append(e, " AS ")
+	e = Quoter.appendName(e, a)
+	return e
+}
+
+func (e expressions) String() string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	e.write(buf)
+	return buf.String()
+}
+
 // Condition implements a single condition often used in WHERE, ON, SET and ON
 // DUPLICATE KEY UPDATE. Please use the helper functions instead of using this
 // type directly.
@@ -189,11 +254,18 @@ type Condition struct {
 	// `IsLeftExpression` to true to avoid quoting of the this field. Left can also
 	// contain a string in the format `qualifier.identifier`.
 	Left string
+	// LeftExpression defines multiple strings as an expression. Each string
+	// gets written without any separator. If `LeftExpression` has been set, the
+	// field `Left` gets ignored.
+	LeftExpression expressions
 	// Right defines the right hand side for an assignment
 	Right struct {
-		Expression string
-		Argument   Argument // Either this or the slice is set.
-		Arguments  Arguments
+		// Expression can contain multiple entries. Each slice item gets written
+		// into the buffer when the SQL string gets build. Usage in SET and ON
+		// DUPLICATE KEY.
+		Expression expressions
+		Argument   Argument  // Either this or the slice is set.
+		Arguments  Arguments // Only set in case of an expression.
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -206,9 +278,6 @@ type Condition struct {
 	// Logical states how multiple WHERE statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
 	Logical byte
-	// IsLeftExpression set to true if the `Left` contains an expression.
-	// Otherwise the `Column` gets always quoted.
-	IsLeftExpression bool
 	// IsPlaceHolder true if the current WHERE condition just acts as a place
 	// holder for a prepared statement or an interpolation.
 	IsPlaceHolder bool
@@ -229,7 +298,7 @@ type join struct {
 	// JoinType can be LEFT, RIGHT, INNER, OUTER, CROSS or another word.
 	JoinType string
 	// Table name and alias of the table
-	Table alias
+	Table identifier
 	// On join on those conditions
 	On Conditions
 }
@@ -247,7 +316,7 @@ func (c *Condition) Or() *Condition {
 }
 
 func (c *Condition) isExpression() bool {
-	return c.IsLeftExpression || c.Right.Expression != ""
+	return c.LeftExpression.isset() || c.Right.Expression.isset()
 }
 
 // intersectConditions iterates over each WHERE fragment and appends all
@@ -294,11 +363,12 @@ func Column(columnName string) *Condition {
 	}
 }
 
-// Expression adds an unquoted SQL expression to a WHERE or HAVING statement.
-func Expression(expression string) *Condition {
+// Expression adds an unquoted SQL expression to a WHERE, HAVING, SET or ON
+// DUPLICATE KEY statement. Each item of an expression gets written into the
+// buffer without a separator.
+func Expression(expression ...string) *Condition {
 	return &Condition{
-		IsLeftExpression: true,
-		Left:             expression,
+		LeftExpression: expression,
 	}
 }
 
@@ -446,9 +516,9 @@ func (c *Condition) Sub(sub *Select) *Condition {
 	return c
 }
 
-// Expression compares the left hand side with the SELECT of the right hand side.
-// Choose the appropriate comparison operator, default is IN.
-func (c *Condition) Expression(exp string) *Condition {
+// Expression compares the left hand side with the expression of the right hand
+// side.
+func (c *Condition) Expression(exp ...string) *Condition {
 	c.Right.Expression = exp
 	return c
 }
@@ -733,16 +803,12 @@ func (cs Conditions) write(w queryWriter, conditionType byte) error {
 		}
 
 		w.WriteByte('(')
-
+		// Code is a bit duplicated but can be refactored later.
 		switch {
-		case cnd.IsLeftExpression:
-			phCount := strings.Count(cnd.Left, placeHolderStr)
-			if phCount != cnd.Right.Arguments.len() {
-				if err := repeat(w, []byte(cnd.Left), cnd.Right.Arguments...); err != nil {
-					return errors.WithStack(err)
-				}
-			} else {
-				_, _ = w.WriteString(cnd.Left)
+		case cnd.LeftExpression.isset():
+			phCount, err := cnd.LeftExpression.write(w, cnd.Right.Arguments...)
+			if err != nil {
+				return errors.WithStack(err)
 			}
 
 			// Only write the operator in case there is no place holder and we
@@ -754,9 +820,16 @@ func (cs Conditions) write(w queryWriter, conditionType byte) error {
 				}
 				cnd.Operator.write(w, eArg.len())
 			}
+			// TODO a case where left and right are expressions
+			// if cnd.Right.Expression.isset() {
+			// }
+		case cnd.Right.Expression.isset():
+			Quoter.WriteIdentifier(w, cnd.Left)
+			cnd.Operator.write(w, 0) // must be zero because place holder get handled via repeatPlaceHolders function
+			cnd.Right.Expression.write(w, cnd.Right.Arguments...)
 
 		case cnd.Right.Sub != nil:
-			Quoter.WriteNameAlias(w, cnd.Left, "")
+			Quoter.WriteIdentifier(w, cnd.Left)
 			cnd.Operator.write(w, 0)
 			w.WriteByte('(')
 			if err := cnd.Right.Sub.toSQL(w); err != nil {
@@ -765,7 +838,7 @@ func (cs Conditions) write(w queryWriter, conditionType byte) error {
 			w.WriteByte(')')
 
 		case cnd.Right.Argument != nil && cnd.Right.Arguments == nil:
-			Quoter.WriteNameAlias(w, cnd.Left, "")
+			Quoter.WriteIdentifier(w, cnd.Left)
 			al := cnd.Right.Argument.len()
 			if cnd.IsPlaceHolder {
 				al = 1
@@ -776,7 +849,7 @@ func (cs Conditions) write(w queryWriter, conditionType byte) error {
 			cnd.Operator.write(w, al)
 
 		case cnd.Right.Argument == nil && cnd.Right.Arguments == nil:
-			Quoter.WriteNameAlias(w, cnd.Left, "")
+			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator
 			if cOp == 0 {
 				cOp = Null
@@ -828,7 +901,7 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 		case cnd.isExpression():
 			addArg = true
 		case cnd.IsPlaceHolder:
-			addArg = cnd.Operator.hasArgs(1) // always a length of one, see the `repeat()` function
+			addArg = cnd.Operator.hasArgs(1) // always a length of one, see the `repeatPlaceHolders()` function
 			// By keeping addArg as it is and not setting
 			// addArg=false, this []int avoids
 			// https://en.wikipedia.org/wiki/Permutation Which would
@@ -869,8 +942,8 @@ func (cs Conditions) writeSetClauses(w queryWriter) error {
 		w.WriteByte('=')
 
 		switch {
-		case cnd.Right.Expression != "":
-			w.WriteString(cnd.Right.Expression)
+		case cnd.Right.Expression.isset(): // maybe that case is superfluous
+			cnd.Right.Expression.write(w)
 		case cnd.Right.Sub != nil:
 			w.WriteByte('(')
 			if err := cnd.Right.Sub.toSQL(w); err != nil {
@@ -920,8 +993,8 @@ func (cs Conditions) writeOnDuplicateKey(w queryWriter) error {
 		w.WriteByte('=')
 
 		switch {
-		case cnd.Right.Expression != "":
-			w.WriteString(cnd.Right.Expression)
+		case cnd.Right.Expression.isset(): // maybe that case is superfluous
+			cnd.Right.Expression.write(w)
 		//case cnd.Right.Sub != nil:
 		//	w.WriteByte('(')
 		//	if err := cnd.Right.Sub.toSQL(w); err != nil {

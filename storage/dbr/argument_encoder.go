@@ -31,7 +31,7 @@ var bTextNull = []byte(`NULL`)
 // different arguments but with the same memory size will not allocate new
 // memory.
 // 1. dimension: number of unrepeated place holders. e.g.: WHERE colA IN (?)
-// 2. dimension number of args for each place holder, after repeat, e.g.: WHERE colA IN (?,?,?,?)
+// 2. dimension number of args for each place holder, after repeatPlaceHolders, e.g.: WHERE colA IN (?,?,?,?)
 // 3. buffer to write into the argument, always a Go primitive type
 //
 // Reusing an already initialized type for different arguments improves

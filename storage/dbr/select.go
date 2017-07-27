@@ -38,35 +38,37 @@ type Select struct {
 	// Record if set retrieves the necessary arguments from the interface.
 	Record ArgumentsAppender
 
-	// Columns represents a slice of names and its optional aliases. Wildcard
+	// Columns represents a slice of names and its optional identifiers. Wildcard
 	// `SELECT *` statements are not really supported:
 	// http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
-	Columns aliases
+	Columns identifiers
 
 	//TODO: create a possibility of the Select type which has a half-pre-rendered
 	// SQL statement where a developer can only modify or append WHERE clauses.
 	// especially useful during code generation
 
 	// Table table name and optional alias name to SELECT from.
-	Table alias
+	Table identifier
 
-	Wheres            Conditions
-	Joins             Joins
-	GroupBys          aliases
-	HavingFragments   Conditions
-	OrderBys          aliases
-	LimitCount        uint64
-	OffsetCount       uint64
-	LimitValid        bool
-	OffsetValid       bool
-	IsStar            bool // IsStar generates a SELECT * FROM query
-	IsCountStar       bool // IsCountStar retains the column names but executes a COUNT(*) query.
-	IsDistinct        bool // See Distinct()
-	IsStraightJoin    bool // See StraightJoin()
-	IsSQLNoCache      bool // See SQLNoCache()
-	IsForUpdate       bool // See ForUpdate()
-	IsLockInShareMode bool // See LockInShareMode()
-	IsInterpolate     bool // See Interpolate()
+	Wheres               Conditions
+	Joins                Joins
+	GroupBys             identifiers
+	HavingFragments      Conditions
+	OrderBys             identifiers
+	LimitCount           uint64
+	OffsetCount          uint64
+	LimitValid           bool
+	OffsetValid          bool
+	IsStar               bool // IsStar generates a SELECT * FROM query
+	IsCountStar          bool // IsCountStar retains the column names but executes a COUNT(*) query.
+	IsDistinct           bool // See Distinct()
+	IsStraightJoin       bool // See StraightJoin()
+	IsSQLNoCache         bool // See SQLNoCache()
+	IsForUpdate          bool // See ForUpdate()
+	IsLockInShareMode    bool // See LockInShareMode()
+	IsInterpolate        bool // See Interpolate()
+	IsOrderByDeactivated bool // See OrderByDeactivated()
+	IsClearPointers      bool // TODO idea remove all  pointers once the query string has been build and cached
 	// PropagationStopped set to true if you would like to interrupt the
 	// listener chain. Once set to true all sub sequent calls of the next
 	// listeners will be suppressed.
@@ -105,7 +107,7 @@ func NewSelect(columns ...string) *Select {
 // https://dev.mysql.com/doc/refman/5.7/en/derived-tables.html
 func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
 	s := &Select{
-		Table: alias{
+		Table: identifier{
 			DerivedTable: subSelect,
 			Alias:        aliasName,
 		},
@@ -286,9 +288,16 @@ func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
 	return b
 }
 
-// AddColumnsExpr adds expressions to the columns list.
-func (b *Select) AddColumnsExpr(expressions ...string) *Select {
+// AddColumnsExpressions adds expressions to the columns list. Each expression
+// represents a column.
+func (b *Select) AddColumnsExpressions(expressions ...string) *Select {
 	b.Columns = b.Columns.appendColumns(expressions, true)
+	return b
+}
+
+// AddColumnExpression adds a multi line expression as a column.
+func (b *Select) AddColumnExpression(e expressions) *Select {
+	b.Columns = append(b.Columns, identifier{Expression: e})
 	return b
 }
 
@@ -356,7 +365,7 @@ func (b *Select) Having(wf ...*Condition) *Select {
 // OrderByDeactivated deactivates ordering of the result set by applying ORDER
 // BY NULL to the SELECT statement. Very useful for GROUP BY queries.
 func (b *Select) OrderByDeactivated() *Select {
-	b.OrderBys = aliases{MakeExpressionAlias("NULL", "")}
+	b.IsOrderByDeactivated = true
 	return b
 }
 
@@ -415,7 +424,7 @@ func (b *Select) Interpolate() *Select {
 	return b
 }
 
-func (b *Select) join(j string, t alias, on ...*Condition) *Select {
+func (b *Select) join(j string, t identifier, on ...*Condition) *Select {
 	jf := &join{
 		JoinType: j,
 		Table:    t,
@@ -427,31 +436,31 @@ func (b *Select) join(j string, t alias, on ...*Condition) *Select {
 
 // Joins creates an INNER join construct. By default, the onConditions are glued
 // together with AND.
-func (b *Select) Join(table alias, onConditions ...*Condition) *Select {
+func (b *Select) Join(table identifier, onConditions ...*Condition) *Select {
 	return b.join("INNER", table, onConditions...)
 }
 
 // LeftJoin creates a LEFT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) LeftJoin(table alias, onConditions ...*Condition) *Select {
+func (b *Select) LeftJoin(table identifier, onConditions ...*Condition) *Select {
 	return b.join("LEFT", table, onConditions...)
 }
 
 // RightJoin creates a RIGHT join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) RightJoin(table alias, onConditions ...*Condition) *Select {
+func (b *Select) RightJoin(table identifier, onConditions ...*Condition) *Select {
 	return b.join("RIGHT", table, onConditions...)
 }
 
 // OuterJoin creates an OUTER join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) OuterJoin(table alias, onConditions ...*Condition) *Select {
+func (b *Select) OuterJoin(table identifier, onConditions ...*Condition) *Select {
 	return b.join("OUTER", table, onConditions...)
 }
 
 // CrossJoin creates a CROSS join construct. By default, the onConditions are
 // glued together with AND.
-func (b *Select) CrossJoin(table alias, onConditions ...*Condition) *Select {
+func (b *Select) CrossJoin(table identifier, onConditions ...*Condition) *Select {
 	return b.join("CROSS", table, onConditions...)
 }
 
@@ -514,7 +523,8 @@ func (b *Select) toSQL(w queryWriter) error {
 	case b.IsStar:
 		w.WriteByte('*')
 	case b.IsCountStar:
-		Quoter.WriteExpressionAlias(w, "COUNT(*)", "counted")
+		w.WriteString("COUNT(*) AS ")
+		Quoter.writeName(w, "counted")
 	default:
 		if err := b.Columns.WriteQuoted(w); err != nil {
 			return errors.WithStack(err)
@@ -558,7 +568,12 @@ func (b *Select) toSQL(w queryWriter) error {
 		return errors.WithStack(err)
 	}
 
-	sqlWriteOrderBy(w, b.OrderBys, false)
+	if b.IsOrderByDeactivated {
+		w.WriteString(" ORDER BY NULL")
+	} else {
+		sqlWriteOrderBy(w, b.OrderBys, false)
+	}
+
 	sqlWriteLimitOffset(w, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
 	switch {
 	case b.IsLockInShareMode:

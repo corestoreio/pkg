@@ -51,9 +51,9 @@ type Delete struct {
 	// Record if set retrieves the necessary arguments from the interface.
 	Record ArgumentsAppender
 
-	From        alias
+	From        identifier
 	Wheres      Conditions
-	OrderBys    aliases
+	OrderBys    identifiers
 	LimitCount  uint64
 	OffsetCount uint64
 	LimitValid  bool
