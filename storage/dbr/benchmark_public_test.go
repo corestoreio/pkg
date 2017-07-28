@@ -137,7 +137,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate NoCache", func(b *testing.B) {
-		sqlObj.UseBuildCache = false
+		sqlObj.IsBuildCache = false
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -148,7 +148,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL Interpolate Cache", func(b *testing.B) {
-		sqlObj.UseBuildCache = true
+		sqlObj.IsBuildCache = true
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -325,7 +325,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 
 	sqlObj := dbr.NewDelete("alpha").Where(dbr.Column("a").String("b")).Limit(1).OrderBy("id").Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		sqlObj.UseBuildCache = false
+		sqlObj.IsBuildCache = false
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -336,7 +336,7 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj.UseBuildCache = true
+		sqlObj.IsBuildCache = true
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -365,7 +365,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 		dbr.Int64(1), dbr.Int64(2), dbr.Bool(true),
 	).Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
-		sqlObj.UseBuildCache = false
+		sqlObj.IsBuildCache = false
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {
@@ -376,7 +376,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	b.Run("ToSQL with cache", func(b *testing.B) {
-		sqlObj.UseBuildCache = true
+		sqlObj.BuildCache()
 		for i := 0; i < b.N; i++ {
 			_, args, err := sqlObj.ToSQL()
 			if err != nil {

@@ -120,3 +120,44 @@ func (c *Connection) Options(opts ...ConnectionOption) error {
 func (c *Connection) Close() error {
 	return errors.WithStack(c.DB.Close())
 }
+
+// BuilderBase contains fields which all SQL query builder have in common, the
+// same base. Exported for documentation reasons.
+type BuilderBase struct {
+	// ID of a statement. Used in logging. If empty the generated SQL string
+	// gets used which can might contain sensitive information which should not
+	// get logged. TODO implement
+	ID           string
+	Log          log.Logger // Log optional logger
+	RawFullSQL   string
+	RawArguments Arguments // Arguments used by RawFullSQL
+
+	Table identifier
+
+	// PropagationStopped set to true if you would like to interrupt the
+	// listener chain. Once set to true all sub sequent calls of the next
+	// listeners will be suppressed.
+	PropagationStopped bool
+	IsInterpolate      bool // See Interpolate()
+	IsBuildCache       bool // see BuildCache()
+	cacheSQL           []byte
+	cacheArgs          Arguments // like a buffer, gets reused
+	// propagationStoppedAt position in the slice where the stopped propagation
+	// has been requested. for every new iteration the propagation must stop at
+	// this position.
+	propagationStoppedAt int
+}
+
+// BuilderConditional defines base fields used in statements which can have
+// conditional constraints like WHERE, JOIN, ORDER, etc.
+type BuilderConditional struct {
+	// Record if set retrieves the necessary arguments from the interface.
+	Record      ArgumentsAppender
+	Joins       Joins
+	Wheres      Conditions
+	OrderBys    identifiers
+	LimitCount  uint64
+	OffsetCount uint64
+	LimitValid  bool
+	OffsetValid bool
+}

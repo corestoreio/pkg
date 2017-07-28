@@ -19,7 +19,6 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // WithCTE defines a common table expression used in the type `With`.
@@ -53,7 +52,7 @@ type WithCTE struct {
 //
 // Supported in: MySQL >=8.0.1 and MariaDb >=10.2
 type With struct {
-	Log log.Logger // Log optional logger
+	BuilderBase
 	// DB gets required once the Load*() functions will be used.
 	DB QueryPreparer
 
@@ -65,14 +64,7 @@ type With struct {
 		Update *Update
 		Delete *Delete
 	}
-	IsRecursive   bool // See Recursive()
-	IsInterpolate bool // See Interpolate()
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
-	cacheArgs     Arguments // like a buffer, gets reused
-	cacheSQL      []byte
+	IsRecursive bool // See Recursive()
 }
 
 // NewWith creates a new WITH statement with multiple common table expressions
@@ -86,20 +78,22 @@ func NewWith(expressions ...WithCTE) *With {
 // With creates a new With which selects from the provided columns.
 // Columns won't get quoted.
 func (c *Connection) With(expressions ...WithCTE) *With {
-	return &With{
-		Log:        c.Log,
+	w := &With{
 		Subclauses: expressions,
 		DB:         c.DB,
 	}
+	w.BuilderBase.Log = c.Log
+	return w
 }
 
 // With creates a new With that select that given columns bound to the transaction
 func (tx *Tx) With(expressions ...WithCTE) *With {
-	return &With{
-		Log:        tx.Logger,
+	w := &With{
 		Subclauses: expressions,
 		DB:         tx.Tx,
 	}
+	w.BuilderBase.Log = tx.Logger
+	return w
 }
 
 // WithDB sets the database query object.
@@ -170,8 +164,16 @@ func (b *With) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
+// IsBuildCache if `true` the final build query including place holders will be
+// cached in a private field. Each time a call to function ToSQL happens, the
+// arguments will be re-evaluated and returned or interpolated.
+func (b *With) BuildCache() *With {
+	b.IsBuildCache = true
+	return b
+}
+
 func (b *With) hasBuildCache() bool {
-	return b.UseBuildCache
+	return b.IsBuildCache
 }
 
 func (b *With) toSQL(w queryWriter) error {
@@ -199,13 +201,13 @@ func (b *With) toSQL(w queryWriter) error {
 		switch {
 		case sc.Select != nil:
 			sc.Select.IsInterpolate = b.IsInterpolate
-			sc.Select.UseBuildCache = b.UseBuildCache
+			sc.Select.IsBuildCache = b.IsBuildCache
 			if err := sc.Select.toSQL(w); err != nil {
 				return errors.Wrap(err, "[dbr] sc.Select.toSQL")
 			}
 		case sc.Union != nil:
 			sc.Union.IsInterpolate = b.IsInterpolate
-			sc.Union.UseBuildCache = b.UseBuildCache
+			sc.Union.IsBuildCache = b.IsBuildCache
 			if err := sc.Union.toSQL(w); err != nil {
 				return errors.Wrap(err, "[dbr] sc.Union.toSQL")
 			}
@@ -220,22 +222,22 @@ func (b *With) toSQL(w queryWriter) error {
 	switch {
 	case b.TopLevel.Select != nil:
 		b.TopLevel.Select.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Select.UseBuildCache = b.UseBuildCache
+		b.TopLevel.Select.IsBuildCache = b.IsBuildCache
 		return errors.WithStack(b.TopLevel.Select.toSQL(w))
 
 	case b.TopLevel.Union != nil:
 		b.TopLevel.Union.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Union.UseBuildCache = b.UseBuildCache
+		b.TopLevel.Union.IsBuildCache = b.IsBuildCache
 		return errors.WithStack(b.TopLevel.Union.toSQL(w))
 
 	case b.TopLevel.Update != nil:
 		b.TopLevel.Update.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Update.UseBuildCache = b.UseBuildCache
+		b.TopLevel.Update.IsBuildCache = b.IsBuildCache
 		return errors.WithStack(b.TopLevel.Update.toSQL(w))
 
 	case b.TopLevel.Delete != nil:
 		b.TopLevel.Delete.IsInterpolate = b.IsInterpolate
-		b.TopLevel.Delete.UseBuildCache = b.UseBuildCache
+		b.TopLevel.Delete.IsBuildCache = b.IsBuildCache
 		return errors.WithStack(b.TopLevel.Delete.toSQL(w))
 	}
 	return errors.NewEmptyf("[dbr] Type With misses a top level statement")

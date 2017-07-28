@@ -48,9 +48,9 @@ type identifier struct {
 	// Expression has precedence over the `Name` field. Each line in an expression
 	// gets written unchanged to the final SQL string.
 	Expression expressions
-	// Alias must be a valid identifier allowed for alias usage. As soon as the field `Alias` has been set
-	// it gets append to the Name and Expression field: "sql AS Alias"
-	Alias string
+	// Aliased must be a valid identifier allowed for alias usage. As soon as the field `Aliased` has been set
+	// it gets append to the Name and Expression field: "sql AS Aliased"
+	Aliased string
 	// Sort applies only to GROUP BY and ORDER BY clauses. 'd'=descending,
 	// 0=default or nothing; 'a'=ascending.
 	Sort byte
@@ -61,14 +61,12 @@ const (
 	sortAscending  byte = 'a'
 )
 
-// MakeNameAlias creates a new quoted name with an optional alias `a`, which can be
+// MakeIdentifier creates a new quoted name with an optional alias `a`, which can be
 // empty.
-func MakeNameAlias(name, a string) identifier {
-	return identifier{
-		Name:  name,
-		Alias: a,
-	}
-}
+func MakeIdentifier(name string) identifier { return identifier{Name: name} }
+
+// Alias sets the aliased name for the `Name` field.
+func (a identifier) Alias(alias string) identifier { a.Aliased = alias; return a }
 
 // uncomment this functions and its test once needed
 // MakeExpressionAlias creates a new unquoted expression with an optional alias
@@ -76,7 +74,7 @@ func MakeNameAlias(name, a string) identifier {
 //func MakeExpressionAlias(expression []string, a string) identifier {
 //	return identifier{
 //		Expression: expression,
-//		Alias:      a,
+//		Aliased:      a,
 //	}
 //}
 
@@ -89,16 +87,14 @@ func (a identifier) String() string {
 	if len(a.Expression) > 0 {
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
-		Quoter.writeExprAlias(buf, a.Expression, a.Alias)
+		Quoter.writeExprAlias(buf, a.Expression, a.Aliased)
 		return buf.String()
 	}
 	return a.QuoteAs()
 }
 
 // NameAlias always quuotes the name and the alias
-func (a identifier) QuoteAs() string {
-	return Quoter.NameAlias(a.Name, a.Alias)
-}
+func (a identifier) QuoteAs() string { return Quoter.NameAlias(a.Name, a.Aliased) }
 
 // appendArgs assembles the arguments and appends them to `args`
 func (a identifier) appendArgs(args Arguments) (_ Arguments, err error) {
@@ -117,7 +113,7 @@ func (a identifier) WriteQuoted(w queryWriter) error {
 		}
 		w.WriteByte(')')
 		w.WriteString(" AS ")
-		Quoter.writeName(w, a.Alias)
+		Quoter.writeName(w, a.Aliased)
 		return nil
 	}
 
@@ -126,9 +122,9 @@ func (a identifier) WriteQuoted(w queryWriter) error {
 	} else {
 		Quoter.WriteIdentifier(w, a.Name)
 	}
-	if a.Alias != "" {
+	if a.Aliased != "" {
 		w.WriteString(" AS ")
-		Quoter.writeName(w, a.Alias)
+		Quoter.writeName(w, a.Aliased)
 	}
 
 	if a.Sort == sortAscending {
@@ -204,7 +200,7 @@ func (as identifiers) appendColumnsAliases(columns []string, isExpression bool) 
 	}
 
 	for i := 0; i < len(columns); i = i + 2 {
-		id := identifier{Name: columns[i], Alias: columns[i+1]}
+		id := identifier{Name: columns[i], Aliased: columns[i+1]}
 		if isExpression {
 			id.Name = ""
 			id.Expression = []string{columns[i]}

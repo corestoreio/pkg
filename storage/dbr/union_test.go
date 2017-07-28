@@ -113,8 +113,7 @@ func TestUnion_UseBuildCache(t *testing.T) {
 	).All().
 		StringReplace("MyKey", "a", "b", "c"). // does nothing because more than one NewSelect functions
 		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`).
-		PreserveResultSet()
-	u.UseBuildCache = true
+		PreserveResultSet().BuildCache()
 
 	const cachedSQLPlaceHolder = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat(\"c\",b,\"d\")"
 	t.Run("without interpolate", func(t *testing.T) {
@@ -286,8 +285,7 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 	).
 		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
-		All().OrderBy("attribute_id", "store_id")
-	u.UseBuildCache = true
+		All().OrderBy("attribute_id", "store_id").BuildCache()
 
 	const cachedSQLPlaceHolder = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC"
 	t.Run("without interpolate", func(t *testing.T) {

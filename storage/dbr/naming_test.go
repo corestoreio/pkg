@@ -22,12 +22,12 @@ import (
 
 func TestMakeAlias(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "`table1`", MakeNameAlias("table1", "").String())
-	assert.Exactly(t, "`table0` AS `table1`", MakeNameAlias("table0", "table1").String())
-	assert.Exactly(t, "`(table1)`", MakeNameAlias("(table1)", "").String())
-	assert.Exactly(t, "`(table1)` AS `table2`", MakeNameAlias("(table1)", "table2").String())
-	assert.Exactly(t, "`(table1)`", MakeNameAlias("(table1)", "").String())
-	assert.Exactly(t, "`table1`", MakeNameAlias("table1", "").String())
+	assert.Exactly(t, "`table1`", MakeIdentifier("table1").String())
+	assert.Exactly(t, "`table0` AS `table1`", MakeIdentifier("table0").Alias("table1").String())
+	assert.Exactly(t, "`(table1)`", MakeIdentifier("(table1)").String())
+	assert.Exactly(t, "`(table1)` AS `table2`", MakeIdentifier("(table1)").Alias("table2").String())
+	assert.Exactly(t, "`(table1)`", MakeIdentifier("(table1)").String())
+	assert.Exactly(t, "`table1`", MakeIdentifier("table1").String())
 }
 
 //func TestMakeExpressionAlias(t *testing.T) {

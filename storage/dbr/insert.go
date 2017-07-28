@@ -20,19 +20,12 @@ import (
 	"strings"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
-	Log log.Logger // Log optional logger
-	DB  ExecPreparer
-
-	cacheSQL  []byte
-	cacheArgs Arguments // like a buffer, gets reused
-
-	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL
+	BuilderBase
+	DB ExecPreparer
 
 	Into    string
 	Columns []string
@@ -83,26 +76,13 @@ type Insert struct {
 	// IsOnDuplicateKey if enabled adds all columns to the ON DUPLICATE KEY
 	// claus. Takes the OnDuplicateKeyExclude field into consideration.
 	IsOnDuplicateKey bool
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
 	// IsReplace uses the REPLACE syntax. See function Replace().
 	IsReplace bool
 	// IsIgnore ignores error. See function Ignore().
-	IsIgnore      bool
-	IsInterpolate bool // See Interpolate()
-	// PropagationStopped set to true if you would like to interrupt the
-	// listener chain. Once set to true all sub sequent calls of the next
-	// listeners will be suppressed.
-	PropagationStopped bool
+	IsIgnore bool
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners InsertListeners
-	// propagationStoppedAt position in the slice where the stopped propagation
-	// has been requested. for every new iteration the propagation must stop at
-	// this position.
-	propagationStoppedAt int
 }
 
 // NewInsert creates a new Insert object.
@@ -115,9 +95,9 @@ func NewInsert(into string) *Insert {
 // InsertInto instantiates a Insert for the given table
 func (c *Connection) InsertInto(into string) *Insert {
 	i := &Insert{
-		Log:  c.Log,
 		Into: into,
 	}
+	i.BuilderBase.Log = c.Log
 	i.DB = c.DB
 	return i
 }
@@ -125,9 +105,9 @@ func (c *Connection) InsertInto(into string) *Insert {
 // InsertInto instantiates a Insert for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *Insert {
 	i := &Insert{
-		Log:  tx.Logger,
 		Into: into,
 	}
+	i.BuilderBase.Log = tx.Logger
 	i.DB = tx.Tx
 	return i
 }
@@ -310,8 +290,16 @@ func (b *Insert) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
+// IsBuildCache if `true` the final build query including place holders will be
+// cached in a private field. Each time a call to function ToSQL happens, the
+// arguments will be re-evaluated and returned or interpolated.
+func (b *Insert) BuildCache() *Insert {
+	b.IsBuildCache = true
+	return b
+}
+
 func (b *Insert) hasBuildCache() bool {
-	return b.UseBuildCache
+	return b.IsBuildCache
 }
 
 func (b *Insert) toSQL(buf queryWriter) error {

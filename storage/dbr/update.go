@@ -26,20 +26,12 @@ import (
 
 // Update contains the clauses for an UPDATE statement
 type Update struct {
-	Log log.Logger
-	DB  ExecPreparer
+	BuilderBase
+	BuilderConditional
+	DB ExecPreparer
 
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
-	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL
-	cacheSQL     []byte
-	cacheArgs    Arguments // like a buffer, gets reused
-
-	Table identifier
-	// Record   the new record which gets written to the database or assembles
-	// the JOIN/WHERE conditions.
-	Record ArgumentsAppender
 	// RecordColumns only applicable in case when Record field has been set.
 	// `RecordColumns` contains the lis of column names which gets passed to the
 	// ArgumentsAppender function. If empty `RecordColumns` then the names gets
@@ -47,80 +39,46 @@ type Update struct {
 	RecordColumns []string
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
-	SetClauses  Conditions
-	Wheres      Conditions
-	OrderBys    identifiers
-	LimitCount  uint64
-	OffsetCount uint64
-	LimitValid  bool
-	OffsetValid bool
-	// PropagationStopped set to true if you would like to interrupt the
-	// listener chain. Once set to true all sub sequent calls of the next
-	// listeners will be suppressed.
-	PropagationStopped bool
-	IsInterpolate      bool // See Interpolate()
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
+	SetClauses Conditions
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners UpdateListeners
-	// propagationStoppedAt position in the slice where the stopped propagation
-	// has been requested. for every new iteration the propagation must stop at
-	// this position.
-	propagationStoppedAt int
 }
 
 // NewUpdate creates a new Update object.
 func NewUpdate(table string) *Update {
 	return &Update{
-		Table: MakeNameAlias(table, ""),
+		BuilderBase: BuilderBase{
+			Table: MakeIdentifier(table),
+		},
 	}
 }
 
 // Update creates a new Update for the given table
 func (c *Connection) Update(table string) *Update {
 	return &Update{
-		Log:   c.Log,
-		Table: MakeNameAlias(table, ""),
-		DB:    c.DB,
-	}
-}
-
-// UpdateBySQL creates a new Update for the given SQL string and arguments
-func (c *Connection) UpdateBySQL(sql string, args ...Argument) *Update {
-	return &Update{
-		Log:          c.Log,
-		RawFullSQL:   sql,
-		RawArguments: args,
-		DB:           c.DB,
+		BuilderBase: BuilderBase{
+			Table: MakeIdentifier(table),
+			Log:   c.Log,
+		},
+		DB: c.DB,
 	}
 }
 
 // Update creates a new Update for the given table bound to a transaction
 func (tx *Tx) Update(table string) *Update {
 	return &Update{
-		Log:   tx.Logger,
-		Table: MakeNameAlias(table, ""),
-		DB:    tx.Tx,
+		BuilderBase: BuilderBase{
+			Table: MakeIdentifier(table),
+			Log:   tx.Logger,
+		},
+		DB: tx.Tx,
 	}
 }
 
-// UpdateBySQL creates a new Update for the given SQL string and arguments bound
-// to a transaction
-func (tx *Tx) UpdateBySQL(sql string, args ...Argument) *Update {
-	return &Update{
-		Log:          tx.Logger,
-		RawFullSQL:   sql,
-		RawArguments: args,
-		DB:           tx.Tx,
-	}
-}
-
-// Alias sets an alias for the table name.
+// Aliased sets an alias for the table name.
 func (b *Update) Alias(alias string) *Update {
-	b.Table.Alias = alias
+	b.Table.Aliased = alias
 	return b
 }
 
@@ -223,8 +181,16 @@ func (b *Update) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
+// IsBuildCache if `true` the final build query including place holders will be
+// cached in a private field. Each time a call to function ToSQL happens, the
+// arguments will be re-evaluated and returned or interpolated.
+func (b *Update) BuildCache() *Update {
+	b.IsBuildCache = true
+	return b
+}
+
 func (b *Update) hasBuildCache() bool {
-	return b.UseBuildCache
+	return b.IsBuildCache
 }
 
 // ToSQL serialized the Update to a SQL string

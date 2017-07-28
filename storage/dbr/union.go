@@ -22,7 +22,6 @@ import (
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Union represents a UNION SQL statement. UNION is used to combine the result
@@ -30,23 +29,15 @@ import (
 // With template usage enabled, it builds multiple select statements joined by
 // UNION and all based on a common template.
 type Union struct {
-	Log log.Logger // Log optional logger
+	BuilderBase
 	// DB gets required once the Load*() functions will be used.
 	DB QueryPreparer
 
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
-	cacheSQL      []byte
-	cacheArgs     Arguments // like a buffer, gets reused
-
-	Selects       []*Select
-	OrderBys      identifiers
-	IsAll         bool // IsAll enables UNION ALL
-	IsInterpolate bool // See Interpolate()
-	IsIntersect   bool // See Intersect()
-	IsExcept      bool // See Except()
+	Selects     []*Select
+	OrderBys    identifiers
+	IsAll       bool // IsAll enables UNION ALL
+	IsIntersect bool // See Intersect()
+	IsExcept    bool // See Except()
 
 	// When using Union as a template, only one *Select is required.
 	oldNew    [][]string //use for string replacement with `repls` field
@@ -65,20 +56,22 @@ func NewUnion(selects ...*Select) *Union {
 // Union creates a new Union which selects from the provided columns.
 // Columns won't get quoted.
 func (c *Connection) Union(selects ...*Select) *Union {
-	return &Union{
-		Log:     c.Log,
+	u := &Union{
 		Selects: selects,
 		DB:      c.DB,
 	}
+	u.BuilderBase.Log = c.Log
+	return u
 }
 
 // Union creates a new Union that select that given columns bound to the transaction
 func (tx *Tx) Union(selects ...*Select) *Union {
-	return &Union{
-		Log:     tx.Logger,
+	u := &Union{
 		Selects: selects,
 		DB:      tx.Tx,
 	}
+	u.BuilderBase.Log = tx.Logger
+	return u
 }
 
 // WithDB sets the database query object.
@@ -111,13 +104,13 @@ func (u *Union) PreserveResultSet() *Union {
 		for i, s := range u.Selects {
 			s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
 		}
-		u.OrderBys = append(identifiers{MakeNameAlias("_preserve_result_set", "")}, u.OrderBys...)
+		u.OrderBys = append(identifiers{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
 		return u
 	}
 
 	// Panics without any *Select in the slice. Programmer error.
 	u.Selects[0].AddColumnsExprAlias("{preserveResultSet}", "_preserve_result_set")
-	u.OrderBys = append(identifiers{MakeNameAlias("_preserve_result_set", "")}, u.OrderBys...)
+	u.OrderBys = append(identifiers{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
 	for i := 0; i < u.stmtCount; i++ {
 		u.oldNew[i] = append(u.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
 	}
@@ -236,8 +229,16 @@ func (u *Union) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return u.cacheSQL, u.cacheArgs, err
 }
 
+// IsBuildCache if `true` the final build query including place holders will be
+// cached in a private field. Each time a call to function ToSQL happens, the
+// arguments will be re-evaluated and returned or interpolated.
+func (b *Union) BuildCache() *Union {
+	b.IsBuildCache = true
+	return b
+}
+
 func (u *Union) hasBuildCache() bool {
-	return u.UseBuildCache
+	return u.IsBuildCache
 }
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are

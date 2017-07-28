@@ -95,8 +95,7 @@ func TestShow(t *testing.T) {
 	})
 
 	t.Run("table status WHERE", func(t *testing.T) {
-		s := NewShow().TableStatus().Where(Column("Name").Regexp().String(".*catalog[_]+"))
-		s.UseBuildCache = true
+		s := NewShow().TableStatus().Where(Column("Name").Regexp().String(".*catalog[_]+")).BuildCache()
 		compareToSQL(t, s, nil,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",

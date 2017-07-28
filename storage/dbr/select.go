@@ -16,27 +16,16 @@ package dbr
 
 import (
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Select contains the clauses for a SELECT statement. Wildcard `SELECT *`
 // statements are not really supported.
 // http://stackoverflow.com/questions/3639861/why-is-select-considered-harmful
 type Select struct {
-	// ID of the SELECT statement. Used in logging and during performance
-	// monitoring. If empty the generated SQL string gets used which can might
-	// contain sensitive information which should not get logged.
-	// TODO implement
-	ID  string
-	Log log.Logger // Log optional logger
+	BuilderBase
+	BuilderConditional
 	// DB gets required once the Load*() functions will be used.
 	DB QueryPreparer
-
-	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL
-
-	// Record if set retrieves the necessary arguments from the interface.
-	Record ArgumentsAppender
 
 	// Columns represents a slice of names and its optional identifiers. Wildcard
 	// `SELECT *` statements are not really supported:
@@ -47,18 +36,8 @@ type Select struct {
 	// SQL statement where a developer can only modify or append WHERE clauses.
 	// especially useful during code generation
 
-	// Table table name and optional alias name to SELECT from.
-	Table identifier
-
-	Wheres               Conditions
-	Joins                Joins
 	GroupBys             identifiers
-	HavingFragments      Conditions
-	OrderBys             identifiers
-	LimitCount           uint64
-	OffsetCount          uint64
-	LimitValid           bool
-	OffsetValid          bool
+	Havings              Conditions
 	IsStar               bool // IsStar generates a SELECT * FROM query
 	IsCountStar          bool // IsCountStar retains the column names but executes a COUNT(*) query.
 	IsDistinct           bool // See Distinct()
@@ -66,26 +45,10 @@ type Select struct {
 	IsSQLNoCache         bool // See SQLNoCache()
 	IsForUpdate          bool // See ForUpdate()
 	IsLockInShareMode    bool // See LockInShareMode()
-	IsInterpolate        bool // See Interpolate()
 	IsOrderByDeactivated bool // See OrderByDeactivated()
-	IsClearPointers      bool // TODO idea remove all  pointers once the query string has been build and cached
-	// PropagationStopped set to true if you would like to interrupt the
-	// listener chain. Once set to true all sub sequent calls of the next
-	// listeners will be suppressed.
-	PropagationStopped bool
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
-	cacheSQL      []byte
-	cacheArgs     Arguments // like a buffer, gets reused
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners SelectListeners
-	// propagationStoppedAt position in the slice where the stopped propagation
-	// has been requested. for every new iteration the propagation must stop at
-	// this position.
-	propagationStoppedAt int
 }
 
 // NewSelect creates a new Select object.
@@ -106,21 +69,21 @@ func NewSelect(columns ...string) *Select {
 //		SELECT a,b FROM (SELECT x,y FROM `product` AS `p`) AS `t`
 // https://dev.mysql.com/doc/refman/5.7/en/derived-tables.html
 func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
-	s := &Select{
-		Table: identifier{
-			DerivedTable: subSelect,
-			Alias:        aliasName,
+	return &Select{
+		BuilderBase: BuilderBase{
+			Table: identifier{
+				DerivedTable: subSelect,
+				Aliased:      aliasName,
+			},
 		},
 	}
-	return s
 }
 
 // Select creates a new Select which selects from the provided columns.
 // Columns won't get quoted.
 func (c *Connection) Select(columns ...string) *Select {
-	s := &Select{
-		Log: c.Log,
-	}
+	s := &Select{}
+	s.BuilderBase.Log = c.Log
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
@@ -133,9 +96,11 @@ func (c *Connection) Select(columns ...string) *Select {
 // SelectBySQL creates a new Select for the given SQL string and arguments
 func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
-		Log:          c.Log,
-		RawFullSQL:   sql,
-		RawArguments: args,
+		BuilderBase: BuilderBase{
+			Log:          c.Log,
+			RawFullSQL:   sql,
+			RawArguments: args,
+		},
 	}
 	s.DB = c.DB
 	return s
@@ -143,9 +108,8 @@ func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
 
 // Select creates a new Select that select that given columns bound to the transaction
 func (tx *Tx) Select(columns ...string) *Select {
-	s := &Select{
-		Log: tx.Logger,
-	}
+	s := &Select{}
+	s.BuilderBase.Log = tx.Logger
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
@@ -158,9 +122,11 @@ func (tx *Tx) Select(columns ...string) *Select {
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
 	s := &Select{
-		Log:          tx.Logger,
-		RawFullSQL:   sql,
-		RawArguments: args,
+		BuilderBase: BuilderBase{
+			Log:          tx.Logger,
+			RawFullSQL:   sql,
+			RawArguments: args,
+		},
 	}
 	s.DB = tx.Tx
 	return s
@@ -239,14 +205,14 @@ func (b *Select) Star() *Select {
 
 // From sets the table for the SELECT FROM part.
 func (b *Select) From(from string) *Select {
-	b.Table = MakeNameAlias(from, "")
+	b.Table = MakeIdentifier(from)
 	return b
 }
 
 // FromAlias sets the table and its alias name for a `SELECT ... FROM table AS
 // alias` query.
 func (b *Select) FromAlias(from, alias string) *Select {
-	b.Table = MakeNameAlias(from, alias)
+	b.Table = MakeIdentifier(from).Alias(alias)
 	return b
 }
 
@@ -358,7 +324,7 @@ func (b *Select) GroupByExpr(groups ...string) *Select {
 
 // Having appends a HAVING clause to the statement
 func (b *Select) Having(wf ...*Condition) *Select {
-	b.HavingFragments = append(b.HavingFragments, wf...)
+	b.Havings = append(b.Havings, wf...)
 	return b
 }
 
@@ -487,8 +453,25 @@ func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
+// BuildCache enables that the final SQL string including place holders will be
+// cached in a private field. Each time a call to function ToSQL happens, the
+// arguments will be re-evaluated and returned or interpolated together with the
+// SQL string.
+func (b *Select) BuildCache() *Select {
+	b.IsBuildCache = true
+	// feature is experimental. maybe it sucks s we remove it. maybe it has no
+	// business value, not even reducing GC. Or if one would like to cache but
+	// not to remove the pointers we can make the field public.
+	// Once the build cache has been activated all public fields will be
+	// emptied and the pointers get removed.
+	// Can't be implemented for now because we rely on the arguments stored in
+	// the Condition slices in the fields WHERE, HAVING or JOIN.
+	// b.isClearPointers = true
+	return b
+}
+
 func (b *Select) hasBuildCache() bool {
-	return b.UseBuildCache
+	return b.IsBuildCache
 }
 
 // ToSQL serialized the Select to a SQL string
@@ -564,7 +547,7 @@ func (b *Select) toSQL(w queryWriter) error {
 		}
 	}
 
-	if err := b.HavingFragments.write(w, 'h'); err != nil {
+	if err := b.Havings.write(w, 'h'); err != nil {
 		return errors.WithStack(err)
 	}
 
@@ -606,7 +589,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 		return nil, errors.WithStack(err)
 	}
 
-	placeHolderColumns := make([]string, 0, len(b.Joins)+len(b.Wheres)+len(b.HavingFragments))
+	placeHolderColumns := make([]string, 0, len(b.Joins)+len(b.Wheres)+len(b.Havings))
 	var pap []int
 	if len(b.Joins) > 0 {
 		for _, f := range b.Joins {
@@ -633,10 +616,10 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 	placeHolderColumns = placeHolderColumns[:0]
 
-	if args, pap, err = b.HavingFragments.appendArgs(args, appendArgsHAVING); err != nil {
+	if args, pap, err = b.Havings.appendArgs(args, appendArgsHAVING); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.HavingFragments.intersectConditions(placeHolderColumns)); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.Havings.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return args, nil

@@ -137,7 +137,7 @@ type RowConvert struct {
 	Count uint64
 	// Columns contains the names of the column returned from the query.
 	Columns []string
-	// Alias maps a `key` containing the alias name, used in the query, to the
+	// Aliased maps a `key` containing the alias name, used in the query, to the
 	// `value`, the original snake case name used in the parent struct.
 	Alias map[string]string
 	// Initialized gets set to true after the first call to Scan to initialize

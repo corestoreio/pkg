@@ -73,8 +73,7 @@ func TestWith_ToSQL(t *testing.T) {
 		).Union(NewUnion(
 			NewSelect().Star().From("best_month"),
 			NewSelect().Star().From("worst_month"),
-		).All())
-		cte.UseBuildCache = true
+		).All()).BuildCache()
 
 		compareToSQL(t, cte, nil,
 			"WITH\n`sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = ?) GROUP BY Month(day_of_sale))),\n`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"best\" FROM `sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),\n`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, \"worst\" FROM `sales_by_month` WHERE (`total` = (SELECT Min(total) FROM `sales_by_month`)))\n(SELECT * FROM `best_month`)\nUNION ALL\n(SELECT * FROM `worst_month`)",

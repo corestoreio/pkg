@@ -344,9 +344,7 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 		Set(
 			Column("foo").Int(1),
 			Column("bar").Expression("COALESCE(bar, 0) + ?").Int(2)).
-		Where(Column("id").Int(9))
-
-	up.UseBuildCache = true
+		Where(Column("id").Int(9)).BuildCache()
 
 	const cachedSQLPlaceHolder = "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)"
 	t.Run("without interpolate", func(t *testing.T) {

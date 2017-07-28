@@ -133,7 +133,9 @@ func TestDelete_Prepare(t *testing.T) {
 
 	t.Run("Prepare Error", func(t *testing.T) {
 		d := &Delete{
-			From: MakeNameAlias("table", ""),
+			BuilderBase: BuilderBase{
+				Table: MakeIdentifier("table"),
+			},
 		}
 		d.DB = dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
@@ -245,7 +247,7 @@ func TestDelete_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
 	del := NewDelete("alpha").Where(Column("a").String("b")).Limit(1).OrderBy("id")
-	del.UseBuildCache = true
+	del.IsBuildCache = true
 
 	const cachedSQLPlaceHolder = "DELETE FROM `alpha` WHERE (`a` = ?) ORDER BY `id` LIMIT 1"
 	t.Run("without interpolate", func(t *testing.T) {

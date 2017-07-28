@@ -77,6 +77,7 @@ func BenchmarkQuoteAlias(b *testing.B) {
 		if !bytes.Equal(want, buf.Bytes()) {
 			b.Fatalf("Have %s\nWant %s\n", buf.String(), want)
 		}
+		buf.Reset()
 	}
 }
 

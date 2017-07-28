@@ -232,7 +232,7 @@ func (e expressions) isset() bool {
 	return len(e) > 0
 }
 
-// Alias appends a quoted alias name to the expression
+// Aliased appends a quoted alias name to the expression
 func (e expressions) Alias(a string) expressions {
 	e = append(e, " AS ")
 	e = Quoter.appendName(e, a)

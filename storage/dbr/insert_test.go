@@ -572,9 +572,7 @@ func TestInsert_UseBuildCache(t *testing.T) {
 		AddValues(
 			5, 6,
 		).
-		OnDuplicateKey()
-
-	ins.UseBuildCache = true
+		OnDuplicateKey().BuildCache()
 
 	const cachedSQLPlaceHolder = "INSERT INTO `a` (`b`,`c`) VALUES (?,?),(?,?),(?,?) ON DUPLICATE KEY UPDATE `b`=VALUES(`b`), `c`=VALUES(`c`)"
 	t.Run("without interpolate", func(t *testing.T) {

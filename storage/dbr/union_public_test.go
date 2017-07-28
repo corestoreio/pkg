@@ -96,8 +96,7 @@ func TestUnion_Prepare(t *testing.T) {
 		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
 	).
 		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`).
-		PreserveResultSet()
-	u.UseBuildCache = true
+		PreserveResultSet().BuildCache()
 
 	t.Run("Error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)

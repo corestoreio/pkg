@@ -757,7 +757,7 @@ func TestSelectJoin(t *testing.T) {
 			Distinct().StraightJoin().SQLNoCache().
 			FromAlias("dbr_people", "p1").
 			Join(
-				MakeNameAlias("dbr_people", "p2"),
+				MakeIdentifier("dbr_people").Alias("p2"),
 				Expression("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id").Int(42),
 			)
@@ -775,7 +775,7 @@ func TestSelectJoin(t *testing.T) {
 			Select("p1.*", "p2.*").
 			FromAlias("dbr_people", "p1").
 			Join(
-				MakeNameAlias("dbr_people", "p2"),
+				MakeIdentifier("dbr_people").Alias("p2"),
 				Expression("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id").Int(42),
 			)
@@ -792,7 +792,7 @@ func TestSelectJoin(t *testing.T) {
 			Select("p1.*", "p2.name").
 			FromAlias("dbr_people", "p1").
 			LeftJoin(
-				MakeNameAlias("dbr_people", "p2"),
+				MakeIdentifier("dbr_people").Alias("p2"),
 				Expression("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id").Int(42),
 			)
@@ -810,7 +810,7 @@ func TestSelectJoin(t *testing.T) {
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID").
 			FromAlias("dbr_people", "p1").
 			RightJoin(
-				MakeNameAlias("dbr_people", "p2"),
+				MakeIdentifier("dbr_people").Alias("p2"),
 				Expression("`p2`.`id` = `p1`.`id`"),
 			)
 		compareToSQL(t, sqlObj, nil,
@@ -825,7 +825,7 @@ func TestSelectJoin(t *testing.T) {
 			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
 			FromAlias("dbr_people", "p1").
 			RightJoin(
-				MakeNameAlias("dbr_people", "p2"),
+				MakeIdentifier("dbr_people").Alias("p2"),
 				Columns("id", "email"),
 			)
 		compareToSQL(t, sqlObj, nil,
@@ -1308,8 +1308,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 		).
 		OrderBy("l").
 		Limit(7).
-		Offset(8)
-	sel.UseBuildCache = true
+		Offset(8).BuildCache()
 
 	const cachedSQLPlaceHolder = "SELECT DISTINCT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) AND (`g` = ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k) ORDER BY `l` LIMIT 7 OFFSET 8"
 	t.Run("without interpolate", func(t *testing.T) {
@@ -1348,7 +1347,7 @@ func TestSelect_AddRecord(t *testing.T) {
 	t.Run("multiple args from record", func(t *testing.T) {
 		sel := NewSelect("a", "b").
 			FromAlias("dbr_person", "dp").
-			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id").PlaceHolder()).
+			Join(MakeIdentifier("dbr_group").Alias("dg"), Column("dp.id").PlaceHolder()).
 			Where(
 				ParenthesisOpen(),
 				Column("name").PlaceHolder(),
@@ -1374,7 +1373,7 @@ func TestSelect_AddRecord(t *testing.T) {
 	})
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").From("dbr_people").
-			Join(MakeNameAlias("dbr_group", "dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strings("XY%")).
+			Join(MakeIdentifier("dbr_group").Alias("dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strings("XY%")).
 			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,

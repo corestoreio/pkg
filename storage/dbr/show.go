@@ -14,10 +14,7 @@
 
 package dbr
 
-import (
-	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
-)
+import "github.com/corestoreio/errors"
 
 // Always in alphabetical order. We can add more once needed.
 const (
@@ -32,7 +29,7 @@ const (
 
 // Show represents the SHOW syntax
 type Show struct {
-	Log log.Logger // Log optional logger
+	BuilderBase
 	// DB gets required once the Load*() functions will be used.
 	DB QueryPreparer
 
@@ -40,13 +37,6 @@ type Show struct {
 	Type           uint
 	LikeCondition  Argument
 	WhereFragments Conditions
-	IsInterpolate  bool // See Interpolate()
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
-	cacheSQL      []byte
-	cacheArgs     Arguments // like a buffer, gets reused
 }
 
 // NewShow creates a new Truman SHOW.
@@ -157,8 +147,16 @@ func (b *Show) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
+// IsBuildCache if `true` the final build query including place holders will be
+// cached in a private field. Each time a call to function ToSQL happens, the
+// arguments will be re-evaluated and returned or interpolated.
+func (b *Show) BuildCache() *Show {
+	b.IsBuildCache = true
+	return b
+}
+
 func (b *Show) hasBuildCache() bool {
-	return b.UseBuildCache
+	return b.IsBuildCache
 }
 
 // ToSQL serialized the Show to a SQL string

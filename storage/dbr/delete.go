@@ -19,7 +19,6 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Delete contains the clauses for a DELETE statement.
@@ -39,78 +38,60 @@ import (
 //	DROP TABLE t_old;
 // No other sessions can access the tables involved while RENAME TABLE executes,
 // so the rename operation is not subject to concurrency problems.
+// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
 type Delete struct {
-	Log log.Logger // Log optional logger
-	DB  ExecPreparer
-
-	// TODO(CyS) add DELETE ... JOIN ... statement SQLStmtDeleteJoin
-
-	RawFullSQL   string
-	RawArguments Arguments // Arguments used by RawFullSQL
-
-	// Record if set retrieves the necessary arguments from the interface.
-	Record ArgumentsAppender
-
-	From        identifier
-	Wheres      Conditions
-	OrderBys    identifiers
-	LimitCount  uint64
-	OffsetCount uint64
-	LimitValid  bool
-	OffsetValid bool
-	// PropagationStopped set to true if you would like to interrupt the
-	// listener chain. Once set to true all sub sequent calls of the next
-	// listeners will be suppressed.
-	PropagationStopped bool
-	IsInterpolate      bool // See Interpolate()
-	// UseBuildCache if `true` the final build query including place holders
-	// will be cached in a private field. Each time a call to function ToSQL
-	// happens, the arguments will be re-evaluated and returned or interpolated.
-	UseBuildCache bool
-	cacheSQL      []byte
-	cacheArgs     Arguments // like a buffer, gets reused
-
+	BuilderBase
+	BuilderConditional
+	DB ExecPreparer
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners DeleteListeners
-	// propagationStoppedAt position in the slice where the stopped propagation
-	// has been requested. for every new iteration the propagation must stop at
-	// this position.
-	propagationStoppedAt int
 }
 
 // NewDelete creates a new Delete object.
 func NewDelete(from string) *Delete {
 	return &Delete{
-		From: MakeNameAlias(from, ""),
+		BuilderBase: BuilderBase{
+			Table: MakeIdentifier(from),
+		},
+		BuilderConditional: BuilderConditional{
+			Wheres: make(Conditions, 0, 2),
+		},
 	}
 }
 
 // DeleteFrom creates a new Delete for the given table
 func (c *Connection) DeleteFrom(from string) *Delete {
-	d := &Delete{
-		Log:    c.Log,
-		From:   MakeNameAlias(from, ""),
-		Wheres: make(Conditions, 0, 2),
+	return &Delete{
+		BuilderBase: BuilderBase{
+			Table: MakeIdentifier(from),
+			Log:   c.Log,
+		},
+		BuilderConditional: BuilderConditional{
+			Wheres: make(Conditions, 0, 2),
+		},
+		DB: c.DB,
 	}
-	d.DB = c.DB
-	return d
 }
 
 // DeleteFrom creates a new Delete for the given table
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from string) *Delete {
-	d := &Delete{
-		Log:  tx.Logger,
-		From: MakeNameAlias(from, ""),
+	return &Delete{
+		BuilderBase: BuilderBase{
+			Table: MakeIdentifier(from),
+			Log:   tx.Logger,
+		},
+		BuilderConditional: BuilderConditional{
+			Wheres: make(Conditions, 0, 2),
+		},
+		DB: tx.Tx,
 	}
-	d.DB = tx.Tx
-	return d
 }
 
-// Alias sets an alias for the table name.
+// Aliased sets an alias for the table name.
 func (b *Delete) Alias(alias string) *Delete {
-	b.From.Alias = alias
+	b.Table.Aliased = alias
 	return b
 }
 
@@ -198,8 +179,16 @@ func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
+// IsBuildCache if `true` the final build query including place holders will be
+// cached in a private field. Each time a call to function ToSQL happens, the
+// arguments will be re-evaluated and returned or interpolated.
+func (b *Delete) BuildCache() *Delete {
+	b.IsBuildCache = true
+	return b
+}
+
 func (b *Delete) hasBuildCache() bool {
-	return b.UseBuildCache
+	return b.IsBuildCache
 }
 
 // ToSQL serialized the Delete to a SQL string
@@ -215,12 +204,12 @@ func (b *Delete) toSQL(buf queryWriter) error {
 		return nil
 	}
 
-	if len(b.From.Name) == 0 {
+	if b.Table.Name == "" {
 		return errors.NewEmptyf("[dbr] Delete: Table is missing")
 	}
 
 	buf.WriteString("DELETE FROM ")
-	b.From.WriteQuoted(buf)
+	b.Table.WriteQuoted(buf)
 
 	// TODO(CyS) add SQLStmtDeleteJoin
 
@@ -244,7 +233,7 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 	if cap(args) == 0 {
 		args = make(Arguments, 0, len(b.Wheres))
 	}
-	args, err = b.From.appendArgs(args)
+	args, err = b.Table.appendArgs(args)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
