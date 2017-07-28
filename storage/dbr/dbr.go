@@ -149,7 +149,8 @@ type BuilderBase struct {
 }
 
 // BuilderConditional defines base fields used in statements which can have
-// conditional constraints like WHERE, JOIN, ORDER, etc.
+// conditional constraints like WHERE, JOIN, ORDER, etc. Exported for
+// documentation reasons.
 type BuilderConditional struct {
 	// Record if set retrieves the necessary arguments from the interface.
 	Record     ArgumentsAppender

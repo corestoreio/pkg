@@ -110,7 +110,6 @@ func repeatPlaceHolders(buf queryWriter, sql []byte, args ...Argument) error {
 }
 
 type ipolate struct {
-	useCache   bool
 	queryCache []byte
 	args       Arguments
 }
@@ -253,7 +252,7 @@ func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
 	// to be done.
 
 	phCount := bytes.Count(sql, bTextPlaceholder)
-	argCount := Arguments(args).len()
+	argCount := args.len()
 
 	// Repeats the place holders, e.g. IN (?) will become IN (?,?,?)
 	if phCount < argCount {

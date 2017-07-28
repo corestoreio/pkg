@@ -229,12 +229,12 @@ func (u *Union) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return u.cacheSQL, u.cacheArgs, err
 }
 
-// IsBuildCache if `true` the final build query including place holders will be
+// BuildCache if `true` the final build query including place holders will be
 // cached in a private field. Each time a call to function ToSQL happens, the
 // arguments will be re-evaluated and returned or interpolated.
-func (b *Union) BuildCache() *Union {
-	b.IsBuildCache = true
-	return b
+func (u *Union) BuildCache() *Union {
+	u.IsBuildCache = true
+	return u
 }
 
 func (u *Union) hasBuildCache() bool {

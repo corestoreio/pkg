@@ -82,7 +82,7 @@ type Arguments []Argument
 func (as Arguments) len() (tl int) {
 	for _, a := range as {
 		if a == nil {
-			tl += 1
+			tl++
 		} else {
 			tl += a.len()
 		}
@@ -224,9 +224,9 @@ type Time struct{ time.Time }
 func (a Time) toIFace(args []interface{}) []interface{} { return append(args, a.Time) }
 func (a Time) writeTo(w queryWriter, _ int) error       { dialect.EscapeTime(w, a.Time); return nil }
 func (a Time) len() int                                 { return 1 }
-func (a Time) Value() (driver.Value, error) {
-	return a.Time, nil
-}
+
+// Value implements the driver.Valuer interface.
+func (a Time) Value() (driver.Value, error) { return a.Time, nil }
 
 // MakeTime implements interface Argument and creates a new time value.
 func MakeTime(t time.Time) Time { return Time{Time: t} }
@@ -238,7 +238,7 @@ type BytesSlice [][]byte
 
 func (a BytesSlice) toIFace(args []interface{}) []interface{} {
 	for _, v := range a {
-		args = append(args, []byte(v))
+		args = append(args, v)
 	}
 	return args
 }
@@ -271,7 +271,7 @@ func (a Bytes) writeTo(w queryWriter, _ int) (err error) {
 
 func (a Bytes) len() int { return 1 }
 
-// Argument implements the driver Valuer interface.
+// Value implements the driver.Valuer interface.
 func (a Bytes) Value() (driver.Value, error) {
 	if a == nil {
 		return nil, nil
@@ -294,9 +294,9 @@ func (a String) writeTo(w queryWriter, _ int) error {
 }
 
 func (a String) len() int { return 1 }
-func (a String) Value() (driver.Value, error) {
-	return string(a), nil
-}
+
+// Value implements the driver.Valuer interface.
+func (a String) Value() (driver.Value, error) { return string(a), nil }
 
 // Strings implements interface Argument and handles multiple string arguments.
 // Strings also checks for valid UTF-8 strings.
@@ -327,9 +327,9 @@ type Bool bool
 func (a Bool) toIFace(args []interface{}) []interface{} { return append(args, a == true) }
 func (a Bool) writeTo(w queryWriter, _ int) error       { dialect.EscapeBool(w, a == true); return nil }
 func (a Bool) len() int                                 { return 1 }
-func (a Bool) Value() (driver.Value, error) {
-	return a == true, nil
-}
+
+// Value implements the driver.Valuer interface.
+func (a Bool) Value() (driver.Value, error) { return a == true, nil }
 
 // Bools implements interface Argument and handles multiple bool arguments.
 type Bools []bool
@@ -350,9 +350,9 @@ type Int int
 func (a Int) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
 func (a Int) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
 func (a Int) len() int                                 { return 1 }
-func (a Int) Value() (driver.Value, error) {
-	return int64(a), nil
-}
+
+// Value implements the driver.Valuer interface.
+func (a Int) Value() (driver.Value, error) { return int64(a), nil }
 
 // Ints implements interface Argument and handles multiple int arguments.
 type Ints []int
@@ -373,6 +373,8 @@ type Int64 int64
 func (a Int64) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
 func (a Int64) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
 func (a Int64) len() int                                 { return 1 }
+
+// Value implements the driver.Valuer interface.
 func (a Int64) Value() (driver.Value, error) {
 	return int64(a), nil
 }
@@ -388,9 +390,9 @@ func (a Uint64) toIFace(args []interface{}) []interface{} {
 }
 func (a Uint64) writeTo(w queryWriter, _ int) error { return writeUint64(w, uint64(a)) }
 func (a Uint64) len() int                           { return 1 }
-func (a Uint64) Value() (driver.Value, error) {
-	return strconv.AppendUint([]byte{}, uint64(a), 10), nil
-}
+
+// Value implements the driver.Valuer interface.
+func (a Uint64) Value() (driver.Value, error) { return strconv.AppendUint([]byte{}, uint64(a), 10), nil }
 
 // Int64s implements interface Argument and handles multiple int64 arguments.
 type Int64s []int64
@@ -412,9 +414,9 @@ func (a Float64) toIFace(args []interface{}) []interface{} { return append(args,
 
 func (a Float64) writeTo(w queryWriter, _ int) error { return writeFloat64(w, float64(a)) }
 func (a Float64) len() int                           { return 1 }
-func (a Float64) Value() (driver.Value, error) {
-	return float64(a), nil
-}
+
+// Value implements the driver.Valuer interface.
+func (a Float64) Value() (driver.Value, error) { return float64(a), nil }
 
 // Float64s implements interface Argument and handles multiple float64 arguments.
 type Float64s []float64

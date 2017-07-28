@@ -155,7 +155,7 @@ func (a NullInt64) IsZero() bool {
 	return !a.Valid
 }
 
-// Argument implements the driver Valuer interface.
+// Value implements the driver.Valuer interface.
 func (a NullInt64) Value() (driver.Value, error) {
 	if !a.Valid {
 		return nil, nil

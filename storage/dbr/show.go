@@ -147,7 +147,7 @@ func (b *Show) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
-// IsBuildCache if `true` the final build query including place holders will be
+// BuildCache if `true` the final build query including place holders will be
 // cached in a private field. Each time a call to function ToSQL happens, the
 // arguments will be re-evaluated and returned or interpolated.
 func (b *Show) BuildCache() *Show {

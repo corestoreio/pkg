@@ -26,9 +26,9 @@ import (
 
 var preprocessSink string
 
-// BenchmarkInterpolate-4   	  500000	      4013 ns/op	     174 B/op	      11 allocs/op with reflection
-// BenchmarkInterpolate-4   	  500000	      3591 ns/op	     174 B/op	      11 allocs/op string
-// BenchmarkInterpolate-4   	  500000	      3599 ns/op	     174 B/op	      11 allocs/op []byte
+// BenchmarkInterpolate-4   	  500000	      4013 ns/o	     174 B/o	      11 allocs/o with reflection
+// BenchmarkInterpolate-4   	  500000	      3591 ns/o	     174 B/o	      11 allocs/o string
+// BenchmarkInterpolate-4   	  500000	      3599 ns/o	     174 B/o	      11 allocs/o []byte
 func BenchmarkInterpolate(b *testing.B) {
 	ipBuf := bufferpool.Get()
 	defer bufferpool.Put(ipBuf)
@@ -56,8 +56,8 @@ func BenchmarkInterpolate(b *testing.B) {
 
 var benchmarkIsValidIdentifier int8
 
-// BenchmarkIsValidIdentifier-4   	20000000	        92.0 ns/op	       0 B/op	       0 allocs/op
-// BenchmarkIsValidIdentifier-4   	 5000000	       280 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsValidIdentifier-4   	20000000	        92.0 ns/o	       0 B/o	       0 allocs/o
+// BenchmarkIsValidIdentifier-4   	 5000000	       280 ns/o	       0 B/o	       0 allocs/o
 func BenchmarkIsValidIdentifier(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		benchmarkIsValidIdentifier = isValidIdentifier(`store_owner.catalog_product_entity_varchar`)
@@ -81,7 +81,7 @@ func BenchmarkQuoteAlias(b *testing.B) {
 	}
 }
 
-// BenchmarkConditions_writeOnDuplicateKey-4   	 5000000	       337 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkConditions_writeOnDuplicateKey-4   	 5000000	       337 ns/o	       0 B/o	       0 allocs/o
 func BenchmarkConditions_writeOnDuplicateKey(b *testing.B) {
 	buf := new(bytes.Buffer)
 	args := make(Arguments, 0, 3)
@@ -104,13 +104,13 @@ func BenchmarkConditions_writeOnDuplicateKey(b *testing.B) {
 	}
 }
 
-var benchmarkDialect_EscapeTimeBuf = new(bytes.Buffer)
+var benchmarkDialectEscapeTimeBuf = new(bytes.Buffer)
 
-func BenchmarkDialect_EscapeTime(b *testing.B) {
+func BenchmarkDialectEscapeTime(b *testing.B) {
 	date := now()
 	for i := 0; i < b.N; i++ {
-		dialect.EscapeTime(benchmarkDialect_EscapeTimeBuf, date)
-		benchmarkDialect_EscapeTimeBuf.Reset()
+		dialect.EscapeTime(benchmarkDialectEscapeTimeBuf, date)
+		benchmarkDialectEscapeTimeBuf.Reset()
 	}
 }
 

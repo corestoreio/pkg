@@ -510,7 +510,7 @@ func ExampleColumn() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)" Arguments: [Cat%]
 }
 
-func ExampleSubSelect() {
+func ExampleCondition_Sub() {
 	s := dbr.NewSelect("sku", "type_id").
 		From("catalog_product_entity").
 		Where(dbr.Column("entity_id").In().Sub(

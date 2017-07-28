@@ -392,7 +392,7 @@ func (b *Select) Interpolate() *Select {
 	return b
 }
 
-// Joins creates an INNER join construct. By default, the onConditions are glued
+// Join creates an INNER join construct. By default, the onConditions are glued
 // together with AND.
 func (b *Select) Join(table identifier, onConditions ...*Condition) *Select {
 	b.join("INNER", table, onConditions...)

@@ -67,7 +67,7 @@ func (nt *NullTime) Scan(value interface{}) (err error) {
 	return errors.NewNotValidf("Can't convert %T to time.Time", value)
 }
 
-// Argument implements the driver Valuer interface.
+// Value implements the driver.Valuer interface.
 func (nt NullTime) Value() (driver.Value, error) {
 	if !nt.Valid {
 		return nil, nil

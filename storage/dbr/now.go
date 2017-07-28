@@ -26,7 +26,7 @@ var now = time.Now
 // Now is a value that serializes to the current time
 var Now = nowSentinel{}
 
-// Argument implements a valuer for compatibility
+// Value implements the driver.Valuer interface.
 func (n nowSentinel) Value() (driver.Value, error) {
 	fnow := n.UTC().Format(timeFormat)
 	return fnow, nil

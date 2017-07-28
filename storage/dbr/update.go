@@ -76,7 +76,7 @@ func (tx *Tx) Update(table string) *Update {
 	}
 }
 
-// Aliased sets an alias for the table name.
+// Alias sets an alias for the table name.
 func (b *Update) Alias(alias string) *Update {
 	b.Table.Aliased = alias
 	return b
@@ -174,7 +174,7 @@ func (b *Update) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
-// IsBuildCache if `true` the final build query including place holders will be
+// BuildCache if `true` the final build query including place holders will be
 // cached in a private field. Each time a call to function ToSQL happens, the
 // arguments will be re-evaluated and returned or interpolated.
 func (b *Update) BuildCache() *Update {
@@ -247,6 +247,9 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	}
 
 	args, _, err = b.SetClauses.appendArgs(args, appendArgsSET)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
 	// Write WHERE clause if we have any fragments
 	args, pap, err := b.Wheres.appendArgs(args, appendArgsWHERE)

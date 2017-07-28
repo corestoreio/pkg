@@ -82,11 +82,11 @@ func writePlaceHolderList(w queryWriter, valLen int) {
 	w.WriteByte(')')
 }
 
-func (op Op) write(w queryWriter, argLen int) (err error) {
+func (o Op) write(w queryWriter, argLen int) (err error) {
 	// hasArgs value only used in cases where we have in the parent caller
 	// function a sub-select. sub-selects do not need a place holder.
 	hasArgs := argLen > 0
-	switch op {
+	switch o {
 	case Null:
 		_, err = w.WriteString(" IS NULL")
 	case NotNull:
@@ -183,10 +183,10 @@ func (op Op) write(w queryWriter, argLen int) (err error) {
 }
 
 // hasArgs returns true if the Operator requires arguments to compare with.
-func (op Op) hasArgs(argLen int) (addArg bool) {
+func (o Op) hasArgs(argLen int) (addArg bool) {
 	// hasArg value only used in cases where we have in the parent caller
 	// function a sub-select. sub-selects do not need a place holder.
-	switch op {
+	switch o {
 	case Null, NotNull:
 		addArg = false
 	case Like, NotLike, Regexp, NotRegexp, Between, NotBetween, Greatest, Least, Coalesce, Xor:
@@ -214,12 +214,12 @@ func (e expressions) write(w queryWriter, arg ...Argument) (phCount int, err err
 
 	for _, expr := range e {
 		phCount += strings.Count(expr, placeHolderStr)
-		if _, err := eBuf.WriteString(expr); err != nil {
+		if _, err = eBuf.WriteString(expr); err != nil {
 			return phCount, errors.Wrapf(err, "[dbr] expression.write: failed to write %q", expr)
 		}
 	}
 	if args != nil && phCount != args.len() {
-		if err := repeatPlaceHolders(w, eBuf.Bytes(), args...); err != nil {
+		if err = repeatPlaceHolders(w, eBuf.Bytes(), args...); err != nil {
 			return phCount, errors.WithStack(err)
 		}
 	} else {

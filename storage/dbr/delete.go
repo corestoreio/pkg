@@ -89,7 +89,7 @@ func (tx *Tx) DeleteFrom(from string) *Delete {
 	}
 }
 
-// Aliased sets an alias for the table name.
+// Alias sets an alias for the table name.
 func (b *Delete) Alias(alias string) *Delete {
 	b.Table.Aliased = alias
 	return b
@@ -172,7 +172,7 @@ func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
 	return b.cacheSQL, b.cacheArgs, err
 }
 
-// IsBuildCache if `true` the final build query including place holders will be
+// BuildCache if `true` the final build query including place holders will be
 // cached in a private field. Each time a call to function ToSQL happens, the
 // arguments will be re-evaluated and returned or interpolated.
 func (b *Delete) BuildCache() *Delete {

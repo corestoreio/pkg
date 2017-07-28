@@ -665,12 +665,12 @@ func TestSelect_LoadUint64(t *testing.T) {
 
 	sel := s.Select("id").From("dbr_people").Where(Column("id").Uint64(bigID))
 
-	t.Run("MaxUint64 prepared stmt op:equal", func(t *testing.T) {
+	t.Run("MaxUint64 prepared stmt o:equal", func(t *testing.T) {
 		id, err := sel.LoadUint64(context.TODO())
 		require.NoError(t, err)
 		assert.Exactly(t, bigID, id)
 	})
-	t.Run("MaxUint64 interpolated op:equal", func(t *testing.T) {
+	t.Run("MaxUint64 interpolated o:equal", func(t *testing.T) {
 		id, err := sel.Interpolate().LoadUint64(context.TODO())
 		require.NoError(t, err)
 		assert.Exactly(t, bigID, id)
