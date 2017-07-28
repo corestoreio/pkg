@@ -46,6 +46,8 @@ type Select struct {
 	IsForUpdate          bool // See ForUpdate()
 	IsLockInShareMode    bool // See LockInShareMode()
 	IsOrderByDeactivated bool // See OrderByDeactivated()
+	OffsetValid          bool
+	OffsetCount          uint64
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners SelectListeners
@@ -390,44 +392,39 @@ func (b *Select) Interpolate() *Select {
 	return b
 }
 
-func (b *Select) join(j string, t identifier, on ...*Condition) *Select {
-	jf := &join{
-		JoinType: j,
-		Table:    t,
-	}
-	jf.On = append(jf.On, on...)
-	b.Joins = append(b.Joins, jf)
-	return b
-}
-
 // Joins creates an INNER join construct. By default, the onConditions are glued
 // together with AND.
 func (b *Select) Join(table identifier, onConditions ...*Condition) *Select {
-	return b.join("INNER", table, onConditions...)
+	b.join("INNER", table, onConditions...)
+	return b
 }
 
 // LeftJoin creates a LEFT join construct. By default, the onConditions are
 // glued together with AND.
 func (b *Select) LeftJoin(table identifier, onConditions ...*Condition) *Select {
-	return b.join("LEFT", table, onConditions...)
+	b.join("LEFT", table, onConditions...)
+	return b
 }
 
 // RightJoin creates a RIGHT join construct. By default, the onConditions are
 // glued together with AND.
 func (b *Select) RightJoin(table identifier, onConditions ...*Condition) *Select {
-	return b.join("RIGHT", table, onConditions...)
+	b.join("RIGHT", table, onConditions...)
+	return b
 }
 
 // OuterJoin creates an OUTER join construct. By default, the onConditions are
 // glued together with AND.
 func (b *Select) OuterJoin(table identifier, onConditions ...*Condition) *Select {
-	return b.join("OUTER", table, onConditions...)
+	b.join("OUTER", table, onConditions...)
+	return b
 }
 
 // CrossJoin creates a CROSS join construct. By default, the onConditions are
 // glued together with AND.
 func (b *Select) CrossJoin(table identifier, onConditions ...*Condition) *Select {
-	return b.join("CROSS", table, onConditions...)
+	b.join("CROSS", table, onConditions...)
+	return b
 }
 
 // ToSQL converts the select statement into a string and returns its arguments.

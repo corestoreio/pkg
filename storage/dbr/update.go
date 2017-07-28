@@ -149,13 +149,6 @@ func (b *Update) Limit(limit uint64) *Update {
 	return b
 }
 
-// Offset sets an offset for the statement; overrides any existing OFFSET
-func (b *Update) Offset(offset uint64) *Update {
-	b.OffsetCount = offset
-	b.OffsetValid = true
-	return b
-}
-
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `Arguments` will then be nil.
@@ -227,7 +220,7 @@ func (b *Update) toSQL(buf queryWriter) error {
 	}
 
 	sqlWriteOrderBy(buf, b.OrderBys, false)
-	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, b.OffsetValid, b.OffsetCount)
+	sqlWriteLimitOffset(buf, b.LimitValid, b.LimitCount, false, 0)
 	return nil
 }
 

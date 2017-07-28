@@ -74,9 +74,9 @@ func TestDelete_OrderBy(t *testing.T) {
 
 func TestDelete_Limit_Offset(t *testing.T) {
 	t.Parallel()
-	compareToSQL(t, NewDelete("a").Limit(10).Offset(20).OrderBy("id"), nil,
-		"DELETE FROM `a` ORDER BY `id` LIMIT 10 OFFSET 20",
-		"DELETE FROM `a` ORDER BY `id` LIMIT 10 OFFSET 20",
+	compareToSQL(t, NewDelete("a").Limit(10).OrderBy("id"), nil,
+		"DELETE FROM `a` ORDER BY `id` LIMIT 10",
+		"DELETE FROM `a` ORDER BY `id` LIMIT 10",
 	)
 }
 
@@ -88,9 +88,9 @@ func TestDelete_Interpolate(t *testing.T) {
 			Column("colB").In().Ints(1, 2, 3, 45),
 			Column("colC").String("He'l`lo"),
 		).
-		Limit(10).Offset(20).OrderBy("id"), nil,
-		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN (?,?,?,?)) AND (`colC` = ?) ORDER BY `id` LIMIT 10 OFFSET 20",
-		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY `id` LIMIT 10 OFFSET 20",
+		Limit(10).OrderBy("id"), nil,
+		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN (?,?,?,?)) AND (`colC` = ?) ORDER BY `id` LIMIT 10",
+		"DELETE FROM `tableA` WHERE (`colA` >= 3.14159) AND (`colB` IN (1,2,3,45)) AND (`colC` = 'He\\'l`lo') ORDER BY `id` LIMIT 10",
 		3.14159, int64(1), int64(2), int64(3), int64(45), "He'l`lo",
 	)
 

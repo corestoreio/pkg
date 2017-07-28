@@ -152,12 +152,19 @@ type BuilderBase struct {
 // conditional constraints like WHERE, JOIN, ORDER, etc.
 type BuilderConditional struct {
 	// Record if set retrieves the necessary arguments from the interface.
-	Record      ArgumentsAppender
-	Joins       Joins
-	Wheres      Conditions
-	OrderBys    identifiers
-	LimitCount  uint64
-	OffsetCount uint64
-	LimitValid  bool
-	OffsetValid bool
+	Record     ArgumentsAppender
+	Joins      Joins
+	Wheres     Conditions
+	OrderBys   identifiers
+	LimitCount uint64
+	LimitValid bool
+}
+
+func (b *BuilderConditional) join(j string, t identifier, on ...*Condition) {
+	jf := &join{
+		JoinType: j,
+		Table:    t,
+	}
+	jf.On = append(jf.On, on...)
+	b.Joins = append(b.Joins, jf)
 }

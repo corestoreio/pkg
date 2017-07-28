@@ -52,10 +52,10 @@ func TestUpdate_Basics(t *testing.T) {
 			int64(1), int64(2))
 	})
 	t.Run("limit offset", func(t *testing.T) {
-		compareToSQL(t, NewUpdate("a").Set(Column("b").Int(1)).Limit(10).Offset(20),
+		compareToSQL(t, NewUpdate("a").Set(Column("b").Int(1)).Limit(10),
 			nil,
-			"UPDATE `a` SET `b`=? LIMIT 10 OFFSET 20",
-			"UPDATE `a` SET `b`=1 LIMIT 10 OFFSET 20",
+			"UPDATE `a` SET `b`=? LIMIT 10",
+			"UPDATE `a` SET `b`=1 LIMIT 10",
 			int64(1))
 	})
 	t.Run("same column name in SET and WHERE", func(t *testing.T) {
