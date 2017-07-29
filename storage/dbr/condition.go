@@ -235,7 +235,7 @@ func (e expressions) isset() bool {
 // Aliased appends a quoted alias name to the expression
 func (e expressions) Alias(a string) expressions {
 	e = append(e, " AS ")
-	e = Quoter.appendName(e, a)
+	e = Quoter.appendQuote(e, a)
 	return e
 }
 
@@ -765,7 +765,7 @@ func (cs Conditions) write(w queryWriter, conditionType byte) error {
 					if j > 0 {
 						w.WriteByte(',')
 					}
-					Quoter.writeName(w, c)
+					Quoter.quote(w, c)
 				}
 				w.WriteByte(')')
 				return nil // done, only one USING allowed
@@ -938,7 +938,7 @@ func (cs Conditions) writeSetClauses(w queryWriter) error {
 		if i > 0 {
 			w.WriteString(", ")
 		}
-		Quoter.writeName(w, cnd.Left)
+		Quoter.quote(w, cnd.Left)
 		w.WriteByte('=')
 
 		switch {
@@ -959,7 +959,7 @@ func (cs Conditions) writeSetClauses(w queryWriter) error {
 
 func writeValues(w queryWriter, column string) {
 	w.WriteString("VALUES(")
-	Quoter.writeName(w, column)
+	Quoter.quote(w, column)
 	w.WriteByte(')')
 }
 
@@ -978,7 +978,7 @@ func (cs Conditions) writeOnDuplicateKey(w queryWriter) error {
 			if j > 0 {
 				w.WriteString(", ")
 			}
-			Quoter.writeName(w, col)
+			Quoter.quote(w, col)
 			w.WriteByte('=')
 			writeValues(w, col)
 			addColon = true
@@ -989,7 +989,7 @@ func (cs Conditions) writeOnDuplicateKey(w queryWriter) error {
 		if i > 0 || addColon {
 			w.WriteString(", ")
 		}
-		Quoter.writeName(w, cnd.Left)
+		Quoter.quote(w, cnd.Left)
 		w.WriteByte('=')
 
 		switch {

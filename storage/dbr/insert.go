@@ -327,7 +327,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 	}
 
 	buf.WriteString("INTO ")
-	Quoter.writeName(buf, b.Into)
+	Quoter.quote(buf, b.Into)
 	buf.WriteByte(' ')
 
 	if b.Select != nil {
@@ -340,7 +340,7 @@ func (b *Insert) toSQL(buf queryWriter) error {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			Quoter.writeName(buf, c)
+			Quoter.quote(buf, c)
 		}
 		buf.WriteString(") ")
 	}

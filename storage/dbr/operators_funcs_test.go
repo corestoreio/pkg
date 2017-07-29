@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +61,16 @@ func TestSQLIfNull(t *testing.T) {
 	t.Parallel()
 	runner := func(want string, have ...string) func(*testing.T) {
 		return func(t *testing.T) {
-			assert.Equal(t, want, dbr.SQLIfNull(have...).String())
+			var alias string
+			if lh := len(have); lh%2 == 1 && lh > 1 {
+				alias = have[lh-1]
+				have = have[:lh-1]
+			}
+			ifn := dbr.SQLIfNull(have...)
+			if alias != "" {
+				ifn = ifn.Alias(alias)
+			}
+			assert.Equal(t, want, ifn.String())
 		}
 	}
 	t.Run("1 args expression", runner(
@@ -118,14 +128,26 @@ func TestSQLIfNull(t *testing.T) {
 		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
 		"t1", "c1", "t2", "c2", "alias",
 	))
-	t.Run("6 args", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x`",
-		"t1", "c1", "t2", "c2", "alias", "x",
-	))
-	t.Run("7 args", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x_y`",
-		"t1", "c1", "t2", "c2", "alias", "x", "y",
-	))
+
+	// its own tests
+	t.Run("6 args", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					assert.True(t, errors.IsNotValid(err), "%+v", err)
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+
+		runner(
+			"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x`",
+			"t1", "c1", "t2", "c2", "alias", "x",
+		)(t)
+	})
 }
 
 func TestSQLIf_Expression(t *testing.T) {

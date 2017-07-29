@@ -113,7 +113,7 @@ func (a identifier) WriteQuoted(w queryWriter) error {
 		}
 		w.WriteByte(')')
 		w.WriteString(" AS ")
-		Quoter.writeName(w, a.Aliased)
+		Quoter.quote(w, a.Aliased)
 		return nil
 	}
 
@@ -124,7 +124,7 @@ func (a identifier) WriteQuoted(w queryWriter) error {
 	}
 	if a.Aliased != "" {
 		w.WriteString(" AS ")
-		Quoter.writeName(w, a.Aliased)
+		Quoter.quote(w, a.Aliased)
 	}
 
 	if a.Sort == sortAscending {
@@ -222,26 +222,20 @@ func (mq MysqlQuoter) unQuote(s string) string {
 	return mq.replacer.Replace(s)
 }
 
-func (mq MysqlQuoter) writeName(w queryWriter, n string) {
+func (mq MysqlQuoter) quote(w queryWriter, str string) {
 	w.WriteByte(quoteRune)
-	w.WriteString(mq.unQuote(n))
+	w.WriteString(mq.unQuote(str))
 	w.WriteByte(quoteRune)
 }
 
-func (mq MysqlQuoter) appendName(sl []string, n string) []string {
+func (mq MysqlQuoter) appendQuote(sl []string, n string) []string {
 	return append(sl, quote, mq.unQuote(n), quote)
 }
 
 func (mq MysqlQuoter) writeQualifierName(w queryWriter, q, n string) {
-	mq.writeName(w, q)
+	mq.quote(w, q)
 	w.WriteByte('.')
-	mq.writeName(w, n)
-}
-
-func (mq MysqlQuoter) appendQualifierName(sl []string, q, n string) []string {
-	sl = mq.appendName(sl, q)
-	sl = append(sl, ".")
-	return mq.appendName(sl, n)
+	mq.quote(w, n)
 }
 
 // writeExprAlias appends to the provided `expression` the quote alias name, e.g.:
@@ -250,7 +244,7 @@ func (mq MysqlQuoter) writeExprAlias(w queryWriter, e expressions, alias string)
 	e.write(w)
 	if alias != "" {
 		w.WriteString(" AS ")
-		mq.writeName(w, alias)
+		mq.quote(w, alias)
 	}
 }
 
@@ -275,14 +269,14 @@ func (mq MysqlQuoter) QualifierName(q, n string) string {
 }
 
 // WriteQualifierName same as function QualifierName but writes into w.
-func (mq MysqlQuoter) WriteQualifierName(w queryWriter, q, n string) {
-	if q == "" {
-		mq.writeName(w, n)
+func (mq MysqlQuoter) WriteQualifierName(w queryWriter, qualifier, name string) {
+	if qualifier == "" {
+		mq.quote(w, name)
 		return
 	}
-	mq.writeName(w, q)
+	mq.quote(w, qualifier)
 	w.WriteByte('.')
-	mq.writeName(w, n)
+	mq.quote(w, name)
 }
 
 // NameAlias quotes with back ticks and splits at a dot into the qualified or
@@ -296,7 +290,7 @@ func (mq MysqlQuoter) NameAlias(name, alias string) string {
 	mq.WriteIdentifier(buf, name)
 	if alias != "" {
 		buf.WriteString(" AS ")
-		Quoter.writeName(buf, alias)
+		Quoter.quote(buf, alias)
 	}
 	x := buf.String()
 	bufferpool.Put(buf)
@@ -321,32 +315,74 @@ func (mq MysqlQuoter) WriteIdentifier(w queryWriter, name string) {
 		return
 	case !nameHasQuote && !nameHasDot:
 		// must be quoted
-		mq.writeName(w, name)
+		mq.quote(w, name)
 		return
 	case !nameHasQuote && nameHasDot:
-		mq.splitDotAndQuote(w, name)
+		mq.writeQualifiedIdentifier(w, name)
 		return
 	case name == "":
 		// just an empty string
 		return
 	}
-
-	mq.splitDotAndQuote(w, name)
+	mq.writeQualifiedIdentifier(w, name)
 }
 
-func (mq MysqlQuoter) splitDotAndQuote(w queryWriter, part string) {
+// writeQualifiedIdentifier splits at the dot to separate between the qualifier
+// and the identifier. Both values get quoted. Child function of
+// writeQualifiedIdentifier.
+func (mq MysqlQuoter) writeQualifiedIdentifier(w queryWriter, part string) {
 	dotIndex := strings.IndexByte(part, '.')
 	if dotIndex > 0 { // dot at a beginning of a string at illegal
-		mq.writeName(w, part[:dotIndex])
+		mq.quote(w, part[:dotIndex])
 		w.WriteByte('.')
 		if a := part[dotIndex+1:]; a == sqlStar {
 			w.WriteByte('*')
 		} else {
-			mq.writeName(w, part[dotIndex+1:])
+			mq.quote(w, part[dotIndex+1:])
 		}
 		return
 	}
-	mq.writeName(w, part)
+	mq.quote(w, part)
+}
+
+func (mq MysqlQuoter) appendIdentifier(sl []string, name string) []string {
+
+	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
+	nameHasQuote := strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote)
+	nameHasDot := strings.IndexByte(name, '.') >= 0
+
+	switch {
+	case nameHasQuote:
+		// already quoted
+		return append(sl, name)
+	case !nameHasQuote && !nameHasDot:
+		// must be quoted
+		return mq.appendQuote(sl, name)
+	case !nameHasQuote && nameHasDot:
+		return mq.appendQualifiedIdentifier(sl, name)
+	case name == "":
+		// just an empty string
+		return sl
+	}
+	return mq.appendQualifiedIdentifier(sl, name)
+}
+
+// writeQualifiedIdentifier splits at the dot to separate between the qualifier
+// and the identifier. Both values get quoted. Child function of
+// appendIdentifier.
+func (mq MysqlQuoter) appendQualifiedIdentifier(sl []string, part string) []string {
+	dotIndex := strings.IndexByte(part, '.')
+	if dotIndex > 0 { // dot at a beginning of a string at illegal
+		sl = mq.appendQuote(sl, part[:dotIndex])
+		sl = append(sl, ".")
+		if a := part[dotIndex+1:]; a == sqlStar {
+			sl = append(sl, "*")
+		} else {
+			sl = mq.appendQuote(sl, part[dotIndex+1:])
+		}
+		return sl
+	}
+	return mq.appendQuote(sl, part)
 }
 
 // ColumnsWithQualifier prefixes all columns in the slice `cols` with a qualifier and applies backticks. If a column name has already been

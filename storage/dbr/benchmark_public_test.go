@@ -498,16 +498,23 @@ func BenchmarkQuoteQuote(b *testing.B) {
 	})
 }
 
+var benchmarkIfNull []string
+
 func BenchmarkIfNull(b *testing.B) {
 	runner := func(want string, have ...string) func(*testing.B) {
 		return func(b *testing.B) {
-			result := dbr.SQLIfNull(have...)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				result = dbr.SQLIfNull(have...)
-			}
-			if result.String() != want {
-				b.Fatalf("\nHave: %q\nWant: %q", result, want)
+				var alias string
+				if lh := len(have); lh%2 == 1 && lh > 1 {
+					alias = have[lh-1]
+					have = have[:lh-1]
+				}
+				ifn := dbr.SQLIfNull(have...)
+				if alias != "" {
+					ifn = ifn.Alias(alias)
+				}
+				benchmarkIfNull = ifn
 			}
 		}
 	}
@@ -523,18 +530,13 @@ func BenchmarkIfNull(b *testing.B) {
 		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
 		"t1.c1", "t2.c2", "alias",
 	))
-
 	b.Run("4 args", runner(
 		"IFNULL(`t1`.`c1`,`t2`.`c2`)",
 		"t1", "c1", "t2", "c2",
 	))
 	b.Run("5 args", runner(
 		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
-		"t1", "c1", "t2", "c2", "alias",
-	))
-	b.Run("6 args", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias_x`",
-		"t1", "c1", "t2", "c2", "alias", "x",
+		"t1", "c1", "t2", "c2", "ali`as",
 	))
 }
 

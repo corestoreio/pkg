@@ -504,7 +504,7 @@ func (b *Select) toSQL(w queryWriter) error {
 		w.WriteByte('*')
 	case b.IsCountStar:
 		w.WriteString("COUNT(*) AS ")
-		Quoter.writeName(w, "counted")
+		Quoter.quote(w, "counted")
 	default:
 		if err := b.Columns.WriteQuoted(w); err != nil {
 			return errors.WithStack(err)

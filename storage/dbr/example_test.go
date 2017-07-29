@@ -73,7 +73,8 @@ func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	if len(args) == 0 {
 		return
 	}
-	sqlStr = dbr.Interpolate(sqlStr).Arguments(iFaceToArgs(args...)...).String() // TODO hacky ,better API design
+	// TODO(CyS) iFaceToArgs is a hacky way, better API design needs to be crafted.
+	sqlStr = dbr.Interpolate(sqlStr).Arguments(iFaceToArgs(args...)...).String()
 	fmt.Println("Interpolated Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
 }
@@ -578,15 +579,13 @@ func ExampleSQLIfNull() {
 	fmt.Println(dbr.SQLIfNull("table1.column1"))
 	fmt.Println(dbr.SQLIfNull("column1", "column2"))
 	fmt.Println(dbr.SQLIfNull("table1.column1", "table2.column2"))
-	fmt.Println(dbr.SQLIfNull("column2", "1/0", "alias"))
-	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "8", "alias"))
-	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "9 ", "alias"))
-	fmt.Println(dbr.SQLIfNull("column1", "column2", "alias"))
-	fmt.Println(dbr.SQLIfNull("table1.column1", "table2.column2", "alias"))
+	fmt.Println(dbr.SQLIfNull("column2", "1/0").Alias("alias"))
+	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "8").Alias("alias"))
+	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "9 ").Alias("alias"))
+	fmt.Println(dbr.SQLIfNull("column1", "column2").Alias("alias"))
+	fmt.Println(dbr.SQLIfNull("table1.column1", "table2.column2").Alias("alias"))
 	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2"))
-	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2", "alias"))
-	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2", "alias", "x"))
-	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2", "alias", "x", "y"))
+	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2").Alias("alias"))
 	//Output:
 	//IFNULL(`column1`,(NULL ))
 	//IFNULL(`table1`.`column1`,(NULL ))
@@ -599,8 +598,6 @@ func ExampleSQLIfNull() {
 	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`
 	//IFNULL(`table1`.`column1`,`table2`.`column2`)
 	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`
-	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias_x`
-	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias_x_y`
 }
 
 func ExampleSQLIf() {
@@ -677,7 +674,7 @@ func ExampleSQLCase_select() {
 	//(`promotion_id` NOT IN (4711,815,42))
 }
 
-func ExampleSelect_statementReuseWithNewArguments() {
+func ExampleSelect_SetRecord() {
 
 	//start := dbr.MakeTime(time.Unix(1257894000, 0))
 	//end := dbr.MakeTime(time.Unix(1257980400, 0))
