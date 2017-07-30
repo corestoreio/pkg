@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 
@@ -186,7 +187,7 @@ func (b *Delete) hasBuildCache() bool {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) toSQL(buf queryWriter) error {
+func (b *Delete) toSQL(buf *bytes.Buffer) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.WithStack(err)

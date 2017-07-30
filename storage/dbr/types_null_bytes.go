@@ -37,7 +37,7 @@ package dbr
 //	return append(args, nil)
 //}
 //
-//func (a NullBytes) writeTo(w queryWriter, _ int) error {
+//func (a NullBytes) writeTo(w *bytes.Buffer, _ int) error {
 //	if a.Valid {
 //		dialect.EscapeBinary(w, a.Bytes)
 //		return nil

@@ -30,7 +30,7 @@ type QueryBuilder interface {
 }
 
 type queryBuilder interface {
-	toSQL(queryWriter) error
+	toSQL(*bytes.Buffer) error
 	// appendArgs appends the arguments to Arguments and returns them. If
 	// argument `Arguments` is nil, allocates new bytes
 	appendArgs(Arguments) (Arguments, error)
@@ -38,16 +38,6 @@ type queryBuilder interface {
 	writeBuildCache(sql []byte)
 	// readBuildCache returns the cached SQL string including its place holders.
 	readBuildCache() (sql []byte, args Arguments, err error)
-}
-
-// queryWriter at used to generate a query.
-type queryWriter interface {
-	WriteString(s string) (n int, err error)
-	WriteRune(r rune) (n int, err error)
-	WriteByte(c byte) error
-	Write(p []byte) (n int, err error)
-	Reset()
-	Bytes() []byte
 }
 
 // For the sake of readability within the source code, because boolean arguments
@@ -147,7 +137,7 @@ func (b *Update) String() string {
 	return makeSQL(b, b.IsInterpolate)
 }
 
-func sqlWriteUnionAll(w queryWriter, isAll bool, isIntersect bool, isExcept bool) {
+func sqlWriteUnionAll(w *bytes.Buffer, isAll bool, isIntersect bool, isExcept bool) {
 	w.WriteByte('\n')
 	switch {
 	case isIntersect:
@@ -163,7 +153,7 @@ func sqlWriteUnionAll(w queryWriter, isAll bool, isIntersect bool, isExcept bool
 	w.WriteByte('\n')
 }
 
-func sqlWriteOrderBy(w queryWriter, orderBys identifiers, br bool) {
+func sqlWriteOrderBy(w *bytes.Buffer, orderBys identifiers, br bool) {
 	if len(orderBys) == 0 {
 		return
 	}
@@ -176,7 +166,7 @@ func sqlWriteOrderBy(w queryWriter, orderBys identifiers, br bool) {
 	orderBys.WriteQuoted(w)
 }
 
-func sqlWriteLimitOffset(w queryWriter, limitValid bool, limitCount uint64, offsetValid bool, offsetCount uint64) {
+func sqlWriteLimitOffset(w *bytes.Buffer, limitValid bool, limitCount uint64, offsetValid bool, offsetCount uint64) {
 	if limitValid {
 		w.WriteString(" LIMIT ")
 		writeUint64(w, limitCount)
@@ -187,21 +177,21 @@ func sqlWriteLimitOffset(w queryWriter, limitValid bool, limitCount uint64, offs
 	}
 }
 
-func writeFloat64(w queryWriter, f float64) (err error) {
+func writeFloat64(w *bytes.Buffer, f float64) (err error) {
 	d := w.Bytes()
 	w.Reset()
 	_, err = w.Write(strconv.AppendFloat(d, f, 'g', -1, 64))
 	return err
 }
 
-func writeInt64(w queryWriter, i int64) (err error) {
+func writeInt64(w *bytes.Buffer, i int64) (err error) {
 	d := w.Bytes()
 	w.Reset()
 	_, err = w.Write(strconv.AppendInt(d, i, 10))
 	return err
 }
 
-func writeUint64(w queryWriter, i uint64) (err error) {
+func writeUint64(w *bytes.Buffer, i uint64) (err error) {
 	d := w.Bytes()
 	w.Reset()
 	_, err = w.Write(strconv.AppendUint(d, i, 10))

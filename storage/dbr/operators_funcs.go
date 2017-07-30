@@ -15,6 +15,8 @@
 package dbr
 
 import (
+	"bytes"
+
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
@@ -28,7 +30,6 @@ import (
 // the context in which it is used.
 func SQLIfNull(expression ...string) expressions {
 	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
 
 	switch len(expression) {
 	case 1:
@@ -48,10 +49,12 @@ func SQLIfNull(expression ...string) expressions {
 		panic(errors.NewNotValidf("[dbr] Invalid number of arguments. Max 4 arguments allowed, got: %v", expression))
 
 	}
-	return []string{buf.String()}
+	ret := [1]string{buf.String()}
+	bufferpool.Put(buf)
+	return ret[:]
 }
 
-func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
+func sqlIfNullQuote2(w *bytes.Buffer, expressionAlias ...string) {
 	w.WriteString("IFNULL(")
 	if isValidIdentifier(expressionAlias[0]) == 0 {
 		Quoter.WriteIdentifier(w, expressionAlias[0])
@@ -71,7 +74,7 @@ func sqlIfNullQuote2(w queryWriter, expressionAlias ...string) {
 	w.WriteByte(')')
 }
 
-func sqlIfNullQuote4(w queryWriter, qualifierName ...string) {
+func sqlIfNullQuote4(w *bytes.Buffer, qualifierName ...string) {
 	w.WriteString("IFNULL(")
 	Quoter.writeQualifierName(w, qualifierName[0], qualifierName[1])
 	w.WriteByte(',')
@@ -98,11 +101,12 @@ func SQLIf(expression, true, false string) expressions {
 // should be printed as an alias.
 // https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html#operator_case
 func SQLCase(value, defaultValue string, compareResult ...string) expressions {
+	var ret [1]string
 	if len(compareResult) == 1 {
-		return []string{"<SQLCase error len(compareResult) == 1>"}
+		ret[0] = "<SQLCase error len(compareResult) == 1>"
+		return ret[:]
 	}
 	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
 
 	useAlias := len(compareResult)%2 == 1
 
@@ -129,5 +133,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) expressions {
 		buf.WriteString(" AS ")
 		Quoter.quote(buf, compareResult[len(compareResult)-1])
 	}
-	return []string{buf.String()}
+	ret[0] = buf.String()
+	bufferpool.Put(buf)
+	return ret[:]
 }

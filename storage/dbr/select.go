@@ -15,6 +15,8 @@
 package dbr
 
 import (
+	"bytes"
+
 	"github.com/corestoreio/errors"
 )
 
@@ -473,7 +475,7 @@ func (b *Select) hasBuildCache() bool {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) toSQL(w queryWriter) error {
+func (b *Select) toSQL(w *bytes.Buffer) error {
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.WithStack(err)
 	}

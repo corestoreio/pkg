@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 
@@ -176,7 +177,7 @@ func (b *With) hasBuildCache() bool {
 	return b.IsBuildCache
 }
 
-func (b *With) toSQL(w queryWriter) error {
+func (b *With) toSQL(w *bytes.Buffer) error {
 
 	w.WriteString("WITH")
 	if b.IsRecursive {

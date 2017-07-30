@@ -245,6 +245,9 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 	*/
 }
 
+// BenchmarkSelect_SQLCase-4      500000	      3451 ns/op	    2032 B/op	      21 allocs/op
+// BenchmarkSelect_SQLCase-4   	  500000	      3690 ns/op	    2849 B/op	      24 allocs/op
+// BenchmarkSelect_SQLCase-4   	  300000	      3784 ns/op	    2433 B/op	      26 allocs/op
 func BenchmarkSelect_SQLCase(b *testing.B) {
 	start := dbr.MakeTime(time.Unix(1257894000, 0))
 	end := dbr.MakeTime(time.Unix(1257980400, 0))

@@ -14,7 +14,11 @@
 
 package dbr
 
-import "github.com/corestoreio/errors"
+import (
+	"bytes"
+
+	"github.com/corestoreio/errors"
+)
 
 // Always in alphabetical order. We can add more once needed.
 const (
@@ -161,7 +165,7 @@ func (b *Show) hasBuildCache() bool {
 
 // ToSQL serialized the Show to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Show) toSQL(w queryWriter) error {
+func (b *Show) toSQL(w *bytes.Buffer) error {
 
 	w.WriteString("SHOW ")
 

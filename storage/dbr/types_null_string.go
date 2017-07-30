@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"database/sql"
 	"strings"
 	"unicode/utf8"
@@ -36,7 +37,7 @@ func (a NullString) toIFace(args []interface{}) []interface{} {
 	return append(args, nil)
 }
 
-func (a NullString) writeTo(w queryWriter, _ int) error {
+func (a NullString) writeTo(w *bytes.Buffer, _ int) error {
 	if a.NullString.Valid {
 		if !utf8.ValidString(a.NullString.String) {
 			return errors.NewNotValidf("[dbr] Argument.WriteTo: StringNull is not UTF-8: %q", a.NullString.String)
@@ -174,7 +175,7 @@ func (a NullStrings) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a NullStrings) writeTo(w queryWriter, pos int) error {
+func (a NullStrings) writeTo(w *bytes.Buffer, pos int) error {
 	if s := a[pos]; s.Valid {
 		if !utf8.ValidString(s.String) {
 			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)

@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"strings"
 	"unicode/utf8"
 
@@ -105,7 +106,7 @@ func (a identifier) appendArgs(args Arguments) (_ Arguments, err error) {
 }
 
 // WriteQuoted writes the quoted table and its maybe alias into w.
-func (a identifier) WriteQuoted(w queryWriter) error {
+func (a identifier) WriteQuoted(w *bytes.Buffer) error {
 	if a.DerivedTable != nil {
 		w.WriteByte('(')
 		if err := a.DerivedTable.toSQL(w); err != nil {
@@ -139,7 +140,7 @@ func (a identifier) WriteQuoted(w queryWriter) error {
 type identifiers []identifier
 
 // WriteQuoted writes all identifiers comma separated and quoted into w.
-func (as identifiers) WriteQuoted(w queryWriter) error {
+func (as identifiers) WriteQuoted(w *bytes.Buffer) error {
 	for i, a := range as {
 		if i > 0 {
 			w.WriteString(", ")
@@ -222,7 +223,7 @@ func (mq MysqlQuoter) unQuote(s string) string {
 	return mq.replacer.Replace(s)
 }
 
-func (mq MysqlQuoter) quote(w queryWriter, str string) {
+func (mq MysqlQuoter) quote(w *bytes.Buffer, str string) {
 	w.WriteByte(quoteRune)
 	w.WriteString(mq.unQuote(str))
 	w.WriteByte(quoteRune)
@@ -232,7 +233,7 @@ func (mq MysqlQuoter) appendQuote(sl []string, n string) []string {
 	return append(sl, quote, mq.unQuote(n), quote)
 }
 
-func (mq MysqlQuoter) writeQualifierName(w queryWriter, q, n string) {
+func (mq MysqlQuoter) writeQualifierName(w *bytes.Buffer, q, n string) {
 	mq.quote(w, q)
 	w.WriteByte('.')
 	mq.quote(w, n)
@@ -240,7 +241,7 @@ func (mq MysqlQuoter) writeQualifierName(w queryWriter, q, n string) {
 
 // writeExprAlias appends to the provided `expression` the quote alias name, e.g.:
 // 		writeExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
-func (mq MysqlQuoter) writeExprAlias(w queryWriter, e expressions, alias string) {
+func (mq MysqlQuoter) writeExprAlias(w *bytes.Buffer, e expressions, alias string) {
 	e.write(w)
 	if alias != "" {
 		w.WriteString(" AS ")
@@ -269,7 +270,7 @@ func (mq MysqlQuoter) QualifierName(q, n string) string {
 }
 
 // WriteQualifierName same as function QualifierName but writes into w.
-func (mq MysqlQuoter) WriteQualifierName(w queryWriter, qualifier, name string) {
+func (mq MysqlQuoter) WriteQualifierName(w *bytes.Buffer, qualifier, name string) {
 	if qualifier == "" {
 		mq.quote(w, name)
 		return
@@ -302,7 +303,7 @@ func (mq MysqlQuoter) NameAlias(name, alias string) string {
 // by a dot). It quotes always and each part. If a string contains quotes, they
 // won't get stripped.
 //		WriteIdentifier(&buf,"tableName.ColumnName") -> `tableName`.`ColumnName`
-func (mq MysqlQuoter) WriteIdentifier(w queryWriter, name string) {
+func (mq MysqlQuoter) WriteIdentifier(w *bytes.Buffer, name string) {
 
 	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
 	nameHasQuote := strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote)
@@ -330,7 +331,7 @@ func (mq MysqlQuoter) WriteIdentifier(w queryWriter, name string) {
 // writeQualifiedIdentifier splits at the dot to separate between the qualifier
 // and the identifier. Both values get quoted. Child function of
 // writeQualifiedIdentifier.
-func (mq MysqlQuoter) writeQualifiedIdentifier(w queryWriter, part string) {
+func (mq MysqlQuoter) writeQualifiedIdentifier(w *bytes.Buffer, part string) {
 	dotIndex := strings.IndexByte(part, '.')
 	if dotIndex > 0 { // dot at a beginning of a string at illegal
 		mq.quote(w, part[:dotIndex])

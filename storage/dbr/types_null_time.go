@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -28,7 +29,7 @@ func (a NullTime) toIFace(args []interface{}) []interface{} {
 	return append(args, nil)
 }
 
-func (a NullTime) writeTo(w queryWriter, _ int) error {
+func (a NullTime) writeTo(w *bytes.Buffer, _ int) error {
 	if a.Valid {
 		dialect.EscapeTime(w, a.Time)
 		return nil
@@ -152,7 +153,7 @@ func (a NullTimes) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a NullTimes) writeTo(w queryWriter, pos int) error {
+func (a NullTimes) writeTo(w *bytes.Buffer, pos int) error {
 	if s := a[pos]; s.Valid {
 		dialect.EscapeTime(w, s.Time)
 		return nil

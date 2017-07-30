@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"encoding/hex"
 	"strings"
 	"time"
@@ -27,12 +28,12 @@ var dialect dialecter = mysqlDialect{
 // dialecter at an interface that wraps the diverse properties of individual
 // SQL drivers.
 type dialecter interface {
-	EscapeIdent(w queryWriter, ident string)
-	EscapeBool(w queryWriter, b bool)
-	EscapeString(w queryWriter, s string)
-	EscapeTime(w queryWriter, t time.Time)
-	EscapeBinary(w queryWriter, b []byte)
-	ApplyLimitAndOffset(w queryWriter, limit, offset uint64)
+	EscapeIdent(w *bytes.Buffer, ident string)
+	EscapeBool(w *bytes.Buffer, b bool)
+	EscapeString(w *bytes.Buffer, s string)
+	EscapeTime(w *bytes.Buffer, t time.Time)
+	EscapeBinary(w *bytes.Buffer, b []byte)
+	ApplyLimitAndOffset(w *bytes.Buffer, limit, offset uint64)
 }
 
 const mysqlTimeFormat = "2006-01-02 15:04:05"
@@ -44,13 +45,13 @@ type mysqlDialect struct {
 	identR *strings.Replacer
 }
 
-func (d mysqlDialect) EscapeIdent(w queryWriter, ident string) {
+func (d mysqlDialect) EscapeIdent(w *bytes.Buffer, ident string) {
 	w.WriteByte('`')
 	w.WriteString(d.identR.Replace(ident))
 	w.WriteByte('`')
 }
 
-func (d mysqlDialect) EscapeBool(w queryWriter, b bool) {
+func (d mysqlDialect) EscapeBool(w *bytes.Buffer, b bool) {
 	if b {
 		w.WriteByte('1')
 	} else {
@@ -58,7 +59,7 @@ func (d mysqlDialect) EscapeBool(w queryWriter, b bool) {
 	}
 }
 
-func (d mysqlDialect) EscapeBinary(w queryWriter, b []byte) {
+func (d mysqlDialect) EscapeBinary(w *bytes.Buffer, b []byte) {
 	if b == nil {
 		w.WriteString("NULL")
 	} else {
@@ -70,7 +71,7 @@ func (d mysqlDialect) EscapeBinary(w queryWriter, b []byte) {
 
 // EscapeString. Need to turn \x00, \n, \r, \, ', " and \x1a.
 // Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''".
-func (d mysqlDialect) EscapeString(w queryWriter, s string) {
+func (d mysqlDialect) EscapeString(w *bytes.Buffer, s string) {
 	w.WriteByte('\'')
 	for _, char := range s {
 		// for each case, don't use write rune 8-)
@@ -96,7 +97,7 @@ func (d mysqlDialect) EscapeString(w queryWriter, s string) {
 	w.WriteByte('\'')
 }
 
-func (d mysqlDialect) EscapeTime(w queryWriter, t time.Time) {
+func (d mysqlDialect) EscapeTime(w *bytes.Buffer, t time.Time) {
 	if t.IsZero() {
 		w.WriteString("'0000-00-00'") //  00:00:00
 		return
@@ -108,7 +109,7 @@ func (d mysqlDialect) EscapeTime(w queryWriter, t time.Time) {
 	w.WriteByte('\'')
 }
 
-func (d mysqlDialect) ApplyLimitAndOffset(w queryWriter, limit, offset uint64) {
+func (d mysqlDialect) ApplyLimitAndOffset(w *bytes.Buffer, limit, offset uint64) {
 	w.WriteString(" LIMIT ")
 	if limit == 0 {
 		// In MYSQL, OFFSET cannot be used alone. Set the limit to the max possible value.

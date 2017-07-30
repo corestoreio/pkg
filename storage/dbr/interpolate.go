@@ -82,7 +82,7 @@ func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
 }
 
 // repeatPlaceHolders multiplies the place holder with the arguments internal len.
-func repeatPlaceHolders(buf queryWriter, sql []byte, args ...Argument) error {
+func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args ...Argument) error {
 
 	i := 0
 	pos := 0
@@ -244,7 +244,7 @@ var bTextPlaceholder = []byte("?")
 
 // writeInterpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
-func writeInterpolate(buf queryWriter, sql []byte, args Arguments) error {
+func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 
 	// TODO(CyS) due to the type `interpolate`, we can optimize the parsing in
 	// the second run with the same SQL slice but different arguments. We know

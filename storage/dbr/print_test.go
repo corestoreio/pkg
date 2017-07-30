@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -37,7 +38,7 @@ var _ queryBuilder = (*buildQueryMock)(nil)
 
 type buildQueryMock struct{ error }
 
-func (m buildQueryMock) toSQL(queryWriter) error { return m.error }
+func (m buildQueryMock) toSQL(*bytes.Buffer) error { return m.error }
 
 func (m buildQueryMock) appendArgs(Arguments) (Arguments, error) { return nil, m.error }
 func (m buildQueryMock) hasBuildCache() bool                     { return false }

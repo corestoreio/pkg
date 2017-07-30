@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"database/sql"
 	"strconv"
 
@@ -37,7 +38,7 @@ func (a NullInt64) toIFace(args []interface{}) []interface{} {
 	return append(args, nil)
 }
 
-func (a NullInt64) writeTo(w queryWriter, _ int) error {
+func (a NullInt64) writeTo(w *bytes.Buffer, _ int) error {
 	if a.NullInt64.Valid {
 		return writeInt64(w, a.NullInt64.Int64)
 	}
@@ -178,7 +179,7 @@ func (a NullInt64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a NullInt64s) writeTo(w queryWriter, pos int) error {
+func (a NullInt64s) writeTo(w *bytes.Buffer, pos int) error {
 	if s := a[pos]; s.Valid {
 		return writeInt64(w, s.Int64)
 	}

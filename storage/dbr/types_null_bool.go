@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"database/sql"
 
 	"github.com/corestoreio/errors"
@@ -34,7 +35,7 @@ func (a NullBool) toIFace(args []interface{}) []interface{} {
 	return append(args, nil)
 }
 
-func (a NullBool) writeTo(w queryWriter, _ int) error {
+func (a NullBool) writeTo(w *bytes.Buffer, _ int) error {
 	if a.NullBool.Valid {
 		dialect.EscapeBool(w, a.Bool)
 		return nil

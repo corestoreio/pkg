@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"strings"
@@ -302,7 +303,7 @@ func (b *Insert) hasBuildCache() bool {
 	return b.IsBuildCache
 }
 
-func (b *Insert) toSQL(buf queryWriter) error {
+func (b *Insert) toSQL(buf *bytes.Buffer) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.WithStack(err)

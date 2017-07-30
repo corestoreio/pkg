@@ -188,7 +188,7 @@ func (b *Update) hasBuildCache() bool {
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) toSQL(buf queryWriter) error {
+func (b *Update) toSQL(buf *bytes.Buffer) error {
 
 	if err := b.Listeners.dispatch(OnBeforeToSQL, b); err != nil {
 		return errors.WithStack(err)

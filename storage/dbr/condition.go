@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"strings"
 	"time"
@@ -71,7 +72,7 @@ func (o Op) String() string {
 	return string(o)
 }
 
-func writePlaceHolderList(w queryWriter, valLen int) {
+func writePlaceHolderList(w *bytes.Buffer, valLen int) {
 	w.WriteByte('(')
 	for j := 0; j < valLen; j++ {
 		if j > 0 {
@@ -82,7 +83,7 @@ func writePlaceHolderList(w queryWriter, valLen int) {
 	w.WriteByte(')')
 }
 
-func (o Op) write(w queryWriter, argLen int) (err error) {
+func (o Op) write(w *bytes.Buffer, argLen int) (err error) {
 	// hasArgs value only used in cases where we have in the parent caller
 	// function a sub-select. sub-selects do not need a place holder.
 	hasArgs := argLen > 0
@@ -206,7 +207,7 @@ type expressions []string
 
 // write writes the strings into `w` and correctly handles the place holder
 // repetition depending on the number of arguments.
-func (e expressions) write(w queryWriter, arg ...Argument) (phCount int, err error) {
+func (e expressions) write(w *bytes.Buffer, arg ...Argument) (phCount int, err error) {
 	eBuf := bufferpool.Get()
 	defer bufferpool.Put(eBuf)
 
@@ -540,6 +541,7 @@ func (c *Condition) Ints(i ...int) *Condition {
 	c.Right.Argument = Ints(i)
 	return c
 }
+
 func (c *Condition) Int64(i int64) *Condition {
 	if c.isExpression() {
 		c.Right.Arguments = append(c.Right.Arguments, Int64(i))
@@ -743,7 +745,7 @@ func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
 
 // write writes the conditions for usage as restrictions in WHERE, HAVING or
 // JOIN clauses. conditionType enum of j=join, w=where, h=having
-func (cs Conditions) write(w queryWriter, conditionType byte) error {
+func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 	if len(cs) == 0 {
 		return nil
 	}
@@ -933,7 +935,7 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 	return args, pendingArgPos, nil
 }
 
-func (cs Conditions) writeSetClauses(w queryWriter) error {
+func (cs Conditions) writeSetClauses(w *bytes.Buffer) error {
 	for i, cnd := range cs {
 		if i > 0 {
 			w.WriteString(", ")
@@ -957,7 +959,7 @@ func (cs Conditions) writeSetClauses(w queryWriter) error {
 	return nil
 }
 
-func writeValues(w queryWriter, column string) {
+func writeValues(w *bytes.Buffer, column string) {
 	w.WriteString("VALUES(")
 	Quoter.quote(w, column)
 	w.WriteByte(')')
@@ -966,7 +968,7 @@ func writeValues(w queryWriter, column string) {
 // writeOnDuplicateKey writes the columns to `w` and appends the arguments to
 // `args` and returns `args`.
 // https://dev.mysql.com/doc/refman/5.7/en/insert-on-duplicate.html
-func (cs Conditions) writeOnDuplicateKey(w queryWriter) error {
+func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 	if len(cs) == 0 {
 		return nil
 	}

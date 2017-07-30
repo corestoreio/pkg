@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"database/sql/driver"
 	"strconv"
 	"time"
@@ -67,10 +68,10 @@ type ArgumentsAppender interface {
 type Argument interface {
 	// toIFace appends the argument or arguments to interface slice and returns it.
 	toIFace([]interface{}) []interface{}
-	// writeTo writes the value correctly escaped to the queryWriter. It must
+	// writeTo writes the value correctly escaped to the *bytes.Buffer. It must
 	// avoid SQL injections. `position` defines the current index which should
 	// get written. Max index is equal len().
-	writeTo(w queryWriter, position int) error
+	writeTo(w *bytes.Buffer, position int) error
 	// len returns the length of the available arguments.
 	len() int
 }
@@ -169,7 +170,7 @@ func (a DriverValues) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func writeDriverValuer(w queryWriter, v driver.Valuer) error {
+func writeDriverValuer(w *bytes.Buffer, v driver.Valuer) error {
 	if v == nil {
 		_, err := w.WriteString("NULL")
 		return err
@@ -201,8 +202,8 @@ func writeDriverValuer(w queryWriter, v driver.Valuer) error {
 	return err
 }
 
-func (a DriverValues) writeTo(w queryWriter, pos int) error { return writeDriverValuer(w, a[pos]) }
-func (a DriverValues) len() int                             { return len(a) }
+func (a DriverValues) writeTo(w *bytes.Buffer, pos int) error { return writeDriverValuer(w, a[pos]) }
+func (a DriverValues) len() int                               { return len(a) }
 
 // Times implements interface Argument to handle multiple time.Time arguments. The
 // time.Time value gets correctly encoded in the MySQL/MariaDB format.
@@ -215,14 +216,14 @@ func (a Times) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a Times) writeTo(w queryWriter, pos int) error { dialect.EscapeTime(w, a[pos]); return nil }
-func (a Times) len() int                             { return len(a) }
+func (a Times) writeTo(w *bytes.Buffer, pos int) error { dialect.EscapeTime(w, a[pos]); return nil }
+func (a Times) len() int                               { return len(a) }
 
 // Time implements interface Argument.
 type Time struct{ time.Time }
 
 func (a Time) toIFace(args []interface{}) []interface{} { return append(args, a.Time) }
-func (a Time) writeTo(w queryWriter, _ int) error       { dialect.EscapeTime(w, a.Time); return nil }
+func (a Time) writeTo(w *bytes.Buffer, _ int) error     { dialect.EscapeTime(w, a.Time); return nil }
 func (a Time) len() int                                 { return 1 }
 
 // Value implements the driver.Valuer interface.
@@ -243,7 +244,7 @@ func (a BytesSlice) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a BytesSlice) writeTo(w queryWriter, pos int) (err error) {
+func (a BytesSlice) writeTo(w *bytes.Buffer, pos int) (err error) {
 	if !utf8.Valid(a[pos]) {
 		dialect.EscapeBinary(w, a[pos])
 	} else {
@@ -260,7 +261,7 @@ type Bytes []byte
 
 func (a Bytes) toIFace(args []interface{}) []interface{} { return append(args, []byte(a)) }
 
-func (a Bytes) writeTo(w queryWriter, _ int) (err error) {
+func (a Bytes) writeTo(w *bytes.Buffer, _ int) (err error) {
 	if !utf8.Valid(a) {
 		dialect.EscapeBinary(w, a)
 	} else {
@@ -285,7 +286,7 @@ type String string
 
 func (a String) toIFace(args []interface{}) []interface{} { return append(args, string(a)) }
 
-func (a String) writeTo(w queryWriter, _ int) error {
+func (a String) writeTo(w *bytes.Buffer, _ int) error {
 	if !utf8.ValidString(string(a)) {
 		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a)
 	}
@@ -309,7 +310,7 @@ func (a Strings) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a Strings) writeTo(w queryWriter, pos int) error {
+func (a Strings) writeTo(w *bytes.Buffer, pos int) error {
 	if !utf8.ValidString(a[pos]) {
 		return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", a[pos])
 	}
@@ -325,7 +326,7 @@ func (a Strings) len() int {
 type Bool bool
 
 func (a Bool) toIFace(args []interface{}) []interface{} { return append(args, a == true) }
-func (a Bool) writeTo(w queryWriter, _ int) error       { dialect.EscapeBool(w, a == true); return nil }
+func (a Bool) writeTo(w *bytes.Buffer, _ int) error     { dialect.EscapeBool(w, a == true); return nil }
 func (a Bool) len() int                                 { return 1 }
 
 // Value implements the driver.Valuer interface.
@@ -341,14 +342,14 @@ func (a Bools) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a Bools) writeTo(w queryWriter, pos int) error { dialect.EscapeBool(w, a[pos]); return nil }
-func (a Bools) len() int                             { return len(a) }
+func (a Bools) writeTo(w *bytes.Buffer, pos int) error { dialect.EscapeBool(w, a[pos]); return nil }
+func (a Bools) len() int                               { return len(a) }
 
 // Int implements interface Argument.
 type Int int
 
 func (a Int) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
-func (a Int) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
+func (a Int) writeTo(w *bytes.Buffer, _ int) error     { return writeInt64(w, int64(a)) }
 func (a Int) len() int                                 { return 1 }
 
 // Value implements the driver.Valuer interface.
@@ -364,14 +365,14 @@ func (a Ints) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a Ints) writeTo(w queryWriter, pos int) error { return writeInt64(w, int64(a[pos])) }
-func (a Ints) len() int                             { return len(a) }
+func (a Ints) writeTo(w *bytes.Buffer, pos int) error { return writeInt64(w, int64(a[pos])) }
+func (a Ints) len() int                               { return len(a) }
 
 // Int64 implements interface Argument.
 type Int64 int64
 
 func (a Int64) toIFace(args []interface{}) []interface{} { return append(args, int64(a)) }
-func (a Int64) writeTo(w queryWriter, _ int) error       { return writeInt64(w, int64(a)) }
+func (a Int64) writeTo(w *bytes.Buffer, _ int) error     { return writeInt64(w, int64(a)) }
 func (a Int64) len() int                                 { return 1 }
 
 // Value implements the driver.Valuer interface.
@@ -388,8 +389,8 @@ type Uint64 uint64
 func (a Uint64) toIFace(args []interface{}) []interface{} {
 	return append(args, strconv.AppendUint([]byte{}, uint64(a), 10))
 }
-func (a Uint64) writeTo(w queryWriter, _ int) error { return writeUint64(w, uint64(a)) }
-func (a Uint64) len() int                           { return 1 }
+func (a Uint64) writeTo(w *bytes.Buffer, _ int) error { return writeUint64(w, uint64(a)) }
+func (a Uint64) len() int                             { return 1 }
 
 // Value implements the driver.Valuer interface.
 func (a Uint64) Value() (driver.Value, error) { return strconv.AppendUint([]byte{}, uint64(a), 10), nil }
@@ -404,16 +405,16 @@ func (a Int64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a Int64s) writeTo(w queryWriter, pos int) error { return writeInt64(w, a[pos]) }
-func (a Int64s) len() int                             { return len(a) }
+func (a Int64s) writeTo(w *bytes.Buffer, pos int) error { return writeInt64(w, a[pos]) }
+func (a Int64s) len() int                               { return len(a) }
 
 // Float64 implements interface Argument.
 type Float64 float64
 
 func (a Float64) toIFace(args []interface{}) []interface{} { return append(args, float64(a)) }
 
-func (a Float64) writeTo(w queryWriter, _ int) error { return writeFloat64(w, float64(a)) }
-func (a Float64) len() int                           { return 1 }
+func (a Float64) writeTo(w *bytes.Buffer, _ int) error { return writeFloat64(w, float64(a)) }
+func (a Float64) len() int                             { return 1 }
 
 // Value implements the driver.Valuer interface.
 func (a Float64) Value() (driver.Value, error) { return float64(a), nil }
@@ -428,8 +429,8 @@ func (a Float64s) toIFace(args []interface{}) []interface{} {
 	return args
 }
 
-func (a Float64s) writeTo(w queryWriter, pos int) error { return writeFloat64(w, a[pos]) }
-func (a Float64s) len() int                             { return len(a) }
+func (a Float64s) writeTo(w *bytes.Buffer, pos int) error { return writeFloat64(w, a[pos]) }
+func (a Float64s) len() int                               { return len(a) }
 
 // placeHolderOp identifies place holder arguments. Those arguments will get
 // assembled from an external type.
@@ -438,7 +439,7 @@ type placeHolderOp rune
 // toIFace does not append anything because the placeHolderOp acts as an identifier.
 func (i placeHolderOp) toIFace(args []interface{}) []interface{} { return args }
 func (i placeHolderOp) len() int                                 { return 1 }
-func (i placeHolderOp) writeTo(w queryWriter, _ int) (err error) {
+func (i placeHolderOp) writeTo(w *bytes.Buffer, _ int) (err error) {
 	_, err = w.WriteString("?")
 	return err
 }

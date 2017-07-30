@@ -15,6 +15,7 @@
 package dbr
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"strconv"
@@ -243,7 +244,7 @@ func (u *Union) hasBuildCache() bool {
 
 // ToSQL generates the SQL string and its arguments. Calls to this function are
 // idempotent.
-func (u *Union) toSQL(w queryWriter) error {
+func (u *Union) toSQL(w *bytes.Buffer) error {
 
 	if len(u.Selects) > 1 {
 		for i, s := range u.Selects {
