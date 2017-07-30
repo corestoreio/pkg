@@ -255,7 +255,7 @@ func (a BytesSlice) writeTo(w *bytes.Buffer, pos int) (err error) {
 
 func (a BytesSlice) len() int { return len(a) }
 
-// ArgBytes implements interface Argument. Providing a nil returns a NULL type.
+// Bytes implements interface Argument. Providing a nil returns a NULL type.
 // Detects between valid UTF-8 strings and binary data. Later gets hex encoded.
 type Bytes []byte
 

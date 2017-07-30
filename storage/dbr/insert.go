@@ -147,7 +147,7 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 	return b
 }
 
-// TODO (CyS) write an intermediate type which will be used to get rid of
+// TODO (CyS) maybe write an intermediate type which will be used to get rid of
 // AddValues and AddArguments. Maybe same pattern as Column() function.
 
 // AddValues appends a set of values to the statement. Each call of AddValues
@@ -231,30 +231,34 @@ func (b *Insert) OnDuplicateKey() *Insert {
 	return b
 }
 
-// Pair appends a key/value (column/value) pair to the statement. Calling this
-// function multiple times with the same column name produces invalid SQL.
-func (b *Insert) Pair(column string, arg Argument) *Insert {
-	colPos := -1
-	for i, c := range b.Columns {
-		if strings.EqualFold(c, column) {
-			colPos = i
-			break
+// Pair appends a column/value pair to the statement. Calling this function
+// multiple times with the same column name produces invalid SQL. Slice values
+// and right/left side expressions are not supported and ignored.
+func (b *Insert) Pair(cvs ...*Condition) *Insert {
+	// TODO(CyS) support right side expressions, requires some internal refactoring
+	for _, cv := range cvs {
+		colPos := -1
+		for i, c := range b.Columns {
+			if strings.EqualFold(c, cv.Left) {
+				colPos = i
+				break
+			}
 		}
-	}
-	if colPos == -1 {
-		b.Columns = append(b.Columns, column)
-		if len(b.Values) == 0 {
-			b.Values = make([]Arguments, 1, 5)
-		}
-		b.Values[0] = append(b.Values[0], arg)
-		return b
-	}
+		if colPos == -1 {
+			b.Columns = append(b.Columns, cv.Left)
+			if len(b.Values) == 0 {
+				b.Values = make([]Arguments, 1, 5)
+			}
+			b.Values[0] = append(b.Values[0], cv.Right.Argument)
 
-	if colPos == 0 { // create new slice
-		b.Values = append(b.Values, make(Arguments, len(b.Columns)))
+		} else { // this is not an ELSEIF
+			if colPos == 0 { // create new slice
+				b.Values = append(b.Values, make(Arguments, len(b.Columns)))
+			}
+			pos := len(b.Values) - 1
+			b.Values[pos][colPos] = cv.Right.Argument
+		}
 	}
-	pos := len(b.Values) - 1
-	b.Values[pos][colPos] = arg
 	return b
 }
 
@@ -435,7 +439,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	totalArgCount := len(b.Values) * argCount0
 	if cap(args) == 0 {
-		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys)) // sneaky ;-)
+		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys))
 	}
 	for _, v := range b.Values {
 		args = append(args, v...)

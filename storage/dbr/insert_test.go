@@ -372,14 +372,14 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col1", String("X1"))
+					b.Pair(Column("col1").String("X1"))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair("col2", String("X2"))
+					b.Pair(Column("col2").String("X2"))
 					b.PropagationStopped = true
 				},
 			},
@@ -413,7 +413,7 @@ func TestInsert_Events(t *testing.T) {
 			Listen{
 				Name: "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", String("X1"))
+					i.Pair(Column("colC").String("X1"))
 				},
 			},
 		)
@@ -434,7 +434,7 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "colA",
 				Once:      true,
 				InsertFunc: func(i *Insert) {
-					i.Pair("colA", Float64(3.14159))
+					i.Pair(Column("colA").Float64(3.14159))
 				},
 			},
 			Listen{
@@ -442,7 +442,7 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "colB",
 				Once:      true,
 				InsertFunc: func(i *Insert) {
-					i.Pair("colB", Float64(2.7182))
+					i.Pair(Column("colB").Float64(2.7182))
 				},
 			},
 		)
@@ -455,7 +455,7 @@ func TestInsert_Events(t *testing.T) {
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair("colC", String("X1"))
+					i.Pair(Column("colC").String("X1"))
 				},
 			},
 		)
@@ -535,24 +535,44 @@ func TestInsert_Pair(t *testing.T) {
 
 	t.Run("one row", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").
-			Pair("product_id", Int64(2046)).
-			Pair("linked_product_id", Int64(33)).
-			Pair("link_type_id", Int64(3)),
+			Pair(
+				Column("product_id").Int64(2046),
+				Column("linked_product_id").Int64(33),
+				Column("link_type_id").Int64(3),
+			),
 			nil,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3)",
 			int64(2046), int64(33), int64(3),
 		)
 	})
+	// TODO implement expression handling, requires some refactorings
+	//t.Run("expression no args", func(t *testing.T) {
+	//	compareToSQL(t, NewInsert("catalog_product_link").
+	//		Pair(
+	//			Column("product_id").Int64(2046),
+	//			Column("type_name").Expression("CONCAT(`product_id`,'Manufacturer')"),
+	//			Column("link_type_id").Int64(3),
+	//		),
+	//		nil,
+	//		"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,CONCAT(`product_id`,'Manufacturer'),?)",
+	//		"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,CONCAT(`product_id`,'Manufacturer'),3)",
+	//		int64(2046), int64(33), int64(3),
+	//	)
+	//})
 	t.Run("multiple rows triggers NO error", func(t *testing.T) {
 		compareToSQL(t, NewInsert("catalog_product_link").
-			Pair("product_id", Int64(2046)).
-			Pair("linked_product_id", Int64(33)).
-			Pair("link_type_id", Int64(3)).
-			// next row
-			Pair("product_id", Int64(2046)).
-			Pair("linked_product_id", Int64(34)).
-			Pair("link_type_id", Int64(3)),
+			Pair(
+				// First row
+				Column("product_id").Int64(2046),
+				Column("linked_product_id").Int64(33),
+				Column("link_type_id").Int64(3),
+
+				// second row
+				Column("product_id").Int64(2046),
+				Column("linked_product_id").Int64(34),
+				Column("link_type_id").Int64(3),
+			),
 			nil,
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (?,?,?),(?,?,?)",
 			"INSERT INTO `catalog_product_link` (`product_id`,`linked_product_id`,`link_type_id`) VALUES (2046,33,3),(2046,34,3)",

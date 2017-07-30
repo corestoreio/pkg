@@ -219,14 +219,17 @@ func ExampleInsert_FromSelect() {
 
 func ExampleInsert_Pair() {
 	ins := dbr.NewInsert("catalog_product_link").
-		Pair("product_id", dbr.Int64(2046)).
-		Pair("linked_product_id", dbr.Int64(33)).
-		Pair("link_type_id", dbr.Int64(3)).
-		// next row
-		Pair("product_id", dbr.Int64(2046)).
-		Pair("linked_product_id", dbr.Int64(34)).
-		Pair("link_type_id", dbr.Int64(3))
-	// next row ...
+		Pair(
+			// First row
+			dbr.Column("product_id").Int64(2046),
+			dbr.Column("linked_product_id").Int64(33),
+			dbr.Column("link_type_id").Int64(3),
+
+			// second row
+			dbr.Column("product_id").Int64(2046),
+			dbr.Column("linked_product_id").Int64(34),
+			dbr.Column("link_type_id").Int64(3),
+		)
 	writeToSQLAndInterpolate(ins)
 	// Output:
 	//Prepared Statement:
