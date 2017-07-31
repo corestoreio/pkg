@@ -36,7 +36,7 @@ func NewVariables(names ...string) *Variables {
 		Data: make(map[string]string),
 		Show: dbr.NewShow().Variable().Interpolate(),
 	}
-	vs.Show.UseBuildCache = true
+	vs.Show.IsBuildCache = true
 	if len(names) > 1 {
 		vs.Show.Where(dbr.Column("Variable_name").In().Strings(names...))
 	} else if len(names) == 1 {

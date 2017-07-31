@@ -64,7 +64,7 @@ func (t *Table) update() *Table {
 
 	t.selectAllCache = &dbr.Select{
 	// Columns: t.AllColumnAliasQuote(MainTable), // TODO refactor
-	//Table: dbr.MakeNameAlias(t.Name, MainTable),
+	//Table: dbr.MakeIdentifier(t.Name, MainTable),
 	}
 
 	return t
@@ -161,15 +161,15 @@ func (t *Table) Swap(ctx context.Context, execer dbr.Execer, other string) error
 	buf.WriteString("RENAME TABLE ")
 	dbr.Quoter.WriteQualifierName(buf, t.Schema, t.Name)
 	buf.WriteString(" TO ")
-	dbr.Quoter.WriteNameAlias(buf, tmp, "")
+	dbr.Quoter.WriteIdentifier(buf, tmp)
 	buf.WriteString(", ")
-	dbr.Quoter.WriteNameAlias(buf, other, "")
+	dbr.Quoter.WriteIdentifier(buf, other)
 	buf.WriteString(" TO ")
 	dbr.Quoter.WriteQualifierName(buf, t.Schema, t.Name)
 	buf.WriteByte(',')
-	dbr.Quoter.WriteNameAlias(buf, tmp, "")
+	dbr.Quoter.WriteIdentifier(buf, tmp)
 	buf.WriteString(" TO ")
-	dbr.Quoter.WriteNameAlias(buf, other, "")
+	dbr.Quoter.WriteIdentifier(buf, other)
 
 	if _, err := execer.ExecContext(ctx, buf.String()); err != nil {
 		// only allocs in case of an error ;-)
