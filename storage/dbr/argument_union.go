@@ -69,24 +69,58 @@ type argUnion struct {
 	nullTimes    NullTimes
 }
 
-func (arg argUnion) writeTo(w *bytes.Buffer, pos int) error {
+func (arg argUnion) len() int {
+	switch arg.field {
+	case argFieldInt64, argFieldUint64:
+		return 1
+		// todo
+	}
+	return 0
+}
+
+func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
 	switch arg.field {
 	case argFieldInt64:
-		return writeInt64(w, arg.int64)
+		err = writeInt64(w, arg.int64)
 	case argFieldInt64s:
-		return writeInt64(w, arg.int64s[pos])
-
+		err = writeInt64(w, arg.int64s[pos])
 	case argFieldNullInt64s:
 		if s := arg.nullInt64s[pos]; s.Valid {
 			return writeInt64(w, s.Int64)
 		}
+		_, err = w.WriteString(sqlStrNull)
+
+	case argFieldUint64:
+		err = writeUint64(w, arg.uint64)
+	case argFieldUint64s:
+		err = writeUint64(w, arg.uint64s[pos])
+
+	case argFieldFloat64:
+		err = writeFloat64(w, arg.float64)
+	case argFieldFloat64s:
+		err = writeFloat64(w, arg.float64s[pos])
+	case argFieldNullFloat64s:
+		if s := arg.nullFloat64s[pos]; s.Valid {
+			return writeFloat64(w, s.Float64)
+		}
+		_, err = w.WriteString(sqlStrNull)
+
+	case argFieldBool:
+		dialect.EscapeBool(w, arg.bool)
+	case argFieldBools:
+		dialect.EscapeBool(w, arg.bools[pos])
+	case argFieldNullBool:
+		if s := arg.nullBool; s.Valid {
+			dialect.EscapeBool(w, s.Bool)
+			return nil
+		}
 		_, err := w.WriteString(sqlStrNull)
 		return err
 
-		// todo ...
 	default:
 		panic(errors.NewNotSupportedf("[dbr] Unsupported field type: %d", arg.field))
 	}
+	return err
 }
 
 // ArgUninons a collection of primitive types or slice of primitive types. Using
@@ -124,12 +158,12 @@ func (a ArgUninons) Interfaces(args ...interface{}) []interface{} {
 				}
 			}
 
-			// TODO check for max uint
+			// TODO check if uint64 overflows int64
 		case argFieldUint64:
-			args = append(args, arg.uint64)
+			args = append(args, int64(arg.uint64))
 		case argFieldUint64s:
 			for _, v := range arg.uint64s {
-				args = append(args, v)
+				args = append(args, int64(v))
 			}
 
 		case argFieldFloat64:

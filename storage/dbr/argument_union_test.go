@@ -24,11 +24,11 @@ import (
 )
 
 func BenchmarkArgUnion(b *testing.B) {
-	reflectIFaceContainer := make([]interface{}, 0, 15)
+	reflectIFaceContainer := make([]interface{}, 0, 25)
 	var finalArgs = make([]interface{}, 0, 30)
 	drvVal := []driver.Valuer{MakeNullString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
-	argUnion := makeArgUninons(20)
-
+	argUnion := makeArgUninons(30)
+	now1 := now()
 	b.ResetTimer()
 
 	b.Run("reflection all types", func(b *testing.B) {
@@ -42,6 +42,7 @@ func BenchmarkArgUnion(b *testing.B) {
 				[]string{`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`},
 				drvVal[0],
 				nil,
+				now1,
 			)
 			var err error
 			finalArgs, err = encodePlaceholder(finalArgs, reflectIFaceContainer)
@@ -67,7 +68,8 @@ func BenchmarkArgUnion(b *testing.B) {
 				String(`Licensed under the Apache License, Version 2.0 (the "License");`).
 				Strings(`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`).
 				DriverValue(drvVal...).
-				Null()
+				Null().
+				Time(now1)
 
 			finalArgs = argUnion.Interfaces(finalArgs...)
 			//b.Fatal("%#v", finalArgs)
