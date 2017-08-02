@@ -119,9 +119,3 @@ func ExampleUpdateMulti() {
 	//Index 0 RowsAffected 1
 	//Index 1 RowsAffected 1
 }
-
-type fatalLog struct{}
-
-func (fatalLog) Fatalf(format string, args ...interface{}) {
-	panic(fmt.Sprintf(format, args...))
-}

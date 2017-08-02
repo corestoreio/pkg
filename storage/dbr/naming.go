@@ -346,46 +346,6 @@ func (mq MysqlQuoter) writeQualifiedIdentifier(w *bytes.Buffer, part string) {
 	mq.quote(w, part)
 }
 
-func (mq MysqlQuoter) appendIdentifier(sl []string, name string) []string {
-
-	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
-	nameHasQuote := strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote)
-	nameHasDot := strings.IndexByte(name, '.') >= 0
-
-	switch {
-	case nameHasQuote:
-		// already quoted
-		return append(sl, name)
-	case !nameHasQuote && !nameHasDot:
-		// must be quoted
-		return mq.appendQuote(sl, name)
-	case !nameHasQuote && nameHasDot:
-		return mq.appendQualifiedIdentifier(sl, name)
-	case name == "":
-		// just an empty string
-		return sl
-	}
-	return mq.appendQualifiedIdentifier(sl, name)
-}
-
-// writeQualifiedIdentifier splits at the dot to separate between the qualifier
-// and the identifier. Both values get quoted. Child function of
-// appendIdentifier.
-func (mq MysqlQuoter) appendQualifiedIdentifier(sl []string, part string) []string {
-	dotIndex := strings.IndexByte(part, '.')
-	if dotIndex > 0 { // dot at a beginning of a string at illegal
-		sl = mq.appendQuote(sl, part[:dotIndex])
-		sl = append(sl, ".")
-		if a := part[dotIndex+1:]; a == sqlStar {
-			sl = append(sl, "*")
-		} else {
-			sl = mq.appendQuote(sl, part[dotIndex+1:])
-		}
-		return sl
-	}
-	return mq.appendQuote(sl, part)
-}
-
 // ColumnsWithQualifier prefixes all columns in the slice `cols` with a qualifier and applies backticks. If a column name has already been
 // prefixed with a qualifier or an alias it will be ignored. This functions modifies
 // the argument slice `cols`.

@@ -34,10 +34,6 @@ var (
 	invalidJSON = []byte(`:)`)
 )
 
-type stringInStruct struct {
-	Test NullString `json:"test,omitempty"`
-}
-
 func TestStringFrom(t *testing.T) {
 	t.Parallel()
 	str := MakeNullString("test")
