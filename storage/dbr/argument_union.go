@@ -16,9 +16,10 @@ package dbr
 
 import (
 	"bytes"
-	"time"
-
 	"database/sql/driver"
+	"time"
+	"unicode/utf8"
+
 	"github.com/corestoreio/errors"
 )
 
@@ -45,6 +46,9 @@ const (
 	argFieldNullTimes
 )
 
+// argUnion is union type for different Go primitives and their slice
+// representation. argUnion must be used as a pointer because it slows
+// everything down. Check the benchmarks.
 type argUnion struct {
 	field uint8
 	bool
@@ -69,13 +73,35 @@ type argUnion struct {
 	nullTimes    NullTimes
 }
 
-func (arg argUnion) len() int {
+func (arg argUnion) len() (l int) {
 	switch arg.field {
-	case argFieldInt64, argFieldUint64:
-		return 1
-		// todo
+	case argFieldNull, argFieldInt64, argFieldUint64, argFieldFloat64, argFieldBool, argFieldString, argFieldByte, argFieldTime, argFieldNullBool:
+		l = 1
+	case argFieldInt64s:
+		l = len(arg.int64s)
+	case argFieldUint64s:
+		l = len(arg.uint64s)
+	case argFieldFloat64s:
+		l = len(arg.float64s)
+	case argFieldBools:
+		l = len(arg.bools)
+	case argFieldStrings:
+		l = len(arg.strings)
+	case argFieldBytes:
+		l = len(arg.bytess)
+	case argFieldTimes:
+		l = len(arg.times)
+	case argFieldNullStrings:
+		l = len(arg.nullStrings)
+	case argFieldNullInt64s:
+		l = len(arg.nullInt64s)
+	case argFieldNullFloat64s:
+		l = len(arg.nullFloat64s)
+	case argFieldNullTimes:
+		l = len(arg.nullTimes)
 	}
-	return 0
+	// default is 0
+	return
 }
 
 func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
@@ -114,8 +140,56 @@ func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
 			dialect.EscapeBool(w, s.Bool)
 			return nil
 		}
-		_, err := w.WriteString(sqlStrNull)
-		return err
+		_, err = w.WriteString(sqlStrNull)
+
+		// TODO(CyS) Cut the printed string in errors if it's longer than XX chars
+	case argFieldString:
+		if !utf8.ValidString(arg.string) {
+			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", arg.string)
+		}
+		dialect.EscapeString(w, arg.string)
+	case argFieldStrings:
+		if !utf8.ValidString(arg.strings[pos]) {
+			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", arg.strings[pos])
+		}
+		dialect.EscapeString(w, arg.strings[pos])
+	case argFieldNullStrings:
+		if s := arg.nullStrings[pos]; s.Valid {
+			if !utf8.ValidString(s.String) {
+				return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
+			}
+			dialect.EscapeString(w, s.String)
+		} else {
+			_, err = w.WriteString(sqlStrNull)
+		}
+
+	case argFieldByte:
+		if !utf8.Valid(arg.bytes) {
+			dialect.EscapeBinary(w, arg.bytes)
+		} else {
+			dialect.EscapeString(w, string(arg.bytes)) // maybe create an EscapeByteString version to avoid one alloc ;-)
+		}
+
+	case argFieldBytes:
+		if !utf8.Valid(arg.bytess[pos]) {
+			dialect.EscapeBinary(w, arg.bytess[pos])
+		} else {
+			dialect.EscapeString(w, string(arg.bytess[pos]))
+		}
+
+	case argFieldTime:
+		dialect.EscapeTime(w, arg.time)
+	case argFieldTimes:
+		dialect.EscapeTime(w, arg.times[pos])
+	case argFieldNullTimes:
+		if nt := arg.nullTimes[pos]; nt.Valid {
+			dialect.EscapeTime(w, nt.Time)
+		} else {
+			_, err = w.WriteString(sqlStrNull)
+		}
+
+	case argFieldNull:
+		_, err = w.WriteString(sqlStrNull)
 
 	default:
 		panic(errors.NewNotSupportedf("[dbr] Unsupported field type: %d", arg.field))
@@ -129,6 +203,32 @@ type ArgUninons []argUnion
 
 func makeArgUninons(cap int) ArgUninons {
 	return make(ArgUninons, 0, cap)
+}
+
+// Len returns the total length of all arguments.
+func (a ArgUninons) Len() int {
+	var l int
+	for _, arg := range a {
+		l += arg.len()
+	}
+	return l
+}
+
+// Write writes all arguments into buf and separated by a colon.
+func (a ArgUninons) Write(buf *bytes.Buffer) error {
+	buf.WriteByte('(')
+	for j, arg := range a {
+		l := arg.len()
+		for i := 0; i < l; i++ {
+			if i > 0 || j > 0 {
+				buf.WriteByte(',')
+			}
+			if err := arg.writeTo(buf, i); err != nil {
+				return errors.Wrapf(err, "[dbr] ArgUninons write failed at pos %d with argument %#v", j, arg)
+			}
+		}
+	}
+	return buf.WriteByte(')')
 }
 
 // Interfaces creates an interface slice with flat values. Each type is one of

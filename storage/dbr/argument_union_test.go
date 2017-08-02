@@ -15,13 +15,92 @@
 package dbr
 
 import (
+	"bytes"
 	"database/sql/driver"
-	"github.com/corestoreio/errors"
 	"math"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/corestoreio/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestArgUninons_Length(t *testing.T) {
+	t.Parallel()
+	t.Run("no slices, nulls valid", func(t *testing.T) {
+		args := makeArgUninons(10).
+			Null().Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
+			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
+		assert.Exactly(t, 13, args.Len(), "Length mismatch")
+	})
+	t.Run("no slices, nulls invalid", func(t *testing.T) {
+		args := makeArgUninons(10).
+			Null().Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
+			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
+		assert.Exactly(t, 13, args.Len(), "Length mismatch")
+	})
+	t.Run("slices, nulls valid", func(t *testing.T) {
+		args := makeArgUninons(10).
+			Null().Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
+			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
+			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
+		assert.Exactly(t, 22, args.Len(), "Length mismatch")
+	})
+}
+
+func TestArgUninons_WriteTo(t *testing.T) {
+	t.Parallel()
+
+	t.Run("no slices, nulls valid", func(t *testing.T) {
+		args := makeArgUninons(10).
+			Null().Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
+			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
+
+		buf := new(bytes.Buffer)
+		err := args.Write(buf)
+		require.NoError(t, err)
+		assert.Exactly(t,
+			"(NULL,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05','eCom3',4,2.7,1,'2006-01-02 15:04:05')",
+			buf.String())
+	})
+	t.Run("no slices, nulls invalid", func(t *testing.T) {
+		args := makeArgUninons(10).
+			Null().Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
+			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
+
+		buf := new(bytes.Buffer)
+		err := args.Write(buf)
+		require.NoError(t, err)
+		assert.Exactly(t,
+			"(NULL,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05',NULL,NULL,NULL,NULL,NULL)",
+			buf.String())
+	})
+	t.Run("slices, nulls valid", func(t *testing.T) {
+		args := makeArgUninons(10).
+			Null().Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
+			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(5)).NullFloat64(MakeNullFloat64(2.71), MakeNullFloat64(2.72)).
+			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
+
+		buf := new(bytes.Buffer)
+		err := args.Write(buf)
+		require.NoError(t, err)
+		assert.Exactly(t,
+			"(NULL,1,2,2,1.2,3.1,0,1,'eCom1','eCom11','eCom2','2006-01-02 15:04:05','2006-01-02 15:04:05','eCom3','eCom3',4,5,2.71,2.72,1,'2006-01-02 15:04:05','2006-01-02 15:04:05')",
+			buf.String())
+	})
+	t.Run("byte as binary", func(t *testing.T) {
+
+	})
+	t.Run("non-utf8 string", func(t *testing.T) {
+
+	})
+}
 
 func BenchmarkArgUnion(b *testing.B) {
 	reflectIFaceContainer := make([]interface{}, 0, 25)
