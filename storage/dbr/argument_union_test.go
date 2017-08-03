@@ -315,7 +315,7 @@ func BenchmarkArgUnion(b *testing.B) {
 			finalArgs = finalArgs[:0]
 		}
 	})
-	b.Run("ArgUninons all types", func(b *testing.B) {
+	b.Run("ArgUnions all types", func(b *testing.B) {
 		// two times faster than the reflection version
 
 		finalArgs = finalArgs[:0]
@@ -357,7 +357,7 @@ func BenchmarkArgUnion(b *testing.B) {
 			finalArgs = finalArgs[:0]
 		}
 	})
-	b.Run("ArgUninons numbers", func(b *testing.B) {
+	b.Run("ArgUnions numbers", func(b *testing.B) {
 		// three times faster than the reflection version
 
 		finalArgs = finalArgs[:0]

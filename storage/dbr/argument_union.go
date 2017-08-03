@@ -44,6 +44,7 @@ const (
 	argFieldNullFloat64s
 	argFieldNullBool
 	argFieldNullTimes
+	argFieldPlaceHolder
 )
 
 // argUnion is union type for different Go primitives and their slice
@@ -197,16 +198,16 @@ func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
 	return err
 }
 
-// ArgUninons a collection of primitive types or slice of primitive types. Using
+// ArgUnions a collection of primitive types or slice of primitive types. Using
 // pointers in *argUnion would slow down the program.
-type ArgUninons []argUnion
+type ArgUnions []argUnion
 
-func makeArgUninons(cap int) ArgUninons {
-	return make(ArgUninons, 0, cap)
+func makeArgUninons(cap int) ArgUnions {
+	return make(ArgUnions, 0, cap)
 }
 
 // Len returns the total length of all arguments.
-func (a ArgUninons) Len() int {
+func (a ArgUnions) Len() int {
 	var l int
 	for _, arg := range a {
 		l += arg.len()
@@ -215,7 +216,7 @@ func (a ArgUninons) Len() int {
 }
 
 // Write writes all arguments into buf and separated by a colon.
-func (a ArgUninons) Write(buf *bytes.Buffer) error {
+func (a ArgUnions) Write(buf *bytes.Buffer) error {
 	buf.WriteByte('(')
 	for j, arg := range a {
 		l := arg.len()
@@ -224,7 +225,7 @@ func (a ArgUninons) Write(buf *bytes.Buffer) error {
 				buf.WriteByte(',')
 			}
 			if err := arg.writeTo(buf, i); err != nil {
-				return errors.Wrapf(err, "[dbr] ArgUninons write failed at pos %d with argument %#v", j, arg)
+				return errors.Wrapf(err, "[dbr] ArgUnions write failed at pos %d with argument %#v", j, arg)
 			}
 		}
 	}
@@ -233,7 +234,7 @@ func (a ArgUninons) Write(buf *bytes.Buffer) error {
 
 // Interfaces creates an interface slice with flat values. Each type is one of
 // the allowed in driver.Value.
-func (a ArgUninons) Interfaces(args ...interface{}) []interface{} {
+func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 	if len(a) == 0 {
 		return nil
 	}
@@ -337,67 +338,67 @@ func (a ArgUninons) Interfaces(args ...interface{}) []interface{} {
 	return args
 }
 
-func (a ArgUninons) Null() ArgUninons {
+func (a ArgUnions) Null() ArgUnions {
 	return append(a, argUnion{field: argFieldNull})
 }
-func (a ArgUninons) Int64(i int64) ArgUninons {
+func (a ArgUnions) Int64(i int64) ArgUnions {
 	return append(a, argUnion{field: argFieldInt64, int64: int64(i)})
 }
-func (a ArgUninons) Int64s(i ...int64) ArgUninons {
+func (a ArgUnions) Int64s(i ...int64) ArgUnions {
 	return append(a, argUnion{field: argFieldInt64s, int64s: i})
 }
-func (a ArgUninons) Uint64(i uint64) ArgUninons {
+func (a ArgUnions) Uint64(i uint64) ArgUnions {
 	return append(a, argUnion{field: argFieldUint64, uint64: i})
 }
-func (a ArgUninons) Uint64s(i ...uint64) ArgUninons {
+func (a ArgUnions) Uint64s(i ...uint64) ArgUnions {
 	return append(a, argUnion{field: argFieldUint64s, uint64s: i})
 }
-func (a ArgUninons) Float64(f float64) ArgUninons {
+func (a ArgUnions) Float64(f float64) ArgUnions {
 	return append(a, argUnion{field: argFieldFloat64, float64: f})
 }
-func (a ArgUninons) Float64s(f ...float64) ArgUninons {
+func (a ArgUnions) Float64s(f ...float64) ArgUnions {
 	return append(a, argUnion{field: argFieldFloat64s, float64s: f})
 }
-func (a ArgUninons) Bool(f bool) ArgUninons {
+func (a ArgUnions) Bool(f bool) ArgUnions {
 	return append(a, argUnion{field: argFieldBool, bool: f})
 }
-func (a ArgUninons) Bools(f ...bool) ArgUninons {
+func (a ArgUnions) Bools(f ...bool) ArgUnions {
 	return append(a, argUnion{field: argFieldBools, bools: f})
 }
-func (a ArgUninons) String(f string) ArgUninons {
+func (a ArgUnions) String(f string) ArgUnions {
 	return append(a, argUnion{field: argFieldString, string: f})
 }
-func (a ArgUninons) Strings(f ...string) ArgUninons {
+func (a ArgUnions) Strings(f ...string) ArgUnions {
 	return append(a, argUnion{field: argFieldStrings, strings: f})
 }
-func (a ArgUninons) Bytes(b []byte) ArgUninons {
+func (a ArgUnions) Bytes(b []byte) ArgUnions {
 	return append(a, argUnion{field: argFieldByte, bytes: b})
 }
-func (a ArgUninons) BytesSlice(b ...[]byte) ArgUninons {
+func (a ArgUnions) BytesSlice(b ...[]byte) ArgUnions {
 	return append(a, argUnion{field: argFieldBytes, bytess: b})
 }
-func (a ArgUninons) Time(t time.Time) ArgUninons {
+func (a ArgUnions) Time(t time.Time) ArgUnions {
 	return append(a, argUnion{field: argFieldTime, time: t})
 }
-func (a ArgUninons) Times(t ...time.Time) ArgUninons {
+func (a ArgUnions) Times(t ...time.Time) ArgUnions {
 	return append(a, argUnion{field: argFieldTimes, times: t})
 }
-func (a ArgUninons) NullString(nv ...NullString) ArgUninons {
+func (a ArgUnions) NullString(nv ...NullString) ArgUnions {
 	return append(a, argUnion{field: argFieldNullStrings, nullStrings: nv})
 }
-func (a ArgUninons) NullFloat64(nv ...NullFloat64) ArgUninons {
+func (a ArgUnions) NullFloat64(nv ...NullFloat64) ArgUnions {
 	return append(a, argUnion{field: argFieldNullFloat64s, nullFloat64s: nv})
 }
-func (a ArgUninons) NullInt64(nv ...NullInt64) ArgUninons {
+func (a ArgUnions) NullInt64(nv ...NullInt64) ArgUnions {
 	return append(a, argUnion{field: argFieldNullInt64s, nullInt64s: nv})
 }
-func (a ArgUninons) NullBool(nv NullBool) ArgUninons {
+func (a ArgUnions) NullBool(nv NullBool) ArgUnions {
 	return append(a, argUnion{field: argFieldNullBool, nullBool: nv})
 }
-func (a ArgUninons) NullTime(nv ...NullTime) ArgUninons {
+func (a ArgUnions) NullTime(nv ...NullTime) ArgUnions {
 	return append(a, argUnion{field: argFieldNullTimes, nullTimes: nv})
 }
-func (a ArgUninons) DriverValue(dvs ...driver.Valuer) ArgUninons {
+func (a ArgUnions) DriverValue(dvs ...driver.Valuer) ArgUnions {
 	// Value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
