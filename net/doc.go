@@ -18,7 +18,8 @@
 // Which http router should I use? CoreStore doesn't care because it uses the
 // standard library http API. You can choose nearly any router you like.
 //
-// context Package: https://twitter.com/peterbourgon/status/752022730812317696
-//
-// Sessions: https://github.com/alexedwards/scs
+// TODO(CyS) consider the next items:
+// - context Package: https://twitter.com/peterbourgon/status/752022730812317696
+// - Sessions: https://github.com/alexedwards/scs
+// - https://medium.com/@matryer/introducing-vice-go-channels-across-many-machines-bcac1147d7e2
 package net
