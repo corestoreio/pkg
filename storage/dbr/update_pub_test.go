@@ -198,39 +198,33 @@ var _ dbr.ArgumentsAppender = (*salesInvoice)(nil)
 type salesInvoice struct {
 	EntityID   int64  // Auto Increment
 	State      string // processing, pending, shipped,
-	StoreID    dbr.Int64
+	StoreID    int64
 	CustomerID int64
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesInvoice) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (so salesInvoice) AppendArguments(stmtType int, args dbr.ArgUnions, columns []string) (dbr.ArgUnions, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
-			args = append(args, dbr.Int64(so.EntityID))
+			args = args.Int64(so.EntityID)
 		case "state":
-			args = append(args, dbr.String(so.State))
+			args = args.Str(so.State)
 		case "store_id":
-			args = append(args, so.StoreID)
+			args = args.Int64(so.StoreID)
 		case "customer_id":
-			args = append(args, dbr.Int64(so.CustomerID))
+			args = args.Int64(so.CustomerID)
 		case "alias_customer_id":
 			// Here can be a special treatment implement like encoding to JSON or encryption
-			args = append(args, dbr.Int64(so.CustomerID))
+			args = args.Int64(so.CustomerID)
 		case "grand_total":
-			args = append(args, so.GrandTotal)
+			args = args.NullFloat64(so.GrandTotal)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
 	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
-		args = append(args,
-			dbr.Int64(so.EntityID),
-			dbr.String(so.State),
-			so.StoreID,
-			dbr.Int64(so.CustomerID),
-			so.GrandTotal,
-		)
+		args = args.Int64(so.EntityID).Str(so.State).Int64(so.StoreID).Int64(so.CustomerID).NullFloat64(so.GrandTotal)
 	}
 	return args, nil
 }

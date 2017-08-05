@@ -33,17 +33,17 @@ type dbrPerson struct {
 	Key   dbr.NullString
 }
 
-func (p *dbrPerson) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (p *dbrPerson) AppendArguments(stmtType int, args dbr.ArgUnions, columns []string) (dbr.ArgUnions, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
-			args = append(args, dbr.Int64(p.ID))
+			args = args.Int64(p.ID)
 		case "name":
-			args = append(args, dbr.String(p.Name))
+			args = args.Str(p.Name)
 		case "email":
-			args = append(args, p.Email)
+			args = args.NullString(p.Email)
 		case "key":
-			args = append(args, p.Key)
+			args = args.NullString(p.Key)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
@@ -83,7 +83,7 @@ func compareToSQL(
 
 	if wantSQLPlaceholders != "" {
 		assert.Equal(t, wantSQLPlaceholders, sqlStr, "Placeholder SQL strings do not match")
-		assert.Equal(t, wantArgs, args, "Placeholder Arguments do not match")
+		assert.Equal(t, wantArgs, args, "Placeholder ArgUnions do not match")
 	}
 
 	if wantSQLInterpolated == "" {
@@ -117,7 +117,7 @@ func compareToSQL(
 	}
 
 	sqlStr, args, err = qb.ToSQL()
-	require.Nil(t, args, "Arguments should be nil when the SQL string gets interpolated")
+	require.Nil(t, args, "ArgUnions should be nil when the SQL string gets interpolated")
 	if wantErr == nil {
 		require.NoError(t, err)
 	} else {

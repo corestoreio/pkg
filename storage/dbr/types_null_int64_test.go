@@ -15,15 +15,11 @@
 package dbr
 
 import (
-	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -229,66 +225,4 @@ func assertNullInt64(t *testing.T, i NullInt64, from string) {
 	if i.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
-}
-
-func TestNullInt64_Argument(t *testing.T) {
-	t.Parallel()
-
-	nss := []NullInt64{
-		{
-			NullInt64: sql.NullInt64{
-				Int64: 987654,
-			},
-		},
-		{
-			NullInt64: sql.NullInt64{
-				Int64: 987653,
-				Valid: true,
-			},
-		},
-	}
-	var buf bytes.Buffer
-	args := make([]interface{}, 0, 2)
-	for i, ns := range nss {
-		args = ns.toIFace(args)
-		ns.writeTo(&buf, i)
-	}
-	assert.Exactly(t, []interface{}{interface{}(nil), int64(987653)}, args)
-	assert.Exactly(t, "NULL987653", buf.String())
-}
-
-func TestArgNullInt64(t *testing.T) {
-	t.Parallel()
-
-	args := NullInt64s{MakeNullInt64(987651), MakeNullInt64(987652, false), MakeNullInt64(987653)}
-	assert.Exactly(t, 3, args.len())
-
-	t.Run("writeTo", func(t *testing.T) {
-
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{int64(987651), interface{}(nil), int64(987653)}, argIF)
-		assert.Exactly(t, "987651NULL987653", buf.String())
-	})
-
-	t.Run("single arg", func(t *testing.T) {
-		args = NullInt64s{MakeNullInt64(1234567)}
-
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{int64(1234567)}, argIF)
-		assert.Exactly(t, "1234567", buf.String())
-	})
 }

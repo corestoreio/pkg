@@ -151,7 +151,7 @@ func (b *Update) Limit(limit uint64) *Update {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+// prepared statements. ToSQLs second argument `args` will then be nil.
 func (b *Update) Interpolate() *Update {
 	b.IsInterpolate = true
 	return b
@@ -166,7 +166,7 @@ func (b *Update) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Update) readBuildCache() (sql []byte, _ Arguments, err error) {
+func (b *Update) readBuildCache() (sql []byte, _ ArgUnions, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -226,14 +226,14 @@ func (b *Update) toSQL(buf *bytes.Buffer) error {
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) appendArgs(args Arguments) (Arguments, error) {
+func (b *Update) appendArgs(args ArgUnions) (ArgUnions, error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 
 	if cap(args) == 0 {
-		args = make(Arguments, 0, len(b.SetClauses)+len(b.Wheres))
+		args = make(ArgUnions, 0, len(b.SetClauses)+len(b.Wheres))
 	}
 	var err error
 	if b.Record != nil {
@@ -420,7 +420,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentsAppender) ([
 		b.Update.RecordColumns = b.ColumnAliases
 	}
 
-	args := make(Arguments, 0, (len(records)+len(b.Update.Wheres))*3) // 3 just a guess
+	args := make(ArgUnions, 0, (len(records)+len(b.Update.Wheres))*3) // 3 just a guess
 	results := make([]sql.Result, len(records))
 
 	var ipBuf *bytes.Buffer // ip = interpolate buffer

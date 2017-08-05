@@ -30,7 +30,7 @@ type Insert struct {
 
 	Into    string
 	Columns []string
-	Values  []Arguments
+	Values  []ArgUnions
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
 
@@ -154,12 +154,12 @@ func (b *Insert) AddColumns(columns ...string) *Insert {
 // creates a new set of values. Only primitive types are supported. Runtime type
 // safety only.
 func (b *Insert) AddValues(values ...interface{}) *Insert {
-	return b.AddArguments(iFaceToArgs(values...)...)
+	return b.AddArguments(iFaceToArgs(values...))
 }
 
 // SetRowCount defines the number of expected rows. Each set of place holders
 // within the brackets defines a row. This setting defaults to one. It gets
-// applied when fields `Arguments` and `Records` have been left empty. For each
+// applied when fields `args` and `Records` have been left empty. For each
 // defined column the QueryBuilder creates a place holder. Use when creating a
 // prepared statement. See the example for more details.
 // 		RowCount = 2 ==> (?,?,?),(?,?,?)
@@ -172,7 +172,7 @@ func (b *Insert) SetRowCount(rows int) *Insert {
 // AddArguments appends a set of values to the statement. Each call of
 // AddArguments creates a new set of values. Only primitive types are supported.
 // Runtime type safety only.
-func (b *Insert) AddArguments(args ...Argument) *Insert {
+func (b *Insert) AddArguments(args ArgUnions) *Insert {
 	if lv, mod := len(args), len(b.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more
 		// rows gets inserted.
@@ -247,13 +247,13 @@ func (b *Insert) Pair(cvs ...*Condition) *Insert {
 		if colPos == -1 {
 			b.Columns = append(b.Columns, cv.Left)
 			if len(b.Values) == 0 {
-				b.Values = make([]Arguments, 1, 5)
+				b.Values = make([]ArgUnions, 1, 5)
 			}
 			b.Values[0] = append(b.Values[0], cv.Right.Argument)
 
 		} else { // this is not an ELSEIF
 			if colPos == 0 { // create new slice
-				b.Values = append(b.Values, make(Arguments, len(b.Columns)))
+				b.Values = append(b.Values, make(ArgUnions, len(b.Columns)))
 			}
 			pos := len(b.Values) - 1
 			b.Values[pos][colPos] = cv.Right.Argument
@@ -271,7 +271,7 @@ func (b *Insert) FromSelect(s *Select) *Insert {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+// prepared statements. ToSQLs second argument `args` will then be nil.
 func (b *Insert) Interpolate() *Insert {
 	b.IsInterpolate = true
 	return b
@@ -287,7 +287,7 @@ func (b *Insert) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Insert) readBuildCache() (sql []byte, _ Arguments, err error) {
+func (b *Insert) readBuildCache() (sql []byte, _ ArgUnions, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -386,7 +386,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteByte('?')
+			buf.WriteByte(placeHolderRune)
 		}
 		buf.WriteByte(')')
 	}
@@ -414,7 +414,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 	return errors.Wrap(b.OnDuplicateKeys.writeOnDuplicateKey(buf), "[dbr] Insert.toSQL.writeOnDuplicateKey\n")
 }
 
-func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
+func (b *Insert) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
@@ -439,7 +439,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	totalArgCount := len(b.Values) * argCount0
 	if cap(args) == 0 {
-		args = make(Arguments, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys))
+		args = make(ArgUnions, 0, totalArgCount+len(b.Records)+len(b.OnDuplicateKeys))
 	}
 	for _, v := range b.Values {
 		args = append(args, v...)

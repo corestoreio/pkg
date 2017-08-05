@@ -36,26 +36,26 @@ type categoryEntity struct {
 	TeaserIDs []string
 }
 
-func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.ArgUnions, columns []string) (dbr.ArgUnions, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
-			args = append(args, dbr.Int64(pe.EntityID))
+			args = args.Int64(pe.EntityID)
 		case "attribute_set_id":
-			args = append(args, dbr.Int64(pe.AttributeSetID))
+			args = args.Int64(pe.AttributeSetID)
 		case "parent_id":
-			args = append(args, dbr.String(pe.ParentID))
+			args = args.Str(pe.ParentID)
 		case "path":
-			args = append(args, pe.Path)
+			args = args.NullString(pe.Path)
 		case "teaser_id_s":
 			if stmtType&dbr.SQLPartSet != 0 {
 				if pe.TeaserIDs == nil {
-					args = append(args, nil)
+					args = args.Null()
 				} else {
-					args = append(args, dbr.String(strings.Join(pe.TeaserIDs, "|")))
+					args = args.Str(strings.Join(pe.TeaserIDs, "|"))
 				}
 			} else {
-				args = append(args, dbr.Strings(pe.TeaserIDs))
+				args = args.Strs(pe.TeaserIDs...)
 			}
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)

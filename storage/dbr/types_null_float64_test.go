@@ -15,11 +15,8 @@
 package dbr
 
 import (
-	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -184,66 +181,4 @@ func assertNullFloat64(t *testing.T, f NullFloat64, from string) {
 	if f.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
-}
-
-func TestNullFloat64_Argument(t *testing.T) {
-	t.Parallel()
-
-	nss := []NullFloat64{
-		{
-			NullFloat64: sql.NullFloat64{
-				Float64: math.Pi,
-			},
-		},
-		{
-			NullFloat64: sql.NullFloat64{
-				Float64: math.Ln10,
-				Valid:   true,
-			},
-		},
-	}
-	var buf bytes.Buffer
-	args := make([]interface{}, 0, 2)
-	for i, ns := range nss {
-		args = ns.toIFace(args)
-		ns.writeTo(&buf, i)
-	}
-	assert.Exactly(t, []interface{}{interface{}(nil), math.Ln10}, args)
-	assert.Exactly(t, "NULL2.302585092994046", buf.String())
-}
-
-func TestArgNullFloat64(t *testing.T) {
-	t.Parallel()
-
-	args := NullFloat64s{MakeNullFloat64(math.Phi), MakeNullFloat64(math.E, false), MakeNullFloat64(math.SqrtE)}
-	assert.Exactly(t, 3, args.len())
-
-	t.Run("writeTo", func(t *testing.T) {
-
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{math.Phi, interface{}(nil), math.SqrtE}, argIF)
-		assert.Exactly(t, "1.618033988749895NULL1.6487212707001282", buf.String())
-	})
-
-	t.Run("single arg", func(t *testing.T) {
-		args = NullFloat64s{MakeNullFloat64(math.Sqrt2)}
-
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{1.4142135623730951}, argIF)
-		assert.Exactly(t, "1.4142135623730951", buf.String())
-	})
 }

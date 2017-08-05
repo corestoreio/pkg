@@ -26,31 +26,31 @@ import (
 
 // iFaceToArgs unpacks the interface and creates an Argument slice. Just a
 // helper function for the examples.
-func iFaceToArgs(values ...interface{}) dbr.Arguments {
-	args := make(dbr.Arguments, 0, len(values))
+func iFaceToArgs(values ...interface{}) dbr.ArgUnions {
+	args := make(dbr.ArgUnions, 0, len(values))
 	for _, val := range values {
 		switch v := val.(type) {
 		case float64:
-			args = append(args, dbr.Float64(v))
+			args = args.Float64(v)
 		case int64:
-			args = append(args, dbr.Int64(v))
+			args = args.Int64(v)
 		case int:
-			args = append(args, dbr.Int64(v))
-			args = append(args, dbr.Int64(v))
+			args = args.Int(v)
+			args = args.Int(v)
 		case bool:
-			args = append(args, dbr.Bool(v))
+			args = args.Bool(v)
 		case string:
-			args = append(args, dbr.String(v))
+			args = args.Str(v)
 		case []byte:
-			args = append(args, dbr.Bytes(v))
+			args = args.Bytes(v)
 		case time.Time:
-			args = append(args, dbr.MakeTime(v))
+			args = args.Time(v)
 		case *time.Time:
 			if v != nil {
-				args = append(args, dbr.MakeTime(*v))
+				args = args.Time(*v)
 			}
 		case nil:
-			args = append(args, nil) // use nil for NULL values
+			args = args.Null()
 		default:
 			panic(errors.NewNotSupportedf("[dbr] iFaceToArgs type %#v not yet supported", v))
 		}
@@ -74,7 +74,7 @@ func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 		return
 	}
 	// TODO(CyS) iFaceToArgs is a hacky way, better API design needs to be crafted.
-	sqlStr = dbr.Interpolate(sqlStr).Arguments(iFaceToArgs(args...)...).String()
+	sqlStr = dbr.Interpolate(sqlStr).ArgUnions(iFaceToArgs(args...)).String()
 	fmt.Println("Interpolated Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
 }
@@ -272,7 +272,7 @@ func ExampleNewUnion() {
 	// Maybe more of your code ...
 	u.Append(
 		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
-			AddArguments(dbr.String("-")).
+			AddArgUnions(dbr.MakeArgUnions(1).Str("-")).
 			AddColumnsAlias("c2", "B").
 			From("tableC").Where(dbr.Column("c2").String("ArgForC2")),
 	).
@@ -390,11 +390,8 @@ func ExampleInterpolate() {
 }
 
 func ExampleRepeat() {
-	sl := dbr.Strings{"a", "b", "c", "d", "e"}
-
-	sqlStr, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)",
-		dbr.Ints{5, 7, 9}, sl)
-
+	args := dbr.MakeArgUnions(1).Strs("a", "b", "c", "d", "e").Ints(5, 7, 9)
+	sqlStr, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", args)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
@@ -647,8 +644,9 @@ func ExampleSQLCase_update() {
 // ExampleSQLCase_select is a duplicate of ExampleSelect_AddArguments
 func ExampleSQLCase_select() {
 	// time stamp has no special meaning ;-)
-	start := dbr.MakeTime(time.Unix(1257894000, 0))
-	end := dbr.MakeTime(time.Unix(1257980400, 0))
+	start := time.Unix(1257894000, 0)
+	end := time.Unix(1257980400, 0)
+	args := dbr.MakeArgUnions(4).Times(start, end, start, end)
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnExpression(
 			dbr.SQLCase("", "`closed`",
@@ -656,7 +654,7 @@ func ExampleSQLCase_select() {
 				"date_start > ? AND date_end > ?", "`upcoming`",
 			).Alias("is_on_sale"),
 		).
-		AddArguments(start, end, start, end).
+		AddArgUnions(args).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id").NotIn().Ints(4711, 815, 42))
 	writeToSQLAndInterpolate(s)
@@ -706,8 +704,10 @@ func ExampleSelect_SetRecord() {
 // ExampleSelect_AddArguments is duplicate of ExampleSQLCase_select
 func ExampleSelect_AddArguments() {
 
-	start := dbr.MakeTime(time.Unix(1257894000, 0))
-	end := dbr.MakeTime(time.Unix(1257980400, 0))
+	start := time.Unix(1257894000, 0)
+	end := time.Unix(1257980400, 0)
+	args := dbr.MakeArgUnions(4).Times(start, end, start, end)
+
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnExpression(
 			dbr.SQLCase("", "`closed`",
@@ -715,7 +715,7 @@ func ExampleSelect_AddArguments() {
 				"date_start > ? AND date_end > ?", "`upcoming`",
 			).Alias("is_on_sale"),
 		).
-		AddArguments(start, end, start, end).
+		AddArgUnions(args).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id").NotIn().Ints(4711, 815, 42))
 	writeToSQLAndInterpolate(s)

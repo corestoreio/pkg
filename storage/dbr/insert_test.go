@@ -33,25 +33,22 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
+func (sr someRecord) AppendArguments(stmtType int, args ArgUnions, columns []string) (ArgUnions, error) {
 	for _, c := range columns {
 		switch c {
 		case "something_id":
-			args = append(args, Int(sr.SomethingID))
+			args = args.Int(sr.SomethingID)
 		case "user_id":
-			args = append(args, Int64(sr.UserID))
+			args = args.Int64(sr.UserID)
 		case "other":
-			args = append(args, Bool(sr.Other))
+			args = args.Bool(sr.Other)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
 	if len(columns) == 0 && stmtType&(SQLPartValues) != 0 {
-		args = append(args,
-			Int(sr.SomethingID),
-			Int64(sr.UserID),
-			Bool(sr.Other),
-		)
+		args = args.Int(sr.SomethingID).Int64(sr.UserID).Bool(sr.Other)
+
 	}
 	return args, nil
 }
@@ -142,7 +139,7 @@ func TestInsert_Add(t *testing.T) {
 	})
 	t.Run("single AddArguments", func(t *testing.T) {
 		compareToSQL(t,
-			NewInsert("a").AddColumns("b", "c").AddArguments(Int64(1), Int64(2)),
+			NewInsert("a").AddColumns("b", "c").AddArguments(MakeArgUnions(2).Int64(1).Int64(2)),
 			nil,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
@@ -152,12 +149,12 @@ func TestInsert_Add(t *testing.T) {
 	t.Run("multi AddArguments on duplicate key", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
-				AddArguments(
-					Int64(1), Int64(2),
-					Int64(3), Int64(4),
+				AddArguments(MakeArgUnions(4).
+					Int64(1).Int64(2).
+					Int64(3).Int64(4),
 				).
-				AddArguments(
-					Int64(5), Int64(6),
+				AddArguments(MakeArgUnions(2).
+					Int64(5).Int64(6),
 				).
 				OnDuplicateKey(),
 			nil,

@@ -42,48 +42,21 @@ const (
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func Repeat(sql string, args ...Argument) (string, []interface{}, error) {
+func Repeat(sql string, args ArgUnions) (string, error) {
 
 	phCount := strings.Count(sql, placeHolderStr)
 	if want := len(args); phCount != want || want == 0 {
-		return "", nil, errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
+		return "", errors.NewMismatchf("[dbr] Repeat: Number of %s:%d do not match the number of repetitions: %d", placeHolderStr, phCount, want)
 	}
-
-	retArgs := make([]interface{}, 0, len(args)*2)
 
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-
-	n := phCount
-	i := 0
-	for i < n {
-		m := strings.IndexByte(sql, placeHolderRune)
-		if m < 0 {
-			break
-		}
-		buf.WriteString(sql[:m])
-
-		if i < len(args) {
-			prevLen := len(retArgs)
-			retArgs = args[i].toIFace(retArgs)
-			reps := len(retArgs) - prevLen
-			for r := 0; r < reps; r++ {
-				buf.WriteByte(placeHolderRune)
-				if r < reps-1 {
-					buf.WriteByte(',')
-				}
-			}
-		}
-		sql = sql[m+len(placeHolderStr):]
-		i++
-	}
-	buf.WriteString(sql)
-	return buf.String(), retArgs, nil
+	err := repeatPlaceHolders(buf, []byte(sql), args)
+	return buf.String(), errors.WithStack(err)
 }
 
 // repeatPlaceHolders multiplies the place holder with the arguments internal len.
-func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args ...Argument) error {
-
+func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args ArgUnions) error {
 	i := 0
 	pos := 0
 	for pos < len(sql) {
@@ -91,7 +64,7 @@ func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args ...Argument) error {
 		pos += w
 
 		switch r {
-		case '?':
+		case placeHolderRune:
 			if i < len(args) {
 				reps := args[i].len()
 				for r := 0; r < reps; r++ {
@@ -109,43 +82,43 @@ func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args ...Argument) error {
 	return nil
 }
 
-type ipolate struct {
+type iPolate struct {
 	queryCache []byte
-	args       Arguments
+	args       ArgUnions
 }
 
 // Interpolate takes a SQL byte slice with placeholders and a list of arguments
 // to replace them with. It returns a blank string or an error if the number of
 // placeholders does not match the number of arguments. Implements the Repeat
 // function.
-func Interpolate(sql string) *ipolate {
-	return &ipolate{
+func Interpolate(sql string) *iPolate {
+	return &iPolate{
 		queryCache: []byte(sql),
-		args:       make(Arguments, 0, 8),
+		args:       MakeArgUnions(8),
 	}
 }
 
 // String implements fmt.Stringer and prints errors into the string which will
 // maybe generate invalid SQL code.
-func (ip *ipolate) String() string {
-	sql, _, err := ip.ToSQL()
+func (ip *iPolate) String() string {
+	str, _, err := ip.ToSQL()
 	if err != nil {
 		return err.Error()
 	}
-	return sql
+	return str
 }
 
 // MustString returns the fully interpolated SQL string or panics on error.
-func (ip *ipolate) MustString() string {
-	sql, _, err := ip.ToSQL()
+func (ip *iPolate) MustString() string {
+	str, _, err := ip.ToSQL()
 	if err != nil {
 		panic(err)
 	}
-	return sql
+	return str
 }
 
 // ToSQL implements dbr.QueryBuilder. The interface slice is always nil.
-func (ip *ipolate) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
+func (ip *iPolate) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := writeInterpolate(buf, ip.queryCache, ip.args); err != nil {
@@ -156,79 +129,66 @@ func (ip *ipolate) ToSQL() (_ string, alwaysNil []interface{}, _ error) {
 
 // Reset resets the internal argument cache for reuse. Avoids lots of
 // allocations.
-func (ip *ipolate) Reset() *ipolate                { ip.args = ip.args[:0]; return ip }
-func (ip *ipolate) Null() *ipolate                 { ip.args = append(ip.args, nil); return ip }
-func (ip *ipolate) Int(i int) *ipolate             { ip.args = append(ip.args, Int(i)); return ip }
-func (ip *ipolate) Ints(i ...int) *ipolate         { ip.args = append(ip.args, Ints(i)); return ip }
-func (ip *ipolate) Int64(i int64) *ipolate         { ip.args = append(ip.args, Int64(i)); return ip }
-func (ip *ipolate) Int64s(i ...int64) *ipolate     { ip.args = append(ip.args, Int64s(i)); return ip }
-func (ip *ipolate) Uint64(i uint64) *ipolate       { ip.args = append(ip.args, Uint64(i)); return ip }
-func (ip *ipolate) Float64(f float64) *ipolate     { ip.args = append(ip.args, Float64(f)); return ip }
-func (ip *ipolate) Float64s(f ...float64) *ipolate { ip.args = append(ip.args, Float64s(f)); return ip }
-func (ip *ipolate) Str(s string) *ipolate          { ip.args = append(ip.args, String(s)); return ip }
-func (ip *ipolate) Strs(s ...string) *ipolate      { ip.args = append(ip.args, Strings(s)); return ip }
-func (ip *ipolate) Bool(b bool) *ipolate           { ip.args = append(ip.args, Bool(b)); return ip }
-func (ip *ipolate) Bools(b ...bool) *ipolate       { ip.args = append(ip.args, Bools(b)); return ip }
-func (ip *ipolate) Bytes(p []byte) *ipolate        { ip.args = append(ip.args, Bytes(p)); return ip }
-func (ip *ipolate) BytesSlice(p ...[]byte) *ipolate {
-	ip.args = append(ip.args, BytesSlice(p))
+func (ip *iPolate) Reset() *iPolate              { ip.args = ip.args[:0]; return ip }
+func (ip *iPolate) Null() *iPolate               { ip.args = ip.args.Null(); return ip }
+func (ip *iPolate) Int(i int) *iPolate           { ip.args = ip.args.Int(i); return ip }
+func (ip *iPolate) Ints(i ...int) *iPolate       { ip.args = ip.args.Ints(i...); return ip }
+func (ip *iPolate) Int64(i int64) *iPolate       { ip.args = ip.args.Int64(i); return ip }
+func (ip *iPolate) Int64s(i ...int64) *iPolate   { ip.args = ip.args.Int64s(i...); return ip }
+func (ip *iPolate) Uint64(i uint64) *iPolate     { ip.args = ip.args.Uint64(i); return ip }
+func (ip *iPolate) Uint64s(i ...uint64) *iPolate { ip.args = ip.args.Uint64s(i...); return ip }
+func (ip *iPolate) Float64(f float64) *iPolate   { ip.args = ip.args.Float64(f); return ip }
+func (ip *iPolate) Float64s(f ...float64) *iPolate {
+	ip.args = ip.args.Float64s(f...)
 	return ip
 }
-func (ip *ipolate) Time(t time.Time) *ipolate     { ip.args = append(ip.args, MakeTime(t)); return ip }
-func (ip *ipolate) Times(t ...time.Time) *ipolate { ip.args = append(ip.args, Times(t)); return ip }
+func (ip *iPolate) Str(s string) *iPolate     { ip.args = ip.args.Str(s); return ip }
+func (ip *iPolate) Strs(s ...string) *iPolate { ip.args = ip.args.Strs(s...); return ip }
+func (ip *iPolate) Bool(b bool) *iPolate      { ip.args = ip.args.Bool(b); return ip }
+func (ip *iPolate) Bools(b ...bool) *iPolate  { ip.args = ip.args.Bools(b...); return ip }
 
-func (ip *ipolate) NullString(nv ...NullString) *ipolate {
-	if len(nv) == 1 {
-		ip.args = append(ip.args, nv[0])
-	} else {
-		ip.args = append(ip.args, NullStrings(nv))
-	}
+// Bytes uses a byte slice for comparison. Providing a nil value returns a
+// NULL type. Detects between valid UTF-8 strings and binary data. Later gets
+// hex encoded.
+func (ip *iPolate) Bytes(p []byte) *iPolate { ip.args = ip.args.Bytes(p); return ip }
+func (ip *iPolate) BytesSlice(p ...[]byte) *iPolate {
+	ip.args = ip.args.BytesSlice(p...)
 	return ip
 }
-
-func (ip *ipolate) NullFloat64(nv ...NullFloat64) *ipolate {
-	if len(nv) == 1 {
-		ip.args = append(ip.args, nv[0])
-	} else {
-		ip.args = append(ip.args, NullFloat64s(nv))
-	}
+func (ip *iPolate) Time(t time.Time) *iPolate     { ip.args = ip.args.Time(t); return ip }
+func (ip *iPolate) Times(t ...time.Time) *iPolate { ip.args = ip.args.Times(t...); return ip }
+func (ip *iPolate) NullString(nv ...NullString) *iPolate {
+	ip.args = ip.args.NullString(nv...)
 	return ip
 }
-
-func (ip *ipolate) NullInt64(nv ...NullInt64) *ipolate {
-	if len(nv) == 1 {
-		ip.args = append(ip.args, nv[0])
-	} else {
-		ip.args = append(ip.args, NullInt64s(nv))
-	}
+func (ip *iPolate) NullFloat64(nv ...NullFloat64) *iPolate {
+	ip.args = ip.args.NullFloat64(nv...)
 	return ip
 }
-
-func (ip *ipolate) NullBool(nv NullBool) *ipolate {
-	ip.args = append(ip.args, nv)
+func (ip *iPolate) NullInt64(nv ...NullInt64) *iPolate {
+	ip.args = ip.args.NullInt64(nv...)
 	return ip
 }
-func (ip *ipolate) NullTime(nv ...NullTime) *ipolate {
-	if len(nv) == 1 {
-		ip.args = append(ip.args, nv[0])
-	} else {
-		ip.args = append(ip.args, NullTimes(nv))
-	}
+func (ip *iPolate) NullBool(nv ...NullBool) *iPolate {
+	ip.args = ip.args.NullBool(nv...)
 	return ip
 }
-func (ip *ipolate) Value(dv ...driver.Valuer) *ipolate {
-	ip.args = append(ip.args, DriverValues(dv))
+func (ip *iPolate) NullTime(nv ...NullTime) *iPolate {
+	ip.args = ip.args.NullTime(nv...)
 	return ip
 }
-func (ip *ipolate) Arguments(arg ...Argument) *ipolate {
-	// todo maybe make this method Arguments private
-	ip.args = append(ip.args, arg...)
+func (ip *iPolate) DriverValue(dvs ...driver.Valuer) *iPolate {
+	ip.args = ip.args.DriverValue(dvs...)
+	return ip
+}
+func (ip *iPolate) ArgUnions(args ArgUnions) *iPolate {
+	ip.args = args
 	return ip
 }
 
 // Named uses the NamedArg for string replacement. Replaces the names with place
 // holder character. TODO(CyS) Slices in NamedArg.Value are not yet supported.
-func (ip *ipolate) Named(nArgs ...sql.NamedArg) *ipolate {
+func (ip *iPolate) Named(nArgs ...sql.NamedArg) *iPolate {
 	// for now this unoptimized version with a stupid string replacement and
 	// converting between bytes and string.
 	sqlStr := string(ip.queryCache)
@@ -244,7 +204,7 @@ var bTextPlaceholder = []byte("?")
 
 // writeInterpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
-func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
+func writeInterpolate(buf *bytes.Buffer, sql []byte, args ArgUnions) error {
 
 	// TODO(CyS) due to the type `interpolate`, we can optimize the parsing in
 	// the second run with the same SQL slice but different arguments. We know
@@ -252,13 +212,13 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 	// to be done.
 
 	phCount := bytes.Count(sql, bTextPlaceholder)
-	argCount := args.len()
+	argCount := args.Len()
 
 	// Repeats the place holders, e.g. IN (?) will become IN (?,?,?)
 	if phCount < argCount {
 		rBuf := bufferpool.Get()
 		defer bufferpool.Put(rBuf)
-		if err := repeatPlaceHolders(rBuf, sql, args...); err != nil {
+		if err := repeatPlaceHolders(rBuf, sql, args); err != nil {
 			return errors.WithStack(err)
 		}
 		sql = rBuf.Bytes()
@@ -270,7 +230,7 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 	argLength := 0
 	if len(args) > 0 {
 		argLength = 1
-		if args[0] != nil {
+		if args[0].field > 0 {
 			argLength = args[0].len()
 		}
 	}
@@ -280,21 +240,21 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 		pos += w
 
 		switch {
-		case r == '?':
+		case r == placeHolderRune:
 			if phCounter < argLength-1 {
 				phCounter++
 			} else {
 				phCounter = 0 // next argument set starts
 				argIndex++
 				if argIndex >= len(args) {
-					return errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d but argument count was %d", argIndex, len(args)-1)
+					return errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d is greater than argument count %d", argIndex, len(args)-1)
 				}
 				argLength = 1
-				if args[argIndex] != nil {
+				if args[argIndex].field > 0 {
 					argLength = args[argIndex].len()
 				}
 			}
-			if args[argIndex] == nil {
+			if args[argIndex].field == 0 {
 				buf.WriteString("NULL")
 			} else if err := args[argIndex].writeTo(buf, phCounter); err != nil {
 				return errors.WithStack(err)
@@ -324,7 +284,7 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 	}
 
 	if phTotals != argCount {
-		return errors.NewNotValidf("[dbr] Arguments are imbalanced. Placeholders: %d Current argument count: %d or %d", phTotals, argCount, len(args))
+		return errors.NewNotValidf("[dbr] args are imbalanced. Placeholders: %d Current argument count: %d or %d", phTotals, argCount, len(args))
 	}
 	return nil
 }

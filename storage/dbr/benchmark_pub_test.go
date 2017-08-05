@@ -249,8 +249,8 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 // BenchmarkSelect_SQLCase-4   	  500000	      3690 ns/op	    2849 B/op	      24 allocs/op
 // BenchmarkSelect_SQLCase-4   	  300000	      3784 ns/op	    2433 B/op	      26 allocs/op
 func BenchmarkSelect_SQLCase(b *testing.B) {
-	start := dbr.MakeTime(time.Unix(1257894000, 0))
-	end := dbr.MakeTime(time.Unix(1257980400, 0))
+	start := time.Unix(1257894000, 0)
+	end := time.Unix(1257980400, 0)
 	pid := []int{4711, 815, 42}
 
 	var haveSQL string
@@ -266,7 +266,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 					"date_start > ? AND date_end > ?", "`upcoming`",
 				).Alias("is_on_sale"),
 			).
-			AddArguments(start, end, start, end).
+			AddArgUnions(dbr.MakeArgUnions(4).Times(start, end, start, end)).
 			From("catalog_promotions").
 			Where(
 				dbr.Column("promotion_id").
@@ -358,7 +358,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, args, err := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
-				dbr.Int64(1), dbr.Int64(2), dbr.Bool(true),
+				dbr.MakeArgUnions(3).Int64(1).Int64(2).Bool(true),
 			).ToSQL()
 			if err != nil {
 				b.Fatal(err)
@@ -368,7 +368,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	sqlObj := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
-		dbr.Int64(1), dbr.Int64(2), dbr.Bool(true),
+		dbr.MakeArgUnions(3).Int64(1).Int64(2).Bool(true),
 	).Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCache = false
@@ -401,15 +401,15 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendArguments(stmtType int, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
+func (sr someRecord) AppendArguments(stmtType int, args dbr.ArgUnions, condition []string) (dbr.ArgUnions, error) {
 	for _, c := range condition {
 		switch c {
 		case "something_id":
-			args = append(args, dbr.Int(sr.SomethingID))
+			args = args.Int(sr.SomethingID)
 		case "user_id":
-			args = append(args, dbr.Int64(sr.UserID))
+			args = args.Int64(sr.UserID)
 		case "other":
-			args = append(args, dbr.Bool(sr.Other))
+			args = args.Bool(sr.Other)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
@@ -438,36 +438,31 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 func BenchmarkRepeat(b *testing.B) {
 
 	b.Run("multi", func(b *testing.B) {
-		sl := dbr.Strings{"a", "b", "c", "d", "e"}
+		args := dbr.MakeArgUnions(3).Ints(5, 7, 9, 11).Strs("a", "b", "c", "d", "e").Int(22)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)",
-				dbr.Ints{5, 7, 9, 11}, sl, dbr.Int(22))
+			s, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?) AND status IN (?)", args)
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if s != want {
 				b.Fatalf("\nHave: %q\nWant: %q", s, want)
-			}
-			if len(args) == 0 {
-				b.Fatal("Args cannot be empty")
 			}
 		}
 	})
 
 	b.Run("single", func(b *testing.B) {
+		args := dbr.MakeArgUnions(1).Ints(9, 8, 7, 6)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
+		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			s, args, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?)", dbr.Ints{9, 8, 7, 6})
+			s, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?)", args)
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 			if s != want {
 				b.Fatalf("\nHave: %q\nWant: %q", s, want)
-			}
-			if len(args) == 0 {
-				b.Fatal("Args cannot be empty")
 			}
 		}
 	})

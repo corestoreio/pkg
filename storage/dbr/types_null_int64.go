@@ -15,7 +15,6 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql"
 	"strconv"
 
@@ -30,23 +29,6 @@ import (
 type NullInt64 struct {
 	sql.NullInt64
 }
-
-func (a NullInt64) toIFace(args []interface{}) []interface{} {
-	if a.NullInt64.Valid {
-		return append(args, a.NullInt64.Int64)
-	}
-	return append(args, nil)
-}
-
-func (a NullInt64) writeTo(w *bytes.Buffer, _ int) error {
-	if a.NullInt64.Valid {
-		return writeInt64(w, a.NullInt64.Int64)
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullInt64) len() int { return 1 }
 
 // MakeNullInt64 creates a new NullInt64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullInt64
@@ -162,31 +144,4 @@ func (a NullInt64) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return a.Int64, nil
-}
-
-// NullInt64s adds a nullable int64 or a slice of nullable int64s to the
-// argument list. Providing no arguments returns a NULL type.
-type NullInt64s []NullInt64
-
-func (a NullInt64s) toIFace(args []interface{}) []interface{} {
-	for _, s := range a {
-		if s.Valid {
-			args = append(args, s.Int64)
-		} else {
-			args = append(args, nil)
-		}
-	}
-	return args
-}
-
-func (a NullInt64s) writeTo(w *bytes.Buffer, pos int) error {
-	if s := a[pos]; s.Valid {
-		return writeInt64(w, s.Int64)
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullInt64s) len() int {
-	return len(a)
 }

@@ -149,7 +149,7 @@ func (b *Delete) Limit(limit uint64) *Delete {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+// prepared statements. ToSQLs second argument `args` will then be nil.
 func (b *Delete) Interpolate() *Delete {
 	b.IsInterpolate = true
 	return b
@@ -165,7 +165,7 @@ func (b *Delete) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
+func (b *Delete) readBuildCache() (sql []byte, _ ArgUnions, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -219,13 +219,13 @@ func (b *Delete) toSQL(buf *bytes.Buffer) error {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
+func (b *Delete) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 	if cap(args) == 0 {
-		args = make(Arguments, 0, len(b.Wheres))
+		args = make(ArgUnions, 0, len(b.Wheres))
 	}
 	args, err = b.Table.appendArgs(args)
 	if err != nil {

@@ -98,7 +98,7 @@ func (a identifier) String() string {
 func (a identifier) QuoteAs() string { return Quoter.NameAlias(a.Name, a.Aliased) }
 
 // appendArgs assembles the arguments and appends them to `args`
-func (a identifier) appendArgs(args Arguments) (_ Arguments, err error) {
+func (a identifier) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
 	if a.DerivedTable != nil {
 		args, err = a.DerivedTable.appendArgs(args)
 	}
@@ -119,7 +119,7 @@ func (a identifier) WriteQuoted(w *bytes.Buffer) error {
 	}
 
 	if a.Expression.isset() {
-		a.Expression.write(w)
+		a.Expression.write(w, nil)
 	} else {
 		Quoter.WriteIdentifier(w, a.Name)
 	}
@@ -152,7 +152,7 @@ func (as identifiers) WriteQuoted(w *bytes.Buffer) error {
 	return nil
 }
 
-func (as identifiers) appendArgs(args Arguments) (Arguments, error) {
+func (as identifiers) appendArgs(args ArgUnions) (ArgUnions, error) {
 	for _, a := range as {
 		var err error
 		args, err = a.appendArgs(args)
@@ -242,7 +242,7 @@ func (mq MysqlQuoter) writeQualifierName(w *bytes.Buffer, q, n string) {
 // writeExprAlias appends to the provided `expression` the quote alias name, e.g.:
 // 		writeExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
 func (mq MysqlQuoter) writeExprAlias(w *bytes.Buffer, e expressions, alias string) {
-	e.write(w)
+	e.write(w, nil)
 	if alias != "" {
 		w.WriteString(" AS ")
 		mq.quote(w, alias)

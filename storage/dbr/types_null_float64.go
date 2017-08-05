@@ -15,7 +15,6 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql"
 	"strconv"
 
@@ -28,23 +27,6 @@ import (
 type NullFloat64 struct {
 	sql.NullFloat64
 }
-
-func (a NullFloat64) toIFace(args []interface{}) []interface{} {
-	if a.NullFloat64.Valid {
-		return append(args, a.NullFloat64.Float64)
-	}
-	return append(args, nil)
-}
-
-func (a NullFloat64) writeTo(w *bytes.Buffer, _ int) error {
-	if a.NullFloat64.Valid {
-		return writeFloat64(w, a.NullFloat64.Float64)
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullFloat64) len() int { return 1 }
 
 // MakeNullFloat64 creates a new NullFloat64. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullFloat64
@@ -152,31 +134,4 @@ func (a NullFloat64) Ptr() *float64 {
 // A non-null NullFloat64 with a 0 value will not be considered zero.
 func (a NullFloat64) IsZero() bool {
 	return !a.Valid
-}
-
-// NullFloat64s adds a nullable float64 or a slice of nullable float64s to the
-// argument list. Providing no arguments returns a NULL type.
-type NullFloat64s []NullFloat64
-
-func (a NullFloat64s) toIFace(args []interface{}) []interface{} {
-	for _, s := range a {
-		if s.Valid {
-			args = append(args, s.Float64)
-		} else {
-			args = append(args, nil)
-		}
-	}
-	return args
-}
-
-func (a NullFloat64s) writeTo(w *bytes.Buffer, pos int) error {
-	if s := a[pos]; s.Valid {
-		return writeFloat64(w, s.Float64)
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullFloat64s) len() int {
-	return len(a)
 }

@@ -33,30 +33,24 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (pe productEntity) AppendArguments(stmtType int, args dbr.ArgUnions, columns []string) (dbr.ArgUnions, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":
-			args = append(args, dbr.Int64(pe.AttributeSetID))
+			args = args.Int64(pe.AttributeSetID)
 		case "type_id":
-			args = append(args, dbr.String(pe.TypeID))
+			args = args.Str(pe.TypeID)
 		case "sku":
-			args = append(args, pe.SKU)
+			args = args.NullString(pe.SKU)
 		case "has_options":
-			args = append(args, dbr.Bool(pe.HasOptions))
+			args = args.Bool(pe.HasOptions)
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
 	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
 		// This case gets executed when an INSERT statement doesn't contain any columns.
-		args = append(args,
-			dbr.Int64(pe.EntityID),
-			dbr.Int64(pe.AttributeSetID),
-			dbr.String(pe.TypeID),
-			pe.SKU,
-			dbr.Bool(pe.HasOptions),
-		)
+		args = args.Int64(pe.EntityID).Int64(pe.AttributeSetID).Str(pe.TypeID).NullString(pe.SKU).Bool(pe.HasOptions)
 	}
 	return args, nil
 }

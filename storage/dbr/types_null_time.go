@@ -15,30 +15,11 @@
 package dbr
 
 import (
-	"bytes"
 	"fmt"
 	"time"
 
 	"github.com/corestoreio/errors"
 )
-
-func (a NullTime) toIFace(args []interface{}) []interface{} {
-	if a.Valid {
-		return append(args, a.Time)
-	}
-	return append(args, nil)
-}
-
-func (a NullTime) writeTo(w *bytes.Buffer, _ int) error {
-	if a.Valid {
-		dialect.EscapeTime(w, a.Time)
-		return nil
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullTime) len() int { return 1 }
 
 // MakeNullTime creates a new NullTime. Setting the second optional argument to
 // false, the string will not be valid anymore, hence NULL. NullTime implements
@@ -136,32 +117,4 @@ func (a NullTime) Ptr() *time.Time {
 		return nil
 	}
 	return &a.Time
-}
-
-// NullTimes adds a nullable Time or a slice of nullable Timess to the
-// argument list. Providing no arguments returns a NULL type.
-type NullTimes []NullTime
-
-func (a NullTimes) toIFace(args []interface{}) []interface{} {
-	for _, s := range a {
-		if s.Valid {
-			args = append(args, s.Time)
-		} else {
-			args = append(args, nil)
-		}
-	}
-	return args
-}
-
-func (a NullTimes) writeTo(w *bytes.Buffer, pos int) error {
-	if s := a[pos]; s.Valid {
-		dialect.EscapeTime(w, s.Time)
-		return nil
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullTimes) len() int {
-	return len(a)
 }

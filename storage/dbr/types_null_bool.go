@@ -15,7 +15,6 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql"
 
 	"github.com/corestoreio/errors"
@@ -27,24 +26,6 @@ import (
 type NullBool struct {
 	sql.NullBool
 }
-
-func (a NullBool) toIFace(args []interface{}) []interface{} {
-	if a.NullBool.Valid {
-		return append(args, a.NullBool.Bool)
-	}
-	return append(args, nil)
-}
-
-func (a NullBool) writeTo(w *bytes.Buffer, _ int) error {
-	if a.NullBool.Valid {
-		dialect.EscapeBool(w, a.Bool)
-		return nil
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullBool) len() int { return 1 }
 
 // MakeNullBool creates a new NullBool. Implements interface Argument.
 func MakeNullBool(b bool, valid ...bool) NullBool {

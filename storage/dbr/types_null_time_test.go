@@ -15,13 +15,10 @@
 package dbr
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -192,60 +189,4 @@ func assertNullTime(t *testing.T, ti NullTime, from string) {
 	if ti.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
-}
-
-func TestNullTime_Argument(t *testing.T) {
-	t.Parallel()
-
-	nss := []NullTime{
-		{
-			Time: timeValue,
-		},
-		{
-			Time:  timeValue,
-			Valid: true,
-		},
-	}
-	var buf bytes.Buffer
-	args := make([]interface{}, 0, 2)
-	for i, ns := range nss {
-		args = ns.toIFace(args)
-		ns.writeTo(&buf, i)
-	}
-	assert.Exactly(t, []interface{}{interface{}(nil), timeValue}, args)
-	assert.Exactly(t, "NULL'1977-05-25 20:21:21'", buf.String())
-}
-
-func TestArgNullTime(t *testing.T) {
-	t.Parallel()
-
-	args := NullTimes{MakeNullTime(timeValue), MakeNullTime(timeValue, false), MakeNullTime(timeValue)}
-	assert.Exactly(t, 3, args.len())
-
-	t.Run("writeTo", func(t *testing.T) {
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{timeValue, interface{}(nil), timeValue}, argIF)
-		assert.Exactly(t, "'1977-05-25 20:21:21'NULL'1977-05-25 20:21:21'", buf.String())
-	})
-
-	t.Run("single arg", func(t *testing.T) {
-		args = NullTimes{MakeNullTime(timeValue)}
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{timeValue}, argIF)
-		assert.Exactly(t, "'1977-05-25 20:21:21'", buf.String())
-	})
 }

@@ -78,7 +78,7 @@ func writePlaceHolderList(w *bytes.Buffer, valLen int) {
 		if j > 0 {
 			w.WriteByte(',')
 		}
-		w.WriteByte('?')
+		w.WriteByte(placeHolderRune)
 	}
 	w.WriteByte(')')
 }
@@ -105,22 +105,22 @@ func (o Op) write(w *bytes.Buffer, argLen int) (err error) {
 	case Like:
 		_, err = w.WriteString(" LIKE ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case NotLike:
 		_, err = w.WriteString(" NOT LIKE ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case Regexp:
 		_, err = w.WriteString(" REGEXP ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case NotRegexp:
 		_, err = w.WriteString(" NOT REGEXP ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case Between:
 		_, err = w.WriteString(" BETWEEN ? AND ?")
@@ -138,7 +138,7 @@ func (o Op) write(w *bytes.Buffer, argLen int) (err error) {
 	case Xor:
 		_, err = w.WriteString(" XOR ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case Exists:
 		_, err = w.WriteString(" EXISTS ")
@@ -147,37 +147,37 @@ func (o Op) write(w *bytes.Buffer, argLen int) (err error) {
 	case NotEqual:
 		_, err = w.WriteString(" != ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case Less:
 		_, err = w.WriteString(" < ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case Greater:
 		_, err = w.WriteString(" > ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case LessOrEqual:
 		_, err = w.WriteString(" <= ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case GreaterOrEqual:
 		_, err = w.WriteString(" >= ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	case SpaceShip:
 		_, err = w.WriteString(" <=> ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	default: // and case Equal
 		_, err = w.WriteString(" = ")
 		if hasArgs {
-			err = w.WriteByte('?')
+			err = w.WriteByte(placeHolderRune)
 		}
 	}
 	return
@@ -207,11 +207,9 @@ type expressions []string
 
 // write writes the strings into `w` and correctly handles the place holder
 // repetition depending on the number of arguments.
-func (e expressions) write(w *bytes.Buffer, arg ...Argument) (phCount int, err error) {
+func (e expressions) write(w *bytes.Buffer, args ArgUnions) (phCount int, err error) {
 	eBuf := bufferpool.Get()
 	defer bufferpool.Put(eBuf)
-
-	args := Arguments(arg)
 
 	for _, expr := range e {
 		phCount += strings.Count(expr, placeHolderStr)
@@ -219,8 +217,8 @@ func (e expressions) write(w *bytes.Buffer, arg ...Argument) (phCount int, err e
 			return phCount, errors.Wrapf(err, "[dbr] expression.write: failed to write %q", expr)
 		}
 	}
-	if args != nil && phCount != args.len() {
-		if err = repeatPlaceHolders(w, eBuf.Bytes(), args...); err != nil {
+	if args != nil && phCount != args.Len() {
+		if err = repeatPlaceHolders(w, eBuf.Bytes(), args); err != nil {
 			return phCount, errors.WithStack(err)
 		}
 	} else {
@@ -243,7 +241,7 @@ func (e expressions) Alias(a string) expressions {
 func (e expressions) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	e.write(buf)
+	e.write(buf, nil)
 	return buf.String()
 }
 
@@ -265,8 +263,8 @@ type Condition struct {
 		// into the buffer when the SQL string gets build. Usage in SET and ON
 		// DUPLICATE KEY.
 		Expression expressions
-		Argument   Argument  // Either this or the slice is set.
-		Arguments  Arguments // Only set in case of an expression.
+		Argument   argUnion  // Either this or the slice is set.
+		ArgUnions  ArgUnions // Only set in case of an expression.
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -502,7 +500,7 @@ const cahensConstant = -64341
 // PlaceHolder sets the database specific place holder character. Mostly used in
 // prepared statements and for interpolation.
 func (c *Condition) PlaceHolder() *Condition {
-	c.Right.Argument = placeHolderOp(cahensConstant)
+	c.Right.Argument.field = argFieldPlaceHolder
 	c.IsPlaceHolder = true
 	return c
 }
@@ -526,98 +524,119 @@ func (c *Condition) Expression(exp ...string) *Condition {
 
 func (c *Condition) Int(i int) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Int(i))
+		c.Right.ArgUnions = c.Right.ArgUnions.Int64(int64(i))
 		return c
 	}
-	c.Right.Argument = Int(i)
+	c.Right.Argument.field = argFieldInt
+	c.Right.Argument.int = i
 	return c
 }
 
 func (c *Condition) Ints(i ...int) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Ints(i))
+		c.Right.ArgUnions = c.Right.ArgUnions.Ints(i...)
 		return c
 	}
-	c.Right.Argument = Ints(i)
+	c.Right.Argument.field = argFieldInts
+	c.Right.Argument.ints = i
 	return c
 }
 
 func (c *Condition) Int64(i int64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Int64(i))
+		c.Right.ArgUnions = c.Right.ArgUnions.Int64(i)
 		return c
 	}
-	c.Right.Argument = Int64(i)
+	c.Right.Argument.field = argFieldInt64
+	c.Right.Argument.int64 = i
 	return c
 }
 
 func (c *Condition) Int64s(i ...int64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Int64s(i))
+		c.Right.ArgUnions = c.Right.ArgUnions.Int64s(i...)
 		return c
 	}
-	c.Right.Argument = Int64s(i)
+	c.Right.Argument.field = argFieldInt64s
+	c.Right.Argument.int64s = i
 	return c
 }
 
 func (c *Condition) Uint64(i uint64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Uint64(i))
+		c.Right.ArgUnions = c.Right.ArgUnions.Uint64(i)
 		return c
 	}
-	c.Right.Argument = Uint64(i)
+	c.Right.Argument.field = argFieldUint64
+	c.Right.Argument.uint64 = i
+	return c
+}
+
+func (c *Condition) Uint64s(i ...uint64) *Condition {
+	if c.isExpression() {
+		c.Right.ArgUnions = c.Right.ArgUnions.Uint64s(i...)
+		return c
+	}
+	c.Right.Argument.field = argFieldUint64s
+	c.Right.Argument.uint64s = i
 	return c
 }
 
 func (c *Condition) Float64(f float64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Float64(f))
+		c.Right.ArgUnions = c.Right.ArgUnions.Float64(f)
 		return c
 	}
-	c.Right.Argument = Float64(f)
+	c.Right.Argument.field = argFieldFloat64
+	c.Right.Argument.float64 = f
 	return c
 }
 func (c *Condition) Float64s(f ...float64) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Float64s(f))
+		c.Right.ArgUnions = c.Right.ArgUnions.Float64s(f...)
 		return c
 	}
-	c.Right.Argument = Float64s(f)
+	c.Right.Argument.field = argFieldFloat64s
+	c.Right.Argument.float64s = f
 	return c
 }
 func (c *Condition) String(s string) *Condition { // TODO rename to Str and Strs and use String() as fmt.Stringer
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, String(s))
+		c.Right.ArgUnions = c.Right.ArgUnions.Str(s)
 		return c
 	}
-	c.Right.Argument = String(s)
+	c.Right.Argument.field = argFieldString
+	c.Right.Argument.string = s
 	return c
 }
 
 func (c *Condition) Strings(s ...string) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Strings(s))
+		c.Right.ArgUnions = c.Right.ArgUnions.Strs(s...)
 		return c
 	}
-	c.Right.Argument = Strings(s)
+	c.Right.Argument.field = argFieldStrings
+	c.Right.Argument.strings = s
 	return c
 }
 
 func (c *Condition) Bool(b bool) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Bool(b))
+		c.Right.ArgUnions = c.Right.ArgUnions.Bool(b)
 		return c
 	}
-	c.Right.Argument = Bool(b)
+	c.Right.Argument.field = argFieldBool
+	c.Right.Argument.bool = b
 	return c
 }
 
 func (c *Condition) Bools(b ...bool) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Bools(b))
+		c.Right.ArgUnions = c.Right.ArgUnions.Bools(b...)
 		return c
 	}
-	c.Right.Argument = Bools(b)
+	c.Right.Argument.field = argFieldBools
+	c.Right.Argument.bools = b
 	return c
 }
 
@@ -626,120 +645,106 @@ func (c *Condition) Bools(b ...bool) *Condition {
 // hex encoded.
 func (c *Condition) Bytes(p []byte) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Bytes(p))
+		c.Right.ArgUnions = c.Right.ArgUnions.Bytes(p)
 		return c
 	}
-	c.Right.Argument = Bytes(p)
+	c.Right.Argument.field = argFieldByte
+	c.Right.Argument.bytes = p
 	return c
 }
 
 func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, BytesSlice(p))
+		c.Right.ArgUnions = c.Right.ArgUnions.BytesSlice(p...)
 		return c
 	}
-	c.Right.Argument = BytesSlice(p)
+	c.Right.Argument.field = argFieldBytes
+	c.Right.Argument.bytess = p
 	return c
 }
 
-// Time uses time.Time arguments for comparison.
 func (c *Condition) Time(t time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, MakeTime(t))
+		c.Right.ArgUnions = c.Right.ArgUnions.Time(t)
 		return c
 	}
-	c.Right.Argument = MakeTime(t)
+	c.Right.Argument.field = argFieldTime
+	c.Right.Argument.time = t
 	return c
 }
 
-// Times uses time.Time arguments for comparison.
 func (c *Condition) Times(t ...time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = append(c.Right.Arguments, Times(t))
+		c.Right.ArgUnions = c.Right.ArgUnions.Times(t...)
 		return c
 	}
-	c.Right.Argument = Times(t)
+	c.Right.Argument.field = argFieldTimes
+	c.Right.Argument.times = t
 	return c
 }
 
-// NullString uses nullable string arguments for comparison.
 func (c *Condition) NullString(nv ...NullString) *Condition {
-	switch {
-	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, NullStrings(nv))
-	case len(nv) == 1:
-		c.Right.Argument = nv[0]
-	default:
-		c.Right.Argument = NullStrings(nv)
+	if c.isExpression() {
+		c.Right.ArgUnions = c.Right.ArgUnions.NullString(nv...)
+		return c
 	}
+	c.Right.Argument.field = argFieldNullStrings
+	c.Right.Argument.nullStrings = nv
 	return c
 }
 
-// NullFloat64 uses nullable float64 arguments for comparison.
 func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
-	switch {
-	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, NullFloat64s(nv))
-	case len(nv) == 1:
-		c.Right.Argument = nv[0]
-	default:
-		c.Right.Argument = NullFloat64s(nv)
+	if c.isExpression() {
+		c.Right.ArgUnions = c.Right.ArgUnions.NullFloat64(nv...)
+		return c
 	}
+	c.Right.Argument.field = argFieldNullFloat64s
+	c.Right.Argument.nullFloat64s = nv
 	return c
 }
 
-// NullInt64 uses nullable int64 arguments for comparison.
 func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
-	switch {
-	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, NullInt64s(nv))
-	case len(nv) == 1:
-		c.Right.Argument = nv[0]
-	default:
-		c.Right.Argument = NullInt64s(nv)
+	if c.isExpression() {
+		c.Right.ArgUnions = c.Right.ArgUnions.NullInt64(nv...)
+		return c
 	}
+	c.Right.Argument.field = argFieldNullInt64s
+	c.Right.Argument.nullInt64s = nv
 	return c
 }
 
-// NullBool uses nullable bool arguments for comparison.
-func (c *Condition) NullBool(nv NullBool) *Condition {
-	switch {
-	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, nv)
-	default:
-		c.Right.Argument = nv
+func (c *Condition) NullBool(nv ...NullBool) *Condition {
+	if c.isExpression() {
+		c.Right.ArgUnions = c.Right.ArgUnions.NullBool(nv...)
+		return c
 	}
+	c.Right.Argument.field = argFieldNullBools
+	c.Right.Argument.nullBools = nv
 	return c
 }
 
-// NullTime uses nullable time arguments for comparison.
 func (c *Condition) NullTime(nv ...NullTime) *Condition {
-	switch {
-	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, NullTimes(nv))
-	case len(nv) == 1:
-		c.Right.Argument = nv[0]
-	default:
-		c.Right.Argument = NullTimes(nv)
+	if c.isExpression() {
+		c.Right.ArgUnions = c.Right.ArgUnions.NullTime(nv...)
+		return c
 	}
+	c.Right.Argument.field = argFieldNullTimes
+	c.Right.Argument.nullTimes = nv
 	return c
 }
 
 // Values onlny usable in case for ON DUPLCIATE KEY to generate a statement like:
 //		column=VALUES(column)
 func (c *Condition) Values() *Condition {
-	// noop just to lower the cognitive overload.
+	// noop just to lower the cognitive overload when reading the code where
+	// this function gets used.
 	return c
 }
 
-// DriverValue uses driver.Valuers for comparison.
+// DriverValue uses driver.Valuers for comparison. Named DriverValue to avoid
+// confusion with Values() function.
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
-	switch {
-	case c.isExpression():
-		c.Right.Arguments = append(c.Right.Arguments, DriverValues(dv))
-	default:
-		c.Right.Argument = DriverValues(dv)
-	}
+	c.Right.ArgUnions = c.Right.ArgUnions.DriverValue(dv...)
 	return c
 }
 
@@ -808,17 +813,17 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 		// Code is a bit duplicated but can be refactored later.
 		switch {
 		case cnd.LeftExpression.isset():
-			phCount, err := cnd.LeftExpression.write(w, cnd.Right.Arguments...)
+			phCount, err := cnd.LeftExpression.write(w, cnd.Right.ArgUnions)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (len(cnd.Right.Arguments) == 1 || cnd.Right.Argument != nil) && cnd.Operator > 0 {
+			if phCount == 0 && (len(cnd.Right.ArgUnions) == 1 || cnd.Right.Argument.field > 0) && cnd.Operator > 0 {
 				eArg := cnd.Right.Argument
-				if eArg == nil {
-					eArg = cnd.Right.Arguments[0]
+				if eArg.field == 0 {
+					eArg = cnd.Right.ArgUnions[0]
 				}
 				cnd.Operator.write(w, eArg.len())
 			}
@@ -828,7 +833,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 		case cnd.Right.Expression.isset():
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cnd.Operator.write(w, 0) // must be zero because place holder get handled via repeatPlaceHolders function
-			cnd.Right.Expression.write(w, cnd.Right.Arguments...)
+			cnd.Right.Expression.write(w, cnd.Right.ArgUnions)
 
 		case cnd.Right.Sub != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
@@ -839,7 +844,8 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			}
 			w.WriteByte(')')
 
-		case cnd.Right.Argument != nil && cnd.Right.Arguments == nil:
+			// One Argument
+		case cnd.Right.Argument.field > 0 && cnd.Right.ArgUnions == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			al := cnd.Right.Argument.len()
 			if cnd.IsPlaceHolder {
@@ -850,7 +856,20 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			}
 			cnd.Operator.write(w, al)
 
-		case cnd.Right.Argument == nil && cnd.Right.Arguments == nil:
+		case cnd.Right.Argument.field == 0 && cnd.Right.ArgUnions != nil:
+			Quoter.WriteIdentifier(w, cnd.Left)
+			al := cnd.Right.ArgUnions.Len()
+
+			if cnd.IsPlaceHolder {
+				al = 1
+			}
+			if al > 1 && cnd.Operator == 0 { // no operator but slice applied, so creating an IN query.
+				cnd.Operator = In
+			}
+			cnd.Operator.write(w, al)
+
+			// No Argument at all
+		case cnd.Right.Argument.field == 0 && cnd.Right.ArgUnions == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator
 			if cOp == 0 {
@@ -877,7 +896,7 @@ const (
 )
 
 // conditionType enum of: see constants appendArgs
-func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments, pendingArgPos []int, err error) {
+func (cs Conditions) appendArgs(args ArgUnions, conditionType byte) (_ ArgUnions, pendingArgPos []int, err error) {
 	if len(cs) == 0 {
 		return args, pendingArgPos, nil
 	}
@@ -913,9 +932,10 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 			// later swap the positions.
 			pendingArgPos = append(pendingArgPos, pendingArgPosCount)
 
-		case cnd.Right.Argument != nil:
-			// a column only supports one value.
+		case cnd.Right.Argument.field > 0:
 			addArg = cnd.Operator.hasArgs(cnd.Right.Argument.len())
+		case cnd.Right.ArgUnions != nil:
+			addArg = cnd.Operator.hasArgs(cnd.Right.ArgUnions.Len())
 		case cnd.Right.Sub != nil:
 			args, err = cnd.Right.Sub.appendArgs(args)
 			if err != nil {
@@ -924,10 +944,10 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 		}
 
 		if addArg {
-			if cnd.Right.Argument != nil {
+			if cnd.Right.Argument.field > 0 {
 				args = append(args, cnd.Right.Argument)
 			}
-			args = append(args, cnd.Right.Arguments...)
+			args = append(args, cnd.Right.ArgUnions...)
 		}
 		pendingArgPosCount++
 		i++
@@ -945,7 +965,7 @@ func (cs Conditions) writeSetClauses(w *bytes.Buffer) error {
 
 		switch {
 		case cnd.Right.Expression.isset(): // maybe that case is superfluous
-			cnd.Right.Expression.write(w)
+			cnd.Right.Expression.write(w, nil)
 		case cnd.Right.Sub != nil:
 			w.WriteByte('(')
 			if err := cnd.Right.Sub.toSQL(w); err != nil {
@@ -953,7 +973,7 @@ func (cs Conditions) writeSetClauses(w *bytes.Buffer) error {
 			}
 			w.WriteByte(')')
 		default:
-			w.WriteByte('?')
+			w.WriteByte(placeHolderRune)
 		}
 	}
 	return nil
@@ -996,23 +1016,23 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 
 		switch {
 		case cnd.Right.Expression.isset(): // maybe that case is superfluous
-			cnd.Right.Expression.write(w)
+			cnd.Right.Expression.write(w, nil)
 		//case cnd.Right.Sub != nil:
 		//	w.WriteByte('(')
 		//	if err := cnd.Right.Sub.toSQL(w); err != nil {
 		//		return errors.WithStack(err)
 		//	}
 		//	w.WriteByte(')')
-		case cnd.Right.Argument == nil:
+		case cnd.Right.Argument.field == 0:
 			writeValues(w, cnd.Left)
 		default:
-			w.WriteByte('?')
+			w.WriteByte(placeHolderRune)
 		}
 	}
 	return nil
 }
 
-func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args Arguments, stmtType int, columns []string) (_ Arguments, err error) {
+func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args ArgUnions, stmtType int, columns []string) (_ ArgUnions, err error) {
 	if rec == nil {
 		return args, nil
 	}

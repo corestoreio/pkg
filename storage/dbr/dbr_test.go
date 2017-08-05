@@ -106,15 +106,15 @@ func (p *dbrPerson) RowScan(r *sql.Rows) error {
 	return assignDbrPerson(p, &p.convert)
 }
 
-func personAppendArguments(p *dbrPerson, args Arguments, columns []string) (_ Arguments, err error) {
+func personAppendArguments(p *dbrPerson, args ArgUnions, columns []string) (_ ArgUnions, err error) {
 	for _, c := range columns {
 		switch c {
 		case "id", "dp.id":
-			args = append(args, Int64(p.ID))
+			args = args.Uint64(p.ID)
 		case "name":
-			args = append(args, String(p.Name))
+			args = args.Str(p.Name)
 		case "email":
-			args = append(args, NullString(p.Email))
+			args = args.NullString(p.Email)
 			// case "key": don't add key, it triggers a test failure condition
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
@@ -123,7 +123,7 @@ func personAppendArguments(p *dbrPerson, args Arguments, columns []string) (_ Ar
 	return args, err
 }
 
-func (p *dbrPerson) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
+func (p *dbrPerson) AppendArguments(stmtType int, args ArgUnions, columns []string) (_ ArgUnions, err error) {
 	return personAppendArguments(p, args, columns)
 }
 
@@ -132,7 +132,7 @@ type dbrPersons struct {
 	Data    []*dbrPerson
 }
 
-func (ps *dbrPersons) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
+func (ps *dbrPersons) AppendArguments(stmtType int, args ArgUnions, columns []string) (_ ArgUnions, err error) {
 	for _, p := range ps.Data {
 		args, err = personAppendArguments(p, args, columns)
 		if err != nil {
@@ -170,36 +170,36 @@ func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
 	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
+func (p *nullTypedRecord) AppendArguments(stmtType int, args ArgUnions, columns []string) (ArgUnions, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":
-			args = append(args, Int64(p.ID))
+			args = args.Int64(p.ID)
 		case "string_val":
-			args = append(args, NullString(p.StringVal))
+			args = args.NullString(p.StringVal)
 		case "int64_val":
 			if p.Int64Val.Valid {
-				args = append(args, Int64(p.Int64Val.Int64))
+				args = args.Int64(p.Int64Val.Int64)
 			} else {
-				args = append(args, nil)
+				args = args.Null()
 			}
 		case "float64_val":
 			if p.Float64Val.Valid {
-				args = append(args, Float64(p.Float64Val.Float64))
+				args = args.Float64(p.Float64Val.Float64)
 			} else {
-				args = append(args, nil)
+				args = args.Null()
 			}
 		case "time_val":
 			if p.TimeVal.Valid {
-				args = append(args, MakeTime(p.TimeVal.Time))
+				args = args.Time(p.TimeVal.Time)
 			} else {
-				args = append(args, nil)
+				args = args.Null()
 			}
 		case "bool_val":
 			if p.BoolVal.Valid {
-				args = append(args, Bool(p.BoolVal.Bool))
+				args = args.Bool(p.BoolVal.Bool)
 			} else {
-				args = append(args, nil)
+				args = args.Null()
 			}
 		default:
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)

@@ -15,12 +15,8 @@
 package dbr
 
 import (
-	"bytes"
-	"database/sql"
 	"encoding/json"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -221,32 +217,4 @@ func assertNullBool(t *testing.T, b NullBool, from string) {
 	if b.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
-}
-
-func TestNullBool_Argument(t *testing.T) {
-	t.Parallel()
-
-	nss := []NullBool{
-		{
-			NullBool: sql.NullBool{
-				Bool: false,
-			},
-		},
-		{
-			NullBool: sql.NullBool{
-				Bool:  true,
-				Valid: true,
-			},
-		},
-	}
-	var buf bytes.Buffer
-	args := make([]interface{}, 0, 2)
-	for i, ns := range nss {
-		args = ns.toIFace(args)
-		ns.writeTo(&buf, i)
-
-		//assert.Exactly(t, 1, args[0].len(), "Length must be always one")
-	}
-	assert.Exactly(t, []interface{}{interface{}(nil), true}, args)
-	assert.Exactly(t, "NULL1", buf.String())
 }

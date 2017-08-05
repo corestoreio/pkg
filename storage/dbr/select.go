@@ -98,7 +98,7 @@ func (c *Connection) Select(columns ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments
-func (c *Connection) SelectBySQL(sql string, args ...Argument) *Select {
+func (c *Connection) SelectBySQL(sql string, args ArgUnions) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
 			Log:          c.Log,
@@ -124,7 +124,7 @@ func (tx *Tx) Select(columns ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySQL(sql string, args ...Argument) *Select {
+func (tx *Tx) SelectBySQL(sql string, args ArgUnions) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
 			Log:          tx.Logger,
@@ -280,7 +280,7 @@ func (b *Select) SetRecord(rec ArgumentsAppender) *Select {
 // AddArguments adds more arguments to the Argument field of the Select type.
 // You must call this function directly after you have used e.g.
 // AddColumnsExprAlias with place holders.
-func (b *Select) AddArguments(args ...Argument) *Select {
+func (b *Select) AddArgUnions(args ArgUnions) *Select {
 	b.RawArguments = append(b.RawArguments, args...)
 	return b
 }
@@ -388,7 +388,7 @@ func (b *Select) Paginate(page, perPage uint64) *Select {
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `Arguments` will then be nil.
+// prepared statements. ToSQLs second argument `args` will then be nil.
 func (b *Select) Interpolate() *Select {
 	b.IsInterpolate = true
 	return b
@@ -434,7 +434,7 @@ func (b *Select) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
-// argumentCapacity returns the total possible guessed size of a new Arguments
+// argumentCapacity returns the total possible guessed size of a new args
 // slice. Use as the cap parameter in a call to `make`.
 func (b *Select) argumentCapacity() int {
 	return len(b.RawArguments) + (len(b.Joins)+len(b.Wheres))*2
@@ -444,7 +444,7 @@ func (b *Select) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
+func (b *Select) readBuildCache() (sql []byte, _ ArgUnions, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -568,15 +568,15 @@ func (b *Select) toSQL(w *bytes.Buffer) error {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
+func (b *Select) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 
-	// not sure if copying is necessary but leaves at least b.Arguments in pristine
+	// not sure if copying is necessary but leaves at least b.args in pristine
 	// condition
 	if cap(args) == 0 {
-		args = make(Arguments, 0, b.argumentCapacity())
+		args = make(ArgUnions, 0, b.argumentCapacity())
 	}
 	args = append(args, b.RawArguments...)
 

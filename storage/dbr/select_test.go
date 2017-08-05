@@ -37,8 +37,8 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	})
 	t.Run("no table with args", func(t *testing.T) {
 		sel := NewSelect().
-			AddColumnsExprAlias("?", "n").AddArguments(Int64(1)).
-			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArguments(String("a'bc"))
+			AddColumnsExprAlias("?", "n").AddArgUnions(MakeArgUnions(1).Int64(1)).
+			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArgUnions(MakeArgUnions(1).Str("a'bc"))
 		compareToSQL(t, sel, nil,
 			"SELECT ? AS `n`, CAST(? AS CHAR(20)) AS `str`",
 			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
@@ -469,20 +469,20 @@ func TestSelectBySQL(t *testing.T) {
 	s := createFakeSession()
 
 	compareToSQL(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = 1"),
+		s.SelectBySQL("SELECT * FROM users WHERE x = 1", nil),
 		nil,
 		"SELECT * FROM users WHERE x = 1",
 		"SELECT * FROM users WHERE x = 1",
 	)
 	compareToSQL(t,
-		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN (?)", Int(9), Ints{5, 6, 7}),
+		s.SelectBySQL("SELECT * FROM users WHERE x = ? AND y IN (?)", MakeArgUnions(2).Int(9).Ints(5, 6, 7)),
 		nil,
 		"SELECT * FROM users WHERE x = ? AND y IN (?)",
 		"SELECT * FROM users WHERE x = 9 AND y IN (5,6,7)",
 		int64(9), int64(5), int64(6), int64(7),
 	)
 	compareToSQL(t,
-		s.SelectBySQL("wat", Int(9), Ints{5, 6, 7}),
+		s.SelectBySQL("wat", MakeArgUnions(2).Int(9).Ints(5, 6, 7)),
 		nil,
 		"wat",
 		"",
@@ -560,7 +560,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 
 	t.Run("single slice item", func(t *testing.T) {
 		var people dbrPersons
-		count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", String("jonathan@uservoice.com")).Load(context.TODO(), &people)
+		count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", MakeArgUnions(1).Str("jonathan@uservoice.com")).Load(context.TODO(), &people)
 
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), count)

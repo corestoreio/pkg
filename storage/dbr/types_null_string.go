@@ -15,7 +15,6 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql"
 	"strings"
 	"unicode/utf8"
@@ -29,27 +28,6 @@ import (
 type NullString struct {
 	sql.NullString
 }
-
-func (a NullString) toIFace(args []interface{}) []interface{} {
-	if a.NullString.Valid {
-		return append(args, a.NullString.String)
-	}
-	return append(args, nil)
-}
-
-func (a NullString) writeTo(w *bytes.Buffer, _ int) error {
-	if a.NullString.Valid {
-		if !utf8.ValidString(a.NullString.String) {
-			return errors.NewNotValidf("[dbr] Argument.WriteTo: StringNull is not UTF-8: %q", a.NullString.String)
-		}
-		dialect.EscapeString(w, a.NullString.String)
-	} else {
-		w.WriteString(sqlStrNull)
-	}
-	return nil
-}
-
-func (a NullString) len() int { return 1 }
 
 // MakeNullString creates a new NullString. Setting the second optional argument
 // to false, the string will not be valid anymore, hence NULL. NullString
@@ -159,34 +137,4 @@ func (a NullString) Ptr() *string {
 // IsZero returns true for null strings, for potential future omitempty support.
 func (a NullString) IsZero() bool {
 	return !a.Valid
-}
-
-// NullStrings contains multiple nullable strings.
-type NullStrings []NullString
-
-func (a NullStrings) toIFace(args []interface{}) []interface{} {
-	for _, s := range a {
-		if s.Valid {
-			args = append(args, s.String)
-		} else {
-			args = append(args, nil)
-		}
-	}
-	return args
-}
-
-func (a NullStrings) writeTo(w *bytes.Buffer, pos int) error {
-	if s := a[pos]; s.Valid {
-		if !utf8.ValidString(s.String) {
-			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
-		}
-		dialect.EscapeString(w, s.String)
-		return nil
-	}
-	_, err := w.WriteString(sqlStrNull)
-	return err
-}
-
-func (a NullStrings) len() int {
-	return len(a)
 }

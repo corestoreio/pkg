@@ -16,7 +16,6 @@ package dbr
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -218,80 +217,4 @@ func assertJSONEquals(t *testing.T, data []byte, cmp string, from string) {
 	if string(data) != cmp {
 		t.Errorf("bad %s data: %s ≠ %s\n", from, data, cmp)
 	}
-}
-
-func TestNullString_Argument(t *testing.T) {
-	t.Parallel()
-
-	nss := []NullString{
-		{
-			NullString: sql.NullString{
-				String: "Gopher",
-			},
-		},
-		{
-			NullString: sql.NullString{
-				String: "Ru'st\")y('",
-				Valid:  true,
-			},
-		},
-	}
-	var buf bytes.Buffer
-	args := make([]interface{}, 0, 2)
-	for i, ns := range nss {
-		args = ns.toIFace(args)
-		ns.writeTo(&buf, i)
-	}
-	assert.Exactly(t, []interface{}{interface{}(nil), "Ru'st\")y('"}, args)
-	assert.Exactly(t, "NULL'Ru\\'st\\\")y(\\''", buf.String())
-}
-
-func TestArgNullString(t *testing.T) {
-	t.Parallel()
-
-	args := NullStrings{MakeNullString("1'; DROP TABLE users-- 1"), MakeNullString("Rusty", false), MakeNullString("Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗")}
-	assert.Exactly(t, 3, args.len())
-
-	t.Run("writeTo", func(t *testing.T) {
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{"1'; DROP TABLE users-- 1", interface{}(nil), "Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗"}, argIF)
-		assert.Exactly(t, "'1\\'; DROP TABLE users-- 1'NULL'Powerلُلُصّبُلُلصّبُررً ॣ ॣh ॣ ॣ冗'", buf.String())
-	})
-
-	t.Run("invalid UTF-8", func(t *testing.T) {
-		var buf bytes.Buffer
-
-		args2 := NullStrings{MakeNullString("\x00\xff")}
-		err := args2.writeTo(&buf, 0)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
-		buf.Reset()
-
-		args2 = NullStrings{MakeNullString("\x00\xff"), MakeNullString("2nd")}
-		err = args2.writeTo(&buf, 0)
-		assert.True(t, errors.IsNotValid(err), "%+v", err)
-		buf.Reset()
-	})
-
-	t.Run("single arg", func(t *testing.T) {
-		args = NullStrings{MakeNullString("1';")}
-
-		var buf bytes.Buffer
-		argIF := make([]interface{}, 0, 2)
-		for i := 0; i < args.len(); i++ {
-			if err := args.writeTo(&buf, i); err != nil {
-				t.Fatalf("%+v", err)
-			}
-		}
-		argIF = args.toIFace(argIF)
-		assert.Exactly(t, []interface{}{"1';"}, argIF)
-		assert.Exactly(t, "'1\\';'", buf.String())
-	})
-
 }
