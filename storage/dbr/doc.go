@@ -36,4 +36,6 @@
 // Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 //
 // TODO(CyS) Add named parameter from GO1.8 to each query builder
+//
+// TODO(CyS) think about named locks: https://news.ycombinator.com/item?id=14907679 https://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_get-lock
 package dbr
