@@ -390,14 +390,14 @@ func ExampleInterpolate() {
 }
 
 func ExampleRepeat() {
-	args := dbr.MakeArgUnions(1).Strs("a", "b", "c", "d", "e").Ints(5, 7, 9)
+	args := dbr.MakeArgUnions(2).Ints(5, 7, 9).Strs("a", "b", "c", "d", "e")
 	sqlStr, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", args)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		return
 	}
 
-	fmt.Printf("%s\nArguments: %v\n", sqlStr, args)
+	fmt.Printf("%s\nArguments: %v\n", sqlStr, args.Interfaces())
 	// Output:
 	// SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)
 	// Arguments: [5 7 9 a b c d e]

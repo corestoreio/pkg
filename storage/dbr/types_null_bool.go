@@ -17,6 +17,8 @@ package dbr
 import (
 	"database/sql"
 
+	"strconv"
+
 	"github.com/corestoreio/errors"
 )
 
@@ -39,6 +41,14 @@ func MakeNullBool(b bool, valid ...bool) NullBool {
 			Valid: v,
 		},
 	}
+}
+
+// GoString prints an optimized Go representation.
+func (a NullBool) GoString() string {
+	if !a.Valid {
+		return "dbr.NullBool{}"
+	}
+	return "dbr.MakeNullBool(" + strconv.FormatBool(a.Bool) + ")"
 }
 
 // UnmarshalJSON implements json.Unmarshaler. It supports number and null input.

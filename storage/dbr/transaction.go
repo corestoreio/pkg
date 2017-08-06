@@ -21,13 +21,15 @@ import (
 	"github.com/corestoreio/log"
 )
 
-// Tx at a transaction for the given Session
+// Tx is a transaction for the given connection.
+// Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 type Tx struct {
 	log.Logger
 	*sql.Tx
 }
 
-// Begin creates a transaction for the given session
+// Begin creates a transaction for the given connection.
+// Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 func (c *Connection) Begin() (*Tx, error) {
 	dbTx, err := c.DB.Begin()
 	if err != nil {

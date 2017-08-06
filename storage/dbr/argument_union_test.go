@@ -29,6 +29,7 @@ import (
 )
 
 var _ fmt.Stringer = (*ArgUnions)(nil)
+var _ fmt.GoStringer = (*argUnion)(nil)
 
 type driverValueBytes []byte
 
@@ -58,28 +59,44 @@ func (a driverValueError) Value() (driver.Value, error) {
 	return nil, errors.NewAbortedf("WE've aborted something")
 }
 
-func TestArgUninons_Length(t *testing.T) {
+func TestArgUninons_Length_and_Stringer(t *testing.T) {
 	t.Parallel()
+
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := MakeArgUnions(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
+
+		// like fmt.Stringer
+		assert.Exactly(t, "(NULL,-1,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05','eCom3',4,2.7,1,'2006-01-02 15:04:05')", fmt.Sprintf("%v", args))
+		// like fmt.GoStringer
+		assert.Exactly(t,
+			"dbr.MakeArgUnions().Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dbr.MakeNullString(`eCom3`)).NullInt64(dbr.MakeNullInt64(4)).NullFloat64(dbr.MakeNullFloat64(2.7)).NullBool(dbr.MakeNullBool(true)).NullTime(dbr.MakeNullTime(time.Unix(1136214252,2))",
+			fmt.Sprintf("%#v", args))
 	})
+
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgUnions(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
+		assert.Exactly(t,
+			"dbr.MakeArgUnions().Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dbr.NullString{}).NullInt64(dbr.NullInt64{}).NullFloat64(dbr.NullFloat64{}).NullBool(dbr.NullBool{}).NullTime(dbr.NullTime{})",
+			fmt.Sprintf("%#v", args))
 	})
+
 	t.Run("slices, nulls valid", func(t *testing.T) {
 		args := MakeArgUnions(10).
-			Null().Int(-1).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strs("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
+			Null().Int(-1).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strs("eCom1", "eCom11").BytesSlice(nil, []byte(`eCom2`)).Times(now(), now()).
 			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
-		assert.Exactly(t, 23, args.Len(), "Length mismatch")
+		assert.Exactly(t, 24, args.Len(), "Length mismatch")
+		assert.Exactly(t,
+			"dbr.MakeArgUnions().Null().Int(-1).Int64s([]int64{1, 2}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strs(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136214252,2),time.Unix(1136214252,2)).NullString(dbr.MakeNullString(`eCom3`),dbr.MakeNullString(`eCom3`)).NullInt64(dbr.MakeNullInt64(4),dbr.MakeNullInt64(4)).NullFloat64(dbr.MakeNullFloat64(2.7),dbr.MakeNullFloat64(2.7)).NullBool(dbr.MakeNullBool(true)).NullTime(dbr.MakeNullTime(time.Unix(1136214252,2),dbr.MakeNullTime(time.Unix(1136214252,2))",
+			fmt.Sprintf("%#v", args))
 	})
 }
 
@@ -139,11 +156,29 @@ func TestArgUninons_DriverValue(t *testing.T) {
 
 	t.Run("Driver.Values supported types", func(t *testing.T) {
 		args := MakeArgUnions(10).
-			DriverValue(
+			DriverValues(
 				driverValueNil(0),
 				driverValueBytes(nil), MakeNullInt64(3), MakeNullFloat64(2.7), MakeNullBool(true),
 				driverValueBytes(`Invoice`), MakeNullString("Creditmemo"), nowSentinel{}, MakeNullTime(now()),
 			)
+		assert.Exactly(t,
+			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
+				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 15:04:12", now()},
+			args.Interfaces())
+	})
+
+	t.Run("Driver.Value supported types", func(t *testing.T) {
+		args := MakeArgUnions(10).
+			DriverValue(driverValueNil(0)).
+			DriverValue(driverValueBytes(nil)).
+			DriverValue(MakeNullInt64(3)).
+			DriverValue(MakeNullFloat64(2.7)).
+			DriverValue(MakeNullBool(true)).
+			DriverValue(driverValueBytes(`Invoice`)).
+			DriverValue(MakeNullString("Creditmemo")).
+			DriverValue(nowSentinel{}).
+			DriverValue(MakeNullTime(now()))
+
 		assert.Exactly(t,
 			[]interface{}{nil, []uint8(nil), int64(3), 2.7, true,
 				[]uint8{0x49, 0x6e, 0x76, 0x6f, 0x69, 0x63, 0x65}, "Creditmemo", "2006-01-02 15:04:12", now()},

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
@@ -196,4 +197,16 @@ func writeUint64(w *bytes.Buffer, i uint64) (err error) {
 	w.Reset()
 	_, err = w.Write(strconv.AppendUint(d, i, 10))
 	return err
+}
+
+func writeBytes(w *bytes.Buffer, p []byte) (err error) {
+	switch {
+	case p == nil:
+		_, err = w.WriteString(sqlStrNull)
+	case !utf8.Valid(p):
+		dialect.EscapeBinary(w, p)
+	default:
+		dialect.EscapeString(w, string(p)) // maybe create an EscapeByteString version to avoid one alloc ;-)
+	}
+	return
 }

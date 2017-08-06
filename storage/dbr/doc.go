@@ -33,5 +33,7 @@
 //
 // https://mariadb.com/kb/en/mariadb/documentation/
 //
+// Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
+//
 // TODO(CyS) Add named parameter from GO1.8 to each query builder
 package dbr

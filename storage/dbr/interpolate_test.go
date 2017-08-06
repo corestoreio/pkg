@@ -62,16 +62,12 @@ func TestRepeat(t *testing.T) {
 		assert.Exactly(t, []interface{}{int64(11), int64(3), int64(5)}, args.Interfaces())
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
-		args := MakeArgUnions(3).Strs("a", "b", "c", "d", "e").Int64s(5, 7, 9)
+		args := MakeArgUnions(3).Int64s(5, 7, 9).Strs("a", "b", "c", "d", "e")
 		s, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", args)
 		require.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
 		assert.Exactly(t, []interface{}{int64(5), int64(7), int64(9), "a", "b", "c", "d", "e"}, args.Interfaces())
 	})
-}
-
-func TestRepeat_Slices(t *testing.T) {
-
 }
 
 func TestInterpolateNil(t *testing.T) {
@@ -144,19 +140,25 @@ func TestInterpolate_ArgValue(t *testing.T) {
 	var aNil driverValueBytes
 
 	t.Run("equal", func(t *testing.T) {
-		str := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ?").DriverValue(
-			aInt, aStr, aFlo,
-			aTim, aBoo, aByt,
-			nil, aNil,
-		).String()
-		assert.Equal(t, "SELECT * FROM x WHERE a = 4711 AND b = 'Goph\\'er' AND c = 2.7182818 AND d = '2006-01-02 15:04:12' AND e = 1 AND f = 0x42797479476f7068652772 AND g = NULL AND h = NULL",
+		str := Interpolate("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ?").
+			DriverValue(aInt).
+			DriverValue(aStr).
+			DriverValue(aFlo).
+			DriverValue(aTim).
+			DriverValue(aBoo).
+			DriverValue(aByt).
+			DriverValue(aNil).
+			DriverValue(aNil).
+			String()
+		assert.Equal(t, "SELECT * FROM x WHERE a = 4711 AND b = 'Goph\\'er' AND c = 2.7182818 AND d = '2006-01-02 15:04:12' AND e = 1 AND f = 'BytyGophe\\'r' AND g = NULL AND h = NULL",
 			str)
 	})
 	t.Run("in", func(t *testing.T) {
 		str := Interpolate("SELECT * FROM x WHERE a IN (?) AND b IN (?) AND c IN (?) AND d IN (?) AND e IN (?) AND f IN (?)").
 			DriverValue(aInt, aInt).DriverValue(aStr, aStr).DriverValue(aFlo, aFlo).
 			DriverValue(aTim, aTim).DriverValue(aBoo, aBoo).DriverValue(aByt, aByt).String()
-		assert.Equal(t, "SELECT * FROM x WHERE a IN (4711,4711) AND b IN ('Goph\\'er','Goph\\'er') AND c IN (2.7182818,2.7182818) AND d IN ('2006-01-02 15:04:12','2006-01-02 15:04:12') AND e IN (1,1) AND f IN (0x42797479476f7068652772,0x42797479476f7068652772)",
+		assert.Equal(t,
+			"SELECT * FROM x WHERE a IN (4711,4711) AND b IN ('Goph\\'er','Goph\\'er') AND c IN (2.7182818,2.7182818) AND d IN ('2006-01-02 15:04:12','2006-01-02 15:04:12') AND e IN (1,1) AND f IN ('BytyGophe\\'r','BytyGophe\\'r')",
 			str)
 	})
 	t.Run("type not supported", func(t *testing.T) {

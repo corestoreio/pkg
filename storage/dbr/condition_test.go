@@ -85,7 +85,7 @@ func TestOpRune(t *testing.T) {
 			Column("a315").In().NullTime(MakeNullTime(now().Add(time.Minute))),
 			Column("a316").In().Null(),
 			Column("a317").In().Bytes([]byte(`H3llo1`)),
-			Column("a320").In().DriverValue(MakeNullInt64(2345), MakeNullFloat64(3.14159)),
+			Column("a320").In().DriverValue(MakeNullFloat64(674589), MakeNullFloat64(3.14159)),
 
 			Column("a401").SpaceShip().String("H_ll_"),
 			Column("a402").SpaceShip().NullString(NullString{}),
@@ -93,7 +93,7 @@ func TestOpRune(t *testing.T) {
 		)
 	compareToSQL(t, s, nil,
 		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a1` IS NULL) AND (`a1` LIKE ?) AND (`a1` LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a2` IS NULL) AND (`a2` NOT LIKE ?) AND (`a2` NOT LIKE ?) AND (`a301` IN (?,?)) AND (`a302` IN (?,?)) AND (`a303` IN (?)) AND (`a304` IN (?,?)) AND (`a305` IN (?)) AND (`a306` IN (?,?)) AND (`a307` IN (?,?)) AND (`a308` IN (?)) AND (`a309` IN (?,?)) AND (`a310` IN (?,?)) AND (`a311` IN (?,?)) AND (`a312` IN (?)) AND (`a313` IN (?)) AND (`a314` IN (?,?)) AND (`a315` IN (?)) AND (`a316` IS NULL) AND (`a317` IN (?)) AND (`a320` IN (?,?)) AND (`a401` <=> ?) AND (`a402` <=> ?) AND (`a403` <=> ?)",
-		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` IS NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE 2345) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` IS NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE 2345) AND (`a301` IN ('Go1','Go2')) AND (`a302` IN (NULL,NULL)) AND (`a303` IN ('NullString')) AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN (NULL)) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN (NULL)) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN (NULL)) AND (`a313` IN (1)) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315` IN ('2006-01-02 15:05:05')) AND (`a316` IS NULL) AND (`a317` IN ('H3llo1')) AND (`a320` IN (2345,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
+		"SELECT `a`, `b` FROM `tableA` WHERE (`a1` LIKE 'H_ll_') AND (`a1` LIKE NULL) AND (`a1` LIKE 'NullString') AND (`a1` LIKE 2.718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -2.718281) AND (`a1` LIKE 2718281) AND (`a1` LIKE NULL) AND (`a1` LIKE -987) AND (`a1` LIKE 2718281) AND (`a1` LIKE 1) AND (`a1` LIKE NULL) AND (`a1` LIKE 0) AND (`a1` LIKE '2006-01-02 15:04:05') AND (`a1` LIKE '2006-01-02 15:05:05') AND (`a1` IS NULL) AND (`a1` LIKE 'H3llo') AND (`a1` LIKE 2345) AND (`a2` NOT LIKE 'H_ll_') AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 'NullString') AND (`a2` NOT LIKE 2.718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -2.718281) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE -987) AND (`a2` NOT LIKE 2718281) AND (`a2` NOT LIKE 1) AND (`a2` NOT LIKE NULL) AND (`a2` NOT LIKE 0) AND (`a2` NOT LIKE '2006-01-02 15:04:05') AND (`a2` NOT LIKE '2006-01-02 15:05:05') AND (`a2` IS NULL) AND (`a2` NOT LIKE 'H3llo') AND (`a2` NOT LIKE 2345) AND (`a301` IN ('Go1','Go2')) AND (`a302` IN (NULL,NULL)) AND (`a303` IN ('NullString')) AND (`a304` IN (2.718281,3.14159)) AND (`a305` IN (NULL)) AND (`a306` IN (-2.718281,-3.14159)) AND (`a307` IN (2718281,314159)) AND (`a308` IN (NULL)) AND (`a309` IN (-987,-654)) AND (`a310` IN (2718281,314159)) AND (`a311` IN (1,0)) AND (`a312` IN (NULL)) AND (`a313` IN (1)) AND (`a314` IN ('2006-01-02 15:04:05','2006-01-02 15:04:05')) AND (`a315` IN ('2006-01-02 15:05:05')) AND (`a316` IS NULL) AND (`a317` IN ('H3llo1')) AND (`a320` IN (674589,3.14159)) AND (`a401` <=> 'H_ll_') AND (`a402` <=> NULL) AND (`a403` <=> 'NullString')",
 		"H_ll_", interface{}(nil), "NullString", 2.718281, interface{}(nil),
 		-2.718281, int64(2718281), interface{}(nil), int64(-987), int64(2718281), true,
 		interface{}(nil), false, now(), now().Add(time.Minute),
@@ -105,7 +105,7 @@ func TestOpRune(t *testing.T) {
 		interface{}(nil), -2.718281, -3.14159, int64(2718281), int64(314159), interface{}(nil),
 		int64(-987), int64(-654), int64(2718281), int64(314159), true, false, interface{}(nil), true,
 		now(), now(), now().Add(time.Minute), []uint8{0x48, 0x33, 0x6c, 0x6c, 0x6f, 0x31},
-		int64(2345), 3.14159, "H_ll_", interface{}(nil), "NullString",
+		float64(674589), 3.14159, "H_ll_", interface{}(nil), "NullString",
 	)
 }
 
@@ -177,7 +177,7 @@ func TestOpArgs(t *testing.T) {
 
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
-				Column("a3419").In().DriverValue(
+				Column("a3419").In().DriverValues(
 					MakeNullFloat64(3.141),
 					MakeNullString("G'o"),
 					driverValueBytes{66, 250, 67},
@@ -194,7 +194,7 @@ func TestOpArgs(t *testing.T) {
 	t.Run("ArgValue BETWEEN values", func(t *testing.T) {
 		compareToSQL(t,
 			NewSelect("a", "b").From("t1").Where(
-				Column("a319").Between().DriverValue(MakeNullFloat64(3.141), MakeNullString("G'o")),
+				Column("a319").Between().DriverValues(MakeNullFloat64(3.141), MakeNullString("G'o")),
 			),
 			nil,
 			"SELECT `a`, `b` FROM `t1` WHERE (`a319` BETWEEN ? AND ?)",

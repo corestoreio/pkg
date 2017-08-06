@@ -648,7 +648,7 @@ func (c *Condition) Bytes(p []byte) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Bytes(p)
 		return c
 	}
-	c.Right.Argument.field = argFieldByte
+	c.Right.Argument.field = argFieldBytes
 	c.Right.Argument.bytes = p
 	return c
 }
@@ -658,7 +658,7 @@ func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.BytesSlice(p...)
 		return c
 	}
-	c.Right.Argument.field = argFieldBytes
+	c.Right.Argument.field = argFieldBytess
 	c.Right.Argument.bytess = p
 	return c
 }
@@ -745,6 +745,10 @@ func (c *Condition) Values() *Condition {
 // confusion with Values() function.
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
 	c.Right.ArgUnions = c.Right.ArgUnions.DriverValue(dv...)
+	return c
+}
+func (c *Condition) DriverValues(dv ...driver.Valuer) *Condition {
+	c.Right.ArgUnions = c.Right.ArgUnions.DriverValues(dv...)
 	return c
 }
 
