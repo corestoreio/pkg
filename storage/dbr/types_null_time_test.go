@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -189,4 +191,16 @@ func assertNullTime(t *testing.T, ti NullTime, from string) {
 	if ti.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
+}
+
+func TestNewNullTime(t *testing.T) {
+	t.Parallel()
+	var test = time.Now()
+	assert.Equal(t, test, MakeNullTime(test).Time)
+	assert.True(t, MakeNullTime(test).Valid)
+	assert.True(t, MakeNullTime(time.Time{}).Valid)
+
+	v, err := MakeNullTime(test).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, test, v)
 }

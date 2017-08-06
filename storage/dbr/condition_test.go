@@ -25,6 +25,7 @@ import (
 )
 
 var _ fmt.Stringer = (*expressions)(nil)
+var _ fmt.Stringer = Op(0)
 
 func TestOpRune(t *testing.T) {
 	t.Parallel()

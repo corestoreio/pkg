@@ -39,7 +39,7 @@ type Show struct {
 
 	// Type bitwise flag containing the type of the SHOW statement.
 	Type           uint
-	LikeCondition  argUnion
+	LikeCondition  *argUnion
 	WhereFragments Conditions
 }
 
@@ -190,7 +190,7 @@ func (b *Show) toSQL(w *bytes.Buffer) error {
 		w.WriteString("BINARY LOG")
 	}
 
-	if b.LikeCondition.field > 0 {
+	if b.LikeCondition.isset() {
 		Like.write(w, 1)
 	} else if err := b.WhereFragments.write(w, 'w'); err != nil {
 		return errors.WithStack(err)
@@ -207,7 +207,7 @@ func (b *Show) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
 		args = make(ArgUnions, 0, b.argumentCapacity())
 	}
 
-	if b.LikeCondition.field > 0 {
+	if b.LikeCondition.isset() {
 		args = append(args, b.LikeCondition)
 	} else if args, _, err = b.WhereFragments.appendArgs(args, appendArgsWHERE); err != nil {
 		return nil, errors.WithStack(err)

@@ -18,121 +18,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-var _ fmt.Stringer = Op(0)
-
-//var _ Argument = Int(0)
-//var _ Argument = Int64(0)
-//var _ Argument = Float64(0)
-//var _ Argument = Bool(true)
-//var _ Argument = (*BytesSlice)(nil)
-//var _ Argument = (*Ints)(nil)
-//var _ Argument = (*Int64s)(nil)
-//var _ Argument = (*Float64s)(nil)
-//var _ Argument = (*Times)(nil)
-//var _ Argument = (*Strings)(nil)
-//var _ Argument = (*NullString)(nil)
-//var _ Argument = (*NullStrings)(nil)
-//var _ Argument = (*NullFloat64)(nil)
-//var _ Argument = (*NullFloat64s)(nil)
-//var _ Argument = (*NullTime)(nil)
-//var _ Argument = (*NullTimes)(nil)
-//var _ Argument = (*NullInt64)(nil)
-//var _ Argument = (*NullInt64s)(nil)
-//var _ Argument = (*NullBool)(nil)
-//var _ Argument = (*DriverValues)(nil)
-//var _ driver.Valuer = (*Bool)(nil)
-//var _ driver.Valuer = (*Int)(nil)
-//var _ driver.Valuer = (*Int64)(nil)
-//var _ driver.Valuer = (*Float64)(nil)
-//var _ driver.Valuer = (*Time)(nil)
-//var _ driver.Valuer = (*Bytes)(nil)
-//var _ driver.Valuer = (*String)(nil)
-
-//func TestDriverValuer(t *testing.T) {
-//	t.Parallel()
-//	tests := []struct {
-//		have driver.Valuer
-//		want driver.Value
-//	}{
-//		{Bool(true), true},
-//		{Int(7), int64(7)},
-//		{Int64(8), int64(8)},
-//		{Float64(8.9), float64(8.9)},
-//		{MakeTime(now()), now()},
-//		{Bytes(`Go2`), []byte(`Go2`)},
-//		{String(`Go2`), `Go2`},
-//	}
-//	for i, test := range tests {
-//		v, err := test.have.Value()
-//		if err != nil {
-//			t.Fatalf("index %d with %+v", i, err)
-//		}
-//		assert.Exactly(t, test.want, v, "Index %d", i)
-//	}
-//}
-
-func TestNullStringFrom(t *testing.T) {
-	t.Parallel()
-	assert.Equal(t, "product", MakeNullString("product").String)
-	assert.True(t, MakeNullString("product").Valid)
-	//assert.False(t, NullStringFromPtr(nil).Valid)
-	assert.True(t, MakeNullString("").Valid)
-	v, err := MakeNullString("product").Value()
-	assert.NoError(t, err)
-	assert.Equal(t, "product", v)
-}
-
-func TestNewNullInt64(t *testing.T) {
-	t.Parallel()
-	assert.EqualValues(t, 1257894000, MakeNullInt64(1257894000).Int64)
-	assert.True(t, MakeNullInt64(1257894000).Valid)
-	assert.True(t, MakeNullInt64(0).Valid)
-	v, err := MakeNullInt64(1257894000).Value()
-	assert.NoError(t, err)
-	assert.EqualValues(t, 1257894000, v)
-}
-
-func TestNewNullFloat64(t *testing.T) {
-	t.Parallel()
-	var test = 1257894000.93445000001
-	assert.Equal(t, test, MakeNullFloat64(test).Float64)
-	assert.True(t, MakeNullFloat64(test).Valid)
-	assert.True(t, MakeNullFloat64(0).Valid)
-	v, err := MakeNullFloat64(test).Value()
-	assert.NoError(t, err)
-	assert.Equal(t, test, v)
-}
-
-func TestNewNullTime(t *testing.T) {
-	t.Parallel()
-	var test = time.Now()
-	assert.Equal(t, test, MakeNullTime(test).Time)
-	assert.True(t, MakeNullTime(test).Valid)
-	assert.True(t, MakeNullTime(time.Time{}).Valid)
-
-	v, err := MakeNullTime(test).Value()
-	assert.NoError(t, err)
-	assert.Equal(t, test, v)
-}
-
-func TestNewNullBool(t *testing.T) {
-	t.Parallel()
-
-	assert.Equal(t, true, MakeNullBool(true).Bool)
-	assert.True(t, MakeNullBool(true).Valid)
-	assert.True(t, MakeNullBool(false).Valid)
-	v, err := MakeNullBool(true).Value()
-	assert.NoError(t, err)
-	assert.Equal(t, true, v)
-}
 
 func TestNullTypeScanning(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)

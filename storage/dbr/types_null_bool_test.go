@@ -17,6 +17,8 @@ package dbr
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -217,4 +219,15 @@ func assertNullBool(t *testing.T, b NullBool, from string) {
 	if b.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
+}
+
+func TestNewNullBool(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, true, MakeNullBool(true).Bool)
+	assert.True(t, MakeNullBool(true).Valid)
+	assert.True(t, MakeNullBool(false).Valid)
+	v, err := MakeNullBool(true).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, true, v)
 }

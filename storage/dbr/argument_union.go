@@ -26,6 +26,43 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+// https://www.adampalmer.me/iodigitalsec/2013/08/18/mysql_real_escape_string-wont-magically-solve-your-sql-injection-problems/
+
+const (
+	sqlStrNull = "NULL"
+	sqlStar    = "*"
+)
+
+// SQL statement types and parts used as bit flag e.g. hint in
+// ArgumentsAppender.AppendArguments.
+const (
+	SQLStmtInsert int = 1 << iota
+	SQLStmtSelect
+	SQLStmtUpdate
+	SQLStmtDelete
+
+	SQLPartJoin
+	SQLPartWhere
+	SQLPartHaving
+	SQLPartSet
+	SQLPartValues
+)
+
+// ArgumentsAppender assembles arguments for CRUD statements. The `stmtType`
+// variable contains a flag from the constants SQLStmt* and SQLPart* to allow
+// the knowledge in which case the function AppendArguments gets called. Any new
+// arguments must be append to variable `args` and then returned. The readonly
+// variable `columns` contains the name of the requested columns. E.g. if the
+// first requested column names `id` then the first appended value must be an
+// integer. Variable `columns` can additionally contain the names and/or
+// expressions used in the WHERE, JOIN or HAVING clauses, if applicable for the
+// SQL statement type. In case where stmtType has been set to
+// SQLStmtInsert|SQLPartValues, the `columns` slice can be empty which means
+// that all arguments are requested.
+type ArgumentsAppender interface {
+	AppendArguments(stmtType int, args ArgUnions, columns []string) (ArgUnions, error)
+}
+
 const (
 	argFieldNull uint8 = iota + 1
 	argFieldInt
@@ -83,7 +120,10 @@ type argUnion struct {
 	name string // todo
 }
 
-func (arg argUnion) len() (l int) {
+func (arg *argUnion) isset() bool {
+	return arg != nil && arg.field > 0
+}
+func (arg *argUnion) len() (l int) {
 	switch arg.field {
 	case argFieldNull, argFieldInt, argFieldInt64, argFieldUint64, argFieldFloat64, argFieldBool, argFieldString, argFieldBytes, argFieldTime, argFieldPlaceHolder:
 		l = 1
@@ -118,7 +158,7 @@ func (arg argUnion) len() (l int) {
 	return
 }
 
-func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
+func (arg *argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
 	switch arg.field {
 	case argFieldInt:
 		err = writeInt64(w, int64(arg.int))
@@ -209,7 +249,7 @@ func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
 	return err
 }
 
-func (arg argUnion) GoString() string {
+func (arg *argUnion) GoString() string {
 	buf := new(bytes.Buffer)
 
 	switch arg.field {
@@ -331,7 +371,7 @@ func (arg argUnion) GoString() string {
 
 // args a collection of primitive types or slice of primitive types. Using
 // pointers in *argUnion would slow down the program.
-type ArgUnions []argUnion
+type ArgUnions []*argUnion
 
 // MakeArgUnions creates a new argument union slice with the desired capacity.
 func MakeArgUnions(cap int) ArgUnions {
@@ -395,6 +435,7 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 		args = make([]interface{}, 0, 2*len(a))
 	}
 	for _, arg := range a { // run bench between arg and a[i]
+		//for j := 0; j < len(a); j++ { // run bench between arg and a[i]
 		switch arg.field {
 
 		case argFieldInt:
@@ -509,66 +550,65 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 	return args
 }
 
-func (a ArgUnions) last() argUnion          { return a[len(a)-1] }
-func (a ArgUnions) Null() ArgUnions         { return append(a, argUnion{field: argFieldNull}) }
-func (a ArgUnions) Int(i int) ArgUnions     { return append(a, argUnion{field: argFieldInt, int: i}) }
-func (a ArgUnions) Ints(i ...int) ArgUnions { return append(a, argUnion{field: argFieldInts, ints: i}) }
+func (a ArgUnions) Null() ArgUnions         { return append(a, &argUnion{field: argFieldNull}) }
+func (a ArgUnions) Int(i int) ArgUnions     { return append(a, &argUnion{field: argFieldInt, int: i}) }
+func (a ArgUnions) Ints(i ...int) ArgUnions { return append(a, &argUnion{field: argFieldInts, ints: i}) }
 func (a ArgUnions) Int64(i int64) ArgUnions {
-	return append(a, argUnion{field: argFieldInt64, int64: int64(i)})
+	return append(a, &argUnion{field: argFieldInt64, int64: int64(i)})
 }
 func (a ArgUnions) Int64s(i ...int64) ArgUnions {
-	return append(a, argUnion{field: argFieldInt64s, int64s: i})
+	return append(a, &argUnion{field: argFieldInt64s, int64s: i})
 }
 func (a ArgUnions) Uint64(i uint64) ArgUnions {
-	return append(a, argUnion{field: argFieldUint64, uint64: i})
+	return append(a, &argUnion{field: argFieldUint64, uint64: i})
 }
 func (a ArgUnions) Uint64s(i ...uint64) ArgUnions {
-	return append(a, argUnion{field: argFieldUint64s, uint64s: i})
+	return append(a, &argUnion{field: argFieldUint64s, uint64s: i})
 }
 func (a ArgUnions) Float64(f float64) ArgUnions {
-	return append(a, argUnion{field: argFieldFloat64, float64: f})
+	return append(a, &argUnion{field: argFieldFloat64, float64: f})
 }
 func (a ArgUnions) Float64s(f ...float64) ArgUnions {
-	return append(a, argUnion{field: argFieldFloat64s, float64s: f})
+	return append(a, &argUnion{field: argFieldFloat64s, float64s: f})
 }
 func (a ArgUnions) Bool(f bool) ArgUnions {
-	return append(a, argUnion{field: argFieldBool, bool: f})
+	return append(a, &argUnion{field: argFieldBool, bool: f})
 }
 func (a ArgUnions) Bools(f ...bool) ArgUnions {
-	return append(a, argUnion{field: argFieldBools, bools: f})
+	return append(a, &argUnion{field: argFieldBools, bools: f})
 }
 func (a ArgUnions) Str(f string) ArgUnions {
-	return append(a, argUnion{field: argFieldString, string: f})
+	return append(a, &argUnion{field: argFieldString, string: f})
 }
 func (a ArgUnions) Strs(f ...string) ArgUnions {
-	return append(a, argUnion{field: argFieldStrings, strings: f})
+	return append(a, &argUnion{field: argFieldStrings, strings: f})
 }
 func (a ArgUnions) Bytes(b []byte) ArgUnions {
-	return append(a, argUnion{field: argFieldBytes, bytes: b})
+	return append(a, &argUnion{field: argFieldBytes, bytes: b})
 }
 func (a ArgUnions) BytesSlice(b ...[]byte) ArgUnions {
-	return append(a, argUnion{field: argFieldBytess, bytess: b})
+	return append(a, &argUnion{field: argFieldBytess, bytess: b})
 }
 func (a ArgUnions) Time(t time.Time) ArgUnions {
-	return append(a, argUnion{field: argFieldTime, time: t})
+	return append(a, &argUnion{field: argFieldTime, time: t})
 }
 func (a ArgUnions) Times(t ...time.Time) ArgUnions {
-	return append(a, argUnion{field: argFieldTimes, times: t})
+	return append(a, &argUnion{field: argFieldTimes, times: t})
 }
 func (a ArgUnions) NullString(nv ...NullString) ArgUnions {
-	return append(a, argUnion{field: argFieldNullStrings, nullStrings: nv})
+	return append(a, &argUnion{field: argFieldNullStrings, nullStrings: nv})
 }
 func (a ArgUnions) NullFloat64(nv ...NullFloat64) ArgUnions {
-	return append(a, argUnion{field: argFieldNullFloat64s, nullFloat64s: nv})
+	return append(a, &argUnion{field: argFieldNullFloat64s, nullFloat64s: nv})
 }
 func (a ArgUnions) NullInt64(nv ...NullInt64) ArgUnions {
-	return append(a, argUnion{field: argFieldNullInt64s, nullInt64s: nv})
+	return append(a, &argUnion{field: argFieldNullInt64s, nullInt64s: nv})
 }
 func (a ArgUnions) NullBool(nv ...NullBool) ArgUnions {
-	return append(a, argUnion{field: argFieldNullBools, nullBools: nv})
+	return append(a, &argUnion{field: argFieldNullBools, nullBools: nv})
 }
 func (a ArgUnions) NullTime(nv ...NullTime) ArgUnions {
-	return append(a, argUnion{field: argFieldNullTimes, nullTimes: nv})
+	return append(a, &argUnion{field: argFieldNullTimes, nullTimes: nv})
 }
 
 // DriverValue adds multiple of the same underlying values to the argument
@@ -584,7 +624,7 @@ func (a ArgUnions) DriverValue(dvs ...driver.Valuer) ArgUnions {
 	//   []byte
 	//   string
 	//   time.Time
-	var arg argUnion
+	arg := new(argUnion)
 	for _, dv := range dvs {
 		// dv cannot be nil
 		v, err := dv.Value()

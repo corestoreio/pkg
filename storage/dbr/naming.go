@@ -304,46 +304,32 @@ func (mq MysqlQuoter) NameAlias(name, alias string) string {
 // won't get stripped.
 //		WriteIdentifier(&buf,"tableName.ColumnName") -> `tableName`.`ColumnName`
 func (mq MysqlQuoter) WriteIdentifier(w *bytes.Buffer, name string) {
-
-	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
-	nameHasQuote := strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote)
-	nameHasDot := strings.IndexByte(name, '.') >= 0
-
-	switch {
-	case nameHasQuote:
-		// already quoted
-		w.WriteString(name)
+	if name == "" {
 		return
-	case !nameHasQuote && !nameHasDot:
+	}
+	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
+	if strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote) {
+		w.WriteString(name) // already quoted
+		return
+	}
+
+	if strings.IndexByte(name, '.') == -1 {
 		// must be quoted
 		mq.quote(w, name)
 		return
-	case !nameHasQuote && nameHasDot:
-		mq.writeQualifiedIdentifier(w, name)
-		return
-	case name == "":
-		// just an empty string
-		return
 	}
-	mq.writeQualifiedIdentifier(w, name)
-}
 
-// writeQualifiedIdentifier splits at the dot to separate between the qualifier
-// and the identifier. Both values get quoted. Child function of
-// writeQualifiedIdentifier.
-func (mq MysqlQuoter) writeQualifiedIdentifier(w *bytes.Buffer, part string) {
-	dotIndex := strings.IndexByte(part, '.')
-	if dotIndex > 0 { // dot at a beginning of a string at illegal
-		mq.quote(w, part[:dotIndex])
+	if dotIndex := strings.IndexByte(name, '.'); dotIndex > 0 { // dot at a beginning of a string at illegal
+		mq.quote(w, name[:dotIndex])
 		w.WriteByte('.')
-		if a := part[dotIndex+1:]; a == sqlStar {
+		if a := name[dotIndex+1:]; a == sqlStar {
 			w.WriteByte('*')
 		} else {
-			mq.quote(w, part[dotIndex+1:])
+			mq.quote(w, name[dotIndex+1:])
 		}
 		return
 	}
-	mq.quote(w, part)
+	mq.quote(w, name)
 }
 
 // ColumnsWithQualifier prefixes all columns in the slice `cols` with a qualifier and applies backticks. If a column name has already been

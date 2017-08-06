@@ -263,7 +263,7 @@ type Condition struct {
 		// into the buffer when the SQL string gets build. Usage in SET and ON
 		// DUPLICATE KEY.
 		Expression expressions
-		Argument   argUnion  // Either this or the slice is set.
+		Argument   *argUnion // Either this or the slice is set.
 		ArgUnions  ArgUnions // Only set in case of an expression.
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
@@ -357,18 +357,22 @@ func Columns(columns ...string) *Condition {
 
 // Column adds a new condition.
 func Column(columnName string) *Condition {
-	return &Condition{
+	c := &Condition{
 		Left: columnName,
 	}
+	c.Right.Argument = new(argUnion)
+	return c
 }
 
 // Expression adds an unquoted SQL expression to a WHERE, HAVING, SET or ON
 // DUPLICATE KEY statement. Each item of an expression gets written into the
 // buffer without a separator.
 func Expression(expression ...string) *Condition {
-	return &Condition{
+	c := &Condition{
 		LeftExpression: expression,
 	}
+	c.Right.ArgUnions = MakeArgUnions(3)
+	return c
 }
 
 // ParenthesisOpen sets an open parenthesis "(". Mostly used for OR conditions
@@ -824,9 +828,9 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (len(cnd.Right.ArgUnions) == 1 || cnd.Right.Argument.field > 0) && cnd.Operator > 0 {
+			if phCount == 0 && (len(cnd.Right.ArgUnions) == 1 || cnd.Right.Argument.isset()) && cnd.Operator > 0 {
 				eArg := cnd.Right.Argument
-				if eArg.field == 0 {
+				if eArg == nil {
 					eArg = cnd.Right.ArgUnions[0]
 				}
 				cnd.Operator.write(w, eArg.len())
@@ -936,7 +940,7 @@ func (cs Conditions) appendArgs(args ArgUnions, conditionType byte) (_ ArgUnions
 			// later swap the positions.
 			pendingArgPos = append(pendingArgPos, pendingArgPosCount)
 
-		case cnd.Right.Argument.field > 0:
+		case cnd.Right.Argument.isset():
 			addArg = cnd.Operator.hasArgs(cnd.Right.Argument.len())
 		case cnd.Right.ArgUnions != nil:
 			addArg = cnd.Operator.hasArgs(cnd.Right.ArgUnions.Len())
@@ -948,7 +952,7 @@ func (cs Conditions) appendArgs(args ArgUnions, conditionType byte) (_ ArgUnions
 		}
 
 		if addArg {
-			if cnd.Right.Argument.field > 0 {
+			if cnd.Right.Argument.isset() {
 				args = append(args, cnd.Right.Argument)
 			}
 			args = append(args, cnd.Right.ArgUnions...)

@@ -71,6 +71,12 @@ func BenchmarkSelect_Rows(b *testing.B) {
 
 var benchmarkSelectStr string
 
+// BenchmarkSelectBasicSQL-4 	  500000	      2542 ns/op	    1512 B/op	      18 allocs/op
+// BenchmarkSelectBasicSQL-4     1000000	      2395 ns/op	    1664 B/op	      17 allocs/op <== arg value ?
+// BenchmarkSelectBasicSQL-4      500000	      3060 ns/op	    2089 B/op	      22 allocs/op <== Builder Structs
+// BenchmarkSelectBasicSQL-4   	  200000	      9266 ns/op	    5875 B/op	      18 allocs/op <== arg union
+// BenchmarkSelectBasicSQL-4   	  500000	      3385 ns/op	    3698 B/op	      19 allocs/op
+// BenchmarkSelectBasicSQL-4   	  500000	      3216 ns/op	    3281 B/op	      20 allocs/op
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results

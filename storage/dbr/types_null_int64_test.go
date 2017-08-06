@@ -20,6 +20,8 @@ import (
 	"math"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -225,4 +227,14 @@ func assertNullInt64(t *testing.T, i NullInt64, from string) {
 	if i.Valid {
 		t.Error(from, "is valid, but should be invalid")
 	}
+}
+
+func TestNewNullInt64(t *testing.T) {
+	t.Parallel()
+	assert.EqualValues(t, 1257894000, MakeNullInt64(1257894000).Int64)
+	assert.True(t, MakeNullInt64(1257894000).Valid)
+	assert.True(t, MakeNullInt64(0).Valid)
+	v, err := MakeNullInt64(1257894000).Value()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1257894000, v)
 }

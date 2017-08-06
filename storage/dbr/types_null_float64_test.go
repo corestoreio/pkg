@@ -182,3 +182,14 @@ func assertNullFloat64(t *testing.T, f NullFloat64, from string) {
 		t.Error(from, "is valid, but should be invalid")
 	}
 }
+
+func TestNewNullFloat64(t *testing.T) {
+	t.Parallel()
+	var test = 1257894000.93445000001
+	assert.Equal(t, test, MakeNullFloat64(test).Float64)
+	assert.True(t, MakeNullFloat64(test).Valid)
+	assert.True(t, MakeNullFloat64(0).Valid)
+	v, err := MakeNullFloat64(test).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, test, v)
+}

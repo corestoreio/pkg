@@ -218,3 +218,14 @@ func assertJSONEquals(t *testing.T, data []byte, cmp string, from string) {
 		t.Errorf("bad %s data: %s ≠ %s\n", from, data, cmp)
 	}
 }
+
+func TestNullStringFrom(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, "product", MakeNullString("product").String)
+	assert.True(t, MakeNullString("product").Valid)
+	//assert.False(t, NullStringFromPtr(nil).Valid)
+	assert.True(t, MakeNullString("").Valid)
+	v, err := MakeNullString("product").Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "product", v)
+}
