@@ -34,11 +34,11 @@ type queryBuilder interface {
 	toSQL(*bytes.Buffer) error
 	// appendArgs appends the arguments to args and returns them. If
 	// argument `args` is nil, allocates new bytes
-	appendArgs(ArgUnions) (ArgUnions, error)
+	appendArgs(Arguments) (Arguments, error)
 	hasBuildCache() bool
 	writeBuildCache(sql []byte)
 	// readBuildCache returns the cached SQL string including its place holders.
-	readBuildCache() (sql []byte, args ArgUnions, err error)
+	readBuildCache() (sql []byte, args Arguments, err error)
 }
 
 // For the sake of readability within the source code, because boolean arguments
@@ -94,7 +94,7 @@ func toSQL(b queryBuilder, isInterpolate, isPrepared bool) (string, []interface{
 	}
 
 	// capacity of args gets handled in the concret implementation of `b`
-	args, err := b.appendArgs(ArgUnions{})
+	args, err := b.appendArgs(Arguments{})
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}

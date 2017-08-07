@@ -201,11 +201,11 @@ func (u *Union) StringReplace(key string, values ...string) *Union {
 // MultiplyArguments repeats the `args` variable n-times to match the number of
 // generated SELECT queries in the final UNION statement. It should be called
 // after all calls to `StringReplace` have been made.
-func (u *Union) MultiplyArguments(args ArgUnions) ArgUnions {
+func (u *Union) MultiplyArguments(args Arguments) Arguments {
 	if len(u.Selects) > 1 {
 		return args
 	}
-	ret := make(ArgUnions, len(args)*u.stmtCount)
+	ret := make(Arguments, len(args)*u.stmtCount)
 	lArgs := len(args)
 	for i := 0; i < u.stmtCount; i++ {
 		copy(ret[i*lArgs:], args)
@@ -222,7 +222,7 @@ func (u *Union) writeBuildCache(sql []byte) {
 	u.cacheSQL = sql
 }
 
-func (u *Union) readBuildCache() (sql []byte, _ ArgUnions, err error) {
+func (u *Union) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if u.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -287,15 +287,15 @@ func (u *Union) toSQL(w *bytes.Buffer) error {
 	return nil
 }
 
-func (u *Union) makeArguments() ArgUnions {
+func (u *Union) makeArguments() Arguments {
 	var argCap int
 	for _, s := range u.Selects {
 		argCap += s.argumentCapacity()
 	}
-	return make(ArgUnions, 0, len(u.Selects)*argCap)
+	return make(Arguments, 0, len(u.Selects)*argCap)
 }
 
-func (u *Union) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
+func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 	if cap(args) == 0 {
 		args = u.makeArguments()
 	}

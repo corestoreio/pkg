@@ -130,7 +130,7 @@ type BuilderBase struct {
 	ID           string
 	Log          log.Logger // Log optional logger
 	RawFullSQL   string
-	RawArguments ArgUnions // args used by RawFullSQL
+	RawArguments Arguments // args used by RawFullSQL
 
 	Table identifier
 
@@ -141,7 +141,7 @@ type BuilderBase struct {
 	IsInterpolate      bool // See Interpolate()
 	IsBuildCache       bool // see BuildCache()
 	cacheSQL           []byte
-	cacheArgs          ArgUnions // like a buffer, gets reused
+	cacheArgs          Arguments // like a buffer, gets reused
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.

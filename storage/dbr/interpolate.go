@@ -42,7 +42,7 @@ const (
 // The questions marks are of course depending on the values in the Arg*
 // functions. This function should be generally used when dealing with prepared
 // statements.
-func Repeat(sql string, args ArgUnions) (string, error) {
+func Repeat(sql string, args Arguments) (string, error) {
 
 	phCount := strings.Count(sql, placeHolderStr)
 	if want := len(args); phCount != want || want == 0 {
@@ -56,7 +56,7 @@ func Repeat(sql string, args ArgUnions) (string, error) {
 }
 
 // repeatPlaceHolders multiplies the place holder with the arguments internal len.
-func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args ArgUnions) error {
+func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args Arguments) error {
 	i := 0
 	pos := 0
 	for pos < len(sql) {
@@ -84,7 +84,7 @@ func repeatPlaceHolders(buf *bytes.Buffer, sql []byte, args ArgUnions) error {
 
 type iPolate struct {
 	queryCache []byte
-	args       ArgUnions
+	args       Arguments
 }
 
 // Interpolate takes a SQL byte slice with placeholders and a list of arguments
@@ -94,7 +94,7 @@ type iPolate struct {
 func Interpolate(sql string) *iPolate {
 	return &iPolate{
 		queryCache: []byte(sql),
-		args:       MakeArgUnions(8),
+		args:       MakeArgs(8),
 	}
 }
 
@@ -181,7 +181,7 @@ func (ip *iPolate) DriverValue(dvs ...driver.Valuer) *iPolate {
 	ip.args = ip.args.DriverValue(dvs...)
 	return ip
 }
-func (ip *iPolate) ArgUnions(args ArgUnions) *iPolate {
+func (ip *iPolate) ArgUnions(args Arguments) *iPolate {
 	ip.args = args
 	return ip
 }
@@ -204,7 +204,7 @@ var bTextPlaceholder = []byte("?")
 
 // writeInterpolate merges `args` into `sql` and writes the result into `buf`. `sql`
 // stays unchanged.
-func writeInterpolate(buf *bytes.Buffer, sql []byte, args ArgUnions) error {
+func writeInterpolate(buf *bytes.Buffer, sql []byte, args Arguments) error {
 
 	// TODO(CyS) due to the type `interpolate`, we can optimize the parsing in
 	// the second run with the same SQL slice but different arguments. We know

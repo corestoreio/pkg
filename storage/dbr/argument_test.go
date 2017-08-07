@@ -27,8 +27,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ fmt.Stringer = (*ArgUnions)(nil)
-var _ fmt.GoStringer = (*argUnion)(nil)
+var _ fmt.Stringer = (*Arguments)(nil)
+var _ fmt.GoStringer = (*argument)(nil)
 
 type driverValueBytes []byte
 
@@ -62,7 +62,7 @@ func TestArgUninons_Length_and_Stringer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
@@ -72,29 +72,29 @@ func TestArgUninons_Length_and_Stringer(t *testing.T) {
 		assert.Exactly(t, "(NULL,-1,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05','eCom3',4,2.7,1,'2006-01-02 15:04:05')", fmt.Sprintf("%v", args))
 		// like fmt.GoStringer
 		assert.Exactly(t,
-			"dbr.MakeArgUnions().Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dbr.MakeNullString(`eCom3`)).NullInt64(dbr.MakeNullInt64(4)).NullFloat64(dbr.MakeNullFloat64(2.7)).NullBool(dbr.MakeNullBool(true)).NullTime(dbr.MakeNullTime(time.Unix(1136214252,2))",
+			"dbr.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dbr.MakeNullString(`eCom3`)).NullInt64(dbr.MakeNullInt64(4)).NullFloat64(dbr.MakeNullFloat64(2.7)).NullBool(dbr.MakeNullBool(true)).NullTime(dbr.MakeNullTime(time.Unix(1136214252,2))",
 			fmt.Sprintf("%#v", args))
 	})
 
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
 		assert.Exactly(t,
-			"dbr.MakeArgUnions().Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dbr.NullString{}).NullInt64(dbr.NullInt64{}).NullFloat64(dbr.NullFloat64{}).NullBool(dbr.NullBool{}).NullTime(dbr.NullTime{})",
+			"dbr.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dbr.NullString{}).NullInt64(dbr.NullInt64{}).NullFloat64(dbr.NullFloat64{}).NullBool(dbr.NullBool{}).NullTime(dbr.NullTime{})",
 			fmt.Sprintf("%#v", args))
 	})
 
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Int(-1).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strs("eCom1", "eCom11").BytesSlice(nil, []byte(`eCom2`)).Times(now(), now()).
 			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
 		assert.Exactly(t, 24, args.Len(), "Length mismatch")
 		assert.Exactly(t,
-			"dbr.MakeArgUnions().Null().Int(-1).Int64s([]int64{1, 2}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strs(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136214252,2),time.Unix(1136214252,2)).NullString(dbr.MakeNullString(`eCom3`),dbr.MakeNullString(`eCom3`)).NullInt64(dbr.MakeNullInt64(4),dbr.MakeNullInt64(4)).NullFloat64(dbr.MakeNullFloat64(2.7),dbr.MakeNullFloat64(2.7)).NullBool(dbr.MakeNullBool(true)).NullTime(dbr.MakeNullTime(time.Unix(1136214252,2),dbr.MakeNullTime(time.Unix(1136214252,2))",
+			"dbr.MakeArgs(14).Null().Int(-1).Int64s([]int64{1, 2}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strs(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136214252,2),time.Unix(1136214252,2)).NullString(dbr.MakeNullString(`eCom3`),dbr.MakeNullString(`eCom3`)).NullInt64(dbr.MakeNullInt64(4),dbr.MakeNullInt64(4)).NullFloat64(dbr.MakeNullFloat64(2.7),dbr.MakeNullFloat64(2.7)).NullBool(dbr.MakeNullBool(true)).NullTime(dbr.MakeNullTime(time.Unix(1136214252,2),dbr.MakeNullTime(time.Unix(1136214252,2))",
 			fmt.Sprintf("%#v", args))
 	})
 }
@@ -105,7 +105,7 @@ func TestArgUninons_Interfaces(t *testing.T) {
 	container := make([]interface{}, 0, 48)
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
@@ -119,7 +119,7 @@ func TestArgUninons_Interfaces(t *testing.T) {
 		container = container[:0]
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
@@ -130,7 +130,7 @@ func TestArgUninons_Interfaces(t *testing.T) {
 		container = container[:0]
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).
 			Strs("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).
@@ -145,7 +145,7 @@ func TestArgUninons_Interfaces(t *testing.T) {
 			args.Interfaces())
 	})
 	t.Run("returns nil interface", func(t *testing.T) {
-		args := MakeArgUnions(10)
+		args := MakeArgs(10)
 		assert.Nil(t, args.Interfaces(), "args.Interfaces() must return nil")
 	})
 }
@@ -154,7 +154,7 @@ func TestArgUninons_DriverValue(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Driver.Values supported types", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			DriverValues(
 				driverValueNil(0),
 				driverValueBytes(nil), MakeNullInt64(3), MakeNullFloat64(2.7), MakeNullBool(true),
@@ -167,7 +167,7 @@ func TestArgUninons_DriverValue(t *testing.T) {
 	})
 
 	t.Run("Driver.Value supported types", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			DriverValue(driverValueNil(0)).
 			DriverValue(driverValueBytes(nil)).
 			DriverValue(MakeNullInt64(3)).
@@ -197,7 +197,7 @@ func TestArgUninons_DriverValue(t *testing.T) {
 			}
 		}()
 
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			DriverValue(
 				driverValueNotSupported(4),
 			)
@@ -217,7 +217,7 @@ func TestArgUninons_DriverValue(t *testing.T) {
 			}
 		}()
 
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			DriverValue(
 				driverValueError(0),
 			)
@@ -230,7 +230,7 @@ func TestArgUninons_WriteTo(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
@@ -243,7 +243,7 @@ func TestArgUninons_WriteTo(t *testing.T) {
 			buf.String())
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
@@ -256,7 +256,7 @@ func TestArgUninons_WriteTo(t *testing.T) {
 			buf.String())
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
-		args := MakeArgUnions(10).
+		args := MakeArgs(10).
 			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strs("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(5)).NullFloat64(MakeNullFloat64(2.71), MakeNullFloat64(2.72)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
@@ -269,34 +269,34 @@ func TestArgUninons_WriteTo(t *testing.T) {
 			buf.String())
 	})
 	t.Run("non-utf8 string", func(t *testing.T) {
-		args := MakeArgUnions(2).Str("\xc0\x80")
+		args := MakeArgs(2).Str("\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, `(`, buf.String())
 		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("non-utf8 strings", func(t *testing.T) {
-		args := MakeArgUnions(2).Strs("Go", "\xc0\x80")
+		args := MakeArgs(2).Strs("Go", "\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, `('Go',`, buf.String())
 		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("non-utf8 NullString", func(t *testing.T) {
-		args := MakeArgUnions(2).NullString(MakeNullString("Go2"), MakeNullString("Hello\xc0\x80World"))
+		args := MakeArgs(2).NullString(MakeNullString("Go2"), MakeNullString("Hello\xc0\x80World"))
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, "('Go2',", buf.String())
 		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("bytes as binary", func(t *testing.T) {
-		args := MakeArgUnions(2).Bytes([]byte("\xc0\x80"))
+		args := MakeArgs(2).Bytes([]byte("\xc0\x80"))
 		buf := new(bytes.Buffer)
 		require.NoError(t, args.Write(buf))
 		assert.Exactly(t, "(0xc080)", buf.String())
 	})
 	t.Run("bytesSlice as binary", func(t *testing.T) {
-		args := MakeArgUnions(2).BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
+		args := MakeArgs(2).BytesSlice([]byte(`Rusty`), []byte("Go\xc0\x80"))
 		buf := new(bytes.Buffer)
 		require.NoError(t, args.Write(buf))
 		assert.Exactly(t, "('Rusty',0x476fc080)", buf.String())
@@ -314,7 +314,7 @@ func TestArgUninons_WriteTo(t *testing.T) {
 			}
 		}()
 
-		au := argUnion{value: complex64(1)}
+		au := argument{value: complex64(1)}
 		buf := new(bytes.Buffer)
 		require.NoError(t, au.writeTo(buf, 0))
 		assert.Empty(t, buf.String(), "buffer should be empty")

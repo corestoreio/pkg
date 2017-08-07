@@ -207,7 +207,7 @@ type expressions []string
 
 // write writes the strings into `w` and correctly handles the place holder
 // repetition depending on the number of arguments.
-func (e expressions) write(w *bytes.Buffer, args ArgUnions) (phCount int, err error) {
+func (e expressions) write(w *bytes.Buffer, args Arguments) (phCount int, err error) {
 	eBuf := bufferpool.Get()
 	defer bufferpool.Put(eBuf)
 
@@ -263,8 +263,8 @@ type Condition struct {
 		// into the buffer when the SQL string gets build. Usage in SET and ON
 		// DUPLICATE KEY.
 		Expression expressions
-		Argument   argUnion  // Either this or the slice is set.
-		ArgUnions  ArgUnions // Only set in case of an expression.
+		Argument   argument  // Either this or the slice is set.
+		ArgUnions  Arguments // Only set in case of an expression.
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -369,7 +369,7 @@ func Expression(expression ...string) *Condition {
 	c := &Condition{
 		LeftExpression: expression,
 	}
-	c.Right.ArgUnions = MakeArgUnions(3)
+	c.Right.ArgUnions = MakeArgs(3)
 	return c
 }
 
@@ -877,7 +877,7 @@ const (
 )
 
 // conditionType enum of: see constants appendArgs
-func (cs Conditions) appendArgs(args ArgUnions, conditionType byte) (_ ArgUnions, pendingArgPos []int, err error) {
+func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments, pendingArgPos []int, err error) {
 	if len(cs) == 0 {
 		return args, pendingArgPos, nil
 	}
@@ -1013,7 +1013,7 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 	return nil
 }
 
-func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args ArgUnions, stmtType int, columns []string) (_ ArgUnions, err error) {
+func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args Arguments, stmtType int, columns []string) (_ Arguments, err error) {
 	if rec == nil {
 		return args, nil
 	}

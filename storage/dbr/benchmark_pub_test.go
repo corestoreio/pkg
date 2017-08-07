@@ -125,7 +125,7 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 
 	// BenchmarkSelectFullSQL/NewSelect-4             300000	      5849 ns/op	    3649 B/op	      38 allocs/op
 	// BenchmarkSelectFullSQL/NewSelect-4          	  200000	      6307 ns/op	    4922 B/op	      45 allocs/op <== builder structs
-	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      7084 ns/op	    8212 B/op	      44 allocs/op <== ArgUnions
+	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      7084 ns/op	    8212 B/op	      44 allocs/op <== Arguments
 	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6449 ns/op	    5515 B/op	      44 allocs/op no pointers
 	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6268 ns/op	    5443 B/op	      37 allocs/op
 	b.Run("NewSelect", func(b *testing.B) {
@@ -282,7 +282,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 					"date_start > ? AND date_end > ?", "`upcoming`",
 				).Alias("is_on_sale"),
 			).
-			AddArgUnions(dbr.MakeArgUnions(4).Times(start, end, start, end)).
+			AddArgUnions(dbr.MakeArgs(4).Times(start, end, start, end)).
 			From("catalog_promotions").
 			Where(
 				dbr.Column("promotion_id").
@@ -374,7 +374,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	b.Run("NewInsert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, args, err := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
-				dbr.MakeArgUnions(3).Int64(1).Int64(2).Bool(true),
+				dbr.MakeArgs(3).Int64(1).Int64(2).Bool(true),
 			).ToSQL()
 			if err != nil {
 				b.Fatal(err)
@@ -384,7 +384,7 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 
 	sqlObj := dbr.NewInsert("alpha").AddColumns("something_id", "user_id", "other").AddArguments(
-		dbr.MakeArgUnions(3).Int64(1).Int64(2).Bool(true),
+		dbr.MakeArgs(3).Int64(1).Int64(2).Bool(true),
 	).Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCache = false
@@ -417,7 +417,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendArguments(stmtType int, args dbr.ArgUnions, condition []string) (dbr.ArgUnions, error) {
+func (sr someRecord) AppendArguments(stmtType int, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
 	for _, c := range condition {
 		switch c {
 		case "something_id":
@@ -454,7 +454,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 func BenchmarkRepeat(b *testing.B) {
 
 	b.Run("multi", func(b *testing.B) {
-		args := dbr.MakeArgUnions(3).Ints(5, 7, 9, 11).Strs("a", "b", "c", "d", "e").Int(22)
+		args := dbr.MakeArgs(3).Ints(5, 7, 9, 11).Strs("a", "b", "c", "d", "e").Int(22)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -469,7 +469,7 @@ func BenchmarkRepeat(b *testing.B) {
 	})
 
 	b.Run("single", func(b *testing.B) {
-		args := dbr.MakeArgUnions(1).Ints(9, 8, 7, 6)
+		args := dbr.MakeArgs(1).Ints(9, 8, 7, 6)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -659,7 +659,7 @@ func BenchmarkArgUnion(b *testing.B) {
 	reflectIFaceContainer := make([]interface{}, 0, 25)
 	var finalArgs = make([]interface{}, 0, 30)
 	drvVal := []driver.Valuer{dbr.MakeNullString("I'm a valid null string: See the License for the specific language governing permissions and See the License for the specific language governing permissions and See the License for the specific language governing permissions and")}
-	argUnion := dbr.MakeArgUnions(30)
+	argUnion := dbr.MakeArgs(30)
 	now1 := dbr.Now.UTC()
 	b.ResetTimer()
 

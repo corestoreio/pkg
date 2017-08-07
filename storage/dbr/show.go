@@ -39,8 +39,9 @@ type Show struct {
 
 	// Type bitwise flag containing the type of the SHOW statement.
 	Type uint
-	// LikeCondition supports only one argument
-	LikeCondition  ArgUnions
+	// LikeCondition supports only one argument. Either LIKE or WHERE can be
+	// set.
+	LikeCondition  Arguments
 	WhereFragments Conditions
 }
 
@@ -117,14 +118,14 @@ func (b *Show) Where(wf ...*Condition) *Show {
 
 // Like sets the comparisons LIKE condition. Either WHERE or LIKE can be used.
 // Only the first argument supported.
-func (b *Show) Like(arg ArgUnions) *Show {
+func (b *Show) Like(arg Arguments) *Show {
 	b.LikeCondition = arg
 	return b
 }
 
 // Interpolate if set stringyfies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
-// prepared statements. ToSQLs second argument `ArgUnions` will then be nil.
+// prepared statements. ToSQLs second argument `Arguments` will then be nil.
 func (b *Show) Interpolate() *Show {
 	b.IsInterpolate = true
 	return b
@@ -135,7 +136,7 @@ func (b *Show) ToSQL() (string, []interface{}, error) {
 	return toSQL(b, b.IsInterpolate, _isNotPrepared)
 }
 
-// argumentCapacity returns the total possible guessed size of a new ArgUnions
+// argumentCapacity returns the total possible guessed size of a new Arguments
 // slice. Use as the cap parameter in a call to `make`.
 func (b *Show) argumentCapacity() int {
 	return len(b.WhereFragments)
@@ -145,7 +146,7 @@ func (b *Show) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Show) readBuildCache() (sql []byte, _ ArgUnions, err error) {
+func (b *Show) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -202,10 +203,10 @@ func (b *Show) toSQL(w *bytes.Buffer) error {
 
 // ToSQL serialized the Show to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Show) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
+func (b *Show) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if cap(args) == 0 {
-		args = make(ArgUnions, 0, b.argumentCapacity())
+		args = make(Arguments, 0, b.argumentCapacity())
 	}
 
 	if len(b.LikeCondition) == 1 {

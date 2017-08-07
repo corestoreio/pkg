@@ -36,7 +36,7 @@ type salesOrder struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesOrder) AppendArguments(stmtType int, args dbr.ArgUnions, columns []string) (dbr.ArgUnions, error) {
+func (so salesOrder) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":

@@ -33,7 +33,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendArguments(stmtType int, args ArgUnions, columns []string) (ArgUnions, error) {
+func (sr someRecord) AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "something_id":
@@ -139,7 +139,7 @@ func TestInsert_Add(t *testing.T) {
 	})
 	t.Run("single AddArguments", func(t *testing.T) {
 		compareToSQL(t,
-			NewInsert("a").AddColumns("b", "c").AddArguments(MakeArgUnions(2).Int64(1).Int64(2)),
+			NewInsert("a").AddColumns("b", "c").AddArguments(MakeArgs(2).Int64(1).Int64(2)),
 			nil,
 			"INSERT INTO `a` (`b`,`c`) VALUES (?,?)",
 			"INSERT INTO `a` (`b`,`c`) VALUES (1,2)",
@@ -149,11 +149,11 @@ func TestInsert_Add(t *testing.T) {
 	t.Run("multi AddArguments on duplicate key", func(t *testing.T) {
 		compareToSQL(t,
 			NewInsert("a").AddColumns("b", "c").
-				AddArguments(MakeArgUnions(4).
+				AddArguments(MakeArgs(4).
 					Int64(1).Int64(2).
 					Int64(3).Int64(4),
 				).
-				AddArguments(MakeArgUnions(2).
+				AddArguments(MakeArgs(2).
 					Int64(5).Int64(6),
 				).
 				OnDuplicateKey(),

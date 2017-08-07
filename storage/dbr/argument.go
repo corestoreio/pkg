@@ -60,13 +60,13 @@ const (
 // SQLStmtInsert|SQLPartValues, the `columns` slice can be empty which means
 // that all arguments are requested.
 type ArgumentsAppender interface {
-	AppendArguments(stmtType int, args ArgUnions, columns []string) (ArgUnions, error)
+	AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error)
 }
 
-// argUnion is union type for different Go primitives and their slice
-// representation. argUnion must be used as a pointer because it slows
+// argument is union type for different Go primitives and their slice
+// representation. argument must be used as a pointer because it slows
 // everything down. Check the benchmarks.
-type argUnion struct {
+type argument struct {
 	isSet bool
 	// name for named place holders sql.NamedArg
 	name  string // todo
@@ -75,12 +75,12 @@ type argUnion struct {
 
 type placeHolder uint8
 
-func (arg *argUnion) set(v interface{}) {
+func (arg *argument) set(v interface{}) {
 	arg.isSet = true
 	arg.value = v
 }
 
-func (arg *argUnion) len() (l int) {
+func (arg *argument) len() (l int) {
 	switch v := arg.value.(type) {
 	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, placeHolder:
 		l = 1
@@ -117,7 +117,7 @@ func (arg *argUnion) len() (l int) {
 	return
 }
 
-func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
+func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 	switch v := arg.value.(type) {
 	case int:
 		err = writeInt64(w, int64(v))
@@ -208,7 +208,7 @@ func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
 	return err
 }
 
-func (arg argUnion) GoString() string {
+func (arg argument) GoString() string {
 	buf := new(bytes.Buffer)
 
 	switch v := arg.value.(type) {
@@ -328,18 +328,17 @@ func (arg argUnion) GoString() string {
 	return buf.String()
 }
 
-// args a collection of primitive types or slice of primitive types. Using
-// pointers in *argUnion would slow down the program.
-type ArgUnions []argUnion
+// Arguments a collection of primitive types or slices of primitive types.
+type Arguments []argument
 
-// MakeArgUnions creates a new argument union slice with the desired capacity.
-func MakeArgUnions(cap int) ArgUnions {
-	return make(ArgUnions, 0, cap)
+// MakeArgs creates a new argument slice with the desired capacity.
+func MakeArgs(cap int) Arguments {
+	return make(Arguments, 0, cap)
 }
 
-func (a ArgUnions) GoString() string {
+func (a Arguments) GoString() string {
 	buf := new(bytes.Buffer)
-	buf.WriteString("dbr.MakeArgUnions()")
+	fmt.Fprintf(buf, "dbr.MakeArgs(%d)", len(a))
 	for _, arg := range a {
 		buf.WriteString(arg.GoString())
 	}
@@ -347,7 +346,7 @@ func (a ArgUnions) GoString() string {
 }
 
 // Len returns the total length of all arguments.
-func (a ArgUnions) Len() int {
+func (a Arguments) Len() int {
 	var l int
 	for _, arg := range a {
 		l += arg.len()
@@ -357,7 +356,7 @@ func (a ArgUnions) Len() int {
 
 // String implements fmt.Stringer. Errors will be written in the returned
 // string, which might be annoying for now. Can be changed later.
-func (a ArgUnions) String() string {
+func (a Arguments) String() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	if err := a.Write(buf); err != nil {
@@ -366,8 +365,8 @@ func (a ArgUnions) String() string {
 	return buf.String()
 }
 
-// Write writes all arguments into buf and separated by a colon.
-func (a ArgUnions) Write(buf *bytes.Buffer) error {
+// Write writes all arguments into buf and separates by a comma.
+func (a Arguments) Write(buf *bytes.Buffer) error {
 	buf.WriteByte('(')
 	for j, arg := range a {
 		l := arg.len()
@@ -383,9 +382,9 @@ func (a ArgUnions) Write(buf *bytes.Buffer) error {
 	return buf.WriteByte(')')
 }
 
-// Interfaces creates an interface slice with flat values. Each type is one of
-// the allowed in driver.value.
-func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
+// Interfaces creates an interface slice with flatend values. Each type is one
+// of the allowed types in driver.Value.
+func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 	const maxInt64 = 1<<63 - 1
 	if len(a) == 0 {
 		return nil
@@ -394,12 +393,11 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 		args = make([]interface{}, 0, 2*len(a))
 	}
 
-	for j := 0; j < len(a); j++ { // faster than range
-		arg := &a[j]
+	for _, arg := range a {
 		switch vv := arg.value.(type) {
 
 		case bool, string, []byte, time.Time, float64, int64, nil:
-			args = append(args, vv) // vv is already interface{} !
+			args = append(args, arg.value)
 
 		case int:
 			args = append(args, int64(vv))
@@ -499,74 +497,74 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 	return args
 }
 
-func (a ArgUnions) PlaceHolder() ArgUnions {
-	return append(a, argUnion{isSet: true, value: placeHolder(1)})
+func (a Arguments) PlaceHolder() Arguments {
+	return append(a, argument{isSet: true, value: placeHolder(1)})
 }
-func (a ArgUnions) Null() ArgUnions         { return append(a, argUnion{isSet: true}) }
-func (a ArgUnions) Int(i int) ArgUnions     { return append(a, argUnion{isSet: true, value: i}) }
-func (a ArgUnions) Ints(i ...int) ArgUnions { return append(a, argUnion{isSet: true, value: i}) }
-func (a ArgUnions) Int64(i int64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: int64(i)})
+func (a Arguments) Null() Arguments         { return append(a, argument{isSet: true}) }
+func (a Arguments) Int(i int) Arguments     { return append(a, argument{isSet: true, value: i}) }
+func (a Arguments) Ints(i ...int) Arguments { return append(a, argument{isSet: true, value: i}) }
+func (a Arguments) Int64(i int64) Arguments {
+	return append(a, argument{isSet: true, value: int64(i)})
 }
-func (a ArgUnions) Int64s(i ...int64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: i})
+func (a Arguments) Int64s(i ...int64) Arguments {
+	return append(a, argument{isSet: true, value: i})
 }
-func (a ArgUnions) Uint64(i uint64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: i})
+func (a Arguments) Uint64(i uint64) Arguments {
+	return append(a, argument{isSet: true, value: i})
 }
-func (a ArgUnions) Uint64s(i ...uint64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: i})
+func (a Arguments) Uint64s(i ...uint64) Arguments {
+	return append(a, argument{isSet: true, value: i})
 }
-func (a ArgUnions) Float64(f float64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: f})
+func (a Arguments) Float64(f float64) Arguments {
+	return append(a, argument{isSet: true, value: f})
 }
-func (a ArgUnions) Float64s(f ...float64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: f})
+func (a Arguments) Float64s(f ...float64) Arguments {
+	return append(a, argument{isSet: true, value: f})
 }
-func (a ArgUnions) Bool(f bool) ArgUnions {
-	return append(a, argUnion{isSet: true, value: f})
+func (a Arguments) Bool(f bool) Arguments {
+	return append(a, argument{isSet: true, value: f})
 }
-func (a ArgUnions) Bools(f ...bool) ArgUnions {
-	return append(a, argUnion{isSet: true, value: f})
+func (a Arguments) Bools(f ...bool) Arguments {
+	return append(a, argument{isSet: true, value: f})
 }
-func (a ArgUnions) Str(f string) ArgUnions {
-	return append(a, argUnion{isSet: true, value: f})
+func (a Arguments) Str(f string) Arguments {
+	return append(a, argument{isSet: true, value: f})
 }
-func (a ArgUnions) Strs(f ...string) ArgUnions {
-	return append(a, argUnion{isSet: true, value: f})
+func (a Arguments) Strs(f ...string) Arguments {
+	return append(a, argument{isSet: true, value: f})
 }
-func (a ArgUnions) Bytes(b []byte) ArgUnions {
-	return append(a, argUnion{isSet: true, value: b})
+func (a Arguments) Bytes(b []byte) Arguments {
+	return append(a, argument{isSet: true, value: b})
 }
-func (a ArgUnions) BytesSlice(b ...[]byte) ArgUnions {
-	return append(a, argUnion{isSet: true, value: b})
+func (a Arguments) BytesSlice(b ...[]byte) Arguments {
+	return append(a, argument{isSet: true, value: b})
 }
-func (a ArgUnions) Time(t time.Time) ArgUnions {
-	return append(a, argUnion{isSet: true, value: t})
+func (a Arguments) Time(t time.Time) Arguments {
+	return append(a, argument{isSet: true, value: t})
 }
-func (a ArgUnions) Times(t ...time.Time) ArgUnions {
-	return append(a, argUnion{isSet: true, value: t})
+func (a Arguments) Times(t ...time.Time) Arguments {
+	return append(a, argument{isSet: true, value: t})
 }
-func (a ArgUnions) NullString(nv ...NullString) ArgUnions {
-	return append(a, argUnion{isSet: true, value: nv})
+func (a Arguments) NullString(nv ...NullString) Arguments {
+	return append(a, argument{isSet: true, value: nv})
 }
-func (a ArgUnions) NullFloat64(nv ...NullFloat64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: nv})
+func (a Arguments) NullFloat64(nv ...NullFloat64) Arguments {
+	return append(a, argument{isSet: true, value: nv})
 }
-func (a ArgUnions) NullInt64(nv ...NullInt64) ArgUnions {
-	return append(a, argUnion{isSet: true, value: nv})
+func (a Arguments) NullInt64(nv ...NullInt64) Arguments {
+	return append(a, argument{isSet: true, value: nv})
 }
-func (a ArgUnions) NullBool(nv ...NullBool) ArgUnions {
-	return append(a, argUnion{isSet: true, value: nv})
+func (a Arguments) NullBool(nv ...NullBool) Arguments {
+	return append(a, argument{isSet: true, value: nv})
 }
-func (a ArgUnions) NullTime(nv ...NullTime) ArgUnions {
-	return append(a, argUnion{isSet: true, value: nv})
+func (a Arguments) NullTime(nv ...NullTime) Arguments {
+	return append(a, argument{isSet: true, value: nv})
 }
 
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets
 // added to the argument slice.
-func (a ArgUnions) DriverValue(dvs ...driver.Valuer) ArgUnions {
+func (a Arguments) DriverValue(dvs ...driver.Valuer) Arguments {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -576,7 +574,7 @@ func (a ArgUnions) DriverValue(dvs ...driver.Valuer) ArgUnions {
 	//   []byte
 	//   string
 	//   time.Time
-	var arg argUnion
+	var arg argument
 	var i64s []int64
 	var f64s []float64
 	var bs []bool
@@ -632,7 +630,7 @@ func (a ArgUnions) DriverValue(dvs ...driver.Valuer) ArgUnions {
 }
 
 // DriverValues adds each driver.value as its own argument to the argument slice.
-func (a ArgUnions) DriverValues(dvs ...driver.Valuer) ArgUnions {
+func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
 	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
@@ -674,8 +672,8 @@ func (a ArgUnions) DriverValues(dvs ...driver.Valuer) ArgUnions {
 	return a
 }
 
-func iFaceToArgs(values ...interface{}) ArgUnions {
-	args := make(ArgUnions, 0, len(values))
+func iFaceToArgs(values ...interface{}) Arguments {
+	args := make(Arguments, 0, len(values))
 	for _, val := range values {
 		switch v := val.(type) {
 		case float32:

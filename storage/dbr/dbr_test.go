@@ -106,7 +106,7 @@ func (p *dbrPerson) RowScan(r *sql.Rows) error {
 	return assignDbrPerson(p, &p.convert)
 }
 
-func personAppendArguments(p *dbrPerson, args ArgUnions, columns []string) (_ ArgUnions, err error) {
+func personAppendArguments(p *dbrPerson, args Arguments, columns []string) (_ Arguments, err error) {
 	for _, c := range columns {
 		switch c {
 		case "id", "dp.id":
@@ -123,7 +123,7 @@ func personAppendArguments(p *dbrPerson, args ArgUnions, columns []string) (_ Ar
 	return args, err
 }
 
-func (p *dbrPerson) AppendArguments(stmtType int, args ArgUnions, columns []string) (_ ArgUnions, err error) {
+func (p *dbrPerson) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
 	return personAppendArguments(p, args, columns)
 }
 
@@ -132,7 +132,7 @@ type dbrPersons struct {
 	Data    []*dbrPerson
 }
 
-func (ps *dbrPersons) AppendArguments(stmtType int, args ArgUnions, columns []string) (_ ArgUnions, err error) {
+func (ps *dbrPersons) AppendArguments(stmtType int, args Arguments, columns []string) (_ Arguments, err error) {
 	for _, p := range ps.Data {
 		args, err = personAppendArguments(p, args, columns)
 		if err != nil {
@@ -170,7 +170,7 @@ func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
 	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) AppendArguments(stmtType int, args ArgUnions, columns []string) (ArgUnions, error) {
+func (p *nullTypedRecord) AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "id":

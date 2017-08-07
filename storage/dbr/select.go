@@ -98,7 +98,7 @@ func (c *Connection) Select(columns ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments
-func (c *Connection) SelectBySQL(sql string, args ArgUnions) *Select {
+func (c *Connection) SelectBySQL(sql string, args Arguments) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
 			Log:          c.Log,
@@ -124,7 +124,7 @@ func (tx *Tx) Select(columns ...string) *Select {
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySQL(sql string, args ArgUnions) *Select {
+func (tx *Tx) SelectBySQL(sql string, args Arguments) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
 			Log:          tx.Logger,
@@ -280,7 +280,7 @@ func (b *Select) SetRecord(rec ArgumentsAppender) *Select {
 // AddArguments adds more arguments to the Argument field of the Select type.
 // You must call this function directly after you have used e.g.
 // AddColumnsExprAlias with place holders.
-func (b *Select) AddArgUnions(args ArgUnions) *Select {
+func (b *Select) AddArgUnions(args Arguments) *Select {
 	b.RawArguments = append(b.RawArguments, args...)
 	return b
 }
@@ -444,7 +444,7 @@ func (b *Select) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Select) readBuildCache() (sql []byte, _ ArgUnions, err error) {
+func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -568,7 +568,7 @@ func (b *Select) toSQL(w *bytes.Buffer) error {
 
 // ToSQL serialized the Select to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Select) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
+func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
@@ -576,7 +576,7 @@ func (b *Select) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
 	// not sure if copying is necessary but leaves at least b.args in pristine
 	// condition
 	if cap(args) == 0 {
-		args = make(ArgUnions, 0, b.argumentCapacity())
+		args = make(Arguments, 0, b.argumentCapacity())
 	}
 	args = append(args, b.RawArguments...)
 

@@ -36,7 +36,7 @@ type categoryEntity struct {
 	TeaserIDs []string
 }
 
-func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.ArgUnions, columns []string) (dbr.ArgUnions, error) {
+func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":

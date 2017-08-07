@@ -36,7 +36,7 @@ func BenchmarkInterpolate(b *testing.B) {
 
 	const want = `SELECT * FROM x WHERE a = 1 AND b = -2 AND c = 3 AND d = 4 AND e = 5 AND f = 6 AND g = 7 AND h = 8 AND i = 9 AND j = 10 AND k = 'Hello' AND l = 1`
 	var sqlBytes = []byte("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?")
-	args := MakeArgUnions(3).
+	args := MakeArgs(3).
 		Int64s(1, -2, 3, 4, 5, 6, 7, 8, 9, 10).
 		Str("Hello").
 		Bool(true)
@@ -83,7 +83,7 @@ func BenchmarkQuoteAlias(b *testing.B) {
 // BenchmarkConditions_writeOnDuplicateKey-4   	 5000000	       337 ns/o	       0 B/o	       0 allocs/o
 func BenchmarkConditions_writeOnDuplicateKey(b *testing.B) {
 	buf := new(bytes.Buffer)
-	args := MakeArgUnions(3)
+	args := MakeArgs(3)
 	dk := Conditions{
 		Column("name").String("E0S 5D Mark III"),
 		Column("sku").Values(),

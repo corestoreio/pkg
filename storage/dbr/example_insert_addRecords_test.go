@@ -33,7 +33,7 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AppendArguments(stmtType int, args dbr.ArgUnions, columns []string) (dbr.ArgUnions, error) {
+func (pe productEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":

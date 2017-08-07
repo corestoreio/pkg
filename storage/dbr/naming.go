@@ -98,7 +98,7 @@ func (a identifier) String() string {
 func (a identifier) QuoteAs() string { return Quoter.NameAlias(a.Name, a.Aliased) }
 
 // appendArgs assembles the arguments and appends them to `args`
-func (a identifier) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
+func (a identifier) appendArgs(args Arguments) (_ Arguments, err error) {
 	if a.DerivedTable != nil {
 		args, err = a.DerivedTable.appendArgs(args)
 	}
@@ -152,7 +152,7 @@ func (as identifiers) WriteQuoted(w *bytes.Buffer) error {
 	return nil
 }
 
-func (as identifiers) appendArgs(args ArgUnions) (ArgUnions, error) {
+func (as identifiers) appendArgs(args Arguments) (Arguments, error) {
 	for _, a := range as {
 		var err error
 		args, err = a.appendArgs(args)

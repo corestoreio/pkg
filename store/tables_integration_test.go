@@ -69,7 +69,7 @@ func BenchmarkIntegration_TableStoreSlice_Reflection(b *testing.B) {
 		Logger:    log.BlackHole{EnableDebug: false, EnableInfo: false},
 		Querier:   dbc.DB,
 		Columns:   []string{"`main_table`.`store_id`", "`main_table`.`code`", "`main_table`.`website_id`", "`main_table`.`group_id`", "`main_table`.`name`", "`main_table`.`sort_order`", "`main_table`.`is_active`"},
-		FromTable: dbr.MakeAlias("core_store", "main_table"),
+		FromTable: dbr.MakeIdentifier("core_store", "main_table"),
 	}
 
 	b.ReportAllocs()

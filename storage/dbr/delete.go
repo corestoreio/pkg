@@ -165,7 +165,7 @@ func (b *Delete) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *Delete) readBuildCache() (sql []byte, _ ArgUnions, err error) {
+func (b *Delete) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -219,13 +219,13 @@ func (b *Delete) toSQL(buf *bytes.Buffer) error {
 
 // ToSQL serialized the Delete to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Delete) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
+func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
 	}
 	if cap(args) == 0 {
-		args = make(ArgUnions, 0, len(b.Wheres))
+		args = make(Arguments, 0, len(b.Wheres))
 	}
 	args, err = b.Table.appendArgs(args)
 	if err != nil {

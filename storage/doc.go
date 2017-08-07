@@ -30,4 +30,12 @@
 // github.com/go-reform/reform
 // A better ORM for Go, based on non-empty interfaces and code generation.
 // https://gopkg.in/reform.v1
+//
+// UUID or GUID as Primary Keys? Be Careful!
+// UUID vs Auto increment integers: https://news.ycombinator.com/item?id=14523523
+// https://tomharrisonjr.com/uuid-or-guid-as-primary-keys-be-careful-7b2aa3dcb439
+//
+// I would argue that using a PK in any public context is a bad idea.
+//
+// Best of Both: Integers Internal, UUIDs External.
 package storage

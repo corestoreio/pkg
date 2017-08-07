@@ -235,7 +235,7 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 	runner := func(cnds Conditions, wantSQL string, wantArgs ...interface{}) func(*testing.T) {
 		return func(t *testing.T) {
 			buf := new(bytes.Buffer)
-			args := MakeArgUnions(2)
+			args := MakeArgs(2)
 			err := cnds.writeOnDuplicateKey(buf)
 			require.NoError(t, err)
 			args, _, err = cnds.appendArgs(args, appendArgsDUPKEY)

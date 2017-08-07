@@ -26,8 +26,8 @@ import (
 
 // iFaceToArgs unpacks the interface and creates an Argument slice. Just a
 // helper function for the examples.
-func iFaceToArgs(values ...interface{}) dbr.ArgUnions {
-	args := make(dbr.ArgUnions, 0, len(values))
+func iFaceToArgs(values ...interface{}) dbr.Arguments {
+	args := make(dbr.Arguments, 0, len(values))
 	for _, val := range values {
 		switch v := val.(type) {
 		case float64:
@@ -272,7 +272,7 @@ func ExampleNewUnion() {
 	// Maybe more of your code ...
 	u.Append(
 		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
-			AddArgUnions(dbr.MakeArgUnions(1).Str("-")).
+			AddArgUnions(dbr.MakeArgs(1).Str("-")).
 			AddColumnsAlias("c2", "B").
 			From("tableC").Where(dbr.Column("c2").String("ArgForC2")),
 	).
@@ -390,7 +390,7 @@ func ExampleInterpolate() {
 }
 
 func ExampleRepeat() {
-	args := dbr.MakeArgUnions(2).Ints(5, 7, 9).Strs("a", "b", "c", "d", "e")
+	args := dbr.MakeArgs(2).Ints(5, 7, 9).Strs("a", "b", "c", "d", "e")
 	sqlStr, err := dbr.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", args)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
@@ -646,7 +646,7 @@ func ExampleSQLCase_select() {
 	// time stamp has no special meaning ;-)
 	start := time.Unix(1257894000, 0)
 	end := time.Unix(1257980400, 0)
-	args := dbr.MakeArgUnions(4).Times(start, end, start, end)
+	args := dbr.MakeArgs(4).Times(start, end, start, end)
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnExpression(
 			dbr.SQLCase("", "`closed`",
@@ -706,7 +706,7 @@ func ExampleSelect_AddArguments() {
 
 	start := time.Unix(1257894000, 0)
 	end := time.Unix(1257980400, 0)
-	args := dbr.MakeArgUnions(4).Times(start, end, start, end)
+	args := dbr.MakeArgs(4).Times(start, end, start, end)
 
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
 		AddColumnExpression(

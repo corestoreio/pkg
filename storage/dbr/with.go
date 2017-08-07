@@ -157,7 +157,7 @@ func (b *With) writeBuildCache(sql []byte) {
 	b.cacheSQL = sql
 }
 
-func (b *With) readBuildCache() (sql []byte, _ ArgUnions, err error) {
+func (b *With) readBuildCache() (sql []byte, _ Arguments, err error) {
 	if b.cacheSQL == nil {
 		return nil, nil, nil
 	}
@@ -244,7 +244,7 @@ func (b *With) toSQL(w *bytes.Buffer) error {
 	return errors.NewEmptyf("[dbr] Type With misses a top level statement")
 }
 
-func (b *With) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
+func (b *With) appendArgs(args Arguments) (_ Arguments, err error) {
 	for _, sc := range b.Subclauses {
 		switch {
 		case sc.Select != nil:

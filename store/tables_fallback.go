@@ -128,11 +128,11 @@ func (ts *tableStoreResource) PrepareSelect() error {
 	sb := &dbr.Select{
 		Logger:    ts.Log,
 		Preparer:  ts.DB,
-		Columns:   dbr.Quoter.TableColumnAlias(csdb.MainTable, "store_id", "code", "website_id", "group_id", "name", "sort_order", "is_active"),
-		FromTable: dbr.MakeAlias(ts.Table.Name, csdb.MainTable),
+		Columns:   dbr.Quoter.ColumnsWithQualifier(csdb.MainTable, "store_id", "code", "website_id", "group_id", "name", "sort_order", "is_active"),
+		FromTable: dbr.MakeIdentifier(ts.Table.Name, csdb.MainTable),
 	}
-	sb.SelectListeners.Merge(ts.Table.ListenerBucket.Select) // global listeners
-	sb.SelectListeners.Merge(ts.Listeners.Select)            // custom listeners
+	sb.Listeners.Merge(ts.Table.Listeners.Select) // global listeners
+	sb.Listeners.Merge(ts.Listeners.Select)       // custom listeners
 
 	var err error
 	ts.stmt, err = sb.Prepare()
@@ -458,7 +458,7 @@ type TableGroup struct {
 //// parentSQLSelect fills this slice with data from the database.
 //// Generated via tableToStruct.
 //func (s *TableGroupSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectEvent) (int, error) {
-//	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(*s), cbs...)
+//	return 0, nil // csdb.Load(dbrSess, TableCollection, TableIndexGroup, &(*s), cbs...)
 //}
 //
 //// SQLInsert inserts all records into the database @todo.
@@ -699,7 +699,7 @@ type TableWebsite struct {
 //// parentSQLSelect fills this slice with data from the database.
 //// Generated via tableToStruct.
 //func (s *TableWebsiteSlice) parentSQLSelect(dbrSess dbr.SessionRunner, cbs ...dbr.SelectEvent) (int, error) {
-//	return 0, nil // csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(*s), cbs...)
+//	return 0, nil // csdb.Load(dbrSess, TableCollection, TableIndexWebsite, &(*s), cbs...)
 //}
 //
 //// SQLInsert inserts all records into the database @todo.
