@@ -38,8 +38,9 @@ type Show struct {
 	DB QueryPreparer
 
 	// Type bitwise flag containing the type of the SHOW statement.
-	Type           uint
-	LikeCondition  *argUnion
+	Type uint
+	// LikeCondition supports only one argument
+	LikeCondition  ArgUnions
 	WhereFragments Conditions
 }
 
@@ -117,7 +118,7 @@ func (b *Show) Where(wf ...*Condition) *Show {
 // Like sets the comparisons LIKE condition. Either WHERE or LIKE can be used.
 // Only the first argument supported.
 func (b *Show) Like(arg ArgUnions) *Show {
-	b.LikeCondition = arg[0]
+	b.LikeCondition = arg
 	return b
 }
 
@@ -190,7 +191,7 @@ func (b *Show) toSQL(w *bytes.Buffer) error {
 		w.WriteString("BINARY LOG")
 	}
 
-	if b.LikeCondition.isset() {
+	if len(b.LikeCondition) == 1 {
 		Like.write(w, 1)
 	} else if err := b.WhereFragments.write(w, 'w'); err != nil {
 		return errors.WithStack(err)
@@ -207,8 +208,8 @@ func (b *Show) appendArgs(args ArgUnions) (_ ArgUnions, err error) {
 		args = make(ArgUnions, 0, b.argumentCapacity())
 	}
 
-	if b.LikeCondition.isset() {
-		args = append(args, b.LikeCondition)
+	if len(b.LikeCondition) == 1 {
+		args = append(args, b.LikeCondition[0])
 	} else if args, _, err = b.WhereFragments.appendArgs(args, appendArgsWHERE); err != nil {
 		return nil, errors.WithStack(err)
 	}

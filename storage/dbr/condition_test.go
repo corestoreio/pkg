@@ -69,7 +69,7 @@ func TestOpRune(t *testing.T) {
 			Column("a2").NotLike().Bytes([]byte(`H3llo`)),
 			Column("a2").NotLike().DriverValue(MakeNullInt64(2345)),
 
-			Column("a301").In().Strings("Go1", "Go2"),
+			Column("a301").In().Strs("Go1", "Go2"),
 			Column("a302").In().NullString(NullString{}, NullString{}),
 			Column("a303").In().NullString(MakeNullString("NullString")),
 			Column("a304").In().Float64s(2.718281, 3.14159),
@@ -299,7 +299,7 @@ func TestExpression(t *testing.T) {
 		sel := NewSelect("a").From("c").
 			Where(
 				Column("h").In().Int64s(1, 2, 3),
-				Expression("l NOT IN (?)").Strings("xx", "yy"),
+				Expression("l NOT IN (?)").Strs("xx", "yy"),
 			)
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `c` WHERE (`h` IN (?,?,?)) AND (l NOT IN (?,?))",
@@ -313,7 +313,7 @@ func TestExpression(t *testing.T) {
 			Where(
 				Column("h").In().Int64s(1, 2, 3),
 				Expression("l = ? AND m IN (?) AND n = ? AND o IN (?) AND p = ? AND q IN (?)").
-					String("xx").Strings("aa", "bb", "cc").
+					String("xx").Strs("aa", "bb", "cc").
 					Bool(true).Bools(true, false, true).
 					Bytes([]byte(`Gopher`)).BytesSlice([]byte(`Go1`), []byte(`Go2`)),
 			)

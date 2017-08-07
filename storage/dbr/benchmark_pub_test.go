@@ -56,7 +56,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 			Where(dbr.Expression(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
 
 		if len(tables) > 0 {
-			sel.Where(dbr.Column("TABLE_NAME IN ?").In().Strings(tables...))
+			sel.Where(dbr.Column("TABLE_NAME IN ?").In().Strs(tables...))
 		}
 
 		rows, err := sel.Query(ctx)
@@ -76,7 +76,9 @@ var benchmarkSelectStr string
 // BenchmarkSelectBasicSQL-4      500000	      3060 ns/op	    2089 B/op	      22 allocs/op <== Builder Structs
 // BenchmarkSelectBasicSQL-4   	  200000	      9266 ns/op	    5875 B/op	      18 allocs/op <== arg union
 // BenchmarkSelectBasicSQL-4   	  500000	      3385 ns/op	    3698 B/op	      19 allocs/op
-// BenchmarkSelectBasicSQL-4   	  500000	      3216 ns/op	    3281 B/op	      20 allocs/op
+// BenchmarkSelectBasicSQL-4   	  500000	      3216 ns/op	    3281 B/op	      20 allocs/op <= union type struct, large
+// BenchmarkSelectBasicSQL-4   	  500000	      2937 ns/op	    2281 B/op	      20 allocs/op no pointers
+// BenchmarkSelectBasicSQL-4   	  500000	      2849 ns/op	    2257 B/op	      18 allocs/op
 func BenchmarkSelectBasicSQL(b *testing.B) {
 
 	// Do some allocations outside the loop so they don't affect the results
@@ -121,6 +123,11 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
+	// BenchmarkSelectFullSQL/NewSelect-4             300000	      5849 ns/op	    3649 B/op	      38 allocs/op
+	// BenchmarkSelectFullSQL/NewSelect-4          	  200000	      6307 ns/op	    4922 B/op	      45 allocs/op <== builder structs
+	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      7084 ns/op	    8212 B/op	      44 allocs/op <== ArgUnions
+	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6449 ns/op	    5515 B/op	      44 allocs/op no pointers
+	// BenchmarkSelectFullSQL/NewSelect-4         	  200000	      6268 ns/op	    5443 B/op	      37 allocs/op
 	b.Run("NewSelect", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").

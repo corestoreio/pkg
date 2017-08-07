@@ -85,7 +85,7 @@ func ExampleUpdateMulti() {
 		dbr.NewUpdate("sales_order").
 			AddColumns("state", "customer_id", "grand_total").
 			Where(
-				dbr.Column("shipping_method").In().Strings("DHL", "UPS"),
+				dbr.Column("shipping_method").In().Strs("DHL", "UPS"),
 				dbr.Column("entity_id").PlaceHolder(),
 			), // Our template statement
 	).WithDB(dbc.DB)

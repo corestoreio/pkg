@@ -258,7 +258,7 @@ func TestNewUnionTemplate(t *testing.T) {
 		// The EAV UNION has been fixed with our statement that you first sort
 		// by attribute_id ASC and then by store_id ASC. If in the original
 		// buggy query of M1/M2 the sorting would be really DESC then you would
-		// never see the scoped data because the default data overwrites
+		// never see the scoped value because the default value overwrites
 		// everything when loading the PHP array.
 
 		u := NewUnion(

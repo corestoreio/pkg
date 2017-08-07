@@ -230,7 +230,7 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args ArgUnions) error {
 	argLength := 0
 	if len(args) > 0 {
 		argLength = 1
-		if args[0].field > 0 {
+		if args[0].isSet {
 			argLength = args[0].len()
 		}
 	}
@@ -250,11 +250,11 @@ func writeInterpolate(buf *bytes.Buffer, sql []byte, args ArgUnions) error {
 					return errors.NewNotValidf("[dbr] Arguments are imbalanced. Argument Index %d is greater than argument count %d", argIndex, len(args)-1)
 				}
 				argLength = 1
-				if args[argIndex].field > 0 {
+				if args[argIndex].isSet {
 					argLength = args[argIndex].len()
 				}
 			}
-			if args[argIndex].field == 0 {
+			if !args[argIndex].isSet {
 				buf.WriteString("NULL")
 			} else if err := args[argIndex].writeTo(buf, phCounter); err != nil {
 				return errors.WithStack(err)

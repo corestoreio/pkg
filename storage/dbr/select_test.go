@@ -82,7 +82,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	t.Run("column right expression with slice argument", func(t *testing.T) {
 		sel := NewSelect("sku", "name").From("products").Where(
 			Column("id").NotBetween().Ints(4, 7),
-			Column("name").NotLike().Expression("CONCAT('Canon',?,'E0S 8D Mark VII')").Strings("Camera", "Photo", "Flash"),
+			Column("name").NotLike().Expression("CONCAT('Canon',?,'E0S 8D Mark VII')").Strs("Camera", "Photo", "Flash"),
 		)
 		compareToSQL(t, sel, nil,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` NOT LIKE CONCAT('Canon',?,?,?,'E0S 8D Mark VII'))",
@@ -326,7 +326,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{"w"},
 	))
 	t.Run("IN string", runner(
-		Column("d").In().Strings("x", "y"),
+		Column("d").In().Strs("x", "y"),
 		"SELECT `a`, `b` FROM `c` WHERE (`d` IN (?,?))",
 		[]interface{}{"x", "y"},
 	))
@@ -516,7 +516,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 
 	assert.Equal(t, len(people.Data), 2)
 	if len(people.Data) == 2 {
-		// Make sure that the Ids are set. It'ab possible (maybe?) that different DBs set ids differently so
+		// Make sure that the Ids are isSet. It'ab possible (maybe?) that different DBs isSet ids differently so
 		// don't assume they're 1 and 2.
 		assert.True(t, people.Data[0].ID > 0)
 		assert.True(t, people.Data[1].ID > people.Data[0].ID)
@@ -1373,7 +1373,7 @@ func TestSelect_AddRecord(t *testing.T) {
 	})
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").From("dbr_people").
-			Join(MakeIdentifier("dbr_group").Alias("dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strings("XY%")).
+			Join(MakeIdentifier("dbr_group").Alias("dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strs("XY%")).
 			SetRecord(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,

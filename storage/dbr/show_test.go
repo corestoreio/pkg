@@ -60,7 +60,7 @@ func TestShow(t *testing.T) {
 		)
 	})
 	t.Run("variables WHERE", func(t *testing.T) {
-		s := NewShow().Variable().Where(Column("Variable_name").In().Strings("basedir", "back_log"))
+		s := NewShow().Variable().Where(Column("Variable_name").In().Strs("basedir", "back_log"))
 		compareToSQL(t, s, nil,
 			"SHOW VARIABLES WHERE (`Variable_name` IN (?,?))",
 			"SHOW VARIABLES WHERE (`Variable_name` IN ('basedir','back_log'))",

@@ -263,7 +263,7 @@ type Condition struct {
 		// into the buffer when the SQL string gets build. Usage in SET and ON
 		// DUPLICATE KEY.
 		Expression expressions
-		Argument   *argUnion // Either this or the slice is set.
+		Argument   argUnion  // Either this or the slice is set.
 		ArgUnions  ArgUnions // Only set in case of an expression.
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
@@ -357,11 +357,9 @@ func Columns(columns ...string) *Condition {
 
 // Column adds a new condition.
 func Column(columnName string) *Condition {
-	c := &Condition{
+	return &Condition{
 		Left: columnName,
 	}
-	c.Right.Argument = new(argUnion)
-	return c
 }
 
 // Expression adds an unquoted SQL expression to a WHERE, HAVING, SET or ON
@@ -497,14 +495,10 @@ func (c *Condition) Coalesce() *Condition {
 //		TYPES
 ///////////////////////////////////////////////////////////////////////////////
 
-// Cahen's Constant, used as a random identifier that an argument is a place
-// holder.
-const cahensConstant = -64341
-
 // PlaceHolder sets the database specific place holder character. Mostly used in
 // prepared statements and for interpolation.
 func (c *Condition) PlaceHolder() *Condition {
-	c.Right.Argument.field = argFieldPlaceHolder
+	c.Right.Argument.set(placeHolder(1))
 	c.IsPlaceHolder = true
 	return c
 }
@@ -531,8 +525,7 @@ func (c *Condition) Int(i int) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Int64(int64(i))
 		return c
 	}
-	c.Right.Argument.field = argFieldInt
-	c.Right.Argument.int = i
+	c.Right.Argument.set(i)
 	return c
 }
 
@@ -541,8 +534,7 @@ func (c *Condition) Ints(i ...int) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Ints(i...)
 		return c
 	}
-	c.Right.Argument.field = argFieldInts
-	c.Right.Argument.ints = i
+	c.Right.Argument.set(i)
 	return c
 }
 
@@ -551,8 +543,7 @@ func (c *Condition) Int64(i int64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Int64(i)
 		return c
 	}
-	c.Right.Argument.field = argFieldInt64
-	c.Right.Argument.int64 = i
+	c.Right.Argument.set(i)
 	return c
 }
 
@@ -561,8 +552,7 @@ func (c *Condition) Int64s(i ...int64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Int64s(i...)
 		return c
 	}
-	c.Right.Argument.field = argFieldInt64s
-	c.Right.Argument.int64s = i
+	c.Right.Argument.set(i)
 	return c
 }
 
@@ -571,8 +561,7 @@ func (c *Condition) Uint64(i uint64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Uint64(i)
 		return c
 	}
-	c.Right.Argument.field = argFieldUint64
-	c.Right.Argument.uint64 = i
+	c.Right.Argument.set(i)
 	return c
 }
 
@@ -581,8 +570,7 @@ func (c *Condition) Uint64s(i ...uint64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Uint64s(i...)
 		return c
 	}
-	c.Right.Argument.field = argFieldUint64s
-	c.Right.Argument.uint64s = i
+	c.Right.Argument.set(i)
 	return c
 }
 
@@ -591,8 +579,7 @@ func (c *Condition) Float64(f float64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Float64(f)
 		return c
 	}
-	c.Right.Argument.field = argFieldFloat64
-	c.Right.Argument.float64 = f
+	c.Right.Argument.set(f)
 	return c
 }
 func (c *Condition) Float64s(f ...float64) *Condition {
@@ -600,8 +587,7 @@ func (c *Condition) Float64s(f ...float64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Float64s(f...)
 		return c
 	}
-	c.Right.Argument.field = argFieldFloat64s
-	c.Right.Argument.float64s = f
+	c.Right.Argument.set(f)
 	return c
 }
 func (c *Condition) String(s string) *Condition { // TODO rename to Str and Strs and use String() as fmt.Stringer
@@ -609,18 +595,16 @@ func (c *Condition) String(s string) *Condition { // TODO rename to Str and Strs
 		c.Right.ArgUnions = c.Right.ArgUnions.Str(s)
 		return c
 	}
-	c.Right.Argument.field = argFieldString
-	c.Right.Argument.string = s
+	c.Right.Argument.set(s)
 	return c
 }
 
-func (c *Condition) Strings(s ...string) *Condition {
+func (c *Condition) Strs(s ...string) *Condition {
 	if c.isExpression() {
 		c.Right.ArgUnions = c.Right.ArgUnions.Strs(s...)
 		return c
 	}
-	c.Right.Argument.field = argFieldStrings
-	c.Right.Argument.strings = s
+	c.Right.Argument.set(s)
 	return c
 }
 
@@ -629,8 +613,7 @@ func (c *Condition) Bool(b bool) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Bool(b)
 		return c
 	}
-	c.Right.Argument.field = argFieldBool
-	c.Right.Argument.bool = b
+	c.Right.Argument.set(b)
 	return c
 }
 
@@ -639,8 +622,7 @@ func (c *Condition) Bools(b ...bool) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Bools(b...)
 		return c
 	}
-	c.Right.Argument.field = argFieldBools
-	c.Right.Argument.bools = b
+	c.Right.Argument.set(b)
 	return c
 }
 
@@ -652,8 +634,7 @@ func (c *Condition) Bytes(p []byte) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Bytes(p)
 		return c
 	}
-	c.Right.Argument.field = argFieldBytes
-	c.Right.Argument.bytes = p
+	c.Right.Argument.set(p)
 	return c
 }
 
@@ -662,8 +643,7 @@ func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.BytesSlice(p...)
 		return c
 	}
-	c.Right.Argument.field = argFieldBytess
-	c.Right.Argument.bytess = p
+	c.Right.Argument.set(p)
 	return c
 }
 
@@ -672,8 +652,7 @@ func (c *Condition) Time(t time.Time) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Time(t)
 		return c
 	}
-	c.Right.Argument.field = argFieldTime
-	c.Right.Argument.time = t
+	c.Right.Argument.set(t)
 	return c
 }
 
@@ -682,8 +661,7 @@ func (c *Condition) Times(t ...time.Time) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.Times(t...)
 		return c
 	}
-	c.Right.Argument.field = argFieldTimes
-	c.Right.Argument.times = t
+	c.Right.Argument.set(t)
 	return c
 }
 
@@ -692,8 +670,7 @@ func (c *Condition) NullString(nv ...NullString) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.NullString(nv...)
 		return c
 	}
-	c.Right.Argument.field = argFieldNullStrings
-	c.Right.Argument.nullStrings = nv
+	c.Right.Argument.set(nv)
 	return c
 }
 
@@ -702,8 +679,7 @@ func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.NullFloat64(nv...)
 		return c
 	}
-	c.Right.Argument.field = argFieldNullFloat64s
-	c.Right.Argument.nullFloat64s = nv
+	c.Right.Argument.set(nv)
 	return c
 }
 
@@ -712,8 +688,7 @@ func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.NullInt64(nv...)
 		return c
 	}
-	c.Right.Argument.field = argFieldNullInt64s
-	c.Right.Argument.nullInt64s = nv
+	c.Right.Argument.set(nv)
 	return c
 }
 
@@ -722,8 +697,7 @@ func (c *Condition) NullBool(nv ...NullBool) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.NullBool(nv...)
 		return c
 	}
-	c.Right.Argument.field = argFieldNullBools
-	c.Right.Argument.nullBools = nv
+	c.Right.Argument.set(nv)
 	return c
 }
 
@@ -732,8 +706,7 @@ func (c *Condition) NullTime(nv ...NullTime) *Condition {
 		c.Right.ArgUnions = c.Right.ArgUnions.NullTime(nv...)
 		return c
 	}
-	c.Right.Argument.field = argFieldNullTimes
-	c.Right.Argument.nullTimes = nv
+	c.Right.Argument.set(nv)
 	return c
 }
 
@@ -828,9 +801,9 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (len(cnd.Right.ArgUnions) == 1 || cnd.Right.Argument.isset()) && cnd.Operator > 0 {
+			if phCount == 0 && (len(cnd.Right.ArgUnions) == 1 || cnd.Right.Argument.isSet) && cnd.Operator > 0 {
 				eArg := cnd.Right.Argument
-				if eArg == nil {
+				if !eArg.isSet {
 					eArg = cnd.Right.ArgUnions[0]
 				}
 				cnd.Operator.write(w, eArg.len())
@@ -853,7 +826,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			w.WriteByte(')')
 
 			// One Argument
-		case cnd.Right.Argument.field > 0 && cnd.Right.ArgUnions == nil:
+		case cnd.Right.Argument.isSet && cnd.Right.ArgUnions == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			al := cnd.Right.Argument.len()
 			if cnd.IsPlaceHolder {
@@ -864,7 +837,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			}
 			cnd.Operator.write(w, al)
 
-		case cnd.Right.Argument.field == 0 && cnd.Right.ArgUnions != nil:
+		case !cnd.Right.Argument.isSet && cnd.Right.ArgUnions != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			al := cnd.Right.ArgUnions.Len()
 
@@ -877,7 +850,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			cnd.Operator.write(w, al)
 
 			// No Argument at all
-		case cnd.Right.Argument.field == 0 && cnd.Right.ArgUnions == nil:
+		case !cnd.Right.Argument.isSet && cnd.Right.ArgUnions == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator
 			if cOp == 0 {
@@ -940,7 +913,7 @@ func (cs Conditions) appendArgs(args ArgUnions, conditionType byte) (_ ArgUnions
 			// later swap the positions.
 			pendingArgPos = append(pendingArgPos, pendingArgPosCount)
 
-		case cnd.Right.Argument.isset():
+		case cnd.Right.Argument.isSet:
 			addArg = cnd.Operator.hasArgs(cnd.Right.Argument.len())
 		case cnd.Right.ArgUnions != nil:
 			addArg = cnd.Operator.hasArgs(cnd.Right.ArgUnions.Len())
@@ -952,7 +925,7 @@ func (cs Conditions) appendArgs(args ArgUnions, conditionType byte) (_ ArgUnions
 		}
 
 		if addArg {
-			if cnd.Right.Argument.isset() {
+			if cnd.Right.Argument.isSet {
 				args = append(args, cnd.Right.Argument)
 			}
 			args = append(args, cnd.Right.ArgUnions...)
@@ -1031,7 +1004,7 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 		//		return errors.WithStack(err)
 		//	}
 		//	w.WriteByte(')')
-		case cnd.Right.Argument.field == 0:
+		case !cnd.Right.Argument.isSet:
 			writeValues(w, cnd.Left)
 		default:
 			w.WriteByte(placeHolderRune)

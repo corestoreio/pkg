@@ -56,163 +56,122 @@ const (
 // first requested column names `id` then the first appended value must be an
 // integer. Variable `columns` can additionally contain the names and/or
 // expressions used in the WHERE, JOIN or HAVING clauses, if applicable for the
-// SQL statement type. In case where stmtType has been set to
+// SQL statement type. In case where stmtType has been isSet to
 // SQLStmtInsert|SQLPartValues, the `columns` slice can be empty which means
 // that all arguments are requested.
 type ArgumentsAppender interface {
 	AppendArguments(stmtType int, args ArgUnions, columns []string) (ArgUnions, error)
 }
 
-const (
-	argFieldNull uint8 = iota + 1
-	argFieldInt
-	argFieldInts
-	argFieldInt64
-	argFieldInt64s
-	argFieldUint64
-	argFieldUint64s
-	argFieldFloat64
-	argFieldFloat64s
-	argFieldBool
-	argFieldBools
-	argFieldString
-	argFieldStrings
-	argFieldBytes
-	argFieldBytess
-	argFieldTime
-	argFieldTimes
-	argFieldNullStrings
-	argFieldNullInt64s
-	argFieldNullFloat64s
-	argFieldNullBools
-	argFieldNullTimes
-	argFieldPlaceHolder
-)
-
 // argUnion is union type for different Go primitives and their slice
 // representation. argUnion must be used as a pointer because it slows
 // everything down. Check the benchmarks.
 type argUnion struct {
-	field uint8
-	bool
-	int
-	int64
-	uint64
-	float64
-	string
-	ints     []int
-	int64s   []int64
-	uint64s  []uint64
-	float64s []float64
-	bools    []bool
-	strings  []string
-	bytes    []byte
-	bytess   [][]byte
-	times    []time.Time
-	time     time.Time
-
-	nullStrings  []NullString
-	nullInt64s   []NullInt64
-	nullFloat64s []NullFloat64
-	nullBools    []NullBool
-	nullTimes    []NullTime
+	isSet bool
 	// name for named place holders sql.NamedArg
-	name string // todo
+	name  string // todo
+	value interface{}
 }
 
-func (arg *argUnion) isset() bool {
-	return arg != nil && arg.field > 0
+type placeHolder uint8
+
+func (arg *argUnion) set(v interface{}) {
+	arg.isSet = true
+	arg.value = v
 }
+
 func (arg *argUnion) len() (l int) {
-	switch arg.field {
-	case argFieldNull, argFieldInt, argFieldInt64, argFieldUint64, argFieldFloat64, argFieldBool, argFieldString, argFieldBytes, argFieldTime, argFieldPlaceHolder:
+	switch v := arg.value.(type) {
+	case nil, int, int64, uint64, float64, bool, string, []byte, time.Time, placeHolder:
 		l = 1
-	case argFieldInts:
-		l = len(arg.ints)
-	case argFieldInt64s:
-		l = len(arg.int64s)
-	case argFieldUint64s:
-		l = len(arg.uint64s)
-	case argFieldFloat64s:
-		l = len(arg.float64s)
-	case argFieldBools:
-		l = len(arg.bools)
-	case argFieldStrings:
-		l = len(arg.strings)
-	case argFieldBytess:
-		l = len(arg.bytess)
-	case argFieldTimes:
-		l = len(arg.times)
-	case argFieldNullStrings:
-		l = len(arg.nullStrings)
-	case argFieldNullInt64s:
-		l = len(arg.nullInt64s)
-	case argFieldNullFloat64s:
-		l = len(arg.nullFloat64s)
-	case argFieldNullBools:
-		l = len(arg.nullBools)
-	case argFieldNullTimes:
-		l = len(arg.nullTimes)
+	case []int:
+		l = len(v)
+	case []int64:
+		l = len(v)
+	case []uint64:
+		l = len(v)
+	case []float64:
+		l = len(v)
+	case []bool:
+		l = len(v)
+	case []string:
+		l = len(v)
+	case [][]byte:
+		l = len(v)
+	case []time.Time:
+		l = len(v)
+	case []NullString:
+		l = len(v)
+	case []NullInt64:
+		l = len(v)
+	case []NullFloat64:
+		l = len(v)
+	case []NullBool:
+		l = len(v)
+	case []NullTime:
+		l = len(v)
+	default:
+		panic("Unsupported type")
 	}
 	// default is 0
 	return
 }
 
-func (arg *argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
-	switch arg.field {
-	case argFieldInt:
-		err = writeInt64(w, int64(arg.int))
-	case argFieldInts:
-		err = writeInt64(w, int64(arg.ints[pos]))
-	case argFieldInt64:
-		err = writeInt64(w, arg.int64)
-	case argFieldInt64s:
-		err = writeInt64(w, arg.int64s[pos])
-	case argFieldNullInt64s:
-		if s := arg.nullInt64s[pos]; s.Valid {
+func (arg argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
+	switch v := arg.value.(type) {
+	case int:
+		err = writeInt64(w, int64(v))
+	case []int:
+		err = writeInt64(w, int64(v[pos]))
+	case int64:
+		err = writeInt64(w, v)
+	case []int64:
+		err = writeInt64(w, v[pos])
+	case []NullInt64:
+		if s := v[pos]; s.Valid {
 			return writeInt64(w, s.Int64)
 		}
 		_, err = w.WriteString(sqlStrNull)
 
-	case argFieldUint64:
-		err = writeUint64(w, arg.uint64)
-	case argFieldUint64s:
-		err = writeUint64(w, arg.uint64s[pos])
+	case uint64:
+		err = writeUint64(w, v)
+	case []uint64:
+		err = writeUint64(w, v[pos])
 
-	case argFieldFloat64:
-		err = writeFloat64(w, arg.float64)
-	case argFieldFloat64s:
-		err = writeFloat64(w, arg.float64s[pos])
-	case argFieldNullFloat64s:
-		if s := arg.nullFloat64s[pos]; s.Valid {
+	case float64:
+		err = writeFloat64(w, v)
+	case []float64:
+		err = writeFloat64(w, v[pos])
+	case []NullFloat64:
+		if s := v[pos]; s.Valid {
 			return writeFloat64(w, s.Float64)
 		}
 		_, err = w.WriteString(sqlStrNull)
 
-	case argFieldBool:
-		dialect.EscapeBool(w, arg.bool)
-	case argFieldBools:
-		dialect.EscapeBool(w, arg.bools[pos])
-	case argFieldNullBools:
-		if s := arg.nullBools[pos]; s.Valid {
+	case bool:
+		dialect.EscapeBool(w, v)
+	case []bool:
+		dialect.EscapeBool(w, v[pos])
+	case []NullBool:
+		if s := v[pos]; s.Valid {
 			dialect.EscapeBool(w, s.Bool)
 			return nil
 		}
 		_, err = w.WriteString(sqlStrNull)
 
 		// TODO(CyS) Cut the printed string in errors if it's longer than XX chars
-	case argFieldString:
-		if !utf8.ValidString(arg.string) {
-			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", arg.string)
+	case string:
+		if !utf8.ValidString(v) {
+			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", v)
 		}
-		dialect.EscapeString(w, arg.string)
-	case argFieldStrings:
-		if !utf8.ValidString(arg.strings[pos]) {
-			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", arg.strings[pos])
+		dialect.EscapeString(w, v)
+	case []string:
+		if !utf8.ValidString(v[pos]) {
+			return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", v[pos])
 		}
-		dialect.EscapeString(w, arg.strings[pos])
-	case argFieldNullStrings:
-		if s := arg.nullStrings[pos]; s.Valid {
+		dialect.EscapeString(w, v[pos])
+	case []NullString:
+		if s := v[pos]; s.Valid {
 			if !utf8.ValidString(s.String) {
 				return errors.NewNotValidf("[dbr] Argument.WriteTo: String is not UTF-8: %q", s.String)
 			}
@@ -221,157 +180,157 @@ func (arg *argUnion) writeTo(w *bytes.Buffer, pos int) (err error) {
 			_, err = w.WriteString(sqlStrNull)
 		}
 
-	case argFieldBytes:
-		err = writeBytes(w, arg.bytes)
+	case []byte:
+		err = writeBytes(w, v)
 
-	case argFieldBytess:
-		err = writeBytes(w, arg.bytess[pos])
+	case [][]byte:
+		err = writeBytes(w, v[pos])
 
-	case argFieldTime:
-		dialect.EscapeTime(w, arg.time)
-	case argFieldTimes:
-		dialect.EscapeTime(w, arg.times[pos])
-	case argFieldNullTimes:
-		if nt := arg.nullTimes[pos]; nt.Valid {
+	case time.Time:
+		dialect.EscapeTime(w, v)
+	case []time.Time:
+		dialect.EscapeTime(w, v[pos])
+	case []NullTime:
+		if nt := v[pos]; nt.Valid {
 			dialect.EscapeTime(w, nt.Time)
 		} else {
 			_, err = w.WriteString(sqlStrNull)
 		}
 
-	case argFieldNull:
+	case nil:
 		_, err = w.WriteString(sqlStrNull)
-	case argFieldPlaceHolder:
+	case placeHolder:
 		err = w.WriteByte(placeHolderRune)
 
 	default:
-		panic(errors.NewNotSupportedf("[dbr] Unsupported field type: %d", arg.field))
+		panic(errors.NewNotSupportedf("[dbr] Unsupported field type: %d", arg.value))
 	}
 	return err
 }
 
-func (arg *argUnion) GoString() string {
+func (arg argUnion) GoString() string {
 	buf := new(bytes.Buffer)
 
-	switch arg.field {
-	case argFieldInt:
-		fmt.Fprintf(buf, ".Int(%d)", arg.int)
-	case argFieldInts:
-		fmt.Fprintf(buf, ".Ints(%#v...)", arg.ints)
+	switch v := arg.value.(type) {
+	case int:
+		fmt.Fprintf(buf, ".Int(%d)", v)
+	case []int:
+		fmt.Fprintf(buf, ".Ints(%#v...)", v)
 
-	case argFieldInt64:
-		fmt.Fprintf(buf, ".Int64(%d)", arg.int64)
-	case argFieldInt64s:
-		fmt.Fprintf(buf, ".Int64s(%#v...)", arg.int64s)
-	case argFieldNullInt64s:
+	case int64:
+		fmt.Fprintf(buf, ".Int64(%d)", v)
+	case []int64:
+		fmt.Fprintf(buf, ".Int64s(%#v...)", v)
+	case []NullInt64:
 		buf.WriteString(".NullInt64(")
-		for i, v := range arg.nullInt64s {
+		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(v.GoString())
+			buf.WriteString(nv.GoString())
 		}
 		buf.WriteString(")")
 
-	case argFieldUint64:
-		fmt.Fprintf(buf, ".Uint64(%d)", arg.uint64)
-	case argFieldUint64s:
-		fmt.Fprintf(buf, ".Uint64s(%#v...)", arg.uint64s)
+	case uint64:
+		fmt.Fprintf(buf, ".Uint64(%d)", v)
+	case []uint64:
+		fmt.Fprintf(buf, ".Uint64s(%#v...)", v)
 
-	case argFieldFloat64:
-		fmt.Fprintf(buf, ".Float64(%f)", arg.float64)
-	case argFieldFloat64s:
-		fmt.Fprintf(buf, ".Float64s(%#v...)", arg.float64s)
-	case argFieldNullFloat64s:
+	case float64:
+		fmt.Fprintf(buf, ".Float64(%f)", v)
+	case []float64:
+		fmt.Fprintf(buf, ".Float64s(%#v...)", v)
+	case []NullFloat64:
 		buf.WriteString(".NullFloat64(")
-		for i, v := range arg.nullFloat64s {
+		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(v.GoString())
+			buf.WriteString(nv.GoString())
 		}
 		buf.WriteString(")")
 
-	case argFieldBool:
-		fmt.Fprintf(buf, ".Bool(%v)", arg.bool)
-	case argFieldBools:
-		fmt.Fprintf(buf, ".Bools(%#v...)", arg.bools)
-	case argFieldNullBools:
+	case bool:
+		fmt.Fprintf(buf, ".Bool(%v)", v)
+	case []bool:
+		fmt.Fprintf(buf, ".Bools(%#v...)", v)
+	case []NullBool:
 		buf.WriteString(".NullBool(")
-		for i, v := range arg.nullBools {
+		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(v.GoString())
+			buf.WriteString(nv.GoString())
 		}
 		buf.WriteString(")")
 
-	case argFieldString:
-		fmt.Fprintf(buf, ".Str(%q)", arg.string)
-	case argFieldStrings:
+	case string:
+		fmt.Fprintf(buf, ".Str(%q)", v)
+	case []string:
 		buf.WriteString(".Strs(")
-		for i, v := range arg.strings {
+		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			fmt.Fprintf(buf, "%q", v)
+			fmt.Fprintf(buf, "%q", nv)
 		}
 		buf.WriteString(")")
-	case argFieldNullStrings:
+	case []NullString:
 		buf.WriteString(".NullString(")
-		for i, v := range arg.nullStrings {
+		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(v.GoString())
+			buf.WriteString(nv.GoString())
 		}
 		buf.WriteString(")")
 
-	case argFieldBytes:
-		fmt.Fprintf(buf, ".Bytes(%#v)", arg.bytes)
-	case argFieldBytess:
+	case []byte:
+		fmt.Fprintf(buf, ".Bytes(%#v)", v)
+	case [][]byte:
 		buf.WriteString(".BytesSlice(")
-		for i, v := range arg.bytess {
+		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			fmt.Fprintf(buf, "%#v", v)
+			fmt.Fprintf(buf, "%#v", nv)
 		}
 		buf.WriteString(")")
 
-	case argFieldTime:
-		fmt.Fprintf(buf, ".Time(time.Unix(%d,%d))", arg.time.Unix(), arg.time.Nanosecond())
-	case argFieldTimes:
+	case time.Time:
+		fmt.Fprintf(buf, ".Time(time.Unix(%d,%d))", v.Unix(), v.Nanosecond())
+	case []time.Time:
 		buf.WriteString(".Times(")
-		for i, t := range arg.times {
+		for i, t := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
 			fmt.Fprintf(buf, "time.Unix(%d,%d)", t.Unix(), t.Nanosecond())
 		}
 		buf.WriteString(")")
-	case argFieldNullTimes:
+	case []NullTime:
 		buf.WriteString(".NullTime(")
-		for i, v := range arg.nullTimes {
+		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
 			}
-			buf.WriteString(v.GoString())
+			buf.WriteString(nv.GoString())
 		}
 		buf.WriteString(")")
 
-	case argFieldNull:
+	case nil:
 		fmt.Fprint(buf, ".Null()")
-	case argFieldPlaceHolder:
-		// TODO(CyS) do we need this?
+	case placeHolder:
+		// noop
 	default:
-		panic(errors.NewNotSupportedf("[dbr] Unsupported field type: %d", arg.field))
+		panic(errors.NewNotSupportedf("[dbr] Unsupported field type: %T", arg.value))
 	}
 	return buf.String()
 }
 
 // args a collection of primitive types or slice of primitive types. Using
 // pointers in *argUnion would slow down the program.
-type ArgUnions []*argUnion
+type ArgUnions []argUnion
 
 // MakeArgUnions creates a new argument union slice with the desired capacity.
 func MakeArgUnions(cap int) ArgUnions {
@@ -425,7 +384,7 @@ func (a ArgUnions) Write(buf *bytes.Buffer) error {
 }
 
 // Interfaces creates an interface slice with flat values. Each type is one of
-// the allowed in driver.Value.
+// the allowed in driver.value.
 func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 	const maxInt64 = 1<<63 - 1
 	if len(a) == 0 {
@@ -434,25 +393,27 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 	if args == nil {
 		args = make([]interface{}, 0, 2*len(a))
 	}
-	for _, arg := range a { // run bench between arg and a[i]
-		//for j := 0; j < len(a); j++ { // run bench between arg and a[i]
-		switch arg.field {
 
-		case argFieldInt:
-			args = append(args, int64(arg.int))
-		case argFieldInts:
-			for _, v := range arg.ints {
+	for j := 0; j < len(a); j++ { // faster than range
+		arg := &a[j]
+		switch vv := arg.value.(type) {
+
+		case bool, string, []byte, time.Time, float64, int64, nil:
+			args = append(args, vv) // vv is already interface{} !
+
+		case int:
+			args = append(args, int64(vv))
+		case []int:
+			for _, v := range vv {
 				args = append(args, int64(v))
 			}
 
-		case argFieldInt64:
-			args = append(args, arg.int64)
-		case argFieldInt64s:
-			for _, v := range arg.int64s {
+		case []int64:
+			for _, v := range vv {
 				args = append(args, v)
 			}
-		case argFieldNullInt64s:
-			for _, v := range arg.nullInt64s {
+		case []NullInt64:
+			for _, v := range vv {
 				if v.Valid {
 					args = append(args, v.Int64)
 				} else {
@@ -462,29 +423,27 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 
 			// Get send as text in a byte slice. The MySQL/MariaDB Server type
 			// casts it into a bigint. If you change this, a test will fail.
-		case argFieldUint64:
-			if arg.uint64 > maxInt64 {
-				args = append(args, strconv.AppendUint([]byte{}, arg.uint64, 10))
+		case uint64:
+			if vv > maxInt64 {
+				args = append(args, strconv.AppendUint([]byte{}, vv, 10))
 			} else {
-				args = append(args, int64(arg.uint64))
+				args = append(args, int64(vv))
 			}
-		case argFieldUint64s:
-			for _, v := range arg.uint64s {
-				if arg.uint64 > maxInt64 {
+		case []uint64:
+			for _, v := range vv {
+				if v > maxInt64 {
 					args = append(args, strconv.AppendUint([]byte{}, v, 10))
 				} else {
 					args = append(args, int64(v))
 				}
 			}
 
-		case argFieldFloat64:
-			args = append(args, arg.float64)
-		case argFieldFloat64s:
-			for _, v := range arg.float64s {
+		case []float64:
+			for _, v := range vv {
 				args = append(args, v)
 			}
-		case argFieldNullFloat64s:
-			for _, v := range arg.nullFloat64s {
+		case []NullFloat64:
+			for _, v := range vv {
 				if v.Valid {
 					args = append(args, v.Float64)
 				} else {
@@ -492,14 +451,12 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 				}
 			}
 
-		case argFieldBool:
-			args = append(args, arg.bool)
-		case argFieldBools:
-			for _, v := range arg.bools {
+		case []bool:
+			for _, v := range vv {
 				args = append(args, v)
 			}
-		case argFieldNullBools:
-			for _, v := range arg.nullBools {
+		case []NullBool:
+			for _, v := range vv {
 				if v.Valid {
 					args = append(args, v.Bool)
 				} else {
@@ -507,14 +464,12 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 				}
 			}
 
-		case argFieldString:
-			args = append(args, arg.string)
-		case argFieldStrings:
-			for _, v := range arg.strings {
+		case []string:
+			for _, v := range vv {
 				args = append(args, v)
 			}
-		case argFieldNullStrings:
-			for _, v := range arg.nullStrings {
+		case []NullString:
+			for _, v := range vv {
 				if v.Valid {
 					args = append(args, v.String)
 				} else {
@@ -522,100 +477,97 @@ func (a ArgUnions) Interfaces(args ...interface{}) []interface{} {
 				}
 			}
 
-		case argFieldBytes:
-			args = append(args, arg.bytes)
-		case argFieldBytess:
-			for _, v := range arg.bytess {
+		case [][]byte:
+			for _, v := range vv {
 				args = append(args, v)
 			}
 
-		case argFieldTime:
-			args = append(args, arg.time)
-		case argFieldTimes:
-			for _, v := range arg.times {
+		case []time.Time:
+			for _, v := range vv {
 				args = append(args, v)
 			}
-		case argFieldNullTimes:
-			for _, v := range arg.nullTimes {
+		case []NullTime:
+			for _, v := range vv {
 				if v.Valid {
 					args = append(args, v.Time)
 				} else {
 					args = append(args, nil)
 				}
 			}
-		case argFieldNull:
-			args = append(args, nil)
 		}
 	}
 	return args
 }
 
-func (a ArgUnions) Null() ArgUnions         { return append(a, &argUnion{field: argFieldNull}) }
-func (a ArgUnions) Int(i int) ArgUnions     { return append(a, &argUnion{field: argFieldInt, int: i}) }
-func (a ArgUnions) Ints(i ...int) ArgUnions { return append(a, &argUnion{field: argFieldInts, ints: i}) }
+func (a ArgUnions) PlaceHolder() ArgUnions {
+	return append(a, argUnion{isSet: true, value: placeHolder(1)})
+}
+func (a ArgUnions) Null() ArgUnions         { return append(a, argUnion{isSet: true}) }
+func (a ArgUnions) Int(i int) ArgUnions     { return append(a, argUnion{isSet: true, value: i}) }
+func (a ArgUnions) Ints(i ...int) ArgUnions { return append(a, argUnion{isSet: true, value: i}) }
 func (a ArgUnions) Int64(i int64) ArgUnions {
-	return append(a, &argUnion{field: argFieldInt64, int64: int64(i)})
+	return append(a, argUnion{isSet: true, value: int64(i)})
 }
 func (a ArgUnions) Int64s(i ...int64) ArgUnions {
-	return append(a, &argUnion{field: argFieldInt64s, int64s: i})
+	return append(a, argUnion{isSet: true, value: i})
 }
 func (a ArgUnions) Uint64(i uint64) ArgUnions {
-	return append(a, &argUnion{field: argFieldUint64, uint64: i})
+	return append(a, argUnion{isSet: true, value: i})
 }
 func (a ArgUnions) Uint64s(i ...uint64) ArgUnions {
-	return append(a, &argUnion{field: argFieldUint64s, uint64s: i})
+	return append(a, argUnion{isSet: true, value: i})
 }
 func (a ArgUnions) Float64(f float64) ArgUnions {
-	return append(a, &argUnion{field: argFieldFloat64, float64: f})
+	return append(a, argUnion{isSet: true, value: f})
 }
 func (a ArgUnions) Float64s(f ...float64) ArgUnions {
-	return append(a, &argUnion{field: argFieldFloat64s, float64s: f})
+	return append(a, argUnion{isSet: true, value: f})
 }
 func (a ArgUnions) Bool(f bool) ArgUnions {
-	return append(a, &argUnion{field: argFieldBool, bool: f})
+	return append(a, argUnion{isSet: true, value: f})
 }
 func (a ArgUnions) Bools(f ...bool) ArgUnions {
-	return append(a, &argUnion{field: argFieldBools, bools: f})
+	return append(a, argUnion{isSet: true, value: f})
 }
 func (a ArgUnions) Str(f string) ArgUnions {
-	return append(a, &argUnion{field: argFieldString, string: f})
+	return append(a, argUnion{isSet: true, value: f})
 }
 func (a ArgUnions) Strs(f ...string) ArgUnions {
-	return append(a, &argUnion{field: argFieldStrings, strings: f})
+	return append(a, argUnion{isSet: true, value: f})
 }
 func (a ArgUnions) Bytes(b []byte) ArgUnions {
-	return append(a, &argUnion{field: argFieldBytes, bytes: b})
+	return append(a, argUnion{isSet: true, value: b})
 }
 func (a ArgUnions) BytesSlice(b ...[]byte) ArgUnions {
-	return append(a, &argUnion{field: argFieldBytess, bytess: b})
+	return append(a, argUnion{isSet: true, value: b})
 }
 func (a ArgUnions) Time(t time.Time) ArgUnions {
-	return append(a, &argUnion{field: argFieldTime, time: t})
+	return append(a, argUnion{isSet: true, value: t})
 }
 func (a ArgUnions) Times(t ...time.Time) ArgUnions {
-	return append(a, &argUnion{field: argFieldTimes, times: t})
+	return append(a, argUnion{isSet: true, value: t})
 }
 func (a ArgUnions) NullString(nv ...NullString) ArgUnions {
-	return append(a, &argUnion{field: argFieldNullStrings, nullStrings: nv})
+	return append(a, argUnion{isSet: true, value: nv})
 }
 func (a ArgUnions) NullFloat64(nv ...NullFloat64) ArgUnions {
-	return append(a, &argUnion{field: argFieldNullFloat64s, nullFloat64s: nv})
+	return append(a, argUnion{isSet: true, value: nv})
 }
 func (a ArgUnions) NullInt64(nv ...NullInt64) ArgUnions {
-	return append(a, &argUnion{field: argFieldNullInt64s, nullInt64s: nv})
+	return append(a, argUnion{isSet: true, value: nv})
 }
 func (a ArgUnions) NullBool(nv ...NullBool) ArgUnions {
-	return append(a, &argUnion{field: argFieldNullBools, nullBools: nv})
+	return append(a, argUnion{isSet: true, value: nv})
 }
 func (a ArgUnions) NullTime(nv ...NullTime) ArgUnions {
-	return append(a, &argUnion{field: argFieldNullTimes, nullTimes: nv})
+	return append(a, argUnion{isSet: true, value: nv})
 }
 
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets
 // added to the argument slice.
 func (a ArgUnions) DriverValue(dvs ...driver.Valuer) ArgUnions {
-	// Value is a value that drivers must be able to handle.
+	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
 	//   int64
@@ -624,46 +576,64 @@ func (a ArgUnions) DriverValue(dvs ...driver.Valuer) ArgUnions {
 	//   []byte
 	//   string
 	//   time.Time
-	arg := new(argUnion)
+	var arg argUnion
+	var i64s []int64
+	var f64s []float64
+	var bs []bool
+	var bytess [][]byte
+	var strs []string
+	var times []time.Time
 	for _, dv := range dvs {
 		// dv cannot be nil
 		v, err := dv.Value()
 		if err != nil {
 			// TODO: Either keep panic or delay the error until another function gets called which also returns an error.
-			panic(errors.NewFatal(err, "[dbr] Driver.Value error for %#v", dv))
+			panic(errors.NewFatal(err, "[dbr] Driver.value error for %#v", dv))
 		}
+
 		switch t := v.(type) {
 		case nil:
-			arg.field = argFieldNull
 		case int64:
-			arg.field = argFieldInt64s
-			arg.int64s = append(arg.int64s, t)
+			i64s = append(i64s, t)
 		case float64:
-			arg.field = argFieldFloat64s
-			arg.float64s = append(arg.float64s, t)
+			f64s = append(f64s, t)
 		case bool:
-			arg.field = argFieldBools
-			arg.bools = append(arg.bools, t)
+			bs = append(bs, t)
 		case []byte:
-			arg.field = argFieldBytess
-			arg.bytess = append(arg.bytess, t)
+			bytess = append(bytess, t)
 		case string:
-			arg.field = argFieldStrings
-			arg.strings = append(arg.strings, t)
+			strs = append(strs, t)
 		case time.Time:
-			arg.field = argFieldTimes
-			arg.times = append(arg.times, t)
+			times = append(times, t)
 		default:
 			panic(errors.NewNotSupportedf("[dbr] Type %#v not supported in value slice: %#v", t, dvs))
 		}
 	}
+
+	arg.isSet = true
+
+	switch {
+	case len(i64s) > 0:
+		arg.value = i64s
+	case len(f64s) > 0:
+		arg.value = f64s
+	case len(bs) > 0:
+		arg.value = bs
+	case len(bytess) > 0:
+		arg.value = bytess
+	case len(strs) > 0:
+		arg.value = strs
+	case len(times) > 0:
+		arg.value = times
+	}
+
 	a = append(a, arg)
 	return a
 }
 
-// DriverValues adds each driver.Value as its own argument to the argument slice.
+// DriverValues adds each driver.value as its own argument to the argument slice.
 func (a ArgUnions) DriverValues(dvs ...driver.Valuer) ArgUnions {
-	// Value is a value that drivers must be able to handle.
+	// value is a value that drivers must be able to handle.
 	// It is either nil or an instance of one of these types:
 	//
 	//   int64
@@ -680,7 +650,7 @@ func (a ArgUnions) DriverValues(dvs ...driver.Valuer) ArgUnions {
 		v, err := dv.Value()
 		if err != nil {
 			// TODO: Either keep panic or delay the error until another function gets called which also returns an error.
-			panic(errors.NewFatal(err, "[dbr] Driver.Value error for %#v", dv))
+			panic(errors.NewFatal(err, "[dbr] Driver.value error for %#v", dv))
 		}
 		switch t := v.(type) {
 		case nil:

@@ -29,6 +29,7 @@ var preprocessSink string
 // BenchmarkInterpolate-4   	  500000	      4013 ns/o	     174 B/o	      11 allocs/o with reflection
 // BenchmarkInterpolate-4   	  500000	      3591 ns/o	     174 B/o	      11 allocs/o string
 // BenchmarkInterpolate-4   	  500000	      3599 ns/o	     174 B/o	      11 allocs/o []byte
+// BenchmarkInterpolate-4   	  500000	      2684 ns/op	     160 B/op	       1 allocs/op
 func BenchmarkInterpolate(b *testing.B) {
 	ipBuf := bufferpool.Get()
 	defer bufferpool.Put(ipBuf)
@@ -40,8 +41,6 @@ func BenchmarkInterpolate(b *testing.B) {
 		Str("Hello").
 		Bool(true)
 
-	b.ReportAllocs()
-	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		if err := writeInterpolate(ipBuf, sqlBytes, args); err != nil {
 			b.Fatal(err)

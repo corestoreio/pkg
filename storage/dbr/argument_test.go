@@ -314,7 +314,7 @@ func TestArgUninons_WriteTo(t *testing.T) {
 			}
 		}()
 
-		au := argUnion{field: 254}
+		au := argUnion{value: complex64(1)}
 		buf := new(bytes.Buffer)
 		require.NoError(t, au.writeTo(buf, 0))
 		assert.Empty(t, buf.String(), "buffer should be empty")
