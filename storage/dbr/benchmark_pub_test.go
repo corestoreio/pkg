@@ -282,7 +282,7 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 					"date_start > ? AND date_end > ?", "`upcoming`",
 				).Alias("is_on_sale"),
 			).
-			AddArgUnions(dbr.MakeArgs(4).Times(start, end, start, end)).
+			AddArgs(dbr.MakeArgs(4).Times(start, end, start, end)).
 			From("catalog_promotions").
 			Where(
 				dbr.Column("promotion_id").

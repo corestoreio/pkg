@@ -272,7 +272,7 @@ func ExampleNewUnion() {
 	// Maybe more of your code ...
 	u.Append(
 		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
-			AddArgUnions(dbr.MakeArgs(1).Str("-")).
+			AddArgs(dbr.MakeArgs(1).Str("-")).
 			AddColumnsAlias("c2", "B").
 			From("tableC").Where(dbr.Column("c2").String("ArgForC2")),
 	).
@@ -654,7 +654,7 @@ func ExampleSQLCase_select() {
 				"date_start > ? AND date_end > ?", "`upcoming`",
 			).Alias("is_on_sale"),
 		).
-		AddArgUnions(args).
+		AddArgs(args).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id").NotIn().Ints(4711, 815, 42))
 	writeToSQLAndInterpolate(s)
@@ -715,7 +715,7 @@ func ExampleSelect_AddArguments() {
 				"date_start > ? AND date_end > ?", "`upcoming`",
 			).Alias("is_on_sale"),
 		).
-		AddArgUnions(args).
+		AddArgs(args).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id").NotIn().Ints(4711, 815, 42))
 	writeToSQLAndInterpolate(s)

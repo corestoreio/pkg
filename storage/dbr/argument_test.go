@@ -58,7 +58,7 @@ func (a driverValueError) Value() (driver.Value, error) {
 	return nil, errors.NewAbortedf("WE've aborted something")
 }
 
-func TestArgUninons_Length_and_Stringer(t *testing.T) {
+func TestArguments_Length_and_Stringer(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
@@ -99,7 +99,7 @@ func TestArgUninons_Length_and_Stringer(t *testing.T) {
 	})
 }
 
-func TestArgUninons_Interfaces(t *testing.T) {
+func TestArguments_Interfaces(t *testing.T) {
 	t.Parallel()
 
 	container := make([]interface{}, 0, 48)
@@ -150,7 +150,7 @@ func TestArgUninons_Interfaces(t *testing.T) {
 	})
 }
 
-func TestArgUninons_DriverValue(t *testing.T) {
+func TestArguments_DriverValue(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Driver.Values supported types", func(t *testing.T) {
@@ -226,7 +226,7 @@ func TestArgUninons_DriverValue(t *testing.T) {
 
 }
 
-func TestArgUninons_WriteTo(t *testing.T) {
+func TestArguments_WriteTo(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {

@@ -37,8 +37,8 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	})
 	t.Run("no table with args", func(t *testing.T) {
 		sel := NewSelect().
-			AddColumnsExprAlias("?", "n").AddArgUnions(MakeArgs(1).Int64(1)).
-			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArgUnions(MakeArgs(1).Str("a'bc"))
+			AddColumnsExprAlias("?", "n").AddArgs(MakeArgs(1).Int64(1)).
+			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArgs(MakeArgs(1).Str("a'bc"))
 		compareToSQL(t, sel, nil,
 			"SELECT ? AS `n`, CAST(? AS CHAR(20)) AS `str`",
 			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",

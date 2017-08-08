@@ -280,7 +280,7 @@ func (b *Select) SetRecord(rec ArgumentsAppender) *Select {
 // AddArguments adds more arguments to the Argument field of the Select type.
 // You must call this function directly after you have used e.g.
 // AddColumnsExprAlias with place holders.
-func (b *Select) AddArgUnions(args Arguments) *Select {
+func (b *Select) AddArgs(args Arguments) *Select {
 	b.RawArguments = append(b.RawArguments, args...)
 	return b
 }
