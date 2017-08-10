@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ fmt.Stringer = (*expressions)(nil)
 var _ fmt.Stringer = Op(0)
 
 func TestOpRune(t *testing.T) {
@@ -209,7 +208,7 @@ func TestColumn(t *testing.T) {
 	t.Run("invalid column name", func(t *testing.T) {
 		s := NewSelect("a", "b").From("c").Where(
 			Column("a").Int(111),
-			Expression("b=c"),
+			Expr("b=c"),
 		)
 		sql, args, err := s.ToSQL()
 		require.NoError(t, err)
@@ -281,7 +280,7 @@ func TestExpression(t *testing.T) {
 		sel := NewSelect("a").From("c").
 			Where(
 				Column("g").Int(3),
-				Expression("i1 = ? AND i2 IN (?) AND i64_1 = ? AND i64_2 IN (?) AND ui64 > ? AND f64_1 = ? AND f64_2 IN (?)").
+				Expr("i1 = ? AND i2 IN (?) AND i64_1 = ? AND i64_2 IN (?) AND ui64 > ? AND f64_1 = ? AND f64_2 IN (?)").
 					Int(1).Ints(2, 3).
 					Int64(4).Int64s(5, 6).
 					Uint64(7).
@@ -299,7 +298,7 @@ func TestExpression(t *testing.T) {
 		sel := NewSelect("a").From("c").
 			Where(
 				Column("h").In().Int64s(1, 2, 3),
-				Expression("l NOT IN (?)").Strs("xx", "yy"),
+				Expr("l NOT IN (?)").Strs("xx", "yy"),
 			)
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `c` WHERE (`h` IN (?,?,?)) AND (l NOT IN (?,?))",
@@ -312,7 +311,7 @@ func TestExpression(t *testing.T) {
 		sel := NewSelect("a").From("c").
 			Where(
 				Column("h").In().Int64s(1, 2, 3),
-				Expression("l = ? AND m IN (?) AND n = ? AND o IN (?) AND p = ? AND q IN (?)").
+				Expr("l = ? AND m IN (?) AND n = ? AND o IN (?) AND p = ? AND q IN (?)").
 					String("xx").Strs("aa", "bb", "cc").
 					Bool(true).Bools(true, false, true).
 					Bytes([]byte(`Gopher`)).BytesSlice([]byte(`Go1`), []byte(`Go2`)),
@@ -329,7 +328,7 @@ func TestExpression(t *testing.T) {
 		sel := NewSelect("a").From("c").
 			Where(
 				Column("h").In().Int64s(1, 2, 3),
-				Expression("t1 = ? AND t2 IN (?) AND ns = ? OR nf = ? OR ni = ? OR nb = ? AND nt = ?").
+				Expr("t1 = ? AND t2 IN (?) AND ns = ? OR nf = ? OR ni = ? OR nb = ? AND nt = ?").
 					Time(now()).
 					Times(now(), now()).
 					NullString(MakeNullString("Goph3r")).

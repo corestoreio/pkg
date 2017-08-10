@@ -103,14 +103,14 @@ func (u *Union) All() *Union {
 func (u *Union) PreserveResultSet() *Union {
 	if len(u.Selects) > 1 {
 		for i, s := range u.Selects {
-			s.AddColumnsExprAlias(strconv.Itoa(i), "_preserve_result_set")
+			s.AddColumnsConditions(Expr(strconv.Itoa(i)).Alias("_preserve_result_set"))
 		}
 		u.OrderBys = append(identifiers{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
 		return u
 	}
 
 	// Panics without any *Select in the slice. Programmer error.
-	u.Selects[0].AddColumnsExprAlias("{preserveResultSet}", "_preserve_result_set")
+	u.Selects[0].AddColumnsConditions(Expr("{preserveResultSet}").Alias("_preserve_result_set"))
 	u.OrderBys = append(identifiers{MakeIdentifier("_preserve_result_set")}, u.OrderBys...)
 	for i := 0; i < u.stmtCount; i++ {
 		u.oldNew[i] = append(u.oldNew[i], "{preserveResultSet}", strconv.Itoa(i))
@@ -118,28 +118,23 @@ func (u *Union) PreserveResultSet() *Union {
 	return u
 }
 
-// OrderBy appends a column to ORDER the statement ascending. Columns are
-// getting quoted. MySQL might order the result set in a temporary table, which
-// is slow. Under different conditions sorting can skip the temporary table.
+// OrderBy appends a column to ORDER the statement ascending. A column gets
+// always quoted if it is a valid identifier otherwise it will be treated as an
+// expression. MySQL might order the result set in a temporary table, which is
+// slow. Under different conditions sorting can skip the temporary table.
 // https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
 func (u *Union) OrderBy(columns ...string) *Union {
-	u.OrderBys = u.OrderBys.appendColumns(columns, false).applySort(len(columns), sortAscending)
+	u.OrderBys = u.OrderBys.AppendColumns(columns...).applySort(len(columns), sortAscending)
 	return u
 }
 
 // OrderByDesc appends columns to the ORDER BY statement for descending sorting.
-// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a DELETE, the server sorts values using only the initial number of
-// bytes indicated by the max_sort_length system variable.
+// A column gets always quoted if it is a valid identifier otherwise it will be
+// treated as an expression. When you use ORDER BY or GROUP BY to sort a column
+// in a DELETE, the server sorts values using only the initial number of bytes
+// indicated by the max_sort_length system variable.
 func (u *Union) OrderByDesc(columns ...string) *Union {
-	u.OrderBys = u.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
-	return u
-}
-
-// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
-// quote the strings.
-func (u *Union) OrderByExpr(columns ...string) *Union {
-	u.OrderBys = u.OrderBys.appendColumns(columns, true)
+	u.OrderBys = u.OrderBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
 	return u
 }
 

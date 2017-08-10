@@ -92,10 +92,10 @@ func TestUnion_Prepare(t *testing.T) {
 	})
 
 	u := dbr.NewUnion(
-		dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
+		dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
 	).
-		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`).
+		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
 		PreserveResultSet().BuildCache()
 
 	t.Run("Error", func(t *testing.T) {
@@ -134,10 +134,10 @@ func TestUnion_Load(t *testing.T) {
 	t.Parallel()
 
 	u := dbr.NewUnion(
-		dbr.NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
+		dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
 	).
-		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`)
+		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`)
 
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)

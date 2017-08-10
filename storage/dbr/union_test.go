@@ -52,7 +52,7 @@ func TestUnionStmts(t *testing.T) {
 
 	t.Run("order by", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect("a").AddColumnsAlias("d", "b").From("tableAD").Where(Column("d").String("f")),
+			NewSelect("a").AddColumnsAliases("d", "b").From("tableAD").Where(Column("d").String("f")),
 			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		).All().OrderBy("a").OrderByDesc("b")
 
@@ -65,7 +65,7 @@ func TestUnionStmts(t *testing.T) {
 
 	t.Run("preserve result set", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
+			NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 			NewSelect("a", "b").From("tableAB").Where(Column("c").Between().Int64s(3, 5)),
 		).All().OrderBy("a").OrderByDesc("b").PreserveResultSet()
 
@@ -108,11 +108,11 @@ func TestUnion_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
 	u := NewUnion(
-		NewSelect("a").AddColumnsAlias("d", "b").From("tableAD"),
+		NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		NewSelect("a", "b").From("tableAB").Where(Column("b").Float64(3.14159)),
 	).All().
 		StringReplace("MyKey", "a", "b", "c"). // does nothing because more than one NewSelect functions
-		OrderBy("a").OrderByDesc("b").OrderByExpr(`concat("c",b,"d")`).
+		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
 		PreserveResultSet().BuildCache()
 
 	const cachedSQLPlaceHolder = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat(\"c\",b,\"d\")"
@@ -183,7 +183,7 @@ func TestNewUnionTemplate(t *testing.T) {
 
 	t.Run("full statement EAV", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAlias("t.{column}", "col_type").
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("t.{column}", "col_type").
 				FromAlias("catalog_product_entity_{type}", "t").
 				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.{column}_store_id"),

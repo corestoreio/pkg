@@ -29,7 +29,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no table no args", func(t *testing.T) {
-		sel := NewSelect().AddColumnsExprAlias("1", "n").AddColumnsAlias("abc", "str")
+		sel := NewSelect().AddColumnsConditions(Expr("1").Alias("n")).AddColumnsAliases("abc", "str")
 		compareToSQL(t, sel, nil,
 			"SELECT 1 AS `n`, `abc` AS `str`",
 			"",
@@ -37,8 +37,10 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	})
 	t.Run("no table with args", func(t *testing.T) {
 		sel := NewSelect().
-			AddColumnsExprAlias("?", "n").AddArgs(MakeArgs(1).Int64(1)).
-			AddColumnsExprAlias("CAST(? AS CHAR(20))", "str").AddArgs(MakeArgs(1).Str("a'bc"))
+			AddColumnsConditions(
+				Expr("?").Alias("n").Int64(1),
+				Expr("CAST(? AS CHAR(20))").Alias("str").String("a'bc"),
+			)
 		compareToSQL(t, sel, nil,
 			"SELECT ? AS `n`, CAST(? AS CHAR(20)) AS `str`",
 			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
@@ -94,7 +96,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	//t.Run("column left and right expression without arguments", func(t *testing.T) {
 	//	sel := NewSelect("sku", "name").From("products").Where(
 	//		Column("id").NotBetween().Ints(4, 7),
-	//		Column("name").NotEqual().Expression("CONCAT('Canon','E0S 5D Mark III')"),
+	//		Column("name").NotEqual().Expr("CONCAT('Canon','E0S 5D Mark III')"),
 	//	)
 	//	compareToSQL(t, sel, nil,
 	//		"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` != CONCAT('Canon','E0S 5D Mark III'))",
@@ -125,7 +127,7 @@ func TestSelectFullToSQL(t *testing.T) {
 			Column("m").Int(33),
 			Column("n").String("wh3r3").Or(),
 			ParenthesisClose(),
-			Expression("j = k"),
+			Expr("j = k"),
 		).
 		OrderBy("l").
 		Limit(7).
@@ -160,7 +162,7 @@ func TestSelect_Interpolate(t *testing.T) {
 				Column("m").Int(33),
 				Column("n").String("wh3r3").Or(),
 				ParenthesisClose(),
-				Expression("j = k"),
+				Expr("j = k"),
 			).
 			OrderBy("l").
 			Limit(7).
@@ -175,13 +177,13 @@ func TestSelect_Interpolate(t *testing.T) {
 	t.Run("two args in one condition", func(t *testing.T) {
 		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(Expression("`d` = ? OR `e` = ?").Int64(1).String("wat")).
+			Where(Expr("`d` = ? OR `e` = ?").Int64(1).String("wat")).
 			Where(
 				Column("g").Int(3),
 				Column("h").In().Int64s(1, 2, 3),
 			).
 			GroupBy("ab").GroupBy("ii").GroupBy("iii").
-			Having(Expression("j = k"), Column("jj").Int64(1)).
+			Having(Expr("j = k"), Column("jj").Int64(1)).
 			Having(Column("jjj").Int64(2)).
 			OrderBy("l1").OrderBy("l2").OrderBy("l3").
 			Limit(7).Offset(8)
@@ -595,12 +597,12 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.Equal(t, "Jonathan", name)
 	})
 	t.Run("LoadString too many columns", func(t *testing.T) {
-		name, err := s.Select("name", "email").From("dbr_people").Where(Expression("email = 'jonathan@uservoice.com'")).LoadString(context.TODO())
+		name, err := s.Select("name", "email").From("dbr_people").Where(Expr("email = 'jonathan@uservoice.com'")).LoadString(context.TODO())
 		assert.Error(t, err, "%+v", err)
 		assert.Empty(t, name)
 	})
 	t.Run("LoadString not found", func(t *testing.T) {
-		name, err := s.Select("name").From("dbr_people").Where(Expression("email = 'notfound@example.com'")).LoadString(context.TODO())
+		name, err := s.Select("name").From("dbr_people").Where(Expr("email = 'notfound@example.com'")).LoadString(context.TODO())
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, name)
 	})
@@ -616,7 +618,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.Empty(t, id)
 	})
 	t.Run("LoadInt64 not found", func(t *testing.T) {
-		id, err := s.Select("id").From("dbr_people").Where(Expression("id=236478326")).LoadInt64(context.TODO())
+		id, err := s.Select("id").From("dbr_people").Where(Expr("id=236478326")).LoadInt64(context.TODO())
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, id)
 	})
@@ -632,7 +634,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.Empty(t, id)
 	})
 	t.Run("LoadUint64 not found", func(t *testing.T) {
-		id, err := s.Select("id").From("dbr_people").Where(Expression("id=236478326")).LoadUint64(context.TODO())
+		id, err := s.Select("id").From("dbr_people").Where(Expr("id=236478326")).LoadUint64(context.TODO())
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, id)
 	})
@@ -648,7 +650,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 		assert.Empty(t, id)
 	})
 	t.Run("LoadFloat64 not found", func(t *testing.T) {
-		id, err := s.Select("id").From("dbr_people").Where(Expression("id=236478326")).LoadFloat64(context.TODO())
+		id, err := s.Select("id").From("dbr_people").Where(Expr("id=236478326")).LoadFloat64(context.TODO())
 		assert.True(t, errors.IsNotFound(err), "%+v", err)
 		assert.Empty(t, id)
 	})
@@ -692,7 +694,7 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 		assert.Exactly(t, []string(nil), vals)
 	})
 	t.Run("LoadStrings not found", func(t *testing.T) {
-		names, err := s.Select("name").From("dbr_people").Where(Expression("name ='jdhsjdf'")).LoadStrings(context.TODO())
+		names, err := s.Select("name").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadStrings(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, []string{}, names)
 	})
@@ -708,7 +710,7 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 		assert.Exactly(t, []int64(nil), vals)
 	})
 	t.Run("LoadInt64s not found", func(t *testing.T) {
-		names, err := s.Select("id").From("dbr_people").Where(Expression("name ='jdhsjdf'")).LoadInt64s(context.TODO())
+		names, err := s.Select("id").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadInt64s(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, []int64{}, names)
 	})
@@ -724,7 +726,7 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 		assert.Exactly(t, []uint64(nil), vals)
 	})
 	t.Run("LoadUint64s not found", func(t *testing.T) {
-		names, err := s.Select("id").From("dbr_people").Where(Expression("name ='jdhsjdf'")).LoadUint64s(context.TODO())
+		names, err := s.Select("id").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadUint64s(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, []uint64{}, names)
 	})
@@ -740,7 +742,7 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 		assert.Exactly(t, []float64(nil), vals)
 	})
 	t.Run("LoadFloat64s not found", func(t *testing.T) {
-		names, err := s.Select("id").From("dbr_people").Where(Expression("name ='jdhsjdf'")).LoadFloat64s(context.TODO())
+		names, err := s.Select("id").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadFloat64s(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, []float64{}, names)
 	})
@@ -758,7 +760,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			Join(
 				MakeIdentifier("dbr_people").Alias("p2"),
-				Expression("`p2`.`id` = `p1`.`id`"),
+				Expr("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id").Int(42),
 			)
 
@@ -776,7 +778,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			Join(
 				MakeIdentifier("dbr_people").Alias("p2"),
-				Expression("`p2`.`id` = `p1`.`id`"),
+				Expr("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id").Int(42),
 			)
 
@@ -793,7 +795,7 @@ func TestSelectJoin(t *testing.T) {
 			FromAlias("dbr_people", "p1").
 			LeftJoin(
 				MakeIdentifier("dbr_people").Alias("p2"),
-				Expression("`p2`.`id` = `p1`.`id`"),
+				Expr("`p2`.`id` = `p1`.`id`"),
 				Column("p1.id").Int(42),
 			)
 
@@ -807,11 +809,11 @@ func TestSelectJoin(t *testing.T) {
 	t.Run("right", func(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*").
-			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID").
+			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID").
 			FromAlias("dbr_people", "p1").
 			RightJoin(
 				MakeIdentifier("dbr_people").Alias("p2"),
-				Expression("`p2`.`id` = `p1`.`id`"),
+				Expr("`p2`.`id` = `p1`.`id`"),
 			)
 		compareToSQL(t, sqlObj, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
@@ -822,7 +824,7 @@ func TestSelectJoin(t *testing.T) {
 	t.Run("using", func(t *testing.T) {
 		sqlObj := s.
 			Select("p1.*").
-			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
+			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email").
 			FromAlias("dbr_people", "p1").
 			RightJoin(
 				MakeIdentifier("dbr_people").Alias("p2"),
@@ -839,7 +841,7 @@ func TestSelect_Locks(t *testing.T) {
 	t.Parallel()
 	t.Run("LOCK IN SHARE MODE", func(t *testing.T) {
 		s := NewSelect("p1.*").
-			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
+			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email").
 			FromAlias("dbr_people", "p1").LockInShareMode()
 		compareToSQL(t, s, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` LOCK IN SHARE MODE",
@@ -848,7 +850,7 @@ func TestSelect_Locks(t *testing.T) {
 	})
 	t.Run("FOR UPDATE", func(t *testing.T) {
 		s := NewSelect("p1.*").
-			AddColumnsAlias("p2.name", "p2Name", "p2.email", "p2Email").
+			AddColumnsAliases("p2.name", "p2Name", "p2.email", "p2Email").
 			FromAlias("dbr_people", "p1").ForUpdate()
 		compareToSQL(t, s, nil,
 			"SELECT `p1`.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email` FROM `dbr_people` AS `p1` FOR UPDATE",
@@ -963,10 +965,10 @@ func TestSelect_Columns(t *testing.T) {
 			"SELECT `a`, `b`, `d`, `e`, `f` FROM `tableA` AS `tA`",
 		)
 	})
-	t.Run("AddColumnsAlias Expression Quoted", func(t *testing.T) {
+	t.Run("AddColumnsAliases Expression Quoted", func(t *testing.T) {
 		s := NewSelect().From("t3").
-			AddColumnsAlias("x", "u", "y", "v").
-			AddColumnsAlias("SUM(price)", "total_price")
+			AddColumnsAliases("x", "u", "y", "v").
+			AddColumnsAliases("SUM(price)", "total_price")
 		compareToSQL(t, s, nil,
 			"SELECT `x` AS `u`, `y` AS `v`, `SUM(price)` AS `total_price` FROM `t3`",
 			"SELECT `x` AS `u`, `y` AS `v`, `SUM(price)` AS `total_price` FROM `t3`",
@@ -975,22 +977,22 @@ func TestSelect_Columns(t *testing.T) {
 	t.Run("AddColumns+AddColumnsExprAlias", func(t *testing.T) {
 		s := NewSelect().From("t3").
 			AddColumns("t3.name", "sku").
-			AddColumnsExprAlias("SUM(price)", "total_price")
+			AddColumnsConditions(Expr("SUM(price)").Alias("total_price"))
 		compareToSQL(t, s, nil,
 			"SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`",
 			"SELECT `t3`.`name`, `sku`, SUM(price) AS `total_price` FROM `t3`",
 		)
 	})
 
-	t.Run("AddColumnsAlias multi", func(t *testing.T) {
+	t.Run("AddColumnsAliases multi", func(t *testing.T) {
 		s := NewSelect().From("t3").
-			AddColumnsAlias("t3.name", "t3Name", "t3.sku", "t3SKU")
+			AddColumnsAliases("t3.name", "t3Name", "t3.sku", "t3SKU")
 		compareToSQL(t, s, nil,
 			"SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`",
 			"SELECT `t3`.`name` AS `t3Name`, `t3`.`sku` AS `t3SKU` FROM `t3`",
 		)
 	})
-	t.Run("AddColumnsAlias imbalanced", func(t *testing.T) {
+	t.Run("AddColumnsAliases imbalanced", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r != nil {
 				if err, ok := r.(error); ok {
@@ -1003,27 +1005,13 @@ func TestSelect_Columns(t *testing.T) {
 			}
 		}()
 		NewSelect().From("t3").
-			AddColumnsAlias("t3.name", "t3Name", "t3.sku")
+			AddColumnsAliases("t3.name", "t3Name", "t3.sku")
 
 	})
-	t.Run("AddColumnsExprAlias imbalanced", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r != nil {
-				if err, ok := r.(error); ok {
-					assert.True(t, errors.IsMismatch(err), "%+v", err)
-				} else {
-					t.Errorf("Panic should contain an error but got:\n%+v", r)
-				}
-			} else {
-				t.Error("Expecting a panic but got nothing")
-			}
-		}()
-		NewSelect().From("t3").
-			AddColumnsExprAlias("t3.name", "t3Name", "t3.sku")
-	})
+
 	t.Run("AddColumnsExprAlias", func(t *testing.T) {
 		s := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
-			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period")
+			AddColumnsConditions(Expr("DATE_FORMAT(", "t3.period", ", '%Y-%m-01')").Alias("period"))
 		compareToSQL(t, s, nil,
 			"SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`",
 			"SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`",
@@ -1106,19 +1094,22 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 
 	t.Run("without args", func(t *testing.T) {
 		sel3 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
-			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
+			AddColumnsConditions(Expr("DATE_FORMAT(t3.period, '%Y-%m-01')").Alias("period")).
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
-			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
+			AddColumnsConditions(
+				Expr("AVG(`t3`.`product_price`)").Alias("avg_price"),
+				Expr("SUM(t3.qty_ordered)").Alias("total_qty"),
+			).
 			GroupBy("t3.store_id").
-			GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			GroupBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			GroupBy("t3.product_id", "t3.product_name").
 			OrderBy("t3.store_id").
-			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			OrderBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			OrderByDesc("total_qty")
 
 		sel2 := NewSelectWithDerivedTable(sel3, "t2").
 			AddColumns("t2.period", "t2.store_id", "t2.product_id", "t2.product_name", "t2.avg_price").
-			AddColumnsAlias("`t2`.`total_qty`", "`qty_ordered`")
+			AddColumnsAliases("`t2`.`total_qty`", "`qty_ordered`")
 
 		sel1 := NewSelectWithDerivedTable(sel2, "t1").
 			AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
@@ -1132,30 +1123,33 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 
 	t.Run("with args", func(t *testing.T) {
 		sel3 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
-			AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
+			AddColumnsConditions(Expr("DATE_FORMAT(t3.period, '%Y-%m-01')").Alias("period")).
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
-			AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
+			AddColumnsConditions(
+				Expr("AVG(`t3`.`product_price`)").Alias("avg_price"),
+				Expr("SUM(t3.qty_ordered)+?").Alias("total_qty").Float64(3.141),
+			).
 			GroupBy("t3.store_id").
-			GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			GroupBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			GroupBy("t3.product_id", "t3.product_name").
-			Having(Expression("COUNT(*)>?").Int(3)).
+			Having(Expr("COUNT(*)>?").Int(3)).
 			OrderBy("t3.store_id").
-			OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+			OrderBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
 			OrderByDesc("total_qty DESC").
 			Where(Column("t3.store_id").In().Int64s(2, 3, 4))
 
 		sel2 := NewSelectWithDerivedTable(sel3, "t2").
 			AddColumns("t2.period", "t2.store_id", "t2.product_id", "t2.product_name", "t2.avg_price").
-			AddColumnsAlias("t2.total_qty", "qty_ordered")
+			AddColumnsAliases("t2.total_qty", "qty_ordered")
 
 		sel1 := NewSelectWithDerivedTable(sel2, "t1").
 			AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
 			OrderBy("`t1`.period", "`t1`.product_id")
 
 		compareToSQL(t, sel1, nil,
-			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (?,?,?)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
-			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered) AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
-			int64(2), int64(3), int64(4), int64(3),
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered)+? AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (?,?,?)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered)+? AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			3.141, int64(2), int64(3), int64(4), int64(3),
 		)
 	})
 }
@@ -1167,7 +1161,7 @@ func TestSelect_Subselect_Compact(t *testing.T) {
 		AddColumns("`t3`.`product_name`").
 		Where(Column("t3.store_id").In().Int64s(2, 3, 4)).
 		GroupBy("t3.store_id").
-		Having(Expression("COUNT(*)>?").Int(5))
+		Having(Expr("COUNT(*)>?").Int(5))
 
 	sel := NewSelectWithDerivedTable(sel2, "t2").
 		AddColumns("t2.product_name").
@@ -1199,7 +1193,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 				Column("m").Int(33),
 				Column("n").String("wh3r3").Or(),
 				ParenthesisClose(),
-				Expression("j = k"),
+				Expr("j = k"),
 			)
 		compareToSQL(t, sel, nil,
 			"SELECT `a`, `b` FROM `c` AS `cc` WHERE ((`d` = ?) OR (`e` = ?)) AND (`f` = ?) GROUP BY `ab` HAVING ((`m` = ?) OR (`n` = ?)) AND (j = k)",
@@ -1220,7 +1214,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 			).
 			GroupBy("ab").
 			Having(
-				Expression("j = k"),
+				Expr("j = k"),
 				ParenthesisOpen(),
 				Column("m").Int(33),
 				Column("n").String("wh3r3").Or(),
@@ -1245,7 +1239,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 			).
 			GroupBy("ab").
 			Having(
-				Expression("j = k"),
+				Expr("j = k"),
 				ParenthesisOpen(),
 				Column("m").Int(33),
 				Column("n").String("wh3r3").Or(),
@@ -1304,7 +1298,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 			Column("m").Int(33),
 			Column("n").String("wh3r3").Or(),
 			ParenthesisClose(),
-			Expression("j = k"),
+			Expr("j = k"),
 		).
 		OrderBy("l").
 		Limit(7).

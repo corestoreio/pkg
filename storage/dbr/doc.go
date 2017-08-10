@@ -38,4 +38,6 @@
 // TODO(CyS) Add named parameter from GO1.8 to each query builder
 //
 // TODO(CyS) think about named locks: https://news.ycombinator.com/item?id=14907679 https://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_get-lock
+//
+// TODO(CyS) refactor some parts of the code once Go implements generics ;-)
 package dbr

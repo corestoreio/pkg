@@ -17,10 +17,8 @@ package dbr
 import (
 	"bytes"
 	"database/sql/driver"
-	"strings"
 	"time"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
 
@@ -198,57 +196,11 @@ func (o Op) hasArgs(argLen int) (addArg bool) {
 	return
 }
 
-// expression is just some lines to avoid a fully written string created by
-// other functions. Each line can contain arbitrary characters. The lines get
-// written without any separator into a buffer. Hooks/Event/Observer allow an
-// easily modification of different line items. Much better than having a long
-// string with a wrapped complex SQL expression. There is no need to export it.
-type expressions []string
-
-// write writes the strings into `w` and correctly handles the place holder
-// repetition depending on the number of arguments.
-func (e expressions) write(w *bytes.Buffer, args Arguments) (phCount int, err error) {
-	eBuf := bufferpool.Get()
-	defer bufferpool.Put(eBuf)
-
-	for _, expr := range e {
-		phCount += strings.Count(expr, placeHolderStr)
-		if _, err = eBuf.WriteString(expr); err != nil {
-			return phCount, errors.Wrapf(err, "[dbr] expression.write: failed to write %q", expr)
-		}
-	}
-	if args != nil && phCount != args.Len() {
-		if err = repeatPlaceHolders(w, eBuf.Bytes(), args); err != nil {
-			return phCount, errors.WithStack(err)
-		}
-	} else {
-		_, err = eBuf.WriteTo(w)
-	}
-	return phCount, errors.WithStack(err)
-}
-
-func (e expressions) isset() bool {
-	return len(e) > 0
-}
-
-// Aliased appends a quoted alias name to the expression
-func (e expressions) Alias(a string) expressions {
-	e = append(e, " AS ")
-	e = Quoter.appendQuote(e, a)
-	return e
-}
-
-func (e expressions) String() string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	e.write(buf, nil)
-	return buf.String()
-}
-
 // Condition implements a single condition often used in WHERE, ON, SET and ON
 // DUPLICATE KEY UPDATE. Please use the helper functions instead of using this
 // type directly.
 type Condition struct {
+	Aliased string
 	// Left can contain either a valid identifier or an expression. Set field
 	// `IsLeftExpression` to true to avoid quoting of the this field. Left can also
 	// contain a string in the format `qualifier.identifier`.
@@ -256,15 +208,15 @@ type Condition struct {
 	// LeftExpression defines multiple strings as an expression. Each string
 	// gets written without any separator. If `LeftExpression` has been set, the
 	// field `Left` gets ignored.
-	LeftExpression expressions
+	LeftExpression expr
 	// Right defines the right hand side for an assignment
 	Right struct {
+		Argument argument // Only set in case of no expression
 		// Expression can contain multiple entries. Each slice item gets written
 		// into the buffer when the SQL string gets build. Usage in SET and ON
 		// DUPLICATE KEY.
-		Expression expressions
-		Argument   argument  // Either this or the slice is set.
-		ArgUnions  Arguments // Only set in case of an expression.
+		Expression expr
+		Arguments  Arguments
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
@@ -300,6 +252,20 @@ type join struct {
 	Table identifier
 	// On join on those conditions
 	On Conditions
+}
+
+// Alias
+func (c *Condition) Alias(a string) *Condition {
+	// TODO(CyS) implement
+	//// Aliased appends a quoted alias name to the expression
+	//func (e expr) Alias(a string) expr {
+	//										  e.Stmts = append(e.Stmts, " AS ")
+	//	e.Stmts = Quoter.appendQuote(e.Stmts, a)
+	//	return e
+	//}
+
+	c.Aliased = a
+	return c
 }
 
 // And sets the logical AND operator
@@ -362,15 +328,13 @@ func Column(columnName string) *Condition {
 	}
 }
 
-// Expression adds an unquoted SQL expression to a WHERE, HAVING, SET or ON
-// DUPLICATE KEY statement. Each item of an expression gets written into the
-// buffer without a separator.
-func Expression(expression ...string) *Condition {
-	c := &Condition{
+// Expr adds an unquoted SQL expression to a column, WHERE, HAVING, SET or ON DUPLICATE
+// KEY statement. Each item of an expression gets written into the buffer
+// without a separator.
+func Expr(expression ...string) *Condition {
+	return &Condition{
 		LeftExpression: expression,
 	}
-	c.Right.ArgUnions = MakeArgs(3)
-	return c
 }
 
 // ParenthesisOpen sets an open parenthesis "(". Mostly used for OR conditions
@@ -522,7 +486,7 @@ func (c *Condition) Expression(exp ...string) *Condition {
 
 func (c *Condition) Int(i int) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Int64(int64(i))
+		c.Right.Arguments = c.Right.Arguments.Int64(int64(i))
 		return c
 	}
 	c.Right.Argument.set(i)
@@ -531,7 +495,7 @@ func (c *Condition) Int(i int) *Condition {
 
 func (c *Condition) Ints(i ...int) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Ints(i...)
+		c.Right.Arguments = c.Right.Arguments.Ints(i...)
 		return c
 	}
 	c.Right.Argument.set(i)
@@ -540,7 +504,7 @@ func (c *Condition) Ints(i ...int) *Condition {
 
 func (c *Condition) Int64(i int64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Int64(i)
+		c.Right.Arguments = c.Right.Arguments.Int64(i)
 		return c
 	}
 	c.Right.Argument.set(i)
@@ -549,7 +513,7 @@ func (c *Condition) Int64(i int64) *Condition {
 
 func (c *Condition) Int64s(i ...int64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Int64s(i...)
+		c.Right.Arguments = c.Right.Arguments.Int64s(i...)
 		return c
 	}
 	c.Right.Argument.set(i)
@@ -558,7 +522,7 @@ func (c *Condition) Int64s(i ...int64) *Condition {
 
 func (c *Condition) Uint64(i uint64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Uint64(i)
+		c.Right.Arguments = c.Right.Arguments.Uint64(i)
 		return c
 	}
 	c.Right.Argument.set(i)
@@ -567,7 +531,7 @@ func (c *Condition) Uint64(i uint64) *Condition {
 
 func (c *Condition) Uint64s(i ...uint64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Uint64s(i...)
+		c.Right.Arguments = c.Right.Arguments.Uint64s(i...)
 		return c
 	}
 	c.Right.Argument.set(i)
@@ -576,7 +540,7 @@ func (c *Condition) Uint64s(i ...uint64) *Condition {
 
 func (c *Condition) Float64(f float64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Float64(f)
+		c.Right.Arguments = c.Right.Arguments.Float64(f)
 		return c
 	}
 	c.Right.Argument.set(f)
@@ -584,7 +548,7 @@ func (c *Condition) Float64(f float64) *Condition {
 }
 func (c *Condition) Float64s(f ...float64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Float64s(f...)
+		c.Right.Arguments = c.Right.Arguments.Float64s(f...)
 		return c
 	}
 	c.Right.Argument.set(f)
@@ -592,7 +556,7 @@ func (c *Condition) Float64s(f ...float64) *Condition {
 }
 func (c *Condition) String(s string) *Condition { // TODO rename to Str and Strs and use String() as fmt.Stringer
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Str(s)
+		c.Right.Arguments = c.Right.Arguments.Str(s)
 		return c
 	}
 	c.Right.Argument.set(s)
@@ -601,7 +565,7 @@ func (c *Condition) String(s string) *Condition { // TODO rename to Str and Strs
 
 func (c *Condition) Strs(s ...string) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Strs(s...)
+		c.Right.Arguments = c.Right.Arguments.Strs(s...)
 		return c
 	}
 	c.Right.Argument.set(s)
@@ -610,7 +574,7 @@ func (c *Condition) Strs(s ...string) *Condition {
 
 func (c *Condition) Bool(b bool) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Bool(b)
+		c.Right.Arguments = c.Right.Arguments.Bool(b)
 		return c
 	}
 	c.Right.Argument.set(b)
@@ -619,7 +583,7 @@ func (c *Condition) Bool(b bool) *Condition {
 
 func (c *Condition) Bools(b ...bool) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Bools(b...)
+		c.Right.Arguments = c.Right.Arguments.Bools(b...)
 		return c
 	}
 	c.Right.Argument.set(b)
@@ -631,7 +595,7 @@ func (c *Condition) Bools(b ...bool) *Condition {
 // hex encoded.
 func (c *Condition) Bytes(p []byte) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Bytes(p)
+		c.Right.Arguments = c.Right.Arguments.Bytes(p)
 		return c
 	}
 	c.Right.Argument.set(p)
@@ -640,7 +604,7 @@ func (c *Condition) Bytes(p []byte) *Condition {
 
 func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.BytesSlice(p...)
+		c.Right.Arguments = c.Right.Arguments.BytesSlice(p...)
 		return c
 	}
 	c.Right.Argument.set(p)
@@ -649,7 +613,7 @@ func (c *Condition) BytesSlice(p ...[]byte) *Condition {
 
 func (c *Condition) Time(t time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Time(t)
+		c.Right.Arguments = c.Right.Arguments.Time(t)
 		return c
 	}
 	c.Right.Argument.set(t)
@@ -658,7 +622,7 @@ func (c *Condition) Time(t time.Time) *Condition {
 
 func (c *Condition) Times(t ...time.Time) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.Times(t...)
+		c.Right.Arguments = c.Right.Arguments.Times(t...)
 		return c
 	}
 	c.Right.Argument.set(t)
@@ -667,7 +631,7 @@ func (c *Condition) Times(t ...time.Time) *Condition {
 
 func (c *Condition) NullString(nv ...NullString) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.NullString(nv...)
+		c.Right.Arguments = c.Right.Arguments.NullString(nv...)
 		return c
 	}
 	c.Right.Argument.set(nv)
@@ -676,7 +640,7 @@ func (c *Condition) NullString(nv ...NullString) *Condition {
 
 func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.NullFloat64(nv...)
+		c.Right.Arguments = c.Right.Arguments.NullFloat64(nv...)
 		return c
 	}
 	c.Right.Argument.set(nv)
@@ -685,7 +649,7 @@ func (c *Condition) NullFloat64(nv ...NullFloat64) *Condition {
 
 func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.NullInt64(nv...)
+		c.Right.Arguments = c.Right.Arguments.NullInt64(nv...)
 		return c
 	}
 	c.Right.Argument.set(nv)
@@ -694,7 +658,7 @@ func (c *Condition) NullInt64(nv ...NullInt64) *Condition {
 
 func (c *Condition) NullBool(nv ...NullBool) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.NullBool(nv...)
+		c.Right.Arguments = c.Right.Arguments.NullBool(nv...)
 		return c
 	}
 	c.Right.Argument.set(nv)
@@ -703,7 +667,7 @@ func (c *Condition) NullBool(nv ...NullBool) *Condition {
 
 func (c *Condition) NullTime(nv ...NullTime) *Condition {
 	if c.isExpression() {
-		c.Right.ArgUnions = c.Right.ArgUnions.NullTime(nv...)
+		c.Right.Arguments = c.Right.Arguments.NullTime(nv...)
 		return c
 	}
 	c.Right.Argument.set(nv)
@@ -721,11 +685,21 @@ func (c *Condition) Values() *Condition {
 // DriverValue uses driver.Valuers for comparison. Named DriverValue to avoid
 // confusion with Values() function.
 func (c *Condition) DriverValue(dv ...driver.Valuer) *Condition {
-	c.Right.ArgUnions = c.Right.ArgUnions.DriverValue(dv...)
+	c.Right.Arguments = c.Right.Arguments.DriverValue(dv...)
 	return c
 }
 func (c *Condition) DriverValues(dv ...driver.Valuer) *Condition {
-	c.Right.ArgUnions = c.Right.ArgUnions.DriverValues(dv...)
+	c.Right.Arguments = c.Right.Arguments.DriverValues(dv...)
+	return c
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//		FUNCTIONS / EXPRESSIONS
+///////////////////////////////////////////////////////////////////////////////
+
+// SQLCase see description at function SQLCase.
+func (c *Condition) SQLCase(value, defaultValue string, compareResult ...string) *Condition {
+	c.Right.Expression = sqlCase(value, defaultValue, compareResult...)
 	return c
 }
 
@@ -794,17 +768,17 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 		// Code is a bit duplicated but can be refactored later.
 		switch {
 		case cnd.LeftExpression.isset():
-			phCount, err := cnd.LeftExpression.write(w, cnd.Right.ArgUnions)
+			phCount, err := cnd.LeftExpression.write(w, cnd.Right.Arguments)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 
 			// Only write the operator in case there is no place holder and we
 			// have one value.
-			if phCount == 0 && (len(cnd.Right.ArgUnions) == 1 || cnd.Right.Argument.isSet) && cnd.Operator > 0 {
+			if phCount == 0 && (len(cnd.Right.Arguments) == 1 || cnd.Right.Argument.isSet) && cnd.Operator > 0 {
 				eArg := cnd.Right.Argument
 				if !eArg.isSet {
-					eArg = cnd.Right.ArgUnions[0]
+					eArg = cnd.Right.Arguments[0]
 				}
 				cnd.Operator.write(w, eArg.len())
 			}
@@ -814,7 +788,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 		case cnd.Right.Expression.isset():
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cnd.Operator.write(w, 0) // must be zero because place holder get handled via repeatPlaceHolders function
-			cnd.Right.Expression.write(w, cnd.Right.ArgUnions)
+			cnd.Right.Expression.write(w, cnd.Right.Arguments)
 
 		case cnd.Right.Sub != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
@@ -826,7 +800,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			w.WriteByte(')')
 
 			// One Argument
-		case cnd.Right.Argument.isSet && cnd.Right.ArgUnions == nil:
+		case cnd.Right.Argument.isSet && cnd.Right.Arguments == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			al := cnd.Right.Argument.len()
 			if cnd.IsPlaceHolder {
@@ -837,9 +811,9 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			}
 			cnd.Operator.write(w, al)
 
-		case !cnd.Right.Argument.isSet && cnd.Right.ArgUnions != nil:
+		case !cnd.Right.Argument.isSet && cnd.Right.Arguments != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
-			al := cnd.Right.ArgUnions.Len()
+			al := cnd.Right.Arguments.Len()
 
 			if cnd.IsPlaceHolder {
 				al = 1
@@ -850,7 +824,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			cnd.Operator.write(w, al)
 
 			// No Argument at all
-		case !cnd.Right.Argument.isSet && cnd.Right.ArgUnions == nil:
+		case !cnd.Right.Argument.isSet && cnd.Right.Arguments == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator
 			if cOp == 0 {
@@ -915,8 +889,8 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 
 		case cnd.Right.Argument.isSet:
 			addArg = cnd.Operator.hasArgs(cnd.Right.Argument.len())
-		case cnd.Right.ArgUnions != nil:
-			addArg = cnd.Operator.hasArgs(cnd.Right.ArgUnions.Len())
+		case cnd.Right.Arguments != nil:
+			addArg = cnd.Operator.hasArgs(cnd.Right.Arguments.Len())
 		case cnd.Right.Sub != nil:
 			args, err = cnd.Right.Sub.appendArgs(args)
 			if err != nil {
@@ -928,7 +902,7 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 			if cnd.Right.Argument.isSet {
 				args = append(args, cnd.Right.Argument)
 			}
-			args = append(args, cnd.Right.ArgUnions...)
+			args = append(args, cnd.Right.Arguments...)
 		}
 		pendingArgPosCount++
 		i++

@@ -71,6 +71,9 @@ func TestIsValidIdentifier(t *testing.T) {
 	}{
 		{"*", 0},
 		{"table.*", 0},
+		{" table.*", 2},
+		{"table.col", 0},
+		{"table.col ", 2},
 		{"*.*", 2},
 		{"table.p*", 2},
 		{"`table`.*", 2},     // not valid because of backticks
@@ -89,6 +92,8 @@ func TestIsValidIdentifier(t *testing.T) {
 		{"Gooooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher.Goooooooooooooooooooooooooooooooooooooooooooooooooooooooooo0opher", 1},
 		{"Goooooooooooooooooooooooooooooooooooooooooooooooooooooooooopher.Gooooooooooooooooooooooooooooooooooooooooooooooooooooooo0oph€r", 2},
 		{"DATE_FORMAT(t3.period, '%Y-%m-01')", 2},
+		{"1ekdsdf", 3},
+		{"9ekdsdf", 3},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, isValidIdentifier(test.have), "Index %d with %q", i, test.have)

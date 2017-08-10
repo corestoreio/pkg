@@ -115,28 +115,23 @@ func (b *Delete) Where(wf ...*Condition) *Delete {
 	return b
 }
 
-// OrderBy appends columns to the ORDER BY statement for ascending sorting.
-// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a DELETE, the server sorts arguments using only the initial number
-// of bytes indicated by the max_sort_length system variable.
+// OrderBy appends columns to the ORDER BY statement for ascending sorting. A
+// column gets always quoted if it is a valid identifier otherwise it will be
+// treated as an expression. When you use ORDER BY or GROUP BY to sort a column
+// in a DELETE, the server sorts arguments using only the initial number of
+// bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderBy(columns ...string) *Delete {
-	b.OrderBys = b.OrderBys.appendColumns(columns, false)
+	b.OrderBys = b.OrderBys.AppendColumns(columns...)
 	return b
 }
 
 // OrderByDesc appends columns to the ORDER BY statement for descending sorting.
-// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a DELETE, the server sorts arguments using only the initial number
-// of bytes indicated by the max_sort_length system variable.
+// A column gets always quoted if it is a valid identifier otherwise it will be
+// treated as an expression. When you use ORDER BY or GROUP BY to sort a column
+// in a DELETE, the server sorts arguments using only the initial number of
+// bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderByDesc(columns ...string) *Delete {
-	b.OrderBys = b.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
-	return b
-}
-
-// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
-// quote the strings.
-func (b *Delete) OrderByExpr(columns ...string) *Delete {
-	b.OrderBys = b.OrderBys.appendColumns(columns, true)
+	b.OrderBys = b.OrderBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
 	return b
 }
 

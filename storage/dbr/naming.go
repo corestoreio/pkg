@@ -19,6 +19,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"unicode"
+
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
@@ -48,7 +50,7 @@ type identifier struct {
 	Name string
 	// Expression has precedence over the `Name` field. Each line in an expression
 	// gets written unchanged to the final SQL string.
-	Expression expressions
+	Expression expr
 	// Aliased must be a valid identifier allowed for alias usage. As soon as the field `Aliased` has been set
 	// it gets append to the Name and Expression field: "sql AS Aliased"
 	Aliased string
@@ -140,8 +142,8 @@ func (a identifier) WriteQuoted(w *bytes.Buffer) error {
 type identifiers []identifier
 
 // WriteQuoted writes all identifiers comma separated and quoted into w.
-func (as identifiers) WriteQuoted(w *bytes.Buffer) error {
-	for i, a := range as {
+func (ids identifiers) WriteQuoted(w *bytes.Buffer) error {
+	for i, a := range ids {
 		if i > 0 {
 			w.WriteString(", ")
 		}
@@ -152,8 +154,8 @@ func (as identifiers) WriteQuoted(w *bytes.Buffer) error {
 	return nil
 }
 
-func (as identifiers) appendArgs(args Arguments) (Arguments, error) {
-	for _, a := range as {
+func (ids identifiers) appendArgs(args Arguments) (Arguments, error) {
+	for _, a := range ids {
 		var err error
 		args, err = a.appendArgs(args)
 		if err != nil {
@@ -167,48 +169,76 @@ func (as identifiers) appendArgs(args Arguments) (Arguments, error) {
 // Usuallay `lastNindexes` is len(object) because we decrement 1 from
 // `lastNindexes`. This function panics when lastNindexes does not match the
 // length of `identifiers`.
-func (as identifiers) applySort(lastNindexes int, sort byte) identifiers {
-	to := len(as) - lastNindexes
-	for i := len(as) - 1; i >= to; i-- {
-		as[i].Sort = sort
+func (ids identifiers) applySort(lastNindexes int, sort byte) identifiers {
+	to := len(ids) - lastNindexes
+	for i := len(ids) - 1; i >= to; i-- {
+		ids[i].Sort = sort
 	}
-	return as
+	return ids
 }
 
-// AddColumns adds more columns to the identifiers. Columns get quoted.
-func (as identifiers) AddColumns(columns ...string) identifiers {
-	return as.appendColumns(columns, false)
-}
-
-func (as identifiers) appendColumns(columns []string, isExpression bool) identifiers {
-	if cap(as) == 0 {
-		as = make(identifiers, 0, len(columns)*2)
+// AppendColumns adds new columns to the identifier slice. If a column name is
+// not valid identifier that column gets switched into an expression.
+// You should use this function when no arguments should be attached to an expression, otherwise use the function AppendConditions.
+func (ids identifiers) AppendColumns(columns ...string) identifiers {
+	if cap(ids) == 0 {
+		ids = make(identifiers, 0, len(columns)*2)
 	}
 	for _, c := range columns {
 		id := identifier{Name: c}
-		if isExpression {
-			id = identifier{Expression: []string{c}}
+		if isValidIdentifier(c) != 0 {
+			id.Expression = []string{id.Name}
+			id.Name = ""
 		}
-		as = append(as, id)
+		ids = append(ids, id)
 	}
-	return as
+	return ids
 }
 
-// columns must be balanced slice. i=column name, i+1=alias name
-func (as identifiers) appendColumnsAliases(columns []string, isExpression bool) identifiers {
-	if cap(as) == 0 {
-		as = make(identifiers, 0, len(columns)/2)
+// AppendColumnsAliases expects a balanced slice where i=column name and
+// i+1=alias name. An imbalanced slice will cause a panic. If a column name is
+// not valid identifier that column gets switched into an expression. The alias
+// does not change.
+// You should use this function when no arguments should be attached to an expression, otherwise use the function AppendConditions.
+func (ids identifiers) AppendColumnsAliases(columns ...string) identifiers {
+	if (len(columns) % 2) == 1 {
+		// A programmer made an error
+		panic(errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columns))
+	}
+	if cap(ids) == 0 {
+		ids = make(identifiers, 0, len(columns)/2)
 	}
 
 	for i := 0; i < len(columns); i = i + 2 {
 		id := identifier{Name: columns[i], Aliased: columns[i+1]}
-		if isExpression {
+		if isValidIdentifier(id.Name) != 0 {
+			id.Expression = []string{id.Name}
 			id.Name = ""
-			id.Expression = []string{columns[i]}
 		}
-		as = append(as, id)
+		ids = append(ids, id)
 	}
-	return as
+	return ids
+}
+
+// AppendConditions adds an expression with arguments. SubSelects are not yet
+// supported. You should use this function when arguments should be attached to
+// the expression, otherwise use the function AppendColumns*.
+func (ids identifiers) AppendConditions(expressions Conditions, args Arguments) (identifiers, Arguments) {
+	for _, e := range expressions {
+		idf := identifier{Aliased: e.Aliased}
+		switch {
+		case e.Left != "": // just a column
+			idf.Name = e.Left
+		case len(e.LeftExpression) > 0: // now an expression
+			idf.Expression = e.LeftExpression
+		}
+		ids = append(ids, idf)
+		if e.Right.Argument.isSet {
+			args = append(args, e.Right.Argument)
+		}
+		args = append(args, e.Right.Arguments...)
+	}
+	return ids, args
 }
 
 // MysqlQuoter implements Mysql-specific quoting
@@ -241,7 +271,7 @@ func (mq MysqlQuoter) writeQualifierName(w *bytes.Buffer, q, n string) {
 
 // writeExprAlias appends to the provided `expression` the quote alias name, e.g.:
 // 		writeExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
-func (mq MysqlQuoter) writeExprAlias(w *bytes.Buffer, e expressions, alias string) {
+func (mq MysqlQuoter) writeExprAlias(w *bytes.Buffer, e expr, alias string) {
 	e.write(w, nil)
 	if alias != "" {
 		w.WriteString(" AS ")
@@ -358,6 +388,10 @@ const dummyQualifier = "X" // just a dummy value, can be optimized later
 // stored procedure, partition, tablespace, and other object names are known as
 // identifiers. ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar,
 // underscore) Max length 63 characters.
+// It is recommended that you do not use names that begin with Me or MeN, where
+// M and N are integers. For example, avoid using 1e as an identifier, because
+// an expression such as 1e+3 is ambiguous. Depending on context, it might be
+// interpreted as the expression 1e + 3 or as the number 1e+3.
 //
 // Returns 0 if the identifier is valid.
 //
@@ -396,6 +430,9 @@ func isNameValid(name string) int8 {
 	pos := 0
 	for pos < ln {
 		r, w := utf8.DecodeRuneInString(name[pos:])
+		if pos == 0 && unicode.IsDigit(r) {
+			return 3 // name with beginning number is not allowed
+		}
 		pos += w
 		if !mapAlNum(r) {
 			return 2 // errors.NewNotValidf("[csdb] Invalid character in name %q", name)

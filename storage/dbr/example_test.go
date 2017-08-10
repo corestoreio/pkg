@@ -266,14 +266,15 @@ func ExampleNewDelete() {
 func ExampleNewUnion() {
 
 	u := dbr.NewUnion(
-		dbr.NewSelect().AddColumnsAlias("a1", "A", "a2", "B").From("tableA").Where(dbr.Column("a1").Int64(3)),
-		dbr.NewSelect().AddColumnsAlias("b1", "A", "b2", "B").From("tableB").Where(dbr.Column("b1").Int64(4)),
+		dbr.NewSelect().AddColumnsAliases("a1", "A", "a2", "B").From("tableA").Where(dbr.Column("a1").Int64(3)),
+		dbr.NewSelect().AddColumnsAliases("b1", "A", "b2", "B").From("tableB").Where(dbr.Column("b1").Int64(4)),
 	)
 	// Maybe more of your code ...
 	u.Append(
-		dbr.NewSelect().AddColumnsExprAlias("concat(c1,?,c2)", "A").
-			AddArgs(dbr.MakeArgs(1).Str("-")).
-			AddColumnsAlias("c2", "B").
+		dbr.NewSelect().AddColumnsConditions(
+			dbr.Expr("concat(c1,?,c2)").Alias("A").String("-"),
+		).
+			AddColumnsAliases("c2", "B").
 			From("tableC").Where(dbr.Column("c2").String("ArgForC2")),
 	).
 		OrderBy("A").       // Ascending by A
@@ -533,15 +534,15 @@ func ExampleCondition_Sub() {
 
 func ExampleNewSelectWithDerivedTable() {
 	sel3 := dbr.NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
-		AddColumnsExprAlias("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
+		AddColumnsAliases("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
-		AddColumnsExprAlias("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
+		AddColumnsAliases("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
 		Where(dbr.Column("product_name").String("Canon%")).
 		GroupBy("t3.store_id").
-		GroupByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+		GroupBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
 		GroupBy("t3.product_id", "t3.product_name").
 		OrderBy("t3.store_id").
-		OrderByExpr("DATE_FORMAT(t3.period, '%Y-%m-01')").
+		OrderBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
 		OrderByDesc("total_qty")
 
 	sel1 := dbr.NewSelectWithDerivedTable(sel3, "t1").
@@ -601,9 +602,12 @@ func ExampleSQLIfNull() {
 }
 
 func ExampleSQLIf() {
-	s := dbr.NewSelect().AddColumns("a", "b", "c").
-		From("table1").Where(
-		dbr.Expression(dbr.SQLIf("a > 0", "b", "c")...).Greater().Int(4711))
+	s := dbr.NewSelect().
+		AddColumns("a", "b", "c").
+		From("table1").
+		Where(
+			dbr.SQLIf("a > 0", "b", "c").Greater().Int(4711),
+		)
 	writeToSQLAndInterpolate(s)
 
 	// Output:
@@ -617,11 +621,11 @@ func ExampleSQLIf() {
 
 func ExampleSQLCase_update() {
 	u := dbr.NewUpdate("cataloginventory_stock_item").
-		Set(dbr.Column("qty").Expression(dbr.SQLCase("`product_id`", "qty",
+		Set(dbr.Column("qty").SQLCase("`product_id`", "qty",
 			"3456", "qty+?",
 			"3457", "qty+?",
 			"3458", "qty+?",
-		)...).Ints(3, 4, 5)).
+		).Ints(3, 4, 5)).
 		Where(
 			dbr.Column("product_id").In().Int64s(345, 567, 897),
 			dbr.Column("website_id").Int64(6),
@@ -646,15 +650,14 @@ func ExampleSQLCase_select() {
 	// time stamp has no special meaning ;-)
 	start := time.Unix(1257894000, 0)
 	end := time.Unix(1257980400, 0)
-	args := dbr.MakeArgs(4).Times(start, end, start, end)
+
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
-		AddColumnExpression(
+		AddColumnsConditions(
 			dbr.SQLCase("", "`closed`",
 				"date_start <= ? AND date_end >= ?", "`open`",
 				"date_start > ? AND date_end > ?", "`upcoming`",
-			).Alias("is_on_sale"),
+			).Alias("is_on_sale").Times(start, end, start, end),
 		).
-		AddArgs(args).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id").NotIn().Ints(4711, 815, 42))
 	writeToSQLAndInterpolate(s)
@@ -680,7 +683,7 @@ func ExampleSelect_SetRecord() {
 	//start := dbr.MakeTime(time.Unix(1257894000, 0))
 	//end := dbr.MakeTime(time.Unix(1257980400, 0))
 	//s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
-	//	AddColumnsExprAlias(
+	//	AddColumnsAliases(
 	//		dbr.SQLCase("", "`closed`",
 	//			"date_start <= ? AND date_end >= ?", "`open`",
 	//			"date_start > ? AND date_end > ?", "`upcoming`",
@@ -706,16 +709,14 @@ func ExampleSelect_AddArguments() {
 
 	start := time.Unix(1257894000, 0)
 	end := time.Unix(1257980400, 0)
-	args := dbr.MakeArgs(4).Times(start, end, start, end)
 
 	s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").
-		AddColumnExpression(
+		AddColumnsConditions(
 			dbr.SQLCase("", "`closed`",
 				"date_start <= ? AND date_end >= ?", "`open`",
 				"date_start > ? AND date_end > ?", "`upcoming`",
-			).Alias("is_on_sale"),
+			).Alias("is_on_sale").Times(start, end, start, end),
 		).
-		AddArgs(args).
 		From("catalog_promotions").Where(
 		dbr.Column("promotion_id").NotIn().Ints(4711, 815, 42))
 	writeToSQLAndInterpolate(s)
@@ -749,7 +750,7 @@ func ExampleParenthesisOpen() {
 		).
 		GroupBy("ab").
 		Having(
-			dbr.Expression("j = k"),
+			dbr.Expr("j = k"),
 			dbr.ParenthesisOpen(),
 			dbr.Column("m").Int(33),
 			dbr.Column("n").String("wh3r3").Or(),
@@ -778,17 +779,17 @@ func ExampleWith_Union() {
 	// Sales: Find best and worst month:
 	cte := dbr.NewWith(
 		dbr.WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
-			Select: dbr.NewSelect().AddColumnsExpressions("Month(day_of_sale)", "Sum(amount)").From("sales_days").
-				Where(dbr.Expression("Year(day_of_sale) = ?").Int(2015)).
-				GroupByExpr("Month(day_of_sale))"),
+			Select: dbr.NewSelect().AddColumns("Month(day_of_sale)", "Sum(amount)").From("sales_days").
+				Where(dbr.Expr("Year(day_of_sale) = ?").Int(2015)).
+				GroupBy("Month(day_of_sale))"),
 		},
 		dbr.WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
-			Select: dbr.NewSelect().AddColumns("month", "total").AddColumnsExpressions(`"best"`).From("sales_by_month").
-				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumnsExpressions("Max(total)").From("sales_by_month"))),
+			Select: dbr.NewSelect().AddColumns("month", "total").AddColumns(`"best"`).From("sales_by_month").
+				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumns("Max(total)").From("sales_by_month"))),
 		},
 		dbr.WithCTE{Name: "worst_month", Columns: []string{"month", "total", "award"},
-			Select: dbr.NewSelect().AddColumns("month", "total").AddColumnsExpressions(`"worst"`).From("sales_by_month").
-				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumnsExpressions("Min(total)").From("sales_by_month"))),
+			Select: dbr.NewSelect().AddColumns("month", "total").AddColumns(`"worst"`).From("sales_by_month").
+				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumns("Min(total)").From("sales_by_month"))),
 		},
 	).Union(dbr.NewUnion(
 		dbr.NewSelect().Star().From("best_month"),

@@ -53,7 +53,7 @@ func BenchmarkSelect_Rows(b *testing.B) {
 		sel := dbr.NewSelect("TABLE_NAME", "COLUMN_NAME", "ORDINAL_POSITION", "COLUMN_DEFAULT", "IS_NULLABLE",
 			"DATA_TYPE", "CHARACTER_MAXIMUM_LENGTH", "NUMERIC_PRECISION", "NUMERIC_SCALE",
 			"COLUMN_TYPE", "COLUMN_KEY", "EXTRA", "COLUMN_COMMENT").From("information_schema.COLUMNS").
-			Where(dbr.Expression(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
+			Where(dbr.Expr(`TABLE_SCHEMA=DATABASE()`)).WithDB(db)
 
 		if len(tables) > 0 {
 			sel.Where(dbr.Column("TABLE_NAME IN ?").In().Strs(tables...))
@@ -90,7 +90,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
 			Where(
-				dbr.Expression("d = ? OR e = ?").Int64(1).String("wat"),
+				dbr.Expr("d = ? OR e = ?").Int64(1).String("wat"),
 				dbr.Column("a").In().Int64s(aVal...),
 			).
 			OrderByDesc("id").
@@ -108,14 +108,14 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	sqlObj := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
 		Where(
-			dbr.Expression("`d` = ? OR `e` = ?").Int64(1).String("wat"),
+			dbr.Expr("`d` = ? OR `e` = ?").Int64(1).String("wat"),
 			dbr.Column("f").Int64(2),
 			dbr.Column("x").String("hi"),
 			dbr.Column("g").Int64(3),
 			dbr.Column("h").In().Ints(1, 2, 3),
 		).
 		GroupBy("ab").GroupBy("ii").GroupBy("iii").
-		Having(dbr.Expression("j = k"), dbr.Column("jj").Int64(1)).
+		Having(dbr.Expr("j = k"), dbr.Column("jj").Int64(1)).
 		Having(dbr.Column("jjj").Int64(2)).
 		OrderBy("l1").OrderBy("l2").OrderBy("l3").
 		Limit(7).Offset(8).Interpolate()
@@ -133,14 +133,14 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 				Distinct().
 				Where(
-					dbr.Expression("`d` = ? OR `e` = ?").Int64(1).String("wat"),
+					dbr.Expr("`d` = ? OR `e` = ?").Int64(1).String("wat"),
 					dbr.Column("f").Int64(2),
 					dbr.Column("x").String("hi"),
 					dbr.Column("g").Int64(3),
 					dbr.Column("h").In().Ints(1, 2, 3),
 				).
 				GroupBy("ab").GroupBy("ii").GroupBy("iii").
-				Having(dbr.Expression("j = k"), dbr.Column("jj").Int64(1)).
+				Having(dbr.Expr("j = k"), dbr.Column("jj").Int64(1)).
 				Having(dbr.Column("jjj").Int64(2)).
 				OrderBy("l1").OrderBy("l2").OrderBy("l3").
 				Limit(7).Offset(8).
@@ -233,8 +233,8 @@ func BenchmarkSelect_ComplexAddColumns(b *testing.B) {
 		haveSQL, args, err = dbr.NewSelect().
 			AddColumns(" entity_id ,   value").
 			AddColumns("cpev.entity_type_id", "cpev.attribute_id").
-			AddColumnsAlias("(cpev.id*3)", "weirdID").
-			AddColumnsAlias("cpev.value", "value2nd").
+			AddColumnsAliases("(cpev.id*3)", "weirdID").
+			AddColumnsAliases("cpev.value", "value2nd").
 			FromAlias("catalog_product_entity_varchar", "cpev").
 			Where(dbr.Column("entity_type_id").Int64(4)).
 			Where(dbr.Column("attribute_id").In().Int64s(174, 175)).
@@ -276,13 +276,12 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 		var err error
 		haveSQL, benchmarkGlobalVals, err = dbr.NewSelect().
 			AddColumns("price", "sku", "name").
-			AddColumnExpression(
+			AddColumnsConditions(
 				dbr.SQLCase("", "`closed`",
 					"date_start <= ? AND date_end >= ?", "`open`",
 					"date_start > ? AND date_end > ?", "`upcoming`",
-				).Alias("is_on_sale"),
+				).Alias("is_on_sale").Times(start, end, start, end),
 			).
-			AddArgs(dbr.MakeArgs(4).Times(start, end, start, end)).
 			From("catalog_promotions").
 			Where(
 				dbr.Column("promotion_id").
@@ -515,7 +514,7 @@ func BenchmarkQuoteQuote(b *testing.B) {
 	})
 }
 
-var benchmarkIfNull []string
+var benchmarkIfNull *dbr.Condition
 
 func BenchmarkIfNull(b *testing.B) {
 	runner := func(want string, have ...string) func(*testing.B) {
@@ -562,19 +561,19 @@ func BenchmarkUnion(b *testing.B) {
 	newUnion5 := func() *dbr.Union {
 		// not valid SQL
 		return dbr.NewUnion(
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'varchar'", "col_type").FromAlias("catalog_product_entity_varchar", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'varchar'", "col_type").FromAlias("catalog_product_entity_varchar", "t").
 				Where(dbr.Column("entity_id").Int64(1561), dbr.Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.varchar_store_id"),
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'int'", "col_type").FromAlias("catalog_product_entity_int", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'int'", "col_type").FromAlias("catalog_product_entity_int", "t").
 				Where(dbr.Column("entity_id").Int64(1561), dbr.Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.int_store_id"),
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'decimal'", "col_type").FromAlias("catalog_product_entity_decimal", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'decimal'", "col_type").FromAlias("catalog_product_entity_decimal", "t").
 				Where(dbr.Column("entity_id").Int64(1561), dbr.Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.decimal_store_id"),
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'datetime'", "col_type").FromAlias("catalog_product_entity_datetime", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'datetime'", "col_type").FromAlias("catalog_product_entity_datetime", "t").
 				Where(dbr.Column("entity_id").Int64(1561), dbr.Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.datetime_store_id"),
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'text'", "col_type").FromAlias("catalog_product_entity_text", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'text'", "col_type").FromAlias("catalog_product_entity_text", "t").
 				Where(dbr.Column("entity_id").Int64(1561), dbr.Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.text_store_id"),
 		).
@@ -585,7 +584,7 @@ func BenchmarkUnion(b *testing.B) {
 
 	newUnionTpl := func() *dbr.Union {
 		return dbr.NewUnion(
-			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsExprAlias("'{column}'", "col_type").FromAlias("catalog_product_entity_{type}", "t").
+			dbr.NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("'{column}'", "col_type").FromAlias("catalog_product_entity_{type}", "t").
 				Where(dbr.Column("entity_id").Int64(1561), dbr.Column("store_id").In().Int64s(1, 0)).
 				OrderByDesc("t.{column}_store_id"),
 		).

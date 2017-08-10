@@ -61,7 +61,7 @@ func NewSelect(columns ...string) *Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
-		s.Columns = s.Columns.appendColumns(columns, false)
+		s.Columns = s.Columns.AppendColumns(columns...)
 	}
 	return s
 }
@@ -91,13 +91,13 @@ func (c *Connection) Select(columns ...string) *Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
-		s.Columns = s.Columns.appendColumns(columns, false)
+		s.Columns = s.Columns.AppendColumns(columns...)
 	}
 	s.DB = c.DB
 	return s
 }
 
-// SelectBySQL creates a new Select for the given SQL string and arguments
+// SelectBySQL creates a new Select for the given SQL string and arguments.
 func (c *Connection) SelectBySQL(sql string, args Arguments) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
@@ -110,20 +110,22 @@ func (c *Connection) SelectBySQL(sql string, args Arguments) *Select {
 	return s
 }
 
-// Select creates a new Select that select that given columns bound to the transaction
+// Select creates a new Select that select that given columns bound to the
+// transaction.
 func (tx *Tx) Select(columns ...string) *Select {
 	s := &Select{}
 	s.BuilderBase.Log = tx.Logger
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
-		s.Columns = s.Columns.appendColumns(columns, false)
+		s.Columns = s.Columns.AppendColumns(columns...)
 	}
 	s.DB = tx.Tx
 	return s
 }
 
-// SelectBySQL creates a new Select for the given SQL string and arguments bound to the transaction
+// SelectBySQL creates a new Select for the given SQL string and arguments bound
+// to the transaction.
 func (tx *Tx) SelectBySQL(sql string, args Arguments) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
@@ -220,68 +222,42 @@ func (b *Select) FromAlias(from, alias string) *Select {
 	return b
 }
 
-// AddColumns appends more columns to the Columns slice. If a single string gets
-// passed with comma separated values, this string gets split by the comma and
-// its values appended to the Columns slice. Columns won't get quoted.
+// AddColumns appends more columns to the Columns slice. If a column name is not
+// valid identifier that column gets switched into an expression. If a single
+// string gets passed with comma separated values, this string gets split by the
+// comma and its values appended to the Columns slice. Columns won't get quoted.
+// TODO: check if that is still true
 // 		AddColumns("a","b") 		// `a`,`b`
 // 		AddColumns("a,b","z","c,d")	// `a,b`,`z`,`c,d` <- invalid SQL!
 //		AddColumns("t1.name","t1.sku","price") // `t1`.`name`, `t1`.`sku`,`price`
 func (b *Select) AddColumns(cols ...string) *Select {
-	b.Columns = b.Columns.appendColumns(cols, false)
+	b.Columns = b.Columns.AppendColumns(cols...)
 	return b
 }
 
-// AddColumnsAlias expects a balanced slice of "Column1, Alias1, Column2,
-// Alias2" and adds both to the Columns slice.
-//		AddColumnsAlias("t1.name","t1Name","t1.sku","t1SKU") // `t1`.`name` AS `t1Name`, `t1`.`sku` AS `t1SKU`
-// 		AddColumnsAlias("(e.price*x.tax*t.weee)", "final_price") // `(e.price*x.tax*t.weee)` AS `final_price`
-func (b *Select) AddColumnsAlias(columnAliases ...string) *Select {
-	if (len(columnAliases) % 2) == 1 {
-		// A programmer made an error
-		panic(errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columnAliases))
-	} else {
-		b.Columns = b.Columns.appendColumnsAliases(columnAliases, false)
-	}
+// AddColumnsAliases expects a balanced slice of "Column1, Alias1, Column2,
+// Alias2" and adds both to the Columns slice. An imbalanced slice will cause a
+// panic. If a column name is not valid identifier that column gets switched
+// into an expression.
+//		AddColumnsAliases("t1.name","t1Name","t1.sku","t1SKU") // `t1`.`name` AS `t1Name`, `t1`.`sku` AS `t1SKU`
+// 		AddColumnsAliases("(e.price*x.tax*t.weee)", "final_price") // error: `(e.price*x.tax*t.weee)` AS `final_price`
+func (b *Select) AddColumnsAliases(columnAliases ...string) *Select {
+	b.Columns = b.Columns.AppendColumnsAliases(columnAliases...)
 	return b
 }
 
-// AddColumnsExprAlias expects a balanced slice of "expression, AliasName" and
-// adds both concatenated and quoted to the Columns slice.
-// 		AddColumnsExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
-func (b *Select) AddColumnsExprAlias(expressionAliases ...string) *Select {
-	if (len(expressionAliases) % 2) == 1 {
-		// A programmer made an error
-		panic(errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", expressionAliases))
-	} else {
-		b.Columns = b.Columns.appendColumnsAliases(expressionAliases, true)
-	}
-	return b
-}
-
-// AddColumnsExpressions adds expressions to the columns list. Each expression
-// represents a column.
-func (b *Select) AddColumnsExpressions(expressions ...string) *Select {
-	b.Columns = b.Columns.appendColumns(expressions, true)
-	return b
-}
-
-// AddColumnExpression adds a multi line expression as a column.
-func (b *Select) AddColumnExpression(e expressions) *Select {
-	b.Columns = append(b.Columns, identifier{Expression: e})
+// AddColumnsConditions adds a condition as a column to the statement. The
+// operator field gets ignored. Arguments in the condition gets applied to the
+// RawArguments field to maintain the correct order of arguments.
+// 		AddColumnsConditions(Expr("(e.price*x.tax*t.weee)").Alias("final_price")) // (e.price*x.tax*t.weee) AS `final_price`
+func (b *Select) AddColumnsConditions(expressions ...*Condition) *Select {
+	b.Columns, b.RawArguments = b.Columns.AppendConditions(expressions, b.RawArguments)
 	return b
 }
 
 // SetRecord pulls in values to match Columns from the record generator.
 func (b *Select) SetRecord(rec ArgumentsAppender) *Select {
 	b.Record = rec
-	return b
-}
-
-// AddArguments adds more arguments to the Argument field of the Select type.
-// You must call this function directly after you have used e.g.
-// AddColumnsExprAlias with place holders.
-func (b *Select) AddArgs(args Arguments) *Select {
-	b.RawArguments = append(b.RawArguments, args...)
 	return b
 }
 
@@ -292,37 +268,33 @@ func (b *Select) Where(wf ...*Condition) *Select {
 	return b
 }
 
-// GroupBy appends columns to group the statement. The column gets always
-// quoted. MySQL does not sort the results set. To avoid the overhead of sorting
-// that GROUP BY produces this function should add an ORDER BY NULL with
-// function `OrderByDeactivated`.
+// GroupBy appends columns to group the statement. A column gets always quoted
+// if it is a valid identifier otherwise it will be treated as an expression.
+// MySQL does not sort the results set. To avoid the overhead of sorting that
+// GROUP BY produces this function should add an ORDER BY NULL with function
+// `OrderByDeactivated`.
 func (b *Select) GroupBy(columns ...string) *Select {
-	b.GroupBys = b.GroupBys.appendColumns(columns, false)
+	b.GroupBys = b.GroupBys.AppendColumns(columns...)
 	return b
 }
 
-// GroupByAsc sorts the groups in ascending order. No need to add an ORDER BY
-// clause. When you use ORDER BY or GROUP BY to sort a column in a SELECT, the
-// server sorts values using only the initial number of bytes indicated by the
-// max_sort_length system variable.
-func (b *Select) GroupByAsc(groups ...string) *Select {
-	b.GroupBys = b.GroupBys.appendColumns(groups, false).applySort(len(groups), sortAscending)
+// GroupByAsc sorts the groups in ascending order. A column gets always quoted
+// if it is a valid identifier otherwise it will be treated as an expression. No
+// need to add an ORDER BY clause. When you use ORDER BY or GROUP BY to sort a
+// column in a SELECT, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Select) GroupByAsc(columns ...string) *Select {
+	b.GroupBys = b.GroupBys.AppendColumns(columns...).applySort(len(columns), sortAscending)
 	return b
 }
 
-// GroupByDesc sorts the groups in descending order. No need to add an ORDER BY
-// clause. When you use ORDER BY or GROUP BY to sort a column in a SELECT, the
-// server sorts values using only the initial number of bytes indicated by the
-// max_sort_length system variable.
-func (b *Select) GroupByDesc(groups ...string) *Select {
-	b.GroupBys = b.GroupBys.appendColumns(groups, false).applySort(len(groups), sortDescending)
-	return b
-}
-
-// GroupByExpr adds a custom SQL expression to the GROUP BY clause. Does not
-// quote the strings nor add an ORDER BY NULL.
-func (b *Select) GroupByExpr(groups ...string) *Select {
-	b.GroupBys = b.GroupBys.appendColumns(groups, true)
+// GroupByDesc sorts the groups in descending order. A column gets always quoted
+// if it is a valid identifier otherwise it will be treated as an expression. No
+// need to add an ORDER BY clause. When you use ORDER BY or GROUP BY to sort a
+// column in a SELECT, the server sorts values using only the initial number of
+// bytes indicated by the max_sort_length system variable.
+func (b *Select) GroupByDesc(columns ...string) *Select {
+	b.GroupBys = b.GroupBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
 	return b
 }
 
@@ -339,28 +311,23 @@ func (b *Select) OrderByDeactivated() *Select {
 	return b
 }
 
-// OrderBy appends columns to the ORDER BY statement for ascending sorting.
-// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a SELECT, the server sorts values using only the initial number of
-// bytes indicated by the max_sort_length system variable.
+// OrderBy appends columns to the ORDER BY statement for ascending sorting. A
+// column gets always quoted if it is a valid identifier otherwise it will be
+// treated as an expression. When you use ORDER BY or GROUP BY to sort a column
+// in a SELECT, the server sorts values using only the initial number of bytes
+// indicated by the max_sort_length system variable.
 func (b *Select) OrderBy(columns ...string) *Select {
-	b.OrderBys = b.OrderBys.appendColumns(columns, false)
+	b.OrderBys = b.OrderBys.AppendColumns(columns...)
 	return b
 }
 
 // OrderByDesc appends columns to the ORDER BY statement for descending sorting.
-// Columns are getting quoted. When you use ORDER BY or GROUP BY to sort a
-// column in a SELECT, the server sorts values using only the initial number of
-// bytes indicated by the max_sort_length system variable.
+// A column gets always quoted if it is a valid identifier otherwise it will be
+// treated as an expression. When you use ORDER BY or GROUP BY to sort a column
+// in a SELECT, the server sorts values using only the initial number of bytes
+// indicated by the max_sort_length system variable.
 func (b *Select) OrderByDesc(columns ...string) *Select {
-	b.OrderBys = b.OrderBys.appendColumns(columns, false).applySort(len(columns), sortDescending)
-	return b
-}
-
-// OrderByExpr adds a custom SQL expression to the ORDER BY clause. Does not
-// quote the strings.
-func (b *Select) OrderByExpr(columns ...string) *Select {
-	b.OrderBys = b.OrderBys.appendColumns(columns, true)
+	b.OrderBys = b.OrderBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
 	return b
 }
 

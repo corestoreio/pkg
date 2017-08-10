@@ -70,7 +70,7 @@ func TestSQLIfNull(t *testing.T) {
 			if alias != "" {
 				ifn = ifn.Alias(alias)
 			}
-			assert.Equal(t, want, ifn.String())
+			assert.Equal(t, want, ifn.LeftExpression)
 		}
 	}
 	t.Run("1 args expression", runner(
@@ -154,13 +154,13 @@ func TestSQLIf_Expression(t *testing.T) {
 	t.Parallel()
 
 	t.Run("single call", func(t *testing.T) {
-		assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value").String())
+		assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value").LeftExpression.String())
 	})
 
 	t.Run("just EXPRESSION", func(t *testing.T) {
 		s := dbr.NewSelect().AddColumns("a", "b", "c").
 			From("table1").Where(
-			dbr.Expression(
+			dbr.Expr(
 				"IF((a > 0), b, c) > ?",
 			).Greater().Int(4711))
 
@@ -174,7 +174,7 @@ func TestSQLIf_Expression(t *testing.T) {
 	t.Run("IF in EXPRESSION", func(t *testing.T) {
 		s := dbr.NewSelect().AddColumns("a", "b", "c").
 			From("table1").Where(
-			dbr.Expression(dbr.SQLIf("a > 0", "b", "c")...).Greater().Int(4711))
+			dbr.SQLIf("a > 0", "b", "c").Greater().Int(4711))
 
 		compareToSQL(t, s, nil,
 			"SELECT `a`, `b`, `c` FROM `table1` WHERE (IF((a > 0), b, c) > ?)",
@@ -201,11 +201,11 @@ func TestSQLCase(t *testing.T) {
 		*/
 
 		u := dbr.NewUpdate("cataloginventory_stock_item").
-			Set(dbr.Column("qty").Expression(dbr.SQLCase("`product_id`", "qty",
+			Set(dbr.Column("qty").SQLCase("`product_id`", "qty",
 				"3456", "qty+?",
 				"3457", "qty+?",
 				"3458", "qty+?",
-			)...).Ints(3, 4, 5)).
+			).Ints(3, 4, 5)).
 			Where(
 				dbr.Column("product_id").In().Int64s(345, 567, 897),
 				dbr.Column("website_id").Int64(6),
@@ -229,7 +229,7 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty+1",
 				"3457", "qty+4",
 				"3458", "qty-3",
-			).String(),
+			).LeftExpression.String(),
 		)
 		assert.Exactly(t,
 			"(CASE `product_id` WHEN 3456 THEN qty WHEN 3457 THEN qty ELSE qty END) AS `product_qty`",
@@ -237,7 +237,7 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty",
 				"3457", "qty",
 				"product_qty",
-			).String(),
+			).LeftExpression.String(),
 		)
 		assert.Exactly(t,
 			"CASE `product_id` WHEN 3456 THEN qty+1 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty-3 END",
@@ -245,20 +245,20 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty+1",
 				"3457", "qty+4",
 				"3458", "qty-3",
-			).String(),
+			).LeftExpression.String(),
 		)
 		assert.Exactly(t,
 			"CASE  WHEN 1=1 THEN 2 WHEN 3=2 THEN 4 END",
 			dbr.SQLCase("", "",
 				"1=1", "2",
 				"3=2", "4",
-			).String(),
+			).LeftExpression.String(),
 		)
 		assert.Exactly(t,
 			"<SQLCase error len(compareResult) == 1>",
 			dbr.SQLCase("", "",
 				"1=1",
-			).String(),
+			).LeftExpression.String(),
 		)
 	})
 }

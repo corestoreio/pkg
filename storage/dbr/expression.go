@@ -16,10 +16,51 @@ package dbr
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
+
+// expression is just some lines to avoid a fully written string created by
+// other functions. Each line can contain arbitrary characters. The lines get
+// written without any separator into a buffer. Hooks/Event/Observer allow an
+// easily modification of different line items. Much better than having a long
+// string with a wrapped complex SQL expression. There is no need to export it.
+type expr []string
+
+func (e expr) String() string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	e.write(buf, nil)
+	return buf.String()
+}
+
+// write writes the strings into `w` and correctly handles the place holder
+// repetition depending on the number of arguments.
+func (e expr) write(w *bytes.Buffer, args Arguments) (phCount int, err error) {
+	eBuf := bufferpool.Get()
+	defer bufferpool.Put(eBuf)
+
+	for _, es := range e {
+		phCount += strings.Count(es, placeHolderStr)
+		if _, err = eBuf.WriteString(es); err != nil {
+			return phCount, errors.Wrapf(err, "[dbr] expression.write: failed to write %q", es)
+		}
+	}
+	if args != nil && phCount != args.Len() {
+		if err = repeatPlaceHolders(w, eBuf.Bytes(), args); err != nil {
+			return phCount, errors.WithStack(err)
+		}
+	} else {
+		_, err = eBuf.WriteTo(w)
+	}
+	return phCount, errors.WithStack(err)
+}
+
+func (e expr) isset() bool {
+	return len(e) > 0
+}
 
 // SQLIfNull creates an IFNULL expression. Argument count can be either 1, 2 or
 // 4. A single expression can contain a qualified or unqualified identifier. See
@@ -28,7 +69,7 @@ import (
 // IFNULL(expr1,expr2) If expr1 is not NULL, IFNULL() returns expr1; otherwise
 // it returns expr2. IFNULL() returns a numeric or string value, depending on
 // the context in which it is used.
-func SQLIfNull(expression ...string) expressions {
+func SQLIfNull(expression ...string) *Condition {
 	buf := bufferpool.Get()
 
 	switch len(expression) {
@@ -49,9 +90,11 @@ func SQLIfNull(expression ...string) expressions {
 		panic(errors.NewNotValidf("[dbr] Invalid number of arguments. Max 4 arguments allowed, got: %v", expression))
 
 	}
-	ret := [1]string{buf.String()}
+	ret := &Condition{
+		LeftExpression: []string{buf.String()},
+	}
 	bufferpool.Put(buf)
-	return ret[:]
+	return ret
 }
 
 func sqlIfNullQuote2(w *bytes.Buffer, expressionAlias ...string) {
@@ -88,9 +131,10 @@ func sqlIfNullQuote4(w *bytes.Buffer, qualifierName ...string) {
 // otherwise it returns expr3. IF() returns a numeric or string value, depending
 // on the context in which it is used.
 // Returns a []string.
-func SQLIf(expression, true, false string) expressions {
-	ret := [...]string{"IF((", expression, "), ", true, ", ", false, ")"}
-	return ret[:]
+func SQLIf(expression, true, false string) *Condition {
+	return &Condition{
+		LeftExpression: []string{"IF((", expression, "), ", true, ", ", false, ")"},
+	}
 }
 
 // SQLCase generates a CASE ... WHEN ... THEN ... ELSE ... END statement.
@@ -100,11 +144,15 @@ func SQLIf(expression, true, false string) expressions {
 // If the slice is imbalanced the function assumes that the last item of compareResult
 // should be printed as an alias.
 // https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html#operator_case
-func SQLCase(value, defaultValue string, compareResult ...string) expressions {
-	var ret [1]string
-	if len(compareResult) == 1 {
-		ret[0] = "<SQLCase error len(compareResult) == 1>"
-		return ret[:]
+func SQLCase(value, defaultValue string, compareResult ...string) *Condition {
+	return &Condition{
+		LeftExpression: sqlCase(value, defaultValue, compareResult...),
+	}
+}
+
+func sqlCase(value, defaultValue string, compareResult ...string) expr {
+	if len(compareResult) < 2 {
+		panic("[dbr] SQLCase error len(compareResult)")
 	}
 	buf := bufferpool.Get()
 
@@ -133,7 +181,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) expressions {
 		buf.WriteString(" AS ")
 		Quoter.quote(buf, compareResult[len(compareResult)-1])
 	}
-	ret[0] = buf.String()
+	e := []string{buf.String()}
 	bufferpool.Put(buf)
-	return ret[:]
+	return e
 }

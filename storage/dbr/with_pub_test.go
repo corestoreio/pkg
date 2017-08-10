@@ -34,7 +34,7 @@ func TestWith_Query(t *testing.T) {
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
-		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().AddColumnsExpressions("1")}).
+		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().AddColumns("1")}).
 			Select(dbr.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
 		rows, err := sel.Query(context.TODO())
@@ -54,7 +54,7 @@ func TestWith_Prepare(t *testing.T) {
 		dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
-		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().AddColumnsExpressions("1")}).
+		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().AddColumns("1")}).
 			Select(dbr.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
 		stmt, err := sel.Prepare(context.TODO())
@@ -74,7 +74,7 @@ func TestWith_Load(t *testing.T) {
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
-		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().AddColumnsExpressions("1")}).
+		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().AddColumns("1")}).
 			Select(dbr.NewSelect().Star().From("sel")).
 			WithDB(dbc.DB)
 		rows, err := sel.Load(context.TODO(), nil)
@@ -88,7 +88,7 @@ func TestNewWith(t *testing.T) {
 
 	t.Run("one CTE", func(t *testing.T) {
 		cte := dbr.NewWith(
-			dbr.WithCTE{Name: "one", Select: dbr.NewSelect().AddColumnsExpressions("1")},
+			dbr.WithCTE{Name: "one", Select: dbr.NewSelect().AddColumns("1")},
 		).Select(dbr.NewSelect().Star().From("one"))
 		compareToSQL(t, cte, nil,
 			"WITH\n`one` AS (SELECT 1)\nSELECT * FROM `one`",
@@ -101,8 +101,8 @@ func TestNewWith(t *testing.T) {
 				Name:    "cte",
 				Columns: []string{"n"},
 				Union: dbr.NewUnion(
-					dbr.NewSelect().AddColumnsExpressions("1"),
-					dbr.NewSelect().AddColumnsExpressions("n+1").From("cte").Where(dbr.Column("n").Less().Int(5)),
+					dbr.NewSelect().AddColumns("1"),
+					dbr.NewSelect().AddColumns("n+1").From("cte").Where(dbr.Column("n").Less().Int(5)),
 				).All(),
 			},
 		).Recursive().Select(dbr.NewSelect().Star().From("cte"))
@@ -126,7 +126,7 @@ func TestNewWith(t *testing.T) {
 	})
 	t.Run("multi column", func(t *testing.T) {
 		cte := dbr.NewWith(
-			dbr.WithCTE{Name: "multi", Columns: []string{"x", "y"}, Select: dbr.NewSelect().AddColumnsExpressions("1", "2")},
+			dbr.WithCTE{Name: "multi", Columns: []string{"x", "y"}, Select: dbr.NewSelect().AddColumns("1", "2")},
 		).Select(dbr.NewSelect("x", "y").From("multi"))
 		compareToSQL(t, cte, nil,
 			"WITH\n`multi` (`x`,`y`) AS (SELECT 1, 2)\nSELECT `x`, `y` FROM `multi`",
@@ -136,7 +136,7 @@ func TestNewWith(t *testing.T) {
 
 	t.Run("DELETE", func(t *testing.T) {
 		cte := dbr.NewWith(
-			dbr.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dbr.NewSelect().AddColumnsExpressions("123")},
+			dbr.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dbr.NewSelect().AddColumns("123")},
 		).Delete(dbr.NewDelete("test").Where(dbr.Column("val").In().Sub(dbr.NewSelect("val").From("check_vals"))))
 
 		compareToSQL(t, cte, nil,
@@ -147,11 +147,11 @@ func TestNewWith(t *testing.T) {
 	t.Run("UPDATE", func(t *testing.T) {
 		cte := dbr.NewWith(
 			dbr.WithCTE{Name: "my_cte", Columns: []string{"n"}, Union: dbr.NewUnion(
-				dbr.NewSelect().AddColumnsExpressions("1"),
-				dbr.NewSelect().AddColumnsExpressions("1+n").From("my_cte").Where(dbr.Column("n").Less().Int(6)),
+				dbr.NewSelect().AddColumns("1"),
+				dbr.NewSelect().AddColumns("1+n").From("my_cte").Where(dbr.Column("n").Less().Int(6)),
 			).All()},
 			// UPDATE statement is wrong because we're missing a JOIN which is not yet implemented.
-		).Update(dbr.NewUpdate("numbers").Set(dbr.Column("n").Int(0)).Where(dbr.Expression("n=my_cte.n*my_cte.n"))).
+		).Update(dbr.NewUpdate("numbers").Set(dbr.Column("n").Int(0)).Where(dbr.Expr("n=my_cte.n*my_cte.n"))).
 			Recursive()
 
 		compareToSQL(t, cte, nil,
@@ -174,7 +174,7 @@ func TestNewWith(t *testing.T) {
 
 	t.Run("error EMPTY top clause", func(t *testing.T) {
 		cte := dbr.NewWith(
-			dbr.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dbr.NewSelect().AddColumnsExpressions("123")},
+			dbr.WithCTE{Name: "check_vals", Columns: []string{"val"}, Select: dbr.NewSelect().AddColumns("123")},
 		)
 		compareToSQL(t, cte, errors.IsEmpty,
 			"",
