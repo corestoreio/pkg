@@ -57,8 +57,8 @@ func TestUnionStmts(t *testing.T) {
 		).All().OrderBy("a").OrderByDesc("b")
 
 		compareToSQL(t, u, nil,
-			"(SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`d` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))\nORDER BY `a` ASC, `b` DESC",
-			"(SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`d` = 'f'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))\nORDER BY `a` ASC, `b` DESC",
+			"(SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`d` = ?))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))\nORDER BY `a`, `b` DESC",
+			"(SELECT `a`, `d` AS `b` FROM `tableAD` WHERE (`d` = 'f'))\nUNION ALL\n(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = 3))\nORDER BY `a`, `b` DESC",
 			"f", int64(3),
 		)
 	})
@@ -72,8 +72,8 @@ func TestUnionStmts(t *testing.T) {
 		// testing idempotent function ToSQL
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, nil,
-				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN ? AND ?))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC",
-				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN 3 AND 5))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC",
+				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN ? AND ?))\nORDER BY `_preserve_result_set`, `a`, `b` DESC",
+				"(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`c` BETWEEN 3 AND 5))\nORDER BY `_preserve_result_set`, `a`, `b` DESC",
 				int64(3), int64(5),
 			)
 		}
@@ -86,8 +86,8 @@ func TestUnionStmts(t *testing.T) {
 		// All gets ignored
 
 		compareToSQL(t, u, nil,
-			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a` ASC, `b` DESC",
-			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a` ASC, `b` DESC",
+			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a`, `b` DESC",
+			"(SELECT `a` FROM `tableAD`)\nINTERSECT\n(SELECT `b` FROM `tableAB`)\nORDER BY `a`, `b` DESC",
 		)
 	})
 	t.Run("except", func(t *testing.T) {
@@ -110,12 +110,14 @@ func TestUnion_UseBuildCache(t *testing.T) {
 	u := NewUnion(
 		NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		NewSelect("a", "b").From("tableAB").Where(Column("b").Float64(3.14159)),
-	).All().
+	).
+		All().
+		Unsafe().
 		StringReplace("MyKey", "a", "b", "c"). // does nothing because more than one NewSelect functions
 		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
 		PreserveResultSet().BuildCache()
 
-	const cachedSQLPlaceHolder = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat(\"c\",b,\"d\")"
+	const cachedSQLPlaceHolder = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?))\nORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, nil,
@@ -130,7 +132,7 @@ func TestUnion_UseBuildCache(t *testing.T) {
 	t.Run("with interpolate", func(t *testing.T) {
 		u.cacheSQL = nil
 
-		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat('c',b,'d')"
+		const cachedSQLInterpolated = "(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`)\nUNION ALL\n(SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = 3.14159))\nORDER BY `_preserve_result_set`, `a`, `b` DESC, concat('c',b,'d')"
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, nil,
 				cachedSQLPlaceHolder,
@@ -183,13 +185,13 @@ func TestNewUnionTemplate(t *testing.T) {
 
 	t.Run("full statement EAV", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("t.{column}", "col_type").
-				FromAlias("catalog_product_entity_{type}", "t").
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("t.$column$", "col_type").
+				FromAlias("catalog_product_entity_$type$", "t").
 				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)).
-				OrderByDesc("t.{column}_store_id"),
+				OrderByDesc("t.$column$_store_id"),
 		).
-			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
-			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX").
+			StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
+			StringReplace("$column$", "varcharX", "intX", "decimalX", "datetimeX", "textX").
 			PreserveResultSet().
 			All().
 			OrderByDesc("col_type")
@@ -225,20 +227,22 @@ func TestNewUnionTemplate(t *testing.T) {
 		}()
 
 		NewUnion(
-			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").FromAlias("catalog_product_entity_{type}", "t"),
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("t.$column$", "col_type").
+				FromAlias("catalog_product_entity_$type$", "t"),
 		).
-			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
-			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX")
+			StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
+			StringReplace("$column$", "varcharX", "intX", "decimalX", "datetimeX")
 
 	})
 	t.Run("StringReplace 2nd call too many values and nothing should happen", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect().AddColumns("t.value,t.attribute_id,t.{column} AS `col_type`").FromAlias("catalog_product_entity_{type}", "t"),
+			NewSelect().AddColumns("t.value", "t.attribute_id").AddColumnsAliases("t.$column$", "col_type").
+				FromAlias("catalog_product_entity_$type$", "t"),
 		).
-			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
-			StringReplace("{column}", "varcharX", "intX", "decimalX", "datetimeX", "textX", "bytesX")
+			StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
+			StringReplace("$column$", "varcharX", "intX", "decimalX", "datetimeX", "textX", "bytesX")
 		compareToSQL(t, u, nil,
-			"(SELECT `t`.`value,t.attribute_id,t.varcharX AS col_type` FROM `catalog_product_entity_varchar` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.intX AS col_type` FROM `catalog_product_entity_int` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.decimalX AS col_type` FROM `catalog_product_entity_decimal` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.datetimeX AS col_type` FROM `catalog_product_entity_datetime` AS `t`)\nUNION\n(SELECT `t`.`value,t.attribute_id,t.textX AS col_type` FROM `catalog_product_entity_text` AS `t`)",
+			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`varcharX` AS `col_type` FROM `catalog_product_entity_varchar` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`intX` AS `col_type` FROM `catalog_product_entity_int` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`decimalX` AS `col_type` FROM `catalog_product_entity_decimal` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`datetimeX` AS `col_type` FROM `catalog_product_entity_datetime` AS `t`)\nUNION\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`textX` AS `col_type` FROM `catalog_product_entity_text` AS `t`)",
 			"",
 		)
 	})
@@ -262,16 +266,16 @@ func TestNewUnionTemplate(t *testing.T) {
 		// everything when loading the PHP array.
 
 		u := NewUnion(
-			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_{type}", "t").
+			NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_$type$", "t").
 				Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)),
 		).
-			StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
+			StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
 			PreserveResultSet().
 			All().OrderBy("attribute_id", "store_id").
 			Interpolate()
 		compareToSQL(t, u, nil,
-			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC",
-			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC",
+			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`",
+			"(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`",
 		)
 	})
 }
@@ -280,14 +284,14 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
 	u := NewUnion(
-		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_{type}", "t").
+		NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").FromAlias("catalog_product_entity_$type$", "t").
 			Where(Column("entity_id").Int64(1561), Column("store_id").In().Int64s(1, 0)),
 	).
-		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
+		StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
 		All().OrderBy("attribute_id", "store_id").BuildCache()
 
-	const cachedSQLPlaceHolder = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC"
+	const cachedSQLPlaceHolder = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = ?) AND (`store_id` IN (?,?)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 	t.Run("without interpolate", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, nil,
@@ -302,7 +306,7 @@ func TestUnionTemplate_UseBuildCache(t *testing.T) {
 	t.Run("with interpolate", func(t *testing.T) {
 		u.cacheSQL = nil
 
-		const cachedSQLInterpolated = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC"
+		const cachedSQLInterpolated = "(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 0 AS `_preserve_result_set` FROM `catalog_product_entity_varchar` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 1 AS `_preserve_result_set` FROM `catalog_product_entity_int` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 2 AS `_preserve_result_set` FROM `catalog_product_entity_decimal` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 3 AS `_preserve_result_set` FROM `catalog_product_entity_datetime` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nUNION ALL\n(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS `_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE (`entity_id` = 1561) AND (`store_id` IN (1,0)))\nORDER BY `_preserve_result_set`, `attribute_id`, `store_id`"
 		for i := 0; i < 3; i++ {
 			compareToSQL(t, u, nil,
 				cachedSQLPlaceHolder,

@@ -495,8 +495,14 @@ func TestSelectBySQL(t *testing.T) {
 func TestSelectVarieties(t *testing.T) {
 	t.Parallel()
 
-	// This would be wrong SQL!
+	// This would be incorrect SQL!
 	compareToSQL(t, NewSelect("id, name, email").From("users"), nil,
+		"SELECT `id, name, email` FROM `users`",
+		"SELECT `id, name, email` FROM `users`",
+	)
+	// With unsafe it still gets quoted because unsafe has been applied after
+	// the column names has been added.
+	compareToSQL(t, NewSelect("id, name, email").Unsafe().From("users"), nil,
 		"SELECT `id, name, email` FROM `users`",
 		"SELECT `id, name, email` FROM `users`",
 	)
@@ -1094,6 +1100,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 
 	t.Run("without args", func(t *testing.T) {
 		sel3 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
+			Unsafe().
 			AddColumnsConditions(Expr("DATE_FORMAT(t3.period, '%Y-%m-01')").Alias("period")).
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
 			AddColumnsConditions(
@@ -1122,7 +1129,9 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 	})
 
 	t.Run("with args", func(t *testing.T) {
+		// Full valid query which works in a M1 and M2 database.
 		sel3 := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
+			Unsafe().
 			AddColumnsConditions(Expr("DATE_FORMAT(t3.period, '%Y-%m-01')").Alias("period")).
 			AddColumns("`t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`").
 			AddColumnsConditions(
@@ -1135,7 +1144,7 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 			Having(Expr("COUNT(*)>?").Int(3)).
 			OrderBy("t3.store_id").
 			OrderBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
-			OrderByDesc("total_qty DESC").
+			OrderByDesc("total_qty").
 			Where(Column("t3.store_id").In().Int64s(2, 3, 4))
 
 		sel2 := NewSelectWithDerivedTable(sel3, "t2").
@@ -1147,8 +1156,8 @@ func TestSelect_Subselect_Complex(t *testing.T) {
 			OrderBy("`t1`.period", "`t1`.product_id")
 
 		compareToSQL(t, sel1, nil,
-			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered)+? AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (?,?,?)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
-			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered)+? AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty DESC` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered)+? AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (?,?,?)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>?) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
+			"SELECT `t1`.`period`, `t1`.`store_id`, `t1`.`product_id`, `t1`.`product_name`, `t1`.`avg_price`, `t1`.`qty_ordered` FROM (SELECT `t2`.`period`, `t2`.`store_id`, `t2`.`product_id`, `t2`.`product_name`, `t2`.`avg_price`, `t2`.`total_qty` AS `qty_ordered` FROM (SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period`, `t3`.`store_id`,`t3`.`product_id`,`t3`.`product_name`, AVG(`t3`.`product_price`) AS `avg_price`, SUM(t3.qty_ordered)+3.141 AS `total_qty` FROM `sales_bestsellers_aggregated_daily` AS `t3` WHERE (`t3`.`store_id` IN (2,3,4)) GROUP BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `t3`.`product_id`, `t3`.`product_name` HAVING (COUNT(*)>3) ORDER BY `t3`.`store_id`, DATE_FORMAT(t3.period, '%Y-%m-01'), `total_qty` DESC) AS `t2`) AS `t1` ORDER BY `t1`.`period`, `t1`.`product_id`",
 			3.141, int64(2), int64(3), int64(4), int64(3),
 		)
 	})
@@ -1261,6 +1270,14 @@ func TestSelect_Count(t *testing.T) {
 			nil,
 			"SELECT `count(*)` FROM `dbr_people`",
 			"SELECT `count(*)` FROM `dbr_people`",
+		)
+	})
+	t.Run("written count star gets not quoted Unsafe", func(t *testing.T) {
+		compareToSQL(t,
+			NewSelect().Unsafe().AddColumns("count(*)").From("dbr_people"),
+			nil,
+			"SELECT count(*) FROM `dbr_people`",
+			"SELECT count(*) FROM `dbr_people`",
 		)
 	})
 	t.Run("func count star", func(t *testing.T) {

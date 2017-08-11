@@ -95,6 +95,7 @@ func TestUnion_Prepare(t *testing.T) {
 		dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
 	).
+		Unsafe().
 		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
 		PreserveResultSet().BuildCache()
 
@@ -103,7 +104,7 @@ func TestUnion_Prepare(t *testing.T) {
 		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectPrepare(
-			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat(\"c\",b,\"d\")"),
+			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
 		).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
@@ -119,7 +120,7 @@ func TestUnion_Prepare(t *testing.T) {
 		defer cstesting.MockClose(t, dbc, dbMock)
 
 		dbMock.ExpectPrepare(
-			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a` ASC, `b` DESC, concat(\"c\",b,\"d\")"),
+			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
 		)
 
 		u.WithDB(dbc.DB)
@@ -136,14 +137,14 @@ func TestUnion_Load(t *testing.T) {
 	u := dbr.NewUnion(
 		dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
 		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
-	).
+	).Unsafe().
 		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`)
 
 	t.Run("error", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
 
-		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `a` ASC, `b` DESC, concat(\"c\",b,\"d\")")).
+		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `a`, `b` DESC, concat(\"c\",b,\"d\")")).
 			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
 
 		rows, err := u.WithDB(dbc.DB).Load(context.TODO(), nil)

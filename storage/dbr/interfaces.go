@@ -19,8 +19,10 @@ import (
 	"database/sql"
 )
 
-// Preparer prepares a query.
-type Preparer interface {
+// These interfaces are private on purpose. No need to export them.
+
+// preparer prepares a query.
+type preparer interface {
 	// PrepareContext - the provided context is used for the preparation of the
 	// statement, not for the execution of the statement.
 	// PrepareContext creates a prepared statement for later queries or
@@ -30,58 +32,32 @@ type Preparer interface {
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 }
 
-// Execer can execute a non-returning query.
-type Execer interface {
+// execer can execute a non-returning query.
+type execer interface {
 	// ExecContext executes a query that doesn't return rows.
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-// ExecPreparer a composite interface which can execute and prepare a query.
-type ExecPreparer interface {
-	Preparer
-	Execer
+// execPreparer a composite interface which can execute and prepare a query.
+type execPreparer interface {
+	preparer
+	execer
 }
 
-// Querier can execute a returning query.
-type Querier interface {
+// querier can execute a returning query.
+type querier interface {
 	// QueryContext executes a query that returns rows, typically a SELECT. The
 	// args are for any placeholder parameters in the query.
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-// QueryPreparer can execute a returning query and prepare a returning query.
-type QueryPreparer interface {
-	Preparer
-	Querier
+// queryPreparer can execute a returning query and prepare a returning query.
+type queryPreparer interface {
+	preparer
+	querier
 }
 
-// Stmter is a composition of multiple interfaces to describe the common needed
-// behaviour for querying a database within a prepared statement. This interface
-// is context independent.
-type Stmter interface {
-	StmtExecer
-	StmtQueryer
-}
-
-// StmtExecer executes a prepared non-SELECT statement
-type StmtExecer interface {
-	// ExecContext executes a query that doesn't return rows.
-	// For example: an INSERT and UPDATE.
-	ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error)
-}
-
-// StmtQueryer executes a prepared e.g. SELECT statement which can return many
-// rows.
-type StmtQueryer interface {
-	QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error)
-}
-
-// TxBeginner starts a transaction
-type TxBeginner interface {
-	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
-}
-
-// Txer is an in-progress database transaction.
+// txer is an in-progress database transaction.
 //
 // A transaction must end with a call to Commit or Rollback.
 //
@@ -90,16 +66,16 @@ type TxBeginner interface {
 //
 // The statements prepared for a transaction by calling the transaction'ab
 // Prepare or Stmt methods are closed by the call to Commit or Rollback.
-type Txer interface {
+type txer interface {
 	Commit() error
 	Rollback() error
 	Stmt(stmt *sql.Stmt) *sql.Stmt
-	Execer
-	Preparer
-	Querier
+	execer
+	preparer
+	querier
 }
 
-var _ Txer = (*txMock)(nil)
+var _ txer = (*txMock)(nil)
 
 // txMock does nothing and returns always nil
 type txMock struct{}

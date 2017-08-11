@@ -255,8 +255,8 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 	}
 }
 
-var _ Querier = (*dbMock)(nil)
-var _ Execer = (*dbMock)(nil)
+var _ querier = (*dbMock)(nil)
+var _ execer = (*dbMock)(nil)
 
 type dbMock struct {
 	error

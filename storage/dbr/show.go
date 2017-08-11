@@ -34,8 +34,10 @@ const (
 // Show represents the SHOW syntax
 type Show struct {
 	BuilderBase
-	// DB gets required once the Load*() functions will be used.
-	DB QueryPreparer
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB queryPreparer
 
 	// Type bitwise flag containing the type of the SHOW statement.
 	Type uint
@@ -49,7 +51,7 @@ type Show struct {
 func NewShow() *Show { return &Show{} }
 
 // WithDB sets the database query object.
-func (b *Show) WithDB(db QueryPreparer) *Show {
+func (b *Show) WithDB(db queryPreparer) *Show {
 	b.DB = db
 	return b
 }

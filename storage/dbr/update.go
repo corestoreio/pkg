@@ -28,7 +28,10 @@ import (
 type Update struct {
 	BuilderBase
 	BuilderConditional
-	DB ExecPreparer
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB execPreparer
 
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
@@ -83,8 +86,15 @@ func (b *Update) Alias(alias string) *Update {
 }
 
 // WithDB sets the database query object.
-func (b *Update) WithDB(db ExecPreparer) *Update {
+func (b *Update) WithDB(db execPreparer) *Update {
 	b.DB = db
+	return b
+}
+
+// Unsafe see BuilderBase.IsUnsafe which weakens security when building the SQL
+// string. This function must be called before calling any other function.
+func (b *Update) Unsafe() *Update {
+	b.IsUnsafe = true
 	return b
 }
 
@@ -123,7 +133,7 @@ func (b *Update) Where(wf ...*Condition) *Update {
 // in a UPDATE, the server sorts values using only the initial number of bytes
 // indicated by the max_sort_length system variable.
 func (b *Update) OrderBy(columns ...string) *Update {
-	b.OrderBys = b.OrderBys.AppendColumns(columns...)
+	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...)
 	return b
 }
 
@@ -133,7 +143,7 @@ func (b *Update) OrderBy(columns ...string) *Update {
 // in a UPDATE, the server sorts values using only the initial number of bytes
 // indicated by the max_sort_length system variable.
 func (b *Update) OrderByDesc(columns ...string) *Update {
-	b.OrderBys = b.OrderBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
+	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...).applySort(len(columns), sortDescending)
 	return b
 }
 
@@ -284,7 +294,10 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 // provided either through the Records slice or via RecordChan.
 type UpdateMulti struct {
 	Log log.Logger
-	DB  ExecPreparer
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB execPreparer
 
 	// IsTransaction set to true to enable running the UPDATE queries in a
 	// transaction.
@@ -293,7 +306,7 @@ type UpdateMulti struct {
 	sql.IsolationLevel
 	// Tx knows how to start a transaction. Must be set if transactions hasn't
 	// been disabled.
-	Tx TxBeginner
+	Tx *sql.DB // todo can be removed and also the sql.IsolationLevel
 	// Update represents the template UPDATE statement.
 	Update *Update
 
@@ -333,7 +346,7 @@ func (tx *Tx) UpdateMulti(tpl *Update) *UpdateMulti {
 }
 
 // WithDB sets the database query object.
-func (b *UpdateMulti) WithDB(db ExecPreparer) *UpdateMulti {
+func (b *UpdateMulti) WithDB(db execPreparer) *UpdateMulti {
 	b.DB = db
 	return b
 }
@@ -358,7 +371,7 @@ func (b *UpdateMulti) validate() error {
 	return nil
 }
 
-func txUpdateMultiRollback(tx Txer, previousErr error, msg string, args ...interface{}) ([]sql.Result, error) {
+func txUpdateMultiRollback(tx txer, previousErr error, msg string, args ...interface{}) ([]sql.Result, error) {
 	if err := tx.Rollback(); err != nil {
 		eArg := []interface{}{previousErr}
 		return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Tx.Rollback. Previous Error: %s. "+msg, append(eArg, args...)...)
@@ -391,7 +404,7 @@ func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentsAppender) ([
 	}
 
 	exec := b.DB
-	var tx Txer = txMock{}
+	var tx txer = txMock{}
 	if b.IsTransaction {
 		tx, err = b.Tx.BeginTx(ctx, &sql.TxOptions{
 			Isolation: b.IsolationLevel,

@@ -45,7 +45,7 @@ func TestUpdate_Basics(t *testing.T) {
 	})
 	t.Run("order by", func(t *testing.T) {
 		qb := NewUpdate("a").Set(Column("b").Int(1), Column("c").Int(2)).
-			OrderBy("col1", "col2").OrderByDesc("col2", "col3").OrderBy("concat(1,2,3)")
+			OrderBy("col1", "col2").OrderByDesc("col2", "col3").Unsafe().OrderBy("concat(1,2,3)")
 		compareToSQL(t, qb, nil,
 			"UPDATE `a` SET `b`=?, `c`=? ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",
 			"UPDATE `a` SET `b`=1, `c`=2 ORDER BY `col1`, `col2`, `col2` DESC, `col3` DESC, concat(1,2,3)",

@@ -29,8 +29,6 @@ import (
 
 var benchmarkGlobalVals []interface{}
 
-var _ dbr.Querier = (*benchMockQuerier)(nil)
-
 type benchMockQuerier struct{}
 
 func (benchMockQuerier) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {

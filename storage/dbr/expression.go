@@ -152,7 +152,7 @@ func SQLCase(value, defaultValue string, compareResult ...string) *Condition {
 
 func sqlCase(value, defaultValue string, compareResult ...string) expr {
 	if len(compareResult) < 2 {
-		panic("[dbr] SQLCase error len(compareResult)")
+		panic(errors.NewFatalf("[dbr] SQLCase error incorrect length for compareResult: %v", compareResult))
 	}
 	buf := bufferpool.Get()
 

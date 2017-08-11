@@ -26,7 +26,10 @@ import (
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	BuilderBase
-	DB ExecPreparer
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB execPreparer
 
 	Into    string
 	Columns []string
@@ -114,7 +117,7 @@ func (tx *Tx) InsertInto(into string) *Insert {
 }
 
 // WithDB sets the database query object.
-func (b *Insert) WithDB(db ExecPreparer) *Insert {
+func (b *Insert) WithDB(db execPreparer) *Insert {
 	b.DB = db
 	return b
 }

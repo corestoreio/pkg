@@ -70,7 +70,7 @@ func TestSQLIfNull(t *testing.T) {
 			if alias != "" {
 				ifn = ifn.Alias(alias)
 			}
-			assert.Equal(t, want, ifn.LeftExpression)
+			assert.Equal(t, want, ifn.LeftExpression.String())
 		}
 	}
 	t.Run("1 args expression", runner(
@@ -104,20 +104,20 @@ func TestSQLIfNull(t *testing.T) {
 	))
 
 	t.Run("3 args expression left", runner(
-		"IFNULL((1/0),`c2`) AS `alias`",
-		"1/0", "c2", "alias",
+		"IFNULL((1/0),`c2`)",
+		"1/0", "c2",
 	))
 	t.Run("3 args expression right", runner(
-		"IFNULL(`c2`,(1/0)) AS `alias`",
-		"c2", "1/0", "alias",
+		"IFNULL(`c2`,(1/0))",
+		"c2", "1/0",
 	))
 	t.Run("3 args no qualifier", runner(
-		"IFNULL(`c1`,`c2`) AS `alias`",
-		"c1", "c2", "alias",
+		"IFNULL(`c1`,`c2`)",
+		"c1", "c2",
 	))
 	t.Run("3 args with qualifier", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
-		"t1.c1", "t2.c2", "alias",
+		"IFNULL(`t1`.`c1`,`t2`.`c2`)",
+		"t1.c1", "t2.c2",
 	))
 
 	t.Run("4 args", runner(
@@ -125,8 +125,8 @@ func TestSQLIfNull(t *testing.T) {
 		"t1", "c1", "t2", "c2",
 	))
 	t.Run("5 args", runner(
-		"IFNULL(`t1`.`c1`,`t2`.`c2`) AS `alias`",
-		"t1", "c1", "t2", "c2", "alias",
+		"IFNULL(`t1`.`c1`,`t2`.`c2`)",
+		"t1", "c1", "t2", "c2",
 	))
 
 	// its own tests
@@ -254,11 +254,19 @@ func TestSQLCase(t *testing.T) {
 				"3=2", "4",
 			).LeftExpression.String(),
 		)
-		assert.Exactly(t,
-			"<SQLCase error len(compareResult) == 1>",
-			dbr.SQLCase("", "",
-				"1=1",
-			).LeftExpression.String(),
-		)
+	})
+	t.Run("case panics because of invalid length of comparions", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				if err, ok := r.(error); ok {
+					assert.True(t, errors.IsFatal(err))
+				} else {
+					t.Errorf("Panic should contain an error but got:\n%+v", r)
+				}
+			} else {
+				t.Error("Expecting a panic but got nothing")
+			}
+		}()
+		dbr.SQLCase("", "", "1=1")
 	})
 }

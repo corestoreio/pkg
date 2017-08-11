@@ -31,8 +31,10 @@ import (
 // UNION and all based on a common template.
 type Union struct {
 	BuilderBase
-	// DB gets required once the Load*() functions will be used.
-	DB QueryPreparer
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB queryPreparer
 
 	Selects     []*Select
 	OrderBys    identifiers
@@ -76,8 +78,15 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 }
 
 // WithDB sets the database query object.
-func (u *Union) WithDB(db QueryPreparer) *Union {
+func (u *Union) WithDB(db queryPreparer) *Union {
 	u.DB = db
+	return u
+}
+
+// Unsafe see BuilderBase.IsUnsafe which weakens security when building the SQL
+// string. This function must be called before calling any other function.
+func (u *Union) Unsafe() *Union {
+	u.IsUnsafe = true
 	return u
 }
 
@@ -124,7 +133,7 @@ func (u *Union) PreserveResultSet() *Union {
 // slow. Under different conditions sorting can skip the temporary table.
 // https://dev.mysql.com/doc/relnotes/mysql/5.7/en/news-5-7-3.html
 func (u *Union) OrderBy(columns ...string) *Union {
-	u.OrderBys = u.OrderBys.AppendColumns(columns...).applySort(len(columns), sortAscending)
+	u.OrderBys = u.OrderBys.AppendColumns(u.IsUnsafe, columns...)
 	return u
 }
 
@@ -134,7 +143,7 @@ func (u *Union) OrderBy(columns ...string) *Union {
 // in a DELETE, the server sorts values using only the initial number of bytes
 // indicated by the max_sort_length system variable.
 func (u *Union) OrderByDesc(columns ...string) *Union {
-	u.OrderBys = u.OrderBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
+	u.OrderBys = u.OrderBys.AppendColumns(u.IsUnsafe, columns...).applySort(len(columns), sortDescending)
 	return u
 }
 

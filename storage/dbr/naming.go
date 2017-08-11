@@ -178,15 +178,16 @@ func (ids identifiers) applySort(lastNindexes int, sort byte) identifiers {
 }
 
 // AppendColumns adds new columns to the identifier slice. If a column name is
-// not valid identifier that column gets switched into an expression.
-// You should use this function when no arguments should be attached to an expression, otherwise use the function AppendConditions.
-func (ids identifiers) AppendColumns(columns ...string) identifiers {
+// not valid identifier that column gets switched into an expression. You should
+// use this function when no arguments should be attached to an expression,
+// otherwise use the function AppendConditions.
+func (ids identifiers) AppendColumns(isUnsafe bool, columns ...string) identifiers {
 	if cap(ids) == 0 {
 		ids = make(identifiers, 0, len(columns)*2)
 	}
 	for _, c := range columns {
 		id := identifier{Name: c}
-		if isValidIdentifier(c) != 0 {
+		if isUnsafe && isValidIdentifier(c) != 0 {
 			id.Expression = []string{id.Name}
 			id.Name = ""
 		}
@@ -198,9 +199,9 @@ func (ids identifiers) AppendColumns(columns ...string) identifiers {
 // AppendColumnsAliases expects a balanced slice where i=column name and
 // i+1=alias name. An imbalanced slice will cause a panic. If a column name is
 // not valid identifier that column gets switched into an expression. The alias
-// does not change.
-// You should use this function when no arguments should be attached to an expression, otherwise use the function AppendConditions.
-func (ids identifiers) AppendColumnsAliases(columns ...string) identifiers {
+// does not change. You should use this function when no arguments should be
+// attached to an expression, otherwise use the function AppendConditions.
+func (ids identifiers) AppendColumnsAliases(isUnsafe bool, columns ...string) identifiers {
 	if (len(columns) % 2) == 1 {
 		// A programmer made an error
 		panic(errors.NewMismatchf("[dbr] Expecting a balanced slice! Got: %v", columns))
@@ -211,7 +212,7 @@ func (ids identifiers) AppendColumnsAliases(columns ...string) identifiers {
 
 	for i := 0; i < len(columns); i = i + 2 {
 		id := identifier{Name: columns[i], Aliased: columns[i+1]}
-		if isValidIdentifier(id.Name) != 0 {
+		if isUnsafe && isValidIdentifier(id.Name) != 0 {
 			id.Expression = []string{id.Name}
 			id.Name = ""
 		}

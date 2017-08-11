@@ -703,6 +703,10 @@ func (c *Condition) SQLCase(value, defaultValue string, compareResult ...string)
 	return c
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//		INTERNAL
+///////////////////////////////////////////////////////////////////////////////
+
 // write writes the conditions for usage as restrictions in WHERE, HAVING or
 // JOIN clauses. conditionType enum of j=join, w=where, h=having
 func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {

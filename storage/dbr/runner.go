@@ -52,7 +52,10 @@ type RowCloser interface {
 // LAST_INSERT_ID() returns the value generated for the first inserted row only.
 // The reason for this is to make it possible to reproduce easily the same
 // INSERT statement against some other server.
-func Exec(ctx context.Context, db Execer, b QueryBuilder) (sql.Result, error) {
+// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
+// dedicated database session) or a *sql.Tx (an in-progress database
+// transaction).
+func Exec(ctx context.Context, db execer, b QueryBuilder) (sql.Result, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -62,7 +65,10 @@ func Exec(ctx context.Context, db Execer, b QueryBuilder) (sql.Result, error) {
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
-func Prepare(ctx context.Context, db Preparer, b QueryBuilder) (*sql.Stmt, error) {
+// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
+// dedicated database session) or a *sql.Tx (an in-progress database
+// transaction).
+func Prepare(ctx context.Context, db preparer, b QueryBuilder) (*sql.Stmt, error) {
 	var sqlStr string
 	var err error
 	if qb, ok := b.(queryBuilder); ok { // Interface upgrade
@@ -81,7 +87,10 @@ func Prepare(ctx context.Context, db Preparer, b QueryBuilder) (*sql.Stmt, error
 }
 
 // Query executes a query and returns many rows.
-func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
+// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
+// dedicated database session) or a *sql.Tx (an in-progress database
+// transaction).
+func Query(ctx context.Context, db querier, b QueryBuilder) (*sql.Rows, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -92,7 +101,10 @@ func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
 
 // Load loads data from a query into `s`. Load supports loading of up to n-rows.
 // Load checks if a type implements RowCloser interface.
-func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
+// `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
+// dedicated database session) or a *sql.Tx (an in-progress database
+// transaction).
+func Load(ctx context.Context, db querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)

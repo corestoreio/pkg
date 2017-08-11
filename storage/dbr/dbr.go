@@ -140,8 +140,11 @@ type BuilderBase struct {
 	PropagationStopped bool
 	IsInterpolate      bool // See Interpolate()
 	IsBuildCache       bool // see BuildCache()
-	cacheSQL           []byte
-	cacheArgs          Arguments // like a buffer, gets reused
+	// IsUnsafe if set to true the functions AddColumn* will turn any
+	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
+	IsUnsafe  bool
+	cacheSQL  []byte
+	cacheArgs Arguments // like a buffer, gets reused
 	// propagationStoppedAt position in the slice where the stopped propagation
 	// has been requested. for every new iteration the propagation must stop at
 	// this position.

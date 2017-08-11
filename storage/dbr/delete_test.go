@@ -53,7 +53,7 @@ func TestDeleteSingleToSQL(t *testing.T) {
 func TestDelete_OrderBy(t *testing.T) {
 	t.Parallel()
 	t.Run("expr", func(t *testing.T) {
-		compareToSQL(t, NewDelete("a").OrderBy("b=c").OrderByDesc("d"), nil,
+		compareToSQL(t, NewDelete("a").Unsafe().OrderBy("b=c").OrderByDesc("d"), nil,
 			"DELETE FROM `a` ORDER BY b=c, `d` DESC",
 			"DELETE FROM `a` ORDER BY b=c, `d` DESC",
 		)

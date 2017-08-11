@@ -43,7 +43,10 @@ import (
 type Delete struct {
 	BuilderBase
 	BuilderConditional
-	DB ExecPreparer
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB execPreparer
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners DeleteListeners
@@ -97,8 +100,15 @@ func (b *Delete) Alias(alias string) *Delete {
 }
 
 // WithDB sets the database query object.
-func (b *Delete) WithDB(db ExecPreparer) *Delete {
+func (b *Delete) WithDB(db execPreparer) *Delete {
 	b.DB = db
+	return b
+}
+
+// Unsafe see BuilderBase.IsUnsafe which weakens security when building the SQL
+// string. This function must be called before calling any other function.
+func (b *Delete) Unsafe() *Delete {
+	b.IsUnsafe = true
 	return b
 }
 
@@ -121,7 +131,7 @@ func (b *Delete) Where(wf ...*Condition) *Delete {
 // in a DELETE, the server sorts arguments using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderBy(columns ...string) *Delete {
-	b.OrderBys = b.OrderBys.AppendColumns(columns...)
+	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...)
 	return b
 }
 
@@ -131,7 +141,7 @@ func (b *Delete) OrderBy(columns ...string) *Delete {
 // in a DELETE, the server sorts arguments using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Delete) OrderByDesc(columns ...string) *Delete {
-	b.OrderBys = b.OrderBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
+	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...).applySort(len(columns), sortDescending)
 	return b
 }
 
@@ -249,7 +259,7 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 
 // Prepare executes the statement represented by the Delete. It returns the raw
 // database/sql Statement and an error if there was one. Provided arguments in
-// the Delete are getting ignored. It panics when field Preparer at nil.
+// the Delete are getting ignored. It panics when field preparer at nil.
 func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)

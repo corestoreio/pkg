@@ -26,8 +26,10 @@ import (
 type Select struct {
 	BuilderBase
 	BuilderConditional
-	// DB gets required once the Load*() functions will be used.
-	DB QueryPreparer
+	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
+	// dedicated database session) or a *sql.Tx (an in-progress database
+	// transaction).
+	DB queryPreparer
 
 	// Columns represents a slice of names and its optional identifiers. Wildcard
 	// `SELECT *` statements are not really supported:
@@ -61,7 +63,7 @@ func NewSelect(columns ...string) *Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
-		s.Columns = s.Columns.AppendColumns(columns...)
+		s.Columns = s.Columns.AppendColumns(false, columns...)
 	}
 	return s
 }
@@ -91,7 +93,7 @@ func (c *Connection) Select(columns ...string) *Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
-		s.Columns = s.Columns.AppendColumns(columns...)
+		s.Columns = s.Columns.AppendColumns(false, columns...)
 	}
 	s.DB = c.DB
 	return s
@@ -118,7 +120,7 @@ func (tx *Tx) Select(columns ...string) *Select {
 	if len(columns) == 1 && columns[0] == "*" {
 		s.Star()
 	} else {
-		s.Columns = s.Columns.AppendColumns(columns...)
+		s.Columns = s.Columns.AppendColumns(false, columns...)
 	}
 	s.DB = tx.Tx
 	return s
@@ -139,7 +141,7 @@ func (tx *Tx) SelectBySQL(sql string, args Arguments) *Select {
 }
 
 // WithDB sets the database query object.
-func (b *Select) WithDB(db QueryPreparer) *Select {
+func (b *Select) WithDB(db queryPreparer) *Select {
 	b.DB = db
 	return b
 }
@@ -148,6 +150,13 @@ func (b *Select) WithDB(db QueryPreparer) *Select {
 // duplicate rows from the result set.
 func (b *Select) Distinct() *Select {
 	b.IsDistinct = true
+	return b
+}
+
+// Unsafe see BuilderBase.IsUnsafe which weakens security when building the SQL
+// string. This function must be called before calling any other function.
+func (b *Select) Unsafe() *Select {
+	b.IsUnsafe = true
 	return b
 }
 
@@ -223,15 +232,12 @@ func (b *Select) FromAlias(from, alias string) *Select {
 }
 
 // AddColumns appends more columns to the Columns slice. If a column name is not
-// valid identifier that column gets switched into an expression. If a single
-// string gets passed with comma separated values, this string gets split by the
-// comma and its values appended to the Columns slice. Columns won't get quoted.
-// TODO: check if that is still true
+// valid identifier that column gets switched into an expression.
 // 		AddColumns("a","b") 		// `a`,`b`
-// 		AddColumns("a,b","z","c,d")	// `a,b`,`z`,`c,d` <- invalid SQL!
+// 		AddColumns("a,b","z","c,d")	// a,b,`z`,c,d
 //		AddColumns("t1.name","t1.sku","price") // `t1`.`name`, `t1`.`sku`,`price`
 func (b *Select) AddColumns(cols ...string) *Select {
-	b.Columns = b.Columns.AppendColumns(cols...)
+	b.Columns = b.Columns.AppendColumns(b.IsUnsafe, cols...)
 	return b
 }
 
@@ -242,7 +248,7 @@ func (b *Select) AddColumns(cols ...string) *Select {
 //		AddColumnsAliases("t1.name","t1Name","t1.sku","t1SKU") // `t1`.`name` AS `t1Name`, `t1`.`sku` AS `t1SKU`
 // 		AddColumnsAliases("(e.price*x.tax*t.weee)", "final_price") // error: `(e.price*x.tax*t.weee)` AS `final_price`
 func (b *Select) AddColumnsAliases(columnAliases ...string) *Select {
-	b.Columns = b.Columns.AppendColumnsAliases(columnAliases...)
+	b.Columns = b.Columns.AppendColumnsAliases(b.IsUnsafe, columnAliases...)
 	return b
 }
 
@@ -274,7 +280,7 @@ func (b *Select) Where(wf ...*Condition) *Select {
 // GROUP BY produces this function should add an ORDER BY NULL with function
 // `OrderByDeactivated`.
 func (b *Select) GroupBy(columns ...string) *Select {
-	b.GroupBys = b.GroupBys.AppendColumns(columns...)
+	b.GroupBys = b.GroupBys.AppendColumns(b.IsUnsafe, columns...)
 	return b
 }
 
@@ -284,7 +290,7 @@ func (b *Select) GroupBy(columns ...string) *Select {
 // column in a SELECT, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Select) GroupByAsc(columns ...string) *Select {
-	b.GroupBys = b.GroupBys.AppendColumns(columns...).applySort(len(columns), sortAscending)
+	b.GroupBys = b.GroupBys.AppendColumns(b.IsUnsafe, columns...).applySort(len(columns), sortAscending)
 	return b
 }
 
@@ -294,7 +300,7 @@ func (b *Select) GroupByAsc(columns ...string) *Select {
 // column in a SELECT, the server sorts values using only the initial number of
 // bytes indicated by the max_sort_length system variable.
 func (b *Select) GroupByDesc(columns ...string) *Select {
-	b.GroupBys = b.GroupBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
+	b.GroupBys = b.GroupBys.AppendColumns(b.IsUnsafe, columns...).applySort(len(columns), sortDescending)
 	return b
 }
 
@@ -317,7 +323,7 @@ func (b *Select) OrderByDeactivated() *Select {
 // in a SELECT, the server sorts values using only the initial number of bytes
 // indicated by the max_sort_length system variable.
 func (b *Select) OrderBy(columns ...string) *Select {
-	b.OrderBys = b.OrderBys.AppendColumns(columns...)
+	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...)
 	return b
 }
 
@@ -327,7 +333,7 @@ func (b *Select) OrderBy(columns ...string) *Select {
 // in a SELECT, the server sorts values using only the initial number of bytes
 // indicated by the max_sort_length system variable.
 func (b *Select) OrderByDesc(columns ...string) *Select {
-	b.OrderBys = b.OrderBys.AppendColumns(columns...).applySort(len(columns), sortDescending)
+	b.OrderBys = b.OrderBys.AppendColumns(b.IsUnsafe, columns...).applySort(len(columns), sortDescending)
 	return b
 }
 

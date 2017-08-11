@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"os"
 	"time"
-
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/wordwrap"
 	"github.com/corestoreio/errors"
+	"strings"
 )
 
 // iFaceToArgs unpacks the interface and creates an Argument slice. Just a
@@ -294,7 +294,7 @@ func ExampleNewUnion() {
 	//UNION ALL
 	//(SELECT concat(c1,?,c2) AS `A`, `c2` AS `B`, 2 AS `_preserve_result_set` FROM
 	//`tableC` WHERE (`c2` = ?))
-	//ORDER BY `_preserve_result_set`, `A` ASC, `B` DESC
+	//ORDER BY `_preserve_result_set`, `A`, `B` DESC
 	//Arguments: [3 4 - ArgForC2]
 	//
 	//Interpolated Statement:
@@ -306,7 +306,7 @@ func ExampleNewUnion() {
 	//UNION ALL
 	//(SELECT concat(c1,'-',c2) AS `A`, `c2` AS `B`, 2 AS `_preserve_result_set` FROM
 	//`tableC` WHERE (`c2` = 'ArgForC2'))
-	//ORDER BY `_preserve_result_set`, `A` ASC, `B` DESC
+	//ORDER BY `_preserve_result_set`, `A`, `B` DESC
 }
 
 // ExampleNewUnion_template interpolates the SQL string with its placeholders
@@ -319,10 +319,10 @@ func ExampleNewUnion_template() {
 
 	u := dbr.NewUnion(
 		dbr.NewSelect().AddColumns("t.value", "t.attribute_id", "t.store_id").
-			FromAlias("catalog_product_entity_{type}", "t").
+			FromAlias("catalog_product_entity_$type$", "t").
 			Where(dbr.Column("entity_id").Int64(1561), dbr.Column("store_id").In().Int64s(1, 0)),
 	).
-		StringReplace("{type}", "varchar", "int", "decimal", "datetime", "text").
+		StringReplace("$type$", "varchar", "int", "decimal", "datetime", "text").
 		PreserveResultSet().
 		All().OrderBy("attribute_id", "store_id")
 	writeToSQLAndInterpolate(u)
@@ -347,7 +347,7 @@ func ExampleNewUnion_template() {
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = ?) AND (`store_id` IN (?,?)))
-	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
+	//ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`
 	//Arguments: [1561 1 0 1561 1 0 1561 1 0 1561 1 0 1561 1 0]
 	//
 	//Interpolated Statement:
@@ -370,7 +370,7 @@ func ExampleNewUnion_template() {
 	//(SELECT `t`.`value`, `t`.`attribute_id`, `t`.`store_id`, 4 AS
 	//`_preserve_result_set` FROM `catalog_product_entity_text` AS `t` WHERE
 	//(`entity_id` = 1561) AND (`store_id` IN (1,0)))
-	//ORDER BY `_preserve_result_set`, `attribute_id` ASC, `store_id` ASC
+	//ORDER BY `_preserve_result_set`, `attribute_id`, `store_id`
 }
 
 func ExampleInterpolate() {
@@ -533,7 +533,7 @@ func ExampleCondition_Sub() {
 }
 
 func ExampleNewSelectWithDerivedTable() {
-	sel3 := dbr.NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
+	sel3 := dbr.NewSelect().Unsafe().FromAlias("sales_bestsellers_aggregated_daily", "t3").
 		AddColumnsAliases("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
 		AddColumnsAliases("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
@@ -576,29 +576,34 @@ func ExampleNewSelectWithDerivedTable() {
 }
 
 func ExampleSQLIfNull() {
-	fmt.Println(dbr.SQLIfNull("column1"))
-	fmt.Println(dbr.SQLIfNull("table1.column1"))
-	fmt.Println(dbr.SQLIfNull("column1", "column2"))
-	fmt.Println(dbr.SQLIfNull("table1.column1", "table2.column2"))
-	fmt.Println(dbr.SQLIfNull("column2", "1/0").Alias("alias"))
-	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "8").Alias("alias"))
-	fmt.Println(dbr.SQLIfNull("SELECT * FROM x", "9 ").Alias("alias"))
-	fmt.Println(dbr.SQLIfNull("column1", "column2").Alias("alias"))
-	fmt.Println(dbr.SQLIfNull("table1.column1", "table2.column2").Alias("alias"))
-	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2"))
-	fmt.Println(dbr.SQLIfNull("table1", "column1", "table2", "column2").Alias("alias"))
+	s := dbr.NewSelect().AddColumnsConditions(
+		dbr.SQLIfNull("column1"),
+		dbr.SQLIfNull("table1.column1"),
+		dbr.SQLIfNull("column1", "column2"),
+		dbr.SQLIfNull("table1.column1", "table2.column2"),
+		dbr.SQLIfNull("column2", "1/0").Alias("alias"),
+		dbr.SQLIfNull("SELECT * FROM x", "8").Alias("alias"),
+		dbr.SQLIfNull("SELECT * FROM x", "9 ").Alias("alias"),
+		dbr.SQLIfNull("column1", "column2").Alias("alias"),
+		dbr.SQLIfNull("table1.column1", "table2.column2").Alias("alias"),
+		dbr.SQLIfNull("table1", "column1", "table2", "column2"),
+		dbr.SQLIfNull("table1", "column1", "table2", "column2").Alias("alias"),
+	).From("table1")
+	sStr, _, _ := s.ToSQL()
+	fmt.Print(strings.Replace(sStr, ", ", ",\n", -1))
+
 	//Output:
-	//IFNULL(`column1`,(NULL ))
-	//IFNULL(`table1`.`column1`,(NULL ))
-	//IFNULL(`column1`,`column2`)
-	//IFNULL(`table1`.`column1`,`table2`.`column2`)
-	//IFNULL(`column2`,(1/0)) AS `alias`
-	//IFNULL((SELECT * FROM x),`8`) AS `alias`
-	//IFNULL((SELECT * FROM x),(9 )) AS `alias`
-	//IFNULL(`column1`,`column2`) AS `alias`
-	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`
-	//IFNULL(`table1`.`column1`,`table2`.`column2`)
-	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`
+	//SELECT IFNULL(`column1`,(NULL )),
+	//IFNULL(`table1`.`column1`,(NULL )),
+	//IFNULL(`column1`,`column2`),
+	//IFNULL(`table1`.`column1`,`table2`.`column2`),
+	//IFNULL(`column2`,(1/0)) AS `alias`,
+	//IFNULL((SELECT * FROM x),(8)) AS `alias`,
+	//IFNULL((SELECT * FROM x),(9 )) AS `alias`,
+	//IFNULL(`column1`,`column2`) AS `alias`,
+	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`,
+	//IFNULL(`table1`.`column1`,`table2`.`column2`),
+	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias` FROM `table1`
 }
 
 func ExampleSQLIf() {
@@ -779,17 +784,17 @@ func ExampleWith_Union() {
 	// Sales: Find best and worst month:
 	cte := dbr.NewWith(
 		dbr.WithCTE{Name: "sales_by_month", Columns: []string{"month", "total"},
-			Select: dbr.NewSelect().AddColumns("Month(day_of_sale)", "Sum(amount)").From("sales_days").
+			Select: dbr.NewSelect().Unsafe().AddColumns("Month(day_of_sale)", "Sum(amount)").From("sales_days").
 				Where(dbr.Expr("Year(day_of_sale) = ?").Int(2015)).
 				GroupBy("Month(day_of_sale))"),
 		},
 		dbr.WithCTE{Name: "best_month", Columns: []string{"month", "total", "award"},
-			Select: dbr.NewSelect().AddColumns("month", "total").AddColumns(`"best"`).From("sales_by_month").
-				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumns("Max(total)").From("sales_by_month"))),
+			Select: dbr.NewSelect().Unsafe().AddColumns("month", "total").AddColumns(`"best"`).From("sales_by_month").
+				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().Unsafe().AddColumns("Max(total)").From("sales_by_month"))),
 		},
 		dbr.WithCTE{Name: "worst_month", Columns: []string{"month", "total", "award"},
-			Select: dbr.NewSelect().AddColumns("month", "total").AddColumns(`"worst"`).From("sales_by_month").
-				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().AddColumns("Min(total)").From("sales_by_month"))),
+			Select: dbr.NewSelect().Unsafe().AddColumns("month", "total").AddColumns(`"worst"`).From("sales_by_month").
+				Where(dbr.Column("total").Equal().Sub(dbr.NewSelect().Unsafe().AddColumns("Min(total)").From("sales_by_month"))),
 		},
 	).Union(dbr.NewUnion(
 		dbr.NewSelect().Star().From("best_month"),
