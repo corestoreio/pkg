@@ -88,7 +88,7 @@ func BenchmarkSelectBasicSQL(b *testing.B) {
 		_, args, err := dbr.NewSelect("something_id", "user_id", "other").
 			From("some_table").
 			Where(
-				dbr.Expr("d = ? OR e = ?").Int64(1).String("wat"),
+				dbr.Expr("d = ? OR e = ?").Int64(1).Str("wat"),
 				dbr.Column("a").In().Int64s(aVal...),
 			).
 			OrderByDesc("id").
@@ -106,9 +106,9 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 	sqlObj := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 		Distinct().
 		Where(
-			dbr.Expr("`d` = ? OR `e` = ?").Int64(1).String("wat"),
+			dbr.Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat"),
 			dbr.Column("f").Int64(2),
-			dbr.Column("x").String("hi"),
+			dbr.Column("x").Str("hi"),
 			dbr.Column("g").Int64(3),
 			dbr.Column("h").In().Ints(1, 2, 3),
 		).
@@ -131,9 +131,9 @@ func BenchmarkSelectFullSQL(b *testing.B) {
 			_, args, err := dbr.NewSelect("a", "b", "z", "y", "x").From("c").
 				Distinct().
 				Where(
-					dbr.Expr("`d` = ? OR `e` = ?").Int64(1).String("wat"),
+					dbr.Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat"),
 					dbr.Column("f").Int64(2),
-					dbr.Column("x").String("hi"),
+					dbr.Column("x").Str("hi"),
 					dbr.Column("g").Int64(3),
 					dbr.Column("h").In().Ints(1, 2, 3),
 				).
@@ -307,9 +307,10 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 // BenchmarkSelect_Integration_Scanner-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
 // BenchmarkSelect_Integration_Scanner-4   	     500	   3001319 ns/op	  784290 B/op	   23888 allocs/op Go 1.9 with new Scanner iFace
 // BenchmarkSelect_Integration_Scanner-4   	    1000	   1947410 ns/op	  743693 B/op	   17876 allocs/op Go 1.9 with RowConvert type and sql.RawBytes
+// BenchmarkSelect_Integration_Scanner-4   	    1000	   2057231 ns/op	 1113088 B/op	   15870 allocs/op
 func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 
-	b.Skip("Comment me out, if you want to run this benchmark")
+	//b.Skip("Comment me out, if you want to run this benchmark")
 
 	const coreConfigDataRowCount = 2007
 
@@ -335,14 +336,14 @@ func BenchmarkDeleteSQL(b *testing.B) {
 	b.Run("NewDelete", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			var err error
-			_, benchmarkGlobalVals, err = dbr.NewDelete("alpha").Where(dbr.Column("a").String("b")).Limit(1).OrderBy("id").ToSQL()
+			_, benchmarkGlobalVals, err = dbr.NewDelete("alpha").Where(dbr.Column("a").Str("b")).Limit(1).OrderBy("id").ToSQL()
 			if err != nil {
 				b.Fatalf("%+v", err)
 			}
 		}
 	})
 
-	sqlObj := dbr.NewDelete("alpha").Where(dbr.Column("a").String("b")).Limit(1).OrderBy("id").Interpolate()
+	sqlObj := dbr.NewDelete("alpha").Where(dbr.Column("a").Str("b")).Limit(1).OrderBy("id").Interpolate()
 	b.Run("ToSQL no cache", func(b *testing.B) {
 		sqlObj.IsBuildCache = false
 		for i := 0; i < b.N; i++ {

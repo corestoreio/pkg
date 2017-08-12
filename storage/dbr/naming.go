@@ -260,10 +260,6 @@ func (mq MysqlQuoter) quote(w *bytes.Buffer, str string) {
 	w.WriteByte(quoteRune)
 }
 
-func (mq MysqlQuoter) appendQuote(sl []string, n string) []string {
-	return append(sl, quote, mq.unQuote(n), quote)
-}
-
 func (mq MysqlQuoter) writeQualifierName(w *bytes.Buffer, q, n string) {
 	mq.quote(w, q)
 	w.WriteByte('.')

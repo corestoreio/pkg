@@ -39,7 +39,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 		sel := NewSelect().
 			AddColumnsConditions(
 				Expr("?").Alias("n").Int64(1),
-				Expr("CAST(? AS CHAR(20))").Alias("str").String("a'bc"),
+				Expr("CAST(? AS CHAR(20))").Alias("str").Str("a'bc"),
 			)
 		compareToSQL(t, sel, nil,
 			"SELECT ? AS `n`, CAST(? AS CHAR(20)) AS `str`",
@@ -72,7 +72,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	t.Run("column right expression with one argument", func(t *testing.T) {
 		sel := NewSelect("sku", "name").From("products").Where(
 			Column("id").NotBetween().Ints(4, 7),
-			Column("name").Like().Expression("CONCAT('Canon',?,'E0S 7D Mark VI')").String("Camera"),
+			Column("name").Like().Expression("CONCAT('Canon',?,'E0S 7D Mark VI')").Str("Camera"),
 		)
 		compareToSQL(t, sel, nil,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` LIKE CONCAT('Canon',?,'E0S 7D Mark VI'))",
@@ -115,7 +115,7 @@ func TestSelectFullToSQL(t *testing.T) {
 		Where(
 			ParenthesisOpen(),
 			Column("d").Int(1),
-			Column("e").String("wat").Or(),
+			Column("e").Str("wat").Or(),
 			ParenthesisClose(),
 			Column("f").Int(2),
 			Column("g").Int(3),
@@ -125,7 +125,7 @@ func TestSelectFullToSQL(t *testing.T) {
 		Having(
 			ParenthesisOpen(),
 			Column("m").Int(33),
-			Column("n").String("wh3r3").Or(),
+			Column("n").Str("wh3r3").Or(),
 			ParenthesisClose(),
 			Expr("j = k"),
 		).
@@ -150,7 +150,7 @@ func TestSelect_Interpolate(t *testing.T) {
 			Where(
 				ParenthesisOpen(),
 				Column("d").Int(1),
-				Column("e").String("wat").Or(),
+				Column("e").Str("wat").Or(),
 				ParenthesisClose(),
 				Column("f").Int(2),
 				Column("g").Int(3),
@@ -160,7 +160,7 @@ func TestSelect_Interpolate(t *testing.T) {
 			Having(
 				ParenthesisOpen(),
 				Column("m").Int(33),
-				Column("n").String("wh3r3").Or(),
+				Column("n").Str("wh3r3").Or(),
 				ParenthesisClose(),
 				Expr("j = k"),
 			).
@@ -177,7 +177,7 @@ func TestSelect_Interpolate(t *testing.T) {
 	t.Run("two args in one condition", func(t *testing.T) {
 		sel := NewSelect("a", "b", "z", "y", "x").From("c").
 			Distinct().
-			Where(Expr("`d` = ? OR `e` = ?").Int64(1).String("wat")).
+			Where(Expr("`d` = ? OR `e` = ?").Int64(1).Str("wat")).
 			Where(
 				Column("g").Int(3),
 				Column("h").In().Int64s(1, 2, 3),
@@ -323,7 +323,7 @@ func TestSelect_ConditionColumn(t *testing.T) {
 		[]interface{}{int64(33), int64(44)},
 	))
 	t.Run("single string", runner(
-		Column("d").String("w"),
+		Column("d").Str("w"),
 		"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)",
 		[]interface{}{"w"},
 	))
@@ -345,12 +345,12 @@ func TestSelect_ConditionColumn(t *testing.T) {
 	))
 
 	t.Run("LIKE string", runner(
-		Column("d").Like().String("x%"),
+		Column("d").Like().Str("x%"),
 		"SELECT `a`, `b` FROM `c` WHERE (`d` LIKE ?)",
 		[]interface{}{"x%"},
 	))
 	t.Run("NOT LIKE string", runner(
-		Column("d").NotLike().String("x%"),
+		Column("d").NotLike().Str("x%"),
 		"SELECT `a`, `b` FROM `c` WHERE (`d` NOT LIKE ?)",
 		[]interface{}{"x%"},
 	))
@@ -544,7 +544,7 @@ func TestSelect_Load_Rows(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		var person dbrPerson
 		_, err := s.Select("id", "name", "email").From("dbr_people").
-			Where(Column("email").String("jonathan@uservoice.com")).Load(context.TODO(), &person)
+			Where(Column("email").Str("jonathan@uservoice.com")).Load(context.TODO(), &person)
 		assert.NoError(t, err)
 		assert.True(t, person.ID > 0)
 		assert.Equal(t, "Jonathan", person.Name)
@@ -555,7 +555,7 @@ func TestSelect_Load_Rows(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		var person2 dbrPerson
 		count, err := s.Select("id", "name", "email").From("dbr_people").
-			Where(Column("email").String("dontexist@uservoice.com")).Load(context.TODO(), &person2)
+			Where(Column("email").Str("dontexist@uservoice.com")).Load(context.TODO(), &person2)
 
 		require.NoError(t, err, "%+v", err)
 		assert.Exactly(t, dbrPerson{}, person2)
@@ -598,7 +598,7 @@ func TestSelect_LoadType_Single(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 
 	t.Run("LoadString", func(t *testing.T) {
-		name, err := s.Select("name").From("dbr_people").Where(Column("email").String("jonathan@uservoice.com")).LoadString(context.TODO())
+		name, err := s.Select("name").From("dbr_people").Where(Column("email").Str("jonathan@uservoice.com")).LoadString(context.TODO())
 		assert.NoError(t, err)
 		assert.Equal(t, "Jonathan", name)
 	})
@@ -936,7 +936,7 @@ func TestSelect_Events(t *testing.T) {
 			EventType: OnBeforeToSQL,
 			SelectFunc: func(s2 *Select) {
 				s2.OrderByDesc("col2").
-					Where(Column("b").String("a"))
+					Where(Column("b").Str("a"))
 			},
 		})
 
@@ -1192,7 +1192,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 			Where(
 				ParenthesisOpen(),
 				Column("d").Int(1),
-				Column("e").String("wat").Or(),
+				Column("e").Str("wat").Or(),
 				ParenthesisClose(),
 				Column("f").Float64(2.7182),
 			).
@@ -1200,7 +1200,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 			Having(
 				ParenthesisOpen(),
 				Column("m").Int(33),
-				Column("n").String("wh3r3").Or(),
+				Column("n").Str("wh3r3").Or(),
 				ParenthesisClose(),
 				Expr("j = k"),
 			)
@@ -1218,7 +1218,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 				Column("f").Float64(2.7182),
 				ParenthesisOpen(),
 				Column("d").Int(1),
-				Column("e").String("wat").Or(),
+				Column("e").Str("wat").Or(),
 				ParenthesisClose(),
 			).
 			GroupBy("ab").
@@ -1226,7 +1226,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 				Expr("j = k"),
 				ParenthesisOpen(),
 				Column("m").Int(33),
-				Column("n").String("wh3r3").Or(),
+				Column("n").Str("wh3r3").Or(),
 				ParenthesisClose(),
 			)
 		compareToSQL(t, sel, nil,
@@ -1242,7 +1242,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 				Column("f").Float64(2.7182),
 				ParenthesisOpen(),
 				Column("d").Int(1),
-				Column("e").String("wat").Or(),
+				Column("e").Str("wat").Or(),
 				ParenthesisClose(),
 				Column("p").Float64(3.141592),
 			).
@@ -1251,7 +1251,7 @@ func TestSelect_ParenthesisOpen_Close(t *testing.T) {
 				Expr("j = k"),
 				ParenthesisOpen(),
 				Column("m").Int(33),
-				Column("n").String("wh3r3").Or(),
+				Column("n").Str("wh3r3").Or(),
 				ParenthesisClose(),
 				Column("q").NotNull(),
 			)
@@ -1303,7 +1303,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 		Where(
 			ParenthesisOpen(),
 			Column("d").Int(1),
-			Column("e").String("wat").Or(),
+			Column("e").Str("wat").Or(),
 			ParenthesisClose(),
 			Column("f").Int(2),
 			Column("g").Int(3),
@@ -1313,7 +1313,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 		Having(
 			ParenthesisOpen(),
 			Column("m").Int(33),
-			Column("n").String("wh3r3").Or(),
+			Column("n").Str("wh3r3").Or(),
 			ParenthesisClose(),
 			Expr("j = k"),
 		).
@@ -1362,7 +1362,7 @@ func TestSelect_AddRecord(t *testing.T) {
 			Where(
 				ParenthesisOpen(),
 				Column("name").PlaceHolder(),
-				Column("e").String("wat").Or(),
+				Column("e").Str("wat").Or(),
 				ParenthesisClose(),
 				Column("f").LessOrEqual().Int(2),
 				Column("g").Greater().Int(3),
@@ -1371,7 +1371,7 @@ func TestSelect_AddRecord(t *testing.T) {
 			GroupBy("ab").
 			Having(
 				Column("email").PlaceHolder(),
-				Column("n").String("wh3r3"),
+				Column("n").Str("wh3r3"),
 			).
 			OrderBy("l").
 			SetRecord(p)

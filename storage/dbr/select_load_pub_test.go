@@ -129,7 +129,7 @@ func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
 	if err := ps.Convert.Scan(r); err != nil {
 		return errors.WithStack(err)
 	}
-	o := new(TableCoreConfigData)
+	var o TableCoreConfigData
 	for i, col := range ps.Convert.Columns {
 		b := ps.Convert.Index(i)
 		var err error
@@ -149,7 +149,7 @@ func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
 			return errors.Wrapf(err, "[dbr] Failed to convert value at row % with column index %d", ps.Convert.Count, i)
 		}
 	}
-	ps.Data = append(ps.Data, o)
+	ps.Data = append(ps.Data, &o)
 	return nil
 }
 

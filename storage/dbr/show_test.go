@@ -86,7 +86,7 @@ func TestShow(t *testing.T) {
 	})
 
 	t.Run("status WHERE", func(t *testing.T) {
-		s := NewShow().Session().Status().Where(Column("Variable_name").Like().String("%error%"))
+		s := NewShow().Session().Status().Where(Column("Variable_name").Like().Str("%error%"))
 		compareToSQL(t, s, nil,
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE ?)",
 			"SHOW SESSION STATUS WHERE (`Variable_name` LIKE '%error%')",
@@ -95,14 +95,14 @@ func TestShow(t *testing.T) {
 	})
 
 	t.Run("table status WHERE", func(t *testing.T) {
-		s := NewShow().TableStatus().Where(Column("Name").Regexp().String(".*catalog[_]+")).BuildCache()
+		s := NewShow().TableStatus().Where(Column("Name").Regexp().Str(".*catalog[_]+")).BuildCache()
 		compareToSQL(t, s, nil,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP '.*catalog[_]+')",
 			".*catalog[_]+",
 		)
 		assert.Exactly(t, "SHOW TABLE STATUS WHERE (`Name` REGEXP ?)", string(s.cacheSQL))
-		s.WhereFragments[0].String("sales$") // set Equal on purpose ... because cache already written
+		s.WhereFragments[0].Str("sales$") // set Equal on purpose ... because cache already written
 		// twice to test the build cache
 		compareToSQL(t, s, nil,
 			"SHOW TABLE STATUS WHERE (`Name` REGEXP ?)",

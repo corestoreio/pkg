@@ -158,7 +158,7 @@ func ExampleInsert_AddOnDuplicateKey() {
 		AddColumns("id", "name", "email").
 		AddValues(1, "Pik'e", "pikes@peak.com").
 		AddOnDuplicateKey(
-			dbr.Column("name").String("Pik3"),
+			dbr.Column("name").Str("Pik3"),
 			dbr.Column("email").Values(),
 		)
 	writeToSQLAndInterpolate(i)
@@ -197,7 +197,7 @@ func ExampleInsert_FromSelect() {
 			Where(
 				dbr.ParenthesisOpen(),
 				dbr.Column("int64A").GreaterOrEqual().Int64(1),
-				dbr.Column("string").String("wat").Or(),
+				dbr.Column("string").Str("wat").Or(),
 				dbr.ParenthesisClose(),
 				dbr.Column("int64B").In().Int64s(1, 2, 3),
 			).
@@ -245,7 +245,7 @@ func ExampleInsert_Pair() {
 
 func ExampleNewDelete() {
 	d := dbr.NewDelete("tableA").Where(
-		dbr.Column("a").Like().String("b'%"),
+		dbr.Column("a").Like().Str("b'%"),
 		dbr.Column("b").In().Ints(3, 4, 5, 6),
 	).
 		Limit(1).OrderBy("id")
@@ -273,10 +273,10 @@ func ExampleNewUnion() {
 	// Maybe more of your code ...
 	u.Append(
 		dbr.NewSelect().AddColumnsConditions(
-			dbr.Expr("concat(c1,?,c2)").Alias("A").String("-"),
+			dbr.Expr("concat(c1,?,c2)").Alias("A").Str("-"),
 		).
 			AddColumnsAliases("c2", "B").
-			From("tableC").Where(dbr.Column("c2").String("ArgForC2")),
+			From("tableC").Where(dbr.Column("c2").Str("ArgForC2")),
 	).
 		OrderBy("A").       // Ascending by A
 		OrderByDesc("B").   // Descending by B
@@ -419,8 +419,8 @@ func argPrinter(wf *dbr.Condition) {
 	}
 }
 
-// ExampleArgument is duplicate of ExampleColumn
-func ExampleArgument() {
+// ExampleArguments is duplicate of ExampleColumn
+func ExampleArguments() {
 
 	argPrinter(dbr.Column("d").Null())
 	argPrinter(dbr.Column("d").NotNull())
@@ -442,8 +442,8 @@ func ExampleArgument() {
 	argPrinter(dbr.Column("d").LessOrEqual().Int(34))
 	argPrinter(dbr.Column("d").GreaterOrEqual().Int(35))
 
-	argPrinter(dbr.Column("d").Like().String("Goph%"))
-	argPrinter(dbr.Column("d").NotLike().String("Cat%"))
+	argPrinter(dbr.Column("d").Like().Str("Goph%"))
+	argPrinter(dbr.Column("d").NotLike().Str("Cat%"))
 
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
@@ -491,8 +491,8 @@ func ExampleColumn() {
 	argPrinter(dbr.Column("d").LessOrEqual().Int(34))
 	argPrinter(dbr.Column("d").GreaterOrEqual().Int(35))
 
-	argPrinter(dbr.Column("d").Like().String("Goph%"))
-	argPrinter(dbr.Column("d").NotLike().String("Cat%"))
+	argPrinter(dbr.Column("d").Like().Str("Goph%"))
+	argPrinter(dbr.Column("d").NotLike().Str("Cat%"))
 
 	//Output:
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` IS NULL)"
@@ -542,7 +542,7 @@ func ExampleNewSelectWithDerivedTable() {
 		AddColumnsAliases("DATE_FORMAT(t3.period, '%Y-%m-01')", "period").
 		AddColumns("t3.store_id", "t3.product_id", "t3.product_name").
 		AddColumnsAliases("AVG(`t3`.`product_price`)", "avg_price", "SUM(t3.qty_ordered)", "total_qty").
-		Where(dbr.Column("product_name").String("Canon%")).
+		Where(dbr.Column("product_name").Str("Canon%")).
 		GroupBy("t3.store_id").
 		GroupBy("DATE_FORMAT(t3.period, '%Y-%m-01')").
 		GroupBy("t3.product_id", "t3.product_name").
@@ -552,7 +552,7 @@ func ExampleNewSelectWithDerivedTable() {
 
 	sel1 := dbr.NewSelectWithDerivedTable(sel3, "t1").
 		AddColumns("t1.period", "t1.store_id", "t1.product_id", "t1.product_name", "t1.avg_price", "t1.qty_ordered").
-		Where(dbr.Column("product_name").String("Sony%")).
+		Where(dbr.Column("product_name").Str("Sony%")).
 		OrderBy("t1.period", "t1.product_id")
 	writeToSQLAndInterpolate(sel1)
 	// Output:
@@ -714,8 +714,8 @@ func ExampleSelect_SetRecord() {
 
 }
 
-// ExampleSelect_AddArguments is duplicate of ExampleSQLCase_select
-func ExampleSelect_AddArguments() {
+// ExampleSelect_AddColumnsConditions is duplicate of ExampleSQLCase_select
+func ExampleSelect_AddColumnsConditions() {
 
 	start := time.Unix(1257894000, 0)
 	end := time.Unix(1257980400, 0)
@@ -754,7 +754,7 @@ func ExampleParenthesisOpen() {
 		Where(
 			dbr.ParenthesisOpen(),
 			dbr.Column("d").Int(1),
-			dbr.Column("e").String("wat").Or(),
+			dbr.Column("e").Str("wat").Or(),
 			dbr.ParenthesisClose(),
 			dbr.Column("f").Int(2),
 		).
@@ -763,7 +763,7 @@ func ExampleParenthesisOpen() {
 			dbr.Expr("j = k"),
 			dbr.ParenthesisOpen(),
 			dbr.Column("m").Int(33),
-			dbr.Column("n").String("wh3r3").Or(),
+			dbr.Column("n").Str("wh3r3").Or(),
 			dbr.ParenthesisClose(),
 		).
 		OrderBy("l").

@@ -29,7 +29,7 @@ func TestUnionStmts(t *testing.T) {
 			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		)
 		u.Append(
-			NewSelect("c", "d").From("tableCD").Where(Column("d").String("e")),
+			NewSelect("c", "d").From("tableCD").Where(Column("d").Str("e")),
 		)
 		compareToSQL(t, u, nil,
 			"(SELECT `a`, `b` FROM `tableAB` WHERE (`a` = ?))\nUNION\n(SELECT `c`, `d` FROM `tableCD` WHERE (`d` = ?))",
@@ -40,7 +40,7 @@ func TestUnionStmts(t *testing.T) {
 
 	t.Run("simple all", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect("c", "d").From("tableCD").Where(Column("d").String("e")),
+			NewSelect("c", "d").From("tableCD").Where(Column("d").Str("e")),
 			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		).All()
 		compareToSQL(t, u, nil,
@@ -52,7 +52,7 @@ func TestUnionStmts(t *testing.T) {
 
 	t.Run("order by", func(t *testing.T) {
 		u := NewUnion(
-			NewSelect("a").AddColumnsAliases("d", "b").From("tableAD").Where(Column("d").String("f")),
+			NewSelect("a").AddColumnsAliases("d", "b").From("tableAD").Where(Column("d").Str("f")),
 			NewSelect("a", "b").From("tableAB").Where(Column("a").Int64(3)),
 		).All().OrderBy("a").OrderByDesc("b")
 

@@ -59,7 +59,7 @@ func TestUpdate_Basics(t *testing.T) {
 			int64(1))
 	})
 	t.Run("same column name in SET and WHERE", func(t *testing.T) {
-		compareToSQL(t, NewUpdate("dbr_people").Set(Column("key").String("6-revoked")).Where(Column("key").String("6")),
+		compareToSQL(t, NewUpdate("dbr_people").Set(Column("key").Str("6-revoked")).Where(Column("key").Str("6")),
 			nil,
 			"UPDATE `dbr_people` SET `key`=? WHERE (`key` = ?)",
 			"UPDATE `dbr_people` SET `key`='6-revoked' WHERE (`key` = '6')",
@@ -111,7 +111,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err := s.Update("dbr_people").Set(Column("key").String("6-revoked")).Where(Column("key").String("6")).Exec(context.TODO())
+	res, err := s.Update("dbr_people").Set(Column("key").Str("6-revoked")).Where(Column("key").Str("6")).Exec(context.TODO())
 	assert.NoError(t, err)
 
 	// Assert our record was updated (and only our record)
@@ -120,7 +120,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	_, err = s.Select("*").From("dbr_people").Where(Column("email").String("ben@whitehouse.gov")).Load(context.TODO(), &person)
+	_, err = s.Select("*").From("dbr_people").Where(Column("email").Str("ben@whitehouse.gov")).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "Benjamin", person.Name)
@@ -141,7 +141,7 @@ func TestUpdateReal(t *testing.T) {
 
 	// Rename our George to Barack
 	_, err = s.Update("dbr_people").
-		Set(Column("name").String("Barack"), Column("email").String("barack@whitehouse.gov")).
+		Set(Column("name").Str("Barack"), Column("email").Str("barack@whitehouse.gov")).
 		Where(Column("id").In().Int64s(id, 8888)).Exec(context.TODO())
 	// Meaning of 8888: Just to see if the SQL with place holders gets created correctly
 	require.NoError(t, err)
@@ -279,7 +279,7 @@ func TestUpdate_Events(t *testing.T) {
 				Once:      true,
 				EventType: OnBeforeToSQL,
 				UpdateFunc: func(u *Update) {
-					u.Set(Column("d").String("d"))
+					u.Set(Column("d").Str("d"))
 				},
 			},
 		)
@@ -288,7 +288,7 @@ func TestUpdate_Events(t *testing.T) {
 			Name:      "e",
 			EventType: OnBeforeToSQL,
 			UpdateFunc: func(u *Update) {
-				u.Set(Column("e").String("e"))
+				u.Set(Column("e").Str("e"))
 			},
 		})
 		compareToSQL(t, up, nil,
@@ -328,7 +328,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	})
 	t.Run("fails column not in entity object", func(t *testing.T) {
 		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
-			Set(Column("key").String("JustAKey")).
+			Set(Column("key").Str("JustAKey")).
 			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, errors.IsNotFound,
 			"",

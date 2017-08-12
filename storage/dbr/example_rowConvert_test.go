@@ -108,7 +108,7 @@ func ExampleRowConvert() {
 	// </ignore_this>
 
 	s := dbr.NewSelect("*").From("sales_creditmemo").
-		Where(dbr.Column("state").String("shipped")).
+		Where(dbr.Column("state").Str("shipped")).
 		WithDB(dbc.DB).Interpolate()
 
 	cmc := &salesCreditMemoCollection{}

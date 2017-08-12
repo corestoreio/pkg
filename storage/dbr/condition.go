@@ -554,7 +554,7 @@ func (c *Condition) Float64s(f ...float64) *Condition {
 	c.Right.Argument.set(f)
 	return c
 }
-func (c *Condition) String(s string) *Condition { // TODO rename to Str and Strs and use String() as fmt.Stringer
+func (c *Condition) Str(s string) *Condition {
 	if c.isExpression() {
 		c.Right.Arguments = c.Right.Arguments.Str(s)
 		return c

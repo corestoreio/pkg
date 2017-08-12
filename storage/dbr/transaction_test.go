@@ -62,7 +62,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	_, err = tx.Select("*").From("dbr_people").Where(Column("email").String("jonathan@uservoice.com")).Load(context.TODO(), &person)
+	_, err = tx.Select("*").From("dbr_people").Where(Column("email").Str("jonathan@uservoice.com")).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 	assert.Equal(t, "Jonathan", person.Name)
 

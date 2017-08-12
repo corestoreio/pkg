@@ -85,7 +85,7 @@ func BenchmarkConditions_writeOnDuplicateKey(b *testing.B) {
 	buf := new(bytes.Buffer)
 	args := MakeArgs(3)
 	dk := Conditions{
-		Column("name").String("E0S 5D Mark III"),
+		Column("name").Str("E0S 5D Mark III"),
 		Column("sku").Values(),
 		Column("stock").Int64(14),
 	}

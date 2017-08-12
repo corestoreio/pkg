@@ -86,7 +86,7 @@ func TestDelete_Interpolate(t *testing.T) {
 		Where(
 			Column("colA").GreaterOrEqual().Float64(3.14159),
 			Column("colB").In().Ints(1, 2, 3, 45),
-			Column("colC").String("He'l`lo"),
+			Column("colC").Str("He'l`lo"),
 		).
 		Limit(10).OrderBy("id"), nil,
 		"DELETE FROM `tableA` WHERE (`colA` >= ?) AND (`colB` IN (?,?,?,?)) AND (`colC` = ?) ORDER BY `id` LIMIT 10",
@@ -246,7 +246,7 @@ func TestDelete_Events(t *testing.T) {
 func TestDelete_UseBuildCache(t *testing.T) {
 	t.Parallel()
 
-	del := NewDelete("alpha").Where(Column("a").String("b")).Limit(1).OrderBy("id")
+	del := NewDelete("alpha").Where(Column("a").Str("b")).Limit(1).OrderBy("id")
 	del.IsBuildCache = true
 
 	const cachedSQLPlaceHolder = "DELETE FROM `alpha` WHERE (`a` = ?) ORDER BY `id` LIMIT 1"

@@ -309,7 +309,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	res, err = s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
 		AddValues(inID, "", "pikes@peak.com").
-		AddOnDuplicateKey(Column("name").String("Pik3"), Column("email").Values()).
+		AddOnDuplicateKey(Column("name").Str("Pik3"), Column("email").Values()).
 		Exec(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
@@ -369,14 +369,14 @@ func TestInsert_Events(t *testing.T) {
 				Name:      "listener1",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair(Column("col1").String("X1"))
+					b.Pair(Column("col1").Str("X1"))
 				},
 			},
 			Listen{
 				Name:      "listener2",
 				EventType: OnBeforeToSQL,
 				InsertFunc: func(b *Insert) {
-					b.Pair(Column("col2").String("X2"))
+					b.Pair(Column("col2").Str("X2"))
 					b.PropagationStopped = true
 				},
 			},
@@ -410,7 +410,7 @@ func TestInsert_Events(t *testing.T) {
 			Listen{
 				Name: "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair(Column("colC").String("X1"))
+					i.Pair(Column("colC").Str("X1"))
 				},
 			},
 		)
@@ -452,7 +452,7 @@ func TestInsert_Events(t *testing.T) {
 				EventType: OnBeforeToSQL,
 				Name:      "colC",
 				InsertFunc: func(i *Insert) {
-					i.Pair(Column("colC").String("X1"))
+					i.Pair(Column("colC").Str("X1"))
 				},
 			},
 		)
@@ -482,7 +482,7 @@ func TestInsert_FromSelect(t *testing.T) {
 		Where(
 			ParenthesisOpen(),
 			Column("d").Int64(1),
-			Column("e").String("wat").Or(),
+			Column("e").Str("wat").Or(),
 			ParenthesisClose(),
 			Column("a").In().Int64s(1, 2, 3),
 		).

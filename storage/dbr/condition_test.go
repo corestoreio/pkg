@@ -30,7 +30,7 @@ func TestOpRune(t *testing.T) {
 	t.Parallel()
 	s := NewSelect().From("tableA").AddColumns("a", "b").
 		Where(
-			Column("a1").Like().String("H_ll_"),
+			Column("a1").Like().Str("H_ll_"),
 			Column("a1").Like().NullString(NullString{}),
 			Column("a1").Like().NullString(MakeNullString("NullString")),
 			Column("a1").Like().Float64(2.718281),
@@ -49,7 +49,7 @@ func TestOpRune(t *testing.T) {
 			Column("a1").Like().Bytes([]byte(`H3llo`)),
 			Column("a1").Like().DriverValue(MakeNullInt64(2345)),
 
-			Column("a2").NotLike().String("H_ll_"),
+			Column("a2").NotLike().Str("H_ll_"),
 			Column("a2").NotLike().NullString(NullString{}),
 			Column("a2").NotLike().NullString(MakeNullString("NullString")),
 			Column("a2").NotLike().Float64(2.718281),
@@ -87,7 +87,7 @@ func TestOpRune(t *testing.T) {
 			Column("a317").In().Bytes([]byte(`H3llo1`)),
 			Column("a320").In().DriverValue(MakeNullFloat64(674589), MakeNullFloat64(3.14159)),
 
-			Column("a401").SpaceShip().String("H_ll_"),
+			Column("a401").SpaceShip().Str("H_ll_"),
 			Column("a402").SpaceShip().NullString(NullString{}),
 			Column("a403").SpaceShip().NullString(MakeNullString("NullString")),
 		)
@@ -140,7 +140,7 @@ func TestOpArgs(t *testing.T) {
 				Column("a313").In().Float64(3.3),
 				Column("a314").In().Int64(33),
 				Column("a312").In().Int(44),
-				Column("a315").In().String(`Go1`),
+				Column("a315").In().Str(`Go1`),
 				Column("a316").In().BytesSlice([]byte(`Go`), []byte(`Rust`)),
 			),
 			nil,
@@ -250,19 +250,19 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 	}, " ON DUPLICATE KEY UPDATE `sku`=VALUES(`sku`), `name`=VALUES(`name`), `stock`=VALUES(`stock`)"))
 
 	t.Run("col=? and with arguments", runner(Conditions{
-		Column("name").String("E0S 5D Mark II"),
+		Column("name").Str("E0S 5D Mark II"),
 		Column("stock").Int64(12),
 	}, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=?",
 		"E0S 5D Mark II", int64(12)))
 
 	t.Run("col1=VALUES(val)+? and with arguments", runner(Conditions{
-		Column("name").String("E0S 5D Mark II"),
+		Column("name").Str("E0S 5D Mark II"),
 		Column("stock").Expression("VALUES(`stock`)+?-?").Int64(13).Int(4),
 	}, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=VALUES(`stock`)+?-?",
 		"E0S 5D Mark II", int64(13), int64(4)))
 
 	t.Run("col2=VALUES(val) and with arguments and nil", runner(Conditions{
-		Column("name").String("E0S 5D Mark III"),
+		Column("name").Str("E0S 5D Mark III"),
 		Column("sku").Values(),
 		Column("stock").Int64(14),
 	}, " ON DUPLICATE KEY UPDATE `name`=?, `sku`=VALUES(`sku`), `stock`=?",
@@ -312,7 +312,7 @@ func TestExpression(t *testing.T) {
 			Where(
 				Column("h").In().Int64s(1, 2, 3),
 				Expr("l = ? AND m IN (?) AND n = ? AND o IN (?) AND p = ? AND q IN (?)").
-					String("xx").Strs("aa", "bb", "cc").
+					Str("xx").Strs("aa", "bb", "cc").
 					Bool(true).Bools(true, false, true).
 					Bytes([]byte(`Gopher`)).BytesSlice([]byte(`Go1`), []byte(`Go2`)),
 			)
