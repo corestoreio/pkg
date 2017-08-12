@@ -36,7 +36,7 @@ type categoryEntity struct {
 	TeaserIDs []string
 }
 
-func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (pe *categoryEntity) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
@@ -48,7 +48,7 @@ func (pe *categoryEntity) AppendArguments(stmtType int, args dbr.Arguments, colu
 		case "path":
 			args = args.NullString(pe.Path)
 		case "teaser_id_s":
-			if stmtType&dbr.SQLPartSet != 0 {
+			if st.IsUpdate() && st.IsSet() {
 				if pe.TeaserIDs == nil {
 					args = args.Null()
 				} else {

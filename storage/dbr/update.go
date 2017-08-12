@@ -248,7 +248,7 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 		if len(b.SetClausAliases) == 0 {
 			b.SetClausAliases = b.SetClauses.leftHands(b.SetClausAliases)
 		}
-		args, err = b.Record.AppendArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClausAliases)
+		args, err = b.Record.AppendArguments(sqlStmtUpdate|sqlPartSet, args, b.SetClausAliases)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -265,7 +265,7 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 		return nil, errors.WithStack(err)
 	}
 	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtUpdate|SQLPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtUpdate|sqlPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 

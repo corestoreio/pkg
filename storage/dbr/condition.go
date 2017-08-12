@@ -991,13 +991,13 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 	return nil
 }
 
-func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args Arguments, stmtType int, columns []string) (_ Arguments, err error) {
+func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args Arguments, st SQLStmt, columns []string) (_ Arguments, err error) {
 	if rec == nil {
 		return args, nil
 	}
 
 	lenBefore := len(args)
-	args, err = rec.AppendArguments(stmtType, args, columns)
+	args, err = rec.AppendArguments(st, args, columns)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

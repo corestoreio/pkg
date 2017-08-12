@@ -36,17 +36,49 @@ const (
 // SQL statement types and parts used as bit flag e.g. hint in
 // ArgumentsAppender.AppendArguments.
 const (
-	SQLStmtInsert int = 1 << iota
-	SQLStmtSelect
-	SQLStmtUpdate
-	SQLStmtDelete
+	sqlStmtInsert SQLStmt = 1 << iota
+	sqlStmtSelect
+	sqlStmtUpdate
+	sqlStmtDelete
 
-	SQLPartJoin
-	SQLPartWhere
-	SQLPartHaving
-	SQLPartSet
-	SQLPartValues
+	sqlPartJoin
+	sqlPartWhere
+	sqlPartHaving
+	sqlPartSet
+	sqlPartValues
 )
+
+// SQLStmt represents a bit flag which defines the type of the SQL data
+// manipulation statement and which part of that statement.
+type SQLStmt uint
+
+// IsInsert returns true if the SQL is an INSERT statement.
+func (s SQLStmt) IsInsert() bool { return s&sqlStmtInsert != 0 }
+
+// IsSelect returns true if the SQL is a SELECT statement.
+func (s SQLStmt) IsSelect() bool { return s&sqlStmtSelect != 0 }
+
+// IsUpdate returns true if the SQL is an UPDATE statement.
+func (s SQLStmt) IsUpdate() bool { return s&sqlStmtUpdate != 0 }
+
+// IsDelete returns true if the SQL is a DELETE statement.
+func (s SQLStmt) IsDelete() bool { return s&sqlStmtDelete != 0 }
+
+// IsJoin returns true if the SQL part is a JOIN condition.
+func (s SQLStmt) IsJoin() bool { return s&sqlPartJoin != 0 }
+
+// IsWhere returns true if the SQL part is a WHERE condition.
+func (s SQLStmt) IsWhere() bool { return s&sqlPartWhere != 0 }
+
+// IsHaving returns true if the SQL part is a HAVING condition.
+func (s SQLStmt) IsHaving() bool { return s&sqlPartHaving != 0 }
+
+// IsSet returns true if the SQL part is a SET part of an UPDATE statement.
+func (s SQLStmt) IsSet() bool { return s&sqlPartSet != 0 }
+
+// IsValues returns true if the SQL part is a VALUES condition of an INSERT
+// statement.
+func (s SQLStmt) IsValues() bool { return s&sqlPartValues != 0 }
 
 // ArgumentsAppender assembles arguments for CRUD statements. The `stmtType`
 // variable contains a flag from the constants SQLStmt* and SQLPart* to allow
@@ -57,10 +89,11 @@ const (
 // integer. Variable `columns` can additionally contain the names and/or
 // expressions used in the WHERE, JOIN or HAVING clauses, if applicable for the
 // SQL statement type. In case where stmtType has been isSet to
-// SQLStmtInsert|SQLPartValues, the `columns` slice can be empty which means
+// sqlStmtInsert|sqlPartValues, the `columns` slice can be empty which means
 // that all arguments are requested.
+// TODO table name and its alias is missing in the columns slice.
 type ArgumentsAppender interface {
-	AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error)
+	AppendArguments(st SQLStmt, args Arguments, columns []string) (Arguments, error)
 }
 
 // argument is union type for different Go primitives and their slice
@@ -497,69 +530,30 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 	return args
 }
 
-func (a Arguments) PlaceHolder() Arguments {
-	return append(a, argument{isSet: true, value: placeHolder(1)})
-}
-func (a Arguments) Null() Arguments         { return append(a, argument{isSet: true}) }
-func (a Arguments) Int(i int) Arguments     { return append(a, argument{isSet: true, value: i}) }
-func (a Arguments) Ints(i ...int) Arguments { return append(a, argument{isSet: true, value: i}) }
-func (a Arguments) Int64(i int64) Arguments {
-	return append(a, argument{isSet: true, value: int64(i)})
-}
-func (a Arguments) Int64s(i ...int64) Arguments {
-	return append(a, argument{isSet: true, value: i})
-}
-func (a Arguments) Uint64(i uint64) Arguments {
-	return append(a, argument{isSet: true, value: i})
-}
-func (a Arguments) Uint64s(i ...uint64) Arguments {
-	return append(a, argument{isSet: true, value: i})
-}
-func (a Arguments) Float64(f float64) Arguments {
-	return append(a, argument{isSet: true, value: f})
-}
-func (a Arguments) Float64s(f ...float64) Arguments {
-	return append(a, argument{isSet: true, value: f})
-}
-func (a Arguments) Bool(f bool) Arguments {
-	return append(a, argument{isSet: true, value: f})
-}
-func (a Arguments) Bools(f ...bool) Arguments {
-	return append(a, argument{isSet: true, value: f})
-}
-func (a Arguments) Str(f string) Arguments {
-	return append(a, argument{isSet: true, value: f})
-}
-func (a Arguments) Strs(f ...string) Arguments {
-	return append(a, argument{isSet: true, value: f})
-}
-func (a Arguments) Bytes(b []byte) Arguments {
-	return append(a, argument{isSet: true, value: b})
-}
-func (a Arguments) BytesSlice(b ...[]byte) Arguments {
-	return append(a, argument{isSet: true, value: b})
-}
-func (a Arguments) Time(t time.Time) Arguments {
-	return append(a, argument{isSet: true, value: t})
-}
-func (a Arguments) Times(t ...time.Time) Arguments {
-	return append(a, argument{isSet: true, value: t})
-}
-func (a Arguments) NullString(nv ...NullString) Arguments {
-	return append(a, argument{isSet: true, value: nv})
-}
-func (a Arguments) NullFloat64(nv ...NullFloat64) Arguments {
-	return append(a, argument{isSet: true, value: nv})
-}
-func (a Arguments) NullInt64(nv ...NullInt64) Arguments {
-	return append(a, argument{isSet: true, value: nv})
-}
-func (a Arguments) NullBool(nv ...NullBool) Arguments {
-	return append(a, argument{isSet: true, value: nv})
-}
-func (a Arguments) NullTime(nv ...NullTime) Arguments {
-	return append(a, argument{isSet: true, value: nv})
-}
+func (a Arguments) add(v interface{}) Arguments             { return append(a, argument{isSet: true, value: v}) }
+func (a Arguments) PlaceHolder() Arguments                  { return a.add(placeHolder(1)) }
+func (a Arguments) Null() Arguments                         { return a.add(nil) }
+func (a Arguments) Int(i int) Arguments                     { return a.add(i) }
+func (a Arguments) Ints(i ...int) Arguments                 { return a.add(i) }
+func (a Arguments) Int64(i int64) Arguments                 { return a.add(i) }
+func (a Arguments) Int64s(i ...int64) Arguments             { return a.add(i) }
+func (a Arguments) Uint64(i uint64) Arguments               { return a.add(i) }
+func (a Arguments) Uint64s(i ...uint64) Arguments           { return a.add(i) }
+func (a Arguments) Float64(f float64) Arguments             { return a.add(f) }
+func (a Arguments) Float64s(f ...float64) Arguments         { return a.add(f) }
+func (a Arguments) Bool(b bool) Arguments                   { return a.add(b) }
+func (a Arguments) Bools(b ...bool) Arguments               { return a.add(b) }
+func (a Arguments) Str(s string) Arguments                  { return a.add(s) }
+func (a Arguments) Strs(s ...string) Arguments              { return a.add(s) }
+func (a Arguments) Time(t time.Time) Arguments              { return a.add(t) }
+func (a Arguments) Times(t ...time.Time) Arguments          { return a.add(t) }
+func (a Arguments) Bytes(b []byte) Arguments                { return a.add(b) }
+func (a Arguments) BytesSlice(b ...[]byte) Arguments        { return a.add(b) }
+func (a Arguments) NullString(nv ...NullString) Arguments   { return a.add(nv) }
+func (a Arguments) NullFloat64(nv ...NullFloat64) Arguments { return a.add(nv) }
+func (a Arguments) NullInt64(nv ...NullInt64) Arguments     { return a.add(nv) }
+func (a Arguments) NullBool(nv ...NullBool) Arguments       { return a.add(nv) }
+func (a Arguments) NullTime(nv ...NullTime) Arguments       { return a.add(nv) }
 
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets

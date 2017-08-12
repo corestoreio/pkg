@@ -573,7 +573,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 			if args, pap, err = f.On.appendArgs(args, appendArgsJOIN); err != nil {
 				return nil, errors.WithStack(err)
 			}
-			if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartJoin, f.On.intersectConditions(placeHolderColumns)); err != nil {
+			if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtSelect|sqlPartJoin, f.On.intersectConditions(placeHolderColumns)); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		}
@@ -583,7 +583,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	if args, pap, err = b.Wheres.appendArgs(args, appendArgsWHERE); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtSelect|sqlPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	placeHolderColumns = placeHolderColumns[:0]
@@ -591,7 +591,7 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 	if args, pap, err = b.Havings.appendArgs(args, appendArgsHAVING); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtSelect|SQLPartHaving, b.Havings.intersectConditions(placeHolderColumns)); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtSelect|sqlPartHaving, b.Havings.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return args, nil

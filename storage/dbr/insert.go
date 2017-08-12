@@ -455,7 +455,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	for _, rec := range b.Records {
 		alBefore := len(args)
-		args, err = rec.AppendArguments(SQLStmtInsert|SQLPartValues, args, b.Columns) // Columns can be empty
+		args, err = rec.AppendArguments(sqlStmtInsert|sqlPartValues, args, b.Columns) // Columns can be empty
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

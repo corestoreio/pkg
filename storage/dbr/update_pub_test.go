@@ -131,7 +131,7 @@ type salesInvoice struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesInvoice) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (so salesInvoice) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
@@ -152,7 +152,7 @@ func (so salesInvoice) AppendArguments(stmtType int, args dbr.Arguments, columns
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
+	if len(columns) == 0 && st.IsValues() {
 		args = args.Int64(so.EntityID).Str(so.State).Int64(so.StoreID).Int64(so.CustomerID).NullFloat64(so.GrandTotal)
 	}
 	return args, nil
@@ -187,7 +187,7 @@ func TestUpdateMulti_ColumnAliases(t *testing.T) {
 		Where(
 			// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
 			dbr.Column("shipping_method").Str("DHL"), // For all clauses the same restriction
-			dbr.Column("entity_id").PlaceHolder(),       // Int64() acts as a place holder
+			dbr.Column("entity_id").PlaceHolder(),    // Int64() acts as a place holder
 		).WithDB(dbc.DB)
 
 	um.SetClausAliases = []string{"state", "alias_customer_id", "grand_total"}

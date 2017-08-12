@@ -244,7 +244,7 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 		return nil, errors.WithStack(err)
 	}
 	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-	if args, err = appendAssembledArgs(pap, b.Record, args, SQLStmtDelete|SQLPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
+	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtDelete|sqlPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return args, nil

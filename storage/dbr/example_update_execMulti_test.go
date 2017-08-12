@@ -36,7 +36,7 @@ type salesOrder struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesOrder) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (so salesOrder) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "entity_id":
@@ -53,7 +53,7 @@ func (so salesOrder) AppendArguments(stmtType int, args dbr.Arguments, columns [
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
+	if len(columns) == 0 && st.IsValues() {
 		args = args.Int64(so.EntityID).Str(so.State).Int64(so.StoreID).Int64(so.CustomerID).NullFloat64(so.GrandTotal)
 	}
 	return args, nil

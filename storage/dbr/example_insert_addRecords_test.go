@@ -33,7 +33,7 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AppendArguments(stmtType int, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (pe productEntity) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "attribute_set_id":
@@ -48,7 +48,7 @@ func (pe productEntity) AppendArguments(stmtType int, args dbr.Arguments, column
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	if len(columns) == 0 && stmtType&(dbr.SQLPartValues) != 0 {
+	if len(columns) == 0 && st.IsValues() {
 		// This case gets executed when an INSERT statement doesn't contain any columns.
 		args = args.Int64(pe.EntityID).Int64(pe.AttributeSetID).Str(pe.TypeID).NullString(pe.SKU).Bool(pe.HasOptions)
 	}

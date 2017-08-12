@@ -33,7 +33,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendArguments(stmtType int, args Arguments, columns []string) (Arguments, error) {
+func (sr someRecord) AppendArguments(stmtType SQLStmt, args Arguments, columns []string) (Arguments, error) {
 	for _, c := range columns {
 		switch c {
 		case "something_id":
@@ -46,7 +46,7 @@ func (sr someRecord) AppendArguments(stmtType int, args Arguments, columns []str
 			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 	}
-	if len(columns) == 0 && stmtType&(SQLPartValues) != 0 {
+	if len(columns) == 0 && stmtType.IsValues() {
 		args = args.Int(sr.SomethingID).Int64(sr.UserID).Bool(sr.Other)
 
 	}

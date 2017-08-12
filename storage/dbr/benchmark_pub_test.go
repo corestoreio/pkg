@@ -415,7 +415,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) AppendArguments(stmtType int, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
+func (sr someRecord) AppendArguments(_ dbr.SQLStmt, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
 	for _, c := range condition {
 		switch c {
 		case "something_id":
