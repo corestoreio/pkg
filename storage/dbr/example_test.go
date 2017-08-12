@@ -17,11 +17,12 @@ package dbr_test
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/wordwrap"
 	"github.com/corestoreio/errors"
-	"strings"
 )
 
 // iFaceToArgs unpacks the interface and creates an Argument slice. Just a
@@ -434,6 +435,7 @@ func ExampleArgument() {
 	argPrinter(dbr.Column("d").Least().Ints(20, 21, 22))
 	argPrinter(dbr.Column("d").Equal().Int(30))
 	argPrinter(dbr.Column("d").NotEqual().Int(31))
+	argPrinter(dbr.Column("alias.column").SpaceShip().Float64(3.14159))
 
 	argPrinter(dbr.Column("d").Less().Int(32))
 	argPrinter(dbr.Column("d").Greater().Int(33))
@@ -457,6 +459,7 @@ func ExampleArgument() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`alias`.`column` <=> ?)" Arguments: [3.14159]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]
@@ -481,6 +484,7 @@ func ExampleColumn() {
 	argPrinter(dbr.Column("d").Least().Ints(20, 21, 22))
 	argPrinter(dbr.Column("d").Equal().Int(30))
 	argPrinter(dbr.Column("d").NotEqual().Int(31))
+	argPrinter(dbr.Column("alias.column").SpaceShip().Float64(3.14159))
 
 	argPrinter(dbr.Column("d").Less().Int(32))
 	argPrinter(dbr.Column("d").Greater().Int(33))
@@ -504,6 +508,7 @@ func ExampleColumn() {
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` LEAST (?,?,?))" Arguments: [20 21 22]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` = ?)" Arguments: [30]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` != ?)" Arguments: [31]
+	//"SELECT `a`, `b` FROM `c` WHERE (`alias`.`column` <=> ?)" Arguments: [3.14159]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` < ?)" Arguments: [32]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` > ?)" Arguments: [33]
 	//"SELECT `a`, `b` FROM `c` WHERE (`d` <= ?)" Arguments: [34]

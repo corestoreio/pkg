@@ -62,7 +62,7 @@ func (so salesOrder) AppendArguments(stmtType int, args dbr.Arguments, columns [
 // ExampleUpdateMulti can create a prepared statement or interpolated statements
 // to run updates on table  `sales_order` with different objects. The SQL UPDATE
 // statement acts as a template.
-func ExampleUpdateMulti() {
+func ExampleUpdate_ExecMulti() {
 	// <ignore_this>
 	dbc, dbMock := cstesting.MockDB(nil)
 	defer cstesting.MockClose(nil, dbc, dbMock)
@@ -81,21 +81,19 @@ func ExampleUpdateMulti() {
 	// </ignore_this>
 
 	// Create the multi update statement
-	um := dbr.NewUpdateMulti(
-		dbr.NewUpdate("sales_order").
-			AddColumns("state", "customer_id", "grand_total").
-			Where(
-				dbr.Column("shipping_method").In().Strs("DHL", "UPS"),
-				dbr.Column("entity_id").PlaceHolder(),
-			), // Our template statement
-	).WithDB(dbc.DB)
+	um := dbr.NewUpdate("sales_order").
+		AddColumns("state", "customer_id", "grand_total").
+		Where(
+			dbr.Column("shipping_method").In().Strs("DHL", "UPS"),
+			dbr.Column("entity_id").PlaceHolder(),
+		).WithDB(dbc.DB)
 
 	// Our objects which should update the columns in the database table
 	// `sales_order`.
 	so1 := salesOrder{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
 	so2 := salesOrder{2, "processing", 7, 8912, dbr.NullFloat64{}}
 
-	results, err := um.Exec(context.Background(), so1, so2)
+	results, err := um.ExecMulti(context.Background(), so1, so2)
 	if err != nil {
 		fmt.Printf("Exec Error: %+v\n", err)
 		return

@@ -35,11 +35,14 @@ type Update struct {
 
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
-	// RecordColumns only applicable in case when Record field has been set.
-	// `RecordColumns` contains the lis of column names which gets passed to the
-	// ArgumentsAppender function. If empty `RecordColumns` then the names gets
-	// collected from `SetClauses`
-	RecordColumns []string
+	// SetClausAliases only applicable in case when Record field has been set or
+	// ExecMulti gets used. `SetClausAliases` contains the lis of column names
+	// which gets passed to the ArgumentsAppender function. If empty
+	// `SetClausAliases` collects the column names from the `SetClauses`. The
+	// alias slice must have the same length as the columns slice. Despite
+	// setting `SetClausAliases` the SetClauses.Columns must be provided to
+	// create a valid SQL statement.
+	SetClausAliases []string
 	// SetClauses contains the column/argument association. For each column
 	// there must be one argument.
 	SetClauses Conditions
@@ -106,7 +109,7 @@ func (b *Update) Set(c ...*Condition) *Update {
 
 // AddColumns adds columns which values gets later derived from an
 // ArgumentsAppender. Those columns will get passed to the ArgumentsAppender
-// implementation. Mostly used with the type UpdateMulti.
+// implementation. Mostly used with the type Update.
 func (b *Update) AddColumns(columnNames ...string) *Update {
 	for _, col := range columnNames {
 		b.SetClauses = append(b.SetClauses, Column(col))
@@ -242,10 +245,10 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	}
 	var err error
 	if b.Record != nil {
-		if len(b.RecordColumns) == 0 {
-			b.RecordColumns = b.SetClauses.leftHands(b.RecordColumns)
+		if len(b.SetClausAliases) == 0 {
+			b.SetClausAliases = b.SetClauses.leftHands(b.SetClausAliases)
 		}
-		args, err = b.Record.AppendArguments(SQLStmtUpdate|SQLPartSet, args, b.RecordColumns)
+		args, err = b.Record.AppendArguments(SQLStmtUpdate|SQLPartSet, args, b.SetClausAliases)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -269,13 +272,6 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	return args, nil
 }
 
-// Exec interpolates and executes the statement represented by the Update
-// object. It returns the raw database/sql Result and an error if there was one.
-func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
-	result, err := Exec(ctx, b.DB, b)
-	return result, errors.WithStack(err)
-}
-
 // Prepare creates a new prepared statement represented by the Update object. It
 // returns the raw database/sql Stmt and an error if there was one.
 func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
@@ -283,222 +279,81 @@ func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	return stmt, errors.WithStack(err)
 }
 
-// UpdateMulti allows to run an UPDATE statement multiple times with different
-// records in an optionally transaction. If you enable the interpolate feature on
-// the Update object the interpolated SQL string will be send each time to the
-// SQL server otherwise a prepared statement will be created. Create a single
-// Update object without the SET columns and without arguments. Add a WHERE
-// clause with common conditions and conditions with place holders where the
-// value/s get derived from the ArgumentsAppender. The empty WHERE arguments
-// trigger the placeholder and the correct operator. The values itself will be
-// provided either through the Records slice or via RecordChan.
-type UpdateMulti struct {
-	Log log.Logger
-	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
-	// dedicated database session) or a *sql.Tx (an in-progress database
-	// transaction).
-	DB execPreparer
-
-	// IsTransaction set to true to enable running the UPDATE queries in a
-	// transaction.
-	IsTransaction bool
-	// IsolationLevel defines the transaction isolation level.
-	sql.IsolationLevel
-	// Tx knows how to start a transaction. Must be set if transactions hasn't
-	// been disabled.
-	Tx *sql.DB // todo can be removed and also the sql.IsolationLevel
-	// Update represents the template UPDATE statement.
-	Update *Update
-
-	// ColumnAliases provides a special feature, if set, that instead of the
-	// column names, the identifiers will be passed to the ArgumentGenerater.Record
-	// function. The alias slice must have the same length as the columns slice.
-	// Despite setting `ColumnAliases` the Update.SetClauses.Columns must be
-	// provided to create a valid SQL statement.
-	ColumnAliases []string
-}
-
-// NewUpdateMulti creates new UPDATE statement which runs multiple times for a
-// specific Update statement.
-func NewUpdateMulti(tpl *Update) *UpdateMulti {
-	return &UpdateMulti{
-		Update: tpl,
+// Exec interpolates and executes the statement represented by the Update
+// object. It returns the raw database/sql Result and an error if there was one.
+func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
+	if err := b.validate(); err != nil {
+		return nil, errors.WithStack(err)
 	}
+	result, err := Exec(ctx, b.DB, b)
+	return result, errors.WithStack(err)
 }
 
-// UpdateMulti creates a new UpdateMulti for the UPDATE template object.
-func (c *Connection) UpdateMulti(tpl *Update) *UpdateMulti {
-	return &UpdateMulti{
-		Log:    c.Log,
-		DB:     c.DB,
-		Update: tpl,
+func (b *Update) validate() error {
+	if len(b.SetClauses) == 0 {
+		return errors.NewEmptyf("[dbr] Update: Columns are empty")
 	}
-}
-
-// UpdateMulti creates a new UpdateMulti for the given UPDATE template object
-// bound to a transaction.
-func (tx *Tx) UpdateMulti(tpl *Update) *UpdateMulti {
-	return &UpdateMulti{
-		Log:    tx.Logger,
-		DB:     tx.Tx,
-		Update: tpl,
-	}
-}
-
-// WithDB sets the database query object.
-func (b *UpdateMulti) WithDB(db execPreparer) *UpdateMulti {
-	b.DB = db
-	return b
-}
-
-// Transaction enables transaction usage and sets an optional isolation level.
-// If not set the default database isolation level gets used.
-func (b *UpdateMulti) Transaction(level ...sql.IsolationLevel) *UpdateMulti {
-	b.IsTransaction = true
-	if len(level) == 1 {
-		b.IsolationLevel = level[0]
-	}
-	return b
-}
-
-func (b *UpdateMulti) validate() error {
-	if len(b.Update.SetClauses) == 0 {
-		return errors.NewEmptyf("[dbr] UpdateMulti: Columns are empty")
-	}
-	if len(b.ColumnAliases) > 0 && len(b.ColumnAliases) != len(b.Update.SetClauses) {
-		return errors.NewMismatchf("[dbr] UpdateMulti: ColumnAliases slice and Columns slice must have the same length")
+	if len(b.SetClausAliases) > 0 && len(b.SetClausAliases) != len(b.SetClauses) {
+		return errors.NewMismatchf("[dbr] Update: ColumnAliases slice and Columns slice must have the same length")
 	}
 	return nil
 }
 
-func txUpdateMultiRollback(tx txer, previousErr error, msg string, args ...interface{}) ([]sql.Result, error) {
-	if err := tx.Rollback(); err != nil {
-		eArg := []interface{}{previousErr}
-		return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Tx.Rollback. Previous Error: %s. "+msg, append(eArg, args...)...)
-	}
-	return nil, errors.Wrapf(previousErr, msg, args...)
-}
-
-// Exec runs multiple UPDATE queries for different records in serial order. The
-// returned result slice indexes are same index as for the Records slice.
-func (b *UpdateMulti) Exec(ctx context.Context, records ...ArgumentsAppender) ([]sql.Result, error) {
-	if err := b.validate(); err != nil {
+// ExecMulti allows to run an UPDATE statement multiple times with different
+// records in a serial order. The returned result slice indexes are same index
+// as for the Records slice. A prepared statement gets always created. Add a
+// WHERE clause with common conditions and conditions with place holders where
+// the value/s get derived from the ArgumentsAppender. The empty WHERE arguments
+// trigger the placeholder and the correct operator. The values itself will be
+// provided through the Records slice. Field Update.Record gets overwritten by
+// the `records` argument of this function. Rework this docu. ;-)
+func (b *Update) ExecMulti(ctx context.Context, records ...ArgumentsAppender) (_ []sql.Result, err error) {
+	if err = b.validate(); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.UpdateMulti.Exec.Timing",
-			log.Stringer("sql", b.Update),
+		defer log.WhenDone(b.Log).Info("dbr.Update.ExecMulti.Timing",
+			log.Stringer("sql", b),
 			log.Int("records", len(records)))
 	}
 
-	isInterpolate := b.Update.IsInterpolate
-	b.Update.IsInterpolate = false
+	b.IsInterpolate = false
 
 	sqlBuf := bufferpool.Get()
 	defer bufferpool.Put(sqlBuf)
 
-	err := b.Update.toSQL(sqlBuf)
+	if err = b.toSQL(sqlBuf); err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	stmt, err := b.DB.PrepareContext(ctx, sqlBuf.String())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	exec := b.DB
-	var tx txer = txMock{}
-	if b.IsTransaction {
-		tx, err = b.Tx.BeginTx(ctx, &sql.TxOptions{
-			Isolation: b.IsolationLevel,
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "[dbr] UpdateMulti.Exec.Tx.BeginTx. with Query: %q", b.Update)
+	defer func() {
+		if err2 := stmt.Close(); err == nil && err2 != nil {
+			err = errors.WithStack(err2)
 		}
-		exec = tx
-	}
+	}()
 
-	var stmt *sql.Stmt
-	if !isInterpolate {
-		stmt, err = exec.PrepareContext(ctx, sqlBuf.String())
-		if err != nil {
-			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Prepare. with Query: %q", b.Update)
-		}
-		defer stmt.Close() // todo check for error
-	}
-
-	if len(b.ColumnAliases) > 0 {
-		b.Update.RecordColumns = b.ColumnAliases
-	}
-
-	args := make(Arguments, 0, (len(records)+len(b.Update.Wheres))*3) // 3 just a guess
+	args := make(Arguments, 0, (len(records)+len(b.Wheres))*3) // 3 just a bad guess
 	results := make([]sql.Result, len(records))
 
-	var ipBuf *bytes.Buffer // ip = interpolate buffer
-	if isInterpolate {
-		ipBuf = bufferpool.Get()
-		defer bufferpool.Put(ipBuf)
-	}
-
 	for i, rec := range records {
-		b.Update.Record = rec
-		args, err = b.Update.appendArgs(args)
+		b.Record = rec
+		args, err = b.appendArgs(args)
 		if err != nil {
-			return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
+			return nil, errors.Wrapf(err, "[dbr] Update.ExecMulti.appendArgs. Index %d with Query: %q", i, sqlBuf)
 		}
-		if isInterpolate {
-			if err = writeInterpolate(ipBuf, sqlBuf.Bytes(), args); err != nil {
-				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Interpolate. Index %d with Query: %q", i, sqlBuf)
-			}
 
-			results[i], err = exec.ExecContext(ctx, ipBuf.String())
-			if err != nil {
-				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Exec. Index %d with Query: %q", i, sqlBuf)
-			}
-			ipBuf.Reset()
-		} else {
-			results[i], err = stmt.ExecContext(ctx, args.Interfaces()...)
-			if err != nil {
-				return txUpdateMultiRollback(tx, err, "[dbr] UpdateMulti.Exec.Stmt.Exec. Index %d with Query: %q", i, sqlBuf)
-			}
+		results[i], err = stmt.ExecContext(ctx, args.Interfaces()...)
+		if err != nil {
+			return nil, errors.Wrapf(err, "[dbr] Update.ExecMulti.Stmt.Exec. Index %d with Query: %q", i, sqlBuf)
 		}
+
 		args = args[:0] // reset for re-usage
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, errors.WithStack(err)
 	}
 
 	return results, nil
 }
-
-// ExecChan executes incoming Records and writes the output into the provided
-// channels. It closes the channels once the queries have been sent.
-// All queries will run parallel, except when using a transaction.
-//func (b *UpdateMulti) ExecChan(ctx context.Context, records <-chan ArgumentsAppender, results chan<- sql.Result, errs chan<- error) {
-//	defer close(errs)
-//	defer close(errs)
-//	if err := b.validate(); err != nil {
-//		errs <- errors.WithStack(err)
-//		return
-//	}
-//
-//	// RecordChan waits for incoming records to send them to the prepared
-//	// statement. If the channel gets closed the transaction gets terminated and
-//	// the UPDATE statement removed.
-//
-//	//g, ctx := errgroup.WithContext(ctx)
-//	//
-//	//g.Go()
-//	//
-//	//go func() {
-//	//	g.Wait()
-//	//	close(b.RecordChan)
-//	//}()
-//	//
-//	//if err := g.Wait(); err != nil {
-//	//	errChan <- errors.WithStack(err)
-//	//}
-//
-//	// This could run in parallel but it depends if each exec gets a
-//	// different connection. In a transaction only serial processing is
-//	// possible because a Go transaction gets bound to one connection.
-//
-//}

@@ -32,27 +32,36 @@ func TestUpdateMulti_Exec(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no columns provided", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").
-			Where(dbr.Column("entity_id").In().PlaceHolder()), // Int64 must be without arguments
-		)
+		mu := dbr.NewUpdate("catalog_product_entity").Where(dbr.Column("entity_id").In().PlaceHolder())
+
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsEmpty(err), "%+v", err)
 	})
 
-	t.Run("alias mismatch", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti(dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").Where(dbr.Column("entity_id").In().PlaceHolder()))
-		mu.ColumnAliases = []string{"update_sku"}
+	t.Run("alias mismatch Exec", func(t *testing.T) {
+		mu := dbr.NewUpdate("catalog_product_entity").
+			AddColumns("sku", "updated_at").
+			Where(dbr.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{})
+		mu.SetClausAliases = []string{"update_sku"}
 		res, err := mu.Exec(context.TODO())
 		assert.Nil(t, res)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 
+	t.Run("alias mismatch MultiExec", func(t *testing.T) {
+		mu := dbr.NewUpdate("catalog_product_entity").
+			AddColumns("sku", "updated_at").
+			Where(dbr.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{})
+		mu.SetClausAliases = []string{"update_sku"}
+		res, err := mu.ExecMulti(context.TODO())
+		assert.Nil(t, res)
+		assert.True(t, errors.IsMismatch(err), "%+v", err)
+	})
+
 	t.Run("empty Records and RecordChan", func(t *testing.T) {
-		mu := dbr.NewUpdateMulti(
-			dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").
-				Where(dbr.Column("entity_id").In().PlaceHolder()),
-		).WithDB(dbMock{
+		mu := dbr.NewUpdate("catalog_product_entity").AddColumns("sku", "updated_at").
+			Where(dbr.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{
 			error: errors.NewAlreadyClosedf("Who closed myself?"),
 		})
 
@@ -74,44 +83,17 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		},
 	}
 
-	mu := dbr.NewUpdateMulti(
-		dbr.NewUpdate("customer_entity").Alias("ce").AddColumns("name", "email").Where(dbr.Column("id").Equal().PlaceHolder()).Interpolate(),
-	)
+	// interpolate must get ignored
+	mu := dbr.NewUpdate("customer_entity").Alias("ce").
+		AddColumns("name", "email").
+		Where(dbr.Column("id").Equal().PlaceHolder()).
+		Interpolate()
 
-	// SM = SQL Mock
-	setSQLMockInterpolate := func(m sqlmock.Sqlmock) {
-		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`='Alf', `email`='alf@m\\') -- el.mac' WHERE (`id` = 1)")).
-			WillReturnResult(sqlmock.NewResult(0, 1))
-		m.ExpectExec(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`='John', `email`='john@doe.com' WHERE (`id` = 2)")).
-			WillReturnResult(sqlmock.NewResult(0, 1))
-	}
 	setSMPrepared := func(m sqlmock.Sqlmock) {
 		prep := m.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
 		prep.ExpectExec().WithArgs("Alf", "alf@m') -- el.mac", 1).WillReturnResult(sqlmock.NewResult(0, 1))
 		prep.ExpectExec().WithArgs("John", "john@doe.com", 2).WillReturnResult(sqlmock.NewResult(0, 1))
 	}
-
-	t.Run("preprocess no transaction", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
-
-		setSQLMockInterpolate(dbMock)
-
-		mu.WithDB(dbc.DB)
-
-		results, err := mu.Exec(context.TODO(), records...)
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		assert.Len(t, results, 2)
-		for i, res := range results {
-			aff, err := res.RowsAffected()
-			if err != nil {
-				t.Fatalf("Result index %d with error: %s", i, err)
-			}
-			assert.Exactly(t, int64(1), aff)
-		}
-	})
 
 	t.Run("prepared no transaction", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
@@ -119,10 +101,9 @@ func TestUpdateMulti_Exec(t *testing.T) {
 
 		setSMPrepared(dbMock)
 
-		mu.Update.IsInterpolate = false
-		mu.WithDB(dbc.DB)
+		mu.DB = dbc.DB
 
-		results, err := mu.Exec(context.TODO(), records...)
+		results, err := mu.ExecMulti(context.TODO(), records...)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -136,59 +117,6 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		}
 	})
 
-	t.Run("prepared with transaction", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
-
-		dbMock.ExpectBegin()
-		setSMPrepared(dbMock)
-		dbMock.ExpectCommit()
-
-		mu.Tx = dbc.DB
-		mu.Transaction()
-		mu.Update.IsInterpolate = false
-		mu.WithDB(dbc.DB)
-
-		results, err := mu.Exec(context.TODO(), records...)
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		assert.Len(t, results, 2)
-		for i, res := range results {
-			aff, err := res.RowsAffected()
-			if err != nil {
-				t.Fatalf("Result index %d with error: %s", i, err)
-			}
-			assert.Exactly(t, int64(1), aff)
-		}
-	})
-
-	t.Run("preprocess with transaction", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
-
-		dbMock.ExpectBegin()
-		setSQLMockInterpolate(dbMock)
-		dbMock.ExpectCommit()
-
-		mu.Tx = dbc.DB
-		mu.Transaction()
-		mu.Update.IsInterpolate = true
-		mu.WithDB(dbc.DB)
-
-		results, err := mu.Exec(context.TODO(), records...)
-		if err != nil {
-			t.Fatalf("%+v", err)
-		}
-		assert.Len(t, results, 2)
-		for i, res := range results {
-			aff, err := res.RowsAffected()
-			if err != nil {
-				t.Fatalf("Result index %d with error: %s", i, err)
-			}
-			assert.Exactly(t, int64(1), aff)
-		}
-	})
 }
 
 // Make sure that type salesInvoice implements interface.
@@ -215,7 +143,8 @@ func (so salesInvoice) AppendArguments(stmtType int, args dbr.Arguments, columns
 		case "customer_id":
 			args = args.Int64(so.CustomerID)
 		case "alias_customer_id":
-			// Here can be a special treatment implement like encoding to JSON or encryption
+			// Here can be a special treatment implemented like encoding to JSON
+			// or encryption
 			args = args.Int64(so.CustomerID)
 		case "grand_total":
 			args = args.NullFloat64(so.GrandTotal)
@@ -253,18 +182,17 @@ func TestUpdateMulti_ColumnAliases(t *testing.T) {
 	so2 := salesInvoice{2, "processing", 7, 8912, dbr.NullFloat64{}}
 
 	// Create the multi update statement
-	um := dbr.NewUpdateMulti(dbr.NewUpdate("sales_invoice").
+	um := dbr.NewUpdate("sales_invoice").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
 			// dbr.Column("shipping_method", dbr.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
 			dbr.Column("shipping_method").String("DHL"), // For all clauses the same restriction
 			dbr.Column("entity_id").PlaceHolder(),       // Int64() acts as a place holder
-		), // Our template statement
-	).WithDB(dbc.DB)
+		).WithDB(dbc.DB)
 
-	um.ColumnAliases = []string{"state", "alias_customer_id", "grand_total"}
+	um.SetClausAliases = []string{"state", "alias_customer_id", "grand_total"}
 
-	results, err := um.Exec(context.Background(), so1, so2)
+	results, err := um.ExecMulti(context.Background(), so1, so2)
 	require.NoError(t, err)
 
 	dbMock.ExpectClose()
