@@ -73,7 +73,7 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 	compareToSQL(t, NewUpdate("a").
 		Set(
 			Column("foo").Int(1),
-			Column("bar").Expression("COALESCE(bar, 0) + 1"),
+			Column("bar").Expr("COALESCE(bar, 0) + 1"),
 		).Where(Column("id").Int(9)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` = ?)",
@@ -83,7 +83,7 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 	compareToSQL(t, NewUpdate("a").
 		Set(
 			Column("foo").Int(1),
-			Column("bar").Expression("COALESCE(bar, 0) + 1"),
+			Column("bar").Expr("COALESCE(bar, 0) + 1"),
 		).Where(Column("id").In().Int64s(10, 11)),
 		nil,
 		"UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + 1 WHERE (`id` IN (?,?))",
@@ -93,7 +93,7 @@ func TestUpdateSetExprToSQL(t *testing.T) {
 	compareToSQL(t, NewUpdate("a").
 		Set(
 			Column("foo").Int(1),
-			Column("bar").Expression("COALESCE(bar, 0) + ?").Int(2),
+			Column("bar").Expr("COALESCE(bar, 0) + ?").Int(2),
 		).
 		Where(Column("id").Int(9)),
 		nil,
@@ -343,7 +343,7 @@ func TestUpdate_UseBuildCache(t *testing.T) {
 	up := NewUpdate("a").
 		Set(
 			Column("foo").Int(1),
-			Column("bar").Expression("COALESCE(bar, 0) + ?").Int(2)).
+			Column("bar").Expr("COALESCE(bar, 0) + ?").Int(2)).
 		Where(Column("id").Int(9)).BuildCache()
 
 	const cachedSQLPlaceHolder = "UPDATE `a` SET `foo`=?, `bar`=COALESCE(bar, 0) + ? WHERE (`id` = ?)"

@@ -70,7 +70,8 @@ func TestSQLIfNull(t *testing.T) {
 			if alias != "" {
 				ifn = ifn.Alias(alias)
 			}
-			assert.Equal(t, want, ifn.LeftExpression.String())
+			assert.Equal(t, want, ifn.Left)
+			assert.True(t, ifn.IsLeftExpression, "IsLeftExpression should be true")
 		}
 	}
 	t.Run("1 args expression", runner(
@@ -154,7 +155,7 @@ func TestSQLIf_Expression(t *testing.T) {
 	t.Parallel()
 
 	t.Run("single call", func(t *testing.T) {
-		assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value").LeftExpression.String())
+		assert.Exactly(t, "IF((c.value_id > 0), c.value, d.value)", dbr.SQLIf("c.value_id > 0", "c.value", "d.value").Left)
 	})
 
 	t.Run("just EXPRESSION", func(t *testing.T) {
@@ -229,7 +230,7 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty+1",
 				"3457", "qty+4",
 				"3458", "qty-3",
-			).LeftExpression.String(),
+			).Left,
 		)
 		assert.Exactly(t,
 			"(CASE `product_id` WHEN 3456 THEN qty WHEN 3457 THEN qty ELSE qty END) AS `product_qty`",
@@ -237,7 +238,7 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty",
 				"3457", "qty",
 				"product_qty",
-			).LeftExpression.String(),
+			).Left,
 		)
 		assert.Exactly(t,
 			"CASE `product_id` WHEN 3456 THEN qty+1 WHEN 3457 THEN qty+4 WHEN 3458 THEN qty-3 END",
@@ -245,15 +246,11 @@ func TestSQLCase(t *testing.T) {
 				"3456", "qty+1",
 				"3457", "qty+4",
 				"3458", "qty-3",
-			).LeftExpression.String(),
+			).Left,
 		)
-		assert.Exactly(t,
-			"CASE  WHEN 1=1 THEN 2 WHEN 3=2 THEN 4 END",
-			dbr.SQLCase("", "",
-				"1=1", "2",
-				"3=2", "4",
-			).LeftExpression.String(),
-		)
+		ce := dbr.SQLCase("", "", "1=1", "2", "3=2", "4")
+		assert.Exactly(t, "CASE  WHEN 1=1 THEN 2 WHEN 3=2 THEN 4 END", ce.Left)
+		assert.True(t, ce.IsLeftExpression, "IsLeftExpression should be true")
 	})
 	t.Run("case panics because of invalid length of comparions", func(t *testing.T) {
 		defer func() {

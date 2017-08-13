@@ -257,7 +257,7 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 
 	t.Run("col1=VALUES(val)+? and with arguments", runner(Conditions{
 		Column("name").Str("E0S 5D Mark II"),
-		Column("stock").Expression("VALUES(`stock`)+?-?").Int64(13).Int(4),
+		Column("stock").Expr("VALUES(`stock`)+?-?").Int64(13).Int(4),
 	}, " ON DUPLICATE KEY UPDATE `name`=?, `stock`=VALUES(`stock`)+?-?",
 		"E0S 5D Mark II", int64(13), int64(4)))
 
@@ -269,12 +269,12 @@ func TestConditions_writeOnDuplicateKey(t *testing.T) {
 		"E0S 5D Mark III", int64(14)))
 
 	t.Run("col=expression without arguments", runner(Conditions{
-		Column("name").Expression("CONCAT('Canon','E0S 5D Mark III')"),
+		Column("name").Expr("CONCAT('Canon','E0S 5D Mark III')"),
 	}, " ON DUPLICATE KEY UPDATE `name`=CONCAT('Canon','E0S 5D Mark III')",
 	))
 }
 
-func TestExpression(t *testing.T) {
+func TestExpr_Arguments(t *testing.T) {
 
 	t.Run("ints", func(t *testing.T) {
 		sel := NewSelect("a").From("c").
@@ -372,4 +372,15 @@ func TestCondition_Column(t *testing.T) {
 		"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
 		2.718281, int64(28), int64(16), int64(25), int64(17), int64(45),
 	)
+}
+
+func TestExpr(t *testing.T) {
+	t.Parallel()
+	t.Run("quoted string", func(t *testing.T) {
+		s := NewSelect().AddColumns("month", "total").AddColumnsConditions(Expr(`"best"`)).From("sales_by_month")
+		compareToSQL(t, s, nil,
+			"SELECT `month`, `total`, \"best\" FROM `sales_by_month`",
+			"",
+		)
+	})
 }

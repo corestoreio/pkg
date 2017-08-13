@@ -22,32 +22,23 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// expression is just some lines to avoid a fully written string created by
-// other functions. Each line can contain arbitrary characters. The lines get
-// written without any separator into a buffer. Hooks/Event/Observer allow an
-// easily modification of different line items. Much better than having a long
-// string with a wrapped complex SQL expression. There is no need to export it.
-type expr []string
-
-func (e expr) String() string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	e.write(buf, nil)
-	return buf.String()
-}
-
 // write writes the strings into `w` and correctly handles the place holder
 // repetition depending on the number of arguments.
-func (e expr) write(w *bytes.Buffer, args Arguments) (phCount int, err error) {
+func writeExpression(w *bytes.Buffer, expression string, args Arguments) (phCount int, err error) {
+	phCount += strings.Count(expression, placeHolderStr)
+	if phCount == 0 {
+		// fast path
+		_, err = w.WriteString(expression)
+		return phCount, err
+	}
+
 	eBuf := bufferpool.Get()
 	defer bufferpool.Put(eBuf)
 
-	for _, es := range e {
-		phCount += strings.Count(es, placeHolderStr)
-		if _, err = eBuf.WriteString(es); err != nil {
-			return phCount, errors.Wrapf(err, "[dbr] expression.write: failed to write %q", es)
-		}
+	if _, err = eBuf.WriteString(expression); err != nil {
+		return phCount, errors.Wrapf(err, "[dbr] writeExpression: failed to write %q", expression)
 	}
+
 	if args != nil && phCount != args.Len() {
 		if err = repeatPlaceHolders(w, eBuf.Bytes(), args); err != nil {
 			return phCount, errors.WithStack(err)
@@ -56,10 +47,6 @@ func (e expr) write(w *bytes.Buffer, args Arguments) (phCount int, err error) {
 		_, err = eBuf.WriteTo(w)
 	}
 	return phCount, errors.WithStack(err)
-}
-
-func (e expr) isset() bool {
-	return len(e) > 0
 }
 
 // SQLIfNull creates an IFNULL expression. Argument count can be either 1, 2 or
@@ -71,11 +58,12 @@ func (e expr) isset() bool {
 // the context in which it is used.
 func SQLIfNull(expression ...string) *Condition {
 	return &Condition{
-		LeftExpression: sqlIfNull(expression),
+		Left:             sqlIfNull(expression),
+		IsLeftExpression: true,
 	}
 }
 
-func sqlIfNull(expression []string) expr {
+func sqlIfNull(expression []string) string {
 	buf := bufferpool.Get()
 
 	switch len(expression) {
@@ -96,7 +84,7 @@ func sqlIfNull(expression []string) expr {
 		panic(errors.NewNotValidf("[dbr] Invalid number of arguments. Max 4 arguments allowed, got: %v", expression))
 
 	}
-	ret := []string{buf.String()}
+	ret := buf.String()
 	bufferpool.Put(buf)
 	return ret
 }
@@ -133,7 +121,8 @@ func sqlIfNullQuote4(w *bytes.Buffer, qualifierName ...string) {
 // Returns a []string.
 func SQLIf(expression, true, false string) *Condition {
 	return &Condition{
-		LeftExpression: []string{"IF((", expression, "), ", true, ", ", false, ")"},
+		Left:             "IF((" + expression + "), " + true + ", " + false + ")",
+		IsLeftExpression: 1 == 1,
 	}
 }
 
@@ -146,11 +135,12 @@ func SQLIf(expression, true, false string) *Condition {
 // https://dev.mysql.com/doc/refman/5.7/en/control-flow-functions.html#operator_case
 func SQLCase(value, defaultValue string, compareResult ...string) *Condition {
 	return &Condition{
-		LeftExpression: sqlCase(value, defaultValue, compareResult...),
+		Left:             sqlCase(value, defaultValue, compareResult...),
+		IsLeftExpression: true,
 	}
 }
 
-func sqlCase(value, defaultValue string, compareResult ...string) expr {
+func sqlCase(value, defaultValue string, compareResult ...string) string {
 	if len(compareResult) < 2 {
 		panic(errors.NewFatalf("[dbr] SQLCase error incorrect length for compareResult: %v", compareResult))
 	}
@@ -181,7 +171,7 @@ func sqlCase(value, defaultValue string, compareResult ...string) expr {
 		buf.WriteString(" AS ")
 		Quoter.quote(buf, compareResult[len(compareResult)-1])
 	}
-	e := []string{buf.String()}
+	e := buf.String()
 	bufferpool.Put(buf)
 	return e
 }

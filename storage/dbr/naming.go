@@ -50,7 +50,7 @@ type identifier struct {
 	Name string
 	// Expression has precedence over the `Name` field. Each line in an expression
 	// gets written unchanged to the final SQL string.
-	Expression expr
+	Expression string
 	// Aliased must be a valid identifier allowed for alias usage. As soon as the field `Aliased` has been set
 	// it gets append to the Name and Expression field: "sql AS Aliased"
 	Aliased string
@@ -81,16 +81,16 @@ func (a identifier) Alias(alias string) identifier { a.Aliased = alias; return a
 //	}
 //}
 
-func (a identifier) isEmpty() bool {
-	return a.Name == "" && a.DerivedTable == nil && !a.Expression.isset()
-}
+func (a identifier) isEmpty() bool { return a.Name == "" && a.DerivedTable == nil && a.Expression == "" }
 
 // String returns the correct stringyfied statement.
 func (a identifier) String() string {
-	if len(a.Expression) > 0 {
+	if a.Expression != "" {
 		buf := bufferpool.Get()
 		defer bufferpool.Put(buf)
-		Quoter.writeExprAlias(buf, a.Expression, a.Aliased)
+		buf.WriteString(a.Expression)
+		buf.WriteString(" AS ")
+		Quoter.quote(buf, a.Aliased)
 		return buf.String()
 	}
 	return a.QuoteAs()
@@ -120,8 +120,8 @@ func (a identifier) WriteQuoted(w *bytes.Buffer) error {
 		return nil
 	}
 
-	if a.Expression.isset() {
-		a.Expression.write(w, nil)
+	if a.Expression != "" {
+		writeExpression(w, a.Expression, nil)
 	} else {
 		Quoter.WriteIdentifier(w, a.Name)
 	}
@@ -188,7 +188,7 @@ func (ids identifiers) AppendColumns(isUnsafe bool, columns ...string) identifie
 	for _, c := range columns {
 		id := identifier{Name: c}
 		if isUnsafe && isValidIdentifier(c) != 0 {
-			id.Expression = []string{id.Name}
+			id.Expression = id.Name
 			id.Name = ""
 		}
 		ids = append(ids, id)
@@ -213,7 +213,7 @@ func (ids identifiers) AppendColumnsAliases(isUnsafe bool, columns ...string) id
 	for i := 0; i < len(columns); i = i + 2 {
 		id := identifier{Name: columns[i], Aliased: columns[i+1]}
 		if isUnsafe && isValidIdentifier(id.Name) != 0 {
-			id.Expression = []string{id.Name}
+			id.Expression = id.Name
 			id.Name = ""
 		}
 		ids = append(ids, id)
@@ -226,13 +226,12 @@ func (ids identifiers) AppendColumnsAliases(isUnsafe bool, columns ...string) id
 // the expression, otherwise use the function AppendColumns*.
 func (ids identifiers) AppendConditions(expressions Conditions, args Arguments) (identifiers, Arguments) {
 	for _, e := range expressions {
-		idf := identifier{Aliased: e.Aliased}
-		switch {
-		case e.Left != "": // just a column
-			idf.Name = e.Left
-		case len(e.LeftExpression) > 0: // now an expression
-			idf.Expression = e.LeftExpression
+		idf := identifier{Name: e.Left, Aliased: e.Aliased}
+		if e.IsLeftExpression {
+			idf.Expression = idf.Name
+			idf.Name = ""
 		}
+
 		ids = append(ids, idf)
 		if e.Right.Argument.isSet {
 			args = append(args, e.Right.Argument)
@@ -264,16 +263,6 @@ func (mq MysqlQuoter) writeQualifierName(w *bytes.Buffer, q, n string) {
 	mq.quote(w, q)
 	w.WriteByte('.')
 	mq.quote(w, n)
-}
-
-// writeExprAlias appends to the provided `expression` the quote alias name, e.g.:
-// 		writeExprAlias("(e.price*x.tax*t.weee)", "final_price") // (e.price*x.tax*t.weee) AS `final_price`
-func (mq MysqlQuoter) writeExprAlias(w *bytes.Buffer, e expr, alias string) {
-	e.write(w, nil)
-	if alias != "" {
-		w.WriteString(" AS ")
-		mq.quote(w, alias)
-	}
 }
 
 // Name quotes securely a name.

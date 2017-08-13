@@ -67,16 +67,13 @@ func BenchmarkIsValidIdentifier(b *testing.B) {
 }
 
 func BenchmarkQuoteAlias(b *testing.B) {
-	var want = []byte("(e.price * a.tax * e.weee) AS `final_price`")
-	exprs := []string{"(", "e.price", " * ", "a.tax", " * ", "e.weee", ")"}
-	var buf bytes.Buffer
+	const want = "`e`.`price` AS `final_price`"
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Quoter.writeExprAlias(&buf, exprs, "final_price")
-		if !bytes.Equal(want, buf.Bytes()) {
-			b.Fatalf("Have %s\nWant %s\n", buf.String(), want)
+		if have := Quoter.NameAlias("e.price", "final_price"); have != want {
+			b.Fatalf("Have %s\nWant %s\n", have, want)
 		}
-		buf.Reset()
 	}
 }
 

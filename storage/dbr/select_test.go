@@ -60,7 +60,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	t.Run("column right expression without arguments", func(t *testing.T) {
 		sel := NewSelect("sku", "name").From("products").Where(
 			Column("id").NotBetween().Ints(4, 7),
-			Column("name").NotEqual().Expression("CONCAT('Canon','E0S 5D Mark III')"),
+			Column("name").NotEqual().Expr("CONCAT('Canon','E0S 5D Mark III')"),
 		)
 		compareToSQL(t, sel, nil,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` != CONCAT('Canon','E0S 5D Mark III'))",
@@ -72,7 +72,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	t.Run("column right expression with one argument", func(t *testing.T) {
 		sel := NewSelect("sku", "name").From("products").Where(
 			Column("id").NotBetween().Ints(4, 7),
-			Column("name").Like().Expression("CONCAT('Canon',?,'E0S 7D Mark VI')").Str("Camera"),
+			Column("name").Like().Expr("CONCAT('Canon',?,'E0S 7D Mark VI')").Str("Camera"),
 		)
 		compareToSQL(t, sel, nil,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` LIKE CONCAT('Canon',?,'E0S 7D Mark VI'))",
@@ -84,7 +84,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 	t.Run("column right expression with slice argument", func(t *testing.T) {
 		sel := NewSelect("sku", "name").From("products").Where(
 			Column("id").NotBetween().Ints(4, 7),
-			Column("name").NotLike().Expression("CONCAT('Canon',?,'E0S 8D Mark VII')").Strs("Camera", "Photo", "Flash"),
+			Column("name").NotLike().Expr("CONCAT('Canon',?,'E0S 8D Mark VII')").Strs("Camera", "Photo", "Flash"),
 		)
 		compareToSQL(t, sel, nil,
 			"SELECT `sku`, `name` FROM `products` WHERE (`id` NOT BETWEEN ? AND ?) AND (`name` NOT LIKE CONCAT('Canon',?,?,?,'E0S 8D Mark VII'))",
@@ -1017,7 +1017,7 @@ func TestSelect_Columns(t *testing.T) {
 
 	t.Run("AddColumnsExprAlias", func(t *testing.T) {
 		s := NewSelect().FromAlias("sales_bestsellers_aggregated_daily", "t3").
-			AddColumnsConditions(Expr("DATE_FORMAT(", "t3.period", ", '%Y-%m-01')").Alias("period"))
+			AddColumnsConditions(Expr("DATE_FORMAT(t3.period, '%Y-%m-01')").Alias("period"))
 		compareToSQL(t, s, nil,
 			"SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`",
 			"SELECT DATE_FORMAT(t3.period, '%Y-%m-01') AS `period` FROM `sales_bestsellers_aggregated_daily` AS `t3`",

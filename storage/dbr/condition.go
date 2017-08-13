@@ -205,25 +205,27 @@ type Condition struct {
 	// `IsLeftExpression` to true to avoid quoting of the this field. Left can also
 	// contain a string in the format `qualifier.identifier`.
 	Left string
-	// LeftExpression defines multiple strings as an expression. Each string
-	// gets written without any separator. If `LeftExpression` has been set, the
-	// field `Left` gets ignored.
-	LeftExpression expr
-	// Right defines the right hand side for an assignment
+	// IsLeftExpression if set to true, the field Left won't get quoted and
+	// treated as an expression. Additionally the field Right.Arguments will be
+	// read to extract any given args.
+	IsLeftExpression bool
+	// Right defines the right hand side for an assignment which can be either a
+	// single argument, multiple arguments in case of an expression, a sub
+	// select or a name of a column.
 	Right struct {
-		Argument argument // Only set in case of no expression
-		// Expression can contain multiple entries. Each slice item gets written
-		// into the buffer when the SQL string gets build. Usage in SET and ON
-		// DUPLICATE KEY.
-		Expression expr
-		Arguments  Arguments
+		Argument  argument // Only set in case of no expression
+		Arguments Arguments
 		// Select adds a sub-select to the where statement. Column must be
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
 		Sub *Select
 		// Column defines a column name to compare to. The column, with an
-		// optional qualifier, gets quoted.
+		// optional qualifier, gets quoted, in case IsExpression is false.
 		Column string
+		// IsExpression if true field `Column` gets treated as an expression.
+		// Additionally the field Right.Arguments will be read to extract any
+		// given args.
+		IsExpression bool
 	}
 	// Operator contains the comparison logic like LIKE, IN, GREATER, etc ...
 	// defaults to EQUAL.
@@ -284,7 +286,7 @@ func (c *Condition) Or() *Condition {
 }
 
 func (c *Condition) isExpression() bool {
-	return c.LeftExpression.isset() || c.Right.Expression.isset()
+	return c.IsLeftExpression || c.Right.IsExpression
 }
 
 // intersectConditions iterates over each WHERE fragment and appends all
@@ -334,9 +336,10 @@ func Column(columnName string) *Condition {
 // Expr adds an unquoted SQL expression to a column, WHERE, HAVING, SET or ON DUPLICATE
 // KEY statement. Each item of an expression gets written into the buffer
 // without a separator.
-func Expr(expression ...string) *Condition {
+func Expr(expression string) *Condition {
 	return &Condition{
-		LeftExpression: expression,
+		Left:             expression,
+		IsLeftExpression: true,
 	}
 }
 
@@ -486,10 +489,11 @@ func (c *Condition) Sub(sub *Select) *Condition {
 	return c
 }
 
-// Expression compares the left hand side with the expression of the right hand
+// Expr compares the left hand side with the expression of the right hand
 // side.
-func (c *Condition) Expression(exp ...string) *Condition {
-	c.Right.Expression = exp
+func (c *Condition) Expr(expression string) *Condition {
+	c.Right.Column = expression
+	c.Right.IsExpression = c.Right.Column != ""
 	return c
 }
 
@@ -708,13 +712,15 @@ func (c *Condition) DriverValues(dv ...driver.Valuer) *Condition {
 
 // SQLCase see description at function SQLCase.
 func (c *Condition) SQLCase(value, defaultValue string, compareResult ...string) *Condition {
-	c.Right.Expression = sqlCase(value, defaultValue, compareResult...)
+	c.Right.Column = sqlCase(value, defaultValue, compareResult...)
+	c.Right.IsExpression = c.Right.Column != ""
 	return c
 }
 
 // SQLIfNull see description at function SQLIfNull.
 func (c *Condition) SQLIfNull(expression ...string) *Condition {
-	c.Right.Expression = sqlIfNull(expression)
+	c.Right.Column = sqlIfNull(expression)
+	c.Right.IsExpression = c.Right.Column != ""
 	return c
 }
 
@@ -786,8 +792,8 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 		w.WriteByte('(')
 		// Code is a bit duplicated but can be refactored later.
 		switch {
-		case cnd.LeftExpression.isset():
-			phCount, err := cnd.LeftExpression.write(w, cnd.Right.Arguments)
+		case cnd.IsLeftExpression:
+			phCount, err := writeExpression(w, cnd.Left, cnd.Right.Arguments)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -804,10 +810,10 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			// TODO a case where left and right are expressions
 			// if cnd.Right.Expression.isset() {
 			// }
-		case cnd.Right.Expression.isset():
+		case cnd.Right.IsExpression:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cnd.Operator.write(w, 0) // must be zero because place holder get handled via repeatPlaceHolders function
-			cnd.Right.Expression.write(w, cnd.Right.Arguments)
+			writeExpression(w, cnd.Right.Column, cnd.Right.Arguments)
 
 		case cnd.Right.Sub != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
@@ -945,8 +951,8 @@ func (cs Conditions) writeSetClauses(w *bytes.Buffer) error {
 		w.WriteByte('=')
 
 		switch {
-		case cnd.Right.Expression.isset(): // maybe that case is superfluous
-			cnd.Right.Expression.write(w, nil)
+		case cnd.Right.IsExpression: // maybe that case is superfluous
+			writeExpression(w, cnd.Right.Column, nil)
 		case cnd.Right.Sub != nil:
 			w.WriteByte('(')
 			if err := cnd.Right.Sub.toSQL(w); err != nil {
@@ -996,8 +1002,8 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 		w.WriteByte('=')
 
 		switch {
-		case cnd.Right.Expression.isset(): // maybe that case is superfluous
-			cnd.Right.Expression.write(w, nil)
+		case cnd.Right.IsExpression: // maybe that case is superfluous
+			writeExpression(w, cnd.Right.Column, nil)
 		//case cnd.Right.Sub != nil:
 		//	w.WriteByte('(')
 		//	if err := cnd.Right.Sub.toSQL(w); err != nil {
