@@ -331,16 +331,17 @@ func (mq MysqlQuoter) NameAlias(name, alias string) string {
 // won't get stripped.
 //		WriteIdentifier(&buf,"tableName.ColumnName") -> `tableName`.`ColumnName`
 func (mq MysqlQuoter) WriteIdentifier(w *bytes.Buffer, name string) {
-	if name == "" {
+	switch {
+	case name == "":
 		return
-	}
-	// checks if there are quotes at the beginning and at the end. no white spaces allowed.
-	if strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote) {
+	case name == "NULL": // see calling func sqlIfNullQuote2
+		w.WriteString(name)
+		return
+	case strings.HasPrefix(name, quote) && strings.HasSuffix(name, quote): // not really secure
+		// checks if there are quotes at the beginning and at the end. no white spaces allowed.
 		w.WriteString(name) // already quoted
 		return
-	}
-
-	if strings.IndexByte(name, '.') == -1 {
+	case strings.IndexByte(name, '.') == -1:
 		// must be quoted
 		mq.quote(w, name)
 		return

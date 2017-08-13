@@ -345,3 +345,31 @@ func TestExpression(t *testing.T) {
 		)
 	})
 }
+
+func TestCondition_Column(t *testing.T) {
+	t.Parallel()
+	sel := NewSelect("t_d.attribute_id", "e.entity_id").
+		AddColumnsAliases("t_d.value", "default_value").
+		AddColumnsConditions(SQLIf("t_s.value_id IS NULL", "t_d.value", "t_s.value").Alias("value")).
+		AddColumnsConditions(SQLIf("? IS NULL", "t_d.value", "t_s.value").NullFloat64(MakeNullFloat64(2.718281)).Alias("value")).
+		FromAlias("catalog_category_entity", "e").
+		Join(
+			MakeIdentifier("catalog_category_entity_varchar").Alias("t_d"), // t_d = table scope default
+			Column("e.entity_id").Equal().Column("t_d.entity_id"),
+		).
+		LeftJoin(
+			MakeIdentifier("catalog_category_entity_varchar").Alias("t_s"), // t_s = table scope store
+			Column("t_s.attribute_id").GreaterOrEqual().Column("t_d.attribute_id"),
+		).
+		Where(
+			Column("e.entity_id").In().Int64s(28, 16, 25, 17),
+			Column("t_d.attribute_id").In().Int64s(45),
+			Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"),
+		)
+
+	compareToSQL(t, sel, nil,
+		"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((? IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (?,?,?,?)) AND (`t_d`.`attribute_id` IN (?)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
+		"SELECT `t_d`.`attribute_id`, `e`.`entity_id`, `t_d`.`value` AS `default_value`, IF((t_s.value_id IS NULL), t_d.value, t_s.value) AS `value`, IF((2.718281 IS NULL), t_d.value, t_s.value) AS `value` FROM `catalog_category_entity` AS `e` INNER JOIN `catalog_category_entity_varchar` AS `t_d` ON (`e`.`entity_id` = `t_d`.`entity_id`) LEFT JOIN `catalog_category_entity_varchar` AS `t_s` ON (`t_s`.`attribute_id` >= `t_d`.`attribute_id`) WHERE (`e`.`entity_id` IN (28,16,25,17)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0))",
+		2.718281, int64(28), int64(16), int64(25), int64(17), int64(45),
+	)
+}

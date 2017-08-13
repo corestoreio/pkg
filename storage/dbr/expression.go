@@ -70,11 +70,17 @@ func (e expr) isset() bool {
 // it returns expr2. IFNULL() returns a numeric or string value, depending on
 // the context in which it is used.
 func SQLIfNull(expression ...string) *Condition {
+	return &Condition{
+		LeftExpression: sqlIfNull(expression),
+	}
+}
+
+func sqlIfNull(expression []string) expr {
 	buf := bufferpool.Get()
 
 	switch len(expression) {
 	case 1:
-		sqlIfNullQuote2(buf, expression[0], "NULL ")
+		sqlIfNullQuote2(buf, expression[0], "NULL")
 	case 2:
 		// Input:  dbr.SQLIfNull(col1,col2)
 		// Output: IFNULL(`col1`, `col2`)
@@ -90,9 +96,7 @@ func SQLIfNull(expression ...string) *Condition {
 		panic(errors.NewNotValidf("[dbr] Invalid number of arguments. Max 4 arguments allowed, got: %v", expression))
 
 	}
-	ret := &Condition{
-		LeftExpression: []string{buf.String()},
-	}
+	ret := []string{buf.String()}
 	bufferpool.Put(buf)
 	return ret
 }
@@ -102,17 +106,13 @@ func sqlIfNullQuote2(w *bytes.Buffer, expressionAlias ...string) {
 	if isValidIdentifier(expressionAlias[0]) == 0 {
 		Quoter.WriteIdentifier(w, expressionAlias[0])
 	} else {
-		w.WriteByte('(')
 		w.WriteString(expressionAlias[0])
-		w.WriteByte(')')
 	}
 	w.WriteByte(',')
 	if isValidIdentifier(expressionAlias[1]) == 0 {
 		Quoter.WriteIdentifier(w, expressionAlias[1])
 	} else {
-		w.WriteByte('(')
 		w.WriteString(expressionAlias[1])
-		w.WriteByte(')')
 	}
 	w.WriteByte(')')
 }

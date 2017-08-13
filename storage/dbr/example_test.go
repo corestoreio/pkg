@@ -74,7 +74,7 @@ func writeToSQLAndInterpolate(qb dbr.QueryBuilder) {
 	if len(args) == 0 {
 		return
 	}
-	// TODO(CyS) iFaceToArgs is a hacky way, better API design needs to be crafted.
+	// iFaceToArgs is a hacky way, but works for examples, not in production!
 	sqlStr = dbr.Interpolate(sqlStr).ArgUnions(iFaceToArgs(args...)).String()
 	fmt.Println("Interpolated Statement:")
 	wordwrap.Fstring(os.Stdout, sqlStr, 80)
@@ -598,13 +598,13 @@ func ExampleSQLIfNull() {
 	fmt.Print(strings.Replace(sStr, ", ", ",\n", -1))
 
 	//Output:
-	//SELECT IFNULL(`column1`,(NULL )),
-	//IFNULL(`table1`.`column1`,(NULL )),
+	//SELECT IFNULL(`column1`,NULL),
+	//IFNULL(`table1`.`column1`,NULL),
 	//IFNULL(`column1`,`column2`),
 	//IFNULL(`table1`.`column1`,`table2`.`column2`),
-	//IFNULL(`column2`,(1/0)) AS `alias`,
-	//IFNULL((SELECT * FROM x),(8)) AS `alias`,
-	//IFNULL((SELECT * FROM x),(9 )) AS `alias`,
+	//IFNULL(`column2`,1/0) AS `alias`,
+	//IFNULL(SELECT * FROM x,8) AS `alias`,
+	//IFNULL(SELECT * FROM x,9 ) AS `alias`,
 	//IFNULL(`column1`,`column2`) AS `alias`,
 	//IFNULL(`table1`.`column1`,`table2`.`column2`) AS `alias`,
 	//IFNULL(`table1`.`column1`,`table2`.`column2`),
@@ -688,8 +688,49 @@ func ExampleSQLCase_select() {
 	//(`promotion_id` NOT IN (4711,815,42))
 }
 
-func ExampleSelect_SetRecord() {
+func xxxxExampleSelect_SetRecord() {
+	/*
+	   SELECT
+	      `t_d`.`attribute_id`,
+	      `e`.`entity_id`,
+	      `t_d`.`value` AS `default_value`,
+	      `t_s`.`value` AS `store_value`,
+	      IF(t_s.value_id IS NULL, t_d.value, t_s.value) AS `value`
+	   FROM
+	      `catalog_category_entity` AS `e`
+	      INNER JOIN
+	         `catalog_category_entity_varchar` AS `t_d`
+	         ON e.entity_id = t_d.entity_id
+	      LEFT JOIN
+	         `catalog_category_entity_varchar` AS `t_s`
+	         ON t_s.attribute_id = t_d.attribute_id
+	         AND t_s.entity_id = t_d.entity_id
+	         AND t_s.store_id = 1
+	   WHERE (e.entity_id IN (38,20,11,3,9,37,4,10,12,21,5,13,22,6,14,18,23,27,15,19,24,28,16,25,17,26))
+	      AND (t_d.attribute_id IN  ('45'))
+	      AND (t_d.store_id = IFNULL(t_s.store_id, 0))
+	   ;
+	*/
 
+	s := dbr.NewSelect("t_d.attribute_id", "e.entity_id").
+		AddColumnsAliases("t_d.value", "default_value").
+		AddColumnsConditions(dbr.SQLIf("t_s.value_id IS NULL", "t_d.value", "t_s.value").Alias("value")).
+		FromAlias("catalog_category_entity", "e").
+		Join(
+			dbr.MakeIdentifier("catalog_category_entity_varchar").Alias("t_d"), // t_d = table scope default
+			dbr.Column("e.entity_id").Equal().Column("t_d.entity_id"),
+		).
+		LeftJoin(
+			dbr.MakeIdentifier("catalog_category_entity_varchar").Alias("t_s"), // t_s = table scope store
+			dbr.Column("t_s.attribute_id").Equal().Column("t_d.attribute_id"),
+		).
+		Where(
+			dbr.Column("e.entity_id").In().Int64s(28, 16, 25, 17, 26),
+			dbr.Column("t_d.attribute_id").In().Int64s(45),
+			dbr.Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"),
+		)
+
+	writeToSQLAndInterpolate(s)
 	//start := dbr.MakeTime(time.Unix(1257894000, 0))
 	//end := dbr.MakeTime(time.Unix(1257980400, 0))
 	//s := dbr.NewSelect().AddColumns("price", "sku", "name", "title", "description").

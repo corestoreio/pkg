@@ -221,6 +221,9 @@ type Condition struct {
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
 		Sub *Select
+		// Column defines a column name to compare to. The column, with an
+		// optional qualifier, gets quoted.
+		Column string
 	}
 	// Operator contains the comparison logic like LIKE, IN, GREATER, etc ...
 	// defaults to EQUAL.
@@ -458,6 +461,12 @@ func (c *Condition) Coalesce() *Condition {
 ///////////////////////////////////////////////////////////////////////////////
 //		TYPES
 ///////////////////////////////////////////////////////////////////////////////
+
+// Column compares the left hand side with this column name.
+func (c *Condition) Column(col string) *Condition {
+	c.Right.Column = col
+	return c
+}
 
 // PlaceHolder sets the database specific place holder character. Mostly used in
 // prepared statements and for interpolation.
@@ -703,6 +712,12 @@ func (c *Condition) SQLCase(value, defaultValue string, compareResult ...string)
 	return c
 }
 
+// SQLIfNull see description at function SQLIfNull.
+func (c *Condition) SQLIfNull(expression ...string) *Condition {
+	c.Right.Expression = sqlIfNull(expression)
+	return c
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //		INTERNAL
 ///////////////////////////////////////////////////////////////////////////////
@@ -803,7 +818,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			}
 			w.WriteByte(')')
 
-			// One Argument
+			// One Argument and no expression
 		case cnd.Right.Argument.isSet && cnd.Right.Arguments == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			al := cnd.Right.Argument.len()
@@ -815,6 +830,7 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			}
 			cnd.Operator.write(w, al)
 
+			// No Argument and expression arguments
 		case !cnd.Right.Argument.isSet && cnd.Right.Arguments != nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			al := cnd.Right.Arguments.Len()
@@ -827,7 +843,13 @@ func (cs Conditions) write(w *bytes.Buffer, conditionType byte) error {
 			}
 			cnd.Operator.write(w, al)
 
-			// No Argument at all
+			// compares the left column with the right column
+		case cnd.Right.Column != "":
+			Quoter.WriteIdentifier(w, cnd.Left)
+			cnd.Operator.write(w, 0)
+			Quoter.WriteIdentifier(w, cnd.Right.Column)
+
+			// No Argument at all, which kinda is the default case
 		case !cnd.Right.Argument.isSet && cnd.Right.Arguments == nil:
 			Quoter.WriteIdentifier(w, cnd.Left)
 			cOp := cnd.Operator

@@ -74,24 +74,24 @@ func TestSQLIfNull(t *testing.T) {
 		}
 	}
 	t.Run("1 args expression", runner(
-		"IFNULL((1/0),(NULL ))",
+		"IFNULL(1/0,NULL)",
 		"1/0",
 	))
 	t.Run("1 args no qualifier", runner(
-		"IFNULL(`c1`,(NULL ))",
+		"IFNULL(`c1`,NULL)",
 		"c1",
 	))
 	t.Run("1 args with qualifier", runner(
-		"IFNULL(`t1`.`c1`,(NULL ))",
+		"IFNULL(`t1`.`c1`,NULL)",
 		"t1.c1",
 	))
 
 	t.Run("2 args expression left", runner(
-		"IFNULL((1/0),`c2`)",
+		"IFNULL(1/0,`c2`)",
 		"1/0", "c2",
 	))
 	t.Run("2 args expression right", runner(
-		"IFNULL(`c2`,(1/0))",
+		"IFNULL(`c2`,1/0)",
 		"c2", "1/0",
 	))
 	t.Run("2 args no qualifier", runner(
@@ -104,11 +104,11 @@ func TestSQLIfNull(t *testing.T) {
 	))
 
 	t.Run("3 args expression left", runner(
-		"IFNULL((1/0),`c2`)",
+		"IFNULL(1/0,`c2`)",
 		"1/0", "c2",
 	))
 	t.Run("3 args expression right", runner(
-		"IFNULL(`c2`,(1/0))",
+		"IFNULL(`c2`,1/0)",
 		"c2", "1/0",
 	))
 	t.Run("3 args no qualifier", runner(

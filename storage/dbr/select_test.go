@@ -1347,7 +1347,7 @@ func TestSelect_UseBuildCache(t *testing.T) {
 	})
 }
 
-func TestSelect_AddRecord(t *testing.T) {
+func TestSelect_SetRecord(t *testing.T) {
 	t.Parallel()
 	p := &dbrPerson{
 		ID:    6666,
