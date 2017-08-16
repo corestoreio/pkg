@@ -19,10 +19,10 @@ import (
 	"database/sql"
 )
 
-// These interfaces are private on purpose. No need to export them.
-
-// preparer prepares a query.
-type preparer interface {
+// Preparer prepares a query in the server. The underlying type can be either a
+// *sql.DB (connection pool), a *sql.Conn (a single dedicated database session)
+// or a *sql.Tx (an in-progress database transaction).
+type Preparer interface {
 	// PrepareContext - the provided context is used for the preparation of the
 	// statement, not for the execution of the statement.
 	// PrepareContext creates a prepared statement for later queries or
@@ -32,61 +32,37 @@ type preparer interface {
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 }
 
-// execer can execute a non-returning query.
-type execer interface {
+// Execer can execute a non-returning query. The underlying type can be either a
+// *sql.DB (connection pool), a *sql.Conn (a single dedicated database session)
+// or a *sql.Tx (an in-progress database transaction).
+type Execer interface {
 	// ExecContext executes a query that doesn't return rows.
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }
 
-// execPreparer a composite interface which can execute and prepare a query.
-type execPreparer interface {
-	preparer
-	execer
+// ExecPreparer a composite interface which can execute and prepare a query. The
+// underlying type can be either a *sql.DB (connection pool), a *sql.Conn (a
+// single dedicated database session) or a *sql.Tx (an in-progress database
+// transaction).
+type ExecPreparer interface {
+	Preparer
+	Execer
 }
 
-// querier can execute a returning query.
-type querier interface {
+// Querier can execute a returning query. The underlying type can be either a
+// *sql.DB (connection pool), a *sql.Conn (a single dedicated database session)
+// or a *sql.Tx (an in-progress database transaction).
+type Querier interface {
 	// QueryContext executes a query that returns rows, typically a SELECT. The
 	// args are for any placeholder parameters in the query.
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 }
 
-// queryPreparer can execute a returning query and prepare a returning query.
-type queryPreparer interface {
-	preparer
-	querier
-}
-
-// txer is an in-progress database transaction.
-//
-// A transaction must end with a call to Commit or Rollback.
-//
-// After a call to Commit or Rollback, all operations on the transaction fail
-// with ErrTxDone.
-//
-// The statements prepared for a transaction by calling the transaction'ab
-// Prepare or Stmt methods are closed by the call to Commit or Rollback.
-type txer interface {
-	Commit() error
-	Rollback() error
-	Stmt(stmt *sql.Stmt) *sql.Stmt
-	execer
-	preparer
-	querier
-}
-
-var _ txer = (*txMock)(nil)
-
-// txMock does nothing and returns always nil
-type txMock struct{}
-
-func (txMock) Commit() error                                                       { return nil }
-func (txMock) Rollback() error                                                     { return nil }
-func (txMock) Stmt(stmt *sql.Stmt) *sql.Stmt                                       { return nil }
-func (txMock) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) { return nil, nil }
-func (txMock) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return nil, nil
-}
-func (txMock) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	return nil, nil
+// QueryPreparer can execute a returning query and prepare a returning query.
+// The underlying type can be either a *sql.DB (connection pool), a *sql.Conn (a
+// single dedicated database session) or a *sql.Tx (an in-progress database
+// transaction).
+type QueryPreparer interface {
+	Preparer
+	Querier
 }
