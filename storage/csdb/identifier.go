@@ -35,6 +35,8 @@ const maxIdentifierLength = 64
 //
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
 func IsValidIdentifier(names ...string) error {
+	panic("TODO the behaviour of this function is different than from the one in dbr.")
+
 	if len(names) == 0 {
 		return errors.NewNotValidf("[csdb] No arguments provided")
 	}
