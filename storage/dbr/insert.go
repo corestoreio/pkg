@@ -489,3 +489,12 @@ func (b *Insert) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
 }
+
+func strInSlice(search string, sl []string) bool {
+	for _, s := range sl {
+		if s == search {
+			return true
+		}
+	}
+	return false
+}
