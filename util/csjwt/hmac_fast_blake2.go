@@ -15,12 +15,13 @@
 package csjwt
 
 import (
+	"crypto"
 	"crypto/hmac"
 	"hash"
 
 	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/corestoreio/errors"
-	"golang.org/x/crypto/blake2b"
+	_ "golang.org/x/crypto/blake2b"
 )
 
 // NewSigningMethodBlake2b256 creates a new HMAC-Blake2b hash with a preset
@@ -37,10 +38,7 @@ func NewSigningMethodBlake2b256(key Key) (Signer, error) {
 	return &SigningMethodHSFast{
 		Name: Blake2b256,
 		ht: hashpool.New(func() hash.Hash {
-			return hmac.New(func() hash.Hash {
-				h, _ := blake2b.New256(nil)
-				return h
-			}, key.hmacPassword)
+			return hmac.New(crypto.BLAKE2b_256.New, key.hmacPassword)
 		}),
 	}, nil
 }
@@ -58,9 +56,6 @@ func NewSigningMethodBlake2b512(key Key) (Signer, error) {
 
 	return &SigningMethodHSFast{
 		Name: Blake2b512,
-		ht: hashpool.New(func() hash.Hash {
-			h, _ := blake2b.New512(nil)
-			return h
-		}),
+		ht:   hashpool.New(crypto.BLAKE2b_512.New),
 	}, nil
 }
