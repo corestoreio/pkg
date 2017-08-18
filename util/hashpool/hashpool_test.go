@@ -16,7 +16,7 @@ package hashpool_test
 
 import (
 	"bytes"
-	"crypto/sha256"
+	"crypto"
 	"encoding/hex"
 	"hash"
 	"hash/crc64"
@@ -29,7 +29,7 @@ import (
 	"github.com/dchest/siphash"
 	"github.com/pierrec/xxHash/xxHash64"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/blake2b"
+	_ "golang.org/x/crypto/blake2b"
 )
 
 var data = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
@@ -56,14 +56,14 @@ func TestNew64(t *testing.T) {
 }
 
 func TestTank_Equal(t *testing.T) {
-	hp := hashpool.New(sha256.New)
+	hp := hashpool.New(crypto.SHA256.New)
 	mac, err := hex.DecodeString(dataSHA256)
 	assert.NoError(t, err)
 	assert.True(t, hp.Equal(data, mac))
 }
 
 func TestTank_EqualReader(t *testing.T) {
-	hp := hashpool.New(sha256.New)
+	hp := hashpool.New(crypto.SHA256.New)
 	mac, err := hex.DecodeString(dataSHA256)
 	assert.NoError(t, err)
 	isEqual, err := hp.EqualReader(bytes.NewReader(data), mac)
@@ -72,7 +72,7 @@ func TestTank_EqualReader(t *testing.T) {
 }
 
 func TestTank_EqualReader_Error(t *testing.T) {
-	hp := hashpool.New(sha256.New)
+	hp := hashpool.New(crypto.SHA256.New)
 	mac, err := hex.DecodeString(dataSHA256)
 	assert.NoError(t, err)
 	isEqual, err := hp.EqualReader(readerError{}, mac)
@@ -86,7 +86,7 @@ func TestTank_EqualPairs(t *testing.T) {
 	p1 := []byte(`password1`)
 	p2 := []byte(`password1`)
 
-	hp := hashpool.New(sha256.New)
+	hp := hashpool.New(crypto.SHA256.New)
 	tests := []struct {
 		pairs [][]byte
 		want  bool
@@ -115,7 +115,7 @@ func BenchmarkTank_EqualPairs_SHA256_4args(b *testing.B) {
 	u2 := []byte(`username1`)
 	p1 := []byte(`password1`)
 	p2 := []byte(`password1`)
-	hp := hashpool.New(sha256.New)
+	hp := hashpool.New(crypto.SHA256.New)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -132,14 +132,14 @@ func (readerError) Read(p []byte) (int, error) {
 }
 
 func TestTank_SumHex(t *testing.T) {
-	hp := hashpool.New(sha256.New)
+	hp := hashpool.New(crypto.SHA256.New)
 	if have, want := hp.SumHex(data), dataSHA256; have != want {
 		t.Errorf("Have: %v Want: %v", have, want)
 	}
 }
 
 func BenchmarkTank_SumHex_SHA256(b *testing.B) {
-	hp := hashpool.New(sha256.New)
+	hp := hashpool.New(crypto.SHA256.New)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -152,10 +152,7 @@ func BenchmarkTank_SumHex_SHA256(b *testing.B) {
 func BenchmarkTank_SumHex_Blake2b256(b *testing.B) {
 	const dataBlake2b256 = "00fad91702b9d9cfce8f6d3a7e2134283aa370b453e033ed6442dfef2a5c8089"
 
-	hp := hashpool.New(func() hash.Hash {
-		h, _ := blake2b.New256(nil)
-		return h
-	})
+	hp := hashpool.New(crypto.BLAKE2b_256.New)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

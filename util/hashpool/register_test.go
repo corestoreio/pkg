@@ -15,8 +15,7 @@
 package hashpool
 
 import (
-	"crypto/sha256"
-	"crypto/sha512"
+	"crypto"
 	"hash/fnv"
 	"testing"
 
@@ -75,7 +74,7 @@ func TestMustFromRegister(t *testing.T) {
 }
 
 func TestRegisterDeregister(t *testing.T) {
-	assert.NoError(t, Register("sha256", sha256.New))
+	assert.NoError(t, Register("sha256", crypto.SHA256.New))
 
 	assert.True(t, errors.IsAlreadyExists(Register("sha256", nil)))
 
@@ -96,7 +95,7 @@ func TestFromRegistryHMAC_Error(t *testing.T) {
 }
 
 func TestFromRegistryHMAC(t *testing.T) {
-	assert.NoError(t, Register("sha512", sha512.New))
+	assert.NoError(t, Register("sha512", crypto.SHA512.New))
 
 	s512t, err := FromRegistryHMAC("sha512", []byte(`pw123456`))
 	assert.NoError(t, err)
