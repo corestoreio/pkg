@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -39,11 +38,11 @@ var TimeFunc = time.Now
 // Token represents a JWT Token.  Different fields will be used depending on
 // whether you're creating or parsing/verifying a token.
 type Token struct {
-	Raw       text.Chars // The raw token.  Populated when you Parse a token
-	Header    Header     // The first segment of the token
-	Claims    Claimer    // The second segment of the token
-	Signature text.Chars // The third segment of the token.  Populated when you Parse a token
-	Valid     bool       // Is the token valid?  Populated when you Parse/Verify a token
+	Raw       []byte  // The raw token.  Populated when you Parse a token
+	Header    Header  // The first segment of the token
+	Claims    Claimer // The second segment of the token
+	Signature []byte  // The third segment of the token.  Populated when you Parse a token
+	Valid     bool    // Is the token valid?  Populated when you Parse/Verify a token
 	Serializer
 }
 
@@ -72,7 +71,7 @@ func (t Token) Alg() string {
 // provided Signer.Alg() value. Returns a byte slice, save for further
 // processing. This functions allows to sign a token with different signing
 // methods.
-func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
+func (t Token) SignedString(method Signer, key Key) ([]byte, error) {
 
 	if err := t.Header.Set(headerAlg, method.Alg()); err != nil {
 		return nil, errors.Wrap(err, "[csjwt] Header.Set")

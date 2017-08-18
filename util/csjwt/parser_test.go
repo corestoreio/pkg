@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
@@ -239,7 +238,7 @@ func TestVerification_ParseFromRequest_Complex(t *testing.T) {
 
 func TestVerification_Parse_BearerInHeader(t *testing.T) {
 
-	token := text.Chars(`BEaRER `)
+	token := []byte(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
 
 	haveToken := csjwt.NewToken(&jwtclaim.Map{})

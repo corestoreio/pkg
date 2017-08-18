@@ -20,7 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/corestoreio/errors"
-	"github.com/minio/blake2b-simd"
+	"golang.org/x/crypto/blake2b"
 )
 
 // NewSigningMethodBlake2b256 creates a new HMAC-Blake2b hash with a preset
@@ -37,7 +37,10 @@ func NewSigningMethodBlake2b256(key Key) (Signer, error) {
 	return &SigningMethodHSFast{
 		Name: Blake2b256,
 		ht: hashpool.New(func() hash.Hash {
-			return hmac.New(blake2b.New256, key.hmacPassword)
+			return hmac.New(func() hash.Hash {
+				h, _ := blake2b.New256(nil)
+				return h
+			}, key.hmacPassword)
 		}),
 	}, nil
 }
@@ -56,7 +59,8 @@ func NewSigningMethodBlake2b512(key Key) (Signer, error) {
 	return &SigningMethodHSFast{
 		Name: Blake2b512,
 		ht: hashpool.New(func() hash.Hash {
-			return hmac.New(blake2b.New512, key.hmacPassword)
+			h, _ := blake2b.New512(nil)
+			return h
 		}),
 	}, nil
 }

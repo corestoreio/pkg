@@ -44,4 +44,6 @@
 // https://github.com/shieldfy/API-Security-Checklist
 //
 // https://dadario.com.br/revoking-json-web-tokens/
+//
+// TODO(CyS) move RSA and ECDSA into its own subpackage ...
 package csjwt
