@@ -27,9 +27,9 @@ import (
 	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/corestoreio/errors"
 	"github.com/dchest/siphash"
-	"github.com/minio/blake2b-simd"
 	"github.com/pierrec/xxHash/xxHash64"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/blake2b"
 )
 
 var data = []byte(`“The most important property of a program is whether it accomplishes the intention of its user.” ― C.A.R. Hoare`)
@@ -152,7 +152,10 @@ func BenchmarkTank_SumHex_SHA256(b *testing.B) {
 func BenchmarkTank_SumHex_Blake2b256(b *testing.B) {
 	const dataBlake2b256 = "00fad91702b9d9cfce8f6d3a7e2134283aa370b453e033ed6442dfef2a5c8089"
 
-	hp := hashpool.New(blake2b.New256)
+	hp := hashpool.New(func() hash.Hash {
+		h, _ := blake2b.New256(nil)
+		return h
+	})
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
