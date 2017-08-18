@@ -1374,7 +1374,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("n").Str("wh3r3"),
 			).
 			OrderBy("l").
-			SetRecord(p)
+			BindByQualifier("dp", p)
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a`, `b` FROM `dbr_person` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) WHERE ((`name` = ?) OR (`e` = ?)) AND (`f` <= ?) AND (`g` > ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING (`email` = ?) AND (`n` = ?) ORDER BY `l`",
@@ -1383,13 +1383,13 @@ func TestSelect_SetRecord(t *testing.T) {
 		)
 	})
 	t.Run("single arg JOIN", func(t *testing.T) {
-		sel := NewSelect("a").From("dbr_people").
+		sel := NewSelect("a").FromAlias("dbr_people", "dp").
 			Join(MakeIdentifier("dbr_group").Alias("dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strs("XY%")).
-			SetRecord(p).OrderBy("id")
+			Bind(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
-			"SELECT `a` FROM `dbr_people` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) AND (`dg`.`name` = ?) ORDER BY `id`",
-			"SELECT `a` FROM `dbr_people` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = 6666) AND (`dg`.`name` = 'XY%') ORDER BY `id`",
+			"SELECT `a` FROM `dbr_people` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) AND (`dg`.`name` = ?) ORDER BY `id`",
+			"SELECT `a` FROM `dbr_people` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = 6666) AND (`dg`.`name` = 'XY%') ORDER BY `id`",
 			int64(6666), "XY%",
 		)
 	})
@@ -1398,7 +1398,7 @@ func TestSelect_SetRecord(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).
-			SetRecord(p).OrderBy("id")
+			Bind(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -1412,7 +1412,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("id").PlaceHolder(),
 				Column("name").Like().PlaceHolder(),
 			).
-			SetRecord(p).OrderBy("id")
+			Bind(p).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` HAVING (`id` = ?) AND (`name` LIKE ?) ORDER BY `id`",
@@ -1420,4 +1420,29 @@ func TestSelect_SetRecord(t *testing.T) {
 			int64(6666), "Hans Wurst",
 		)
 	})
+
+	t.Run("slice as record - nice feature", func(t *testing.T) {
+		persons := &dbrPersons{
+			Data: []*dbrPerson{
+				{Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
+				{Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
+				{Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
+			},
+		}
+
+		compareToSQL(t,
+			NewSelect("name", "email").From("dbr_person").
+				Where(
+					Column("name").In().PlaceHolder(),
+					Column("email").In().PlaceHolder(),
+				).
+				Bind(persons),
+			nil,
+			"SELECT `name`, `email` FROM `dbr_person` WHERE (`name` IN (?)) AND (`email` IN (?))",
+			"SELECT `name`, `email` FROM `dbr_person` WHERE (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry'))",
+			"Muffin Hat", "Marianne Phyllis Finch", "Daphne Augusta Perry",
+			"Muffin@Hat.head", "marianne@phyllis.finch", "daphne@augusta.perry",
+		)
+	})
+
 }

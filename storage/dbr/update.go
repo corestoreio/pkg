@@ -31,13 +31,13 @@ type Update struct {
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB execPreparer
+	DB ExecPreparer
 
 	// TODO: add UPDATE JOINS SQLStmtUpdateJoin
 
 	// SetClausAliases only applicable in case when Record field has been set or
 	// ExecMulti gets used. `SetClausAliases` contains the lis of column names
-	// which gets passed to the ArgumentsAppender function. If empty
+	// which gets passed to the Binder function. If empty
 	// `SetClausAliases` collects the column names from the `SetClauses`. The
 	// alias slice must have the same length as the columns slice. Despite
 	// setting `SetClausAliases` the SetClauses.Columns must be provided to
@@ -89,7 +89,7 @@ func (b *Update) Alias(alias string) *Update {
 }
 
 // WithDB sets the database query object.
-func (b *Update) WithDB(db execPreparer) *Update {
+func (b *Update) WithDB(db ExecPreparer) *Update {
 	b.DB = db
 	return b
 }
@@ -108,7 +108,7 @@ func (b *Update) Set(c ...*Condition) *Update {
 }
 
 // AddColumns adds columns which values gets later derived from an
-// ArgumentsAppender. Those columns will get passed to the ArgumentsAppender
+// Binder. Those columns will get passed to the Binder
 // implementation. Mostly used with the type Update.
 func (b *Update) AddColumns(columnNames ...string) *Update {
 	for _, col := range columnNames {
@@ -117,10 +117,26 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 	return b
 }
 
-// SetRecord sets a new argument generator type. See the example for more
-// details.
-func (b *Update) SetRecord(rec ArgumentsAppender) *Update {
-	b.Record = rec
+// Bind binds the object to the main table for assembling and appending
+// arguments. An Binder gets called if it matches the qualifier, in
+// this case the current table name or its alias. This function panics if the
+// table name or its alias is empty. This function resets the internal slice.
+func (b *Update) Bind(obj Binder) *Update {
+	if b.ArgumentsAppender == nil {
+		b.ArgumentsAppender = make(map[string]Binder)
+	}
+	b.ArgumentsAppender[b.Table.mustQualifier()] = obj
+	return b
+}
+
+// BindByQualifier binds the object to a specific qualifier for assembling and
+// appending arguments. The qualifier can be in this case a table name or an
+// alias of a JOIN or sub query statement.
+func (b *Update) BindByQualifier(qualifier string, obj Binder) *Update {
+	if b.ArgumentsAppender == nil {
+		b.ArgumentsAppender = make(map[string]Binder)
+	}
+	b.ArgumentsAppender[qualifier] = obj
 	return b
 }
 
@@ -234,7 +250,7 @@ func (b *Update) toSQL(buf *bytes.Buffer) error {
 
 // ToSQL serialized the Update to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *Update) appendArgs(args Arguments) (Arguments, error) {
+func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if b.RawFullSQL != "" {
 		return b.RawArguments, nil
@@ -243,14 +259,23 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 	if cap(args) == 0 {
 		args = make(Arguments, 0, len(b.SetClauses)+len(b.Wheres))
 	}
-	var err error
-	if b.Record != nil {
+
+	if b.ArgumentsAppender != nil {
 		if len(b.SetClausAliases) == 0 {
 			b.SetClausAliases = b.SetClauses.leftHands(b.SetClausAliases)
 		}
-		args, err = b.Record.AppendArguments(sqlStmtUpdate|sqlPartSet, args, b.SetClausAliases)
-		if err != nil {
-			return nil, errors.WithStack(err)
+
+		qualifier := b.Table.mustQualifier() // if this panics, you have different problems.
+
+		if aa, ok := b.ArgumentsAppender[qualifier]; ok {
+			var argCol [1]string
+			for _, col := range b.SetClausAliases {
+				argCol[0] = col
+				args, err = aa.AppendBind(args, argCol[:])
+				if err != nil {
+					return nil, errors.Wrapf(err, "[dbr] Update.appendArgs.AppendBind at qualifier %q and column %q", qualifier, col)
+				}
+			}
 		}
 	}
 
@@ -265,10 +290,11 @@ func (b *Update) appendArgs(args Arguments) (Arguments, error) {
 		return nil, errors.WithStack(err)
 	}
 	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtUpdate|sqlPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
-		return nil, errors.WithStack(err)
+	if boundedCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundedCols) > 0 {
+		if args, err = appendArgs(pap, b.ArgumentsAppender, args, b.Table.mustQualifier(), boundedCols); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
-
 	return args, nil
 }
 
@@ -299,15 +325,23 @@ func (b *Update) validate() error {
 	return nil
 }
 
+//type updateExecMulti struct {
+//	update    *Update
+//	stmt      *sql.Stmt
+//	lastError error
+//	args      Arguments
+//	results   []sql.Result
+//}
+//
+//func (ue *updateExecMulti) Run(rec Binder) *updateExecMulti { return ue }
+//func (ue *updateExecMulti) RunByQualifier(rec Binder) *updateExecMulti { return ue }
+
 // ExecMulti allows to run an UPDATE statement multiple times with different
 // records in a serial order. The returned result slice indexes are same index
-// as for the Records slice. A prepared statement gets always created. Add a
-// WHERE clause with common conditions and conditions with place holders where
-// the value/s get derived from the ArgumentsAppender. The empty WHERE arguments
-// trigger the placeholder and the correct operator. The values itself will be
-// provided through the Records slice. Field Update.Record gets overwritten by
-// the `records` argument of this function. Rework this docu. ;-)
-func (b *Update) ExecMulti(ctx context.Context, records ...ArgumentsAppender) (_ []sql.Result, err error) {
+// as for the Records slice. A prepared statement gets always created. Field
+// Update.ArgumentsAppender gets overwritten by the `records` argument of this
+// function. Rework this docu. ;-)
+func (b *Update) ExecMulti(ctx context.Context, records ...Binder) (_ []sql.Result, err error) {
 	if err = b.validate(); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -339,9 +373,13 @@ func (b *Update) ExecMulti(ctx context.Context, records ...ArgumentsAppender) (_
 
 	args := make(Arguments, 0, (len(records)+len(b.Wheres))*3) // 3 just a bad guess
 	results := make([]sql.Result, len(records))
-
+	if b.ArgumentsAppender == nil {
+		b.ArgumentsAppender = make(map[string]Binder)
+	}
+	qualifier := b.Table.mustQualifier()
 	for i, rec := range records {
-		b.Record = rec
+		b.ArgumentsAppender[qualifier] = rec
+
 		args, err = b.appendArgs(args)
 		if err != nil {
 			return nil, errors.Wrapf(err, "[dbr] Update.ExecMulti.appendArgs. Index %d with Query: %q", i, sqlBuf)

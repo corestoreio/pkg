@@ -28,6 +28,7 @@ import (
 )
 
 var _ fmt.Stringer = (*Arguments)(nil)
+var _ fmt.GoStringer = (*Arguments)(nil)
 var _ fmt.GoStringer = (*argument)(nil)
 
 type driverValueBytes []byte
@@ -355,38 +356,4 @@ func TestIFaceToArgs(t *testing.T) {
 			now(), now(), nil,
 		}, args.Interfaces())
 	})
-}
-
-func TestStmtType(t *testing.T) {
-	t.Parallel()
-	dml := sqlStmtInsert | sqlStmtSelect | sqlStmtUpdate | sqlStmtDelete | sqlPartJoin | sqlPartWhere | sqlPartHaving | sqlPartSet | sqlPartValues
-
-	if !dml.IsInsert() {
-		t.Error("Expected IsInsert")
-	}
-	if !dml.IsSelect() {
-		t.Error("Expected IsSelect")
-	}
-	if !dml.IsUpdate() {
-		t.Error("Expected IsUpdate")
-	}
-	if !dml.IsDelete() {
-		t.Error("Expected IsDelete")
-	}
-	if !dml.IsJoin() {
-		t.Error("Expected IsJoin")
-	}
-	if !dml.IsWhere() {
-		t.Error("Expected IsWhere")
-	}
-	if !dml.IsHaving() {
-		t.Error("Expected IsHaving")
-	}
-	if !dml.IsSet() {
-		t.Error("Expected IsSet")
-	}
-	if !dml.IsValues() {
-		t.Error("Expected IsValues")
-	}
-
 }

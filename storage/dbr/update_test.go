@@ -310,7 +310,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 	}
 
 	t.Run("without where", func(t *testing.T) {
-		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec)
+		u := NewUpdate("dbr_person").AddColumns("name", "email").Bind(pRec)
 		compareToSQL(t, u, nil,
 			"UPDATE `dbr_person` SET `name`=?, `email`=?",
 			"UPDATE `dbr_person` SET `name`='Gopher', `email`='gopher@g00gle.c0m'",
@@ -318,7 +318,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 		)
 	})
 	t.Run("with where", func(t *testing.T) {
-		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
+		u := NewUpdate("dbr_person").AddColumns("name", "email").Bind(pRec).
 			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, nil,
 			"UPDATE `dbr_person` SET `name`=?, `email`=? WHERE (`id` = ?)",
@@ -327,7 +327,7 @@ func TestUpdate_SetRecord(t *testing.T) {
 		)
 	})
 	t.Run("fails column not in entity object", func(t *testing.T) {
-		u := NewUpdate("dbr_person").AddColumns("name", "email").SetRecord(pRec).
+		u := NewUpdate("dbr_person").AddColumns("name", "email").Bind(pRec).
 			Set(Column("key").Str("JustAKey")).
 			Where(Column("id").PlaceHolder())
 		compareToSQL(t, u, errors.IsNotFound,

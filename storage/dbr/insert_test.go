@@ -25,34 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ ArgumentsAppender = (*someRecord)(nil)
-
-type someRecord struct {
-	SomethingID int
-	UserID      int64
-	Other       bool
-}
-
-func (sr someRecord) AppendArguments(stmtType SQLStmt, args Arguments, columns []string) (Arguments, error) {
-	for _, c := range columns {
-		switch c {
-		case "something_id":
-			args = args.Int(sr.SomethingID)
-		case "user_id":
-			args = args.Int64(sr.UserID)
-		case "other":
-			args = args.Bool(sr.Other)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
-	}
-	if len(columns) == 0 && stmtType.IsValues() {
-		args = args.Int(sr.SomethingID).Int64(sr.UserID).Bool(sr.Other)
-
-	}
-	return args, nil
-}
-
 func TestInsert_SetValuesCount(t *testing.T) {
 	t.Parallel()
 
@@ -86,7 +58,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 		person.Email.Valid = true
 		person.Email.String = "obama@whitehouse.gov"
 		compareToSQL(t,
-			NewInsert("dbr_people").AddColumns("name", "email").AddRecords(&person),
+			NewInsert("dbr_people").AddColumns("name", "email").Bind(&person),
 			nil,
 			"INSERT INTO `dbr_people` (`name`,`email`) VALUES (?,?)",
 			"INSERT INTO `dbr_people` (`name`,`email`) VALUES ('Barack','obama@whitehouse.gov')",
@@ -165,74 +137,6 @@ func TestInsert_Add(t *testing.T) {
 	})
 }
 
-func TestInsert_AddRecords(t *testing.T) {
-	t.Parallel()
-	objs := []someRecord{{1, 88, false}, {2, 99, true}, {3, 101, true}}
-	wantArgs := []interface{}{int64(1), int64(88), false, int64(2), int64(99), true, int64(3), int64(101), true, int64(99)}
-
-	t.Run("valid with multiple records", func(t *testing.T) {
-		compareToSQL(t,
-			NewInsert("a").
-				AddColumns("something_id", "user_id", "other").
-				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
-				AddOnDuplicateKey(
-					Column("something_id").Int64(99),
-					Column("user_id").Values(),
-				),
-			nil,
-			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
-			"INSERT INTO `a` (`something_id`,`user_id`,`other`) VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
-			wantArgs...,
-		)
-	})
-	t.Run("without columns, all columns requested", func(t *testing.T) {
-		compareToSQL(t,
-			NewInsert("a").
-				SetRecordValueCount(3).
-				AddRecords(objs[0]).AddRecords(objs[1], objs[2]).
-				AddOnDuplicateKey(
-					Column("something_id").Int64(99),
-					Column("user_id").Values(),
-				),
-			nil,
-			"INSERT INTO `a` VALUES (?,?,?),(?,?,?),(?,?,?) ON DUPLICATE KEY UPDATE `something_id`=?, `user_id`=VALUES(`user_id`)",
-			"INSERT INTO `a` VALUES (1,88,0),(2,99,1),(3,101,1) ON DUPLICATE KEY UPDATE `something_id`=99, `user_id`=VALUES(`user_id`)",
-			wantArgs...,
-		)
-	})
-	t.Run("column not found", func(t *testing.T) {
-		objs := []someRecord{{1, 88, false}, {2, 99, true}}
-		compareToSQL(t,
-			NewInsert("a").AddColumns("something_it", "user_id", "other").AddRecords(objs[0]).AddRecords(objs[1]),
-			errors.IsNotFound,
-			"",
-			"",
-		)
-	})
-	t.Run("slice as record - nice feature", func(t *testing.T) {
-		wantArgs := []interface{}{"Muffin Hat", "Muffin@Hat.head", "Marianne Phyllis Finch", "marianne@phyllis.finch", "Daphne Augusta Perry", "daphne@augusta.perry"}
-		persons := &dbrPersons{
-			Data: []*dbrPerson{
-				{Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
-				{Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
-				{Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
-			},
-		}
-
-		compareToSQL(t,
-			NewInsert("dbr_person").
-				AddColumns("name", "email").
-				AddRecords(persons).
-				SetRowCount(len(persons.Data)),
-			nil,
-			"INSERT INTO `dbr_person` (`name`,`email`) VALUES (?,?),(?,?),(?,?)",
-			"INSERT INTO `dbr_person` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')",
-			wantArgs...,
-		)
-	})
-
-}
-
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
 	s := createRealSessionWithFixtures(t, nil)
@@ -255,7 +159,7 @@ func TestInsertReal(t *testing.T) {
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
-	ib := s.InsertInto("dbr_people").AddColumns("name", "email").AddRecords(&person)
+	ib := s.InsertInto("dbr_people").AddColumns("name", "email").Bind(&person)
 	res, err = ib.Exec(context.TODO())
 	if err != nil {
 		t.Errorf("%s: %s", err, ib.String())
@@ -662,5 +566,32 @@ func TestInsert_AddUpdateAllNonPrimary(t *testing.T) {
 			"Martin", "martin@go.go", int64(3), "2019-01-01", int64(2),
 		)
 	})
+}
 
+func TestInsert_Bind_Slice(t *testing.T) {
+	t.Parallel()
+
+	wantArgs := []interface{}{
+		"Muffin Hat", "Muffin@Hat.head",
+		"Marianne Phyllis Finch", "marianne@phyllis.finch",
+		"Daphne Augusta Perry", "daphne@augusta.perry",
+	}
+	persons := &dbrPersons{
+		Data: []*dbrPerson{
+			{Name: "Muffin Hat", Email: MakeNullString("Muffin@Hat.head")},
+			{Name: "Marianne Phyllis Finch", Email: MakeNullString("marianne@phyllis.finch")},
+			{Name: "Daphne Augusta Perry", Email: MakeNullString("daphne@augusta.perry")},
+		},
+	}
+
+	compareToSQL(t,
+		NewInsert("dbr_person").
+			AddColumns("name", "email").
+			Bind(persons).
+			SetRowCount(len(persons.Data)),
+		nil,
+		"INSERT INTO `dbr_person` (`name`,`email`) VALUES (?,?),(?,?),(?,?)",
+		"INSERT INTO `dbr_person` (`name`,`email`) VALUES ('Muffin Hat','Muffin@Hat.head'),('Marianne Phyllis Finch','marianne@phyllis.finch'),('Daphne Augusta Perry','daphne@augusta.perry')",
+		wantArgs...,
+	)
 }

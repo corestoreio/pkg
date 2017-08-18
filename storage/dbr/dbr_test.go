@@ -61,10 +61,10 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 	return sess
 }
 
-var _ ArgumentsAppender = (*dbrPerson)(nil)
+var _ Binder = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPersons)(nil)
-var _ ArgumentsAppender = (*nullTypedRecord)(nil)
+var _ Binder = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
@@ -75,7 +75,15 @@ type dbrPerson struct {
 	Key     NullString
 }
 
-func assignDbrPerson(p *dbrPerson, rc *RowConvert) error {
+// RowScan loads a single row from a SELECT statement returning only one row
+func (p *dbrPerson) RowScan(r *sql.Rows) error {
+	if err := p.convert.Scan(r); err != nil {
+		return errors.WithStack(err)
+	}
+	return p.assign(&p.convert)
+}
+
+func (p *dbrPerson) assign(rc *RowConvert) error {
 	for i, c := range rc.Columns {
 		b := rc.Index(i)
 		var err error
@@ -98,33 +106,35 @@ func assignDbrPerson(p *dbrPerson, rc *RowConvert) error {
 	return nil
 }
 
-// RowScan loads a single row from a SELECT statement returning only one row
-func (p *dbrPerson) RowScan(r *sql.Rows) error {
-	if err := p.convert.Scan(r); err != nil {
-		return errors.WithStack(err)
+func (p *dbrPerson) AppendBind(args Arguments, columns []string) (_ Arguments, err error) {
+	l := len(columns)
+	if l == 1 {
+		return p.appendBind(args, columns[0])
 	}
-	return assignDbrPerson(p, &p.convert)
-}
-
-func personAppendArguments(p *dbrPerson, args Arguments, columns []string) (_ Arguments, err error) {
-	for _, c := range columns {
-		switch c {
-		case "id", "dp.id":
-			args = args.Uint64(p.ID)
-		case "name":
-			args = args.Str(p.Name)
-		case "email":
-			args = args.NullString(p.Email)
-			// case "key": don't add key, it triggers a test failure condition
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+	if l == 0 {
+		return args.Uint64(p.ID).Str(p.Name).NullString(p.Email), nil // except auto inc column ;-)
+	}
+	for _, col := range columns {
+		if args, err = p.appendBind(args, col); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 	return args, err
 }
 
-func (p *dbrPerson) AppendArguments(_ SQLStmt, args Arguments, columns []string) (_ Arguments, err error) {
-	return personAppendArguments(p, args, columns)
+func (p *dbrPerson) appendBind(args Arguments, column string) (_ Arguments, err error) {
+	switch column {
+	case "id":
+		args = args.Uint64(p.ID)
+	case "name":
+		args = args.Str(p.Name)
+	case "email":
+		args = args.NullString(p.Email)
+		// case "key": don't add key, it triggers a test failure condition
+	default:
+		return nil, errors.NewNotFoundf("[dbr_test] dbrPerson Column %q not found", column)
+	}
+	return args, err
 }
 
 type dbrPersons struct {
@@ -132,15 +142,54 @@ type dbrPersons struct {
 	Data    []*dbrPerson
 }
 
-func (ps *dbrPersons) AppendArguments(_ SQLStmt, args Arguments, columns []string) (_ Arguments, err error) {
+func (ps *dbrPersons) AppendBind(args Arguments, columns []string) (_ Arguments, err error) {
+	if len(columns) != 1 {
+		// INSERT STATEMENT requesting all columns or specific columns
+		for _, p := range ps.Data {
+			if args, err = p.AppendBind(args, columns); err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
+		return args, err
+	}
+
+	// SELECT, DELETE or UPDATE or INSERT with one column
+	column := columns[0]
+	var ids []uint64
+	var names []string
+	var emails []NullString
 	for _, p := range ps.Data {
-		args, err = personAppendArguments(p, args, columns)
-		if err != nil {
-			return nil, errors.WithStack(err)
+		switch column {
+		case "id":
+			ids = append(ids, p.ID)
+		case "name":
+			names = append(names, p.Name)
+		case "email":
+			emails = append(emails, p.Email)
+			// case "key": don't add key, it triggers a test failure condition
+		default:
+			return nil, errors.NewNotFoundf("[dbr_test] dbrPerson Column %q not found", column)
 		}
 	}
+
+	switch column {
+	case "id":
+		args = args.Uint64s(ids...)
+	case "name":
+		args = args.Strs(names...)
+	case "email":
+		args = args.NullString(emails...)
+	}
+
 	return args, nil
 }
+
+//func (ps *dbrPersons) AssignLastInsertID(uint64) error {
+//	// todo iterate and assign to the last item in the slice and assign
+//	// decremented IDs to the previous items in the slice.
+//	return nil
+//}
+//
 
 func (ps *dbrPersons) RowScan(r *sql.Rows) error {
 	if err := ps.convert.Scan(r); err != nil {
@@ -148,14 +197,12 @@ func (ps *dbrPersons) RowScan(r *sql.Rows) error {
 	}
 
 	p := new(dbrPerson)
-	if err := assignDbrPerson(p, &ps.convert); err != nil {
+	if err := p.assign(&ps.convert); err != nil {
 		return errors.WithStack(err)
 	}
 	ps.Data = append(ps.Data, p)
 	return nil
 }
-
-var _ ArgumentsAppender = (*nullTypedRecord)(nil)
 
 type nullTypedRecord struct {
 	ID         int64
@@ -170,9 +217,9 @@ func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
 	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) AppendArguments(_ SQLStmt, args Arguments, columns []string) (Arguments, error) {
-	for _, c := range columns {
-		switch c {
+func (p *nullTypedRecord) AppendBind(args Arguments, columns []string) (Arguments, error) {
+	for _, column := range columns {
+		switch column {
 		case "id":
 			args = args.Int64(p.ID)
 		case "string_val":
@@ -202,10 +249,9 @@ func (p *nullTypedRecord) AppendArguments(_ SQLStmt, args Arguments, columns []s
 				args = args.Null()
 			}
 		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", columns)
 		}
 	}
-
 	return args, nil
 }
 
@@ -255,8 +301,8 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 	}
 }
 
-var _ querier = (*dbMock)(nil)
-var _ execer = (*dbMock)(nil)
+var _ Querier = (*dbMock)(nil)
+var _ Execer = (*dbMock)(nil)
 
 type dbMock struct {
 	error

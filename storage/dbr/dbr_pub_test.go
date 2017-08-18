@@ -18,37 +18,57 @@ import (
 	"os"
 	"testing"
 
+	"time"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var _ dbr.ArgumentsAppender = (*dbrPerson)(nil)
+var now = func() time.Time {
+	return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", -7))
+}
+
+var _ dbr.Binder = (*dbrPerson)(nil)
 
 type dbrPerson struct {
-	ID    int64 `db:"id"`
+	ID    int64
 	Name  string
 	Email dbr.NullString
 	Key   dbr.NullString
 }
 
-func (p *dbrPerson) AppendArguments(_ dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
-	for _, c := range columns {
-		switch c {
-		case "id":
-			args = args.Int64(p.ID)
-		case "name":
-			args = args.Str(p.Name)
-		case "email":
-			args = args.NullString(p.Email)
-		case "key":
-			args = args.NullString(p.Key)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+func (p *dbrPerson) AppendBind(args dbr.Arguments, columns []string) (_ dbr.Arguments, err error) {
+	l := len(columns)
+	if l == 1 {
+		return p.appendBind(args, columns[0])
+	}
+	if l == 0 {
+		return args.Int64(p.ID).Str(p.Name).NullString(p.Email), nil // except auto inc column ;-)
+	}
+	for _, col := range columns {
+		if args, err = p.appendBind(args, col); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
-	return args, nil
+	return args, err
+}
+
+func (p *dbrPerson) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+	switch column {
+	case "id":
+		args = args.Int64(p.ID)
+	case "name":
+		args = args.Str(p.Name)
+	case "email":
+		args = args.NullString(p.Email)
+	case "key":
+		args = args.NullString(p.Key)
+	default:
+		return nil, errors.NewNotFoundf("[dbr_test] dbrPerson Column %q not found", column)
+	}
+	return args, err
 }
 
 func createRealSession(t testing.TB) *dbr.Connection {

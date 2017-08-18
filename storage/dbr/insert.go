@@ -23,13 +23,15 @@ import (
 	"github.com/corestoreio/errors"
 )
 
+// TODO: fetch LastInsertID and assign it to the interface implementation.
+
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	BuilderBase
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB execPreparer
+	DB ExecPreparer
 
 	Into    string
 	Columns []string
@@ -37,7 +39,7 @@ type Insert struct {
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
 
-	Records []ArgumentsAppender
+	Records []Binder
 	// RecordValueCount defines the number of place holders for each value
 	// within the brackets for each set. Must only be set when Records are set
 	// and `Columns` field has been omitted.
@@ -117,7 +119,7 @@ func (tx *Tx) InsertInto(into string) *Insert {
 }
 
 // WithDB sets the database query object.
-func (b *Insert) WithDB(db execPreparer) *Insert {
+func (b *Insert) WithDB(db ExecPreparer) *Insert {
 	b.DB = db
 	return b
 }
@@ -189,17 +191,17 @@ func (b *Insert) AddArguments(args Arguments) *Insert {
 	return b
 }
 
-// AddRecords appends a new record for each INSERT VALUES (),[(...)...] case. A
+// Bind appends a new record for each INSERT VALUES (),[(...)...] case. A
 // record can also be e.g. a slice which appends all requested arguments at
 // once. Using a slice requires to call `SetRowCount` to tell the Insert object
 // the number of rows.
-func (b *Insert) AddRecords(recs ...ArgumentsAppender) *Insert {
+func (b *Insert) Bind(recs ...Binder) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
 
 // SetRecordValueCount number of expected values within each set. Must be
-// applied if a call to AddColumns has been omitted and AddRecords gets called
+// applied if a call to AddColumns has been omitted and Bind gets called
 // or Records gets set in a different way.
 //		INSERT INTO tableX (?,?,?)
 // SetRecordValueCount would now be 3 because of the three place holders.
@@ -455,7 +457,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	for _, rec := range b.Records {
 		alBefore := len(args)
-		args, err = rec.AppendArguments(sqlStmtInsert|sqlPartValues, args, b.Columns) // Columns can be empty
+		args, err = rec.AppendBind(args, b.Columns) // b.Columns can be nil
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -467,6 +469,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	if args, _, err = b.OnDuplicateKeys.appendArgs(args, appendArgsDUPKEY); err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	return args, nil
 }
 

@@ -25,7 +25,7 @@ import (
 )
 
 // Make sure that type salesOrder implements interface.
-var _ dbr.ArgumentsAppender = (*salesOrder)(nil)
+var _ dbr.Binder = (*salesOrder)(nil)
 
 // salesOrder represents just a demo record.
 type salesOrder struct {
@@ -36,25 +36,42 @@ type salesOrder struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesOrder) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
-	for _, c := range columns {
-		switch c {
-		case "entity_id":
-			args = args.Int64(so.EntityID)
-		case "state":
-			args = args.Str(so.State)
-		case "store_id":
-			args = args.Int64(so.StoreID)
-		case "customer_id":
-			args = args.Int64(so.CustomerID)
-		case "grand_total":
-			args = args.NullFloat64(so.GrandTotal)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
+func (so salesOrder) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+	switch column {
+	case "entity_id":
+		args = args.Int64(so.EntityID)
+	case "state":
+		args = args.Str(so.State)
+	case "store_id":
+		args = args.Int64(so.StoreID)
+	case "customer_id":
+		args = args.Int64(so.CustomerID)
+	case "grand_total":
+		args = args.NullFloat64(so.GrandTotal)
+	default:
+		return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", column)
 	}
-	if len(columns) == 0 && st.IsValues() {
-		args = args.Int64(so.EntityID).Str(so.State).Int64(so.StoreID).Int64(so.CustomerID).NullFloat64(so.GrandTotal)
+	return args, nil
+}
+
+// AppendBind implements dbr.Binder interface
+func (so salesOrder) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	l := len(columns)
+	if l == 1 {
+		// Most commonly used case
+		return so.appendBind(args, columns[0])
+	}
+	if l == 0 {
+		// This case gets executed when an INSERT statement doesn't contain any
+		// columns.
+		return args.Int64(so.EntityID).Str(so.State).Int64(so.StoreID), nil
+	}
+	// This case gets executed when an INSERT statement requests specific columns.
+	for _, col := range columns {
+		var err error
+		if args, err = so.appendBind(args, col); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 	return args, nil
 }

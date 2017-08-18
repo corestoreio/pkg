@@ -407,30 +407,6 @@ func BenchmarkInsertValuesSQL(b *testing.B) {
 	})
 }
 
-var _ dbr.ArgumentsAppender = (*someRecord)(nil)
-
-type someRecord struct {
-	SomethingID int
-	UserID      int64
-	Other       bool
-}
-
-func (sr someRecord) AppendArguments(_ dbr.SQLStmt, args dbr.Arguments, condition []string) (dbr.Arguments, error) {
-	for _, c := range condition {
-		switch c {
-		case "something_id":
-			args = args.Int(sr.SomethingID)
-		case "user_id":
-			args = args.Int64(sr.UserID)
-		case "other":
-			args = args.Bool(sr.Other)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
-	}
-	return args, nil
-}
-
 func BenchmarkInsertRecordsSQL(b *testing.B) {
 
 	obj := someRecord{SomethingID: 1, UserID: 99, Other: false}
@@ -439,7 +415,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewInsert("alpha").
 			AddColumns("something_id", "user_id", "other").
-			AddRecords(obj).
+			Bind(obj).
 			ToSQL()
 		if err != nil {
 			b.Fatal(err)

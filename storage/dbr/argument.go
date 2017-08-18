@@ -33,67 +33,22 @@ const (
 	sqlStar    = "*"
 )
 
-// SQL statement types and parts used as bit flag e.g. hint in
-// ArgumentsAppender.AppendArguments.
-const (
-	sqlStmtInsert SQLStmt = 1 << iota
-	sqlStmtSelect
-	sqlStmtUpdate
-	sqlStmtDelete
+// Binder appends the values resp. data from an object to the arguments slice.
+// The readonly variable `columns` contains the name of the requested columns.
+// E.g. if the first requested column names `id` then the first appended value
+// must be an integer. The columns slice can have the following length with the
+// following semantics:
+// - length:0 = INSERT statement requests all columns;
+// - length:1 = SELECT, DELETE or UPDATE statement requests a specific column;
+// - length:>1 INSERT statement requests a specific list of columns.
+type Binder interface {
+	AppendBind(args Arguments, columns []string) (Arguments, error)
+}
 
-	sqlPartJoin
-	sqlPartWhere
-	sqlPartHaving
-	sqlPartSet
-	sqlPartValues
-)
-
-// SQLStmt represents a bit flag which defines the type of the SQL data
-// manipulation statement and which part of that statement.
-type SQLStmt uint
-
-// IsInsert returns true if the SQL is an INSERT statement.
-func (s SQLStmt) IsInsert() bool { return s&sqlStmtInsert != 0 }
-
-// IsSelect returns true if the SQL is a SELECT statement.
-func (s SQLStmt) IsSelect() bool { return s&sqlStmtSelect != 0 }
-
-// IsUpdate returns true if the SQL is an UPDATE statement.
-func (s SQLStmt) IsUpdate() bool { return s&sqlStmtUpdate != 0 }
-
-// IsDelete returns true if the SQL is a DELETE statement.
-func (s SQLStmt) IsDelete() bool { return s&sqlStmtDelete != 0 }
-
-// IsJoin returns true if the SQL part is a JOIN condition.
-func (s SQLStmt) IsJoin() bool { return s&sqlPartJoin != 0 }
-
-// IsWhere returns true if the SQL part is a WHERE condition.
-func (s SQLStmt) IsWhere() bool { return s&sqlPartWhere != 0 }
-
-// IsHaving returns true if the SQL part is a HAVING condition.
-func (s SQLStmt) IsHaving() bool { return s&sqlPartHaving != 0 }
-
-// IsSet returns true if the SQL part is a SET part of an UPDATE statement.
-func (s SQLStmt) IsSet() bool { return s&sqlPartSet != 0 }
-
-// IsValues returns true if the SQL part is a VALUES condition of an INSERT
-// statement.
-func (s SQLStmt) IsValues() bool { return s&sqlPartValues != 0 }
-
-// ArgumentsAppender assembles arguments for CRUD statements. The `stmtType`
-// variable contains a flag from the constants SQLStmt* and SQLPart* to allow
-// the knowledge in which case the function AppendArguments gets called. Any new
-// arguments must be append to variable `args` and then returned. The readonly
-// variable `columns` contains the name of the requested columns. E.g. if the
-// first requested column names `id` then the first appended value must be an
-// integer. Variable `columns` can additionally contain the names and/or
-// expressions used in the WHERE, JOIN or HAVING clauses, if applicable for the
-// SQL statement type. In case where stmtType has been isSet to
-// sqlStmtInsert|sqlPartValues, the `columns` slice can be empty which means
-// that all arguments are requested.
-// TODO table name and its alias is missing in the columns slice.
-type ArgumentsAppender interface {
-	AppendArguments(st SQLStmt, args Arguments, columns []string) (Arguments, error)
+// LastInsertIDAssigner assigns the last insert ID of an auto increment
+// column back to the object.
+type xLastInsertIDAssigner interface { // TODO(CyS) implement xLastInsertIDAssigner
+	AssignLastInsertID(uint64) error
 }
 
 // argument is union type for different Go primitives and their slice
@@ -106,7 +61,7 @@ type argument struct {
 	value interface{}
 }
 
-type placeHolder uint8
+type placeHolder int8
 
 func (arg *argument) set(v interface{}) {
 	arg.isSet = true

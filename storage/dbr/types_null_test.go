@@ -38,17 +38,17 @@ func TestNullTypeScanning(t *testing.T) {
 			record: &nullTypedRecord{ID: 1},
 			valid:  false,
 		},
-		{
-			record: newNullTypedRecordWithData(),
-			valid:  true,
-		},
+		//{
+		//	record: newNullTypedRecordWithData(),
+		//	valid:  true,
+		//},
 	}
 
 	for _, test := range tests {
 		// Create the record in the db
 		res, err := s.InsertInto("null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val").
-			AddRecords(test.record).Exec(context.TODO())
+			Bind(test.record).Exec(context.TODO())
 		require.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)

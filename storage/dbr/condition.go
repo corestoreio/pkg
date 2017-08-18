@@ -17,6 +17,7 @@ package dbr
 import (
 	"bytes"
 	"database/sql/driver"
+	"strings"
 	"time"
 
 	"github.com/corestoreio/errors"
@@ -294,7 +295,7 @@ func (c *Condition) isExpression() bool {
 func (cs Conditions) intersectConditions(cols []string) []string {
 	// this calculates the intersection of the columns in Conditions which
 	// already have an value provided/assigned and those where the arguments
-	// must be assembled from the interface ArgumentsAppender. If the arguments
+	// must be assembled from the interface Binder. If the arguments
 	// should be assembled from the interface IsPlaceHolder is true.
 	for _, cnd := range cs {
 		if cnd.IsPlaceHolder {
@@ -474,7 +475,7 @@ func (c *Condition) Column(col string) *Condition {
 // PlaceHolder sets the database specific place holder character. Mostly used in
 // prepared statements and for interpolation.
 func (c *Condition) PlaceHolder() *Condition {
-	c.Right.Argument.set(placeHolder(1))
+	c.Right.Argument.set(placeHolder(-7)) // value -7 does not matter
 	c.IsPlaceHolder = true
 	return c
 }
@@ -907,7 +908,7 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 		addArg := false
 		switch {
 		case cnd.isExpression():
-			addArg = true
+			addArg = cnd.Operator.hasArgs(len(cnd.Right.Arguments))
 		case cnd.IsPlaceHolder:
 			addArg = cnd.Operator.hasArgs(1) // always a length of one, see the `repeatPlaceHolders()` function
 			// By keeping addArg as it is and not setting
@@ -918,7 +919,6 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 			// Because addArg=false does not add below the arguments and we must
 			// later swap the positions.
 			pendingArgPos = append(pendingArgPos, pendingArgPosCount)
-
 		case cnd.Right.Argument.isSet:
 			addArg = cnd.Operator.hasArgs(cnd.Right.Argument.len())
 		case cnd.Right.Arguments != nil:
@@ -935,8 +935,8 @@ func (cs Conditions) appendArgs(args Arguments, conditionType byte) (_ Arguments
 				args = append(args, cnd.Right.Argument)
 			}
 			args = append(args, cnd.Right.Arguments...)
+			pendingArgPosCount++
 		}
-		pendingArgPosCount++
 		i++
 	}
 	return args, pendingArgPos, nil
@@ -1019,15 +1019,27 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 	return nil
 }
 
-func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args Arguments, st SQLStmt, columns []string) (_ Arguments, err error) {
-	if rec == nil {
+func appendArgs(pendingArgPos []int, records map[string]Binder, args Arguments, defaultQualifier string, columns []string) (_ Arguments, err error) {
+	// arguments list above is a bit long, maybe later this function can be
+	// integrated into Conditions.appendArgs.
+	if records == nil {
 		return args, nil
 	}
 
 	lenBefore := len(args)
-	args, err = rec.AppendArguments(st, args, columns)
-	if err != nil {
-		return nil, errors.WithStack(err)
+	var argCol [1]string
+	for _, identifier := range columns {
+		qualifier, column := splitColumn(identifier)
+		if qualifier == "" {
+			qualifier = defaultQualifier
+		}
+		if rec, ok := records[qualifier]; ok {
+			argCol[0] = column
+			args, err = rec.AppendBind(args, argCol[:])
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+		}
 	}
 	lenAfter := len(args)
 	if lenAfter > lenBefore {
@@ -1040,4 +1052,16 @@ func appendAssembledArgs(pendingArgPos []int, rec ArgumentsAppender, args Argume
 		args = args[:newLen] // remove the appended placeHolderOp types after swapping
 	}
 	return args, nil
+}
+
+// splitColumn splits a string via its last dot into the qualifier and the
+// column name.
+func splitColumn(identifier string) (qualifier, column string) {
+	// dot at a beginning and end of a string is illegal.
+	// Using LastIndexByte allows to retain the database qualifier, so:
+	// database.table.column will become in the return "database.table", "column"
+	if dotIndex := strings.LastIndexByte(identifier, '.'); dotIndex > 0 && dotIndex+1 < len(identifier) {
+		return identifier[:dotIndex], identifier[dotIndex+1:]
+	}
+	return "", identifier
 }

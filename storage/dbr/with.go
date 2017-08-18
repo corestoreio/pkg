@@ -57,7 +57,7 @@ type With struct {
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB queryPreparer
+	DB QueryPreparer
 
 	Subclauses []WithCTE
 	// TopLevel a union type which allows only one of the fields to be set.
@@ -100,7 +100,7 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 }
 
 // WithDB sets the database query object.
-func (b *With) WithDB(db queryPreparer) *With {
+func (b *With) WithDB(db QueryPreparer) *With {
 	b.DB = db
 	return b
 }

@@ -55,7 +55,7 @@ type RowCloser interface {
 // `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
 // dedicated database session) or a *sql.Tx (an in-progress database
 // transaction).
-func Exec(ctx context.Context, db execer, b QueryBuilder) (sql.Result, error) {
+func Exec(ctx context.Context, db Execer, b QueryBuilder) (sql.Result, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -68,7 +68,7 @@ func Exec(ctx context.Context, db execer, b QueryBuilder) (sql.Result, error) {
 // `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
 // dedicated database session) or a *sql.Tx (an in-progress database
 // transaction).
-func Prepare(ctx context.Context, db preparer, b QueryBuilder) (*sql.Stmt, error) {
+func Prepare(ctx context.Context, db Preparer, b QueryBuilder) (*sql.Stmt, error) {
 	var sqlStr string
 	var err error
 	if qb, ok := b.(queryBuilder); ok { // Interface upgrade
@@ -90,7 +90,7 @@ func Prepare(ctx context.Context, db preparer, b QueryBuilder) (*sql.Stmt, error
 // `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
 // dedicated database session) or a *sql.Tx (an in-progress database
 // transaction).
-func Query(ctx context.Context, db querier, b QueryBuilder) (*sql.Rows, error) {
+func Query(ctx context.Context, db Querier, b QueryBuilder) (*sql.Rows, error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -104,7 +104,7 @@ func Query(ctx context.Context, db querier, b QueryBuilder) (*sql.Rows, error) {
 // `db` can be either a *sql.DB (connection pool), a *sql.Conn (a single
 // dedicated database session) or a *sql.Tx (an in-progress database
 // transaction).
-func Load(ctx context.Context, db querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
+func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount int64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)

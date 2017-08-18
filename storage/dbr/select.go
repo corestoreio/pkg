@@ -29,7 +29,7 @@ type Select struct {
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB queryPreparer
+	DB QueryPreparer
 
 	// Columns represents a slice of names and its optional identifiers. Wildcard
 	// `SELECT *` statements are not really supported:
@@ -141,7 +141,7 @@ func (tx *Tx) SelectBySQL(sql string, args Arguments) *Select {
 }
 
 // WithDB sets the database query object.
-func (b *Select) WithDB(db queryPreparer) *Select {
+func (b *Select) WithDB(db QueryPreparer) *Select {
 	b.DB = db
 	return b
 }
@@ -261,9 +261,26 @@ func (b *Select) AddColumnsConditions(expressions ...*Condition) *Select {
 	return b
 }
 
-// SetRecord pulls in values to match Columns from the record generator.
-func (b *Select) SetRecord(rec ArgumentsAppender) *Select {
-	b.Record = rec
+// Bind binds the object to the main table for assembling and appending
+// arguments. An Binder gets called if it matches the qualifier, in
+// this case the current table name or its alias. This function panics if the
+// table name or its alias is empty. This function resets the internal slice.
+func (b *Select) Bind(obj Binder) *Select {
+	if b.ArgumentsAppender == nil {
+		b.ArgumentsAppender = make(map[string]Binder)
+	}
+	b.ArgumentsAppender[b.Table.mustQualifier()] = obj
+	return b
+}
+
+// BindByQualifier binds the object to a specific qualifier for assembling and
+// appending arguments. The qualifier can be in this case a table name or an
+// alias of a JOIN or sub query statement.
+func (b *Select) BindByQualifier(qualifier string, obj Binder) *Select {
+	if b.ArgumentsAppender == nil {
+		b.ArgumentsAppender = make(map[string]Binder)
+	}
+	b.ArgumentsAppender[qualifier] = obj
 	return b
 }
 
@@ -573,26 +590,36 @@ func (b *Select) appendArgs(args Arguments) (_ Arguments, err error) {
 			if args, pap, err = f.On.appendArgs(args, appendArgsJOIN); err != nil {
 				return nil, errors.WithStack(err)
 			}
-			if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtSelect|sqlPartJoin, f.On.intersectConditions(placeHolderColumns)); err != nil {
-				return nil, errors.WithStack(err)
+			// TODO: think about caching all calls to intersectConditions
+			if boundCols := f.On.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
+				defaultQualifier := b.Table.mustQualifier()
+				if args, err = appendArgs(pap, b.ArgumentsAppender, args, defaultQualifier, boundCols); err != nil {
+					return nil, errors.WithStack(err)
+				}
 			}
 		}
+		placeHolderColumns = placeHolderColumns[:0]
 	}
-	placeHolderColumns = placeHolderColumns[:0]
 
 	if args, pap, err = b.Wheres.appendArgs(args, appendArgsWHERE); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtSelect|sqlPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
-		return nil, errors.WithStack(err)
+	if boundCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
+		defaultQualifier := b.Table.mustQualifier()
+		if args, err = appendArgs(pap, b.ArgumentsAppender, args, defaultQualifier, boundCols); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		placeHolderColumns = placeHolderColumns[:0]
 	}
-	placeHolderColumns = placeHolderColumns[:0]
 
 	if args, pap, err = b.Havings.appendArgs(args, appendArgsHAVING); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtSelect|sqlPartHaving, b.Havings.intersectConditions(placeHolderColumns)); err != nil {
-		return nil, errors.WithStack(err)
+	if boundCols := b.Havings.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
+		defaultQualifier := b.Table.mustQualifier()
+		if args, err = appendArgs(pap, b.ArgumentsAppender, args, defaultQualifier, boundCols); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 	return args, nil
 }

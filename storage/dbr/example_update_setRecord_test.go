@@ -23,7 +23,7 @@ import (
 )
 
 // Make sure that type categoryEntity implements interface
-var _ dbr.ArgumentsAppender = (*categoryEntity)(nil)
+var _ dbr.Binder = (*categoryEntity)(nil)
 
 // categoryEntity represents just a demo record.
 type categoryEntity struct {
@@ -32,61 +32,80 @@ type categoryEntity struct {
 	ParentID       string
 	Path           dbr.NullString
 	// TeaserIDs contain a list of foreign primary keys which identifies special
-	// teaser to be shown on the category page.
+	// teaser to be shown on the category page. Each teaser ID gets joined by a
+	// | and stored as a long string in the database.
 	TeaserIDs []string
 }
 
-func (pe *categoryEntity) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
-	for _, c := range columns {
-		switch c {
-		case "entity_id":
-			args = args.Int64(pe.EntityID)
-		case "attribute_set_id":
-			args = args.Int64(pe.AttributeSetID)
-		case "parent_id":
-			args = args.Str(pe.ParentID)
-		case "path":
-			args = args.NullString(pe.Path)
-		case "teaser_id_s":
-			if st.IsUpdate() && st.IsSet() {
-				if pe.TeaserIDs == nil {
-					args = args.Null()
-				} else {
-					args = args.Str(strings.Join(pe.TeaserIDs, "|"))
-				}
-			} else {
-				args = args.Strs(pe.TeaserIDs...)
-			}
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+func (pe categoryEntity) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+	switch column {
+	case "entity_id":
+		args = args.Int64(pe.EntityID)
+	case "attribute_set_id":
+		args = args.Int64(pe.AttributeSetID)
+	case "parent_id":
+		args = args.Str(pe.ParentID)
+	case "path":
+		args = args.NullString(pe.Path)
+	case "teaser_id_s":
+		if pe.TeaserIDs == nil {
+			args = args.Null()
+		} else {
+			args = args.Str(strings.Join(pe.TeaserIDs, "|"))
+		}
+	case "fk_teaser_id_s": // TODO ...
+		args = args.Strs(pe.TeaserIDs...)
+	default:
+		return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", column)
+	}
+	return args, nil
+}
+
+// AppendBind implements dbr.Binder interface
+func (pe categoryEntity) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	l := len(columns)
+	if l == 1 {
+		// Most commonly used case
+		return pe.appendBind(args, columns[0])
+	}
+	if l == 0 {
+		// This case gets executed when an INSERT statement doesn't contain any
+		// columns.
+		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).Str(pe.ParentID), nil
+	}
+	// This case gets executed when an INSERT statement requests specific columns.
+	for _, col := range columns {
+		var err error
+		if args, err = pe.appendBind(args, col); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
 	return args, nil
 }
 
 // ExampleUpdate_SetRecord performs an UPDATE query in the table `catalog_category_entity` with the
-// fix specified columns. The Go type categoryEntity implements the dbr.ArgumentsAppender interface and can
+// fix specified columns. The Go type categoryEntity implements the dbr.Binder interface and can
 // append the required arguments.
 func ExampleUpdate_SetRecord() {
 
-	ce := &categoryEntity{345, 6, "p123", dbr.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
+	ce := categoryEntity{345, 6, "p123", dbr.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
 	// Updates all rows in the table because of missing WHERE statement.
 	u := dbr.NewUpdate("catalog_category_entity").
 		AddColumns("attribute_set_id", "parent_id", "path", "teaser_id_s").
-		SetRecord(ce)
+		Bind(ce)
 	writeToSQLAndInterpolate(u)
 
 	fmt.Print("\n\n")
 
-	ce = &categoryEntity{678, 6, "p456", dbr.NullString{}, nil}
+	ce = categoryEntity{678, 6, "p456", dbr.NullString{}, nil}
 
 	// Updates only one row in the table because of the WHERE. You can call
-	// SetRecord and Exec as often as you like. Each call to Exec will
-	// reassemble the arguments from SetRecord, means you can exchange SetRecord
+	// AddArgumentsAppender and Exec as often as you like. Each call to Exec will
+	// reassemble the arguments from AddArgumentsAppender, means you can exchange AddArgumentsAppender
 	// with different objects.
 	u.
-		SetRecord(ce).
+		Bind(ce).
 		Where(dbr.Column("entity_id").PlaceHolder())
 	writeToSQLAndInterpolate(u)
 

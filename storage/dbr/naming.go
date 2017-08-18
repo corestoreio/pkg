@@ -83,6 +83,19 @@ func (a identifier) Alias(alias string) identifier { a.Aliased = alias; return a
 
 func (a identifier) isEmpty() bool { return a.Name == "" && a.DerivedTable == nil && a.Expression == "" }
 
+// qualifier returns the correct qualifier for an identifier
+func (a identifier) mustQualifier() string {
+	q := a.Name
+	if a.Aliased != "" {
+		q = a.Aliased
+	}
+	if q == "" {
+		// We must panic here because something is really wrong.
+		panic(errors.NewFatalf("[dbr] Table name or alias cannot be empty: %#v", a))
+	}
+	return q
+}
+
 // String returns the correct stringyfied statement.
 func (a identifier) String() string {
 	if a.Expression != "" {
@@ -336,7 +349,7 @@ func (mq MysqlQuoter) WriteIdentifier(w *bytes.Buffer, name string) {
 		return
 	}
 
-	if dotIndex := strings.IndexByte(name, '.'); dotIndex > 0 { // dot at a beginning of a string at illegal
+	if dotIndex := strings.IndexByte(name, '.'); dotIndex > 0 && dotIndex+1 < len(name) { // dot at a beginning of a string is illegal and at the end
 		mq.quote(w, name[:dotIndex])
 		w.WriteByte('.')
 		if a := name[dotIndex+1:]; a == sqlStar {
@@ -412,17 +425,17 @@ func isNameValid(name string) int8 {
 
 	ln := len(name)
 	if ln > maxIdentifierLength || name == "" {
-		return 1 //errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
+		return 1
 	}
 	pos := 0
 	for pos < ln {
 		r, w := utf8.DecodeRuneInString(name[pos:])
 		if pos == 0 && unicode.IsDigit(r) {
-			return 3 // name with beginning number is not allowed
+			return 3
 		}
 		pos += w
 		if !mapAlNum(r) {
-			return 2 // errors.NewNotValidf("[csdb] Invalid character in name %q", name)
+			return 2
 		}
 	}
 	return 0

@@ -384,3 +384,73 @@ func TestExpr(t *testing.T) {
 		)
 	})
 }
+
+func TestSplitColumn(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		identifier string
+		wantQuali  string
+		wantCol    string
+	}{
+		{"id", "", "id"},
+		{".id", "", ".id"},
+		{".id.", "", ".id."},
+		{"id.", "", "id."},
+		{"cpe.entity_id", "cpe", "entity_id"},
+		{"cpe.*", "cpe", "*"},
+		{"database.cpe.entity_id", "database.cpe", "entity_id"},
+	}
+	for i, test := range tests {
+		haveQ, haveC := splitColumn(test.identifier)
+		assert.Exactly(t, test.wantQuali, haveQ, "Qualifier mismatch at index %d", i)
+		assert.Exactly(t, test.wantCol, haveC, "Column mismatch at index %d", i)
+	}
+}
+
+type appendInt int
+
+func (ai appendInt) AppendBind(args Arguments, _ []string) (Arguments, error) {
+	return args.Int(int(ai)), nil
+}
+
+func TestAppendArgs(t *testing.T) {
+	t.Parallel()
+	t.Run("PH,val,expr,PH", func(t *testing.T) {
+		s := NewSelect("sku").FromAlias("catalog", "e").
+			// alias t_d ignored and not needed in this test case
+			Where(
+				Column("e.entity_id").In().PlaceHolder(),                      // 678
+				Column("t_d.attribute_id").In().Int64s(45),                    // 45
+				Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"), // Does not make sense this WHERE condition ;-)
+				Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
+			).
+			BindByQualifier("e", appendInt(678)).
+			BindByQualifier("t_d", appendInt(17))
+
+		compareToSQL(t, s, nil,
+			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` IN (?)) AND (`t_d`.`attribute_id` IN (?)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = ?)",
+			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` IN (678)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = 17)",
+			int64(678), int64(45), int64(17),
+		)
+	})
+
+	t.Run("PH,val,PH", func(t *testing.T) {
+		s := NewSelect("sku").FromAlias("catalog", "e").
+			// alias t_d ignored and not needed in this test case
+			Where(
+				Column("e.entity_id").In().PlaceHolder(),     // 678
+				Column("t_d.attribute_id").In().Int64s(45),   // 45
+				Column("t_d.store_id").Equal().PlaceHolder(), // 17
+			).
+			BindByQualifier("e", appendInt(678)).
+			BindByQualifier("t_d", appendInt(17))
+
+		compareToSQL(t, s, nil,
+			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` IN (?)) AND (`t_d`.`attribute_id` IN (?)) AND (`t_d`.`store_id` = ?)",
+			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` IN (678)) AND (`t_d`.`attribute_id` IN (45)) AND (`t_d`.`store_id` = 17)",
+			int64(678), int64(45), int64(17),
+		)
+	})
+
+}

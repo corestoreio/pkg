@@ -275,7 +275,7 @@ func TestDelete_UseBuildCache(t *testing.T) {
 	})
 }
 
-func TestDelete_AddRecord(t *testing.T) {
+func TestDelete_Bind(t *testing.T) {
 	t.Parallel()
 	p := &dbrPerson{
 		ID:    5555,
@@ -290,7 +290,7 @@ func TestDelete_AddRecord(t *testing.T) {
 				Column("email").PlaceHolder(),
 				Column("int_e").Int(2718281),
 			).
-			SetRecord(p).OrderBy("id")
+			Bind(p).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `dbr_people` WHERE (`idI64` > ?) AND (`id` = ?) AND (`float64_pi` = ?) AND (`email` = ?) AND (`int_e` = ?) ORDER BY `id`",
@@ -303,7 +303,7 @@ func TestDelete_AddRecord(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).
-			SetRecord(p).OrderBy("id")
+			Bind(p).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -323,7 +323,7 @@ func TestDelete_AddRecord(t *testing.T) {
 				Column("time_val").PlaceHolder(),
 				Column("bool_val").PlaceHolder(),
 			).
-			SetRecord(ntr).OrderBy("id")
+			Bind(ntr).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `null_type_table` WHERE (`string_val` = ?) AND (`int64_val` = ?) AND (`float64_val` = ?) AND (`random1` BETWEEN ? AND ?) AND (`time_val` = ?) AND (`bool_val` = ?) ORDER BY `id`",

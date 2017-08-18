@@ -22,7 +22,7 @@ import (
 )
 
 // Make sure that type productEntity implements interface.
-var _ dbr.ArgumentsAppender = (*productEntity)(nil)
+var _ dbr.Binder = (*productEntity)(nil)
 
 // productEntity represents just a demo record.
 type productEntity struct {
@@ -33,24 +33,39 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
-	for _, c := range columns {
-		switch c {
-		case "attribute_set_id":
-			args = args.Int64(pe.AttributeSetID)
-		case "type_id":
-			args = args.Str(pe.TypeID)
-		case "sku":
-			args = args.NullString(pe.SKU)
-		case "has_options":
-			args = args.Bool(pe.HasOptions)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+func (pe productEntity) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	l := len(columns)
+	if l == 1 {
+		// Most commonly used case
+		return pe.appendBind(args, columns[0])
+	}
+	if l == 0 {
+		// This case gets executed when an INSERT statement doesn't contain any
+		// columns.
+		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).Str(pe.TypeID).NullString(pe.SKU).Bool(pe.HasOptions), nil
+	}
+	// This case gets executed when an INSERT statement requests specific columns.
+	for _, col := range columns {
+		var err error
+		if args, err = pe.appendBind(args, col); err != nil {
+			return nil, errors.WithStack(err)
 		}
 	}
-	if len(columns) == 0 && st.IsValues() {
-		// This case gets executed when an INSERT statement doesn't contain any columns.
-		args = args.Int64(pe.EntityID).Int64(pe.AttributeSetID).Str(pe.TypeID).NullString(pe.SKU).Bool(pe.HasOptions)
+	return args, nil
+}
+
+func (pe productEntity) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+	switch column {
+	case "attribute_set_id":
+		args = args.Int64(pe.AttributeSetID)
+	case "type_id":
+		args = args.Str(pe.TypeID)
+	case "sku":
+		args = args.NullString(pe.SKU)
+	case "has_options":
+		args = args.Bool(pe.HasOptions)
+	default:
+		return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", column)
 	}
 	return args, nil
 }
@@ -67,11 +82,11 @@ func ExampleInsert_AddRecords() {
 	}
 
 	i := dbr.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").
-		AddRecords(objs[0]).AddRecords(objs[1])
+		Bind(objs[0]).Bind(objs[1])
 	writeToSQLAndInterpolate(i)
 
 	fmt.Print("\n\n")
-	i = dbr.NewInsert("catalog_product_entity").SetRecordValueCount(5).AddRecords(objs[0]).AddRecords(objs[1])
+	i = dbr.NewInsert("catalog_product_entity").SetRecordValueCount(5).Bind(objs[0]).Bind(objs[1])
 	writeToSQLAndInterpolate(i)
 
 	// Output:

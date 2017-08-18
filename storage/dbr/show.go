@@ -37,7 +37,7 @@ type Show struct {
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB queryPreparer
+	DB QueryPreparer
 
 	// Type bitwise flag containing the type of the SHOW statement.
 	Type uint
@@ -51,7 +51,7 @@ type Show struct {
 func NewShow() *Show { return &Show{} }
 
 // WithDB sets the database query object.
-func (b *Show) WithDB(db queryPreparer) *Show {
+func (b *Show) WithDB(db QueryPreparer) *Show {
 	b.DB = db
 	return b
 }

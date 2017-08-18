@@ -46,7 +46,7 @@ type Delete struct {
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB execPreparer
+	DB ExecPreparer
 	// Listeners allows to dispatch certain functions in different
 	// situations.
 	Listeners DeleteListeners
@@ -100,7 +100,7 @@ func (b *Delete) Alias(alias string) *Delete {
 }
 
 // WithDB sets the database query object.
-func (b *Delete) WithDB(db execPreparer) *Delete {
+func (b *Delete) WithDB(db ExecPreparer) *Delete {
 	b.DB = db
 	return b
 }
@@ -112,9 +112,26 @@ func (b *Delete) Unsafe() *Delete {
 	return b
 }
 
-// SetRecord pulls in arguments to match Columns from the argument appender.
-func (b *Delete) SetRecord(aa ArgumentsAppender) *Delete {
-	b.Record = aa
+// Bind binds the object to the main table for assembling and appending
+// arguments. An Binder gets called if it matches the qualifier, in
+// this case the current table name or its alias. This function panics if the
+// table name or its alias is empty. This function resets the internal slice.
+func (b *Delete) Bind(obj Binder) *Delete {
+	if b.ArgumentsAppender == nil {
+		b.ArgumentsAppender = make(map[string]Binder)
+	}
+	b.ArgumentsAppender[b.Table.mustQualifier()] = obj
+	return b
+}
+
+// BindByQualifier binds the object to a specific qualifier for assembling and
+// appending arguments. The qualifier can be in this case a table name or an
+// alias of a JOIN or sub query statement.
+func (b *Delete) BindByQualifier(qualifier string, obj Binder) *Delete {
+	if b.ArgumentsAppender == nil {
+		b.ArgumentsAppender = make(map[string]Binder)
+	}
+	b.ArgumentsAppender[qualifier] = obj
 	return b
 }
 
@@ -238,14 +255,16 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 	}
 
 	// TODO(CyS) add SQLStmtDeleteJoin
+	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
 
 	args, pap, err := b.Wheres.appendArgs(args, appendArgsWHERE)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	placeHolderColumns := make([]string, 0, len(b.Wheres)) // can be reused once we implement more features of the DELETE statement, like JOINs.
-	if args, err = appendAssembledArgs(pap, b.Record, args, sqlStmtDelete|sqlPartWhere, b.Wheres.intersectConditions(placeHolderColumns)); err != nil {
-		return nil, errors.WithStack(err)
+	if boundCols := b.Wheres.intersectConditions(placeHolderColumns); len(boundCols) > 0 {
+		if args, err = appendArgs(pap, b.ArgumentsAppender, args, b.Table.mustQualifier(), boundCols); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 	return args, nil
 }
@@ -259,7 +278,7 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 
 // Prepare executes the statement represented by the Delete. It returns the raw
 // database/sql Statement and an error if there was one. Provided arguments in
-// the Delete are getting ignored. It panics when field preparer at nil.
+// the Delete are getting ignored. It panics when field Preparer at nil.
 func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
 	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)

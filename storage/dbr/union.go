@@ -34,7 +34,7 @@ type Union struct {
 	// DB can be either a *sql.DB (connection pool), a *sql.Conn (a single
 	// dedicated database session) or a *sql.Tx (an in-progress database
 	// transaction).
-	DB queryPreparer
+	DB QueryPreparer
 
 	Selects     []*Select
 	OrderBys    identifiers
@@ -78,7 +78,7 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 }
 
 // WithDB sets the database query object.
-func (u *Union) WithDB(db queryPreparer) *Union {
+func (u *Union) WithDB(db QueryPreparer) *Union {
 	u.DB = db
 	return u
 }

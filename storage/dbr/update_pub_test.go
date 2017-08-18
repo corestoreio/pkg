@@ -70,7 +70,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 
-	records := []dbr.ArgumentsAppender{
+	records := []dbr.Binder{
 		&dbrPerson{
 			ID:    1,
 			Name:  "Alf",
@@ -120,7 +120,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 }
 
 // Make sure that type salesInvoice implements interface.
-var _ dbr.ArgumentsAppender = (*salesInvoice)(nil)
+var _ dbr.Binder = (*salesInvoice)(nil)
 
 // salesInvoice represents just a demo record.
 type salesInvoice struct {
@@ -131,34 +131,30 @@ type salesInvoice struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesInvoice) AppendArguments(st dbr.SQLStmt, args dbr.Arguments, columns []string) (dbr.Arguments, error) {
-	for _, c := range columns {
-		switch c {
-		case "entity_id":
-			args = args.Int64(so.EntityID)
-		case "state":
-			args = args.Str(so.State)
-		case "store_id":
-			args = args.Int64(so.StoreID)
-		case "customer_id":
-			args = args.Int64(so.CustomerID)
-		case "alias_customer_id":
-			// Here can be a special treatment implemented like encoding to JSON
-			// or encryption
-			args = args.Int64(so.CustomerID)
-		case "grand_total":
-			args = args.NullFloat64(so.GrandTotal)
-		default:
-			return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", c)
-		}
-	}
-	if len(columns) == 0 && st.IsValues() {
-		args = args.Int64(so.EntityID).Str(so.State).Int64(so.StoreID).Int64(so.CustomerID).NullFloat64(so.GrandTotal)
+func (so salesInvoice) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+	column := columns[0]
+	switch column {
+	case "entity_id":
+		args = args.Int64(so.EntityID)
+	case "state":
+		args = args.Str(so.State)
+	case "store_id":
+		args = args.Int64(so.StoreID)
+	case "customer_id":
+		args = args.Int64(so.CustomerID)
+	case "alias_customer_id":
+		// Here can be a special treatment implemented like encoding to JSON
+		// or encryption
+		args = args.Int64(so.CustomerID)
+	case "grand_total":
+		args = args.NullFloat64(so.GrandTotal)
+	default:
+		return nil, errors.NewNotFoundf("[dbr_test] Column %q not found", column)
 	}
 	return args, nil
 }
 
-func TestUpdateMulti_ColumnAliases(t *testing.T) {
+func TestUpdate_SetClausAliases(t *testing.T) {
 	t.Parallel()
 
 	dbc, dbMock := cstesting.MockDB(t)
@@ -168,18 +164,18 @@ func TestUpdateMulti_ColumnAliases(t *testing.T) {
 	))
 
 	prep.ExpectExec().WithArgs(
-		"pending", int64(5678), 31.41459, "DHL", 1).
+		"pending", int64(5678), 31.41459, "DHL", 21).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	prep.ExpectExec().WithArgs(
-		"processing", int64(8912), nil, "DHL", 2).
+		"processing", int64(8912), nil, "DHL", 32).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// </ignore_this>
 
 	// Our objects which should update the columns in the database table
 	// `sales_invoice`.
-	so1 := salesInvoice{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
-	so2 := salesInvoice{2, "processing", 7, 8912, dbr.NullFloat64{}}
+	so1 := salesInvoice{21, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
+	so2 := salesInvoice{32, "processing", 7, 8912, dbr.NullFloat64{}}
 
 	// Create the multi update statement
 	um := dbr.NewUpdate("sales_invoice").
@@ -217,7 +213,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 	t.Run("1 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			SetRecord(ce).
+			Bind(ce).
 			Where(dbr.Column("entity_id").Greater().PlaceHolder())
 
 		compareToSQL(t, u, nil,
@@ -230,7 +226,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 	t.Run("2 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			SetRecord(ce).
+			Bind(ce).
 			Where(
 				dbr.Column("x").In().Int64s(66, 77),
 				dbr.Column("entity_id").Greater().PlaceHolder(),
@@ -244,7 +240,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 	t.Run("3 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			SetRecord(ce).
+			Bind(ce).
 			Where(
 				dbr.Column("entity_id").Greater().PlaceHolder(),
 				dbr.Column("x").In().Int64s(66, 77),
@@ -254,6 +250,25 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`entity_id` > ?) AND (`x` IN (?,?)) AND (`y` > ?)",
 			"UPDATE `catalog_category_entity` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`entity_id` > 678) AND (`x` IN (66,77)) AND (`y` > 99)",
 			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(99),
+		)
+	})
+
+	t.Run("with alias table name", func(t *testing.T) {
+		// A fictional table statement which already reflects future JOIN
+		// implementation.
+		u := dbr.NewUpdate("catalog_category_entity").Alias("ce").
+			AddColumns("attribute_set_id", "parent_id", "path").
+			Bind(ce).
+			BindByQualifier("cpei", ce).
+			Where(
+				dbr.Column("ce.entity_id").Greater().PlaceHolder(), //678
+				dbr.Column("cpe.entity_id").In().Int64s(66, 77),
+				dbr.Column("cpei.attribute_set_id").In().PlaceHolder(), //6
+			)
+		compareToSQL(t, u, nil,
+			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=?, `parent_id`=?, `path`=? WHERE (`ce`.`entity_id` > ?) AND (`cpe`.`entity_id` IN (?,?)) AND (`cpei`.`attribute_set_id` IN (?))",
+			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` IN (6))",
+			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(6),
 		)
 	})
 }
