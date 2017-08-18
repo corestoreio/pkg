@@ -473,15 +473,32 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 	return args, nil
 }
 
-// Exec executes the statement represented by the Insert object.
-// It returns the raw database/sql Result and an error if there was one.
-// Regarding LastInsertID(): If you insert multiple rows using a single
-// INSERT statement, LAST_INSERT_ID() returns the value generated for
-// the first inserted row only. The reason for this at to make it possible to
-// reproduce easily the same INSERT statement against some other server.
+// Exec executes the statement represented by the Insert object. It returns the
+// raw database/sql Result or an error if there was one. Regarding
+// LastInsertID(): If you insert multiple rows using a single INSERT statement,
+// LAST_INSERT_ID() returns the value generated for the first inserted row only.
+// The reason for this at to make it possible to reproduce easily the same
+// INSERT statement against some other server. If a record resp. and object
+// implements the interface LastInsertIDAssigner then the LastInsertID gets
+// assigned incrementally to the objects.
 func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 	result, err := Exec(ctx, b.DB, b)
-	return result, errors.WithStack(err)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if b.Records == nil {
+		return result, nil
+	}
+	lID, err := result.LastInsertId()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	for i, rec := range b.Records {
+		if a, ok := rec.(LastInsertIDAssigner); ok {
+			a.AssignLastInsertID(lID + int64(i))
+		}
+	}
+	return result, nil
 }
 
 // Prepare creates a prepared statement

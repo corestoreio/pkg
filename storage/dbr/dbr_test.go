@@ -63,6 +63,7 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 
 var _ Binder = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPerson)(nil)
+var _ LastInsertIDAssigner = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPersons)(nil)
 var _ Binder = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
@@ -73,6 +74,10 @@ type dbrPerson struct {
 	Name    string
 	Email   NullString
 	Key     NullString
+}
+
+func (p *dbrPerson) AssignLastInsertID(id int64) {
+	p.ID = uint64(id)
 }
 
 // RowScan loads a single row from a SELECT statement returning only one row

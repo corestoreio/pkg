@@ -193,12 +193,20 @@ func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err er
 func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
 	s := createRealSessionWithFixtures(t, nil)
+
+	p := &dbrPerson{
+		Name:  "Pike",
+		Email: MakeNullString("pikes@peak.co"),
+	}
+
 	res, err := s.InsertInto("dbr_people").
-		AddColumns("id", "name", "email").
-		AddValues(678, "Pike", "pikes@peak.co").Exec(context.TODO())
+		AddColumns("name", "email").
+		Bind(p).Exec(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
+	require.Exactly(t, uint64(3), p.ID, "Last Insert ID must be three")
+
 	inID, err := res.LastInsertId()
 	if err != nil {
 		t.Fatalf("%+v", err)
@@ -210,9 +218,12 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 		assert.Equal(t, "Pike", p.Name)
 		assert.Equal(t, "pikes@peak.co", p.Email.String)
 	}
+
+	p.Name = "-"
+	p.Email.String = "pikes@peak.com"
 	res, err = s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		AddValues(inID, "", "pikes@peak.com").
+		Bind(p).
 		AddOnDuplicateKey(Column("name").Str("Pik3"), Column("email").Values()).
 		Exec(context.TODO())
 	if err != nil {

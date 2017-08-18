@@ -46,9 +46,9 @@ type Binder interface {
 }
 
 // LastInsertIDAssigner assigns the last insert ID of an auto increment
-// column back to the object.
-type xLastInsertIDAssigner interface { // TODO(CyS) implement xLastInsertIDAssigner
-	AssignLastInsertID(uint64) error
+// column back to the objects.
+type LastInsertIDAssigner interface {
+	AssignLastInsertID(int64)
 }
 
 // argument is union type for different Go primitives and their slice
