@@ -122,7 +122,7 @@ func sqlIfNullQuote4(w *bytes.Buffer, qualifierName ...string) {
 func SQLIf(expression, true, false string) *Condition {
 	return &Condition{
 		Left:             "IF((" + expression + "), " + true + ", " + false + ")",
-		IsLeftExpression: 1 == 1,
+		IsLeftExpression: 2 > 1,
 	}
 }
 

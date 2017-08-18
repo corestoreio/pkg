@@ -83,10 +83,10 @@ func (pe categoryEntity) AppendBind(args dbr.Arguments, columns []string) (dbr.A
 	return args, nil
 }
 
-// ExampleUpdate_SetRecord performs an UPDATE query in the table `catalog_category_entity` with the
+// ExampleUpdate_Bind performs an UPDATE query in the table `catalog_category_entity` with the
 // fix specified columns. The Go type categoryEntity implements the dbr.Binder interface and can
 // append the required arguments.
-func ExampleUpdate_SetRecord() {
+func ExampleUpdate_Bind() {
 
 	ce := categoryEntity{345, 6, "p123", dbr.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 

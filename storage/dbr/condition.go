@@ -260,16 +260,8 @@ type join struct {
 	On Conditions
 }
 
-// Alias
+// Alias assigns an alias name to the condition.
 func (c *Condition) Alias(a string) *Condition {
-	// TODO(CyS) implement
-	//// Aliased appends a quoted alias name to the expression
-	//func (e expr) Alias(a string) expr {
-	//										  e.Stmts = append(e.Stmts, " AS ")
-	//	e.Stmts = Quoter.appendQuote(e.Stmts, a)
-	//	return e
-	//}
-
 	c.Aliased = a
 	return c
 }

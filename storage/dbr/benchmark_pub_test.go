@@ -307,10 +307,9 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 // BenchmarkSelect_Integration_Scanner-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
 // BenchmarkSelect_Integration_Scanner-4   	     500	   3001319 ns/op	  784290 B/op	   23888 allocs/op Go 1.9 with new Scanner iFace
 // BenchmarkSelect_Integration_Scanner-4   	    1000	   1947410 ns/op	  743693 B/op	   17876 allocs/op Go 1.9 with RowConvert type and sql.RawBytes
-// BenchmarkSelect_Integration_Scanner-4   	    1000	   2057231 ns/op	 1113088 B/op	   15870 allocs/op
 func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 
-	//b.Skip("Comment me out, if you want to run this benchmark")
+	b.Skip("Comment me out, if you want to run this benchmark")
 
 	const coreConfigDataRowCount = 2007
 
