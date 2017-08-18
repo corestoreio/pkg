@@ -1,16 +1,16 @@
-# CoreStore library WIP = Work in Progress
+# CoreStore packages | WIP (Work in Progress)
 
 [![Build Status](https://travis-ci.org/corestoreio/csfw.svg?branch=master)](https://travis-ci.org/corestoreio/csfw) [![wercker status](https://app.wercker.com/status/d7d0bdda415d2228b6fb5bb01681b5c4/s/master "wercker status")](https://app.wercker.com/project/bykey/d7d0bdda415d2228b6fb5bb01681b5c4) [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/lrlnbpcjdy585mg1/branch/master?svg=true)](https://ci.appveyor.com/project/SchumacherFM/csfw/branch/master) [![GoDoc](http://godoc.org/github.com/corestoreio/csfw?status.svg)](http://godoc.org/github.com/corestoreio/csfw) [![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
 
-eCommerce library which is NOT compatible to a Magento 2 database schema but kinda.
+eCommerce packages which is NOT compatible to a Magento 2 database schema but kinda.
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
-Min. Go Version: 1.8
+Min. Go Version: 1.9
 
 ## Usage
 
-To properly use the CoreStore library some environment variables must be set
+To properly use the CoreStore packages, some environment variables must be set
 before running `go generate`. (TODO)
 
 ### Required settings
@@ -25,7 +25,7 @@ $ export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2'
 $ go get github.com/corestoreio/csfw
 $ export CS_DSN='see previous'
 $ cd $GOPATH/src/github.com/corestoreio/csfw
-$ go run codegen/tableToStruct/*.go
+$ xgo run xcodegen/tableToStruct/*.go
 ```
 
 ## Testing
@@ -96,7 +96,6 @@ from the geniuses listed below:
 | Dave Grijalva| [csjwt](https://github.com/corestoreio/csfw/tree/master/util/csjwt) | Copyright (c) 2012 MIT License |
 | Uber Technologies, Inc. | [log](https://github.com/corestoreio/csfw/tree/master/log) | Copyright (c) 2016 MIT License |
 | 2013 The Go Authors | [singleflight](https://github.com/corestoreio/csfw/tree/master/sync/singleflight) | Copyright (c) 2013 BSD Style |
-| Minio Cloud Storage, (C) 2016 Minio, Inc. | [blake2b-simd](https://github.com/minio/blake2b-simd) | Apache License, Version 2.0 |
 | Ventu.io, Oleg Sklyar, contributors. | [util/shortid](http://github.com/corestoreio/csfw/tree/master/utils/shortid) | MIT License Copyright (c) 2016, |
 | Carl Jackson (carl@avtok.com) (Goji) | [net/responseproxy](http://github.com/corestoreio/csfw/tree/master/net/responseproxy) | Copyright (c) 2014, 2015, 2016 |
 | Greg Roseberry, 2014; Patrick O'Brien, 2016 | [util/null](http://github.com/corestoreio/csfw/tree/master/util/null) | BSD Copyright (c) 2014, 2015, 2016 |
