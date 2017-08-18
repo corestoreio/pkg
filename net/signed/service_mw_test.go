@@ -16,7 +16,7 @@ package signed_test
 
 import (
 	"bytes"
-	"crypto/sha256"
+	"crypto"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -33,15 +33,15 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/hashpool"
 	"github.com/corestoreio/errors"
-	"github.com/minio/blake2b-simd"
 	"github.com/stretchr/testify/assert"
+	_ "golang.org/x/crypto/blake2b"
 )
 
 func init() {
-	if err := hashpool.Register("sha256", sha256.New); err != nil {
+	if err := hashpool.Register("sha256", crypto.SHA256.New); err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}
-	if err := hashpool.Register("blk2b256", blake2b.New256); err != nil {
+	if err := hashpool.Register("blk2b256", crypto.BLAKE2b_256.New); err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}
 }
