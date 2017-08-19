@@ -19,4 +19,7 @@
 //
 // Consider API from https://github.com/thephpleague/omnipay
 // and Magento\Payment\Model
+//
+// W3C Draft https://www.w3.org/TR/#tr_Web_Payments
+// https://news.ycombinator.com/item?id=15046601
 package payment
