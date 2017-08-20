@@ -15,10 +15,16 @@
 package dbr_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var _ dbr.Binder = (*someRecord)(nil)
@@ -103,4 +109,191 @@ func TestInsert_Bind(t *testing.T) {
 			"",
 		)
 	})
+}
+
+func TestInsert_Prepare(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ToSQL Error", func(t *testing.T) {
+		in := &dbr.Insert{}
+		in.AddColumns("a", "b")
+		stmt, err := in.Prepare(context.TODO())
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsEmpty(err))
+	})
+
+	t.Run("DB Error", func(t *testing.T) {
+		in := &dbr.Insert{
+			Into: "table",
+		}
+		in.DB = dbMock{
+			error: errors.NewAlreadyClosedf("Who closed myself?"),
+		}
+		in.AddColumns("a", "b").AddValues(1, true)
+
+		stmt, err := in.Prepare(context.TODO())
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
+
+	t.Run("ExecArgs One Row", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `customer_entity` (`email`,`group_id`,`created_at`) VALUES (?,?,?)"))
+		prep.ExpectExec().WithArgs("a@b.c", 33, now()).WillReturnResult(sqlmock.NewResult(4, 0))
+		prep.ExpectExec().WithArgs("x@y.z", 44, now().Add(time.Minute)).WillReturnResult(sqlmock.NewResult(5, 0))
+
+		stmt, err := dbr.NewInsert("customer_entity").
+			AddColumns("email", "group_id", "created_at").
+			WithDB(dbc.DB).
+			Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		tests := []struct {
+			email      string
+			groupID    int
+			created_at time.Time
+			insertID   int64
+		}{
+			{"a@b.c", 33, now(), 4},
+			{"x@y.z", 44, now().Add(time.Minute), 5},
+		}
+
+		args := dbr.MakeArgs(3)
+		for i, test := range tests {
+			args = args[:0]
+
+			res, err := stmt.ExecArgs(context.TODO(), args.Str(test.email).Int(test.groupID).Time(test.created_at))
+			if err != nil {
+				t.Fatalf("Index %d => %+v", i, err)
+			}
+			lid, err := res.LastInsertId()
+			if err != nil {
+				t.Fatalf("Result index %d with error: %s", i, err)
+			}
+			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
+		}
+	})
+
+	t.Run("ExecArgs Multi Row", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `customer_entity` (`email`,`group_id`) VALUES (?,?),(?,?)"))
+		prep.ExpectExec().WithArgs("a@b.c", 33, "d@e.f", 33).WillReturnResult(sqlmock.NewResult(6, 0))
+		prep.ExpectExec().WithArgs("x@y.z", 44, "u@v.w", 44).WillReturnResult(sqlmock.NewResult(7, 0))
+
+		stmt, err := dbr.NewInsert("customer_entity").
+			AddColumns("email", "group_id").
+			SetRowCount(2).
+			WithDB(dbc.DB).
+			Prepare(context.TODO())
+		require.NoError(t, err)
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		tests := []struct {
+			email1   string
+			groupID1 int
+			email2   string
+			groupID2 int
+			insertID int64
+		}{
+			{"a@b.c", 33, "d@e.f", 33, 6},
+			{"x@y.z", 44, "u@v.w", 44, 7},
+		}
+
+		args := dbr.MakeArgs(4)
+		for i, test := range tests {
+			args = args[:0]
+
+			res, err := stmt.ExecArgs(context.TODO(), args.Str(test.email1).Int(test.groupID1).Str(test.email2).Int(test.groupID2))
+			if err != nil {
+				t.Fatalf("Index %d => %+v", i, err)
+			}
+			lid, err := res.LastInsertId()
+			if err != nil {
+				t.Fatalf("Result index %d with error: %s", i, err)
+			}
+			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
+		}
+	})
+
+	t.Run("ExecBind One Row", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `dbr_person` (`name`,`email`) VALUES (?,?)"))
+		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(4, 0))
+		prep.ExpectExec().WithArgs("John Doe", "john@doe.go").WillReturnResult(sqlmock.NewResult(5, 0))
+
+		stmt, err := dbr.NewInsert("dbr_person").
+			AddColumns("name", "email").
+			WithDB(dbc.DB).
+			Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		tests := []struct {
+			name     string
+			email    string
+			insertID int64
+		}{
+			{"Peter Gopher", "peter@gopher.go", 4},
+			{"John Doe", "john@doe.go", 5},
+		}
+
+		for i, test := range tests {
+
+			p := &dbrPerson{
+				Name:  test.name,
+				Email: dbr.MakeNullString(test.email),
+			}
+
+			res, err := stmt.ExecBind(context.TODO(), p)
+			if err != nil {
+				t.Fatalf("Index %d => %+v", i, err)
+			}
+			lid, err := res.LastInsertId()
+			if err != nil {
+				t.Fatalf("Result index %d with error: %s", i, err)
+			}
+			assert.Exactly(t, test.insertID, lid, "Index %d has different LastInsertIDs", i)
+			assert.Exactly(t, test.insertID, p.ID, "Index %d and model p has different LastInsertIDs", i)
+		}
+	})
+
+	t.Run("ExecContext", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("INSERT INTO `dbr_person` (`name`,`email`) VALUES (?,?)"))
+		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go").WillReturnResult(sqlmock.NewResult(4, 0))
+
+		stmt, err := dbr.NewInsert("dbr_person").
+			AddColumns("name", "email").
+			WithDB(dbc.DB).
+			Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		res, err := stmt.ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go")
+		require.NoError(t, err, "failed to execute ExecContext")
+
+		lid, err := res.LastInsertId()
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t, int64(4), lid, "Different LastInsertIDs")
+	})
+
 }

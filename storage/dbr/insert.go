@@ -23,8 +23,6 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// TODO: fetch LastInsertID and assign it to the interface implementation.
-
 // Insert contains the clauses for an INSERT statement
 type Insert struct {
 	BuilderBase
@@ -501,10 +499,97 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 	return result, nil
 }
 
-// Prepare creates a prepared statement
-func (b *Insert) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	stmt, err := Prepare(ctx, b.DB, b)
-	return stmt, errors.WithStack(err)
+// Prepare creates a prepared statement. The provided context is used for the
+// preparation of the statement, not for the execution of the statement.
+func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
+	sqlStmt, err := Prepare(ctx, b.DB, b)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	cap := len(b.Columns) * b.RecordValueCount
+	return &StmtInsert{
+		argsCache: make(Arguments, 0, cap),
+		iFaces:    make([]interface{}, 0, cap),
+		stmt:      sqlStmt,
+		ins:       b,
+	}, nil
+}
+
+// StmtInsert wraps a *sql.StmtInsert with a specific SQL query. To create a
+// StmtInsert call the Prepare function of type Insert. StmtInsert is not safe
+// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
+// Close!
+type StmtInsert struct {
+	ins       *Insert
+	stmt      *sql.Stmt
+	argsCache Arguments
+	iFaces    []interface{}
+}
+
+// Close closes the underlying prepared statement.
+func (st *StmtInsert) Close() error { return st.stmt.Close() }
+
+// ExecContext traditional way, allocation heavy.
+func (st *StmtInsert) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+	return st.stmt.ExecContext(ctx, args...)
+}
+
+// ExecArgs executes a prepared statement with the given arguments. Number of
+// arguments must be the same as in the defined SQL but ExecArgs can be called
+// in a loop. Not thread safe.
+func (st *StmtInsert) ExecArgs(ctx context.Context, args Arguments) (sql.Result, error) {
+	st.ins.Values = st.ins.Values[:0]
+	if lv, mod := len(args), len(st.ins.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
+		// now we have more arguments than columns and we can assume that more
+		// rows gets inserted.
+		for i := 0; i < len(args); i = i + mod {
+			st.ins.Values = append(st.ins.Values, args[i:i+mod])
+		}
+	} else {
+		// each call to AddValues equals one row in a table.
+		st.ins.Values = append(st.ins.Values, args)
+	}
+	st.argsCache = st.argsCache[:0]
+	st.iFaces = st.iFaces[:0]
+
+	var err error
+	st.argsCache, err = st.ins.appendArgs(st.argsCache)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
+}
+
+// ExecBind executes a prepared statement with the given records. Number of
+// records must be the same as in the defined SQL but ExecBind can be called
+// in a loop. Not thread safe. ExecBind supports LastInsertIDAssigner.
+func (st *StmtInsert) ExecBind(ctx context.Context, records ...Binder) (sql.Result, error) {
+	st.argsCache = st.argsCache[:0]
+	st.iFaces = st.iFaces[:0]
+
+	var err error
+
+	st.ins.Records = records
+	st.argsCache, err = st.ins.appendArgs(st.argsCache)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	result, err := st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	lID, err := result.LastInsertId()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	for i, rec := range st.ins.Records {
+		if a, ok := rec.(LastInsertIDAssigner); ok {
+			a.AssignLastInsertID(lID + int64(i))
+		}
+	}
+	return result, nil
 }
 
 func strInSlice(search string, sl []string) bool {

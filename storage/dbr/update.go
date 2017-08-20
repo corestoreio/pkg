@@ -337,10 +337,8 @@ func (b *Update) validate() error {
 //func (ue *updateExecMulti) RunByQualifier(rec Binder) *updateExecMulti { return ue }
 
 // ExecMulti allows to run an UPDATE statement multiple times with different
-// records in a serial order. The returned result slice indexes are same index
-// as for the Records slice. A prepared statement gets always created. Field
-// Update.ArgumentsAppender gets overwritten by the `records` argument of this
-// function. Rework this docu. ;-)
+// records in a serial order. The returned result slice indexes are same indexes
+// as for the `records` slice. A prepared statement gets always created.
 func (b *Update) ExecMulti(ctx context.Context, records ...Binder) (_ []sql.Result, err error) {
 	if err = b.validate(); err != nil {
 		return nil, errors.WithStack(err)

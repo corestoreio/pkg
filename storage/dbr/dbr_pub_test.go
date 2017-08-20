@@ -17,7 +17,6 @@ package dbr_test
 import (
 	"os"
 	"testing"
-
 	"time"
 
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -37,6 +36,10 @@ type dbrPerson struct {
 	Name  string
 	Email dbr.NullString
 	Key   dbr.NullString
+}
+
+func (p *dbrPerson) AssignLastInsertID(id int64) {
+	p.ID = id
 }
 
 func (p *dbrPerson) AppendBind(args dbr.Arguments, columns []string) (_ dbr.Arguments, err error) {

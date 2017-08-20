@@ -244,33 +244,6 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	}
 }
 
-// TODO: do a real test inserting multiple records
-
-func TestInsert_Prepare(t *testing.T) {
-	t.Parallel()
-	t.Run("ToSQL Error", func(t *testing.T) {
-		in := &Insert{}
-		in.AddColumns("a", "b")
-		stmt, err := in.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
-	})
-
-	t.Run("Prepare Error", func(t *testing.T) {
-		in := &Insert{
-			Into: "table",
-		}
-		in.DB = dbMock{
-			error: errors.NewAlreadyClosedf("Who closed myself?"),
-		}
-		in.AddColumns("a", "b").AddValues(1, true)
-
-		stmt, err := in.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
-	})
-}
-
 func TestInsert_Events(t *testing.T) {
 	t.Parallel()
 
