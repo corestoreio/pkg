@@ -538,7 +538,11 @@ func (st *StmtInsert) ExecContext(ctx context.Context, args ...interface{}) (sql
 // arguments must be the same as in the defined SQL but ExecArgs can be called
 // in a loop. Not thread safe.
 func (st *StmtInsert) ExecArgs(ctx context.Context, args Arguments) (sql.Result, error) {
+	st.ins.Records = nil
 	st.ins.Values = st.ins.Values[:0]
+	st.argsCache = st.argsCache[:0]
+	st.iFaces = st.iFaces[:0]
+
 	if lv, mod := len(args), len(st.ins.Columns); mod > 0 && lv > mod && (lv%mod) == 0 {
 		// now we have more arguments than columns and we can assume that more
 		// rows gets inserted.
@@ -549,9 +553,6 @@ func (st *StmtInsert) ExecArgs(ctx context.Context, args Arguments) (sql.Result,
 		// each call to AddValues equals one row in a table.
 		st.ins.Values = append(st.ins.Values, args)
 	}
-	st.argsCache = st.argsCache[:0]
-	st.iFaces = st.iFaces[:0]
-
 	var err error
 	st.argsCache, err = st.ins.appendArgs(st.argsCache)
 	if err != nil {

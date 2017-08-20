@@ -32,10 +32,13 @@ var now = func() time.Time {
 var _ dbr.Binder = (*dbrPerson)(nil)
 
 type dbrPerson struct {
-	ID    int64
-	Name  string
-	Email dbr.NullString
-	Key   dbr.NullString
+	ID          int64
+	Name        string
+	Email       dbr.NullString
+	Key         dbr.NullString
+	StoreID     int64
+	CreatedAt   time.Time
+	TotalIncome float64
 }
 
 func (p *dbrPerson) AssignLastInsertID(id int64) {
@@ -48,7 +51,7 @@ func (p *dbrPerson) AppendBind(args dbr.Arguments, columns []string) (_ dbr.Argu
 		return p.appendBind(args, columns[0])
 	}
 	if l == 0 {
-		return args.Int64(p.ID).Str(p.Name).NullString(p.Email), nil // except auto inc column ;-)
+		return args.Int64(p.ID).Str(p.Name).NullString(p.Email).NullString(p.Key).Int64(p.StoreID).Time(p.CreatedAt).Float64(p.TotalIncome), nil
 	}
 	for _, col := range columns {
 		if args, err = p.appendBind(args, col); err != nil {
@@ -68,6 +71,12 @@ func (p *dbrPerson) appendBind(args dbr.Arguments, column string) (_ dbr.Argumen
 		args = args.NullString(p.Email)
 	case "key":
 		args = args.NullString(p.Key)
+	case "store_id":
+		args = args.Int64(p.StoreID)
+	case "created_at":
+		args = args.Time(p.CreatedAt)
+	case "total_income":
+		args = args.Float64(p.TotalIncome)
 	default:
 		return nil, errors.NewNotFoundf("[dbr_test] dbrPerson Column %q not found", column)
 	}

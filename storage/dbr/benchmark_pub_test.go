@@ -294,42 +294,6 @@ func BenchmarkSelect_SQLCase(b *testing.B) {
 	_ = haveSQL
 }
 
-// table with 2007 rows and 5 columns
-// BenchmarkSelect_Integration_LoadStructs-4   	     300	   3995130 ns/op	  839604 B/op	   23915 allocs/op <- Reflection with struct tags
-// BenchmarkSelect_Integration_LoadX-4         	     500	   3190194 ns/op	  752296 B/op	   21883 allocs/op <- "No Reflection"
-// BenchmarkSelect_Integration_LoadGoSQLDriver-4   	 500	   2975945 ns/op	  738824 B/op	   17859 allocs/op
-// BenchmarkSelect_Integration_LoadPubNative-4       500	   2826601 ns/op	  669699 B/op	   11966 allocs/op <- no database/sql
-
-// BenchmarkSelect_Integration_Load-4   	     500	   3393616 ns/op	  752254 B/op	   21882 allocs/op <- if/else orgie
-// BenchmarkSelect_Integration_Load-4   	     500	   3461720 ns/op	  752234 B/op	   21882 allocs/op <- switch
-
-// BenchmarkSelect_Integration_LScanner-4   	 500	   3425029 ns/op	  755206 B/op	   21878 allocs/op
-// BenchmarkSelect_Integration_Scanner-4   	     500	   3288291 ns/op	  784423 B/op	   23890 allocs/op <- iFace with Scan function
-// BenchmarkSelect_Integration_Scanner-4   	     500	   3001319 ns/op	  784290 B/op	   23888 allocs/op Go 1.9 with new Scanner iFace
-// BenchmarkSelect_Integration_Scanner-4   	    1000	   1947410 ns/op	  743693 B/op	   17876 allocs/op Go 1.9 with RowConvert type and sql.RawBytes
-func BenchmarkSelect_Integration_Scanner(b *testing.B) {
-
-	b.Skip("Comment me out, if you want to run this benchmark")
-
-	const coreConfigDataRowCount = 2007
-
-	c := createRealSession(b)
-	defer c.Close()
-
-	s := c.Select("*").From("core_config_data112")
-	ctx := context.TODO()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var ccd TableCoreConfigDataSlice
-		if _, err := s.Load(ctx, &ccd); err != nil {
-			b.Fatalf("%+v", err)
-		}
-		if len(ccd.Data) != coreConfigDataRowCount {
-			b.Fatal("Length mismatch")
-		}
-	}
-}
-
 func BenchmarkDeleteSQL(b *testing.B) {
 
 	b.Run("NewDelete", func(b *testing.B) {

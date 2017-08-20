@@ -88,10 +88,9 @@ func (p *dbrPerson) RowScan(r *sql.Rows) error {
 	return p.assign(&p.convert)
 }
 
-func (p *dbrPerson) assign(rc *RowConvert) error {
+func (p *dbrPerson) assign(rc *RowConvert) (err error) {
 	for i, c := range rc.Columns {
 		b := rc.Index(i)
-		var err error
 		switch c {
 		case "id":
 			p.ID, err = b.Uint64()
@@ -101,8 +100,8 @@ func (p *dbrPerson) assign(rc *RowConvert) error {
 			p.Email.NullString, err = b.NullString()
 		case "key":
 			p.Key.NullString, err = b.NullString()
-		default:
-			return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
+			//default:
+			//	return errors.NewNotFoundf("[dbr_test] Column %q not found", c)
 		}
 		if err != nil {
 			return errors.WithStack(err)
@@ -270,7 +269,10 @@ func installFixtures(db *sql.DB, c *installFixturesConfig) {
 			id bigint(8) unsigned NOT NULL auto_increment PRIMARY KEY,
 			name varchar(255) NOT NULL,
 			email varchar(255),
-			%s varchar(255)
+			%s varchar(255),
+			store_id smallint(5) unsigned DEFAULT 0 COMMENT 'Store Id',
+			created_at timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' COMMENT 'Created At',
+			total_income decimal(12,4) NOT NULL DEFAULT 0.0000 COMMENT 'Total Income Amount'
 		)
 	`, "`key`")
 
