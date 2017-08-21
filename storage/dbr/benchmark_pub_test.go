@@ -378,7 +378,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, args, err := dbr.NewInsert("alpha").
 			AddColumns("something_id", "user_id", "other").
-			Bind(obj).
+			BindRecord(obj).
 			ToSQL()
 		if err != nil {
 			b.Fatal(err)

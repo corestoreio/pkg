@@ -82,11 +82,11 @@ func ExampleInsert_Bind() {
 	}
 
 	i := dbr.NewInsert("catalog_product_entity").AddColumns("attribute_set_id", "type_id", "sku", "has_options").
-		Bind(objs[0]).Bind(objs[1])
+		BindRecord(objs[0]).BindRecord(objs[1])
 	writeToSQLAndInterpolate(i)
 
 	fmt.Print("\n\n")
-	i = dbr.NewInsert("catalog_product_entity").SetRecordValueCount(5).Bind(objs[0]).Bind(objs[1])
+	i = dbr.NewInsert("catalog_product_entity").SetRecordValueCount(5).BindRecord(objs[0]).BindRecord(objs[1])
 	writeToSQLAndInterpolate(i)
 
 	// Output:

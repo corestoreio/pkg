@@ -193,7 +193,7 @@ func (b *Insert) AddArguments(args Arguments) *Insert {
 // record can also be e.g. a slice which appends all requested arguments at
 // once. Using a slice requires to call `SetRowCount` to tell the Insert object
 // the number of rows.
-func (b *Insert) Bind(recs ...ArgumentsAppender) *Insert {
+func (b *Insert) BindRecord(recs ...ArgumentsAppender) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }

@@ -58,7 +58,7 @@ func TestInsert_SetValuesCount(t *testing.T) {
 		person.Email.Valid = true
 		person.Email.String = "obama@whitehouse.gov"
 		compareToSQL(t,
-			NewInsert("dbr_people").AddColumns("name", "email").Bind(&person),
+			NewInsert("dbr_people").AddColumns("name", "email").BindRecord(&person),
 			nil,
 			"INSERT INTO `dbr_people` (`name`,`email`) VALUES (?,?)",
 			"INSERT INTO `dbr_people` (`name`,`email`) VALUES ('Barack','obama@whitehouse.gov')",
@@ -159,7 +159,7 @@ func TestInsertReal(t *testing.T) {
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
-	ib := s.InsertInto("dbr_people").AddColumns("name", "email").Bind(&person)
+	ib := s.InsertInto("dbr_people").AddColumns("name", "email").BindRecord(&person)
 	res, err = ib.Exec(context.TODO())
 	if err != nil {
 		t.Errorf("%s: %s", err, ib.String())
@@ -201,7 +201,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
 	res, err := s.InsertInto("dbr_people").
 		AddColumns("name", "email").
-		Bind(p).Exec(context.TODO())
+		BindRecord(p).Exec(context.TODO())
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -223,7 +223,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	p.Email.String = "pikes@peak.com"
 	res, err = s.InsertInto("dbr_people").
 		AddColumns("id", "name", "email").
-		Bind(p).
+		BindRecord(p).
 		AddOnDuplicateKey(Column("name").Str("Pik3"), Column("email").Values()).
 		Exec(context.TODO())
 	if err != nil {
@@ -571,7 +571,7 @@ func TestInsert_Bind_Slice(t *testing.T) {
 	compareToSQL(t,
 		NewInsert("dbr_person").
 			AddColumns("name", "email").
-			Bind(persons).
+			BindRecord(persons).
 			SetRowCount(len(persons.Data)),
 		nil,
 		"INSERT INTO `dbr_person` (`name`,`email`) VALUES (?,?),(?,?),(?,?)",

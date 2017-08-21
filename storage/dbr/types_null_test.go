@@ -48,7 +48,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Create the record in the db
 		res, err := s.InsertInto("null_types").
 			AddColumns("string_val", "int64_val", "float64_val", "time_val", "bool_val").
-			Bind(test.record).Exec(context.TODO())
+			BindRecord(test.record).Exec(context.TODO())
 		require.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)

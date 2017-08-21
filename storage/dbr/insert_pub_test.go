@@ -74,7 +74,7 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dbr.NewInsert("a").
 				AddColumns("something_id", "user_id", "other").
-				Bind(objs[0]).Bind(objs[1], objs[2]).
+				BindRecord(objs[0]).BindRecord(objs[1], objs[2]).
 				AddOnDuplicateKey(
 					dbr.Column("something_id").Int64(99),
 					dbr.Column("user_id").Values(),
@@ -89,7 +89,7 @@ func TestInsert_Bind(t *testing.T) {
 		compareToSQL(t,
 			dbr.NewInsert("a").
 				SetRecordValueCount(3).
-				Bind(objs[0]).Bind(objs[1], objs[2]).
+				BindRecord(objs[0]).BindRecord(objs[1], objs[2]).
 				AddOnDuplicateKey(
 					dbr.Column("something_id").Int64(99),
 					dbr.Column("user_id").Values(),
@@ -103,7 +103,7 @@ func TestInsert_Bind(t *testing.T) {
 	t.Run("column not found", func(t *testing.T) {
 		objs := []someRecord{{1, 88, false}, {2, 99, true}}
 		compareToSQL(t,
-			dbr.NewInsert("a").AddColumns("something_it", "user_id", "other").Bind(objs[0]).Bind(objs[1]),
+			dbr.NewInsert("a").AddColumns("something_it", "user_id", "other").BindRecord(objs[0]).BindRecord(objs[1]),
 			errors.IsNotFound,
 			"",
 			"",
