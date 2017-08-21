@@ -19,9 +19,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log"
 )
 
 // Update contains the clauses for an UPDATE statement
@@ -293,11 +291,26 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 	return args, nil
 }
 
-// Prepare creates a new prepared statement represented by the Update object. It
-// returns the raw database/sql Stmt and an error if there was one.
-func (b *Update) Prepare(ctx context.Context) (*sql.Stmt, error) {
+// Prepare executes the statement represented by the Update to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the Update are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement.
+func (b *Update) Prepare(ctx context.Context) (*StmtUpdate, error) {
+	if err := b.validate(); err != nil {
+		return nil, errors.WithStack(err)
+	}
 	stmt, err := Prepare(ctx, b.DB, b)
-	return stmt, errors.WithStack(err)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	cap := len(b.SetClauses) + len(b.Wheres)
+	return &StmtUpdate{
+		upd:       b,
+		argsCache: make(Arguments, 0, cap),
+		iFaces:    make([]interface{}, 0, cap),
+		stmt:      stmt,
+	}, nil
 }
 
 // Exec interpolates and executes the statement represented by the Update
@@ -320,60 +333,54 @@ func (b *Update) validate() error {
 	return nil
 }
 
-// ExecMulti allows to run an UPDATE statement multiple times with different
-// records in a serial order. The returned result slice indexes are same indexes
-// as for the `records` slice. A prepared statement gets always created.
-func (b *Update) ExecMulti(ctx context.Context, records ...ArgumentsAppender) (_ []sql.Result, err error) {
-	if err = b.validate(); err != nil {
-		return nil, errors.WithStack(err)
-	}
+// StmtUpdate wraps a *sql.StmtUpdate with a specific SQL query. To create a
+// StmtUpdate call the Prepare function of type Update. StmtUpdate is not safe
+// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
+// Close!
+type StmtUpdate struct {
+	upd       *Update
+	stmt      *sql.Stmt
+	argsCache Arguments
+	iFaces    []interface{}
+}
 
-	if b.Log != nil && b.Log.IsInfo() {
-		defer log.WhenDone(b.Log).Info("dbr.Update.ExecMulti.Timing",
-			log.Stringer("sql", b),
-			log.Int("records", len(records)))
-	}
+// Close closes the underlying prepared statement.
+func (st *StmtUpdate) Close() error { return st.stmt.Close() }
 
-	b.IsInterpolate = false
+// ExecContext traditional way, allocation heavy.
+func (st *StmtUpdate) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+	return st.stmt.ExecContext(ctx, args...)
+}
 
-	sqlBuf := bufferpool.Get()
-	defer bufferpool.Put(sqlBuf)
+// ExecArgs executes a prepared statement with the given arguments. Number of
+// arguments must be the same as in the defined SQL but ExecArgs can be called
+// in a loop. Not thread safe.
+func (st *StmtUpdate) ExecArgs(ctx context.Context, args Arguments) (sql.Result, error) {
+	//st.argsCache = st.argsCache[:0]
+	st.iFaces = st.iFaces[:0]
 
-	if err = b.toSQL(sqlBuf); err != nil {
-		return nil, errors.WithStack(err)
-	}
+	//var err error
+	//st.argsCache, err = st.upd.appendArgs(st.argsCache)
+	//if err != nil {
+	//	return nil, errors.WithStack(err)
+	//}
+	// TODO fix architecture bug once arguments are overall refactored
+	return st.stmt.ExecContext(ctx, args.Interfaces(st.iFaces...)...)
+}
 
-	stmt, err := b.DB.PrepareContext(ctx, sqlBuf.String())
+// ExecRecord executes a prepared statement with the given records. Number of
+// records must be the same as in the defined SQL but ExecRecord can be called
+// in a loop. Not thread safe.
+func (st *StmtUpdate) ExecRecord(ctx context.Context, records ...QualifiedRecord) (sql.Result, error) {
+	st.argsCache = st.argsCache[:0]
+	st.iFaces = st.iFaces[:0]
+
+	st.upd.BindRecord(records...)
+	var err error
+	st.argsCache, err = st.upd.appendArgs(st.argsCache)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	defer func() {
-		if err2 := stmt.Close(); err == nil && err2 != nil {
-			err = errors.WithStack(err2)
-		}
-	}()
 
-	args := make(Arguments, 0, (len(records)+len(b.Wheres))*3) // 3 just a bad guess
-	results := make([]sql.Result, len(records))
-	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
-	}
-	qualifier := b.Table.mustQualifier()
-	for i, rec := range records {
-		b.ArgumentsAppender[qualifier] = rec
-
-		args, err = b.appendArgs(args)
-		if err != nil {
-			return nil, errors.Wrapf(err, "[dbr] Update.ExecMulti.appendArgs. Index %d with Query: %q", i, sqlBuf)
-		}
-
-		results[i], err = stmt.ExecContext(ctx, args.Interfaces()...)
-		if err != nil {
-			return nil, errors.Wrapf(err, "[dbr] Update.ExecMulti.Stmt.Exec. Index %d with Query: %q", i, sqlBuf)
-		}
-
-		args = args[:0] // reset for re-usage
-	}
-
-	return results, nil
+	return st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
 }

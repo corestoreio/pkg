@@ -76,10 +76,10 @@ func (so salesOrder) AppendArgs(args dbr.Arguments, columns []string) (dbr.Argum
 	return args, nil
 }
 
-// ExampleUpdateMulti can create a prepared statement or interpolated statements
+// ExampleUpdate_Prepare can create a prepared statement or interpolated statements
 // to run updates on table  `sales_order` with different objects. The SQL UPDATE
 // statement acts as a template.
-func ExampleUpdate_ExecMulti() {
+func ExampleUpdate_Prepare() {
 	// <ignore_this>
 	dbc, dbMock := cstesting.MockDB(nil)
 	defer cstesting.MockClose(nil, dbc, dbMock)
@@ -97,34 +97,45 @@ func ExampleUpdate_ExecMulti() {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// </ignore_this>
 
-	// Create the multi update statement
-	um := dbr.NewUpdate("sales_order").
+	// Create the prepared update statement
+	stmt, err := dbr.NewUpdate("sales_order").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
 			dbr.Column("shipping_method").In().Strs("DHL", "UPS"),
 			dbr.Column("entity_id").PlaceHolder(),
-		).WithDB(dbc.DB)
-
-	// Our objects which should update the columns in the database table
-	// `sales_order`.
-	so1 := salesOrder{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
-	so2 := salesOrder{2, "processing", 7, 8912, dbr.NullFloat64{}}
-
-	results, err := um.ExecMulti(context.Background(), so1, so2)
+		).
+		WithDB(dbc.DB).
+		Prepare(context.TODO())
 	if err != nil {
 		fmt.Printf("Exec Error: %+v\n", err)
 		return
 	}
-	for i, r := range results {
-		ra, err := r.RowsAffected()
+	defer stmt.Close()
+
+	// Our objects which should update the columns in the database table
+	// `sales_order`.
+	collection := []salesOrder{
+		{1, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)},
+		{2, "processing", 7, 8912, dbr.NullFloat64{}},
+	}
+	for _, record := range collection {
+		// We're not using an alias in the query so Qualify can have an empty
+		// qualifier, which falls back to the default table name "sales_order".
+		result, err := stmt.ExecRecord(context.Background(), dbr.Qualify("", record))
 		if err != nil {
-			fmt.Printf("Index %d RowsAffected Error: %+v\n", i, err)
+			fmt.Printf("Exec Error: %+v\n", err)
 			return
 		}
-		fmt.Printf("Index %d RowsAffected %d\n", i, ra)
+
+		ra, err := result.RowsAffected()
+		if err != nil {
+			fmt.Printf("RowsAffected Error: %+v\n", err)
+			return
+		}
+		fmt.Printf("RowsAffected %d\n", ra)
 	}
 
 	// Output:
-	//Index 0 RowsAffected 1
-	//Index 1 RowsAffected 1
+	//RowsAffected 1
+	//RowsAffected 1
 }

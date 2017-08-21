@@ -499,8 +499,11 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 	return result, nil
 }
 
-// Prepare creates a prepared statement. The provided context is used for the
-// preparation of the statement, not for the execution of the statement.
+// Prepare executes the statement represented by the Insert to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the Insert are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement.
 func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
 	sqlStmt, err := Prepare(ctx, b.DB, b)
 	if err != nil {
@@ -564,11 +567,11 @@ func (st *StmtInsert) ExecArgs(ctx context.Context, args Arguments) (sql.Result,
 // ExecRecord executes a prepared statement with the given records. Number of
 // records must be the same as in the defined SQL but ExecRecord can be called
 // in a loop. Not thread safe. ExecRecord supports LastInsertIDAssigner.
-func (st *StmtInsert) ExecRecord(ctx context.Context, records ...ArgumentsAppender) (_ sql.Result, err error) {
+func (st *StmtInsert) ExecRecord(ctx context.Context, records ...ArgumentsAppender) (sql.Result, error) {
 	st.argsCache = st.argsCache[:0]
 	st.iFaces = st.iFaces[:0]
-
 	st.ins.Records = records
+	var err error
 	st.argsCache, err = st.ins.appendArgs(st.argsCache)
 	if err != nil {
 		return nil, errors.WithStack(err)

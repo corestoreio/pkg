@@ -30,6 +30,7 @@ func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
 func (b *Select) Prepare(ctx context.Context) (*sql.Stmt, error) {
+	// TODO: do the same as for DELETE or INSERT
 	stmt, err := Prepare(ctx, b.DB, b)
 	return stmt, errors.WithStack(err)
 }

@@ -26,9 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// due to import cycle with the cstesting package, we must test externally
-
-func TestUpdateMulti_Exec(t *testing.T) {
+func TestUpdate_Prepare(t *testing.T) {
 	t.Parallel()
 
 	t.Run("no columns provided", func(t *testing.T) {
@@ -49,13 +47,13 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 
-	t.Run("alias mismatch MultiExec", func(t *testing.T) {
+	t.Run("alias mismatch Prepare", func(t *testing.T) {
 		mu := dbr.NewUpdate("catalog_product_entity").
 			AddColumns("sku", "updated_at").
 			Where(dbr.Column("entity_id").In().PlaceHolder()).WithDB(dbMock{})
 		mu.SetClausAliases = []string{"update_sku"}
-		res, err := mu.ExecMulti(context.TODO())
-		assert.Nil(t, res)
+		stmt, err := mu.Prepare(context.TODO())
+		assert.Nil(t, stmt)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 
@@ -70,50 +68,113 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 
-	records := []dbr.ArgumentsAppender{
-		&dbrPerson{
-			ID:    1,
-			Name:  "Alf",
-			Email: dbr.MakeNullString("alf@m') -- el.mac"),
-		},
-		&dbrPerson{
-			ID:    2,
-			Name:  "John",
-			Email: dbr.MakeNullString("john@doe.com"),
-		},
-	}
-
-	// interpolate must get ignored
-	mu := dbr.NewUpdate("customer_entity").Alias("ce").
-		AddColumns("name", "email").
-		Where(dbr.Column("id").Equal().PlaceHolder()).
-		Interpolate()
-
-	setSMPrepared := func(m sqlmock.Sqlmock) {
-		prep := m.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
-		prep.ExpectExec().WithArgs("Alf", "alf@m') -- el.mac", 1).WillReturnResult(sqlmock.NewResult(0, 1))
-		prep.ExpectExec().WithArgs("John", "john@doe.com", 2).WillReturnResult(sqlmock.NewResult(0, 1))
-	}
-
-	t.Run("prepared no transaction", func(t *testing.T) {
+	t.Run("prepared success", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
 
-		setSMPrepared(dbMock)
-
-		mu.DB = dbc.DB
-
-		results, err := mu.ExecMulti(context.TODO(), records...)
-		if err != nil {
-			t.Fatalf("%+v", err)
+		records := []*dbrPerson{
+			{
+				ID:    1,
+				Name:  "Alf",
+				Email: dbr.MakeNullString("alf@m') -- el.mac"),
+			},
+			{
+				ID:    2,
+				Name:  "John",
+				Email: dbr.MakeNullString("john@doe.com"),
+			},
 		}
-		assert.Len(t, results, 2)
-		for i, res := range results {
-			aff, err := res.RowsAffected()
+
+		// interpolate must get ignored
+		mu := dbr.NewUpdate("customer_entity").Alias("ce").
+			AddColumns("name", "email").
+			Where(dbr.Column("id").Equal().PlaceHolder()).
+			WithDB(dbc.DB).
+			Interpolate() // gets ignored
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
+		prep.ExpectExec().WithArgs("Alf", "alf@m') -- el.mac", 1).WillReturnResult(sqlmock.NewResult(0, 1))
+		prep.ExpectExec().WithArgs("John", "john@doe.com", 2).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		stmt, err := mu.Prepare(context.TODO())
+		require.NoError(t, err)
+		for i, record := range records {
+			results, err := stmt.ExecRecord(context.TODO(), dbr.Qualify("ce", record))
+			require.NoError(t, err)
+			aff, err := results.RowsAffected()
 			if err != nil {
 				t.Fatalf("Result index %d with error: %s", i, err)
 			}
 			assert.Exactly(t, int64(1), aff)
+		}
+	})
+
+	t.Run("ExecContext", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
+		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 9))
+
+		stmt, err := dbr.NewUpdate("customer_entity").Alias("ce").
+			AddColumns("name", "email").
+			Where(dbr.Column("id").Equal().PlaceHolder()).
+			WithDB(dbc.DB).Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		res, err := stmt.ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
+		require.NoError(t, err, "failed to execute ExecContext")
+
+		ra, err := res.RowsAffected()
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t, int64(9), ra, "Different LastInsertIDs")
+	})
+
+	t.Run("ExecArgs One Row", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("UPDATE `customer_entity` AS `ce` SET `name`=?, `email`=? WHERE (`id` = ?)"))
+		prep.ExpectExec().WithArgs("Peter Gopher", "peter@gopher.go", 3456).WillReturnResult(sqlmock.NewResult(0, 11))
+		prep.ExpectExec().WithArgs("Petra Gopher", "petra@gopher.go", 3457).WillReturnResult(sqlmock.NewResult(0, 21))
+
+		stmt, err := dbr.NewUpdate("customer_entity").Alias("ce").
+			AddColumns("name", "email").
+			Where(dbr.Column("id").Equal().PlaceHolder()).
+			WithDB(dbc.DB).Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		tests := []struct {
+			name         string
+			email        string
+			id           int
+			rowsAffected int64
+		}{
+			{"Peter Gopher", "peter@gopher.go", 3456, 11},
+			{"Petra Gopher", "petra@gopher.go", 3457, 21},
+		}
+
+		args := dbr.MakeArgs(3)
+		for i, test := range tests {
+			args = args[:0]
+
+			res, err := stmt.ExecArgs(context.TODO(), args.Str(test.name).Str(test.email).Int(test.id))
+			if err != nil {
+				t.Fatalf("Index %d => %+v", i, err)
+			}
+			ra, err := res.RowsAffected()
+			if err != nil {
+				t.Fatalf("Result index %d with error: %s", i, err)
+			}
+			assert.Exactly(t, test.rowsAffected, ra, "Index %d has different LastInsertIDs", i)
 		}
 	})
 
@@ -174,8 +235,11 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 
 	// Our objects which should update the columns in the database table
 	// `sales_invoice`.
-	so1 := salesInvoice{21, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)}
-	so2 := salesInvoice{32, "processing", 7, 8912, dbr.NullFloat64{}}
+
+	collection := []salesInvoice{
+		{21, "pending", 5, 5678, dbr.MakeNullFloat64(31.41459)},
+		{32, "processing", 7, 8912, dbr.NullFloat64{}},
+	}
 
 	// Create the multi update statement
 	um := dbr.NewUpdate("sales_invoice").
@@ -188,21 +252,24 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 
 	um.SetClausAliases = []string{"state", "alias_customer_id", "grand_total"}
 
-	results, err := um.ExecMulti(context.Background(), so1, so2)
+	stmt, err := um.Prepare(context.TODO())
 	require.NoError(t, err)
+
+	for i, record := range collection {
+		results, err := stmt.ExecRecord(context.TODO(), dbr.Qualify("sales_invoice", record))
+		require.NoError(t, err)
+		ra, err := results.RowsAffected()
+		require.NoError(t, err, "Index %d", i)
+		assert.Exactly(t, int64(1), ra, "Index %d", i)
+	}
 
 	dbMock.ExpectClose()
 	dbc.Close()
 	require.NoError(t, dbMock.ExpectationsWereMet())
 
-	for i, r := range results {
-		ra, err := r.RowsAffected()
-		require.NoError(t, err, "Index %d", i)
-		assert.Exactly(t, int64(1), ra, "Index %d", i)
-	}
 }
 
-func TestUpdate_SetRecord_Arguments(t *testing.T) {
+func TestUpdate_BindRecord(t *testing.T) {
 	ce := &categoryEntity{
 		EntityID:       678,
 		AttributeSetID: 6,

@@ -271,11 +271,11 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 	return r, errors.WithStack(err)
 }
 
-// Prepare executes the statement represented by the Delete. It returns the raw
-// database/sql Statement and an error if there was one. Provided arguments in
-// the Delete are getting ignored. It panics when field Preparer at nil.
-// Prepare creates a prepared statement. The provided context is used for the
-// preparation of the statement, not for the execution of the statement.
+// Prepare executes the statement represented by the Delete to create a prepared
+// statement. It returns a custom statement type or an error if there was one.
+// Provided arguments or records in the Delete are getting ignored. The provided
+// context is used for the preparation of the statement, not for the execution
+// of the statement.
 func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 	sqlStmt, err := Prepare(ctx, b.DB, b)
 	if err != nil {
