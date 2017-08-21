@@ -112,26 +112,21 @@ func (b *Delete) Unsafe() *Delete {
 	return b
 }
 
-// Bind binds the object to the main table for assembling and appending
-// arguments. An Binder gets called if it matches the qualifier, in
-// this case the current table name or its alias. This function panics if the
-// table name or its alias is empty. This function resets the internal slice.
-func (b *Delete) Bind(obj Binder) *Delete {
+// BindRecord binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments.
+// An ArgumentsAppender gets called if it matches the qualifier, in this case
+// the current table name or its alias.
+func (b *Delete) BindRecord(records ...QualifiedRecord) *Delete {
 	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]Binder)
+		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}
-	b.ArgumentsAppender[b.Table.mustQualifier()] = obj
-	return b
-}
-
-// BindByQualifier binds the object to a specific qualifier for assembling and
-// appending arguments. The qualifier can be in this case a table name or an
-// alias of a JOIN or sub query statement.
-func (b *Delete) BindByQualifier(qualifier string, obj Binder) *Delete {
-	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]Binder)
+	for _, rec := range records {
+		q := rec.Qualifier
+		if q == "" {
+			q = b.Table.mustQualifier()
+		}
+		b.ArgumentsAppender[q] = rec.Record
 	}
-	b.ArgumentsAppender[qualifier] = obj
 	return b
 }
 
@@ -279,7 +274,72 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 // Prepare executes the statement represented by the Delete. It returns the raw
 // database/sql Statement and an error if there was one. Provided arguments in
 // the Delete are getting ignored. It panics when field Preparer at nil.
-func (b *Delete) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	stmt, err := Prepare(ctx, b.DB, b)
-	return stmt, errors.WithStack(err)
+// Prepare creates a prepared statement. The provided context is used for the
+// preparation of the statement, not for the execution of the statement.
+func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
+	sqlStmt, err := Prepare(ctx, b.DB, b)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	cap := len(b.Wheres)
+	return &StmtDelete{
+		argsCache: make(Arguments, 0, cap),
+		iFaces:    make([]interface{}, 0, cap),
+		stmt:      sqlStmt,
+		del:       b,
+	}, nil
+}
+
+// StmtDelete wraps a *sql.Stmt with a specific SQL query. To create a
+// StmtDelete call the Prepare function of type Delete. StmtDelete is not safe
+// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
+// Close!
+type StmtDelete struct {
+	del       *Delete
+	stmt      *sql.Stmt
+	argsCache Arguments
+	iFaces    []interface{}
+}
+
+// Close closes the underlying prepared statement.
+func (st *StmtDelete) Close() error { return st.stmt.Close() }
+
+// ExecContext traditional way, allocation heavy.
+func (st *StmtDelete) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+	return st.stmt.ExecContext(ctx, args...)
+}
+
+// ExecArgs executes a prepared statement with the given arguments. Number of
+// arguments must be the same as in the defined SQL but ExecArgs can be called
+// in a loop. Not thread safe.
+func (st *StmtDelete) ExecArgs(ctx context.Context, args Arguments) (sql.Result, error) {
+	st.argsCache = st.argsCache[:0]
+	st.iFaces = st.iFaces[:0]
+
+	//var err error
+	//st.argsCache, err = st.del.appendArgs(st.argsCache)
+	//if err != nil {
+	//	return nil, errors.WithStack(err)
+	//}
+	// TODO fix architecture bug once arguments are overall refactored
+	return st.stmt.ExecContext(ctx, args.Interfaces(st.iFaces...)...)
+}
+
+// ExecRecord executes a prepared statement with the given records. Number of
+// records must be the same as in the defined SQL but ExecRecord can be called
+// in a loop. Not thread safe. ExecRecord supports LastDeleteIDAssigner.
+func (st *StmtDelete) ExecRecord(ctx context.Context, records ...QualifiedRecord) (sql.Result, error) {
+	st.argsCache = st.argsCache[:0]
+	st.iFaces = st.iFaces[:0]
+
+	var err error
+
+	st.del.BindRecord(records...)
+
+	st.argsCache, err = st.del.appendArgs(st.argsCache)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
 }

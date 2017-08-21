@@ -261,26 +261,21 @@ func (b *Select) AddColumnsConditions(expressions ...*Condition) *Select {
 	return b
 }
 
-// Bind binds the object to the main table for assembling and appending
-// arguments. An Binder gets called if it matches the qualifier, in
-// this case the current table name or its alias. This function panics if the
-// table name or its alias is empty. This function resets the internal slice.
-func (b *Select) Bind(obj Binder) *Select {
+// BindRecord binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments.
+// An ArgumentsAppender gets called if it matches the qualifier, in this case
+// the current table name or its alias.
+func (b *Select) BindRecord(records ...QualifiedRecord) *Select {
 	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]Binder)
+		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}
-	b.ArgumentsAppender[b.Table.mustQualifier()] = obj
-	return b
-}
-
-// BindByQualifier binds the object to a specific qualifier for assembling and
-// appending arguments. The qualifier can be in this case a table name or an
-// alias of a JOIN or sub query statement.
-func (b *Select) BindByQualifier(qualifier string, obj Binder) *Select {
-	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]Binder)
+	for _, rec := range records {
+		q := rec.Qualifier
+		if q == "" {
+			q = b.Table.mustQualifier()
+		}
+		b.ArgumentsAppender[q] = rec.Record
 	}
-	b.ArgumentsAppender[qualifier] = obj
 	return b
 }
 

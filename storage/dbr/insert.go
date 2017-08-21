@@ -37,7 +37,7 @@ type Insert struct {
 	// RowCount defines the number of expected rows.
 	RowCount int // See SetRowCount()
 
-	Records []Binder
+	Records []ArgumentsAppender
 	// RecordValueCount defines the number of place holders for each value
 	// within the brackets for each set. Must only be set when Records are set
 	// and `Columns` field has been omitted.
@@ -189,17 +189,17 @@ func (b *Insert) AddArguments(args Arguments) *Insert {
 	return b
 }
 
-// Bind appends a new record for each INSERT VALUES (),[(...)...] case. A
+// BindRecord appends a new record for each INSERT VALUES (),[(...)...] case. A
 // record can also be e.g. a slice which appends all requested arguments at
 // once. Using a slice requires to call `SetRowCount` to tell the Insert object
 // the number of rows.
-func (b *Insert) Bind(recs ...Binder) *Insert {
+func (b *Insert) Bind(recs ...ArgumentsAppender) *Insert {
 	b.Records = append(b.Records, recs...)
 	return b
 }
 
 // SetRecordValueCount number of expected values within each set. Must be
-// applied if a call to AddColumns has been omitted and Bind gets called
+// applied if a call to AddColumns has been omitted and BindRecord gets called
 // or Records gets set in a different way.
 //		INSERT INTO tableX (?,?,?)
 // SetRecordValueCount would now be 3 because of the three place holders.
@@ -455,7 +455,7 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	for _, rec := range b.Records {
 		alBefore := len(args)
-		args, err = rec.AppendBind(args, b.Columns) // b.Columns can be nil
+		args, err = rec.AppendArgs(args, b.Columns) // b.Columns can be nil
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -561,14 +561,12 @@ func (st *StmtInsert) ExecArgs(ctx context.Context, args Arguments) (sql.Result,
 	return st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
 }
 
-// ExecBind executes a prepared statement with the given records. Number of
-// records must be the same as in the defined SQL but ExecBind can be called
-// in a loop. Not thread safe. ExecBind supports LastInsertIDAssigner.
-func (st *StmtInsert) ExecBind(ctx context.Context, records ...Binder) (sql.Result, error) {
+// ExecRecord executes a prepared statement with the given records. Number of
+// records must be the same as in the defined SQL but ExecRecord can be called
+// in a loop. Not thread safe. ExecRecord supports LastInsertIDAssigner.
+func (st *StmtInsert) ExecRecord(ctx context.Context, records ...ArgumentsAppender) (_ sql.Result, err error) {
 	st.argsCache = st.argsCache[:0]
 	st.iFaces = st.iFaces[:0]
-
-	var err error
 
 	st.ins.Records = records
 	st.argsCache, err = st.ins.appendArgs(st.argsCache)

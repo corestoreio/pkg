@@ -23,7 +23,7 @@ import (
 )
 
 // Make sure that type categoryEntity implements interface
-var _ dbr.Binder = (*categoryEntity)(nil)
+var _ dbr.ArgumentsAppender = (*categoryEntity)(nil)
 
 // categoryEntity represents just a demo record.
 type categoryEntity struct {
@@ -61,8 +61,8 @@ func (pe categoryEntity) appendBind(args dbr.Arguments, column string) (_ dbr.Ar
 	return args, nil
 }
 
-// AppendBind implements dbr.Binder interface
-func (pe categoryEntity) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+// AppendArgs implements dbr.ArgumentsAppender interface
+func (pe categoryEntity) AppendArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
@@ -83,17 +83,19 @@ func (pe categoryEntity) AppendBind(args dbr.Arguments, columns []string) (dbr.A
 	return args, nil
 }
 
-// ExampleUpdate_Bind performs an UPDATE query in the table `catalog_category_entity` with the
-// fix specified columns. The Go type categoryEntity implements the dbr.Binder interface and can
+// ExampleUpdate_BindRecord performs an UPDATE query in the table `catalog_category_entity` with the
+// fix specified columns. The Go type categoryEntity implements the dbr.ArgumentsAppender interface and can
 // append the required arguments.
-func ExampleUpdate_Bind() {
+func ExampleUpdate_BindRecord() {
 
 	ce := categoryEntity{345, 6, "p123", dbr.MakeNullString("4/5/6/7"), []string{"saleAutumn", "saleShoe"}}
 
 	// Updates all rows in the table because of missing WHERE statement.
 	u := dbr.NewUpdate("catalog_category_entity").
 		AddColumns("attribute_set_id", "parent_id", "path", "teaser_id_s").
-		Bind(ce)
+		BindRecord(
+			dbr.Qualify("", ce), // qualifier can be empty because no alias and no additional tables.
+		)
 	writeToSQLAndInterpolate(u)
 
 	fmt.Print("\n\n")
@@ -105,7 +107,7 @@ func ExampleUpdate_Bind() {
 	// reassemble the arguments from AddArgumentsAppender, means you can exchange AddArgumentsAppender
 	// with different objects.
 	u.
-		Bind(ce).
+		BindRecord(dbr.Qualify("", ce)). // overwrites previously set default qualifier
 		Where(dbr.Column("entity_id").PlaceHolder())
 	writeToSQLAndInterpolate(u)
 

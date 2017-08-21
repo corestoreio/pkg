@@ -410,7 +410,7 @@ func TestSplitColumn(t *testing.T) {
 
 type appendInt int
 
-func (ai appendInt) AppendBind(args Arguments, _ []string) (Arguments, error) {
+func (ai appendInt) AppendArgs(args Arguments, _ []string) (Arguments, error) {
 	return args.Int(int(ai)), nil
 }
 
@@ -425,8 +425,7 @@ func TestAppendArgs(t *testing.T) {
 				Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"), // Does not make sense this WHERE condition ;-)
 				Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 			).
-			BindByQualifier("e", appendInt(678)).
-			BindByQualifier("t_d", appendInt(17))
+			BindRecord(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17)))
 
 		compareToSQL(t, s, nil,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` IN (?)) AND (`t_d`.`attribute_id` IN (?)) AND (`t_d`.`store_id` = IFNULL(`t_s`.`store_id`,0)) AND (`t_d`.`store_id` = ?)",
@@ -443,8 +442,7 @@ func TestAppendArgs(t *testing.T) {
 				Column("t_d.attribute_id").In().Int64s(45),   // 45
 				Column("t_d.store_id").Equal().PlaceHolder(), // 17
 			).
-			BindByQualifier("e", appendInt(678)).
-			BindByQualifier("t_d", appendInt(17))
+			BindRecord(Qualify("e", appendInt(678)), Qualify("t_d", appendInt(17)))
 
 		compareToSQL(t, s, nil,
 			"SELECT `sku` FROM `catalog` AS `e` WHERE (`e`.`entity_id` IN (?)) AND (`t_d`.`attribute_id` IN (?)) AND (`t_d`.`store_id` = ?)",

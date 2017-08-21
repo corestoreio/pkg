@@ -22,7 +22,7 @@ import (
 )
 
 // Make sure that type productEntity implements interface.
-var _ dbr.Binder = (*productEntity)(nil)
+var _ dbr.ArgumentsAppender = (*productEntity)(nil)
 
 // productEntity represents just a demo record.
 type productEntity struct {
@@ -33,7 +33,7 @@ type productEntity struct {
 	HasOptions     bool
 }
 
-func (pe productEntity) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (pe productEntity) AppendArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case

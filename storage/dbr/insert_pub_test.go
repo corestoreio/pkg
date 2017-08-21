@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ dbr.Binder = (*someRecord)(nil)
+var _ dbr.ArgumentsAppender = (*someRecord)(nil)
 
 type someRecord struct {
 	SomethingID int
@@ -49,7 +49,7 @@ func (sr someRecord) appendBind(args dbr.Arguments, column string) (_ dbr.Argume
 	return args, err
 }
 
-func (sr someRecord) AppendBind(args dbr.Arguments, columns []string) (_ dbr.Arguments, err error) {
+func (sr someRecord) AppendArgs(args dbr.Arguments, columns []string) (_ dbr.Arguments, err error) {
 	l := len(columns)
 	if l == 1 {
 		return sr.appendBind(args, columns[0])
@@ -224,7 +224,7 @@ func TestInsert_Prepare(t *testing.T) {
 		}
 	})
 
-	t.Run("ExecBind One Row", func(t *testing.T) {
+	t.Run("ExecRecord One Row", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
 
@@ -257,7 +257,7 @@ func TestInsert_Prepare(t *testing.T) {
 				Email: dbr.MakeNullString(test.email),
 			}
 
-			res, err := stmt.ExecBind(context.TODO(), p)
+			res, err := stmt.ExecRecord(context.TODO(), p)
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}

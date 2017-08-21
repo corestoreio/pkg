@@ -33,22 +33,48 @@ const (
 	sqlStar    = "*"
 )
 
-// Binder appends the values resp. data from an object to the arguments slice.
-// The readonly variable `columns` contains the name of the requested columns.
-// E.g. if the first requested column names `id` then the first appended value
-// must be an integer. The columns slice can have the following length with the
+// ArgumentsAppender appends the values from an object to the arguments slice.
+// The object which implements this interface maps usually to a database table
+// record. Further in this library we reference always to a record which
+// implements ArgumentsAppender. The readonly variable `columns` contains the
+// name of the requested columns. It is the responsibility of the implementor to
+// match the column name with the corresponding internal field. E.g. if the
+// first requested column names `id` (int) then the first appended value must be
+// an integer. The columns slice can have the following length with the
 // following semantics:
-// - length:0 = INSERT statement requests all columns;
-// - length:1 = SELECT, DELETE or UPDATE statement requests a specific column;
-// - length:>1 INSERT statement requests a specific list of columns.
-type Binder interface {
-	AppendBind(args Arguments, columns []string) (Arguments, error)
+// - length: 0 = INSERT statement requests all columns;
+// - length: 1 = SELECT, DELETE or UPDATE statement requests a specific column;
+// - length: >1 = INSERT statement requests a specific list of columns.
+type ArgumentsAppender interface {
+	AppendArgs(args Arguments, columns []string) (Arguments, error)
 }
 
 // LastInsertIDAssigner assigns the last insert ID of an auto increment
 // column back to the objects.
 type LastInsertIDAssigner interface {
 	AssignLastInsertID(int64)
+}
+
+// QualifiedRecord is an ArgumentsAppender with a qualifier. A QualifiedRecord
+// gets used as arguments to ExecRecord or BindRecord in the SQL statement. If
+// you use an alias for the main table/view you must the alias as the qualifier.
+type QualifiedRecord struct {
+	_Named_Fields_Required struct{}
+
+	// Qualifier is the name of the table or view or procedure or can be their
+	// alias. It must be a valid MySQL/MariaDB identifier.
+	//
+	// If empty, the main table or its alias of a query will be used. We call it
+	// the default qualifier. Each query can only contain one default qualifier.
+	// If you provide multiple default qualifier, the last one wins and
+	// overwrites the previous.
+	Qualifier string
+	Record    ArgumentsAppender
+}
+
+// Qualify provides a more concise way to create QualifiedRecord values.
+func Qualify(q string, record ArgumentsAppender) QualifiedRecord {
+	return QualifiedRecord{Qualifier: q, Record: record}
 }
 
 // argument is union type for different Go primitives and their slice

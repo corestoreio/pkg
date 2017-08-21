@@ -1374,7 +1374,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("n").Str("wh3r3"),
 			).
 			OrderBy("l").
-			BindByQualifier("dp", p)
+			BindRecord(Qualify("dp", p))
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a`, `b` FROM `dbr_person` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) WHERE ((`name` = ?) OR (`e` = ?)) AND (`f` <= ?) AND (`g` > ?) AND (`h` IN (?,?,?)) GROUP BY `ab` HAVING (`email` = ?) AND (`n` = ?) ORDER BY `l`",
@@ -1385,7 +1385,7 @@ func TestSelect_SetRecord(t *testing.T) {
 	t.Run("single arg JOIN", func(t *testing.T) {
 		sel := NewSelect("a").FromAlias("dbr_people", "dp").
 			Join(MakeIdentifier("dbr_group").Alias("dg"), Column("dp.id").PlaceHolder(), Column("dg.name").Strs("XY%")).
-			Bind(p).OrderBy("id")
+			BindRecord(Qualify("dp", p)).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` AS `dp` INNER JOIN `dbr_group` AS `dg` ON (`dp`.`id` = ?) AND (`dg`.`name` = ?) ORDER BY `id`",
@@ -1398,7 +1398,7 @@ func TestSelect_SetRecord(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).
-			Bind(p).OrderBy("id")
+			BindRecord(Qualify("", p)).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -1412,7 +1412,7 @@ func TestSelect_SetRecord(t *testing.T) {
 				Column("id").PlaceHolder(),
 				Column("name").Like().PlaceHolder(),
 			).
-			Bind(p).OrderBy("id")
+			BindRecord(Qualify("", p)).OrderBy("id")
 
 		compareToSQL(t, sel, nil,
 			"SELECT `a` FROM `dbr_people` HAVING (`id` = ?) AND (`name` LIKE ?) ORDER BY `id`",
@@ -1436,7 +1436,7 @@ func TestSelect_SetRecord(t *testing.T) {
 					Column("name").In().PlaceHolder(),
 					Column("email").In().PlaceHolder(),
 				).
-				Bind(persons),
+				BindRecord(Qualify("", persons)),
 			nil,
 			"SELECT `name`, `email` FROM `dbr_person` WHERE (`name` IN (?)) AND (`email` IN (?))",
 			"SELECT `name`, `email` FROM `dbr_person` WHERE (`name` IN ('Muffin Hat','Marianne Phyllis Finch','Daphne Augusta Perry')) AND (`email` IN ('Muffin@Hat.head','marianne@phyllis.finch','daphne@augusta.perry'))",

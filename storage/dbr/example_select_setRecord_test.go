@@ -23,8 +23,8 @@ import (
 )
 
 // Make sure that type catalogCategoryEntity implements interface
-var _ dbr.Binder = (*catalogCategoryEntity)(nil)
-var _ dbr.Binder = (*tableStore)(nil)
+var _ dbr.ArgumentsAppender = (*catalogCategoryEntity)(nil)
+var _ dbr.ArgumentsAppender = (*tableStore)(nil)
 
 // catalogCategoryEntity defined somewhere in a different package.
 type catalogCategoryEntity struct {
@@ -56,8 +56,8 @@ func (ce catalogCategoryEntity) appendBind(args dbr.Arguments, column string) (_
 	return args, nil
 }
 
-// AppendBind implements dbr.Binder interface
-func (ce catalogCategoryEntity) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+// AppendArgs implements dbr.ArgumentsAppender interface
+func (ce catalogCategoryEntity) AppendArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
@@ -105,8 +105,8 @@ func (ts tableStore) appendBind(args dbr.Arguments, column string) (_ dbr.Argume
 	return args, nil
 }
 
-// AppendBind implements dbr.Binder interface
-func (ts tableStore) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+// AppendArgs implements dbr.ArgumentsAppender interface
+func (ts tableStore) AppendArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
@@ -127,7 +127,7 @@ func (ts tableStore) AppendBind(args dbr.Arguments, columns []string) (dbr.Argum
 	return args, nil
 }
 
-func ExampleSelect_BindByQualifier() {
+func ExampleSelect_BindRecord() {
 
 	ce := catalogCategoryEntity{678, 6, 670, "2/13/670/678", 0, now()}
 	st := tableStore{17, "ch-en", 2, 4, "Swiss EN Store"}
@@ -150,8 +150,7 @@ func ExampleSelect_BindByQualifier() {
 			dbr.Column("t_d.store_id").Equal().SQLIfNull("t_s.store_id", "0"), // Just for testing
 			dbr.Column("t_d.store_id").Equal().PlaceHolder(),                  // 17
 		).
-		BindByQualifier("e", ce).
-		BindByQualifier("t_d", st)
+		BindRecord(dbr.Qualify("e", ce), dbr.Qualify("t_d", st))
 
 	writeToSQLAndInterpolate(s)
 	fmt.Print("\n\n")

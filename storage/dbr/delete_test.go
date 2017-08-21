@@ -125,28 +125,6 @@ func TestDeleteReal(t *testing.T) {
 	assert.Equal(t, int64(0), count, "count")
 }
 
-func TestDelete_Prepare(t *testing.T) {
-	t.Parallel()
-	t.Run("ToSQL Error", func(t *testing.T) {
-		compareToSQL(t, NewDelete("").Where(Column("a").Int64(1)), errors.IsEmpty, "", "")
-	})
-
-	t.Run("Prepare Error", func(t *testing.T) {
-		d := &Delete{
-			BuilderBase: BuilderBase{
-				Table: MakeIdentifier("table"),
-			},
-		}
-		d.DB = dbMock{
-			error: errors.NewAlreadyClosedf("Who closed myself?"),
-		}
-		d.Where(Column("a").Int(1))
-		stmt, err := d.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
-	})
-}
-
 func TestDelete_Events(t *testing.T) {
 	t.Parallel()
 
@@ -290,7 +268,7 @@ func TestDelete_Bind(t *testing.T) {
 				Column("email").PlaceHolder(),
 				Column("int_e").Int(2718281),
 			).
-			Bind(p).OrderBy("id")
+			BindRecord(Qualify("", p)).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `dbr_people` WHERE (`idI64` > ?) AND (`id` = ?) AND (`float64_pi` = ?) AND (`email` = ?) AND (`int_e` = ?) ORDER BY `id`",
@@ -303,7 +281,7 @@ func TestDelete_Bind(t *testing.T) {
 			Where(
 				Column("id").PlaceHolder(),
 			).
-			Bind(p).OrderBy("id")
+			BindRecord(Qualify("dbr_people", p)).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `dbr_people` WHERE (`id` = ?) ORDER BY `id`",
@@ -323,7 +301,7 @@ func TestDelete_Bind(t *testing.T) {
 				Column("time_val").PlaceHolder(),
 				Column("bool_val").PlaceHolder(),
 			).
-			Bind(ntr).OrderBy("id")
+			BindRecord(Qualify("", ntr)).OrderBy("id")
 
 		compareToSQL(t, del, nil,
 			"DELETE FROM `null_type_table` WHERE (`string_val` = ?) AND (`int64_val` = ?) AND (`float64_val` = ?) AND (`random1` BETWEEN ? AND ?) AND (`time_val` = ?) AND (`bool_val` = ?) ORDER BY `id`",

@@ -70,7 +70,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
 
-	records := []dbr.Binder{
+	records := []dbr.ArgumentsAppender{
 		&dbrPerson{
 			ID:    1,
 			Name:  "Alf",
@@ -120,7 +120,7 @@ func TestUpdateMulti_Exec(t *testing.T) {
 }
 
 // Make sure that type salesInvoice implements interface.
-var _ dbr.Binder = (*salesInvoice)(nil)
+var _ dbr.ArgumentsAppender = (*salesInvoice)(nil)
 
 // salesInvoice represents just a demo record.
 type salesInvoice struct {
@@ -131,7 +131,7 @@ type salesInvoice struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesInvoice) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+func (so salesInvoice) AppendArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	column := columns[0]
 	switch column {
 	case "entity_id":
@@ -213,7 +213,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 	t.Run("1 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			Bind(ce).
+			BindRecord(dbr.Qualify("", ce)).
 			Where(dbr.Column("entity_id").Greater().PlaceHolder())
 
 		compareToSQL(t, u, nil,
@@ -226,7 +226,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 	t.Run("2 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			Bind(ce).
+			BindRecord(dbr.Qualify("", ce)).
 			Where(
 				dbr.Column("x").In().Int64s(66, 77),
 				dbr.Column("entity_id").Greater().PlaceHolder(),
@@ -240,7 +240,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 	t.Run("3 WHERE", func(t *testing.T) {
 		u := dbr.NewUpdate("catalog_category_entity").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			Bind(ce).
+			BindRecord(dbr.Qualify("", ce)).
 			Where(
 				dbr.Column("entity_id").Greater().PlaceHolder(),
 				dbr.Column("x").In().Int64s(66, 77),
@@ -258,8 +258,7 @@ func TestUpdate_SetRecord_Arguments(t *testing.T) {
 		// implementation.
 		u := dbr.NewUpdate("catalog_category_entity").Alias("ce").
 			AddColumns("attribute_set_id", "parent_id", "path").
-			Bind(ce).
-			BindByQualifier("cpei", ce).
+			BindRecord(dbr.Qualify("", ce), dbr.Qualify("cpei", ce)).
 			Where(
 				dbr.Column("ce.entity_id").Greater().PlaceHolder(), //678
 				dbr.Column("cpe.entity_id").In().Int64s(66, 77),

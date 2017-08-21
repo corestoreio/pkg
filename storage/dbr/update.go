@@ -37,7 +37,7 @@ type Update struct {
 
 	// SetClausAliases only applicable in case when Record field has been set or
 	// ExecMulti gets used. `SetClausAliases` contains the lis of column names
-	// which gets passed to the Binder function. If empty
+	// which gets passed to the ArgumentsAppender function. If empty
 	// `SetClausAliases` collects the column names from the `SetClauses`. The
 	// alias slice must have the same length as the columns slice. Despite
 	// setting `SetClausAliases` the SetClauses.Columns must be provided to
@@ -108,7 +108,7 @@ func (b *Update) Set(c ...*Condition) *Update {
 }
 
 // AddColumns adds columns which values gets later derived from an
-// Binder. Those columns will get passed to the Binder
+// ArgumentsAppender. Those columns will get passed to the ArgumentsAppender
 // implementation. Mostly used with the type Update.
 func (b *Update) AddColumns(columnNames ...string) *Update {
 	for _, col := range columnNames {
@@ -117,26 +117,21 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 	return b
 }
 
-// Bind binds the object to the main table for assembling and appending
-// arguments. An Binder gets called if it matches the qualifier, in
-// this case the current table name or its alias. This function panics if the
-// table name or its alias is empty. This function resets the internal slice.
-func (b *Update) Bind(obj Binder) *Update {
+// BindRecord binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments.
+// An ArgumentsAppender gets called if it matches the qualifier, in this case
+// the current table name or its alias.
+func (b *Update) BindRecord(records ...QualifiedRecord) *Update {
 	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]Binder)
+		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}
-	b.ArgumentsAppender[b.Table.mustQualifier()] = obj
-	return b
-}
-
-// BindByQualifier binds the object to a specific qualifier for assembling and
-// appending arguments. The qualifier can be in this case a table name or an
-// alias of a JOIN or sub query statement.
-func (b *Update) BindByQualifier(qualifier string, obj Binder) *Update {
-	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]Binder)
+	for _, rec := range records {
+		q := rec.Qualifier
+		if q == "" {
+			q = b.Table.mustQualifier()
+		}
+		b.ArgumentsAppender[q] = rec.Record
 	}
-	b.ArgumentsAppender[qualifier] = obj
 	return b
 }
 
@@ -271,9 +266,9 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 			var argCol [1]string
 			for _, col := range b.SetClausAliases {
 				argCol[0] = col
-				args, err = aa.AppendBind(args, argCol[:])
+				args, err = aa.AppendArgs(args, argCol[:])
 				if err != nil {
-					return nil, errors.Wrapf(err, "[dbr] Update.appendArgs.AppendBind at qualifier %q and column %q", qualifier, col)
+					return nil, errors.Wrapf(err, "[dbr] Update.appendArgs.AppendArgs at qualifier %q and column %q", qualifier, col)
 				}
 			}
 		}
@@ -325,21 +320,10 @@ func (b *Update) validate() error {
 	return nil
 }
 
-//type updateExecMulti struct {
-//	update    *Update
-//	stmt      *sql.Stmt
-//	lastError error
-//	args      Arguments
-//	results   []sql.Result
-//}
-//
-//func (ue *updateExecMulti) Run(rec Binder) *updateExecMulti { return ue }
-//func (ue *updateExecMulti) RunByQualifier(rec Binder) *updateExecMulti { return ue }
-
 // ExecMulti allows to run an UPDATE statement multiple times with different
 // records in a serial order. The returned result slice indexes are same indexes
 // as for the `records` slice. A prepared statement gets always created.
-func (b *Update) ExecMulti(ctx context.Context, records ...Binder) (_ []sql.Result, err error) {
+func (b *Update) ExecMulti(ctx context.Context, records ...ArgumentsAppender) (_ []sql.Result, err error) {
 	if err = b.validate(); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -372,7 +356,7 @@ func (b *Update) ExecMulti(ctx context.Context, records ...Binder) (_ []sql.Resu
 	args := make(Arguments, 0, (len(records)+len(b.Wheres))*3) // 3 just a bad guess
 	results := make([]sql.Result, len(records))
 	if b.ArgumentsAppender == nil {
-		b.ArgumentsAppender = make(map[string]Binder)
+		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}
 	qualifier := b.Table.mustQualifier()
 	for i, rec := range records {

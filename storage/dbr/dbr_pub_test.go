@@ -29,7 +29,7 @@ var now = func() time.Time {
 	return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", -7))
 }
 
-var _ dbr.Binder = (*dbrPerson)(nil)
+var _ dbr.ArgumentsAppender = (*dbrPerson)(nil)
 
 type dbrPerson struct {
 	ID          int64
@@ -45,7 +45,7 @@ func (p *dbrPerson) AssignLastInsertID(id int64) {
 	p.ID = id
 }
 
-func (p *dbrPerson) AppendBind(args dbr.Arguments, columns []string) (_ dbr.Arguments, err error) {
+func (p *dbrPerson) AppendArgs(args dbr.Arguments, columns []string) (_ dbr.Arguments, err error) {
 	l := len(columns)
 	if l == 1 {
 		return p.appendBind(args, columns[0])

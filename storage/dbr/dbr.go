@@ -155,13 +155,12 @@ type BuilderBase struct {
 // conditional constraints like WHERE, JOIN, ORDER, etc. Exported for
 // documentation reasons.
 type BuilderConditional struct {
-	// Binder a map of appenders to retrieve the necessary arguments
-	// from the interface implementations of the objects. The string key (the
-	// qualifier) can either be the table or object name or in cases, where an
-	// alias gets used, the string key must be the same as the alias. The map
-	// get called internally when the arguments are getting assembled.
-	// Think about using []Binder ... but not yet worth.
-	ArgumentsAppender map[string]Binder
+	// ArgumentsAppender a map of ArgumentsAppender to retrieve the necessary
+	// arguments from the interface implementations of the objects. The string
+	// key (the qualifier) can either be the table or object name or in cases,
+	// where an alias gets used, the string key must be the same as the alias.
+	// The map get called internally when the arguments are getting assembled.
+	ArgumentsAppender map[string]ArgumentsAppender
 	Joins             Joins
 	Wheres            Conditions
 	OrderBys          identifiers

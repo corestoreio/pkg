@@ -287,7 +287,7 @@ func (c *Condition) isExpression() bool {
 func (cs Conditions) intersectConditions(cols []string) []string {
 	// this calculates the intersection of the columns in Conditions which
 	// already have an value provided/assigned and those where the arguments
-	// must be assembled from the interface Binder. If the arguments
+	// must be assembled from the interface ArgumentsAppender. If the arguments
 	// should be assembled from the interface IsPlaceHolder is true.
 	for _, cnd := range cs {
 		if cnd.IsPlaceHolder {
@@ -1011,7 +1011,7 @@ func (cs Conditions) writeOnDuplicateKey(w *bytes.Buffer) error {
 	return nil
 }
 
-func appendArgs(pendingArgPos []int, records map[string]Binder, args Arguments, defaultQualifier string, columns []string) (_ Arguments, err error) {
+func appendArgs(pendingArgPos []int, records map[string]ArgumentsAppender, args Arguments, defaultQualifier string, columns []string) (_ Arguments, err error) {
 	// arguments list above is a bit long, maybe later this function can be
 	// integrated into Conditions.appendArgs.
 	if records == nil {
@@ -1027,7 +1027,7 @@ func appendArgs(pendingArgPos []int, records map[string]Binder, args Arguments, 
 		}
 		if rec, ok := records[qualifier]; ok {
 			argCol[0] = column
-			args, err = rec.AppendBind(args, argCol[:])
+			args, err = rec.AppendArgs(args, argCol[:])
 			if err != nil {
 				return nil, errors.WithStack(err)
 			}

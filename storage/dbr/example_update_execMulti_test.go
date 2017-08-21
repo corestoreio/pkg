@@ -25,7 +25,7 @@ import (
 )
 
 // Make sure that type salesOrder implements interface.
-var _ dbr.Binder = (*salesOrder)(nil)
+var _ dbr.ArgumentsAppender = (*salesOrder)(nil)
 
 // salesOrder represents just a demo record.
 type salesOrder struct {
@@ -54,8 +54,8 @@ func (so salesOrder) appendBind(args dbr.Arguments, column string) (_ dbr.Argume
 	return args, nil
 }
 
-// AppendBind implements dbr.Binder interface
-func (so salesOrder) AppendBind(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
+// AppendArgs implements dbr.ArgumentsAppender interface
+func (so salesOrder) AppendArgs(args dbr.Arguments, columns []string) (dbr.Arguments, error) {
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case

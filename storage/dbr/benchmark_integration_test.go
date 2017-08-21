@@ -66,7 +66,7 @@ func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 	}
 }
 
-//BenchmarkInsert_Prepared/ExecBind-4         	    5000	    320371 ns/op	     512 B/op	      12 allocs/op
+//BenchmarkInsert_Prepared/ExecRecord-4        	    5000	    320371 ns/op	     512 B/op	      12 allocs/op
 //BenchmarkInsert_Prepared/ExecArgs-4         	    5000	    310453 ns/op	     640 B/op	      14 allocs/op
 //BenchmarkInsert_Prepared/ExecContext-4      	    5000	    312097 ns/op	     608 B/op	      13 allocs/op
 func BenchmarkInsert_Prepared(b *testing.B) {
@@ -105,11 +105,11 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	ctx := context.TODO()
 	b.ResetTimer()
 
-	b.Run("ExecBind", func(b *testing.B) {
+	b.Run("ExecRecord", func(b *testing.B) {
 		truncate(c.DB)
 		p := &dbrPerson{
-			Name:        "Maria Gopher ExecBind",
-			Email:       dbr.MakeNullString("maria@gopherExecBind.go"),
+			Name:        "Maria Gopher ExecRecord",
+			Email:       dbr.MakeNullString("maria@gopherExecRecord.go"),
 			StoreID:     storeID,
 			CreatedAt:   now(),
 			TotalIncome: totalIncome,
@@ -118,7 +118,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			p.TotalIncome = totalIncome * float64(i)
-			res, err := stmt.ExecBind(ctx, p)
+			res, err := stmt.ExecRecord(ctx, p)
 			if err != nil {
 				b.Fatal(err)
 			}

@@ -61,11 +61,11 @@ func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Conn
 	return sess
 }
 
-var _ Binder = (*dbrPerson)(nil)
+var _ ArgumentsAppender = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPerson)(nil)
 var _ LastInsertIDAssigner = (*dbrPerson)(nil)
 var _ Scanner = (*dbrPersons)(nil)
-var _ Binder = (*nullTypedRecord)(nil)
+var _ ArgumentsAppender = (*nullTypedRecord)(nil)
 var _ Scanner = (*nullTypedRecord)(nil)
 
 type dbrPerson struct {
@@ -110,7 +110,7 @@ func (p *dbrPerson) assign(rc *RowConvert) (err error) {
 	return nil
 }
 
-func (p *dbrPerson) AppendBind(args Arguments, columns []string) (_ Arguments, err error) {
+func (p *dbrPerson) AppendArgs(args Arguments, columns []string) (_ Arguments, err error) {
 	l := len(columns)
 	if l == 1 {
 		return p.appendBind(args, columns[0])
@@ -146,11 +146,11 @@ type dbrPersons struct {
 	Data    []*dbrPerson
 }
 
-func (ps *dbrPersons) AppendBind(args Arguments, columns []string) (_ Arguments, err error) {
+func (ps *dbrPersons) AppendArgs(args Arguments, columns []string) (_ Arguments, err error) {
 	if len(columns) != 1 {
 		// INSERT STATEMENT requesting all columns or specific columns
 		for _, p := range ps.Data {
-			if args, err = p.AppendBind(args, columns); err != nil {
+			if args, err = p.AppendArgs(args, columns); err != nil {
 				return nil, errors.WithStack(err)
 			}
 		}
@@ -221,7 +221,7 @@ func (p *nullTypedRecord) RowScan(r *sql.Rows) error {
 	return r.Scan(&p.ID, &p.StringVal, &p.Int64Val, &p.Float64Val, &p.TimeVal, &p.BoolVal)
 }
 
-func (p *nullTypedRecord) AppendBind(args Arguments, columns []string) (Arguments, error) {
+func (p *nullTypedRecord) AppendArgs(args Arguments, columns []string) (Arguments, error) {
 	for _, column := range columns {
 		switch column {
 		case "id":
