@@ -283,10 +283,10 @@ func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 	}
 	cap := len(b.Wheres)
 	return &StmtDelete{
+		del:       b,
+		stmt:      sqlStmt,
 		argsCache: make(Arguments, 0, cap),
 		iFaces:    make([]interface{}, 0, cap),
-		stmt:      sqlStmt,
-		del:       b,
 	}, nil
 }
 

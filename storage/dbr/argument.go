@@ -81,9 +81,12 @@ func Qualify(q string, record ArgumentsAppender) QualifiedRecord {
 // representation. argument must be used as a pointer because it slows
 // everything down. Check the benchmarks.
 type argument struct {
+	// isSet indicates if an argument is really set, because `argument` gets
+	// used as an embedded non-pointer type in type Condition.
 	isSet bool
-	// name for named place holders sql.NamedArg
-	name  string // todo
+	// name for named place holders sql.NamedArg. Write a converter to and from
+	// sql.NamedArg
+	name  string
 	value interface{}
 }
 
@@ -224,7 +227,9 @@ func (arg argument) writeTo(w *bytes.Buffer, pos int) (err error) {
 
 func (arg argument) GoString() string {
 	buf := new(bytes.Buffer)
-
+	if arg.name != "" {
+		fmt.Fprintf(buf, ".Name(%q)", arg.name)
+	}
 	switch v := arg.value.(type) {
 	case int:
 		fmt.Fprintf(buf, ".Int(%d)", v)
@@ -253,7 +258,7 @@ func (arg argument) GoString() string {
 	case float64:
 		fmt.Fprintf(buf, ".Float64(%f)", v)
 	case []float64:
-		fmt.Fprintf(buf, ".Float64s(%#v...)", v)
+		fmt.Fprintf(buf, ".Float64s(%#v...)", v) // the lazy way; prints `[]float64{2.76, 3.141}...` but should `2.76, 3.141`
 	case []NullFloat64:
 		buf.WriteString(".NullFloat64(")
 		for i, nv := range v {
@@ -348,6 +353,39 @@ type Arguments []argument
 // MakeArgs creates a new argument slice with the desired capacity.
 func MakeArgs(cap int) Arguments {
 	return make(Arguments, 0, cap)
+}
+
+// AppendArgs allows to merge one argument slice with another depending on the
+// matched columns. Each argument in the slice must be a named argument.
+func (a Arguments) AppendArgs(args Arguments, columns []string) (Arguments, error) {
+	l := len(columns)
+	if l == 1 {
+		// most used case.
+		return a.appendBind(args, columns[0]), nil
+	}
+	if l == 0 {
+		// case insert statement requests all columns
+		return append(args, a...), nil
+	}
+
+	// case insert statement requests specific columns
+	for _, col := range columns {
+		args = a.appendBind(args, col)
+	}
+	return args, nil
+}
+
+func (a Arguments) appendBind(args Arguments, column string) Arguments {
+	// now a bit slow ... but will be refactored later with constant time
+	// access, but first benchmark it. This for loop can be the 3rd one in the
+	// overall chain.
+	for _, arg := range a {
+		// Case sensitive comparison
+		if column != "" && arg.name == column {
+			return append(args, arg)
+		}
+	}
+	return args
 }
 
 func (a Arguments) GoString() string {
@@ -511,7 +549,20 @@ func (a Arguments) Interfaces(args ...interface{}) []interface{} {
 	return args
 }
 
-func (a Arguments) add(v interface{}) Arguments             { return append(a, argument{isSet: true, value: v}) }
+func (a Arguments) add(v interface{}) Arguments {
+	if l := len(a); l > 0 {
+		// look back if there might be a name.
+		if arg := a[l-1]; !arg.isSet {
+			// The previous call Name() has set the name and now we set the
+			// value, but don't append a new entry.
+			arg.isSet = true
+			arg.value = v
+			a[l-1] = arg
+			return a
+		}
+	}
+	return append(a, argument{isSet: true, value: v})
+}
 func (a Arguments) PlaceHolder() Arguments                  { return a.add(placeHolder(1)) }
 func (a Arguments) Null() Arguments                         { return a.add(nil) }
 func (a Arguments) Int(i int) Arguments                     { return a.add(i) }
@@ -535,6 +586,11 @@ func (a Arguments) NullFloat64(nv ...NullFloat64) Arguments { return a.add(nv) }
 func (a Arguments) NullInt64(nv ...NullInt64) Arguments     { return a.add(nv) }
 func (a Arguments) NullBool(nv ...NullBool) Arguments       { return a.add(nv) }
 func (a Arguments) NullTime(nv ...NullTime) Arguments       { return a.add(nv) }
+
+// Name sets the name for the following argument. Calling Name two time after
+// each other sets the first call to Name to a NULL value. A call to Name should
+// always follow a call to a function type like Int, Float64s or NullTime.
+func (a Arguments) Name(n string) Arguments { return append(a, argument{name: n}) }
 
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets

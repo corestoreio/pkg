@@ -214,6 +214,7 @@ type Condition struct {
 	// single argument, multiple arguments in case of an expression, a sub
 	// select or a name of a column.
 	Right struct {
+		NamedArg  string
 		Argument  argument // Only set in case of no expression
 		Arguments Arguments
 		// Select adds a sub-select to the where statement. Column must be
@@ -461,6 +462,14 @@ func (c *Condition) Coalesce() *Condition {
 // Column compares the left hand side with this column name.
 func (c *Condition) Column(col string) *Condition {
 	c.Right.Column = col
+	return c
+}
+
+// NamedArg if set the MySQL/MariaDB placeholder `?` will be replaced with a
+// name. Records which implement ArgumentAppender must also use this name.
+func (c *Condition) NamedArg(n string) *Condition {
+	c.Right.NamedArg = n
+	c.IsPlaceHolder = true
 	return c
 }
 

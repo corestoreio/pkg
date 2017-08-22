@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var _ ArgumentsAppender = (*Arguments)(nil)
 var _ fmt.Stringer = (*Arguments)(nil)
 var _ fmt.GoStringer = (*Arguments)(nil)
 var _ fmt.GoStringer = (*argument)(nil)
@@ -355,5 +356,90 @@ func TestIFaceToArgs(t *testing.T) {
 			true, "Gopher", []uint8{0x48, 0x65, 0x6c, 0x6c, 0x6f},
 			now(), now(), nil,
 		}, args.Interfaces())
+	})
+}
+
+func TestArguments_Named(t *testing.T) {
+	t.Parallel()
+
+	assert.Exactly(t,
+		"dbr.MakeArgs(4).Str(\"Rusty\").Name(\"entity_id\").Null().Name(\"entity_sku\").Int64(4).Float64(3.141000)",
+		MakeArgs(2).
+			Str("Rusty").
+			Name("entity_id").Name("entity_sku").Int64(4).
+			Float64(3.141).
+			GoString())
+
+	assert.Exactly(t,
+		"dbr.MakeArgs(3).Name(\"entity_id\").Null().Name(\"entity_sku\").Int64(4).Float64(3.141000)",
+		MakeArgs(2).
+			Name("entity_id").Name("entity_sku").Int64(4).
+			Float64(3.141).
+			GoString())
+
+	assert.Exactly(t,
+		"dbr.MakeArgs(2).Name(\"entity_id\").Int64(4).Float64(3.141000)",
+		MakeArgs(2).
+			Name("entity_id").Int64(4).
+			Float64(3.141).
+			GoString())
+
+	assert.Exactly(t,
+		"dbr.MakeArgs(2).Float64(3.141000).Name(\"entity_id\").Int64(4)",
+		MakeArgs(2).
+			Float64(3.141).
+			Name("entity_id").Int64(4).
+			GoString())
+
+	assert.Exactly(t,
+		"dbr.MakeArgs(4).Float64s([]float64{2.76, 3.141}...).Name(\"entity_id\").Int64(4).Name(\"store_id\").Uint64(5678).Time(time.Unix(1136214252,2))",
+		MakeArgs(2).
+			Float64s(2.76, 3.141).
+			Name("entity_id").Int64(4).
+			Name("store_id").Uint64(5678).
+			Time(now()).
+			GoString())
+}
+
+func TestArguments_AppendArgs(t *testing.T) {
+	t.Parallel()
+
+	t.Run("len=1", func(t *testing.T) {
+		to := MakeArgs(4)
+		from := MakeArgs(3).Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
+		var err error
+		from, err = from.AppendArgs(to, []string{"colA"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t,
+			"dbr.MakeArgs(1).Name(\"colA\").Strs(\"a\",\"b\")",
+			from.GoString())
+	})
+
+	t.Run("len=0", func(t *testing.T) {
+		to := MakeArgs(4)
+		from := MakeArgs(3).Name("colZ").Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
+		var err error
+		from, err = from.AppendArgs(to, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t,
+			"dbr.MakeArgs(3).Name(\"colZ\").Int64(3).Float64(2.200000).Name(\"colA\").Strs(\"a\",\"b\")",
+			from.GoString())
+	})
+
+	t.Run("len>1", func(t *testing.T) {
+		to := MakeArgs(4)
+		from := MakeArgs(3).Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).Str("c").Name("colA").Strs("a", "b")
+		var err error
+		from, err = from.AppendArgs(to, []string{"colA", "colB"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t,
+			"dbr.MakeArgs(2).Name(\"colA\").Strs(\"a\",\"b\").Name(\"colB\").Float64(2.200000)",
+			from.GoString())
 	})
 }
