@@ -404,9 +404,12 @@ func TestArguments_Named(t *testing.T) {
 func TestArguments_AppendArgs(t *testing.T) {
 	t.Parallel()
 
+	to := MakeArgs(4)
+	from := MakeArgs(3)
+
 	t.Run("len=1", func(t *testing.T) {
-		to := MakeArgs(4)
-		from := MakeArgs(3).Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
+
+		from = from.Reset().Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
 		var err error
 		from, err = from.AppendArgs(to, []string{"colA"})
 		if err != nil {
@@ -418,10 +421,10 @@ func TestArguments_AppendArgs(t *testing.T) {
 	})
 
 	t.Run("len=0", func(t *testing.T) {
-		to := MakeArgs(4)
-		from := MakeArgs(3).Name("colZ").Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
+
+		from = from.Reset().Name("colZ").Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
 		var err error
-		from, err = from.AppendArgs(to, nil)
+		from, err = from.AppendArgs(to.Reset(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -431,10 +434,10 @@ func TestArguments_AppendArgs(t *testing.T) {
 	})
 
 	t.Run("len>1", func(t *testing.T) {
-		to := MakeArgs(4)
-		from := MakeArgs(3).Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).Str("c").Name("colA").Strs("a", "b")
+
+		from = from.Reset().Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).Str("c").Name("colA").Strs("a", "b")
 		var err error
-		from, err = from.AppendArgs(to, []string{"colA", "colB"})
+		from, err = from.AppendArgs(to.Reset(), []string{"colA", "colB"})
 		if err != nil {
 			t.Fatal(err)
 		}

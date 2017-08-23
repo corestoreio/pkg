@@ -592,6 +592,9 @@ func (a Arguments) NullTime(nv ...NullTime) Arguments       { return a.add(nv) }
 // always follow a call to a function type like Int, Float64s or NullTime.
 func (a Arguments) Name(n string) Arguments { return append(a, argument{name: n}) }
 
+// Reset resets the slice for new usage retaining the already allocated memory.
+func (a Arguments) Reset() Arguments { return a[:0] }
+
 // DriverValue adds multiple of the same underlying values to the argument
 // slice. When using different values, the last applied value wins and gets
 // added to the argument slice.
