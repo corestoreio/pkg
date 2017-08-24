@@ -333,7 +333,7 @@ func (b *Update) validate() error {
 	return nil
 }
 
-// StmtUpdate wraps a *sql.StmtUpdate with a specific SQL query. To create a
+// StmtUpdate wraps a *sql.Stmt with a specific SQL query. To create a
 // StmtUpdate call the Prepare function of type Update. StmtUpdate is not safe
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
@@ -342,45 +342,43 @@ type StmtUpdate struct {
 	stmt      *sql.Stmt
 	argsCache Arguments
 	iFaces    []interface{}
+	ärgErr    error // Sorry Germans for that terrible pun #notSorry
 }
 
 // Close closes the underlying prepared statement.
 func (st *StmtUpdate) Close() error { return st.stmt.Close() }
 
+// WithArgs sets the arguments for the execution with Exec. It internally resets
+// previously applied arguments.
+func (st *StmtUpdate) WithArgs(args Arguments) *StmtUpdate {
+	st.argsCache = st.argsCache[:0]
+	st.argsCache = append(st.argsCache, args...)
+	return st
+}
+
+// WithRecords sets the records for the execution with Do. It internally
+// resets previously applied arguments.
+func (st *StmtUpdate) WithRecords(records ...QualifiedRecord) *StmtUpdate {
+	st.argsCache = st.argsCache[:0]
+	st.upd.BindRecord(records...)
+	st.argsCache, st.ärgErr = st.upd.appendArgs(st.argsCache)
+	return st
+}
+
+// Do executes a query with the previous set arguments or records or without
+// arguments. It does not reset the internal arguments, so multiple executions
+// with the same arguments/records are possible. Number of previously applied
+// arguments or records must be the same as in the defined SQL but
+// With*().Do() can be called in a loop, both are not thread safe.
+func (st *StmtUpdate) Do(ctx context.Context) (sql.Result, error) {
+	if st.ärgErr != nil {
+		return nil, st.ärgErr
+	}
+	st.iFaces = st.iFaces[:0]
+	return st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
+}
+
 // ExecContext traditional way, allocation heavy.
 func (st *StmtUpdate) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	return st.stmt.ExecContext(ctx, args...)
-}
-
-// ExecArgs executes a prepared statement with the given arguments. Number of
-// arguments must be the same as in the defined SQL but ExecArgs can be called
-// in a loop. Not thread safe.
-func (st *StmtUpdate) ExecArgs(ctx context.Context, args Arguments) (sql.Result, error) {
-	//st.argsCache = st.argsCache[:0]
-	st.iFaces = st.iFaces[:0]
-
-	//var err error
-	//st.argsCache, err = st.upd.appendArgs(st.argsCache)
-	//if err != nil {
-	//	return nil, errors.WithStack(err)
-	//}
-	// TODO fix architecture bug once arguments are overall refactored
-	return st.stmt.ExecContext(ctx, args.Interfaces(st.iFaces...)...)
-}
-
-// ExecRecord executes a prepared statement with the given records. Number of
-// records must be the same as in the defined SQL but ExecRecord can be called
-// in a loop. Not thread safe.
-func (st *StmtUpdate) ExecRecord(ctx context.Context, records ...QualifiedRecord) (sql.Result, error) {
-	st.argsCache = st.argsCache[:0]
-	st.iFaces = st.iFaces[:0]
-
-	st.upd.BindRecord(records...)
-	var err error
-	st.argsCache, err = st.upd.appendArgs(st.argsCache)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
 }

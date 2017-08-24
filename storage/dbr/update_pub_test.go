@@ -99,7 +99,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		stmt, err := mu.Prepare(context.TODO())
 		require.NoError(t, err)
 		for i, record := range records {
-			results, err := stmt.ExecRecord(context.TODO(), dbr.Qualify("ce", record))
+			results, err := stmt.WithRecords(dbr.Qualify("ce", record)).Do(context.TODO())
 			require.NoError(t, err)
 			aff, err := results.RowsAffected()
 			if err != nil {
@@ -166,7 +166,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.ExecArgs(context.TODO(), args.Str(test.name).Str(test.email).Int(test.id))
+			res, err := stmt.WithArgs(args.Str(test.name).Str(test.email).Int(test.id)).Do(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -256,7 +256,7 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	require.NoError(t, err)
 
 	for i, record := range collection {
-		results, err := stmt.ExecRecord(context.TODO(), dbr.Qualify("sales_invoice", record))
+		results, err := stmt.WithRecords(dbr.Qualify("sales_invoice", record)).Do(context.TODO())
 		require.NoError(t, err)
 		ra, err := results.RowsAffected()
 		require.NoError(t, err, "Index %d", i)

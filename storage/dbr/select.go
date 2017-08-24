@@ -443,14 +443,6 @@ func (b *Select) readBuildCache() (sql []byte, _ Arguments, err error) {
 // SQL string.
 func (b *Select) BuildCache() *Select {
 	b.IsBuildCache = true
-	// feature is experimental. maybe it sucks s we remove it. maybe it has no
-	// business value, not even reducing GC. Or if one would like to cache but
-	// not to remove the pointers we can make the field public.
-	// Once the build cache has been activated all public fields will be
-	// emptied and the pointers get removed.
-	// Can't be implemented for now because we rely on the arguments stored in
-	// the Condition slices in the fields WHERE, HAVING or JOIN.
-	// b.isClearPointers = true
 	return b
 }
 

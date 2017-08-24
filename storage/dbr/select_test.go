@@ -47,6 +47,22 @@ func TestSelect_BasicToSQL(t *testing.T) {
 			int64(1), "a'bc",
 		)
 	})
+	t.Run("no table with placeholders", func(t *testing.T) {
+		t.Skip("TODO: Implement")
+
+		sel := NewSelect().
+			AddColumnsConditions(
+				Expr("?").Alias("n").Int64(1),
+				Expr("CAST(:abc AS CHAR(20))").Alias("str"),
+			).BindRecord(
+			Qualify("", MakeArgs(1).Name("abc").Str("a'bc")),
+		)
+		compareToSQL(t, sel, nil,
+			"SELECT ? AS `n`, CAST(:abc AS CHAR(20)) AS `str`",
+			"SELECT 1 AS `n`, CAST('a\\'bc' AS CHAR(20)) AS `str`",
+			int64(1), "a'bc",
+		)
+	})
 
 	t.Run("two cols, one table, one condition", func(t *testing.T) {
 		sel := NewSelect("a", "b").From("c").Where(Column("id").Equal().Int(1))

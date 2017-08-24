@@ -109,10 +109,17 @@ func Load(ctx context.Context, db Querier, b QueryBuilder, s Scanner) (rowCount 
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
-
-	r, err := db.QueryContext(ctx, sqlStr, args...)
+	rows, err := db.QueryContext(ctx, sqlStr, args...)
+	rowCount, err = load(rows, err, s)
 	if err != nil {
 		return 0, errors.Wrapf(err, "[dbr] Load.QueryContext with query %q", sqlStr)
+	}
+	return rowCount, nil
+}
+
+func load(r *sql.Rows, errIn error, s Scanner) (rowCount int64, err error) {
+	if errIn != nil {
+		return 0, errors.WithStack(errIn)
 	}
 	defer func() {
 		// Not testable with the sqlmock package :-(

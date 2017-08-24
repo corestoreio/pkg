@@ -192,7 +192,7 @@ func TestRowConvert(t *testing.T) {
 
 		rc, err := dbr.Load(context.TODO(), dbc.DB, tbl, tbl)
 		assert.Exactly(t, int64(0), rc)
-		assert.EqualError(t, err, "sql: Scan error on column index 0: unsupported Scan, storing driver.Value type chan int into type *sql.RawBytes")
+		assert.Contains(t, err.Error(), "sql: Scan error on column index 0: unsupported Scan, storing driver.Value type chan int into type *sql.RawBytes")
 	})
 
 	t.Run("fmt.Stringer", func(t *testing.T) {

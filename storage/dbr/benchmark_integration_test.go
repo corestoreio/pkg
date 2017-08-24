@@ -118,7 +118,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			p.TotalIncome = totalIncome * float64(i)
-			res, err := stmt.ExecRecord(ctx, p)
+			res, err := stmt.WithRecords(p).Do(ctx)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -140,10 +140,10 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			args = args[:0]
 
-			res, err := stmt.ExecArgs(ctx, args.
+			res, err := stmt.WithArgs(args.
 				Str("Maria Gopher ExecArgs").NullString(dbr.MakeNullString("maria@gopherExecArgs.go")).
-				Int64(storeID).Time(now()).Float64(totalIncome*float64(i)),
-			)
+				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)),
+			).Do(ctx)
 			if err != nil {
 				b.Fatal(err)
 			}

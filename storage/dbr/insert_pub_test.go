@@ -167,7 +167,7 @@ func TestInsert_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.ExecArgs(context.TODO(), args.Str(test.email).Int(test.groupID).Time(test.created_at))
+			res, err := stmt.WithArgs(args.Str(test.email).Int(test.groupID).Time(test.created_at)).Do(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -212,7 +212,7 @@ func TestInsert_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.ExecArgs(context.TODO(), args.Str(test.email1).Int(test.groupID1).Str(test.email2).Int(test.groupID2))
+			res, err := stmt.WithArgs(args.Str(test.email1).Int(test.groupID1).Str(test.email2).Int(test.groupID2)).Do(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -257,7 +257,7 @@ func TestInsert_Prepare(t *testing.T) {
 				Email: dbr.MakeNullString(test.email),
 			}
 
-			res, err := stmt.ExecRecord(context.TODO(), p)
+			res, err := stmt.WithRecords(p).Do(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
