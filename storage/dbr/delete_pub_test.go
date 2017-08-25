@@ -78,7 +78,7 @@ func TestDelete_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.WithArguments(args.Str(test.email).Int(test.groupID)).Do(context.TODO())
+			res, err := stmt.WithArguments(args.Str(test.email).Int(test.groupID)).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -123,7 +123,7 @@ func TestDelete_Prepare(t *testing.T) {
 				Email: dbr.MakeNullString(test.email),
 			}
 
-			res, err := stmt.WithRecords(dbr.Qualify("", p)).Do(context.TODO())
+			res, err := stmt.WithRecords(dbr.Qualify("", p)).ExecContext(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}

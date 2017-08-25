@@ -117,6 +117,11 @@ func (b *Delete) Unsafe() *Delete {
 // An ArgumentsAppender gets called if it matches the qualifier, in this case
 // the current table name or its alias.
 func (b *Delete) BindRecord(records ...QualifiedRecord) *Delete {
+	b.bindRecord(records...)
+	return b
+}
+
+func (b *Delete) bindRecord(records ...QualifiedRecord) {
 	if b.ArgumentsAppender == nil {
 		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}
@@ -127,7 +132,6 @@ func (b *Delete) BindRecord(records ...QualifiedRecord) *Delete {
 		}
 		b.ArgumentsAppender[q] = rec.Record
 	}
-	return b
 }
 
 // Where appends a WHERE clause to the statement whereSQLOrMap can be a string
@@ -283,10 +287,13 @@ func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 	}
 	cap := len(b.Wheres)
 	return &StmtDelete{
-		del:       b,
-		stmt:      sqlStmt,
-		argsCache: make(Arguments, 0, cap),
-		iFaces:    make([]interface{}, 0, cap),
+		StmtBase: StmtBase{
+			stmt:      sqlStmt,
+			argsCache: make(Arguments, 0, cap),
+			argsRaw:   make([]interface{}, 0, cap),
+			bind:      b.bindRecord,
+		},
+		del: b,
 	}, nil
 }
 
@@ -295,47 +302,20 @@ func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
 type StmtDelete struct {
-	del       *Delete
-	stmt      *sql.Stmt
-	argsCache Arguments
-	iFaces    []interface{}
-	ärgErr    error // Sorry Germans for that terrible pun #notSorry
+	StmtBase
+	del *Delete
 }
-
-// Close closes the underlying prepared statement.
-func (st *StmtDelete) Close() error { return st.stmt.Close() }
 
 // WithArguments sets the arguments for the execution with Exec. It internally resets
 // previously applied arguments.
 func (st *StmtDelete) WithArguments(args Arguments) *StmtDelete {
-	st.argsCache = st.argsCache[:0]
-	st.argsCache = append(st.argsCache, args...)
+	st.withArguments(args)
 	return st
 }
 
 // WithRecords sets the records for the execution with Do. It internally
 // resets previously applied arguments.
 func (st *StmtDelete) WithRecords(records ...QualifiedRecord) *StmtDelete {
-	st.argsCache = st.argsCache[:0]
-	st.del.BindRecord(records...)
-	st.argsCache, st.ärgErr = st.del.appendArgs(st.argsCache)
+	st.withRecords(st.del.appendArgs, records...)
 	return st
-}
-
-// Do executes a query with the previous set arguments or records or without
-// arguments. It does not reset the internal arguments, so multiple executions
-// with the same arguments/records are possible. Number of previously applied
-// arguments or records must be the same as in the defined SQL but
-// With*().Do() can be called in a loop, both are not thread safe.
-func (st *StmtDelete) Do(ctx context.Context) (sql.Result, error) {
-	if st.ärgErr != nil {
-		return nil, st.ärgErr
-	}
-	st.iFaces = st.iFaces[:0]
-	return st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
-}
-
-// ExecContext traditional way, allocation heavy.
-func (st *StmtDelete) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
-	return st.stmt.ExecContext(ctx, args...)
 }

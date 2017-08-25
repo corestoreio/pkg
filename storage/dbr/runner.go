@@ -364,3 +364,85 @@ func (b *RowConvert) NullString() (sql.NullString, error) {
 func rangeError(fn, str string) *strconv.NumError {
 	return &strconv.NumError{Func: fn, Num: str, Err: strconv.ErrRange}
 }
+
+// StmtBase wraps a *sql.Stmt with a specific SQL query. To create a
+// StmtBase call the Prepare function of type Select. StmtBase is not safe
+// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
+// Close!
+type StmtBase struct {
+	stmt             *sql.Stmt
+	argsCache        Arguments
+	argsRaw          []interface{}
+	isWithInterfaces bool
+	// ärgErr represents an argument error caused in one of the three With
+	// functions.
+	ärgErr error // Sorry Germans for that terrible pun #notSorry
+	bind   func(records ...QualifiedRecord)
+}
+
+// Close closes the underlying prepared statement.
+func (st *StmtBase) Close() error { return st.stmt.Close() }
+
+func (st *StmtBase) withArgs(args ...interface{}) {
+	st.argsCache = st.argsCache[:0]
+	st.argsRaw = st.argsRaw[:0]
+	st.argsRaw = append(st.argsRaw, args...)
+	st.isWithInterfaces = true
+}
+
+func (st *StmtBase) withArguments(args Arguments) {
+	st.argsCache = st.argsCache[:0]
+	st.argsCache = append(st.argsCache, args...)
+	st.isWithInterfaces = false
+}
+
+// WithRecords sets the records for the execution with Do. It internally
+// resets previously applied arguments.
+func (st *StmtBase) withRecords(appendArgs func(Arguments) (Arguments, error), records ...QualifiedRecord) {
+	st.argsCache = st.argsCache[:0]
+	st.bind(records...)
+	st.argsCache, st.ärgErr = appendArgs(st.argsCache)
+	st.isWithInterfaces = false
+}
+
+func (st *StmtBase) prepareArgs(args ...interface{}) error {
+	if st.ärgErr != nil {
+		return st.ärgErr
+	}
+	st.argsRaw = st.argsRaw[:0]
+	if !st.isWithInterfaces {
+		st.argsRaw = st.argsCache.Interfaces(st.argsRaw...)
+	}
+	st.argsRaw = append(st.argsRaw, args...)
+	return nil
+}
+
+// ExecContext supports both either the traditional way or passing arguments or
+// in combination with the previously called WithArguments, WithRecords or
+// WithArgs functions. If you want to call it multiple times with the same
+// arguments, do not use the `args` variable, instead use the With+ functions.
+// Calling any of the With+ function and additionally setting the `args`, will
+// append the `args` at the end to the previously set or generated arguments.
+// This function is not thread safe.
+func (st *StmtBase) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+	if err := st.prepareArgs(args...); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return st.stmt.ExecContext(ctx, st.argsRaw...)
+}
+
+// QueryContext traditional way, allocation heavy.
+func (st *StmtBase) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+	if err := st.prepareArgs(args...); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return st.stmt.QueryContext(ctx, st.argsRaw...)
+}
+
+// QueryRowContext traditional way, allocation heavy.
+func (st *StmtBase) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
+	if err := st.prepareArgs(args...); err != nil {
+		// Hmmm what should happen here?
+	}
+	return st.stmt.QueryRowContext(ctx, st.argsRaw...)
+}
