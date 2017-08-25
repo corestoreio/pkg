@@ -26,6 +26,7 @@ import (
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/byteconv"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Scanner allows a type to load data from database query. It's used in the
@@ -150,7 +151,8 @@ func load(r *sql.Rows, errIn error, s Scanner) (rowCount int64, err error) {
 // table or a view to convert the sql.RawBytes into the desired final type. It
 // scans a *sql.Rows into a *sql.RawBytes slice. The conversion into the desired
 // final type can happen without allocating of memory. RowConvert should be used
-// as a composite field in a database table struct.
+// as a composite field in a database table struct. Does not support streaming
+// because neither database/sql does :-(
 type RowConvert struct {
 	// Count increments on call to Scan.
 	Count uint64
@@ -164,7 +166,7 @@ type RowConvert struct {
 	Initialized bool
 	// CheckValidUTF8 if enabled checks if strings contains valid UTF-8 characters.
 	CheckValidUTF8 bool
-	scanArgs       []interface{}
+	scanArgs       []interface{} // could be a sync.Pool but check it in benchmarks.
 	scanRaw        []*sql.RawBytes
 	index          int
 	current        []byte
@@ -378,12 +380,13 @@ type StmtBase struct {
 	// functions.
 	ärgErr error // Sorry Germans for that terrible pun #notSorry
 	bind   func(records ...QualifiedRecord)
+	Log    log.Logger
 }
 
 // Close closes the underlying prepared statement.
 func (st *StmtBase) Close() error { return st.stmt.Close() }
 
-func (st *StmtBase) withArgs(args ...interface{}) {
+func (st *StmtBase) withArgs(args []interface{}) {
 	st.argsCache = st.argsCache[:0]
 	st.argsRaw = st.argsRaw[:0]
 	st.argsRaw = append(st.argsRaw, args...)
@@ -405,44 +408,77 @@ func (st *StmtBase) withRecords(appendArgs func(Arguments) (Arguments, error), r
 	st.isWithInterfaces = false
 }
 
+// prepareArgs transforms mainly the Arguments into []interface{} but also
+// appends the `args` from the Exec+ or Query+ function.
+// All method receivers are not thread safe.
 func (st *StmtBase) prepareArgs(args ...interface{}) error {
 	if st.ärgErr != nil {
 		return st.ärgErr
 	}
-	st.argsRaw = st.argsRaw[:0]
+
 	if !st.isWithInterfaces {
+		st.argsRaw = st.argsRaw[:0]
 		st.argsRaw = st.argsCache.Interfaces(st.argsRaw...)
 	}
 	st.argsRaw = append(st.argsRaw, args...)
 	return nil
 }
 
-// ExecContext supports both either the traditional way or passing arguments or
+// Exec supports both either the traditional way or passing arguments or
 // in combination with the previously called WithArguments, WithRecords or
 // WithArgs functions. If you want to call it multiple times with the same
 // arguments, do not use the `args` variable, instead use the With+ functions.
 // Calling any of the With+ function and additionally setting the `args`, will
 // append the `args` at the end to the previously set or generated arguments.
 // This function is not thread safe.
-func (st *StmtBase) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
+func (st *StmtBase) Exec(ctx context.Context, args ...interface{}) (sql.Result, error) {
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return st.stmt.ExecContext(ctx, st.argsRaw...)
 }
 
-// QueryContext traditional way, allocation heavy.
-func (st *StmtBase) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
+// Query traditional way, allocation heavy.
+func (st *StmtBase) Query(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return st.stmt.QueryContext(ctx, st.argsRaw...)
 }
 
-// QueryRowContext traditional way, allocation heavy.
-func (st *StmtBase) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
+// QueryRow traditional way, allocation heavy.
+func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row {
 	if err := st.prepareArgs(args...); err != nil {
 		// Hmmm what should happen here?
 	}
 	return st.stmt.QueryRowContext(ctx, st.argsRaw...)
 }
+
+// Load loads data from a query into an object. You must set DB.QueryContext on
+// the Select object or it just panics. Load can load a single row or n-rows.
+func (st *StmtBase) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	r, err := st.Query(ctx)
+	rowCount, err = load(r, err, s)
+	return rowCount, errors.WithStack(err)
+}
+
+// LoadInt64 executes the prepared statement and returns the value at an int64.
+// It returns a NotFound error if the query returns nothing.
+func (st *StmtBase) LoadInt64(ctx context.Context) (int64, error) {
+	if st.Log != nil && st.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(st.Log).Debug("dbr.Select.StmtBase.LoadInt64", log.String("sql", "TODO"))
+	}
+	return loadInt64(st.Query(ctx))
+}
+
+// LoadInt64s executes the Select and returns the value as a slice of int64s.
+func (st *StmtBase) LoadInt64s(ctx context.Context) ([]int64, error) {
+	if st.Log != nil && st.Log.IsDebug() {
+		// do not use fullSQL because we might log sensitive data
+		defer log.WhenDone(st.Log).Debug("dbr.Select.StmtBase.LoadInt64s", log.String("sql", "TODO"))
+	}
+	return loadInt64s(st.Query(ctx))
+}
+
+// More Load* functions can be added later

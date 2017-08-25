@@ -246,7 +246,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 		t.Run("Context", func(t *testing.T) {
 
-			rows, err := stmt.QueryContext(context.TODO(), 6789)
+			rows, err := stmt.Query(context.TODO(), 6789)
 			require.NoError(t, err)
 			defer rows.Close()
 
@@ -257,7 +257,7 @@ func TestSelect_Prepare(t *testing.T) {
 
 		t.Run("RowContext", func(t *testing.T) {
 
-			row := stmt.QueryRowContext(context.TODO(), 6790)
+			row := stmt.QueryRow(context.TODO(), 6790)
 			require.NoError(t, err)
 			n, e := "", ""
 			require.NoError(t, row.Scan(&n, &e))
@@ -293,7 +293,7 @@ func TestSelect_Prepare(t *testing.T) {
 			stmt.WithArguments(dbr.MakeArgs(1).Int(6899))
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Do(context.TODO())
+				rows, err := stmt.Query(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -313,7 +313,7 @@ func TestSelect_Prepare(t *testing.T) {
 			stmt.WithRecords(dbr.Qualify("", p))
 
 			for i := 0; i < iterations; i++ {
-				rows, err := stmt.Do(context.TODO())
+				rows, err := stmt.Query(context.TODO())
 				require.NoError(t, err)
 
 				cols, err := rows.Columns()
@@ -326,7 +326,7 @@ func TestSelect_Prepare(t *testing.T) {
 		t.Run("WithRecords Error", func(t *testing.T) {
 			p := TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
 			stmt.WithRecords(dbr.Qualify("", p))
-			rows, err := stmt.Do(context.TODO())
+			rows, err := stmt.Query(context.TODO())
 			assert.True(t, errors.IsDuplicated(err), "%+v", err)
 			assert.Nil(t, rows)
 		})

@@ -47,10 +47,14 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 	}
 	cap := b.argumentCapacity()
 	return &StmtSelect{
-		sel:       b,
-		argsCache: make(Arguments, 0, cap),
-		iFaces:    make([]interface{}, 0, cap),
-		stmt:      stmt,
+		StmtBase: StmtBase{
+			stmt:      stmt,
+			argsCache: make(Arguments, 0, cap),
+			argsRaw:   make([]interface{}, 0, cap),
+			bind:      b.bindRecord,
+			Log:       b.Log,
+		},
+		sel: b,
 	}, nil
 }
 
@@ -59,101 +63,30 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
 type StmtSelect struct {
-	sel              *Select
-	stmt             *sql.Stmt
-	argsCache        Arguments
-	iFaces           []interface{}
-	isWithInterfaces bool
-	// ärgErr represents an argument error caused in one of the three With functions.
-	ärgErr error // Sorry Germans for that terrible pun #notSorry
+	StmtBase
+	sel *Select
 }
-
-// Close closes the underlying prepared statement.
-func (st *StmtSelect) Close() error { return st.stmt.Close() }
 
 // WithArguments sets the interfaced arguments for the execution with Do. It
 // internally resets previously applied arguments.
 func (st *StmtSelect) WithArgs(args ...interface{}) *StmtSelect {
-	st.argsCache = st.argsCache[:0]
-	st.iFaces = st.iFaces[:0]
-	st.iFaces = append(st.iFaces, args...)
-	st.isWithInterfaces = true
+	st.withArgs(args)
 	return st
 }
 
 // WithArguments sets the arguments for the execution with Do. It internally resets
 // previously applied arguments.
 func (st *StmtSelect) WithArguments(args Arguments) *StmtSelect {
-	st.argsCache = st.argsCache[:0]
-	st.argsCache = append(st.argsCache, args...)
-	st.isWithInterfaces = false
+	st.withArguments(args)
 	return st
 }
 
 // WithRecords sets the records for the execution with Do. It internally
 // resets previously applied arguments.
 func (st *StmtSelect) WithRecords(records ...QualifiedRecord) *StmtSelect {
-	st.argsCache = st.argsCache[:0]
-	st.sel.BindRecord(records...)
-	st.argsCache, st.ärgErr = st.sel.appendArgs(st.argsCache)
-	st.isWithInterfaces = false
+	st.withRecords(st.sel.appendArgs, records...)
 	return st
 }
-
-// Do executes a query with the previous set arguments or records or without
-// arguments. It does not reset the internal arguments, so multiple executions
-// with the same arguments/records are possible. Number of previously applied
-// arguments or records must be the same as in the defined SQL but
-// With*().Exec() can be called in a loop, both are not thread safe.
-func (st *StmtSelect) Do(ctx context.Context) (*sql.Rows, error) {
-	if st.ärgErr != nil {
-		return nil, st.ärgErr
-	}
-	if !st.isWithInterfaces {
-		st.iFaces = st.iFaces[:0]
-		st.iFaces = st.argsCache.Interfaces(st.iFaces...)
-	}
-	return st.stmt.QueryContext(ctx, st.iFaces...)
-}
-
-// QueryContext traditional way, allocation heavy.
-func (st *StmtSelect) QueryContext(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
-	return st.stmt.QueryContext(ctx, args...)
-}
-
-// QueryRowContext traditional way, allocation heavy.
-func (st *StmtSelect) QueryRowContext(ctx context.Context, args ...interface{}) *sql.Row {
-	return st.stmt.QueryRowContext(ctx, args...)
-}
-
-// Load loads data from a query into an object. You must set DB.QueryContext on
-// the Select object or it just panics. Load can load a single row or n-rows.
-func (st *StmtSelect) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
-	r, err := st.Do(ctx)
-	rowCount, err = load(r, err, s)
-	return rowCount, errors.WithStack(err)
-}
-
-// LoadInt64 executes the prepared statement and returns the value at an int64.
-// It returns a NotFound error if the query returns nothing.
-func (st *StmtSelect) LoadInt64(ctx context.Context) (int64, error) {
-	if st.sel.Log != nil && st.sel.Log.IsDebug() {
-		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(st.sel.Log).Debug("dbr.Select.StmtSelect.LoadInt64", log.Stringer("sql", st.sel))
-	}
-	return loadInt64(st.Do(ctx))
-}
-
-// LoadInt64s executes the Select and returns the value as a slice of int64s.
-func (st *StmtSelect) LoadInt64s(ctx context.Context) ([]int64, error) {
-	if st.sel.Log != nil && st.sel.Log.IsDebug() {
-		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(st.sel.Log).Debug("dbr.Select.StmtSelect.LoadInt64s", log.Stringer("sql", st.sel))
-	}
-	return loadInt64s(st.Do(ctx))
-}
-
-// More Load* functions can be added later
 
 // The partially duplicated code in the Load[a-z0-9]+ functions can be optimized
 // later. The Scanner interface should not be used for loading primitive types

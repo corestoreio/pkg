@@ -511,10 +511,12 @@ func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
 	}
 	cap := len(b.Columns) * b.RecordValueCount
 	return &StmtInsert{
-		argsCache: make(Arguments, 0, cap),
-		iFaces:    make([]interface{}, 0, cap),
-		stmt:      sqlStmt,
-		ins:       b,
+		StmtBase: StmtBase{
+			stmt:      sqlStmt,
+			argsCache: make(Arguments, 0, cap),
+			argsRaw:   make([]interface{}, 0, cap),
+		},
+		ins: b,
 	}, nil
 }
 
@@ -523,15 +525,9 @@ func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
 type StmtInsert struct {
-	ins       *Insert
-	stmt      *sql.Stmt
-	argsCache Arguments
-	iFaces    []interface{}
-	ärgErr    error // Sorry Germans for that terrible pun #notSorry
+	StmtBase
+	ins *Insert
 }
-
-// Close closes the underlying prepared statement.
-func (st *StmtInsert) Close() error { return st.stmt.Close() }
 
 // WithArguments sets the arguments for the execution with Exec. It internally resets
 // previously applied arguments.
@@ -571,13 +567,9 @@ func (st *StmtInsert) WithRecords(records ...ArgumentsAppender) *StmtInsert {
 // with the same arguments/records are possible. Number of previously applied
 // arguments or records must be the same as in the defined SQL but
 // With*().Do() can be called in a loop, both are not thread safe.
-func (st *StmtInsert) Do(ctx context.Context) (sql.Result, error) {
-	if st.ärgErr != nil {
-		return nil, st.ärgErr
-	}
-	st.iFaces = st.iFaces[:0]
+func (st *StmtInsert) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 
-	result, err := st.stmt.ExecContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
+	result, err := st.StmtBase.Exec(ctx, args...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -595,11 +587,6 @@ func (st *StmtInsert) Do(ctx context.Context) (sql.Result, error) {
 		}
 	}
 	return result, nil
-}
-
-// ExecContext traditional way, allocation heavy.
-func (st *StmtInsert) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
-	return st.stmt.ExecContext(ctx, args...)
 }
 
 func strInSlice(search string, sl []string) bool {

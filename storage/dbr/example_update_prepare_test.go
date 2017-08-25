@@ -121,7 +121,7 @@ func ExampleUpdate_Prepare() {
 	for _, record := range collection {
 		// We're not using an alias in the query so Qualify can have an empty
 		// qualifier, which falls back to the default table name "sales_order".
-		result, err := stmt.WithRecords(dbr.Qualify("", record)).Do(context.Background())
+		result, err := stmt.WithRecords(dbr.Qualify("", record)).Exec(context.Background())
 		if err != nil {
 			fmt.Printf("Exec Error: %+v\n", err)
 			return

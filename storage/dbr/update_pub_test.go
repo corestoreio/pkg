@@ -99,7 +99,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		stmt, err := mu.Prepare(context.TODO())
 		require.NoError(t, err)
 		for i, record := range records {
-			results, err := stmt.WithRecords(dbr.Qualify("ce", record)).Do(context.TODO())
+			results, err := stmt.WithRecords(dbr.Qualify("ce", record)).Exec(context.TODO())
 			require.NoError(t, err)
 			aff, err := results.RowsAffected()
 			if err != nil {
@@ -125,7 +125,7 @@ func TestUpdate_Prepare(t *testing.T) {
 			require.NoError(t, stmt.Close(), "Close on a prepared statement")
 		}()
 
-		res, err := stmt.ExecContext(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
+		res, err := stmt.Exec(context.TODO(), "Peter Gopher", "peter@gopher.go", 3456)
 		require.NoError(t, err, "failed to execute ExecContext")
 
 		ra, err := res.RowsAffected()
@@ -166,7 +166,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.WithArguments(args.Str(test.name).Str(test.email).Int(test.id)).Do(context.TODO())
+			res, err := stmt.WithArguments(args.Str(test.name).Str(test.email).Int(test.id)).Exec(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -256,7 +256,7 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	require.NoError(t, err)
 
 	for i, record := range collection {
-		results, err := stmt.WithRecords(dbr.Qualify("sales_invoice", record)).Do(context.TODO())
+		results, err := stmt.WithRecords(dbr.Qualify("sales_invoice", record)).Exec(context.TODO())
 		require.NoError(t, err)
 		ra, err := results.RowsAffected()
 		require.NoError(t, err, "Index %d", i)
