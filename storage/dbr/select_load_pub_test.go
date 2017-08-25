@@ -19,6 +19,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -81,30 +82,8 @@ func TestSelect_Rows(t *testing.T) {
 	})
 }
 
-func TestSelect_Prepare(t *testing.T) {
-
-	t.Run("ToSQL Error", func(t *testing.T) {
-		sel := dbr.NewSelect()
-		stmt, err := sel.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
-	})
-
-	t.Run("Prepare Error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
-
-		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
-
-		sel := dbr.NewSelect("a", "b").From("tableX").WithDB(dbc.DB)
-		stmt, err := sel.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
-	})
-
-}
-
 var _ dbr.Scanner = (*TableCoreConfigDataSlice)(nil)
+
 var _ dbr.RowCloser = (*TableCoreConfigDataSlice)(nil)
 
 // TableCoreConfigDataSlice represents a collection type for DB table core_config_data
@@ -112,7 +91,7 @@ var _ dbr.RowCloser = (*TableCoreConfigDataSlice)(nil)
 type TableCoreConfigDataSlice struct {
 	Convert dbr.RowConvert
 	Data    []*TableCoreConfigData
-	scanErr error // just for testing not needed otherwise
+	err     error // just for testing not needed otherwise
 }
 
 // TableCoreConfigData represents a type for DB table core_config_data
@@ -154,7 +133,13 @@ func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
 }
 
 func (ps *TableCoreConfigDataSlice) RowClose() error {
-	return ps.scanErr
+	return ps.err
+}
+
+var _ dbr.ArgumentsAppender = (*TableCoreConfigDataSlice)(nil)
+
+func (ps TableCoreConfigDataSlice) AppendArgs(args dbr.Arguments, _ []string) (dbr.Arguments, error) {
+	return args, ps.err
 }
 
 func TestSelect_Load(t *testing.T) {
@@ -210,9 +195,222 @@ func TestSelect_Load(t *testing.T) {
 		s.DB = dbc.DB
 
 		ccd := &TableCoreConfigDataSlice{
-			scanErr: errors.NewDuplicatedf("Somewhere exists a duplicate entry"),
+			err: errors.NewDuplicatedf("Somewhere exists a duplicate entry"),
 		}
 		_, err := s.Load(context.TODO(), ccd)
 		assert.True(t, errors.IsDuplicated(err), "%+v", err)
+	})
+}
+
+func TestSelect_Prepare(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ToSQL Error", func(t *testing.T) {
+		sel := dbr.NewSelect()
+		stmt, err := sel.Prepare(context.TODO())
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsEmpty(err))
+	})
+
+	t.Run("Prepare Error", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectPrepare("SELECT `a`, `b` FROM `tableX`").WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+
+		sel := dbr.NewSelect("a", "b").From("tableX").WithDB(dbc.DB)
+		stmt, err := sel.Prepare(context.TODO())
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
+
+	t.Run("Query", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `name`, `email` FROM `dbr_person` WHERE (`id` = ?)"))
+		prep.ExpectQuery().WithArgs(6789).
+			WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
+
+		prep.ExpectQuery().WithArgs(6790).
+			WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
+
+		stmt, err := dbr.NewSelect("name", "email").From("dbr_person").
+			Where(dbr.Column("id").PlaceHolder()).
+			WithDB(dbc.DB).
+			Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		t.Run("Context", func(t *testing.T) {
+
+			rows, err := stmt.QueryContext(context.TODO(), 6789)
+			require.NoError(t, err)
+			defer rows.Close()
+
+			cols, err := rows.Columns()
+			require.NoError(t, err)
+			assert.Exactly(t, []string{"name", "email"}, cols)
+		})
+
+		t.Run("RowContext", func(t *testing.T) {
+
+			row := stmt.QueryRowContext(context.TODO(), 6790)
+			require.NoError(t, err)
+			n, e := "", ""
+			require.NoError(t, row.Scan(&n, &e))
+
+			assert.Exactly(t, "Peter Gopher2", n)
+			assert.Exactly(t, "peter@gopher.go2", e)
+		})
+	})
+
+	t.Run("Do", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `name`, `email` FROM `dbr_person` WHERE (`id` = ?)"))
+
+		stmt, err := dbr.NewSelect("name", "email").From("dbr_person").
+			Where(dbr.Column("id").PlaceHolder()).
+			WithDB(dbc.DB).
+			Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		const iterations = 3
+
+		t.Run("WithArguments", func(t *testing.T) {
+			for i := 0; i < iterations; i++ {
+				prep.ExpectQuery().WithArgs(6899).
+					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
+			}
+			// use loop with Do and add args before
+			stmt.WithArguments(dbr.MakeArgs(1).Int(6899))
+
+			for i := 0; i < iterations; i++ {
+				rows, err := stmt.Do(context.TODO())
+				require.NoError(t, err)
+
+				cols, err := rows.Columns()
+				require.NoError(t, err)
+				assert.Exactly(t, []string{"name", "email"}, cols)
+				rows.Close()
+			}
+		})
+
+		t.Run("WithRecords", func(t *testing.T) {
+			for i := 0; i < iterations; i++ {
+				prep.ExpectQuery().WithArgs(6900).
+					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
+			}
+
+			p := &dbrPerson{ID: 6900}
+			stmt.WithRecords(dbr.Qualify("", p))
+
+			for i := 0; i < iterations; i++ {
+				rows, err := stmt.Do(context.TODO())
+				require.NoError(t, err)
+
+				cols, err := rows.Columns()
+				require.NoError(t, err)
+				assert.Exactly(t, []string{"name", "email"}, cols)
+				rows.Close()
+			}
+		})
+
+		t.Run("WithRecords Error", func(t *testing.T) {
+			p := TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			stmt.WithRecords(dbr.Qualify("", p))
+			rows, err := stmt.Do(context.TODO())
+			assert.True(t, errors.IsDuplicated(err), "%+v", err)
+			assert.Nil(t, rows)
+		})
+	})
+
+	t.Run("Load", func(t *testing.T) {
+
+		t.Run("multi rows", func(t *testing.T) {
+			dbc, dbMock := cstesting.MockDB(t)
+			defer cstesting.MockClose(t, dbc, dbMock)
+
+			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `config_id`, `scope_id`, `path` FROM `core_config_data` WHERE (`config_id` IN (?))"))
+
+			stmt, err := dbr.NewSelect("config_id", "scope_id", "path").From("core_config_data").
+				Where(dbr.Column("config_id").In().PlaceHolder()).
+				WithDB(dbc.DB).
+				Prepare(context.TODO())
+			require.NoError(t, err, "failed creating a prepared statement")
+			defer func() {
+				require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			}()
+
+			columns := []string{"config_id", "scope_id", "path"}
+
+			prep.ExpectQuery().WithArgs(345).
+				WillReturnRows(sqlmock.NewRows(columns).AddRow(3, 4, "a/b/c").AddRow(4, 4, "a/b/d"))
+
+			ccd := &TableCoreConfigDataSlice{}
+
+			rc, err := stmt.WithArgs(345).Load(context.TODO(), ccd)
+			require.NoError(t, err)
+			assert.Exactly(t, int64(2), rc)
+
+			assert.Exactly(t, "&{3  4 a/b/c {{ false}}}", fmt.Sprintf("%v", ccd.Data[0]))
+			assert.Exactly(t, "&{4  4 a/b/d {{ false}}}", fmt.Sprintf("%v", ccd.Data[1]))
+		})
+
+		t.Run("Int64", func(t *testing.T) {
+			dbc, dbMock := cstesting.MockDB(t)
+			defer cstesting.MockClose(t, dbc, dbMock)
+
+			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` = ?)"))
+
+			stmt, err := dbr.NewSelect("scope_id").From("core_config_data").
+				Where(dbr.Column("config_id").PlaceHolder()).
+				WithDB(dbc.DB).
+				Prepare(context.TODO())
+			require.NoError(t, err, "failed creating a prepared statement")
+			defer func() {
+				require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			}()
+
+			columns := []string{"scope_id"}
+
+			prep.ExpectQuery().WithArgs(346).WillReturnRows(sqlmock.NewRows(columns).AddRow(35))
+
+			val, err := stmt.WithArguments(dbr.MakeArgs(1).Int64(346)).LoadInt64(context.TODO())
+			require.NoError(t, err)
+			assert.Exactly(t, int64(35), val)
+		})
+
+		t.Run("Int64s", func(t *testing.T) {
+			dbc, dbMock := cstesting.MockDB(t)
+			defer cstesting.MockClose(t, dbc, dbMock)
+
+			prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("SELECT `scope_id` FROM `core_config_data` WHERE (`config_id` IN (?))"))
+
+			stmt, err := dbr.NewSelect("scope_id").From("core_config_data").
+				Where(dbr.Column("config_id").In().PlaceHolder()).
+				WithDB(dbc.DB).
+				Prepare(context.TODO())
+			require.NoError(t, err, "failed creating a prepared statement")
+			defer func() {
+				require.NoError(t, stmt.Close(), "Close on a prepared statement")
+			}()
+
+			columns := []string{"scope_id"}
+
+			prep.ExpectQuery().WithArgs(346, 347).WillReturnRows(sqlmock.NewRows(columns).AddRow(36).AddRow(37))
+
+			val, err := stmt.WithArguments(dbr.MakeArgs(1).Int64s(346, 347)).LoadInt64s(context.TODO())
+			require.NoError(t, err)
+			assert.Exactly(t, []int64{36, 37}, val)
+		})
+
 	})
 }

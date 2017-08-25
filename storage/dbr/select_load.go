@@ -59,30 +59,44 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
 type StmtSelect struct {
-	sel       *Select
-	stmt      *sql.Stmt
-	argsCache Arguments
-	iFaces    []interface{}
-	ärgErr    error // Sorry Germans for that terrible pun #notSorry
+	sel              *Select
+	stmt             *sql.Stmt
+	argsCache        Arguments
+	iFaces           []interface{}
+	isWithInterfaces bool
+	// ärgErr represents an argument error caused in one of the three With functions.
+	ärgErr error // Sorry Germans for that terrible pun #notSorry
 }
 
 // Close closes the underlying prepared statement.
 func (st *StmtSelect) Close() error { return st.stmt.Close() }
 
-// WithArgs sets the arguments for the execution with Exec. It internally resets
-// previously applied arguments.
-func (st *StmtSelect) WithArgs(args Arguments) *StmtSelect {
+// WithArguments sets the interfaced arguments for the execution with Do. It
+// internally resets previously applied arguments.
+func (st *StmtSelect) WithArgs(args ...interface{}) *StmtSelect {
 	st.argsCache = st.argsCache[:0]
-	st.argsCache = append(st.argsCache, args...)
+	st.iFaces = st.iFaces[:0]
+	st.iFaces = append(st.iFaces, args...)
+	st.isWithInterfaces = true
 	return st
 }
 
-// WithRecords sets the records for the execution with Exec. It internally
+// WithArguments sets the arguments for the execution with Do. It internally resets
+// previously applied arguments.
+func (st *StmtSelect) WithArguments(args Arguments) *StmtSelect {
+	st.argsCache = st.argsCache[:0]
+	st.argsCache = append(st.argsCache, args...)
+	st.isWithInterfaces = false
+	return st
+}
+
+// WithRecords sets the records for the execution with Do. It internally
 // resets previously applied arguments.
 func (st *StmtSelect) WithRecords(records ...QualifiedRecord) *StmtSelect {
 	st.argsCache = st.argsCache[:0]
 	st.sel.BindRecord(records...)
 	st.argsCache, st.ärgErr = st.sel.appendArgs(st.argsCache)
+	st.isWithInterfaces = false
 	return st
 }
 
@@ -95,8 +109,11 @@ func (st *StmtSelect) Do(ctx context.Context) (*sql.Rows, error) {
 	if st.ärgErr != nil {
 		return nil, st.ärgErr
 	}
-	st.iFaces = st.iFaces[:0]
-	return st.stmt.QueryContext(ctx, st.argsCache.Interfaces(st.iFaces...)...)
+	if !st.isWithInterfaces {
+		st.iFaces = st.iFaces[:0]
+		st.iFaces = st.argsCache.Interfaces(st.iFaces...)
+	}
+	return st.stmt.QueryContext(ctx, st.iFaces...)
 }
 
 // QueryContext traditional way, allocation heavy.
@@ -136,6 +153,8 @@ func (st *StmtSelect) LoadInt64s(ctx context.Context) ([]int64, error) {
 	return loadInt64s(st.Do(ctx))
 }
 
+// More Load* functions can be added later
+
 // The partially duplicated code in the Load[a-z0-9]+ functions can be optimized
 // later. The Scanner interface should not be used for loading primitive types
 // as the Scanner interface shall only be used with larger structs, means
@@ -161,8 +180,8 @@ func loadInt64(rows *sql.Rows, errIn error) (value int64, err error) {
 	}
 
 	defer func() {
-		if err2 := rows.Close(); err == nil && err2 != nil {
-			err = errors.WithStack(err)
+		if cErr := rows.Close(); err == nil && cErr != nil {
+			err = errors.WithStack(cErr)
 		}
 	}()
 
@@ -200,8 +219,8 @@ func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
 		return nil, errors.WithStack(errIn)
 	}
 	defer func() {
-		if err2 := rows.Close(); err == nil && err2 != nil {
-			err = errors.WithStack(err)
+		if cErr := rows.Close(); err == nil && cErr != nil {
+			err = errors.WithStack(cErr)
 		}
 	}()
 
@@ -222,7 +241,7 @@ func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
 // LoadUint64 executes the Select and returns the value at an uint64. It returns
 // a NotFound error if the query returns nothing. This function comes in handy
 // when performing a COUNT(*) query. See function `Select.Count`.
-func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
+func (b *Select) LoadUint64(ctx context.Context) (_ uint64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)
@@ -236,7 +255,11 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
 
 	var value uint64
 	found := false
@@ -256,7 +279,7 @@ func (b *Select) LoadUint64(ctx context.Context) (uint64, error) {
 }
 
 // LoadUint64s executes the Select and returns the value at a slice of uint64s.
-func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
+func (b *Select) LoadUint64s(ctx context.Context) (_ []uint64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -270,7 +293,11 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
 
 	values := make([]uint64, 0, 10)
 	for rows.Next() {
@@ -288,7 +315,7 @@ func (b *Select) LoadUint64s(ctx context.Context) ([]uint64, error) {
 
 // LoadFloat64 executes the Select and returns the value at an float64. It
 // returns a NotFound error if the query returns nothing.
-func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
+func (b *Select) LoadFloat64(ctx context.Context) (_ float64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return 0, errors.WithStack(err)
@@ -302,7 +329,11 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 	if err != nil {
 		return 0, errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
 
 	var value float64
 	found := false
@@ -322,7 +353,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (float64, error) {
 }
 
 // LoadFloat64s executes the Select and returns the value at a slice of float64s.
-func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
+func (b *Select) LoadFloat64s(ctx context.Context) (_ []float64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -336,7 +367,11 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
 
 	values := make([]float64, 0, 10)
 	for rows.Next() {
@@ -349,12 +384,12 @@ func (b *Select) LoadFloat64s(ctx context.Context) ([]float64, error) {
 	if err = rows.Err(); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return values, nil
+	return values, err
 }
 
 // LoadString executes the Select and returns the value as a string. It
 // returns a NotFound error if the row amount is not equal one.
-func (b *Select) LoadString(ctx context.Context) (string, error) {
+func (b *Select) LoadString(ctx context.Context) (_ string, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return "", errors.WithStack(err)
@@ -368,7 +403,11 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
 
 	var value string
 	found := false
@@ -388,7 +427,7 @@ func (b *Select) LoadString(ctx context.Context) (string, error) {
 }
 
 // LoadStrings executes the Select and returns a slice of strings.
-func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
+func (b *Select) LoadStrings(ctx context.Context) (_ []string, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -402,7 +441,11 @@ func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	defer rows.Close()
+	defer func() {
+		if errC := rows.Close(); err == nil && errC != nil {
+			err = errors.WithStack(errC)
+		}
+	}()
 
 	values := make([]string, 0, 10)
 	for rows.Next() {
@@ -415,5 +458,5 @@ func (b *Select) LoadStrings(ctx context.Context) ([]string, error) {
 	if err = rows.Err(); err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return values, nil
+	return values, err
 }

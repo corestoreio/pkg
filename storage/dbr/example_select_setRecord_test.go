@@ -36,7 +36,7 @@ type catalogCategoryEntity struct {
 	CreatedAt      time.Time
 }
 
-func (ce catalogCategoryEntity) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+func (ce catalogCategoryEntity) appendArgs(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
 	switch column {
 	case "entity_id":
 		args = args.Int64(ce.EntityID)
@@ -61,7 +61,7 @@ func (ce catalogCategoryEntity) AppendArgs(args dbr.Arguments, columns []string)
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
-		return ce.appendBind(args, columns[0])
+		return ce.appendArgs(args, columns[0])
 	}
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
@@ -71,7 +71,7 @@ func (ce catalogCategoryEntity) AppendArgs(args dbr.Arguments, columns []string)
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {
 		var err error
-		if args, err = ce.appendBind(args, col); err != nil {
+		if args, err = ce.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
@@ -87,7 +87,7 @@ type tableStore struct {
 	Name      string // name varchar(255) NOT NULL
 }
 
-func (ts tableStore) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+func (ts tableStore) appendArgs(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
 	switch column {
 	case "store_id":
 		args = args.Int64(ts.StoreID)
@@ -110,7 +110,7 @@ func (ts tableStore) AppendArgs(args dbr.Arguments, columns []string) (dbr.Argum
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
-		return ts.appendBind(args, columns[0])
+		return ts.appendArgs(args, columns[0])
 	}
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
@@ -120,7 +120,7 @@ func (ts tableStore) AppendArgs(args dbr.Arguments, columns []string) (dbr.Argum
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {
 		var err error
-		if args, err = ts.appendBind(args, col); err != nil {
+		if args, err = ts.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

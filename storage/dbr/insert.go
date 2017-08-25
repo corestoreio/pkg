@@ -533,9 +533,9 @@ type StmtInsert struct {
 // Close closes the underlying prepared statement.
 func (st *StmtInsert) Close() error { return st.stmt.Close() }
 
-// WithArgs sets the arguments for the execution with Exec. It internally resets
+// WithArguments sets the arguments for the execution with Exec. It internally resets
 // previously applied arguments.
-func (st *StmtInsert) WithArgs(args Arguments) *StmtInsert {
+func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
 	st.ins.Records = nil
 	st.ins.Values = st.ins.Values[:0]
 	st.argsCache = st.argsCache[:0]

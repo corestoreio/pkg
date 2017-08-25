@@ -37,7 +37,7 @@ func (pe productEntity) AppendArgs(args dbr.Arguments, columns []string) (dbr.Ar
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
-		return pe.appendBind(args, columns[0])
+		return pe.appendArgs(args, columns[0])
 	}
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
@@ -47,14 +47,14 @@ func (pe productEntity) AppendArgs(args dbr.Arguments, columns []string) (dbr.Ar
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {
 		var err error
-		if args, err = pe.appendBind(args, col); err != nil {
+		if args, err = pe.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 	return args, nil
 }
 
-func (pe productEntity) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+func (pe productEntity) appendArgs(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
 	switch column {
 	case "attribute_set_id":
 		args = args.Int64(pe.AttributeSetID)

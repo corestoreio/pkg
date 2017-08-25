@@ -348,9 +348,9 @@ type StmtUpdate struct {
 // Close closes the underlying prepared statement.
 func (st *StmtUpdate) Close() error { return st.stmt.Close() }
 
-// WithArgs sets the arguments for the execution with Exec. It internally resets
+// WithArguments sets the arguments for the execution with Exec. It internally resets
 // previously applied arguments.
-func (st *StmtUpdate) WithArgs(args Arguments) *StmtUpdate {
+func (st *StmtUpdate) WithArguments(args Arguments) *StmtUpdate {
 	st.argsCache = st.argsCache[:0]
 	st.argsCache = append(st.argsCache, args...)
 	return st

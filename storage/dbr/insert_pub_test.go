@@ -35,7 +35,7 @@ type someRecord struct {
 	Other       bool
 }
 
-func (sr someRecord) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+func (sr someRecord) appendArgs(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
 	switch column {
 	case "something_id":
 		args = args.Int(sr.SomethingID)
@@ -52,13 +52,13 @@ func (sr someRecord) appendBind(args dbr.Arguments, column string) (_ dbr.Argume
 func (sr someRecord) AppendArgs(args dbr.Arguments, columns []string) (_ dbr.Arguments, err error) {
 	l := len(columns)
 	if l == 1 {
-		return sr.appendBind(args, columns[0])
+		return sr.appendArgs(args, columns[0])
 	}
 	if l == 0 {
 		return args.Int(sr.SomethingID).Int64(sr.UserID).Bool(sr.Other), nil // except auto inc column ;-)
 	}
 	for _, col := range columns {
-		if args, err = sr.appendBind(args, col); err != nil {
+		if args, err = sr.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
@@ -167,7 +167,7 @@ func TestInsert_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.WithArgs(args.Str(test.email).Int(test.groupID).Time(test.created_at)).Do(context.TODO())
+			res, err := stmt.WithArguments(args.Str(test.email).Int(test.groupID).Time(test.created_at)).Do(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -212,7 +212,7 @@ func TestInsert_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.WithArgs(args.Str(test.email1).Int(test.groupID1).Str(test.email2).Int(test.groupID2)).Do(context.TODO())
+			res, err := stmt.WithArguments(args.Str(test.email1).Int(test.groupID1).Str(test.email2).Int(test.groupID2)).Do(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}

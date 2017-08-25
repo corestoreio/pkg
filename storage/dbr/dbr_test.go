@@ -113,20 +113,20 @@ func (p *dbrPerson) assign(rc *RowConvert) (err error) {
 func (p *dbrPerson) AppendArgs(args Arguments, columns []string) (_ Arguments, err error) {
 	l := len(columns)
 	if l == 1 {
-		return p.appendBind(args, columns[0])
+		return p.appendArgs(args, columns[0])
 	}
 	if l == 0 {
 		return args.Uint64(p.ID).Str(p.Name).NullString(p.Email), nil // except auto inc column ;-)
 	}
 	for _, col := range columns {
-		if args, err = p.appendBind(args, col); err != nil {
+		if args, err = p.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 	return args, err
 }
 
-func (p *dbrPerson) appendBind(args Arguments, column string) (_ Arguments, err error) {
+func (p *dbrPerson) appendArgs(args Arguments, column string) (_ Arguments, err error) {
 	switch column {
 	case "id":
 		args = args.Uint64(p.ID)

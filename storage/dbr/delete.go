@@ -305,9 +305,9 @@ type StmtDelete struct {
 // Close closes the underlying prepared statement.
 func (st *StmtDelete) Close() error { return st.stmt.Close() }
 
-// WithArgs sets the arguments for the execution with Exec. It internally resets
+// WithArguments sets the arguments for the execution with Exec. It internally resets
 // previously applied arguments.
-func (st *StmtDelete) WithArgs(args Arguments) *StmtDelete {
+func (st *StmtDelete) WithArguments(args Arguments) *StmtDelete {
 	st.argsCache = st.argsCache[:0]
 	st.argsCache = append(st.argsCache, args...)
 	return st

@@ -140,7 +140,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			args = args[:0]
 
-			res, err := stmt.WithArgs(args.
+			res, err := stmt.WithArguments(args.
 				Str("Maria Gopher ExecArgs").NullString(dbr.MakeNullString("maria@gopherExecArgs.go")).
 				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)),
 			).Do(ctx)

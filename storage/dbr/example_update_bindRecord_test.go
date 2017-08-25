@@ -37,7 +37,7 @@ type categoryEntity struct {
 	TeaserIDs []string
 }
 
-func (pe categoryEntity) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+func (pe categoryEntity) appendArgs(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
 	switch column {
 	case "entity_id":
 		args = args.Int64(pe.EntityID)
@@ -66,7 +66,7 @@ func (pe categoryEntity) AppendArgs(args dbr.Arguments, columns []string) (dbr.A
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
-		return pe.appendBind(args, columns[0])
+		return pe.appendArgs(args, columns[0])
 	}
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
@@ -76,7 +76,7 @@ func (pe categoryEntity) AppendArgs(args dbr.Arguments, columns []string) (dbr.A
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {
 		var err error
-		if args, err = pe.appendBind(args, col); err != nil {
+		if args, err = pe.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

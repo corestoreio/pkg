@@ -166,7 +166,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.WithArgs(args.Str(test.name).Str(test.email).Int(test.id)).Do(context.TODO())
+			res, err := stmt.WithArguments(args.Str(test.name).Str(test.email).Int(test.id)).Do(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}

@@ -36,7 +36,7 @@ type salesOrder struct {
 	GrandTotal dbr.NullFloat64
 }
 
-func (so salesOrder) appendBind(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
+func (so salesOrder) appendArgs(args dbr.Arguments, column string) (_ dbr.Arguments, err error) {
 	switch column {
 	case "entity_id":
 		args = args.Int64(so.EntityID)
@@ -59,7 +59,7 @@ func (so salesOrder) AppendArgs(args dbr.Arguments, columns []string) (dbr.Argum
 	l := len(columns)
 	if l == 1 {
 		// Most commonly used case
-		return so.appendBind(args, columns[0])
+		return so.appendArgs(args, columns[0])
 	}
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
@@ -69,7 +69,7 @@ func (so salesOrder) AppendArgs(args dbr.Arguments, columns []string) (dbr.Argum
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {
 		var err error
-		if args, err = so.appendBind(args, col); err != nil {
+		if args, err = so.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}

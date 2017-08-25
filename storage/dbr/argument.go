@@ -361,7 +361,7 @@ func (a Arguments) AppendArgs(args Arguments, columns []string) (Arguments, erro
 	l := len(columns)
 	if l == 1 {
 		// most used case.
-		return a.appendBind(args, columns[0]), nil
+		return a.appendArgs(args, columns[0]), nil
 	}
 	if l == 0 {
 		// case insert statement requests all columns
@@ -370,12 +370,12 @@ func (a Arguments) AppendArgs(args Arguments, columns []string) (Arguments, erro
 
 	// case insert statement requests specific columns
 	for _, col := range columns {
-		args = a.appendBind(args, col)
+		args = a.appendArgs(args, col)
 	}
 	return args, nil
 }
 
-func (a Arguments) appendBind(args Arguments, column string) Arguments {
+func (a Arguments) appendArgs(args Arguments, column string) Arguments {
 	// now a bit slow ... but will be refactored later with constant time
 	// access, but first benchmark it. This for loop can be the 3rd one in the
 	// overall chain.
