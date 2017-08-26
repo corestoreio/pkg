@@ -61,8 +61,9 @@ func WithDSN(dsn string) ConnectionOption {
 }
 
 // NewConnection instantiates a Connection for a given database/sql connection
-// and event receiver. An invalid drivername causes a NotImplemented error to be
-// returned. You can either apply a DSN or a pre configured *sql.DB type.
+// and event receiver. An invalid driver name causes a NotImplemented error to be
+// returned. You can either apply a DSN or a pre configured *sql.DB type. For
+// full UTF-8 support you must set the charset in the SQL driver to utf8mb4.
 func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	c := &Connection{
 		dn: DriverNameMySQL,
@@ -89,6 +90,10 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	if c.DB, err = sql.Open(c.dn, c.dsn.FormatDSN()); err != nil {
 		return nil, errors.WithStack(err)
 	}
+
+	// TODO: Validate that we run with utf8mb4 the normal utf8 is only 3 bytes
+	// where utf8mb4 is full 4byte support.
+	// SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%';
 
 	return c, nil
 }

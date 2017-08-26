@@ -147,7 +147,7 @@ func (u *Union) OrderByDesc(columns ...string) *Union {
 	return u
 }
 
-// Interpolate if set stringyfies the arguments into the SQL string and returns
+// Interpolate if set stringifies the arguments into the SQL string and returns
 // pre-processed SQL command when calling the function ToSQL. Not suitable for
 // prepared statements. ToSQLs second argument `args` will then be nil.
 func (u *Union) Interpolate() *Union {
@@ -215,6 +215,22 @@ func (u *Union) MultiplyArguments(args Arguments) Arguments {
 		copy(ret[i*lArgs:], args)
 	}
 	return ret
+}
+
+// BindRecord binds the qualified record to the main table/view, or any other
+// table/view/alias used in the query, for assembling and appending arguments.
+// An ArgumentsAppender gets called if it matches the qualifier, in this case
+// the current table name or its alias.
+// Should be called once all selects have been set.
+func (u *Union) BindRecord(records ...QualifiedRecord) *Union {
+	u.bindRecord(records...)
+	return u
+}
+
+func (u *Union) bindRecord(records ...QualifiedRecord) {
+	for _, sel := range u.Selects {
+		sel.bindRecord(records...)
+	}
 }
 
 // ToSQL converts the statements into a string and returns its arguments.
@@ -325,15 +341,60 @@ func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
 	return rows, errors.WithStack(err)
 }
 
-// Prepare prepares a SQL statement. Sets IsInterpolate to false.
-func (u *Union) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	stmt, err := Prepare(ctx, u.DB, u)
-	return stmt, errors.WithStack(err)
-}
-
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Union object or it just panics. Load can load a single row or n-rows.
 func (u *Union) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
 	rowCount, err = Load(ctx, u.DB, u, s)
 	return rowCount, errors.WithStack(err)
+}
+
+// Prepare prepares a SQL statement. Sets IsInterpolate to false.
+func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
+	stmt, err := Prepare(ctx, u.DB, u)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	//return stmt, errors.WithStack(err)
+	args := u.makeArguments()
+	return &StmtUnion{
+		StmtBase: StmtBase{
+			stmt:      stmt,
+			argsCache: args,
+			argsRaw:   make([]interface{}, 0, len(args)),
+			bind:      u.bindRecord,
+			Log:       u.Log,
+		},
+		uni: u,
+	}, nil
+
+}
+
+// StmtUnion wraps a *sql.Stmt with a specific SQL query. To create a
+// StmtUnion call the Prepare function of type Union. StmtUnion is not safe
+// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
+// Close!
+type StmtUnion struct {
+	StmtBase
+	uni *Union
+}
+
+// WithArguments sets the interfaced arguments for the execution with Do. It
+// internally resets previously applied arguments.
+func (st *StmtUnion) WithArgs(args ...interface{}) *StmtUnion {
+	st.withArgs(args)
+	return st
+}
+
+// WithArguments sets the arguments for the execution with Do. It internally resets
+// previously applied arguments.
+func (st *StmtUnion) WithArguments(args Arguments) *StmtUnion {
+	st.withArguments(args)
+	return st
+}
+
+// WithRecords sets the records for the execution with Do. It internally
+// resets previously applied arguments.
+func (st *StmtUnion) WithRecords(records ...QualifiedRecord) *StmtUnion {
+	st.withRecords(st.uni.appendArgs, records...)
+	return st
 }
