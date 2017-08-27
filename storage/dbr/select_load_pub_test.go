@@ -289,7 +289,7 @@ func TestSelect_Prepare(t *testing.T) {
 				prep.ExpectQuery().WithArgs(6899).
 					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
 			}
-			// use loop with Do and add args before
+			// use loop with Query+ and add args before
 			stmt.WithArguments(dbr.MakeArgs(1).Int(6899))
 
 			for i := 0; i < iterations; i++ {

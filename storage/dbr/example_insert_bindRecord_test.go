@@ -70,11 +70,11 @@ func (pe productEntity) appendArgs(args dbr.Arguments, column string) (_ dbr.Arg
 	return args, nil
 }
 
-// ExampleInsert_Bind inserts new data into table
+// ExampleInsert_BindRecord inserts new data into table
 // `catalog_product_entity`. First statement by specifying the exact column
 // names. In the second example all columns values are getting inserted and you
 // specify the number of place holders per record.
-func ExampleInsert_Bind() {
+func ExampleInsert_BindRecord() {
 
 	objs := []productEntity{
 		{1, 5, "simple", dbr.MakeNullString("SOA9"), false},

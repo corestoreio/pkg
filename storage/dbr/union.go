@@ -376,21 +376,21 @@ type StmtUnion struct {
 	uni *Union
 }
 
-// WithArguments sets the interfaced arguments for the execution with Do. It
+// WithArgs sets the interfaced arguments for the execution with Query+. It
 // internally resets previously applied arguments.
 func (st *StmtUnion) WithArgs(args ...interface{}) *StmtUnion {
 	st.withArgs(args)
 	return st
 }
 
-// WithArguments sets the arguments for the execution with Do. It internally resets
-// previously applied arguments.
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments.
 func (st *StmtUnion) WithArguments(args Arguments) *StmtUnion {
 	st.withArguments(args)
 	return st
 }
 
-// WithRecords sets the records for the execution with Do. It internally
+// WithRecords sets the records for the execution with Query+. It internally
 // resets previously applied arguments.
 func (st *StmtUnion) WithRecords(records ...QualifiedRecord) *StmtUnion {
 	st.withRecords(st.uni.appendArgs, records...)

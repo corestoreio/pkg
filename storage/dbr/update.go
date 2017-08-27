@@ -349,15 +349,15 @@ type StmtUpdate struct {
 	upd *Update
 }
 
-// WithArguments sets the arguments for the execution with Exec. It internally resets
-// previously applied arguments.
+// WithArguments sets the arguments for the execution with ExecContext. It
+// internally resets previously applied arguments.
 func (st *StmtUpdate) WithArguments(args Arguments) *StmtUpdate {
 	st.withArguments(args)
 	return st
 }
 
-// WithRecords sets the records for the execution with Do. It internally
-// resets previously applied arguments.
+// WithRecords sets the records for the execution with ExecContext. It
+// internally resets previously applied arguments.
 func (st *StmtUpdate) WithRecords(records ...QualifiedRecord) *StmtUpdate {
 	st.withRecords(st.upd.appendArgs, records...)
 	return st

@@ -313,7 +313,7 @@ func (st *StmtDelete) WithArguments(args Arguments) *StmtDelete {
 	return st
 }
 
-// WithRecords sets the records for the execution with Do. It internally
+// WithRecords sets the records for the execution with Exec. It internally
 // resets previously applied arguments.
 func (st *StmtDelete) WithRecords(records ...QualifiedRecord) *StmtDelete {
 	st.withRecords(st.del.appendArgs, records...)

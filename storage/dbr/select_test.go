@@ -535,7 +535,7 @@ func TestSelect_Load_Slice_Scanner(t *testing.T) {
 	var people dbrPersons
 	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id").Load(context.TODO(), &people)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, int64(2), count)
 
 	assert.Equal(t, len(people.Data), 2)
@@ -561,7 +561,7 @@ func TestSelect_Load_Rows(t *testing.T) {
 		var person dbrPerson
 		_, err := s.Select("id", "name", "email").From("dbr_people").
 			Where(Column("email").Str("jonathan@uservoice.com")).Load(context.TODO(), &person)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, person.ID > 0)
 		assert.Equal(t, "Jonathan", person.Name)
 		assert.True(t, person.Email.Valid)
@@ -586,7 +586,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 		var people dbrPersons
 		count, err := s.SelectBySQL("SELECT name FROM dbr_people WHERE email = ?", MakeArgs(1).Str("jonathan@uservoice.com")).Load(context.TODO(), &people)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, int64(1), count)
 		if len(people.Data) == 1 {
 			assert.Equal(t, "Jonathan", people.Data[0].Name)
@@ -599,13 +599,13 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 	t.Run("IN Clause", func(t *testing.T) {
 		ids, err := s.Select("id").From("dbr_people").
 			Where(Column("id").In().Int64s(1, 2, 3)).LoadInt64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Exactly(t, []int64{1, 2}, ids)
 	})
 	t.Run("NOT IN Clause", func(t *testing.T) {
 		ids, err := s.Select("id").From("dbr_people").
 			Where(Column("id").NotIn().Int64s(2, 3)).LoadInt64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Exactly(t, []int64{1}, ids)
 	})
 }
@@ -615,12 +615,12 @@ func TestSelect_LoadType_Single(t *testing.T) {
 
 	t.Run("LoadString", func(t *testing.T) {
 		name, err := s.Select("name").From("dbr_people").Where(Column("email").Str("jonathan@uservoice.com")).LoadString(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "Jonathan", name)
 	})
 	t.Run("LoadString too many columns", func(t *testing.T) {
 		name, err := s.Select("name", "email").From("dbr_people").Where(Expr("email = 'jonathan@uservoice.com'")).LoadString(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Empty(t, name)
 	})
 	t.Run("LoadString not found", func(t *testing.T) {
@@ -631,12 +631,12 @@ func TestSelect_LoadType_Single(t *testing.T) {
 
 	t.Run("LoadInt64", func(t *testing.T) {
 		id, err := s.Select("id").From("dbr_people").Limit(1).LoadInt64(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, id > 0)
 	})
 	t.Run("LoadInt64 too many columns", func(t *testing.T) {
 		id, err := s.Select("id", "email").From("dbr_people").Limit(1).LoadInt64(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Empty(t, id)
 	})
 	t.Run("LoadInt64 not found", func(t *testing.T) {
@@ -647,12 +647,12 @@ func TestSelect_LoadType_Single(t *testing.T) {
 
 	t.Run("LoadUint64", func(t *testing.T) {
 		id, err := s.Select("id").From("dbr_people").Limit(1).LoadUint64(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, id > 0)
 	})
 	t.Run("LoadUint64 too many columns", func(t *testing.T) {
 		id, err := s.Select("id", "email").From("dbr_people").Limit(1).LoadUint64(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Empty(t, id)
 	})
 	t.Run("LoadUint64 not found", func(t *testing.T) {
@@ -663,12 +663,12 @@ func TestSelect_LoadType_Single(t *testing.T) {
 
 	t.Run("LoadFloat64", func(t *testing.T) {
 		id, err := s.Select("id").From("dbr_people").Limit(1).LoadFloat64(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, id > 0)
 	})
 	t.Run("LoadFloat64 too many columns", func(t *testing.T) {
 		id, err := s.Select("id", "email").From("dbr_people").Limit(1).LoadFloat64(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Empty(t, id)
 	})
 	t.Run("LoadFloat64 not found", func(t *testing.T) {
@@ -707,65 +707,65 @@ func TestSelect_LoadType_Slices(t *testing.T) {
 
 	t.Run("LoadStrings", func(t *testing.T) {
 		names, err := s.Select("name").From("dbr_people").LoadStrings(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []string{"Jonathan", "Dmitri"}, names)
 	})
 	t.Run("LoadStrings too many columns", func(t *testing.T) {
 		vals, err := s.Select("name", "email").From("dbr_people").LoadStrings(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Exactly(t, []string(nil), vals)
 	})
 	t.Run("LoadStrings not found", func(t *testing.T) {
 		names, err := s.Select("name").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadStrings(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []string{}, names)
 	})
 
 	t.Run("LoadInt64s", func(t *testing.T) {
 		names, err := s.Select("id").From("dbr_people").LoadInt64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []int64{1, 2}, names)
 	})
 	t.Run("LoadInt64s too many columns", func(t *testing.T) {
 		vals, err := s.Select("id", "email").From("dbr_people").LoadInt64s(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Exactly(t, []int64(nil), vals)
 	})
 	t.Run("LoadInt64s not found", func(t *testing.T) {
 		names, err := s.Select("id").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadInt64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []int64{}, names)
 	})
 
 	t.Run("LoadUint64s", func(t *testing.T) {
 		names, err := s.Select("id").From("dbr_people").LoadUint64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []uint64{1, 2}, names)
 	})
 	t.Run("LoadUint64s too many columns", func(t *testing.T) {
 		vals, err := s.Select("id", "email").From("dbr_people").LoadUint64s(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Exactly(t, []uint64(nil), vals)
 	})
 	t.Run("LoadUint64s not found", func(t *testing.T) {
 		names, err := s.Select("id").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadUint64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []uint64{}, names)
 	})
 
 	t.Run("LoadFloat64s", func(t *testing.T) {
 		names, err := s.Select("id").From("dbr_people").LoadFloat64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []float64{1, 2}, names)
 	})
 	t.Run("LoadFloat64s too many columns", func(t *testing.T) {
 		vals, err := s.Select("id", "email").From("dbr_people").LoadFloat64s(context.TODO())
-		assert.Error(t, err, "%+v", err)
+		require.Error(t, err)
 		assert.Exactly(t, []float64(nil), vals)
 	})
 	t.Run("LoadFloat64s not found", func(t *testing.T) {
 		names, err := s.Select("id").From("dbr_people").Where(Expr("name ='jdhsjdf'")).LoadFloat64s(context.TODO())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, []float64{}, names)
 	})
 
@@ -1305,7 +1305,7 @@ func TestSelect_Count(t *testing.T) {
 			"SELECT COUNT(*) AS `counted` FROM `dbr_people`",
 		)
 		var buf bytes.Buffer
-		assert.NoError(t, s.Columns.WriteQuoted(&buf))
+		require.NoError(t, s.Columns.WriteQuoted(&buf))
 		assert.Exactly(t, "`a`, `b`", buf.String(), "Columns should be removed or changed when calling Count() function")
 	})
 }

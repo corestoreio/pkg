@@ -405,8 +405,8 @@ func (st *StmtBase) withArguments(args Arguments) {
 	st.isWithInterfaces = false
 }
 
-// WithRecords sets the records for the execution with Do. It internally
-// resets previously applied arguments.
+// withRecords sets the records for the execution with Query or Exec. It
+// internally resets previously applied arguments.
 func (st *StmtBase) withRecords(appendArgs func(Arguments) (Arguments, error), records ...QualifiedRecord) {
 	st.argsCache = st.argsCache[:0]
 	st.bindRecord(records)
@@ -455,6 +455,7 @@ func (st *StmtBase) Query(ctx context.Context, args ...interface{}) (*sql.Rows, 
 // QueryRow traditional way, allocation heavy.
 func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row {
 	if err := st.prepareArgs(args...); err != nil {
+		_ = err
 		// Hmmm what should happen here?
 	}
 	return st.stmt.QueryRowContext(ctx, st.argsRaw...)

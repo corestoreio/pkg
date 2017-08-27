@@ -552,7 +552,7 @@ func (st *StmtInsert) WithArguments(args Arguments) *StmtInsert {
 	return st
 }
 
-// WithRecords sets the records for the execution with Do. It internally
+// WithRecords sets the records for the execution with Exec. It internally
 // resets previously applied arguments.
 func (st *StmtInsert) WithRecords(records ...ArgumentsAppender) *StmtInsert {
 	st.argsCache = st.argsCache[:0]
@@ -562,11 +562,11 @@ func (st *StmtInsert) WithRecords(records ...ArgumentsAppender) *StmtInsert {
 	return st
 }
 
-// Do executes a query with the previous set arguments or records or without
-// arguments. It does not reset the internal arguments, so multiple executions
-// with the same arguments/records are possible. Number of previously applied
-// arguments or records must be the same as in the defined SQL but
-// With*().Do() can be called in a loop, both are not thread safe.
+// ExecContext executes a query with the previous set arguments or records or
+// without arguments. It does not reset the internal arguments, so multiple
+// executions with the same arguments/records are possible. Number of previously
+// applied arguments or records must be the same as in the defined SQL but
+// With*().ExecContext() can be called in a loop, both are not thread safe.
 func (st *StmtInsert) ExecContext(ctx context.Context, args ...interface{}) (sql.Result, error) {
 
 	result, err := st.StmtBase.Exec(ctx, args...)

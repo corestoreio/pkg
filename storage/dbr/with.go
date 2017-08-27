@@ -339,21 +339,21 @@ type StmtWith struct {
 	with *With
 }
 
-// WithArguments sets the interfaced arguments for the execution with Do. It
+// WithArgs sets the interfaced arguments for the execution with Query+. It
 // internally resets previously applied arguments.
 func (st *StmtWith) WithArgs(args ...interface{}) *StmtWith {
 	st.withArgs(args)
 	return st
 }
 
-// WithArguments sets the arguments for the execution with Do. It internally resets
-// previously applied arguments.
+// WithArguments sets the arguments for the execution with Query+. It internally
+// resets previously applied arguments.
 func (st *StmtWith) WithArguments(args Arguments) *StmtWith {
 	st.withArguments(args)
 	return st
 }
 
-// WithRecords sets the records for the execution with Do. It internally
+// WithRecords sets the records for the execution with Query+. It internally
 // resets previously applied arguments.
 func (st *StmtWith) WithRecords(records ...QualifiedRecord) *StmtWith {
 	st.withRecords(st.with.appendArgs, records...)
