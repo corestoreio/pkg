@@ -18,10 +18,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWith_Query(t *testing.T) {
@@ -39,26 +41,6 @@ func TestWith_Query(t *testing.T) {
 			WithDB(dbc.DB)
 		rows, err := sel.Query(context.TODO())
 		assert.Nil(t, rows)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
-
-	})
-}
-
-func TestWith_Prepare(t *testing.T) {
-	t.Parallel()
-
-	t.Run("error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
-
-		dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
-			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
-
-		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().Unsafe().AddColumns("1")}).
-			Select(dbr.NewSelect().Star().From("sel")).
-			WithDB(dbc.DB)
-		stmt, err := sel.Prepare(context.TODO())
-		assert.Nil(t, stmt)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 
 	})
@@ -181,4 +163,154 @@ func TestNewWith(t *testing.T) {
 			"",
 		)
 	})
+}
+
+func TestWith_Prepare(t *testing.T) {
+	t.Parallel()
+
+	t.Run("error", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH `sel` AS (SELECT 1) SELECT * FROM `sel`")).
+			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+
+		sel := dbr.NewWith(dbr.WithCTE{Name: "sel", Select: dbr.NewSelect().Unsafe().AddColumns("1")}).
+			Select(dbr.NewSelect().Star().From("sel")).
+			WithDB(dbc.DB)
+		stmt, err := sel.Prepare(context.TODO())
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
+
+	t.Run("Query", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `a`, `d` AS `b` FROM `tableAD`) UNION ALL (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))) SELECT * FROM `cte`"))
+		prep.ExpectQuery().WithArgs(6889).
+			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher", "peter@gopher.go"))
+
+		prep.ExpectQuery().WithArgs(6890).
+			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
+
+		stmt, err := dbr.NewWith(
+			dbr.WithCTE{
+				Name:    "cte",
+				Columns: []string{"n"},
+				Union: dbr.NewUnion(
+					dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
+					dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").PlaceHolder()),
+				).All(),
+			},
+		).
+			Recursive().
+			Select(dbr.NewSelect().Star().From("cte")).
+			BuildCache().WithDB(dbc.DB).
+			Prepare(context.TODO())
+
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		t.Run("Context", func(t *testing.T) {
+
+			rows, err := stmt.Query(context.TODO(), 6889)
+			require.NoError(t, err)
+			defer rows.Close()
+
+			cols, err := rows.Columns()
+			require.NoError(t, err)
+			assert.Exactly(t, []string{"a", "b"}, cols)
+		})
+
+		t.Run("RowContext", func(t *testing.T) {
+
+			row := stmt.QueryRow(context.TODO(), 6890)
+			require.NoError(t, err)
+			n, e := "", ""
+			require.NoError(t, row.Scan(&n, &e))
+
+			assert.Exactly(t, "Peter Gopher2", n)
+			assert.Exactly(t, "peter@gopher.go2", e)
+		})
+	})
+
+	t.Run("Exec", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("WITH RECURSIVE `cte` (`n`) AS ((SELECT `name`, `d` AS `email` FROM `dbr_person`) UNION ALL (SELECT `name`, `email` FROM `dbr_person2` WHERE (`id` = ?))) SELECT * FROM `cte`"))
+
+		stmt, err := dbr.NewWith(
+			dbr.WithCTE{
+				Name:    "cte",
+				Columns: []string{"n"},
+				Union: dbr.NewUnion(
+					dbr.NewSelect("name").AddColumnsAliases("d", "email").From("dbr_person"),
+					dbr.NewSelect("name", "email").From("dbr_person2").Where(dbr.Column("id").PlaceHolder()),
+				).All(),
+			},
+		).
+			Recursive().
+			Select(dbr.NewSelect().Star().From("cte")).
+			BuildCache().WithDB(dbc.DB).
+			Prepare(context.TODO())
+
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		const iterations = 3
+
+		t.Run("WithArguments", func(t *testing.T) {
+			for i := 0; i < iterations; i++ {
+				prep.ExpectQuery().WithArgs(6899).
+					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
+			}
+			// use loop with Do and add args before
+			stmt.WithArguments(dbr.MakeArgs(1).Int(6899))
+
+			for i := 0; i < iterations; i++ {
+				rows, err := stmt.Query(context.TODO())
+				require.NoError(t, err)
+
+				cols, err := rows.Columns()
+				require.NoError(t, err)
+				assert.Exactly(t, []string{"name", "email"}, cols)
+				rows.Close()
+			}
+		})
+
+		t.Run("WithRecords", func(t *testing.T) {
+			for i := 0; i < iterations; i++ {
+				prep.ExpectQuery().WithArgs(6900).
+					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
+			}
+
+			p := &dbrPerson{ID: 6900}
+			stmt.WithRecords(dbr.Qualify("", p))
+
+			for i := 0; i < iterations; i++ {
+				rows, err := stmt.Query(context.TODO())
+				require.NoError(t, err)
+
+				cols, err := rows.Columns()
+				require.NoError(t, err)
+				assert.Exactly(t, []string{"name", "email"}, cols)
+				rows.Close()
+			}
+		})
+
+		t.Run("WithRecords Error", func(t *testing.T) {
+			p := TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			stmt.WithRecords(dbr.Qualify("", p))
+			rows, err := stmt.Query(context.TODO())
+			assert.True(t, errors.IsDuplicated(err), "%+v", err)
+			assert.Nil(t, rows)
+		})
+	})
+
 }

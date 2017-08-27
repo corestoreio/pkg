@@ -48,11 +48,11 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 	cap := b.argumentCapacity()
 	return &StmtSelect{
 		StmtBase: StmtBase{
-			stmt:      stmt,
-			argsCache: make(Arguments, 0, cap),
-			argsRaw:   make([]interface{}, 0, cap),
-			bind:      b.bindRecord,
-			Log:       b.Log,
+			stmt:       stmt,
+			argsCache:  make(Arguments, 0, cap),
+			argsRaw:    make([]interface{}, 0, cap),
+			bindRecord: b.bindRecord,
+			Log:        b.Log,
 		},
 		sel: b,
 	}, nil

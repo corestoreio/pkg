@@ -117,11 +117,11 @@ func (b *Delete) Unsafe() *Delete {
 // An ArgumentsAppender gets called if it matches the qualifier, in this case
 // the current table name or its alias.
 func (b *Delete) BindRecord(records ...QualifiedRecord) *Delete {
-	b.bindRecord(records...)
+	b.bindRecord(records)
 	return b
 }
 
-func (b *Delete) bindRecord(records ...QualifiedRecord) {
+func (b *Delete) bindRecord(records []QualifiedRecord) {
 	if b.ArgumentsAppender == nil {
 		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}
@@ -288,10 +288,10 @@ func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 	cap := len(b.Wheres)
 	return &StmtDelete{
 		StmtBase: StmtBase{
-			stmt:      sqlStmt,
-			argsCache: make(Arguments, 0, cap),
-			argsRaw:   make([]interface{}, 0, cap),
-			bind:      b.bindRecord,
+			stmt:       sqlStmt,
+			argsCache:  make(Arguments, 0, cap),
+			argsRaw:    make([]interface{}, 0, cap),
+			bindRecord: b.bindRecord,
 		},
 		del: b,
 	}, nil

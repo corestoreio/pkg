@@ -206,13 +206,13 @@ func (b *With) toSQL(w *bytes.Buffer) error {
 			sc.Select.IsInterpolate = b.IsInterpolate
 			sc.Select.IsBuildCache = b.IsBuildCache
 			if err := sc.Select.toSQL(w); err != nil {
-				return errors.Wrap(err, "[dbr] sc.Select.toSQL")
+				return errors.WithStack(err)
 			}
 		case sc.Union != nil:
 			sc.Union.IsInterpolate = b.IsInterpolate
 			sc.Union.IsBuildCache = b.IsBuildCache
 			if err := sc.Union.toSQL(w); err != nil {
-				return errors.Wrap(err, "[dbr] sc.Union.toSQL")
+				return errors.WithStack(err)
 			}
 		}
 		w.WriteRune(')')
@@ -278,15 +278,84 @@ func (b *With) Query(ctx context.Context) (*sql.Rows, error) {
 	return rows, errors.WithStack(err)
 }
 
-// Prepare prepares a SQL statement. Sets IsInterpolate to false.
-func (b *With) Prepare(ctx context.Context) (*sql.Stmt, error) {
-	stmt, err := Prepare(ctx, b.DB, b)
-	return stmt, errors.WithStack(err)
-}
-
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the With object or it just panics. Load can load a single row or n-rows.
 func (b *With) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
 	rowCount, err = Load(ctx, b.DB, b, s)
 	return rowCount, errors.WithStack(err)
+}
+
+func (b *With) bindRecord(records []QualifiedRecord) {
+	// Current pattern: To whom it may concern.
+
+	for _, sc := range b.Subclauses {
+		switch {
+		case sc.Select != nil:
+			sc.Select.bindRecord(records)
+		case sc.Union != nil:
+			sc.Union.bindRecord(records)
+		}
+	}
+
+	switch {
+	case b.TopLevel.Select != nil:
+		b.TopLevel.Select.bindRecord(records)
+	case b.TopLevel.Union != nil:
+		b.TopLevel.Union.bindRecord(records)
+	case b.TopLevel.Update != nil:
+		b.TopLevel.Update.bindRecord(records)
+	case b.TopLevel.Delete != nil:
+		b.TopLevel.Delete.bindRecord(records)
+	}
+
+}
+
+// Prepare prepares a SQL statement. Sets IsInterpolate to false.
+func (b *With) Prepare(ctx context.Context) (*StmtWith, error) {
+	stmt, err := Prepare(ctx, b.DB, b)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	const cap = 10 // just a guess; needs to b more precise but later.
+	return &StmtWith{
+		StmtBase: StmtBase{
+			stmt:       stmt,
+			argsCache:  make(Arguments, 0, cap),
+			argsRaw:    make([]interface{}, 0, cap),
+			bindRecord: b.bindRecord,
+			Log:        b.Log,
+		},
+		with: b,
+	}, nil
+}
+
+// StmtWith wraps a *sql.Stmt with a specific SQL query. To create a
+// StmtWith call the Prepare function of type Union. StmtWith is not safe
+// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
+// Close!
+type StmtWith struct {
+	StmtBase
+	with *With
+}
+
+// WithArguments sets the interfaced arguments for the execution with Do. It
+// internally resets previously applied arguments.
+func (st *StmtWith) WithArgs(args ...interface{}) *StmtWith {
+	st.withArgs(args)
+	return st
+}
+
+// WithArguments sets the arguments for the execution with Do. It internally resets
+// previously applied arguments.
+func (st *StmtWith) WithArguments(args Arguments) *StmtWith {
+	st.withArguments(args)
+	return st
+}
+
+// WithRecords sets the records for the execution with Do. It internally
+// resets previously applied arguments.
+func (st *StmtWith) WithRecords(records ...QualifiedRecord) *StmtWith {
+	st.withRecords(st.with.appendArgs, records...)
+	return st
 }

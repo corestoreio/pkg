@@ -120,11 +120,11 @@ func (b *Update) AddColumns(columnNames ...string) *Update {
 // An ArgumentsAppender gets called if it matches the qualifier, in this case
 // the current table name or its alias.
 func (b *Update) BindRecord(records ...QualifiedRecord) *Update {
-	b.bindRecord(records...)
+	b.bindRecord(records)
 	return b
 }
 
-func (b *Update) bindRecord(records ...QualifiedRecord) {
+func (b *Update) bindRecord(records []QualifiedRecord) {
 	if b.ArgumentsAppender == nil {
 		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}
@@ -311,10 +311,10 @@ func (b *Update) Prepare(ctx context.Context) (*StmtUpdate, error) {
 	cap := len(b.SetClauses) + len(b.Wheres)
 	return &StmtUpdate{
 		StmtBase: StmtBase{
-			stmt:      stmt,
-			argsCache: make(Arguments, 0, cap),
-			argsRaw:   make([]interface{}, 0, cap),
-			bind:      b.bindRecord,
+			stmt:       stmt,
+			argsCache:  make(Arguments, 0, cap),
+			argsRaw:    make([]interface{}, 0, cap),
+			bindRecord: b.bindRecord,
 		},
 		upd: b,
 	}, nil

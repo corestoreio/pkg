@@ -372,15 +372,21 @@ func rangeError(fn, str string) *strconv.NumError {
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
 type StmtBase struct {
-	stmt             *sql.Stmt
-	argsCache        Arguments
-	argsRaw          []interface{}
+	stmt *sql.Stmt
+	// argsCache can be a sync.Pool and when calling Close function the
+	// interface slice gets returned to the pool
+	argsCache Arguments
+	// argsRaw can be a sync.Pool and when calling Close function the interface
+	// slice gets returned to the pool
+	argsRaw []interface{}
+	// isWithInterfaces will be set to true if the raw interface arguments are
+	// getting applied.
 	isWithInterfaces bool
 	// ärgErr represents an argument error caused in one of the three With
 	// functions.
-	ärgErr error // Sorry Germans for that terrible pun #notSorry
-	bind   func(records ...QualifiedRecord)
-	Log    log.Logger
+	ärgErr     error // Sorry Germans for that terrible pun #notSorry
+	bindRecord func(records []QualifiedRecord)
+	Log        log.Logger
 }
 
 // Close closes the underlying prepared statement.
@@ -403,7 +409,7 @@ func (st *StmtBase) withArguments(args Arguments) {
 // resets previously applied arguments.
 func (st *StmtBase) withRecords(appendArgs func(Arguments) (Arguments, error), records ...QualifiedRecord) {
 	st.argsCache = st.argsCache[:0]
-	st.bind(records...)
+	st.bindRecord(records)
 	st.argsCache, st.ärgErr = appendArgs(st.argsCache)
 	st.isWithInterfaces = false
 }

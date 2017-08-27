@@ -267,7 +267,7 @@ func TestSelect_Prepare(t *testing.T) {
 		})
 	})
 
-	t.Run("Do", func(t *testing.T) {
+	t.Run("Exec", func(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
 

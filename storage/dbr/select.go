@@ -266,11 +266,11 @@ func (b *Select) AddColumnsConditions(expressions ...*Condition) *Select {
 // An ArgumentsAppender gets called if it matches the qualifier, in this case
 // the current table name or its alias.
 func (b *Select) BindRecord(records ...QualifiedRecord) *Select {
-	b.bindRecord(records...)
+	b.bindRecord(records)
 	return b
 }
 
-func (b *Select) bindRecord(records ...QualifiedRecord) {
+func (b *Select) bindRecord(records []QualifiedRecord) {
 	if b.ArgumentsAppender == nil {
 		b.ArgumentsAppender = make(map[string]ArgumentsAppender)
 	}

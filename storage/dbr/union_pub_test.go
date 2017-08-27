@@ -78,59 +78,6 @@ func TestUnion_Query(t *testing.T) {
 	})
 }
 
-func TestUnion_Prepare(t *testing.T) {
-	t.Parallel()
-
-	t.Run("ToSQL Error", func(t *testing.T) {
-		u := dbr.NewUnion(
-			dbr.NewSelect(),
-			dbr.NewSelect(),
-		)
-		stmt, err := u.Prepare(context.TODO())
-		assert.Nil(t, stmt)
-		assert.True(t, errors.IsEmpty(err))
-	})
-
-	u := dbr.NewUnion(
-		dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
-		dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
-	).
-		Unsafe().
-		OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
-		PreserveResultSet().BuildCache()
-
-	t.Run("Error", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
-
-		dbMock.ExpectPrepare(
-			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
-		).
-			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
-
-		u.WithDB(dbc.DB)
-
-		stmt, err := u.Prepare(context.TODO())
-		require.Nil(t, stmt)
-		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
-	})
-
-	t.Run("Prepared", func(t *testing.T) {
-		dbc, dbMock := cstesting.MockDB(t)
-		defer cstesting.MockClose(t, dbc, dbMock)
-
-		dbMock.ExpectPrepare(
-			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
-		)
-
-		u.WithDB(dbc.DB)
-
-		stmt, err := u.Prepare(context.TODO())
-		require.NotNil(t, stmt)
-		assert.NoError(t, err)
-	})
-}
-
 func TestUnion_Load(t *testing.T) {
 	t.Parallel()
 
@@ -151,4 +98,154 @@ func TestUnion_Load(t *testing.T) {
 		assert.Exactly(t, int64(0), rows)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
+}
+
+func TestUnion_Prepare(t *testing.T) {
+	t.Parallel()
+
+	t.Run("ToSQL Error", func(t *testing.T) {
+		u := dbr.NewUnion(
+			dbr.NewSelect(),
+			dbr.NewSelect(),
+		)
+		stmt, err := u.Prepare(context.TODO())
+		assert.Nil(t, stmt)
+		assert.True(t, errors.IsEmpty(err))
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		dbMock.ExpectPrepare(
+			cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b`, 0 AS `_preserve_result_set` FROM `tableAD`) UNION (SELECT `a`, `b`, 1 AS `_preserve_result_set` FROM `tableAB` WHERE (`b` = ?)) ORDER BY `_preserve_result_set`, `a`, `b` DESC, concat(\"c\",b,\"d\")"),
+		).
+			WillReturnError(errors.NewAlreadyClosedf("Who closed myself?"))
+
+		u := dbr.NewUnion(
+			dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
+			dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").Float64(3.14159)),
+		).
+			Unsafe().
+			OrderBy("a").OrderByDesc("b").OrderBy(`concat("c",b,"d")`).
+			PreserveResultSet().BuildCache().WithDB(dbc.DB)
+
+		stmt, err := u.Prepare(context.TODO())
+		require.Nil(t, stmt)
+		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
+	})
+
+	t.Run("Query", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("(SELECT `a`, `d` AS `b` FROM `tableAD`) UNION (SELECT `a`, `b` FROM `tableAB` WHERE (`b` = ?))"))
+		prep.ExpectQuery().WithArgs(6889).
+			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher", "peter@gopher.go"))
+
+		prep.ExpectQuery().WithArgs(6890).
+			WillReturnRows(sqlmock.NewRows([]string{"a", "b"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
+
+		stmt, err := dbr.NewUnion(
+			dbr.NewSelect("a").AddColumnsAliases("d", "b").From("tableAD"),
+			dbr.NewSelect("a", "b").From("tableAB").Where(dbr.Column("b").PlaceHolder()),
+		).
+			BuildCache().WithDB(dbc.DB).
+			Prepare(context.TODO())
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		t.Run("Context", func(t *testing.T) {
+
+			rows, err := stmt.Query(context.TODO(), 6889)
+			require.NoError(t, err)
+			defer rows.Close()
+
+			cols, err := rows.Columns()
+			require.NoError(t, err)
+			assert.Exactly(t, []string{"a", "b"}, cols)
+		})
+
+		t.Run("RowContext", func(t *testing.T) {
+
+			row := stmt.QueryRow(context.TODO(), 6890)
+			require.NoError(t, err)
+			n, e := "", ""
+			require.NoError(t, row.Scan(&n, &e))
+
+			assert.Exactly(t, "Peter Gopher2", n)
+			assert.Exactly(t, "peter@gopher.go2", e)
+		})
+	})
+
+	t.Run("Exec", func(t *testing.T) {
+		dbc, dbMock := cstesting.MockDB(t)
+		defer cstesting.MockClose(t, dbc, dbMock)
+
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("(SELECT `name`, `d` AS `email` FROM `dbr_person`) UNION (SELECT `name`, `email` FROM `dbr_person2` WHERE (`id` = ?))"))
+
+		stmt, err := dbr.NewUnion(
+			dbr.NewSelect("name").AddColumnsAliases("d", "email").From("dbr_person"),
+			dbr.NewSelect("name", "email").From("dbr_person2").Where(dbr.Column("id").PlaceHolder()),
+		).
+			BuildCache().WithDB(dbc.DB).
+			Prepare(context.TODO())
+
+		require.NoError(t, err, "failed creating a prepared statement")
+		defer func() {
+			require.NoError(t, stmt.Close(), "Close on a prepared statement")
+		}()
+
+		const iterations = 3
+
+		t.Run("WithArguments", func(t *testing.T) {
+			for i := 0; i < iterations; i++ {
+				prep.ExpectQuery().WithArgs(6899).
+					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher", "peter@gopher.go"))
+			}
+			// use loop with Do and add args before
+			stmt.WithArguments(dbr.MakeArgs(1).Int(6899))
+
+			for i := 0; i < iterations; i++ {
+				rows, err := stmt.Query(context.TODO())
+				require.NoError(t, err)
+
+				cols, err := rows.Columns()
+				require.NoError(t, err)
+				assert.Exactly(t, []string{"name", "email"}, cols)
+				rows.Close()
+			}
+		})
+
+		t.Run("WithRecords", func(t *testing.T) {
+			for i := 0; i < iterations; i++ {
+				prep.ExpectQuery().WithArgs(6900).
+					WillReturnRows(sqlmock.NewRows([]string{"name", "email"}).AddRow("Peter Gopher2", "peter@gopher.go2"))
+			}
+
+			p := &dbrPerson{ID: 6900}
+			stmt.WithRecords(dbr.Qualify("", p))
+
+			for i := 0; i < iterations; i++ {
+				rows, err := stmt.Query(context.TODO())
+				require.NoError(t, err)
+
+				cols, err := rows.Columns()
+				require.NoError(t, err)
+				assert.Exactly(t, []string{"name", "email"}, cols)
+				rows.Close()
+			}
+		})
+
+		t.Run("WithRecords Error", func(t *testing.T) {
+			p := TableCoreConfigDataSlice{err: errors.NewDuplicatedf("Found a duplicate")}
+			stmt.WithRecords(dbr.Qualify("", p))
+			rows, err := stmt.Query(context.TODO())
+			assert.True(t, errors.IsDuplicated(err), "%+v", err)
+			assert.Nil(t, rows)
+		})
+	})
+
 }

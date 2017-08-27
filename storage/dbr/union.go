@@ -223,13 +223,13 @@ func (u *Union) MultiplyArguments(args Arguments) Arguments {
 // the current table name or its alias.
 // Should be called once all selects have been set.
 func (u *Union) BindRecord(records ...QualifiedRecord) *Union {
-	u.bindRecord(records...)
+	u.bindRecord(records)
 	return u
 }
 
-func (u *Union) bindRecord(records ...QualifiedRecord) {
+func (u *Union) bindRecord(records []QualifiedRecord) {
 	for _, sel := range u.Selects {
-		sel.bindRecord(records...)
+		sel.bindRecord(records)
 	}
 }
 
@@ -354,19 +354,17 @@ func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	//return stmt, errors.WithStack(err)
 	args := u.makeArguments()
 	return &StmtUnion{
 		StmtBase: StmtBase{
-			stmt:      stmt,
-			argsCache: args,
-			argsRaw:   make([]interface{}, 0, len(args)),
-			bind:      u.bindRecord,
-			Log:       u.Log,
+			stmt:       stmt,
+			argsCache:  args,
+			argsRaw:    make([]interface{}, 0, len(args)),
+			bindRecord: u.bindRecord,
+			Log:        u.Log,
 		},
 		uni: u,
 	}, nil
-
 }
 
 // StmtUnion wraps a *sql.Stmt with a specific SQL query. To create a
