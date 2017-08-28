@@ -19,4 +19,37 @@
 // 3rd party packages which can support in code generation:
 // - https://github.com/fatih/astrewrite
 // - https://github.com/matroskin13/grizzly Collections generator for Golang
+// - https://github.com/awalterschulze/goderive
+
+// Idea when generating the code, but in the above case column email has a unique index and hence
+// we can throw an error NewDuplicated
+//// https://github.com/gobuffalo/authrecipe/blob/master/models/user.go#53
+//
+//// Validate gets run every time you call a "pop.Validate" method.
+//func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
+//	var err error
+//	return validate.Validate(
+//		&validators.StringIsPresent{Field: u.Email, Name: "Email"},
+//		&validators.StringIsPresent{Field: u.PasswordHash, Name: "PasswordHash"},
+//		// check to see if the email address is already taken:
+//		&validators.FuncValidator{
+//			Field:   u.Email,
+//			Name:    "Email",
+//			Message: "%s is already taken",
+//			Fn: func() bool {
+//				var b bool
+//				q := tx.Where("email = ?", u.Email)
+//				if u.ID != uuid.Nil {
+//					q = q.Where("id != ?", u.ID)
+//				}
+//				b, err = q.Exists(u)
+//				if err != nil {
+//					return false
+//				}
+//				return !b
+//			},
+//		},
+//	), err
+//}
+
 package codegen
