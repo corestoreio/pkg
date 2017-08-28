@@ -25,13 +25,13 @@ import (
 
 // Connect creates a new database connection from a DSN stored in an
 // environment variable CS_DSN.
-func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
-	c, err := dbr.NewConnection(dbr.WithDSN(csdb.MustGetDSN()))
+func Connect(opts ...dbr.ConnPoolOption) (*dbr.ConnPool, error) {
+	c, err := dbr.NewConnPool(dbr.WithDSN(csdb.MustGetDSN()))
 	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection")
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnPool")
 	}
 	if err := c.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[csdb] dbr.NewConnection.Options")
+		return nil, errors.Wrap(err, "[csdb] dbr.NewConnPool.Options")
 	}
 	return c, err
 }

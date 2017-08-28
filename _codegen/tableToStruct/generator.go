@@ -34,7 +34,7 @@ import (
 
 type generator struct {
 	tts             codegen.TableToStruct
-	dbrConn         *dbr.Connection
+	dbrConn         *dbr.ConnPool
 	outfile         *os.File
 	tables          []string      // all available tables for which we should at least generate a type definition
 	whiteListTables slices.String // table name in this slice is allowed for generic functions
@@ -45,7 +45,7 @@ type generator struct {
 	mageVersion        int
 }
 
-func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
+func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.ConnPool, wg *sync.WaitGroup) *generator {
 	wg.Add(1)
 	return &generator{
 		tts:                tts,

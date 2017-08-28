@@ -116,7 +116,7 @@ func (m TypeCodeValueTable) Empty() bool {
 // GetEavValueTables returns a map of all custom and default EAV value tables for entity type codes.
 // Despite value_table_prefix can have in Magento a different table name we treat it here
 // as the table name itself. Not thread safe.
-func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeCodeValueTable, error) {
+func GetEavValueTables(dbrConn *dbr.ConnPool, entityTypeCodes []string) (TypeCodeValueTable, error) {
 
 	typeCodeTables := make(TypeCodeValueTable, len(entityTypeCodes))
 
