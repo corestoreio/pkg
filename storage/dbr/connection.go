@@ -49,6 +49,35 @@ type ConnPool struct {
 	dsn *mysql.Config
 }
 
+// Conn represents a single database session rather a pool of database sessions.
+// Prefer running queries from DB unless there is a specific need for a
+// continuous single database session.
+//
+// A Conn must call Close to return the connection to the database pool and may
+// do so concurrently with a running query.
+//
+// After a call to Close, all operations on the connection fail with
+// ErrConnDone.
+type Conn struct {
+	logWithID
+	DB *sql.Conn
+}
+
+// Tx is an in-progress database transaction.
+//
+// A transaction must end with a call to Commit or Rollback.
+//
+// After a call to Commit or Rollback, all operations on the transaction fail
+// with ErrTxDone.
+//
+// The statements prepared for a transaction by calling the transaction's
+// Prepare or Stmt methods are closed by the call to Commit or Rollback.
+// Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
+type Tx struct {
+	logWithID
+	DB *sql.Tx
+}
+
 // ConnPoolOption can be used at an argument in NewConnPool to configure a
 // connection.
 type ConnPoolOption func(*ConnPool) error
@@ -63,7 +92,7 @@ type ConnPoolOption func(*ConnPool) error
 func WithLogger(l log.Logger, uniqueID func() string) ConnPoolOption {
 	return func(c *ConnPool) error {
 		c.makeUniqueID = uniqueID
-		c.Log = l.With(log.String("id", c.makeUniqueID()))
+		c.Log = l.With(log.String("ConnPoolID", c.makeUniqueID()))
 		return nil
 	}
 }
@@ -157,107 +186,9 @@ func (c *ConnPool) Options(opts ...ConnPoolOption) error {
 // set with Info logging enabled.
 func (c *ConnPool) Close() error {
 	if c.Log != nil && c.Log.IsInfo() {
-		defer c.Log.Info("ConnPool", log.String("type", "close"), log.Duration("duration", time.Since(c.start)))
+		defer c.Log.Info("ConnPool", log.String("type", "close"), log.Duration("duration", now().Sub(c.start)))
 	}
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
-}
-
-// Conn returns a single connection by either opening a new connection
-// or returning an existing connection from the connection pool. Conn will
-// block until either a connection is returned or ctx is canceled.
-// Queries run on the same Conn will be run in the same database session.
-//
-// Every Conn must be returned to the database pool after use by
-// calling Conn.Close.
-func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
-	dbc, err := c.DB.Conn(ctx)
-	l := c.Log
-	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Conn"), log.String("id", c.makeUniqueID()))
-	}
-	return &Conn{
-		logWithID: logWithID{
-			start:        time.Now(),
-			Log:          l,
-			makeUniqueID: c.makeUniqueID,
-		},
-		Conn: dbc,
-	}, errors.WithStack(err)
-}
-
-// Conn represents a single database session rather a pool of database sessions.
-// Prefer running queries from DB unless there is a specific need for a
-// continuous single database session.
-//
-// A Conn must call Close to return the connection to the database pool and may
-// do so concurrently with a running query.
-//
-// After a call to Close, all operations on the connection fail with
-// ErrConnDone.
-type Conn struct {
-	logWithID
-	*sql.Conn
-}
-
-// BeginTx starts a transaction.
-//
-// The provided context is used until the transaction is committed or rolled back.
-// If the context is canceled, the sql package will roll back
-// the transaction. Tx.Commit will return an error if the context provided to
-// BeginTx is canceled.
-//
-// The provided TxOptions is optional and may be nil if defaults should be used.
-// If a non-default isolation level is used that the driver doesn't support,
-// an error will be returned.
-func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
-	start := time.Now()
-
-	dbTx, err := c.Conn.BeginTx(ctx, opts)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	l := c.Log
-	if l != nil {
-		l = l.With(log.String("Conn", "Transaction"), log.String("id", c.makeUniqueID()))
-		if l.IsInfo() {
-			l.Info("Transaction", log.String("type", "begin"))
-		}
-	}
-	return &Tx{
-		logWithID: logWithID{
-			start:        start,
-			Log:          l,
-			makeUniqueID: c.makeUniqueID,
-		},
-		Tx: dbTx,
-	}, nil
-}
-
-// Close returns the connection to the connection pool. All operations after a
-// Close will return with ErrConnDone. Close is safe to call concurrently with
-// other operations and will block until all other operations finish. It may be
-// useful to first cancel any used context and then call close directly after.
-// It logs the time taken, if a logger has been set with Info logging enabled.
-func (c *Conn) Close() error {
-	if c.Log != nil && c.Log.IsInfo() {
-		defer c.Log.Info("Conn", log.String("type", "close"), log.Duration("duration", time.Since(c.start)))
-	}
-	return c.Conn.Close() // no stack wrap otherwise error is hard to compare
-}
-
-// Tx is an in-progress database transaction.
-//
-// A transaction must end with a call to Commit or Rollback.
-//
-// After a call to Commit or Rollback, all operations on the transaction fail
-// with ErrTxDone.
-//
-// The statements prepared for a transaction by calling the transaction's
-// Prepare or Stmt methods are closed by the call to Commit or Rollback.
-// Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
-type Tx struct {
-	logWithID
-	*sql.Tx
 }
 
 // BeginTx starts a transaction.
@@ -273,7 +204,7 @@ type Tx struct {
 //
 // Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
-	start := time.Now()
+	start := now()
 
 	dbTx, err := c.DB.BeginTx(ctx, opts)
 	if err != nil {
@@ -281,7 +212,7 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("ConnPool", "Transaction"), log.String("id", c.makeUniqueID()))
+		l = l.With(log.String("ConnPool", "Transaction"), log.String("TxID", c.makeUniqueID()))
 		if l.IsInfo() {
 			l.Info("Transaction", log.String("type", "begin"))
 		}
@@ -292,26 +223,95 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 			Log:          l,
 			makeUniqueID: c.makeUniqueID,
 		},
-		Tx: dbTx,
+		DB: dbTx,
 	}, nil
+}
+
+// Conn returns a single connection by either opening a new connection
+// or returning an existing connection from the connection pool. Conn will
+// block until either a connection is returned or ctx is canceled.
+// Queries run on the same Conn will be run in the same database session.
+//
+// Every Conn must be returned to the database pool after use by
+// calling Conn.Close.
+func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
+	dbc, err := c.DB.Conn(ctx)
+	l := c.Log
+	if l != nil {
+		l = c.Log.With(log.String("ConnPool", "Conn"), log.String("ConnID", c.makeUniqueID()))
+	}
+	return &Conn{
+		logWithID: logWithID{
+			start:        now(),
+			Log:          l,
+			makeUniqueID: c.makeUniqueID,
+		},
+		DB: dbc,
+	}, errors.WithStack(err)
+}
+
+// BeginTx starts a transaction.
+//
+// The provided context is used until the transaction is committed or rolled back.
+// If the context is canceled, the sql package will roll back
+// the transaction. Tx.Commit will return an error if the context provided to
+// BeginTx is canceled.
+//
+// The provided TxOptions is optional and may be nil if defaults should be used.
+// If a non-default isolation level is used that the driver doesn't support,
+// an error will be returned.
+func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
+	start := now()
+
+	dbTx, err := c.DB.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	l := c.Log
+	if l != nil {
+		l = l.With(log.String("Conn", "Transaction"), log.String("TxID", c.makeUniqueID()))
+		if l.IsInfo() {
+			l.Info("Transaction", log.String("type", "begin"))
+		}
+	}
+	return &Tx{
+		logWithID: logWithID{
+			start:        start,
+			Log:          l,
+			makeUniqueID: c.makeUniqueID,
+		},
+		DB: dbTx,
+	}, nil
+}
+
+// Close returns the connection to the connection pool. All operations after a
+// Close will return with ErrConnDone. Close is safe to call concurrently with
+// other operations and will block until all other operations finish. It may be
+// useful to first cancel any used context and then call close directly after.
+// It logs the time taken, if a logger has been set with Info logging enabled.
+func (c *Conn) Close() error {
+	if c.Log != nil && c.Log.IsInfo() {
+		defer c.Log.Info("Conn", log.String("type", "close"), log.Duration("duration", now().Sub(c.start)))
+	}
+	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
 
 // Commit finishes the transaction. It logs the time taken, if a logger has been
 // set with Info logging enabled.
 func (tx *Tx) Commit() error {
 	if tx.Log != nil && tx.Log.IsInfo() {
-		defer tx.Log.Info("Transaction", log.String("type", "commit"), log.Duration("duration", time.Since(tx.start)))
+		defer tx.Log.Info("Transaction", log.String("type", "commit"), log.Duration("duration", now().Sub(tx.start)))
 	}
-	return tx.Tx.Commit()
+	return tx.DB.Commit()
 }
 
 // Rollback cancels the transaction. It logs the time taken, if a logger has
 // been set with Info logging enabled.
 func (tx *Tx) Rollback() error {
 	if tx.Log != nil && tx.Log.IsInfo() {
-		defer tx.Log.Info("Transaction", log.String("type", "rollback"), log.Duration("duration", time.Since(tx.start)))
+		defer tx.Log.Info("Transaction", log.String("type", "rollback"), log.Duration("duration", now().Sub(tx.start)))
 	}
-	return tx.Tx.Rollback()
+	return tx.DB.Rollback()
 }
 
 // Wrap is a helper method that will automatically COMMIT or ROLLBACK once the

@@ -79,7 +79,7 @@ func newSelect(db QueryPreparer, l log.Logger, from []string, id string) *Select
 		DB: db,
 	}
 	if len(from) > 1 {
-		s.Table.Alias(from[1])
+		s.Table = s.Table.Alias(from[1])
 	}
 	return s
 }
@@ -120,7 +120,7 @@ func (c *Conn) SelectFrom(fromAlias ...string) *Select {
 	if l != nil {
 		l = c.Log.With(log.String("Conn", "Select"), log.String("id", id), log.String("table", fromAlias[0]))
 	}
-	return newSelect(c.Conn, l, fromAlias, id)
+	return newSelect(c.DB, l, fromAlias, id)
 }
 
 // Select creates a new Select that select that given columns bound to the
@@ -131,34 +131,32 @@ func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
 	if l != nil {
 		l = tx.Log.With(log.String("Tx", "Select"), log.String("id", id), log.String("table", fromAlias[0]))
 	}
-	return newSelect(tx.Tx, l, fromAlias, id)
+	return newSelect(tx.DB, l, fromAlias, id)
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments.
 func (c *ConnPool) SelectBySQL(sql string, args Arguments) *Select {
-	s := &Select{
+	return &Select{
 		BuilderBase: BuilderBase{
 			Log:          c.Log,
 			RawFullSQL:   sql,
 			RawArguments: args,
 		},
+		DB: c.DB,
 	}
-	s.DB = c.DB
-	return s
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments bound
 // to the transaction.
 func (tx *Tx) SelectBySQL(sql string, args Arguments) *Select {
-	s := &Select{
+	return &Select{
 		BuilderBase: BuilderBase{
 			Log:          tx.Log,
 			RawFullSQL:   sql,
 			RawArguments: args,
 		},
+		DB: tx.DB,
 	}
-	s.DB = tx.Tx
-	return s
 }
 
 // WithDB sets the database query object.

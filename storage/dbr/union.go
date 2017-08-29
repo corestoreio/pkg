@@ -90,7 +90,7 @@ func (c *Conn) Union(selects ...*Select) *Union {
 			Log: unionInitLog(c.Log, selects, id, "Conn"),
 		},
 		Selects: selects,
-		DB:      c.Conn,
+		DB:      c.DB,
 	}
 }
 
@@ -104,7 +104,7 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 			Log: unionInitLog(tx.Log, selects, id, "Tx"),
 		},
 		Selects: selects,
-		DB:      tx.Tx,
+		DB:      tx.DB,
 	}
 }
 

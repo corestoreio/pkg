@@ -112,7 +112,7 @@ func (c *Conn) With(expressions ...WithCTE) *With {
 			Log: withInitLog(c.Log, expressions, id, "Conn"),
 		},
 		Subclauses: expressions,
-		DB:         c.Conn,
+		DB:         c.DB,
 	}
 }
 
@@ -125,7 +125,7 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 			Log: withInitLog(tx.Log, expressions, id, "Tx"),
 		},
 		Subclauses: expressions,
-		DB:         tx.Tx,
+		DB:         tx.DB,
 	}
 }
 

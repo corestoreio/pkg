@@ -15,13 +15,17 @@
 package dbr_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -159,6 +163,132 @@ func TestDelete_Prepare(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Exactly(t, int64(4), lid, "Different RowsAffected")
+	})
+}
+
+func TestDelete_WithLogger(t *testing.T) {
+	uniID := new(int32)
+	rConn := createRealSession(t)
+	defer cstesting.Close(t, rConn)
+
+	var uniqueIDFunc = func() string {
+		nextID := atomic.AddInt32(uniID, 1)
+		return fmt.Sprintf("UNIQUEID%02d", nextID)
+	}
+
+	buf := new(bytes.Buffer)
+	lg := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithWriter(buf),
+		logw.WithFlag(0), // no flags at all
+	)
+	require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
+
+	t.Run("ConnPool", func(t *testing.T) {
+		d := rConn.DeleteFrom("dbr_people").Where(dbr.Column("id").GreaterOrEqual().Float64(34.56))
+
+		t.Run("Exec", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				d.IsInterpolate = false
+			}()
+			_, err := d.Interpolate().Exec(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnPool: \"Delete\" deleteID: \"UNIQUEID02\" table: \"dbr_people\" duration: 0 sql: \"DELETE FROM `dbr_people` WHERE (`id` >= 34.56)\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQUEID01\" ConnPool: \"Delete\" deleteID: \"UNIQUEID02\" table: \"dbr_people\" duration: 0 sql: \"DELETE FROM `dbr_people` WHERE (`id` >= ?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := rConn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				_, err := tx.DeleteFrom("dbr_people").Where(dbr.Column("id").GreaterOrEqual().Float64(36.56)).Interpolate().Exec(context.TODO())
+				if err != nil {
+					return err
+				}
+
+				assert.Exactly(t, "INFO Transaction ConnPoolID: \"UNIQUEID01\" ConnPool: \"Transaction\" TxID: \"UNIQUEID03\" type: \"begin\"\nDEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnPool: \"Transaction\" TxID: \"UNIQUEID03\" Tx: \"Delete\" deleteID: \"UNIQUEID04\" table: \"dbr_people\" duration: 0 sql: \"DELETE FROM `dbr_people` WHERE (`id` >= 36.56)\"\n",
+					buf.String())
+
+				return nil
+			}))
+		})
+	})
+
+	t.Run("Conn", func(t *testing.T) {
+		conn, err := rConn.Conn(context.TODO())
+		require.NoError(t, err)
+
+		d := conn.DeleteFrom("dbr_people").Where(dbr.Column("id").GreaterOrEqual().Float64(39.56))
+		t.Run("Exec", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				d.IsInterpolate = false
+			}()
+
+			_, err := d.Interpolate().Exec(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnPool: \"Conn\" ConnID: \"UNIQUEID05\" Conn: \"Delete\" deleteID: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 sql: \"DELETE FROM `dbr_people` WHERE (`id` >= 39.56)\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQUEID01\" ConnPool: \"Conn\" ConnID: \"UNIQUEID05\" Conn: \"Delete\" deleteID: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 sql: \"DELETE FROM `dbr_people` WHERE (`id` >= ?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				_, err := tx.DeleteFrom("dbr_people").Where(dbr.Column("id").GreaterOrEqual().Float64(37.56)).Interpolate().Exec(context.TODO())
+				if err != nil {
+					return err
+				}
+
+				assert.Exactly(t, "INFO Transaction ConnPoolID: \"UNIQUEID01\" ConnPool: \"Conn\" ConnID: \"UNIQUEID05\" Conn: \"Transaction\" TxID: \"UNIQUEID07\" type: \"begin\"\nDEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnPool: \"Conn\" ConnID: \"UNIQUEID05\" Conn: \"Transaction\" TxID: \"UNIQUEID07\" Tx: \"Delete\" deleteID: \"UNIQUEID08\" table: \"dbr_people\" duration: 0 sql: \"DELETE FROM `dbr_people` WHERE (`id` >= 37.56)\"\n",
+					buf.String())
+
+				return nil
+			}))
+		})
+
+		t.Run("Tx Rollback", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.Error(t, tx.Wrap(func() error {
+				_, err := tx.DeleteFrom("dbr_people").Where(dbr.Column("id").GreaterOrEqual().PlaceHolder()).Interpolate().Exec(context.TODO())
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}))
+
+			assert.Exactly(t, "INFO Transaction ConnPoolID: \"UNIQUEID01\" ConnPool: \"Conn\" ConnID: \"UNIQUEID05\" Conn: \"Transaction\" TxID: \"UNIQUEID09\" type: \"begin\"\nDEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnPool: \"Conn\" ConnID: \"UNIQUEID05\" Conn: \"Transaction\" TxID: \"UNIQUEID09\" Tx: \"Delete\" deleteID: \"UNIQUEID10\" table: \"dbr_people\" duration: 0 sql: \"DELETE FROM `dbr_people` WHERE (`id` >= ?)\"\nINFO Transaction ConnPoolID: \"UNIQUEID01\" ConnPool: \"Conn\" ConnID: \"UNIQUEID05\" Conn: \"Transaction\" TxID: \"UNIQUEID09\" type: \"rollback\" duration: 0\n",
+				buf.String())
+		})
 	})
 
 }

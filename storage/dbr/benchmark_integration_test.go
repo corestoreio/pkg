@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/cstesting"
 )
 
 var runIntegration bool
@@ -50,7 +51,7 @@ func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 	const coreConfigDataRowCount = 2007
 
 	c := createRealSession(b)
-	defer c.Close()
+	defer cstesting.Close(b, c)
 
 	s := c.SelectFrom("core_config_data112").Star()
 	ctx := context.TODO()
@@ -83,9 +84,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 	c := createRealSession(b)
 	defer func() {
 		truncate(c.DB)
-		if err := c.Close(); err != nil {
-			b.Fatal(err)
-		}
+		cstesting.Close(b, c)
 	}()
 	truncate(c.DB)
 

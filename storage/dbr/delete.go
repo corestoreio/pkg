@@ -84,7 +84,7 @@ func (c *ConnPool) DeleteFrom(from string) *Delete {
 	l := c.Log
 	id := c.makeUniqueID()
 	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Delete"), log.String("id", id), log.String("table", from))
+		l = c.Log.With(log.String("ConnPool", "Delete"), log.String("deleteID", id), log.String("table", from))
 	}
 	return newDeleteFrom(c.DB, l, from, id)
 }
@@ -95,9 +95,9 @@ func (c *Conn) DeleteFrom(from string) *Delete {
 	l := c.Log
 	id := c.makeUniqueID()
 	if l != nil {
-		l = c.Log.With(log.String("Conn", "Delete"), log.String("id", id), log.String("table", from))
+		l = c.Log.With(log.String("Conn", "Delete"), log.String("deleteID", id), log.String("table", from))
 	}
-	return newDeleteFrom(c.Conn, l, from, id)
+	return newDeleteFrom(c.DB, l, from, id)
 }
 
 // DeleteFrom creates a new Delete for the given table
@@ -106,9 +106,9 @@ func (tx *Tx) DeleteFrom(from string) *Delete {
 	l := tx.Log
 	id := tx.makeUniqueID()
 	if l != nil {
-		l = tx.Log.With(log.String("Tx", "Delete"), log.String("id", id), log.String("table", from))
+		l = tx.Log.With(log.String("Tx", "Delete"), log.String("deleteID", id), log.String("table", from))
 	}
-	return newDeleteFrom(tx.Tx, l, from, id)
+	return newDeleteFrom(tx.DB, l, from, id)
 }
 
 // Alias sets an alias for the table name.
@@ -302,6 +302,9 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 // context is used for the preparation of the statement, not for the execution
 // of the statement.
 func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
+	}
 	sqlStmt, err := Prepare(ctx, b.DB, b)
 	if err != nil {
 		return nil, errors.WithStack(err)

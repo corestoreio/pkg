@@ -125,7 +125,7 @@ func (c *Conn) InsertInto(into string) *Insert {
 	if l != nil {
 		l = c.Log.With(log.String("Conn", "Insert"), log.String("id", id), log.String("table", into))
 	}
-	return newInsertInto(c.Conn, l, into, id)
+	return newInsertInto(c.DB, l, into, id)
 }
 
 // InsertInto instantiates a Insert for the given table bound to a transaction
@@ -135,7 +135,7 @@ func (tx *Tx) InsertInto(into string) *Insert {
 	if l != nil {
 		l = tx.Log.With(log.String("Tx", "Insert"), log.String("id", id), log.String("table", into))
 	}
-	return newInsertInto(tx.Tx, l, into, id)
+	return newInsertInto(tx.DB, l, into, id)
 }
 
 // WithDB sets the database query object.

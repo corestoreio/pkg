@@ -90,7 +90,7 @@ func (c *Conn) Update(table string) *Update {
 			Table: MakeIdentifier(table),
 			Log:   l,
 		},
-		DB: c.Conn,
+		DB: c.DB,
 	}
 }
 
@@ -107,7 +107,7 @@ func (tx *Tx) Update(table string) *Update {
 			Table: MakeIdentifier(table),
 			Log:   l,
 		},
-		DB: tx.Tx,
+		DB: tx.DB,
 	}
 }
 

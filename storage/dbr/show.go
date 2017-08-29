@@ -81,7 +81,7 @@ func (c *Conn) Show() *Show {
 			id:  id,
 			Log: l,
 		},
-		DB: c.Conn,
+		DB: c.DB,
 	}
 }
 
@@ -98,7 +98,7 @@ func (tx *Tx) Show() *Show {
 			id:  id,
 			Log: l,
 		},
-		DB: tx.Tx,
+		DB: tx.DB,
 	}
 }
 

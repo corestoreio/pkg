@@ -15,17 +15,13 @@
 package dbr_test
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"sync/atomic"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
-	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,25 +71,5 @@ func TestTx_Wrap(t *testing.T) {
 			return err
 		})
 		assert.True(t, errors.IsAborted(err))
-	})
-}
-
-func TestWithLogger(t *testing.T) {
-	t.Parallel()
-	uniID := new(int32)
-	rConn := createRealSession(t)
-	var uniqueIDFunc = func() string {
-		nextID := atomic.AddInt32(uniID, 1)
-		return fmt.Sprintf("UNIQUEID%02d", nextID)
-	}
-
-	t.Run("Delete", func(t *testing.T) {
-		buf := new(bytes.Buffer)
-		lg := logw.NewLog(logw.WithLevel(logw.LevelDebug), logw.WithWriter(buf))
-
-		require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
-
-		rConn.DeleteFrom("tableXYZ").Exec(context.TODO())
-		assert.Exactly(t, `xxx`, buf.String())
 	})
 }

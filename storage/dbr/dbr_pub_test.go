@@ -21,12 +21,18 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var now = func() time.Time {
 	return time.Date(2006, 1, 2, 15, 4, 5, 02, time.FixedZone("hardcoded", -7))
+}
+
+func init() {
+	// Freeze time in package log
+	log.Now = now
 }
 
 var _ dbr.ArgumentsAppender = (*dbrPerson)(nil)
