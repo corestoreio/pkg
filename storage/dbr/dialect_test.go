@@ -24,7 +24,7 @@ import (
 func TestEscapeWith_NaughtyStrings(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 
-	sel := s.Select("id", "name", "email").From("dbr_people").OrderBy("id")
+	sel := s.SelectFrom("dbr_people").AddColumns("id", "name", "email").OrderBy("id")
 
 	for _, nstr := range naughtystrings.Unencoded() {
 		var people dbrPersons

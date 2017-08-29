@@ -18,6 +18,7 @@ import (
 	"bytes"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Select contains the clauses for a SELECT statement. Wildcard `SELECT *`
@@ -68,6 +69,21 @@ func NewSelect(columns ...string) *Select {
 	return s
 }
 
+func newSelect(db QueryPreparer, l log.Logger, from []string, id string) *Select {
+	s := &Select{
+		BuilderBase: BuilderBase{
+			id:    id,
+			Log:   l,
+			Table: MakeIdentifier(from[0]),
+		},
+		DB: db,
+	}
+	if len(from) > 1 {
+		s.Table.Alias(from[1])
+	}
+	return s
+}
+
 // NewSelectWithDerivedTable creates a new derived table (Subquery in the FROM
 // Clause) using the provided sub-select in the FROM part together with an alias
 // name. Appends the arguments of the sub-select to the parent *Select pointer
@@ -87,20 +103,39 @@ func NewSelectWithDerivedTable(subSelect *Select, aliasName string) *Select {
 
 // Select creates a new Select which selects from the provided columns.
 // Columns won't get quoted.
-func (c *Connection) Select(columns ...string) *Select {
-	s := &Select{}
-	s.BuilderBase.Log = c.Log
-	if len(columns) == 1 && columns[0] == "*" {
-		s.Star()
-	} else {
-		s.Columns = s.Columns.AppendColumns(false, columns...)
+func (c *ConnPool) SelectFrom(fromAlias ...string) *Select {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = c.Log.With(log.String("ConnPool", "Select"), log.String("id", id), log.String("table", fromAlias[0]))
 	}
-	s.DB = c.DB
-	return s
+	return newSelect(c.DB, l, fromAlias, id)
+}
+
+// Select creates a new Select which selects from the provided columns.
+// Columns won't get quoted.
+func (c *Conn) SelectFrom(fromAlias ...string) *Select {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = c.Log.With(log.String("Conn", "Select"), log.String("id", id), log.String("table", fromAlias[0]))
+	}
+	return newSelect(c.Conn, l, fromAlias, id)
+}
+
+// Select creates a new Select that select that given columns bound to the
+// transaction.
+func (tx *Tx) SelectFrom(fromAlias ...string) *Select {
+	id := tx.makeUniqueID()
+	l := tx.Log
+	if l != nil {
+		l = tx.Log.With(log.String("Tx", "Select"), log.String("id", id), log.String("table", fromAlias[0]))
+	}
+	return newSelect(tx.Tx, l, fromAlias, id)
 }
 
 // SelectBySQL creates a new Select for the given SQL string and arguments.
-func (c *Connection) SelectBySQL(sql string, args Arguments) *Select {
+func (c *ConnPool) SelectBySQL(sql string, args Arguments) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
 			Log:          c.Log,
@@ -112,26 +147,12 @@ func (c *Connection) SelectBySQL(sql string, args Arguments) *Select {
 	return s
 }
 
-// Select creates a new Select that select that given columns bound to the
-// transaction.
-func (tx *Tx) Select(columns ...string) *Select {
-	s := &Select{}
-	s.BuilderBase.Log = tx.Logger
-	if len(columns) == 1 && columns[0] == "*" {
-		s.Star()
-	} else {
-		s.Columns = s.Columns.AppendColumns(false, columns...)
-	}
-	s.DB = tx.Tx
-	return s
-}
-
 // SelectBySQL creates a new Select for the given SQL string and arguments bound
 // to the transaction.
 func (tx *Tx) SelectBySQL(sql string, args Arguments) *Select {
 	s := &Select{
 		BuilderBase: BuilderBase{
-			Log:          tx.Logger,
+			Log:          tx.Log,
 			RawFullSQL:   sql,
 			RawArguments: args,
 		},

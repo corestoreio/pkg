@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Insert contains the clauses for an INSERT statement
@@ -96,24 +97,45 @@ func NewInsert(into string) *Insert {
 	}
 }
 
-// InsertInto instantiates a Insert for the given table
-func (c *Connection) InsertInto(into string) *Insert {
-	i := &Insert{
+func newInsertInto(db ExecPreparer, l log.Logger, into, id string) *Insert {
+	return &Insert{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: l,
+		},
+		DB:   db,
 		Into: into,
 	}
-	i.BuilderBase.Log = c.Log
-	i.DB = c.DB
-	return i
+}
+
+// InsertInto instantiates a Insert for the given table
+func (c *ConnPool) InsertInto(into string) *Insert {
+	l := c.Log
+	id := c.makeUniqueID()
+	if l != nil {
+		l = c.Log.With(log.String("ConnPool", "Insert"), log.String("id", id), log.String("table", into))
+	}
+	return newInsertInto(c.DB, l, into, id)
+}
+
+// InsertInto instantiates a Insert for the given table
+func (c *Conn) InsertInto(into string) *Insert {
+	l := c.Log
+	id := c.makeUniqueID()
+	if l != nil {
+		l = c.Log.With(log.String("Conn", "Insert"), log.String("id", id), log.String("table", into))
+	}
+	return newInsertInto(c.Conn, l, into, id)
 }
 
 // InsertInto instantiates a Insert for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *Insert {
-	i := &Insert{
-		Into: into,
+	l := tx.Log
+	id := tx.makeUniqueID()
+	if l != nil {
+		l = tx.Log.With(log.String("Tx", "Insert"), log.String("id", id), log.String("table", into))
 	}
-	i.BuilderBase.Log = tx.Logger
-	i.DB = tx.Tx
-	return i
+	return newInsertInto(tx.Tx, l, into, id)
 }
 
 // WithDB sets the database query object.

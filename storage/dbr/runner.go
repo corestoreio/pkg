@@ -367,6 +367,62 @@ func rangeError(fn, str string) *strconv.NumError {
 	return &strconv.NumError{Func: fn, Num: str, Err: strconv.ErrRange}
 }
 
+// BuilderBase contains fields which all SQL query builder have in common, the
+// same base. Exported for documentation reasons.
+type BuilderBase struct {
+	// ID of a statement. Used in logging. If empty the generated SQL string
+	// gets used which can might contain sensitive information which should not
+	// get logged. TODO implement
+	id           string
+	Log          log.Logger // Log optional logger
+	RawFullSQL   string
+	RawArguments Arguments // args used by RawFullSQL
+
+	Table identifier
+
+	// PropagationStopped set to true if you would like to interrupt the
+	// listener chain. Once set to true all sub sequent calls of the next
+	// listeners will be suppressed.
+	PropagationStopped bool
+	IsInterpolate      bool // See Interpolate()
+	IsBuildCache       bool // see BuildCache()
+	// IsUnsafe if set to true the functions AddColumn* will turn any
+	// non valid identifier (not `{a-z}[a-z0-9$_]+`i) into an expression.
+	IsUnsafe  bool
+	cacheSQL  []byte
+	cacheArgs Arguments // like a buffer, gets reused
+	// propagationStoppedAt position in the slice where the stopped propagation
+	// has been requested. for every new iteration the propagation must stop at
+	// this position.
+	propagationStoppedAt int
+}
+
+// BuilderConditional defines base fields used in statements which can have
+// conditional constraints like WHERE, JOIN, ORDER, etc. Exported for
+// documentation reasons.
+type BuilderConditional struct {
+	// ArgumentsAppender a map of ArgumentsAppender to retrieve the necessary
+	// arguments from the interface implementations of the objects. The string
+	// key (the qualifier) can either be the table or object name or in cases,
+	// where an alias gets used, the string key must be the same as the alias.
+	// The map get called internally when the arguments are getting assembled.
+	ArgumentsAppender map[string]ArgumentsAppender
+	Joins             Joins
+	Wheres            Conditions
+	OrderBys          identifiers
+	LimitCount        uint64
+	LimitValid        bool
+}
+
+func (b *BuilderConditional) join(j string, t identifier, on ...*Condition) {
+	jf := &join{
+		JoinType: j,
+		Table:    t,
+	}
+	jf.On = append(jf.On, on...)
+	b.Joins = append(b.Joins, jf)
+}
+
 // StmtBase wraps a *sql.Stmt with a specific SQL query. To create a
 // StmtBase call the Prepare function of type Select. StmtBase is not safe
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call

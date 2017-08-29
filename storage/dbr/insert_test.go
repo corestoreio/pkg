@@ -167,7 +167,7 @@ func TestInsertReal(t *testing.T) {
 	validateInsertingBarack(t, s, res, err)
 }
 
-func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err error) {
+func validateInsertingBarack(t *testing.T, c *ConnPool, res sql.Result, err error) {
 	require.NoError(t, err)
 	if res == nil {
 		t.Fatal("result at nit but should not")
@@ -181,7 +181,7 @@ func validateInsertingBarack(t *testing.T, c *Connection, res sql.Result, err er
 	assert.Equal(t, int64(1), rowsAff)
 
 	var person dbrPerson
-	_, err = c.Select("*").From("dbr_people").Where(Column("id").Int64(id)).Load(context.TODO(), &person)
+	_, err = c.SelectFrom("dbr_people").Star().Where(Column("id").Int64(id)).Load(context.TODO(), &person)
 	require.NoError(t, err)
 
 	assert.Equal(t, id, int64(person.ID))
@@ -213,7 +213,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 	}
 	{
 		var p dbrPerson
-		_, err = s.Select("*").From("dbr_people").Where(Column("id").Int64(inID)).Load(context.TODO(), &p)
+		_, err = s.SelectFrom("dbr_people").Star().Where(Column("id").Int64(inID)).Load(context.TODO(), &p)
 		require.NoError(t, err)
 		assert.Equal(t, "Pike", p.Name)
 		assert.Equal(t, "pikes@peak.co", p.Email.String)
@@ -237,7 +237,7 @@ func TestInsertReal_OnDuplicateKey(t *testing.T) {
 
 	{
 		var p dbrPerson
-		_, err = s.Select("*").From("dbr_people").Where(Column("id").Int64(inID)).Load(context.TODO(), &p)
+		_, err = s.SelectFrom("dbr_people").Star().Where(Column("id").Int64(inID)).Load(context.TODO(), &p)
 		require.NoError(t, err)
 		assert.Equal(t, "Pik3", p.Name)
 		assert.Equal(t, "pikes@peak.com", p.Email.String)

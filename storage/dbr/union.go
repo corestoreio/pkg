@@ -23,6 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Union represents a UNION SQL statement. UNION is used to combine the result
@@ -56,25 +57,55 @@ func NewUnion(selects ...*Select) *Union {
 	}
 }
 
-// Union creates a new Union which selects from the provided columns.
-// Columns won't get quoted.
-func (c *Connection) Union(selects ...*Select) *Union {
-	u := &Union{
+func unionInitLog(l log.Logger, selects []*Select, id, connType string) log.Logger {
+	if l != nil {
+		tables := make([]string, len(selects))
+		for i, s := range selects {
+			tables[i] = s.Table.Name
+		}
+		l = l.With(log.String(connType, "Union"), log.String("id", id), log.Strings("tables", tables...))
+	}
+	return l
+}
+
+// Union creates a new Union with a random connection from the pool.
+func (c *ConnPool) Union(selects ...*Select) *Union {
+	id := c.makeUniqueID()
+	return &Union{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: unionInitLog(c.Log, selects, id, "ConnPool"),
+		},
 		Selects: selects,
 		DB:      c.DB,
 	}
-	u.BuilderBase.Log = c.Log
-	return u
 }
 
-// Union creates a new Union that select that given columns bound to the transaction
+// Union creates a new Union with a dedicated connection from the pool.
+func (c *Conn) Union(selects ...*Select) *Union {
+	id := c.makeUniqueID()
+	return &Union{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: unionInitLog(c.Log, selects, id, "Conn"),
+		},
+		Selects: selects,
+		DB:      c.Conn,
+	}
+}
+
+// Union creates a new Union that select that given columns bound to the
+// transaction.
 func (tx *Tx) Union(selects ...*Select) *Union {
-	u := &Union{
+	id := tx.makeUniqueID()
+	return &Union{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: unionInitLog(tx.Log, selects, id, "Tx"),
+		},
 		Selects: selects,
 		DB:      tx.Tx,
 	}
-	u.BuilderBase.Log = tx.Logger
-	return u
 }
 
 // WithDB sets the database query object.

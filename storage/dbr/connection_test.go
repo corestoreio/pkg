@@ -24,7 +24,7 @@ import (
 func TestTransactionReal(t *testing.T) {
 	s := createRealSessionWithFixtures(t, nil)
 
-	tx, err := s.Begin()
+	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
 	res, err := tx.InsertInto("dbr_people").AddColumns("name", "email").AddValues(
@@ -42,7 +42,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.Equal(t, int64(2), rowsAff)
 
 	var person dbrPerson
-	_, err = tx.Select("*").From("dbr_people").Where(Column("id").Int64(id)).Load(context.TODO(), &person)
+	_, err = tx.SelectFrom("dbr_people").Star().Where(Column("id").Int64(id)).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, id, int64(person.ID))
@@ -58,11 +58,11 @@ func TestTransactionRollbackReal(t *testing.T) {
 	// Insert by specifying values
 	s := createRealSessionWithFixtures(t, nil)
 
-	tx, err := s.Begin()
+	tx, err := s.BeginTx(context.TODO(), nil)
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	_, err = tx.Select("*").From("dbr_people").Where(Column("email").Str("jonathan@uservoice.com")).Load(context.TODO(), &person)
+	_, err = tx.SelectFrom("dbr_people").Star().Where(Column("email").Str("jonathan@uservoice.com")).Load(context.TODO(), &person)
 	assert.NoError(t, err)
 	assert.Equal(t, "Jonathan", person.Name)
 

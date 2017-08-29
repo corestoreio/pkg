@@ -20,6 +20,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Update contains the clauses for an UPDATE statement
@@ -58,23 +59,53 @@ func NewUpdate(table string) *Update {
 	}
 }
 
-// Update creates a new Update for the given table
-func (c *Connection) Update(table string) *Update {
+// Update creates a new Update for the given table with a random connection from
+// the pool.
+func (c *ConnPool) Update(table string) *Update {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = c.Log.With(log.String("ConnPool", "Update"), log.String("id", id), log.String("table", table))
+	}
 	return &Update{
 		BuilderBase: BuilderBase{
+			id:    id,
 			Table: MakeIdentifier(table),
-			Log:   c.Log,
+			Log:   l,
 		},
 		DB: c.DB,
 	}
 }
 
-// Update creates a new Update for the given table bound to a transaction
-func (tx *Tx) Update(table string) *Update {
+// Update creates a new Update for the given table bound to a single connection.
+func (c *Conn) Update(table string) *Update {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = c.Log.With(log.String("ConnPool", "Update"), log.String("id", id), log.String("table", table))
+	}
 	return &Update{
 		BuilderBase: BuilderBase{
+			id:    id,
 			Table: MakeIdentifier(table),
-			Log:   tx.Logger,
+			Log:   l,
+		},
+		DB: c.Conn,
+	}
+}
+
+// Update creates a new Update for the given table bound to a transaction.
+func (tx *Tx) Update(table string) *Update {
+	id := tx.makeUniqueID()
+	l := tx.Log
+	if l != nil {
+		l = tx.Log.With(log.String("Tx", "Update"), log.String("id", id), log.String("table", table))
+	}
+	return &Update{
+		BuilderBase: BuilderBase{
+			id:    id,
+			Table: MakeIdentifier(table),
+			Log:   l,
 		},
 		DB: tx.Tx,
 	}

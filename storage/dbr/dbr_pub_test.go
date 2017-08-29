@@ -83,12 +83,12 @@ func (p *dbrPerson) appendArgs(args dbr.Arguments, column string) (_ dbr.Argumen
 	return args, err
 }
 
-func createRealSession(t testing.TB) *dbr.Connection {
+func createRealSession(t testing.TB) *dbr.ConnPool {
 	dsn := os.Getenv("CS_DSN")
 	if dsn == "" {
 		t.Skip("Environment variable CS_DSN not found. Skipping ...")
 	}
-	cxn, err := dbr.NewConnection(
+	cxn, err := dbr.NewConnPool(
 		dbr.WithDSN(dsn),
 	)
 	if err != nil {

@@ -120,7 +120,7 @@ func TestDeleteReal(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), rowsAff, "RowsAffected")
 
-	count, err := s.Select().Count().From("dbr_people").Where(Column("id").Int64(id)).LoadInt64(context.TODO())
+	count, err := s.SelectFrom("dbr_people").Count().Where(Column("id").Int64(id)).LoadInt64(context.TODO())
 	require.NoError(t, err)
 	assert.Equal(t, int64(0), count, "count")
 }

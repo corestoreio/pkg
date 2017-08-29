@@ -28,25 +28,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//
-// Test helpers
-//
+///////////////////////////////////////////////////////////////////////////////
+// TEST HELPERS
+///////////////////////////////////////////////////////////////////////////////
 
 // Returns a session that's not backed by a database
-func createFakeSession() *Connection {
-	cxn, err := NewConnection()
+func createFakeSession() *ConnPool {
+	cxn, err := NewConnPool()
 	if err != nil {
 		panic(err)
 	}
 	return cxn
 }
 
-func createRealSession(t testing.TB) *Connection {
+func createRealSession(t testing.TB) *ConnPool {
 	dsn := os.Getenv("CS_DSN")
 	if dsn == "" {
 		t.Skip("Environment variable CS_DSN not found. Skipping ...")
 	}
-	cxn, err := NewConnection(
+	cxn, err := NewConnPool(
 		WithDSN(dsn),
 	)
 	if err != nil {
@@ -55,7 +55,7 @@ func createRealSession(t testing.TB) *Connection {
 	return cxn
 }
 
-func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *Connection {
+func createRealSessionWithFixtures(t testing.TB, c *installFixturesConfig) *ConnPool {
 	sess := createRealSession(t)
 	installFixtures(sess.DB, c)
 	return sess

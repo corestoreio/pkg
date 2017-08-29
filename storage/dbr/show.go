@@ -18,6 +18,7 @@ import (
 	"bytes"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Always in alphabetical order. We can add more once needed.
@@ -49,6 +50,57 @@ type Show struct {
 
 // NewShow creates a new Truman SHOW.
 func NewShow() *Show { return &Show{} }
+
+// Select creates a new Select which selects from the provided columns.
+// Columns won't get quoted.
+func (c *ConnPool) Show() *Show {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = c.Log.With(log.String("ConnPool", "Show"), log.String("id", id))
+	}
+	return &Show{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: l,
+		},
+		DB: c.DB,
+	}
+}
+
+// Select creates a new Select which selects from the provided columns.
+// Columns won't get quoted.
+func (c *Conn) Show() *Show {
+	id := c.makeUniqueID()
+	l := c.Log
+	if l != nil {
+		l = c.Log.With(log.String("Conn", "Show"), log.String("id", id))
+	}
+	return &Show{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: l,
+		},
+		DB: c.Conn,
+	}
+}
+
+// Select creates a new Select that select that given columns bound to the
+// transaction.
+func (tx *Tx) Show() *Show {
+	id := tx.makeUniqueID()
+	l := tx.Log
+	if l != nil {
+		l = tx.Log.With(log.String("Tx", "Show"), log.String("id", id))
+	}
+	return &Show{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: l,
+		},
+		DB: tx.Tx,
+	}
+}
 
 // WithDB sets the database query object.
 func (b *Show) WithDB(db QueryPreparer) *Show {

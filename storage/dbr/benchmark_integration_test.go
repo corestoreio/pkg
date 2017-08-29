@@ -52,7 +52,7 @@ func BenchmarkSelect_Integration_Scanner(b *testing.B) {
 	c := createRealSession(b)
 	defer c.Close()
 
-	s := c.Select("*").From("core_config_data112")
+	s := c.SelectFrom("core_config_data112").Star()
 	ctx := context.TODO()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

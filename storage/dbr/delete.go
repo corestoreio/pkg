@@ -20,6 +20,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // Delete contains the clauses for a DELETE statement.
@@ -64,33 +65,50 @@ func NewDelete(from string) *Delete {
 	}
 }
 
-// DeleteFrom creates a new Delete for the given table
-func (c *Connection) DeleteFrom(from string) *Delete {
+func newDeleteFrom(db ExecPreparer, l log.Logger, from, id string) *Delete {
 	return &Delete{
 		BuilderBase: BuilderBase{
+			id:    id,
 			Table: MakeIdentifier(from),
-			Log:   c.Log,
+			Log:   l,
 		},
 		BuilderConditional: BuilderConditional{
 			Wheres: make(Conditions, 0, 2),
 		},
-		DB: c.DB,
+		DB: db,
 	}
+}
+
+// DeleteFrom creates a new Delete for the given table
+func (c *ConnPool) DeleteFrom(from string) *Delete {
+	l := c.Log
+	id := c.makeUniqueID()
+	if l != nil {
+		l = c.Log.With(log.String("ConnPool", "Delete"), log.String("id", id), log.String("table", from))
+	}
+	return newDeleteFrom(c.DB, l, from, id)
+}
+
+// DeleteFrom creates a new Delete for the given table
+// in the context for a single database connection.
+func (c *Conn) DeleteFrom(from string) *Delete {
+	l := c.Log
+	id := c.makeUniqueID()
+	if l != nil {
+		l = c.Log.With(log.String("Conn", "Delete"), log.String("id", id), log.String("table", from))
+	}
+	return newDeleteFrom(c.Conn, l, from, id)
 }
 
 // DeleteFrom creates a new Delete for the given table
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from string) *Delete {
-	return &Delete{
-		BuilderBase: BuilderBase{
-			Table: MakeIdentifier(from),
-			Log:   tx.Logger,
-		},
-		BuilderConditional: BuilderConditional{
-			Wheres: make(Conditions, 0, 2),
-		},
-		DB: tx.Tx,
+	l := tx.Log
+	id := tx.makeUniqueID()
+	if l != nil {
+		l = tx.Log.With(log.String("Tx", "Delete"), log.String("id", id), log.String("table", from))
 	}
+	return newDeleteFrom(tx.Tx, l, from, id)
 }
 
 // Alias sets an alias for the table name.
@@ -271,6 +289,9 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 // Exec executes the statement represented by the Delete
 // It returns the raw database/sql Result and an error if there was one
 func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Exec", log.Stringer("sql", b))
+	}
 	r, err := Exec(ctx, b.DB, b)
 	return r, errors.WithStack(err)
 }

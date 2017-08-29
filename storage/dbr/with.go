@@ -20,6 +20,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log"
 )
 
 // WithCTE defines a common table expression used in the type `With`.
@@ -78,25 +79,54 @@ func NewWith(expressions ...WithCTE) *With {
 	}
 }
 
-// With creates a new With which selects from the provided columns.
-// Columns won't get quoted.
-func (c *Connection) With(expressions ...WithCTE) *With {
-	w := &With{
+func withInitLog(l log.Logger, expressions []WithCTE, id, connType string) log.Logger {
+	if l != nil {
+		tables := make([]string, len(expressions))
+		for i, w := range expressions {
+			tables[i] = w.Name
+		}
+		l = l.With(log.String(connType, "With"), log.String("id", id), log.Strings("tables", tables...))
+	}
+	return l
+}
+
+// With creates a new With statement.
+func (c *ConnPool) With(expressions ...WithCTE) *With {
+	id := c.makeUniqueID()
+	return &With{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: withInitLog(c.Log, expressions, id, "ConnPool"),
+		},
 		Subclauses: expressions,
 		DB:         c.DB,
 	}
-	w.BuilderBase.Log = c.Log
-	return w
+}
+
+// With creates a new With statement bound to a single connection.
+func (c *Conn) With(expressions ...WithCTE) *With {
+	id := c.makeUniqueID()
+	return &With{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: withInitLog(c.Log, expressions, id, "Conn"),
+		},
+		Subclauses: expressions,
+		DB:         c.Conn,
+	}
 }
 
 // With creates a new With that select that given columns bound to the transaction
 func (tx *Tx) With(expressions ...WithCTE) *With {
-	w := &With{
+	id := tx.makeUniqueID()
+	return &With{
+		BuilderBase: BuilderBase{
+			id:  id,
+			Log: withInitLog(tx.Log, expressions, id, "Tx"),
+		},
 		Subclauses: expressions,
 		DB:         tx.Tx,
 	}
-	w.BuilderBase.Log = tx.Logger
-	return w
 }
 
 // WithDB sets the database query object.
