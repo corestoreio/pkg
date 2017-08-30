@@ -84,7 +84,7 @@ func (c *ConnPool) DeleteFrom(from string) *Delete {
 	l := c.Log
 	id := c.makeUniqueID()
 	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Delete"), log.String("deleteID", id), log.String("table", from))
+		l = c.Log.With(log.String("deleteID", id), log.String("table", from))
 	}
 	return newDeleteFrom(c.DB, l, from, id)
 }
@@ -95,7 +95,7 @@ func (c *Conn) DeleteFrom(from string) *Delete {
 	l := c.Log
 	id := c.makeUniqueID()
 	if l != nil {
-		l = c.Log.With(log.String("Conn", "Delete"), log.String("deleteID", id), log.String("table", from))
+		l = c.Log.With(log.String("deleteID", id), log.String("table", from))
 	}
 	return newDeleteFrom(c.DB, l, from, id)
 }
@@ -106,7 +106,7 @@ func (tx *Tx) DeleteFrom(from string) *Delete {
 	l := tx.Log
 	id := tx.makeUniqueID()
 	if l != nil {
-		l = tx.Log.With(log.String("Tx", "Delete"), log.String("deleteID", id), log.String("table", from))
+		l = tx.Log.With(log.String("deleteID", id), log.String("table", from))
 	}
 	return newDeleteFrom(tx.DB, l, from, id)
 }
@@ -241,7 +241,9 @@ func (b *Delete) toSQL(buf *bytes.Buffer) error {
 		return errors.NewEmptyf("[dbr] Delete: Table is missing")
 	}
 
-	buf.WriteString("DELETE FROM ")
+	buf.WriteString("DELETE ")
+	writeStmtID(buf, b.id)
+	buf.WriteString("FROM ")
 	b.Table.WriteQuoted(buf)
 
 	// TODO(CyS) add SQLStmtDeleteJoin
@@ -286,8 +288,9 @@ func (b *Delete) appendArgs(args Arguments) (_ Arguments, err error) {
 	return args, nil
 }
 
-// Exec executes the statement represented by the Delete
-// It returns the raw database/sql Result and an error if there was one
+// Exec executes the statement represented by the Delete. It returns the raw
+// database/sql Result and an error if there was one. If info mode for logging
+// has been enabled it logs the duration taken. In debug mode the SQL string.
 func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Exec", log.Stringer("sql", b))
@@ -300,7 +303,8 @@ func (b *Delete) Exec(ctx context.Context) (sql.Result, error) {
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Delete are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
-// of the statement.
+// of the statement. If debug mode for logging has been enabled it logs the
+// duration taken and the SQL string.
 func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 	if b.Log != nil && b.Log.IsDebug() {
 		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))

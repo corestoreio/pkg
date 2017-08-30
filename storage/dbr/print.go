@@ -138,6 +138,12 @@ func (b *Update) String() string {
 	return makeSQL(b, b.IsInterpolate)
 }
 
+// String returns a string representing a preprocessed, interpolated, query.
+// On error, the error gets printed. Fulfills interface fmt.Stringer.
+func (u *Union) String() string {
+	return makeSQL(u, u.IsInterpolate)
+}
+
 func sqlWriteUnionAll(w *bytes.Buffer, isAll bool, isIntersect bool, isExcept bool) {
 	w.WriteByte('\n')
 	switch {
@@ -209,4 +215,12 @@ func writeBytes(w *bytes.Buffer, p []byte) (err error) {
 		dialect.EscapeString(w, string(p)) // maybe create an EscapeByteString version to avoid one alloc ;-)
 	}
 	return
+}
+
+func writeStmtID(w *bytes.Buffer, id string) {
+	if id != "" {
+		w.WriteString("/*ID:")
+		w.WriteString(id)
+		w.WriteString("*/ ")
+	}
 }

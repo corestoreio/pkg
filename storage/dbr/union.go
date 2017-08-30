@@ -57,13 +57,13 @@ func NewUnion(selects ...*Select) *Union {
 	}
 }
 
-func unionInitLog(l log.Logger, selects []*Select, id, connType string) log.Logger {
+func unionInitLog(l log.Logger, selects []*Select, id string) log.Logger {
 	if l != nil {
 		tables := make([]string, len(selects))
 		for i, s := range selects {
 			tables[i] = s.Table.Name
 		}
-		l = l.With(log.String(connType, "Union"), log.String("id", id), log.Strings("tables", tables...))
+		l = l.With(log.String("unionID", id), log.Strings("tables", tables...))
 	}
 	return l
 }
@@ -74,7 +74,7 @@ func (c *ConnPool) Union(selects ...*Select) *Union {
 	return &Union{
 		BuilderBase: BuilderBase{
 			id:  id,
-			Log: unionInitLog(c.Log, selects, id, "ConnPool"),
+			Log: unionInitLog(c.Log, selects, id),
 		},
 		Selects: selects,
 		DB:      c.DB,
@@ -87,7 +87,7 @@ func (c *Conn) Union(selects ...*Select) *Union {
 	return &Union{
 		BuilderBase: BuilderBase{
 			id:  id,
-			Log: unionInitLog(c.Log, selects, id, "Conn"),
+			Log: unionInitLog(c.Log, selects, id),
 		},
 		Selects: selects,
 		DB:      c.DB,
@@ -101,7 +101,7 @@ func (tx *Tx) Union(selects ...*Select) *Union {
 	return &Union{
 		BuilderBase: BuilderBase{
 			id:  id,
-			Log: unionInitLog(tx.Log, selects, id, "Tx"),
+			Log: unionInitLog(tx.Log, selects, id),
 		},
 		Selects: selects,
 		DB:      tx.DB,
@@ -297,6 +297,8 @@ func (u *Union) hasBuildCache() bool {
 // idempotent.
 func (u *Union) toSQL(w *bytes.Buffer) error {
 
+	u.Selects[0].id = u.id
+
 	if len(u.Selects) > 1 {
 		for i, s := range u.Selects {
 			if i > 0 {
@@ -313,10 +315,10 @@ func (u *Union) toSQL(w *bytes.Buffer) error {
 		return nil
 	}
 
-	bufS1 := bufferpool.Get()
-	err := u.Selects[0].toSQL(bufS1)
-	selStr := bufS1.String()
-	bufferpool.Put(bufS1)
+	bufSel0 := bufferpool.Get()
+	err := u.Selects[0].toSQL(bufSel0)
+	selStr := bufSel0.String()
+	bufferpool.Put(bufSel0)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -366,21 +368,34 @@ func (u *Union) appendArgs(args Arguments) (_ Arguments, err error) {
 	return u.MultiplyArguments(args), nil
 }
 
-// Query executes a query and returns many rows.
+// Query executes a query and returns many rows. If debug mode for logging has
+// been enabled it logs the duration taken and the SQL string.
 func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
+	if u.Log != nil && u.Log.IsDebug() {
+		defer log.WhenDone(u.Log).Debug("Query", log.Stringer("sql", u))
+	}
 	rows, err := Query(ctx, u.DB, u)
 	return rows, errors.WithStack(err)
 }
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
-// the Union object or it just panics. Load can load a single row or n-rows.
+// the Union object or it just panics. Load can load a single row or n-rows. If
+// debug mode for logging has been enabled it logs the duration taken and the
+// SQL string.
 func (u *Union) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	if u.Log != nil && u.Log.IsDebug() {
+		defer log.WhenDone(u.Log).Debug("Load", log.Stringer("sql", u))
+	}
 	rowCount, err = Load(ctx, u.DB, u, s)
 	return rowCount, errors.WithStack(err)
 }
 
-// Prepare prepares a SQL statement. Sets IsInterpolate to false.
+// Prepare prepares a SQL statement. Sets IsInterpolate to false. If debug mode
+// for logging has been enabled it logs the duration taken and the SQL string.
 func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
+	if u.Log != nil && u.Log.IsDebug() {
+		defer log.WhenDone(u.Log).Debug("Prepare", log.Stringer("sql", u))
+	}
 	stmt, err := Prepare(ctx, u.DB, u)
 	if err != nil {
 		return nil, errors.WithStack(err)

@@ -29,6 +29,7 @@ var _ fmt.Stringer = (*Delete)(nil)
 var _ fmt.Stringer = (*Insert)(nil)
 var _ fmt.Stringer = (*Update)(nil)
 var _ fmt.Stringer = (*Select)(nil)
+var _ fmt.Stringer = (*Union)(nil)
 
 var _ QueryBuilder = (*Select)(nil)
 var _ QueryBuilder = (*Delete)(nil)

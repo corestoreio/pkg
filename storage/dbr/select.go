@@ -490,7 +490,7 @@ func (b *Select) toSQL(w *bytes.Buffer) error {
 	}
 
 	w.WriteString("SELECT ")
-
+	writeStmtID(w, b.id)
 	if b.IsDistinct {
 		w.WriteString("DISTINCT ")
 	}

@@ -26,7 +26,7 @@ import (
 
 type uniqueIDFn func() string
 
-func uniqueIDNoop() string { return "" }
+func uniqueIDNoOp() string { return "" }
 
 type logWithID struct {
 	start time.Time
@@ -35,6 +35,9 @@ type logWithID struct {
 	// assigned to a new connection or a new statement. The function signature is
 	// equal to fmt.Stringer so one can use for example:
 	//		uuid.NewV4().String
+	// The returned unique ID gets used in logging and inserted as a comment
+	// into the SQL string. The returned string must not contain the
+	// comment-end-termination pattern: `*/`.
 	makeUniqueID uniqueIDFn
 }
 
@@ -89,9 +92,13 @@ type ConnPoolOption func(*ConnPool) error
 // assigned to a new connection or a new statement. The function signature is
 // equal to fmt.Stringer so one can use for example:
 //		uuid.NewV4().String
-func WithLogger(l log.Logger, uniqueID func() string) ConnPoolOption {
+// The returned unique ID from `uniqueIDFn` gets used in logging and inserted as
+// a comment into the SQL string for tracing in server log files and PROCESS
+// LIST. The returned string must not contain the comment-end-termination
+// pattern: `*/`.
+func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 	return func(c *ConnPool) error {
-		c.makeUniqueID = uniqueID
+		c.makeUniqueID = uniqueIDFn
 		c.Log = l.With(log.String("ConnPoolID", c.makeUniqueID()))
 		return nil
 	}
@@ -136,7 +143,7 @@ func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
 		return nil, errors.NewNotImplementedf("[dbr] unsupported driver: %q", c.dn)
 	}
 	if c.makeUniqueID == nil {
-		c.makeUniqueID = uniqueIDNoop
+		c.makeUniqueID = uniqueIDNoOp
 	}
 	if c.DB != nil || c.dsn == nil {
 		return c, nil
@@ -185,8 +192,8 @@ func (c *ConnPool) Options(opts ...ConnPoolOption) error {
 // shared between many goroutines. It logs the time taken, if a logger has been
 // set with Info logging enabled.
 func (c *ConnPool) Close() error {
-	if c.Log != nil && c.Log.IsInfo() {
-		defer c.Log.Info("ConnPool", log.String("type", "close"), log.Duration("duration", now().Sub(c.start)))
+	if c.Log != nil && c.Log.IsDebug() {
+		defer c.Log.Debug("Close", log.Duration("duration", now().Sub(c.start)))
 	}
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
@@ -212,9 +219,9 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("ConnPool", "Transaction"), log.String("TxID", c.makeUniqueID()))
-		if l.IsInfo() {
-			l.Info("Transaction", log.String("type", "begin"))
+		l = l.With(log.String("TxID", c.makeUniqueID()))
+		if l.IsDebug() {
+			l.Debug("BeginTx")
 		}
 	}
 	return &Tx{
@@ -238,7 +245,7 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 	dbc, err := c.DB.Conn(ctx)
 	l := c.Log
 	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Conn"), log.String("ConnID", c.makeUniqueID()))
+		l = c.Log.With(log.String("ConnID", c.makeUniqueID()))
 	}
 	return &Conn{
 		logWithID: logWithID{
@@ -269,9 +276,9 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("Conn", "Transaction"), log.String("TxID", c.makeUniqueID()))
-		if l.IsInfo() {
-			l.Info("Transaction", log.String("type", "begin"))
+		l = l.With(log.String("TxID", c.makeUniqueID()))
+		if l.IsDebug() {
+			l.Debug("BeginTx")
 		}
 	}
 	return &Tx{
@@ -290,8 +297,8 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 // useful to first cancel any used context and then call close directly after.
 // It logs the time taken, if a logger has been set with Info logging enabled.
 func (c *Conn) Close() error {
-	if c.Log != nil && c.Log.IsInfo() {
-		defer c.Log.Info("Conn", log.String("type", "close"), log.Duration("duration", now().Sub(c.start)))
+	if c.Log != nil && c.Log.IsDebug() {
+		defer c.Log.Debug("Close", log.Duration("duration", now().Sub(c.start)))
 	}
 	return c.DB.Close() // no stack wrap otherwise error is hard to compare
 }
@@ -299,8 +306,8 @@ func (c *Conn) Close() error {
 // Commit finishes the transaction. It logs the time taken, if a logger has been
 // set with Info logging enabled.
 func (tx *Tx) Commit() error {
-	if tx.Log != nil && tx.Log.IsInfo() {
-		defer tx.Log.Info("Transaction", log.String("type", "commit"), log.Duration("duration", now().Sub(tx.start)))
+	if tx.Log != nil && tx.Log.IsDebug() {
+		defer tx.Log.Debug("Commit", log.Duration("duration", now().Sub(tx.start)))
 	}
 	return tx.DB.Commit()
 }
@@ -308,8 +315,8 @@ func (tx *Tx) Commit() error {
 // Rollback cancels the transaction. It logs the time taken, if a logger has
 // been set with Info logging enabled.
 func (tx *Tx) Rollback() error {
-	if tx.Log != nil && tx.Log.IsInfo() {
-		defer tx.Log.Info("Transaction", log.String("type", "rollback"), log.Duration("duration", now().Sub(tx.start)))
+	if tx.Log != nil && tx.Log.IsDebug() {
+		defer tx.Log.Debug("Rollback", log.Duration("duration", now().Sub(tx.start)))
 	}
 	return tx.DB.Rollback()
 }
@@ -332,7 +339,7 @@ func (tx *Tx) Wrap(fns ...func() error) error {
 	for i, f := range fns {
 		if err := f(); err != nil {
 			if rErr := tx.Rollback(); rErr != nil {
-				return errors.Wrapf(err, "[dbr] transaction.wrap.Rollback.error at index %d", i)
+				return errors.Wrapf(rErr, "[dbr] transaction.wrap.Rollback.error at index %d", i)
 			}
 			return errors.Wrapf(err, "[dbr] transaction.wrap.error at index %d", i)
 		}

@@ -18,12 +18,16 @@ import (
 	"context"
 	"testing"
 
+	"bytes"
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sync/atomic"
 )
 
 func TestUnion_Query(t *testing.T) {
@@ -184,11 +188,11 @@ func TestUnion_Prepare(t *testing.T) {
 		dbc, dbMock := cstesting.MockDB(t)
 		defer cstesting.MockClose(t, dbc, dbMock)
 
-		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("(SELECT `name`, `d` AS `email` FROM `dbr_person`) UNION (SELECT `name`, `email` FROM `dbr_person2` WHERE (`id` = ?))"))
+		prep := dbMock.ExpectPrepare(cstesting.SQLMockQuoteMeta("(SELECT `name`, `d` AS `email` FROM `dbr_people`) UNION (SELECT `name`, `email` FROM `dbr_people2` WHERE (`id` = ?))"))
 
 		stmt, err := dbr.NewUnion(
-			dbr.NewSelect("name").AddColumnsAliases("d", "email").From("dbr_person"),
-			dbr.NewSelect("name", "email").From("dbr_person2").Where(dbr.Column("id").PlaceHolder()),
+			dbr.NewSelect("name").AddColumnsAliases("d", "email").From("dbr_people"),
+			dbr.NewSelect("name", "email").From("dbr_people2").Where(dbr.Column("id").PlaceHolder()),
 		).
 			BuildCache().WithDB(dbc.DB).
 			Prepare(context.TODO())
@@ -245,6 +249,168 @@ func TestUnion_Prepare(t *testing.T) {
 			rows, err := stmt.Query(context.TODO())
 			assert.True(t, errors.IsDuplicated(err), "%+v", err)
 			assert.Nil(t, rows)
+		})
+	})
+}
+
+func TestUnion_WithLogger(t *testing.T) {
+	uniID := new(int32)
+	rConn := createRealSession(t)
+	defer cstesting.Close(t, rConn)
+
+	var uniqueIDFunc = func() string {
+		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))
+	}
+
+	buf := new(bytes.Buffer)
+	lg := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithWriter(buf),
+		logw.WithFlag(0), // no flags at all
+	)
+	require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
+
+	t.Run("ConnPool", func(t *testing.T) {
+		u := rConn.Union(
+			dbr.NewSelect("name").AddColumnsAliases("email", "email").From("dbr_people"),
+			dbr.NewSelect("name", "email").FromAlias("dbr_people", "dp2").Where(dbr.Column("id").In().Int64s(6, 8)),
+		)
+
+		t.Run("Query", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			rows, err := u.Interpolate().Query(context.TODO())
+			require.NoError(t, err)
+			require.NoError(t, rows.Close())
+
+			assert.Exactly(t, "DEBUG Query ConnPoolID: \"UNIQ01\" unionID: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
+				buf.String())
+		})
+
+		t.Run("Load", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			p := &dbrPerson{}
+			_, err := u.Interpolate().Load(context.TODO(), p)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Load ConnPoolID: \"UNIQ01\" unionID: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+			stmt, err := u.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQ01\" unionID: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := rConn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				rows, err := tx.Union(
+					dbr.NewSelect("name").AddColumnsAliases("email", "email").From("dbr_people"),
+					dbr.NewSelect("name", "email").FromAlias("dbr_people", "dp2").Where(dbr.Column("id").In().Int64s(7, 9)),
+				).Interpolate().Query(context.TODO())
+
+				require.NoError(t, rows.Close())
+				return err
+			}))
+			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQ01\" TxID: \"UNIQ03\"\nDEBUG Query ConnPoolID: \"UNIQ01\" TxID: \"UNIQ03\" unionID: \"UNIQ04\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ04*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (7,9)))\"\nDEBUG Commit ConnPoolID: \"UNIQ01\" TxID: \"UNIQ03\" duration: 0\n",
+				buf.String())
+		})
+	})
+
+	t.Run("Conn", func(t *testing.T) {
+		conn, err := rConn.Conn(context.TODO())
+		require.NoError(t, err)
+
+		u := conn.Union(
+			dbr.NewSelect("name").AddColumnsAliases("email", "email").From("dbr_people"),
+			dbr.NewSelect("name", "email").FromAlias("dbr_people", "dp2").Where(dbr.Column("id").In().Int64s(61, 81)),
+		)
+		t.Run("Query", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+
+			rows, err := u.Interpolate().Query(context.TODO())
+			require.NoError(t, err)
+			require.NoError(t, rows.Close())
+
+			assert.Exactly(t, "DEBUG Query ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" unionID: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
+				buf.String())
+		})
+
+		t.Run("Load", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			p := &dbrPerson{}
+			_, err := u.Interpolate().Load(context.TODO(), p)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Load ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" unionID: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := u.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" unionID: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				rows, err := tx.Union(
+					dbr.NewSelect("name").AddColumnsAliases("email", "email").From("dbr_people"),
+					dbr.NewSelect("name", "email").FromAlias("dbr_people", "dp2").Where(dbr.Column("id").In().Int64s(71, 91)),
+				).Interpolate().Query(context.TODO())
+				if err != nil {
+					return err
+				}
+				return rows.Close()
+			}))
+			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ07\"\nDEBUG Query ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ07\" unionID: \"UNIQ08\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ08*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (71,91)))\"\nDEBUG Commit ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ07\" duration: 0\n",
+				buf.String())
+		})
+
+		t.Run("Tx Rollback", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.Error(t, tx.Wrap(func() error {
+				rows, err := tx.Union(
+					dbr.NewSelect("name").AddColumnsAliases("email", "email").From("dbr_people"),
+					dbr.NewSelect("name", "email").FromAlias("dbr_people", "dp2").Where(dbr.Column("id").In().PlaceHolder()),
+				).Interpolate().Query(context.TODO())
+				if err != nil {
+					return err
+				}
+				return rows.Close()
+			}))
+
+			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ09\"\nDEBUG Query ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ09\" unionID: \"UNIQ10\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ10*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?)))\"\nDEBUG Rollback ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ09\" duration: 0\n",
+				buf.String())
 		})
 	})
 

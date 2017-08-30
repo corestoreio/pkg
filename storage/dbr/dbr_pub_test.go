@@ -15,15 +15,15 @@
 package dbr_test
 
 import (
-	"os"
-	"testing"
-	"time"
-
+	"database/sql"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"os"
+	"testing"
+	"time"
 )
 
 var now = func() time.Time {
@@ -36,6 +36,7 @@ func init() {
 }
 
 var _ dbr.ArgumentsAppender = (*dbrPerson)(nil)
+var _ dbr.Scanner = (*dbrPerson)(nil)
 
 type dbrPerson struct {
 	ID          int64
@@ -45,6 +46,11 @@ type dbrPerson struct {
 	StoreID     int64
 	CreatedAt   time.Time
 	TotalIncome float64
+}
+
+func (p *dbrPerson) RowScan(r *sql.Rows) error {
+	// noop
+	return nil
 }
 
 func (p *dbrPerson) AssignLastInsertID(id int64) {
