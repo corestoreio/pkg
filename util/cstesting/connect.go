@@ -50,12 +50,12 @@ func MustGetDSN() string {
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
 // If the DSN environment variable has not been set it skips the test.
 // Argument t specified usually the *testing.T/B struct.
-func MustConnectDB(t testing.TB, opts ...dbr.ConnectionOption) *dbr.Connection {
+func MustConnectDB(t testing.TB, opts ...dbr.ConnPoolOption) *dbr.ConnPool {
 	t.Helper()
 	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
 		t.Skipf("%s", err)
 	}
-	cos := []dbr.ConnectionOption{dbr.WithDSN(MustGetDSN())}
+	cos := []dbr.ConnPoolOption{dbr.WithDSN(MustGetDSN())}
 	if len(opts) == 0 {
 		return dbr.MustConnectAndVerify(cos...)
 	}
@@ -73,14 +73,14 @@ func Close(t testing.TB, c io.Closer) {
 }
 
 // MockDB creates a mocked database connection. Fatals on error.
-func MockDB(t testing.TB) (*dbr.Connection, sqlmock.Sqlmock) {
+func MockDB(t testing.TB) (*dbr.ConnPool, sqlmock.Sqlmock) {
 	if t != nil { // t can be nil in Example functions
 		t.Helper()
 	}
 	db, sm, err := sqlmock.New()
 	fatalIfError(t, err)
 
-	dbc, err := dbr.NewConnection(dbr.WithDB(db))
+	dbc, err := dbr.NewConnPool(dbr.WithDB(db))
 	fatalIfError(t, err)
 	return dbc, sm
 }
