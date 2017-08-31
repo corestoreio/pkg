@@ -15,16 +15,19 @@
 package dbr_test
 
 import (
+	"bytes"
 	"context"
-	"testing"
-	"time"
-
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sync/atomic"
+	"testing"
+	"time"
 )
 
 var _ dbr.ArgumentsAppender = (*someRecord)(nil)
@@ -299,5 +302,132 @@ func TestInsert_Prepare(t *testing.T) {
 		}
 		assert.Exactly(t, int64(4), lid, "Different LastInsertIDs")
 	})
+}
 
+func TestInsert_WithLogger(t *testing.T) {
+	uniID := new(int32)
+	rConn := createRealSession(t)
+	defer cstesting.Close(t, rConn)
+
+	var uniqueIDFunc = func() string {
+		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 4))
+	}
+
+	buf := new(bytes.Buffer)
+	lg := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithWriter(buf),
+		logw.WithFlag(0), // no flags at all
+	)
+	require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
+
+	t.Run("ConnPool", func(t *testing.T) {
+		d := rConn.InsertInto("dbr_people").Replace().AddColumns("email", "name").AddValues("a@b.c", "John")
+
+		t.Run("Exec", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				d.IsInterpolate = false
+			}()
+			_, err := d.Interpolate().Exec(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ08*/ INTO `dbr_people` (`email`,`name`) VALUES ('a@b.c','John')\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" insert_id: \"UNIQ08\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ08*/ INTO `dbr_people` (`email`,`name`) VALUES (?,?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := rConn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				_, err := tx.InsertInto("dbr_people").Replace().AddColumns("email", "name").AddValues("a@b.c", "John").Interpolate().Exec(context.TODO())
+				return err
+			}))
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" insert_id: \"UNIQ16\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ16*/ INTO `dbr_people` (`email`,`name`) VALUES ('a@b.c','John')\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" tx_id: \"UNIQ12\" duration: 0\n",
+				buf.String())
+		})
+	})
+
+	t.Run("Conn", func(t *testing.T) {
+		conn, err := rConn.Conn(context.TODO())
+		require.NoError(t, err)
+
+		d := conn.InsertInto("dbr_people").Replace().AddColumns("email", "name").AddValues("a@b.zeh", "J0hn")
+
+		t.Run("Exec", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				d.IsInterpolate = false
+			}()
+
+			_, err := d.Interpolate().Exec(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dbr_people` (`email`,`name`) VALUES ('a@b.zeh','J0hn')\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dbr_people` (`email`,`name`) VALUES (?,?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare Exec", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			_, err = stmt.Exec(context.TODO(), "mail@e.de", "Hans")
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ24*/ INTO `dbr_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" insert_id: \"UNIQ24\" table: \"dbr_people\" duration: 0 arg_len: 2\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				_, err := tx.InsertInto("dbr_people").Replace().AddColumns("email", "name").AddValues("a@b.c", "John").Interpolate().Exec(context.TODO())
+				return err
+			}))
+
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" insert_id: \"UNIQ32\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ32*/ INTO `dbr_people` (`email`,`name`) VALUES ('a@b.c','John')\"\nDEBUG Commit conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ28\" duration: 0\n",
+				buf.String())
+		})
+
+		t.Run("Tx Rollback", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.Error(t, tx.Wrap(func() error {
+				_, err := tx.InsertInto("dbr_people").Replace().AddColumns("email", "name").
+					AddArguments(dbr.MakeArgs(2).PlaceHolder().PlaceHolder()).Interpolate().Exec(context.TODO())
+				return err
+			}))
+
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\"\nDEBUG Exec conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" insert_id: \"UNIQ40\" table: \"dbr_people\" duration: 0 sql: \"REPLACE /*ID:UNIQ40*/ INTO `dbr_people` (`email`,`name`) VALUES (?,?)\"\nDEBUG Rollback conn_pool_id: \"UNIQ04\" conn_id: \"UNIQ20\" tx_id: \"UNIQ36\" duration: 0\n",
+				buf.String())
+		})
+	})
 }

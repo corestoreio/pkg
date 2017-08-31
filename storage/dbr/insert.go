@@ -97,7 +97,11 @@ func NewInsert(into string) *Insert {
 	}
 }
 
-func newInsertInto(db ExecPreparer, l log.Logger, into, id string) *Insert {
+func newInsertInto(db ExecPreparer, idFn uniqueIDFn, l log.Logger, into string) *Insert {
+	id := idFn()
+	if l != nil {
+		l = l.With(log.String("insert_id", id), log.String("table", into))
+	}
 	return &Insert{
 		BuilderBase: BuilderBase{
 			id:  id,
@@ -110,32 +114,17 @@ func newInsertInto(db ExecPreparer, l log.Logger, into, id string) *Insert {
 
 // InsertInto instantiates a Insert for the given table
 func (c *ConnPool) InsertInto(into string) *Insert {
-	l := c.Log
-	id := c.makeUniqueID()
-	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Insert"), log.String("id", id), log.String("table", into))
-	}
-	return newInsertInto(c.DB, l, into, id)
+	return newInsertInto(c.DB, c.makeUniqueID, c.Log, into)
 }
 
 // InsertInto instantiates a Insert for the given table
 func (c *Conn) InsertInto(into string) *Insert {
-	l := c.Log
-	id := c.makeUniqueID()
-	if l != nil {
-		l = c.Log.With(log.String("Conn", "Insert"), log.String("id", id), log.String("table", into))
-	}
-	return newInsertInto(c.DB, l, into, id)
+	return newInsertInto(c.DB, c.makeUniqueID, c.Log, into)
 }
 
 // InsertInto instantiates a Insert for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *Insert {
-	l := tx.Log
-	id := tx.makeUniqueID()
-	if l != nil {
-		l = tx.Log.With(log.String("Tx", "Insert"), log.String("id", id), log.String("table", into))
-	}
-	return newInsertInto(tx.DB, l, into, id)
+	return newInsertInto(tx.DB, tx.makeUniqueID, tx.Log, into)
 }
 
 // WithDB sets the database query object.
@@ -344,7 +333,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 	}
 
 	if len(b.Into) == 0 {
-		return errors.NewEmptyf("[dbr] Insert Table is missing")
+		return errors.NewEmptyf("[dbr] Inserted table is missing")
 	}
 
 	ior := "INSERT "
@@ -352,6 +341,7 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 		ior = "REPLACE "
 	}
 	buf.WriteString(ior)
+	writeStmtID(buf, b.id)
 	if b.IsIgnore {
 		buf.WriteString("IGNORE ")
 	}
@@ -439,6 +429,15 @@ func (b *Insert) toSQL(buf *bytes.Buffer) error {
 	return errors.Wrap(b.OnDuplicateKeys.writeOnDuplicateKey(buf), "[dbr] Insert.toSQL.writeOnDuplicateKey\n")
 }
 
+func strInSlice(search string, sl []string) bool {
+	for _, s := range sl {
+		if s == search {
+			return true
+		}
+	}
+	return false
+}
+
 func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 
 	if b.RawFullSQL != "" {
@@ -502,6 +501,9 @@ func (b *Insert) appendArgs(args Arguments) (_ Arguments, err error) {
 // implements the interface LastInsertIDAssigner then the LastInsertID gets
 // assigned incrementally to the objects.
 func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Exec", log.Stringer("sql", b))
+	}
 	result, err := Exec(ctx, b.DB, b)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -527,6 +529,9 @@ func (b *Insert) Exec(ctx context.Context) (sql.Result, error) {
 // context is used for the preparation of the statement, not for the execution
 // of the statement.
 func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
+	}
 	sqlStmt, err := Prepare(ctx, b.DB, b)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -534,9 +539,11 @@ func (b *Insert) Prepare(ctx context.Context) (*StmtInsert, error) {
 	cap := len(b.Columns) * b.RecordValueCount
 	return &StmtInsert{
 		StmtBase: StmtBase{
+			id:        b.id,
 			stmt:      sqlStmt,
 			argsCache: make(Arguments, 0, cap),
 			argsRaw:   make([]interface{}, 0, cap),
+			log:       b.Log,
 		},
 		ins: b,
 	}, nil
@@ -609,13 +616,4 @@ func (st *StmtInsert) ExecContext(ctx context.Context, args ...interface{}) (sql
 		}
 	}
 	return result, nil
-}
-
-func strInSlice(search string, sl []string) bool {
-	for _, s := range sl {
-		if s == search {
-			return true
-		}
-	}
-	return false
 }
