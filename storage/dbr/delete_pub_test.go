@@ -214,15 +214,10 @@ func TestDelete_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, tx.Wrap(func() error {
 				_, err := tx.DeleteFrom("dbr_people").Where(dbr.Column("id").GreaterOrEqual().Float64(36.56)).Interpolate().Exec(context.TODO())
-				if err != nil {
-					return err
-				}
-
-				assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\" delete_id: \"UNIQUEID04\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID04*/ FROM `dbr_people` WHERE (`id` >= 36.56)\"\n",
-					buf.String())
-
-				return nil
+				return err
 			}))
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\" delete_id: \"UNIQUEID04\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID04*/ FROM `dbr_people` WHERE (`id` >= 36.56)\"\nDEBUG Commit conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\" duration: 0\n",
+				buf.String())
 		})
 	})
 
@@ -295,5 +290,4 @@ func TestDelete_WithLogger(t *testing.T) {
 				buf.String())
 		})
 	})
-
 }

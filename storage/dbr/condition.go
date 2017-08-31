@@ -206,14 +206,13 @@ type Condition struct {
 	// `IsLeftExpression` to true to avoid quoting of the this field. Left can also
 	// contain a string in the format `qualifier.identifier`.
 	Left string
-	// IsLeftExpression if set to true, the field Left won't get quoted and
-	// treated as an expression. Additionally the field Right.Arguments will be
-	// read to extract any given args.
-	IsLeftExpression bool
 	// Right defines the right hand side for an assignment which can be either a
 	// single argument, multiple arguments in case of an expression, a sub
 	// select or a name of a column.
 	Right struct {
+		// Column defines a column name to compare to. The column, with an
+		// optional qualifier, gets quoted, in case IsExpression is false.
+		Column    string
 		NamedArg  string
 		Argument  argument // Only set in case of no expression
 		Arguments Arguments
@@ -221,9 +220,6 @@ type Condition struct {
 		// either a column name or anything else which can handle the result of
 		// a sub-select.
 		Sub *Select
-		// Column defines a column name to compare to. The column, with an
-		// optional qualifier, gets quoted, in case IsExpression is false.
-		Column string
 		// IsExpression if true field `Column` gets treated as an expression.
 		// Additionally the field Right.Arguments will be read to extract any
 		// given args.
@@ -232,7 +228,10 @@ type Condition struct {
 	// Operator contains the comparison logic like LIKE, IN, GREATER, etc ...
 	// defaults to EQUAL.
 	Operator Op
-
+	// IsLeftExpression if set to true, the field Left won't get quoted and
+	// treated as an expression. Additionally the field Right.Arguments will be
+	// read to extract any given args.
+	IsLeftExpression bool
 	// Logical states how multiple WHERE statements will be connected.
 	// Default to AND. Possible values are a=AND, o=OR, x=XOR, n=NOT
 	Logical byte

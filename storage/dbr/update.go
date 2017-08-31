@@ -59,13 +59,10 @@ func NewUpdate(table string) *Update {
 	}
 }
 
-// Update creates a new Update for the given table with a random connection from
-// the pool.
-func (c *ConnPool) Update(table string) *Update {
-	id := c.makeUniqueID()
-	l := c.Log
+func newUpdate(db ExecPreparer, idFn uniqueIDFn, l log.Logger, table string) *Update {
+	id := idFn()
 	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Update"), log.String("id", id), log.String("table", table))
+		l = l.With(log.String("update_id", id), log.String("table", table))
 	}
 	return &Update{
 		BuilderBase: BuilderBase{
@@ -73,42 +70,24 @@ func (c *ConnPool) Update(table string) *Update {
 			Table: MakeIdentifier(table),
 			Log:   l,
 		},
-		DB: c.DB,
+		DB: db,
 	}
+}
+
+// Update creates a new Update for the given table with a random connection from
+// the pool.
+func (c *ConnPool) Update(table string) *Update {
+	return newUpdate(c.DB, c.makeUniqueID, c.Log, table)
 }
 
 // Update creates a new Update for the given table bound to a single connection.
 func (c *Conn) Update(table string) *Update {
-	id := c.makeUniqueID()
-	l := c.Log
-	if l != nil {
-		l = c.Log.With(log.String("ConnPool", "Update"), log.String("id", id), log.String("table", table))
-	}
-	return &Update{
-		BuilderBase: BuilderBase{
-			id:    id,
-			Table: MakeIdentifier(table),
-			Log:   l,
-		},
-		DB: c.DB,
-	}
+	return newUpdate(c.DB, c.makeUniqueID, c.Log, table)
 }
 
 // Update creates a new Update for the given table bound to a transaction.
 func (tx *Tx) Update(table string) *Update {
-	id := tx.makeUniqueID()
-	l := tx.Log
-	if l != nil {
-		l = tx.Log.With(log.String("Tx", "Update"), log.String("id", id), log.String("table", table))
-	}
-	return &Update{
-		BuilderBase: BuilderBase{
-			id:    id,
-			Table: MakeIdentifier(table),
-			Log:   l,
-		},
-		DB: tx.DB,
-	}
+	return newUpdate(tx.DB, tx.makeUniqueID, tx.Log, table)
 }
 
 // Alias sets an alias for the table name.
@@ -259,6 +238,7 @@ func (b *Update) toSQL(buf *bytes.Buffer) error {
 	}
 
 	buf.WriteString("UPDATE ")
+	writeStmtID(buf, b.id)
 	b.Table.WriteQuoted(buf)
 	buf.WriteString(" SET ")
 
@@ -326,12 +306,38 @@ func (b *Update) appendArgs(args Arguments) (_ Arguments, err error) {
 	return args, nil
 }
 
+func (b *Update) validate() error {
+	if len(b.SetClauses) == 0 {
+		return errors.NewEmptyf("[dbr] Update: Columns are empty")
+	}
+	if len(b.SetClausAliases) > 0 && len(b.SetClausAliases) != len(b.SetClauses) {
+		return errors.NewMismatchf("[dbr] Update: ColumnAliases slice and Columns slice must have the same length")
+	}
+	return nil
+}
+
+// Exec interpolates and executes the statement represented by the Update
+// object. It returns the raw database/sql Result and an error if there was one.
+func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Exec", log.Stringer("sql", b))
+	}
+	if err := b.validate(); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	result, err := Exec(ctx, b.DB, b)
+	return result, errors.WithStack(err)
+}
+
 // Prepare executes the statement represented by the Update to create a prepared
 // statement. It returns a custom statement type or an error if there was one.
 // Provided arguments or records in the Update are getting ignored. The provided
 // context is used for the preparation of the statement, not for the execution
 // of the statement.
 func (b *Update) Prepare(ctx context.Context) (*StmtUpdate, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
+	}
 	if err := b.validate(); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -342,33 +348,15 @@ func (b *Update) Prepare(ctx context.Context) (*StmtUpdate, error) {
 	cap := len(b.SetClauses) + len(b.Wheres)
 	return &StmtUpdate{
 		StmtBase: StmtBase{
+			id:         b.id,
 			stmt:       stmt,
 			argsCache:  make(Arguments, 0, cap),
 			argsRaw:    make([]interface{}, 0, cap),
 			bindRecord: b.bindRecord,
+			log:        b.Log,
 		},
 		upd: b,
 	}, nil
-}
-
-// Exec interpolates and executes the statement represented by the Update
-// object. It returns the raw database/sql Result and an error if there was one.
-func (b *Update) Exec(ctx context.Context) (sql.Result, error) {
-	if err := b.validate(); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	result, err := Exec(ctx, b.DB, b)
-	return result, errors.WithStack(err)
-}
-
-func (b *Update) validate() error {
-	if len(b.SetClauses) == 0 {
-		return errors.NewEmptyf("[dbr] Update: Columns are empty")
-	}
-	if len(b.SetClausAliases) > 0 && len(b.SetClausAliases) != len(b.SetClauses) {
-		return errors.NewMismatchf("[dbr] Update: ColumnAliases slice and Columns slice must have the same length")
-	}
-	return nil
 }
 
 // StmtUpdate wraps a *sql.Stmt with a specific SQL query. To create a

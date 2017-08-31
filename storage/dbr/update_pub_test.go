@@ -15,15 +15,18 @@
 package dbr_test
 
 import (
+	"bytes"
 	"context"
-	"testing"
-
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sync/atomic"
+	"testing"
 )
 
 func TestUpdate_Prepare(t *testing.T) {
@@ -336,5 +339,142 @@ func TestUpdate_BindRecord(t *testing.T) {
 			"UPDATE `catalog_category_entity` AS `ce` SET `attribute_set_id`=6, `parent_id`='p456', `path`='3/4/5' WHERE (`ce`.`entity_id` > 678) AND (`cpe`.`entity_id` IN (66,77)) AND (`cpei`.`attribute_set_id` IN (6))",
 			int64(6), "p456", "3/4/5", int64(678), int64(66), int64(77), int64(6),
 		)
+	})
+}
+
+func TestUpdate_WithLogger(t *testing.T) {
+	uniID := new(int32)
+	rConn := createRealSession(t)
+	defer cstesting.Close(t, rConn)
+
+	var uniqueIDFunc = func() string {
+		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 3))
+	}
+
+	buf := new(bytes.Buffer)
+	lg := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithWriter(buf),
+		logw.WithFlag(0), // no flags at all
+	)
+	require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
+
+	t.Run("ConnPool", func(t *testing.T) {
+		d := rConn.Update("dbr_people").Set(
+			dbr.Column("email").Str("new@email.com"),
+		).Where(dbr.Column("id").GreaterOrEqual().Float64(78.31))
+
+		t.Run("Exec", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				d.IsInterpolate = false
+			}()
+			_, err := d.Interpolate().Exec(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ06*/ `dbr_people` SET `email`='new@email.com' WHERE (`id` >= 78.31)\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" update_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ06*/ `dbr_people` SET `email`=? WHERE (`id` >= ?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := rConn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				_, err := tx.Update("dbr_people").Set(
+					dbr.Column("email").Str("new@email.com"),
+				).Where(dbr.Column("id").GreaterOrEqual().Float64(36.56)).Interpolate().Exec(context.TODO())
+				return err
+			}))
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\" update_id: \"UNIQ12\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ12*/ `dbr_people` SET `email`='new@email.com' WHERE (`id` >= 36.56)\"\nDEBUG Commit conn_pool_id: \"UNIQ03\" tx_id: \"UNIQ09\" duration: 0\n",
+				buf.String())
+		})
+	})
+
+	t.Run("Conn", func(t *testing.T) {
+		conn, err := rConn.Conn(context.TODO())
+		require.NoError(t, err)
+
+		d := conn.Update("dbr_people").Set(
+			dbr.Column("email").Str("new@email.com"),
+		).Where(dbr.Column("id").GreaterOrEqual().Float64(21.56))
+
+		t.Run("Exec", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				d.IsInterpolate = false
+			}()
+
+			_, err := d.Interpolate().Exec(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dbr_people` SET `email`='new@email.com' WHERE (`id` >= 21.56)\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dbr_people` SET `email`=? WHERE (`id` >= ?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare Exec", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			_, err = stmt.Exec(context.TODO(), "mail@e.de", 61.57)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ18*/ `dbr_people` SET `email`=? WHERE (`id` >= ?)\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" update_id: \"UNIQ18\" table: \"dbr_people\" duration: 0 arg_len: 2\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				_, err := tx.Update("dbr_people").Set(
+					dbr.Column("email").Str("new@email.com"),
+				).Where(dbr.Column("id").GreaterOrEqual().Float64(39.56)).Interpolate().Exec(context.TODO())
+				return err
+			}))
+
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ21\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ21\" update_id: \"UNIQ24\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ24*/ `dbr_people` SET `email`='new@email.com' WHERE (`id` >= 39.56)\"\nDEBUG Commit conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ21\" duration: 0\n",
+				buf.String())
+		})
+
+		t.Run("Tx Rollback", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.Error(t, tx.Wrap(func() error {
+				_, err := tx.Update("dbr_people").Set(
+					dbr.Column("email").Str("new@email.com"),
+				).Where(dbr.Column("id").GreaterOrEqual().PlaceHolder()).Interpolate().Exec(context.TODO())
+				return err
+			}))
+
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ27\"\nDEBUG Exec conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ27\" update_id: \"UNIQ30\" table: \"dbr_people\" duration: 0 sql: \"UPDATE /*ID:UNIQ30*/ `dbr_people` SET `email`='new@email.com' WHERE (`id` >= ?)\"\nDEBUG Rollback conn_pool_id: \"UNIQ03\" conn_id: \"UNIQ15\" tx_id: \"UNIQ27\" duration: 0\n",
+				buf.String())
+		})
 	})
 }

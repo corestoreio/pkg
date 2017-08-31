@@ -65,7 +65,11 @@ func NewDelete(from string) *Delete {
 	}
 }
 
-func newDeleteFrom(db ExecPreparer, l log.Logger, from, id string) *Delete {
+func newDeleteFrom(db ExecPreparer, idFn uniqueIDFn, l log.Logger, from string) *Delete {
+	id := idFn()
+	if l != nil {
+		l = l.With(log.String("delete_id", id), log.String("table", from))
+	}
 	return &Delete{
 		BuilderBase: BuilderBase{
 			id:    id,
@@ -81,34 +85,19 @@ func newDeleteFrom(db ExecPreparer, l log.Logger, from, id string) *Delete {
 
 // DeleteFrom creates a new Delete for the given table
 func (c *ConnPool) DeleteFrom(from string) *Delete {
-	l := c.Log
-	id := c.makeUniqueID()
-	if l != nil {
-		l = c.Log.With(log.String("delete_id", id), log.String("table", from))
-	}
-	return newDeleteFrom(c.DB, l, from, id)
+	return newDeleteFrom(c.DB, c.makeUniqueID, c.Log, from)
 }
 
 // DeleteFrom creates a new Delete for the given table
 // in the context for a single database connection.
 func (c *Conn) DeleteFrom(from string) *Delete {
-	l := c.Log
-	id := c.makeUniqueID()
-	if l != nil {
-		l = c.Log.With(log.String("delete_id", id), log.String("table", from))
-	}
-	return newDeleteFrom(c.DB, l, from, id)
+	return newDeleteFrom(c.DB, c.makeUniqueID, c.Log, from)
 }
 
 // DeleteFrom creates a new Delete for the given table
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from string) *Delete {
-	l := tx.Log
-	id := tx.makeUniqueID()
-	if l != nil {
-		l = tx.Log.With(log.String("delete_id", id), log.String("table", from))
-	}
-	return newDeleteFrom(tx.DB, l, from, id)
+	return newDeleteFrom(tx.DB, tx.makeUniqueID, tx.Log, from)
 }
 
 // Alias sets an alias for the table name.
