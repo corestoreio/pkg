@@ -79,13 +79,13 @@ func NewWith(expressions ...WithCTE) *With {
 	}
 }
 
-func withInitLog(l log.Logger, expressions []WithCTE, id, connType string) log.Logger {
+func withInitLog(l log.Logger, expressions []WithCTE, id string) log.Logger {
 	if l != nil {
 		tables := make([]string, len(expressions))
 		for i, w := range expressions {
 			tables[i] = w.Name
 		}
-		l = l.With(log.String(connType, "With"), log.String("id", id), log.Strings("tables", tables...))
+		l = l.With(log.String("with_cte_id", id), log.Strings("tables", tables...))
 	}
 	return l
 }
@@ -96,7 +96,7 @@ func (c *ConnPool) With(expressions ...WithCTE) *With {
 	return &With{
 		BuilderBase: BuilderBase{
 			id:  id,
-			Log: withInitLog(c.Log, expressions, id, "ConnPool"),
+			Log: withInitLog(c.Log, expressions, id),
 		},
 		Subclauses: expressions,
 		DB:         c.DB,
@@ -109,7 +109,7 @@ func (c *Conn) With(expressions ...WithCTE) *With {
 	return &With{
 		BuilderBase: BuilderBase{
 			id:  id,
-			Log: withInitLog(c.Log, expressions, id, "Conn"),
+			Log: withInitLog(c.Log, expressions, id),
 		},
 		Subclauses: expressions,
 		DB:         c.DB,
@@ -122,7 +122,7 @@ func (tx *Tx) With(expressions ...WithCTE) *With {
 	return &With{
 		BuilderBase: BuilderBase{
 			id:  id,
-			Log: withInitLog(tx.Log, expressions, id, "Tx"),
+			Log: withInitLog(tx.Log, expressions, id),
 		},
 		Subclauses: expressions,
 		DB:         tx.DB,
@@ -211,11 +211,11 @@ func (b *With) hasBuildCache() bool {
 
 func (b *With) toSQL(w *bytes.Buffer) error {
 
-	w.WriteString("WITH")
+	w.WriteString("WITH ")
+	writeStmtID(w, b.id)
 	if b.IsRecursive {
-		w.WriteString(" RECURSIVE")
+		w.WriteString("RECURSIVE ")
 	}
-	w.WriteRune('\n')
 
 	for i, sc := range b.Subclauses {
 		Quoter.quote(w, sc.Name)
@@ -302,19 +302,6 @@ func (b *With) appendArgs(args Arguments) (_ Arguments, err error) {
 	return nil, errors.NewEmptyf("[dbr] Type With misses a top level statement")
 }
 
-// Query executes a query and returns many rows.
-func (b *With) Query(ctx context.Context) (*sql.Rows, error) {
-	rows, err := Query(ctx, b.DB, b)
-	return rows, errors.WithStack(err)
-}
-
-// Load loads data from a query into an object. You must set DB.QueryContext on
-// the With object or it just panics. Load can load a single row or n-rows.
-func (b *With) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
-	rowCount, err = Load(ctx, b.DB, b, s)
-	return rowCount, errors.WithStack(err)
-}
-
 func (b *With) bindRecord(records []QualifiedRecord) {
 	// Current pattern: To whom it may concern.
 
@@ -337,17 +324,38 @@ func (b *With) bindRecord(records []QualifiedRecord) {
 	case b.TopLevel.Delete != nil:
 		b.TopLevel.Delete.bindRecord(records)
 	}
+}
 
+// Query executes a query and returns many rows.
+func (b *With) Query(ctx context.Context) (*sql.Rows, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Query", log.Stringer("sql", b))
+	}
+	rows, err := Query(ctx, b.DB, b)
+	return rows, errors.WithStack(err)
+}
+
+// Load loads data from a query into an object. You must set DB.QueryContext on
+// the With object or it just panics. Load can load a single row or n-rows.
+func (b *With) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Load", log.Int64("row_count", rowCount), log.Stringer("sql", b))
+	}
+	rowCount, err = Load(ctx, b.DB, b, s)
+	return rowCount, errors.WithStack(err)
 }
 
 // Prepare prepares a SQL statement. Sets IsInterpolate to false.
 func (b *With) Prepare(ctx context.Context) (*StmtWith, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
+	}
 	stmt, err := Prepare(ctx, b.DB, b)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	const cap = 10 // just a guess; needs to b more precise but later.
+	const cap = 10 // just a guess; needs to be more precise but later.
 	return &StmtWith{
 		StmtBase: StmtBase{
 			stmt:       stmt,

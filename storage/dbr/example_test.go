@@ -791,9 +791,9 @@ func ExampleWith_Union() {
 
 	// Output:
 	//Prepared Statement:
-	//WITH
-	//`sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount)
-	//FROM `sales_days` WHERE (Year(day_of_sale) = ?) GROUP BY Month(day_of_sale))),
+	//WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale),
+	//Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = ?) GROUP BY
+	//Month(day_of_sale))),
 	//`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "best" FROM
 	//`sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),
 	//`worst_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, "worst"
@@ -805,9 +805,8 @@ func ExampleWith_Union() {
 	//Arguments: [2015]
 	//
 	//Interpolated Statement:
-	//WITH
-	//`sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale), Sum(amount)
-	//FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY
+	//WITH `sales_by_month` (`month`,`total`) AS (SELECT Month(day_of_sale),
+	//Sum(amount) FROM `sales_days` WHERE (Year(day_of_sale) = 2015) GROUP BY
 	//Month(day_of_sale))),
 	//`best_month` (`month`,`total`,`award`) AS (SELECT `month`, `total`, 'best' FROM
 	//`sales_by_month` WHERE (`total` = (SELECT Max(total) FROM `sales_by_month`))),

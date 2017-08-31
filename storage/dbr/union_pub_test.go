@@ -15,11 +15,12 @@
 package dbr_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"sync/atomic"
 	"testing"
 
-	"bytes"
-	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -27,7 +28,6 @@ import (
 	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sync/atomic"
 )
 
 func TestUnion_Query(t *testing.T) {
@@ -298,7 +298,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 row_count: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
 				buf.String())
 		})
 
@@ -361,7 +361,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 row_count: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
 				buf.String())
 		})
 
@@ -413,5 +413,4 @@ func TestUnion_WithLogger(t *testing.T) {
 				buf.String())
 		})
 	})
-
 }

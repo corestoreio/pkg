@@ -144,6 +144,12 @@ func (u *Union) String() string {
 	return makeSQL(u, u.IsInterpolate)
 }
 
+// String returns a string representing a preprocessed, interpolated, query.
+// On error, the error gets printed. Fulfills interface fmt.Stringer.
+func (b *With) String() string {
+	return makeSQL(b, b.IsInterpolate)
+}
+
 func sqlWriteUnionAll(w *bytes.Buffer, isAll bool, isIntersect bool, isExcept bool) {
 	w.WriteByte('\n')
 	switch {

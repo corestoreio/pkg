@@ -384,7 +384,7 @@ func (u *Union) Query(ctx context.Context) (*sql.Rows, error) {
 // SQL string.
 func (u *Union) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
 	if u.Log != nil && u.Log.IsDebug() {
-		defer log.WhenDone(u.Log).Debug("Load", log.Stringer("sql", u))
+		defer log.WhenDone(u.Log).Debug("Load", log.Int64("row_count", rowCount), log.Stringer("sql", u))
 	}
 	rowCount, err = Load(ctx, u.DB, u, s)
 	return rowCount, errors.WithStack(err)

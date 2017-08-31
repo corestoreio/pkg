@@ -16,14 +16,15 @@ package dbr_test
 
 import (
 	"database/sql"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
-	"time"
 )
 
 var now = func() time.Time {

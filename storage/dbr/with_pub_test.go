@@ -15,13 +15,17 @@
 package dbr_test
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"sync/atomic"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -73,8 +77,8 @@ func TestNewWith(t *testing.T) {
 			dbr.WithCTE{Name: "one", Select: dbr.NewSelect().Unsafe().AddColumns("1")},
 		).Select(dbr.NewSelect().Star().From("one"))
 		compareToSQL(t, cte, nil,
-			"WITH\n`one` AS (SELECT 1)\nSELECT * FROM `one`",
-			"WITH\n`one` AS (SELECT 1)\nSELECT * FROM `one`",
+			"WITH `one` AS (SELECT 1)\nSELECT * FROM `one`",
+			"WITH `one` AS (SELECT 1)\nSELECT * FROM `one`",
 		)
 	})
 	t.Run("one CTE recursive", func(t *testing.T) {
@@ -89,8 +93,8 @@ func TestNewWith(t *testing.T) {
 			},
 		).Recursive().Select(dbr.NewSelect().Star().From("cte"))
 		compareToSQL(t, cte, nil,
-			"WITH RECURSIVE\n`cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < ?)))\nSELECT * FROM `cte`",
-			"WITH RECURSIVE\n`cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < 5)))\nSELECT * FROM `cte`",
+			"WITH RECURSIVE `cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < ?)))\nSELECT * FROM `cte`",
+			"WITH RECURSIVE `cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT n+1 FROM `cte` WHERE (`n` < 5)))\nSELECT * FROM `cte`",
 			int64(5),
 		)
 	})
@@ -101,8 +105,8 @@ func TestNewWith(t *testing.T) {
 			dbr.WithCTE{Name: "derived", Select: dbr.NewSelect().Star().From("intermed").Where(dbr.Column("x").Less().Int(10))},
 		).Select(dbr.NewSelect().Star().From("derived"))
 		compareToSQL(t, cte, nil,
-			"WITH\n`intermed` AS (SELECT * FROM `test` WHERE (`x` >= ?)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < ?))\nSELECT * FROM `derived`",
-			"WITH\n`intermed` AS (SELECT * FROM `test` WHERE (`x` >= 5)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < 10))\nSELECT * FROM `derived`",
+			"WITH `intermed` AS (SELECT * FROM `test` WHERE (`x` >= ?)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < ?))\nSELECT * FROM `derived`",
+			"WITH `intermed` AS (SELECT * FROM `test` WHERE (`x` >= 5)),\n`derived` AS (SELECT * FROM `intermed` WHERE (`x` < 10))\nSELECT * FROM `derived`",
 			int64(5), int64(10),
 		)
 	})
@@ -111,7 +115,7 @@ func TestNewWith(t *testing.T) {
 			dbr.WithCTE{Name: "multi", Columns: []string{"x", "y"}, Select: dbr.NewSelect().Unsafe().AddColumns("1", "2")},
 		).Select(dbr.NewSelect("x", "y").From("multi"))
 		compareToSQL(t, cte, nil,
-			"WITH\n`multi` (`x`,`y`) AS (SELECT 1, 2)\nSELECT `x`, `y` FROM `multi`",
+			"WITH `multi` (`x`,`y`) AS (SELECT 1, 2)\nSELECT `x`, `y` FROM `multi`",
 			"",
 		)
 	})
@@ -122,8 +126,8 @@ func TestNewWith(t *testing.T) {
 		).Delete(dbr.NewDelete("test").Where(dbr.Column("val").In().Sub(dbr.NewSelect("val").From("check_vals"))))
 
 		compareToSQL(t, cte, nil,
-			"WITH\n`check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
-			"WITH\n`check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
+			"WITH `check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
+			"WITH `check_vals` (`val`) AS (SELECT 123)\nDELETE FROM `test` WHERE (`val` IN (SELECT `val` FROM `check_vals`))",
 		)
 	})
 	t.Run("UPDATE", func(t *testing.T) {
@@ -137,8 +141,8 @@ func TestNewWith(t *testing.T) {
 			Recursive()
 
 		compareToSQL(t, cte, nil,
-			"WITH RECURSIVE\n`my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < ?)))\nUPDATE `numbers` SET `n`=? WHERE (n=my_cte.n*my_cte.n)",
-			"WITH RECURSIVE\n`my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
+			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < ?)))\nUPDATE `numbers` SET `n`=? WHERE (n=my_cte.n*my_cte.n)",
+			"WITH RECURSIVE `my_cte` (`n`) AS ((SELECT 1)\nUNION ALL\n(SELECT 1+n FROM `my_cte` WHERE (`n` < 6)))\nUPDATE `numbers` SET `n`=0 WHERE (n=my_cte.n*my_cte.n)",
 			int64(6), int64(0),
 		)
 		//WITH RECURSIVE my_cte(n) AS
@@ -312,5 +316,173 @@ func TestWith_Prepare(t *testing.T) {
 			assert.Nil(t, rows)
 		})
 	})
+}
 
+func TestWith_WithLogger(t *testing.T) {
+	uniID := new(int32)
+	rConn := createRealSession(t)
+	defer cstesting.Close(t, rConn)
+
+	var uniqueIDFunc = func() string {
+		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 2))
+	}
+
+	buf := new(bytes.Buffer)
+	lg := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithWriter(buf),
+		logw.WithFlag(0), // no flags at all
+	)
+	require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
+
+	cte := dbr.WithCTE{
+		Name:    "zehTeEh",
+		Columns: []string{"name2", "email2"},
+		Union: dbr.NewUnion(
+			dbr.NewSelect("name").AddColumnsAliases("email", "email").From("dbr_people"),
+			dbr.NewSelect("name", "email").FromAlias("dbr_people", "dp2").Where(dbr.Column("id").In().Int64s(6, 8)),
+		).All(),
+	}
+	cteSel := dbr.NewSelect().Star().From("zehTeEh")
+
+	t.Run("ConnPool", func(t *testing.T) {
+
+		u := rConn.With(cte).Select(cteSel)
+
+		t.Run("Query", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			rows, err := u.Interpolate().Query(context.TODO())
+			require.NoError(t, err)
+			require.NoError(t, rows.Close())
+
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID:UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
+				buf.String())
+		})
+
+		t.Run("Load", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			p := &dbrPerson{}
+			_, err := u.Interpolate().Load(context.TODO(), p)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 row_count: 0 sql: \"WITH /*ID:UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+			stmt, err := u.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ02\" with_cte_id: \"UNIQ04\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID:UNIQ04*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?))))\\nSELECT * FROM `zehTeEh`\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := rConn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				rows, err := tx.With(
+					dbr.WithCTE{
+						Name:    "zehTeEh",
+						Columns: []string{"name2", "email2"},
+						Union: dbr.NewUnion(
+							dbr.NewSelect("name").AddColumnsAliases("email", "email").From("dbr_people"),
+							dbr.NewSelect("name", "email").FromAlias("dbr_people", "dp2").Where(dbr.Column("id").In().Int64s(6, 8)),
+						).All(),
+					},
+				).Recursive().
+					Select(dbr.NewSelect().Star().From("zehTeEh")).Interpolate().Query(context.TODO())
+
+				require.NoError(t, err)
+				return rows.Close()
+			}))
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ02\" tx_id: \"UNIQ06\"\nDEBUG Query conn_pool_id: \"UNIQ02\" tx_id: \"UNIQ06\" with_cte_id: \"UNIQ08\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID:UNIQ08*/ RECURSIVE `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\nDEBUG Commit conn_pool_id: \"UNIQ02\" tx_id: \"UNIQ06\" duration: 0\n",
+				buf.String())
+		})
+	})
+
+	t.Run("Conn", func(t *testing.T) {
+		conn, err := rConn.Conn(context.TODO())
+		require.NoError(t, err)
+
+		u := conn.With(cte).Select(cteSel)
+
+		t.Run("Query", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+
+			rows, err := u.Interpolate().Query(context.TODO())
+			require.NoError(t, err)
+			require.NoError(t, rows.Close())
+
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID:UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
+				buf.String())
+		})
+
+		t.Run("Load", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			p := &dbrPerson{}
+			_, err := u.Interpolate().Load(context.TODO(), p)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 row_count: 0 sql: \"WITH /*ID:UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := u.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" with_cte_id: \"UNIQ12\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID:UNIQ12*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?))))\\nSELECT * FROM `zehTeEh`\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				rows, err := tx.With(cte).Select(cteSel).Interpolate().Query(context.TODO())
+				if err != nil {
+					return err
+				}
+				return rows.Close()
+			}))
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ14\"\nDEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ14\" with_cte_id: \"UNIQ16\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID:UNIQ16*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh`\"\nDEBUG Commit conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ14\" duration: 0\n",
+				buf.String())
+		})
+
+		t.Run("Tx Rollback", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.Error(t, tx.Wrap(func() error {
+				rows, err := tx.With(cte).Select(cteSel.Where(dbr.Column("email").In().PlaceHolder())).Interpolate().Query(context.TODO())
+				if err != nil {
+					return err
+				}
+				return rows.Close()
+			}))
+
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ18\"\nDEBUG Query conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ18\" with_cte_id: \"UNIQ20\" tables: \"zehTeEh\" duration: 0 sql: \"WITH /*ID:UNIQ20*/ `zehTeEh` (`name2`,`email2`) AS ((SELECT `name`, `email` AS `email` FROM `dbr_people`)\\nUNION ALL\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8))))\\nSELECT * FROM `zehTeEh` WHERE (`email` IN (?))\"\nDEBUG Rollback conn_pool_id: \"UNIQ02\" conn_id: \"UNIQ10\" tx_id: \"UNIQ18\" duration: 0\n",
+				buf.String())
+		})
+	})
 }
