@@ -84,7 +84,7 @@ func (c *ConnPool) DeleteFrom(from string) *Delete {
 	l := c.Log
 	id := c.makeUniqueID()
 	if l != nil {
-		l = c.Log.With(log.String("deleteID", id), log.String("table", from))
+		l = c.Log.With(log.String("delete_id", id), log.String("table", from))
 	}
 	return newDeleteFrom(c.DB, l, from, id)
 }
@@ -95,7 +95,7 @@ func (c *Conn) DeleteFrom(from string) *Delete {
 	l := c.Log
 	id := c.makeUniqueID()
 	if l != nil {
-		l = c.Log.With(log.String("deleteID", id), log.String("table", from))
+		l = c.Log.With(log.String("delete_id", id), log.String("table", from))
 	}
 	return newDeleteFrom(c.DB, l, from, id)
 }
@@ -106,7 +106,7 @@ func (tx *Tx) DeleteFrom(from string) *Delete {
 	l := tx.Log
 	id := tx.makeUniqueID()
 	if l != nil {
-		l = tx.Log.With(log.String("deleteID", id), log.String("table", from))
+		l = tx.Log.With(log.String("delete_id", id), log.String("table", from))
 	}
 	return newDeleteFrom(tx.DB, l, from, id)
 }
@@ -316,10 +316,12 @@ func (b *Delete) Prepare(ctx context.Context) (*StmtDelete, error) {
 	cap := len(b.Wheres)
 	return &StmtDelete{
 		StmtBase: StmtBase{
+			id:         b.id,
 			stmt:       sqlStmt,
 			argsCache:  make(Arguments, 0, cap),
 			argsRaw:    make([]interface{}, 0, cap),
 			bindRecord: b.bindRecord,
+			log:        b.Log,
 		},
 		del: b,
 	}, nil

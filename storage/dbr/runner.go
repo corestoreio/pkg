@@ -428,6 +428,7 @@ func (b *BuilderConditional) join(j string, t identifier, on ...*Condition) {
 // for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
 // Close!
 type StmtBase struct {
+	id   string // tracing ID
 	stmt *sql.Stmt
 	// argsCache can be a sync.Pool and when calling Close function the
 	// interface slice gets returned to the pool
@@ -442,7 +443,7 @@ type StmtBase struct {
 	// functions.
 	ärgErr     error // Sorry Germans for that terrible pun #notSorry
 	bindRecord func(records []QualifiedRecord)
-	Log        log.Logger
+	log        log.Logger
 }
 
 // Close closes the underlying prepared statement.
@@ -486,6 +487,8 @@ func (st *StmtBase) prepareArgs(args ...interface{}) error {
 	return nil
 }
 
+// Errors do not get logged in the next functions. Errors are getting handled.
+
 // Exec supports both either the traditional way or passing arguments or
 // in combination with the previously called WithArguments, WithRecords or
 // WithArgs functions. If you want to call it multiple times with the same
@@ -497,6 +500,9 @@ func (st *StmtBase) Exec(ctx context.Context, args ...interface{}) (sql.Result, 
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
 	}
+	if st.log != nil && st.log.IsDebug() {
+		defer log.WhenDone(st.log).Debug("Exec", log.Int("arg_len", len(st.argsRaw)))
+	}
 	return st.stmt.ExecContext(ctx, st.argsRaw...)
 }
 
@@ -504,6 +510,9 @@ func (st *StmtBase) Exec(ctx context.Context, args ...interface{}) (sql.Result, 
 func (st *StmtBase) Query(ctx context.Context, args ...interface{}) (*sql.Rows, error) {
 	if err := st.prepareArgs(args...); err != nil {
 		return nil, errors.WithStack(err)
+	}
+	if st.log != nil && st.log.IsDebug() {
+		defer log.WhenDone(st.log).Debug("Query", log.Int("arg_len", len(st.argsRaw)))
 	}
 	return st.stmt.QueryContext(ctx, st.argsRaw...)
 }
@@ -514,12 +523,19 @@ func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row 
 		_ = err
 		// Hmmm what should happen here?
 	}
+	if st.log != nil && st.log.IsDebug() {
+		defer log.WhenDone(st.log).Debug("QueryRow", log.Int("arg_len", len(st.argsRaw)))
+	}
 	return st.stmt.QueryRowContext(ctx, st.argsRaw...)
 }
 
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Select object or it just panics. Load can load a single row or n-rows.
 func (st *StmtBase) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	if st.log != nil && st.log.IsDebug() {
+		defer log.WhenDone(st.log).Debug("Load", log.Int64("row_count", rowCount),
+			log.Int("arg_len", len(st.argsRaw)), log.String("object_type", fmt.Sprintf("%T", s)))
+	}
 	r, err := st.Query(ctx)
 	rowCount, err = load(r, err, s)
 	return rowCount, errors.WithStack(err)
@@ -528,20 +544,22 @@ func (st *StmtBase) Load(ctx context.Context, s Scanner) (rowCount int64, err er
 // LoadInt64 executes the prepared statement and returns the value at an int64.
 // It returns a NotFound error if the query returns nothing.
 func (st *StmtBase) LoadInt64(ctx context.Context) (int64, error) {
-	if st.Log != nil && st.Log.IsDebug() {
-		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(st.Log).Debug("dbr.Select.StmtBase.LoadInt64", log.String("sql", "TODO"))
+	if st.log != nil && st.log.IsDebug() {
+		defer log.WhenDone(st.log).Debug("LoadInt64", log.Int("arg_len", len(st.argsRaw)))
 	}
 	return loadInt64(st.Query(ctx))
 }
 
 // LoadInt64s executes the Select and returns the value as a slice of int64s.
-func (st *StmtBase) LoadInt64s(ctx context.Context) ([]int64, error) {
-	if st.Log != nil && st.Log.IsDebug() {
+func (st *StmtBase) LoadInt64s(ctx context.Context) (ret []int64, err error) {
+	if st.log != nil && st.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(st.Log).Debug("dbr.Select.StmtBase.LoadInt64s", log.String("sql", "TODO"))
+		defer log.WhenDone(st.log).Debug("LoadInt64s", log.Int("row_count", len(ret)), log.Int("arg_len", len(st.argsRaw)))
 	}
-	return loadInt64s(st.Query(ctx))
+	ret, err = loadInt64s(st.Query(ctx))
+	// Do not simplify it because we need ret in the defer. we don't log errors
+	// because they get handled.
+	return ret, err
 }
 
 // More Load* functions can be added later

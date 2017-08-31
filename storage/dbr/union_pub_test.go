@@ -285,7 +285,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
-			assert.Exactly(t, "DEBUG Query ConnPoolID: \"UNIQ01\" unionID: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
 				buf.String())
 		})
 
@@ -298,7 +298,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load ConnPoolID: \"UNIQ01\" unionID: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (6,8)))\"\n",
 				buf.String())
 		})
 
@@ -308,7 +308,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQ01\" unionID: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" union_id: \"UNIQ02\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ02*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
 				buf.String())
 		})
 
@@ -325,7 +325,7 @@ func TestUnion_WithLogger(t *testing.T) {
 				require.NoError(t, rows.Close())
 				return err
 			}))
-			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQ01\" TxID: \"UNIQ03\"\nDEBUG Query ConnPoolID: \"UNIQ01\" TxID: \"UNIQ03\" unionID: \"UNIQ04\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ04*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (7,9)))\"\nDEBUG Commit ConnPoolID: \"UNIQ01\" TxID: \"UNIQ03\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" tx_id: \"UNIQ03\"\nDEBUG Query conn_pool_id: \"UNIQ01\" tx_id: \"UNIQ03\" union_id: \"UNIQ04\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ04*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (7,9)))\"\nDEBUG Commit conn_pool_id: \"UNIQ01\" tx_id: \"UNIQ03\" duration: 0\n",
 				buf.String())
 		})
 	})
@@ -348,7 +348,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
-			assert.Exactly(t, "DEBUG Query ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" unionID: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
 				buf.String())
 		})
 
@@ -361,7 +361,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" unionID: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81)))\"\n",
 				buf.String())
 		})
 
@@ -372,7 +372,7 @@ func TestUnion_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" unionID: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" union_id: \"UNIQ06\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ06*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?)))\"\n",
 				buf.String())
 		})
 
@@ -390,7 +390,7 @@ func TestUnion_WithLogger(t *testing.T) {
 				}
 				return rows.Close()
 			}))
-			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ07\"\nDEBUG Query ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ07\" unionID: \"UNIQ08\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ08*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (71,91)))\"\nDEBUG Commit ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ07\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ07\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ07\" union_id: \"UNIQ08\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ08*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (71,91)))\"\nDEBUG Commit conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ07\" duration: 0\n",
 				buf.String())
 		})
 
@@ -409,7 +409,7 @@ func TestUnion_WithLogger(t *testing.T) {
 				return rows.Close()
 			}))
 
-			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ09\"\nDEBUG Query ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ09\" unionID: \"UNIQ10\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ10*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?)))\"\nDEBUG Rollback ConnPoolID: \"UNIQ01\" ConnID: \"UNIQ05\" TxID: \"UNIQ09\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" union_id: \"UNIQ10\" tables: \"dbr_people, dbr_people\" duration: 0 sql: \"(SELECT /*ID:UNIQ10*/ `name`, `email` AS `email` FROM `dbr_people`)\\nUNION\\n(SELECT `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?)))\"\nDEBUG Rollback conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" duration: 0\n",
 				buf.String())
 		})
 	})

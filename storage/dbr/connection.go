@@ -95,11 +95,11 @@ type ConnPoolOption func(*ConnPool) error
 // The returned unique ID from `uniqueIDFn` gets used in logging and inserted as
 // a comment into the SQL string for tracing in server log files and PROCESS
 // LIST. The returned string must not contain the comment-end-termination
-// pattern: `*/`.
+// pattern: `*/`. The `uniqueIDFn` must be thread safe.
 func WithLogger(l log.Logger, uniqueIDFn func() string) ConnPoolOption {
 	return func(c *ConnPool) error {
 		c.makeUniqueID = uniqueIDFn
-		c.Log = l.With(log.String("ConnPoolID", c.makeUniqueID()))
+		c.Log = l.With(log.String("conn_pool_id", c.makeUniqueID()))
 		return nil
 	}
 }
@@ -219,7 +219,7 @@ func (c *ConnPool) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error
 	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("TxID", c.makeUniqueID()))
+		l = l.With(log.String("tx_id", c.makeUniqueID()))
 		if l.IsDebug() {
 			l.Debug("BeginTx")
 		}
@@ -245,7 +245,7 @@ func (c *ConnPool) Conn(ctx context.Context) (*Conn, error) {
 	dbc, err := c.DB.Conn(ctx)
 	l := c.Log
 	if l != nil {
-		l = c.Log.With(log.String("ConnID", c.makeUniqueID()))
+		l = c.Log.With(log.String("conn_id", c.makeUniqueID()))
 	}
 	return &Conn{
 		logWithID: logWithID{
@@ -276,7 +276,7 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	}
 	l := c.Log
 	if l != nil {
-		l = l.With(log.String("TxID", c.makeUniqueID()))
+		l = l.With(log.String("tx_id", c.makeUniqueID()))
 		if l.IsDebug() {
 			l.Debug("BeginTx")
 		}

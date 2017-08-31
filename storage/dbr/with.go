@@ -354,7 +354,7 @@ func (b *With) Prepare(ctx context.Context) (*StmtWith, error) {
 			argsCache:  make(Arguments, 0, cap),
 			argsRaw:    make([]interface{}, 0, cap),
 			bindRecord: b.bindRecord,
-			Log:        b.Log,
+			log:        b.Log,
 		},
 		with: b,
 	}, nil

@@ -63,7 +63,7 @@ func unionInitLog(l log.Logger, selects []*Select, id string) log.Logger {
 		for i, s := range selects {
 			tables[i] = s.Table.Name
 		}
-		l = l.With(log.String("unionID", id), log.Strings("tables", tables...))
+		l = l.With(log.String("union_id", id), log.Strings("tables", tables...))
 	}
 	return l
 }
@@ -407,7 +407,7 @@ func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
 			argsCache:  args,
 			argsRaw:    make([]interface{}, 0, len(args)),
 			bindRecord: u.bindRecord,
-			Log:        u.Log,
+			log:        u.Log,
 		},
 		uni: u,
 	}, nil

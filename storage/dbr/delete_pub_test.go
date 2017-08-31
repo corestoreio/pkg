@@ -194,7 +194,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			_, err := d.Interpolate().Exec(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Exec ConnPoolID: \"UNIQUEID01\" deleteID: \"UNIQUEID02\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID02*/ FROM `dbr_people` WHERE (`id` >= 34.56)\"\n",
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQUEID01\" delete_id: \"UNIQUEID02\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID02*/ FROM `dbr_people` WHERE (`id` >= 34.56)\"\n",
 				buf.String())
 		})
 
@@ -204,7 +204,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQUEID01\" deleteID: \"UNIQUEID02\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID02*/ FROM `dbr_people` WHERE (`id` >= ?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" delete_id: \"UNIQUEID02\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID02*/ FROM `dbr_people` WHERE (`id` >= ?)\"\n",
 				buf.String())
 		})
 
@@ -218,7 +218,7 @@ func TestDelete_WithLogger(t *testing.T) {
 					return err
 				}
 
-				assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQUEID01\" TxID: \"UNIQUEID03\"\nDEBUG Exec ConnPoolID: \"UNIQUEID01\" TxID: \"UNIQUEID03\" deleteID: \"UNIQUEID04\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID04*/ FROM `dbr_people` WHERE (`id` >= 36.56)\"\n",
+				assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" tx_id: \"UNIQUEID03\" delete_id: \"UNIQUEID04\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID04*/ FROM `dbr_people` WHERE (`id` >= 36.56)\"\n",
 					buf.String())
 
 				return nil
@@ -240,7 +240,7 @@ func TestDelete_WithLogger(t *testing.T) {
 			_, err := d.Interpolate().Exec(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" deleteID: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dbr_people` WHERE (`id` >= 39.56)\"\n",
+			assert.Exactly(t, "DEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dbr_people` WHERE (`id` >= 39.56)\"\n",
 				buf.String())
 		})
 
@@ -251,7 +251,21 @@ func TestDelete_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			defer stmt.Close()
 
-			assert.Exactly(t, "DEBUG Prepare ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" deleteID: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dbr_people` WHERE (`id` >= ?)\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dbr_people` WHERE (`id` >= ?)\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare Exec", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := d.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			_, err = stmt.Exec(context.TODO(), 41.57)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID06*/ FROM `dbr_people` WHERE (`id` >= ?)\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" delete_id: \"UNIQUEID06\" table: \"dbr_people\" duration: 0 arg_len: 1\n",
 				buf.String())
 		})
 
@@ -264,7 +278,7 @@ func TestDelete_WithLogger(t *testing.T) {
 				return err
 			}))
 
-			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" TxID: \"UNIQUEID07\"\nDEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" TxID: \"UNIQUEID07\" deleteID: \"UNIQUEID08\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID08*/ FROM `dbr_people` WHERE (`id` >= 37.56)\"\nDEBUG Commit ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" TxID: \"UNIQUEID07\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" tx_id: \"UNIQUEID07\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" tx_id: \"UNIQUEID07\" delete_id: \"UNIQUEID08\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID08*/ FROM `dbr_people` WHERE (`id` >= 37.56)\"\nDEBUG Commit conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" tx_id: \"UNIQUEID07\" duration: 0\n",
 				buf.String())
 		})
 
@@ -277,7 +291,7 @@ func TestDelete_WithLogger(t *testing.T) {
 				return err
 			}))
 
-			assert.Exactly(t, "DEBUG BeginTx ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" TxID: \"UNIQUEID09\"\nDEBUG Exec ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" TxID: \"UNIQUEID09\" deleteID: \"UNIQUEID10\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID10*/ FROM `dbr_people` WHERE (`id` >= ?)\"\nDEBUG Rollback ConnPoolID: \"UNIQUEID01\" ConnID: \"UNIQUEID05\" TxID: \"UNIQUEID09\" duration: 0\n",
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" tx_id: \"UNIQUEID09\"\nDEBUG Exec conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" tx_id: \"UNIQUEID09\" delete_id: \"UNIQUEID10\" table: \"dbr_people\" duration: 0 sql: \"DELETE /*ID:UNIQUEID10*/ FROM `dbr_people` WHERE (`id` >= ?)\"\nDEBUG Rollback conn_pool_id: \"UNIQUEID01\" conn_id: \"UNIQUEID05\" tx_id: \"UNIQUEID09\" duration: 0\n",
 				buf.String())
 		})
 	})
