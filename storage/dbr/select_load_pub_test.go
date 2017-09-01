@@ -26,8 +26,10 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
+	"github.com/corestoreio/log/logw"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sync/atomic"
 )
 
 func TestSelect_Rows(t *testing.T) {
@@ -412,5 +414,258 @@ func TestSelect_Prepare(t *testing.T) {
 			assert.Exactly(t, []int64{36, 37}, val)
 		})
 
+	})
+}
+
+func TestSelect_WithLogger(t *testing.T) {
+	uniID := new(int32)
+	rConn := createRealSession(t)
+	defer cstesting.Close(t, rConn)
+
+	var uniqueIDFunc = func() string {
+		return fmt.Sprintf("UNIQ%02d", atomic.AddInt32(uniID, 1))
+	}
+
+	buf := new(bytes.Buffer)
+	lg := logw.NewLog(
+		logw.WithLevel(logw.LevelDebug),
+		logw.WithWriter(buf),
+		logw.WithFlag(0), // no flags at all
+	)
+	require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
+
+	t.Run("ConnPool", func(t *testing.T) {
+		u := rConn.SelectFrom("dbr_people").AddColumns("name", "email").Where(dbr.Column("id").In().Int64s(6, 8))
+
+		t.Run("Query", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			rows, err := u.Interpolate().Query(context.TODO())
+			require.NoError(t, err)
+			require.NoError(t, rows.Close())
+
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("Load", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			p := &dbrPerson{}
+			_, err := u.Interpolate().Load(context.TODO(), p)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadInt64", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadInt64(context.TODO())
+			if !errors.IsNotFound(err) {
+				require.NoError(t, err)
+			}
+
+			assert.Exactly(t, "DEBUG LoadInt64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadInt64s", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadInt64s(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG LoadInt64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadUint64", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadUint64(context.TODO())
+			if !errors.IsNotFound(err) {
+				require.NoError(t, err)
+			}
+			assert.Exactly(t, "DEBUG LoadUint64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadUint64s", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadUint64s(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG LoadUint64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadFloat64", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadFloat64(context.TODO())
+			if !errors.IsNotFound(err) {
+				require.NoError(t, err)
+			}
+			assert.Exactly(t, "DEBUG LoadFloat64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadFloat64s", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadFloat64s(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG LoadFloat64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadString", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadString(context.TODO())
+			if !errors.IsNotFound(err) {
+				require.NoError(t, err)
+			}
+
+			assert.Exactly(t, "DEBUG LoadString conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("LoadStrings", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			_, err := u.Interpolate().LoadStrings(context.TODO())
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG LoadStrings conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+			stmt, err := u.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (?,?))\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := rConn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				rows, err := tx.SelectFrom("dbr_people").
+					AddColumns("name", "email").Where(dbr.Column("id").In().Int64s(7, 9)).
+					Interpolate().Query(context.TODO())
+				require.NoError(t, err)
+				return rows.Close()
+			}))
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" tx_id: \"UNIQ03\"\nDEBUG Query conn_pool_id: \"UNIQ01\" tx_id: \"UNIQ03\" select_id: \"UNIQ04\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ04*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (7,9))\"\nDEBUG Commit conn_pool_id: \"UNIQ01\" tx_id: \"UNIQ03\" duration: 0\n",
+				buf.String())
+		})
+	})
+
+	t.Run("Conn", func(t *testing.T) {
+		conn, err := rConn.Conn(context.TODO())
+		require.NoError(t, err)
+
+		u := conn.SelectFrom("dbr_people", "dp2").AddColumns("name", "email").Where(dbr.Column("id").In().Int64s(61, 81))
+
+		t.Run("Query", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+
+			rows, err := u.Interpolate().Query(context.TODO())
+			require.NoError(t, err)
+			require.NoError(t, rows.Close())
+
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81))\"\n",
+				buf.String())
+		})
+
+		t.Run("Load", func(t *testing.T) {
+			defer func() {
+				buf.Reset()
+				u.IsInterpolate = false
+			}()
+			p := &dbrPerson{}
+			_, err := u.Interpolate().Load(context.TODO(), p)
+			require.NoError(t, err)
+
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81))\"\n",
+				buf.String())
+		})
+
+		t.Run("Prepare", func(t *testing.T) {
+			defer buf.Reset()
+
+			stmt, err := u.Prepare(context.TODO())
+			require.NoError(t, err)
+			defer stmt.Close()
+
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?))\"\n",
+				buf.String())
+		})
+
+		t.Run("Tx Commit", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.NoError(t, tx.Wrap(func() error {
+				rows, err := tx.SelectFrom("dbr_people").AddColumns("name", "email").Where(dbr.Column("id").In().Int64s(71, 91)).
+					Interpolate().Query(context.TODO())
+				if err != nil {
+					return err
+				}
+				return rows.Close()
+			}))
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ07\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ07\" select_id: \"UNIQ08\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ08*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (71,91))\"\nDEBUG Commit conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ07\" duration: 0\n",
+				buf.String())
+		})
+
+		t.Run("Tx Rollback", func(t *testing.T) {
+			defer buf.Reset()
+			tx, err := conn.BeginTx(context.TODO(), nil)
+			require.NoError(t, err)
+			require.Error(t, tx.Wrap(func() error {
+				rows, err := tx.SelectFrom("dbr_people").AddColumns("name", "email").Where(dbr.Column("id").In().PlaceHolder()).
+					Interpolate().Query(context.TODO())
+				if err != nil {
+					return err
+				}
+				return rows.Close()
+			}))
+
+			assert.Exactly(t, "DEBUG BeginTx conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\"\nDEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" select_id: \"UNIQ10\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ10*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (?))\"\nDEBUG Rollback conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" tx_id: \"UNIQ09\" duration: 0\n",
+				buf.String())
+		})
 	})
 }

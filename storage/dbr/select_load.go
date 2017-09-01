@@ -24,6 +24,9 @@ import (
 
 // Query executes a query and returns many rows.
 func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Query", log.Stringer("sql", b))
+	}
 	rows, err := Query(ctx, b.DB, b)
 	return rows, errors.WithStack(err)
 }
@@ -31,6 +34,9 @@ func (b *Select) Query(ctx context.Context) (*sql.Rows, error) {
 // Load loads data from a query into an object. You must set DB.QueryContext on
 // the Select object or it just panics. Load can load a single row or n-rows.
 func (b *Select) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Load", log.Stringer("sql", b))
+	}
 	rowCount, err = Load(ctx, b.DB, b, s)
 	return rowCount, errors.WithStack(err)
 }
@@ -41,6 +47,9 @@ func (b *Select) Load(ctx context.Context, s Scanner) (rowCount int64, err error
 // context is used for the preparation of the statement, not for the execution
 // of the statement.
 func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
+	if b.Log != nil && b.Log.IsDebug() {
+		defer log.WhenDone(b.Log).Debug("Prepare", log.Stringer("sql", b))
+	}
 	stmt, err := Prepare(ctx, b.DB, b)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -48,6 +57,7 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 	cap := b.argumentCapacity()
 	return &StmtSelect{
 		StmtBase: StmtBase{
+			id:         b.id,
 			stmt:       stmt,
 			argsCache:  make(Arguments, 0, cap),
 			argsRaw:    make([]interface{}, 0, cap),
@@ -102,7 +112,7 @@ func (b *Select) LoadInt64(ctx context.Context) (int64, error) {
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadInt64", log.String("sql", sqlStr))
 	}
 	return loadInt64(b.DB.QueryContext(ctx, sqlStr, args...))
 }
@@ -135,16 +145,17 @@ func loadInt64(rows *sql.Rows, errIn error) (value int64, err error) {
 }
 
 // LoadInt64s executes the Select and returns the value as a slice of int64s.
-func (b *Select) LoadInt64s(ctx context.Context) ([]int64, error) {
+func (b *Select) LoadInt64s(ctx context.Context) (ret []int64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64s", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadInt64s", log.Int("row_count", len(ret)), log.String("sql", sqlStr))
 	}
-	return loadInt64s(b.DB.QueryContext(ctx, sqlStr, args...))
+	ret, err = loadInt64s(b.DB.QueryContext(ctx, sqlStr, args...))
+	return ret, err // used in defer!
 }
 
 func loadInt64s(rows *sql.Rows, errIn error) (_ []int64, err error) {
@@ -181,7 +192,7 @@ func (b *Select) LoadUint64(ctx context.Context) (_ uint64, err error) {
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadUint64", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadUint64", log.String("sql", sqlStr))
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
@@ -212,14 +223,14 @@ func (b *Select) LoadUint64(ctx context.Context) (_ uint64, err error) {
 }
 
 // LoadUint64s executes the Select and returns the value at a slice of uint64s.
-func (b *Select) LoadUint64s(ctx context.Context) (_ []uint64, err error) {
+func (b *Select) LoadUint64s(ctx context.Context) (values []uint64, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadUint64s", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadUint64s", log.Int("row_count", len(values)), log.String("sql", sqlStr))
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
@@ -232,7 +243,7 @@ func (b *Select) LoadUint64s(ctx context.Context) (_ []uint64, err error) {
 		}
 	}()
 
-	values := make([]uint64, 0, 10)
+	values = make([]uint64, 0, 10)
 	for rows.Next() {
 		var value uint64
 		if err = rows.Scan(&value); err != nil {
@@ -255,7 +266,7 @@ func (b *Select) LoadFloat64(ctx context.Context) (_ float64, err error) {
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadFloat64", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadFloat64", log.String("sql", sqlStr))
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
@@ -293,7 +304,7 @@ func (b *Select) LoadFloat64s(ctx context.Context) (_ []float64, err error) {
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadFloat64s", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadFloat64s", log.String("sql", sqlStr))
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
@@ -329,7 +340,7 @@ func (b *Select) LoadString(ctx context.Context) (_ string, err error) {
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadInt64", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadString", log.String("sql", sqlStr))
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
@@ -360,14 +371,14 @@ func (b *Select) LoadString(ctx context.Context) (_ string, err error) {
 }
 
 // LoadStrings executes the Select and returns a slice of strings.
-func (b *Select) LoadStrings(ctx context.Context) (_ []string, err error) {
+func (b *Select) LoadStrings(ctx context.Context) (values []string, err error) {
 	sqlStr, args, err := b.ToSQL()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if b.Log != nil && b.Log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(b.Log).Debug("dbr.Select.LoadStrings", log.String("sql", sqlStr))
+		defer log.WhenDone(b.Log).Debug("LoadStrings", log.Int("row_count", len(values)), log.String("sql", sqlStr))
 	}
 
 	rows, err := b.DB.QueryContext(ctx, sqlStr, args...)
@@ -380,7 +391,7 @@ func (b *Select) LoadStrings(ctx context.Context) (_ []string, err error) {
 		}
 	}()
 
-	values := make([]string, 0, 10)
+	values = make([]string, 0, 10)
 	for rows.Next() {
 		var value string
 		if err = rows.Scan(&value); err != nil {

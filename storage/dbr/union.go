@@ -403,6 +403,7 @@ func (u *Union) Prepare(ctx context.Context) (*StmtUnion, error) {
 	args := u.makeArguments()
 	return &StmtUnion{
 		StmtBase: StmtBase{
+			id:         u.id,
 			stmt:       stmt,
 			argsCache:  args,
 			argsRaw:    make([]interface{}, 0, len(args)),
