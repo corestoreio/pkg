@@ -379,8 +379,9 @@ func (mq MysqlQuoter) ColumnsWithQualifier(t string, cols ...string) []string {
 	return cols
 }
 
-// maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-const maxIdentifierLength = 64
+// MaxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
+const MaxIdentifierLength = 64
+
 const dummyQualifier = "X" // just a dummy value, can be optimized later
 
 // IsValidIdentifier checks the permissible syntax for identifiers. Certain
@@ -396,24 +397,31 @@ const dummyQualifier = "X" // just a dummy value, can be optimized later
 // Returns 0 if the identifier is valid.
 //
 // http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-func isValidIdentifier(objectName string) int8 {
-	if objectName == sqlStar {
+func IsValidIdentifier(objectName string) (err error) {
+	if v := isValidIdentifier(objectName); v != 0 {
+		err = errors.NewNotValidf("[dbr] Invalid identifier %q (Case %d)", objectName, v)
+	}
+	return
+}
+
+func isValidIdentifier(s string) int8 {
+	if s == sqlStar {
 		return 0
 	}
 	qualifier := dummyQualifier
-	if i := strings.IndexByte(objectName, '.'); i >= 0 {
-		qualifier = objectName[:i]
-		objectName = objectName[i+1:]
+	if i := strings.IndexByte(s, '.'); i >= 0 {
+		qualifier = s[:i]
+		s = s[i+1:]
 	}
 
 	validQualifier := isNameValid(qualifier)
-	if validQualifier == 0 && objectName == sqlStar {
+	if validQualifier == 0 && s == sqlStar {
 		return 0
 	}
 	if validQualifier > 0 {
 		return validQualifier
 	}
-	return isNameValid(objectName)
+	return isNameValid(s)
 }
 
 // isNameValid returns 0 if the name is valid or an error number identifying
@@ -424,7 +432,7 @@ func isNameValid(name string) int8 {
 	}
 
 	ln := len(name)
-	if ln > maxIdentifierLength || name == "" {
+	if ln > MaxIdentifierLength || name == "" {
 		return 1
 	}
 	pos := 0

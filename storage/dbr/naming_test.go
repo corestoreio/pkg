@@ -17,6 +17,7 @@ package dbr
 import (
 	"testing"
 
+	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,6 +39,7 @@ func TestMakeAlias(t *testing.T) {
 //}
 
 func TestMysqlQuoter_QuoteAlias(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, alias, want string
 	}{
@@ -56,6 +58,7 @@ func TestMysqlQuoter_QuoteAlias(t *testing.T) {
 }
 
 func TestMysqlQuoter_Name(t *testing.T) {
+	t.Parallel()
 	assert.Exactly(t, "`tableName`", Quoter.Name("tableName"))
 	assert.Exactly(t, "`tableName`", Quoter.Name("table`Name"))
 	assert.Exactly(t, "``", Quoter.Name(""))
@@ -65,6 +68,7 @@ func TestMysqlQuoter_Name(t *testing.T) {
 }
 
 func TestIsValidIdentifier(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have string
 		want int8
@@ -98,4 +102,10 @@ func TestIsValidIdentifier(t *testing.T) {
 	for i, test := range tests {
 		assert.Exactly(t, test.want, isValidIdentifier(test.have), "Index %d with %q", i, test.have)
 	}
+}
+
+func TestIsValidIdentifier2(t *testing.T) {
+	t.Parallel()
+	assert.True(t, errors.IsNotValid(IsValidIdentifier("DATE_FORMAT(t3.period, '%Y-%m-01')")))
+	assert.NoError(t, IsValidIdentifier("table.col"))
 }
