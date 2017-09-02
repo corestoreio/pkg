@@ -138,7 +138,7 @@ func TestWithTableNames(t *testing.T) {
 	t.Run("Invalid Identifier", func(t *testing.T) {
 		err := ts.Options(csdb.WithTableNames("x1"))
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
-		assert.Contains(t, err.Error(), `Invalid character "\uf8ff" in name "x\uf8ff1"`)
+		assert.Contains(t, err.Error(), `identifier "x\uf8ff1" (Case 2)`)
 	})
 }
 

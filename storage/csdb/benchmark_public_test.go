@@ -107,7 +107,7 @@ func BenchmarkIsValidIdentifier(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkIsValidIdentifier = csdb.IsValidIdentifier(id)
+		benchmarkIsValidIdentifier = dbr.IsValidIdentifier(id)
 	}
 	if benchmarkIsValidIdentifier != nil {
 		b.Fatalf("%+v", benchmarkIsValidIdentifier)
@@ -151,7 +151,7 @@ func BenchmarkColumnsJoinFields(b *testing.B) {
 }
 
 var benchmarkLoadColumns map[string]csdb.Columns
-var benchmarkLoadColumnsHashWant = []byte{0x66, 0x73, 0x3c, 0x93, 0x11, 0x65, 0xbc, 0xcf}
+var benchmarkLoadColumnsHashWant = []byte{0x95, 0x7d, 0x84, 0x3c, 0x1f, 0x8, 0x94, 0x2e}
 
 func BenchmarkLoadColumns(b *testing.B) {
 	const tn = "eav_attribute"

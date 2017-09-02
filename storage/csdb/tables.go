@@ -64,8 +64,8 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 		priority: 10,
 		fn: func(tm *Tables) error {
 
-			if err := IsValidIdentifier(objectName); err != nil {
-				return errors.Wrapf(err, "[csdb] WithTableOrViewFromQuery.IsValidIdentifier")
+			if err := dbr.IsValidIdentifier(objectName); err != nil {
+				return errors.WithStack(err)
 			}
 
 			var viewOrTable string
@@ -117,8 +117,8 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 func WithTable(tableName string, cols ...*Column) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
-			if err := IsValidIdentifier(tableName); err != nil {
-				return errors.Wrap(err, "[csdb] WithNewTable.IsValidIdentifier")
+			if err := dbr.IsValidIdentifier(tableName); err != nil {
+				return errors.WithStack(err)
 			}
 
 			if err := tm.Upsert(NewTable(tableName, cols...)); err != nil {
@@ -135,27 +135,27 @@ func WithTable(tableName string, cols ...*Column) TableOption {
 // generator script of the CoreStore project, we can guarantee that the
 // generated index constant will always stay the same but the name of the table
 // differs.
-func WithTableLoadColumns(ctx context.Context, db dbr.Querier, tableNames ...string) TableOption {
+func WithTableLoadColumns(ctx context.Context, db dbr.Querier, names ...string) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
-
-			if err := IsValidIdentifier(tableNames...); err != nil {
-				return errors.Wrap(err, "[csdb] WithTableLoadColumns.IsValidIdentifier")
+			for _, n := range names {
+				if err := dbr.IsValidIdentifier(n); err != nil {
+					return errors.WithStack(err)
+				}
 			}
 
-			tc, err := LoadColumns(ctx, db, tableNames...)
+			tc, err := LoadColumns(ctx, db, names...)
 			if err != nil {
 				return errors.Wrap(err, "[csdb] Load columns failed")
 			}
 
-			for _, tableName := range tableNames {
-
-				t := NewTable(tableName)
+			for _, n := range names {
+				t := NewTable(n)
 				t.Schema = tm.Schema
 
-				t.Columns = tc[tableName]
+				t.Columns = tc[n]
 				if err := tm.Upsert(t); err != nil {
-					return errors.Wrapf(err, "[csdb] Tables.Insert for %q", tableName)
+					return errors.Wrapf(err, "[csdb] Tables.Insert for %q", n)
 				}
 			}
 			return nil
@@ -166,14 +166,16 @@ func WithTableLoadColumns(ctx context.Context, db dbr.Querier, tableNames ...str
 // WithTableNames creates for each table name and its index a new table pointer.
 // You should call afterwards the functional option WithLoadColumnDefinitions.
 // This function returns an error if a table index already exists.
-func WithTableNames(tableName ...string) TableOption {
+func WithTableNames(names ...string) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
-			if err := IsValidIdentifier(tableName...); err != nil {
-				return errors.Wrap(err, "[csdb] WithTable.IsValidIdentifier")
+			for _, name := range names {
+				if err := dbr.IsValidIdentifier(name); err != nil {
+					return errors.WithStack(err)
+				}
 			}
 
-			for _, tn := range tableName {
+			for _, tn := range names {
 				if err := tm.Upsert(NewTable(tn)); err != nil {
 					return errors.Wrapf(err, "[csdb] Tables.Insert %q", tn)
 				}
@@ -406,16 +408,14 @@ func (tm *Tables) ToSQL() (string, []interface{}, error) {
 	defer tm.mu.Unlock()
 
 	query := selAllTablesColumns
-	var arg dbr.Argument
+	var arg dbr.Arguments
 	if ltm := len(tm.tm); ltm > 0 {
 		query = selTablesColumns
 		tables := make([]string, 0, ltm)
 		for name := range tm.tm {
 			tables = append(tables, name)
 		}
-		arg = dbr.Strings(tables)
+		arg = arg.Strs(tables...)
 	}
-
-	sql, err := dbr.Interpolate(query, arg)
-	return sql, nil, errors.Wrap(err, "[csdb] Tables.ToSQL.Interpolate")
+	return dbr.Interpolate(query).ArgUnions(arg).ToSQL()
 }

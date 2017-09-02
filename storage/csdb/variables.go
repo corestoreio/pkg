@@ -40,7 +40,7 @@ func NewVariables(names ...string) *Variables {
 	if len(names) > 1 {
 		vs.Show.Where(dbr.Column("Variable_name").In().Strs(names...))
 	} else if len(names) == 1 {
-		vs.Show.Where(dbr.Column("Variable_name").Like().String(names[0]))
+		vs.Show.Where(dbr.Column("Variable_name").Like().Str(names[0]))
 	}
 	return vs
 }

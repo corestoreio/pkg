@@ -99,7 +99,7 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
 		}
 	} else {
-		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.Strings(tables))
+		sqlStr, _, err := dbr.Interpolate(selTablesColumns).Strs(tables...).ToSQL()
 		if err != nil {
 			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
 		}
@@ -142,54 +142,6 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 		return nil, errors.NewNotFoundf("[csdb] Tables %v not found", tables)
 	}
 	return tc, err
-}
-
-func LoadColumnsOLD(ctx context.Context, db dbr.Querier, tables ...string) (map[string]Columns, error) {
-	var rows *sql.Rows
-
-	if len(tables) == 0 {
-		var err error
-		rows, err = db.QueryContext(ctx, selAllTablesColumns)
-		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
-		}
-	} else {
-		sqlStr, err := dbr.Interpolate(selTablesColumns, dbr.Strings(tables))
-		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
-		}
-		rows, err = db.QueryContext(ctx, sqlStr)
-		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v with WHERE clause", tables)
-		}
-	}
-	defer rows.Close()
-
-	tc := make(map[string]Columns)
-
-	var tn string
-	var dto Column
-	scanArgs := []interface{}{&tn, &dto.Field, &dto.Pos, &dto.Default, &dto.Null, &dto.DataType, &dto.CharMaxLength, &dto.Precision, &dto.Scale, &dto.ColumnType, &dto.Key, &dto.Extra, &dto.Comment}
-	for rows.Next() {
-		if err := rows.Scan(scanArgs...); err != nil {
-			return nil, errors.Wrap(err, "[csdb] Scan Query")
-		}
-
-		if _, ok := tc[tn]; !ok {
-			tc[tn] = make(Columns, 0, 10)
-		}
-		c := dto
-		c.DataType = strings.ToLower(c.DataType)
-		tc[tn] = append(tc[tn], &c)
-		tn = ""
-	}
-	if err := rows.Err(); err != nil {
-		return nil, errors.Wrapf(err, "[csdb] rows.Err Query")
-	}
-	if len(tc) == 0 {
-		return nil, errors.NewNotFoundf("[csdb] Tables %v not found", tables)
-	}
-	return tc, nil
 }
 
 // Hash calculates a non-cryptographic, fast and efficient hash value from all

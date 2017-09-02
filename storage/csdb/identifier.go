@@ -14,45 +14,16 @@
 
 package csdb
 
+// MD5 is only used for shortening the very long foreign or index key name.
+
 import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"strings"
 	"unicode"
-
-	"github.com/corestoreio/errors"
 )
-
-// maxIdentifierLength see http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-const maxIdentifierLength = 64
-
-// IsValidIdentifier checks the permissible syntax for identifiers. Certain
-// objects within MySQL, including database, table, index, column, alias, view,
-// stored procedure, partition, tablespace, and other object names are known as
-// identifiers. ASCII: [0-9,a-z,A-Z$_] (basic Latin letters, digits 0-9, dollar,
-// underscore) Max length 63 characters. Returns errors.NotValid
-//
-// http://dev.mysql.com/doc/refman/5.7/en/identifiers.html
-func IsValidIdentifier(names ...string) error {
-	panic("TODO the behaviour of this function is different than from the one in dbr.")
-
-	if len(names) == 0 {
-		return errors.NewNotValidf("[csdb] No arguments provided")
-	}
-	for _, name := range names {
-		if len(name) > maxIdentifierLength || name == "" {
-			return errors.NewNotValidf("[csdb] Incorrect identifier. Too long or empty: %q", name)
-		}
-
-		for _, r := range name {
-			if mapAlNum(r) != r {
-				return errors.NewNotValidf("[csdb] Invalid character %q in name %q", string(r), name)
-			}
-		}
-	}
-	return nil
-}
 
 func mapAlNum(r rune) rune {
 	var ok bool
@@ -113,11 +84,12 @@ func Shorten(tableName string) string {
 // with their abbreviations and in the second round creating a MD5 hash of the
 // table name.
 func TableName(prefix, name string, suffixes ...string) string {
-	if prefix == "" && len(suffixes) == 0 && len(name) <= maxIdentifierLength {
+	if prefix == "" && len(suffixes) == 0 && len(name) <= dbr.MaxIdentifierLength {
 		return strings.Map(mapAlNum, name)
 	}
 
-	var buf = make([]byte, 0, maxIdentifierLength)
+	var cBuf [dbr.MaxIdentifierLength]byte
+	var buf = cBuf[:0]
 	if !strings.HasPrefix(name, prefix) {
 		buf = append(buf, prefix...)
 	}
@@ -142,7 +114,8 @@ func IndexName(indexType, tableName string, fields ...string) string {
 		prefix = "FTI_"
 	}
 
-	var buf = make([]byte, 0, maxIdentifierLength)
+	var cBuf [dbr.MaxIdentifierLength]byte
+	var buf = cBuf[:0]
 	buf = append(buf, tableName...)
 	for i, f := range fields {
 		if i == 0 {
@@ -161,7 +134,8 @@ func IndexName(indexType, tableName string, fields ...string) string {
 // `after`. Event should be one of the following types: `insert`, `update` or
 // `delete`
 func TriggerName(tableName, time, event string) string {
-	var buf = make([]byte, 0, maxIdentifierLength)
+	var cBuf [dbr.MaxIdentifierLength]byte
+	var buf = cBuf[:0]
 	buf = append(buf, tableName...)
 	buf = append(buf, '_')
 	buf = append(buf, time...)
@@ -173,7 +147,8 @@ func TriggerName(tableName, time, event string) string {
 // ForeignKeyName creates a new foreign key name. The returned string represents
 // a valid identifier within MySQL.
 func ForeignKeyName(priTableName, priColumnName, refTableName, refColumnName string) string {
-	var buf = make([]byte, 0, maxIdentifierLength)
+	var cBuf [dbr.MaxIdentifierLength]byte
+	var buf = cBuf[:0]
 	buf = append(buf, priTableName...)
 	buf = append(buf, '_')
 	buf = append(buf, priColumnName...)
@@ -186,12 +161,12 @@ func ForeignKeyName(priTableName, priColumnName, refTableName, refColumnName str
 
 // TODO: micro optimize later 8-) to reduce allocations
 func shortenEntityName(name []byte, prefix string) []byte {
-	if len(name) < maxIdentifierLength {
+	if len(name) < dbr.MaxIdentifierLength {
 		return name
 	}
 	name2 := name[:0]
 	name2 = append(name2, translatedAbbreviations.Replace(string(name))...)
-	if len(name2) > maxIdentifierLength {
+	if len(name2) > dbr.MaxIdentifierLength {
 		return []byte(fmt.Sprintf("%s%x", prefix, md5.Sum(name2))) // worse worse case
 	}
 	return name2

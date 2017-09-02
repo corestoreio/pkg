@@ -110,11 +110,11 @@ func (t *Table) ScanClose() error {
 }
 
 func (t *Table) ToSQL() (string, []interface{}, error) {
-	sql, err := dbr.Interpolate(selTablesColumns, dbr.String(t.Name))
+	sqlStr, _, err := dbr.Interpolate(selTablesColumns).Str(t.Name).ToSQL()
 	if err != nil {
 		return "", nil, errors.Wrapf(err, "[csdb] Table.ToSQL.Interpolate for table %q", t.Name)
 	}
-	return sql, nil, nil
+	return sqlStr, nil, nil
 }
 
 // Truncate truncates the tables. Removes all rows and sets the auto increment
@@ -123,8 +123,8 @@ func (t *Table) Truncate(ctx context.Context, execer dbr.Execer) error {
 	if t.IsView {
 		return nil
 	}
-	if err := IsValidIdentifier(t.Name); err != nil {
-		return errors.Wrap(err, "[csdb] Truncate table name")
+	if err := dbr.IsValidIdentifier(t.Name); err != nil {
+		return errors.WithStack(err)
 	}
 	ddl := "TRUNCATE TABLE " + dbr.Quoter.QualifierName(t.Schema, t.Name)
 	_, err := execer.ExecContext(ctx, ddl)
@@ -137,8 +137,11 @@ func (t *Table) Truncate(ctx context.Context, execer dbr.Execer) error {
 // another. RENAME TABLE also works for views, as long as you do not try to
 // rename a view into a different database.
 func (t *Table) Rename(ctx context.Context, execer dbr.Execer, new string) error {
-	if err := IsValidIdentifier(t.Name, new); err != nil {
-		return errors.Wrap(err, "[csdb] Rename table name")
+	if err := dbr.IsValidIdentifier(t.Name); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := dbr.IsValidIdentifier(new); err != nil {
+		return errors.WithStack(err)
 	}
 	ddl := "RENAME TABLE " + dbr.Quoter.QualifierName(t.Schema, t.Name) + " TO " + dbr.Quoter.NameAlias(new, "")
 	_, err := execer.ExecContext(ctx, ddl)
@@ -150,8 +153,11 @@ func (t *Table) Rename(ctx context.Context, execer dbr.Execer, new string) error
 // swapped! As long as two databases are on the same file system, you can use
 // RENAME TABLE to move a table from one database to another.
 func (t *Table) Swap(ctx context.Context, execer dbr.Execer, other string) error {
-	if err := IsValidIdentifier(t.Name, other); err != nil {
-		return errors.Wrap(err, "[csdb] Swap table name")
+	if err := dbr.IsValidIdentifier(t.Name); err != nil {
+		return errors.WithStack(err)
+	}
+	if err := dbr.IsValidIdentifier(other); err != nil {
+		return errors.WithStack(err)
 	}
 
 	tmp := TableName("", t.Name, strconv.FormatInt(time.Now().UnixNano(), 10))
@@ -184,7 +190,7 @@ func (t *Table) Drop(ctx context.Context, execer dbr.Execer) error {
 	if t.IsView {
 		typ = "VIEW"
 	}
-	if err := IsValidIdentifier(t.Name); err != nil {
+	if err := dbr.IsValidIdentifier(t.Name); err != nil {
 		return errors.Wrap(err, "[csdb] Drop table name")
 	}
 	_, err := execer.ExecContext(ctx, "DROP "+typ+" IF EXISTS "+dbr.Quoter.QualifierName(t.Schema, t.Name))
