@@ -68,11 +68,7 @@ func TestSelect_Rows(t *testing.T) {
 		sel.DB = dbc.DB
 		rows, err := sel.Query(context.TODO())
 		require.NoError(t, err, "%+v", err)
-		defer func() {
-			if err := rows.Close(); err != nil {
-				t.Fatal(err)
-			}
-		}()
+		defer cstesting.Close(t, rows)
 
 		var xx []string
 		for rows.Next() {
@@ -242,15 +238,13 @@ func TestSelect_Prepare(t *testing.T) {
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		defer cstesting.Close(t, stmt)
 
 		t.Run("Context", func(t *testing.T) {
 
 			rows, err := stmt.Query(context.TODO(), 6789)
 			require.NoError(t, err)
-			defer rows.Close()
+			defer cstesting.Close(t, rows)
 
 			cols, err := rows.Columns()
 			require.NoError(t, err)
@@ -280,9 +274,7 @@ func TestSelect_Prepare(t *testing.T) {
 			WithDB(dbc.DB).
 			Prepare(context.TODO())
 		require.NoError(t, err, "failed creating a prepared statement")
-		defer func() {
-			require.NoError(t, stmt.Close(), "Close on a prepared statement")
-		}()
+		defer cstesting.Close(t, stmt)
 
 		const iterations = 3
 
@@ -301,7 +293,7 @@ func TestSelect_Prepare(t *testing.T) {
 				cols, err := rows.Columns()
 				require.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
-				rows.Close()
+				cstesting.Close(t, rows)
 			}
 		})
 
@@ -321,7 +313,7 @@ func TestSelect_Prepare(t *testing.T) {
 				cols, err := rows.Columns()
 				require.NoError(t, err)
 				assert.Exactly(t, []string{"name", "email"}, cols)
-				rows.Close()
+				cstesting.Close(t, rows)
 			}
 		})
 
@@ -347,9 +339,7 @@ func TestSelect_Prepare(t *testing.T) {
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
 			require.NoError(t, err, "failed creating a prepared statement")
-			defer func() {
-				require.NoError(t, stmt.Close(), "Close on a prepared statement")
-			}()
+			defer cstesting.Close(t, stmt)
 
 			columns := []string{"config_id", "scope_id", "path"}
 
@@ -377,9 +367,7 @@ func TestSelect_Prepare(t *testing.T) {
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
 			require.NoError(t, err, "failed creating a prepared statement")
-			defer func() {
-				require.NoError(t, stmt.Close(), "Close on a prepared statement")
-			}()
+			defer cstesting.Close(t, stmt)
 
 			columns := []string{"scope_id"}
 
@@ -401,9 +389,7 @@ func TestSelect_Prepare(t *testing.T) {
 				WithDB(dbc.DB).
 				Prepare(context.TODO())
 			require.NoError(t, err, "failed creating a prepared statement")
-			defer func() {
-				require.NoError(t, stmt.Close(), "Close on a prepared statement")
-			}()
+			defer cstesting.Close(t, stmt)
 
 			columns := []string{"scope_id"}
 
@@ -435,7 +421,7 @@ func TestSelect_WithLogger(t *testing.T) {
 	require.NoError(t, rConn.Options(dbr.WithLogger(lg, uniqueIDFunc)))
 
 	t.Run("ConnPool", func(t *testing.T) {
-		u := rConn.SelectFrom("dbr_people").AddColumns("name", "email").Where(dbr.Column("id").In().Int64s(6, 8))
+		u := rConn.SelectFrom("dbr_people").AddColumns("name", "email").Where(dbr.Column("id").Greater().Int64(67896543123))
 
 		t.Run("Query", func(t *testing.T) {
 			defer func() {
@@ -446,7 +432,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, rows.Close())
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -459,7 +445,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -473,11 +459,11 @@ func TestSelect_WithLogger(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			assert.Exactly(t, "DEBUG LoadInt64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadInt64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
-		t.Run("LoadInt64s", func(t *testing.T) {
+		t.Run("XXXXoadInt64s", func(t *testing.T) {
 			defer func() {
 				buf.Reset()
 				u.IsInterpolate = false
@@ -485,7 +471,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().LoadInt64s(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadInt64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadInt64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -498,7 +484,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			if !errors.IsNotFound(err) {
 				require.NoError(t, err)
 			}
-			assert.Exactly(t, "DEBUG LoadUint64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadUint64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -510,7 +496,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().LoadUint64s(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadUint64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadUint64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -523,7 +509,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			if !errors.IsNotFound(err) {
 				require.NoError(t, err)
 			}
-			assert.Exactly(t, "DEBUG LoadFloat64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadFloat64 conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -535,7 +521,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().LoadFloat64s(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadFloat64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadFloat64s conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -549,7 +535,7 @@ func TestSelect_WithLogger(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			assert.Exactly(t, "DEBUG LoadString conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadString conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -561,7 +547,7 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().LoadStrings(context.TODO())
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG LoadStrings conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (6,8))\"\n",
+			assert.Exactly(t, "DEBUG LoadStrings conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 row_count: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > 67896543123)\"\n",
 				buf.String())
 		})
 
@@ -569,9 +555,9 @@ func TestSelect_WithLogger(t *testing.T) {
 			defer buf.Reset()
 			stmt, err := u.Prepare(context.TODO())
 			require.NoError(t, err)
-			defer stmt.Close()
+			defer cstesting.Close(t, stmt)
 
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` IN (?,?))\"\n",
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" select_id: \"UNIQ02\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ02*/ `name`, `email` FROM `dbr_people` WHERE (`id` > ?)\"\n",
 				buf.String())
 		})
 
@@ -593,9 +579,10 @@ func TestSelect_WithLogger(t *testing.T) {
 
 	t.Run("Conn", func(t *testing.T) {
 		conn, err := rConn.Conn(context.TODO())
+		defer cstesting.Close(t, conn)
 		require.NoError(t, err)
 
-		u := conn.SelectFrom("dbr_people", "dp2").AddColumns("name", "email").Where(dbr.Column("id").In().Int64s(61, 81))
+		u := conn.SelectFrom("dbr_people", "dp2").AddColumns("name", "email").Where(dbr.Column("id").Less().Int64s(-3))
 
 		t.Run("Query", func(t *testing.T) {
 			defer func() {
@@ -605,9 +592,9 @@ func TestSelect_WithLogger(t *testing.T) {
 
 			rows, err := u.Interpolate().Query(context.TODO())
 			require.NoError(t, err)
-			require.NoError(t, rows.Close())
+			cstesting.Close(t, rows)
 
-			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81))\"\n",
+			assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` < -3)\"\n",
 				buf.String())
 		})
 
@@ -620,19 +607,67 @@ func TestSelect_WithLogger(t *testing.T) {
 			_, err := u.Interpolate().Load(context.TODO(), p)
 			require.NoError(t, err)
 
-			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (61,81))\"\n",
+			assert.Exactly(t, "DEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` < -3)\"\n",
 				buf.String())
 		})
 
 		t.Run("Prepare", func(t *testing.T) {
-			defer buf.Reset()
 
 			stmt, err := u.Prepare(context.TODO())
 			require.NoError(t, err)
-			defer stmt.Close()
-
-			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` IN (?,?))\"\n",
+			defer cstesting.Close(t, stmt)
+			assert.Exactly(t, "DEBUG Prepare conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" duration: 0 sql: \"SELECT /*ID:UNIQ06*/ `name`, `email` FROM `dbr_people` AS `dp2` WHERE (`id` < ?)\"\n",
 				buf.String())
+			buf.Reset()
+
+			t.Run("QueryRow", func(t *testing.T) {
+				defer buf.Reset()
+				rows := stmt.QueryRow(context.TODO(), -8)
+				var x string
+				require.True(t, rows.Scan(&x) == sql.ErrNoRows)
+				_ = x
+
+				assert.Exactly(t, "DEBUG QueryRow conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0 arg_len: 1\n",
+					buf.String())
+			})
+
+			t.Run("Query", func(t *testing.T) {
+				defer buf.Reset()
+				rows, err := stmt.Query(context.TODO(), -4)
+				require.NoError(t, err)
+				cstesting.Close(t, rows)
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0 arg_len: 1\n",
+					buf.String())
+			})
+
+			t.Run("Load", func(t *testing.T) {
+				defer buf.Reset()
+				p := &dbrPerson{}
+				_, err := stmt.WithArgs(-6).Load(context.TODO(), p)
+				require.NoError(t, err)
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG Load conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0 row_count: 0 object_type: \"*dbr_test.dbrPerson\"\n",
+					buf.String())
+			})
+
+			t.Run("LoadInt64", func(t *testing.T) {
+				defer buf.Reset()
+				_, err := stmt.WithArgs(-7).LoadInt64(context.TODO())
+				if !errors.IsNotFound(err) {
+					require.NoError(t, err)
+				}
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG LoadInt64 conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0\n",
+					buf.String())
+			})
+
+			t.Run("LoadInt64s", func(t *testing.T) {
+				defer buf.Reset()
+				iSl, err := stmt.WithArgs(-7).LoadInt64s(context.TODO())
+				require.NoError(t, err)
+				assert.Exactly(t, []int64{}, iSl)
+				assert.Exactly(t, "DEBUG Query conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0 arg_len: 1\nDEBUG LoadInt64s conn_pool_id: \"UNIQ01\" conn_id: \"UNIQ05\" select_id: \"UNIQ06\" table: \"dbr_people\" is_prepared: true duration: 0 row_count: 0\n",
+					buf.String())
+			})
+
 		})
 
 		t.Run("Tx Commit", func(t *testing.T) {

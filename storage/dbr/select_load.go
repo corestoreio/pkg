@@ -54,6 +54,7 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+
 	cap := b.argumentCapacity()
 	return &StmtSelect{
 		StmtBase: StmtBase{
@@ -62,7 +63,7 @@ func (b *Select) Prepare(ctx context.Context) (*StmtSelect, error) {
 			argsCache:  make(Arguments, 0, cap),
 			argsRaw:    make([]interface{}, 0, cap),
 			bindRecord: b.bindRecord,
-			log:        b.Log,
+			log:        b.Log.With(log.Bool("is_prepared", true)),
 		},
 		sel: b,
 	}, nil

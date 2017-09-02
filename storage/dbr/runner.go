@@ -423,10 +423,10 @@ func (b *BuilderConditional) join(j string, t identifier, on ...*Condition) {
 	b.Joins = append(b.Joins, jf)
 }
 
-// StmtBase wraps a *sql.Stmt with a specific SQL query. To create a
-// StmtBase call the Prepare function of type Select. StmtBase is not safe
-// for concurrent use, despite the underlying *sql.Stmt is. Don't forget to call
-// Close!
+// StmtBase wraps a *sql.Stmt (a prepared statement) with a specific SQL query.
+// To create a StmtBase call the Prepare function of type Select. StmtBase is
+// not safe for concurrent use, despite the underlying *sql.Stmt is. Don't
+// forget to call Close!
 type StmtBase struct {
 	id   string // tracing ID
 	stmt *sql.Stmt
@@ -533,8 +533,7 @@ func (st *StmtBase) QueryRow(ctx context.Context, args ...interface{}) *sql.Row 
 // the Select object or it just panics. Load can load a single row or n-rows.
 func (st *StmtBase) Load(ctx context.Context, s Scanner) (rowCount int64, err error) {
 	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("Load", log.Int64("row_count", rowCount),
-			log.Int("arg_len", len(st.argsRaw)), log.String("object_type", fmt.Sprintf("%T", s)))
+		defer log.WhenDone(st.log).Debug("Load", log.Int64("row_count", rowCount), log.String("object_type", fmt.Sprintf("%T", s)))
 	}
 	r, err := st.Query(ctx)
 	rowCount, err = load(r, err, s)
@@ -545,7 +544,7 @@ func (st *StmtBase) Load(ctx context.Context, s Scanner) (rowCount int64, err er
 // It returns a NotFound error if the query returns nothing.
 func (st *StmtBase) LoadInt64(ctx context.Context) (int64, error) {
 	if st.log != nil && st.log.IsDebug() {
-		defer log.WhenDone(st.log).Debug("LoadInt64", log.Int("arg_len", len(st.argsRaw)))
+		defer log.WhenDone(st.log).Debug("LoadInt64")
 	}
 	return loadInt64(st.Query(ctx))
 }
@@ -554,7 +553,7 @@ func (st *StmtBase) LoadInt64(ctx context.Context) (int64, error) {
 func (st *StmtBase) LoadInt64s(ctx context.Context) (ret []int64, err error) {
 	if st.log != nil && st.log.IsDebug() {
 		// do not use fullSQL because we might log sensitive data
-		defer log.WhenDone(st.log).Debug("LoadInt64s", log.Int("row_count", len(ret)), log.Int("arg_len", len(st.argsRaw)))
+		defer log.WhenDone(st.log).Debug("LoadInt64s", log.Int("row_count", len(ret)))
 	}
 	ret, err = loadInt64s(st.Query(ctx))
 	// Do not simplify it because we need ret in the defer. we don't log errors
