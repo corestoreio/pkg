@@ -51,8 +51,7 @@ type Show struct {
 // NewShow creates a new Truman SHOW.
 func NewShow() *Show { return &Show{} }
 
-// Select creates a new Select which selects from the provided columns.
-// Columns won't get quoted.
+// Show creates a new Show statement with a random connection from the pool.
 func (c *ConnPool) Show() *Show {
 	id := c.makeUniqueID()
 	l := c.Log
@@ -68,8 +67,7 @@ func (c *ConnPool) Show() *Show {
 	}
 }
 
-// Select creates a new Select which selects from the provided columns.
-// Columns won't get quoted.
+// Show creates a new Show statement bound to a single connection.
 func (c *Conn) Show() *Show {
 	id := c.makeUniqueID()
 	l := c.Log
@@ -85,8 +83,7 @@ func (c *Conn) Show() *Show {
 	}
 }
 
-// Select creates a new Select that select that given columns bound to the
-// transaction.
+// Show creates a new Show query bound to a transaction.
 func (tx *Tx) Show() *Show {
 	id := tx.makeUniqueID()
 	l := tx.Log

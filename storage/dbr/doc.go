@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package dbr has additions to Go's database/sql for super fast performance and
+// Package dbr handles the SQL DML for super fast performance,
 // type safety and convenience.
 //
 // Aim: Allow a developer to easily modify a SQL query without type assertion of
-// parts of the query. This package gets extended during csfw development.
+// parts of the query. No reflection magic has been used so we must achieve
+// type safety with code generation.
+//
+// This package works only with MySQL and its derivates like MariaDB or Percona.
 //
 // Abbreviations
 //
@@ -35,9 +38,14 @@
 //
 // Practical Guide to SQL Transaction Isolation: https://begriffs.com/posts/2017-08-01-practical-guide-sql-isolation.html
 //
-// TODO(CyS) Add named parameter from GO1.8 to each query builder
+// TODO(CyS) Add named parameter from GO1.8 to each query builder, partially
+// implemented in the Arguments type.
 //
-// TODO(CyS) think about named locks: https://news.ycombinator.com/item?id=14907679 https://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_get-lock
+// TODO(CyS) think about named locks:
+// https://news.ycombinator.com/item?id=14907679
+// https://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_get-lock
+// Database locks should not be used by the average developer. Understand
+// optimistic concurrency and use serializable isolation.
 //
 // TODO(CyS) refactor some parts of the code once Go implements generics ;-)
 package dbr
