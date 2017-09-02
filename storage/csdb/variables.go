@@ -69,26 +69,3 @@ func (vs *Variables) RowScan(r *sql.Rows) error {
 	vs.Data[name] = value
 	return nil
 }
-
-func isValidVarName(name string, allowPercent bool) error {
-	if name == "" {
-		return nil
-	}
-	for _, r := range name {
-		var ok bool
-		switch {
-		case '0' <= r && r <= '9':
-			ok = true
-		case 'a' <= r && r <= 'z', 'A' <= r && r <= 'Z':
-			ok = true
-		case r == '_': // % can be bypassed with underscore ;-)
-			ok = true
-		case r == '%' && allowPercent:
-			ok = true
-		}
-		if !ok {
-			return errors.NewNotValidf("[csdb] Invalid character %q in variable name %q", string(r), name)
-		}
-	}
-	return nil
-}

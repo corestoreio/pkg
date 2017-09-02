@@ -104,11 +104,13 @@ func (t *Table) RowScan(r *sql.Rows) error {
 	return nil
 }
 
+// ScanClose closes the RowScan. ScanClose gets called automatically.
 func (t *Table) ScanClose() error {
 	t.update()
 	return nil
 }
 
+// ToSQL creates a SQL query for loading all columns for the current table.
 func (t *Table) ToSQL() (string, []interface{}, error) {
 	sqlStr, _, err := dbr.Interpolate(selTablesColumns).Str(t.Name).ToSQL()
 	if err != nil {

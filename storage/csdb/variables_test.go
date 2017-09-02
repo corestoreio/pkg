@@ -21,41 +21,11 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ dbr.Scanner = (*Variables)(nil)
 var _ dbr.QueryBuilder = (*Variables)(nil)
-
-func TestIsValidVarName(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name         string
-		allowPercent bool
-		errBhf       errors.BehaviourFunc
-	}{
-		{"auto_increment_offset", false, nil},
-		{"auto_increment_offset", true, nil},
-		{"auto_increment%", true, nil},
-		{"auto_increment%", false, errors.IsNotValid},
-		{"auto_in`crement%", true, errors.IsNotValid},
-		{"auto_increment%", true, errors.IsNotValid},
-		{"auto_in'crement%", true, errors.IsNotValid},
-		{"", true, nil},
-		{"", false, nil},
-	}
-	for _, test := range tests {
-
-		haveErr := isValidVarName(test.name, test.allowPercent)
-		if test.errBhf == nil {
-			assert.NoError(t, haveErr, "%+v", haveErr)
-			continue
-		}
-		assert.True(t, test.errBhf(haveErr), "%+v", haveErr)
-	}
-}
 
 func TestNewVariables_Integration(t *testing.T) {
 	t.Parallel()

@@ -20,9 +20,10 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"strings"
 	"unicode"
+
+	"github.com/corestoreio/csfw/storage/dbr"
 )
 
 func mapAlNum(r rune) rune {

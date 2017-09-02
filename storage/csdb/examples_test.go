@@ -14,7 +14,7 @@
 
 package csdb_test
 
-func ExampleMasterStatus_ToSQL() {
+func ExampleMasterStatus() {
 
 	//Output:
 }

@@ -194,10 +194,7 @@ func TestResurrectStmtSqlMockShouldPrepareTwoTimesWithThreeCalls(t *testing.T) {
 }
 
 func TestResurrectStmtRealDB(t *testing.T) {
-	var debugLogBuf *log.MutexBuffer
-	//var infoLogBuf *log.MutexBuffer
-
-	debugLogBuf = new(log.MutexBuffer)
+	debugLogBuf := new(log.MutexBuffer)
 	//infoLogBuf = new(log.MutexBuffer)
 
 	l := logw.NewLog(

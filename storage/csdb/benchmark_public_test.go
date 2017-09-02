@@ -119,24 +119,24 @@ var benchmarkColumnsJoinFieldsWant = "category_id|product_id|position"
 var benchmarkColumnsJoinFieldsData = csdb.Columns{
 	&csdb.Column{
 		Field:      "category_id",
-		ColumnType: ("int(10) unsigned"),
+		ColumnType: "int(10) unsigned",
 		Key:        "",
 		Default:    dbr.MakeNullString("0"),
-		Extra:      (""),
+		Extra:      "",
 	},
 	&csdb.Column{
 		Field:      "product_id",
-		ColumnType: ("int(10) unsigned"),
-		Key:        (""),
+		ColumnType: "int(10) unsigned",
+		Key:        "",
 		Default:    dbr.MakeNullString("0"),
-		Extra:      (""),
+		Extra:      "",
 	},
 	&csdb.Column{
 		Field:      "position",
-		ColumnType: ("int(10) unsigned"),
+		ColumnType: "int(10) unsigned",
 		Null:       "YES",
-		Key:        (""),
-		Extra:      (""),
+		Key:        "",
+		Extra:      "",
 	},
 }
 

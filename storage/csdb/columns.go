@@ -133,7 +133,6 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 
 		c.DataType = strings.ToLower(c.DataType)
 		tc[tn] = append(tc[tn], c)
-		tn = ""
 	}
 	if err = rows.Err(); err != nil {
 		return nil, errors.Wrapf(err, "[csdb] rows.Err Query")
