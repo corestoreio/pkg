@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbh
+package dml
 
 import (
 	"database/sql/driver"
@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/errors"
 )
 
-// Strings contains several functions for data moveing. You can use package
+// Strings contains several functions for data moving. You can use package
 // slices.String for further modifications of this slice type.
 type Strings []string
 
