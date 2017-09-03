@@ -16,7 +16,8 @@ package migration
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/corestoreio/csfw/sql/dml"
 )
 
 // ToUTF8MB4 converts MySQL compatible databases from utf8 to utf8mb4. What’s
@@ -34,7 +35,11 @@ import (
 //
 // # Run this for each column (replace table name, column_name, the column type, maximum length, etc.)
 // ALTER TABLE table_name CHANGE column_name column_name VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-func ToUTF8MB4(ctx context.Context, db *sql.DB) error {
+func ToUTF8MB4(ctx context.Context, db interface {
+	dml.Querier
+	dml.Execer
+	dml.Preparer
+}) error {
 	// TODO: Implement utf8mb4 conversion
 	return nil
 }
