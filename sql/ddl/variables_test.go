@@ -85,3 +85,17 @@ func TestNewVariables_Mock(t *testing.T) {
 		assert.Len(t, vs.Data, 2)
 	})
 }
+
+func TestVariables_Equal(t *testing.T) {
+	t.Parallel()
+
+	v := NewVariables("any_key")
+
+	v.Data["any_key"] = "A"
+	assert.True(t, v.Equal("any_key", "A"))
+	assert.False(t, v.Equal("any_key", "B"))
+	assert.False(t, v.Equal("any_key", "a"))
+
+	assert.True(t, v.EqualFold("any_key", "a"))
+	assert.False(t, v.EqualFold("any_key", "B"))
+}

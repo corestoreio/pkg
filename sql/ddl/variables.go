@@ -16,6 +16,7 @@ package ddl
 
 import (
 	"database/sql"
+	"strings"
 
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
@@ -43,6 +44,17 @@ func NewVariables(names ...string) *Variables {
 		vs.Show.Where(dml.Column("Variable_name").Like().Str(names[0]))
 	}
 	return vs
+}
+
+// EqualFold reports whether the value of key and `expected`, interpreted as
+// UTF-8 strings, are equal under Unicode case-folding.
+func (vs *Variables) EqualFold(key, expected string) bool {
+	return strings.EqualFold(vs.Data[key], expected)
+}
+
+// Equal compares case sensitive the value of key with the `expected`.
+func (vs *Variables) Equal(key, expected string) bool {
+	return vs.Data[key] == expected
 }
 
 // ToSQL implements dml.QueryBuilder interface to assemble a SQL string and its
