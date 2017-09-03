@@ -7,14 +7,14 @@ import (
 	"path"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/errors"
 )
 
 // StartBackup enables, like the mysqlbinlog command line tool, a remote raw
 // backup. Backup remote binlog from position (filename, offset) and write in
 // backupDir.
-func (b *BinlogSyncer) StartBackup(backupDir string, p csdb.MasterStatus, timeout time.Duration) error {
+func (b *BinlogSyncer) StartBackup(backupDir string, p ddl.MasterStatus, timeout time.Duration) error {
 	if timeout == 0 {
 		// a very long timeout here
 		timeout = 30 * 3600 * 24 * time.Second

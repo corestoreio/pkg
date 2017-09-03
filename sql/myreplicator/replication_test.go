@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/pingcap/check"
 	uuid "github.com/satori/go.uuid"
 	"github.com/siddontang/go-mysql/client"
@@ -241,9 +241,9 @@ func (t *testSyncerSuite) setupTest(c *check.C, flavor string) {
 		t.con.Close()
 	}
 
-	dsn, err := csdb.GetParsedDSN()
+	dsn, err := ddl.GetParsedDSN()
 	if err != nil {
-		c.Skip(fmt.Sprintf("Failed to get DSN from env %q with %s", csdb.EnvDSN, err))
+		c.Skip(fmt.Sprintf("Failed to get DSN from env %q with %s", ddl.EnvDSN, err))
 	}
 
 	t.con, err = client.Connect(dsn.Addr, dsn.User, dsn.Passwd, dsn.DBName)
@@ -285,7 +285,7 @@ func (t *testSyncerSuite) testPositionSync(c *check.C) {
 	binFile, _ := r.GetString(0, 0)
 	binPos, _ := r.GetInt(0, 1)
 
-	s, err := t.bls.StartSync(csdb.MasterStatus{File: binFile, Position: uint(binPos)})
+	s, err := t.bls.StartSync(ddl.MasterStatus{File: binFile, Position: uint(binPos)})
 	c.Assert(err, check.IsNil)
 
 	// Test re-sync.
@@ -385,7 +385,7 @@ func (t *testSyncerSuite) TestMysqlBinlogCodec(c *check.C) {
 		c.Error(err)
 	}
 
-	err := t.bls.StartBackup("./testdata/var", csdb.MasterStatus{Position: uint(0)}, 2*time.Second)
+	err := t.bls.StartBackup("./testdata/var", ddl.MasterStatus{Position: uint(0)}, 2*time.Second)
 	if err != nil {
 		c.Fatalf("%+v", err)
 	}

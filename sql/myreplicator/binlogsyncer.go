@@ -10,7 +10,7 @@ import (
 
 	"crypto/tls"
 
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"github.com/siddontang/go-mysql/client"
@@ -65,7 +65,7 @@ type BinlogSyncer struct {
 
 	parser *BinlogParser
 
-	nextPos csdb.MasterStatus
+	nextPos ddl.MasterStatus
 
 	running bool
 
@@ -257,7 +257,7 @@ func (b *BinlogSyncer) startDumpStream() *BinlogStreamer {
 }
 
 // StartSync starts syncing from the `pos` position.
-func (b *BinlogSyncer) StartSync(pos csdb.MasterStatus) (*BinlogStreamer, error) {
+func (b *BinlogSyncer) StartSync(pos ddl.MasterStatus) (*BinlogStreamer, error) {
 	if b.cfg.Log.IsInfo() {
 		b.cfg.Log.Info("BinlogSyncer.StartSync", log.Stringer("position", pos))
 	}
@@ -308,7 +308,7 @@ func (b *BinlogSyncer) StartSyncGTID(gset mysql.GTIDSet) (*BinlogStreamer, error
 	return b.startDumpStream(), nil
 }
 
-func (b *BinlogSyncer) writeBinglogDumpCommand(p csdb.MasterStatus) error {
+func (b *BinlogSyncer) writeBinglogDumpCommand(p ddl.MasterStatus) error {
 	b.con.ResetSequence()
 
 	data := make([]byte, 4+1+4+2+4+len(p.File))
@@ -332,7 +332,7 @@ func (b *BinlogSyncer) writeBinglogDumpCommand(p csdb.MasterStatus) error {
 }
 
 func (b *BinlogSyncer) writeBinlogDumpMysqlGTIDCommand(gset mysql.GTIDSet) error {
-	p := csdb.MasterStatus{Position: 4}
+	p := ddl.MasterStatus{Position: 4}
 	gtidData := gset.Encode()
 
 	b.con.ResetSequence()
@@ -388,7 +388,7 @@ func (b *BinlogSyncer) writeBinlogDumpMariadbGTIDCommand(gset mysql.GTIDSet) err
 	}
 
 	// Since we use @slave_connect_state, the file and position here are ignored.
-	return b.writeBinglogDumpCommand(csdb.MasterStatus{})
+	return b.writeBinglogDumpCommand(ddl.MasterStatus{})
 }
 
 // localHostname returns the hostname that register slave would register as.
@@ -444,7 +444,7 @@ func (b *BinlogSyncer) writeRegisterSlaveCommand() error {
 	return b.con.WritePacket(data)
 }
 
-func (b *BinlogSyncer) replySemiSyncACK(p csdb.MasterStatus) error {
+func (b *BinlogSyncer) replySemiSyncACK(p ddl.MasterStatus) error {
 	b.con.ResetSequence()
 
 	data := make([]byte, 4+1+8+len(p.File))
@@ -485,7 +485,7 @@ func (b *BinlogSyncer) retrySync() error {
 	return nil
 }
 
-func (b *BinlogSyncer) prepareSyncPos(pos csdb.MasterStatus) error {
+func (b *BinlogSyncer) prepareSyncPos(pos ddl.MasterStatus) error {
 	// always start from position 4
 	if pos.Position < 4 {
 		pos.Position = 4
