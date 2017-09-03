@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 )
 
@@ -50,16 +50,16 @@ func MustGetDSN() string {
 // using a DSN from an environment variable found in the constant csdb.EnvDSN.
 // If the DSN environment variable has not been set it skips the test.
 // Argument t specified usually the *testing.T/B struct.
-func MustConnectDB(t testing.TB, opts ...dbr.ConnPoolOption) *dbr.ConnPool {
+func MustConnectDB(t testing.TB, opts ...dml.ConnPoolOption) *dml.ConnPool {
 	t.Helper()
 	if _, err := getDSN(EnvDSN); errors.IsNotFound(err) {
 		t.Skipf("%s", err)
 	}
-	cos := []dbr.ConnPoolOption{dbr.WithDSN(MustGetDSN())}
+	cos := []dml.ConnPoolOption{dml.WithDSN(MustGetDSN())}
 	if len(opts) == 0 {
-		return dbr.MustConnectAndVerify(cos...)
+		return dml.MustConnectAndVerify(cos...)
 	}
-	dbc := dbr.MustConnectAndVerify(append(cos, opts...)...)
+	dbc := dml.MustConnectAndVerify(append(cos, opts...)...)
 	return dbc
 }
 
@@ -73,14 +73,14 @@ func Close(t testing.TB, c io.Closer) {
 }
 
 // MockDB creates a mocked database connection. Fatals on error.
-func MockDB(t testing.TB) (*dbr.ConnPool, sqlmock.Sqlmock) {
+func MockDB(t testing.TB) (*dml.ConnPool, sqlmock.Sqlmock) {
 	if t != nil { // t can be nil in Example functions
 		t.Helper()
 	}
 	db, sm, err := sqlmock.New()
 	fatalIfError(t, err)
 
-	dbc, err := dbr.NewConnPool(dbr.WithDB(db))
+	dbc, err := dml.NewConnPool(dml.WithDB(db))
 	fatalIfError(t, err)
 	return dbc, sm
 }
