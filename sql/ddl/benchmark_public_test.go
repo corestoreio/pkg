@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb_test
+package ddl_test
 
 import (
 	"bytes"
 	"context"
 	"testing"
 
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/byteconv"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
@@ -30,7 +30,7 @@ func BenchmarkTableName(b *testing.B) {
 
 	b.Run("Short with prefix suffix", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("xyz_", "catalog_product_€ntity", "int")
+			have := ddl.TableName("xyz_", "catalog_product_€ntity", "int")
 			if want := `xyz_catalog_product_ntity_int`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -38,7 +38,7 @@ func BenchmarkTableName(b *testing.B) {
 	})
 	b.Run("Short with prefix without suffix", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("xyz_", "catalog_product_€ntity")
+			have := ddl.TableName("xyz_", "catalog_product_€ntity")
 			if want := `xyz_catalog_product_ntity`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -46,7 +46,7 @@ func BenchmarkTableName(b *testing.B) {
 	})
 	b.Run("Short without prefix and suffix", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("", "catalog_product_€ntity")
+			have := ddl.TableName("", "catalog_product_€ntity")
 			if want := `catalog_product_ntity`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -54,7 +54,7 @@ func BenchmarkTableName(b *testing.B) {
 	})
 	b.Run("abbreviated", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("", "catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity")
+			have := ddl.TableName("", "catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity")
 			if want := `cat_prd_ntity_cat_prd_ntity_cstr_cat_prd_ntity`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -62,7 +62,7 @@ func BenchmarkTableName(b *testing.B) {
 	})
 	b.Run("hashed", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.TableName("", "catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity_catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity")
+			have := ddl.TableName("", "catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity_catalog_product_€ntity_catalog_product_€ntity_customer_catalog_product_€ntity")
 			if want := `t_bb0f749c31c69ed73ad028cb61f43745`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -74,7 +74,7 @@ func BenchmarkIndexName(b *testing.B) {
 	b.ReportAllocs()
 	b.Run("unique short", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.IndexName("unique", "sales_invoiced_aggregated_order", "period", "store_id", "order_status")
+			have := ddl.IndexName("unique", "sales_invoiced_aggregated_order", "period", "store_id", "order_status")
 			if want := `SALES_INVOICED_AGGREGATED_ORDER_PERIOD_STORE_ID_ORDER_STATUS`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -83,7 +83,7 @@ func BenchmarkIndexName(b *testing.B) {
 
 	b.Run("unique abbreviated", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.IndexName("unique", "sales_invoiced_aggregated_order", "customer", "store_id", "order_status", "order_type")
+			have := ddl.IndexName("unique", "sales_invoiced_aggregated_order", "customer", "store_id", "order_status", "order_type")
 			if want := `SALES_INVOICED_AGGRED_ORDER_CSTR_STORE_ID_ORDER_STS_ORDER_TYPE`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -92,7 +92,7 @@ func BenchmarkIndexName(b *testing.B) {
 
 	b.Run("unique hashed", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			have := csdb.IndexName("unique", "sales_invoiced_aggregated_order", "period", "store_id", "order_status", "order_type", "order_date")
+			have := ddl.IndexName("unique", "sales_invoiced_aggregated_order", "period", "store_id", "order_status", "order_type", "order_date")
 			if want := `UNQ_26EE326A968C157BC5004C8206E082E2`; have != want {
 				b.Fatalf("\nHave %q\nWant %q", have, want)
 			}
@@ -107,7 +107,7 @@ func BenchmarkIsValidIdentifier(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkIsValidIdentifier = dbr.IsValidIdentifier(id)
+		benchmarkIsValidIdentifier = dml.IsValidIdentifier(id)
 	}
 	if benchmarkIsValidIdentifier != nil {
 		b.Fatalf("%+v", benchmarkIsValidIdentifier)
@@ -116,22 +116,22 @@ func BenchmarkIsValidIdentifier(b *testing.B) {
 
 var benchmarkColumnsJoinFields string
 var benchmarkColumnsJoinFieldsWant = "category_id|product_id|position"
-var benchmarkColumnsJoinFieldsData = csdb.Columns{
-	&csdb.Column{
+var benchmarkColumnsJoinFieldsData = ddl.Columns{
+	&ddl.Column{
 		Field:      "category_id",
 		ColumnType: "int(10) unsigned",
 		Key:        "",
-		Default:    dbr.MakeNullString("0"),
+		Default:    dml.MakeNullString("0"),
 		Extra:      "",
 	},
-	&csdb.Column{
+	&ddl.Column{
 		Field:      "product_id",
 		ColumnType: "int(10) unsigned",
 		Key:        "",
-		Default:    dbr.MakeNullString("0"),
+		Default:    dml.MakeNullString("0"),
 		Extra:      "",
 	},
-	&csdb.Column{
+	&ddl.Column{
 		Field:      "position",
 		ColumnType: "int(10) unsigned",
 		Null:       "YES",
@@ -150,7 +150,7 @@ func BenchmarkColumnsJoinFields(b *testing.B) {
 	}
 }
 
-var benchmarkLoadColumns map[string]csdb.Columns
+var benchmarkLoadColumns map[string]ddl.Columns
 var benchmarkLoadColumnsHashWant = []byte{0x95, 0x7d, 0x84, 0x3c, 0x1f, 0x8, 0x94, 0x2e}
 
 func BenchmarkLoadColumns(b *testing.B) {
@@ -166,7 +166,7 @@ func BenchmarkLoadColumns(b *testing.B) {
 	b.ResetTimer()
 	b.Run("RowConvert", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			benchmarkLoadColumns, err = csdb.LoadColumns(ctx, db.DB, tn)
+			benchmarkLoadColumns, err = ddl.LoadColumns(ctx, db.DB, tn)
 			if err != nil {
 				b.Error(err)
 			}
@@ -192,10 +192,10 @@ func BenchmarkVariables(b *testing.B) {
 	db := cstesting.MustConnectDB(b)
 	defer cstesting.Close(b, db)
 
-	vars := csdb.NewVariables("innodb%")
+	vars := ddl.NewVariables("innodb%")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := dbr.Load(ctx, db.DB, vars, vars)
+		_, err := dml.Load(ctx, db.DB, vars, vars)
 		if err != nil {
 			b.Fatalf("%+v", err)
 		}

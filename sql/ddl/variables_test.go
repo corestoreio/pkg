@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package ddl
 
 import (
 	"context"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ dbr.Scanner = (*Variables)(nil)
-var _ dbr.QueryBuilder = (*Variables)(nil)
+var _ dml.Scanner = (*Variables)(nil)
+var _ dml.QueryBuilder = (*Variables)(nil)
 
 func TestNewVariables_Integration(t *testing.T) {
 	t.Parallel()
@@ -34,7 +34,7 @@ func TestNewVariables_Integration(t *testing.T) {
 	defer cstesting.Close(t, db)
 
 	vs := NewVariables()
-	_, err := dbr.Load(context.TODO(), db.DB, vs, vs)
+	_, err := dml.Load(context.TODO(), db.DB, vs, vs)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -56,7 +56,7 @@ func TestNewVariables_Mock(t *testing.T) {
 			WillReturnRows(mockedRows)
 
 		vs := NewVariables("keyVal11")
-		rc, err := dbr.Load(context.TODO(), dbc.DB, vs, vs)
+		rc, err := dml.Load(context.TODO(), dbc.DB, vs, vs)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}
@@ -74,7 +74,7 @@ func TestNewVariables_Mock(t *testing.T) {
 			WillReturnRows(mockedRows)
 
 		vs := NewVariables("keyVal11", "keyVal22")
-		rc, err := dbr.Load(context.TODO(), dbc.DB, vs, vs)
+		rc, err := dml.Load(context.TODO(), dbc.DB, vs, vs)
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}

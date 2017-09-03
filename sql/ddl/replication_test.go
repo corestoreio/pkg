@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb_test
+package ddl_test
 
 import (
 	"context"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ dbr.QueryBuilder = (*csdb.MasterStatus)(nil)
-var _ dbr.Scanner = (*csdb.MasterStatus)(nil)
+var _ dml.QueryBuilder = (*ddl.MasterStatus)(nil)
+var _ dml.Scanner = (*ddl.MasterStatus)(nil)
 
 func TestMasterStatus_Compare(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		left, right csdb.MasterStatus
+		left, right ddl.MasterStatus
 		want        int
 	}{
-		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000001", Position: 4}, -1},
-		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, 0},
-		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000001", Position: 2}, 1},
-		{csdb.MasterStatus{File: "mysql-bin.000001", Position: 3}, csdb.MasterStatus{File: "mysql-bin.000002", Position: 2}, -1},
-		{csdb.MasterStatus{File: "mysql-bin.000003", Position: 1}, csdb.MasterStatus{File: "mysql-bin.000002", Position: 2}, 1},
+		{ddl.MasterStatus{File: "mysql-bin.000001", Position: 3}, ddl.MasterStatus{File: "mysql-bin.000001", Position: 4}, -1},
+		{ddl.MasterStatus{File: "mysql-bin.000001", Position: 3}, ddl.MasterStatus{File: "mysql-bin.000001", Position: 3}, 0},
+		{ddl.MasterStatus{File: "mysql-bin.000001", Position: 3}, ddl.MasterStatus{File: "mysql-bin.000001", Position: 2}, 1},
+		{ddl.MasterStatus{File: "mysql-bin.000001", Position: 3}, ddl.MasterStatus{File: "mysql-bin.000002", Position: 2}, -1},
+		{ddl.MasterStatus{File: "mysql-bin.000003", Position: 1}, ddl.MasterStatus{File: "mysql-bin.000002", Position: 2}, 1},
 	}
 	for i, test := range tests {
 		have := test.left.Compare(test.right)
@@ -58,8 +58,8 @@ func TestShowMasterStatus(t *testing.T) {
 
 	dbMock.ExpectQuery("SHOW MASTER STATUS").WillReturnRows(mockedRows)
 
-	v := new(csdb.MasterStatus)
-	_, err := dbr.Load(context.TODO(), dbc.DB, v, v)
+	v := new(ddl.MasterStatus)
+	_, err := dml.Load(context.TODO(), dbc.DB, v, v)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -82,7 +82,7 @@ func TestMasterStatus_FromString(t *testing.T) {
 		{"mysql-bin.000004", "", 0, errors.IsNotFound, ""},
 	}
 	for i, test := range tests {
-		var haveMS = &csdb.MasterStatus{}
+		var haveMS = &ddl.MasterStatus{}
 		haveErr := haveMS.FromString(test.in)
 		if test.wantErr != nil {
 			assert.True(t, test.wantErr(haveErr), "Index %d: %+v", i, haveErr)

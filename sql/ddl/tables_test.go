@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,33 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb_test
+package ddl_test
 
 import (
 	"context"
 	"testing"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var _ dbr.QueryBuilder = (*csdb.Tables)(nil)
-var _ dbr.Scanner = (*csdb.Tables)(nil)
-var _ dbr.RowCloser = (*csdb.Tables)(nil)
+var _ dml.QueryBuilder = (*ddl.Tables)(nil)
+var _ dml.Scanner = (*ddl.Tables)(nil)
+var _ dml.RowCloser = (*ddl.Tables)(nil)
 
 func TestNewTableService(t *testing.T) {
 	t.Parallel()
-	assert.Equal(t, csdb.MustNewTables().Len(), 0)
+	assert.Equal(t, ddl.MustNewTables().Len(), 0)
 
-	tm1 := csdb.MustNewTables(
-		csdb.WithTable("store"),
-		csdb.WithTable("store_group"),
-		csdb.WithTable("store_website"),
+	tm1 := ddl.MustNewTables(
+		ddl.WithTable("store"),
+		ddl.WithTable("store_group"),
+		ddl.WithTable("store_website"),
 	)
 	assert.Equal(t, 3, tm1.Len())
 }
@@ -55,18 +55,18 @@ func TestNewTableServicePanic(t *testing.T) {
 		}
 	}()
 
-	_ = csdb.MustNewTables(
-		csdb.WithTable(""),
+	_ = ddl.MustNewTables(
+		ddl.WithTable(""),
 	)
 }
 
 func TestTables_Upsert_Insert(t *testing.T) {
 	t.Parallel()
 
-	ts := csdb.MustNewTables()
+	ts := ddl.MustNewTables()
 
 	t.Run("Insert OK", func(t *testing.T) {
-		assert.NoError(t, ts.Upsert(csdb.NewTable("test1")))
+		assert.NoError(t, ts.Upsert(ddl.NewTable("test1")))
 		assert.Equal(t, 1, ts.Len())
 	})
 }
@@ -74,7 +74,7 @@ func TestTables_Upsert_Insert(t *testing.T) {
 func TestTables_DeleteFromCache(t *testing.T) {
 	t.Parallel()
 
-	ts := csdb.MustNewTables(csdb.WithTableNames("a3", "b5", "c7"))
+	ts := ddl.MustNewTables(ddl.WithTableNames("a3", "b5", "c7"))
 	t.Run("Delete One", func(t *testing.T) {
 		ts.DeleteFromCache("b5")
 		assert.Exactly(t, 2, ts.Len())
@@ -88,7 +88,7 @@ func TestTables_DeleteFromCache(t *testing.T) {
 func TestTables_DeleteAllFromCache(t *testing.T) {
 	t.Parallel()
 
-	ts := csdb.MustNewTables(csdb.WithTableNames("a3", "b5", "c7"))
+	ts := ddl.MustNewTables(ddl.WithTableNames("a3", "b5", "c7"))
 	ts.DeleteAllFromCache()
 	assert.Exactly(t, 0, ts.Len())
 }
@@ -96,9 +96,9 @@ func TestTables_DeleteAllFromCache(t *testing.T) {
 func TestTables_Upsert_Update(t *testing.T) {
 	t.Parallel()
 
-	ts := csdb.MustNewTables(csdb.WithTableNames("a3", "b5", "c7"))
+	ts := ddl.MustNewTables(ddl.WithTableNames("a3", "b5", "c7"))
 	t.Run("One", func(t *testing.T) {
-		ts.Upsert(csdb.NewTable("x5"))
+		ts.Upsert(ddl.NewTable("x5"))
 		assert.Exactly(t, 4, ts.Len())
 		tb, err := ts.Table("x5")
 		assert.NoError(t, err, "%+v", err)
@@ -118,7 +118,7 @@ func TestTables_MustTable(t *testing.T) {
 		}
 	}()
 
-	ts := csdb.MustNewTables(csdb.WithTableNames("a3"))
+	ts := ddl.MustNewTables(ddl.WithTableNames("a3"))
 	tbl := ts.MustTable("a3")
 	assert.NotNil(t, tbl)
 	tbl = ts.MustTable("a44")
@@ -128,7 +128,7 @@ func TestTables_MustTable(t *testing.T) {
 func TestWithTableNames(t *testing.T) {
 	t.Parallel()
 
-	ts := csdb.MustNewTables(csdb.WithTableNames("a3", "b5", "c7"))
+	ts := ddl.MustNewTables(ddl.WithTableNames("a3", "b5", "c7"))
 	t.Run("Ok", func(t *testing.T) {
 		assert.Exactly(t, "a3", ts.MustTable("a3").Name)
 		assert.Exactly(t, "b5", ts.MustTable("b5").Name)
@@ -136,7 +136,7 @@ func TestWithTableNames(t *testing.T) {
 	})
 
 	t.Run("Invalid Identifier", func(t *testing.T) {
-		err := ts.Options(csdb.WithTableNames("x1"))
+		err := ts.Options(ddl.WithTableNames("x1"))
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 		assert.Contains(t, err.Error(), `identifier "x\uf8ff1" (Case 2)`)
 	})
@@ -148,10 +148,10 @@ func TestTables_RowScan_Integration(t *testing.T) {
 	dbc := cstesting.MustConnectDB(t)
 	defer dbc.Close()
 
-	tm0 := csdb.MustNewTables(
-		csdb.WithTable("admin_user"),
+	tm0 := ddl.MustNewTables(
+		ddl.WithTable("admin_user"),
 	)
-	_, err := dbr.Load(context.TODO(), dbc.DB, tm0, tm0)
+	_, err := dml.Load(context.TODO(), dbc.DB, tm0, tm0)
 	require.NoError(t, err)
 
 	table := tm0.MustTable("admin_user")
@@ -176,10 +176,10 @@ func TestTables_RowScan_Mock(t *testing.T) {
 	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('admin_user') ORDER BY TABLE_NAME, ORDINAL_POSITION")).
 		WillReturnRows(rows)
 
-	tm0 := csdb.MustNewTables(
-		csdb.WithTable("admin_user"),
+	tm0 := ddl.MustNewTables(
+		ddl.WithTable("admin_user"),
 	)
-	_, err := dbr.Load(context.TODO(), dbc.DB, tm0, tm0)
+	_, err := dml.Load(context.TODO(), dbc.DB, tm0, tm0)
 	require.NoError(t, err)
 
 	table := tm0.MustTable("admin_user")
@@ -191,8 +191,8 @@ func TestMustInitTables(t *testing.T) {
 	t.Parallel()
 
 	t.Run("ok", func(*testing.T) {
-		var ts *csdb.Tables
-		ts = csdb.MustInitTables(ts, csdb.WithTableNames("a3", "b5", "c7"))
+		var ts *ddl.Tables
+		ts = ddl.MustInitTables(ts, ddl.WithTableNames("a3", "b5", "c7"))
 		require.NotNil(t, ts)
 		assert.Exactly(t, "a3", ts.MustTable("a3").Name)
 		assert.Exactly(t, "b5", ts.MustTable("b5").Name)
@@ -207,8 +207,8 @@ func TestMustInitTables(t *testing.T) {
 				t.Error("Expecting a panic")
 			}
 		}()
-		var ts *csdb.Tables
-		csdb.MustInitTables(ts, csdb.WithTableNames("a˚3"))
+		var ts *ddl.Tables
+		ddl.MustInitTables(ts, ddl.WithTableNames("a˚3"))
 	})
 }
 
@@ -216,26 +216,26 @@ func TestWithTableDMLListeners(t *testing.T) {
 	t.Parallel()
 
 	counter := 0
-	ev := dbr.MustNewListenerBucket(
-		dbr.Listen{
+	ev := dml.MustNewListenerBucket(
+		dml.Listen{
 			Name:       "l1",
-			EventType:  dbr.OnBeforeToSQL,
-			SelectFunc: func(_ *dbr.Select) { counter++ },
+			EventType:  dml.OnBeforeToSQL,
+			SelectFunc: func(_ *dml.Select) { counter++ },
 		},
-		dbr.Listen{
+		dml.Listen{
 			Name:       "l2",
-			EventType:  dbr.OnBeforeToSQL,
-			SelectFunc: func(_ *dbr.Select) { counter++ },
+			EventType:  dml.OnBeforeToSQL,
+			SelectFunc: func(_ *dml.Select) { counter++ },
 		},
 	)
 
 	t.Run("Nil Table / No-WithTable", func(*testing.T) {
-		ts := csdb.MustNewTables(
-			csdb.WithTableDMLListeners("tableA", ev, ev),
-			csdb.WithTable("tableA"),
+		ts := ddl.MustNewTables(
+			ddl.WithTableDMLListeners("tableA", ev, ev),
+			ddl.WithTable("tableA"),
 		) // +=2
 		tbl := ts.MustTable("tableA")
-		sel := dbr.NewSelect().From("tableA")
+		sel := dml.NewSelect().From("tableA")
 		sel.Listeners.Merge(tbl.Listeners.Select) // +=2
 		sel.AddColumns("a", "b")
 		assert.Exactly(t, "SELECT `a`, `b` FROM `tableA`", sel.String())
@@ -243,18 +243,18 @@ func TestWithTableDMLListeners(t *testing.T) {
 	})
 
 	t.Run("Non Nil Table", func(*testing.T) {
-		ts := csdb.MustNewTables(
-			csdb.WithTable("TeschtT", &csdb.Column{Field: "col1"}),
-			csdb.WithTableDMLListeners("TeschtT", ev, ev),
+		ts := ddl.MustNewTables(
+			ddl.WithTable("TeschtT", &ddl.Column{Field: "col1"}),
+			ddl.WithTableDMLListeners("TeschtT", ev, ev),
 		) // +=2
 		tbl := ts.MustTable("TeschtT")
 		require.Exactly(t, "TeschtT", tbl.Name)
 	})
 
 	t.Run("Nil Table and after WithTable call", func(*testing.T) {
-		ts := csdb.MustNewTables(
-			csdb.WithTableDMLListeners("TeschtU", ev, ev),
-			csdb.WithTable("TeschtU", &csdb.Column{Field: "col1"}),
+		ts := ddl.MustNewTables(
+			ddl.WithTableDMLListeners("TeschtU", ev, ev),
+			ddl.WithTable("TeschtU", &ddl.Column{Field: "col1"}),
 		) // +=2
 		tbl := ts.MustTable("TeschtU")
 		require.Exactly(t, "TeschtU", tbl.Name)
@@ -265,7 +265,7 @@ func TestWithTableLoadColumns(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Invalid Identifier", func(t *testing.T) {
-		tbls, err := csdb.NewTables(csdb.WithTableLoadColumns(context.TODO(), nil, "H€llo"))
+		tbls, err := ddl.NewTables(ddl.WithTableLoadColumns(context.TODO(), nil, "H€llo"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
@@ -285,8 +285,8 @@ func TestWithTableLoadColumns(t *testing.T) {
 		dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('admin_user') ORDER BY TABLE_NAME, ORDINAL_POSITION")).
 			WillReturnRows(rows)
 
-		tm0 := csdb.MustNewTables(
-			csdb.WithTableLoadColumns(context.TODO(), dbc.DB, "admin_user"),
+		tm0 := ddl.MustNewTables(
+			ddl.WithTableLoadColumns(context.TODO(), dbc.DB, "admin_user"),
 		)
 
 		table := tm0.MustTable("admin_user")
@@ -299,13 +299,13 @@ func TestWithTableOrViewFromQuery(t *testing.T) {
 	t.Parallel()
 
 	t.Run("Invalid type", func(t *testing.T) {
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), nil, "proc", "asdasd", "SELECT * from"))
+		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), nil, "proc", "asdasd", "SELECT * from"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsUnavailable(err), "%+v", err)
 	})
 
 	t.Run("Invalid object name", func(t *testing.T) {
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), nil, "proc", "asdasd", "SELECT * from"))
+		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), nil, "proc", "asdasd", "SELECT * from"))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
 	})
@@ -317,7 +317,7 @@ func TestWithTableOrViewFromQuery(t *testing.T) {
 		xErr := errors.NewAlreadyClosedf("Connection already closed")
 		dbMock.ExpectExec("DROP TABLE IF EXISTS `testTable`").WillReturnError(xErr)
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", true))
+		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", true))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -329,7 +329,7 @@ func TestWithTableOrViewFromQuery(t *testing.T) {
 		xErr := errors.NewAlreadyClosedf("Connection already closed")
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("CREATE TABLE `testTable` AS SELECT * FROM catalog_product_entity")).WillReturnError(xErr)
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", false))
+		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", false))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -345,7 +345,7 @@ func TestWithTableOrViewFromQuery(t *testing.T) {
 
 		dbMock.ExpectQuery("SELEC.+\\s+FROM\\s+information_schema\\.COLUMNS").WillReturnError(xErr)
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", false))
+		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "table", "testTable", "SELECT * FROM catalog_product_entity", false))
 		assert.Nil(t, tbls)
 		assert.True(t, errors.IsAlreadyClosed(err), "%+v", err)
 	})
@@ -362,7 +362,7 @@ func TestWithTableOrViewFromQuery(t *testing.T) {
 			WillReturnRows(
 				cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
 
-		tbls, err := csdb.NewTables(csdb.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "view", "testTable", "SELECT * FROM core_config_data", false))
+		tbls, err := ddl.NewTables(ddl.WithTableOrViewFromQuery(context.TODO(), dbc.DB, "view", "testTable", "SELECT * FROM core_config_data", false))
 		if err != nil {
 			t.Fatalf("%+v", err)
 		}

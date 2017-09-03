@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package ddl
 
 import (
 	"database/sql"
 
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 )
 
 // Variables contains multiple MySQL configuration variables. Not threadsafe.
 type Variables struct {
-	Convert dbr.RowConvert
+	Convert dml.RowConvert
 	Data    map[string]string
-	Show    *dbr.Show
+	Show    *dml.Show
 }
 
 // NewVariables creates a new variable collection. If the argument names gets
@@ -34,24 +34,24 @@ type Variables struct {
 func NewVariables(names ...string) *Variables {
 	vs := &Variables{
 		Data: make(map[string]string),
-		Show: dbr.NewShow().Variable().Interpolate(),
+		Show: dml.NewShow().Variable().Interpolate(),
 	}
 	vs.Show.IsBuildCache = true
 	if len(names) > 1 {
-		vs.Show.Where(dbr.Column("Variable_name").In().Strs(names...))
+		vs.Show.Where(dml.Column("Variable_name").In().Strs(names...))
 	} else if len(names) == 1 {
-		vs.Show.Where(dbr.Column("Variable_name").Like().Str(names[0]))
+		vs.Show.Where(dml.Column("Variable_name").Like().Str(names[0]))
 	}
 	return vs
 }
 
-// ToSQL implements dbr.QueryBuilder interface to assemble a SQL string and its
+// ToSQL implements dml.QueryBuilder interface to assemble a SQL string and its
 // arguments for query execution.
 func (vs *Variables) ToSQL() (string, []interface{}, error) {
 	return vs.Show.ToSQL()
 }
 
-// RowScan implements dbr.Scanner interface and scans a single row from the
+// RowScan implements dml.Scanner interface and scans a single row from the
 // database query result. It expects that the variable name is in column 0 and
 // the variable value in column 1.
 func (vs *Variables) RowScan(r *sql.Rows) error {
@@ -60,11 +60,11 @@ func (vs *Variables) RowScan(r *sql.Rows) error {
 	}
 	name, err := vs.Convert.Index(0).Str()
 	if err != nil {
-		return errors.Wrapf(err, "[csdb] Variables.RowScan.Index.0 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
+		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.0 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
 	}
 	value, err := vs.Convert.Index(1).Str()
 	if err != nil {
-		return errors.Wrapf(err, "[csdb] Variables.RowScan.Index.1 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
+		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.1 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
 	}
 	vs.Data[name] = value
 	return nil

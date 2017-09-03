@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package ddl
 
 import (
 	"fmt"
@@ -53,11 +53,11 @@ func MustGetDSN() string {
 func GetParsedDSN() (*mysql.Config, error) {
 	dsn, err := GetDSN()
 	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] Cannot find DSN environment variable")
+		return nil, errors.Wrap(err, "[ddl] Cannot find DSN environment variable")
 	}
 	pd, err := mysql.ParseDSN(dsn)
 	if err != nil {
-		return nil, errors.Wrap(err, "[csdb] Cannot parse DSN into URL")
+		return nil, errors.Wrap(err, "[ddl] Cannot parse DSN into URL")
 	}
 	return pd, nil
 }

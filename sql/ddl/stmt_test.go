@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb_test
+package ddl_test
 
 import (
 	"context"
@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -34,17 +34,17 @@ import (
 )
 
 type typeWriter struct {
-	Write *csdb.ResurrectStmt
+	Write *ddl.ResurrectStmt
 }
 
 var (
-	sqlStmtInsert         = dbr.NewInsert("xtable").AddColumns("path", "value").SetRowCount(1)
+	sqlStmtInsert         = dml.NewInsert("xtable").AddColumns("path", "value").SetRowCount(1)
 	expectedInsertPrepare = cstesting.SQLMockQuoteMeta("INSERT INTO `xtable` (`path`,`value`) VALUES (?,?)")
-	sqlStmtReplace        = dbr.NewInsert("core_config_data").Replace().AddColumns("path", "value").SetRowCount(1)
+	sqlStmtReplace        = dml.NewInsert("core_config_data").Replace().AddColumns("path", "value").SetRowCount(1)
 )
 
 func newTypeWriterMocked(db *sql.DB, l log.Logger) *typeWriter {
-	rs := csdb.NewResurrectStmt(db, sqlStmtInsert)
+	rs := ddl.NewResurrectStmt(db, sqlStmtInsert)
 	rs.Log = l
 	tw := &typeWriter{
 		Write: rs,
@@ -54,7 +54,7 @@ func newTypeWriterMocked(db *sql.DB, l log.Logger) *typeWriter {
 }
 
 func newTypeWriterReal(db *sql.DB, l log.Logger) *typeWriter {
-	rs := csdb.NewResurrectStmt(db, sqlStmtReplace)
+	rs := ddl.NewResurrectStmt(db, sqlStmtReplace)
 	rs.Log = l
 	tw := &typeWriter{
 		Write: rs,
@@ -203,7 +203,7 @@ func TestResurrectStmtRealDB(t *testing.T) {
 		logw.WithLevel(logw.LevelDebug),
 	)
 
-	if _, err := csdb.GetDSN(); errors.IsNotFound(err) {
+	if _, err := ddl.GetDSN(); errors.IsNotFound(err) {
 		t.Skip("Skipping because no DSN found.")
 	}
 
@@ -230,10 +230,10 @@ func TestResurrectStmtRealDB(t *testing.T) {
 	//	println("\n", infoLogBuf.String(), "\n")
 
 	// to be more precise you must check the order of the logged values
-	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Close SQL: "REPLACE INTO`))
-	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Prepare SQL: "REPLACE INTO`))
+	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `ddl.ResurrectStmt.stmt.Close SQL: "REPLACE INTO`))
+	assert.Exactly(t, 2, strings.Count(debugLogBuf.String(), `ddl.ResurrectStmt.stmt.Prepare SQL: "REPLACE INTO`))
 
-	res, err := dbc.DeleteFrom("core_config_data").Where(dbr.Column("path").Like().Str("RSgopher%")).Exec(context.TODO())
+	res, err := dbc.DeleteFrom("core_config_data").Where(dml.Column("path").Like().Str("RSgopher%")).Exec(context.TODO())
 	assert.NoError(t, err)
 	ar, err := res.RowsAffected()
 	assert.NoError(t, err)

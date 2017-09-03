@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package ddl
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/slices"
 	"github.com/corestoreio/errors"
@@ -48,14 +48,14 @@ type Columns []*Column
 type Column struct {
 	Field   string         //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
 	Pos     uint64         //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
-	Default dbr.NullString //`COLUMN_DEFAULT` longtext,
+	Default dml.NullString //`COLUMN_DEFAULT` longtext,
 	Null    string         //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
 	// DataType contains the basic type of a column like smallint, int, mediumblob,
 	// float, double, etc... but always transformed to lower case.
 	DataType      string        //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
-	CharMaxLength dbr.NullInt64 //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
-	Precision     dbr.NullInt64 //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
-	Scale         dbr.NullInt64 //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
+	CharMaxLength dml.NullInt64 //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
+	Precision     dml.NullInt64 //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
+	Scale         dml.NullInt64 //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
 	// ColumnType full SQL string of the column type
 	ColumnType string //`COLUMN_TYPE` longtext NOT NULL,
 	// Key primary or unique or ...
@@ -89,38 +89,38 @@ const selAllTablesColumns = `SELECT
 // contains the table name. Returns a NotFound error if the table is not
 // available. All columns from all tables gets selected when you don't provide
 // the argument `tables`.
-func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[string]Columns, error) {
+func LoadColumns(ctx context.Context, db dml.Querier, tables ...string) (map[string]Columns, error) {
 	var rows *sql.Rows
 
 	if len(tables) == 0 {
 		var err error
 		rows, err = db.QueryContext(ctx, selAllTablesColumns)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v", tables)
+			return nil, errors.Wrapf(err, "[ddl] LoadColumns QueryContext for tables %v", tables)
 		}
 	} else {
-		sqlStr, _, err := dbr.Interpolate(selTablesColumns).Strs(tables...).ToSQL()
+		sqlStr, _, err := dml.Interpolate(selTablesColumns).Strs(tables...).ToSQL()
 		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] LoadColumns dbr.Repeat for tables %v", tables)
+			return nil, errors.Wrapf(err, "[ddl] LoadColumns dml.Repeat for tables %v", tables)
 		}
 		rows, err = db.QueryContext(ctx, sqlStr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "[csdb] LoadColumns QueryContext for tables %v with WHERE clause", tables)
+			return nil, errors.Wrapf(err, "[ddl] LoadColumns QueryContext for tables %v with WHERE clause", tables)
 		}
 	}
 	var err error
 	defer func() {
 		// Not testable with the sqlmock package :-(
 		if err2 := rows.Close(); err2 != nil && err == nil {
-			err = errors.Wrap(err2, "[dbr] LoadColumns.Rows.Close")
+			err = errors.Wrap(err2, "[dml] LoadColumns.Rows.Close")
 		}
 	}()
 
 	tc := make(map[string]Columns)
-	rc := new(dbr.RowConvert)
+	rc := new(dml.RowConvert)
 	for rows.Next() {
 		if err = rc.Scan(rows); err != nil {
-			return nil, errors.Wrapf(err, "[csdb] Scan Query for tables: %v", tables)
+			return nil, errors.Wrapf(err, "[ddl] Scan Query for tables: %v", tables)
 		}
 		c, tn, err := NewColumn(rc)
 		if err != nil {
@@ -135,10 +135,10 @@ func LoadColumns(ctx context.Context, db dbr.Querier, tables ...string) (map[str
 		tc[tn] = append(tc[tn], c)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrapf(err, "[csdb] rows.Err Query")
+		return nil, errors.Wrapf(err, "[ddl] rows.Err Query")
 	}
 	if len(tc) == 0 {
-		return nil, errors.NewNotFoundf("[csdb] Tables %v not found", tables)
+		return nil, errors.NewNotFoundf("[ddl] Tables %v not found", tables)
 	}
 	return tc, err
 }
@@ -198,7 +198,7 @@ func (cs Columns) Map(f func(*Column) *Column) Columns {
 	for i, c := range cs {
 		var c2 = new(Column)
 		*c2 = *c
-		// columns.go:161::error: assignment copies lock value to *c2: csdb.Column contains sync.RWMutex (vet)
+		// columns.go:161::error: assignment copies lock value to *c2: ddl.Column contains sync.RWMutex (vet)
 		// hmmm ...
 		cols[i] = f(c2)
 	}
@@ -286,7 +286,7 @@ func (cs Columns) String() string {
 func (cs Columns) GoString() string {
 	// fix tests if you change this layout of the returned string
 	var buf bytes.Buffer
-	_, _ = buf.WriteString("csdb.Columns{\n")
+	_, _ = buf.WriteString("ddl.Columns{\n")
 	for _, c := range cs {
 		_, _ = fmt.Fprintf(&buf, "%#v,\n", c)
 	}
@@ -323,7 +323,7 @@ func (cs Columns) JoinFields(sep string) string {
 
 // NewColumn creates a new column pointer and maps it from a raw database row
 // its bytes into the type Column.
-func NewColumn(rc *dbr.RowConvert) (c *Column, tableName string, err error) {
+func NewColumn(rc *dml.RowConvert) (c *Column, tableName string, err error) {
 	c = new(Column)
 	for i, col := range rc.Columns {
 		if rc.Alias != nil {
@@ -364,10 +364,10 @@ func NewColumn(rc *dbr.RowConvert) (c *Column, tableName string, err error) {
 		case "COLUMN_COMMENT":
 			c.Comment, err = rc.Str()
 		default:
-			return nil, "", errors.NewNotSupportedf("[csdb] Column %q not supported or alias not found")
+			return nil, "", errors.NewNotSupportedf("[ddl] Column %q not supported or alias not found")
 		}
 		if err != nil {
-			return nil, "", errors.Wrapf(err, "[csdb] Failed to scan %q at row %d", col, rc.Count)
+			return nil, "", errors.Wrapf(err, "[ddl] Failed to scan %q at row %d", col, rc.Count)
 		}
 	}
 	return c, tableName, nil
@@ -394,13 +394,13 @@ func (c *Column) GoString() string {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 
-	_, _ = buf.WriteString("&csdb.Column{")
+	_, _ = buf.WriteString("&ddl.Column{")
 	fmt.Fprintf(buf, "Field: %q, ", c.Field)
 	if c.Pos > 0 {
 		fmt.Fprintf(buf, "Pos: %d, ", c.Pos)
 	}
 	if c.Default.Valid {
-		fmt.Fprintf(buf, "Default: dbr.MakeNullString(%q), ", c.Default.String)
+		fmt.Fprintf(buf, "Default: dml.MakeNullString(%q), ", c.Default.String)
 	}
 	if c.Null != "" {
 		fmt.Fprintf(buf, "Null: %q, ", c.Null)
@@ -409,13 +409,13 @@ func (c *Column) GoString() string {
 		fmt.Fprintf(buf, "DataType: %q, ", c.DataType)
 	}
 	if c.CharMaxLength.Valid {
-		fmt.Fprintf(buf, "CharMaxLength: dbr.MakeNullInt64(%d), ", c.CharMaxLength.Int64)
+		fmt.Fprintf(buf, "CharMaxLength: dml.MakeNullInt64(%d), ", c.CharMaxLength.Int64)
 	}
 	if c.Precision.Valid {
-		fmt.Fprintf(buf, "Precision: dbr.MakeNullInt64(%d), ", c.Precision.Int64)
+		fmt.Fprintf(buf, "Precision: dml.MakeNullInt64(%d), ", c.Precision.Int64)
 	}
 	if c.Scale.Valid {
-		fmt.Fprintf(buf, "Scale: dbr.MakeNullInt64(%d), ", c.Scale.Int64)
+		fmt.Fprintf(buf, "Scale: dml.MakeNullInt64(%d), ", c.Scale.Int64)
 	}
 	if c.ColumnType != "" {
 		fmt.Fprintf(buf, "ColumnType: %q, ", c.ColumnType)
@@ -553,32 +553,32 @@ func (c *Column) goPrimitive(useNullType bool) string {
 	case colTypeBool:
 		goType = "bool"
 		if isNull {
-			goType = "dbr.NullBool"
+			goType = "dml.NullBool"
 		}
 	case colTypeInt:
 		goType = "int64"
 		if isNull {
-			goType = "dbr.NullInt64"
+			goType = "dml.NullInt64"
 		}
 	case colTypeString:
 		goType = "string"
 		if isNull {
-			goType = "dbr.NullString"
+			goType = "dml.NullString"
 		}
 	case colTypeFloat:
 		goType = "float64"
 		if isNull {
-			goType = "dbr.NullFloat64"
+			goType = "dml.NullFloat64"
 		}
 	case colTypeDate:
 		goType = "time.Time"
 		if isNull {
-			goType = "dbr.NullTime"
+			goType = "dml.NullTime"
 		}
 	case colTypeTime:
 		goType = "time.Time"
 		if isNull {
-			goType = "dbr.NullTime"
+			goType = "dml.NullTime"
 		}
 	case colTypeMoney:
 		goType = "money.Money"

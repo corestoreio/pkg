@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package ddl
 
 import (
 	"strconv"
@@ -39,13 +39,13 @@ type MasterStatus struct {
 	ExecutedGTIDSet string
 }
 
-// ToSQL implements dbr.QueryBuilder interface to assemble a SQL string and its
+// ToSQL implements dml.QueryBuilder interface to assemble a SQL string and its
 // arguments for query execution.
 func (ms *MasterStatus) ToSQL() (string, []interface{}, error) {
 	return "SHOW MASTER STATUS", nil, nil
 }
 
-// RowScan implements dbr.Scanner interface to scan a row returned from database
+// RowScan implements dml.Scanner interface to scan a row returned from database
 // query.
 func (ms *MasterStatus) RowScan(r *sql.Rows) error {
 	return errors.WithStack(
@@ -85,12 +85,12 @@ func (ms MasterStatus) String() string {
 func (ms *MasterStatus) FromString(str string) error {
 	c := strings.IndexByte(str, ';')
 	if c < 1 {
-		return errors.NewNotFoundf("[csdb] MasterStatus FromString: Delimiter semi-colon not found.")
+		return errors.NewNotFoundf("[ddl] MasterStatus FromString: Delimiter semi-colon not found.")
 	}
 
 	pos, err := strconv.ParseUint(str[c+1:], 10, 32)
 	if err != nil {
-		return errors.NewNotValidf("[csdb] MasterStatus FromString: %s", err)
+		return errors.NewNotValidf("[ddl] MasterStatus FromString: %s", err)
 	}
 	ms.File = str[:c]
 	ms.Position = uint(pos)

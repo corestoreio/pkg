@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package ddl
 
 // MD5 is only used for shortening the very long foreign or index key name.
 
@@ -23,7 +23,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/dml"
 )
 
 func mapAlNum(r rune) rune {
@@ -85,11 +85,11 @@ func Shorten(tableName string) string {
 // with their abbreviations and in the second round creating a MD5 hash of the
 // table name.
 func TableName(prefix, name string, suffixes ...string) string {
-	if prefix == "" && len(suffixes) == 0 && len(name) <= dbr.MaxIdentifierLength {
+	if prefix == "" && len(suffixes) == 0 && len(name) <= dml.MaxIdentifierLength {
 		return strings.Map(mapAlNum, name)
 	}
 
-	var cBuf [dbr.MaxIdentifierLength]byte
+	var cBuf [dml.MaxIdentifierLength]byte
 	var buf = cBuf[:0]
 	if !strings.HasPrefix(name, prefix) {
 		buf = append(buf, prefix...)
@@ -115,7 +115,7 @@ func IndexName(indexType, tableName string, fields ...string) string {
 		prefix = "FTI_"
 	}
 
-	var cBuf [dbr.MaxIdentifierLength]byte
+	var cBuf [dml.MaxIdentifierLength]byte
 	var buf = cBuf[:0]
 	buf = append(buf, tableName...)
 	for i, f := range fields {
@@ -135,7 +135,7 @@ func IndexName(indexType, tableName string, fields ...string) string {
 // `after`. Event should be one of the following types: `insert`, `update` or
 // `delete`
 func TriggerName(tableName, time, event string) string {
-	var cBuf [dbr.MaxIdentifierLength]byte
+	var cBuf [dml.MaxIdentifierLength]byte
 	var buf = cBuf[:0]
 	buf = append(buf, tableName...)
 	buf = append(buf, '_')
@@ -148,7 +148,7 @@ func TriggerName(tableName, time, event string) string {
 // ForeignKeyName creates a new foreign key name. The returned string represents
 // a valid identifier within MySQL.
 func ForeignKeyName(priTableName, priColumnName, refTableName, refColumnName string) string {
-	var cBuf [dbr.MaxIdentifierLength]byte
+	var cBuf [dml.MaxIdentifierLength]byte
 	var buf = cBuf[:0]
 	buf = append(buf, priTableName...)
 	buf = append(buf, '_')
@@ -162,12 +162,12 @@ func ForeignKeyName(priTableName, priColumnName, refTableName, refColumnName str
 
 // TODO: micro optimize later 8-) to reduce allocations
 func shortenEntityName(name []byte, prefix string) []byte {
-	if len(name) < dbr.MaxIdentifierLength {
+	if len(name) < dml.MaxIdentifierLength {
 		return name
 	}
 	name2 := name[:0]
 	name2 = append(name2, translatedAbbreviations.Replace(string(name))...)
-	if len(name2) > dbr.MaxIdentifierLength {
+	if len(name2) > dml.MaxIdentifierLength {
 		return []byte(fmt.Sprintf("%s%x", prefix, md5.Sum(name2))) // worse worse case
 	}
 	return name2

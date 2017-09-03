@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,37 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb_test
+package ddl_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ dbr.QueryBuilder = (*csdb.Table)(nil)
-var _ dbr.Scanner = (*csdb.Table)(nil)
+var _ dml.QueryBuilder = (*ddl.Table)(nil)
+var _ dml.Scanner = (*ddl.Table)(nil)
 
-var tableMap *csdb.Tables
+var tableMap *ddl.Tables
 
 func init() {
-	tableMap = csdb.MustNewTables(
-		csdb.WithTable(
+	tableMap = ddl.MustNewTables(
+		ddl.WithTable(
 			"catalog_category_anc_categs_index_idx",
-			&csdb.Column{
+			&ddl.Column{
 				Field:      "category_id",
 				ColumnType: "int(10) unsigned",
 				Key:        "MUL",
-				Default:    dbr.MakeNullString("0"),
+				Default:    dml.MakeNullString("0"),
 				Extra:      "",
 			},
-			&csdb.Column{
+			&ddl.Column{
 				Field:      "path",
 				ColumnType: "varchar(255)",
 				Null:       "YES",
@@ -50,16 +50,16 @@ func init() {
 				Extra:      "",
 			},
 		),
-		csdb.WithTable(
+		ddl.WithTable(
 			"catalog_category_anc_categs_index_tmp",
-			&csdb.Column{
+			&ddl.Column{
 				Field:      "category_id",
 				ColumnType: "int(10) unsigned",
 				Key:        "PRI",
-				Default:    dbr.MakeNullString("0"),
+				Default:    dml.MakeNullString("0"),
 				Extra:      "",
 			},
-			&csdb.Column{
+			&ddl.Column{
 				Field:      "path",
 				ColumnType: "varchar(255)",
 				Null:       "YES",
@@ -68,22 +68,22 @@ func init() {
 		),
 	)
 
-	tableMap.Upsert(csdb.NewTable(
+	tableMap.Upsert(ddl.NewTable(
 		"catalog_category_anc_products_index_idx",
-		&csdb.Column{
+		&ddl.Column{
 			Field:      "category_id",
 			ColumnType: "int(10) unsigned",
-			Default:    dbr.MakeNullString("0"),
+			Default:    dml.MakeNullString("0"),
 			Extra:      "",
 		},
-		&csdb.Column{
+		&ddl.Column{
 			Field:      "product_id",
 			ColumnType: "int(10) unsigned",
 			Key:        "",
-			Default:    dbr.MakeNullString("0"),
+			Default:    dml.MakeNullString("0"),
 			Extra:      "",
 		},
-		&csdb.Column{
+		&ddl.Column{
 			Field:      "position",
 			ColumnType: "int(10) unsigned",
 			Null:       "YES",
@@ -92,22 +92,22 @@ func init() {
 		},
 	),
 	)
-	tableMap.Upsert(csdb.NewTable(
+	tableMap.Upsert(ddl.NewTable(
 		"admin_user",
-		&csdb.Column{
+		&ddl.Column{
 			Field:      "user_id",
 			ColumnType: "int(10) unsigned",
 			Key:        "PRI",
 			Extra:      "auto_increment",
 		},
-		&csdb.Column{
+		&ddl.Column{
 			Field:      "email",
 			ColumnType: "varchar(128)",
 			Null:       "YES",
 			Key:        "",
 			Extra:      "",
 		},
-		&csdb.Column{
+		&ddl.Column{
 			Field:      "username",
 			ColumnType: "varchar(40)",
 			Null:       "YES",
@@ -169,7 +169,7 @@ func TestTable_Truncate(t *testing.T) {
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
-		tbl := csdb.NewTable("product")
+		tbl := ddl.NewTable("product")
 		tbl.IsView = true
 		err := tbl.Rename(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
@@ -189,7 +189,7 @@ func TestTable_Rename(t *testing.T) {
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
-		tbl := csdb.NewTable("product")
+		tbl := ddl.NewTable("product")
 		tbl.IsView = true
 		err := tbl.Rename(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
@@ -210,7 +210,7 @@ func TestTable_Swap(t *testing.T) {
 	})
 
 	t.Run("Invalid table Name", func(t *testing.T) {
-		tbl := csdb.NewTable("product")
+		tbl := ddl.NewTable("product")
 		tbl.IsView = true
 		err := tbl.Swap(context.TODO(), nil, "namecatalog_category_anc_categs_index_tmpcatalog_category_anc_categs_")
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
@@ -229,7 +229,7 @@ func TestTable_Drop(t *testing.T) {
 		assert.NoError(t, err, "%+v", err)
 	})
 	t.Run("Invalid table Name", func(t *testing.T) {
-		tbl := csdb.NewTable("produ™€ct")
+		tbl := ddl.NewTable("produ™€ct")
 		tbl.IsView = true
 		err := tbl.Drop(context.TODO(), nil)
 		assert.True(t, errors.IsNotValid(err), "%+v", err)
@@ -246,7 +246,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' INTO TABLE `admin_user` (user_id,email,username) ;")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{})
+		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", ddl.InfileOptions{})
 		assert.NoError(t, err, "%+v", err)
 	})
 
@@ -256,7 +256,7 @@ func TestTable_LoadDataInfile(t *testing.T) {
 
 		dbMock.ExpectExec(cstesting.SQLMockQuoteMeta("LOAD DATA LOCAL INFILE 'non-existent.csv' REPLACE  INTO TABLE `admin_user` FIELDS TERMINATED BY '|' OPTIONALLY  ENCLOSED BY '+' ESCAPED BY '\"'\n LINES  TERMINATED BY '\r\n' STARTING BY '###'\nIGNORE 1 LINES\n (user_id,@email,@username)\nSET username=UPPER(@username),\nemail=UPPER(@email);")).
 			WillReturnResult(sqlmock.NewResult(0, 0))
-		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", csdb.InfileOptions{
+		err := tableMap.MustTable("admin_user").LoadDataInfile(context.TODO(), dbc.DB, "non-existent.csv", ddl.InfileOptions{
 			Replace:                    true,
 			FieldsTerminatedBy:         "|",
 			FieldsOptionallyEnclosedBy: true,

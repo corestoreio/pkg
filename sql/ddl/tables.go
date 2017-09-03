@@ -1,4 +1,4 @@
-// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+// Copyright 2015-2017, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package ddl
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 )
 
@@ -42,7 +42,7 @@ type TableOption struct {
 
 // Tables handles all the tables defined for a package. Thread safe.
 type Tables struct {
-	Convert dbr.RowConvert
+	Convert dml.RowConvert
 	// Schema represents the name of the database. Might be empty.
 	Schema        string
 	previousTable string // the table which has been scanned beforehand
@@ -57,14 +57,14 @@ type Tables struct {
 // table gets first dropped, if exists, and then created. Argument typ can be
 // only `table` or `view`.
 func WithTableOrViewFromQuery(ctx context.Context, db interface {
-	dbr.Execer
-	dbr.Querier
+	dml.Execer
+	dml.Querier
 }, typ string, objectName string, query string, dropIfExists ...bool) TableOption {
 	return TableOption{
 		priority: 10,
 		fn: func(tm *Tables) error {
 
-			if err := dbr.IsValidIdentifier(objectName); err != nil {
+			if err := dml.IsValidIdentifier(objectName); err != nil {
 				return errors.WithStack(err)
 			}
 
@@ -75,28 +75,28 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 			case "table":
 				viewOrTable = "TABLE"
 			default:
-				return errors.NewUnavailablef("[csdb] Option %q for variable typ not available. Only `view` or `table`", typ)
+				return errors.NewUnavailablef("[ddl] Option %q for variable typ not available. Only `view` or `table`", typ)
 			}
 
-			vnq := dbr.Quoter.Name(objectName)
+			vnq := dml.Quoter.Name(objectName)
 			if len(dropIfExists) > 0 && dropIfExists[0] {
 				if _, err := db.ExecContext(ctx, "DROP "+viewOrTable+" IF EXISTS "+vnq); err != nil {
-					return errors.Wrapf(err, "[csdb] Drop view failed %q", objectName)
+					return errors.Wrapf(err, "[ddl] Drop view failed %q", objectName)
 				}
 			}
 
 			_, err := db.ExecContext(ctx, "CREATE "+viewOrTable+" "+vnq+" AS "+query)
 			if err != nil {
-				return errors.Wrapf(err, "[csdb] Create view %q failed", objectName)
+				return errors.Wrapf(err, "[ddl] Create view %q failed", objectName)
 			}
 
 			tc, err := LoadColumns(ctx, db, objectName)
 			if err != nil {
-				return errors.Wrapf(err, "[csdb] Load columns failed for %q", objectName)
+				return errors.Wrapf(err, "[ddl] Load columns failed for %q", objectName)
 			}
 
 			if err := WithTable(objectName, tc[objectName]...).fn(tm); err != nil {
-				return errors.Wrapf(err, "[csdb] Failed to add new table %q", objectName)
+				return errors.Wrapf(err, "[ddl] Failed to add new table %q", objectName)
 			}
 
 			tm.mu.Lock()
@@ -117,12 +117,12 @@ func WithTableOrViewFromQuery(ctx context.Context, db interface {
 func WithTable(tableName string, cols ...*Column) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
-			if err := dbr.IsValidIdentifier(tableName); err != nil {
+			if err := dml.IsValidIdentifier(tableName); err != nil {
 				return errors.WithStack(err)
 			}
 
 			if err := tm.Upsert(NewTable(tableName, cols...)); err != nil {
-				return errors.Wrap(err, "[csdb] WithNewTable.Tables.Insert")
+				return errors.Wrap(err, "[ddl] WithNewTable.Tables.Insert")
 			}
 			return nil
 		},
@@ -135,18 +135,18 @@ func WithTable(tableName string, cols ...*Column) TableOption {
 // generator script of the CoreStore project, we can guarantee that the
 // generated index constant will always stay the same but the name of the table
 // differs.
-func WithTableLoadColumns(ctx context.Context, db dbr.Querier, names ...string) TableOption {
+func WithTableLoadColumns(ctx context.Context, db dml.Querier, names ...string) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
 			for _, n := range names {
-				if err := dbr.IsValidIdentifier(n); err != nil {
+				if err := dml.IsValidIdentifier(n); err != nil {
 					return errors.WithStack(err)
 				}
 			}
 
 			tc, err := LoadColumns(ctx, db, names...)
 			if err != nil {
-				return errors.Wrap(err, "[csdb] Load columns failed")
+				return errors.Wrap(err, "[ddl] Load columns failed")
 			}
 
 			for _, n := range names {
@@ -155,7 +155,7 @@ func WithTableLoadColumns(ctx context.Context, db dbr.Querier, names ...string) 
 
 				t.Columns = tc[n]
 				if err := tm.Upsert(t); err != nil {
-					return errors.Wrapf(err, "[csdb] Tables.Insert for %q", n)
+					return errors.Wrapf(err, "[ddl] Tables.Insert for %q", n)
 				}
 			}
 			return nil
@@ -170,14 +170,14 @@ func WithTableNames(names ...string) TableOption {
 	return TableOption{
 		fn: func(tm *Tables) error {
 			for _, name := range names {
-				if err := dbr.IsValidIdentifier(name); err != nil {
+				if err := dml.IsValidIdentifier(name); err != nil {
 					return errors.WithStack(err)
 				}
 			}
 
 			for _, tn := range names {
 				if err := tm.Upsert(NewTable(tn)); err != nil {
-					return errors.Wrapf(err, "[csdb] Tables.Insert %q", tn)
+					return errors.Wrapf(err, "[ddl] Tables.Insert %q", tn)
 				}
 			}
 			return nil
@@ -188,7 +188,7 @@ func WithTableNames(names ...string) TableOption {
 // WithTableDMLListeners adds event listeners to a table object. It doesn't
 // matter if the table has already been set. If the table object gets set later,
 // the events will be copied to the new object.
-func WithTableDMLListeners(tableName string, events ...*dbr.ListenerBucket) TableOption {
+func WithTableDMLListeners(tableName string, events ...*dml.ListenerBucket) TableOption {
 	return TableOption{
 		priority: 254,
 		fn: func(tm *Tables) error {
@@ -197,7 +197,7 @@ func WithTableDMLListeners(tableName string, events ...*dbr.ListenerBucket) Tabl
 
 			t, ok := tm.tm[tableName]
 			if !ok {
-				return errors.NewNotFoundf("[csdb] Table %q not found", tableName)
+				return errors.NewNotFoundf("[ddl] Table %q not found", tableName)
 			}
 			t.Listeners.Merge(events...)
 			tm.tm[tableName] = t
@@ -213,7 +213,7 @@ func NewTables(opts ...TableOption) (*Tables, error) {
 		tm: make(map[string]*Table),
 	}
 	if err := tm.Options(opts...); err != nil {
-		return nil, errors.Wrap(err, "[csdb] NewTables applied option error")
+		return nil, errors.Wrap(err, "[ddl] NewTables applied option error")
 	}
 	return tm, nil
 }
@@ -234,7 +234,7 @@ func MustNewTables(opts ...TableOption) *Tables {
 // practice to rely on init ... but for now it works very well.
 //
 //		func init() {
-//			TableCollection = csdb.MustInitTables(TableCollection,[Options])
+//			TableCollection = ddl.MustInitTables(TableCollection,[Options])
 // 		}
 // TODO(CyS) rethink and refactor maybe.
 func MustInitTables(ts *Tables, opts ...TableOption) *Tables {
@@ -262,7 +262,7 @@ func (tm *Tables) Options(opts ...TableOption) error {
 
 	for _, to := range opts {
 		if err := to.fn(tm); err != nil {
-			return errors.Wrap(err, "[csdb] Applied option error")
+			return errors.Wrap(err, "[ddl] Applied option error")
 		}
 	}
 	return nil
@@ -279,7 +279,7 @@ func (tm *Tables) Table(name string) (*Table, error) {
 	if t, ok := tm.tm[name]; ok {
 		return t, nil
 	}
-	return nil, errors.NewNotFoundf("[csdb] Table %q not found.", name)
+	return nil, errors.NewNotFoundf("[ddl] Table %q not found.", name)
 }
 
 // MustTable same as Table function but panics when the table cannot be found or
@@ -394,7 +394,7 @@ func (tm *Tables) RowScan(r *sql.Rows) error {
 	return nil
 }
 
-// RowClose implements dbr.RowCloser interface used in dbr.Load. It unlocks the
+// RowClose implements dml.RowCloser interface used in dml.Load. It unlocks the
 // internal mutex.
 func (tm *Tables) RowClose() error {
 	tm.mu.Unlock()
@@ -408,7 +408,7 @@ func (tm *Tables) ToSQL() (string, []interface{}, error) {
 	defer tm.mu.Unlock()
 
 	query := selAllTablesColumns
-	var arg dbr.Arguments
+	var arg dml.Arguments
 	if ltm := len(tm.tm); ltm > 0 {
 		query = selTablesColumns
 		tables := make([]string, 0, ltm)
@@ -417,5 +417,5 @@ func (tm *Tables) ToSQL() (string, []interface{}, error) {
 		}
 		arg = arg.Strs(tables...)
 	}
-	return dbr.Interpolate(query).ArgUnions(arg).ToSQL()
+	return dml.Interpolate(query).ArgUnions(arg).ToSQL()
 }
