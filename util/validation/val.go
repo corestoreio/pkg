@@ -17,6 +17,7 @@ package validation
 // review https://github.com/go-ozzo/ozzo-validation but with an API like uber-go/zap. Ozzo is a slow reflection soup.
 // import "github.com/asaskevich/govalidator"
 // TODO: review github.com/markbates/validate which has the nicest API
+// https://github.com/gobuffalo/authrecipe/blob/master/models/user.go#53
 // TODO: review https://github.com/RussellLuo/validating
 
 // Validator general interface that a type has implemented for validation.
