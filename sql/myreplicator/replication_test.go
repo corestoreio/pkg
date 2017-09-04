@@ -21,6 +21,7 @@ import (
 var testOutputLogs = flag.Bool("out", false, "output binlog event")
 
 func TestBinLogSyncer(t *testing.T) {
+	t.Skip("For now tests are disabled, needs some work")
 	check.TestingT(t)
 }
 
