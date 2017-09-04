@@ -15,18 +15,20 @@
 package ddl
 
 import (
+	"database/sql"
 	"strconv"
 	"strings"
 
-	"database/sql"
-
+	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/errors"
 )
 
-// MasterStatus This statement provides status information about the binary log
-// files of the master. It requires either the SUPER or REPLICATION CLIENT
-// privilege.
+// MasterStatus provides status information about the binary log files of the
+// master. It requires either the SUPER or REPLICATION CLIENT privilege. Once a
+// MasterStatus pointer variable has been created it can be reused multiple
+// times.
 type MasterStatus struct {
+	rc             dml.RowConvert
 	File           string
 	Position       uint
 	BinlogDoDB     string
@@ -48,9 +50,36 @@ func (ms *MasterStatus) ToSQL() (string, []interface{}, error) {
 // RowScan implements dml.Scanner interface to scan a row returned from database
 // query.
 func (ms *MasterStatus) RowScan(r *sql.Rows) error {
-	return errors.WithStack(
-		r.Scan(&ms.File, &ms.Position, &ms.BinlogDoDB, &ms.BinlogIgnoreDB, &ms.ExecutedGTIDSet),
-	)
+	if err := ms.rc.Scan(r); err != nil {
+		return err
+	}
+	for i, col := range ms.rc.Columns {
+		if ms.rc.Alias != nil {
+			if orgCol, ok := ms.rc.Alias[col]; ok {
+				col = orgCol
+			}
+		}
+		b := ms.rc.Index(i)
+		var err error
+		switch col {
+		case "File":
+			ms.File, err = b.Str()
+		case "Position":
+			ms.Position, err = b.Uint()
+		case "Binlog_Do_DB":
+			ms.BinlogDoDB, err = b.Str()
+		case "Binlog_Ignore_DB":
+			ms.BinlogIgnoreDB, err = b.Str()
+		case "Executed_Gtid_Set":
+			ms.ExecutedGTIDSet, err = b.Str()
+		default:
+			return errors.NewNotFoundf("[ddl] Column %q not found in SHOW MASTER STATUS", col)
+		}
+		if err != nil {
+			return errors.Wrapf(err, "[dml] Failed to rc value at row % with column index %d", ms.rc.Count, i)
+		}
+	}
+	return nil
 }
 
 // Compare compares with another MasterStatus. Returns 1 if left hand side is

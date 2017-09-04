@@ -146,7 +146,7 @@ func WithTableLoadColumns(ctx context.Context, db dml.Querier, names ...string) 
 
 			tc, err := LoadColumns(ctx, db, names...)
 			if err != nil {
-				return errors.Wrap(err, "[ddl] Load columns failed")
+				return errors.WithStack(err)
 			}
 
 			for _, n := range names {
