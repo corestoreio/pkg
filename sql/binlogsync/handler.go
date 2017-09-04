@@ -3,7 +3,7 @@ package binlogsync
 import (
 	"context"
 
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 	"golang.org/x/sync/errgroup"
@@ -18,7 +18,7 @@ type RowsEventHandler interface {
 	// [before update row, after update row] for update v0, only one row for a
 	// event, and we don't support this version yet. The Do function will run in
 	// its own Goroutine.
-	Do(ctx context.Context, action string, t csdb.Table, rows [][]interface{}) error
+	Do(ctx context.Context, action string, t ddl.Table, rows [][]interface{}) error
 	// Complete runs before a binlog rotation event happens. Same error rules
 	// apply here like for function Do(). The Complete function will run in its
 	// own Goroutine.
@@ -38,7 +38,7 @@ func (c *Canal) RegisterRowsEventHandler(h RowsEventHandler) {
 	c.rsHandlers = append(c.rsHandlers, h)
 }
 
-func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table csdb.Table, rows [][]interface{}) error {
+func (c *Canal) travelRowsEventHandler(ctx context.Context, action string, table ddl.Table, rows [][]interface{}) error {
 	c.rsMu.RLock()
 	defer c.rsMu.RUnlock()
 

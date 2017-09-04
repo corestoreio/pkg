@@ -5,16 +5,15 @@ import (
 	"database/sql"
 	"net"
 	"regexp"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/storage/myreplicator"
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/dml"
+	"github.com/corestoreio/csfw/sql/myreplicator"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/sync/singleflight"
 	"github.com/corestoreio/csfw/util/conv"
@@ -43,7 +42,7 @@ type Canal struct {
 	cfgw config.Writer
 
 	masterMu           sync.RWMutex
-	masterStatus       csdb.MasterStatus
+	masterStatus       ddl.MasterStatus
 	masterLastSaveTime time.Time
 
 	// expAlterTable defines the regex to be used to detect ALTER TABLE
@@ -59,7 +58,7 @@ type Canal struct {
 	// Tables contains the overall SQL table cache. If a table gets modified
 	// during runtime of this program then somehow we must clear the cache to
 	// reload the table structures.
-	tables *csdb.Tables
+	tables *ddl.Tables
 	// tableSFG takes to only execute one SQL query per table in parallel
 	// situations. No need for a pointer because Canal is already a pointer. So
 	// simple embedding.
@@ -111,9 +110,10 @@ func WithConfigurationWriter(w config.Writer) Option {
 // TODO(CyS) add a WithContext() option function or just only a parameter for a time out.
 
 func withUpdateBinlogStart(c *Canal) error {
-	ctx := context.Background()
-	var ms csdb.MasterStatus
-	if err := ms.Load(dbr.WrapDBContext(ctx, c.db)); err != nil {
+	ctx := context.TODO()
+	var ms ddl.MasterStatus
+
+	if _, err := dml.Load(ctx, c.db, &ms, &ms); err != nil {
 		return errors.Wrap(err, "[binlogsync] ShowMasterStatus Load")
 	}
 
@@ -154,13 +154,15 @@ func withPrepareSyncer(c *Canal) error {
 }
 
 func withCheckBinlogRowFormat(c *Canal) error {
+	const varName = "binlog_format"
 	ctx := context.Background()
-	v := csdb.Variable{}
-	if err := v.LoadOne(dbr.WrapDBContext(ctx, c.db), "binlog_format"); err != nil {
+
+	v := ddl.NewVariables(varName)
+	if _, err := dml.Load(ctx, c.db, v, v); err != nil {
 		return errors.Wrap(err, "[binlogsync] checkBinlogRowFormat row.Scan")
 	}
-	if !strings.EqualFold(v.Value, "ROW") {
-		return errors.NewNotSupportedf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q", v.Name, v.Value)
+	if !v.EqualFold(varName, "ROW") {
+		return errors.NewNotSupportedf("[binlogsync] binlog variable %q must have the configured ROW format, but got %q", varName, v.Data[varName])
 	}
 	return nil
 }
@@ -177,7 +179,7 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 	atomic.StoreInt32(c.closed, 0)
 	c.expAlterTable = regexp.MustCompile("(?i)^ALTER\\sTABLE\\s.*?`{0,1}(.*?)`{0,1}\\.{0,1}`{0,1}([^`\\.]+?)`{0,1}\\s.*")
 
-	c.BackendPosition = cfgmodel.NewStr("storage/binlogsync/position")
+	c.BackendPosition = cfgmodel.NewStr("sql/binlogsync/position")
 
 	// remove custom parameters from DSN and copy them into our own map because
 	// otherwise MySQL connection fails due to unknown connection parameters.
@@ -192,7 +194,7 @@ func NewCanal(dsn *mysql.Config, db Option, opts ...Option) (*Canal, error) {
 
 	}
 
-	c.tables = csdb.MustNewTables()
+	c.tables = ddl.MustNewTables()
 	c.tables.Schema = c.DSN.DBName
 	c.tableSFG = new(singleflight.Group)
 	c.Log = log.BlackHole{}
@@ -246,7 +248,7 @@ func (c *Canal) masterUpdate(fileName string, pos uint) {
 
 // SyncedPosition returns the current synced position as retrieved from the SQl
 // server.
-func (c *Canal) SyncedPosition() csdb.MasterStatus {
+func (c *Canal) SyncedPosition() ddl.MasterStatus {
 	c.masterMu.RLock()
 	defer c.masterMu.RUnlock()
 	return c.masterStatus
@@ -306,7 +308,7 @@ func (c *Canal) Close() error {
 // the first search, it will add the table to the internal map and performs a
 // column load from the information_schema and then returns the fully defined
 // table.
-func (c *Canal) FindTable(ctx context.Context, tableName string) (csdb.Table, error) {
+func (c *Canal) FindTable(ctx context.Context, tableName string) (ddl.Table, error) {
 	// deference the table pointer to avoid race conditions and devs modifying the
 	// table ;-)
 	t, err := c.tables.Table(tableName)
@@ -314,31 +316,32 @@ func (c *Canal) FindTable(ctx context.Context, tableName string) (csdb.Table, er
 		return *t, nil
 	}
 	if !errors.IsNotFound(err) {
-		return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
+		return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table error")
 	}
 
 	val, err, _ := c.tableSFG.Do(tableName, func() (interface{}, error) {
-		if err := c.tables.Options(csdb.WithTableLoadColumns(ctx, c.db, tableName)); err != nil {
-			return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
+		if err := c.tables.Options(ddl.WithTableLoadColumns(ctx, c.db, tableName)); err != nil {
+			return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.WithTableLoadColumns error")
 		}
 
 		t, err = c.tables.Table(tableName)
 		if err != nil {
-			return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
+			return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.Table2 error")
 		}
 		return *t, nil
 	})
 
 	if err != nil {
-		return csdb.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.SingleFlight error")
+		return ddl.Table{}, errors.Wrapf(err, "[binlogsync] FindTable.SingleFlight error")
 	}
 
-	return val.(csdb.Table), nil
+	return val.(ddl.Table), nil
 }
 
 // ClearTableCache clear table cache
 func (c *Canal) ClearTableCache(db string, table string) {
-	c.tables.Delete()
+	// TODO implement
+	// c.tables.DeleteAllFromCache()
 	//key := fmt.Sprintf("%s.%s", db, table)
 	//c.tableLock.Lock()
 	//delete(c.tables, key)
@@ -349,18 +352,18 @@ func (c *Canal) ClearTableCache(db string, table string) {
 func (c *Canal) CheckBinlogRowImage(ctx context.Context, image string) error {
 	// need to check MySQL binlog row image? full, minimal or noblob?
 	// now only log
+	const varName = "binlog_row_image"
 	if c.flavor() == MySQLFlavor {
-		var v csdb.Variable
-		if err := v.LoadOne(dbr.WrapDBContext(ctx, c.db), "binlog_row_image"); err != nil {
+		v := ddl.NewVariables(varName)
+		if _, err := dml.Load(ctx, c.db, v, v); err != nil {
 			return errors.Wrap(err, "[binlogsync] CheckBinlogRowImage LoadOne")
 		}
 
 		// MySQL has binlog row image from 5.6, so older will return empty
-		if v.Value != "" && !strings.EqualFold(v.Value, image) {
-			return errors.NewNotSupportedf("[binlogsync] MySQL uses %q binlog row image, but we want %q", v.Value, image)
+		if v.EqualFold(varName, image) {
+			return errors.NewNotSupportedf("[binlogsync] MySQL uses %q binlog row image, but we want %q", v.Data[varName], image)
 		}
 	}
-
 	return nil
 }
 

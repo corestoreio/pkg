@@ -20,17 +20,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/binlogsync"
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/sql/binlogsync"
+	"github.com/corestoreio/csfw/sql/ddl"
 )
 
 // TODO(CyS): Add more tests
 
 func TestIntegrationNewCanal(t *testing.T) {
 	t.Parallel()
-	dsn, err := csdb.GetParsedDSN()
+	dsn, err := ddl.GetParsedDSN()
 	if err != nil {
-		t.Skipf("Failed to get DSN from env %q with %s", csdb.EnvDSN, err)
+		t.Skipf("Failed to get DSN from env %q with %s", ddl.EnvDSN, err)
 	}
 	c, err := binlogsync.NewCanal(dsn, binlogsync.WithMySQL())
 	if err != nil {
@@ -53,7 +53,7 @@ type catalogProductEvent struct {
 	t   *testing.T
 }
 
-func (cpe catalogProductEvent) Do(_ context.Context, action string, table csdb.Table, rows [][]interface{}) error {
+func (cpe catalogProductEvent) Do(_ context.Context, action string, table ddl.Table, rows [][]interface{}) error {
 	sl := time.Duration(rand.Intn(100)) * time.Millisecond
 	time.Sleep(sl)
 

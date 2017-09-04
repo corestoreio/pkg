@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/storage/binlogsync"
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/sql/binlogsync"
+	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/errors"
 	"github.com/go-sql-driver/mysql"
@@ -110,7 +110,7 @@ func TestNewCanal_CheckBinlogRowFormat_Wrong(t *testing.T) {
 			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 				FromCSVString(`mysqlbin.log:0001,4711,,,`),
 		)
-	dbMock.ExpectQuery(`SHOW SESSION VARIABLES LIKE`).
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WithArgs().
 		WillReturnRows(
 			sqlmock.NewRows([]string{"Variable_Name", "Value"}).
@@ -147,7 +147,7 @@ func TestNewCanal_CheckBinlogRowFormat_Error(t *testing.T) {
 				FromCSVString(`mysqlbin.log:0001,4711,,,`),
 		)
 	wantErr := errors.NewNotImplementedf("MySQL Syntax not implemted")
-	dbMock.ExpectQuery(`SHOW SESSION VARIABLES LIKE`).
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WillReturnError(wantErr)
 
 	c, err := binlogsync.NewCanal(dsn, binlogsync.WithDB(dbc.DB))
@@ -179,7 +179,7 @@ func newTestCanal(t *testing.T) (*binlogsync.Canal, sqlmock.Sqlmock, func()) {
 			sqlmock.NewRows([]string{"File", "Position", "Binlog_Do_DB", "Binlog_Ignore_DB", "Executed_Gtid_Set"}).
 				FromCSVString(`mysqlbin.log:0001,4711,,,`),
 		)
-	dbMock.ExpectQuery(`SHOW SESSION VARIABLES LIKE`).
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SHOW VARIABLES WHERE (`Variable_name` LIKE 'binlog_format')")).
 		WithArgs().
 		WillReturnRows(
 			sqlmock.NewRows([]string{"Variable_Name", "Value"}).
@@ -202,12 +202,12 @@ func TestNewCanal_SuccessfulStart(t *testing.T) {
 	assert.Exactly(t, uint(4711), cp.Position)
 }
 
-func TestCanal_FindTable(t *testing.T) {
+func TestCanal_FindTable_RaceFree(t *testing.T) {
 	c, dbMock, deferred := newTestCanal(t)
 	defer deferred()
 
-	dbMock.ExpectQuery("SELECT.+FROM `information_schema`.`COLUMNS` WHERE").
-		WithArgs("core_config_data").
+	dbMock.ExpectQuery("SELECT.+FROM information_schema.COLUMNS WHERE.+TABLE_NAME IN \\('core_config_data'\\)").
+		WithArgs().
 		WillReturnRows(
 			cstesting.MustMockRows(cstesting.WithFile("testdata/core_config_data_columns.csv")))
 
@@ -223,7 +223,7 @@ func TestCanal_FindTable(t *testing.T) {
 				time.Sleep(time.Microsecond * time.Duration(i*10))
 			}
 
-			tbl, err := c.FindTable(context.Background(), 31, "core_config_data")
+			tbl, err := c.FindTable(context.Background(), "core_config_data")
 			if err != nil {
 				t.Fatalf("%+v", err)
 			}
@@ -245,11 +245,11 @@ func TestCanal_FindTable_Error(t *testing.T) {
 	defer deferred()
 
 	wantErr := errors.NewUnauthorizedf("Du kommst da nicht rein")
-	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM `information_schema`.`COLUMNS` WHERE (TABLE_SCHEMA=DATABASE()) AND (TABLE_NAME IN (?))")).
-		WithArgs("core_config_data").
+	dbMock.ExpectQuery(cstesting.SQLMockQuoteMeta("SELECT TABLE_NAME, COLUMN_NAME, ORDINAL_POSITION, COLUMN_DEFAULT, IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, NUMERIC_SCALE, COLUMN_TYPE, COLUMN_KEY, EXTRA, COLUMN_COMMENT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('core_config_data') ORDER BY TABLE_NAME, ORDINAL_POSITION")).
+		WithArgs().
 		WillReturnError(wantErr)
 
-	tbl, err := c.FindTable(context.Background(), 31, "core_config_data")
-	assert.Exactly(t, csdb.Table{}, tbl)
+	tbl, err := c.FindTable(context.Background(), "core_config_data")
+	assert.Exactly(t, ddl.Table{}, tbl)
 	assert.True(t, errors.IsUnauthorized(err), "%+v", err)
 }

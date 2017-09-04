@@ -18,7 +18,7 @@
 
 // This tool helps you debugging and understanding the binary log.
 
-package main
+package binlogsync
 
 import (
 	"bytes"
@@ -26,14 +26,14 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/myreplicator"
+	"github.com/corestoreio/csfw/sql/ddl"
+	"github.com/corestoreio/csfw/sql/myreplicator"
 	"github.com/corestoreio/csfw/util/conv"
 )
 
 func main() {
 	// export CS_DSN=mysql://root:PASSWORD@localhost:3306/DATABASE_NAME?BinlogSlaveId=100
-	dsn, err := csdb.GetParsedDSN()
+	dsn, err := ddl.GetParsedDSN()
 	if err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}
@@ -51,7 +51,7 @@ func main() {
 	defer syncer.Close()
 
 	// mysql.Position change to whatever SHOW MASTER STATUS tells you
-	streamer, err := syncer.StartSync(csdb.MasterStatus{File: "mysql-bin.000001", Position: 4})
+	streamer, err := syncer.StartSync(ddl.MasterStatus{File: "mysql-bin.000001", Position: 4})
 	if err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}

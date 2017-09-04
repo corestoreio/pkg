@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/corestoreio/csfw/storage/myreplicator"
+	"github.com/corestoreio/csfw/sql/myreplicator"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
 )
@@ -132,7 +132,7 @@ func (c *Canal) handleRowsEvent(ctx context.Context, e *myreplicator.BinlogEvent
 
 	table := string(ev.Table.Table)
 
-	t, err := c.FindTable(ctx, int(ev.TableID), table)
+	t, err := c.FindTable(ctx, table)
 	if err != nil {
 		return errors.Wrapf(err, "[binlogsync] GetTable %q.%q", c.DSN.DBName, table)
 	}
