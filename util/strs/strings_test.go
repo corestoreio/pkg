@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util_test
+package strs_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/strs"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStrIsAlNum(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		have string
 		want bool
@@ -36,7 +37,7 @@ func TestStrIsAlNum(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.True(t, util.StrIsAlNum(test.have) == test.want, "%#v", test)
+		assert.True(t, strs.IsAlNum(test.have) == test.want, "%#v", test)
 	}
 }
 
@@ -46,7 +47,7 @@ var benchStrIsAlNum bool
 func BenchmarkStrIsAlNum(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchStrIsAlNum = util.StrIsAlNum("Hello1WorldOfGophers")
+		benchStrIsAlNum = strs.IsAlNum("Hello1WorldOfGophers")
 	}
 }
 
@@ -61,7 +62,7 @@ func TestUnderscoreToCamelCase(t *testing.T) {
 		{"catalog_____product_entity_", "CatalogProductEntity"},
 	}
 	for _, test := range tests {
-		assert.Equal(t, test.out, util.UnderscoreToCamelCase(test.in), "%#v", test)
+		assert.Equal(t, test.out, strs.ToCamelCase(test.in), "%#v", test)
 	}
 }
 
@@ -71,7 +72,7 @@ var benchCases string
 func BenchmarkUnderscoreToCamelCase(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchCases = util.UnderscoreToCamelCase("_catalog__product_entity")
+		benchCases = strs.ToCamelCase("_catalog__product_entity")
 	}
 }
 
@@ -88,7 +89,7 @@ func TestCamelCaseToUnderscore(t *testing.T) {
 		{"  CatalogProductEntityE", "  _catalog_product_entity_e"}, // the leading underscore is a bug ... :-\
 	}
 	for _, test := range tests {
-		assert.Equal(t, test.out, util.CamelCaseToUnderscore(test.in), "%#v", test)
+		assert.Equal(t, test.out, strs.FromCamelCase(test.in), "%#v", test)
 	}
 }
 
@@ -96,7 +97,7 @@ func TestCamelCaseToUnderscore(t *testing.T) {
 func BenchmarkCamelCaseToUnderscore(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchCases = util.CamelCaseToUnderscore("CatalogPPoductEntity")
+		benchCases = strs.FromCamelCase("CatalogPPoductEntity")
 	}
 }
 
@@ -104,7 +105,7 @@ func BenchmarkCamelCaseToUnderscore(b *testing.B) {
 func BenchmarkCamelize(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchCases = util.UnderscoreCamelize("catalog_____product_entity_")
+		benchCases = strs.ToGoCamelCase("catalog_____product_entity_")
 	}
 }
 
@@ -128,7 +129,7 @@ func TestCamelize(t *testing.T) {
 		{"hello_idx_Tmp_cs", "HelloIDXTMPCS"},
 	}
 	for _, test := range tests {
-		assert.Equal(t, test.expected, util.UnderscoreCamelize(test.actual))
+		assert.Equal(t, test.expected, strs.ToGoCamelCase(test.actual))
 	}
 }
 
@@ -169,7 +170,7 @@ func TestLintName(t *testing.T) {
 		{"UrlRewriteID", "URLRewriteID"},
 	}
 	for _, test := range tests {
-		got := util.LintName(test.name)
+		got := strs.LintName(test.name)
 		if got != test.want {
 			t.Errorf("lintName(%q) = %q, want %q", test.name, got, test.want)
 		}
@@ -180,19 +181,19 @@ func TestLintName(t *testing.T) {
 func BenchmarkLintName(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchCases = util.LintName("____ApiProxyId")
+		benchCases = strs.LintName("____ApiProxyId")
 	}
 }
 
 func TestRandAlnum(t *testing.T) {
 	t.Parallel()
-	s := util.RandAlnum(18)
+	s := strs.RandAlnum(18)
 	assert.Len(t, s, 18)
 }
 
 func BenchmarkRandAlnum_18(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchCases = util.RandAlnum(18)
+		benchCases = strs.RandAlnum(18)
 	}
 }

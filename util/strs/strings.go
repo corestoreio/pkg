@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package strs
 
 import (
 	"math/rand"
@@ -21,8 +21,8 @@ import (
 	"unicode"
 )
 
-// StrIsAlNum returns true if an alpha numeric string consists of characters a-zA-Z0-9_
-func StrIsAlNum(s string) bool {
+// IsAlNum returns true if an alpha numeric string consists of characters a-zA-Z0-9_
+func IsAlNum(s string) bool {
 	c := 0
 	for _, r := range s {
 		switch {
@@ -43,18 +43,18 @@ func StrIsAlNum(s string) bool {
 	return len(s) == c
 }
 
-// UnderscoreToCamelCase converts from underscore separated form to camel case form.
+// ToCamelCase converts from underscore separated form to camel case form.
 // Eg.: catalog_product_entity -> CatalogProductEntity
-func UnderscoreToCamelCase(s string) string {
+func ToCamelCase(s string) string {
 	return strings.Replace(strings.Title(strings.Replace(strings.ToLower(s), "_", " ", -1)), " ", "", -1)
 }
 
-// UnderscoreCamelize transforms from snake case to CamelCase. Also removes
+// ToGoCamelCase transforms from snake case to CamelCase. Also removes
 // quotes and takes care of special names.
 // 		idx_eav_id 				=> IDXEAVID
 // 		hello_gopher_id 		=> HelloGopherID
 //		catalog_product_entity 	=> CatalogProductEntity
-func UnderscoreCamelize(s string) string {
+func ToGoCamelCase(s string) string {
 	s = strings.Map(func(r rune) rune {
 		switch {
 		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9':
@@ -76,9 +76,9 @@ func UnderscoreCamelize(s string) string {
 	return ret
 }
 
-// CamelCaseToUnderscore converts from camel case form to underscore separated form.
+// FromCamelCase converts from camel case form to underscore separated form.
 // Eg.: CatalogProductEntity -> catalog_product_entity
-func CamelCaseToUnderscore(str string) string {
+func FromCamelCase(str string) string {
 	var newstr []rune
 	firstTime := true
 

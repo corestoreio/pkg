@@ -1,4 +1,26 @@
-package wordwrap
+// The MIT License (MIT)
+//
+// Copyright (c) 2014 Mitchell Hashimoto
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+package strs
 
 import (
 	"testing"
@@ -83,7 +105,7 @@ func TestWrapString(t *testing.T) {
 	}
 
 	for i, tc := range cases {
-		actual := String(tc.Input, tc.Lim)
+		actual := WordWrap(tc.Input, tc.Lim)
 		if actual != tc.Output {
 			t.Fatalf("Case %d Input:\n\n`%s`\n\nActual Output:\n\n`%s`", i, tc.Input, actual)
 		}
@@ -95,6 +117,6 @@ var benchmarkWrapString string
 // BenchmarkWrapString-4   	 1000000	      1984 ns/op	     448 B/op	       5 allocs/op
 func BenchmarkWrapString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		benchmarkWrapString = String(" This is a list: \n\n\t* foo\n\t* bar\n\n\n\t* baz  \nBAM    ", 6)
+		benchmarkWrapString = WordWrap(" This is a list: \n\n\t* foo\n\t* bar\n\n\n\t* baz  \nBAM    ", 6)
 	}
 }
