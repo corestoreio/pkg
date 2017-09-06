@@ -115,11 +115,11 @@ func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
 		case "config_id":
 			o.ConfigID, err = b.Int64()
 		case "scope":
-			o.Scope, err = b.Str()
+			o.Scope, err = b.String()
 		case "scope_id":
 			o.ScopeID, err = b.Int64()
 		case "path":
-			o.Path, err = b.Str()
+			o.Path, err = b.String()
 		case "value":
 			o.Value.NullString, err = b.NullString()
 		}

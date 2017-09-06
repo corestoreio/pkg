@@ -67,7 +67,7 @@ func (cc *salesCreditMemoCollection) RowScan(r *sql.Rows) error {
 		case "entity_id":
 			o.EntityID, err = b.Uint64()
 		case "state":
-			o.State, err = b.Str()
+			o.State, err = b.String()
 		case "store_id":
 			o.StoreID, err = b.Uint16()
 		case "customer_id":
@@ -76,7 +76,7 @@ func (cc *salesCreditMemoCollection) RowScan(r *sql.Rows) error {
 			o.GrandTotal, err = b.NullFloat64()
 		case "voucher_codes":
 			var s string
-			s, err = b.Str()
+			s, err = b.String()
 			o.VoucherCodes = strings.Split(s, "|")
 		}
 		if err != nil {

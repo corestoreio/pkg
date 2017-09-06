@@ -146,7 +146,7 @@ func (vs *baseTestCollection) RowScan(r *sql.Rows) error {
 		case "byte":
 			o.Byte = b.Byte()
 		case "str":
-			o.Str, err = b.Str()
+			o.Str, err = b.String()
 		case "null_string":
 			o.NullString, err = b.NullString()
 		}

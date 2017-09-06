@@ -95,7 +95,7 @@ func (p *dmlPerson) assign(rc *RowConvert) (err error) {
 		case "id":
 			p.ID, err = b.Uint64()
 		case "name":
-			p.Name, err = b.Str()
+			p.Name, err = b.String()
 		case "email":
 			p.Email.NullString, err = b.NullString()
 		case "key":
