@@ -28,7 +28,6 @@ import (
 )
 
 var _ ArgumentsAppender = (*Arguments)(nil)
-var _ fmt.Stringer = (*Arguments)(nil)
 var _ fmt.GoStringer = (*Arguments)(nil)
 var _ fmt.GoStringer = (*argument)(nil)
 
@@ -70,8 +69,6 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
 
-		// like fmt.Stringer
-		assert.Exactly(t, "(NULL,-1,1,2,3.1,1,'eCom1','eCom2','2006-01-02 15:04:05','eCom3',4,2.7,1,'2006-01-02 15:04:05')", fmt.Sprintf("%v", args))
 		// like fmt.GoStringer
 		assert.Exactly(t,
 			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136214252,2))",

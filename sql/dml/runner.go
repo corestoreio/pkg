@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"unicode/utf8"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/byteconv"
 	"github.com/corestoreio/errors"
 	"github.com/corestoreio/log"
@@ -152,7 +151,8 @@ func load(r *sql.Rows, errIn error, s Scanner) (rowCount int64, err error) {
 // scans a *sql.Rows into a *sql.RawBytes slice. The conversion into the desired
 // final type can happen without allocating of memory. RowConvert should be used
 // as a composite field in a database table struct. Does not support streaming
-// because neither database/sql does :-(
+// because neither database/sql does :-(  The method receiver functions have the
+// same names as in type RowConvert.
 type RowConvert struct {
 	// Count increments on call to Scan.
 	Count uint64
@@ -305,25 +305,26 @@ func (b *RowConvert) Uint64() (uint64, error) {
 	return i, err
 }
 
-// String implements fmt.Stringer interface and returns the column names with
-// their values. Mostly useful for debugging purposes. The output format might
-// change.
-func (b *RowConvert) String() string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
+// Debug writes the column names with their values into `w`. The output format
+// might change.
+func (b *RowConvert) Debug(w io.Writer) (err error) {
+	nl := []byte("\n")
+	tNil := []byte(": <nil>")
 	for i, c := range b.Columns {
 		if i > 0 {
-			buf.WriteByte('\n')
+			_, _ = w.Write(nl)
 		}
-		buf.WriteString(c)
+		_, _ = w.Write([]byte(c))
 		b := *b.scanRaw[i]
 		if b == nil {
-			buf.WriteString(": <nil>")
+			_, _ = w.Write(tNil)
 		} else {
-			fmt.Fprintf(buf, ": %q", string(b))
+			if _, err = fmt.Fprintf(w, ": %q", string(b)); err != nil {
+				return errors.WithStack(err)
+			}
 		}
 	}
-	return buf.String()
+	return nil
 }
 
 // Byte copies the value byte slice at index `idx` into a new slice. See the

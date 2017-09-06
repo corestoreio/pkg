@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/sql/dml"
-	"github.com/corestoreio/csfw/util/wordwrap"
+	"github.com/corestoreio/csfw/util/strs"
 	"github.com/corestoreio/errors"
 )
 
@@ -66,7 +66,7 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 		return
 	}
 	fmt.Println("Prepared Statement:")
-	wordwrap.Fstring(os.Stdout, sqlStr, 80)
+	strs.FwordWrap(os.Stdout, sqlStr, 80)
 	fmt.Print("\n")
 	if len(args) > 0 {
 		fmt.Printf("Arguments: %v\n\n", args)
@@ -77,7 +77,7 @@ func writeToSQLAndInterpolate(qb dml.QueryBuilder) {
 	// iFaceToArgs is a hacky way, but works for examples, not in production!
 	sqlStr = dml.Interpolate(sqlStr).ArgUnions(iFaceToArgs(args...)).String()
 	fmt.Println("Interpolated Statement:")
-	wordwrap.Fstring(os.Stdout, sqlStr, 80)
+	strs.FwordWrap(os.Stdout, sqlStr, 80)
 }
 
 func ExampleNewInsert() {

@@ -22,7 +22,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/errors"
 )
 
@@ -347,7 +346,8 @@ func (arg argument) GoString() string {
 	return buf.String()
 }
 
-// Arguments a collection of primitive types or slices of primitive types.
+// Arguments a collection of primitive types or slices of primitive types. The
+// method receiver functions have the same names as in type RowConvert.
 type Arguments []argument
 
 // MakeArgs creates a new argument slice with the desired capacity.
@@ -404,17 +404,6 @@ func (a Arguments) Len() int {
 		l += arg.len()
 	}
 	return l
-}
-
-// String implements fmt.Stringer. Errors will be written in the returned
-// string, which might be annoying for now. Can be changed later.
-func (a Arguments) String() string {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	if err := a.Write(buf); err != nil {
-		return fmt.Sprintf("[dml] args.String: %+v", err)
-	}
-	return buf.String()
 }
 
 // Write writes all arguments into buf and separates by a comma.

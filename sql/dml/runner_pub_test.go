@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"fmt"
 	"io"
 	"testing"
 
@@ -30,7 +29,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var _ fmt.Stringer = (*dml.RowConvert)(nil)
 var _ io.WriterTo = (*dml.RowConvert)(nil)
 
 type myToSQL struct {
@@ -207,6 +205,8 @@ func TestRowConvert(t *testing.T) {
 
 		tbl := new(baseTestCollection)
 		tbl.EventAfterScan = func(b dml.RowConvert, _ *baseTest) {
+			buf := new(bytes.Buffer)
+			require.NoError(t, b.Debug(buf))
 			assert.Exactly(t, `bool: "1"
 null_bool: "false"
 int: "-1"
@@ -221,7 +221,7 @@ uint32: "32"
 uint64: "64"
 byte: "byte data"
 str: "I'm a string"
-null_string: <nil>`, b.String())
+null_string: <nil>`, buf.String())
 		}
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
@@ -297,8 +297,11 @@ null_string: <nil>`, b.String())
 			},
 			tbl.Data[0])
 
+		buf := new(bytes.Buffer)
+		require.NoError(t, tbl.Convert.Debug(buf))
+
 		assert.Exactly(t, "bool: \"True\"\nnull_bool: <nil>\nint: \"-1\"\nint64: \"-64\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"I'm a string\"\nnull_string: <nil>",
-			tbl.Convert.String())
+			buf.String())
 	})
 
 	t.Run("invalid UTF8 Str", func(t *testing.T) {
