@@ -42,7 +42,7 @@ type salesCreditMemo struct {
 	State      string // processing, pending, shipped,
 	StoreID    uint16
 	CustomerID int64
-	GrandTotal sql.NullFloat64
+	GrandTotal dml.NullFloat64
 	// VoucherCodes contains list of refunded codes, stored as CSV. Or even
 	// stored in another table or even encrypted and the function decrypts it on
 	// load. Same as the M2 EAV models
@@ -124,6 +124,6 @@ func ExampleRowConvert() {
 
 	// Output:
 	//[entity_id state store_id customer_id grand_total voucher_codes]
-	//{18446744073700551613 shipped 7 98765 {47.11 true} [1FE9983E 28E76FBC]}
-	//{18446744073700551614 shipped 7 12345 {28.94 true} [4FE7787E 15E59FBB 794EFDE8]}
+	//{18446744073700551613 shipped 7 98765 {{47.11 true}} [1FE9983E 28E76FBC]}
+	//{18446744073700551614 shipped 7 12345 {{28.94 true}} [4FE7787E 15E59FBB 794EFDE8]}
 }

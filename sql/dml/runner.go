@@ -224,8 +224,9 @@ func (b *RowConvert) Bool() (bool, error) {
 }
 
 // NullBool see the documentation for function Scan.
-func (b *RowConvert) NullBool() (sql.NullBool, error) {
-	return byteconv.ParseNullBool(b.current)
+func (b *RowConvert) NullBool() (NullBool, error) {
+	nv, err := byteconv.ParseNullBool(b.current)
+	return NullBool{NullBool: nv}, err
 }
 
 // Int see the documentation for function Scan.
@@ -246,8 +247,9 @@ func (b *RowConvert) Int64() (int64, error) {
 }
 
 // NullInt64 see the documentation for function Scan.
-func (b *RowConvert) NullInt64() (sql.NullInt64, error) {
-	return byteconv.ParseNullInt64(b.current)
+func (b *RowConvert) NullInt64() (NullInt64, error) {
+	nv, err := byteconv.ParseNullInt64(b.current)
+	return NullInt64{NullInt64: nv}, err
 }
 
 // Float64 see the documentation for function Scan.
@@ -256,8 +258,9 @@ func (b *RowConvert) Float64() (float64, error) {
 }
 
 // NullFloat64 see the documentation for function Scan.
-func (b *RowConvert) NullFloat64() (sql.NullFloat64, error) {
-	return byteconv.ParseNullFloat64(b.current)
+func (b *RowConvert) NullFloat64() (NullFloat64, error) {
+	nv, err := byteconv.ParseNullFloat64(b.current)
+	return NullFloat64{NullFloat64: nv}, err
 }
 
 // Uint see the documentation for function Scan.
@@ -356,12 +359,11 @@ func (b *RowConvert) String() (string, error) {
 }
 
 // NullString see the documentation for function Scan.
-func (b *RowConvert) NullString() (sql.NullString, error) {
+func (b *RowConvert) NullString() (NullString, error) {
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
-		return sql.NullString{}, errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
+		return NullString{}, errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 	}
-	s := byteconv.ParseNullString(b.current)
-	return s, nil
+	return NullString{NullString: byteconv.ParseNullString(b.current)}, nil
 }
 
 func rangeError(fn, str string) *strconv.NumError {

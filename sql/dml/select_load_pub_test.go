@@ -121,7 +121,7 @@ func (ps *TableCoreConfigDataSlice) RowScan(r *sql.Rows) error {
 		case "path":
 			o.Path, err = b.String()
 		case "value":
-			o.Value.NullString, err = b.NullString()
+			o.Value, err = b.NullString()
 		}
 		if err != nil {
 			return errors.Wrapf(err, "[dml] Failed to convert value at row % with column index %d", ps.Convert.Count, i)

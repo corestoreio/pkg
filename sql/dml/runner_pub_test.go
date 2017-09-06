@@ -75,12 +75,12 @@ func TestPrepare(t *testing.T) {
 
 type baseTest struct {
 	Bool        bool
-	NullBool    sql.NullBool
+	NullBool    dml.NullBool
 	Int         int
 	Int64       int64
-	NullInt64   sql.NullInt64
+	NullInt64   dml.NullInt64
 	Float64     float64
-	NullFloat64 sql.NullFloat64
+	NullFloat64 dml.NullFloat64
 	Uint        uint
 	Uint8       uint8
 	Uint16      uint16
@@ -88,7 +88,7 @@ type baseTest struct {
 	Uint64      uint64
 	Byte        []byte
 	Str         string
-	NullString  sql.NullString
+	NullString  dml.NullString
 }
 
 type baseTestCollection struct {
@@ -248,12 +248,12 @@ null_string: <nil>`, buf.String())
 		assert.Exactly(t,
 			&baseTest{
 				Bool:        true,
-				NullBool:    sql.NullBool{Bool: false, Valid: true},
+				NullBool:    dml.MakeNullBool(false, true),
 				Int:         -1,
 				Int64:       -64,
-				NullInt64:   sql.NullInt64{Int64: -128, Valid: true},
+				NullInt64:   dml.MakeNullInt64(-128),
 				Float64:     0.1,
-				NullFloat64: sql.NullFloat64{Float64: 3.141, Valid: true},
+				NullFloat64: dml.MakeNullFloat64(3.141),
 				Uint:        0x0,
 				Uint8:       0x8,
 				Uint16:      0x10,
@@ -261,7 +261,7 @@ null_string: <nil>`, buf.String())
 				Uint64:      0x40,
 				Byte:        []byte("byte data"),
 				Str:         "I'm a string",
-				NullString:  sql.NullString{String: "null_string", Valid: true},
+				NullString:  dml.MakeNullString("null_string"),
 			},
 			tbl.Data[0])
 	})

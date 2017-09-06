@@ -97,9 +97,9 @@ func (p *dmlPerson) assign(rc *RowConvert) (err error) {
 		case "name":
 			p.Name, err = b.String()
 		case "email":
-			p.Email.NullString, err = b.NullString()
+			p.Email, err = b.NullString()
 		case "key":
-			p.Key.NullString, err = b.NullString()
+			p.Key, err = b.NullString()
 			//default:
 			//	return errors.NewNotFoundf("[dml_test] Column %q not found", c)
 		}
