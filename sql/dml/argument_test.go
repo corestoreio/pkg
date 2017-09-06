@@ -64,36 +64,36 @@ func TestArguments_Length_and_Stringer(t *testing.T) {
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
 
 		// like fmt.GoStringer
 		assert.Exactly(t,
-			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136214252,2))",
+			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).String(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136214252,2))",
 			fmt.Sprintf("%#v", args))
 	})
 
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
 		assert.Exactly(t, 14, args.Len(), "Length mismatch")
 		assert.Exactly(t,
-			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).Str(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dml.NullString{}).NullInt64(dml.NullInt64{}).NullFloat64(dml.NullFloat64{}).NullBool(dml.NullBool{}).NullTime(dml.NullTime{})",
+			"dml.MakeArgs(14).Null().Int(-1).Int64(1).Uint64(2).Float64(3.100000).Bool(true).String(\"eCom1\").Bytes([]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Time(time.Unix(1136214252,2)).NullString(dml.NullString{}).NullInt64(dml.NullInt64{}).NullFloat64(dml.NullFloat64{}).NullBool(dml.NullBool{}).NullTime(dml.NullTime{})",
 			fmt.Sprintf("%#v", args))
 	})
 
 	t.Run("slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Int(-1).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strs("eCom1", "eCom11").BytesSlice(nil, []byte(`eCom2`)).Times(now(), now()).
+			Null().Int(-1).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice(nil, []byte(`eCom2`)).Times(now(), now()).
 			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
 		assert.Exactly(t, 24, args.Len(), "Length mismatch")
 		assert.Exactly(t,
-			"dml.MakeArgs(14).Null().Int(-1).Int64s([]int64{1, 2}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strs(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136214252,2),time.Unix(1136214252,2)).NullString(dml.MakeNullString(`eCom3`),dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4),dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7),dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136214252,2),dml.MakeNullTime(time.Unix(1136214252,2))",
+			"dml.MakeArgs(14).Null().Int(-1).Int64s([]int64{1, 2}...).Uint64s([]uint64{0x2}...).Float64s([]float64{1.2, 3.1}...).Bools([]bool{false, true}...).Strings(\"eCom1\",\"eCom11\").BytesSlice([]byte(nil),[]byte{0x65, 0x43, 0x6f, 0x6d, 0x32}).Times(time.Unix(1136214252,2),time.Unix(1136214252,2)).NullString(dml.MakeNullString(`eCom3`),dml.MakeNullString(`eCom3`)).NullInt64(dml.MakeNullInt64(4),dml.MakeNullInt64(4)).NullFloat64(dml.MakeNullFloat64(2.7),dml.MakeNullFloat64(2.7)).NullBool(dml.MakeNullBool(true)).NullTime(dml.MakeNullTime(time.Unix(1136214252,2),dml.MakeNullTime(time.Unix(1136214252,2))",
 			fmt.Sprintf("%#v", args))
 	})
 }
@@ -105,7 +105,7 @@ func TestArguments_Interfaces(t *testing.T) {
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
 
@@ -119,7 +119,7 @@ func TestArguments_Interfaces(t *testing.T) {
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
 		assert.Exactly(t,
@@ -131,7 +131,7 @@ func TestArguments_Interfaces(t *testing.T) {
 	t.Run("slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
 			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).
-			Strs("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
+			Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(4)).
 			NullFloat64(MakeNullFloat64(2.7), MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
@@ -230,7 +230,7 @@ func TestArguments_WriteTo(t *testing.T) {
 
 	t.Run("no slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3")).NullInt64(MakeNullInt64(4)).NullFloat64(MakeNullFloat64(2.7)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()))
 
@@ -243,7 +243,7 @@ func TestArguments_WriteTo(t *testing.T) {
 	})
 	t.Run("no slices, nulls invalid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).Str("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
+			Null().Int(-1).Int64(1).Uint64(2).Float64(3.1).Bool(true).String("eCom1").Bytes([]byte(`eCom2`)).Time(now()).
 			NullString(MakeNullString("eCom3", false)).NullInt64(MakeNullInt64(4, false)).NullFloat64(MakeNullFloat64(2.7, false)).
 			NullBool(MakeNullBool(true, false)).NullTime(MakeNullTime(now(), false))
 
@@ -256,7 +256,7 @@ func TestArguments_WriteTo(t *testing.T) {
 	})
 	t.Run("slices, nulls valid", func(t *testing.T) {
 		args := MakeArgs(10).
-			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strs("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
+			Null().Ints(-1, -2).Int64s(1, 2).Uint64s(2).Float64s(1.2, 3.1).Bools(false, true).Strings("eCom1", "eCom11").BytesSlice([]byte(`eCom2`)).Times(now(), now()).
 			NullString(MakeNullString("eCom3"), MakeNullString("eCom3")).NullInt64(MakeNullInt64(4), MakeNullInt64(5)).NullFloat64(MakeNullFloat64(2.71), MakeNullFloat64(2.72)).
 			NullBool(MakeNullBool(true)).NullTime(MakeNullTime(now()), MakeNullTime(now()))
 
@@ -268,14 +268,14 @@ func TestArguments_WriteTo(t *testing.T) {
 			buf.String())
 	})
 	t.Run("non-utf8 string", func(t *testing.T) {
-		args := MakeArgs(2).Str("\xc0\x80")
+		args := MakeArgs(2).String("\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, `(`, buf.String())
 		assert.True(t, errors.IsNotValid(err), "Should have a not valid error behaviour %+v", err)
 	})
 	t.Run("non-utf8 strings", func(t *testing.T) {
-		args := MakeArgs(2).Strs("Go", "\xc0\x80")
+		args := MakeArgs(2).Strings("Go", "\xc0\x80")
 		buf := new(bytes.Buffer)
 		err := args.Write(buf)
 		assert.Exactly(t, `('Go',`, buf.String())
@@ -360,9 +360,9 @@ func TestArguments_Named(t *testing.T) {
 	t.Parallel()
 
 	assert.Exactly(t,
-		"dml.MakeArgs(4).Str(\"Rusty\").Name(\"entity_id\").Null().Name(\"entity_sku\").Int64(4).Float64(3.141000)",
+		"dml.MakeArgs(4).String(\"Rusty\").Name(\"entity_id\").Null().Name(\"entity_sku\").Int64(4).Float64(3.141000)",
 		MakeArgs(2).
-			Str("Rusty").
+			String("Rusty").
 			Name("entity_id").Name("entity_sku").Int64(4).
 			Float64(3.141).
 			GoString())
@@ -406,40 +406,40 @@ func TestArguments_AppendArgs(t *testing.T) {
 
 	t.Run("len=1", func(t *testing.T) {
 
-		from = from.Reset().Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
+		from = from.Reset().Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
 		var err error
 		from, err = from.AppendArgs(to, []string{"colA"})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Exactly(t,
-			"dml.MakeArgs(1).Name(\"colA\").Strs(\"a\",\"b\")",
+			"dml.MakeArgs(1).Name(\"colA\").Strings(\"a\",\"b\")",
 			from.GoString())
 	})
 
 	t.Run("len=0", func(t *testing.T) {
 
-		from = from.Reset().Name("colZ").Int64(3).Float64(2.2).Name("colA").Strs("a", "b")
+		from = from.Reset().Name("colZ").Int64(3).Float64(2.2).Name("colA").Strings("a", "b")
 		var err error
 		from, err = from.AppendArgs(to.Reset(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Exactly(t,
-			"dml.MakeArgs(3).Name(\"colZ\").Int64(3).Float64(2.200000).Name(\"colA\").Strs(\"a\",\"b\")",
+			"dml.MakeArgs(3).Name(\"colZ\").Int64(3).Float64(2.200000).Name(\"colA\").Strings(\"a\",\"b\")",
 			from.GoString())
 	})
 
 	t.Run("len>1", func(t *testing.T) {
 
-		from = from.Reset().Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).Str("c").Name("colA").Strs("a", "b")
+		from = from.Reset().Name("colZ").Int64(3).Uint64(6).Name("colB").Float64(2.2).String("c").Name("colA").Strings("a", "b")
 		var err error
 		from, err = from.AppendArgs(to.Reset(), []string{"colA", "colB"})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assert.Exactly(t,
-			"dml.MakeArgs(2).Name(\"colA\").Strs(\"a\",\"b\").Name(\"colB\").Float64(2.200000)",
+			"dml.MakeArgs(2).Name(\"colA\").Strings(\"a\",\"b\").Name(\"colB\").Float64(2.200000)",
 			from.GoString())
 	})
 }

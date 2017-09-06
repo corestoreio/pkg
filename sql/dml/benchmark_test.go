@@ -38,7 +38,7 @@ func BenchmarkInterpolate(b *testing.B) {
 	var sqlBytes = []byte("SELECT * FROM x WHERE a = ? AND b = ? AND c = ? AND d = ? AND e = ? AND f = ? AND g = ? AND h = ? AND i = ? AND j = ? AND k = ? AND l = ?")
 	args := MakeArgs(3).
 		Int64s(1, -2, 3, 4, 5, 6, 7, 8, 9, 10).
-		Str("Hello").
+		String("Hello").
 		Bool(true)
 
 	for i := 0; i < b.N; i++ {

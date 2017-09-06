@@ -391,7 +391,7 @@ func BenchmarkInsertRecordsSQL(b *testing.B) {
 func BenchmarkRepeat(b *testing.B) {
 
 	b.Run("multi", func(b *testing.B) {
-		args := dml.MakeArgs(3).Ints(5, 7, 9, 11).Strs("a", "b", "c", "d", "e").Int(22)
+		args := dml.MakeArgs(3).Ints(5, 7, 9, 11).Strings("a", "b", "c", "d", "e").Int(22)
 		const want = "SELECT * FROM `table` WHERE id IN (?,?,?,?) AND name IN (?,?,?,?,?) AND status IN (?)"
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -634,8 +634,8 @@ func BenchmarkArgUnion(b *testing.B) {
 				Uint64(9).Uint64s(10, 11, 12).
 				Float64(3.14159).Float64s(33.44, 55.66, 77.88).
 				Bool(true).Bools(true, false, true).
-				Str(`Licensed under the Apache License, Version 2.0 (the "License");`).
-				Strs(`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`).
+				String(`Licensed under the Apache License, Version 2.0 (the "License");`).
+				Strings(`Unless required by applicable law or agreed to in writing, software`, `Licensed under the Apache License, Version 2.0 (the "License");`).
 				DriverValue(drvVal...).
 				Null().
 				Time(now1)

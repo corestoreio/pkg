@@ -38,7 +38,7 @@ func TestRepeat(t *testing.T) {
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
 	t.Run("MisMatch length reps", func(t *testing.T) {
-		s, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", MakeArgs(2).Int64s(1, 2).Strs("d", "3"))
+		s, err := Repeat("SELECT * FROM `table` WHERE id IN (?)", MakeArgs(2).Int64s(1, 2).Strings("d", "3"))
 		assert.Empty(t, s)
 		assert.True(t, errors.IsMismatch(err), "%+v", err)
 	})
@@ -62,7 +62,7 @@ func TestRepeat(t *testing.T) {
 		assert.Exactly(t, []interface{}{int64(11), int64(3), int64(5)}, args.Interfaces())
 	})
 	t.Run("multi 3,5 times replacement", func(t *testing.T) {
-		args := MakeArgs(3).Int64s(5, 7, 9).Strs("a", "b", "c", "d", "e")
+		args := MakeArgs(3).Int64s(5, 7, 9).Strings("a", "b", "c", "d", "e")
 		s, err := Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", args)
 		require.NoError(t, err)
 		assert.Exactly(t, "SELECT * FROM `table` WHERE id IN (?,?,?) AND name IN (?,?,?,?,?)", s)
@@ -340,13 +340,13 @@ func TestInterpolateBetween(t *testing.T) {
 		"SELECT * FROM x WHERE a IN (?) AND b IN (?) AND c NOT IN (?) AND d BETWEEN ? AND ?",
 		"SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND c NOT IN (5,6,7) AND d BETWEEN 'wat' AND 'ok'",
 		nil,
-		MakeArgs(5).Ints(1).Ints(1, 2, 3).Int64s(5, 6, 7).Str("wat").Str("ok"),
+		MakeArgs(5).Ints(1).Ints(1, 2, 3).Int64s(5, 6, 7).String("wat").String("ok"),
 	))
 	t.Run("BETWEEN in the middle", runner(
 		"SELECT * FROM x WHERE a IN (?) AND b IN (?) AND d BETWEEN ? AND ? AND c NOT IN (?)",
 		"SELECT * FROM x WHERE a IN (1) AND b IN (1,2,3) AND d BETWEEN 'wat' AND 'ok' AND c NOT IN (5,6,7)",
 		nil,
-		MakeArgs(5).Ints(1).Ints(1, 2, 3).Str("wat").Str("ok").Int64s(5, 6, 7),
+		MakeArgs(5).Ints(1).Ints(1, 2, 3).String("wat").String("ok").Int64s(5, 6, 7),
 	))
 }
 
@@ -432,24 +432,24 @@ func TestInterpolate(t *testing.T) {
 		{
 			`SELECT * FROM x WHERE a = ?
 			AND b = ?`,
-			MakeArgs(2).Str("hello").Str("\"hello's \\ world\" \n\r\x00\x1a"),
+			MakeArgs(2).String("hello").String("\"hello's \\ world\" \n\r\x00\x1a"),
 			`SELECT * FROM x WHERE a = 'hello'
 			AND b = '\"hello\'s \\ world\" \n\r\x00\x1a'`, nil,
 		},
 		{
 			`SELECT * FROM x WHERE a IN (?)`,
-			MakeArgs(1).Strs("a'a", "bb"),
+			MakeArgs(1).Strings("a'a", "bb"),
 			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, nil,
 		},
 		{
 			`SELECT * FROM x WHERE a IN (?,?)`,
-			MakeArgs(1).Strs("a'a", "bb"),
+			MakeArgs(1).Strings("a'a", "bb"),
 			`SELECT * FROM x WHERE a IN ('a\'a','bb')`, nil,
 		},
 
 		// slices
 		{"SELECT * FROM x WHERE a = ? AND b = (?) AND c = (?) AND d = (?)",
-			MakeArgs(4).Int(1).Ints(1, 2, 3).Ints(5, 6, 7).Strs("wat", "ok"),
+			MakeArgs(4).Int(1).Ints(1, 2, 3).Ints(5, 6, 7).Strings("wat", "ok"),
 			"SELECT * FROM x WHERE a = 1 AND b = (1,2,3) AND c = (5,6,7) AND d = ('wat','ok')", nil},
 		//
 		////// TODO valuers
@@ -464,12 +464,12 @@ func TestInterpolate(t *testing.T) {
 		{"SELECT * FROM x WHERE", MakeArgs(1).Int(1),
 			"", errors.IsNotValid},
 
-		{"SELECT * FROM x WHERE a = ?", MakeArgs(1).Str(string([]byte{0x34, 0xFF, 0xFE})),
+		{"SELECT * FROM x WHERE a = ?", MakeArgs(1).String(string([]byte{0x34, 0xFF, 0xFE})),
 			"", errors.IsNotValid},
 
 		// String() without arguments is equal to empty interface in the previous version.
-		{"SELECT 'hello", MakeArgs(1).Str(""), "", errors.IsNotValid},
-		{`SELECT "hello`, MakeArgs(1).Str(""), "", errors.IsNotValid},
+		{"SELECT 'hello", MakeArgs(1).String(""), "", errors.IsNotValid},
+		{`SELECT "hello`, MakeArgs(1).String(""), "", errors.IsNotValid},
 
 		// preprocessing
 		{"SELECT '?'", nil, "SELECT '?'", nil},

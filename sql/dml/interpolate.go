@@ -142,8 +142,8 @@ func (ip *iPolate) Float64s(f ...float64) *iPolate {
 	ip.args = ip.args.Float64s(f...)
 	return ip
 }
-func (ip *iPolate) Str(s string) *iPolate     { ip.args = ip.args.Str(s); return ip }
-func (ip *iPolate) Strs(s ...string) *iPolate { ip.args = ip.args.Strs(s...); return ip }
+func (ip *iPolate) Str(s string) *iPolate     { ip.args = ip.args.String(s); return ip }
+func (ip *iPolate) Strs(s ...string) *iPolate { ip.args = ip.args.Strings(s...); return ip }
 func (ip *iPolate) Bool(b bool) *iPolate      { ip.args = ip.args.Bool(b); return ip }
 func (ip *iPolate) Bools(b ...bool) *iPolate  { ip.args = ip.args.Bools(b...); return ip }
 

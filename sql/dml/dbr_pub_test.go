@@ -64,7 +64,7 @@ func (p *dmlPerson) AppendArgs(args dml.Arguments, columns []string) (_ dml.Argu
 		return p.appendArgs(args, columns[0])
 	}
 	if l == 0 {
-		return args.Int64(p.ID).Str(p.Name).NullString(p.Email).NullString(p.Key).Int64(p.StoreID).Time(p.CreatedAt).Float64(p.TotalIncome), nil
+		return args.Int64(p.ID).String(p.Name).NullString(p.Email).NullString(p.Key).Int64(p.StoreID).Time(p.CreatedAt).Float64(p.TotalIncome), nil
 	}
 	for _, col := range columns {
 		if args, err = p.appendArgs(args, col); err != nil {
@@ -79,7 +79,7 @@ func (p *dmlPerson) appendArgs(args dml.Arguments, column string) (_ dml.Argumen
 	case "id":
 		args = args.Int64(p.ID)
 	case "name":
-		args = args.Str(p.Name)
+		args = args.String(p.Name)
 	case "email":
 		args = args.NullString(p.Email)
 	case "key":

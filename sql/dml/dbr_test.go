@@ -116,7 +116,7 @@ func (p *dmlPerson) AppendArgs(args Arguments, columns []string) (_ Arguments, e
 		return p.appendArgs(args, columns[0])
 	}
 	if l == 0 {
-		return args.Uint64(p.ID).Str(p.Name).NullString(p.Email), nil // except auto inc column ;-)
+		return args.Uint64(p.ID).String(p.Name).NullString(p.Email), nil // except auto inc column ;-)
 	}
 	for _, col := range columns {
 		if args, err = p.appendArgs(args, col); err != nil {
@@ -131,7 +131,7 @@ func (p *dmlPerson) appendArgs(args Arguments, column string) (_ Arguments, err 
 	case "id":
 		args = args.Uint64(p.ID)
 	case "name":
-		args = args.Str(p.Name)
+		args = args.String(p.Name)
 	case "email":
 		args = args.NullString(p.Email)
 		// case "key": don't add key, it triggers a test failure condition
@@ -180,7 +180,7 @@ func (ps *dmlPersons) AppendArgs(args Arguments, columns []string) (_ Arguments,
 	case "id":
 		args = args.Uint64s(ids...)
 	case "name":
-		args = args.Strs(names...)
+		args = args.Strings(names...)
 	case "email":
 		args = args.NullString(emails...)
 	}

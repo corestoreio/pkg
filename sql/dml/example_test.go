@@ -41,7 +41,7 @@ func iFaceToArgs(values ...interface{}) dml.Arguments {
 		case bool:
 			args = args.Bool(v)
 		case string:
-			args = args.Str(v)
+			args = args.String(v)
 		case []byte:
 			args = args.Bytes(v)
 		case time.Time:
@@ -392,7 +392,7 @@ func ExampleInterpolate() {
 }
 
 func ExampleRepeat() {
-	args := dml.MakeArgs(2).Ints(5, 7, 9).Strs("a", "b", "c", "d", "e")
+	args := dml.MakeArgs(2).Ints(5, 7, 9).Strings("a", "b", "c", "d", "e")
 	sqlStr, err := dml.Repeat("SELECT * FROM `table` WHERE id IN (?) AND name IN (?)", args)
 	if err != nil {
 		fmt.Printf("%+v\n", err)

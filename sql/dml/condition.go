@@ -570,7 +570,7 @@ func (c *Condition) Float64s(f ...float64) *Condition {
 }
 func (c *Condition) Str(s string) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Str(s)
+		c.Right.Arguments = c.Right.Arguments.String(s)
 		return c
 	}
 	c.Right.Argument.set(s)
@@ -579,7 +579,7 @@ func (c *Condition) Str(s string) *Condition {
 
 func (c *Condition) Strs(s ...string) *Condition {
 	if c.isExpression() {
-		c.Right.Arguments = c.Right.Arguments.Strs(s...)
+		c.Right.Arguments = c.Right.Arguments.Strings(s...)
 		return c
 	}
 	c.Right.Argument.set(s)

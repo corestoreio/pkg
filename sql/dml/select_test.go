@@ -55,7 +55,7 @@ func TestSelect_BasicToSQL(t *testing.T) {
 				Expr("?").Alias("n").Int64(1),
 				Expr("CAST(:abc AS CHAR(20))").Alias("str"),
 			).BindRecord(
-			Qualify("", MakeArgs(1).Name("abc").Str("a'bc")),
+			Qualify("", MakeArgs(1).Name("abc").String("a'bc")),
 		)
 		compareToSQL(t, sel, nil,
 			"SELECT ? AS `n`, CAST(:abc AS CHAR(20)) AS `str`",
@@ -584,7 +584,7 @@ func TestSelectBySQL_Load_Slice(t *testing.T) {
 
 	t.Run("single slice item", func(t *testing.T) {
 		var people dmlPersons
-		count, err := s.SelectBySQL("SELECT name FROM dml_people WHERE email = ?", MakeArgs(1).Str("jonathan@uservoice.com")).Load(context.TODO(), &people)
+		count, err := s.SelectBySQL("SELECT name FROM dml_people WHERE email = ?", MakeArgs(1).String("jonathan@uservoice.com")).Load(context.TODO(), &people)
 
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), count)

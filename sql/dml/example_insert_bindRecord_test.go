@@ -42,7 +42,7 @@ func (pe productEntity) AppendArgs(args dml.Arguments, columns []string) (dml.Ar
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns.
-		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).Str(pe.TypeID).NullString(pe.SKU).Bool(pe.HasOptions), nil
+		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).String(pe.TypeID).NullString(pe.SKU).Bool(pe.HasOptions), nil
 	}
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {
@@ -59,7 +59,7 @@ func (pe productEntity) appendArgs(args dml.Arguments, column string) (_ dml.Arg
 	case "attribute_set_id":
 		args = args.Int64(pe.AttributeSetID)
 	case "type_id":
-		args = args.Str(pe.TypeID)
+		args = args.String(pe.TypeID)
 	case "sku":
 		args = args.NullString(pe.SKU)
 	case "has_options":

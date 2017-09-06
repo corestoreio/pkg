@@ -44,17 +44,17 @@ func (pe categoryEntity) appendArgs(args dml.Arguments, column string) (_ dml.Ar
 	case "attribute_set_id":
 		args = args.Int64(pe.AttributeSetID)
 	case "parent_id":
-		args = args.Str(pe.ParentID)
+		args = args.String(pe.ParentID)
 	case "path":
 		args = args.NullString(pe.Path)
 	case "teaser_id_s":
 		if pe.TeaserIDs == nil {
 			args = args.Null()
 		} else {
-			args = args.Str(strings.Join(pe.TeaserIDs, "|"))
+			args = args.String(strings.Join(pe.TeaserIDs, "|"))
 		}
 	case "fk_teaser_id_s": // TODO ...
-		args = args.Strs(pe.TeaserIDs...)
+		args = args.Strings(pe.TeaserIDs...)
 	default:
 		return nil, errors.NewNotFoundf("[dml_test] Column %q not found", column)
 	}
@@ -71,7 +71,7 @@ func (pe categoryEntity) AppendArgs(args dml.Arguments, columns []string) (dml.A
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns.
-		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).Str(pe.ParentID), nil
+		return args.Int64(pe.EntityID).Int64(pe.AttributeSetID).String(pe.ParentID), nil
 	}
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {

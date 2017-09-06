@@ -45,7 +45,7 @@ func (ce catalogCategoryEntity) appendArgs(args dml.Arguments, column string) (_
 	case "parent_id":
 		args = args.Int64(ce.ParentID)
 	case "path":
-		args = args.Str(ce.Path)
+		args = args.String(ce.Path)
 	case "position":
 		args = args.Int(ce.Position)
 	case "created_at":
@@ -66,7 +66,7 @@ func (ce catalogCategoryEntity) AppendArgs(args dml.Arguments, columns []string)
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns.
-		return args.Int64(ce.EntityID).Int64(ce.AttributeSetID).Int64(ce.ParentID).Str(ce.Path).Int(ce.Position).Time(ce.CreatedAt), nil
+		return args.Int64(ce.EntityID).Int64(ce.AttributeSetID).Int64(ce.ParentID).String(ce.Path).Int(ce.Position).Time(ce.CreatedAt), nil
 	}
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {
@@ -92,13 +92,13 @@ func (ts tableStore) appendArgs(args dml.Arguments, column string) (_ dml.Argume
 	case "store_id":
 		args = args.Int64(ts.StoreID)
 	case "code":
-		args = args.Str(ts.Code)
+		args = args.String(ts.Code)
 	case "website_id":
 		args = args.Int64(ts.WebsiteID)
 	case "group_id":
 		args = args.Int64(ts.GroupID)
 	case "name":
-		args = args.Str(ts.Name)
+		args = args.String(ts.Name)
 	default:
 		return nil, errors.NewNotFoundf("[dml_test] %T: Column %q not found", ts, column)
 	}
@@ -115,7 +115,7 @@ func (ts tableStore) AppendArgs(args dml.Arguments, columns []string) (dml.Argum
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns.
-		return args.Int64(ts.StoreID).Str(ts.Code).Int64(ts.WebsiteID).Int64(ts.GroupID).Str(ts.Name), nil
+		return args.Int64(ts.StoreID).String(ts.Code).Int64(ts.WebsiteID).Int64(ts.GroupID).String(ts.Name), nil
 	}
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {

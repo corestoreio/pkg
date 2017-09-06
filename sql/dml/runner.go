@@ -347,7 +347,7 @@ func (b *RowConvert) WriteTo(w io.Writer) (n int64, err error) {
 	return int64(n2), errors.WithStack(err)
 }
 
-// Str see the documentation for function Scan.
+// String see the documentation for function Scan.
 func (b *RowConvert) Str() (string, error) {
 	if b.CheckValidUTF8 && !utf8.Valid(b.current) {
 		return "", errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)

@@ -170,7 +170,7 @@ func TestUpdate_Prepare(t *testing.T) {
 		for i, test := range tests {
 			args = args[:0]
 
-			res, err := stmt.WithArguments(args.Str(test.name).Str(test.email).Int(test.id)).Exec(context.TODO())
+			res, err := stmt.WithArguments(args.String(test.name).String(test.email).Int(test.id)).Exec(context.TODO())
 			if err != nil {
 				t.Fatalf("Index %d => %+v", i, err)
 			}
@@ -202,7 +202,7 @@ func (so salesInvoice) AppendArgs(args dml.Arguments, columns []string) (dml.Arg
 	case "entity_id":
 		args = args.Int64(so.EntityID)
 	case "state":
-		args = args.Str(so.State)
+		args = args.String(so.State)
 	case "store_id":
 		args = args.Int64(so.StoreID)
 	case "customer_id":
@@ -249,7 +249,7 @@ func TestUpdate_SetClausAliases(t *testing.T) {
 	um := dml.NewUpdate("sales_invoice").
 		AddColumns("state", "customer_id", "grand_total").
 		Where(
-			// dml.Column("shipping_method", dml.In.Str("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
+			// dml.Column("shipping_method", dml.In.String("DHL", "UPS")), // For all clauses the same restriction TODO fix bug when using IN
 			dml.Column("shipping_method").Str("DHL"), // For all clauses the same restriction
 			dml.Column("entity_id").PlaceHolder(),    // Int64() acts as a place holder
 		).WithDB(dbc.DB)

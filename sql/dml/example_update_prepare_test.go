@@ -41,7 +41,7 @@ func (so salesOrder) appendArgs(args dml.Arguments, column string) (_ dml.Argume
 	case "entity_id":
 		args = args.Int64(so.EntityID)
 	case "state":
-		args = args.Str(so.State)
+		args = args.String(so.State)
 	case "store_id":
 		args = args.Int64(so.StoreID)
 	case "customer_id":
@@ -64,7 +64,7 @@ func (so salesOrder) AppendArgs(args dml.Arguments, columns []string) (dml.Argum
 	if l == 0 {
 		// This case gets executed when an INSERT statement doesn't contain any
 		// columns.
-		return args.Int64(so.EntityID).Str(so.State).Int64(so.StoreID), nil
+		return args.Int64(so.EntityID).String(so.State).Int64(so.StoreID), nil
 	}
 	// This case gets executed when an INSERT statement requests specific columns.
 	for _, col := range columns {

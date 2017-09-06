@@ -283,9 +283,9 @@ func (arg argument) GoString() string {
 		buf.WriteString(")")
 
 	case string:
-		fmt.Fprintf(buf, ".Str(%q)", v)
+		fmt.Fprintf(buf, ".String(%q)", v)
 	case []string:
-		buf.WriteString(".Strs(")
+		buf.WriteString(".Strings(")
 		for i, nv := range v {
 			if i > 0 {
 				buf.WriteByte(',')
@@ -564,8 +564,8 @@ func (a Arguments) Float64(f float64) Arguments             { return a.add(f) }
 func (a Arguments) Float64s(f ...float64) Arguments         { return a.add(f) }
 func (a Arguments) Bool(b bool) Arguments                   { return a.add(b) }
 func (a Arguments) Bools(b ...bool) Arguments               { return a.add(b) }
-func (a Arguments) Str(s string) Arguments                  { return a.add(s) }
-func (a Arguments) Strs(s ...string) Arguments              { return a.add(s) }
+func (a Arguments) String(s string) Arguments               { return a.add(s) }
+func (a Arguments) Strings(s ...string) Arguments           { return a.add(s) }
 func (a Arguments) Time(t time.Time) Arguments              { return a.add(t) }
 func (a Arguments) Times(t ...time.Time) Arguments          { return a.add(t) }
 func (a Arguments) Bytes(b []byte) Arguments                { return a.add(b) }
@@ -685,7 +685,7 @@ func (a Arguments) DriverValues(dvs ...driver.Valuer) Arguments {
 		case []byte:
 			a = a.Bytes(t)
 		case string:
-			a = a.Str(t)
+			a = a.String(t)
 		case time.Time:
 			a = a.Times(t)
 		default:
@@ -722,7 +722,7 @@ func iFaceToArgs(values ...interface{}) Arguments {
 		case bool:
 			args = args.Bool(v)
 		case string:
-			args = args.Str(v)
+			args = args.String(v)
 		case []byte:
 			args = args.Bytes(v)
 		case time.Time:
