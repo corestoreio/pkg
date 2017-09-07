@@ -159,6 +159,7 @@ func NewConnPool(opts ...ConnPoolOption) (*ConnPool, error) {
 	// TODO: Validate that we run with utf8mb4 the normal utf8 is only 3 bytes
 	// where utf8mb4 is full 4byte support.
 	// SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%';
+	// TODO: Set SQL mode to strict https://dev.mysql.com/doc/refman/5.7/en/sql-mode.html#sql-mode-strict
 
 	return c, nil
 }

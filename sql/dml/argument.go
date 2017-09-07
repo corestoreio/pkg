@@ -558,6 +558,7 @@ func (a Arguments) Int(i int) Arguments                     { return a.add(i) }
 func (a Arguments) Ints(i ...int) Arguments                 { return a.add(i) }
 func (a Arguments) Int64(i int64) Arguments                 { return a.add(i) }
 func (a Arguments) Int64s(i ...int64) Arguments             { return a.add(i) }
+func (a Arguments) Uint(i uint) Arguments                   { return a.add(uint64(i)) }
 func (a Arguments) Uint64(i uint64) Arguments               { return a.add(i) }
 func (a Arguments) Uint64s(i ...uint64) Arguments           { return a.add(i) }
 func (a Arguments) Float64(f float64) Arguments             { return a.add(f) }
