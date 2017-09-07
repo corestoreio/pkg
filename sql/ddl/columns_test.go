@@ -134,19 +134,19 @@ func TestColumnsMap(t *testing.T) {
 	t.Parallel()
 	cols := ddl.Columns{
 		&ddl.Column{
-			Field:      (`category_id131`),
-			ColumnType: (`int(10) unsigned`),
-			Key:        (`PRI`),
+			Field:      `category_id131`,
+			ColumnType: `int(10) unsigned`,
+			Key:        `PRI`,
 			Default:    dml.MakeNullString(`0`),
-			Extra:      (``),
+			Extra:      ``,
 		},
 		&ddl.Column{
-			Field:      (`is_root_category180`),
-			ColumnType: (`smallint(2) unsigned`),
+			Field:      `is_root_category180`,
+			ColumnType: `smallint(2) unsigned`,
 			Null:       "YES",
-			Key:        (``),
+			Key:        ``,
 			Default:    dml.MakeNullString(`0`),
-			Extra:      (``),
+			Extra:      ``,
 		},
 	}
 	colsHave := cols.Map(func(c *ddl.Column) *ddl.Column {
@@ -155,12 +155,12 @@ func TestColumnsMap(t *testing.T) {
 	})
 
 	colsWant := ddl.Columns{
-		&ddl.Column{Field: (`category_id1312`),
-			ColumnType: (`int(10) unsigned`), Key: (`PRI`),
-			Default: dml.MakeNullString(`0`), Extra: (``)},
-		&ddl.Column{Field: (`is_root_category1802`),
-			ColumnType: (`smallint(2) unsigned`), Null: "YES",
-			Key: (``), Default: dml.MakeNullString(`0`), Extra: (``)},
+		&ddl.Column{Field: `category_id1312`,
+			ColumnType: `int(10) unsigned`, Key: `PRI`,
+			Default: dml.MakeNullString(`0`), Extra: ``},
+		&ddl.Column{Field: `is_root_category1802`,
+			ColumnType: `smallint(2) unsigned`, Null: "YES",
+			Key: ``, Default: dml.MakeNullString(`0`), Extra: ``},
 	}
 
 	assert.Exactly(t, colsWant, colsHave)
@@ -170,210 +170,29 @@ func TestColumnsFilter(t *testing.T) {
 	t.Parallel()
 	cols := ddl.Columns{
 		&ddl.Column{
-			Field:      (`category_id131`),
-			ColumnType: (`int(10) unsigned`),
-			Key:        (`PRI`),
+			Field:      `category_id131`,
+			ColumnType: `int10 unsigned`,
+			Key:        `PRI`,
 			Default:    dml.MakeNullString(`0`),
-			Extra:      (``),
+			Extra:      ``,
 		},
 		&ddl.Column{
-			Field:      (`is_root_category180`),
-			ColumnType: (`smallint(2) unsigned`),
+			Field:      `is_root_category180`,
+			ColumnType: `smallint2 unsigned`,
 			Null:       "YES",
-			Key:        (``),
+			Key:        ``,
 			Default:    dml.MakeNullString(`0`),
-			Extra:      (``),
+			Extra:      ``,
 		},
 	}
 	colsHave := cols.Filter(func(c *ddl.Column) bool {
 		return c.Field == "is_root_category180"
 	})
 	colsWant := ddl.Columns{
-		&ddl.Column{Field: (`is_root_category180`), ColumnType: (`smallint(2) unsigned`), Null: "YES", Key: (``), Default: dml.MakeNullString(`0`), Extra: (``)},
+		&ddl.Column{Field: `is_root_category180`, ColumnType: `smallint2 unsigned`, Null: "YES", Key: ``, Default: dml.MakeNullString(`0`), Extra: ``},
 	}
 
 	assert.Exactly(t, colsWant, colsHave)
-}
-
-func TestGetGoPrimitive(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		c           ddl.Column
-		useNullType bool
-		want        string
-	}{
-		{
-			ddl.Column{
-				Field:    (`category_id131`),
-				DataType: `int`,
-				Key:      (`PRI`),
-				Default:  dml.MakeNullString(`0`),
-				Extra:    (``),
-			},
-			false,
-			"int64",
-		},
-		{
-			ddl.Column{
-				Field:    (`category_id143`),
-				DataType: (`int`),
-				Null:     "YES",
-				Key:      (`PRI`),
-				Default:  dml.MakeNullString(`0`),
-				Extra:    (``),
-			},
-			false,
-			"int64",
-		},
-		{
-			ddl.Column{
-				Field:    (`category_id155`),
-				DataType: (`int`),
-				Null:     "YES",
-				Key:      (`PRI`),
-				Default:  dml.MakeNullString(`0`),
-				Extra:    (``),
-			},
-			true,
-			"dml.NullInt64",
-		},
-
-		{
-			ddl.Column{
-				Field:    (`is_root_category155`),
-				DataType: (`smallint`),
-				Null:     "YES",
-				Key:      (``),
-				Default:  dml.MakeNullString(`0`),
-				Extra:    (``),
-			},
-			false,
-			"bool",
-		},
-		{
-			ddl.Column{
-				Field:    (`is_root_category180`),
-				DataType: (`smallint`),
-				Null:     "YES",
-				Key:      (``),
-				Default:  dml.MakeNullString(`0`),
-				Extra:    (``),
-			},
-			true,
-			"dml.NullBool",
-		},
-
-		{
-			ddl.Column{
-				Field:    (`product_name193`),
-				DataType: (`varchar`),
-				Null:     "YES",
-				Key:      (``),
-				Default:  dml.MakeNullString(`0`),
-				Extra:    (``),
-			},
-			true,
-			"dml.NullString",
-		},
-		{
-			ddl.Column{
-				Field:    (`product_name193`),
-				DataType: (`varchar`),
-				Null:     "YES",
-			},
-			false,
-			"string",
-		},
-
-		{
-			ddl.Column{
-				Field:    (`price`),
-				DataType: (`decimal`),
-				Null:     "YES",
-			},
-			false,
-			"money.Money",
-		},
-		{
-			ddl.Column{
-				Field:    (`shipping_adjustment_230`),
-				DataType: (`decimal`),
-				Null:     "YES",
-			},
-			true,
-			"money.Money",
-		},
-		{
-			ddl.Column{
-				Field:    (`grand_absolut_233`),
-				DataType: (`decimal`),
-				Null:     "YES",
-			},
-			true,
-			"money.Money",
-		},
-		{
-			ddl.Column{
-				Field:    (`some_currencies_242`),
-				DataType: (`decimal`),
-				Default:  dml.MakeNullString(`0.0000`),
-			},
-			true,
-			"money.Money",
-		},
-
-		{
-			ddl.Column{
-				Field:    (`weight_252`),
-				DataType: (`decimal`),
-				Null:     "YES",
-				Default:  dml.MakeNullString(`0.0000`),
-			},
-			true,
-			"dml.NullFloat64",
-		},
-		{
-			ddl.Column{
-				Field:    (`weight_263`),
-				DataType: (`double`),
-				Null:     "YES",
-				Default:  dml.MakeNullString(`0.0000`),
-			},
-			false,
-			"float64",
-		},
-
-		{
-			ddl.Column{
-				Field:    (`created_at_274`),
-				DataType: (`date`),
-				Null:     "YES",
-				Default:  dml.MakeNullString(`0000-00-00`),
-			},
-			false,
-			"time.Time",
-		},
-		{
-			ddl.Column{
-				Field:    (`created_at_274`),
-				DataType: (`date`),
-				Null:     "YES",
-				Default:  dml.MakeNullString(`0000-00-00`),
-			},
-			true,
-			"dml.NullTime",
-		},
-	}
-
-	for i, test := range tests {
-		var have string
-		if test.useNullType {
-			have = test.c.GoPrimitiveNull()
-		} else {
-			have = test.c.GoPrimitive()
-		}
-		assert.Equal(t, test.want, have, "Index %d", i)
-	}
 }
 
 var adminUserColumns = ddl.Columns{
@@ -417,12 +236,6 @@ func TestColumn_IsUnsigned(t *testing.T) {
 	t.Parallel()
 	assert.True(t, adminUserColumns.ByField("lognum").IsUnsigned())
 	assert.False(t, adminUserColumns.ByField("reload_acl_flag").IsUnsigned())
-}
-
-func TestColumn_DataTypeSimple(t *testing.T) {
-	t.Parallel()
-	assert.Exactly(t, "date", adminUserColumns.ByField("logdate").DataTypeSimple())
-	assert.Exactly(t, "int", adminUserColumns.ByField("reload_acl_flag").DataTypeSimple())
 }
 
 func TestColumn_IsCurrentTimestamp(t *testing.T) {

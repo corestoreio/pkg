@@ -415,7 +415,7 @@ func (tm *Tables) ToSQL() (string, []interface{}, error) {
 		for name := range tm.tm {
 			tables = append(tables, name)
 		}
-		arg = arg.Strs(tables...)
+		arg = arg.Strings(tables...)
 	}
 	return dml.Interpolate(query).ArgUnions(arg).ToSQL()
 }

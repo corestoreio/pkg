@@ -22,7 +22,6 @@ import (
 	"hash/fnv"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -62,11 +61,6 @@ type Column struct {
 	Key     string //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
 	Extra   string //`EXTRA` varchar(30) NOT NULL DEFAULT '',
 	Comment string //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
-
-	mu sync.RWMutex
-	// DataTypeSimple contains the simplified data type of the field DataType.
-	// Fo example bigint, smallint, tinyint will result in "int".
-	dataTypeSimple string
 }
 
 // DMLLoadColumns specifies the data manipulation language for retrieving all
@@ -338,31 +332,31 @@ func NewColumn(rc *dml.RowConvert) (c *Column, tableName string, err error) {
 		var err error
 		switch col {
 		case "TABLE_NAME":
-			tableName, err = rc.Str()
+			tableName, err = rc.String()
 		case "COLUMN_NAME":
-			c.Field, err = rc.Str()
+			c.Field, err = rc.String()
 		case "ORDINAL_POSITION":
 			c.Pos, err = rc.Uint64()
 		case "COLUMN_DEFAULT":
-			c.Default.NullString, err = rc.NullString()
+			c.Default, err = rc.NullString()
 		case "IS_NULLABLE":
-			c.Null, err = rc.Str()
+			c.Null, err = rc.String()
 		case "DATA_TYPE":
-			c.DataType, err = rc.Str()
+			c.DataType, err = rc.String()
 		case "CHARACTER_MAXIMUM_LENGTH":
-			c.CharMaxLength.NullInt64, err = rc.NullInt64()
+			c.CharMaxLength, err = rc.NullInt64()
 		case "NUMERIC_PRECISION":
-			c.Precision.NullInt64, err = rc.NullInt64()
+			c.Precision, err = rc.NullInt64()
 		case "NUMERIC_SCALE":
-			c.Scale.NullInt64, err = rc.NullInt64()
+			c.Scale, err = rc.NullInt64()
 		case "COLUMN_TYPE":
-			c.ColumnType, err = rc.Str()
+			c.ColumnType, err = rc.String()
 		case "COLUMN_KEY":
-			c.Key, err = rc.Str()
+			c.Key, err = rc.String()
 		case "EXTRA":
-			c.Extra, err = rc.Str()
+			c.Extra, err = rc.String()
 		case "COLUMN_COMMENT":
-			c.Comment, err = rc.Str()
+			c.Comment, err = rc.String()
 		default:
 			return nil, "", errors.NewNotSupportedf("[ddl] Column %q not supported or alias not found")
 		}
@@ -463,64 +457,20 @@ func (c *Column) IsCurrentTimestamp() bool {
 	return c.Default.String == columnCurrentTimestamp
 }
 
-const (
-	colTypeBool   = "bool"
-	colTypeByte   = "bytes"
-	colTypeDate   = "date"
-	colTypeFloat  = "float"
-	colTypeInt    = "int"
-	colTypeMoney  = "money"
-	colTypeString = "string"
-	colTypeTime   = "time"
-)
-
-// DataTypeSimple calculates the simplified data type of the field DataType. The
-// calculated result will be cached. For example bigint, smallint, tinyint will
-// result in "int". The returned string guarantees to be lower case. Available
-// returned types are: bool, bytes, date, float, int, money, string, time. Data
-// type money is special for the database schema. This function is thread safe.
-func (c *Column) DataTypeSimple() string {
-	c.mu.RLock()
-	dts := c.dataTypeSimple
-	c.mu.RUnlock()
-	if dts != "" {
-		return dts
-	}
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.dataTypeSimple = "undefnied"
-
+// IsFloat returns true if a column is of one of the types: decimal, double or
+// float.
+func (c *Column) IsFloat() bool {
 	switch c.DataType {
-	case "bigint", "int", "mediumint", "smallint", "tinyint":
-		c.dataTypeSimple = colTypeInt
-	case "longtext", "mediumtext", "text", "tinytext", "varchar", "enum", "char":
-		c.dataTypeSimple = colTypeString
-	case "longblob", "mediumblob", "blob", "varbinary", "binary":
-		c.dataTypeSimple = colTypeByte
-	case "date", "datetime", "timestamp":
-		c.dataTypeSimple = colTypeDate
-	case "time":
-		c.dataTypeSimple = colTypeTime
-	case "decimal", "float", "double":
-		c.dataTypeSimple = colTypeFloat
-	case "bit":
-		c.dataTypeSimple = colTypeBool
+	case "decimal", "double", "float":
+		return true
 	}
-
-	switch {
-	case columnTypes.byName.bool.ContainsReverse(c.Field):
-		c.dataTypeSimple = colTypeBool
-	case c.dataTypeSimple == colTypeFloat && c.isMoney():
-		c.dataTypeSimple = colTypeMoney
-	}
-	return c.dataTypeSimple
+	return false
 }
 
 // isMoney checks if a column contains a MySQL decimal or float type and if the
 // column name has a special naming.
 // This function needs a lot of care ...
-func (c *Column) isMoney() bool {
+func (c *Column) IsMoney() bool {
 	// needs more love
 	switch {
 	// could us a long list of || statements but switch looks nicer :-)
@@ -530,60 +480,21 @@ func (c *Column) isMoney() bool {
 		return true
 	case columnTypes.byName.moneySW.StartsWithReverse(c.Field):
 		return true
-	case !c.IsNull() && c.Default.String == "0.0000":
-		return true
 	}
 	return false
 }
 
-// GoPrimitive detects the Go type of a SQL table column as a non nullable type.
-func (c *Column) GoPrimitive() string {
-	return c.goPrimitive(false)
-}
-
-// GoPrimitiveNull detects the Go type of a SQL table column as a nullable type.
-func (c *Column) GoPrimitiveNull() string {
-	return c.goPrimitive(true)
-}
-
-func (c *Column) goPrimitive(useNullType bool) string {
-	var goType = "undefined"
-	isNull := c.IsNull() && useNullType
-	switch c.DataTypeSimple() {
-	case colTypeBool:
-		goType = "bool"
-		if isNull {
-			goType = "dml.NullBool"
-		}
-	case colTypeInt:
-		goType = "int64"
-		if isNull {
-			goType = "dml.NullInt64"
-		}
-	case colTypeString:
-		goType = "string"
-		if isNull {
-			goType = "dml.NullString"
-		}
-	case colTypeFloat:
-		goType = "float64"
-		if isNull {
-			goType = "dml.NullFloat64"
-		}
-	case colTypeDate:
-		goType = "time.Time"
-		if isNull {
-			goType = "dml.NullTime"
-		}
-	case colTypeTime:
-		goType = "time.Time"
-		if isNull {
-			goType = "dml.NullTime"
-		}
-	case colTypeMoney:
-		goType = "money.Money"
+// IsBool returns true if column is of type `int` and its name starts with a
+// special string like: `used_`, `is_`, `has_`.
+func (c *Column) IsBool() bool {
+	var isInt bool
+	switch c.DataType {
+	case "int", "tinyint", "smallint", "bigint":
+		isInt = true
+	case "bit":
+		return true
 	}
-	return goType
+	return isInt && columnTypes.byName.bool.ContainsReverse(c.Field)
 }
 
 // columnTypes looks ugly but ... refactor later
@@ -593,12 +504,6 @@ var columnTypes = struct { // the slices in this struct are only for reading. no
 		money      slices.String
 		moneySW    slices.String
 		moneyEqual slices.String
-	}
-	byType struct {
-		int     slices.String
-		string  slices.String
-		dateSW  slices.String
-		floatSW slices.String
 	}
 }{
 	struct {
@@ -611,16 +516,5 @@ var columnTypes = struct { // the slices in this struct are only for reading. no
 		slices.String{"price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"},
 		slices.String{"base_", "grand_"},
 		slices.String{"value", "price", "cost", "msrp"},
-	},
-	struct {
-		int     slices.String // contains
-		string  slices.String // contains
-		dateSW  slices.String // SW starts with
-		floatSW slices.String // SW starts with
-	}{
-		slices.String{"int"},
-		slices.String{"char", "text"},
-		slices.String{"time", "date"},
-		slices.String{"decimal", "float", "double"},
 	},
 }

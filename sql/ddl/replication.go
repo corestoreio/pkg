@@ -63,15 +63,15 @@ func (ms *MasterStatus) RowScan(r *sql.Rows) error {
 		var err error
 		switch col {
 		case "File":
-			ms.File, err = b.Str()
+			ms.File, err = b.String()
 		case "Position":
 			ms.Position, err = b.Uint()
 		case "Binlog_Do_DB":
-			ms.BinlogDoDB, err = b.Str()
+			ms.BinlogDoDB, err = b.String()
 		case "Binlog_Ignore_DB":
-			ms.BinlogIgnoreDB, err = b.Str()
+			ms.BinlogIgnoreDB, err = b.String()
 		case "Executed_Gtid_Set":
-			ms.ExecutedGTIDSet, err = b.Str()
+			ms.ExecutedGTIDSet, err = b.String()
 		default:
 			return errors.NewNotFoundf("[ddl] Column %q not found in SHOW MASTER STATUS", col)
 		}

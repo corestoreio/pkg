@@ -70,13 +70,13 @@ func (vs *Variables) RowScan(r *sql.Rows) error {
 	if err := vs.Convert.Scan(r); err != nil {
 		return err
 	}
-	name, err := vs.Convert.Index(0).Str()
+	name, err := vs.Convert.Index(0).String()
 	if err != nil {
-		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.0 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
+		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.0 at Row %d", vs.Convert.Count)
 	}
-	value, err := vs.Convert.Index(1).Str()
+	value, err := vs.Convert.Index(1).String()
 	if err != nil {
-		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.1 at Row %d\nRaw Values: %q\n", vs.Convert.Count, vs.Convert.String())
+		return errors.Wrapf(err, "[ddl] Variables.RowScan.Index.1 at Row %d", vs.Convert.Count)
 	}
 	vs.Data[name] = value
 	return nil
