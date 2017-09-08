@@ -29,7 +29,9 @@ var Imports = map[string][]string{
 	"table": {
 		"database/sql",
 		"github.com/corestoreio/csfw/sql/dml",
+		"github.com/corestoreio/csfw/storage/money",
 		"github.com/corestoreio/errors",
+		"time",
 	},
 }
 
@@ -49,12 +51,11 @@ func (t *Table) WriteTo(w io.Writer) (n int64, err error) {
 	}
 	t.FuncMap["ToCamelCase"] = strs.ToCamelCase
 	t.FuncMap["ToGoCamelCase"] = strs.ToGoCamelCase
-	t.FuncMap["FieldName"] = func(c *ddl.Column) string {
-		fn := strs.ToGoCamelCase(c.Field)
-		if !c.IsNull() {
-			return fn
-		}
-		return fn + ".Null" + strs.ToGoCamelCase(c.DataTypeSimple())
+	if _, ok := t.FuncMap["MySQLToGoType"]; !ok {
+		t.FuncMap["MySQLToGoType"] = MySQLToGoType
+	}
+	if _, ok := t.FuncMap["GoTypeFuncName"]; !ok {
+		t.FuncMap["GoTypeFuncName"] = GoTypeFuncName
 	}
 
 	tplEntity, err := template.New("entity").Funcs(t.FuncMap).Parse(TplEntity)

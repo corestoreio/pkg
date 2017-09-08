@@ -15,17 +15,44 @@
 package dmlgen_test
 
 import (
-	"io"
-	"os"
-	"testing"
-
+	"context"
 	"fmt"
-
 	"github.com/corestoreio/csfw/sql/ddl"
 	"github.com/corestoreio/csfw/sql/dml"
 	"github.com/corestoreio/csfw/sql/dmlgen"
 	"github.com/corestoreio/csfw/util/cstesting"
+	"github.com/stretchr/testify/require"
+	"io"
+	"os"
+	"testing"
 )
+
+/*
+SELECT
+  concat('col_',
+         replace(
+             replace(
+                 replace(
+                     replace(COLUMN_TYPE, '(', '_')
+                     , ')', '')
+                 , ' ', '_')
+             , ',', '_')
+  )
+    AS ColName,
+  COLUMN_TYPE,
+  IF(IS_NULLABLE = 'NO', 'NOT NULL', ''),
+  ' DEFAULT',
+  COLUMN_DEFAULT,
+  ','
+FROM information_schema.COLUMNS
+WHERE
+  table_schema = 'magento22' AND
+  column_type IN (SELECT column_type
+                  FROM information_schema.`COLUMNS`
+                  GROUP BY column_type)
+GROUP BY COLUMN_TYPE
+ORDER BY COLUMN_TYPE
+*/
 
 var _ io.WriterTo = (*dmlgen.Table)(nil)
 
@@ -63,6 +90,39 @@ func TestTable_WriteTo(t *testing.T) {
 
 	writeHeader(f, dmlgen.Imports["table"])
 
+	_, err = tbl.WriteTo(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTable_WithAllTypes(t *testing.T) {
+	t.Parallel()
+
+	db, mock := cstesting.MockDB(t)
+	defer cstesting.MockClose(t, db, mock)
+
+	mock.ExpectQuery("SELECT.+").WillReturnRows(cstesting.MustMockRows(
+		cstesting.WithFile("testdata/dmlgen_types.csv"),
+	))
+
+	colMap, err := ddl.LoadColumns(context.Background(), db.DB, "dmlgen_types")
+	require.NoError(t, err)
+
+	const outFile = "testdata/dmlgen_types.go"
+	os.Remove(outFile)
+	f, err := os.Create(outFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cstesting.Close(t, f)
+
+	writeHeader(f, dmlgen.Imports["table"])
+	tbl := &dmlgen.Table{
+		Package: "testdata",
+		Name:    "dmlgen_types",
+		Columns: colMap["dmlgen_types"],
+	}
 	_, err = tbl.WriteTo(f)
 	if err != nil {
 		t.Fatal(err)

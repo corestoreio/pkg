@@ -18,13 +18,13 @@ const TplEntity = `// {{.Entity}} represents a type for DB table {{.Tick}}{{.Tab
 // Generated via dmlgen.
 type {{.Entity}} struct {
 	rc dml.RowConvert
-	{{ range .Columns }}{{.Field | ToGoCamelCase}} {{.GoPrimitive}} {{ $.Tick }}json:",omitempty"{{ $.Tick }} {{.GoComment}}
+	{{ range .Columns }}{{ToGoCamelCase .Field}} {{MySQLToGoType .}} {{ $.Tick }}json:"{{.Field}},omitempty"{{ $.Tick }} {{.GoComment}}
 {{ end }} }
 
 // AssignLastInsertID updates the increment ID field with the last inserted ID
 // from an INSERT operation. Implements dml.InsertIDAssigner
 func (e *{{.Entity}}) AssignLastInsertID(id int64) {
-	{{ range .Columns }}{{if .IsPK}} e.{{. | FieldName}} = uint64(id) {{end}}
+	{{ range .Columns }}{{if .IsPK}} e.{{ToGoCamelCase .Field}} = {{MySQLToGoType .}}(id) {{end}}
 {{ end }}
 }
 
@@ -41,7 +41,7 @@ func (e *{{.Entity}}) assign(rc *dml.RowConvert) (err error) {
 		b := rc.Index(i)
 		switch c { {{ range .Columns }}
 			case "{{.Field }}":
-				e.{{. | FieldName}}, err = b.{{.RowConvertName}}(){{end}}
+				e.{{ToGoCamelCase .Field}}, err = b.{{ GoTypeFuncName . }}(){{end}}
 		default:
 			return errors.NewNotFoundf("[{{.Package}}] Column %q not found", c)
 		}
@@ -58,8 +58,14 @@ func (e *{{.Entity}}) AppendArgs(args dml.Arguments, columns []string) (_ dml.Ar
 		return e.appendArgs(args, columns[0])
 	}
 	if l == 0 {
-		return args.Uint64(e.ID).Str(e.Name).NullString(e.Email), nil // except auto inc column ;-)
+		// This case gets executed when an INSERT statement doesn't contain any
+		// columns.
+		return args{{range .Columns}}.
+			{{GoTypeFuncName .}}(e.{{ToGoCamelCase .Field}}){{end}},
+			nil
 	}
+	// This case gets executed when an INSERT statement requests specific
+	// columns.
 	for _, col := range columns {
 		if args, err = e.appendArgs(args, col); err != nil {
 			return nil, errors.WithStack(err)
@@ -69,9 +75,9 @@ func (e *{{.Entity}}) AppendArgs(args dml.Arguments, columns []string) (_ dml.Ar
 }
 
 func (e *{{.Entity}}) appendArgs(args dml.Arguments, column string) (_ dml.Arguments, err error) {
-	switch column { {{ range .Columns }}
+	switch column { {{range .Columns}}
 	case "{{.Field }}":
-		args = args.{{.RowConvertName}}(e.{{. | FieldName}}){{end}}
+		args = args.{{GoTypeFuncName .}}(e.{{ToGoCamelCase .Field}}){{end}}
 	default:
 		return nil, errors.NewNotFoundf("[dml_test] dmlPerson Column %q not found", column)
 	}
@@ -122,7 +128,7 @@ func (c *{{.Collection}}) AppendArgs(args Arguments, columns []string) (_ Argume
 	case "id":
 		args = args.Uint64s(ids...)
 	case "name":
-		args = args.Strs(names...)
+		args = args.Strings(names...)
 	case "email":
 		args = args.NullString(emails...)
 	}
