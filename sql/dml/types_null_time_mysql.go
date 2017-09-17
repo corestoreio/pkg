@@ -44,27 +44,29 @@ type NullTime struct {
 // The value type must be time.Time or string / []byte (formatted time-string),
 // otherwise Scan fails.
 func (nt *NullTime) Scan(value interface{}) (err error) {
+	nt.Time, nt.Valid = time.Time{}, false
 	if value == nil {
-		nt.Time, nt.Valid = time.Time{}, false
 		return
 	}
 
 	switch v := value.(type) {
 	case time.Time:
-		nt.Time, nt.Valid = v, true
-		return
+		nt.Time = v
 	case []byte:
+		if v == nil {
+			return
+		}
 		nt.Time, err = parseDateTime(string(v), time.UTC)
-		nt.Valid = (err == nil)
-		return
 	case string:
+		if v == "" {
+			return
+		}
 		nt.Time, err = parseDateTime(v, time.UTC)
-		nt.Valid = (err == nil)
-		return
+	default:
+		err = errors.NewNotValidf("[dml] Can't convert %T to time.Time. Maybe not yet implemented.", value)
 	}
-
-	nt.Valid = false
-	return errors.NewNotValidf("Can't convert %T to time.Time", value)
+	nt.Valid = err == nil
+	return
 }
 
 // Value implements the driver.Valuer interface.
@@ -76,13 +78,15 @@ func (nt NullTime) Value() (driver.Value, error) {
 }
 
 func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
-	base := "0000-00-00 00:00:00.0000000"
+	base := "0000-00-00 00:00:00.000000000+00:00"
+	// 		"2006-01-02T15:04:05.000000002+00:00"
+	// 		"2006-01-02T15:04:05.999999999Z07:00"
 	switch len(str) {
-	case 10, 19, 21, 22, 23, 24, 25, 26: // up to "YYYY-MM-DD HH:MM:SS.MMMMMM"
+	case 10, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 35: // up to "YYYY-MM-DD HH:MM:SS.MMMMMMM+HH:II"
 		if str == base[:len(str)] {
 			return
 		}
-		t, err = time.Parse(timeFormat[:len(str)], str)
+		t, err = time.Parse(time.RFC3339Nano[:len(str)], str)
 	default:
 		err = errors.NewNotValidf("invalid time string: %s", str)
 		return

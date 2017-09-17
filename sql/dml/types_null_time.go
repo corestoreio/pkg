@@ -36,26 +36,26 @@ func MakeNullTime(t time.Time, valid ...bool) NullTime {
 }
 
 // GoString prints an optimized Go representation.
-func (a NullTime) GoString() string {
-	if !a.Valid {
+func (nt NullTime) GoString() string {
+	if !nt.Valid {
 		return "dml.NullTime{}"
 	}
-	return fmt.Sprintf("dml.MakeNullTime(time.Unix(%d,%d)", a.Time.Unix(), a.Time.Nanosecond())
+	return fmt.Sprintf("dml.MakeNullTime(time.Unix(%d,%d)", nt.Time.Unix(), nt.Time.Nanosecond())
 }
 
 // MarshalJSON implements json.Marshaler.
 // It will encode null if this time is null.
-func (a NullTime) MarshalJSON() ([]byte, error) {
-	if !a.Valid {
+func (nt NullTime) MarshalJSON() ([]byte, error) {
+	if !nt.Valid {
 		return []byte("null"), nil
 	}
-	return a.Time.MarshalJSON()
+	return nt.Time.MarshalJSON()
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
 // It supports string, object (e.g. pq.NullTime and friends)
 // and null input.
-func (a *NullTime) UnmarshalJSON(data []byte) error {
+func (nt *NullTime) UnmarshalJSON(data []byte) error {
 	var err error
 	var v interface{}
 	if err = JSONUnMarshalFn(data, &v); err != nil {
@@ -63,58 +63,79 @@ func (a *NullTime) UnmarshalJSON(data []byte) error {
 	}
 	switch x := v.(type) {
 	case string:
-		err = a.Time.UnmarshalJSON(data)
+		err = nt.Time.UnmarshalJSON(data)
 	case map[string]interface{}:
 		ti, tiOK := x["Time"].(string)
 		valid, validOK := x["Valid"].(bool)
 		if !tiOK || !validOK {
 			return errors.NewNotValidf(`[dml] json: unmarshalling object into Go value of type dml.NullTime requires key "Time" to be of type string and key "Valid" to be of type bool; found %T and %T, respectively`, x["Time"], x["Valid"])
 		}
-		err = a.Time.UnmarshalText([]byte(ti))
-		a.Valid = valid
+		err = nt.Time.UnmarshalText([]byte(ti))
+		nt.Valid = valid
 		return err
 	case nil:
-		a.Valid = false
+		nt.Valid = false
 		return nil
 	default:
 		err = errors.NewNotValidf("[dml] json: cannot unmarshal %#v into Go value of type dml.NullTime", v)
 	}
-	a.Valid = err == nil
+	nt.Valid = err == nil
 	return err
 }
 
 // MarshalText transforms the time type into a byte slice.
-func (a NullTime) MarshalText() ([]byte, error) {
-	if !a.Valid {
+func (nt NullTime) MarshalText() ([]byte, error) {
+	if !nt.Valid {
 		return []byte("null"), nil
 	}
-	return a.Time.MarshalText()
+	return nt.Time.MarshalText()
 }
 
 // UnmarshalText parses the byte slice to create a time type.
-func (a *NullTime) UnmarshalText(text []byte) error {
+func (nt *NullTime) UnmarshalText(text []byte) error {
 	str := string(text)
 	if str == "" || str == "null" {
-		a.Valid = false
+		nt.Valid = false
 		return nil
 	}
-	if err := a.Time.UnmarshalText(text); err != nil {
+	if err := nt.Time.UnmarshalText(text); err != nil {
 		return err
 	}
-	a.Valid = true
+	nt.Valid = true
 	return nil
 }
 
-// SetValid changes this Time's value and sets it to be non-null.
-func (a *NullTime) SetValid(v time.Time) {
-	a.Time = v
-	a.Valid = true
+// MarshalBinary transforms the time type into a byte slice.
+func (nt NullTime) MarshalBinary() (data []byte, err error) {
+	if !nt.Valid {
+		return data, nil
+	}
+	return nt.Time.MarshalBinary()
 }
 
-// Ptr returns a pointer to this Time's value, or a nil pointer if this Time is null.
-func (a NullTime) Ptr() *time.Time {
-	if !a.Valid {
+// UnmarshalBinary parses the byte slice to create a time type.
+func (nt *NullTime) UnmarshalBinary(data []byte) error {
+	if len(data) == 0 {
+		nt.Valid = false
 		return nil
 	}
-	return &a.Time
+	err := nt.Time.UnmarshalBinary(data)
+	nt.Valid = err == nil
+	return err
+}
+
+// SetValid changes this Time's value and sets it to be non-null.
+func (nt *NullTime) SetValid(v time.Time) *NullTime {
+	nt.Time = v
+	nt.Valid = true
+	return nt
+}
+
+// Ptr returns a pointer to this Time's value, or a nil pointer if this Time is
+// null.
+func (nt NullTime) Ptr() *time.Time {
+	if !nt.Valid {
+		return nil
+	}
+	return &nt.Time
 }

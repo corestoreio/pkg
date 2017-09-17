@@ -23,7 +23,8 @@ type nowSentinel struct{}
 
 var now = time.Now
 
-// Now is a value that serializes to the current time
+// Now is a value that serializes to the current time. Should only be used to
+// testing purposes. This exported variable can be removed at any time.
 var Now = nowSentinel{}
 
 // Value implements the driver.Valuer interface.
@@ -32,7 +33,7 @@ func (n nowSentinel) Value() (driver.Value, error) {
 	return fnow, nil
 }
 
-// String returns the time string in format "2006-01-02 15:04:05"
+// String returns the time string in format time.RFC3339Nano.
 func (n nowSentinel) String() string {
 	return n.UTC().Format(timeFormat)
 }

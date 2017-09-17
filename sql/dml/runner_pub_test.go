@@ -20,6 +20,7 @@ import (
 	"database/sql"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/sql/dml"
@@ -89,6 +90,8 @@ type baseTest struct {
 	Byte        []byte
 	Str         string
 	NullString  dml.NullString
+	Time        time.Time
+	NullTime    dml.NullTime
 }
 
 type baseTestCollection struct {
@@ -149,9 +152,13 @@ func (vs *baseTestCollection) RowScan(r *sql.Rows) error {
 			o.Str, err = b.String()
 		case "null_string":
 			o.NullString, err = b.NullString()
+		case "time":
+			o.Time, err = b.Time()
+		case "null_time":
+			o.NullTime, err = b.NullTime()
 		}
 		if err != nil {
-			return errors.Wrapf(err, "[dml_test] Failed to scan %q at row %d", col, b.Count)
+			return errors.Wrapf(err, "[dml_test] Failed to scan column %q at row %d", col, b.Count)
 		}
 	}
 	if vs.EventAfterScan != nil {
@@ -174,7 +181,7 @@ func TestRowConvert(t *testing.T) {
 		"int", "int64", "null_int64",
 		"float64", "null_float64",
 		"uint", "uint8", "uint16", "uint32", "uint64",
-		"byte", "str", "null_string",
+		"byte", "str", "null_string", "time", "null_time",
 	}
 
 	t.Run("scan with error", func(t *testing.T) {
@@ -183,7 +190,7 @@ func TestRowConvert(t *testing.T) {
 			1, 2, nil,
 			0.1, nil,
 			0, 8, 16, 32, 64,
-			nil, "", nil)
+			nil, "", nil, time.Time{}, nil)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
@@ -200,28 +207,16 @@ func TestRowConvert(t *testing.T) {
 			-1, -64, -128,
 			0.1, 3.141,
 			0, 8, 16, 32, 64,
-			"byte data", "I'm a string", nil)
+			"byte data", "I'm a string", nil,
+			now(), nil,
+		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
 		tbl.EventAfterScan = func(b dml.RowConvert, _ *baseTest) {
 			buf := new(bytes.Buffer)
 			require.NoError(t, b.Debug(buf))
-			assert.Exactly(t, `bool: "1"
-null_bool: "false"
-int: "-1"
-int64: "-64"
-null_int64: "-128"
-float64: "0.1"
-null_float64: "3.141"
-uint: "0"
-uint8: "8"
-uint16: "16"
-uint32: "32"
-uint64: "64"
-byte: "byte data"
-str: "I'm a string"
-null_string: <nil>`, buf.String())
+			assert.Exactly(t, "bool: \"1\"\nnull_bool: \"false\"\nint: \"-1\"\nint64: \"-64\"\nnull_int64: \"-128\"\nfloat64: \"0.1\"\nnull_float64: \"3.141\"\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: \"byte data\"\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02T15:04:05.000000002+00:00\"\nnull_time: <nil>", buf.String())
 		}
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
@@ -235,16 +230,21 @@ null_string: <nil>`, buf.String())
 			-1, -64, -128,
 			0.1, 3.141,
 			0, 8, 16, 32, 64,
-			"byte data", "I'm a string", "null_string")
+			"byte data", "I'm a string", "null_string",
+			now(), now(),
+		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
 
 		rc, err := dml.Load(context.TODO(), dbc.DB, tbl, tbl)
-		assert.Exactly(t, int64(1), rc)
 		require.NoError(t, err)
+
+		assert.Exactly(t, int64(1), rc)
 		require.Len(t, tbl.Data, 1)
 
+		tbl.Data[0].Time = now()
+		tbl.Data[0].NullTime = dml.MakeNullTime(now()) // otherwise test would fail ...
 		assert.Exactly(t,
 			&baseTest{
 				Bool:        true,
@@ -262,6 +262,8 @@ null_string: <nil>`, buf.String())
 				Byte:        []byte("byte data"),
 				Str:         "I'm a string",
 				NullString:  dml.MakeNullString("null_string"),
+				Time:        now(),
+				NullTime:    dml.MakeNullTime(now()),
 			},
 			tbl.Data[0])
 	})
@@ -272,7 +274,9 @@ null_string: <nil>`, buf.String())
 			-1, -64, nil,
 			0.1, nil,
 			0, 8, 16, 32, 64,
-			nil, "I'm a string", nil)
+			nil, "I'm a string", nil,
+			now(), nil,
+		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
@@ -282,25 +286,26 @@ null_string: <nil>`, buf.String())
 		require.NoError(t, err)
 		require.Len(t, tbl.Data, 1)
 
-		assert.Exactly(t,
-			&baseTest{
-				Bool:    true,
-				Int:     -1,
-				Int64:   -64,
-				Float64: 0.1,
-				Uint:    0x0,
-				Uint8:   0x8,
-				Uint16:  0x10,
-				Uint32:  0x20,
-				Uint64:  0x40,
-				Str:     "I'm a string",
-			},
-			tbl.Data[0])
+		want := &baseTest{
+			Bool:    true,
+			Int:     -1,
+			Int64:   -64,
+			Float64: 0.1,
+			Uint:    0x0,
+			Uint8:   0x8,
+			Uint16:  0x10,
+			Uint32:  0x20,
+			Uint64:  0x40,
+			Str:     "I'm a string",
+			Time:    now(),
+		}
+		tbl.Data[0].Time = now() // useless to test this because location gets set new, hence a new pointer ...
+		assert.Exactly(t, want, tbl.Data[0])
 
 		buf := new(bytes.Buffer)
 		require.NoError(t, tbl.Convert.Debug(buf))
 
-		assert.Exactly(t, "bool: \"True\"\nnull_bool: <nil>\nint: \"-1\"\nint64: \"-64\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"I'm a string\"\nnull_string: <nil>",
+		assert.Exactly(t, "bool: \"True\"\nnull_bool: <nil>\nint: \"-1\"\nint64: \"-64\"\nnull_int64: <nil>\nfloat64: \"0.1\"\nnull_float64: <nil>\nuint: \"0\"\nuint8: \"8\"\nuint16: \"16\"\nuint32: \"32\"\nuint64: \"64\"\nbyte: <nil>\nstr: \"I'm a string\"\nnull_string: <nil>\ntime: \"2006-01-02T15:04:05.000000002+00:00\"\nnull_time: <nil>",
 			buf.String())
 	})
 
@@ -311,7 +316,8 @@ null_string: <nil>`, buf.String())
 			-1, -64, nil,
 			0.1, nil,
 			0, 8, 16, 32, 64,
-			nil, "aa\xe2", string([]byte{66, 250, 67})) // both are invalid
+			nil, "aa\xe2", string([]byte{66, 250, 67}), // both are invalid
+			now(), nil)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
@@ -328,7 +334,9 @@ null_string: <nil>`, buf.String())
 			-1, -64, nil,
 			0.1, nil,
 			0, 8, 16, 32, 64,
-			nil, "aa", string([]byte{66, 250, 67})) // both are invalid
+			nil, "aa", string([]byte{66, 250, 67}), // both are invalid
+			now(), nil)
+
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)
@@ -346,7 +354,9 @@ null_string: <nil>`, buf.String())
 			-1, -64, nil,
 			0.1, nil,
 			0, 8, 16, 32, 64,
-			nil, "I'm writing to ...", nil)
+			nil, "I'm writing to ...", nil,
+			now(), now(),
+		)
 		dbMock.ExpectQuery("SELECT \\* FROM `test`").WillReturnRows(r)
 
 		tbl := new(baseTestCollection)

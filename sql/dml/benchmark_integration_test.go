@@ -140,7 +140,7 @@ func BenchmarkInsert_Prepared(b *testing.B) {
 			args = args[:0]
 
 			res, err := stmt.WithArguments(args.
-			String("Maria Gopher ExecArgs").NullString(dml.MakeNullString("maria@gopherExecArgs.go")).
+				String("Maria Gopher ExecArgs").NullString(dml.MakeNullString("maria@gopherExecArgs.go")).
 				Int64(storeID).Time(now()).Float64(totalIncome * float64(i)),
 			).ExecContext(ctx)
 			if err != nil {

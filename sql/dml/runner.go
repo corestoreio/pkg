@@ -21,6 +21,7 @@ import (
 	"io"
 	"math"
 	"strconv"
+	"time"
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/util/byteconv"
@@ -364,6 +365,24 @@ func (b *RowConvert) NullString() (NullString, error) {
 		return NullString{}, errors.NewNotValidf("[dml] Column Index %d at position %d contains invalid UTF-8 characters", b.index, b.Count)
 	}
 	return NullString{NullString: byteconv.ParseNullString(b.current)}, nil
+}
+
+// String see the documentation for function Scan.
+func (b *RowConvert) Time() (time.Time, error) {
+	t, err := time.Parse(time.RFC3339Nano, string(b.current))
+	if err != nil {
+		return time.Time{}, errors.NewNotValidf("[dml] RowConvert Time: Invalid time string: %q", string(b.current))
+	}
+	return t, nil
+}
+
+// NullString see the documentation for function Scan.
+func (b *RowConvert) NullTime() (NullTime, error) {
+	var nt NullTime
+	if err := nt.Scan(b.current); err != nil {
+		return NullTime{}, errors.NewNotValidf("[dml] RowConvert NullTime: Invalid time string: %q", string(b.current))
+	}
+	return nt, nil
 }
 
 func rangeError(fn, str string) *strconv.NumError {

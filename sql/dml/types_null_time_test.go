@@ -15,6 +15,7 @@
 package dml
 
 import (
+	"encoding"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -24,15 +25,21 @@ import (
 )
 
 var (
-	_            fmt.GoStringer = (*NullTime)(nil)
-	intJSON                     = []byte(`12345`)
-	timeString                  = "1977-05-25T20:21:21Z"
-	timeJSON                    = []byte(`"` + timeString + `"`)
-	nullTimeJSON                = []byte(`null`)
-	timeValue, _                = time.Parse(time.RFC3339, timeString)
-	timeObject                  = []byte(`{"Time":"1977-05-25T20:21:21Z","Valid":true}`)
-	nullObject                  = []byte(`{"Time":"0001-01-01T00:00:00Z","Valid":false}`)
-	badObject                   = []byte(`{"hello": "world"}`)
+	_            json.Marshaler             = (*NullTime)(nil)
+	_            json.Unmarshaler           = (*NullTime)(nil)
+	_            encoding.TextMarshaler     = (*NullTime)(nil)
+	_            encoding.TextUnmarshaler   = (*NullTime)(nil)
+	_            encoding.BinaryMarshaler   = (*NullTime)(nil)
+	_            encoding.BinaryUnmarshaler = (*NullTime)(nil)
+	_            fmt.GoStringer             = (*NullTime)(nil)
+	intJSON                                 = []byte(`12345`)
+	timeString                              = "1977-05-25T20:21:21Z"
+	timeJSON                                = []byte(`"` + timeString + `"`)
+	nullTimeJSON                            = []byte(`null`)
+	timeValue, _                            = time.Parse(time.RFC3339, timeString)
+	timeObject                              = []byte(`{"Time":"1977-05-25T20:21:21Z","Valid":true}`)
+	nullObject                              = []byte(`{"Time":"0001-01-01T00:00:00Z","Valid":false}`)
+	badObject                               = []byte(`{"hello": "world"}`)
 )
 
 func TestUnmarshalTimeJSON(t *testing.T) {
